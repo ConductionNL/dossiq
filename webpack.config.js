@@ -23,6 +23,18 @@ webpackConfig.entry = {
 		import: path.join(__dirname, 'src', 'settings.js'),
 		filename: appId + '-settings.js',
 	},
+	casesOverviewWidget: {
+		import: path.join(__dirname, 'src', 'casesOverviewWidget.js'),
+		filename: appId + '-casesOverviewWidget.js',
+	},
+	overdueCasesWidget: {
+		import: path.join(__dirname, 'src', 'overdueCasesWidget.js'),
+		filename: appId + '-overdueCasesWidget.js',
+	},
+	myTasksWidget: {
+		import: path.join(__dirname, 'src', 'myTasksWidget.js'),
+		filename: appId + '-myTasksWidget.js',
+	},
 }
 
 // Use local source when available (monorepo dev), otherwise fall back to npm package

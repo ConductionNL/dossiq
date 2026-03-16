@@ -170,3 +170,50 @@ The system MUST support generating an inspection report from the completed check
 - **Task Management spec** (`../task-management/spec.md`): Inspection tasks appear in the inspector's task list.
 - **Docudesk**: PDF report generation from checklist data.
 - **Nextcloud Files**: Photo storage under case folder structure.
+
+### Current Implementation Status
+
+**Not yet implemented.** No mobile inspection, PWA, checklist, or field inspection code exists in the Procest codebase. There are no inspection schemas, no PWA manifest, no service worker, and no mobile-specific Vue components.
+
+**Foundation available:**
+- Task management infrastructure (`src/views/tasks/TaskList.vue`, `src/views/tasks/TaskDetail.vue`, `src/services/taskApi.js`, `src/utils/taskLifecycle.js`) provides the task list model that inspection assignments could use.
+- File upload support via `filesPlugin` in the object store for photo attachment.
+- The `CnDetailPage` component used in case/task detail views provides sidebar and responsive layout foundations.
+- Nextcloud Files integration for document storage under case folders.
+- Docudesk (external dependency) for PDF report generation from checklist data.
+
+**Partial implementations:** None.
+
+### Standards & References
+
+- **PWA (Progressive Web App)**: W3C standard for installable web apps with offline capability.
+- **Service Workers**: Browser API for offline caching and background sync (required for V3 offline capability).
+- **IndexedDB**: Browser storage API for offline data persistence.
+- **Geolocation API**: W3C standard for GPS coordinate capture.
+- **MediaStream API (getUserMedia)**: Browser API for camera access.
+- **WCAG 2.5.5**: Touch target size minimum 44x44px for mobile accessibility.
+- **GEMMA VTH-referentiecomponenten**: Mobile inspection is part of the VTH reference architecture.
+- **Omgevingswet**: Environmental and planning law requiring field inspections for permit compliance.
+- **BIO**: Security requirements for mobile device data handling (device encryption, secure data transmission).
+
+### Specificity Assessment
+
+This spec is well-defined for V2 (online PWA) and V3 (offline) with clear scenarios for each capability. The PWA approach is well-suited to the Nextcloud web architecture.
+
+**What's missing:**
+- No OpenRegister schema definition for inspection, checklist, or checklist item entities.
+- No specification of the PWA manifest configuration (icons, colors, orientation, display mode).
+- No specification of how checklists are defined per case type (admin configuration UI).
+- No specification of offline storage capacity limits and cleanup strategy.
+- No specification of the photo annotation tool implementation (canvas-based, third-party library).
+- No specification of the sync conflict resolution UI.
+- No specification of how inspection tasks are created and assigned (admin UI or automatic from case workflow).
+- No specification of the inspection report template format.
+
+**Open questions:**
+1. Should the mobile inspection be a separate Vue app (PWA entry point) or part of the main Procest app with responsive layout?
+2. How are checklists defined -- as OpenRegister schemas, JSON templates, or n8n workflow definitions?
+3. What is the maximum number of photos per inspection (storage/bandwidth considerations)?
+4. Should the system support digital signatures for field sign-off (V3 feature mentioned but not specified)?
+5. How does offline sync handle photo uploads -- queue all or sync progressively?
+6. Should the PWA support multiple simultaneous offline inspections?

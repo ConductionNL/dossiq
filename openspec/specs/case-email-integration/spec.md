@@ -107,3 +107,44 @@ All emails MUST be converted to PDF for archival as case documents.
 - Docudesk for email-to-PDF conversion
 - OpenRegister for case data (template variable resolution)
 - Background jobs for inbound email polling
+
+### Current Implementation Status
+
+**Not yet implemented.** No email-related services, controllers, or Vue components exist in the Procest codebase. There are no email template schemas, SMTP/IMAP configuration fields, or email-to-PDF conversion logic.
+
+**Foundation available:**
+- The `NotificatieService` (`lib/Service/NotificatieService.php`) handles ZGW notification channels (kanaal/abonnement schemas exist in config), which could be extended for email notifications.
+- Document schemas exist (`document_schema`, `caseDocument` in `SettingsService::SLUG_TO_CONFIG_KEY`) for storing sent/received emails as case documents.
+- Activity timeline component (`src/views/cases/components/ActivityTimeline.vue`) would display email events.
+- Docudesk (external dependency) provides PDF generation capabilities for email-to-PDF conversion.
+- OpenConnector could host SMTP/IMAP adapters.
+
+**Partial implementations:** None.
+
+### Standards & References
+
+- **SMTP/IMAP**: Standard email protocols for sending and receiving.
+- **Nextcloud Mail App**: Potential integration point for email composition and mailbox management.
+- **ZGW Documenten API (VNG)**: Sent/received emails stored as informatieobjecten follow ZGW DRC patterns.
+- **Archiefwet / NEN 2082**: Email archival as PDF follows Dutch archiving standards for government correspondence.
+- **AVG/GDPR**: Email content containing citizen data must be handled per privacy regulations.
+- **WCAG AA**: Email composer and template editor must be accessible.
+
+### Specificity Assessment
+
+This spec is moderately specific -- it covers the key user stories but lacks technical depth.
+
+**What's missing:**
+- No OpenRegister schema for email templates (fields, variable syntax, zaaktype linkage).
+- No specification of the email composer UI component.
+- No specification of the IMAP polling background job implementation (Nextcloud `IJobList`).
+- No specification of email thread data model (Message-ID, In-Reply-To headers).
+- No specification of how the case number is extracted from email subjects (regex pattern, error handling).
+- No specification of the unlinked email queue UI.
+- Variable syntax `{{variable}}` is shown but not formally defined (available variables, nested access, formatting).
+
+**Open questions:**
+1. Should email integration use Nextcloud Mail app's infrastructure or implement direct SMTP/IMAP?
+2. How are email templates versioned when a zaaktype is updated?
+3. Should the system support rich-text email or plain text only?
+4. How is the email-to-PDF conversion triggered -- synchronously on receipt or via background job?

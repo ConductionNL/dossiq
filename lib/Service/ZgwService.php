@@ -145,15 +145,32 @@ class ZgwService
         private readonly ZgwBusinessRulesService $businessRulesService,
         private readonly LoggerInterface $logger,
     ) {
+        $container = \OC::$server;
+
         try {
-            $container = \OC::$server;
             $this->openRegisterMappingService = $container->get(
                 'OCA\OpenRegister\Service\MappingService'
             );
-            $this->openRegisterObjectService  = $container->get(
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'ZgwService: MappingService not available',
+                ['exception' => $e->getMessage()]
+            );
+        }
+
+        try {
+            $this->openRegisterObjectService = $container->get(
                 'OCA\OpenRegister\Service\ObjectService'
             );
-            $this->consumerMapper       = $container->get(
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'ZgwService: ObjectService not available',
+                ['exception' => $e->getMessage()]
+            );
+        }
+
+        try {
+            $this->consumerMapper = $container->get(
                 'OCA\OpenRegister\Db\ConsumerMapper'
             );
             $this->authorizationService = $container->get(
@@ -161,7 +178,7 @@ class ZgwService
             );
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'ZgwService: OpenRegister services not available',
+                'ZgwService: Auth services not available',
                 ['exception' => $e->getMessage()]
             );
         }

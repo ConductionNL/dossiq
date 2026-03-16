@@ -120,3 +120,56 @@ The system MUST support the formal WOO decision and document publication.
 - Besluiten-management spec (for formal decision registration)
 - Mijn Overheid integration (for verzoeker notification)
 - Document management within case (zaakdossier)
+
+---
+
+### Current Implementation Status
+
+**Not implemented.** No WOO-specific case type template, workflow, or UI exists in the Procest codebase.
+
+**Existing foundations:**
+- **Case type configuration**: `src/views/settings/CaseTypeAdmin.vue`, `CaseTypeDetail.vue`, `CaseTypeList.vue`, and `src/views/settings/tabs/StatusesTab.vue` provide admin UI for creating and configuring case types with status diagrams. A WOO zaaktype could be created through this UI manually.
+- **Status types**: The `statusType` schema in `procest_register.json` supports ordered statuses with `isFinal`, `notifyInitiator`, `notificationText` properties. The 8 WOO stages could be configured as status types.
+- **Document types**: The `documentType` schema supports `name`, `direction` (incoming/outgoing/internal), `requiredAtStatus`. WOO document types could be configured.
+- **Property definitions**: The `propertyDefinition` schema supports custom fields per case type. WOO intake fields (onderwerp, periode, bestuurlijke aangelegenheid, etc.) could be defined.
+- **Decision management**: The `decision` and `decisionType` schemas exist in `procest_register.json`. ZGW BRC controller (`lib/Controller/BrcController.php`) provides decision API endpoints.
+- **Deadline tracking**: `src/views/cases/components/DeadlinePanel.vue` provides deadline display with processing deadline calculation from case type.
+- **Duration helpers**: `src/utils/durationHelpers.js` supports ISO 8601 duration parsing for deadline calculations.
+
+**Not implemented (WOO-specific):**
+- No pre-configured WOO zaaktype template shipped with the app
+- No WOO-specific intake form with verzoeker, onderwerp, periode fields
+- No WOO deadline calculation (4 weeks + optional 2-week extension)
+- No per-document assessment workflow (openbaar/deels openbaar/niet openbaar)
+- No weigeringsgrond (WOO Art. 5.1/5.2) selection UI
+- No Docudesk integration for document redaction/anonymization
+- No decision document generation
+- No inventarislijst (document inventory) generation
+- No publication to reading room
+- No template library concept (activate a template to create a zaaktype)
+
+### Standards & References
+
+- **Wet open overheid (WOO)**: Dutch transparency law (2022), replacing WOB. Key deadlines: 4 weeks response time, max 2-week extension (Art. 4.4).
+- **WOO Article 5.1/5.2**: Legal grounds for withholding documents (eenheid van de Kroon, veiligheid Staat, persoonlijke levenssfeer, etc.).
+- **ZGW APIs**: Cases, documents, and decisions follow ZGW patterns. ZTC defines the zaaktype structure.
+- **GEMMA**: WOO processing is a standard use case in the GEMMA reference architecture.
+- **Platform Openheid Overheid (PLOOI)**: National publication platform for WOO documents (may be relevant for publication step).
+- **AVG/GDPR**: Document redaction/anonymization requirements for personal data.
+- **Archiefwet**: Archival requirements for WOO decisions and disclosed documents.
+
+### Specificity Assessment
+
+- **Mostly implementable** as a configuration + custom components on top of existing case type infrastructure. The spec clearly defines the WOO stages, intake fields, assessment options, and deadline rules.
+- **Missing details:**
+  - How is the WOO zaaktype template packaged and activated? (JSON template? Seed data in repair step? Admin UI "template library"?)
+  - How does the per-document assessment UI work? (Inline in case detail? Separate assessment view? Table with dropdowns?)
+  - How does Docudesk integration work technically? (API call? File share? n8n workflow?)
+  - What is the "reading room" publication mechanism? (Public URL? OpenCatalogi? External platform like PLOOI?)
+  - How is the inventarislijst generated? (Auto-generated document listing all documents with their assessment status?)
+- **Open questions:**
+  - Should the WOO template be hard-coded in the app or configurable via the admin UI?
+  - Should deadline extension be a separate action or a field on the case?
+  - How does the document assessment interact with Nextcloud's file management?
+  - Should WOO-specific fields be propertyDefinitions or first-class case fields?
+  - Is Docudesk integration via direct API or via OpenConnector?

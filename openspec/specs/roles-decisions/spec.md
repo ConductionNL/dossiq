@@ -692,3 +692,59 @@ All roles and decisions interfaces MUST comply with WCAG AA:
 - Decision validity calculations MUST be performed client-side (no extra API call)
 - Role and result operations MUST complete within 2 seconds
 - The case detail page MUST load participants, results, and decisions in parallel with other sections
+
+---
+
+### Current Implementation Status
+
+**Roles: Substantially implemented (MVP). Results: Partially implemented. Decisions: Not implemented.**
+
+**Roles -- Implemented (with file paths):**
+- **ParticipantsSection**: `src/views/cases/components/ParticipantsSection.vue` -- displays all roles on a case, grouped by role type name. Resolves participant display names via Nextcloud OCS API (`/ocs/v2.php/cloud/users/{uid}`). Shows initials avatar, role type label, and participant name. Supports "Add Participant" button and "Reassign" action on handler roles. Supports "Remove" action on non-handler roles (REQ-ROLE-001, REQ-ROLE-005).
+- **AddParticipantDialog**: `src/views/cases/components/AddParticipantDialog.vue` -- dialog for adding participants with role type selection and user picker. Supports pre-selecting handler role type (REQ-ROLE-003).
+- **Handler reassignment**: `ParticipantsSection.vue` includes inline reassign UI with NcSelect user picker. Updates both the role object's `participant` and the case's `assignee` field (REQ-ROLE-003).
+- **Role removal**: Supported via delete button with confirmation dialog.
+- **Role schema**: Defined in `lib/Settings/procest_register.json` with properties: `name`, `description`, `roleType`, `case`, `participant` (REQ matching the data model).
+- **RoleType schema**: Defined in `procest_register.json` with `name`, `caseType`, `genericRole` properties. The `genericRole` enum includes: `initiator`, `handler`, `advisor`, `decision_maker`, `stakeholder`, `coordinator`, `contact`, `co_initiator`.
+- **Data fetching**: Roles fetched via `objectStore.fetchCollection('role', { '_filters[case]': caseId })`. Role types fetched in parallel.
+- **Display name resolution**: `resolveDisplayNames()` method fetches Nextcloud user info per participant UID.
+- **User picker**: `fetchUsers()` fetches available users from `/ocs/v2.php/cloud/users/details`.
+
+**Roles -- Not yet implemented:**
+- **REQ-ROLE-002: Role type enforcement (V1)**: No validation that assigned role types belong to the case's case type. All role types are shown in the picker regardless of case type.
+- **REQ-ROLE-004: Role-based case access (V1)**: No RBAC enforcement based on role assignments. All users with app access can see all cases.
+- **REQ-ROLE-006: Role validation**: Client-side validation exists in the dialog, but server-side validation of participant existence and case reference validity is delegated to OpenRegister schema validation.
+- **Notifications**: No Nextcloud notification sent when a handler is assigned or reassigned.
+- **External contacts**: Only Nextcloud users are supported as participants. No integration with Nextcloud Contacts for external party references.
+
+**Results -- Partially implemented:**
+- **ResultSection**: `src/views/cases/components/ResultSection.vue` -- displays a single result with name, description, and result type. Resolves result type name from the `resultTypes` array.
+- **Result schema**: Defined in `procest_register.json` with `name`, `description`, `case`, `resultType` properties.
+- **ResultType schema**: Defined in `procest_register.json` with `name`, `description`, `caseType`, `archiveAction`, `retentionPeriod`, `retentionDateSource` properties.
+- **Not implemented**: Result creation UI (selecting from predefined result types during case closure), archival metadata display, result type management in admin settings (REQ-RESULT-002), enforcement of one-result-per-case.
+
+**Decisions -- Not implemented:**
+- **Decision schema**: Defined in `procest_register.json` with `title`, `description`, `case`, `decisionType`, `decidedBy`, `decidedAt`, `effectiveDate`, `expiryDate` properties.
+- **DecisionType schema**: Defined in `procest_register.json` with `name`, `description`, `category`, `objectionPeriod`, `publicationRequired`, `publicationPeriod` properties.
+- **No UI exists** for creating, viewing, editing, or deleting decisions on cases. No Decisions section on the case detail page. No validity period tracking or expiry indicators.
+- The ZGW BRC (Besluiten) controller (`lib/Controller/BrcController.php`) provides ZGW-compliant decision API endpoints, but no frontend consumes them.
+
+### Standards & References
+
+- **ZGW APIs (VNG Realisatie)**: Roles map to ZGW `Rol` with `omschrijvingGeneriek` for generic role categories. Results map to `Resultaat` with `archiefnominatie` and `archiefactietermijn`. Decisions map to `Besluit` with `ingangsdatum`, `vervaldatum`, `publicatie_indicatie`. ZGW BRC controller fully implemented.
+- **Schema.org**: Roles typed as `schema:Role`, decisions as `schema:ChooseAction` in `procest_register.json`.
+- **CMMN 1.1**: Role assignments follow CMMN case participant patterns.
+- **Archivering**: Result types include `archiveAction` (retain/destroy) and `retentionPeriod` (ISO 8601 duration) per Dutch archival standards (Archiefwet).
+- **WCAG 2.1 AA**: ParticipantsSection uses sufficient contrast and text labels. Decision validity indicators (not yet implemented) must not rely solely on color.
+- **Wet open overheid (WOO)**: Decision publication requirements align with WOO transparency obligations.
+
+### Specificity Assessment
+
+- **Roles**: Well-specified and mostly implemented. The MVP scenarios are clear and actionable.
+- **Results**: Well-specified but implementation is incomplete. The result creation flow during case closure needs UI work.
+- **Decisions**: Well-specified but entirely unimplemented in the frontend. The data model exists in the register config, and the ZGW API layer exists, but no Procest-native UI exists.
+- **Open questions:**
+  - Should role type enforcement be strict (reject) or advisory (warn)?
+  - How should external contacts (non-Nextcloud users) be represented as participants?
+  - Should decision publication trigger an n8n workflow or a direct API call?
+  - How does the result creation flow interact with case status transitions (must the case transition to a final status after result is recorded)?

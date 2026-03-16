@@ -111,3 +111,42 @@ Shown timeslots must reflect current availability to prevent double bookings.
 - WHEN both attempt to book it simultaneously
 - THEN only one booking MUST succeed
 - AND the other MUST receive a message to select a different timeslot
+
+### Current Implementation Status
+
+**Not yet implemented.** No appointment-related schemas, controllers, services, or Vue components exist in the Procest codebase. The `procest_register.json` configuration does not include an appointment schema.
+
+**Foundation available:**
+- Case detail view (`src/views/cases/CaseDetail.vue`) provides the integration point where an "Plan afspraak" button would be added.
+- Activity timeline component (`src/views/cases/components/ActivityTimeline.vue`) could display appointment events.
+- OpenConnector (external dependency) could host JCC/Qmatic API adapters.
+- The task management infrastructure (`src/views/tasks/`) could model appointment scheduling as a task type.
+
+**Partial implementations:** None.
+
+### Standards & References
+
+- **VNG GEMMA Referentiearchitectuur**: Afsprakenbeheer is a recognized component in the GEMMA zaakgericht werken reference architecture.
+- **JCC Afspraken API**: Proprietary API for municipal appointment scheduling (widely used in Dutch municipalities).
+- **Qmatic Orchestra REST API**: Standard integration for queue management and appointment booking.
+- **Open-Formulieren Appointment Plugin Architecture**: Reference implementation for pluggable appointment backends (JCC, Qmatic).
+- **WCAG AA**: Appointment booking UI must be accessible, including date/time pickers.
+- **BRP (Basisregistratie Personen)**: Citizen identification for appointment linking.
+
+### Specificity Assessment
+
+This spec is moderately specific -- it describes the functional requirements well but lacks technical implementation details.
+
+**What's missing:**
+- No OpenRegister schema definition for the appointment entity (fields, types, validations).
+- No API endpoint specifications for appointment CRUD.
+- No plugin interface definition (how backends are registered, configured, and selected).
+- No specification of the Nextcloud Calendar integration mechanics.
+- No email/SMS notification template specifications.
+- No specification of how "products" and "locations" are configured in the admin settings.
+
+**Open questions:**
+1. Should appointments be stored as OpenRegister objects or as Nextcloud Calendar events?
+2. How does the citizen access the appointment booking -- via a public form, portal, or share link?
+3. What is the fallback when the external appointment backend is unavailable?
+4. How are appointment reminders implemented -- Nextcloud cron job or n8n workflow?

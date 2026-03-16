@@ -216,3 +216,46 @@ The system MUST provide an overview of all active voorstellen and their paraferi
 - **Task Management spec** (`../task-management/spec.md`): Parafering steps create tasks for actors.
 - **OpenConnector**: iBabs API, NotuBiz API adapters.
 - **Docudesk**: Document templates for collegeadvies, raadsvoorstel.
+
+### Current Implementation Status
+
+**Not yet implemented.** No parafering, voorstel, or B&W decision-related code exists in the Procest codebase. There are no schemas for voorstel, parafeerroute, or parafeeractie in `procest_register.json`. No Vue components for parafering workflows exist.
+
+**Foundation available:**
+- Task management infrastructure (`src/views/tasks/`, `src/services/taskApi.js`, `src/utils/taskLifecycle.js`) provides a model for parafering steps (each step could be modeled as a task).
+- The `decision` schema exists in `SettingsService::SLUG_TO_CONFIG_KEY` (config key `decision_schema`), providing a foundation for recording besluiten.
+- The `decisionType` schema exists for typing decisions.
+- ZGW Besluiten API controller (`lib/Controller/BrcController.php`) handles besluit CRUD via ZGW API endpoints.
+- Activity timeline component could display parafering events.
+- Nextcloud notification infrastructure is available via the `NotificatieService` (`lib/Service/NotificatieService.php`).
+
+**Partial implementations:** None specific to parafering, but the `BrcController` and decision schemas provide the data model foundation for step 10 (archivering).
+
+### Standards & References
+
+- **BPMN 2.0**: Process modeling standard for sequential/parallel parafeerroutes.
+- **ZGW Besluiten API (VNG)**: For recording formal besluiten (decisions) linked to cases.
+- **CMMN 1.1**: HumanTask concept maps to parafering steps.
+- **Awb (Algemene wet bestuursrecht)**: Legal framework for administrative decision-making.
+- **iBabs API**: Commercial API for raadsinformatiesysteem (council information system).
+- **NotuBiz API**: Alternative RIS platform API.
+- **GEMMA**: B&W besluitvormingsproces is a standard reference process in GEMMA zaakgericht werken.
+- **Archiefwet**: Legal requirements for archiving besluiten.
+
+### Specificity Assessment
+
+This spec is well-structured with a clear 10-step process model and feature tier separation (V1/V2). The scenarios are detailed with concrete actor/action/system descriptions.
+
+**What's missing:**
+- No OpenRegister schema definition for voorstel, parafeerroute, or parafeeractie entities.
+- No API endpoint specifications.
+- No UI wireframes for the parafering interface (inbox, voorstel view, action buttons).
+- No specification of mandate/delegation configuration (how "paraferen namens" is set up).
+- No specification of how parafeerroutes are configured per case type in admin settings (which tab/section).
+- Parallel parafering logic (AND/OR completion rules) needs more detail.
+
+**Open questions:**
+1. How are parafeerroutes stored -- as OpenRegister objects or as n8n workflow definitions?
+2. Should the parafering dashboard be a separate page or a section of the existing dashboard?
+3. How does the system handle parafering steps when the assigned actor is unavailable and has no delegate?
+4. What is the integration mechanism with iBabs -- REST API, SOAP, or file exchange?

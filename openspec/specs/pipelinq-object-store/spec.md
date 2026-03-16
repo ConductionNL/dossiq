@@ -99,3 +99,37 @@ Every fetch request to OpenRegister MUST include the CSRF token and OCS header.
 - WHEN the request is constructed
 - THEN it MUST include `requesttoken: OC.requestToken` header
 - AND it MUST include `OCS-APIREQUEST: true` header
+
+---
+
+### Current Implementation Status
+
+**Implemented via shared library.** The Pipelinq object store exists but uses the `@conduction/nextcloud-vue` shared library rather than a custom implementation.
+
+**Implemented (with file paths -- in `pipelinq/` submodule):**
+- **Object store**: `pipelinq/src/store/modules/object.js` -- uses `createObjectStore('object')` from `@conduction/nextcloud-vue` with `filesPlugin()`, `auditTrailsPlugin()`, and `relationsPlugin()`. This provides all CRUD, pagination, caching, search, loading/error state tracking, and authentication headers.
+- **Settings store**: `pipelinq/src/store/modules/settings.js` -- fetches `/apps/pipelinq/api/settings` to get register/schema configuration, with loading and error state tracking. Includes `fetchSettings()` and `saveSettings()` actions with CSRF token and OCS headers.
+- **Settings initialization**: The store fetches settings before data operations can proceed (settings store `initialized` flag guards data fetching).
+- **Authentication headers**: Both stores include `requesttoken: OC.requestToken` and `OCS-APIREQUEST: true` in all fetch calls.
+
+**Architecture difference from spec:**
+- The spec describes a custom store with explicit `registerObjectType()`, `unregisterObjectType()`, `fetchCollection()`, `fetchObject()`, `saveObject()`, `deleteObject()`, `isLoading()` APIs. The actual implementation delegates all of this to `createObjectStore('object')` from the shared library, which provides equivalent functionality but with a different API surface.
+- The shared library store internally handles object type registration based on the register/schema configuration.
+
+**Not explicitly implemented:**
+- `unregisterObjectType()` -- not exposed as a public API; type registry is managed internally by the shared library.
+- Per-type error state (`errors.client`) -- the shared library may track errors differently.
+
+### Standards & References
+
+- **Nextcloud authentication**: CSRF token via `OC.requestToken` and OCS header per Nextcloud API conventions.
+- **OpenRegister API**: REST API at `/apps/openregister/api/objects/{register}/{schema}` for all CRUD operations.
+- **Pinia**: Vue 2 compatible state management via `PiniaVuePlugin`.
+
+### Specificity Assessment
+
+- **Implementable as-is**, but the described API surface does not match the actual shared library API. The spec should either be updated to reflect the `createObjectStore()` pattern or a custom wrapper should be built.
+- **Missing detail:** The spec does not mention the shared library (`@conduction/nextcloud-vue`) that actually provides the implementation. This library is used by Procest, Pipelinq, Softwarecatalog, and other Conduction apps.
+- **Open questions:**
+  - Should the spec be rewritten to describe the shared library's API, or should it describe a Pipelinq-specific wrapper?
+  - How does the shared library handle pagination metadata -- does it match the spec's `pagination.client` structure?

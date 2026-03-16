@@ -176,6 +176,100 @@ class ZgwDocumentService
     }//end getMimeType()
 
     /**
+     * Store a chunk (bestandsdeel) for a document.
+     *
+     * Chunks are stored as temporary files named `_part_{volgnummer}`
+     * in the document folder until all parts are uploaded and merged.
+     *
+     * @param string $uuid       The document UUID
+     * @param int    $volgnummer The chunk sequence number (1-based)
+     * @param string $content    The raw binary chunk content
+     *
+     * @return int The chunk size in bytes
+     */
+    public function storeChunk(string $uuid, int $volgnummer, string $content): int
+    {
+        $folder   = $this->getDocumentFolder(uuid: $uuid);
+        $partName = '_part_'.$volgnummer;
+        $file     = $folder->newFile(path: $partName);
+        $file->putContent(data: $content);
+
+        return strlen(string: $content);
+    }//end storeChunk()
+
+    /**
+     * Check which chunk parts exist for a document.
+     *
+     * @param string $uuid       The document UUID
+     * @param int    $totalParts The expected total number of parts
+     *
+     * @return array<int> List of volgnummers that have been uploaded
+     */
+    public function getUploadedChunks(string $uuid, int $totalParts): array
+    {
+        $folder   = $this->getDocumentFolder(uuid: $uuid);
+        $uploaded = [];
+
+        for ($i = 1; $i <= $totalParts; $i++) {
+            try {
+                $folder->get(path: '_part_'.$i);
+                $uploaded[] = $i;
+            } catch (NotFoundException $e) {
+                // Not yet uploaded.
+            }
+        }
+
+        return $uploaded;
+    }//end getUploadedChunks()
+
+    /**
+     * Merge all chunk parts into the final document file.
+     *
+     * Reads each `_part_{n}` file in order, concatenates into the final
+     * file, then deletes the temporary chunk files.
+     *
+     * @param string $uuid       The document UUID
+     * @param string $fileName   The target file name
+     * @param int    $totalParts The total number of parts
+     *
+     * @return int The merged file size in bytes
+     *
+     * @throws InvalidArgumentException If not all chunks are present.
+     */
+    public function mergeChunks(string $uuid, string $fileName, int $totalParts): int
+    {
+        $folder  = $this->getDocumentFolder(uuid: $uuid);
+        $content = '';
+
+        for ($i = 1; $i <= $totalParts; $i++) {
+            $partName = '_part_'.$i;
+            try {
+                $part     = $folder->get(path: $partName);
+                $content .= $part->getContent();
+            } catch (NotFoundException $e) {
+                throw new InvalidArgumentException(
+                    'Missing chunk '.$i.' of '.$totalParts.' for document '.$uuid
+                );
+            }
+        }
+
+        // Write the merged file.
+        $file = $folder->newFile(path: $fileName);
+        $file->putContent(data: $content);
+
+        // Clean up chunk files.
+        for ($i = 1; $i <= $totalParts; $i++) {
+            try {
+                $folder->get(path: '_part_'.$i)->delete();
+            } catch (NotFoundException $e) {
+                // Already gone.
+            }
+        }
+
+        return strlen(string: $content);
+    }//end mergeChunks()
+
+    /**
      * Get or create the document storage folder for a UUID.
      *
      * @param string $uuid The document UUID

@@ -95,3 +95,44 @@ External systems (citizen portal, dashboards) need milestone data.
 - GIVEN the citizen portal queries milestone data for a citizen's case
 - THEN only the milestone labels and reached status MUST be returned
 - AND internal identifiers and case worker details MUST be excluded
+
+### Current Implementation Status
+
+**Not yet implemented as a standalone feature.** No milestone-specific schemas, controllers, services, or Vue components exist in the Procest codebase.
+
+**Foundation available / partial overlap:**
+- The status timeline (`src/views/cases/components/StatusTimeline.vue`) already provides a visual progress indicator showing passed/current/future status dots with dates. This overlaps significantly with the milestone concept -- status types function as milestones in the current implementation.
+- Status types are ordered and have timestamps when reached (via `statusRecord` schema in `SettingsService::SLUG_TO_CONFIG_KEY`).
+- The case list view already shows status information per case row (via `QuickStatusDropdown`).
+- The `statusRecord` schema tracks status transitions with timestamps, providing the data for duration analysis.
+- ZGW status endpoints via `ZrcController` track status history.
+
+**Key distinction:** The spec envisions milestones as a separate concept from statuses -- milestones are business-friendly progress markers that can be independent of status transitions. The current status timeline serves a similar but not identical purpose.
+
+**Partial implementations:** The status timeline component effectively implements milestone visualization for cases where milestones map 1:1 to status types.
+
+### Standards & References
+
+- **CMMN 1.1**: Milestone concept -- a PlanItem that marks a significant event in the case lifecycle.
+- **ZGW Zaken API (VNG)**: Status history (statussen) provides the foundation for milestone timestamps.
+- **GEMMA**: Voortgangsbewaking (progress monitoring) is a standard zaakgericht werken capability.
+- **Schema.org**: `schema:Event` could model individual milestone events.
+- **WCAG AA**: Step indicators and progress bars must be accessible (ARIA roles, keyboard navigation).
+
+### Specificity Assessment
+
+This spec is well-structured with clear scenarios for configuration, automatic/manual triggering, visualization, and API access.
+
+**What's missing:**
+- No OpenRegister schema definition for milestone sets or individual milestones.
+- No specification of how milestones differ from status types in the data model (or whether milestones should be implemented as an extension of status types).
+- No specification of the milestone configuration UI in admin settings.
+- No specification of the n8n workflow event mapping mechanism.
+- No specification of the analytics/reporting dashboard UI.
+- No specification of how milestone data is exposed for citizen portal consumption.
+
+**Open questions:**
+1. Should milestones be a separate concept from statuses, or should status types be extended with milestone properties?
+2. If separate, how do milestones relate to status types -- can a milestone be reached independently of status transitions?
+3. How are n8n workflow events mapped to milestones -- via webhook, event name matching, or configuration?
+4. Should the progress percentage be linear (based on count) or weighted (based on expected duration)?

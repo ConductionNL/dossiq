@@ -31,46 +31,52 @@
 				</NcButton>
 			</template>
 
-			<!-- KPI Cards widget -->
-			<template #widget-kpis>
-				<div class="kpi-row">
-					<div class="kpi-card">
-						<div class="kpi-icon">
-							<FolderOpen :size="24" />
-						</div>
-						<div class="kpi-content">
-							<span class="kpi-value">{{ kpis.openCount }}</span>
-							<span class="kpi-label">{{ t('procest', 'Open Cases') }}</span>
-						</div>
-					</div>
-					<div class="kpi-card" :class="{ 'kpi-card--warning': kpis.overdueCount > 0 }">
-						<div class="kpi-icon" :class="{ 'kpi-icon--warning': kpis.overdueCount > 0 }">
-							<AlertCircle :size="24" />
-						</div>
-						<div class="kpi-content">
-							<span class="kpi-value">{{ kpis.overdueCount }}</span>
-							<span class="kpi-label">{{ t('procest', 'Overdue') }}</span>
-						</div>
-					</div>
-					<div class="kpi-card">
-						<div class="kpi-icon kpi-icon--success">
-							<CheckCircle :size="24" />
-						</div>
-						<div class="kpi-content">
-							<span class="kpi-value">{{ kpis.completedCount }}</span>
-							<span class="kpi-label">{{ t('procest', 'Completed This Month') }}</span>
-						</div>
-					</div>
-					<div class="kpi-card">
-						<div class="kpi-icon">
-							<ClipboardCheckOutline :size="24" />
-						</div>
-						<div class="kpi-content">
-							<span class="kpi-value">{{ kpis.taskCount }}</span>
-							<span class="kpi-label">{{ t('procest', 'My Tasks') }}</span>
-						</div>
-					</div>
-				</div>
+			<!-- Open Cases count widget -->
+			<template #widget-count-open-cases>
+				<CnStatsBlock
+					:title="t('procest', 'Open Cases')"
+					:count="kpis.openCount"
+					:count-label="t('procest', 'open')"
+					:icon="FolderOpen"
+					variant="primary"
+					horizontal
+					:route="{ name: 'Cases', query: { status: 'open' } }" />
+			</template>
+
+			<!-- Overdue count widget -->
+			<template #widget-count-overdue>
+				<CnStatsBlock
+					:title="t('procest', 'Overdue')"
+					:count="kpis.overdueCount"
+					:count-label="t('procest', 'overdue')"
+					:icon="AlertCircle"
+					:variant="kpis.overdueCount > 0 ? 'error' : 'default'"
+					horizontal
+					:route="{ name: 'Cases', query: { overdue: 'true' } }" />
+			</template>
+
+			<!-- Completed This Month count widget -->
+			<template #widget-count-completed>
+				<CnStatsBlock
+					:title="t('procest', 'Completed This Month')"
+					:count="kpis.completedCount"
+					:count-label="t('procest', 'completed')"
+					:icon="CheckCircle"
+					variant="success"
+					horizontal
+					:route="{ name: 'Cases', query: { status: 'completed' } }" />
+			</template>
+
+			<!-- My Tasks count widget -->
+			<template #widget-count-my-tasks>
+				<CnStatsBlock
+					:title="t('procest', 'My Tasks')"
+					:count="kpis.taskCount"
+					:count-label="t('procest', 'tasks')"
+					:icon="ClipboardCheckOutline"
+					variant="primary"
+					horizontal
+					:route="{ name: 'Tasks' }" />
 			</template>
 
 			<!-- Cases by Status widget -->
@@ -166,7 +172,7 @@
 
 <script>
 import { NcButton } from '@nextcloud/vue'
-import CnDashboardPage from '../components/CnDashboardPage.vue'
+import { CnDashboardPage, CnStatsBlock } from '@conduction/nextcloud-vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
 import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'
@@ -192,13 +198,16 @@ const BAR_COLORS = [
 ]
 
 /**
- * Default dashboard layout — positions for the 3 built-in widgets.
- * KPIs span full width (12 cols), status chart and my work share the second row.
+ * Default dashboard layout — 4 count tiles across the top row (3 cols each),
+ * then cases-by-status and my-work share the second row.
  */
 const DEFAULT_LAYOUT = [
-	{ id: 1, widgetId: 'kpis', gridX: 0, gridY: 0, gridWidth: 12, gridHeight: 2, showTitle: false },
-	{ id: 2, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 3, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
+	{ id: 1, widgetId: 'count-open-cases', gridX: 0, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
+	{ id: 2, widgetId: 'count-overdue', gridX: 3, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
+	{ id: 3, widgetId: 'count-completed', gridX: 6, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
+	{ id: 4, widgetId: 'count-my-tasks', gridX: 9, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
+	{ id: 5, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
+	{ id: 6, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
 ]
 
 export default {
@@ -206,18 +215,20 @@ export default {
 	components: {
 		NcButton,
 		CnDashboardPage,
+		CnStatsBlock,
 		Plus,
 		Refresh,
-		FolderOpen,
-		AlertCircle,
-		CheckCircle,
-		ClipboardCheckOutline,
 		CaseCreateDialog,
 		TaskCreateDialog,
 	},
 	emits: ['navigate'],
 	data() {
 		return {
+			// Icon components for CnStatsBlock :icon prop
+			FolderOpen,
+			AlertCircle,
+			CheckCircle,
+			ClipboardCheckOutline,
 			showCreateDialog: false,
 			showTaskDialog: false,
 			openCases: [],
@@ -253,13 +264,12 @@ export default {
 				&& this.caseTypes.length === 0
 				&& !this.error
 		},
-		/**
-		 * Widget definitions for CnDashboardPage.
-		 * Each widget is a custom type — rendered by the matching #widget-{id} slot.
-		 */
 		widgetDefs() {
 			return [
-				{ id: 'kpis', title: t('procest', 'Key Metrics'), type: 'custom' },
+				{ id: 'count-open-cases', title: t('procest', 'Open Cases'), type: 'custom' },
+				{ id: 'count-overdue', title: t('procest', 'Overdue'), type: 'custom' },
+				{ id: 'count-completed', title: t('procest', 'Completed This Month'), type: 'custom' },
+				{ id: 'count-my-tasks', title: t('procest', 'My Tasks'), type: 'custom' },
 				{ id: 'cases-by-status', title: t('procest', 'Cases by Status'), type: 'custom' },
 				{ id: 'my-work', title: t('procest', 'My Work'), type: 'custom' },
 			]
@@ -335,7 +345,6 @@ export default {
 
 		onLayoutChange(newLayout) {
 			this.dashboardLayout = newLayout
-			// TODO: Persist layout to app config when ready
 		},
 
 		barWidth(count) {
@@ -370,75 +379,6 @@ export default {
 </script>
 
 <style scoped>
-/* KPI Cards */
-.kpi-row {
-	display: grid;
-	grid-template-columns: repeat(4, 1fr);
-	gap: 16px;
-	padding: 8px;
-	height: 100%;
-	align-content: center;
-}
-
-@media (max-width: 900px) {
-	.kpi-row {
-		grid-template-columns: repeat(2, 1fr);
-	}
-}
-
-.kpi-card {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	padding: 12px 16px;
-	background: var(--color-main-background);
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large);
-}
-
-.kpi-card--warning {
-	border-color: var(--color-warning);
-	background: var(--color-warning-hover, rgba(233, 163, 0, 0.05));
-}
-
-.kpi-icon {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 44px;
-	height: 44px;
-	border-radius: 50%;
-	background: var(--color-primary-element-light, rgba(0, 130, 201, 0.1));
-	color: var(--color-primary-element);
-	flex-shrink: 0;
-}
-
-.kpi-icon--success {
-	background: rgba(70, 186, 97, 0.1);
-	color: #46ba61;
-}
-
-.kpi-icon--warning {
-	background: rgba(233, 50, 45, 0.1);
-	color: var(--color-error);
-}
-
-.kpi-content {
-	display: flex;
-	flex-direction: column;
-}
-
-.kpi-value {
-	font-size: 24px;
-	font-weight: 700;
-	line-height: 1.2;
-}
-
-.kpi-label {
-	font-size: 13px;
-	color: var(--color-text-maxcontrast);
-}
-
 /* Status chart widget */
 .status-widget-content {
 	padding: 12px;

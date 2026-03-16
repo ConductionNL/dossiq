@@ -220,3 +220,86 @@ The case dashboard SHOULD support keyboard shortcuts for power users.
 - **Dashboard spec** (`../dashboard/spec.md`): App-level dashboard (different from per-case view).
 - **Pipelinq**: Contactmomenten come from Pipelinq CRM integration.
 - **OpenRegister**: All case data queries.
+
+### Current Implementation Status
+
+**Substantially implemented (MVP).** The case detail view is functional with most MVP panels in place.
+
+**Implemented:**
+- Case detail page (`src/views/cases/CaseDetail.vue`) using `CnDetailPage` from `@conduction/nextcloud-vue` with sidebar support. Bookmarkable URL: `/apps/procest/cases/:id`.
+- Status timeline component (`src/views/cases/components/StatusTimeline.vue`) displaying ordered status dots with passed/current/future states and dates.
+- Status change dropdown (`NcSelect`) with status type options from case type configuration. Result prompt shown when final status is selected (with result type dropdown or free-text fallback).
+- Deadline panel (`src/views/cases/components/DeadlinePanel.vue`) showing start date, deadline, processing time, days elapsed, countdown with overdue styling, extension info (allowed/already extended), and extension request button.
+- Participants section (`src/views/cases/components/ParticipantsSection.vue`) with grouped role display, add participant button, and handler assignment.
+- Add participant dialog (`src/views/cases/components/AddParticipantDialog.vue`).
+- Activity timeline (`src/views/cases/components/ActivityTimeline.vue`) with add note input, chronological event display.
+- Result section (`src/views/cases/components/ResultSection.vue`) for recording case results.
+- Quick status dropdown from case list (`src/views/cases/components/QuickStatusDropdown.vue`).
+- Case creation dialog (`src/views/cases/CaseCreateDialog.vue`).
+- Save/delete actions in header.
+- Back navigation to case list.
+- Router: `/cases/:id` route with `caseId` prop (`src/router/index.js`).
+
+**Not yet implemented:**
+- REQ-CDV-04: Contactmomenten integration (Pipelinq data not yet surfaced in case view).
+- REQ-CDV-05: Linked cases and objects panel (sub-cases, BAG/BRP linked objects).
+- REQ-CDV-06b: Responsive tablet layout (single-column stacking).
+- REQ-CDV-06c: Print view with text-based status timeline.
+- REQ-CDV-07: Keyboard shortcuts (N for note, T for task, S for status, D for documents, Esc, ?).
+- Custom properties panel (V1 -- property definitions are in the schema but no case-level property editor is visible).
+- Documents checklist panel (document types exist in schema but no checklist UI in case detail).
+- Cross-panel reactive updates (partial -- status changes may not immediately update all panels without refresh).
+
+**Mock Registers (dependency):** This spec depends on mock BRP and BAG registers being available in OpenRegister for linked object display (REQ-CDV-05b). These registers are available as JSON files that can be loaded on demand from `openregister/lib/Settings/`. Production deployments should connect to the actual Haal Centraal BRP API and BAG API via OpenConnector.
+
+### Using Mock Register Data
+
+This spec depends on the **BRP** and **BAG** mock registers for displaying linked objects on the case dashboard (REQ-CDV-05b).
+
+**Loading the registers:**
+```bash
+# Load BRP register (35 persons, register slug: "brp", schema: "ingeschreven-persoon")
+docker exec -u www-data nextcloud php occ openregister:load-register /var/www/html/custom_apps/openregister/lib/Settings/brp_register.json
+
+# Load BAG register (32 addresses + 21 objects + 21 buildings, register slug: "bag", schemas: "nummeraanduiding", "verblijfsobject", "pand")
+docker exec -u www-data nextcloud php occ openregister:load-register /var/www/html/custom_apps/openregister/lib/Settings/bag_register.json
+```
+
+**Test data for this spec's use cases:**
+- **Linked BRP-persoon**: BSN `999993653` (Suzanne Moulin, Rotterdam) -- link as initiator/aanvrager to a case, verify display in "Gerelateerde objecten"
+- **Linked BAG-object**: Use BAG nummeraanduiding records from Amsterdam (municipality code `0363`) -- link an address to a bouwvergunning case
+- **Cross-reference**: BRP persons include `verblijfplaats.adresseerbaarObjectIdentificatie` linking to BAG verblijfsobject records -- verify address resolution
+
+**Querying mock data:**
+```bash
+# Find person for case linking
+curl "http://localhost:8080/index.php/apps/openregister/api/objects/{brp_register_id}/{person_schema_id}?_search=999993653" -u admin:admin
+
+# Find BAG address for case linking
+curl "http://localhost:8080/index.php/apps/openregister/api/objects/{bag_register_id}/{nummeraanduiding_schema_id}?_search=1015" -u admin:admin
+```
+
+### Standards & References
+
+- **CMMN 1.1**: Case detail view follows the CasePlanModel concept with visual plan item lifecycle.
+- **ZGW Zaken API (VNG)**: Case data model aligns with zaak endpoints (identificatie, omschrijving, status, resultaat, zaakobjecten).
+- **WCAG AA**: Keyboard navigation, screen reader support, contrast requirements apply to all panels.
+- **Schema.org**: Case uses `schema:Project` typing with `schema:name`, `schema:startDate`, `schema:endDate`.
+- **Nextcloud Design System**: Uses `NcButton`, `NcSelect`, `NcLoadingIcon`, `NcTextField` from `@nextcloud/vue`.
+
+### Specificity Assessment
+
+This spec is well-specified for MVP with clear layout wireframe, panel composition, and cross-panel interaction scenarios. It is implementation-ready.
+
+**Strengths:** ASCII wireframe layout, concrete scenarios with data, clear panel hierarchy, responsive breakpoints defined.
+
+**Missing/Ambiguous:**
+- No specification of how the sidebar is used (the implementation uses `CnDetailPage` sidebar, but the spec doesn't mention it).
+- Cross-panel reactivity mechanism not specified (event bus, Pinia store reactivity, or WebSocket).
+- No specification of loading states per panel (skeleton loading vs spinner).
+- Quick note persistence mechanism (Nextcloud `ICommentsManager` mentioned in case-management spec but not referenced here).
+
+**Open questions:**
+1. Should the two-column layout be configurable (panel rearrangement) or fixed?
+2. How are contactmomenten fetched -- direct API call to Pipelinq or via OpenRegister cross-register query?
+3. Should the print view include all panels or only a subset?

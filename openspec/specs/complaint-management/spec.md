@@ -99,3 +99,43 @@ Recurring complaints about the same subject, department, or employee signal syst
   - Trend over time (increasing/decreasing)
   - Average resolution time by category
 - AND categories with significantly increased frequency MUST be flagged
+
+### Current Implementation Status
+
+**Not yet implemented.** No complaint-specific schemas, controllers, services, or Vue components exist in the Procest codebase. There is no "klacht" schema in `procest_register.json`.
+
+**Foundation available:**
+- The case management infrastructure could model complaints as a specialized case type with specific status types (ontvangen, in_behandeling, hoorgesprek_gepland, afgehandeld) and properties.
+- Case type configuration (`src/views/settings/CaseTypeDetail.vue`) could define a "Klacht behandeling" case type with Awb-mandated deadlines.
+- The dashboard (`src/views/Dashboard.vue`) already shows KPI cards that could be extended with complaint-specific metrics.
+- Task management (`src/views/tasks/`) could model hearing scheduling as tasks.
+- The `caseType` schema supports `processingDeadline` which could enforce the 6-week Awb deadline.
+
+**Partial implementations:** The case management system could handle complaints as a case type configuration exercise without any code changes for basic complaint tracking. The specialized features (hearing management, disposition tracking, escalation, frequency analysis) would require new code.
+
+### Standards & References
+
+- **Awb Chapter 9 (Algemene wet bestuursrecht)**: Legal framework mandating the klachtenprocedure with specific timelines (5 working days acknowledgment, 6 weeks resolution, 4-week extension).
+- **Nationale ombudsman**: Oversight body for complaint handling; municipalities must comply with ombudsman recommendations.
+- **VNG Model Klachtenverordening**: Standard complaint ordinance template used by Dutch municipalities.
+- **GEMMA**: Klachtafhandeling is a standard process in the GEMMA reference architecture.
+- **ZGW Zaken API**: Complaints could be modeled as a specific zaaktype with their own catalogi entry.
+- **ISO 10002**: Quality management -- Customer satisfaction -- Guidelines for complaints handling.
+
+### Specificity Assessment
+
+This spec is well-structured with clear Awb-based requirements but lacks data model and technical detail.
+
+**What's missing:**
+- No OpenRegister schema definition for the complaint entity (beyond the informal field list in the scenario).
+- No specification of the complaint-specific admin configuration (categories, hearing templates, disposition options).
+- No specification of the frequency analysis dashboard UI (charts, filters, time ranges).
+- No specification of the escalation workflow (automatic or manual, which case type is created).
+- No specification of the complaint numbering system implementation.
+- No hearing data model (separate schema or embedded in complaint).
+
+**Open questions:**
+1. Should complaints be modeled as a separate OpenRegister schema or as a case type configuration?
+2. How does the frequency analysis aggregate data -- real-time queries or periodic batch calculation?
+3. Should the hearing (hoorgesprek) support video conferencing integration?
+4. How does the complaint system interact with the Nationale ombudsman reporting requirements?

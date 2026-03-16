@@ -99,3 +99,44 @@ Every fetch request to OpenRegister MUST include the CSRF token and OCS header.
 - WHEN the request is constructed
 - THEN it MUST include `requesttoken: OC.requestToken` header
 - AND it MUST include `OCS-APIREQUEST: true` header
+
+---
+
+### Current Implementation Status
+
+**Implemented via shared library.** The object store exists but uses `@conduction/nextcloud-vue` rather than a custom implementation.
+
+**Implemented (with file paths):**
+- **Object store**: `src/store/modules/object.js` -- uses `createObjectStore('object')` from `@conduction/nextcloud-vue` with plugins: `filesPlugin()` (file uploads/downloads), `auditTrailsPlugin()` (audit trail integration), `relationsPlugin()` (cross-entity reference resolution). The shared library provides: CRUD operations, paginated collection fetching, single object fetching, search, loading state tracking, error state tracking, caching, schema resolution, and authentication headers.
+- **Settings store**: `src/store/modules/settings.js` -- fetches `/apps/procest/api/settings` for register/schema configuration. Provides `fetchSettings()` and `saveSettings()` actions. Tracks `loading`, `error`, and `initialized` state. Includes CSRF token and OCS headers on all requests.
+- **Settings initialization**: The settings store's `initialized` flag ensures configuration is loaded before data operations proceed.
+- **Authentication**: Both stores include `requesttoken: OC.requestToken` and `OCS-APIREQUEST: true` headers.
+
+**Architecture difference from spec:**
+- The spec describes a custom store with explicit methods: `registerObjectType()`, `unregisterObjectType()`, `fetchCollection()`, `fetchObject()`, `saveObject()`, `deleteObject()`, `isLoading()`. The actual implementation delegates all of this to the shared library's `createObjectStore()` function, which provides equivalent functionality with a different API surface.
+- The shared library manages the object type registry, pagination metadata, and per-type error/loading states internally.
+- Object types are registered based on the register/schema configuration from settings, not via explicit `registerObjectType()` calls in application code.
+
+**What the shared library provides (not visible in Procest code but functionally present):**
+- Dynamic type registration mapped to register/schema pairs
+- Collection fetching with `_limit`, `_offset`, `_search`, `_sort`, `_order`, and `_filters` parameters
+- Single object fetching by ID
+- Create (POST), Update (PUT), Delete (DELETE) operations
+- Per-type loading and error state tracking
+- Pagination metadata per type
+- Object caching
+
+### Standards & References
+
+- **Nextcloud authentication**: CSRF token and OCS header per Nextcloud API conventions.
+- **OpenRegister API**: REST API at `/apps/openregister/api/objects/{register}/{schema}` for all operations.
+- **Pinia**: State management with Vue 2 compatibility via `PiniaVuePlugin`.
+
+### Specificity Assessment
+
+- **The spec describes the right functionality but the wrong API.** The actual implementation uses a shared library (`@conduction/nextcloud-vue`) that provides all described capabilities but with a different method signature. The spec should be updated to document the shared library pattern or acknowledge that the implementation delegates to it.
+- **Well-specified for custom implementation**, but since the shared library is used across all Conduction apps (Procest, Pipelinq, Softwarecatalog, etc.), documenting the library's API would be more accurate.
+- **Open questions:**
+  - Should this spec document the shared library's API or Procest-specific wrappers?
+  - Does the shared library's caching behavior match the spec's expectations?
+  - How are per-type errors exposed -- as `errors.case` or via a getter function?

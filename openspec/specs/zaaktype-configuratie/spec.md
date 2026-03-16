@@ -180,3 +180,60 @@ The system SHOULD support testing a case type configuration before publishing.
 - **B&W Parafering spec** (`../bw-parafering/spec.md`): Parafeerroutes are configured per case type.
 - **Admin Settings spec** (`../admin-settings/spec.md`): Admin UI framework and navigation.
 - **OpenRegister**: All configuration stored as OpenRegister objects.
+
+---
+
+### Current Implementation Status
+
+**V1 partially implemented.** Basic case type CRUD and status configuration exist. Advanced features (parafeerroute, import/export, versioning, test mode) are not implemented.
+
+**Implemented (with file paths):**
+- **Case type CRUD via admin UI (REQ-ZTC-01)**:
+  - `src/views/settings/CaseTypeList.vue` -- lists all case types with title, draft/published badge, processing deadline, validity period, and actions (set default, edit, delete).
+  - `src/views/settings/CaseTypeDetail.vue` -- detail/edit view for a single case type with tabs.
+  - `src/views/settings/CaseTypeAdmin.vue` -- admin wrapper component.
+  - `src/views/settings/AdminRoot.vue` -- admin root with case type list and detail.
+  - `src/views/settings/tabs/GeneralTab.vue` -- general properties tab for case type editing (title, description, processingDeadline, confidentiality, etc.).
+- **Status diagram editor (REQ-ZTC-02 partial)**:
+  - `src/views/settings/tabs/StatusesTab.vue` -- status type configuration within a case type. Supports adding, ordering, and editing statuses. Includes `isFinal` marking.
+  - `src/views/cases/components/StatusTimeline.vue` -- visual timeline showing status progression on case detail.
+- **Case type validation**: `src/utils/caseTypeValidation.js` -- client-side validation for case type fields.
+- **Navigation**: `src/navigation/MainMenu.vue` -- "Case Types" menu item in the settings footer, linked to `/case-types` route.
+- **Router**: `src/router/index.js` -- route `{ path: '/case-types', name: 'CaseTypes', component: AdminRoot }`.
+- **Schema definitions**: All 7 configuration schemas defined in `lib/Settings/procest_register.json`: `caseType`, `statusType`, `resultType`, `roleType`, `propertyDefinition`, `documentType`, `decisionType`.
+- **ZGW catalog API**: `lib/Controller/ZtcController.php` -- full ZGW Catalogi API with CRUD for zaaktypen, statustypen, resultaattypen, informatieobjecttypen. Includes publish endpoints (`POST .../zaaktypen/{uuid}/publish`).
+- **ZGW catalog rules**: `lib/Service/ZgwZtcRulesService.php` -- validation rules for zaaktype creation and modification.
+
+**Not yet implemented:**
+- **REQ-ZTC-03: Document type configuration (V1)**: No admin UI for configuring document types per case type. The `documentType` schema exists but no management UI.
+- **REQ-ZTC-04: Property definition configuration (V1)**: No admin UI for configuring custom properties per case type. The `propertyDefinition` schema exists but no management UI. No enum value editor.
+- **REQ-ZTC-05: Parafeerroute configuration (V2)**: No parafeerroute configuration UI. No visual flow diagram for approval routes.
+- **REQ-ZTC-06: Import/export configuration (V2)**: No JSON export/import for case type configurations. No ZTC catalog sync.
+- **REQ-ZTC-07: Version management (V2)**: No versioning of case type configurations. No clone/new version functionality.
+- **REQ-ZTC-08: Test mode (V2)**: No sandbox/test mode for case types.
+- **Status drag-and-drop ordering**: Status ordering may be manual (number input) rather than drag-and-drop.
+- **Warning on editing published case type**: No "10 active cases" warning when editing a published case type.
+- **Visual status flow diagram**: `StatusTimeline.vue` shows a horizontal timeline on case detail, but the admin status editor may not have a visual diagram.
+
+### Standards & References
+
+- **ZGW Catalogi API (VNG Realisatie)**: Full ZGW-compliant catalog API via `ZtcController.php`. Supports ZaakType, StatusType, ResultaatType, RolType, InformatieObjectType, BesluitType, Eigenschap. Includes publish endpoints.
+- **CMMN 1.1**: CaseDefinition patterns for case type configuration with status lifecycle.
+- **GEMMA**: Zaaktype catalogus is a standard component in the GEMMA reference architecture.
+- **Common Ground**: Configuration data stored as OpenRegister objects in the information layer.
+- **Selectielijst**: Dutch archival selection list determining retention periods per case type category.
+- **Archiefwet**: Archival rules linked to result types (retain/destroy with retention periods).
+
+### Specificity Assessment
+
+- **V1 requirements are well-specified** with clear scenarios for CRUD, status editing, document types, and property definitions. The basic CRUD and status management are implemented.
+- **V2 requirements need more detail:**
+  - Parafeerroute configuration lacks a data model (how are routes stored? As JSON on the case type? As separate objects?).
+  - Import/export format needs specification (what JSON structure? How are UUID conflicts resolved?).
+  - ZTC catalog sync needs protocol details (how often? One-way or bidirectional? Conflict resolution?).
+  - Version management needs lifecycle rules (can old versions be edited? How are active cases migrated?).
+- **Open questions:**
+  - Should document types and property definitions have their own admin tabs alongside statuses?
+  - Should role types and result types also be configurable via the admin UI? (They are defined in the data model but no admin UI exists.)
+  - How should the visual status flow diagram be rendered? (SVG? Canvas? HTML/CSS?)
+  - Should the "test mode" create real OpenRegister objects marked as test, or use a separate sandbox register?

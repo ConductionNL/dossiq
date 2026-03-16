@@ -100,3 +100,43 @@ Case workers and department heads need oversight of open consultations.
 - WHEN they view the consultations dashboard
 - THEN all 3 MUST be listed with parent case reference, subject, and deadline
 - AND overdue items MUST be highlighted
+
+### Current Implementation Status
+
+**Not yet implemented.** No consultation-specific (adviesaanvraag) schemas, controllers, services, or Vue components exist in the Procest codebase.
+
+**Foundation available:**
+- Case detail view (`src/views/cases/CaseDetail.vue`) provides the integration point where a "Consultations" panel could be added.
+- Activity timeline component (`src/views/cases/components/ActivityTimeline.vue`) could display consultation events.
+- Task management infrastructure (`src/views/tasks/`) could model consultation steps as tasks assigned to the consulted department.
+- The `role` schema in OpenRegister could represent the consulted party.
+- The object store with `relationsPlugin` supports linking objects (consultations to parent cases).
+- Document management (filesPlugin) supports attaching documents to consultations.
+
+**Partial implementations:** None.
+
+### Standards & References
+
+- **Awb (Algemene wet bestuursrecht)**: Administrative law provisions for inter-departmental consultation (adviesrecht, 3:5-3:9 Awb).
+- **ZGW Zaken API (VNG)**: Consultations could be modeled as related zaken or as custom zaakobjecten.
+- **GEMMA**: Adviesaanvraag is a standard interaction pattern in GEMMA ketenprocessen.
+- **Common Ground**: Inter-organizational data exchange follows Common Ground API-first principles.
+- **BIO**: Security requirements for sharing case information between departments/organizations.
+
+### Specificity Assessment
+
+This spec provides a solid functional overview with clear lifecycle, document exchange, and structured response requirements.
+
+**What's missing:**
+- No OpenRegister schema definition for the consultation entity (formal fields, types, validations).
+- No specification of how consulted parties receive and interact with consultations (separate view, shared case access, or email notification with link).
+- No API endpoints for consultation CRUD.
+- No specification of permission model (can the consulted party see the full case or only the consultation context?).
+- No specification of how conditions from advice flow back as actionable items on the parent case.
+- No UI wireframes for the consultation panel, creation dialog, or department inbox.
+
+**Open questions:**
+1. Should consultations be modeled as sub-cases, as OpenRegister objects with a dedicated schema, or as tasks?
+2. How do external organizations (e.g., Brandweer) access the consultation -- via Nextcloud account, share link, or email?
+3. Should the system support parallel consultations with a "wait for all" or "wait for any" completion rule?
+4. How are departments defined in the system -- Nextcloud groups, OpenRegister objects, or configuration?

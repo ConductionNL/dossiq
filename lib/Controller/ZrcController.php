@@ -211,14 +211,14 @@ class ZrcController extends Controller
             // Zrc-008c: Before saving a status, check if it would reopen a closed zaak
             // and require the zaken.heropenen scope.
             if ($resource === 'statussen') {
-                $reopenError = $this->checkReopenScope(originalBody: $originalBody);
+                $reopenError = $this->checkReopenScope(body: $originalBody);
                 if ($reopenError !== null) {
                     return $reopenError;
                 }
 
                 // Zrc-007q: Before adding an eindstatus, verify all linked IOs
                 // have indicatieGebruiksrecht set (not null).
-                $gebruiksrechtError = $this->checkIndicatieGebruiksrechtBeforeClose(originalBody: $originalBody);
+                $gebruiksrechtError = $this->checkIndicatieGebruiksrechtBeforeClose(body: $originalBody);
                 if ($gebruiksrechtError !== null) {
                     return $gebruiksrechtError;
                 }
@@ -239,13 +239,13 @@ class ZrcController extends Controller
 
             // ZRC-specific: handle eindstatus / heropenen effect for statussen.
             if ($resource === 'statussen') {
-                $this->handleEindstatusEffect(originalBody: $originalBody, objectData: $objectData);
+                $this->handleEindstatusEffect(body: $originalBody, objectData: $objectData);
             }
 
             // Zrc-021: When a resultaat is created, derive archiefactiedatum
             // and archiefnominatie on the parent zaak from the resultaattype.
             if ($resource === 'resultaten') {
-                $this->handleResultaatCreated(originalBody: $originalBody, objectData: $objectData);
+                $this->handleResultaatCreated(body: $originalBody, objectData: $objectData);
             }
 
             $baseUrl         = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);

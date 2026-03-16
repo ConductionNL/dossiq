@@ -142,3 +142,47 @@ The system SHOULD provide workload statistics for capacity planning.
 - **Case Management spec** (`../case-management/spec.md`): Cases are the primary work units.
 - **Admin Settings spec** (`../admin-settings/spec.md`): Team/afdeling configuration.
 - **OpenRegister**: All queries against `procest` register.
+
+---
+
+### Current Implementation Status
+
+**Not implemented as a team-level feature.** The personal My Work view exists (`src/views/MyWork.vue`) but no team/manager werkvoorraad functionality has been built.
+
+**Existing foundations that relate to this spec:**
+- **My Work view**: `src/views/MyWork.vue` -- personal workload view showing cases and tasks assigned to the current user. This is the base that werkvoorraad extends with team oversight. Includes grouping by urgency, filter tabs, overdue highlighting, and show-completed toggle.
+- **Dashboard widgets**: `lib/Dashboard/CasesOverviewWidget.php` and `src/views/widgets/CasesOverviewWidget.vue` -- shows case overview, could be extended for team statistics. `lib/Dashboard/OverdueCasesWidget.php` shows overdue cases.
+- **Dashboard panels**: `src/views/dashboard/KpiCards.vue` shows KPI summary cards. `src/views/dashboard/StatusChart.vue` shows status distribution. `src/views/dashboard/OverduePanel.vue` shows overdue items.
+- **Object store**: The `useObjectStore()` can filter by `assignee` and `status`, which could be used for team member workload queries.
+- **Case assignee field**: Cases have an `assignee` field (Nextcloud user UID) in the `case` schema, enabling per-user workload queries.
+- **Task assignee field**: Tasks have an `assignee` field, enabling per-user task queries.
+
+**Not yet implemented:**
+- **REQ-WV-01: Team work queue**: No team overview, no per-member breakdown, no unassigned items queue.
+- **REQ-WV-02: Priority/urgency sorting**: The My Work view has urgency grouping, but no combined urgency score or team-level sorting.
+- **REQ-WV-03: Filters and views**: No zaaktype filter, afdeling filter, or deadline range filter on a team-level view.
+- **REQ-WV-04: Bulk reassignment**: No multi-select or bulk reassignment capability. Only individual handler reassignment exists in `ParticipantsSection.vue`.
+- **REQ-WV-05: Deadline monitoring**: No automated daily deadline checks or notification triggers. Overdue display is purely visual (client-side calculation).
+- **REQ-WV-06: Workload statistics (V2)**: No capacity overview, average processing time, or workload comparison.
+- **Team/afdeling concept**: No concept of teams or departments (afdelingen) in the data model. Nextcloud groups exist but are not used for team scoping.
+
+### Standards & References
+
+- **CMMN 1.1**: Work queue patterns for distributing and managing case work items.
+- **BPMN 2.0**: Resource allocation patterns for work distribution.
+- **ZGW APIs**: The ZGW model does not define a werkvoorraad concept directly, but team-based case filtering is standard in Dutch zaaksystemen.
+- **GEMMA**: Werkvoorraad is a standard component in the GEMMA reference architecture for zaakgericht werken.
+- **Common Ground**: The werkvoorraad is typically a process-layer concern built on top of the ZGW information layer.
+- **BIO**: Audit trail requirements for reassignment actions (who reassigned, when, why).
+
+### Specificity Assessment
+
+- **V1 requirements are well-specified** with concrete scenarios for team overview, filtering, bulk reassignment, and deadline monitoring.
+- **Missing foundational concept**: The spec assumes a "team" or "afdeling" concept that does not exist in the current data model. How are teams defined? Nextcloud groups? A custom team entity in OpenRegister? A configuration in admin settings?
+- **Open questions:**
+  - How are teams defined and managed? (Nextcloud groups, custom OpenRegister objects, or admin settings?)
+  - Who has access to the werkvoorraad view? (Only team leads/managers, or configurable via RBAC?)
+  - Should the werkvoorraad be a separate navigation item or integrated into the My Work view with a "Team" tab?
+  - How are notifications triggered for deadline monitoring? (n8n workflow, cron job, Nextcloud background job?)
+  - What defines a "team member" for unassigned case routing?
+  - Should bulk reassignment support "round-robin" distribution automatically?

@@ -147,3 +147,80 @@ The system MUST record the intake channel and source metadata in the case audit 
 - **Roles & Decisions spec** (`../roles-decisions/spec.md`): Initiator role is created during intake.
 - **OpenRegister**: All case data stored as OpenRegister objects.
 - **OpenConnector**: ZGW API endpoint routing and StUF translation.
+
+---
+
+### Using Mock Register Data
+
+This spec depends on the **BAG** and **DSO** mock registers for testing address validation and DSO intake (REQ-INTAKE-04, V1).
+
+**Loading the registers:**
+```bash
+# Load BAG register (32 addresses + 21 objects + 21 buildings, register slug: "bag")
+docker exec -u www-data nextcloud php occ openregister:load-register /var/www/html/custom_apps/openregister/lib/Settings/bag_register.json
+
+# Load DSO register (53 records, register slug: "dso", schemas: "activiteit", "locatie", "omgevingsdocument", "vergunningaanvraag")
+docker exec -u www-data nextcloud php occ openregister:load-register /var/www/html/custom_apps/openregister/lib/Settings/dso_register.json
+
+# Load BRP register for initiator BSN linking
+docker exec -u www-data nextcloud php occ openregister:load-register /var/www/html/custom_apps/openregister/lib/Settings/brp_register.json
+```
+
+**Test data for this spec's use cases:**
+- **DSO intake (REQ-INTAKE-04)**: Use DSO `vergunningaanvraag` records to test omgevingsvergunning case creation with activiteiten, locatie, and bijlagen
+- **BAG address validation**: Use BAG `nummeraanduiding` records to test address resolution in form-to-case mapping
+- **Initiator with BSN**: BSN `999993653` (Suzanne Moulin) -- test initiator role creation with BSN from Open Formulieren DigiD flow
+- **DSO activiteiten**: Use DSO `activiteit` records (e.g., "Dakkapel plaatsen", "Aanbouw") for activity-to-zaaktype mapping
+
+### Current Implementation Status
+
+**Partially implemented (manual intake + ZGW API intake). V1 features not implemented.**
+
+**Implemented (with file paths):**
+- **Manual case creation**: `src/views/cases/CaseCreateDialog.vue` provides a UI form for creating new cases. Users select a case type, fill in title, description, and other fields. The case is created via the object store against OpenRegister.
+- **ZGW API case creation**: `lib/Controller/ZrcController.php` provides `POST /api/zgw/zaken/v1/zaken` endpoint for external systems to create cases via ZGW-compliant API. Supports zaaktype reference, omschrijving, startdatum, and other ZGW fields (REQ-INTAKE-01).
+- **ZGW business rules**: `lib/Service/ZgwBusinessRulesService.php` and `lib/Service/ZgwZrcRulesService.php` implement validation rules for case creation, including zaaktype validation, status initialization, and field mapping.
+- **ZGW mapping**: `lib/Service/ZgwMappingService.php` handles bidirectional mapping between ZGW Dutch terminology and Procest English field names.
+- **ZGW auth**: `lib/Middleware/ZgwAuthMiddleware.php` provides JWT-based authentication for ZGW API endpoints, allowing external systems to authenticate.
+- **Case type validation**: `src/utils/caseTypeValidation.js` provides client-side validation for case type data. `lib/Service/ZgwZtcRulesService.php` validates zaaktype status (draft/published, validity window).
+- **Deadline calculation**: The case type's `processingDeadline` (ISO 8601 duration) is used to calculate the case deadline. `src/utils/durationHelpers.js` supports ISO 8601 duration parsing. `src/views/cases/components/DeadlinePanel.vue` displays the calculated deadline.
+- **Status initialization**: New cases get their status set to the first status type (by order) of the case type. Implemented in ZGW business rules and CaseCreateDialog.
+- **Audit trail**: Case creation is logged via OpenRegister's audit trail. The `auditTrailsPlugin()` in the object store captures creation events (REQ-INTAKE-06).
+- **ZGW notification**: `lib/Controller/NrcController.php` and `lib/Service/NotificatieService.php` support ZGW notification webhooks for case lifecycle events.
+- **Identifier generation**: Case identifiers can be auto-generated (format depends on configuration).
+
+**Not yet implemented:**
+- **REQ-INTAKE-02: Automatic behandelaar assignment**: No default assignee configuration on case types. No round-robin assignment strategy. Cases are created without an assignee unless manually set.
+- **REQ-INTAKE-03: Initial task creation (V1)**: No automatic task creation based on case type configuration. No task templates on case types.
+- **REQ-INTAKE-04: Open Formulieren integration (V1)**: No integration with Open Formulieren. No DigiD/BSN handling. No form-to-case field mapping.
+- **REQ-INTAKE-05: Duplicate detection (V1)**: No duplicate submission detection.
+- **E-mail intake**: No IMAP trigger or e-mail-to-case conversion.
+- **Bulk import**: No CSV/JSON bulk case creation.
+- **DSO/Omgevingsloket intake**: No StUF-LVO integration. No DSO verzoek processing.
+- **Initiator role creation**: No automatic creation of initiator role during intake. The role must be manually added via the Participants section.
+- **Assignment notification**: No Nextcloud notification sent when a case is assigned to a handler.
+
+### Standards & References
+
+- **ZGW Zaken API**: `POST /zaken/api/v1/zaken` implemented via `ZrcController.php`. Supports the ZGW case creation flow with zaaktype validation, status initialization, and field mapping.
+- **StUF-ZKN**: `creeerZaak_Lk01` message format not implemented. StUF translation would require OpenConnector.
+- **CMMN 1.1**: Case instantiation follows CasePlanModel patterns with status lifecycle initialization.
+- **Common Ground**: Intake channels (API, forms, DSO) align with Common Ground information layer principles.
+- **Open Formulieren**: VNG's open-source form engine for citizen-facing e-forms. Integration via ZGW API callback.
+- **DSO (Digitaal Stelsel Omgevingswet)**: Environmental law digital system for permit applications.
+- **DigiD/eHerkenning**: Dutch government authentication for citizens (DigiD) and organizations (eHerkenning). BSN handling requires AVG-compliant encryption.
+- **AVG/GDPR**: BSN storage must be encrypted, access logged, and retention limited.
+
+### Specificity Assessment
+
+- **MVP (manual + API intake) is well-specified and implemented.** The ZGW API intake flow is clear and the implementation covers the core scenarios.
+- **V1 features need more detail:**
+  - Open Formulieren integration needs the specific webhook format, field mapping rules, and DigiD data handling.
+  - Duplicate detection needs the matching criteria (BSN + title similarity? Address? Time window?).
+  - Automatic task creation depends on the task template spec (not yet defined in detail).
+- **Open questions:**
+  - How does the round-robin assignment algorithm handle unavailable team members (vacation, sick leave)?
+  - Should automatic behandelaar assignment be configurable per case type or global?
+  - How is BSN encrypted and stored? (OpenRegister field-level encryption? Separate encrypted store?)
+  - Should intake audit metadata (channel, source form ID) be stored as case properties or as a separate audit object?
+  - How does bulk import handle validation errors (reject entire batch, skip invalid records, or import with warnings)?

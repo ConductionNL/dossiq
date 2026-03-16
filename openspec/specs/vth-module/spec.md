@@ -171,3 +171,74 @@ The system MUST support requesting and tracking internal and external advice on 
 - **Legesberekening spec** (`../legesberekening/spec.md`): Leges are calculated on permit cases.
 - **Mobiel Inspectie spec** (`../mobiel-inspectie/spec.md`): Field inspection UI for toezicht.
 - **OpenConnector**: DSO, BAG, BRK, Veiligheidsregio integrations.
+
+---
+
+### Using Mock Register Data
+
+This spec depends on the **DSO** and **BAG** mock registers for permit intake and location data (REQ-VTH-01).
+
+**Loading the registers:**
+```bash
+# Load DSO register (53 records, register slug: "dso", schemas: "activiteit", "locatie", "omgevingsdocument", "vergunningaanvraag")
+docker exec -u www-data nextcloud php occ openregister:load-register /var/www/html/custom_apps/openregister/lib/Settings/dso_register.json
+
+# Load BAG register (32 addresses + 21 objects + 21 buildings, register slug: "bag")
+docker exec -u www-data nextcloud php occ openregister:load-register /var/www/html/custom_apps/openregister/lib/Settings/bag_register.json
+```
+
+**Test data for this spec's use cases:**
+- **DSO application intake (REQ-VTH-01)**: Use DSO `vergunningaanvraag` records to test case creation from omgevingsvergunning aanvraag with activiteiten and locatie
+- **Multiple activities**: DSO `activiteit` records include "Bouwen", "Kappen", "Uitrit aanleggen" etc. -- test samenloop (combined activities)
+- **BAG locatie**: BAG `nummeraanduiding` records with postcode/huisnummer -- test permit location linking
+- **Bouwkosten from DSO**: DSO `vergunningaanvraag` includes cost data -- test passing bouwkosten to legesberekening
+- **Inspection locations**: BAG addresses across multiple municipalities -- test inspection planning with geographic data
+
+### Current Implementation Status
+
+**Not implemented.** No VTH-specific functionality exists in the Procest codebase. The following foundational elements could support future VTH development:
+
+- **Case management infrastructure**: The core case system (case types, statuses, tasks, roles, decisions) exists and could be extended with VTH-specific case types.
+- **ZGW API layer**: Full ZGW-compliant controllers exist (`lib/Controller/ZrcController.php`, `ZtcController.php`, `DrcController.php`, `BrcController.php`) which could serve as the API layer for VTH integrations.
+- **ZGW mappings**: `lib/Service/ZgwMappingService.php` and `lib/Controller/ZgwMappingController.php` support configurable field mappings between English and ZGW Dutch terminology.
+- **Case type configuration**: `src/views/settings/CaseTypeAdmin.vue`, `CaseTypeDetail.vue`, and `CaseTypeList.vue` provide the admin UI for configuring case types, which could be used to create VTH-specific case types (Omgevingsvergunning, Toezichtzaak, Handhavingszaak).
+- **Document management**: The `filesPlugin()` in the object store and the DRC controller provide document handling capabilities.
+- **Register config**: `lib/Settings/procest_register.json` defines `documentType` and `propertyDefinition` schemas that could support inspection checklists and VTH-specific properties.
+
+**Nothing VTH-specific exists:**
+- No DSO/Omgevingsloket integration
+- No inspection checklist configuration or completion UI
+- No enforcement strategy (LHS) matrix
+- No supervision planning (toezichtplan) views
+- No mobile inspection UI
+- No advice management workflow
+- No VTH-specific case type templates
+
+### Standards & References
+
+- **Omgevingswet**: Dutch Environmental Law (effective Jan 1, 2024) governing permits, supervision, and enforcement. Defines procedure types (regulier 8 weeks, uitgebreid 26 weeks).
+- **DSO (Digitaal Stelsel Omgevingswet)**: Digital system for environmental law. DSO API specifications for receiving vergunningaanvragen.
+- **GEMMA VTH-referentiecomponenten**: VNG reference architecture for VTH processes.
+- **StUF-LVO**: Message standard for environmental law data exchange.
+- **ZGW APIs**: Zaken, Documenten, Catalogi, Besluiten APIs for VTH case management.
+- **Landelijke Handhavingsstrategie (LHS)**: National enforcement strategy matrix (ernst x gedrag = interventie).
+- **BAG/BRK**: Kadaster registries for address and parcel data linked to permit locations.
+- **WOO (Wet open overheid)**: Transparency requirements for VTH decisions.
+- **Archiefwet**: Archival requirements for VTH decisions and inspection records.
+- **BIO (Baseline Informatiebeveiliging Overheid)**: Security requirements for government systems.
+
+### Specificity Assessment
+
+- **Not implementable as a single spec.** This is a high-level domain overview covering multiple complex subsystems (DSO intake, inspection checklists, enforcement strategies, supervision planning, advice management). Each subsystem would need its own detailed spec.
+- **Good as a roadmap** but insufficient for implementation. The scenarios provide a useful overview of VTH processes but lack:
+  - Detailed DSO API integration specification (which DSO endpoints, message formats, error handling)
+  - Inspection checklist data model (how are checklist templates and completed checklists stored in OpenRegister?)
+  - LHS matrix implementation details (how is the matrix configured, who maintains it, how are interventions suggested)
+  - Supervision planning data model and scheduling algorithm
+  - Mobile inspection UI requirements (offline support, GPS, photo capture)
+- **Open questions:**
+  - Should DSO integration go through OpenConnector or be implemented directly in Procest?
+  - How are inspection checklists versioned (if a checklist template changes, do in-progress inspections use the old or new version)?
+  - Should the LHS matrix be configurable per municipality or fixed?
+  - What level of mobile/offline support is required for field inspections?
+  - How does VTH module integrate with legesberekening (permit fee calculation)?

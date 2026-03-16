@@ -218,3 +218,63 @@ The system MUST maintain a complete version history of all calculations per case
 - **Zaak Intake Flow spec** (`../zaak-intake-flow/spec.md`): Bouwkosten imported from DSO intake.
 - **OpenRegister**: Verordeningen and calculations stored as OpenRegister objects.
 - **OpenConnector**: Financial system export adapters (StUF-FIN, Key2Financien, Civision Innen).
+
+### Using Mock Register Data
+
+This spec depends on the **BAG** mock register for oppervlakte (floor area) data used in fee calculations.
+
+**Loading the register:**
+```bash
+# Load BAG register (32 addresses + 21 objects + 21 buildings, register slug: "bag", schemas: "nummeraanduiding", "verblijfsobject", "pand")
+docker exec -u www-data nextcloud php occ openregister:load-register /var/www/html/custom_apps/openregister/lib/Settings/bag_register.json
+```
+
+**Test data for this spec's use cases:**
+- **Oppervlakte for fee calculation**: BAG `verblijfsobject` records include `oppervlakte` (floor area in m2) -- use these values in staffel calculations
+- **Bouwkosten linked to BAG-object**: Link a BAG address to a permit case, then test fee calculation using the declared bouwkosten
+- **Multiple gebruiksdoel types**: BAG records include woonfunctie, kantoorfunctie, winkelfunctie -- test different fee rates per building type
+
+### Current Implementation Status
+
+**Not yet implemented.** No legesberekening-related schemas, controllers, services, or Vue components exist in the Procest codebase. There are no schemas for legesverordening, artikelen, tarieven, or berekeningen in `procest_register.json`.
+
+**Foundation available:**
+- Case properties infrastructure (`case_property_schema` in `SettingsService::SLUG_TO_CONFIG_KEY`) could store calculated leges amounts as case properties (e.g., `bouwkosten`, `legesbedrag`).
+- Property definitions (`property_definition_schema`) could define case type-specific fee-relevant fields.
+- The object store with `auditTrailsPlugin` provides version tracking for calculation history.
+- OpenConnector (external dependency) could host financial system export adapters.
+- The case detail view could display a "Leges" panel showing calculation breakdown.
+
+**Partial implementations:** None.
+
+### Standards & References
+
+- **VNG Modellegesverordening**: Standard fee ordinance template used by most Dutch municipalities; defines the tariff structure (titels, hoofdstukken, artikelen).
+- **StUF-FIN**: XML-based standard for financial system integration in Dutch government.
+- **GEMMA VTH-referentiecomponenten**: VTH055 (Legesberekening), VTH056 (Legesnota), VTH057 (Financiele afhandeling), VTH103, VTH117, VTH119.
+- **Unie van Waterschappen Modelverordening**: Fee ordinance template for waterschappen.
+- **Rechtmatigheidsverantwoording**: Dutch government accountability framework requiring transparent fee calculations.
+- **Archiefwet**: Calculation records must be retained per archival requirements.
+- **Key2Financien / Civision Innen / Unit4Financials / iFinancieen**: Common Dutch municipal financial systems.
+
+### Specificity Assessment
+
+This is a well-specified domain spec with concrete calculation examples and a clear verordening structure model.
+
+**Strengths:** Clear calculation type taxonomy (vast, percentage, staffel, maximum, combinatie). Concrete arithmetic examples. Verordening hierarchy diagram. Financial system export targets listed.
+
+**What's missing:**
+- No OpenRegister schema definitions for verordening, artikel, tarief, berekening entities.
+- No specification of the calculation engine implementation (PHP service, n8n workflow, or external engine).
+- No specification of the admin UI for verordening management.
+- No specification of the case detail "Leges" panel UI.
+- No API endpoints for triggering calculations or retrieving results.
+- Excel import format not specified (which columns, which sheets, validation rules).
+- No specification of the 4-ogen principe task/approval workflow mechanics.
+
+**Open questions:**
+1. Should the calculation engine be implemented as a PHP service or as n8n workflows?
+2. How are verordeningen versioned and activated -- date-based or manual activation?
+3. Should the system support per-article overrides for specific cases (e.g., exemptions)?
+4. How does the system handle verordening changes mid-year for ongoing cases?
+5. What is the expected calculation precision (decimal places, rounding rules)?

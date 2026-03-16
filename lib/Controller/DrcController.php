@@ -61,6 +61,13 @@ class DrcController extends Controller
     private const EIO_RESOURCE = 'enkelvoudiginformatieobjecten';
 
     /**
+     * Default chunk size for bestandsdelen (10 MB).
+     *
+     * @var int
+     */
+    private const DEFAULT_CHUNK_SIZE = 10485760;
+
+    /**
      * Constructor.
      *
      * @param string     $appName    The app name.
@@ -259,6 +266,22 @@ class DrcController extends Controller
                 );
             }
 
+            // Chunked upload: set fileParts BEFORE initial save to avoid
+            // a second round-trip when bestandsomvang is given without inhoud.
+            $bestandsomvang = (int) ($body['bestandsomvang'] ?? 0);
+            if ($bestandsomvang > 0 && empty($inhoud) === true) {
+                $totalParts = (int) ceil($bestandsomvang / self::DEFAULT_CHUNK_SIZE);
+
+                $englishData['fileParts'] = json_encode(
+                    [
+                        'pending'    => true,
+                        'totalParts' => $totalParts,
+                        'chunkSize'  => self::DEFAULT_CHUNK_SIZE,
+                        'fileSize'   => $bestandsomvang,
+                    ]
+                );
+            }
+
             $object = $this->zgwService->getObjectService()->saveObject(
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema'],
@@ -272,7 +295,7 @@ class DrcController extends Controller
 
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
 
-            // Store file content.
+            // Store file content (only when inhoud is provided).
             if (empty($inhoud) === false && $objectUuid !== '') {
                 $fileName = $objectData['fileName'] ?? 'document';
                 if ($fileName === '') {
@@ -304,6 +327,18 @@ class DrcController extends Controller
                 mappingConfig: $mappingConfig,
                 baseUrl: $baseUrl
             );
+
+            // Add bestandsdelen for chunked upload responses.
+            $chunkInfo = $this->parseFileParts(objectData: $objectData);
+            if ($chunkInfo !== null && ($chunkInfo['pending'] ?? false) === true) {
+                $mapped['bestandsdelen'] = $this->buildBestandsdelenArray(
+                    uuid: $objectUuid,
+                    fileSize: ($chunkInfo['fileSize'] ?? $bestandsomvang),
+                    totalParts: ($chunkInfo['totalParts'] ?? 1)
+                );
+            } else {
+                $mapped['bestandsdelen'] = [];
+            }
 
             $this->zgwService->publishNotification(
                 self::ZGW_API,
@@ -346,7 +381,17 @@ class DrcController extends Controller
             return $authError;
         }
 
-        return $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
+        $response = $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
+
+        // Add bestandsdelen for EIO resources with pending chunked uploads.
+        if ($resource === self::EIO_RESOURCE
+            && $response->getStatus() === Http::STATUS_OK
+            && $this->zgwService->getObjectService() !== null
+        ) {
+            $this->enrichWithBestandsdelen(response: $response, uuid: $uuid);
+        }
+
+        return $response;
     }//end show()
 
     /**
@@ -1318,6 +1363,279 @@ class DrcController extends Controller
             );
         }//end try
     }//end setIndicatieGebruiksrecht()
+
+    /**
+     * Upload a chunk (bestandsdeel) for a document.
+     *
+     * Receives raw binary data for a single chunk and stores it.
+     * When all chunks have been uploaded, merges them into the final file.
+     *
+     * @param string $uuid The document UUID.
+     *
+     * @return JSONResponse
+     *
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     * @PublicPage
+     * @CORS
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     */
+    public function uploadChunk(string $uuid): JSONResponse
+    {
+        $authError = $this->zgwService->validateJwtAuth($this->request);
+        if ($authError !== null) {
+            return $authError;
+        }
+
+        $objectService = $this->zgwService->getObjectService();
+        if ($objectService === null) {
+            return $this->zgwService->unavailableResponse();
+        }
+
+        $mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
+        if ($mappingConfig === null) {
+            return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, self::EIO_RESOURCE);
+        }
+
+        try {
+            // Find the EIO object.
+            $existing = $objectService->find(
+                $uuid,
+                register: $mappingConfig['sourceRegister'],
+                schema: $mappingConfig['sourceSchema']
+            );
+            if (is_array($existing) === true) {
+                $objectData = $existing;
+            } else {
+                $objectData = $existing->jsonSerialize();
+            }
+
+            // Verify this document has a pending chunked upload.
+            $chunkInfo = $this->parseFileParts(objectData: $objectData);
+            if ($chunkInfo === null || ($chunkInfo['pending'] ?? false) !== true) {
+                return new JSONResponse(
+                    data: ['detail' => 'Dit document heeft geen openstaande chunked upload.'],
+                    statusCode: Http::STATUS_BAD_REQUEST
+                );
+            }
+
+            $totalParts = (int) ($chunkInfo['totalParts'] ?? 0);
+            if ($totalParts <= 0) {
+                return new JSONResponse(
+                    data: ['detail' => 'Ongeldige chunk configuratie.'],
+                    statusCode: Http::STATUS_BAD_REQUEST
+                );
+            }
+
+            // Get volgnummer from query parameter or request body.
+            $volgnummer = (int) ($this->request->getParam('volgnummer') ?? 0);
+            if ($volgnummer <= 0 || $volgnummer > $totalParts) {
+                return new JSONResponse(
+                    data: ['detail' => 'Ongeldig volgnummer. Verwacht 1-'.$totalParts.'.'],
+                    statusCode: Http::STATUS_BAD_REQUEST
+                );
+            }
+
+            // Read raw body content.
+            $content = file_get_contents('php://input');
+            if ($content === false || $content === '') {
+                return new JSONResponse(
+                    data: ['detail' => 'Geen bestandsinhoud ontvangen.'],
+                    statusCode: Http::STATUS_BAD_REQUEST
+                );
+            }
+
+            // Store the chunk.
+            $docService = $this->zgwService->getDocumentService();
+            $chunkSize  = $docService->storeChunk(
+                uuid: $uuid,
+                volgnummer: $volgnummer,
+                content: $content
+            );
+
+            // Check if all chunks have been uploaded.
+            $uploaded = $docService->getUploadedChunks(uuid: $uuid, totalParts: $totalParts);
+
+            if (count($uploaded) === $totalParts) {
+                // All chunks present — merge into final file.
+                $fileName = $objectData['fileName'] ?? 'document';
+                if ($fileName === '') {
+                    $fileName = 'document';
+                }
+
+                $mergedSize = $docService->mergeChunks(
+                    uuid: $uuid,
+                    fileName: $fileName,
+                    totalParts: $totalParts
+                );
+
+                // Update the object: clear chunk metadata, set file size.
+                unset(
+                    $objectData['@self'],
+                    $objectData['id'],
+                    $objectData['organisation']
+                );
+                $objectData['fileParts'] = '';
+                $objectData['fileSize']  = $mergedSize;
+
+                $objectService->saveObject(
+                    register: $mappingConfig['sourceRegister'],
+                    schema: $mappingConfig['sourceSchema'],
+                    object: $objectData,
+                    uuid: $uuid
+                );
+
+                return new JSONResponse(
+                    data: [
+                        'volgnummer'     => $volgnummer,
+                        'omvang'         => $chunkSize,
+                        'uploadComplete' => true,
+                        'bestandsomvang' => $mergedSize,
+                        'uploadedParts'  => count($uploaded),
+                        'totalParts'     => $totalParts,
+                    ],
+                    statusCode: Http::STATUS_OK
+                );
+            }//end if
+
+            return new JSONResponse(
+                data: [
+                    'volgnummer'     => $volgnummer,
+                    'omvang'         => $chunkSize,
+                    'uploadComplete' => false,
+                    'uploadedParts'  => count($uploaded),
+                    'totalParts'     => $totalParts,
+                ],
+                statusCode: Http::STATUS_OK
+            );
+        } catch (\Throwable $e) {
+            $this->zgwService->getLogger()->error(
+                'DRC chunk upload error: '.$e->getMessage(),
+                ['exception' => $e]
+            );
+
+            return new JSONResponse(
+                data: ['detail' => $e->getMessage()],
+                statusCode: Http::STATUS_BAD_REQUEST
+            );
+        }//end try
+    }//end uploadChunk()
+
+    /**
+     * Enrich a show response with bestandsdelen if a chunked upload is pending.
+     *
+     * @param JSONResponse $response The show response
+     * @param string       $uuid     The document UUID
+     *
+     * @return void
+     */
+    private function enrichWithBestandsdelen(JSONResponse $response, string $uuid): void
+    {
+        $mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
+        if ($mappingConfig === null) {
+            return;
+        }
+
+        try {
+            $existing = $this->zgwService->getObjectService()->find(
+                $uuid,
+                register: $mappingConfig['sourceRegister'],
+                schema: $mappingConfig['sourceSchema']
+            );
+            if (is_array($existing) === true) {
+                $objectData = $existing;
+            } else {
+                $objectData = $existing->jsonSerialize();
+            }
+
+            $data = $response->getData();
+            if (is_array($data) === false) {
+                return;
+            }
+
+            $chunkInfo = $this->parseFileParts(objectData: $objectData);
+            if ($chunkInfo !== null && ($chunkInfo['pending'] ?? false) === true) {
+                $data['bestandsdelen'] = $this->buildBestandsdelenArray(
+                    uuid: $uuid,
+                    fileSize: (int) ($chunkInfo['fileSize'] ?? 0),
+                    totalParts: (int) ($chunkInfo['totalParts'] ?? 1)
+                );
+            } else {
+                $data['bestandsdelen'] = [];
+            }
+
+            $response->setData(data: $data);
+        } catch (\Throwable $e) {
+            // Silently skip enrichment on errors.
+        }//end try
+    }//end enrichWithBestandsdelen()
+
+    /**
+     * Parse the fileParts JSON field from an object data array.
+     *
+     * @param array $objectData The object data array
+     *
+     * @return array|null Decoded chunk info, or null if not set
+     */
+    private function parseFileParts(array $objectData): ?array
+    {
+        $raw = $objectData['fileParts'] ?? '';
+        if ($raw === '' || $raw === null) {
+            return null;
+        }
+
+        if (is_string($raw) === true) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded) === true) {
+                return $decoded;
+            }
+
+            return null;
+        }
+
+        if (is_array($raw) === true) {
+            return $raw;
+        }
+
+        return null;
+    }//end parseFileParts()
+
+    /**
+     * Build the bestandsdelen array for a chunked upload response.
+     *
+     * @param string $uuid       The document UUID
+     * @param int    $fileSize   The total file size in bytes
+     * @param int    $totalParts The total number of parts
+     *
+     * @return array The bestandsdelen array with volgnummer, omvang, and url
+     */
+    private function buildBestandsdelenArray(string $uuid, int $fileSize, int $totalParts): array
+    {
+        $baseUrl = $this->zgwService->buildBaseUrl(
+            $this->request,
+            self::ZGW_API,
+            'bestandsdelen'
+        );
+
+        $bestandsdelen = [];
+        $remaining     = $fileSize;
+
+        for ($i = 1; $i <= $totalParts; $i++) {
+            $chunkSize  = min(self::DEFAULT_CHUNK_SIZE, $remaining);
+            $remaining -= $chunkSize;
+
+            $bestandsdelen[] = [
+                'url'        => $baseUrl.'/'.$uuid.'?volgnummer='.$i,
+                'volgnummer' => $i,
+                'omvang'     => $chunkSize,
+                'lock'       => '',
+            ];
+        }
+
+        return $bestandsdelen;
+    }//end buildBestandsdelenArray()
 
     /**
      * Handle EIO-specific update with lock checking and inhoud handling.

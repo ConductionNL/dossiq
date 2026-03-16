@@ -99,3 +99,45 @@ All actions by external parties MUST be tracked in the case audit trail.
 - Nextcloud share infrastructure (token generation, expiration management)
 - Audit trail system for tracking external access
 - Partner organization registry (could be an OpenRegister schema)
+
+### Current Implementation Status
+
+**Not yet implemented.** No sharing, token-based access, or ketenpartner collaboration functionality exists in the Procest codebase. There are no share-related schemas, controllers, services, or Vue components.
+
+**Foundation available:**
+- Nextcloud's share infrastructure (`OCP\Share\IManager`) provides token-based sharing with expiration, password protection, and permission levels -- could be leveraged for case sharing.
+- OpenRegister RBAC provides the permission enforcement layer.
+- The audit trail plugin in the object store (`auditTrailsPlugin` in `src/store/modules/object.js`) could track external access events.
+- ZGW authentication middleware (`lib/Middleware/ZgwAuthMiddleware.php`) demonstrates external API authentication patterns.
+
+**Partial implementations:** None.
+
+### Standards & References
+
+- **Nextcloud Sharing API**: Token-based sharing with expiration, passwords, and permission scopes.
+- **eHerkenning**: Dutch government-to-business authentication standard for partner organization users.
+- **DigiD**: Dutch citizen authentication (for citizen-facing case access).
+- **AVG/GDPR**: Data sharing with external parties requires purpose limitation, data minimization, and processing agreements.
+- **BIO (Baseline Informatiebeveiliging Overheid)**: Security requirements for government data sharing.
+- **Common Ground**: Federated data access patterns for inter-organizational collaboration.
+- **ZGW Autorisaties API (VNG)**: Authorization scopes for external system access to case data.
+- **Ketensamenwerking**: Dutch government term for chain collaboration between public organizations.
+
+### Specificity Assessment
+
+This spec covers the key sharing scenarios well but lacks technical implementation details.
+
+**What's missing:**
+- No specification of how Nextcloud's native share infrastructure is extended or wrapped for case sharing.
+- No data model for partner organizations (OpenRegister schema definition).
+- No API endpoints for share creation, listing, and revocation.
+- No UI wireframes for the "Delen" panel in case detail.
+- No specification of field-level access control implementation (how excluded fields are filtered from API responses).
+- No specification of the "Gedeelde zaken" view for partner organizations.
+- No specification of how partner organization users authenticate (Nextcloud user accounts, LDAP, eHerkenning).
+
+**Open questions:**
+1. Should case sharing use Nextcloud's built-in share system or a custom implementation?
+2. How is field-level access control enforced -- at the API layer or the database query layer?
+3. Can shared access be time-limited per session or only by expiration date?
+4. How does sharing interact with the ZGW API layer -- can external systems access shared cases via ZGW endpoints?

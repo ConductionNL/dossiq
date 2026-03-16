@@ -256,7 +256,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
                     status: 400,
                     detail: 'De selectielijstProcestype URL is ongeldig of wijst niet naar een procestype resource.',
                     invalidParams: [$this->fieldError(
-                        name: 'selectielijstProcestype',
+                        fieldName: 'selectielijstProcestype',
                         code: 'invalid-resource',
                         reason: 'De selectielijstProcestype URL is ongeldig of wijst niet naar een procestype resource.'
                     )
@@ -445,7 +445,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $selectielijstData = $this->fetchExternalUrl(url: $selectielijstklasseUrl);
             if ($selectielijstData === null) {
                 $errors[] = $this->fieldError(
-                    name: 'selectielijstklasse',
+                    fieldName: 'selectielijstklasse',
                     code: 'invalid',
                     reason: 'De selectielijstklasse URL is ongeldig of niet bereikbaar.'
                 );
@@ -462,7 +462,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $rtoData = $this->fetchExternalUrl(url: $rtoUrl);
             if ($rtoData === null) {
                 $errors[] = $this->fieldError(
-                    name: 'resultaattypeomschrijving',
+                    fieldName: 'resultaattypeomschrijving',
                     code: 'invalid',
                     reason: 'De resultaattypeomschrijving URL is ongeldig of niet bereikbaar.'
                 );
@@ -595,7 +595,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             && in_array($afleidingswijze, self::AFLEIDINGSWIJZE_FORBIDS_EINDDATUM_BEKEND, true) === true
         ) {
             $errors[] = $this->fieldError(
-                name: 'brondatumArchiefprocedure.einddatumBekend',
+                fieldName: 'brondatumArchiefprocedure.einddatumBekend',
                 code: 'must-be-empty',
                 reason: "einddatumBekend moet false zijn voor afleidingswijze \"{$afleidingswijze}\"."
             );
@@ -760,7 +760,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             if ($hasValue === false) {
                 return [
                     $this->fieldError(
-                        name: $fieldName,
+                        fieldName: $fieldName,
                         code: 'required',
                         reason: "{$fieldName} is vereist voor afleidingswijze \"{$afleidingswijze}\"."
                     ),
@@ -770,7 +770,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             if ($hasValue === true) {
                 return [
                     $this->fieldError(
-                        name: $fieldName,
+                        fieldName: $fieldName,
                         code: 'must-be-empty',
                         reason: "{$fieldName} mag niet ingevuld zijn voor afleidingswijze \"{$afleidingswijze}\"."
                     ),
@@ -795,7 +795,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
     ): ?array {
         if ($procestermijn === 'nihil' && $afleidingswijze !== 'afgehandeld') {
             return $this->fieldError(
-                name: 'nonFieldErrors',
+                fieldName: 'nonFieldErrors',
                 code: 'invalid-afleidingswijze-for-procestermijn',
                 reason: "Afleidingswijze \"{$afleidingswijze}\" is niet geldig".' bij selectielijstklasse met procestermijn "nihil".'
             );
@@ -805,7 +805,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $reason = "Afleidingswijze \"{$afleidingswijze}\" is niet geldig"
                 .' bij selectielijstklasse met procestermijn "bestaansduur_procesobject".';
             return $this->fieldError(
-                name: 'nonFieldErrors',
+                fieldName: 'nonFieldErrors',
                 code: 'invalid-afleidingswijze-for-procestermijn',
                 reason: $reason
             );
@@ -815,7 +815,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $reason = 'brondatumArchiefprocedure.procestermijn is vereist voor'
                 .' afleidingswijze "termijn" maar selectielijstklasse heeft geen procestermijn.';
             return $this->fieldError(
-                name: 'brondatumArchiefprocedure.procestermijn',
+                fieldName: 'brondatumArchiefprocedure.procestermijn',
                 code: 'required',
                 reason: $reason
             );

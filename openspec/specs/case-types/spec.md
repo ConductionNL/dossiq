@@ -857,3 +857,57 @@ The system MUST handle error scenarios gracefully for case type operations.
 - **Case Management spec** (`../case-management/spec.md`): Cases reference case types for behavioral controls (statuses, deadlines, confidentiality, document requirements, property requirements, result types, role types).
 - **OpenRegister**: All case type data is stored as OpenRegister objects in the `procest` register under the respective schemas (caseType, statusType, resultType, roleType, propertyDefinition, documentType, decisionType).
 - **Nextcloud Admin Settings**: Case type management is exposed via the Nextcloud admin settings panel (`OCA\Procest\Settings\AdminSettings`).
+
+### Current Implementation Status
+
+**Substantially implemented (MVP).** Core case type CRUD and status type management are functional.
+
+**Implemented:**
+- Case type CRUD via OpenRegister object store -- create, read, update, delete case types as OpenRegister objects in the `procest` register with the `caseType` schema.
+- Case type list display (`src/views/settings/CaseTypeList.vue`) with title, isDraft badge (Draft/Published), processing deadline (formatted via `durationHelpers.js`), validity period, default star icon, delete action, set-as-default action (published only).
+- Case type detail/edit with tabbed interface (`src/views/settings/CaseTypeDetail.vue`) -- General and Statuses tabs implemented. Publish/unpublish buttons with validation error display.
+- General tab (`src/views/settings/tabs/GeneralTab.vue`) with all core fields: title, description, purpose, trigger, subject, processing deadline, service target, extension allowed/period, suspension allowed, origin, confidentiality, publication required/text, valid from, valid until.
+- Statuses tab (`src/views/settings/tabs/StatusesTab.vue`) with ordered status type list, drag-and-drop reorder, inline editing, add/delete, isFinal checkbox, notifyInitiator toggle with notification text.
+- Draft/published lifecycle with publish validation (publish errors displayed in UI).
+- Default case type selection stored via `SettingsService` config key `default_case_type`.
+- Case type validation utilities (`src/utils/caseTypeValidation.js`).
+- All case type sub-entity schemas defined in `procest_register.json` and mapped in `SettingsService::SLUG_TO_CONFIG_KEY`: caseType, statusType, resultType, roleType, propertyDefinition, documentType, decisionType.
+- ZGW Catalogi API compatibility via `ZtcController` (`lib/Controller/ZtcController.php`) and `ZgwZtcRulesService` (`lib/Service/ZgwZtcRulesService.php`).
+
+**Not yet implemented (V1):**
+- REQ-CT-07: Result type management tab (schema exists, no UI).
+- REQ-CT-08: Role type management tab (schema exists, no UI).
+- REQ-CT-09: Property definition management tab (schema exists, no UI).
+- REQ-CT-10: Document type management tab (schema exists, no UI).
+- REQ-CT-11: Decision type management (schema exists, no UI).
+- REQ-CT-12: Confidentiality default enforcement on case creation (field exists, enforcement unclear).
+- Backend validation for publish prerequisites (at least one status type, at least one final status, validFrom set).
+- Delete case type blocking when active cases reference it.
+- Status type name uniqueness validation within a case type.
+- Duplicate order number detection and auto-renumbering.
+
+### Standards & References
+
+- **ZGW Catalogi API (VNG)**: Direct mapping to ZaakType, StatusType, ResultaatType, RolType, Eigenschap, InformatieObjectType, BesluitType. The `ZtcController` implements ZGW Catalogi API endpoints.
+- **CMMN 1.1**: CaseDefinition concept for case type, Milestone sequence for status types, TimerEventListener for processing deadlines.
+- **Schema.org**: `PropertyValueSpecification` for property definitions.
+- **ISO 8601**: Duration format for all time-based fields (processingDeadline, extensionPeriod, retentionPeriod, objectionPeriod, publicationPeriod).
+- **GEMMA**: ZaakType configuration follows GEMMA zaakgericht werken reference architecture.
+- **Archiefwet / Selectielijst**: Result types with archiveAction (retain/destroy) and retentionPeriod follow Dutch archiving legislation.
+
+### Specificity Assessment
+
+This is a comprehensive, highly detailed spec that is implementation-ready for both MVP and V1. It includes complete data models with field-level ZGW mappings.
+
+**Strengths:** Exhaustive data model tables with type/required/mapping columns. 16 requirements with detailed scenarios. Clear feature tier separation. Validation rules explicitly specified.
+
+**Missing/Ambiguous:**
+- No specification of how sub-entity schemas (statusType, resultType, etc.) relate to each other via OpenRegister references (reference resolution mechanics).
+- No specification of bulk operations (e.g., import multiple status types at once).
+- Case type versioning strategy not specified -- can a published type be edited in-place or must it be versioned?
+- No specification of case type search/filter in the admin list.
+
+**Open questions:**
+1. Should editing a published case type require unpublishing first, or can it be edited in-place with a warning?
+2. How should the system handle changes to a case type that affect existing cases (e.g., removing a status type that cases are currently at)?
+3. Should the `subCaseTypes` field enforce a tree structure (no cycles) and how is this validated?

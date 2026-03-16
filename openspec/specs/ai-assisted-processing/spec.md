@@ -105,3 +105,43 @@ Not all municipalities want AI features. They must be individually toggleable.
 - WHEN an admin configures the AI model endpoint (local Ollama or external API)
 - THEN all AI requests MUST use the configured model
 - AND the configuration MUST support both local (privacy-preserving) and cloud models
+
+### Current Implementation Status
+
+**Not yet implemented.** No AI-related services, controllers, or Vue components exist in the Procest codebase. The MCP integration infrastructure exists at the workspace level (`.mcp.json` with n8n-mcp and OpenRegister MCP), but Procest itself has no AI document classification, data extraction, knowledge base Q&A, or decision support functionality.
+
+**Foundation available:**
+- The n8n MCP server is configured at the workspace level, providing workflow orchestration that could trigger AI pipelines.
+- OpenRegister MCP provides data access that AI tools could query.
+- The `objectStore` pattern (`src/store/modules/object.js`) with `auditTrailsPlugin` provides the audit infrastructure that AI interaction logging would use.
+
+**Partial implementations:** None.
+
+### Standards & References
+
+- **MCP (Model Context Protocol)**: Anthropic's standard for LLM tool integration -- the foundation for AI features.
+- **GDPR / AVG**: AI processing of citizen data requires Data Protection Impact Assessment (DPIA), especially for document classification containing PII.
+- **BIO (Baseline Informatiebeveiliging Overheid)**: Government security baseline applies to AI model endpoints and data handling.
+- **Algoritmeregister**: Dutch government requirement to register algorithmic decision-making systems.
+- **Common Ground**: AI services should be deployable as Common Ground components (API-first, layered architecture).
+- **WCAG AA**: AI suggestion UI must be accessible.
+
+### Specificity Assessment
+
+This spec is at a conceptual level -- suitable for roadmap planning but not implementation-ready.
+
+**What's missing:**
+- No UI wireframes or component specifications for the AI suggestion interface.
+- No specification of which MCP tools/prompts would be used for each AI capability.
+- No data model for AI suggestions, confidence scores, or audit entries.
+- No specification of the n8n workflow structure for AI pipelines.
+- No performance requirements (latency for AI responses, timeout handling).
+- "Via MCP" is vague -- needs concrete tool names, parameters, and response schemas.
+- Knowledge base (RAG) assumes a document corpus but doesn't specify how documents enter the knowledge base.
+
+**Open questions:**
+1. Which LLM models are supported (Ollama models, OpenAI, Azure OpenAI)?
+2. What is the maximum document size for classification/extraction?
+3. How does the knowledge base corpus get populated -- manual upload or automatic from case documents?
+4. Should AI suggestions be cached or computed on-demand each time?
+5. What is the privacy boundary -- can document content leave the Nextcloud instance?

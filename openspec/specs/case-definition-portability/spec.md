@@ -94,3 +94,42 @@ Admins can choose which parts of a definition to export or import.
 - WHEN an admin exports with only `schema` and `statuses` selected
 - THEN the ZIP MUST contain only `schema.json`, `statuses.json`, and `manifest.json`
 - AND the manifest MUST note that workflows and permissions were excluded
+
+### Current Implementation Status
+
+**Not yet implemented.** No export/import functionality for case type definitions exists in the codebase. There are no controllers, services, or UI components for definition portability.
+
+**Foundation available:**
+- `SettingsService::loadConfiguration()` (`lib/Service/SettingsService.php`) imports register configuration from `procest_register.json` via OpenRegister's `ConfigurationService::importFromApp()`. This import/auto-configure pattern could serve as a model for case definition import.
+- The `procest_register.json` file (`lib/Settings/procest_register.json`) already defines the complete schema structure for all case type entities, providing a reference format for portable definitions.
+- The repair step `InitializeSettings` (`lib/Repair/InitializeSettings.php`) and `LoadDefaultZgwMappings` (`lib/Repair/LoadDefaultZgwMappings.php`) demonstrate import/initialization patterns.
+- OpenRegister's `ConfigurationService` has version-aware import with force-reimport capability.
+- n8n workflows can be exported/imported via n8n API (n8n MCP tools: `n8n_get_workflow`, `n8n_create_workflow`).
+
+**Partial implementations:** None.
+
+### Standards & References
+
+- **DTAP (Development, Test, Acceptance, Production)**: Standard software deployment pipeline that portability supports.
+- **ZGW Catalogi API (VNG)**: Case type definitions (ZaakType, StatusType, ResultaatType, etc.) follow ZGW Catalogi API schemas, which could serve as an interoperable export format.
+- **GEMMA**: Dutch municipal architecture standard promoting reusable configurations across municipalities.
+- **OpenRegister Configuration Format**: The existing `procest_register.json` format provides a proprietary but well-structured configuration exchange format.
+- **Common Ground**: Emphasizes configuration portability across municipalities via standardized APIs.
+
+### Specificity Assessment
+
+This spec is at a design level -- it clearly describes what the feature should do but lacks implementation-level detail.
+
+**What's missing:**
+- No specification of the manifest.json schema (exact fields, version format, dependency encoding).
+- No API endpoints for export/import operations.
+- No UI wireframes for the import wizard (conflict resolution, validation report, progress).
+- No specification of how n8n workflow URLs are parameterized (which fields are environment-specific).
+- No specification of the merge strategy for field-by-field conflict resolution.
+- No specification of how OpenRegister schema IDs are remapped during import (IDs differ across environments).
+
+**Open questions:**
+1. Should case definitions be exportable via the admin UI, CLI, or API (or all three)?
+2. How are OpenRegister object IDs (references between schemas) handled during import -- UUID-based or slug-based matching?
+3. Should the package include sample data (test cases) for validation?
+4. How does this interact with the ZGW Catalogi API -- should export also produce a ZGW-compatible catalog export?
