@@ -70,8 +70,10 @@ export default {
 
 	setup() {
 		const sidebarState = inject('sidebarState', null)
+		const objectStore = useObjectStore()
 		return useListView('case', {
 			sidebarState,
+			objectStore,
 			defaultSort: { key: 'deadline', order: 'asc' },
 		})
 	},
