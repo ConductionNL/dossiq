@@ -4,7 +4,7 @@
 
 ### MODIFIED Requirements
 
-#### REQ-OR-URL-01: Frontend API URL Construction
+#### REQ-OREG-014: Frontend API URL Construction
 
 **Status**: MODIFIED (was implicit/unspecified, now explicit)
 

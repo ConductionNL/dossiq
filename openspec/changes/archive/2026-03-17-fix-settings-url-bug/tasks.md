@@ -9,7 +9,7 @@
 2. In `fetchSettings()`: replace `fetch('/apps/procest/api/settings', ...)` with `fetch(generateUrl('/apps/procest/api/settings'), ...)`
 3. In `saveSettings()`: replace `fetch('/apps/procest/api/settings', ...)` with `fetch(generateUrl('/apps/procest/api/settings'), ...)`
 
-**Spec ref**: `openspec/changes/fix-settings-url-bug/specs/openregister-integration/spec.md#REQ-OR-URL-01`
+**Spec ref**: `openspec/changes/fix-settings-url-bug/specs/openregister-integration/spec.md#REQ-OREG-014`
 
 **Acceptance criteria**:
 - [x] `@nextcloud/router` imported at top of file
@@ -29,7 +29,7 @@
    - Get/update single mapping: `fetch('/apps/procest/api/zgw-mappings/${resourceKey}', ...)` → `fetch(generateUrl('/apps/procest/api/zgw-mappings/${resourceKey}'), ...)`
    - Reset mapping: `fetch('/apps/procest/api/zgw-mappings/${resourceKey}/reset', ...)` → `fetch(generateUrl('/apps/procest/api/zgw-mappings/${resourceKey}/reset'), ...)`
 
-**Spec ref**: `openspec/changes/fix-settings-url-bug/specs/openregister-integration/spec.md#REQ-OR-URL-01`
+**Spec ref**: `openspec/changes/fix-settings-url-bug/specs/openregister-integration/spec.md#REQ-OREG-014`
 
 **Acceptance criteria**:
 - [x] `@nextcloud/router` imported at top of file
@@ -43,11 +43,11 @@
 **What**: After applying Tasks 1 and 2, verify the fix resolves the cascade failure.
 
 **Acceptance criteria**:
-- [ ] Browser console shows no 404 on `/apps/procest/api/settings` on page load
-- [ ] Browser console shows no "Object type X is not registered" errors
-- [ ] Dashboard renders (KPI cards visible, not blank screen)
-- [ ] Case list shows data or meaningful empty state (not "No items found" due to API failure)
-- [ ] Admin settings form shows register/schema IDs (not empty fields)
-- [ ] ZGW mapping table loads on admin settings page
+- [x] Browser console shows no 404 on `/apps/procest/api/settings` on page load
+- [x] Browser console shows no "Object type X is not registered" errors
+- [x] Dashboard renders (KPI cards visible, not blank screen)
+- [x] Case list shows data or meaningful empty state (not "No items found" due to API failure)
+- [x] Admin settings form shows register/schema IDs (not empty fields)
+- [x] ZGW mapping table loads on admin settings page
 
 > **Note**: Tasks 1 and 2 were already implemented before this change was spec'd. Verification (Task 3) requires a running Nextcloud instance.

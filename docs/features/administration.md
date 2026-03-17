@@ -71,7 +71,7 @@ The repair step automatically imports the register configuration, checks OpenReg
 
 ### Pinia Store Pattern (MVP)
 
-Dedicated Pinia stores for each of the 12 entity types, providing typed CRUD operations, error handling, pagination, and caching.
+Dedicated Pinia stores for each of the 12 entity types, providing typed CRUD operations, error handling, pagination, and caching. All internal API calls use `generateUrl()` from `@nextcloud/router` to ensure correct URL generation regardless of Nextcloud's URL rewriting configuration.
 
 ### Error Handling (MVP)
 

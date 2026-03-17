@@ -11,7 +11,7 @@
       "description": "Replace hardcoded /apps/procest/api/settings paths with generateUrl() from @nextcloud/router in fetchSettings() and saveSettings().",
       "github_issue": 14,
       "status": "done",
-      "spec_ref": "openspec/changes/fix-settings-url-bug/specs/openregister-integration/spec.md#REQ-OR-URL-01",
+      "spec_ref": "openspec/changes/fix-settings-url-bug/specs/openregister-integration/spec.md#REQ-OREG-014",
       "acceptance_criteria": [
         "@nextcloud/router imported at top of file",
         "Both fetch calls in settings.js use generateUrl()",
@@ -28,7 +28,7 @@
       "description": "Replace all 3 hardcoded /apps/procest/api/zgw-mappings paths with generateUrl() from @nextcloud/router.",
       "github_issue": 15,
       "status": "done",
-      "spec_ref": "openspec/changes/fix-settings-url-bug/specs/openregister-integration/spec.md#REQ-OR-URL-01",
+      "spec_ref": "openspec/changes/fix-settings-url-bug/specs/openregister-integration/spec.md#REQ-OREG-014",
       "acceptance_criteria": [
         "@nextcloud/router imported at top of file",
         "All 3 fetch calls in zgwMapping.js use generateUrl()",
@@ -44,8 +44,8 @@
       "title": "Verify fix works end-to-end",
       "description": "After Tasks 1 and 2 are applied, verify the cascade failure is resolved by testing in a browser.",
       "github_issue": 16,
-      "status": "pending",
-      "spec_ref": "openspec/changes/fix-settings-url-bug/specs/openregister-integration/spec.md#REQ-OR-URL-01",
+      "status": "done",
+      "spec_ref": "openspec/changes/fix-settings-url-bug/specs/openregister-integration/spec.md#REQ-OREG-014",
       "acceptance_criteria": [
         "Browser console shows no 404 on /apps/procest/api/settings on page load",
         "Browser console shows no 'Object type X is not registered' errors",
