@@ -3,7 +3,9 @@
 		<div class="dashboard-page">
 			<!-- Header: title + actions -->
 			<div class="dashboard-header">
-				<h1 class="dashboard-title">{{ t('procest', 'Dashboard') }}</h1>
+				<h1 class="dashboard-title">
+					{{ t('procest', 'Dashboard') }}
+				</h1>
 				<div class="dashboard-actions">
 					<NcButton type="primary" @click="showCreateDialog = true">
 						<template #icon>
@@ -45,104 +47,108 @@
 			<!-- Widget grid -->
 			<div v-else class="dashboard-grid">
 				<!-- KPI Cards widget -->
-			<div class="dashboard-widget dashboard-widget--full">
-				<div class="kpi-row">
-					<div class="kpi-card">
-						<div class="kpi-icon">
-							<FolderOpen :size="24" />
+				<div class="dashboard-widget dashboard-widget--full">
+					<div class="kpi-row">
+						<div class="kpi-card">
+							<div class="kpi-icon">
+								<FolderOpen :size="24" />
+							</div>
+							<div class="kpi-content">
+								<span class="kpi-value">{{ kpis.openCount }}</span>
+								<span class="kpi-label">{{ t('procest', 'Open Cases') }}</span>
+							</div>
 						</div>
-						<div class="kpi-content">
-							<span class="kpi-value">{{ kpis.openCount }}</span>
-							<span class="kpi-label">{{ t('procest', 'Open Cases') }}</span>
+						<div class="kpi-card" :class="{ 'kpi-card--warning': kpis.overdueCount > 0 }">
+							<div class="kpi-icon" :class="{ 'kpi-icon--warning': kpis.overdueCount > 0 }">
+								<AlertCircle :size="24" />
+							</div>
+							<div class="kpi-content">
+								<span class="kpi-value">{{ kpis.overdueCount }}</span>
+								<span class="kpi-label">{{ t('procest', 'Overdue') }}</span>
+							</div>
 						</div>
-					</div>
-					<div class="kpi-card" :class="{ 'kpi-card--warning': kpis.overdueCount > 0 }">
-						<div class="kpi-icon" :class="{ 'kpi-icon--warning': kpis.overdueCount > 0 }">
-							<AlertCircle :size="24" />
+						<div class="kpi-card">
+							<div class="kpi-icon kpi-icon--success">
+								<CheckCircle :size="24" />
+							</div>
+							<div class="kpi-content">
+								<span class="kpi-value">{{ kpis.completedCount }}</span>
+								<span class="kpi-label">{{ t('procest', 'Completed This Month') }}</span>
+							</div>
 						</div>
-						<div class="kpi-content">
-							<span class="kpi-value">{{ kpis.overdueCount }}</span>
-							<span class="kpi-label">{{ t('procest', 'Overdue') }}</span>
-						</div>
-					</div>
-					<div class="kpi-card">
-						<div class="kpi-icon kpi-icon--success">
-							<CheckCircle :size="24" />
-						</div>
-						<div class="kpi-content">
-							<span class="kpi-value">{{ kpis.completedCount }}</span>
-							<span class="kpi-label">{{ t('procest', 'Completed This Month') }}</span>
-						</div>
-					</div>
-					<div class="kpi-card">
-						<div class="kpi-icon">
-							<ClipboardCheckOutline :size="24" />
-						</div>
-						<div class="kpi-content">
-							<span class="kpi-value">{{ kpis.taskCount }}</span>
-							<span class="kpi-label">{{ t('procest', 'My Tasks') }}</span>
+						<div class="kpi-card">
+							<div class="kpi-icon">
+								<ClipboardCheckOutline :size="24" />
+							</div>
+							<div class="kpi-content">
+								<span class="kpi-value">{{ kpis.taskCount }}</span>
+								<span class="kpi-label">{{ t('procest', 'My Tasks') }}</span>
+							</div>
 						</div>
 					</div>
 				</div>
-			</div>
 
 				<!-- Cases by Status widget -->
-			<div class="dashboard-widget">
-				<h3 class="dashboard-widget__title">{{ t('procest', 'Cases by Status') }}</h3>
-				<div class="status-widget-content">
-					<div v-if="statusData.length === 0" class="chart-empty">
-						{{ t('procest', 'No open cases') }}
-					</div>
-					<div v-else class="status-chart">
-						<div
-							v-for="(item, index) in statusData"
-							:key="item.name"
-							class="status-bar-row">
-							<span class="status-bar-label">{{ item.name }}</span>
-							<div class="status-bar-track">
-								<div
-									class="status-bar-fill"
-									:style="{ width: barWidth(item.count), background: barColor(index) }" />
+				<div class="dashboard-widget">
+					<h3 class="dashboard-widget__title">
+						{{ t('procest', 'Cases by Status') }}
+					</h3>
+					<div class="status-widget-content">
+						<div v-if="statusData.length === 0" class="chart-empty">
+							{{ t('procest', 'No open cases') }}
+						</div>
+						<div v-else class="status-chart">
+							<div
+								v-for="(item, index) in statusData"
+								:key="item.name"
+								class="status-bar-row">
+								<span class="status-bar-label">{{ item.name }}</span>
+								<div class="status-bar-track">
+									<div
+										class="status-bar-fill"
+										:style="{ width: barWidth(item.count), background: barColor(index) }" />
+								</div>
+								<span class="status-bar-count">{{ item.count }}</span>
 							</div>
-							<span class="status-bar-count">{{ item.count }}</span>
 						</div>
 					</div>
 				</div>
-			</div>
 
 				<!-- My Work widget -->
-			<div class="dashboard-widget">
-				<h3 class="dashboard-widget__title">{{ t('procest', 'My Work') }}</h3>
-				<div class="my-work-widget-content">
-					<div v-if="myWorkItems.length === 0" class="chart-empty">
-						{{ t('procest', 'No items assigned to you') }}
-					</div>
-					<div v-else class="my-work-list">
-						<div
-							v-for="item in myWorkItems"
-							:key="`${item.type}-${item.id}`"
-							class="my-work-item"
-							:class="{ 'my-work-item--overdue': item.isOverdue }"
-							@click="onWorkItemClick(item.type, item.id)">
-							<span class="entity-badge" :class="'badge--' + item.type">
-								{{ item.type === 'case' ? 'CASE' : 'TASK' }}
-							</span>
-							<span class="my-work-title">{{ item.title }}</span>
-							<span class="my-work-stage">{{ item.reference }}</span>
-							<span v-if="item.daysText" class="my-work-due" :class="{ overdue: item.isOverdue }">
-								{{ item.daysText }}
-							</span>
+				<div class="dashboard-widget">
+					<h3 class="dashboard-widget__title">
+						{{ t('procest', 'My Work') }}
+					</h3>
+					<div class="my-work-widget-content">
+						<div v-if="myWorkItems.length === 0" class="chart-empty">
+							{{ t('procest', 'No items assigned to you') }}
 						</div>
-						<NcButton
-							v-if="myWorkItems.length >= 5"
-							type="tertiary"
-							class="view-all-link"
-							@click="$router.push({ name: 'MyWork' })">
-							{{ t('procest', 'View all my work') }}
-						</NcButton>
+						<div v-else class="my-work-list">
+							<div
+								v-for="item in myWorkItems"
+								:key="`${item.type}-${item.id}`"
+								class="my-work-item"
+								:class="{ 'my-work-item--overdue': item.isOverdue }"
+								@click="onWorkItemClick(item.type, item.id)">
+								<span class="entity-badge" :class="'badge--' + item.type">
+									{{ item.type === 'case' ? 'CASE' : 'TASK' }}
+								</span>
+								<span class="my-work-title">{{ item.title }}</span>
+								<span class="my-work-stage">{{ item.reference }}</span>
+								<span v-if="item.daysText" class="my-work-due" :class="{ overdue: item.isOverdue }">
+									{{ item.daysText }}
+								</span>
+							</div>
+							<NcButton
+								v-if="myWorkItems.length >= 5"
+								type="tertiary"
+								class="view-all-link"
+								@click="$router.push({ name: 'MyWork' })">
+								{{ t('procest', 'View all my work') }}
+							</NcButton>
+						</div>
 					</div>
 				</div>
-			</div>
 			</div>
 		</div>
 

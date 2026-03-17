@@ -1,9 +1,15 @@
+import { generateUrl } from '@nextcloud/router'
 import { useObjectStore } from './modules/object.js'
 import { useSettingsStore } from './modules/settings.js'
 
 export async function initializeStores() {
 	const settingsStore = useSettingsStore()
 	const objectStore = useObjectStore()
+
+	objectStore.configure({
+		baseUrl: generateUrl('/apps/openregister/api/objects'),
+		schemaBaseUrl: generateUrl('/apps/openregister/api/schemas'),
+	})
 
 	const config = await settingsStore.fetchSettings()
 

@@ -223,6 +223,14 @@ export default {
 </script>
 
 <style scoped>
+::v-deep .cn-table-container {
+	overflow-x: auto;
+}
+
+::v-deep .cn-data-table {
+	min-width: 800px;
+}
+
 .ct-title {
 	display: flex;
 	align-items: center;

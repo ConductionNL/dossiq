@@ -1,0 +1,61 @@
+{
+  "change": "fix-settings-url-bug",
+  "project": "procest",
+  "repo": "ConductionNL/procest",
+  "created": "2026-03-17",
+  "tracking_issue": 13,
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Fix settings.js fetch URLs",
+      "description": "Replace hardcoded /apps/procest/api/settings paths with generateUrl() from @nextcloud/router in fetchSettings() and saveSettings().",
+      "github_issue": 14,
+      "status": "done",
+      "spec_ref": "openspec/changes/fix-settings-url-bug/specs/openregister-integration/spec.md#REQ-OR-URL-01",
+      "acceptance_criteria": [
+        "@nextcloud/router imported at top of file",
+        "Both fetch calls in settings.js use generateUrl()",
+        "No hardcoded /apps/procest/api/settings strings remain in the file"
+      ],
+      "files_likely_affected": [
+        "src/store/modules/settings.js"
+      ],
+      "labels": ["openspec", "fix-settings-url-bug"]
+    },
+    {
+      "id": 2,
+      "title": "Fix zgwMapping.js fetch URLs",
+      "description": "Replace all 3 hardcoded /apps/procest/api/zgw-mappings paths with generateUrl() from @nextcloud/router.",
+      "github_issue": 15,
+      "status": "done",
+      "spec_ref": "openspec/changes/fix-settings-url-bug/specs/openregister-integration/spec.md#REQ-OR-URL-01",
+      "acceptance_criteria": [
+        "@nextcloud/router imported at top of file",
+        "All 3 fetch calls in zgwMapping.js use generateUrl()",
+        "No hardcoded /apps/procest/api/zgw-mappings strings remain in the file"
+      ],
+      "files_likely_affected": [
+        "src/store/modules/zgwMapping.js"
+      ],
+      "labels": ["openspec", "fix-settings-url-bug"]
+    },
+    {
+      "id": 3,
+      "title": "Verify fix works end-to-end",
+      "description": "After Tasks 1 and 2 are applied, verify the cascade failure is resolved by testing in a browser.",
+      "github_issue": 16,
+      "status": "pending",
+      "spec_ref": "openspec/changes/fix-settings-url-bug/specs/openregister-integration/spec.md#REQ-OR-URL-01",
+      "acceptance_criteria": [
+        "Browser console shows no 404 on /apps/procest/api/settings on page load",
+        "Browser console shows no 'Object type X is not registered' errors",
+        "Dashboard renders (KPI cards visible, not blank screen)",
+        "Case list shows data or meaningful empty state",
+        "Admin settings form shows register/schema IDs (not empty fields)",
+        "ZGW mapping table loads on admin settings page"
+      ],
+      "files_likely_affected": [],
+      "labels": ["openspec", "fix-settings-url-bug"]
+    }
+  ]
+}

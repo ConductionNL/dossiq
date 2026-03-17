@@ -21,14 +21,14 @@ export function getOriginOptions() {
 
 export function getConfidentialityOptions() {
 	return [
-		{ id: 'public', label: t('procest', 'Public') },
-		{ id: 'restricted', label: t('procest', 'Restricted') },
-		{ id: 'internal', label: t('procest', 'Internal') },
-		{ id: 'case_sensitive', label: t('procest', 'Case sensitive') },
-		{ id: 'confidential', label: t('procest', 'Confidential') },
-		{ id: 'highly_confidential', label: t('procest', 'Highly confidential') },
-		{ id: 'secret', label: t('procest', 'Secret') },
-		{ id: 'top_secret', label: t('procest', 'Top secret') },
+		{ id: 'openbaar', label: t('procest', 'Public') },
+		{ id: 'beperkt_openbaar', label: t('procest', 'Restricted') },
+		{ id: 'intern', label: t('procest', 'Internal') },
+		{ id: 'zaakvertrouwelijk', label: t('procest', 'Case sensitive') },
+		{ id: 'vertrouwelijk', label: t('procest', 'Confidential') },
+		{ id: 'confidentieel', label: t('procest', 'Highly confidential') },
+		{ id: 'geheim', label: t('procest', 'Secret') },
+		{ id: 'zeer_geheim', label: t('procest', 'Top secret') },
 	]
 }
 
