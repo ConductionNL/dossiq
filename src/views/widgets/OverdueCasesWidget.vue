@@ -4,7 +4,7 @@
 		:item-menu="itemMenu"
 		@show="onShow">
 		<template #empty-content>
-			<NcEmptyContent :title="t('procest', 'Geen openstaande zaken')">
+			<NcEmptyContent :title="t('procest', 'No open cases')">
 				<template #icon>
 					<AlertCircle />
 				</template>
@@ -38,7 +38,7 @@ export default {
 			overdueCases: [],
 			itemMenu: {
 				show: {
-					text: t('procest', 'Bekijk zaak'),
+					text: t('procest', 'View case'),
 					icon: 'icon-confirm',
 				},
 			},
@@ -51,9 +51,9 @@ export default {
 		items() {
 			return this.overdueCases.map((caseObj) => ({
 				id: caseObj.id,
-				mainText: caseObj.title || caseObj.identifier || t('procest', 'Naamloze zaak'),
+				mainText: caseObj.title || caseObj.identifier || t('procest', 'Unnamed case'),
 				subText: caseObj.daysOverdue
-					? t('procest', '{days} dagen te laat', { days: caseObj.daysOverdue })
+					? t('procest', '{days} days overdue', { days: caseObj.daysOverdue })
 					: caseObj.identifier || '',
 				avatarUrl: '/apps-extra/procest/img/app-dark.svg',
 			}))

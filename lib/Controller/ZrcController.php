@@ -30,6 +30,7 @@ use OCA\Procest\Service\ZgwService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 
 /**
@@ -80,11 +81,13 @@ class ZrcController extends Controller
      * @param string     $appName    The application name
      * @param IRequest   $request    The incoming request
      * @param ZgwService $zgwService The shared ZGW service
+     * @param IL10N      $l10n       The localization service
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly ZgwService $zgwService,
+        private readonly IL10N $l10n,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -884,7 +887,7 @@ class ZrcController extends Controller
     {
         return new JSONResponse(
             data: [
-                'detail' => 'U heeft niet de juiste rechten voor deze actie.',
+                'detail' => $this->l10n->t('You do not have the correct permissions for this action.'),
                 'code'   => 'permission_denied',
             ],
             statusCode: Http::STATUS_FORBIDDEN
@@ -1041,12 +1044,12 @@ class ZrcController extends Controller
             if (in_array($product, $allowed, true) === false) {
                 return new JSONResponse(
                     data: [
-                        'detail'        => 'productenOfDiensten bevat een waarde die niet in het zaaktype voorkomt.',
+                        'detail'        => $this->l10n->t('productenOfDiensten contains a value not present in the zaaktype.'),
                         'invalidParams' => [
                             [
                                 'name'   => 'productenOfDiensten',
                                 'code'   => 'invalid-products-services',
-                                'reason' => "Product '{$product}' is niet toegestaan voor dit zaaktype.",
+                                'reason' => $this->l10n->t('Product \'%s\' is not allowed for this zaaktype.', [$product]),
                             ],
                         ],
                     ],

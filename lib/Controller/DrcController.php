@@ -28,6 +28,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 
 /**
@@ -73,11 +74,13 @@ class DrcController extends Controller
      * @param string     $appName    The app name.
      * @param IRequest   $request    The incoming request.
      * @param ZgwService $zgwService The shared ZGW service.
+     * @param IL10N      $l10n       The localization service.
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly ZgwService $zgwService,
+        private readonly IL10N $l10n,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -516,12 +519,12 @@ class DrcController extends Controller
             if (empty($oioRelations) === false) {
                 return new JSONResponse(
                     [
-                        'detail'        => 'Het informatieobject kan niet verwijderd worden: er zijn gerelateerde ObjectInformatieObjecten.',
+                        'detail'        => $this->l10n->t('The document cannot be deleted: there are related ObjectInformatieObjecten.'),
                         'invalidParams' => [
                             [
                                 'name'   => 'nonFieldErrors',
                                 'code'   => 'pending-relations',
-                                'reason' => 'Het informatieobject kan niet verwijderd worden.',
+                                'reason' => $this->l10n->t('The document cannot be deleted.'),
                             ],
                         ],
                     ],
@@ -607,7 +610,7 @@ class DrcController extends Controller
 
             if ($this->zgwService->getDocumentService()->fileExists(uuid: $uuid, fileName: $fileName) === false) {
                 return new JSONResponse(
-                    data: ['detail' => 'Bestand niet gevonden.'],
+                    data: ['detail' => $this->l10n->t('File not found.')],
                     statusCode: Http::STATUS_NOT_FOUND
                 );
             }
@@ -664,7 +667,7 @@ class DrcController extends Controller
             ) !== null
         ) {
             return new JSONResponse(
-                data: ['detail' => 'Document is al vergrendeld.'],
+                data: ['detail' => $this->l10n->t('Document is already locked.')],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
         }
@@ -690,7 +693,7 @@ class DrcController extends Controller
             );
         } catch (\OCA\OpenRegister\Exception\LockedException $e) {
             return new JSONResponse(
-                data: ['detail' => 'Document is al vergrendeld.'],
+                data: ['detail' => $this->l10n->t('Document is already locked.')],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
         } catch (\Throwable $e) {
@@ -800,7 +803,7 @@ class DrcController extends Controller
 
         if ($storedLockId === null) {
             return new JSONResponse(
-                data: ['detail' => 'Document is niet vergrendeld.'],
+                data: ['detail' => $this->l10n->t('Document is not locked.')],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
         }
@@ -818,9 +821,9 @@ class DrcController extends Controller
             );
             if ($hasForceScope === false) {
                 if ($lockId === '') {
-                    $detail = 'Geforceerd unlocken is niet toegestaan zonder juiste scope.';
+                    $detail = $this->l10n->t('Forced unlocking is not allowed without the correct scope.');
                 } else {
-                    $detail = 'Lock ID komt niet overeen en geforceerd unlocken is niet toegestaan.';
+                    $detail = $this->l10n->t('Lock ID does not match and forced unlocking is not allowed.');
                 }
 
                 return new JSONResponse(
@@ -952,7 +955,7 @@ class DrcController extends Controller
                     );
                 } catch (\Throwable $e) {
                     return new JSONResponse(
-                        data: ['detail' => 'Niet gevonden.'],
+                        data: ['detail' => $this->l10n->t('Not found.')],
                         statusCode: Http::STATUS_NOT_FOUND
                     );
                 }
@@ -1416,7 +1419,7 @@ class DrcController extends Controller
             $chunkInfo = $this->parseFileParts(objectData: $objectData);
             if ($chunkInfo === null || ($chunkInfo['pending'] ?? false) !== true) {
                 return new JSONResponse(
-                    data: ['detail' => 'Dit document heeft geen openstaande chunked upload.'],
+                    data: ['detail' => $this->l10n->t('This document has no pending chunked upload.')],
                     statusCode: Http::STATUS_BAD_REQUEST
                 );
             }
@@ -1424,7 +1427,7 @@ class DrcController extends Controller
             $totalParts = (int) ($chunkInfo['totalParts'] ?? 0);
             if ($totalParts <= 0) {
                 return new JSONResponse(
-                    data: ['detail' => 'Ongeldige chunk configuratie.'],
+                    data: ['detail' => $this->l10n->t('Invalid chunk configuration.')],
                     statusCode: Http::STATUS_BAD_REQUEST
                 );
             }
@@ -1433,7 +1436,7 @@ class DrcController extends Controller
             $volgnummer = (int) ($this->request->getParam('volgnummer') ?? 0);
             if ($volgnummer <= 0 || $volgnummer > $totalParts) {
                 return new JSONResponse(
-                    data: ['detail' => 'Ongeldig volgnummer. Verwacht 1-'.$totalParts.'.'],
+                    data: ['detail' => $this->l10n->t('Invalid sequence number. Expected 1-%s.', [$totalParts])],
                     statusCode: Http::STATUS_BAD_REQUEST
                 );
             }
@@ -1442,7 +1445,7 @@ class DrcController extends Controller
             $content = file_get_contents('php://input');
             if ($content === false || $content === '') {
                 return new JSONResponse(
-                    data: ['detail' => 'Geen bestandsinhoud ontvangen.'],
+                    data: ['detail' => $this->l10n->t('No file content received.')],
                     statusCode: Http::STATUS_BAD_REQUEST
                 );
             }
@@ -1833,12 +1836,12 @@ class DrcController extends Controller
         if ($storedLockId === null) {
             return new JSONResponse(
                 data: [
-                    'detail'        => 'Alleen vergrendelde documenten mogen bewerkt worden.',
+                    'detail'        => $this->l10n->t('Only locked documents may be edited.'),
                     'invalidParams' => [
                         [
                             'name'   => 'nonFieldErrors',
                             'code'   => 'unlocked',
-                            'reason' => 'Het document is niet vergrendeld. Vergrendel het document eerst.',
+                            'reason' => $this->l10n->t('The document is not locked. Lock the document first.'),
                         ],
                     ],
                 ],
@@ -1862,12 +1865,12 @@ class DrcController extends Controller
 
             return new JSONResponse(
                 data: [
-                    'detail'        => 'Lock ID is vereist voor het bewerken van een vergrendeld document.',
+                    'detail'        => $this->l10n->t('Lock ID is required for editing a locked document.'),
                     'invalidParams' => [
                         [
                             'name'   => $errorName,
                             'code'   => $errorCode,
-                            'reason' => 'Lock ID ontbreekt in het verzoek.',
+                            'reason' => $this->l10n->t('Lock ID is missing from the request.'),
                         ],
                     ],
                 ],
@@ -1879,12 +1882,12 @@ class DrcController extends Controller
         if ($providedLockId !== $storedLockId) {
             return new JSONResponse(
                 data: [
-                    'detail'        => 'Lock ID komt niet overeen.',
+                    'detail'        => $this->l10n->t('Lock ID does not match.'),
                     'invalidParams' => [
                         [
                             'name'   => 'nonFieldErrors',
                             'code'   => 'incorrect-lock-id',
-                            'reason' => 'Lock ID komt niet overeen met de opgeslagen vergrendeling.',
+                            'reason' => $this->l10n->t('Lock ID does not match the stored lock.'),
                         ],
                     ],
                 ],

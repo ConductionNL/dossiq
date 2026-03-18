@@ -4,7 +4,7 @@
 		:item-menu="itemMenu"
 		@show="onShow">
 		<template #empty-content>
-			<NcEmptyContent :title="t('procest', 'Geen zaken gevonden')">
+			<NcEmptyContent :title="t('procest', 'No cases found')">
 				<template #icon>
 					<FolderOpen />
 				</template>
@@ -37,7 +37,7 @@ export default {
 			cases: [],
 			itemMenu: {
 				show: {
-					text: t('procest', 'Bekijk zaak'),
+					text: t('procest', 'View case'),
 					icon: 'icon-confirm',
 				},
 			},
@@ -50,7 +50,7 @@ export default {
 		items() {
 			return this.cases.map((caseObj) => ({
 				id: caseObj.id,
-				mainText: caseObj.title || caseObj.identifier || t('procest', 'Naamloze zaak'),
+				mainText: caseObj.title || caseObj.identifier || t('procest', 'Unnamed case'),
 				subText: caseObj.identifier
 					? `#${caseObj.identifier}`
 					: '',

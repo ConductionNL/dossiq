@@ -62,7 +62,7 @@ class OverdueCasesWidget implements IWidget
      */
     public function getTitle(): string
     {
-        return $this->l10n->t('Openstaande zaken');
+        return $this->l10n->t('Overdue Cases');
 
     }//end getTitle()
 

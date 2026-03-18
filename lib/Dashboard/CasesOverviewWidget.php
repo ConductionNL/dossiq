@@ -62,7 +62,7 @@ class CasesOverviewWidget implements IWidget
      */
     public function getTitle(): string
     {
-        return $this->l10n->t('Zaken overzicht');
+        return $this->l10n->t('Cases overview');
 
     }//end getTitle()
 

@@ -62,7 +62,7 @@ class MyTasksWidget implements IWidget
      */
     public function getTitle(): string
     {
-        return $this->l10n->t('Mijn taken');
+        return $this->l10n->t('My Tasks');
 
     }//end getTitle()
 

@@ -4,7 +4,7 @@
 		:item-menu="itemMenu"
 		@show="onShow">
 		<template #empty-content>
-			<NcEmptyContent :title="t('procest', 'Geen taken gevonden')">
+			<NcEmptyContent :title="t('procest', 'No tasks found')">
 				<template #icon>
 					<ClipboardCheckOutline />
 				</template>
@@ -37,7 +37,7 @@ export default {
 			tasks: [],
 			itemMenu: {
 				show: {
-					text: t('procest', 'Bekijk taak'),
+					text: t('procest', 'View task'),
 					icon: 'icon-confirm',
 				},
 			},
@@ -50,10 +50,10 @@ export default {
 		items() {
 			return this.tasks.map((task) => ({
 				id: task.id,
-				mainText: task.title || t('procest', 'Naamloze taak'),
+				mainText: task.title || t('procest', 'Unnamed task'),
 				subText: task.dueDate
 					? t('procest', 'Deadline: {date}', { date: task.dueDate.slice(0, 10) })
-					: t('procest', 'Geen deadline'),
+					: t('procest', 'No deadline'),
 				avatarUrl: '/apps-extra/procest/img/app-dark.svg',
 			}))
 		},

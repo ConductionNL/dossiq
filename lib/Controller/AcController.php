@@ -27,6 +27,7 @@ use OCA\Procest\Service\ZgwService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 
 /**
@@ -52,11 +53,13 @@ class AcController extends Controller
      * @param string     $appName    The app name.
      * @param IRequest   $request    The incoming request.
      * @param ZgwService $zgwService The shared ZGW service.
+     * @param IL10N      $l10n       The localization service.
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly ZgwService $zgwService,
+        private readonly IL10N $l10n,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -507,7 +510,7 @@ class AcController extends Controller
                             'name'   => 'nonFieldErrors',
                             'code'   => 'ambiguous-authorizations-specified',
                             // phpcs:ignore Generic.Files.LineLength.MaxExceeded
-                            'reason' => 'Wanneer heeftAlleAutorisaties op true staat, mag autorisaties niet opgegeven worden. Indien heeftAlleAutorisaties false is, dan moet autorisaties opgegeven worden.',
+                            'reason' => $this->l10n->t('When heeftAlleAutorisaties is true, autorisaties must not be specified. When heeftAlleAutorisaties is false, autorisaties must be specified.'),
                         ],
                     ],
                 ],
@@ -527,7 +530,7 @@ class AcController extends Controller
                         [
                             'name'   => 'nonFieldErrors',
                             'code'   => 'missing-authorizations',
-                            'reason' => 'Wanneer heeftAlleAutorisaties false is, dan moet autorisaties opgegeven worden.',
+                            'reason' => $this->l10n->t('When heeftAlleAutorisaties is false, autorisaties must be specified.'),
                         ],
                     ],
                 ],
@@ -578,7 +581,7 @@ class AcController extends Controller
                     $invalidParams[] = [
                         'name'   => "autorisaties.{$index}.zaaktype",
                         'code'   => 'required',
-                        'reason' => 'zaaktype is verplicht wanneer een scope m.b.t. zaken is opgegeven.',
+                        'reason' => $this->l10n->t('zaaktype is required when a scope related to zaken is specified.'),
                     ];
                 }
 
@@ -586,7 +589,7 @@ class AcController extends Controller
                     $invalidParams[] = [
                         'name'   => "autorisaties.{$index}.maxVertrouwelijkheidaanduiding",
                         'code'   => 'required',
-                        'reason' => 'maxVertrouwelijkheidaanduiding is verplicht wanneer een scope m.b.t. zaken is opgegeven.',
+                        'reason' => $this->l10n->t('maxVertrouwelijkheidaanduiding is required when a scope related to zaken is specified.'),
                     ];
                 }
             }//end if
@@ -600,7 +603,7 @@ class AcController extends Controller
                     $invalidParams[] = [
                         'name'   => "autorisaties.{$index}.informatieobjecttype",
                         'code'   => 'required',
-                        'reason' => 'informatieobjecttype is verplicht wanneer een scope m.b.t. documenten is opgegeven.',
+                        'reason' => $this->l10n->t('informatieobjecttype is required when a scope related to documenten is specified.'),
                     ];
                 }
 
@@ -609,7 +612,7 @@ class AcController extends Controller
                         'name'   => "autorisaties.{$index}.maxVertrouwelijkheidaanduiding",
                         'code'   => 'required',
                         // phpcs:ignore Generic.Files.LineLength.TooLong
-                        'reason' => 'maxVertrouwelijkheidaanduiding is verplicht wanneer een scope m.b.t. documenten is opgegeven.',
+                        'reason' => $this->l10n->t('maxVertrouwelijkheidaanduiding is required when a scope related to documenten is specified.'),
                     ];
                 }
             }//end if
@@ -622,7 +625,7 @@ class AcController extends Controller
                     $invalidParams[] = [
                         'name'   => "autorisaties.{$index}.besluittype",
                         'code'   => 'required',
-                        'reason' => 'besluittype is verplicht wanneer een scope m.b.t. besluiten is opgegeven.',
+                        'reason' => $this->l10n->t('besluittype is required when a scope related to besluiten is specified.'),
                     ];
                 }
             }
