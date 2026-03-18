@@ -175,7 +175,7 @@ class ZgwBusinessRulesService
         array $body,
         ?array $existingObject
     ): array {
-        $ok = [
+        $valid = [
             'valid'        => true,
             'status'       => 200,
             'detail'       => '',
@@ -222,7 +222,7 @@ class ZgwBusinessRulesService
             );
         }
 
-        return $ok;
+        return $valid;
     }//end dispatchToRegister()
 
     /**
@@ -260,7 +260,7 @@ class ZgwBusinessRulesService
                 => $this->zrcRules->rulesZaakinformatieobjectenPatch($body, $existingObject),
             $resource === 'zaakeigenschappen' && $action === 'create'
                 => $this->zrcRules->rulesZaakeigenschappenCreate($body),
-            default => $this->ok(body: $body),
+            default => $this->isValid(body: $body),
         };//end match
     }//end dispatchZrc()
 
@@ -287,7 +287,7 @@ class ZgwBusinessRulesService
                 => $this->ztcRules->rulesZaaktypeinformatieobjecttypenCreate($body),
             $resource === 'resultaattypen' && $action === 'create'
                 => $this->ztcRules->rulesResultaattypenCreate($body),
-            default => $this->ok(body: $body),
+            default => $this->isValid(body: $body),
         };
     }//end dispatchZtc()
 
@@ -314,7 +314,7 @@ class ZgwBusinessRulesService
                 => $this->drcRules->rulesEnkelvoudiginformatieobjectenDestroy($body, $existingObject),
             $resource === 'objectinformatieobjecten' && $action === 'create'
                 => $this->drcRules->rulesObjectinformatieobjectenCreate($body),
-            default => $this->ok(body: $body),
+            default => $this->isValid(body: $body),
         };
     }//end dispatchDrc()
 
@@ -339,7 +339,7 @@ class ZgwBusinessRulesService
                 => $this->brcRules->rulesBesluitenPatch($body, $existingObject),
             $resource === 'besluitinformatieobjecten' && $action === 'create'
                 => $this->brcRules->rulesBesluitinformatieobjectenCreate($body),
-            default => $this->ok(body: $body),
+            default => $this->isValid(body: $body),
         };
     }//end dispatchBrc()
 
@@ -350,7 +350,7 @@ class ZgwBusinessRulesService
      *
      * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
      */
-    private function ok(array $body): array
+    private function isValid(array $body): array
     {
         return [
             'valid'        => true,
@@ -358,5 +358,5 @@ class ZgwBusinessRulesService
             'detail'       => '',
             'enrichedBody' => $body,
         ];
-    }//end ok()
+    }//end isValid()
 }//end class

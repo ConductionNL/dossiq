@@ -69,6 +69,8 @@ namespace OCA\Procest\Service;
  * BRC (Besluiten API) business rule validation and enrichment.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class ZgwBrcRulesService extends ZgwRulesBase
 {
@@ -125,7 +127,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
             $body['identificatie'] = $this->generateIdentificatie(prefix: 'BESLUIT');
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesBesluitenCreate()
 
     /**
@@ -142,7 +144,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
      */
     public function rulesBesluitenUpdate(array $body, ?array $existingObject=null): array
     {
-        $result = $this->ok(body: $body);
+        $result = $this->isValid(body: $body);
 
         $result = $this->checkBesluitTypeImmutability(
             result: $result,
@@ -181,7 +183,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
      */
     public function rulesBesluitenPatch(array $body, ?array $existingObject=null): array
     {
-        $result = $this->ok(body: $body);
+        $result = $this->isValid(body: $body);
 
         $result = $this->checkBesluitTypeImmutability(
             result: $result,
@@ -234,7 +236,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
         // Brc-004: Set aardRelatieWeergave automatically.
         $body['aardRelatieWeergave'] = 'Legt vast, omgekeerd: wordt vastgelegd door';
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesBesluitinformatieobjectenCreate()
 
     /**
@@ -423,6 +425,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
      * @return array|null Validation error, or null if valid
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     private function validateZaakBesluittypeRelation(string $zaakUrl, string $besluitTypeUrl): ?array
     {

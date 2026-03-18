@@ -40,8 +40,11 @@ use OCP\IRequest;
  * @psalm-suppress UnusedClass
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  * @SuppressWarnings(PHPMD.ExcessiveClassLength)
+ * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
  * @SuppressWarnings(PHPMD.NPathComplexity)
  */
@@ -812,7 +815,6 @@ class DrcController extends Controller
         $lockId = $body['lock'] ?? '';
 
         // Determine if this is a forced unlock (wrong/empty lockId + scope).
-        $force = false;
         if ($lockId !== $storedLockId) {
             $hasForceScope = $this->zgwService->consumerHasScope(
                 $this->request,
@@ -841,7 +843,6 @@ class DrcController extends Controller
                 );
             }//end if
 
-            $force = true;
         }//end if
 
         // Try OpenRegister's LockHandler, fall back to clearing data blob.

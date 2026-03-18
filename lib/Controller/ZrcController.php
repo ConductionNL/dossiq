@@ -26,6 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use DateInterval;
+use DateTime;
 use OCA\Procest\Service\ZgwService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -780,8 +782,6 @@ class ZrcController extends Controller
             $zaakLevel = self::VERTROUWELIJKHEID_LEVELS[$zaakVa] ?? 1;
 
             // Check zaaktype + maxVertrouwelijkheidaanduiding from consumer autorisaties.
-            $zaakTypeUuid = $zaakData['caseType'] ?? ($zaakData['zaaktype'] ?? '');
-
             foreach ($autorisaties as $auth) {
                 $scopes = $auth['scopes'] ?? [];
                 if (in_array('zaken.lezen', $scopes, true) === false) {
@@ -2040,8 +2040,8 @@ class ZrcController extends Controller
             $archiefactiedatum = $baseDate;
             if ($procestermijn !== null && $procestermijn !== '') {
                 try {
-                    $dateObj  = new \DateTime($baseDate);
-                    $interval = new \DateInterval($procestermijn);
+                    $dateObj  = new DateTime($baseDate);
+                    $interval = new DateInterval($procestermijn);
                     $dateObj->add($interval);
                     $archiefactiedatum = $dateObj->format('Y-m-d');
                 } catch (\Throwable $e) {

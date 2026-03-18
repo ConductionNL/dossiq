@@ -33,6 +33,7 @@ use Psr\Log\LoggerInterface;
  * external URL fetching, OpenRegister lookups, error builders.
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.TooManyMethods)
  */
 abstract class ZgwRulesBase
@@ -87,7 +88,7 @@ abstract class ZgwRulesBase
      *
      * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
      */
-    protected function ok(array $body): array
+    protected function isValid(array $body): array
     {
         return [
             'valid'        => true,
@@ -95,7 +96,7 @@ abstract class ZgwRulesBase
             'detail'       => '',
             'enrichedBody' => $body,
         ];
-    }//end ok()
+    }//end isValid()
 
     /**
      * Build a validation error result.
@@ -600,6 +601,8 @@ abstract class ZgwRulesBase
      * @param string $errorField   Field name for error reporting
      *
      * @return array|null Validation error if duplicate found, null if unique
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     protected function checkFieldUniqueness(
         string $field1Value,

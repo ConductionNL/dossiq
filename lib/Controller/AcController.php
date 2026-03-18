@@ -43,7 +43,9 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+ * @SuppressWarnings(PHPMD.NPathComplexity)
  */
 class AcController extends Controller
 {

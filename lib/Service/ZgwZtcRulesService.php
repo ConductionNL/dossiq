@@ -50,6 +50,8 @@ namespace OCA\Procest\Service;
  * ZTC (Catalogi API) business rule validation and enrichment.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class ZgwZtcRulesService extends ZgwRulesBase
 {
@@ -307,7 +309,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $body['_directFields'] = $directFields;
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesZaaktypenCreate()
 
     /**
@@ -350,7 +352,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $body['_directFields'] = $directFields;
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesBesluittypenCreate()
 
     /**
@@ -409,7 +411,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             }//end if
         }//end if
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesZaaktypeinformatieobjecttypenCreate()
 
     /**
@@ -439,10 +441,10 @@ class ZgwZtcRulesService extends ZgwRulesBase
         $errors = [];
 
         // Ztc-002: Validate and fetch external URLs for enrichment.
-        $selectielijstklasseUrl = $body['selectielijstklasse'] ?? '';
+        $selectieUrl = $body['selectielijstklasse'] ?? '';
         $selectielijstData      = null;
-        if (empty($selectielijstklasseUrl) === false) {
-            $selectielijstData = $this->fetchExternalUrl(url: $selectielijstklasseUrl);
+        if (empty($selectieUrl) === false) {
+            $selectielijstData = $this->fetchExternalUrl(url: $selectieUrl);
             if ($selectielijstData === null) {
                 $errors[] = $this->fieldError(
                     fieldName: 'selectielijstklasse',
@@ -494,7 +496,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             return $this->error(status: 400, detail: $errors[0]['reason'], invalidParams: $errors);
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesResultaattypenCreate()
 
     /**

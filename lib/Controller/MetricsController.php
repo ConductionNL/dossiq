@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use DateTime;
 use OCA\Procest\AppInfo\Application;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\TextPlainResponse;
@@ -176,7 +177,7 @@ class MetricsController extends Controller
     private function getOverdueCasesCount(): int
     {
         try {
-            $now = (new \DateTime())->format('Y-m-d');
+            $now = (new DateTime())->format('Y-m-d');
             $qb  = $this->db->getQueryBuilder();
             $qb->select($qb->func()->count('o.id', 'cnt'))
                 ->from('openregister_objects', 'o')
@@ -236,7 +237,7 @@ class MetricsController extends Controller
     private function getOverdueTasksCount(): int
     {
         try {
-            $now = (new \DateTime())->format('Y-m-d');
+            $now = (new DateTime())->format('Y-m-d');
             $qb  = $this->db->getQueryBuilder();
             $qb->select($qb->func()->count('o.id', 'cnt'))
                 ->from('openregister_objects', 'o')

@@ -30,6 +30,7 @@ use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
+use RuntimeException;
 
 /**
  * Controller for managing Procest application settings.
@@ -81,7 +82,7 @@ class SettingsController extends Controller
             return $this->objectService;
         }
 
-        throw new \RuntimeException('OpenRegister service is not available.');
+        throw new RuntimeException('OpenRegister service is not available.');
 
     }//end getObjectService()
 
@@ -99,7 +100,7 @@ class SettingsController extends Controller
             return $configurationService;
         }
 
-        throw new \RuntimeException('Configuration service is not available.');
+        throw new RuntimeException('Configuration service is not available.');
 
     }//end getConfigurationService()
 

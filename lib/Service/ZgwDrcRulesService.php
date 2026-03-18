@@ -66,6 +66,8 @@ namespace OCA\Procest\Service;
  * DRC (Documenten API) business rule validation and enrichment.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class ZgwDrcRulesService extends ZgwRulesBase
 {
@@ -134,7 +136,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
             $body['identificatie'] = $this->generateIdentificatie(prefix: 'DOCUMENT');
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesEnkelvoudiginformatieobjectenCreate()
 
     /**
@@ -159,7 +161,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
             return $lockError;
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesEnkelvoudiginformatieobjectenUpdate()
 
     /**
@@ -184,7 +186,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
             return $lockError;
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesEnkelvoudiginformatieobjectenPatch()
 
     /**
@@ -204,12 +206,12 @@ class ZgwDrcRulesService extends ZgwRulesBase
         ?array $existingObject=null
     ): array {
         if ($existingObject === null || $this->objectService === null) {
-            return $this->ok(body: $body);
+            return $this->isValid(body: $body);
         }
 
         $existingId = $existingObject['id'] ?? ($existingObject['@self']['id'] ?? null);
         if ($existingId === null) {
-            return $this->ok(body: $body);
+            return $this->isValid(body: $body);
         }
 
         // Drc-007: Check for ObjectInformatieObject relations.
@@ -239,7 +241,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
             }
         }//end if
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesEnkelvoudiginformatieobjectenDestroy()
 
     /**
@@ -300,7 +302,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
             }
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesObjectinformatieobjectenCreate()
 
     /**
@@ -763,9 +765,9 @@ class ZgwDrcRulesService extends ZgwRulesBase
             return $body;
         }
 
-        $va = $iotData['confidentiality'] ?? $iotData['confidentialityDesignation'] ?? $iotData['vertrouwelijkheidaanduiding'] ?? '';
-        if ($va !== '') {
-            $body['vertrouwelijkheidaanduiding'] = $va;
+        $val = $iotData['confidentiality'] ?? $iotData['confidentialityDesignation'] ?? $iotData['vertrouwelijkheidaanduiding'] ?? '';
+        if ($val !== '') {
+            $body['vertrouwelijkheidaanduiding'] = $val;
         }
 
         return $body;

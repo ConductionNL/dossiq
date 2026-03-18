@@ -58,6 +58,9 @@ namespace OCA\Procest\Service;
  * ZRC (Zaken API) business rule validation and enrichment.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  */
 class ZgwZrcRulesService extends ZgwRulesBase
 {
@@ -121,7 +124,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $body['archiefstatus'] = 'nog_te_archiveren';
         }
 
-        return $this->validateZaakFields(result: $this->ok(body: $body), existingObject: null, isPatch: false);
+        return $this->validateZaakFields(result: $this->isValid(body: $body), existingObject: null, isPatch: false);
     }//end rulesZakenCreate()
 
     /**
@@ -161,7 +164,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         return $this->validateZaakFields(
-            result: $this->ok(body: $body),
+            result: $this->isValid(body: $body),
             existingObject: $existingObject,
             isPatch: false
         );
@@ -198,7 +201,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         return $this->validateZaakFields(
-            result: $this->ok(body: $body),
+            result: $this->isValid(body: $body),
             existingObject: $existingObject,
             isPatch: true
         );
@@ -234,7 +237,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             }
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesStatussenCreate()
 
     /**
@@ -267,7 +270,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             }
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesResultatenCreate()
 
     /**
@@ -300,7 +303,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             }
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesRollenCreate()
 
     /**
@@ -341,7 +344,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         $body['aardRelatieWeergave'] = 'Hoort bij, omgekeerd: kent';
         $body['registratiedatum']    = date('Y-m-d');
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesZaakinformatieobjectenCreate()
 
     /**
@@ -359,7 +362,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      */
     public function rulesZaakinformatieobjectenUpdate(array $body, ?array $existingObject=null): array
     {
-        $result = $this->checkZioImmutability(result: $this->ok(body: $body), existingObject: $existingObject);
+        $result = $this->checkZioImmutability(result: $this->isValid(body: $body), existingObject: $existingObject);
         if ($result['valid'] === false) {
             return $result;
         }
@@ -367,7 +370,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         $body = $result['enrichedBody'];
         $body['aardRelatieWeergave'] = 'Hoort bij, omgekeerd: kent';
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesZaakinformatieobjectenUpdate()
 
     /**
@@ -415,7 +418,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             }
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesZaakeigenschappenCreate()
 
     /**
@@ -443,9 +446,9 @@ class ZgwZrcRulesService extends ZgwRulesBase
             return $body;
         }
 
-        $va = $ztData['confidentiality'] ?? ($ztData['confidentialityDesignation'] ?? ($ztData['vertrouwelijkheidaanduiding'] ?? ''));
-        if ($va !== '') {
-            $body['vertrouwelijkheidaanduiding'] = $va;
+        $val = $ztData['confidentiality'] ?? ($ztData['confidentialityDesignation'] ?? ($ztData['vertrouwelijkheidaanduiding'] ?? ''));
+        if ($val !== '') {
+            $body['vertrouwelijkheidaanduiding'] = $val;
         }
 
         return $body;

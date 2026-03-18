@@ -39,6 +39,8 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassLength)
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
 class ZgwService
@@ -95,14 +97,14 @@ class ZgwService
      *
      * @var object|null
      */
-    private $openRegisterMappingService = null;
+    private $mappingService = null;
 
     /**
      * The OpenRegister ObjectService (loaded dynamically).
      *
      * @var object|null
      */
-    private $openRegisterObjectService = null;
+    private $objectService = null;
 
     /**
      * Cached request body to avoid re-reading php://input.
@@ -148,7 +150,7 @@ class ZgwService
         $container = \OC::$server;
 
         try {
-            $this->openRegisterMappingService = $container->get(
+            $this->mappingService = $container->get(
                 'OCA\OpenRegister\Service\MappingService'
             );
         } catch (\Throwable $e) {
@@ -159,7 +161,7 @@ class ZgwService
         }
 
         try {
-            $this->openRegisterObjectService = $container->get(
+            $this->objectService = $container->get(
                 'OCA\OpenRegister\Service\ObjectService'
             );
         } catch (\Throwable $e) {
@@ -191,7 +193,7 @@ class ZgwService
      */
     public function getObjectService(): ?object
     {
-        return $this->openRegisterObjectService;
+        return $this->objectService;
     }//end getObjectService()
 
     /**
@@ -396,7 +398,7 @@ class ZgwService
             $objectData['_downloadUrl'] = $baseUrl.'/'.$objectData['_uuid'].'/download';
         }
 
-        $mapped = $this->openRegisterMappingService->executeMapping(
+        $mapped = $this->mappingService->executeMapping(
             mapping: $mapping,
             input: $objectData
         );
@@ -428,7 +430,7 @@ class ZgwService
         $body['_valueMappings'] = $mappingConfig['valueMapping'] ?? [];
         unset($body['_route'], $body['zgwApi'], $body['resource'], $body['uuid']);
 
-        $mapped = $this->openRegisterMappingService->executeMapping(
+        $mapped = $this->mappingService->executeMapping(
             mapping: $mapping,
             input: $body
         );
@@ -828,7 +830,7 @@ class ZgwService
      */
     public function handleIndex(IRequest $request, string $zgwApi, string $resource): JSONResponse
     {
-        if ($this->openRegisterObjectService === null) {
+        if ($this->objectService === null) {
             return $this->unavailableResponse();
         }
 
@@ -859,12 +861,12 @@ class ZgwService
                 ]
             );
 
-            $query  = $this->openRegisterObjectService->buildSearchQuery(
+            $query  = $this->objectService->buildSearchQuery(
                 requestParams: $searchParams,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $result = $this->openRegisterObjectService->searchObjectsPaginated(
+            $result = $this->objectService->searchObjectsPaginated(
                 query: $query,
                 _multitenancy: false
             );
@@ -932,7 +934,7 @@ class ZgwService
         bool $hasForceer=true,
         ?bool $parentZaaktypeDraft=null
     ): JSONResponse {
-        if ($this->openRegisterObjectService === null) {
+        if ($this->objectService === null) {
             return $this->unavailableResponse();
         }
 
@@ -949,7 +951,7 @@ class ZgwService
                 resource: $resource,
                 action: 'create',
                 body: $body,
-                objectService: $this->openRegisterObjectService,
+                objectService: $this->objectService,
                 mappingConfig: $mappingConfig,
                 parentZaaktypeDraft: $parentZaaktypeDraft,
                 zaakClosed: $zaakClosed,
@@ -988,7 +990,7 @@ class ZgwService
                 $englishData = array_merge($englishData, $directFields);
             }
 
-            $object = $this->openRegisterObjectService->saveObject(
+            $object = $this->objectService->saveObject(
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema'],
                 object: $englishData
@@ -1049,7 +1051,7 @@ class ZgwService
         string $resource,
         string $uuid
     ): JSONResponse {
-        if ($this->openRegisterObjectService === null) {
+        if ($this->objectService === null) {
             return $this->unavailableResponse();
         }
 
@@ -1059,7 +1061,7 @@ class ZgwService
         }
 
         try {
-            $object = $this->openRegisterObjectService->find(
+            $object = $this->objectService->find(
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema'],
                 id: $uuid
@@ -1125,7 +1127,7 @@ class ZgwService
         // into controller args, so a body "uuid" field can override the route's {uuid}.
         $uuid = $this->resolvePathUuid(request: $request, uuid: $uuid);
 
-        if ($this->openRegisterObjectService === null) {
+        if ($this->objectService === null) {
             return $this->unavailableResponse();
         }
 
@@ -1142,7 +1144,7 @@ class ZgwService
                 $action = 'update';
             }
 
-            $existingObj = $this->openRegisterObjectService->find(
+            $existingObj = $this->objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
@@ -1159,7 +1161,7 @@ class ZgwService
                 action: $action,
                 body: $body,
                 existingObject: $existingData,
-                objectService: $this->openRegisterObjectService,
+                objectService: $this->objectService,
                 mappingConfig: $mappingConfig,
                 parentZaaktypeDraft: $parentZtDraft,
                 zaakClosed: $zaakClosed,
@@ -1194,7 +1196,7 @@ class ZgwService
 
             // For partial updates (PATCH), merge with existing object data.
             if ($partial === true) {
-                $existing     = $this->openRegisterObjectService->find(
+                $existing     = $this->objectService->find(
                     $uuid,
                     register: $mappingConfig['sourceRegister'],
                     schema: $mappingConfig['sourceSchema']
@@ -1272,7 +1274,7 @@ class ZgwService
                 $englishData = array_merge($englishData, $directFields);
             }
 
-            $object = $this->openRegisterObjectService->saveObject(
+            $object = $this->objectService->saveObject(
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema'],
                 object: $englishData,
@@ -1336,7 +1338,7 @@ class ZgwService
         ?bool $zaakClosed=null,
         bool $hasForceer=true
     ): JSONResponse {
-        if ($this->openRegisterObjectService === null) {
+        if ($this->objectService === null) {
             return $this->unavailableResponse();
         }
 
@@ -1346,7 +1348,7 @@ class ZgwService
         }
 
         try {
-            $existingObj = $this->openRegisterObjectService->find(
+            $existingObj = $this->objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
@@ -1363,7 +1365,7 @@ class ZgwService
                 action: 'destroy',
                 body: [],
                 existingObject: $existingData,
-                objectService: $this->openRegisterObjectService,
+                objectService: $this->objectService,
                 mappingConfig: $mappingConfig,
                 parentZaaktypeDraft: $parentZtDraft,
                 zaakClosed: $zaakClosed,
@@ -1376,7 +1378,7 @@ class ZgwService
                 );
             }
 
-            $this->openRegisterObjectService->deleteObject(uuid: $uuid);
+            $this->objectService->deleteObject(uuid: $uuid);
 
             $baseUrl = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
             $this->publishNotification(
@@ -1423,9 +1425,9 @@ class ZgwService
 
         // Fetch real audit trail from OpenRegister.
         $entries = [];
-        if ($this->openRegisterObjectService !== null) {
+        if ($this->objectService !== null) {
             try {
-                $logs = $this->openRegisterObjectService->getLogs($uuid, [], false, false);
+                $logs = $this->objectService->getLogs($uuid, [], false, false);
                 foreach ($logs as $log) {
                     $entries[] = $this->mapAuditTrailToZgw(
                         log: $log,
@@ -1486,9 +1488,9 @@ class ZgwService
         ).'/'.$uuid;
 
         // Try to find the specific audit trail entry from OpenRegister.
-        if ($this->openRegisterObjectService !== null) {
+        if ($this->objectService !== null) {
             try {
-                $logs = $this->openRegisterObjectService->getLogs($uuid, [], false, false);
+                $logs = $this->objectService->getLogs($uuid, [], false, false);
                 foreach ($logs as $log) {
                     if (is_array($log) === true) {
                         $logData = $log;
@@ -1639,7 +1641,7 @@ class ZgwService
                 return null;
             }
 
-            $zaak = $this->openRegisterObjectService->find(
+            $zaak = $this->objectService->find(
                 $zaakUuid,
                 register: $zaakConfig['sourceRegister'],
                 schema: $zaakConfig['sourceSchema']
@@ -1714,7 +1716,7 @@ class ZgwService
                 return null;
             }
 
-            $zaak = $this->openRegisterObjectService->find(
+            $zaak = $this->objectService->find(
                 $zaakUuid,
                 register: $zaakConfig['sourceRegister'],
                 schema: $zaakConfig['sourceSchema']
@@ -1779,7 +1781,7 @@ class ZgwService
                 return null;
             }
 
-            $zaaktype = $this->openRegisterObjectService->find(
+            $zaaktype = $this->objectService->find(
                 $zaaktypeUuid,
                 register: $zaaktypeConfig['sourceRegister'],
                 schema: $zaaktypeConfig['sourceSchema']
@@ -1857,7 +1859,7 @@ class ZgwService
                 return null;
             }
 
-            $zaaktype = $this->openRegisterObjectService->find(
+            $zaaktype = $this->objectService->find(
                 $zaaktypeUuid,
                 register: $zaaktypeConfig['sourceRegister'],
                 schema: $zaaktypeConfig['sourceSchema']

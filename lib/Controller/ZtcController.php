@@ -609,6 +609,9 @@ class ZtcController extends Controller
      * @param string $uuid          The besluittype UUID.
      *
      * @return array The enriched response data.
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     private function enrichBesluittype(
         array $data,
@@ -693,6 +696,10 @@ class ZtcController extends Controller
      * @param string $uuid          The zaaktype UUID.
      *
      * @return array The enriched response data.
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
     private function enrichZaaktype(
         array $data,
