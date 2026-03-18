@@ -132,7 +132,7 @@ class ZtcController extends Controller
         }
 
         $data = $response->getData();
-        if (isset($data['results']) === false || is_array($data['results']) === false) {
+        if (is_array($data) === false || isset($data['results']) === false || is_array($data['results']) === false) {
             return $response;
         }
 

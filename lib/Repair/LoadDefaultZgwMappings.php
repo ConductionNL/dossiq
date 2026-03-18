@@ -1482,6 +1482,8 @@ class LoadDefaultZgwMappings implements IRepairStep
      * @param IOutput $output The output interface for progress reporting
      *
      * @return void
+     *
+     * @psalm-suppress UnusedParam
      */
     private function createDefaultApplicaties(IOutput $output): void
     {

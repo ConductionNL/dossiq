@@ -273,6 +273,8 @@ class ZgwBusinessRulesService
      * @param array|null $existingObject The existing object data
      *
      * @return array The validation result
+     *
+     * @psalm-suppress UnusedParam — $existingObject reserved for update validation rules
      */
     private function dispatchZtc(string $resource, string $action, array $body, ?array $existingObject): array
     {

@@ -31,6 +31,7 @@ use OCP\EventDispatcher\IEventListener;
  * When a user searches in Nextcloud's unified search, results for Procest schemas
  * (cases, tasks, etc.) will link directly to Procest's detail views.
  */
+/** @implements IEventListener<Event> */
 class DeepLinkRegistrationListener implements IEventListener
 {
     /**

@@ -545,7 +545,7 @@ class DrcController extends Controller
             // Delete stored files.
             if (isset($fileName) === true && $fileName !== null) {
                 try {
-                    $this->zgwService->getDocumentService()->deleteFile(uuid: $uuid, fileName: $fileName);
+                    $this->zgwService->getDocumentService()->deleteFiles(uuid: $uuid);
                 } catch (\Throwable $e) {
                     $this->zgwService->getLogger()->warning(
                         'DRC file cleanup failed: '.$e->getMessage(),

@@ -371,12 +371,12 @@ class BrcController extends Controller
             $zaakUrl = '';
             if (is_array($data) === true) {
                 $zaakUrl = $data['zaak'] ?? '';
-            }
 
-            if ($zaakUrl !== '') {
-                $besluitUrl = $data['url'] ?? '';
-                if ($besluitUrl !== '') {
-                    $this->syncZaakBesluitToZrc(zaakUrl: $zaakUrl, besluitUrl: $besluitUrl);
+                if ($zaakUrl !== '') {
+                    $besluitUrl = $data['url'] ?? '';
+                    if ($besluitUrl !== '') {
+                        $this->syncZaakBesluitToZrc(zaakUrl: $zaakUrl, besluitUrl: $besluitUrl);
+                    }
                 }
             }
         }

@@ -95,11 +95,11 @@ class ZgwZrcRulesService extends ZgwRulesBase
         // Zrc-002: Check unique identificatie + bronorganisatie.
         if (empty($body['identificatie']) === false) {
             $error = $this->checkFieldUniqueness(
-                value: $body['identificatie'] ?? '',
-                englishField: 'identifier',
-                secondValue: $body['bronorganisatie'] ?? '',
-                secondEnglishField: 'sourceOrganisation',
-                dutchField: 'identificatie'
+                field1Value: $body['identificatie'] ?? '',
+                field1Search: 'identifier',
+                field2Value: $body['bronorganisatie'] ?? '',
+                field2Search: 'sourceOrganisation',
+                errorField: 'identificatie'
             );
             if ($error !== null) {
                 return $error;
@@ -464,6 +464,8 @@ class ZgwZrcRulesService extends ZgwRulesBase
      * @param string $zaaktypeField The zaaktype field containing allowed type UUIDs
      *
      * @return array|null Validation error, or null if valid
+     *
+     * @psalm-suppress UnusedParam — $zaaktypeField reserved for future filtering
      */
     private function validateSubResourceType(
         string $zaakUrl,
@@ -608,7 +610,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                 status: 400,
                 detail: $detail,
                 invalidParams: [$this->fieldError(
-                    field: 'nonFieldErrors',
+                    fieldName: 'nonFieldErrors',
                     code: 'missing-zaaktype-informatieobjecttype-relation',
                     reason: $detail
                 )
@@ -643,6 +645,8 @@ class ZgwZrcRulesService extends ZgwRulesBase
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+     *
+     * @psalm-suppress UnusedParam — $isPatch reserved for partial-update field validation
      */
     private function validateZaakFields(array $result, ?array $existingObject, bool $isPatch): array
     {
@@ -665,7 +669,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     detail: 'De communicatiekanaal URL is ongeldig.',
                     invalidParams: [
                         $this->fieldError(
-                            field: 'communicatiekanaal',
+                            fieldName: 'communicatiekanaal',
                             code: 'bad-url',
                             reason: 'De communicatiekanaal URL is ongeldig.'
                         ),
@@ -692,7 +696,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     detail: 'De communicatiekanaal URL is ongeldig.',
                     invalidParams: [
                         $this->fieldError(
-                            field: 'communicatiekanaal',
+                            fieldName: 'communicatiekanaal',
                             code: $code,
                             reason: 'De communicatiekanaal URL is ongeldig.'
                         ),
@@ -711,7 +715,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                         status: 400,
                         detail: 'relevanteAndereZaken bevat een ongeldige URL.',
                         invalidParams: [$this->fieldError(
-                            field: "relevanteAndereZaken.{$idx}.url",
+                            fieldName: "relevanteAndereZaken.{$idx}.url",
                             code: 'bad-url',
                             reason: 'De URL is ongeldig.'
                         )
@@ -727,7 +731,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $errors = [];
             if (($opschorting['indicatie'] ?? null) === null) {
                 $errors[] = $this->fieldError(
-                    field: 'opschorting.indicatie',
+                    fieldName: 'opschorting.indicatie',
                     code: 'required',
                     reason: 'Indicatie is vereist bij opschorting.'
                 );
@@ -735,7 +739,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
 
             if (($opschorting['reden'] ?? '') === '') {
                 $errors[] = $this->fieldError(
-                    field: 'opschorting.reden',
+                    fieldName: 'opschorting.reden',
                     code: 'required',
                     reason: 'Reden is vereist bij opschorting.'
                 );
@@ -756,7 +760,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $errors = [];
             if (($verlenging['reden'] ?? '') === '') {
                 $errors[] = $this->fieldError(
-                    field: 'verlenging.reden',
+                    fieldName: 'verlenging.reden',
                     code: 'required',
                     reason: 'Reden is vereist bij verlenging.'
                 );
@@ -764,7 +768,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
 
             if (($verlenging['duur'] ?? '') === '') {
                 $errors[] = $this->fieldError(
-                    field: 'verlenging.duur',
+                    fieldName: 'verlenging.duur',
                     code: 'required',
                     reason: 'Duur is vereist bij verlenging.'
                 );
@@ -801,7 +805,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                         status: 400,
                         detail: 'Een zaak kan niet zijn eigen hoofdzaak zijn.',
                         invalidParams: [$this->fieldError(
-                            field: 'hoofdzaak',
+                            fieldName: 'hoofdzaak',
                             code: 'self-forbidden',
                             reason: 'Een zaak kan niet zijn eigen hoofdzaak zijn.'
                         )
@@ -837,7 +841,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     status: 400,
                     detail: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.',
                     invalidParams: [$this->fieldError(
-                        field: 'laatsteBetaaldatum',
+                        fieldName: 'laatsteBetaaldatum',
                         code: 'betaling-nvt',
                         reason: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.'
                     )
@@ -866,7 +870,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     status: 400,
                     detail: 'archiefnominatie is vereist als archiefstatus niet "nog_te_archiveren" is.',
                     invalidParams: [$this->fieldError(
-                        field: 'archiefnominatie',
+                        fieldName: 'archiefnominatie',
                         code: 'archiefnominatie-not-set',
                         reason: 'Vereist.'
                     )
@@ -879,7 +883,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     status: 400,
                     detail: 'archiefactiedatum is vereist als archiefstatus niet "nog_te_archiveren" is.',
                     invalidParams: [$this->fieldError(
-                        field: 'archiefactiedatum',
+                        fieldName: 'archiefactiedatum',
                         code: 'archiefactiedatum-not-set',
                         reason: 'Vereist.'
                     )
@@ -921,7 +925,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                 status: 400,
                 detail: 'De hoofdzaak is ongeldig.',
                 invalidParams: [$this->fieldError(
-                    field: 'hoofdzaak',
+                    fieldName: 'hoofdzaak',
                     code: 'no_match',
                     reason: 'De hoofdzaak URL verwijst niet naar een bekende zaak.'
                 )
@@ -936,7 +940,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                 status: 400,
                 detail: 'Een deelzaak van een deelzaak is niet toegestaan.',
                 invalidParams: [$this->fieldError(
-                    field: 'hoofdzaak',
+                    fieldName: 'hoofdzaak',
                     code: 'deelzaak-als-hoofdzaak',
                     reason: 'De opgegeven hoofdzaak is zelf een deelzaak.'
                 )
@@ -1003,7 +1007,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     status: 400,
                     detail: 'productenOfDiensten bevat een ongeldige URL.',
                     invalidParams: [$this->fieldError(
-                        field: 'productenOfDiensten',
+                        fieldName: 'productenOfDiensten',
                         code: 'invalid-products-services',
                         reason: "'{$product}' is geen geldige URL."
                     )
@@ -1018,7 +1022,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     status: 400,
                     detail: 'productenOfDiensten bevat een waarde die niet in het zaaktype voorkomt.',
                     invalidParams: [$this->fieldError(
-                        field: 'productenOfDiensten',
+                        fieldName: 'productenOfDiensten',
                         code: 'invalid-products-services',
                         reason: "Product '{$product}' is niet toegestaan voor dit zaaktype."
                     )

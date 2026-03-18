@@ -369,6 +369,8 @@ class ZgwDrcRulesService extends ZgwRulesBase
      * @param array $body The request body
      *
      * @return array|null Validation error, or null if valid
+     *
+     * @psalm-suppress UnusedParam — $body reserved for future gebruiksrechten lookup
      */
     private function validateIndicatieGebruiksrechtTrue(array $body): ?array
     {

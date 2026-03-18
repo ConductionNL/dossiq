@@ -353,7 +353,7 @@ class ZrcController extends Controller
         // the existing object, so validation errors are returned even
         // when the OpenRegister find() call fails transiently.
         if ($resource === 'zaken') {
-            $preValidation = $this->preValidateZaakBody(partial: false);
+            $preValidation = $this->preValidateZaakBody(isPatch: false);
             if ($preValidation !== null) {
                 return $preValidation;
             }
@@ -409,7 +409,7 @@ class ZrcController extends Controller
         // the existing object, so validation errors are returned even
         // when the OpenRegister find() call fails transiently.
         if ($resource === 'zaken') {
-            $preValidation = $this->preValidateZaakBody(partial: true);
+            $preValidation = $this->preValidateZaakBody(isPatch: true);
             if ($preValidation !== null) {
                 return $preValidation;
             }
@@ -908,6 +908,8 @@ class ZrcController extends Controller
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
+     *
+     * @psalm-suppress UnusedParam — $isPatch reserved for partial-update validation
      */
     private function preValidateZaakBody(bool $isPatch): ?JSONResponse
     {
@@ -1700,7 +1702,7 @@ class ZrcController extends Controller
                 $zaakData = $this->deriveArchiefactiedatum(
                     zaakData: $zaakData,
                     zaakConfig: $zaakConfig,
-                    einddatum: $datumStatusGezet
+                    datumStatusGezet: $datumStatusGezet
                 );
 
                 $zaakData['id'] = $zaakMatches[1];
@@ -1852,6 +1854,8 @@ class ZrcController extends Controller
      * @param array $objectData The created resultaat object data
      *
      * @return void
+     *
+     * @psalm-suppress UnusedParam — $objectData reserved for future use in result processing
      */
     private function handleResultaatCreated(array $body, array $objectData): void
     {
@@ -1888,7 +1892,7 @@ class ZrcController extends Controller
             $zaakData = $this->deriveArchiefactiedatum(
                 zaakData: $zaakData,
                 zaakConfig: $zaakConfig,
-                einddatum: $einddatum
+                datumStatusGezet: $einddatum
             );
 
             // Type coercion for re-save (OpenRegister stores numeric strings as ints).
