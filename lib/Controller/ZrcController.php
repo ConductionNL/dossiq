@@ -703,7 +703,6 @@ class ZrcController extends Controller
         $response = $this->index(resource: 'zaken');
         $response->setStatus(Http::STATUS_CREATED);
 
-        // @var JSONResponse $response
         return $response;
     }//end zoek()
 
