@@ -1075,7 +1075,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         // Zrc-004: zaak is immutable.
         if (isset($body['zaak']) === true) {
             $existingZaak = $existingObject['case'] ?? ($existingObject['zaak'] ?? '');
-            $newZaakUuid = $this->extractUuid(url: $body['zaak']);
+            $newZaakUuid  = $this->extractUuid(url: $body['zaak']);
             if (is_string($existingZaak) === true) {
                 $existZaakId = $this->extractUuid(url: $existingZaak);
             } else {
@@ -1090,7 +1090,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         // Zrc-004: informatieobject is immutable.
         if (isset($body['informatieobject']) === true) {
             $existingIo = $existingObject['document'] ?? ($existingObject['informatieobject'] ?? '');
-            $newIoUuid = $this->extractUuid(url: $body['informatieobject']);
+            $newIoUuid  = $this->extractUuid(url: $body['informatieobject']);
             if (is_string($existingIo) === true) {
                 $existIoId = $this->extractUuid(url: $existingIo);
             } else {

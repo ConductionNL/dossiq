@@ -390,7 +390,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
                     // URL — let reverse mapping handle UUID extraction.
                 } else if ($uuid !== null) {
                     // Bare UUID — verify it exists; if not, treat as omschrijving.
-                    $existing = $this->findBySchemaKey(uuid: $uuid, schemaKey: 'document_type_schema');
+                    $existing        = $this->findBySchemaKey(uuid: $uuid, schemaKey: 'document_type_schema');
                     $needsNameLookup = ($existing === null);
                 }
 

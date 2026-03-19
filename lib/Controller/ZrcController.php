@@ -170,7 +170,7 @@ class ZrcController extends Controller
             $originalBody = $body;
 
             // ZRC-specific: resolve zaak closed from body before validation.
-            $zaakClosed = $this->zgwService->resolveZaakClosedFromBody($resource, $body);
+            $zaakClosed    = $this->zgwService->resolveZaakClosedFromBody($resource, $body);
             $hasGeforceerd = true;
             if ($zaakClosed === true) {
                 $hasGeforceerd = $this->zgwService->consumerHasScope(
@@ -235,7 +235,11 @@ class ZrcController extends Controller
                 schema: $mappingConfig['sourceSchema'],
                 object: $englishData
             );
-            $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
+            if (is_array($object) === true) {
+                $objectData = $object;
+            } else {
+                $objectData = $object->jsonSerialize();
+            }
 
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
 
@@ -644,7 +648,11 @@ class ZrcController extends Controller
             $outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
             $mapped          = [];
             foreach (($result['results'] ?? []) as $object) {
-                $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
+                if (is_array($object) === true) {
+                    $objectData = $object;
+                } else {
+                    $objectData = $object->jsonSerialize();
+                }
 
                 $mapped[] = $this->zgwService->applyOutboundMapping(
                     objectData: $objectData,
@@ -684,7 +692,7 @@ class ZrcController extends Controller
         $response = $this->index(resource: 'zaken');
         $response->setStatus(Http::STATUS_CREATED);
 
-        /** @var JSONResponse $response */
+        /* @var JSONResponse $response */
         return $response;
     }//end zoek()
 
@@ -766,7 +774,11 @@ class ZrcController extends Controller
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $zaakData = is_array($zaakObj) === true ? $zaakObj : $zaakObj->jsonSerialize();
+            if (is_array($zaakObj) === true) {
+                $zaakData = $zaakObj;
+            } else {
+                $zaakData = $zaakObj->jsonSerialize();
+            }
 
             $zaakVa    = $zaakData['confidentiality'] ?? ($zaakData['vertrouwelijkheidaanduiding'] ?? 'openbaar');
             $zaakLevel = self::VERTROUWELIJKHEID_LEVELS[$zaakVa] ?? 1;
@@ -778,8 +790,12 @@ class ZrcController extends Controller
                     continue;
                 }
 
-                $maxVa = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
-                $maxLevel = ($maxVa !== null) ? (self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99) : 99;
+                $maxVa    = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
+                if ($maxVa !== null) {
+                    $maxLevel = self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99;
+                } else {
+                    $maxLevel = 99;
+                }
 
                 if ($zaakLevel <= $maxLevel) {
                     return null;
@@ -843,8 +859,12 @@ class ZrcController extends Controller
             $zaakLevel = self::VERTROUWELIJKHEID_LEVELS[$zaakVa] ?? 1;
 
             foreach ($lezenAuths as $auth) {
-                $maxVa = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
-                $maxLevel = ($maxVa !== null) ? (self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99) : 99;
+                $maxVa    = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
+                if ($maxVa !== null) {
+                    $maxLevel = self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99;
+                } else {
+                    $maxLevel = 99;
+                }
 
                 if ($zaakLevel <= $maxLevel) {
                     $filtered[] = $zaak;
@@ -929,7 +949,11 @@ class ZrcController extends Controller
                     $segments      = array_filter(explode('/', trim($path, '/')));
                     $last          = end($segments);
                     $looksLikeUuid = preg_match('/[0-9a-f]{4,}-/i', (string) $last) === 1;
-                    $code = ($looksLikeUuid === true) ? 'bad-url' : 'invalid-resource';
+                    if ($looksLikeUuid === true) {
+                        $code = 'bad-url';
+                    } else {
+                        $code = 'invalid-resource';
+                    }
 
                     return new JSONResponse(
                         data: [
@@ -1002,7 +1026,11 @@ class ZrcController extends Controller
                 register: $ztConfig['sourceRegister'],
                 schema: $ztConfig['sourceSchema']
             );
-            $ztData = is_array($ztObj) === true ? $ztObj : $ztObj->jsonSerialize();
+            if (is_array($ztObj) === true) {
+                $ztData = $ztObj;
+            } else {
+                $ztData = $ztObj->jsonSerialize();
+            }
         } catch (\Throwable $e) {
             return null;
         }
@@ -1090,7 +1118,11 @@ class ZrcController extends Controller
                 $result = $objectService->searchObjectsPaginated(query: $query);
 
                 foreach (($result['results'] ?? []) as $obj) {
-                    $data = is_array($obj) === true ? $obj : $obj->jsonSerialize();
+                    if (is_array($obj) === true) {
+                        $data = $obj;
+                    } else {
+                        $data = $obj->jsonSerialize();
+                    }
 
                     $subUuid = $data['id'] ?? ($data['@self']['id'] ?? '');
                     if ($subUuid === '') {
@@ -1159,7 +1191,11 @@ class ZrcController extends Controller
                     register: $mappingConfig['sourceRegister'],
                     schema: $mappingConfig['sourceSchema']
                 );
-                $existingData = is_array($existingObj) === true ? $existingObj : $existingObj->jsonSerialize();
+                if (is_array($existingObj) === true) {
+                    $existingData = $existingObj;
+                } else {
+                    $existingData = $existingObj->jsonSerialize();
+                }
 
                 $zaakClosed    = $this->zgwService->resolveZaakClosed($resource, $existingData);
                 $hasGeforceerd = true;
@@ -1217,7 +1253,11 @@ class ZrcController extends Controller
                 register: $zaakConfig['sourceRegister'],
                 schema: $zaakConfig['sourceSchema']
             );
-            $zaakData = is_array($zaak) === true ? $zaak : $zaak->jsonSerialize();
+            if (is_array($zaak) === true) {
+                $zaakData = $zaak;
+            } else {
+                $zaakData = $zaak->jsonSerialize();
+            }
 
             $endDate = $zaakData['endDate'] ?? null;
 
@@ -1241,7 +1281,11 @@ class ZrcController extends Controller
                 register: $stConfig['sourceRegister'],
                 schema: $stConfig['sourceSchema']
             );
-            $stData = is_array($statustype) === true ? $statustype : $statustype->jsonSerialize();
+            if (is_array($statustype) === true) {
+                $stData = $statustype;
+            } else {
+                $stData = $statustype->jsonSerialize();
+            }
 
             $isEindstatus = $stData['isFinal'] ?? ($stData['isFinalStatus'] ?? ($stData['isEindstatus'] ?? false));
 
@@ -1309,7 +1353,11 @@ class ZrcController extends Controller
                 return null;
             }
 
-            $stData = is_array($statustype) === true ? $statustype : $statustype->jsonSerialize();
+            if (is_array($statustype) === true) {
+                $stData = $statustype;
+            } else {
+                $stData = $statustype->jsonSerialize();
+            }
 
             $isEindstatus = $stData['isFinal'] ?? ($stData['isFinalStatus'] ?? ($stData['isEindstatus'] ?? false));
 
@@ -1348,7 +1396,11 @@ class ZrcController extends Controller
                     schema: $zaakConfig['sourceSchema']
                 );
                 if ($zaakObj !== null) {
-                    $zaakData = is_array($zaakObj) === true ? $zaakObj : $zaakObj->jsonSerialize();
+                    if (is_array($zaakObj) === true) {
+                        $zaakData = $zaakObj;
+                    } else {
+                        $zaakData = $zaakObj->jsonSerialize();
+                    }
 
                     $endDate           = $zaakData['endDate'] ?? ($zaakData['einddatum'] ?? null);
                     $zaakAlreadyClosed = ($endDate !== null && $endDate !== '');
@@ -1375,7 +1427,11 @@ class ZrcController extends Controller
             $zioResult = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
 
             foreach (($zioResult['results'] ?? []) as $zioObj) {
-                $zioData = is_array($zioObj) === true ? $zioObj : $zioObj->jsonSerialize();
+                if (is_array($zioObj) === true) {
+                    $zioData = $zioObj;
+                } else {
+                    $zioData = $zioObj->jsonSerialize();
+                }
 
                 $docUuid = $zioData['document'] ?? ($zioData['informatieobject'] ?? '');
 
@@ -1388,7 +1444,11 @@ class ZrcController extends Controller
                     register: $docConfig['sourceRegister'],
                     schema: $docConfig['sourceSchema']
                 );
-                $docData = is_array($docObj) === true ? $docObj : $docObj->jsonSerialize();
+                if (is_array($docObj) === true) {
+                    $docData = $docObj;
+                } else {
+                    $docData = $docObj->jsonSerialize();
+                }
 
                 $indGr = $docData['usageRightsIndication'] ?? ($docData['usageRightsIndicator'] ?? ($docData['indicatieGebruiksrecht'] ?? null));
 
@@ -1461,7 +1521,11 @@ class ZrcController extends Controller
 
         $maxOrder = 0;
         foreach (($result['results'] ?? []) as $st) {
-            $stObj = is_array($st) === true ? $st : $st->jsonSerialize();
+            if (is_array($st) === true) {
+                $stObj = $st;
+            } else {
+                $stObj = $st->jsonSerialize();
+            }
 
             $order = (int) ($stObj['order'] ?? ($stObj['volgnummer'] ?? 0));
             if ($order > $maxOrder) {
@@ -1515,7 +1579,11 @@ class ZrcController extends Controller
                 return;
             }
 
-            $stData = is_array($statustype) === true ? $statustype : $statustype->jsonSerialize();
+            if (is_array($statustype) === true) {
+                $stData = $statustype;
+            } else {
+                $stData = $statustype->jsonSerialize();
+            }
 
             $isEindstatus = $stData['isFinal'] ?? ($stData['isFinalStatus'] ?? ($stData['isEindstatus'] ?? false));
 
@@ -1558,7 +1626,11 @@ class ZrcController extends Controller
 
                     $maxOrder = 0;
                     foreach (($result['results'] ?? []) as $st) {
-                        $stObj = is_array($st) === true ? $st : $st->jsonSerialize();
+                        if (is_array($st) === true) {
+                            $stObj = $st;
+                        } else {
+                            $stObj = $st->jsonSerialize();
+                        }
 
                         $order = (int) ($stObj['order'] ?? ($stObj['volgnummer'] ?? 0));
                         if ($order > $maxOrder) {
@@ -1595,7 +1667,11 @@ class ZrcController extends Controller
                 return;
             }
 
-            $zaakData = is_array($zaak) === true ? $zaak : $zaak->jsonSerialize();
+            if (is_array($zaak) === true) {
+                $zaakData = $zaak;
+            } else {
+                $zaakData = $zaak->jsonSerialize();
+            }
 
             // Strip metadata that confuses saveObject on re-save.
             unset($zaakData['@self'], $zaakData['organisation']);
@@ -1700,7 +1776,11 @@ class ZrcController extends Controller
             $result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
 
             foreach (($result['results'] ?? []) as $zioObj) {
-                $zioData = is_array($zioObj) === true ? $zioObj : $zioObj->jsonSerialize();
+                if (is_array($zioObj) === true) {
+                    $zioData = $zioObj;
+                } else {
+                    $zioData = $zioObj->jsonSerialize();
+                }
 
                 $docUuid = $zioData['document'] ?? ($zioData['informatieobject'] ?? '');
 
@@ -1715,7 +1795,11 @@ class ZrcController extends Controller
                         register: $docConfig['sourceRegister'],
                         schema: $docConfig['sourceSchema']
                     );
-                    $docData = is_array($docObj) === true ? $docObj : $docObj->jsonSerialize();
+                    if (is_array($docObj) === true) {
+                        $docData = $docObj;
+                    } else {
+                        $docData = $docObj->jsonSerialize();
+                    }
 
                     // Check if indicatieGebruiksrecht is already set.
                     $indGr = $docData['usageRightsIndication'] ?? ($docData['usageRightsIndicator'] ?? ($docData['indicatieGebruiksrecht'] ?? null));
@@ -1799,7 +1883,11 @@ class ZrcController extends Controller
                 register: $zaakConfig['sourceRegister'],
                 schema: $zaakConfig['sourceSchema']
             );
-            $zaakData = is_array($zaakObj) === true ? $zaakObj : $zaakObj->jsonSerialize();
+            if (is_array($zaakObj) === true) {
+                $zaakData = $zaakObj;
+            } else {
+                $zaakData = $zaakObj->jsonSerialize();
+            }
 
             // Use the zaak endDate as einddatum (may be null if zaak isn't closed yet).
             $einddatum = $zaakData['endDate'] ?? date('Y-m-d');
@@ -1878,8 +1966,12 @@ class ZrcController extends Controller
                 return $zaakData;
             }
 
-            $resultaat = $results[0];
-            $resultaatData = is_array($resultaat) === true ? $resultaat : $resultaat->jsonSerialize();
+            $resultaat     = $results[0];
+            if (is_array($resultaat) === true) {
+                $resultaatData = $resultaat;
+            } else {
+                $resultaatData = $resultaat->jsonSerialize();
+            }
 
             // Get the resultaattype to find brondatumArchiefprocedure.
             $resultaattypeId = $resultaatData['resultType'] ?? ($resultaatData['resultaattype'] ?? '');
@@ -1906,7 +1998,11 @@ class ZrcController extends Controller
                 return $zaakData;
             }
 
-            $rtData = is_array($rtObj) === true ? $rtObj : $rtObj->jsonSerialize();
+            if (is_array($rtObj) === true) {
+                $rtData = $rtObj;
+            } else {
+                $rtData = $rtObj->jsonSerialize();
+            }
 
             // Get brondatumArchiefprocedure.
             $brondatum = $rtData['sourceDateArchiveProcedure'] ?? ($rtData['brondatumArchiefprocedure'] ?? null);
@@ -2021,7 +2117,11 @@ class ZrcController extends Controller
                             register: $zaakConfig['sourceRegister'],
                             schema: $zaakConfig['sourceSchema']
                         );
-                        $mainData = is_array($mainZaak) === true ? $mainZaak : $mainZaak->jsonSerialize();
+                        if (is_array($mainZaak) === true) {
+                            $mainData = $mainZaak;
+                        } else {
+                            $mainData = $mainZaak->jsonSerialize();
+                        }
 
                         $mainEnd = $mainData['endDate'] ?? null;
                         if ($mainEnd !== null && $mainEnd !== '') {
@@ -2093,8 +2193,12 @@ class ZrcController extends Controller
 
             $results = $result['results'] ?? [];
             if (empty($results) === false) {
-                $propObj = $results[0];
-                $propData = is_array($propObj) === true ? $propObj : $propObj->jsonSerialize();
+                $propObj  = $results[0];
+                if (is_array($propObj) === true) {
+                    $propData = $propObj;
+                } else {
+                    $propData = $propObj->jsonSerialize();
+                }
 
                 $value = $propData['value'] ?? ($propData['waarde'] ?? '');
                 if ($value !== '' && strtotime($value) !== false) {
@@ -2145,7 +2249,11 @@ class ZrcController extends Controller
             // Find the latest (maximum) date among all besluiten for this zaak.
             $latestDate = null;
             foreach ($results as $besluitObj) {
-                $besluitData = is_array($besluitObj) === true ? $besluitObj : $besluitObj->jsonSerialize();
+                if (is_array($besluitObj) === true) {
+                    $besluitData = $besluitObj;
+                } else {
+                    $besluitData = $besluitObj->jsonSerialize();
+                }
 
                 $dateVal = $besluitData[$englishField] ?? ($besluitData[$dutchField] ?? '');
                 if ($dateVal !== '' && strtotime($dateVal) !== false) {
@@ -2284,7 +2392,11 @@ class ZrcController extends Controller
                 register: $zioConfig['sourceRegister'],
                 schema: $zioConfig['sourceSchema']
             );
-            $zioData = is_array($zioObj) === true ? $zioObj : $zioObj->jsonSerialize();
+            if (is_array($zioObj) === true) {
+                $zioData = $zioObj;
+            } else {
+                $zioData = $zioObj->jsonSerialize();
+            }
 
             // The ZIO stores 'case' as a UUID (format: uuid with $ref) and
             // 'document' as a full URL (format: uri). Build the zaak URL from
@@ -2341,7 +2453,11 @@ class ZrcController extends Controller
             $result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
 
             foreach (($result['results'] ?? []) as $oioObj) {
-                $oioData = is_array($oioObj) === true ? $oioObj : $oioObj->jsonSerialize();
+                if (is_array($oioObj) === true) {
+                    $oioData = $oioObj;
+                } else {
+                    $oioData = $oioObj->jsonSerialize();
+                }
 
                 $oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
                 if ($oioUuid !== '') {
