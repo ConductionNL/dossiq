@@ -1,156 +1,152 @@
 <template>
 	<div>
-		<div class="dashboard-page">
-			<!-- Header: title + actions -->
-			<div class="dashboard-header">
-				<h1 class="dashboard-title">
-					{{ t('procest', 'Dashboard') }}
-				</h1>
-				<div class="dashboard-actions">
-					<NcButton type="primary" @click="showCreateDialog = true">
-						<template #icon>
-							<Plus :size="20" />
-						</template>
-						{{ t('procest', 'New Case') }}
-					</NcButton>
-					<NcButton @click="showTaskDialog = true">
-						<template #icon>
-							<Plus :size="20" />
-						</template>
-						{{ t('procest', 'New Task') }}
-					</NcButton>
-					<NcButton :disabled="globalLoading"
-						:aria-label="t('procest', 'Refresh dashboard')"
-						@click="loadDashboardData">
-						<template #icon>
-							<Refresh :size="20" :class="{ 'icon-spinning': globalLoading }" />
-						</template>
-					</NcButton>
-				</div>
-			</div>
+		<CnDashboardPage
+			:title="t('procest', 'Dashboard')"
+			:widgets="widgetDefs"
+			:layout="dashboardLayout"
+			:loading="globalLoading && !hasData"
+			:empty-label="t('procest', 'No widgets configured')"
+			:unavailable-label="t('procest', 'Widget not available')"
+			@layout-change="onLayoutChange">
+			<!-- Header actions: quick action buttons -->
+			<template #header-actions>
+				<NcButton type="primary" @click="showCreateDialog = true">
+					<template #icon>
+						<Plus :size="20" />
+					</template>
+					{{ t('procest', 'New Case') }}
+				</NcButton>
+				<NcButton @click="showTaskDialog = true">
+					<template #icon>
+						<Plus :size="20" />
+					</template>
+					{{ t('procest', 'New Task') }}
+				</NcButton>
+				<NcButton :disabled="globalLoading"
+					:aria-label="t('procest', 'Refresh dashboard')"
+					@click="loadDashboardData">
+					<template #icon>
+						<Refresh :size="20" :class="{ 'icon-spinning': globalLoading }" />
+					</template>
+				</NcButton>
+			</template>
 
-			<!-- Loading state -->
-			<div v-if="globalLoading && !hasData" class="dashboard-loading">
-				{{ t('procest', 'Loading dashboard…') }}
-			</div>
+			<!-- Open Cases count widget -->
+			<template #widget-count-open-cases>
+				<CnStatsBlock
+					:title="t('procest', 'Open Cases')"
+					:count="kpis.openCount"
+					:count-label="t('procest', 'open')"
+					:icon="FolderOpen"
+					variant="primary"
+					horizontal
+					:route="{ name: 'Cases', query: { status: 'open' } }" />
+			</template>
 
-			<!-- Empty state -->
-			<div v-else-if="showEmptyState" class="welcome-message">
-				<p v-if="isAdmin">
-					{{ t('procest', 'Welcome to Procest! Get started by creating your first case type in Settings.') }}
-				</p>
-				<p v-else>
-					{{ t('procest', 'Welcome to Procest! Get started by creating your first case or task using the buttons above.') }}
-				</p>
-			</div>
+			<!-- Overdue count widget -->
+			<template #widget-count-overdue>
+				<CnStatsBlock
+					:title="t('procest', 'Overdue')"
+					:count="kpis.overdueCount"
+					:count-label="t('procest', 'overdue')"
+					:icon="AlertCircle"
+					:variant="kpis.overdueCount > 0 ? 'error' : 'default'"
+					horizontal
+					:route="{ name: 'Cases', query: { overdue: 'true' } }" />
+			</template>
 
-			<!-- Widget grid -->
-			<div v-else class="dashboard-grid">
-				<!-- KPI Cards widget -->
-				<div class="dashboard-widget dashboard-widget--full">
-					<div class="kpi-row">
-						<div class="kpi-card">
-							<div class="kpi-icon">
-								<FolderOpen :size="24" />
+			<!-- Completed This Month count widget -->
+			<template #widget-count-completed>
+				<CnStatsBlock
+					:title="t('procest', 'Completed This Month')"
+					:count="kpis.completedCount"
+					:count-label="t('procest', 'completed')"
+					:icon="CheckCircle"
+					variant="success"
+					horizontal
+					:route="{ name: 'Cases', query: { status: 'completed' } }" />
+			</template>
+
+			<!-- My Tasks count widget -->
+			<template #widget-count-my-tasks>
+				<CnStatsBlock
+					:title="t('procest', 'My Tasks')"
+					:count="kpis.taskCount"
+					:count-label="t('procest', 'tasks')"
+					:icon="ClipboardCheckOutline"
+					variant="primary"
+					horizontal
+					:route="{ name: 'Tasks' }" />
+			</template>
+
+			<!-- Cases by Status widget -->
+			<template #widget-cases-by-status>
+				<div class="status-widget-content">
+					<div v-if="statusData.length === 0" class="chart-empty">
+						{{ t('procest', 'No open cases') }}
+					</div>
+					<div v-else class="status-chart">
+						<div
+							v-for="(item, index) in statusData"
+							:key="item.name"
+							class="status-bar-row">
+							<span class="status-bar-label">{{ item.name }}</span>
+							<div class="status-bar-track">
+								<div
+									class="status-bar-fill"
+									:style="{ width: barWidth(item.count), background: barColor(index) }" />
 							</div>
-							<div class="kpi-content">
-								<span class="kpi-value">{{ kpis.openCount }}</span>
-								<span class="kpi-label">{{ t('procest', 'Open Cases') }}</span>
-							</div>
-						</div>
-						<div class="kpi-card" :class="{ 'kpi-card--warning': kpis.overdueCount > 0 }">
-							<div class="kpi-icon" :class="{ 'kpi-icon--warning': kpis.overdueCount > 0 }">
-								<AlertCircle :size="24" />
-							</div>
-							<div class="kpi-content">
-								<span class="kpi-value">{{ kpis.overdueCount }}</span>
-								<span class="kpi-label">{{ t('procest', 'Overdue') }}</span>
-							</div>
-						</div>
-						<div class="kpi-card">
-							<div class="kpi-icon kpi-icon--success">
-								<CheckCircle :size="24" />
-							</div>
-							<div class="kpi-content">
-								<span class="kpi-value">{{ kpis.completedCount }}</span>
-								<span class="kpi-label">{{ t('procest', 'Completed This Month') }}</span>
-							</div>
-						</div>
-						<div class="kpi-card">
-							<div class="kpi-icon">
-								<ClipboardCheckOutline :size="24" />
-							</div>
-							<div class="kpi-content">
-								<span class="kpi-value">{{ kpis.taskCount }}</span>
-								<span class="kpi-label">{{ t('procest', 'My Tasks') }}</span>
-							</div>
+							<span class="status-bar-count">{{ item.count }}</span>
 						</div>
 					</div>
 				</div>
+			</template>
 
-				<!-- Cases by Status widget -->
-				<div class="dashboard-widget">
-					<h3 class="dashboard-widget__title">
-						{{ t('procest', 'Cases by Status') }}
-					</h3>
-					<div class="status-widget-content">
-						<div v-if="statusData.length === 0" class="chart-empty">
-							{{ t('procest', 'No open cases') }}
+			<!-- My Work widget -->
+			<template #widget-my-work>
+				<div class="my-work-widget-content">
+					<div v-if="myWorkItems.length === 0" class="chart-empty">
+						{{ t('procest', 'No items assigned to you') }}
+					</div>
+					<div v-else class="my-work-list">
+						<div
+							v-for="item in myWorkItems"
+							:key="`${item.type}-${item.id}`"
+							class="my-work-item"
+							:class="{ 'my-work-item--overdue': item.isOverdue }"
+							@click="onWorkItemClick(item.type, item.id)">
+							<span class="entity-badge" :class="'badge--' + item.type">
+								{{ item.type === 'case' ? 'CASE' : 'TASK' }}
+							</span>
+							<span class="my-work-title">{{ item.title }}</span>
+							<span class="my-work-stage">{{ item.reference }}</span>
+							<span v-if="item.daysText" class="my-work-due" :class="{ overdue: item.isOverdue }">
+								{{ item.daysText }}
+							</span>
 						</div>
-						<div v-else class="status-chart">
-							<div
-								v-for="(item, index) in statusData"
-								:key="item.name"
-								class="status-bar-row">
-								<span class="status-bar-label">{{ item.name }}</span>
-								<div class="status-bar-track">
-									<div
-										class="status-bar-fill"
-										:style="{ width: barWidth(item.count), background: barColor(index) }" />
-								</div>
-								<span class="status-bar-count">{{ item.count }}</span>
-							</div>
-						</div>
+						<NcButton
+							v-if="myWorkItems.length >= 5"
+							type="tertiary"
+							class="view-all-link"
+							@click="$router.push({ name: 'MyWork' })">
+							{{ t('procest', 'View all my work') }}
+						</NcButton>
 					</div>
 				</div>
+			</template>
 
-				<!-- My Work widget -->
-				<div class="dashboard-widget">
-					<h3 class="dashboard-widget__title">
-						{{ t('procest', 'My Work') }}
-					</h3>
-					<div class="my-work-widget-content">
-						<div v-if="myWorkItems.length === 0" class="chart-empty">
-							{{ t('procest', 'No items assigned to you') }}
-						</div>
-						<div v-else class="my-work-list">
-							<div
-								v-for="item in myWorkItems"
-								:key="`${item.type}-${item.id}`"
-								class="my-work-item"
-								:class="{ 'my-work-item--overdue': item.isOverdue }"
-								@click="onWorkItemClick(item.type, item.id)">
-								<span class="entity-badge" :class="'badge--' + item.type">
-									{{ item.type === 'case' ? 'CASE' : 'TASK' }}
-								</span>
-								<span class="my-work-title">{{ item.title }}</span>
-								<span class="my-work-stage">{{ item.reference }}</span>
-								<span v-if="item.daysText" class="my-work-due" :class="{ overdue: item.isOverdue }">
-									{{ item.daysText }}
-								</span>
-							</div>
-							<NcButton
-								v-if="myWorkItems.length >= 5"
-								type="tertiary"
-								class="view-all-link"
-								@click="$router.push({ name: 'MyWork' })">
-								{{ t('procest', 'View all my work') }}
-							</NcButton>
-						</div>
-					</div>
+			<!-- Empty state override with welcome message -->
+			<template #empty>
+				<div v-if="showEmptyState" class="welcome-message">
+					<p v-if="isAdmin">
+						{{ t('procest', 'Welcome to Procest! Get started by creating your first case type in Settings.') }}
+					</p>
+					<p v-else>
+						{{ t('procest', 'Welcome to Procest! Get started by creating your first case or task using the buttons above.') }}
+					</p>
 				</div>
-			</div>
-		</div>
+			</template>
+		</CnDashboardPage>
 
 		<!-- Error display -->
 		<div v-if="error" class="dashboard-error">
@@ -176,6 +172,7 @@
 
 <script>
 import { NcButton } from '@nextcloud/vue'
+import { CnDashboardPage, CnStatsBlock } from '@conduction/nextcloud-vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
 import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'
@@ -183,7 +180,6 @@ import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
 import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
 import { useObjectStore } from '../store/modules/object.js'
-import { getCurrentUserId } from '../utils/currentUser.js'
 import {
 	computeKpis,
 	aggregateByStatus,
@@ -201,22 +197,38 @@ const BAR_COLORS = [
 	'var(--color-text-maxcontrast)',
 ]
 
+/**
+ * Default dashboard layout — 4 count tiles across the top row (3 cols each),
+ * then cases-by-status and my-work share the second row.
+ */
+const DEFAULT_LAYOUT = [
+	{ id: 1, widgetId: 'count-open-cases', gridX: 0, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
+	{ id: 2, widgetId: 'count-overdue', gridX: 3, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
+	{ id: 3, widgetId: 'count-completed', gridX: 6, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
+	{ id: 4, widgetId: 'count-my-tasks', gridX: 9, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
+	{ id: 5, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
+	{ id: 6, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
+]
+
 export default {
 	name: 'Dashboard',
 	components: {
 		NcButton,
+		CnDashboardPage,
+		CnStatsBlock,
 		Plus,
 		Refresh,
-		FolderOpen,
-		AlertCircle,
-		CheckCircle,
-		ClipboardCheckOutline,
 		CaseCreateDialog,
 		TaskCreateDialog,
 	},
 	emits: ['navigate'],
 	data() {
 		return {
+			// Icon components for CnStatsBlock :icon prop
+			FolderOpen,
+			AlertCircle,
+			CheckCircle,
+			ClipboardCheckOutline,
 			showCreateDialog: false,
 			showTaskDialog: false,
 			openCases: [],
@@ -230,6 +242,7 @@ export default {
 			globalLoading: false,
 			error: null,
 			refreshTimer: null,
+			dashboardLayout: [...DEFAULT_LAYOUT],
 		}
 	},
 	computed: {
@@ -251,6 +264,16 @@ export default {
 				&& this.caseTypes.length === 0
 				&& !this.error
 		},
+		widgetDefs() {
+			return [
+				{ id: 'count-open-cases', title: t('procest', 'Open Cases'), type: 'custom' },
+				{ id: 'count-overdue', title: t('procest', 'Overdue'), type: 'custom' },
+				{ id: 'count-completed', title: t('procest', 'Completed This Month'), type: 'custom' },
+				{ id: 'count-my-tasks', title: t('procest', 'My Tasks'), type: 'custom' },
+				{ id: 'cases-by-status', title: t('procest', 'Cases by Status'), type: 'custom' },
+				{ id: 'my-work', title: t('procest', 'My Work'), type: 'custom' },
+			]
+		},
 	},
 	async mounted() {
 		await this.loadDashboardData()
@@ -269,7 +292,7 @@ export default {
 			this.globalLoading = true
 			this.error = null
 
-			const currentUser = getCurrentUserId()
+			const currentUser = OC?.currentUser || ''
 			const today = new Date()
 			const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10)
 
@@ -320,6 +343,10 @@ export default {
 			}
 		},
 
+		onLayoutChange(newLayout) {
+			this.dashboardLayout = newLayout
+		},
+
 		barWidth(count) {
 			const max = Math.max(1, ...this.statusData.map(s => s.count))
 			const pct = (count / max) * 100
@@ -352,141 +379,6 @@ export default {
 </script>
 
 <style scoped>
-/* Dashboard layout */
-.dashboard-page {
-	padding: 16px;
-}
-
-.dashboard-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	flex-wrap: wrap;
-	gap: 12px;
-	margin-bottom: 20px;
-}
-
-.dashboard-title {
-	font-size: 24px;
-	font-weight: 700;
-	margin: 0;
-}
-
-.dashboard-actions {
-	display: flex;
-	gap: 8px;
-}
-
-.dashboard-loading {
-	padding: 40px;
-	text-align: center;
-	color: var(--color-text-maxcontrast);
-}
-
-.dashboard-grid {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	grid-template-rows: auto auto;
-	gap: 16px;
-}
-
-.dashboard-widget {
-	background: var(--color-main-background);
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large);
-	overflow: hidden;
-}
-
-.dashboard-widget--full {
-	grid-column: 1 / -1;
-}
-
-.dashboard-widget__title {
-	font-size: 15px;
-	margin: 0;
-	padding: 12px 16px;
-	border-bottom: 1px solid var(--color-border);
-}
-
-.dashboard-widget--full .dashboard-widget__title {
-	display: none;
-}
-
-@media (max-width: 900px) {
-	.dashboard-grid {
-		grid-template-columns: 1fr;
-	}
-}
-
-/* KPI Cards */
-.kpi-row {
-	display: grid;
-	grid-template-columns: repeat(4, 1fr);
-	gap: 16px;
-	padding: 8px;
-	height: 100%;
-	align-content: center;
-}
-
-@media (max-width: 900px) {
-	.kpi-row {
-		grid-template-columns: repeat(2, 1fr);
-	}
-}
-
-.kpi-card {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	padding: 12px 16px;
-	background: var(--color-main-background);
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large);
-}
-
-.kpi-card--warning {
-	border-color: var(--color-warning);
-	background: var(--color-warning-hover, rgba(233, 163, 0, 0.05));
-}
-
-.kpi-icon {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 44px;
-	height: 44px;
-	border-radius: 50%;
-	background: var(--color-primary-element-light, rgba(0, 130, 201, 0.1));
-	color: var(--color-primary-element);
-	flex-shrink: 0;
-}
-
-.kpi-icon--success {
-	background: rgba(70, 186, 97, 0.1);
-	color: #46ba61;
-}
-
-.kpi-icon--warning {
-	background: rgba(233, 50, 45, 0.1);
-	color: var(--color-error);
-}
-
-.kpi-content {
-	display: flex;
-	flex-direction: column;
-}
-
-.kpi-value {
-	font-size: 24px;
-	font-weight: 700;
-	line-height: 1.2;
-}
-
-.kpi-label {
-	font-size: 13px;
-	color: var(--color-text-maxcontrast);
-}
-
 /* Status chart widget */
 .status-widget-content {
 	padding: 12px;

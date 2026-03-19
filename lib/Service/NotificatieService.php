@@ -155,11 +155,7 @@ class NotificatieService
         $client        = new Client(['timeout' => 10]);
 
         foreach ($subscriptions as $subscription) {
-            if (is_array($subscription) === true) {
-                $subData = $subscription;
-            } else {
-                $subData = $subscription->jsonSerialize();
-            }
+            $subData = is_array($subscription) === true ? $subscription : $subscription->jsonSerialize();
 
             $this->deliverToSubscription(
                 client: $client,
@@ -212,12 +208,12 @@ class NotificatieService
             }
 
             $client->post(
-                    $callbackUrl,
-                    [
-                        'json'    => $notification,
-                        'headers' => $headers,
-                    ]
-                    );
+                $callbackUrl,
+                [
+                    'json'    => $notification,
+                    'headers' => $headers,
+                ]
+            );
 
             $this->logger->info(
                 'Notification delivered',

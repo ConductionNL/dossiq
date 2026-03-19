@@ -131,3 +131,50 @@ The app navigation MUST show menu items for the primary entity types.
 - WHEN the navigation loads
 - THEN the menu MUST include at minimum "Dashboard", "Clients", and "Requests" items
 - AND clicking each item MUST navigate to the corresponding list view
+
+---
+
+### Current Implementation Status
+
+**Not implemented in the current Pipelinq app.** The Pipelinq app exists as a submodule at `pipelinq/` but is focused on lead/prospect/pipeline management rather than client/request management as described in this spec.
+
+**Current Pipelinq stores** (in `pipelinq/src/store/modules/`):
+- `object.js` -- generic object store (same pattern as Procest)
+- `settings.js` -- app settings
+- `leadSources.js` -- lead source configuration
+- `requestChannels.js` -- request channel configuration
+- `product.js` -- product management
+- `prospect.js` -- prospect/lead management
+
+**No client, request, or contact stores exist.** The Pipelinq register (`pipelinq/lib/Settings/pipelinq_register.json`) defines schemas for leads, prospects, and pipeline entities, not clients/requests/contacts as this spec describes.
+
+**The `client-management` register does not exist** -- neither in Pipelinq's register config nor as an OpenRegister register.
+
+**Repair step**: `pipelinq/lib/Repair/InitializeSettings.php` initializes the Pipelinq register but does not create a `client-management` register.
+
+**What would need to be built:**
+- New schemas for `client`, `request`, `contact` in the Pipelinq register config
+- Client list and detail views
+- Request list and detail views
+- Navigation items for Clients and Requests
+- Settings endpoint for client-management register/schema IDs
+
+### Standards & References
+
+- **ZGW APIs**: Requests (verzoeken) could map to the ZGW concept of "Verzoek" or pre-case intake.
+- **Common Ground**: Client/contact management aligns with the Klantinteracties API standard (VNG).
+- **Schema.org**: Clients map to `schema:Organization` or `schema:Person`, contacts to `schema:ContactPoint`.
+- **AVG/GDPR**: Client and contact personal data storage requires appropriate data protection measures.
+- **GEMMA**: Klantcontactcentrum (KCC) reference component for client interaction management.
+
+### Specificity Assessment
+
+- **Implementable as-is** for the basic CRUD requirements. The spec is clear about the entity model and view requirements.
+- **Missing details:**
+  - Schema definitions for `client`, `request`, and `contact` are not specified (what properties does each have?).
+  - How does a request transition to a Procest case? The spec mentions requests as "pre-state of a case" but does not define the conversion flow.
+  - What is the relationship between Pipelinq contacts and Nextcloud Contacts?
+- **Open questions:**
+  - Should the client-management register be separate from the main Pipelinq register, or should client/request/contact schemas be added to the existing Pipelinq register?
+  - How does client data relate to ZGW betrokkene (involved party) concepts?
+  - Is there a deduplication strategy for clients that appear in both Pipelinq and Procest?

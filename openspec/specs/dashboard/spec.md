@@ -324,3 +324,62 @@ The dashboard MUST follow the layout structure defined in the design reference (
 - **Accessibility**: All KPI cards MUST have appropriate ARIA labels. Charts MUST have text alternatives. The dashboard MUST meet WCAG AA standards.
 - **Localization**: All labels, messages, and date formatting MUST support English and Dutch localization.
 - **Caching**: Dashboard data MAY be cached client-side for up to 60 seconds to reduce API load, but MUST be refreshable on demand.
+
+### Current Implementation Status
+
+**Substantially implemented (MVP).** The dashboard is fully functional with KPI cards, status chart, My Work preview, and quick actions.
+
+**Implemented:**
+- Dashboard page (`src/views/Dashboard.vue`) using `CnDashboardPage` from `@conduction/nextcloud-vue` with configurable grid layout.
+- KPI cards row (4 cards): Open Cases (with count), Overdue (with warning styling when > 0), Completed This Month (count), My Tasks (count). Cards use material design icons (FolderOpen, AlertCircle, CheckCircle, ClipboardCheckOutline).
+- Cases by Status horizontal bar chart with proportional bar widths, status labels, counts, and color coding. Empty state: "No open cases".
+- My Work preview panel showing top 5 items (cases and tasks) with entity type badges ([CASE]/[TASK]), title, reference, deadline text, overdue highlighting. "View all my work" link navigates to MyWork route.
+- Quick actions: "+ New Case" button (primary) and "+ New Task" button in header area. Refresh button with spinning animation.
+- Case creation dialog (`CaseCreateDialog`) and Task creation dialog (`TaskCreateDialog`) integrated.
+- Dashboard data loading via `Promise.allSettled` for resilient parallel fetching: cases (limit 1000), caseTypes (limit 100), statusTypes (limit 500), tasks (filtered by current user, limit 100).
+- KPI computation (`src/utils/dashboardHelpers.js::computeKpis`) calculating open count, overdue count, completed this month count, task count.
+- Status aggregation (`src/utils/dashboardHelpers.js::aggregateByStatus`).
+- My Work items generation (`src/utils/dashboardHelpers.js::getMyWorkItems`).
+- Empty state with welcome message (different for admin vs regular user).
+- Error display with retry button.
+- Auto-refresh every 5 minutes (`setInterval`).
+- Loading state with `globalLoading` flag and `icon-spinning` animation.
+- Grid layout with DEFAULT_LAYOUT: 4 KPI tiles (3 cols each) in row 1, cases-by-status (6 cols) and my-work (6 cols) in row 2.
+- Navigation to case/task detail on work item click.
+- Three Nextcloud Dashboard widgets registered as PHP classes: `CasesOverviewWidget` (`lib/Dashboard/CasesOverviewWidget.php`), `MyTasksWidget` (`lib/Dashboard/MyTasksWidget.php`), `OverdueCasesWidget` (`lib/Dashboard/OverdueCasesWidget.php`) -- these are Nextcloud-native dashboard widgets separate from the in-app dashboard.
+- Widget entry points: `src/casesOverviewWidget.js`, `src/myTasksWidget.js`, `src/overdueCasesWidget.js`.
+- Widget Vue components: `src/views/widgets/CasesOverviewWidget.vue`, `src/views/widgets/MyTasksWidget.vue`, `src/views/widgets/OverdueCasesWidget.vue`.
+- Dashboard helper components: `src/views/dashboard/KpiCards.vue`, `src/views/dashboard/StatusChart.vue`, `src/views/dashboard/OverduePanel.vue`, `src/views/dashboard/MyWorkPreview.vue`, `src/views/dashboard/ActivityFeed.vue`.
+
+**Not yet implemented or partial:**
+- REQ-DASH-003: Cases by Type chart (V1).
+- REQ-DASH-004: Overdue Cases panel as separate panel in the two-column layout (overdue is shown as KPI card count but not as a detailed list panel with case details in the main dashboard -- the `OverduePanel.vue` component exists but may not be wired into the main dashboard layout).
+- REQ-DASH-006: Recent Activity feed (the `ActivityFeed.vue` component exists but is not visually present in the `Dashboard.vue` template -- no `#widget-activity` slot).
+- REQ-DASH-011: Average Processing Time KPI (V1) -- the `kpis` object has `avgDays` field but the KPI card for "Completed This Month" does not display the average.
+- KPI sub-labels (`+3 today`, `action needed`, `avg 18 days`, `2 due today`) are defined in the spec but not all are displayed in the current implementation.
+- Clickable KPI cards navigating to filtered views (e.g., clicking Overdue navigates to overdue-filtered case list).
+- RBAC scoping -- dashboard fetches all cases (limit 1000) without explicit RBAC filtering (relies on OpenRegister's built-in access control).
+- Layout responsiveness (single-column collapse on narrow viewports).
+
+### Standards & References
+
+- **WCAG AA**: KPI cards need ARIA labels, charts need text alternatives.
+- **Nextcloud Dashboard API**: Three IWidget implementations for Nextcloud-native dashboard integration.
+- **Nextcloud Activity API (`OCP\Activity\IManager`)**: Activity feed data source (mentioned in spec, `ActivityFeed.vue` component exists).
+- **GEMMA**: Dashboard follows zaakgericht werken management information patterns.
+
+### Specificity Assessment
+
+This spec is very detailed and mostly implementation-ready. The current implementation closely follows the spec.
+
+**Strengths:** Concrete KPI definitions with sub-labels, chart specifications, layout wireframe, empty state and error scenarios.
+
+**Missing/Ambiguous:**
+- The spec defines a two-column layout (left: charts + My Work; right: Overdue + Activity) but the implementation uses a grid layout with CnDashboardPage -- this architectural difference is not problematic but the Activity Feed and Overdue Panel are not yet wired in.
+- No specification of the configurable grid layout behavior (is the user able to rearrange widgets?).
+- No specification of the Nextcloud-native dashboard widgets (CasesOverviewWidget, MyTasksWidget, OverdueCasesWidget) -- these exist in the code but not in the spec.
+
+**Open questions:**
+1. Should the in-app dashboard and Nextcloud-native dashboard widgets share data/state?
+2. Should the auto-refresh interval (5 minutes) be configurable?
+3. How should the dashboard handle >1000 cases (current fetch limit)?

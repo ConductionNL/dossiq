@@ -4,17 +4,29 @@ import { translate as t, translatePlural as n, loadTranslations } from '@nextclo
 import pinia from './pinia.js'
 import router from './router/index.js'
 import App from './App.vue'
+import { initializeStores } from './store/store.js'
 
 // Library CSS — must be explicit import (webpack tree-shakes side-effect imports from aliased packages)
 import '@conduction/nextcloud-vue/css/index.css'
+
+// Global (unscoped) app styles
+import './assets/app.css'
 
 Vue.mixin({ methods: { t, n } })
 Vue.use(PiniaVuePlugin)
 
 loadTranslations('procest', () => {
-	new Vue({
+	// Create Vue instance to activate Pinia context, then initialize stores.
+	const app = new Vue({
 		pinia,
 		router,
 		render: h => h(App),
-	}).$mount('#content')
+	})
+
+	// Mount immediately so the App renders (NC32 needs #content to be taken over).
+	app.$mount('#content')
+
+	// Initialize stores in parallel — the useListView retry logic will wait
+	// for registerObjectType to complete.
+	initializeStores()
 })

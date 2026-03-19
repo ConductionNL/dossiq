@@ -72,8 +72,10 @@ export default {
 
 	setup() {
 		const sidebarState = inject('sidebarState', null)
+		const objectStore = useObjectStore()
 		return useListView('task', {
 			sidebarState,
+			objectStore,
 			defaultSort: { key: 'dueDate', order: 'asc' },
 		})
 	},

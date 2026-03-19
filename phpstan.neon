@@ -3,7 +3,6 @@ parameters:
     paths:
         - lib
     bootstrapFiles:
-        - vendor/autoload.php
         - phpstan-bootstrap.php
     excludePaths:
         - vendor
@@ -15,15 +14,19 @@ parameters:
         - '#Call to an undefined method OC::#'
         - '#Class OC not found#'
         - '#Access to static property \$server on an unknown class OC#'
-        # OCP (nextcloud/ocp has no composer autoload; bootstrap + scanDirectories may not resolve in all environments)
-        - '#extends unknown class OCP\\#'
-        - '#implements unknown interface OCP\\#'
-        - '#has invalid type OCP\\#'
-        - '#has unknown class OCP\\#'
-        - '#on an unknown class OCP\\#'
-        - '#Instantiated class OCP\\#'
-        - '#calls parent::__construct\(\) but .+ does not extend any class#'
-        # OpenRegister (runtime app dependency, not in composer)
-        - '#OCA\\OpenRegister\\#'
+        # OCA classes from other apps (OpenRegister) not available during static analysis
+        - '#unknown class OCA\\OpenRegister\\#'
+        - '#OCA\\OpenRegister\\[a-zA-Z\\]+.*not found#'
+        - '#on an unknown class OCA\\OpenRegister\\#'
+        - '#has invalid return type OCA\\OpenRegister\\#'
+        - '#Class OCA\\Procest\\Controller\\ZgwController not found#'
+        # GuzzleHttp is available at runtime via Nextcloud but not in composer require
+        - '#unknown class GuzzleHttp\\#'
+        - '#GuzzleHttp\\[a-zA-Z\\]+.*not found#'
+        - '#on an unknown class GuzzleHttp\\#'
+        - '#invalid type GuzzleHttp\\#'
+        - '#Caught class GuzzleHttp\\#'
+        # Dynamic HTTP status codes from business rule validation results
+        - '#Parameter \$statusCode of class OCP\\AppFramework\\Http\\JSONResponse constructor expects#'
         # Controller::$request from OCP\AppFramework\Controller
         - '#Access to an undefined property OCA\\Procest\\Controller\\SettingsController::\$request#'

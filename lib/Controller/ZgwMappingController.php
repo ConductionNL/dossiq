@@ -27,6 +27,7 @@ use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\ZgwMappingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 
@@ -42,6 +43,7 @@ class ZgwMappingController extends Controller
      * @param ZgwMappingService $zgwMappingService The ZGW mapping service
      * @param SettingsService   $settingsService   The settings service
      * @param LoggerInterface   $logger            The logger interface
+     * @param IL10N             $l10n              The localization service
      *
      * @return void
      */
@@ -50,6 +52,7 @@ class ZgwMappingController extends Controller
         private readonly ZgwMappingService $zgwMappingService,
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
+        private readonly IL10N $l10n,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -62,11 +65,11 @@ class ZgwMappingController extends Controller
     public function index(): JSONResponse
     {
         return new JSONResponse(
-                [
-                    'success'  => true,
-                    'mappings' => $this->zgwMappingService->listMappings(),
-                ]
-                );
+            [
+                'success'  => true,
+                'mappings' => $this->zgwMappingService->listMappings(),
+            ]
+        );
     }//end index()
 
     /**
@@ -82,19 +85,19 @@ class ZgwMappingController extends Controller
 
         if ($mapping === null) {
             return new JSONResponse(
-                    [
-                        'success' => false,
-                        'message' => "No mapping configured for {$resourceKey}",
-                    ]
-                    );
+                [
+                    'success' => false,
+                    'message' => $this->l10n->t('No mapping configured for %s', [$resourceKey]),
+                ]
+            );
         }
 
         return new JSONResponse(
-                [
-                    'success' => true,
-                    'mapping' => $mapping,
-                ]
-                );
+            [
+                'success' => true,
+                'mapping' => $mapping,
+            ]
+        );
     }//end show()
 
     /**
@@ -114,11 +117,11 @@ class ZgwMappingController extends Controller
         $this->zgwMappingService->saveMapping(resourceKey: $resourceKey, config: $params);
 
         return new JSONResponse(
-                [
-                    'success' => true,
-                    'mapping' => $this->zgwMappingService->getMapping($resourceKey),
-                ]
-                );
+            [
+                'success' => true,
+                'mapping' => $this->zgwMappingService->getMapping($resourceKey),
+            ]
+        );
     }//end update()
 
     /**
@@ -133,10 +136,10 @@ class ZgwMappingController extends Controller
         $this->zgwMappingService->deleteMapping($resourceKey);
 
         return new JSONResponse(
-                [
-                    'success' => true,
-                ]
-                );
+            [
+                'success' => true,
+            ]
+        );
     }//end destroy()
 
     /**
@@ -151,11 +154,11 @@ class ZgwMappingController extends Controller
         $registerId = $this->settingsService->getConfigValue(key: 'register', default: '');
         if ($registerId === '') {
             return new JSONResponse(
-                    [
-                        'success' => false,
-                        'message' => 'No Procest register configured',
-                    ]
-                    );
+                [
+                    'success' => false,
+                    'message' => $this->l10n->t('No Procest register configured'),
+                ]
+            );
         }
 
         $loader   = new LoadDefaultZgwMappings(
@@ -168,10 +171,10 @@ class ZgwMappingController extends Controller
         $this->zgwMappingService->resetToDefault(resourceKey: $resourceKey, defaults: $defaults);
 
         return new JSONResponse(
-                [
-                    'success' => true,
-                    'mapping' => $this->zgwMappingService->getMapping($resourceKey),
-                ]
-                );
+            [
+                'success' => true,
+                'mapping' => $this->zgwMappingService->getMapping($resourceKey),
+            ]
+        );
     }//end reset()
 }//end class

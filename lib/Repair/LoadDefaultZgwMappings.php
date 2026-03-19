@@ -106,6 +106,9 @@ class LoadDefaultZgwMappings implements IRepairStep
 
         $output->info("Loaded {$loaded} default ZGW mapping configurations.");
 
+        // Patch existing mappings that have known bugs (e.g., Twig renders false as "").
+        $this->patchExistingMappings(defaults: $defaults, output: $output);
+
         // Create default test applicaties via ConsumerMapper.
         $this->createDefaultApplicaties(output: $output);
 
@@ -117,6 +120,38 @@ class LoadDefaultZgwMappings implements IRepairStep
             ['loaded' => $loaded, 'total' => count(value: $defaults)]
         );
     }//end run()
+
+    /**
+     * Patch existing mappings that contain known bugs.
+     *
+     * Some Twig templates don't handle boolean false correctly (Twig renders
+     * false as empty string "", which nullable casts then turn into null).
+     * This method checks existing mappings and updates them if they contain
+     * the buggy template.
+     *
+     * @param array   $defaults The default mapping configurations
+     * @param IOutput $output   The repair output
+     *
+     * @return void
+     */
+    private function patchExistingMappings(array $defaults, IOutput $output): void
+    {
+        // Patch: enkelvoudiginformatieobject indicatieGebruiksrecht Twig template.
+        // Old: '{{ usageRightsIndication }}' renders false as "" → ?bool → null.
+        // New: uses is same as() to distinguish false from null.
+        $eioKey = 'enkelvoudiginformatieobject';
+        if ($this->zgwMappingService->hasMapping($eioKey) === true) {
+            $existing = $this->zgwMappingService->getMapping($eioKey);
+            $oldTpl   = '{{ usageRightsIndication }}';
+            $current  = $existing['propertyMapping']['indicatieGebruiksrecht'] ?? '';
+            if ($current === $oldTpl && isset($defaults[$eioKey]) === true) {
+                $existing['propertyMapping']['indicatieGebruiksrecht']
+                    = $defaults[$eioKey]['propertyMapping']['indicatieGebruiksrecht'];
+                $this->zgwMappingService->saveMapping(resourceKey: $eioKey, config: $existing);
+                $output->info('Patched enkelvoudiginformatieobject mapping: indicatieGebruiksrecht template.');
+            }
+        }
+    }//end patchExistingMappings()
 
     /**
      * Build a Twig URL-replacement template string.
@@ -278,6 +313,7 @@ class LoadDefaultZgwMappings implements IRepairStep
                 'url'                          => '{{ _baseUrl }}/{{ _uuid }}',
                 'uuid'                         => '{{ _uuid }}',
                 'identificatie'                => '{{ identifier }}',
+                'bronorganisatie'              => '{{ sourceOrganisation }}',
                 'omschrijving'                 => '{{ title }}',
                 'toelichting'                  => '{{ description }}',
                 'zaaktype'                     => $this->tplUrl(
@@ -292,13 +328,18 @@ class LoadDefaultZgwMappings implements IRepairStep
                 'uiterlijkeEinddatumAfdoening' => '{{ deadline }}',
                 'vertrouwelijkheidaanduiding'  => '{{ confidentiality }}',
                 'verantwoordelijkeOrganisatie' => '{{ assignee }}',
-                'archiefnominatie'            => '{{ archiveNomination }}',
-                'archiefactiedatum'           => '{{ archiveActionDate }}',
+                'archiefnominatie'             => '{{ archiveNomination }}',
+                'archiefactiedatum'            => '{{ archiveActionDate }}',
+                'archiefstatus'                => '{{ archiveStatus }}',
+                'betalingsindicatie'           => '{{ paymentIndication }}',
+                'laatsteBetaaldatum'           => '{{ lastPaymentDate }}',
+                'hoofdzaak'                    => '{% if parentCase %}{{ _baseUrl }}/{{ parentCase }}{% endif %}',
             ],
             'reverseMapping'        => [
                 'title'              => '{{ omschrijving }}',
                 'description'        => '{{ toelichting }}',
                 'identifier'         => '{{ identificatie }}',
+                'sourceOrganisation' => '{{ bronorganisatie }}',
                 'caseType'           => '{{ zaaktype | zgw_extract_uuid }}',
                 'startDate'          => '{{ startdatum }}',
                 'endDate'            => '{{ einddatum }}',
@@ -308,6 +349,10 @@ class LoadDefaultZgwMappings implements IRepairStep
                 'assignee'           => '{{ verantwoordelijkeOrganisatie }}',
                 'archiveNomination'  => '{{ archiefnominatie }}',
                 'archiveActionDate'  => '{{ archiefactiedatum }}',
+                'archiveStatus'      => '{{ archiefstatus }}',
+                'paymentIndication'  => '{{ betalingsindicatie }}',
+                'lastPaymentDate'    => '{{ laatsteBetaaldatum }}',
+                'parentCase'         => '{{ hoofdzaak | zgw_extract_uuid }}',
             ],
             'valueMapping'          => [
                 'confidentiality' => [
@@ -321,24 +366,55 @@ class LoadDefaultZgwMappings implements IRepairStep
                     'zeer_geheim'       => 'zeer_geheim',
                 ],
             ],
+            'nullableFields'        => [
+                'einddatum',
+                'einddatumGepland',
+                'uiterlijkeEinddatumAfdoening',
+                'archiefnominatie',
+                'archiefactiedatum',
+                'archiefstatus',
+                'betalingsindicatie',
+                'laatsteBetaaldatum',
+                'hoofdzaak',
+            ],
             'queryParameterMapping' => [
-                'zaaktype'        => [
+                'zaaktype'              => [
                     'field'       => 'caseType',
                     'extractUuid' => true,
                 ],
-                'identificatie'   => [
+                'identificatie'         => [
                     'field' => 'identifier',
                 ],
-                'startdatum'      => [
+                'bronorganisatie'       => [
+                    'field' => 'sourceOrganisation',
+                ],
+                'startdatum'            => [
                     'field' => 'startDate',
                 ],
-                'startdatum__gte' => [
+                'startdatum__gte'       => [
                     'field'    => 'startDate',
                     'operator' => 'gte',
                 ],
-                'startdatum__lte' => [
+                'startdatum__lte'       => [
                     'field'    => 'startDate',
                     'operator' => 'lte',
+                ],
+                'einddatum'             => [
+                    'field' => 'endDate',
+                ],
+                'einddatum__isnull'     => [
+                    'field'    => 'endDate',
+                    'operator' => 'isnull',
+                ],
+                'archiefnominatie'      => [
+                    'field' => 'archiveNomination',
+                ],
+                'archiefactiedatum__lt' => [
+                    'field'    => 'archiveActionDate',
+                    'operator' => 'lt',
+                ],
+                'archiefstatus'         => [
+                    'field' => 'archiveStatus',
                 ],
             ],
         ];
@@ -615,26 +691,30 @@ class LoadDefaultZgwMappings implements IRepairStep
             'sourceSchema'          => ($settings['result_type_schema'] ?? ''),
             'enabled'               => true,
             'propertyMapping'       => [
-                'url'                  => '{{ _baseUrl }}/{{ _uuid }}',
-                'uuid'                 => '{{ _uuid }}',
-                'omschrijving'         => '{{ name }}',
-                'omschrijvingGeneriek' => '{{ genericDescription }}',
-                'toelichting'          => '{{ description }}',
-                'zaaktype'             => $this->tplUrl(
+                'url'                       => '{{ _baseUrl }}/{{ _uuid }}',
+                'uuid'                      => '{{ _uuid }}',
+                'omschrijving'              => '{{ name }}',
+                'omschrijvingGeneriek'      => '{{ genericDescription }}',
+                'toelichting'               => '{{ description }}',
+                'zaaktype'                  => $this->tplUrl(
                     from: 'catalogi/resultaattypen',
                     to: 'catalogi/zaaktypen',
                     varName: 'caseType'
                 ),
-                'archiefnominatie'     => '{{ archivalAction }}',
-                'archiefactietermijn'  => '{{ archivalPeriod }}',
+                'archiefnominatie'          => '{{ archivalAction }}',
+                'archiefactietermijn'       => '{{ archivalPeriod }}',
+                'brondatumArchiefprocedure' => '{{ sourceDateArchiveProcedure | json_encode }}',
+                'selectielijstklasse'       => '{{ selectionListClass }}',
             ],
             'reverseMapping'        => [
-                'name'               => '{{ omschrijving }}',
-                'genericDescription' => '{{ omschrijvingGeneriek }}',
-                'description'        => '{{ toelichting }}',
-                'caseType'           => '{{ zaaktype | zgw_extract_uuid }}',
-                'archivalAction'     => '{{ archiefnominatie }}',
-                'archivalPeriod'     => '{{ archiefactietermijn }}',
+                'name'                       => '{{ omschrijving }}',
+                'genericDescription'         => '{{ omschrijvingGeneriek }}',
+                'description'                => '{{ toelichting }}',
+                'caseType'                   => '{{ zaaktype | zgw_extract_uuid }}',
+                'archivalAction'             => '{{ archiefnominatie }}',
+                'archivalPeriod'             => '{{ archiefactietermijn }}',
+                'sourceDateArchiveProcedure' => '{{ brondatumArchiefprocedure | json_encode }}',
+                'selectionListClass'         => '{{ selectielijstklasse }}',
             ],
             'valueMapping'          => [
                 'archivalAction' => [
@@ -643,9 +723,15 @@ class LoadDefaultZgwMappings implements IRepairStep
                     'blijvend_bewaren' => 'blijvend_bewaren',
                 ],
             ],
+            'cast'                  => [
+                'sourceDateArchiveProcedure' => 'jsonToArray',
+            ],
+            'reverseCast'           => [],
             'nullableFields'        => [
                 'archiefactietermijn',
                 'omschrijvingGeneriek',
+                'brondatumArchiefprocedure',
+                'selectielijstklasse',
             ],
             'queryParameterMapping' => [
                 'zaaktype' => [
@@ -909,13 +995,16 @@ class LoadDefaultZgwMappings implements IRepairStep
             ],
             'valueMapping'          => [],
             'queryParameterMapping' => [
-                'zaaktypen' => [
+                'zaaktypen'    => [
                     'field'       => 'caseType',
                     'extractUuid' => true,
                 ],
-                'catalogus' => [
+                'catalogus'    => [
                     'field'       => 'catalogus',
                     'extractUuid' => true,
+                ],
+                'omschrijving' => [
+                    'field' => 'name',
                 ],
             ],
         ];
@@ -1025,7 +1114,8 @@ class LoadDefaultZgwMappings implements IRepairStep
                 ),
                 'locked'                      => '{{ locked }}',
                 'registratiedatum'            => '{{ _created }}',
-                'indicatieGebruiksrecht'      => '{{ usageRightsIndication }}',
+                // phpcs:ignore Generic.Files.LineLength.MaxExceeded
+                'indicatieGebruiksrecht'      => '{{ usageRightsIndication is same as(true) ? "true" : (usageRightsIndication is same as(false) ? "false" : "") }}',
             ],
             'reverseMapping'        => [
                 'identifier'            => '{{ identificatie }}',
@@ -1392,6 +1482,8 @@ class LoadDefaultZgwMappings implements IRepairStep
      * @param IOutput $output The output interface for progress reporting
      *
      * @return void
+     *
+     * @psalm-suppress UnusedParam
      */
     private function createDefaultApplicaties(IOutput $output): void
     {
@@ -1406,9 +1498,19 @@ class LoadDefaultZgwMappings implements IRepairStep
         $defaults = $this->getDefaultApplicaties();
         $created  = 0;
 
+        $updated = 0;
+
         foreach ($defaults as $applicatie) {
             $existing = $consumerMapper->findAll(filters: ['name' => $applicatie['name']]);
             if (count(value: $existing) > 0) {
+                // Update existing consumer's authorization configuration
+                // to ensure new scopes are applied.
+                $consumer  = $existing[0];
+                $newConfig = $applicatie['authorizationConfiguration'] ?? [];
+                $consumer->setAuthorizationConfiguration($newConfig);
+                $consumer->setUpdated(new DateTime());
+                $consumerMapper->update($consumer);
+                $updated++;
                 continue;
             }
 
@@ -1418,7 +1520,7 @@ class LoadDefaultZgwMappings implements IRepairStep
             $created++;
         }
 
-        $output->info("Created {$created} default test applicaties.");
+        $output->info("Created {$created}, updated {$updated} default test applicaties.");
     }//end createDefaultApplicaties()
 
     /**
@@ -1456,6 +1558,13 @@ class LoadDefaultZgwMappings implements IRepairStep
                             'scopes'    => [
                                 'zaaktypen.lezen',
                             ],
+                        ],
+                        [
+                            'component'                      => 'zrc',
+                            'scopes'                         => [
+                                'zaken.lezen',
+                            ],
+                            'maxVertrouwelijkheidaanduiding' => 'openbaar',
                         ],
                     ],
                 ],

@@ -26,10 +26,13 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use DateInterval;
+use DateTime;
 use OCA\Procest\Service\ZgwService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 
 /**
@@ -48,10 +51,10 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.NPathComplexity)
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
+ * @SuppressWarnings(PHPMD.UnusedFormalParameter)
  */
 class ZrcController extends Controller
 {
-
     /**
      * The ZGW API group for this controller.
      *
@@ -81,13 +84,15 @@ class ZrcController extends Controller
      * @param string     $appName    The application name
      * @param IRequest   $request    The incoming request
      * @param ZgwService $zgwService The shared ZGW service
+     * @param IL10N      $l10n       The localization service
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly ZgwService $zgwService,
+        private readonly IL10N $l10n,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -108,9 +113,9 @@ class ZrcController extends Controller
     {
         $response = $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
 
-        // zrc-006a: Filter zaken results based on consumer's vertrouwelijkheidaanduiding.
+        // Zrc-006a: Filter zaken results based on consumer's vertrouwelijkheidaanduiding.
         if ($resource === 'zaken' && $response->getStatus() === Http::STATUS_OK) {
-            $response = $this->filterZakenByAuthorisation($response);
+            $response = $this->filterZakenByAuthorisation(response: $response);
         }
 
         return $response;
@@ -139,7 +144,7 @@ class ZrcController extends Controller
             return $authError;
         }
 
-        // zrc-006c: Check zaken.aanmaken scope for zaak creation.
+        // Zrc-006c: Check zaken.aanmaken scope for zaak creation.
         if ($resource === 'zaken') {
             $hasScope = $this->zgwService->consumerHasScope(
                 $this->request,
@@ -165,8 +170,15 @@ class ZrcController extends Controller
             $originalBody = $body;
 
             // ZRC-specific: resolve zaak closed from body before validation.
-            $zaakClosed    = $this->zgwService->resolveZaakClosedFromBody($resource, $body);
-            $hasGeforceerd = $zaakClosed === true ? $this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.geforceerd-bijwerken') : true;
+            $zaakClosed = $this->zgwService->resolveZaakClosedFromBody($resource, $body);
+            $hasGeforceerd = true;
+            if ($zaakClosed === true) {
+                $hasGeforceerd = $this->zgwService->consumerHasScope(
+                    $this->request,
+                    'zrc',
+                    'zaken.geforceerd-bijwerken'
+                );
+            }
 
             $ruleResult = $this->zgwService->getBusinessRulesService()->validate(
                 zgwApi: self::ZGW_API,
@@ -194,6 +206,7 @@ class ZrcController extends Controller
                 mappingConfig: $mappingConfig
             );
 
+            /** @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change */
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],
@@ -201,17 +214,40 @@ class ZrcController extends Controller
                 );
             }
 
-            $object     = $this->zgwService->getObjectService()->saveObject(
+            // Zrc-008c: Before saving a status, check if it would reopen a closed zaak
+            // and require the zaken.heropenen scope.
+            if ($resource === 'statussen') {
+                $reopenError = $this->checkReopenScope(body: $originalBody);
+                if ($reopenError !== null) {
+                    return $reopenError;
+                }
+
+                // Zrc-007q: Before adding an eindstatus, verify all linked IOs
+                // have indicatieGebruiksrecht set (not null).
+                $gebruiksrechtError = $this->checkIndicatieGebruiksrechtBeforeClose(body: $originalBody);
+                if ($gebruiksrechtError !== null) {
+                    return $gebruiksrechtError;
+                }
+            }
+
+            $object = $this->zgwService->getObjectService()->saveObject(
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema'],
                 object: $englishData
             );
-            $objectData = is_array($object) ? $object : $object->jsonSerialize();
+            $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
+
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
 
             // ZRC-specific: handle eindstatus / heropenen effect for statussen.
             if ($resource === 'statussen') {
-                $this->handleEindstatusEffect($originalBody, $objectData);
+                $this->handleEindstatusEffect(body: $originalBody, objectData: $objectData);
+            }
+
+            // Zrc-021: When a resultaat is created, derive archiefactiedatum
+            // and archiefnominatie on the parent zaak from the resultaattype.
+            if ($resource === 'resultaten') {
+                $this->handleResultaatCreated(body: $originalBody, objectData: $objectData);
             }
 
             $baseUrl         = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
@@ -223,15 +259,15 @@ class ZrcController extends Controller
                 baseUrl: $baseUrl
             );
 
-            // zrc-004a/zrc-005a: ZaakInformatieObject enrichment and OIO sync.
+            // Zrc-004a/zrc-005a: ZaakInformatieObject enrichment and OIO sync.
             if ($resource === 'zaakinformatieobjecten') {
-                // zrc-004a: Ensure aardRelatieWeergave and registratiedatum in response.
-                $mapped = $this->enrichZioResponse($mapped, $body);
+                // Zrc-004a: Ensure aardRelatieWeergave and registratiedatum in response.
+                $mapped = $this->enrichZioResponse(mapped: $mapped, body: $body);
 
-                // zrc-005a: Create ObjectInformatieObject in DRC.
+                // Zrc-005a: Create ObjectInformatieObject in DRC.
                 $zaakUrl = $originalBody['zaak'] ?? ($body['zaak'] ?? '');
                 $ioUrl   = $originalBody['informatieobject'] ?? ($body['informatieobject'] ?? '');
-                $this->syncCreateObjectInformatieObject($zaakUrl, $ioUrl);
+                $this->syncCreateObjectInformatieObject(zaakUrl: $zaakUrl, ioUrl: $ioUrl);
             }
 
             $this->zgwService->publishNotification(
@@ -271,14 +307,14 @@ class ZrcController extends Controller
      */
     public function show(string $resource, string $uuid): JSONResponse
     {
-        // zrc-006b: Check zaken.lezen scope and vertrouwelijkheidaanduiding.
+        // Zrc-006b: Check zaken.lezen scope and vertrouwelijkheidaanduiding.
         if ($resource === 'zaken') {
             $authError = $this->zgwService->validateJwtAuth($this->request);
             if ($authError !== null) {
                 return $authError;
             }
 
-            $scopeError = $this->checkZaakReadAccess($uuid);
+            $scopeError = $this->checkZaakReadAccess(uuid: $uuid);
             if ($scopeError !== null) {
                 return $scopeError;
             }
@@ -304,12 +340,25 @@ class ZrcController extends Controller
      */
     public function update(string $resource, string $uuid): JSONResponse
     {
+        // Resolve UUID from URL path — body "uuid" can override controller args.
+        $uuid = $this->zgwService->resolvePathUuid($this->request, $uuid);
+
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
         }
 
-        [$zaakClosed, $hasGeforceerd] = $this->resolveZaakClosedForExisting($resource, $uuid);
+        // Zrc-010/zrc-015: Pre-validate body fields that don't require
+        // the existing object, so validation errors are returned even
+        // when the OpenRegister find() call fails transiently.
+        if ($resource === 'zaken') {
+            $preValidation = $this->preValidateZaakBody(isPatch: false);
+            if ($preValidation !== null) {
+                return $preValidation;
+            }
+        }
+
+        [$zaakClosed, $hasGeforceerd] = $this->resolveZaakClosedForExisting(resource: $resource, uuid: $uuid);
 
         $response = $this->zgwService->handleUpdate(
             $this->request,
@@ -322,9 +371,9 @@ class ZrcController extends Controller
             $hasGeforceerd
         );
 
-        // zrc-004b: Enrich ZIO response with immutable aardRelatieWeergave.
+        // Zrc-004b: Enrich ZIO response with immutable aardRelatieWeergave.
         if ($resource === 'zaakinformatieobjecten' && $response->getStatus() === Http::STATUS_OK) {
-            $response = $this->enrichZioJsonResponse($response);
+            $response = $this->enrichZioJsonResponse(response: $response);
         }
 
         return $response;
@@ -347,12 +396,25 @@ class ZrcController extends Controller
      */
     public function patch(string $resource, string $uuid): JSONResponse
     {
+        // Resolve UUID from URL path — body "uuid" can override controller args.
+        $uuid = $this->zgwService->resolvePathUuid($this->request, $uuid);
+
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
         }
 
-        [$zaakClosed, $hasGeforceerd] = $this->resolveZaakClosedForExisting($resource, $uuid);
+        // Zrc-010/zrc-015: Pre-validate body fields that don't require
+        // the existing object, so validation errors are returned even
+        // when the OpenRegister find() call fails transiently.
+        if ($resource === 'zaken') {
+            $preValidation = $this->preValidateZaakBody(isPatch: true);
+            if ($preValidation !== null) {
+                return $preValidation;
+            }
+        }
+
+        [$zaakClosed, $hasGeforceerd] = $this->resolveZaakClosedForExisting(resource: $resource, uuid: $uuid);
 
         $response = $this->zgwService->handleUpdate(
             $this->request,
@@ -365,9 +427,9 @@ class ZrcController extends Controller
             $hasGeforceerd
         );
 
-        // zrc-004c: Enrich ZIO response with immutable aardRelatieWeergave.
+        // Zrc-004c: Enrich ZIO response with immutable aardRelatieWeergave.
         if ($resource === 'zaakinformatieobjecten' && $response->getStatus() === Http::STATUS_OK) {
-            $response = $this->enrichZioJsonResponse($response);
+            $response = $this->enrichZioJsonResponse(response: $response);
         }
 
         return $response;
@@ -396,18 +458,18 @@ class ZrcController extends Controller
             return $authError;
         }
 
-        // zrc-023: Cascade delete for zaken.
+        // Zrc-023: Cascade delete for zaken.
         if ($resource === 'zaken') {
-            return $this->destroyZaak($uuid);
+            return $this->destroyZaak(uuid: $uuid);
         }
 
-        // zrc-005b: Before deleting, capture ZIO data for OIO cleanup.
+        // Zrc-005b: Before deleting, capture ZIO data for OIO cleanup.
         $zioData = null;
         if ($resource === 'zaakinformatieobjecten') {
-            $zioData = $this->getZioDataForOioSync($uuid);
+            $zioData = $this->getZioDataForOioSync(uuid: $uuid);
         }
 
-        [$zaakClosed, $hasGeforceerd] = $this->resolveZaakClosedForExisting($resource, $uuid);
+        [$zaakClosed, $hasGeforceerd] = $this->resolveZaakClosedForExisting(resource: $resource, uuid: $uuid);
 
         $response = $this->zgwService->handleDestroy(
             $this->request,
@@ -419,14 +481,14 @@ class ZrcController extends Controller
             $hasGeforceerd
         );
 
-        // zrc-005b: If ZIO deletion succeeded, also delete the OIO in DRC.
+        // Zrc-005b: If ZIO deletion succeeded, also delete the OIO in DRC.
         if ($resource === 'zaakinformatieobjecten'
             && $response->getStatus() === Http::STATUS_NO_CONTENT
             && $zioData !== null
         ) {
             $this->syncDeleteObjectInformatieObject(
-                $zioData['zaakUrl'],
-                $zioData['ioUrl']
+                zaakUrl: $zioData['zaakUrl'],
+                ioUrl: $zioData['ioUrl']
             );
         }
 
@@ -582,8 +644,9 @@ class ZrcController extends Controller
             $outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
             $mapped          = [];
             foreach (($result['results'] ?? []) as $object) {
-                $objectData = is_array($object) ? $object : $object->jsonSerialize();
-                $mapped[]   = $this->zgwService->applyOutboundMapping(
+                $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
+
+                $mapped[] = $this->zgwService->applyOutboundMapping(
                     objectData: $objectData,
                     mapping: $outboundMapping,
                     mappingConfig: $mappingConfig,
@@ -621,6 +684,7 @@ class ZrcController extends Controller
         $response = $this->index(resource: 'zaken');
         $response->setStatus(Http::STATUS_CREATED);
 
+        /** @var JSONResponse $response */
         return $response;
     }//end zoek()
 
@@ -697,27 +761,25 @@ class ZrcController extends Controller
                 return null;
             }
 
-            $zaakObj  = $this->zgwService->getObjectService()->find(
+            $zaakObj = $this->zgwService->getObjectService()->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $zaakData = is_array($zaakObj) ? $zaakObj : $zaakObj->jsonSerialize();
+            $zaakData = is_array($zaakObj) === true ? $zaakObj : $zaakObj->jsonSerialize();
 
             $zaakVa    = $zaakData['confidentiality'] ?? ($zaakData['vertrouwelijkheidaanduiding'] ?? 'openbaar');
             $zaakLevel = self::VERTROUWELIJKHEID_LEVELS[$zaakVa] ?? 1;
 
             // Check zaaktype + maxVertrouwelijkheidaanduiding from consumer autorisaties.
-            $zaakTypeUuid = $zaakData['caseType'] ?? ($zaakData['zaaktype'] ?? '');
-
             foreach ($autorisaties as $auth) {
                 $scopes = $auth['scopes'] ?? [];
                 if (in_array('zaken.lezen', $scopes, true) === false) {
                     continue;
                 }
 
-                $maxVa    = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
-                $maxLevel = $maxVa !== null ? (self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99) : 99;
+                $maxVa = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
+                $maxLevel = ($maxVa !== null) ? (self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99) : 99;
 
                 if ($zaakLevel <= $maxLevel) {
                     return null;
@@ -781,8 +843,8 @@ class ZrcController extends Controller
             $zaakLevel = self::VERTROUWELIJKHEID_LEVELS[$zaakVa] ?? 1;
 
             foreach ($lezenAuths as $auth) {
-                $maxVa    = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
-                $maxLevel = $maxVa !== null ? (self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99) : 99;
+                $maxVa = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
+                $maxLevel = ($maxVa !== null) ? (self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99) : 99;
 
                 if ($zaakLevel <= $maxLevel) {
                     $filtered[] = $zaak;
@@ -807,12 +869,173 @@ class ZrcController extends Controller
     {
         return new JSONResponse(
             data: [
-                'detail' => 'U heeft niet de juiste rechten voor deze actie.',
+                'detail' => $this->l10n->t('You do not have the correct permissions for this action.'),
                 'code'   => 'permission_denied',
             ],
             statusCode: Http::STATUS_FORBIDDEN
         );
     }//end permissionDeniedResponse()
+
+    /**
+     * Pre-validate zaak body fields before calling handleUpdate (zrc-010/zrc-015).
+     *
+     * Validates communicatiekanaal URL format and productenOfDiensten
+     * without requiring the existing object from OpenRegister.
+     * This ensures validation errors are returned with proper invalidParams
+     * even when OpenRegister's find() call fails transiently.
+     *
+     * @param bool $isPatch Whether this is a PATCH operation
+     *
+     * @return JSONResponse|null A 400 response if validation fails, null if valid
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     *
+     * @psalm-suppress UnusedParam — $isPatch reserved for partial-update validation
+     */
+    private function preValidateZaakBody(bool $isPatch): ?JSONResponse
+    {
+        try {
+            $body = $this->zgwService->getRequestBody($this->request);
+
+            // Zrc-010: Validate communicatiekanaal URL.
+            $commKanaal = $body['communicatiekanaal'] ?? null;
+            if ($commKanaal !== null && $commKanaal !== '') {
+                if (filter_var($commKanaal, FILTER_VALIDATE_URL) === false) {
+                    return new JSONResponse(
+                        data: [
+                            'detail'        => 'De communicatiekanaal URL is ongeldig.',
+                            'invalidParams' => [
+                                [
+                                    'name'   => 'communicatiekanaal',
+                                    'code'   => 'bad-url',
+                                    'reason' => 'De communicatiekanaal URL is ongeldig.',
+                                ],
+                            ],
+                        ],
+                        statusCode: Http::STATUS_BAD_REQUEST
+                    );
+                }
+
+                // Check if URL ends with a valid UUID (resource endpoint, not collection).
+                $path    = (string) parse_url($commKanaal, PHP_URL_PATH);
+                $hasUuid = preg_match(
+                    '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/?$/i',
+                    $path
+                ) === 1;
+
+                if ($hasUuid === false) {
+                    // Determine error code: garbled UUID → bad-url, collection endpoint → invalid-resource.
+                    $segments      = array_filter(explode('/', trim($path, '/')));
+                    $last          = end($segments);
+                    $looksLikeUuid = preg_match('/[0-9a-f]{4,}-/i', (string) $last) === 1;
+                    $code = ($looksLikeUuid === true) ? 'bad-url' : 'invalid-resource';
+
+                    return new JSONResponse(
+                        data: [
+                            'detail'        => 'De communicatiekanaal URL is ongeldig.',
+                            'invalidParams' => [
+                                [
+                                    'name'   => 'communicatiekanaal',
+                                    'code'   => $code,
+                                    'reason' => 'De communicatiekanaal URL is ongeldig.',
+                                ],
+                            ],
+                        ],
+                        statusCode: Http::STATUS_BAD_REQUEST
+                    );
+                }//end if
+            }//end if
+
+            // Zrc-015: Validate productenOfDiensten.
+            $producten = $body['productenOfDiensten'] ?? null;
+            if (is_array($producten) === true
+                && empty($producten) === false
+                && $this->zgwService->getObjectService() !== null
+            ) {
+                $zaaktypeUrl = $body['zaaktype'] ?? '';
+                if (empty($zaaktypeUrl) === false) {
+                    $error = $this->preValidateProductenOfDiensten(
+                        producten: $producten,
+                        zaaktypeUrl: $zaaktypeUrl
+                    );
+                    if ($error !== null) {
+                        return $error;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Pre-validation is best-effort; fall through to handleUpdate.
+            $this->zgwService->getLogger()->debug(
+                'preValidateZaakBody: '.$e->getMessage()
+            );
+        }//end try
+
+        return null;
+    }//end preValidateZaakBody()
+
+    /**
+     * Pre-validate productenOfDiensten against zaaktype (zrc-015).
+     *
+     * @param array  $producten   The productenOfDiensten URLs
+     * @param string $zaaktypeUrl The zaaktype URL
+     *
+     * @return JSONResponse|null A 400 response if invalid, null if valid
+     */
+    private function preValidateProductenOfDiensten(
+        array $producten,
+        string $zaaktypeUrl
+    ): ?JSONResponse {
+        $uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
+        if (preg_match($uuidPattern, $zaaktypeUrl, $matches) !== 1) {
+            return null;
+        }
+
+        $ztConfig = $this->zgwService->getZgwMappingService()->getMapping('zaaktype');
+        if ($ztConfig === null) {
+            return null;
+        }
+
+        try {
+            $ztObj = $this->zgwService->getObjectService()->find(
+                $matches[1],
+                register: $ztConfig['sourceRegister'],
+                schema: $ztConfig['sourceSchema']
+            );
+            $ztData = is_array($ztObj) === true ? $ztObj : $ztObj->jsonSerialize();
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        $allowed = $ztData['productsOrServices'] ?? ($ztData['productsAndServices'] ?? ($ztData['productenOfDiensten'] ?? []));
+        if (is_string($allowed) === true) {
+            $allowed = json_decode($allowed, true) ?? [];
+        }
+
+        if (is_array($allowed) === false || empty($allowed) === true) {
+            return null;
+        }
+
+        foreach ($producten as $product) {
+            if (in_array($product, $allowed, true) === false) {
+                return new JSONResponse(
+                    data: [
+                        'detail'        => $this->l10n->t('productenOfDiensten contains a value not present in the zaaktype.'),
+                        'invalidParams' => [
+                            [
+                                'name'   => 'productenOfDiensten',
+                                'code'   => 'invalid-products-services',
+                                'reason' => $this->l10n->t('Product \'%s\' is not allowed for this zaaktype.', [$product]),
+                            ],
+                        ],
+                    ],
+                    statusCode: Http::STATUS_BAD_REQUEST
+                );
+            }
+        }
+
+        return null;
+    }//end preValidateProductenOfDiensten()
 
     /**
      * Delete a zaak with cascade delete of all sub-resources (zrc-023).
@@ -853,58 +1076,44 @@ class ZrcController extends Controller
             );
         }
 
-        // zrc-023: Cascade delete sub-resources.
-        $subResources = [
-            'status'               => 'status_schema',
-            'resultaat'            => 'result_schema',
-            'rol'                  => 'role_schema',
-            'zaakeigenschap'       => 'case_property_schema',
-            'zaakinformatieobject' => 'case_document_schema',
-            'zaakobject'           => 'case_object_schema',
-        ];
-
-        foreach ($subResources as $mappingKey => $schemaKey) {
-            $subConfig = $this->zgwService->getZgwMappingService()->getMapping($mappingKey);
-            if ($subConfig === null) {
-                continue;
-            }
-
+        // Zrc-005b: Before deleting the zaak, sync-delete OIOs in DRC
+        // for any linked ZaakInformatieObjecten. This cross-component
+        // side-effect cannot be handled by OpenRegister's cascade delete.
+        $zioConfig = $this->zgwService->getZgwMappingService()->getMapping('zaakinformatieobject');
+        if ($zioConfig !== null) {
             try {
                 $query  = $objectService->buildSearchQuery(
                     requestParams: ['case' => $uuid, '_limit' => 100],
-                    register: $subConfig['sourceRegister'],
-                    schema: $subConfig['sourceSchema']
+                    register: $zioConfig['sourceRegister'],
+                    schema: $zioConfig['sourceSchema']
                 );
                 $result = $objectService->searchObjectsPaginated(query: $query);
 
                 foreach (($result['results'] ?? []) as $obj) {
-                    $data    = is_array($obj) ? $obj : $obj->jsonSerialize();
+                    $data = is_array($obj) === true ? $obj : $obj->jsonSerialize();
+
                     $subUuid = $data['id'] ?? ($data['@self']['id'] ?? '');
                     if ($subUuid === '') {
                         continue;
                     }
 
-                    // zrc-005b: For ZIOs, also delete the OIO in DRC.
-                    if ($mappingKey === 'zaakinformatieobject') {
-                        $zioData = $this->getZioDataForOioSync($subUuid);
-                        if ($zioData !== null) {
-                            $this->syncDeleteObjectInformatieObject(
-                                $zioData['zaakUrl'],
-                                $zioData['ioUrl']
-                            );
-                        }
+                    $zioData = $this->getZioDataForOioSync(uuid: $subUuid);
+                    if ($zioData !== null) {
+                        $this->syncDeleteObjectInformatieObject(
+                            zaakUrl: $zioData['zaakUrl'],
+                            ioUrl: $zioData['ioUrl']
+                        );
                     }
-
-                    $objectService->deleteObject(uuid: $subUuid);
                 }
             } catch (\Throwable $e) {
                 $this->zgwService->getLogger()->warning(
-                    'zrc-023: Failed to cascade delete '.$mappingKey.' for zaak '.$uuid.': '.$e->getMessage()
+                    'zrc-023: Failed to sync-delete OIOs for zaak '.$uuid.': '.$e->getMessage()
                 );
             }//end try
-        }//end foreach
+        }//end if
 
-        // Delete the zaak itself.
+        // Cascade delete of sub-resources (rol, status, resultaat, etc.)
+        // is handled by OpenRegister via onDelete: CASCADE in schema definitions.
         try {
             $objectService->deleteObject(uuid: $uuid);
         } catch (\Throwable $e) {
@@ -945,14 +1154,22 @@ class ZrcController extends Controller
         $mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
         if ($mappingConfig !== null && $this->zgwService->getObjectService() !== null) {
             try {
-                $existingObj   = $this->zgwService->getObjectService()->find(
+                $existingObj = $this->zgwService->getObjectService()->find(
                     $uuid,
                     register: $mappingConfig['sourceRegister'],
                     schema: $mappingConfig['sourceSchema']
                 );
-                $existingData  = is_array($existingObj) ? $existingObj : $existingObj->jsonSerialize();
+                $existingData = is_array($existingObj) === true ? $existingObj : $existingObj->jsonSerialize();
+
                 $zaakClosed    = $this->zgwService->resolveZaakClosed($resource, $existingData);
-                $hasGeforceerd = $zaakClosed === true ? $this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.geforceerd-bijwerken') : true;
+                $hasGeforceerd = true;
+                if ($zaakClosed === true) {
+                    $hasGeforceerd = $this->zgwService->consumerHasScope(
+                        $this->request,
+                        'zrc',
+                        'zaken.geforceerd-bijwerken'
+                    );
+                }
             } catch (\Throwable $e) {
                 // Proceed without zaak closed info.
                 $this->zgwService->getLogger()->debug(
@@ -965,15 +1182,311 @@ class ZrcController extends Controller
     }//end resolveZaakClosedForExisting()
 
     /**
+     * Check if creating a status would reopen a closed zaak and require the
+     * zaken.heropenen scope (zrc-008c).
+     *
+     * @param array $body The original request body
+     *
+     * @return JSONResponse|null A 403 response if scope is missing, null otherwise
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     */
+    private function checkReopenScope(array $body): ?JSONResponse
+    {
+        try {
+            $zaakUrl       = $body['zaak'] ?? '';
+            $statustypeUrl = $body['statustype'] ?? '';
+            if ($zaakUrl === '' || $statustypeUrl === '') {
+                return null;
+            }
+
+            $uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
+
+            // Find the zaak.
+            if (preg_match($uuidPattern, $zaakUrl, $zaakMatches) !== 1) {
+                return null;
+            }
+
+            $zaakConfig = $this->zgwService->getZgwMappingService()->getMapping('zaak');
+            if ($zaakConfig === null) {
+                return null;
+            }
+
+            $zaak = $this->zgwService->getObjectService()->find(
+                $zaakMatches[1],
+                register: $zaakConfig['sourceRegister'],
+                schema: $zaakConfig['sourceSchema']
+            );
+            $zaakData = is_array($zaak) === true ? $zaak : $zaak->jsonSerialize();
+
+            $endDate = $zaakData['endDate'] ?? null;
+
+            // Zaak is not closed — no reopen check needed.
+            if ($endDate === null || $endDate === '') {
+                return null;
+            }
+
+            // Zaak is closed. Check if statustype is eindstatus.
+            if (preg_match($uuidPattern, $statustypeUrl, $stMatches) !== 1) {
+                return null;
+            }
+
+            $stConfig = $this->zgwService->getZgwMappingService()->getMapping('statustype');
+            if ($stConfig === null) {
+                return null;
+            }
+
+            $statustype = $this->zgwService->getObjectService()->find(
+                $stMatches[1],
+                register: $stConfig['sourceRegister'],
+                schema: $stConfig['sourceSchema']
+            );
+            $stData = is_array($statustype) === true ? $statustype : $statustype->jsonSerialize();
+
+            $isEindstatus = $stData['isFinal'] ?? ($stData['isFinalStatus'] ?? ($stData['isEindstatus'] ?? false));
+
+            if ($isEindstatus === 'true' || $isEindstatus === '1' || $isEindstatus === 1 || $isEindstatus === true) {
+                return null;
+            }
+
+            // Non-eindstatus on a closed zaak = reopen attempt → check scope.
+            $hasScope = $this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.heropenen');
+            if ($hasScope === false) {
+                return $this->permissionDeniedResponse();
+            }
+        } catch (\Throwable $e) {
+            $this->zgwService->getLogger()->debug(
+                'zrc-008c: Could not check reopen scope: '.$e->getMessage()
+            );
+        }//end try
+
+        return null;
+    }//end checkReopenScope()
+
+    /**
+     * Set indicatieGebruiksrecht on all linked IOs and then verify none remain
+     * null before allowing an eindstatus (zrc-007b + zrc-007q).
+     *
+     * First attempts to set indicatieGebruiksrecht on all linked IOs (zrc-007b).
+     * Then checks that all linked IOs have indicatieGebruiksrecht set. If any
+     * still have null after setting, returns 400 (zrc-007q).
+     *
+     * @param array $body The original request body
+     *
+     * @return JSONResponse|null A 400 response if any IO has null indicatieGebruiksrecht, null otherwise
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+     */
+    private function checkIndicatieGebruiksrechtBeforeClose(array $body): ?JSONResponse
+    {
+        try {
+            $zaakUrl       = $body['zaak'] ?? '';
+            $statustypeUrl = $body['statustype'] ?? '';
+            if ($zaakUrl === '' || $statustypeUrl === '') {
+                return null;
+            }
+
+            $uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
+
+            // Check if this is an eindstatus.
+            if (preg_match($uuidPattern, $statustypeUrl, $stMatches) !== 1) {
+                return null;
+            }
+
+            $stConfig = $this->zgwService->getZgwMappingService()->getMapping('statustype');
+            if ($stConfig === null) {
+                return null;
+            }
+
+            $statustype = $this->zgwService->getObjectService()->find(
+                $stMatches[1],
+                register: $stConfig['sourceRegister'],
+                schema: $stConfig['sourceSchema']
+            );
+            if ($statustype === null) {
+                return null;
+            }
+
+            $stData = is_array($statustype) === true ? $statustype : $statustype->jsonSerialize();
+
+            $isEindstatus = $stData['isFinal'] ?? ($stData['isFinalStatus'] ?? ($stData['isEindstatus'] ?? false));
+
+            // Normalize boolean.
+            if ($isEindstatus === 'true' || $isEindstatus === '1' || $isEindstatus === 1 || $isEindstatus === true) {
+                $isEindstatus = true;
+            }
+
+            // Also check by highest volgnummer if not explicitly set.
+            if ($isEindstatus !== true) {
+                $isEindstatus = $this->isEindstatusByVolgnummer(
+                    stData: $stData,
+                    stConfig: $stConfig,
+                    uuidPattern: $uuidPattern
+                );
+            }
+
+            if ($isEindstatus !== true) {
+                return null;
+            }
+
+            // This is an eindstatus — check indicatieGebruiksrecht (zrc-007q).
+            // Only derive values (zrc-007b) on the FIRST close (no endDate yet).
+            // If zaak is already closed, just check raw values without deriving.
+            if (preg_match($uuidPattern, $zaakUrl, $zaakMatches) !== 1) {
+                return null;
+            }
+
+            // Check if zaak is already closed (has endDate).
+            $zaakConfig        = $this->zgwService->getZgwMappingService()->getMapping('zaak');
+            $zaakAlreadyClosed = false;
+            if ($zaakConfig !== null) {
+                $zaakObj = $this->zgwService->getObjectService()->find(
+                    $zaakMatches[1],
+                    register: $zaakConfig['sourceRegister'],
+                    schema: $zaakConfig['sourceSchema']
+                );
+                if ($zaakObj !== null) {
+                    $zaakData = is_array($zaakObj) === true ? $zaakObj : $zaakObj->jsonSerialize();
+
+                    $endDate           = $zaakData['endDate'] ?? ($zaakData['einddatum'] ?? null);
+                    $zaakAlreadyClosed = ($endDate !== null && $endDate !== '');
+                }
+            }
+
+            // Zrc-007b: Only derive indicatieGebruiksrecht on first close.
+            if ($zaakAlreadyClosed === false) {
+                $this->setIndicatieGebruiksrechtOnClose(zaakUuid: $zaakMatches[1]);
+            }
+
+            // Zrc-007q: Now verify all linked IOs have indicatieGebruiksrecht set.
+            $zioConfig = $this->zgwService->getZgwMappingService()->getMapping('zaakinformatieobject');
+            $docConfig = $this->zgwService->getZgwMappingService()->getMapping('enkelvoudiginformatieobject');
+            if ($zioConfig === null || $docConfig === null) {
+                return null;
+            }
+
+            $query     = $this->zgwService->getObjectService()->buildSearchQuery(
+                requestParams: ['case' => $zaakMatches[1], '_limit' => 100],
+                register: $zioConfig['sourceRegister'],
+                schema: $zioConfig['sourceSchema']
+            );
+            $zioResult = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
+
+            foreach (($zioResult['results'] ?? []) as $zioObj) {
+                $zioData = is_array($zioObj) === true ? $zioObj : $zioObj->jsonSerialize();
+
+                $docUuid = $zioData['document'] ?? ($zioData['informatieobject'] ?? '');
+
+                if (preg_match($uuidPattern, (string) $docUuid, $docMatches) !== 1) {
+                    continue;
+                }
+
+                $docObj = $this->zgwService->getObjectService()->find(
+                    $docMatches[1],
+                    register: $docConfig['sourceRegister'],
+                    schema: $docConfig['sourceSchema']
+                );
+                $docData = is_array($docObj) === true ? $docObj : $docObj->jsonSerialize();
+
+                $indGr = $docData['usageRightsIndication'] ?? ($docData['usageRightsIndicator'] ?? ($docData['indicatieGebruiksrecht'] ?? null));
+
+                if ($indGr === null || $indGr === '') {
+                    $detail = 'Zaak kan niet afgesloten worden: niet alle informatieobjecten hebben indicatieGebruiksrecht gezet.';
+                    return new JSONResponse(
+                        data: [
+                            'detail'        => $detail,
+                            'code'          => 'indicatiegebruiksrecht-unset',
+                            'invalidParams' => [
+                                [
+                                    'name'   => 'nonFieldErrors',
+                                    'code'   => 'indicatiegebruiksrecht-unset',
+                                    'reason' => $detail,
+                                ],
+                            ],
+                        ],
+                        statusCode: Http::STATUS_BAD_REQUEST
+                    );
+                }
+            }//end foreach
+        } catch (\Throwable $e) {
+            $this->zgwService->getLogger()->debug(
+                'zrc-007q: Could not check indicatieGebruiksrecht: '.$e->getMessage()
+            );
+        }//end try
+
+        return null;
+    }//end checkIndicatieGebruiksrechtBeforeClose()
+
+    /**
+     * Check if a statustype is the eindstatus by having the highest volgnummer.
+     *
+     * @param array  $stData      The statustype data
+     * @param array  $stConfig    The statustype mapping config
+     * @param string $uuidPattern The UUID regex pattern
+     *
+     * @return bool True if this statustype has the highest volgnummer
+     */
+    private function isEindstatusByVolgnummer(array $stData, array $stConfig, string $uuidPattern): bool
+    {
+        $caseTypeUuid = (string) ($stData['caseType'] ?? '');
+        if (preg_match($uuidPattern, $caseTypeUuid, $ctMatches) === 1) {
+            $caseTypeUuid = $ctMatches[1];
+        }
+
+        $thisOrder = (int) ($stData['order'] ?? ($stData['volgnummer'] ?? 0));
+        if ($caseTypeUuid === '' || $thisOrder <= 0) {
+            return false;
+        }
+
+        try {
+            $query  = $this->zgwService->getObjectService()->buildSearchQuery(
+                requestParams: ['caseType' => $caseTypeUuid, '_limit' => 100],
+                register: $stConfig['sourceRegister'],
+                schema: $stConfig['sourceSchema']
+            );
+            $result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
+        } catch (\Throwable $e) {
+            $result = $this->zgwService->getObjectService()->searchObjectsPaginated(
+                query: [
+                    '@self'    => [
+                        'register' => (int) $stConfig['sourceRegister'],
+                        'schema'   => (int) $stConfig['sourceSchema'],
+                    ],
+                    'caseType' => $caseTypeUuid,
+                ]
+            );
+        }
+
+        $maxOrder = 0;
+        foreach (($result['results'] ?? []) as $st) {
+            $stObj = is_array($st) === true ? $st : $st->jsonSerialize();
+
+            $order = (int) ($stObj['order'] ?? ($stObj['volgnummer'] ?? 0));
+            if ($order > $maxOrder) {
+                $maxOrder = $order;
+            }
+        }
+
+        return $thisOrder >= $maxOrder && $maxOrder > 0;
+    }//end isEindstatusByVolgnummer()
+
+    /**
      * Handle eindstatus side effect when creating a status.
      *
      * When the created status's statustype has isEindstatus=true, sets the
      * parent zaak's einddatum to the datumStatusGezet value.
+     * Also handles zrc-007b (set indicatieGebruiksrecht on linked documents).
      *
      * @param array $body       The original request body
      * @param array $objectData The created object data
      *
      * @return void
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
     private function handleEindstatusEffect(array $body, array $objectData): void
     {
@@ -1002,29 +1515,52 @@ class ZrcController extends Controller
                 return;
             }
 
-            $stData       = is_array($statustype) ? $statustype : $statustype->jsonSerialize();
+            $stData = is_array($statustype) === true ? $statustype : $statustype->jsonSerialize();
+
             $isEindstatus = $stData['isFinal'] ?? ($stData['isFinalStatus'] ?? ($stData['isEindstatus'] ?? false));
 
-            if ($isEindstatus === 'true' || $isEindstatus === '1' || $isEindstatus === 1) {
+            // Normalize boolean from OpenRegister (may be string/int).
+            if ($isEindstatus === 'true' || $isEindstatus === '1' || $isEindstatus === 1 || $isEindstatus === true) {
                 $isEindstatus = true;
             }
 
             // ZGW standard: if isFinal not explicitly set, the statustype with
             // the highest volgnummer for this zaaktype is the eindstatus.
             if ($isEindstatus !== true) {
-                $caseTypeUuid = $stData['caseType'] ?? '';
-                $thisOrder    = (int) ($stData['order'] ?? 0);
+                $caseTypeUuid = (string) ($stData['caseType'] ?? '');
+                // Extract UUID in case caseType is stored as a URL.
+                if (preg_match($uuidPattern, $caseTypeUuid, $ctMatches) === 1) {
+                    $caseTypeUuid = $ctMatches[1];
+                }
+
+                $thisOrder = (int) ($stData['order'] ?? ($stData['volgnummer'] ?? 0));
                 if ($caseTypeUuid !== '' && $thisOrder > 0) {
-                    $query  = $this->zgwService->getObjectService()->buildSearchQuery(
-                        requestParams: ['caseType' => $caseTypeUuid, '_limit' => 100],
-                        register: $stConfig['sourceRegister'],
-                        schema: $stConfig['sourceSchema']
-                    );
-                    $result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
+                    // Search for all statustypen of this zaaktype.
+                    try {
+                        $query  = $this->zgwService->getObjectService()->buildSearchQuery(
+                            requestParams: ['caseType' => $caseTypeUuid, '_limit' => 100],
+                            register: $stConfig['sourceRegister'],
+                            schema: $stConfig['sourceSchema']
+                        );
+                        $result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
+                    } catch (\Throwable $e) {
+                        // Fallback: try direct query without buildSearchQuery.
+                        $result = $this->zgwService->getObjectService()->searchObjectsPaginated(
+                            query: [
+                                '@self'    => [
+                                    'register' => (int) $stConfig['sourceRegister'],
+                                    'schema'   => (int) $stConfig['sourceSchema'],
+                                ],
+                                'caseType' => $caseTypeUuid,
+                            ]
+                        );
+                    }
+
                     $maxOrder = 0;
                     foreach (($result['results'] ?? []) as $st) {
-                        $stObj = is_array($st) ? $st : $st->jsonSerialize();
-                        $order = (int) ($stObj['order'] ?? 0);
+                        $stObj = is_array($st) === true ? $st : $st->jsonSerialize();
+
+                        $order = (int) ($stObj['order'] ?? ($stObj['volgnummer'] ?? 0));
                         if ($order > $maxOrder) {
                             $maxOrder = $order;
                         }
@@ -1033,8 +1569,8 @@ class ZrcController extends Controller
                     if ($thisOrder >= $maxOrder && $maxOrder > 0) {
                         $isEindstatus = true;
                     }
-                }
-            }
+                }//end if
+            }//end if
 
             $zaakUrl = $body['zaak'] ?? '';
             if ($zaakUrl === '') {
@@ -1059,13 +1595,27 @@ class ZrcController extends Controller
                 return;
             }
 
-            $zaakData = is_array($zaak) ? $zaak : $zaak->jsonSerialize();
+            $zaakData = is_array($zaak) === true ? $zaak : $zaak->jsonSerialize();
 
             // Strip metadata that confuses saveObject on re-save.
             unset($zaakData['@self'], $zaakData['organisation']);
 
+            // Ensure field types match schema expectations for re-save.
+            // OpenRegister may store numeric-looking strings as integers, but the
+            // schema expects string types for fields like bronorganisatie.
+            $stringFields = ['title', 'assignee', 'sourceOrganisation', 'identifier'];
+            foreach ($stringFields as $field) {
+                if (isset($zaakData[$field]) === true && is_int($zaakData[$field]) === true) {
+                    $zaakData[$field] = (string) $zaakData[$field];
+                }
+
+                if ($field === 'title' && isset($zaakData[$field]) === false) {
+                    $zaakData[$field] = '';
+                }
+            }
+
             if ($isEindstatus === true) {
-                // zrc-007: Set zaak einddatum when eindstatus is created.
+                // Zrc-007a: Set zaak einddatum when eindstatus is created.
                 $datumStatusGezet = $body['datumStatusGezet'] ?? ($objectData['statusSetDate'] ?? date('Y-m-d'));
                 if (strlen($datumStatusGezet) > 10) {
                     $datumStatusGezet = substr($datumStatusGezet, 0, 10);
@@ -1073,8 +1623,12 @@ class ZrcController extends Controller
 
                 $zaakData['endDate'] = $datumStatusGezet;
 
-                // zrc-021: Derive archiefactiedatum from resultaat.resultaattype.brondatumArchiefprocedure.
-                $zaakData = $this->deriveArchiefactiedatum($zaakData, $zaakConfig, $datumStatusGezet);
+                // Zrc-021: Derive archiefactiedatum from resultaat.resultaattype.brondatumArchiefprocedure.
+                $zaakData = $this->deriveArchiefactiedatum(
+                    zaakData: $zaakData,
+                    zaakConfig: $zaakConfig,
+                    datumStatusGezet: $datumStatusGezet
+                );
 
                 $zaakData['id'] = $zaakMatches[1];
                 $this->zgwService->getObjectService()->saveObject(
@@ -1084,18 +1638,19 @@ class ZrcController extends Controller
                     uuid: $zaakMatches[1]
                 );
 
-                $this->zgwService->getLogger()->info(
-                    "Set zaak einddatum to {$datumStatusGezet} after eindstatus creation"
-                );
-            } else {
-                // zrc-008: Heropenen zaak — when a non-eindstatus is created on
+                // Zrc-007b: Set indicatieGebruiksrecht on all related informatieobjecten.
+                $this->setIndicatieGebruiksrechtOnClose(zaakUuid: $zaakMatches[1]);
+            }
+
+            if ($isEindstatus === false) {
+                // Zrc-008: Heropenen zaak — when a non-eindstatus is created on
                 // a zaak that already has an endDate, clear endDate, archiefactiedatum,
                 // and archiefnominatie (reopen the zaak).
                 $existingEndDate = $zaakData['endDate'] ?? null;
                 if ($existingEndDate !== null && $existingEndDate !== '') {
-                    $zaakData['endDate']           = '';
-                    $zaakData['archiveActionDate'] = '';
-                    $zaakData['archiveNomination'] = '';
+                    $zaakData['endDate']           = null;
+                    $zaakData['archiveActionDate'] = null;
+                    $zaakData['archiveNomination'] = null;
                     $zaakData['id'] = $zaakMatches[1];
                     $this->zgwService->getObjectService()->saveObject(
                         register: $zaakConfig['sourceRegister'],
@@ -1110,24 +1665,181 @@ class ZrcController extends Controller
                 }
             }//end if
         } catch (\Throwable $e) {
-            $this->zgwService->getLogger()->warning(
-                'handleEindstatusEffect failed: '.$e->getMessage()
+            $this->zgwService->getLogger()->error(
+                'handleEindstatusEffect failed: '.$e->getMessage(),
+                ['exception' => $e]
             );
         }//end try
     }//end handleEindstatusEffect()
 
     /**
-     * Derive archiefactiedatum from resultaat's resultaattype brondatumArchiefprocedure (zrc-021).
+     * Set indicatieGebruiksrecht on all informatieobjecten linked to a zaak (zrc-007b).
      *
-     * Supported afleidingswijze values:
-     * - afgehandeld: archiefactiedatum = einddatum + procestermijn
-     * - hoofdzaak: archiefactiedatum = hoofdzaak.einddatum + procestermijn
-     * - eigenschap: archiefactiedatum = zaakeigenschap value + procestermijn
-     * - ander_datumkenmerk: archiefactiedatum = einddatum (custom, same as afgehandeld)
-     * - zaakobject: not implemented (requires external object resolution)
-     * - termijn: archiefactiedatum = einddatum + procestermijn
-     * - ingangsdatum_besluit: archiefactiedatum = besluit.ingangsdatum + procestermijn
-     * - vervaldatum_besluit: archiefactiedatum = besluit.vervaldatum + procestermijn
+     * When a zaak is closed, all related informatieobjecten must have
+     * indicatieGebruiksrecht set (not null).
+     *
+     * @param string $zaakUuid The zaak UUID
+     *
+     * @return void
+     */
+    private function setIndicatieGebruiksrechtOnClose(string $zaakUuid): void
+    {
+        try {
+            $zioConfig = $this->zgwService->getZgwMappingService()->getMapping('zaakinformatieobject');
+            $docConfig = $this->zgwService->getZgwMappingService()->getMapping('enkelvoudiginformatieobject');
+            if ($zioConfig === null || $docConfig === null) {
+                return;
+            }
+
+            // Find all ZIOs for this zaak.
+            $query  = $this->zgwService->getObjectService()->buildSearchQuery(
+                requestParams: ['case' => $zaakUuid, '_limit' => 100],
+                register: $zioConfig['sourceRegister'],
+                schema: $zioConfig['sourceSchema']
+            );
+            $result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
+
+            foreach (($result['results'] ?? []) as $zioObj) {
+                $zioData = is_array($zioObj) === true ? $zioObj : $zioObj->jsonSerialize();
+
+                $docUuid = $zioData['document'] ?? ($zioData['informatieobject'] ?? '');
+
+                $uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
+                if (preg_match($uuidPattern, (string) $docUuid, $docMatches) !== 1) {
+                    continue;
+                }
+
+                try {
+                    $docObj = $this->zgwService->getObjectService()->find(
+                        $docMatches[1],
+                        register: $docConfig['sourceRegister'],
+                        schema: $docConfig['sourceSchema']
+                    );
+                    $docData = is_array($docObj) === true ? $docObj : $docObj->jsonSerialize();
+
+                    // Check if indicatieGebruiksrecht is already set.
+                    $indGr = $docData['usageRightsIndication'] ?? ($docData['usageRightsIndicator'] ?? ($docData['indicatieGebruiksrecht'] ?? null));
+
+                    if ($indGr === null || $indGr === '') {
+                        // Check if gebruiksrechten exist for this document.
+                        $grConfig = $this->zgwService->getZgwMappingService()->getMapping('gebruiksrechten');
+                        $hasGr    = false;
+                        if ($grConfig !== null) {
+                            try {
+                                $grQuery  = $this->zgwService->getObjectService()->buildSearchQuery(
+                                    requestParams: ['document' => $docMatches[1], '_limit' => 1],
+                                    register: $grConfig['sourceRegister'],
+                                    schema: $grConfig['sourceSchema']
+                                );
+                                $grResult = $this->zgwService->getObjectService()
+                                    ->searchObjectsPaginated(query: $grQuery);
+                                $hasGr    = empty($grResult['results'] ?? []) === false;
+                            } catch (\Throwable $e) {
+                                // No gebruiksrechten schema — default to false.
+                            }
+                        }
+
+                        // Set indicatieGebruiksrecht based on whether gebruiksrechten exist.
+                        unset($docData['@self'], $docData['organisation']);
+                        $docData['usageRightsIndication'] = $hasGr;
+                        $docData['id'] = $docMatches[1];
+                        $this->zgwService->getObjectService()->saveObject(
+                            register: $docConfig['sourceRegister'],
+                            schema: $docConfig['sourceSchema'],
+                            object: $docData,
+                            uuid: $docMatches[1]
+                        );
+                    }//end if
+                } catch (\Throwable $e) {
+                    $this->zgwService->getLogger()->debug(
+                        'zrc-007b: Could not update indicatieGebruiksrecht for doc '.$docMatches[1].': '.$e->getMessage()
+                    );
+                }//end try
+            }//end foreach
+        } catch (\Throwable $e) {
+            $this->zgwService->getLogger()->warning(
+                'zrc-007b: Failed to set indicatieGebruiksrecht: '.$e->getMessage()
+            );
+        }//end try
+    }//end setIndicatieGebruiksrechtOnClose()
+
+    /**
+     * Handle resultaat creation side-effects (zrc-021).
+     *
+     * When a resultaat is created, derive archiefactiedatum and
+     * archiefnominatie on the parent zaak from the resultaattype.
+     *
+     * @param array $body       The original request body (Dutch names)
+     * @param array $objectData The created resultaat object data
+     *
+     * @return void
+     *
+     * @psalm-suppress UnusedParam — $objectData reserved for future use in result processing
+     */
+    private function handleResultaatCreated(array $body, array $objectData): void
+    {
+        try {
+            $zaakUrl = $body['zaak'] ?? '';
+            if ($zaakUrl === '') {
+                return;
+            }
+
+            $uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
+            if (preg_match($uuidPattern, $zaakUrl, $zaakMatches) !== 1) {
+                return;
+            }
+
+            $zaakConfig = $this->zgwService->getZgwMappingService()->getMapping('zaak');
+            if ($zaakConfig === null) {
+                return;
+            }
+
+            $zaakObj = $this->zgwService->getObjectService()->find(
+                $zaakMatches[1],
+                register: $zaakConfig['sourceRegister'],
+                schema: $zaakConfig['sourceSchema']
+            );
+            $zaakData = is_array($zaakObj) === true ? $zaakObj : $zaakObj->jsonSerialize();
+
+            // Use the zaak endDate as einddatum (may be null if zaak isn't closed yet).
+            $einddatum = $zaakData['endDate'] ?? date('Y-m-d');
+
+            $zaakData = $this->deriveArchiefactiedatum(
+                zaakData: $zaakData,
+                zaakConfig: $zaakConfig,
+                datumStatusGezet: $einddatum
+            );
+
+            // Type coercion for re-save (OpenRegister stores numeric strings as ints).
+            $stringFields = ['title', 'assignee', 'sourceOrganisation', 'identifier'];
+            foreach ($stringFields as $field) {
+                if (isset($zaakData[$field]) === true && is_int($zaakData[$field]) === true) {
+                    $zaakData[$field] = (string) $zaakData[$field];
+                }
+
+                if ($field === 'title' && isset($zaakData[$field]) === false) {
+                    $zaakData[$field] = '';
+                }
+            }
+
+            // Save the updated zaak.
+            $zaakData['id'] = $zaakMatches[1];
+            $this->zgwService->getObjectService()->saveObject(
+                register: $zaakConfig['sourceRegister'],
+                schema: $zaakConfig['sourceSchema'],
+                object: $zaakData,
+                uuid: $zaakMatches[1]
+            );
+        } catch (\Throwable $e) {
+            $this->zgwService->getLogger()->error(
+                'zrc-021: handleResultaatCreated failed: '.$e->getMessage(),
+                ['exception' => $e]
+            );
+        }//end try
+    }//end handleResultaatCreated()
+
+    /**
+     * Derive archiefactiedatum from resultaat's resultaattype brondatumArchiefprocedure (zrc-021).
      *
      * @param array  $zaakData         The zaak data
      * @param array  $zaakConfig       The zaak mapping config
@@ -1166,8 +1878,8 @@ class ZrcController extends Controller
                 return $zaakData;
             }
 
-            $resultaat     = $results[0];
-            $resultaatData = is_array($resultaat) ? $resultaat : $resultaat->jsonSerialize();
+            $resultaat = $results[0];
+            $resultaatData = is_array($resultaat) === true ? $resultaat : $resultaat->jsonSerialize();
 
             // Get the resultaattype to find brondatumArchiefprocedure.
             $resultaattypeId = $resultaatData['resultType'] ?? ($resultaatData['resultaattype'] ?? '');
@@ -1194,27 +1906,40 @@ class ZrcController extends Controller
                 return $zaakData;
             }
 
-            $rtData = is_array($rtObj) ? $rtObj : $rtObj->jsonSerialize();
+            $rtData = is_array($rtObj) === true ? $rtObj : $rtObj->jsonSerialize();
 
             // Get brondatumArchiefprocedure.
             $brondatum = $rtData['sourceDateArchiveProcedure'] ?? ($rtData['brondatumArchiefprocedure'] ?? null);
+            if (is_string($brondatum) === true) {
+                $brondatum = json_decode($brondatum, true);
+            }
+
             if ($brondatum === null || is_array($brondatum) === false) {
                 return $zaakData;
             }
 
             $afleidingswijze = $brondatum['derivationMethod'] ?? ($brondatum['afleidingswijze'] ?? '');
-            $procestermijn   = $brondatum['processDuration'] ?? ($brondatum['procestermijn'] ?? null);
+            // Archiefactietermijn lives on the ResultaatType, not inside brondatumArchiefprocedure.
+            $procestermijn = $rtData['archivalPeriod'] ?? ($rtData['archiefactietermijn'] ?? null);
 
             // Determine the base date based on afleidingswijze.
             $baseDate = $this->resolveArchiveBaseDate(
-                $afleidingswijze,
-                $datumStatusGezet,
-                $zaakData,
-                $zaakConfig,
-                $brondatum
+                afleidingswijze: $afleidingswijze,
+                einddatum: $datumStatusGezet,
+                zaakData: $zaakData,
+                zaakConfig: $zaakConfig,
+                brondatum: $brondatum
             );
 
             if ($baseDate === null) {
+                // Base date unresolvable — set archiefactiedatum to null but still derive archiefnominatie.
+                $zaakData['archiveActionDate'] = null;
+
+                $nomination = $rtData['archivalAction'] ?? ($rtData['archiveNomination'] ?? ($rtData['archiefnominatie'] ?? ''));
+                if ($nomination !== '') {
+                    $zaakData['archiveNomination'] = $nomination;
+                }
+
                 return $zaakData;
             }
 
@@ -1222,8 +1947,8 @@ class ZrcController extends Controller
             $archiefactiedatum = $baseDate;
             if ($procestermijn !== null && $procestermijn !== '') {
                 try {
-                    $dateObj  = new \DateTime($baseDate);
-                    $interval = new \DateInterval($procestermijn);
+                    $dateObj  = new DateTime($baseDate);
+                    $interval = new DateInterval($procestermijn);
                     $dateObj->add($interval);
                     $archiefactiedatum = $dateObj->format('Y-m-d');
                 } catch (\Throwable $e) {
@@ -1235,10 +1960,8 @@ class ZrcController extends Controller
 
             $zaakData['archiveActionDate'] = $archiefactiedatum;
 
-            // zrc-021: Also set archiveNomination from the resultaattype.
-            $nomination = $rtData['archivalAction']
-                ?? ($rtData['archiveNomination']
-                ?? ($rtData['archiefnominatie'] ?? ''));
+            // Zrc-021: Also set archiveNomination from the resultaattype.
+            $nomination = $rtData['archivalAction'] ?? ($rtData['archiveNomination'] ?? ($rtData['archiefnominatie'] ?? ''));
             if ($nomination !== '') {
                 $zaakData['archiveNomination'] = $nomination;
             }
@@ -1278,8 +2001,11 @@ class ZrcController extends Controller
         switch ($afleidingswijze) {
             case 'afgehandeld':
             case 'termijn':
-            case 'ander_datumkenmerk':
                 return $einddatum;
+
+            case 'ander_datumkenmerk':
+                // Cannot be automatically determined — requires external datumkenmerk.
+                return null;
 
             case 'hoofdzaak':
                 $mainCaseId = $zaakData['parentCase'] ?? ($zaakData['mainCase'] ?? ($zaakData['hoofdzaak'] ?? ''));
@@ -1295,29 +2021,42 @@ class ZrcController extends Controller
                             register: $zaakConfig['sourceRegister'],
                             schema: $zaakConfig['sourceSchema']
                         );
-                        $mainData = is_array($mainZaak) ? $mainZaak : $mainZaak->jsonSerialize();
-                        $mainEnd  = $mainData['endDate'] ?? null;
+                        $mainData = is_array($mainZaak) === true ? $mainZaak : $mainZaak->jsonSerialize();
+
+                        $mainEnd = $mainData['endDate'] ?? null;
                         if ($mainEnd !== null && $mainEnd !== '') {
-                            return is_string($mainEnd) === true ? substr($mainEnd, 0, 10) : $einddatum;
+                            if (is_string($mainEnd) === true) {
+                                return substr($mainEnd, 0, 10);
+                            }
+
+                            return $einddatum;
                         }
                     } catch (\Throwable $e) {
                         // Fall through to einddatum.
-                    }
-                }
+                    }//end try
+                }//end if
                 return $einddatum;
 
             case 'eigenschap':
                 $datumkenmerk = $brondatum['objectAttribute'] ?? ($brondatum['datumkenmerk'] ?? '');
                 if ($datumkenmerk !== '' && $this->zgwService->getObjectService() !== null) {
-                    return $this->resolveEigenschapDate($zaakData, $datumkenmerk) ?? $einddatum;
+                    return $this->resolveEigenschapDate(zaakData: $zaakData, datumkenmerk: $datumkenmerk) ?? $einddatum;
                 }
                 return $einddatum;
 
             case 'ingangsdatum_besluit':
-                return $this->resolveBesluitDate($zaakData, 'startDate', 'ingangsdatum') ?? $einddatum;
+                return $this->resolveBesluitDate(
+                    zaakData: $zaakData,
+                    englishField: 'effectiveDate',
+                    dutchField: 'ingangsdatum'
+                ) ?? $einddatum;
 
             case 'vervaldatum_besluit':
-                return $this->resolveBesluitDate($zaakData, 'expirationDate', 'vervaldatum') ?? $einddatum;
+                return $this->resolveBesluitDate(
+                    zaakData: $zaakData,
+                    englishField: 'expiryDate',
+                    dutchField: 'vervaldatum'
+                ) ?? $einddatum;
 
             default:
                 return null;
@@ -1354,16 +2093,17 @@ class ZrcController extends Controller
 
             $results = $result['results'] ?? [];
             if (empty($results) === false) {
-                $propObj  = $results[0];
-                $propData = is_array($propObj) ? $propObj : $propObj->jsonSerialize();
-                $value    = $propData['value'] ?? ($propData['waarde'] ?? '');
+                $propObj = $results[0];
+                $propData = is_array($propObj) === true ? $propObj : $propObj->jsonSerialize();
+
+                $value = $propData['value'] ?? ($propData['waarde'] ?? '');
                 if ($value !== '' && strtotime($value) !== false) {
                     return substr($value, 0, 10);
                 }
             }
         } catch (\Throwable $e) {
             // Not found — return null.
-        }
+        }//end try
 
         return null;
     }//end resolveEigenschapDate()
@@ -1391,24 +2131,35 @@ class ZrcController extends Controller
 
         try {
             $query  = $this->zgwService->getObjectService()->buildSearchQuery(
-                requestParams: ['case' => $zaakUuid, '_limit' => 1],
+                requestParams: ['case' => $zaakUuid, '_limit' => 100],
                 register: $besluitConfig['sourceRegister'],
                 schema: $besluitConfig['sourceSchema']
             );
             $result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
 
             $results = $result['results'] ?? [];
-            if (empty($results) === false) {
-                $besluitObj  = $results[0];
-                $besluitData = is_array($besluitObj) ? $besluitObj : $besluitObj->jsonSerialize();
-                $dateVal     = $besluitData[$englishField] ?? ($besluitData[$dutchField] ?? '');
+            if (empty($results) === true) {
+                return null;
+            }
+
+            // Find the latest (maximum) date among all besluiten for this zaak.
+            $latestDate = null;
+            foreach ($results as $besluitObj) {
+                $besluitData = is_array($besluitObj) === true ? $besluitObj : $besluitObj->jsonSerialize();
+
+                $dateVal = $besluitData[$englishField] ?? ($besluitData[$dutchField] ?? '');
                 if ($dateVal !== '' && strtotime($dateVal) !== false) {
-                    return substr($dateVal, 0, 10);
+                    $dateStr = substr($dateVal, 0, 10);
+                    if ($latestDate === null || $dateStr > $latestDate) {
+                        $latestDate = $dateStr;
+                    }
                 }
             }
+
+            return $latestDate;
         } catch (\Throwable $e) {
             // Not found — return null.
-        }
+        }//end try
 
         return null;
     }//end resolveBesluitDate()
@@ -1423,10 +2174,10 @@ class ZrcController extends Controller
      */
     private function enrichZioResponse(array $mapped, array $body): array
     {
-        // zrc-004a: aardRelatieWeergave is always "Hoort bij, omgekeerd: kent".
+        // Zrc-004a: aardRelatieWeergave is always "Hoort bij, omgekeerd: kent".
         $mapped['aardRelatieWeergave'] = 'Hoort bij, omgekeerd: kent';
 
-        // zrc-004a: registratiedatum from the enriched body (set by business rules).
+        // Zrc-004a: registratiedatum from the enriched body (set by business rules).
         if (isset($body['registratiedatum']) === true
             && isset($mapped['registratiedatum']) === false
         ) {
@@ -1492,6 +2243,7 @@ class ZrcController extends Controller
                 mappingConfig: $oioConfig
             );
 
+            /** @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change */
             if (is_array($englishData) === false) {
                 $englishData = $oioData;
             }
@@ -1527,28 +2279,29 @@ class ZrcController extends Controller
                 return null;
             }
 
-            $zioObj  = $this->zgwService->getObjectService()->find(
+            $zioObj = $this->zgwService->getObjectService()->find(
                 $uuid,
                 register: $zioConfig['sourceRegister'],
                 schema: $zioConfig['sourceSchema']
             );
-            $zioData = is_array($zioObj) ? $zioObj : $zioObj->jsonSerialize();
+            $zioData = is_array($zioObj) === true ? $zioObj : $zioObj->jsonSerialize();
 
-            // Build the zaak URL from the case UUID.
+            // The ZIO stores 'case' as a UUID (format: uuid with $ref) and
+            // 'document' as a full URL (format: uri). Build the zaak URL from
+            // the case UUID, and use the document URL directly.
             $zaakUuid = $zioData['case'] ?? ($zioData['zaak'] ?? '');
-            $ioUuid   = $zioData['document'] ?? ($zioData['informatieobject'] ?? '');
+            $ioUrl    = $zioData['document'] ?? ($zioData['informatieobject'] ?? '');
 
-            if ($zaakUuid === '' || $ioUuid === '') {
+            if ($zaakUuid === '' || $ioUrl === '') {
                 return null;
             }
 
-            // Build full URLs from UUIDs.
+            // Build zaak URL from the UUID (case field stores UUID).
             $zaakBaseUrl = $this->zgwService->buildBaseUrl($this->request, 'zaken', 'zaken');
-            $ioBaseUrl   = $this->zgwService->buildBaseUrl($this->request, 'documenten', 'enkelvoudiginformatieobjecten');
 
             return [
                 'zaakUrl' => $zaakBaseUrl.'/'.$zaakUuid,
-                'ioUrl'   => $ioBaseUrl.'/'.$ioUuid,
+                'ioUrl'   => $ioUrl,
             ];
         } catch (\Throwable $e) {
             $this->zgwService->getLogger()->debug(
@@ -1574,33 +2327,22 @@ class ZrcController extends Controller
                 return;
             }
 
-            // Search for matching OIOs by object (zaak) and informatieobject.
-            $uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
-
-            // Extract UUIDs for searching in OpenRegister.
-            $zaakUuid = '';
-            if (preg_match($uuidPattern, $zaakUrl, $zaakM) === 1) {
-                $zaakUuid = $zaakM[1];
-            }
-
-            $ioUuid = '';
-            if (preg_match($uuidPattern, $ioUrl, $ioM) === 1) {
-                $ioUuid = $ioM[1];
-            }
-
-            if ($zaakUuid === '' || $ioUuid === '') {
+            // The OIO schema (documentLink) stores 'object' and 'document' as
+            // full URLs (format: uri). Search by the full URL values directly.
+            if ($zaakUrl === '' || $ioUrl === '') {
                 return;
             }
 
             $query  = $this->zgwService->getObjectService()->buildSearchQuery(
-                requestParams: ['relatedObject' => $zaakUuid, 'document' => $ioUuid],
+                requestParams: ['object' => $zaakUrl, 'document' => $ioUrl],
                 register: $oioConfig['sourceRegister'],
                 schema: $oioConfig['sourceSchema']
             );
             $result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
 
             foreach (($result['results'] ?? []) as $oioObj) {
-                $oioData = is_array($oioObj) ? $oioObj : $oioObj->jsonSerialize();
+                $oioData = is_array($oioObj) === true ? $oioObj : $oioObj->jsonSerialize();
+
                 $oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
                 if ($oioUuid !== '') {
                     $this->zgwService->getObjectService()->deleteObject(uuid: $oioUuid);

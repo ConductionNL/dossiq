@@ -729,3 +729,65 @@ All task management interfaces MUST comply with WCAG AA:
 - The kanban board MUST render within 2 seconds for up to 50 cards per column
 - Drag-and-drop status changes MUST provide optimistic UI updates (move the card immediately, then confirm with the API)
 - The My Work view MUST aggregate tasks and cases in a single page load (parallel API calls)
+
+---
+
+### Current Implementation Status
+
+**MVP substantially implemented. V1/Enterprise features not implemented.**
+
+**Implemented (with file paths):**
+- **Task schema**: Defined in `lib/Settings/procest_register.json` with properties: `title`, `description`, `status` (enum: available/active/completed/terminated/disabled), `assignee`, `case` (UUID ref), `dueDate`, `priority` (enum: low/normal/high/urgent), `completedDate`. Matches the spec data model exactly.
+- **Task lifecycle**: `src/utils/taskLifecycle.js` implements the full CMMN PlanItem lifecycle with:
+  - `TASK_STATUSES` constant object
+  - `TRANSITION_MAP`: available -> [active, terminated, disabled], active -> [completed, terminated], completed/terminated/disabled -> [] (terminal)
+  - `getAllowedTransitions(currentStatus)`, `validateTransition(from, to)`, `getStatusLabel(status)`, `getTransitionLabel(targetStatus)`, `isTerminalStatus(status)` functions
+  - Localized status labels (English, Dutch pending)
+- **Task helpers**: `src/utils/taskHelpers.js` provides utility functions for task display and overdue calculations.
+- **Task list view**: `src/views/tasks/TaskList.vue` -- paginated list of tasks with status, assignee, due date, and priority display (REQ-TASK-004).
+- **Task detail view**: `src/views/tasks/TaskDetail.vue` -- full task detail with editable fields.
+- **Task create dialog**: `src/views/tasks/TaskCreateDialog.vue` -- form for creating new tasks linked to a case.
+- **Task API service**: `src/services/taskApi.js` -- `fetchTasksForCases()` for CalDAV task integration.
+- **Task CRUD**: Via the shared object store (`src/store/modules/object.js`) for OpenRegister-based tasks.
+- **My Work integration**: `src/views/MyWork.vue` includes tasks in the unified view with overdue highlighting, priority indicators, grouped sections (REQ-TASK-013).
+- **Dashboard widgets**: `lib/Dashboard/MyTasksWidget.php` and `src/views/widgets/MyTasksWidget.vue` -- Nextcloud dashboard widget showing assigned tasks. `src/views/dashboard/MyWorkPreview.vue` shows task summary on app dashboard.
+- **Navigation**: `src/navigation/MainMenu.vue` includes "Tasks" menu item linked to `/tasks` route.
+- **Router**: `src/router/index.js` includes routes for `/tasks`, `/tasks/new`, and `/tasks/:id`.
+- **Overdue highlighting**: Implemented in `MyWork.vue` with red indicators and "X days overdue" text (REQ-TASK-005, REQ-TASK-013).
+- **Priority badges**: Priority indicators shown in My Work view for high and urgent priorities.
+
+**Architecture note:** Tasks have a dual implementation:
+1. OpenRegister `task` schema objects (used by the object store for CRUD)
+2. CalDAV tasks via `fetchTasksForCases()` in `src/services/taskApi.js` (used by My Work view)
+
+This duality means some views use OpenRegister tasks while others use CalDAV tasks. The spec assumes a single OpenRegister-based task system.
+
+**Not yet implemented:**
+- **REQ-TASK-007: Kanban board view (V1)**: No kanban/board view with columns per status. No drag-and-drop status transitions. No board/list toggle.
+- **REQ-TASK-009: Task checklists (V1)**: No checklist/sub-item support on tasks.
+- **REQ-TASK-010: Task dependencies (V1)**: No "blocked by" relationship support.
+- **REQ-TASK-011: Task templates per case type (V1)**: No task template configuration on case types. No auto-creation of template tasks on case creation.
+- **REQ-TASK-012: Automated task creation on status change (Enterprise)**: No automation rules for task creation.
+- **Task assignment notifications**: No Nextcloud notifications sent when tasks are assigned or reassigned.
+- **Task search by title**: Basic search may exist via the object store's `_search` parameter, but dedicated task search UI is not prominent.
+- **Keyboard navigation**: No explicit keyboard navigation support in task list or cards.
+- **Screen reader support**: No ARIA attributes for task status, priority, or overdue state.
+
+### Standards & References
+
+- **CMMN 1.1**: Task lifecycle states (Available, Active, Completed, Terminated, Disabled) follow the CMMN PlanItem lifecycle exactly. Transition rules match CMMN specification. Implemented in `src/utils/taskLifecycle.js`.
+- **Schema.org**: Tasks typed as `schema:Action` with `actionStatus` in `procest_register.json`.
+- **BPMN 2.0**: Task patterns for assignment and lifecycle management.
+- **ZGW APIs**: No direct ZGW equivalent for tasks (ZGW does not define a task resource), but tasks complement the ZGW Zaak lifecycle.
+- **WCAG 2.1 AA**: Spec requires color-independent indicators and keyboard accessibility. Partially implemented (text labels for overdue, but no keyboard nav).
+
+### Specificity Assessment
+
+- **MVP requirements are well-specified and mostly implemented.** The task CRUD, lifecycle, assignment, list view, and overdue management are clear and actionable.
+- **V1 features (kanban, checklists, dependencies, templates) are well-specified** with concrete scenarios but not yet implemented.
+- **Task architecture ambiguity**: The dual CalDAV/OpenRegister task system needs resolution. The spec assumes OpenRegister-only tasks.
+- **Open questions:**
+  - Should tasks migrate fully to OpenRegister, or should CalDAV integration be maintained for Nextcloud ecosystem compatibility?
+  - How should kanban drag-and-drop handle the keyboard-accessible alternative (dropdown vs. move buttons)?
+  - Should task templates be stored as JSON arrays on the case type object or as separate OpenRegister objects?
+  - How should task dependencies be stored (array of UUIDs on the task object, or separate relation objects)?

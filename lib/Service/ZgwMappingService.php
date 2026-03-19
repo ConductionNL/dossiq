@@ -37,7 +37,6 @@ use Psr\Log\LoggerInterface;
  */
 class ZgwMappingService
 {
-
     /**
      * Prefix for ZGW mapping config keys in IAppConfig.
      */

@@ -1,7 +1,7 @@
 <template>
-	<div class="task-detail">
+	<div v-if="editing || isNew" class="task-detail">
 		<div class="task-detail__header">
-			<NcButton @click="goBack">
+			<NcButton @click="onCancel">
 				{{ t('procest', 'Back to list') }}
 			</NcButton>
 			<h2 v-if="isNew">
@@ -12,16 +12,103 @@
 			</h2>
 		</div>
 
-		<NcLoadingIcon v-if="loading && !isNew" />
+		<!-- Form -->
+		<div class="task-detail__form">
+			<div class="form-group">
+				<label>{{ t('procest', 'Title') }} *</label>
+				<NcTextField
+					:value="form.title"
+					:error="!!validationErrors.title"
+					@update:value="v => { form.title = v; validationErrors.title = '' }" />
+				<p v-if="validationErrors.title" class="form-error">
+					{{ validationErrors.title }}
+				</p>
+			</div>
 
-		<template v-else>
-			<!-- Status display and actions -->
-			<div v-if="!isNew" class="task-detail__status-bar">
-				<span class="status-badge" :class="'status-badge--' + form.status">
-					{{ getStatusLabel(form.status) }}
+			<div class="form-group">
+				<label>{{ t('procest', 'Description') }}</label>
+				<textarea
+					v-model="form.description"
+					rows="4" />
+			</div>
+
+			<div class="form-row">
+				<div class="form-group">
+					<label>{{ t('procest', 'Assignee') }}</label>
+					<NcTextField
+						:value="form.assignee"
+						:placeholder="t('procest', 'Username')"
+						@update:value="v => form.assignee = v" />
+				</div>
+				<div class="form-group">
+					<label>{{ t('procest', 'Due date') }}</label>
+					<NcTextField
+						:value="form.dueDate"
+						type="date"
+						@update:value="v => form.dueDate = v" />
+				</div>
+			</div>
+
+			<div class="form-row">
+				<div class="form-group">
+					<label>{{ t('procest', 'Priority') }}</label>
+					<NcSelect
+						v-model="form.priority"
+						:options="priorityOptions" />
+				</div>
+			</div>
+
+			<!-- Save / Cancel actions -->
+			<div class="task-detail__form-actions">
+				<NcButton
+					type="primary"
+					:disabled="saving"
+					@click="save">
+					<template v-if="saving">
+						<NcLoadingIcon :size="20" />
+					</template>
+					{{ t('procest', 'Save') }}
+				</NcButton>
+				<NcButton
+					v-if="!isNew"
+					@click="editing = false">
+					{{ t('procest', 'Cancel') }}
+				</NcButton>
+			</div>
+		</div>
+	</div>
+
+	<CnDetailPage
+		v-else
+		:title="taskData.title || t('procest', 'Task')"
+		:subtitle="t('procest', 'Task')"
+		:back-route="{ name: 'Tasks' }"
+		:back-label="t('procest', 'Back to list')"
+		:loading="loading"
+		:sidebar="!loading"
+		object-type="procest_task"
+		:object-id="taskId"
+		:sidebar-props="sidebarProps">
+		<template #header-actions>
+			<NcButton
+				v-if="!isReadOnly"
+				type="primary"
+				@click="startEditing">
+				{{ t('procest', 'Edit') }}
+			</NcButton>
+			<NcButton type="error" @click="confirmDelete">
+				{{ t('procest', 'Delete') }}
+			</NcButton>
+		</template>
+
+		<!-- Status card -->
+		<CnDetailCard :title="t('procest', 'Status')">
+			<div class="status-section">
+				<span class="status-badge" :class="'status-badge--' + taskData.status">
+					{{ getStatusLabel(taskData.status) }}
 				</span>
 
-				<div v-if="allowedTransitions.length > 0" class="task-detail__actions-bar">
+				<div v-if="allowedTransitions.length > 0" class="status-section__actions">
 					<NcButton
 						v-for="target in allowedTransitions"
 						:key="target"
@@ -31,95 +118,50 @@
 					</NcButton>
 				</div>
 
-				<div v-if="form.completedDate" class="task-detail__completed-date">
-					{{ t('procest', 'Completed on {date}', { date: formatDueDate(form.completedDate) }) }}
+				<div v-if="taskData.completedDate" class="status-section__completed-date">
+					{{ t('procest', 'Completed on {date}', { date: formatDueDate(taskData.completedDate) }) }}
 				</div>
 			</div>
+		</CnDetailCard>
 
-			<!-- Case link -->
-			<div v-if="caseId && !isNew" class="task-detail__case-link">
-				<a class="case-link" @click="openCase">
-					{{ t('procest', 'Case: {id}', { id: caseTitle }) }}
-				</a>
-			</div>
-
-			<!-- Form -->
-			<div class="task-detail__form">
-				<div class="form-group">
-					<label>{{ t('procest', 'Title') }} *</label>
-					<NcTextField
-						:value="form.title"
-						:disabled="isReadOnly"
-						:error="!!validationErrors.title"
-						@update:value="v => { form.title = v; validationErrors.title = '' }" />
-					<p v-if="validationErrors.title" class="form-error">
-						{{ validationErrors.title }}
-					</p>
+		<!-- Task Information card -->
+		<CnDetailCard :title="t('procest', 'Task Information')">
+			<div class="info-grid">
+				<div class="info-field">
+					<label>{{ t('procest', 'Title') }}</label>
+					<span>{{ taskData.title || '-' }}</span>
 				</div>
-
-				<div class="form-group">
+				<div class="info-field">
+					<label>{{ t('procest', 'Priority') }}</label>
+					<span>{{ taskData.priority || '-' }}</span>
+				</div>
+				<div class="info-field">
+					<label>{{ t('procest', 'Assignee') }}</label>
+					<span>{{ taskData.assignee || '-' }}</span>
+				</div>
+				<div class="info-field">
+					<label>{{ t('procest', 'Due date') }}</label>
+					<span>{{ taskData.dueDate ? formatDueDate(taskData.dueDate) : '-' }}</span>
+				</div>
+				<div v-if="taskData.description" class="info-field info-field--full">
 					<label>{{ t('procest', 'Description') }}</label>
-					<textarea
-						v-model="form.description"
-						:disabled="isReadOnly"
-						rows="4" />
-				</div>
-
-				<div class="form-row">
-					<div class="form-group">
-						<label>{{ t('procest', 'Assignee') }}</label>
-						<NcTextField
-							:value="form.assignee"
-							:disabled="isReadOnly"
-							:placeholder="t('procest', 'Username')"
-							@update:value="v => form.assignee = v" />
-					</div>
-					<div class="form-group">
-						<label>{{ t('procest', 'Due date') }}</label>
-						<NcTextField
-							:value="form.dueDate"
-							:disabled="isReadOnly"
-							type="date"
-							@update:value="v => form.dueDate = v" />
-					</div>
-				</div>
-
-				<div class="form-row">
-					<div class="form-group">
-						<label>{{ t('procest', 'Priority') }}</label>
-						<NcSelect
-							v-model="form.priority"
-							:options="priorityOptions"
-							:disabled="isReadOnly" />
-					</div>
-				</div>
-
-				<!-- Save / Delete actions -->
-				<div class="task-detail__form-actions">
-					<NcButton
-						v-if="!isReadOnly"
-						type="primary"
-						:disabled="saving"
-						@click="save">
-						<template v-if="saving">
-							<NcLoadingIcon :size="20" />
-						</template>
-						{{ t('procest', 'Save') }}
-					</NcButton>
-					<NcButton
-						v-if="!isNew && !isReadOnly"
-						type="error"
-						@click="confirmDelete">
-						{{ t('procest', 'Delete') }}
-					</NcButton>
+					<span>{{ taskData.description }}</span>
 				</div>
 			</div>
-		</template>
-	</div>
+		</CnDetailCard>
+
+		<!-- Linked Case card -->
+		<CnDetailCard v-if="caseId" :title="t('procest', 'Linked Case')">
+			<a class="case-link" @click="openCase">
+				{{ t('procest', 'Case: {id}', { id: caseTitle }) }}
+			</a>
+		</CnDetailCard>
+	</CnDetailPage>
 </template>
 
 <script>
 import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
+import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { getAllowedTransitions, getStatusLabel, getTransitionLabel, isTerminalStatus } from '../../utils/taskLifecycle.js'
 import { formatDueDate } from '../../utils/taskHelpers.js'
@@ -131,6 +173,8 @@ export default {
 		NcLoadingIcon,
 		NcTextField,
 		NcSelect,
+		CnDetailPage,
+		CnDetailCard,
 	},
 	props: {
 		taskId: {
@@ -144,6 +188,7 @@ export default {
 	},
 	data() {
 		return {
+			editing: false,
 			form: {
 				title: '',
 				description: '',
@@ -183,17 +228,23 @@ export default {
 			return caseObj?.title || caseObj?.identifier || this.caseId
 		},
 		isReadOnly() {
-			return !this.isNew && isTerminalStatus(this.form.status)
+			return isTerminalStatus(this.taskData.status)
 		},
 		allowedTransitions() {
 			if (this.isNew) return []
-			return getAllowedTransitions(this.form.status)
+			return getAllowedTransitions(this.taskData.status)
+		},
+		sidebarProps() {
+			const config = this.objectStore.objectTypeRegistry.task || {}
+			return {
+				register: config.register || '',
+				schema: config.schema || '',
+			}
 		},
 	},
 	async mounted() {
 		if (!this.isNew) {
 			await this.objectStore.fetchObject('task', this.taskId)
-			this.populateForm()
 			if (this.caseId) {
 				this.objectStore.fetchObject('case', this.caseId)
 			}
@@ -205,6 +256,11 @@ export default {
 		getStatusLabel,
 		getTransitionLabel,
 		formatDueDate,
+
+		startEditing() {
+			this.populateForm()
+			this.editing = true
+		},
 
 		populateForm() {
 			const data = this.taskData
@@ -257,7 +313,8 @@ export default {
 				if (this.isNew) {
 					this.$router.push({ name: 'TaskDetail', params: { id: result.id } })
 				} else {
-					this.populateForm()
+					await this.objectStore.fetchObject('task', this.taskId)
+					this.editing = false
 				}
 			}
 		},
@@ -280,13 +337,7 @@ export default {
 				update.completedDate = new Date().toISOString()
 			}
 
-			const result = await this.objectStore.saveObject('task', update)
-			if (result) {
-				this.form.status = targetStatus
-				if (update.completedDate) {
-					this.form.completedDate = update.completedDate
-				}
-			}
+			await this.objectStore.saveObject('task', update)
 		},
 
 		async confirmDelete() {
@@ -298,8 +349,12 @@ export default {
 			}
 		},
 
-		goBack() {
-			this.$router.push({ name: 'Tasks' })
+		onCancel() {
+			if (this.isNew) {
+				this.$router.push({ name: 'Tasks' })
+			} else {
+				this.editing = false
+			}
 		},
 
 		openCase() {
@@ -324,41 +379,6 @@ export default {
 	margin-bottom: 20px;
 }
 
-.task-detail__status-bar {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	margin-bottom: 16px;
-	padding: 12px;
-	background: var(--color-background-dark);
-	border-radius: var(--border-radius);
-}
-
-.task-detail__actions-bar {
-	display: flex;
-	gap: 8px;
-	margin-left: auto;
-}
-
-.task-detail__completed-date {
-	color: var(--color-text-maxcontrast);
-	font-size: 13px;
-}
-
-.task-detail__case-link {
-	margin-bottom: 16px;
-}
-
-.case-link {
-	color: var(--color-primary);
-	text-decoration: underline;
-	cursor: pointer;
-}
-
-.case-link:hover {
-	color: var(--color-primary-hover);
-}
-
 .task-detail__form {
 	margin-top: 12px;
 }
@@ -381,11 +401,6 @@ export default {
 	resize: vertical;
 }
 
-.form-group textarea:disabled {
-	opacity: 0.6;
-	cursor: not-allowed;
-}
-
 .form-row {
 	display: flex;
 	gap: 16px;
@@ -405,6 +420,25 @@ export default {
 	display: flex;
 	gap: 12px;
 	margin-top: 20px;
+}
+
+/* View mode styles */
+.status-section {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.status-section__actions {
+	display: flex;
+	gap: 8px;
+	margin-left: auto;
+}
+
+.status-section__completed-date {
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
 }
 
 .status-badge {
@@ -438,5 +472,37 @@ export default {
 .status-badge--disabled {
 	background: var(--color-text-maxcontrast);
 	color: white;
+}
+
+.info-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+}
+
+.info-field {
+	margin-bottom: 8px;
+}
+
+.info-field--full {
+	grid-column: 1 / -1;
+}
+
+.info-field label {
+	display: block;
+	font-weight: bold;
+	margin-bottom: 2px;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+}
+
+.case-link {
+	color: var(--color-primary);
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.case-link:hover {
+	color: var(--color-primary-hover);
 }
 </style>

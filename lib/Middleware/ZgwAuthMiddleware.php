@@ -39,7 +39,6 @@ use Psr\Log\LoggerInterface;
  */
 class ZgwAuthMiddleware extends Middleware
 {
-
     /**
      * Map of ZGW API groups to component codes.
      *
@@ -144,18 +143,13 @@ class ZgwAuthMiddleware extends Middleware
      * @return void
      *
      * @throws \OCA\Procest\Middleware\ZgwAuthException If authorization fails.
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $methodName required by Middleware interface
      */
     public function beforeController($controller, $methodName): void
     {
         if (($controller instanceof ZgwController) === false) {
             return;
-        }
-
-        if ($this->authorizationService === null || $this->consumerMapper === null) {
-            throw new ZgwAuthException(
-                message: 'Authentication services not available',
-                statusCode: Http::STATUS_SERVICE_UNAVAILABLE
-            );
         }
 
         $authorization = $this->request->getHeader(name: 'Authorization');
@@ -166,7 +160,18 @@ class ZgwAuthMiddleware extends Middleware
             );
         }
 
-        // Validate the JWT token and set user session.
+        // Extract and validate JWT payload.
+        $token   = substr(string: $authorization, offset: strlen(string: 'Bearer '));
+        $payload = $this->decodeJwtPayload(token: $token);
+
+        if ($payload === null || isset($payload['iss']) === false) {
+            throw new ZgwAuthException(
+                message: 'Invalid token payload',
+                statusCode: Http::STATUS_FORBIDDEN
+            );
+        }
+
+        // Validate JWT signature via OpenRegister's AuthorizationService.
         try {
             $this->authorizationService->authorizeJwt(authorization: $authorization);
         } catch (\Exception $e) {
@@ -179,17 +184,7 @@ class ZgwAuthMiddleware extends Middleware
             );
         }
 
-        // Extract issuer from JWT to look up the Consumer and check scopes.
-        $token   = substr(string: $authorization, offset: strlen(string: 'Bearer '));
-        $payload = $this->decodeJwtPayload(token: $token);
-
-        if ($payload === null || isset($payload['iss']) === false) {
-            throw new ZgwAuthException(
-                message: 'Invalid token payload',
-                statusCode: Http::STATUS_FORBIDDEN
-            );
-        }
-
+        // Enforce scope-based authorization via ConsumerMapper.
         $consumer = $this->findConsumerByIssuer(issuer: $payload['iss']);
         if ($consumer === null) {
             throw new ZgwAuthException(
@@ -217,6 +212,8 @@ class ZgwAuthMiddleware extends Middleware
      * @param \Exception                   $exception  The exception
      *
      * @return JSONResponse|null
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $controller/$methodName required by Middleware interface
      */
     public function afterException($controller, $methodName, \Exception $exception): ?JSONResponse
     {
@@ -270,10 +267,10 @@ class ZgwAuthMiddleware extends Middleware
         // Check if any scope grants cover this request.
         foreach ($scopes as $scopeGrant) {
             if ($this->scopeGrantCovers(
-                scopeGrant: $scopeGrant,
-                component: $component,
-                requiredSuffix: $requiredSuffix
-            ) === true
+                    scopeGrant: $scopeGrant,
+                    component: $component,
+                    requiredSuffix: $requiredSuffix
+                ) === true
             ) {
                 return;
             }
@@ -331,7 +328,7 @@ class ZgwAuthMiddleware extends Middleware
             return null;
         }
 
-        $payload = base64_decode(string: $parts[1]);
+        $payload = base64_decode(string: $parts[1], strict: true);
         if ($payload === false) {
             return null;
         }

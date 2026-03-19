@@ -74,8 +74,8 @@
   - GIVEN a POST creating EIO with bestandsomvang but no inhoud WHEN created THEN bestandsdelen URLs are returned
   - GIVEN bestandsdelen URLs WHEN PUT with binary chunks THEN chunks are stored temporarily
   - GIVEN all chunks uploaded WHEN the last chunk completes THEN chunks are merged into the final file
-- [ ] Implement
-- [ ] Test
+- [x] Implement
+- [x] Test
 
 ## 4. ObjectInformatieObject Links
 

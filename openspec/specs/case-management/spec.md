@@ -851,3 +851,67 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 - **Nextcloud Activity**: Audit trail events are published via `OCP\Activity\IManager`.
 - **Nextcloud Comments**: Case notes use `OCP\Comments\ICommentsManager`.
 - **Nextcloud Files**: Document uploads reference Nextcloud file IDs via `OCP\Files\IRootFolder`.
+
+### Current Implementation Status
+
+**Substantially implemented (MVP).** Core case management functionality is in place.
+
+**Implemented:**
+- Case CRUD via OpenRegister object store (`src/store/modules/object.js` using `createObjectStore` with filesPlugin, auditTrailsPlugin, relationsPlugin).
+- Case list view (`src/views/cases/CaseList.vue`) using `CnIndexPage` with columns, sorting (default by deadline asc), pagination, row click navigation, selectable rows, and `QuickStatusDropdown` for inline status changes.
+- Case detail view (`src/views/cases/CaseDetail.vue`) using `CnDetailPage` with sidebar, save/delete actions, status change dropdown with result prompt for final status.
+- Case creation dialog (`src/views/cases/CaseCreateDialog.vue`) with case type selection.
+- Status timeline visualization (`src/views/cases/components/StatusTimeline.vue`) showing passed/current/future status dots with dates.
+- Quick status change from list (`src/views/cases/components/QuickStatusDropdown.vue`).
+- Deadline panel (`src/views/cases/components/DeadlinePanel.vue`) with countdown, overdue display, extension info and request button.
+- Participants panel (`src/views/cases/components/ParticipantsSection.vue`) with role groups, add participant dialog, handler assignment.
+- Activity timeline (`src/views/cases/components/ActivityTimeline.vue`) with add note, chronological events.
+- Result section (`src/views/cases/components/ResultSection.vue`).
+- Case validation utilities (`src/utils/caseValidation.js`).
+- Case helper utilities (`src/utils/caseHelpers.js`) with `formatDeadlineCountdown`, `isCaseOverdue`, `formatDateShort`.
+- Duration helpers (`src/utils/durationHelpers.js`) for ISO 8601 duration display.
+- ZGW Zaken API compatibility via `ZrcController` (`lib/Controller/ZrcController.php`) and `ZgwZrcRulesService` (`lib/Service/ZgwZrcRulesService.php`) handling zaken, statussen, resultaten, rollen, zaakeigenschappen, zaakinformatieobjecten, zaakobjecten, klantcontacten.
+- ZGW business rules enforcement (`lib/Service/ZgwBusinessRulesService.php`, `lib/Service/ZgwRulesBase.php`).
+- OpenRegister schemas for case (`case_schema`), status (`status_schema`), statusRecord (`status_record_schema`), role (`role_schema`), result (`result_schema`), caseProperty (`case_property_schema`), caseDocument (`case_document_schema`), caseObject (`case_object_schema`).
+- Router with case routes: `/cases` (list), `/cases/:id` (detail).
+- Overdue case visual highlighting in case list (via `getRowClass` and `getDeadlineClass`).
+
+**Not yet implemented or partial:**
+- REQ-CM-09: Custom properties panel in case detail (schema exists but no property editor UI in case detail).
+- REQ-CM-10: Required documents checklist (document types exist but no checklist UI matching uploaded files against requirements).
+- REQ-CM-14c/d: Status change blocking by required properties or documents (V1).
+- REQ-CM-14e: Status change triggering initiator notification (schema supports it but notification delivery not confirmed).
+- REQ-CM-17: Case suspension with deadline pause/resume (V1).
+- REQ-CM-18: Sub-cases / parent-child relationships (V1).
+- REQ-CM-19: Confidentiality level enforcement (field exists in schema but no access control enforcement).
+- REQ-CM-22: Audit trail via Nextcloud Activity (`OCP\Activity\IManager`) -- not confirmed as implemented; audit trails plugin exists in object store but integration with Nextcloud Activity system unclear.
+- Case search (keyword search against title and description).
+- Filter by priority, handler, overdue status in case list.
+
+### Standards & References
+
+- **ZGW Zaken API (VNG)**: Full compatibility layer via `ZrcController` and `ZgwZrcRulesService` implementing VNG Zaken API patterns (zaken, statussen, resultaten, rollen, zaakeigenschappen, zaakinformatieobjecten).
+- **CMMN 1.1**: Case modeled as CasePlanModel with HumanTask, Milestone, and case lifecycle concepts.
+- **Schema.org**: Case typed as `schema:Project` with `schema:name`, `schema:identifier`, `schema:startDate`, `schema:endDate`.
+- **ISO 8601**: Duration format for processing deadlines, extension periods.
+- **WCAG AA**: Accessible case list and detail views required.
+- **GEMMA**: Zaakgericht werken reference architecture compliance.
+- **Archiefwet**: Case result types with archival rules (retain/destroy, retention period).
+- **Awb**: Administrative law requirements for case handling deadlines and notifications.
+
+### Specificity Assessment
+
+This is the most detailed spec in the set -- highly implementation-ready with concrete data models, field mappings, and exhaustive scenarios.
+
+**Strengths:** Complete data model with CMMN/Schema.org/ZGW triple mapping. 22 requirements with detailed Gherkin scenarios. Clear feature tier separation. Explicit validation rules.
+
+**Missing/Ambiguous:**
+- No specification of case identifier format generation logic (the spec says `YYYY-NNN` but the implementation may use OpenRegister auto-generation).
+- No specification of how case deletion handles cascade (documents, tasks, decisions, roles).
+- No specification of the "reopen" mechanism after a case reaches final status.
+- Audit trail integration with Nextcloud Activity system needs implementation detail.
+
+**Open questions:**
+1. Is the audit trail stored via Nextcloud Activity (`IManager`) or via OpenRegister's audit trail plugin -- or both?
+2. Should case search use OpenRegister's built-in search or Nextcloud's full-text search?
+3. How are case identifiers guaranteed unique across multiple Nextcloud instances?

@@ -29,11 +29,13 @@ module.exports = defineConfig([{
 	rules: {
 		'jsdoc/require-jsdoc': 'off',
 		'vue/first-attribute-linebreak': 'off',
+		'vue/enforce-style-attribute': ['error', { allow: ['scoped'] }],
 		'@typescript-eslint/no-explicit-any': 'off',
 		'n/no-missing-import': 'off',
 		'import/namespace': 'off',
 		'import/default': 'off',
 		'import/no-named-as-default': 'off',
 		'import/no-named-as-default-member': 'off',
+		'import/no-unresolved': ['error', { ignore: ['^@conduction/nextcloud-vue'] }],
 	},
 }])
