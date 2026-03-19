@@ -84,12 +84,13 @@ class InitializeSettings implements IRepairStep
                 $output->info(
                     'Procest configuration imported successfully (version: '.$version.')'
                 );
-            } else {
-                $message = ($result['message'] ?? 'unknown error');
-                $output->warning(
-                    'Procest configuration import issue: '.$message
-                );
+                return;
             }
+
+            $message = ($result['message'] ?? 'unknown error');
+            $output->warning(
+                'Procest configuration import issue: '.$message
+            );
         } catch (\Throwable $e) {
             $output->warning('Could not auto-configure Procest: '.$e->getMessage());
             $this->logger->error(

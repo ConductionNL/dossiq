@@ -46,6 +46,7 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassLength)
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
  * @SuppressWarnings(PHPMD.NPathComplexity)
  */
@@ -371,12 +372,12 @@ class BrcController extends Controller
             $zaakUrl = '';
             if (is_array($data) === true) {
                 $zaakUrl = $data['zaak'] ?? '';
-            }
 
-            if ($zaakUrl !== '') {
-                $besluitUrl = $data['url'] ?? '';
-                if ($besluitUrl !== '') {
-                    $this->syncZaakBesluitToZrc(zaakUrl: $zaakUrl, besluitUrl: $besluitUrl);
+                if ($zaakUrl !== '') {
+                    $besluitUrl = $data['url'] ?? '';
+                    if ($besluitUrl !== '') {
+                        $this->syncZaakBesluitToZrc(zaakUrl: $zaakUrl, besluitUrl: $besluitUrl);
+                    }
                 }
             }
         }
@@ -413,8 +414,8 @@ class BrcController extends Controller
 
         $uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
         $zaakUuid    = '';
-        if (preg_match($uuidPattern, $zaakUrl, $m) === 1) {
-            $zaakUuid = $m[1];
+        if (preg_match($uuidPattern, $zaakUrl, $match) === 1) {
+            $zaakUuid = $match[1];
         }
 
         if ($zaakUuid === '') {
@@ -572,6 +573,7 @@ class BrcController extends Controller
                 mappingConfig: $mappingConfig
             );
 
+            // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],

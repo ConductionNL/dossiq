@@ -50,6 +50,8 @@ namespace OCA\Procest\Service;
  * ZTC (Catalogi API) business rule validation and enrichment.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class ZgwZtcRulesService extends ZgwRulesBase
 {
@@ -244,6 +246,9 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
+     * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
      */
     public function rulesZaaktypenCreate(array $body): array
     {
@@ -256,7 +261,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
                     status: 400,
                     detail: 'De selectielijstProcestype URL is ongeldig of wijst niet naar een procestype resource.',
                     invalidParams: [$this->fieldError(
-                        name: 'selectielijstProcestype',
+                        fieldName: 'selectielijstProcestype',
                         code: 'invalid-resource',
                         reason: 'De selectielijstProcestype URL is ongeldig of wijst niet naar een procestype resource.'
                     )
@@ -307,7 +312,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $body['_directFields'] = $directFields;
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesZaaktypenCreate()
 
     /**
@@ -350,7 +355,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $body['_directFields'] = $directFields;
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesBesluittypenCreate()
 
     /**
@@ -362,6 +367,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @param array $body The ZGW request body
      *
      * @return array The validation result
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW resolution of omschrijving/UUID/URL
      */
     public function rulesZaaktypeinformatieobjecttypenCreate(array $body): array
     {
@@ -378,24 +385,17 @@ class ZgwZtcRulesService extends ZgwRulesBase
                 $isUrl = (str_starts_with($iotRef, 'http://') === true
                     || str_starts_with($iotRef, 'https://') === true);
 
+                $needsNameLookup = false;
                 if ($isUrl === true) {
                     // URL — let reverse mapping handle UUID extraction.
                 } else if ($uuid !== null) {
                     // Bare UUID — verify it exists; if not, treat as omschrijving.
-                    $existing = $this->findBySchemaKey(uuid: $uuid, schemaKey: 'document_type_schema');
-                    if ($existing === null) {
-                        $found = $this->findObjectByField(
-                            register: $register,
-                            schema: $schema,
-                            field: 'name',
-                            value: $iotRef
-                        );
-                        if ($found !== null) {
-                            $body['informatieobjecttype'] = $found;
-                        }
-                    }
-                } else {
-                    // Not a URL or UUID — resolve by name (omschrijving).
+                    $existing        = $this->findBySchemaKey(uuid: $uuid, schemaKey: 'document_type_schema');
+                    $needsNameLookup = ($existing === null);
+                }
+
+                if ($isUrl === false && ($uuid === null || $needsNameLookup === true)) {
+                    // Not a URL, or bare UUID that didn't resolve — resolve by name.
                     $found = $this->findObjectByField(
                         register: $register,
                         schema: $schema,
@@ -409,7 +409,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             }//end if
         }//end if
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesZaaktypeinformatieobjecttypenCreate()
 
     /**
@@ -439,13 +439,13 @@ class ZgwZtcRulesService extends ZgwRulesBase
         $errors = [];
 
         // Ztc-002: Validate and fetch external URLs for enrichment.
-        $selectielijstklasseUrl = $body['selectielijstklasse'] ?? '';
-        $selectielijstData      = null;
-        if (empty($selectielijstklasseUrl) === false) {
-            $selectielijstData = $this->fetchExternalUrl(url: $selectielijstklasseUrl);
+        $selectieUrl       = $body['selectielijstklasse'] ?? '';
+        $selectielijstData = null;
+        if (empty($selectieUrl) === false) {
+            $selectielijstData = $this->fetchExternalUrl(url: $selectieUrl);
             if ($selectielijstData === null) {
                 $errors[] = $this->fieldError(
-                    name: 'selectielijstklasse',
+                    fieldName: 'selectielijstklasse',
                     code: 'invalid',
                     reason: 'De selectielijstklasse URL is ongeldig of niet bereikbaar.'
                 );
@@ -462,7 +462,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $rtoData = $this->fetchExternalUrl(url: $rtoUrl);
             if ($rtoData === null) {
                 $errors[] = $this->fieldError(
-                    name: 'resultaattypeomschrijving',
+                    fieldName: 'resultaattypeomschrijving',
                     code: 'invalid',
                     reason: 'De resultaattypeomschrijving URL is ongeldig of niet bereikbaar.'
                 );
@@ -494,7 +494,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             return $this->error(status: 400, detail: $errors[0]['reason'], invalidParams: $errors);
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesResultaattypenCreate()
 
     /**
@@ -595,7 +595,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             && in_array($afleidingswijze, self::AFLEIDINGSWIJZE_FORBIDS_EINDDATUM_BEKEND, true) === true
         ) {
             $errors[] = $this->fieldError(
-                name: 'brondatumArchiefprocedure.einddatumBekend',
+                fieldName: 'brondatumArchiefprocedure.einddatumBekend',
                 code: 'must-be-empty',
                 reason: "einddatumBekend moet false zijn voor afleidingswijze \"{$afleidingswijze}\"."
             );
@@ -756,27 +756,27 @@ class ZgwZtcRulesService extends ZgwRulesBase
     ): array {
         $hasValue = ($fieldValue !== '' && $fieldValue !== null);
 
-        if (in_array($afleidingswijze, $requiredFor, true) === true) {
-            if ($hasValue === false) {
-                return [
-                    $this->fieldError(
-                        name: $fieldName,
-                        code: 'required',
-                        reason: "{$fieldName} is vereist voor afleidingswijze \"{$afleidingswijze}\"."
-                    ),
-                ];
-            }
-        } else {
-            if ($hasValue === true) {
-                return [
-                    $this->fieldError(
-                        name: $fieldName,
-                        code: 'must-be-empty',
-                        reason: "{$fieldName} mag niet ingevuld zijn voor afleidingswijze \"{$afleidingswijze}\"."
-                    ),
-                ];
-            }
-        }//end if
+        $isRequired = in_array($afleidingswijze, $requiredFor, true);
+
+        if ($isRequired === true && $hasValue === false) {
+            return [
+                $this->fieldError(
+                    fieldName: $fieldName,
+                    code: 'required',
+                    reason: "{$fieldName} is vereist voor afleidingswijze \"{$afleidingswijze}\"."
+                ),
+            ];
+        }
+
+        if ($isRequired === false && $hasValue === true) {
+            return [
+                $this->fieldError(
+                    fieldName: $fieldName,
+                    code: 'must-be-empty',
+                    reason: "{$fieldName} mag niet ingevuld zijn voor afleidingswijze \"{$afleidingswijze}\"."
+                ),
+            ];
+        }
 
         return [];
     }//end validateFieldPresence()
@@ -795,7 +795,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
     ): ?array {
         if ($procestermijn === 'nihil' && $afleidingswijze !== 'afgehandeld') {
             return $this->fieldError(
-                name: 'nonFieldErrors',
+                fieldName: 'nonFieldErrors',
                 code: 'invalid-afleidingswijze-for-procestermijn',
                 reason: "Afleidingswijze \"{$afleidingswijze}\" is niet geldig".' bij selectielijstklasse met procestermijn "nihil".'
             );
@@ -805,7 +805,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $reason = "Afleidingswijze \"{$afleidingswijze}\" is niet geldig"
                 .' bij selectielijstklasse met procestermijn "bestaansduur_procesobject".';
             return $this->fieldError(
-                name: 'nonFieldErrors',
+                fieldName: 'nonFieldErrors',
                 code: 'invalid-afleidingswijze-for-procestermijn',
                 reason: $reason
             );
@@ -815,7 +815,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $reason = 'brondatumArchiefprocedure.procestermijn is vereist voor'
                 .' afleidingswijze "termijn" maar selectielijstklasse heeft geen procestermijn.';
             return $this->fieldError(
-                name: 'brondatumArchiefprocedure.procestermijn',
+                fieldName: 'brondatumArchiefprocedure.procestermijn',
                 code: 'required',
                 reason: $reason
             );
@@ -839,6 +839,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @return array The body with resolved references
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     private function resolveTypeReferences(
         array $body,
@@ -909,6 +910,9 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @param array $body The request body
      *
      * @return array The body with resolved zaaktype references
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — nested object resolution
+     * @SuppressWarnings(PHPMD.NPathComplexity)      — nested object resolution
      */
     private function resolveGerelateerdeZaaktypen(array $body): array
     {

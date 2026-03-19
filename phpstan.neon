@@ -3,7 +3,7 @@ parameters:
     paths:
         - lib
     bootstrapFiles:
-        - vendor/autoload.php
+        - phpstan-bootstrap.php
     excludePaths:
         - vendor
     scanDirectories:
@@ -14,3 +14,17 @@ parameters:
         - '#Call to an undefined method OC::#'
         - '#Class OC not found#'
         - '#Access to static property \$server on an unknown class OC#'
+        # OCA classes from other apps (OpenRegister) not available during static analysis
+        - '#unknown class OCA\\OpenRegister\\#'
+        - '#OCA\\OpenRegister\\[a-zA-Z\\]+.*not found#'
+        - '#on an unknown class OCA\\OpenRegister\\#'
+        - '#has invalid return type OCA\\OpenRegister\\#'
+        - '#Class OCA\\Procest\\Controller\\ZgwController not found#'
+        # GuzzleHttp is available at runtime via Nextcloud but not in composer require
+        - '#unknown class GuzzleHttp\\#'
+        - '#GuzzleHttp\\[a-zA-Z\\]+.*not found#'
+        - '#on an unknown class GuzzleHttp\\#'
+        - '#invalid type GuzzleHttp\\#'
+        - '#Caught class GuzzleHttp\\#'
+        # Dynamic HTTP status codes from business rule validation results
+        - '#Parameter \$statusCode of class OCP\\AppFramework\\Http\\JSONResponse constructor expects#'

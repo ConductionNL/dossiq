@@ -72,8 +72,10 @@ export default {
 
 	setup() {
 		const sidebarState = inject('sidebarState', null)
+		const objectStore = useObjectStore()
 		return useListView('task', {
 			sidebarState,
+			objectStore,
 			defaultSort: { key: 'dueDate', order: 'asc' },
 		})
 	},
@@ -211,9 +213,9 @@ export default {
 }
 </style>
 
-<style>
-/* Unscoped: rowClass applies to CnDataTable's <tr> elements */
-.row--overdue {
+<style scoped>
+/* rowClass applies to CnDataTable's <tr> elements */
+:deep(.row--overdue) {
 	border-left: 3px solid var(--color-error);
 }
 </style>

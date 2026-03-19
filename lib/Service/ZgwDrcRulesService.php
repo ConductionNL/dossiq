@@ -66,6 +66,8 @@ namespace OCA\Procest\Service;
  * DRC (Documenten API) business rule validation and enrichment.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class ZgwDrcRulesService extends ZgwRulesBase
 {
@@ -79,6 +81,9 @@ class ZgwDrcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
+     * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
      */
     public function rulesEnkelvoudiginformatieobjectenCreate(array $body): array
     {
@@ -118,7 +123,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
         // Drc-008: Check unique identificatie + bronorganisatie.
         if (empty($body['identificatie']) === false) {
             $error = $this->checkFieldUniqueness(
-                field1Value: $body['identificatie'] ?? '',
+                field1Value: $body['identificatie'],
                 field1Search: 'identifier',
                 field2Value: $body['bronorganisatie'] ?? '',
                 field2Search: 'sourceOrganisation',
@@ -134,7 +139,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
             $body['identificatie'] = $this->generateIdentificatie(prefix: 'DOCUMENT');
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesEnkelvoudiginformatieobjectenCreate()
 
     /**
@@ -159,7 +164,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
             return $lockError;
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesEnkelvoudiginformatieobjectenUpdate()
 
     /**
@@ -184,7 +189,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
             return $lockError;
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesEnkelvoudiginformatieobjectenPatch()
 
     /**
@@ -204,12 +209,12 @@ class ZgwDrcRulesService extends ZgwRulesBase
         ?array $existingObject=null
     ): array {
         if ($existingObject === null || $this->objectService === null) {
-            return $this->ok(body: $body);
+            return $this->isValid(body: $body);
         }
 
         $existingId = $existingObject['id'] ?? ($existingObject['@self']['id'] ?? null);
         if ($existingId === null) {
-            return $this->ok(body: $body);
+            return $this->isValid(body: $body);
         }
 
         // Drc-007: Check for ObjectInformatieObject relations.
@@ -239,7 +244,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
             }
         }//end if
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesEnkelvoudiginformatieobjectenDestroy()
 
     /**
@@ -252,6 +257,9 @@ class ZgwDrcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
+     * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
      */
     public function rulesObjectinformatieobjectenCreate(array $body): array
     {
@@ -300,7 +308,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
             }
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesObjectinformatieobjectenCreate()
 
     /**
@@ -368,9 +376,13 @@ class ZgwDrcRulesService extends ZgwRulesBase
      *
      * @param array $body The request body
      *
-     * @return array|null Validation error, or null if valid
+     * @return array Validation error
+     *
+     * @psalm-suppress UnusedParam — $body reserved for future gebruiksrechten lookup
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $body reserved for future gebruiksrechten lookup
      */
-    private function validateIndicatieGebruiksrechtTrue(array $body): ?array
+    private function validateIndicatieGebruiksrechtTrue(array $body): array
     {
         // On create, the document does not yet exist so there can be no gebruiksrechten.
         return $this->error(
@@ -463,6 +475,8 @@ class ZgwDrcRulesService extends ZgwRulesBase
      * @param string $objectType The object type (zaak or besluit)
      *
      * @return array|null Validation error if relation doesn't exist, null if valid
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW cross-register validation
      */
     private function validateOioCrossRegister(string $ioUrl, string $objectUrl, string $objectType): ?array
     {
@@ -478,17 +492,15 @@ class ZgwDrcRulesService extends ZgwRulesBase
             return null;
         }
 
-        $schemaKey   = '';
-        $searchField = '';
-        if ($objectType === 'zaak') {
-            $schemaKey   = 'case_document_schema';
-            $searchField = 'case';
-        } else if ($objectType === 'besluit') {
-            $schemaKey   = 'decision_document_schema';
-            $searchField = 'decision';
-        } else {
+        $typeMap = [
+            'zaak'    => ['case_document_schema', 'case'],
+            'besluit' => ['decision_document_schema', 'decision'],
+        ];
+        if (isset($typeMap[$objectType]) === false) {
             return null;
         }
+
+        [$schemaKey, $searchField] = $typeMap[$objectType];
 
         $schema = $this->settingsService->getConfigValue(key: $schemaKey);
         if ($schema === '') {
@@ -702,7 +714,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
 
         // Check if the document is locked.
         $existingLock = $existingObject['locked'] ?? ($existingObject['lock'] ?? '');
-        if ($existingLock === '' || $existingLock === false || $existingLock === null) {
+        if ($existingLock === '' || $existingLock === false) {
             return null;
         }
 
@@ -761,9 +773,9 @@ class ZgwDrcRulesService extends ZgwRulesBase
             return $body;
         }
 
-        $va = $iotData['confidentiality'] ?? $iotData['confidentialityDesignation'] ?? $iotData['vertrouwelijkheidaanduiding'] ?? '';
-        if ($va !== '') {
-            $body['vertrouwelijkheidaanduiding'] = $va;
+        $val = $iotData['confidentiality'] ?? $iotData['confidentialityDesignation'] ?? $iotData['vertrouwelijkheidaanduiding'] ?? '';
+        if ($val !== '') {
+            $body['vertrouwelijkheidaanduiding'] = $val;
         }
 
         return $body;

@@ -1,37 +1,56 @@
 <template>
-	<div class="case-detail">
-		<div class="case-detail__header">
-			<NcButton @click="$router.push({ name: 'Cases' })">
-				{{ t('procest', 'Back to list') }}
-			</NcButton>
-			<h2>{{ caseData.title || t('procest', 'Case') }}</h2>
-			<span v-if="caseData.identifier" class="case-detail__identifier">
-				{{ caseData.identifier }}
-			</span>
-		</div>
+	<div>
+		<CnDetailPage
+			:title="caseData.title || t('procest', 'Case')"
+			:subtitle="caseData.identifier ? `${t('procest', 'Case')} — ${caseData.identifier}` : t('procest', 'Case')"
+			:back-route="{ name: 'Cases' }"
+			:back-label="t('procest', 'Back to list')"
+			:loading="loading"
+			:sidebar="!isNew && !loading"
+			object-type="procest_case"
+			:object-id="caseId"
+			:sidebar-props="sidebarProps">
+			<template #header-actions>
+				<NcButton
+					v-if="!isReadOnly"
+					type="primary"
+					:disabled="saving"
+					@click="save">
+					<template v-if="saving">
+						<NcLoadingIcon :size="20" />
+					</template>
+					{{ t('procest', 'Save') }}
+				</NcButton>
+				<NcButton type="error" @click="confirmDelete">
+					{{ t('procest', 'Delete') }}
+				</NcButton>
+			</template>
 
-		<NcLoadingIcon v-if="loading" />
+			<!-- Status card -->
+			<CnDetailCard :title="t('procest', 'Status')">
+				<div class="status-section">
+					<span class="status-badge" :class="currentStatusBadgeClass">
+						{{ currentStatusName }}
+					</span>
 
-		<template v-else>
-			<!-- Status bar -->
-			<div class="case-detail__status-bar">
-				<span class="status-badge" :class="currentStatusBadgeClass">
-					{{ currentStatusName }}
-				</span>
+					<!-- Status change dropdown -->
+					<div v-if="!isReadOnly && orderedStatusTypes.length > 0" class="status-section__change">
+						<NcSelect
+							v-model="selectedStatus"
+							:options="orderedStatusTypes"
+							label="name"
+							track-by="id"
+							:placeholder="t('procest', 'Change status...')"
+							@input="onStatusSelected" />
+					</div>
 
-				<!-- Status change dropdown -->
-				<div v-if="!isReadOnly && orderedStatusTypes.length > 0" class="case-detail__status-change">
-					<NcSelect
-						v-model="selectedStatus"
-						:options="orderedStatusTypes"
-						label="name"
-						track-by="id"
-						:placeholder="t('procest', 'Change status...')"
-						@input="onStatusSelected" />
+					<span v-if="caseData.endDate" class="status-section__closed-info">
+						{{ t('procest', 'Closed on {date}', { date: formatDate(caseData.endDate) }) }}
+					</span>
 				</div>
 
 				<!-- Result prompt (shown when final status selected) -->
-				<div v-if="showResultPrompt" class="case-detail__result-prompt">
+				<div v-if="showResultPrompt" class="result-prompt">
 					<template v-if="resultTypes.length > 0">
 						<NcSelect
 							v-model="selectedResultType"
@@ -50,7 +69,7 @@
 					<p v-if="resultError" class="form-error">
 						{{ resultError }}
 					</p>
-					<div class="case-detail__result-actions">
+					<div class="result-prompt__actions">
 						<NcButton type="primary" @click="confirmStatusChange">
 							{{ t('procest', 'Confirm') }}
 						</NcButton>
@@ -59,115 +78,92 @@
 						</NcButton>
 					</div>
 				</div>
+			</CnDetailCard>
 
-				<span v-if="caseData.endDate" class="case-detail__closed-info">
-					{{ t('procest', 'Closed on {date}', { date: formatDate(caseData.endDate) }) }}
-				</span>
-			</div>
+			<!-- Status Timeline card -->
+			<CnDetailCard v-if="orderedStatusTypes.length > 0" :title="t('procest', 'Status Timeline')">
+				<StatusTimeline
+					:status-types="orderedStatusTypes"
+					:current-status-id="caseData.status"
+					:status-history="caseData.statusHistory || []" />
+			</CnDetailCard>
 
-			<!-- Status timeline -->
-			<StatusTimeline
-				v-if="orderedStatusTypes.length > 0"
-				:status-types="orderedStatusTypes"
-				:current-status-id="caseData.status"
-				:status-history="caseData.statusHistory || []" />
+			<!-- Case Information card -->
+			<CnDetailCard :title="t('procest', 'Case Information')">
+				<div class="form-group">
+					<label>{{ t('procest', 'Title') }} *</label>
+					<NcTextField
+						:value="form.title"
+						:disabled="isReadOnly"
+						:error="!!validationErrors.title"
+						@update:value="v => { form.title = v; validationErrors.title = '' }" />
+					<p v-if="validationErrors.title" class="form-error">
+						{{ validationErrors.title }}
+					</p>
+				</div>
 
-			<!-- Case info + Deadline panels side by side -->
-			<div class="case-detail__panels">
-				<!-- Info panel / form -->
-				<div class="case-detail__info-panel">
-					<h3>{{ t('procest', 'Case Information') }}</h3>
+				<div class="form-group">
+					<label>{{ t('procest', 'Description') }}</label>
+					<textarea
+						v-model="form.description"
+						:disabled="isReadOnly"
+						rows="3" />
+				</div>
 
+				<div class="form-row">
 					<div class="form-group">
-						<label>{{ t('procest', 'Title') }} *</label>
-						<NcTextField
-							:value="form.title"
-							:disabled="isReadOnly"
-							:error="!!validationErrors.title"
-							@update:value="v => { form.title = v; validationErrors.title = '' }" />
-						<p v-if="validationErrors.title" class="form-error">
-							{{ validationErrors.title }}
-						</p>
+						<label>{{ t('procest', 'Case type') }}</label>
+						<span class="form-value">{{ caseTypeName }}</span>
 					</div>
-
 					<div class="form-group">
-						<label>{{ t('procest', 'Description') }}</label>
-						<textarea
-							v-model="form.description"
-							:disabled="isReadOnly"
-							rows="3" />
-					</div>
-
-					<div class="form-row">
-						<div class="form-group">
-							<label>{{ t('procest', 'Case type') }}</label>
-							<span class="form-value">{{ caseTypeName }}</span>
-						</div>
-						<div class="form-group">
-							<label>{{ t('procest', 'Identifier') }}</label>
-							<span class="form-value">{{ caseData.identifier || '—' }}</span>
-						</div>
-					</div>
-
-					<div class="form-row">
-						<div class="form-group">
-							<label>{{ t('procest', 'Priority') }}</label>
-							<NcSelect
-								v-model="form.priority"
-								:options="priorityOptions"
-								:disabled="isReadOnly" />
-						</div>
-						<div class="form-group">
-							<label>{{ t('procest', 'Confidentiality') }}</label>
-							<span class="form-value">{{ caseData.confidentiality || '—' }}</span>
-						</div>
-					</div>
-
-					<div class="form-row">
-						<div class="form-group">
-							<label>{{ t('procest', 'Handler') }}</label>
-							<NcTextField
-								:value="form.assignee"
-								:disabled="isReadOnly"
-								:placeholder="t('procest', 'Assign handler...')"
-								@update:value="v => form.assignee = v" />
-						</div>
-						<div class="form-group">
-							<label>{{ t('procest', 'Start date') }}</label>
-							<span class="form-value">{{ formatDate(caseData.startDate) }}</span>
-						</div>
-					</div>
-
-					<ResultSection
-						:result="caseResult"
-						:result-types="resultTypes"
-						:show-empty="isAtFinalStatus && !caseResult" />
-
-					<div v-if="!caseResult && caseData.result" class="form-group">
-						<label>{{ t('procest', 'Result') }}</label>
-						<span class="form-value">{{ caseData.result }}</span>
-					</div>
-
-					<!-- Save / Delete actions -->
-					<div v-if="!isReadOnly" class="case-detail__form-actions">
-						<NcButton
-							type="primary"
-							:disabled="saving"
-							@click="save">
-							<template v-if="saving">
-								<NcLoadingIcon :size="20" />
-							</template>
-							{{ t('procest', 'Save') }}
-						</NcButton>
-						<NcButton type="error" @click="confirmDelete">
-							{{ t('procest', 'Delete') }}
-						</NcButton>
+						<label>{{ t('procest', 'Identifier') }}</label>
+						<span class="form-value">{{ caseData.identifier || '—' }}</span>
 					</div>
 				</div>
 
-				<!-- Deadline panel -->
+				<div class="form-row">
+					<div class="form-group">
+						<label>{{ t('procest', 'Priority') }}</label>
+						<NcSelect
+							v-model="form.priority"
+							:options="priorityOptions"
+							:disabled="isReadOnly" />
+					</div>
+					<div class="form-group">
+						<label>{{ t('procest', 'Confidentiality') }}</label>
+						<span class="form-value">{{ caseData.confidentiality || '—' }}</span>
+					</div>
+				</div>
+
+				<div class="form-row">
+					<div class="form-group">
+						<label>{{ t('procest', 'Handler') }}</label>
+						<NcTextField
+							:value="form.assignee"
+							:disabled="isReadOnly"
+							:placeholder="t('procest', 'Assign handler...')"
+							@update:value="v => form.assignee = v" />
+					</div>
+					<div class="form-group">
+						<label>{{ t('procest', 'Start date') }}</label>
+						<span class="form-value">{{ formatDate(caseData.startDate) }}</span>
+					</div>
+				</div>
+
+				<ResultSection
+					:result="caseResult"
+					:result-types="resultTypes"
+					:show-empty="isAtFinalStatus && !caseResult" />
+
+				<div v-if="!caseResult && caseData.result" class="form-group">
+					<label>{{ t('procest', 'Result') }}</label>
+					<span class="form-value">{{ caseData.result }}</span>
+				</div>
+			</CnDetailCard>
+
+			<!-- Deadline & Timing card -->
+			<CnDetailCard v-if="caseTypeData" :title="t('procest', 'Deadline & Timing')">
 				<DeadlinePanel
-					v-if="caseTypeData"
 					:start-date="caseData.startDate"
 					:deadline="caseData.deadline"
 					:processing-deadline="caseTypeData.processingDeadline"
@@ -176,22 +172,23 @@
 					:extension-count="caseData.extensionCount || 0"
 					:is-final="isAtFinalStatus"
 					@extend="showExtensionDialog" />
-			</div>
+			</CnDetailCard>
 
-			<!-- Participants section -->
-			<ParticipantsSection
-				:case-id="caseId"
-				:is-read-only="isReadOnly"
-				@handler-changed="onHandlerChanged" />
+			<!-- Participants card -->
+			<CnDetailCard :title="t('procest', 'Participants')">
+				<ParticipantsSection
+					:case-id="caseId"
+					:is-read-only="isReadOnly"
+					@handler-changed="onHandlerChanged" />
+			</CnDetailCard>
 
-			<!-- Tasks section -->
-			<div class="case-detail__section">
-				<div class="section-header">
-					<h3>{{ t('procest', 'Tasks') }} ({{ completedTaskCount }}/{{ tasks.length }})</h3>
+			<!-- Tasks card -->
+			<CnDetailCard :title="`${t('procest', 'Tasks')} (${completedTaskCount}/${tasks.length})`">
+				<template #actions>
 					<NcButton v-if="!isReadOnly" @click="$router.push({ name: 'TaskNew', query: { caseId } })">
 						{{ t('procest', 'New task') }}
 					</NcButton>
-				</div>
+				</template>
 
 				<div v-if="tasks.length === 0" class="section-empty">
 					{{ t('procest', 'No tasks yet') }}
@@ -245,14 +242,16 @@
 						</tbody>
 					</table>
 				</div>
-			</div>
+			</CnDetailCard>
 
-			<!-- Activity timeline -->
-			<ActivityTimeline
-				:activity="caseData.activity || []"
-				:is-read-only="isReadOnly"
-				@add-note="onAddNote" />
-		</template>
+			<!-- Activity card -->
+			<CnDetailCard :title="t('procest', 'Activity')">
+				<ActivityTimeline
+					:activity="caseData.activity || []"
+					:is-read-only="isReadOnly"
+					@add-note="onAddNote" />
+			</CnDetailCard>
+		</CnDetailPage>
 
 		<!-- Extension dialog -->
 		<div v-if="showExtension" class="extension-overlay" @click.self="showExtension = false">
@@ -281,6 +280,7 @@
 
 <script>
 import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
+import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { getStatusLabel as getTaskStatusLabel } from '../../utils/taskLifecycle.js'
 import { isOverdue, isDueToday, getOverdueText, formatDueDate, sortTasks, getPriorityLevels } from '../../utils/taskHelpers.js'
@@ -299,6 +299,8 @@ export default {
 		NcLoadingIcon,
 		NcTextField,
 		NcSelect,
+		CnDetailPage,
+		CnDetailCard,
 		StatusTimeline,
 		DeadlinePanel,
 		ActivityTimeline,
@@ -384,6 +386,13 @@ export default {
 		extensionPeriodText() {
 			if (!this.caseTypeData?.extensionPeriod) return ''
 			return formatDuration(this.caseTypeData.extensionPeriod)
+		},
+		sidebarProps() {
+			const config = this.objectStore.objectTypeRegistry.case || {}
+			return {
+				register: config.register || '',
+				schema: config.schema || '',
+			}
 		},
 	},
 	async mounted() {
@@ -703,76 +712,35 @@ export default {
 </script>
 
 <style scoped>
-.case-detail {
-	padding: 20px;
-	max-width: 900px;
-}
-
-.case-detail__header {
-	display: flex;
-	align-items: center;
-	gap: 16px;
-	margin-bottom: 20px;
-}
-
-.case-detail__identifier {
-	font-family: monospace;
-	font-size: 14px;
-	color: var(--color-text-maxcontrast);
-	background: var(--color-background-dark);
-	padding: 2px 8px;
-	border-radius: var(--border-radius);
-}
-
-/* Status bar */
-.case-detail__status-bar {
+/* Status section */
+.status-section {
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	margin-bottom: 16px;
-	padding: 12px;
-	background: var(--color-background-dark);
-	border-radius: var(--border-radius);
 	flex-wrap: wrap;
 }
 
-.case-detail__status-change {
+.status-section__change {
 	min-width: 200px;
 }
 
-.case-detail__closed-info {
+.status-section__closed-info {
 	color: var(--color-text-maxcontrast);
 	font-size: 13px;
 	margin-left: auto;
 }
 
 /* Result prompt */
-.case-detail__result-prompt {
-	width: 100%;
-	margin-top: 8px;
-	padding-top: 8px;
+.result-prompt {
+	margin-top: 12px;
+	padding-top: 12px;
 	border-top: 1px solid var(--color-border);
 }
 
-.case-detail__result-actions {
+.result-prompt__actions {
 	display: flex;
 	gap: 8px;
 	margin-top: 8px;
-}
-
-/* Panels layout */
-.case-detail__panels {
-	display: flex;
-	gap: 20px;
-	margin-bottom: 24px;
-}
-
-.case-detail__info-panel {
-	flex: 2;
-}
-
-.case-detail__info-panel h3 {
-	margin: 0 0 16px;
 }
 
 /* Form styles */
@@ -818,74 +786,6 @@ export default {
 	color: var(--color-error);
 	font-size: 13px;
 	margin-top: 4px;
-}
-
-.case-detail__form-actions {
-	display: flex;
-	gap: 12px;
-	margin-top: 20px;
-}
-
-/* Sections */
-.case-detail__section {
-	margin-top: 24px;
-	border-top: 1px solid var(--color-border);
-	padding-top: 16px;
-}
-
-.section-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 12px;
-}
-
-.section-empty {
-	text-align: center;
-	color: var(--color-text-maxcontrast);
-	padding: 16px;
-}
-
-/* Tasks table */
-.viewTableContainer {
-	background: var(--color-main-background);
-	border-radius: var(--border-radius);
-	overflow: hidden;
-	box-shadow: 0 2px 4px var(--color-box-shadow);
-	border: 1px solid var(--color-border);
-}
-
-.viewTable {
-	width: 100%;
-	border-collapse: collapse;
-	background-color: var(--color-main-background);
-}
-
-.viewTable th,
-.viewTable td {
-	padding: 12px;
-	text-align: left;
-	border-bottom: 1px solid var(--color-border);
-	vertical-align: middle;
-}
-
-.viewTable th {
-	background-color: var(--color-background-dark);
-	font-weight: 500;
-	color: var(--color-text-maxcontrast);
-}
-
-.viewTableRow {
-	cursor: pointer;
-	transition: background-color 0.2s ease;
-}
-
-.viewTableRow:hover {
-	background: var(--color-background-hover);
-}
-
-.viewTableRow--overdue {
-	border-left: 3px solid var(--color-error);
 }
 
 /* Status badges */
@@ -960,6 +860,54 @@ export default {
 .due-date--today {
 	color: var(--color-warning);
 	font-weight: 500;
+}
+
+/* Tasks table */
+.section-empty {
+	text-align: center;
+	color: var(--color-text-maxcontrast);
+	padding: 16px;
+}
+
+.viewTableContainer {
+	background: var(--color-main-background);
+	border-radius: var(--border-radius);
+	overflow: hidden;
+	box-shadow: 0 2px 4px var(--color-box-shadow);
+	border: 1px solid var(--color-border);
+}
+
+.viewTable {
+	width: 100%;
+	border-collapse: collapse;
+	background-color: var(--color-main-background);
+}
+
+.viewTable th,
+.viewTable td {
+	padding: 12px;
+	text-align: left;
+	border-bottom: 1px solid var(--color-border);
+	vertical-align: middle;
+}
+
+.viewTable th {
+	background-color: var(--color-background-dark);
+	font-weight: 500;
+	color: var(--color-text-maxcontrast);
+}
+
+.viewTableRow {
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+}
+
+.viewTableRow:hover {
+	background: var(--color-background-hover);
+}
+
+.viewTableRow--overdue {
+	border-left: 3px solid var(--color-error);
 }
 
 /* Extension dialog */

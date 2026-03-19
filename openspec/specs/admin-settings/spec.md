@@ -580,3 +580,57 @@ The case type detail/edit view MUST follow the layout structure defined in DESIG
 - **Localization**: All labels, error messages, validation messages, and placeholder text MUST support English and Dutch localization.
 - **Data integrity**: Deleting a case type or sub-entity MUST use soft-delete or referential integrity checks. The system MUST prevent orphaning active cases.
 - **Responsiveness**: The admin settings page MUST be usable on desktop viewports (minimum 1024px width). Mobile responsiveness is not required for admin settings.
+
+### Current Implementation Status
+
+**Implemented:**
+- Admin panel registration via `OCA\Procest\Settings\AdminSettings` (`lib/Settings/AdminSettings.php`) and `OCA\Procest\Sections\SettingsSection` (`lib/Sections/SettingsSection.php`) -- registers the "Procest" section in Nextcloud admin settings with icon support.
+- Admin settings Vue root component (`src/views/settings/AdminRoot.vue`) renders the full admin page with two sections: Case Type Management and ZGW API Mapping.
+- Case type list view (`src/views/settings/CaseTypeList.vue`) using `CnIndexPage` -- displays title, isDraft badge (Draft/Published), processing deadline, validity period. Supports set-as-default (star icon, published-only) and delete actions.
+- Case type detail/edit view (`src/views/settings/CaseTypeDetail.vue`) with tabbed interface: General and Statuses tabs are implemented. Publish/unpublish buttons with validation errors. Save button in header.
+- General tab (`src/views/settings/tabs/GeneralTab.vue`) with fields: title, description, purpose, trigger, subject, processing deadline, service target, extension allowed/period, suspension allowed, origin, confidentiality, publication required/text, valid from/until, draft/published status.
+- Statuses tab (`src/views/settings/tabs/StatusesTab.vue`) with ordered list, drag-and-drop reorder, inline editing, add/delete, isFinal checkbox, notifyInitiator toggle with notification text field.
+- Case type CRUD via OpenRegister object store (`src/store/modules/object.js` using `createObjectStore` from `@conduction/nextcloud-vue`).
+- Default case type selection persisted via `SettingsService` (`lib/Service/SettingsService.php`, config key `default_case_type`).
+- Settings controller (`lib/Controller/SettingsController.php`) with index/create/load endpoints.
+- Register configuration auto-import from `procest_register.json` (`lib/Service/SettingsService.php::loadConfiguration`).
+- Case type admin orchestrator component (`src/views/settings/CaseTypeAdmin.vue`) managing list/detail view switching.
+- Duration formatting helpers (`src/utils/durationHelpers.js`).
+- Case type validation utilities (`src/utils/caseTypeValidation.js`).
+
+**Not yet implemented:**
+- Results tab (V1) -- result type CRUD with archival rules.
+- Roles tab (V1) -- role type CRUD with generic role mapping.
+- Properties tab (V1) -- property definition CRUD with required-at-status linking.
+- Documents tab (V1) -- document type CRUD with direction and required-at-status.
+- Publish validation: checking for at least one status type and validFrom date before publishing (partial -- UI has publish errors display but completeness checks may not cover all scenarios).
+- Delete case type blocking when active cases exist (no backend enforcement found).
+- Concurrent editing conflict detection.
+- Keyboard alternative for drag-and-drop reorder.
+
+### Standards & References
+
+- **ZGW Catalogi API (VNG)**: The case type data model maps directly to ZaakType, StatusType, ResultaatType, RolType, EigenschapType, InformatieObjectType from the ZGW Catalogi API specification (VNG-Realisatie/catalogi-api).
+- **CMMN 1.1**: Case type modeled after CaseDefinition concept; status types correspond to CMMN Milestone sequences.
+- **Schema.org**: Properties use `schema:name`, `schema:description`, `schema:identifier` mappings.
+- **ISO 8601**: Duration format for processing deadlines, extension periods, retention periods.
+- **WCAG AA**: Spec requires accessible form labels, keyboard alternatives for drag-and-drop, `aria-describedby` for error messages.
+- **GEMMA**: Dutch municipal architecture standards for zaakgericht werken.
+
+### Specificity Assessment
+
+This spec is highly specific and implementation-ready. Requirements are well-structured with concrete scenarios, data tables, and validation rules.
+
+**Strengths:** Detailed Gherkin scenarios covering happy paths and error cases. Clear feature tier separation (MVP vs V1). Explicit field definitions with types.
+
+**Missing/Ambiguous:**
+- No API endpoint definitions (REST paths, request/response schemas) -- relies on OpenRegister generic CRUD.
+- Publish validation logic not fully specified at the backend level (controller vs service layer responsibility).
+- Archival rules for result types reference `retentionDateSource` options but do not define their semantics in detail (e.g., what "custom_property" or "related_case" means concretely).
+- No specification of how V1 tabs become available (feature flag, config, or automatic based on version).
+- Decision types (REQ-CT-11 in case-types spec) are mentioned in the data model but not in the admin-settings spec tabs.
+
+**Open questions:**
+1. Should the admin settings enforce backend validation (server-side) or is frontend validation sufficient for MVP?
+2. How should the system handle case type versioning -- can a published case type be edited, or must it be unpublished first?
+3. Should delete of status types cascade to status records on existing cases?

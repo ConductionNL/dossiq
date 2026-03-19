@@ -30,8 +30,6 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
-use Psr\Log\LoggerInterface;
-
 /**
  * Dispatcher for ZGW business rule validation and enrichment.
  *
@@ -44,18 +42,14 @@ class ZgwBusinessRulesService
     /**
      * Constructor.
      *
-     * @param LoggerInterface    $logger          The logger
-     * @param SettingsService    $settingsService The settings service
-     * @param ZgwZrcRulesService $zrcRules        ZRC (Zaken) rules
-     * @param ZgwZtcRulesService $ztcRules        ZTC (Catalogi) rules
-     * @param ZgwDrcRulesService $drcRules        DRC (Documenten) rules
-     * @param ZgwBrcRulesService $brcRules        BRC (Besluiten) rules
+     * @param ZgwZrcRulesService $zrcRules ZRC (Zaken) rules
+     * @param ZgwZtcRulesService $ztcRules ZTC (Catalogi) rules
+     * @param ZgwDrcRulesService $drcRules DRC (Documenten) rules
+     * @param ZgwBrcRulesService $brcRules BRC (Besluiten) rules
      *
      * @return void
      */
     public function __construct(
-        private readonly LoggerInterface $logger,
-        private readonly SettingsService $settingsService,
         private readonly ZgwZrcRulesService $zrcRules,
         private readonly ZgwZtcRulesService $ztcRules,
         private readonly ZgwDrcRulesService $drcRules,
@@ -82,6 +76,7 @@ class ZgwBusinessRulesService
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)    — ZGW scope flag from middleware
      */
     public function validate(
         string $zgwApi,
@@ -175,7 +170,7 @@ class ZgwBusinessRulesService
         array $body,
         ?array $existingObject
     ): array {
-        $ok = [
+        $valid = [
             'valid'        => true,
             'status'       => 200,
             'detail'       => '',
@@ -222,7 +217,7 @@ class ZgwBusinessRulesService
             );
         }
 
-        return $ok;
+        return $valid;
     }//end dispatchToRegister()
 
     /**
@@ -260,7 +255,7 @@ class ZgwBusinessRulesService
                 => $this->zrcRules->rulesZaakinformatieobjectenPatch($body, $existingObject),
             $resource === 'zaakeigenschappen' && $action === 'create'
                 => $this->zrcRules->rulesZaakeigenschappenCreate($body),
-            default => $this->ok(body: $body),
+            default => $this->isValid(body: $body),
         };//end match
     }//end dispatchZrc()
 
@@ -273,6 +268,10 @@ class ZgwBusinessRulesService
      * @param array|null $existingObject The existing object data
      *
      * @return array The validation result
+     *
+     * @psalm-suppress UnusedParam — $existingObject reserved for update validation rules
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $existingObject reserved for update rules
      */
     private function dispatchZtc(string $resource, string $action, array $body, ?array $existingObject): array
     {
@@ -285,7 +284,7 @@ class ZgwBusinessRulesService
                 => $this->ztcRules->rulesZaaktypeinformatieobjecttypenCreate($body),
             $resource === 'resultaattypen' && $action === 'create'
                 => $this->ztcRules->rulesResultaattypenCreate($body),
-            default => $this->ok(body: $body),
+            default => $this->isValid(body: $body),
         };
     }//end dispatchZtc()
 
@@ -312,7 +311,7 @@ class ZgwBusinessRulesService
                 => $this->drcRules->rulesEnkelvoudiginformatieobjectenDestroy($body, $existingObject),
             $resource === 'objectinformatieobjecten' && $action === 'create'
                 => $this->drcRules->rulesObjectinformatieobjectenCreate($body),
-            default => $this->ok(body: $body),
+            default => $this->isValid(body: $body),
         };
     }//end dispatchDrc()
 
@@ -337,7 +336,7 @@ class ZgwBusinessRulesService
                 => $this->brcRules->rulesBesluitenPatch($body, $existingObject),
             $resource === 'besluitinformatieobjecten' && $action === 'create'
                 => $this->brcRules->rulesBesluitinformatieobjectenCreate($body),
-            default => $this->ok(body: $body),
+            default => $this->isValid(body: $body),
         };
     }//end dispatchBrc()
 
@@ -348,7 +347,7 @@ class ZgwBusinessRulesService
      *
      * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
      */
-    private function ok(array $body): array
+    private function isValid(array $body): array
     {
         return [
             'valid'        => true,
@@ -356,5 +355,5 @@ class ZgwBusinessRulesService
             'detail'       => '',
             'enrichedBody' => $body,
         ];
-    }//end ok()
+    }//end isValid()
 }//end class

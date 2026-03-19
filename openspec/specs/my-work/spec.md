@@ -307,3 +307,51 @@ The system MUST handle cases where items change status while the user is viewing
 - **Accessibility**: Each item MUST be keyboard-navigable. Screen readers MUST announce the entity type, title, urgency status, and deadline. Overdue visual indicators MUST NOT rely solely on color (use text "X days overdue" as well). All content MUST meet WCAG AA standards.
 - **Localization**: All labels, section titles, date formatting, and relative time expressions (e.g., "5 days overdue", "3 days") MUST support English and Dutch localization.
 - **Responsiveness**: The My Work view MUST adapt to narrow viewports, maintaining readability of all item fields on mobile screens.
+
+---
+
+### Current Implementation Status
+
+**Substantially implemented (MVP).** The My Work view exists and covers most MVP requirements.
+
+**Implemented (with file paths):**
+- **My Work view**: `src/views/MyWork.vue` -- full implementation with filter tabs (All/Cases/Tasks), grouped sections (Overdue, Due this week, Upcoming, No deadline), overdue highlighting (red left border, red text), item counts per section, empty states, and show-completed toggle.
+- **Navigation entry**: `src/navigation/MainMenu.vue` -- "My Work" menu item with `AccountCheck` icon linked to route `/my-work`.
+- **Router**: `src/router/index.js` -- route `{ path: '/my-work', name: 'MyWork', component: MyWork }`.
+- **Dashboard helpers**: `src/utils/dashboardHelpers.js` -- `getGroupedMyWorkItems()` function that groups items into overdue/dueThisWeek/upcoming/noDeadline sections with sorting by priority then deadline.
+- **Task API service**: `src/services/taskApi.js` -- `fetchTasksForCases()` fetches CalDAV tasks linked to cases.
+- **Object store**: `src/store/modules/object.js` -- uses `createObjectStore('object')` from `@conduction/nextcloud-vue` for CRUD operations against OpenRegister.
+- **Filter tabs**: Three tabs (All, Cases, Tasks) with item counts, active tab highlighting (REQ-MYWORK-002).
+- **Grouped sections**: Four sections with section counts and empty section hiding (REQ-MYWORK-004).
+- **Overdue highlighting**: Red border on overdue rows, red overdue text, priority indicators (REQ-MYWORK-005).
+- **Default non-final filter**: Active cases only by default; show-completed toggle fetches final-status cases (REQ-MYWORK-006).
+- **Item navigation**: Click navigates to CaseDetail; task clicks navigate to the linked case (REQ-MYWORK-007).
+- **Empty state**: NcEmptyContent with "No items assigned to you" and "All caught up!" messages (REQ-MYWORK-009).
+- **Dashboard widgets**: `lib/Dashboard/MyTasksWidget.php`, `lib/Dashboard/OverdueCasesWidget.php`, `lib/Dashboard/CasesOverviewWidget.php` -- Nextcloud dashboard widgets with corresponding Vue components in `src/views/widgets/`.
+- **Dashboard preview**: `src/views/dashboard/MyWorkPreview.vue` and `src/views/dashboard/OverduePanel.vue` -- summary panels on the main dashboard.
+
+**Not yet implemented:**
+- **REQ-MYWORK-008: Cross-App Workload (V1)**: No Pipelinq integration. The view only shows Procest cases and tasks. No [LEAD] or [REQUEST] badges. No conditional filter tabs for Pipelinq items.
+- **Task data source**: Currently uses CalDAV tasks via `fetchTasksForCases()` rather than OpenRegister `task` schema objects as specified. The spec envisions tasks as OpenRegister objects, but the current implementation fetches from Nextcloud's CalDAV task backend.
+- **Case type name resolution**: The case type name is not displayed on case items in the My Work list (spec requires it in REQ-MYWORK-001).
+- **Keyboard navigation**: No explicit keyboard navigation support (tab through items, enter to open).
+- **Screen reader announcements**: No ARIA attributes for entity type, urgency status, or deadline.
+- **Localization**: Translation functions `t()` are used throughout, but Dutch translations may be incomplete in l10n files.
+- **Responsiveness**: No explicit responsive/mobile styling in the component.
+
+### Standards & References
+
+- **CMMN 1.1**: Task statuses (available, active, completed, terminated, disabled) follow the CMMN PlanItem lifecycle, as implemented in `src/utils/taskLifecycle.js`.
+- **Schema.org**: Cases map to `schema:Project`, tasks to `schema:Action` (defined in `procest_register.json`).
+- **ZGW APIs (VNG Realisatie)**: Cases correspond to `Zaak`, tasks to internal work items. The ZRC controller (`lib/Controller/ZrcController.php`) provides ZGW-compliant endpoints.
+- **WCAG 2.1 AA**: Spec requires color-independent overdue indicators (text "X days overdue" alongside color). Currently implemented with both red styling and text labels.
+- **NL Design System**: CSS variables used for colors (e.g., `--color-error`, `--color-primary-element-light`) which support theming.
+
+### Specificity Assessment
+
+- **Mostly implementable as-is.** The MVP requirements are specific enough and are largely already implemented.
+- **Ambiguity in task data source**: The spec assumes tasks are OpenRegister objects in the `task` schema, but the current implementation uses CalDAV tasks. This architectural mismatch needs resolution -- should the spec be updated to reflect CalDAV, or should the implementation migrate to OpenRegister tasks?
+- **Missing detail on cross-app workload**: The V1 cross-app requirement lacks detail on how Pipelinq data is discovered (does Procest query the Pipelinq register directly? Does Pipelinq expose an API?).
+- **Open questions:**
+  - Should the My Work view support auto-refresh (polling or websocket) for concurrent state changes (REQ-MYWORK-010)?
+  - What is the performance target for users with 100+ items? The current implementation fetches up to 100 cases in a single call.

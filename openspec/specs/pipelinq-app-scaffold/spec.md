@@ -75,3 +75,36 @@ The app source code MUST be hosted at `ConductionNL/pipelinq` on GitHub.
 - GIVEN the ConductionNL GitHub organization
 - WHEN checking for the pipelinq repository
 - THEN `https://github.com/ConductionNL/pipelinq` MUST exist and be public
+
+---
+
+### Current Implementation Status
+
+**Fully implemented.** The Pipelinq app scaffold is complete and functional.
+
+**Implemented (with file paths -- in the `pipelinq/` submodule):**
+- **App registration**: `pipelinq/appinfo/info.xml` -- id `pipelinq`, namespace `Pipelinq`, Nextcloud 28-33 compatibility, PHP 8.1+ requirement.
+- **Navigation entry**: Registered in `info.xml` as a top-bar navigation item.
+- **SPA entry point**: `pipelinq/src/main.js` -- Vue 2 app with Pinia, mounts to `#content`.
+- **Webpack build**: `pipelinq/webpack.config.js` -- extends `@nextcloud/webpack-vue-config` with entry points for `pipelinq-main.js` and `pipelinq-settings.js`.
+- **Admin settings**: `pipelinq/lib/Settings/AdminSettings.php` with section registration and settings Vue component.
+- **Repair step**: `pipelinq/lib/Repair/InitializeSettings.php` for register/schema initialization.
+- **Register config**: `pipelinq/lib/Settings/pipelinq_register.json` -- defines the Pipelinq register and schemas.
+- **Settings store**: `pipelinq/src/store/modules/settings.js` for config fetching.
+- **Object store**: `pipelinq/src/store/modules/object.js` -- uses `createObjectStore('object')` from shared library.
+- **Translation support**: `t('pipelinq', ...)` used throughout Vue components.
+- **GitHub repository**: https://github.com/ConductionNL/pipelinq exists.
+
+**All requirements in this spec are implemented.**
+
+### Standards & References
+
+- **Nextcloud App Development Guidelines**: App structure follows Nextcloud conventions (info.xml, routes.php, AppFramework controllers).
+- **Vue 2 + Pinia**: Standard frontend stack for Conduction apps.
+- **@nextcloud/webpack-vue-config**: Nextcloud's standard webpack configuration extended with custom entry points.
+- **Nextcloud L10N**: Translation functions `t()` and `n()` used per Nextcloud conventions.
+
+### Specificity Assessment
+
+- **Fully implementable and already implemented.** The spec is specific enough and all scenarios are satisfied.
+- **No open questions** -- this is a straightforward scaffold spec.

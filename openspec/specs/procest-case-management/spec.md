@@ -106,3 +106,52 @@ The app navigation MUST show menu items for Cases and optionally Tasks.
 - WHEN the navigation loads
 - THEN the menu MUST include at minimum a "Dashboard" item and a "Cases" item
 - AND clicking "Cases" MUST navigate to the cases list view
+
+---
+
+### Current Implementation Status
+
+**Substantially implemented.** Core case management functionality is in place.
+
+**Implemented (with file paths):**
+- **Register auto-configuration**: `lib/Repair/InitializeSettings.php` creates the register and schemas via `SettingsService::loadConfiguration()`. Handles missing OpenRegister. Register defined in `lib/Settings/procest_register.json` with schemas for case, task, status, role, result, decision, and all type schemas.
+- **Settings endpoint**: `lib/Controller/SettingsController.php` with `GET /api/settings` (index) and `POST /api/settings` (create). Returns register and schema IDs. Routes in `appinfo/routes.php`.
+- **Settings store**: `src/store/modules/settings.js` -- fetches and saves settings with loading/error state.
+- **Cases list view**: `src/views/cases/CaseList.vue` -- paginated, searchable list of cases using the object store.
+- **Case detail view**: `src/views/cases/CaseDetail.vue` -- displays case fields, tasks, participants, status timeline, deadline panel, activity timeline, and result section.
+- **Case CRUD**: Object store (`src/store/modules/object.js`) provides create, update, delete operations against OpenRegister.
+- **Case create dialog**: `src/views/cases/CaseCreateDialog.vue` for creating new cases with form fields.
+- **Case validation**: `src/utils/caseValidation.js` provides client-side validation for case data.
+- **Case helpers**: `src/utils/caseHelpers.js` provides utility functions for case display.
+- **Task list within case**: `src/views/cases/CaseDetail.vue` includes task section. Tasks fetched from CalDAV via `src/services/taskApi.js`.
+- **Task management**: `src/views/tasks/TaskList.vue`, `src/views/tasks/TaskDetail.vue`, `src/views/tasks/TaskCreateDialog.vue` for standalone task views.
+- **Navigation**: `src/navigation/MainMenu.vue` includes Dashboard, My Work, Cases, and Tasks menu items.
+- **Status timeline**: `src/views/cases/components/StatusTimeline.vue` -- visual status progression.
+- **Quick status dropdown**: `src/views/cases/components/QuickStatusDropdown.vue` for status transitions.
+- **Deadline panel**: `src/views/cases/components/DeadlinePanel.vue` for deadline tracking.
+- **Activity timeline**: `src/views/cases/components/ActivityTimeline.vue` for audit trail display.
+- **Participants section**: `src/views/cases/components/ParticipantsSection.vue` for role management.
+- **Result section**: `src/views/cases/components/ResultSection.vue` for case results.
+
+**Architecture note:** The spec refers to a `case-management` register, but the actual implementation uses a register named `procest` (defined in `procest_register.json`). The register name discrepancy should be resolved.
+
+**Not yet implemented:**
+- **Task creation from case detail**: Task creation within case detail uses CalDAV tasks rather than OpenRegister `task` schema objects. The spec envisions OpenRegister-based tasks.
+- **Cases search**: Basic search exists via the object store's `_search` parameter, but advanced filtering may be incomplete.
+
+### Standards & References
+
+- **ZGW APIs (VNG Realisatie)**: Full ZGW API layer via `ZrcController.php` (Zaken), `ZtcController.php` (Catalogi), with ZGW-to-English field mapping via `ZgwMappingService`.
+- **CMMN 1.1**: Case lifecycle and task status management follow CMMN patterns.
+- **Schema.org**: Cases typed as `schema:Project`, tasks as `schema:Action` in `procest_register.json`.
+- **OpenAPI 3.0.0**: Register configuration format.
+- **Common Ground**: Data layer in OpenRegister, process layer in Procest.
+
+### Specificity Assessment
+
+- **Implementable and mostly implemented.** The spec is clear about basic CRUD and view requirements.
+- **Register name discrepancy**: The spec says `case-management` register but the implementation uses `procest`. This should be reconciled.
+- **Task architecture ambiguity**: The spec assumes tasks stored in OpenRegister, but the implementation uses CalDAV tasks for some features and OpenRegister tasks for others.
+- **Open questions:**
+  - Should tasks exclusively use OpenRegister or CalDAV?
+  - How does the settings endpoint return schema IDs -- as individual keys or as a nested config object?

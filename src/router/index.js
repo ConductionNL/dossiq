@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+import { generateUrl } from '@nextcloud/router'
 import Dashboard from '../views/Dashboard.vue'
 import MyWork from '../views/MyWork.vue'
 import CaseList from '../views/cases/CaseList.vue'
@@ -11,7 +12,8 @@ import AdminRoot from '../views/settings/AdminRoot.vue'
 Vue.use(Router)
 
 export default new Router({
-	mode: 'hash',
+	mode: 'history',
+	base: generateUrl('/apps/procest'),
 	routes: [
 		{ path: '/', name: 'Dashboard', component: Dashboard },
 		{ path: '/my-work', name: 'MyWork', component: MyWork },

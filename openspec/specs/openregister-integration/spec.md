@@ -901,3 +901,51 @@ Base URL: `/index.php/apps/openregister/api/objects`
 | `usePropertyDefinitionStore()` | propertyDefinition | Filtered by caseType |
 | `useDocumentTypeStore()` | documentType | Filtered by caseType |
 | `useDecisionTypeStore()` | decisionType | Filtered by caseType (V1) |
+
+---
+
+### Current Implementation Status
+
+**Core architecture implemented; individual entity stores differ from spec.**
+
+**Implemented (with file paths):**
+- **Configuration file**: `lib/Settings/procest_register.json` exists, is valid JSON, conforms to OpenAPI 3.0.0, defines a register with app `procest`. Defines 12 schemas: `caseType`, `statusType`, `resultType`, `roleType`, `propertyDefinition`, `documentType`, `decisionType`, `case`, `task`, `role`, `result`, `decision`. Each schema includes `x-schema-org-type` and `x-zgw-equivalent` annotations (REQ-OREG-001).
+- **Repair step**: `lib/Repair/InitializeSettings.php` calls `SettingsService::loadConfiguration()` which uses `ConfigurationService::importFromApp('procest')` from OpenRegister. Handles missing OpenRegister gracefully with warning. Is idempotent (REQ-OREG-002).
+- **Settings controller**: `lib/Controller/SettingsController.php` with routes `GET /api/settings` and `POST /api/settings` (REQ-OREG-003).
+- **Settings store**: `src/store/modules/settings.js` -- Pinia store that fetches and saves settings with loading/error state tracking.
+- **Object store**: `src/store/modules/object.js` -- uses `createObjectStore('object')` from `@conduction/nextcloud-vue` shared library. This is a **single unified store** rather than 12 individual stores as specified. The shared library provides CRUD, pagination, caching, `resolveReferences`, and `fetchSchema` functionality via plugins: `filesPlugin()`, `auditTrailsPlugin()`, `relationsPlugin()`.
+- **Frontend API patterns**: The object store queries OpenRegister via `/index.php/apps/openregister/api/objects/{register}/{schema}` endpoints (REQ-OREG-003).
+- **ZGW API layer**: Full ZGW-compliant API controllers exist: `ZrcController.php` (Zaken), `ZtcController.php` (Catalogi), `DrcController.php` (Documenten), `BrcController.php` (Besluiten), `NrcController.php` (Notificaties), `AcController.php` (Autorisaties) with ZGW-to-English mapping via `ZgwMappingService` (REQ-OREG-011 partial).
+- **ZGW business rules**: `lib/Service/ZgwBusinessRulesService.php`, `ZgwZrcRulesService.php`, `ZgwZtcRulesService.php`, `ZgwDrcRulesService.php`, `ZgwBrcRulesService.php` implement validation and cross-entity rules.
+- **ZGW auth middleware**: `lib/Middleware/ZgwAuthMiddleware.php` for JWT-based ZGW authentication.
+- **Audit trail**: The `auditTrailsPlugin()` in the object store integrates with OpenRegister's audit trail. ZGW controllers expose `/audittrail` sub-routes (REQ-OREG-010).
+- **Cross-entity references**: The `relationsPlugin()` in the object store supports resolving references. Case detail views resolve case types, status types, participants, and tasks (REQ-OREG-006).
+- **Case detail parallel loading**: `src/views/cases/CaseDetail.vue` fetches case, tasks, roles, and related data (REQ-OREG-012).
+- **Participants section**: `src/views/cases/components/ParticipantsSection.vue` resolves role types and participant display names via Nextcloud OCS API.
+- **Result section**: `src/views/cases/components/ResultSection.vue` resolves result types.
+
+**Not yet implemented or differs from spec:**
+- **12 individual Pinia stores**: The spec envisions `useCaseStore()`, `useTaskStore()`, `useRoleStore()`, etc. The actual implementation uses a **single `useObjectStore()`** with dynamic type registration via `@conduction/nextcloud-vue`. This is architecturally different but functionally equivalent.
+- **REQ-OREG-009: Cascade behaviors (V1)**: No cascade delete logic exists in the frontend or backend. Deleting a case does not automatically delete linked tasks/roles/results/decisions. Deleting a case type does not cascade to child type entities.
+- **REQ-OREG-007: Schema validation**: Validation is delegated to OpenRegister's schema validation. The frontend does client-side validation in `src/utils/caseValidation.js` and `src/utils/caseTypeValidation.js`, but server-side validation happens in OpenRegister, not in Procest.
+- **REQ-OREG-008: Concurrent modification (HTTP 409)**: Not implemented. No optimistic locking or conflict detection.
+- **Store caching (stale-while-revalidate)**: The shared library handles caching, but the specific behavior is not visible from the Procest codebase.
+
+### Standards & References
+
+- **OpenAPI 3.0.0**: The register configuration file follows this format.
+- **ZGW APIs (VNG Realisatie)**: Full ZGW-compliant API layer with Zaken (ZRC), Catalogi (ZTC), Documenten (DRC), Besluiten (BRC), Notificaties (NRC), and Autorisaties (AC) endpoints.
+- **CMMN 1.1**: Task lifecycle states follow the CasePlanModel/HumanTask pattern.
+- **Schema.org**: Entity type annotations in `procest_register.json`.
+- **Common Ground**: Layered architecture with data in OpenRegister (information layer) and Procest as process layer.
+
+### Specificity Assessment
+
+- **Mostly implementable as-is**, but the 12-store pattern conflicts with the actual architecture (single unified object store from `@conduction/nextcloud-vue`). The spec should be updated to reflect the shared library pattern or the implementation should diverge.
+- **Missing details:**
+  - The spec does not mention the ZGW API layer, which is a major feature of the actual implementation.
+  - Cascade behavior rules need concrete definition (which approach: cascade delete or prevent delete?).
+  - RBAC enforcement details depend on OpenRegister's RBAC implementation, which is not specified here.
+- **Open questions:**
+  - Should the spec be updated to match the single-store pattern, or should 12 individual stores be created?
+  - How does ZGW field mapping (English to Dutch) interact with the OpenRegister schema definitions?

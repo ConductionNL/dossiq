@@ -28,6 +28,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 
 /**
@@ -39,8 +40,11 @@ use OCP\IRequest;
  * @psalm-suppress UnusedClass
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  * @SuppressWarnings(PHPMD.ExcessiveClassLength)
+ * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
  * @SuppressWarnings(PHPMD.NPathComplexity)
  */
@@ -61,16 +65,25 @@ class DrcController extends Controller
     private const EIO_RESOURCE = 'enkelvoudiginformatieobjecten';
 
     /**
+     * Default chunk size for bestandsdelen (10 MB).
+     *
+     * @var int
+     */
+    private const DEFAULT_CHUNK_SIZE = 10485760;
+
+    /**
      * Constructor.
      *
      * @param string     $appName    The app name.
      * @param IRequest   $request    The incoming request.
      * @param ZgwService $zgwService The shared ZGW service.
+     * @param IL10N      $l10n       The localization service.
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly ZgwService $zgwService,
+        private readonly IL10N $l10n,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -252,10 +265,27 @@ class DrcController extends Controller
                 unset($englishData['content']);
             }
 
+            // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],
                     statusCode: Http::STATUS_BAD_REQUEST
+                );
+            }
+
+            // Chunked upload: set fileParts BEFORE initial save to avoid
+            // a second round-trip when bestandsomvang is given without inhoud.
+            $bestandsomvang = (int) ($body['bestandsomvang'] ?? 0);
+            if ($bestandsomvang > 0 && empty($inhoud) === true) {
+                $totalParts = (int) ceil($bestandsomvang / self::DEFAULT_CHUNK_SIZE);
+
+                $englishData['fileParts'] = json_encode(
+                    [
+                        'pending'    => true,
+                        'totalParts' => $totalParts,
+                        'chunkSize'  => self::DEFAULT_CHUNK_SIZE,
+                        'fileSize'   => $bestandsomvang,
+                    ]
                 );
             }
 
@@ -272,7 +302,7 @@ class DrcController extends Controller
 
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
 
-            // Store file content.
+            // Store file content (only when inhoud is provided).
             if (empty($inhoud) === false && $objectUuid !== '') {
                 $fileName = $objectData['fileName'] ?? 'document';
                 if ($fileName === '') {
@@ -304,6 +334,17 @@ class DrcController extends Controller
                 mappingConfig: $mappingConfig,
                 baseUrl: $baseUrl
             );
+
+            // Add bestandsdelen for chunked upload responses.
+            $chunkInfo = $this->parseFileParts(objectData: $objectData);
+            $mapped['bestandsdelen'] = [];
+            if ($chunkInfo !== null && ($chunkInfo['pending'] ?? false) === true) {
+                $mapped['bestandsdelen'] = $this->buildBestandsdelenArray(
+                    uuid: $objectUuid,
+                    fileSize: ($chunkInfo['fileSize'] ?? $bestandsomvang),
+                    totalParts: ($chunkInfo['totalParts'] ?? 1)
+                );
+            }
 
             $this->zgwService->publishNotification(
                 self::ZGW_API,
@@ -346,7 +387,17 @@ class DrcController extends Controller
             return $authError;
         }
 
-        return $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
+        $response = $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
+
+        // Add bestandsdelen for EIO resources with pending chunked uploads.
+        if ($resource === self::EIO_RESOURCE
+            && $response->getStatus() === Http::STATUS_OK
+            && $this->zgwService->getObjectService() !== null
+        ) {
+            $this->enrichWithBestandsdelen(response: $response, uuid: $uuid);
+        }
+
+        return $response;
     }//end show()
 
     /**
@@ -471,12 +522,12 @@ class DrcController extends Controller
             if (empty($oioRelations) === false) {
                 return new JSONResponse(
                     [
-                        'detail'        => 'Het informatieobject kan niet verwijderd worden: er zijn gerelateerde ObjectInformatieObjecten.',
+                        'detail'        => $this->l10n->t('The document cannot be deleted: there are related ObjectInformatieObjecten.'),
                         'invalidParams' => [
                             [
                                 'name'   => 'nonFieldErrors',
                                 'code'   => 'pending-relations',
-                                'reason' => 'Het informatieobject kan niet verwijderd worden.',
+                                'reason' => $this->l10n->t('The document cannot be deleted.'),
                             ],
                         ],
                     ],
@@ -497,7 +548,7 @@ class DrcController extends Controller
             // Delete stored files.
             if (isset($fileName) === true && $fileName !== null) {
                 try {
-                    $this->zgwService->getDocumentService()->deleteFile(uuid: $uuid, fileName: $fileName);
+                    $this->zgwService->getDocumentService()->deleteFiles(uuid: $uuid);
                 } catch (\Throwable $e) {
                     $this->zgwService->getLogger()->warning(
                         'DRC file cleanup failed: '.$e->getMessage(),
@@ -562,7 +613,7 @@ class DrcController extends Controller
 
             if ($this->zgwService->getDocumentService()->fileExists(uuid: $uuid, fileName: $fileName) === false) {
                 return new JSONResponse(
-                    data: ['detail' => 'Bestand niet gevonden.'],
+                    data: ['detail' => $this->l10n->t('File not found.')],
                     statusCode: Http::STATUS_NOT_FOUND
                 );
             }
@@ -619,7 +670,7 @@ class DrcController extends Controller
             ) !== null
         ) {
             return new JSONResponse(
-                data: ['detail' => 'Document is al vergrendeld.'],
+                data: ['detail' => $this->l10n->t('Document is already locked.')],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
         }
@@ -645,7 +696,7 @@ class DrcController extends Controller
             );
         } catch (\OCA\OpenRegister\Exception\LockedException $e) {
             return new JSONResponse(
-                data: ['detail' => 'Document is al vergrendeld.'],
+                data: ['detail' => $this->l10n->t('Document is already locked.')],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
         } catch (\Throwable $e) {
@@ -743,19 +794,18 @@ class DrcController extends Controller
         $mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
 
         // Check if the document is actually locked (entity or data blob).
+        $storedLockId = null;
         if ($mappingConfig !== null) {
             $storedLockId = $this->resolveStoredLockId(
                 objectService: $objectService,
                 mappingConfig: $mappingConfig,
                 uuid: $uuid
             );
-        } else {
-            $storedLockId = null;
         }
 
         if ($storedLockId === null) {
             return new JSONResponse(
-                data: ['detail' => 'Document is niet vergrendeld.'],
+                data: ['detail' => $this->l10n->t('Document is not locked.')],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
         }
@@ -764,7 +814,6 @@ class DrcController extends Controller
         $lockId = $body['lock'] ?? '';
 
         // Determine if this is a forced unlock (wrong/empty lockId + scope).
-        $force = false;
         if ($lockId !== $storedLockId) {
             $hasForceScope = $this->zgwService->consumerHasScope(
                 $this->request,
@@ -773,9 +822,9 @@ class DrcController extends Controller
             );
             if ($hasForceScope === false) {
                 if ($lockId === '') {
-                    $detail = 'Geforceerd unlocken is niet toegestaan zonder juiste scope.';
+                    $detail = $this->l10n->t('Forced unlocking is not allowed without the correct scope.');
                 } else {
-                    $detail = 'Lock ID komt niet overeen en geforceerd unlocken is niet toegestaan.';
+                    $detail = $this->l10n->t('Lock ID does not match and forced unlocking is not allowed.');
                 }
 
                 return new JSONResponse(
@@ -792,8 +841,6 @@ class DrcController extends Controller
                     statusCode: Http::STATUS_BAD_REQUEST
                 );
             }//end if
-
-            $force = true;
         }//end if
 
         // Try OpenRegister's LockHandler, fall back to clearing data blob.
@@ -907,7 +954,7 @@ class DrcController extends Controller
                     );
                 } catch (\Throwable $e) {
                     return new JSONResponse(
-                        data: ['detail' => 'Niet gevonden.'],
+                        data: ['detail' => $this->l10n->t('Not found.')],
                         statusCode: Http::STATUS_NOT_FOUND
                     );
                 }
@@ -1320,6 +1367,278 @@ class DrcController extends Controller
     }//end setIndicatieGebruiksrecht()
 
     /**
+     * Upload a chunk (bestandsdeel) for a document.
+     *
+     * Receives raw binary data for a single chunk and stores it.
+     * When all chunks have been uploaded, merges them into the final file.
+     *
+     * @param string $uuid The document UUID.
+     *
+     * @return JSONResponse
+     *
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     * @PublicPage
+     * @CORS
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     */
+    public function uploadChunk(string $uuid): JSONResponse
+    {
+        $authError = $this->zgwService->validateJwtAuth($this->request);
+        if ($authError !== null) {
+            return $authError;
+        }
+
+        $objectService = $this->zgwService->getObjectService();
+        if ($objectService === null) {
+            return $this->zgwService->unavailableResponse();
+        }
+
+        $mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
+        if ($mappingConfig === null) {
+            return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, self::EIO_RESOURCE);
+        }
+
+        try {
+            // Find the EIO object.
+            $existing = $objectService->find(
+                $uuid,
+                register: $mappingConfig['sourceRegister'],
+                schema: $mappingConfig['sourceSchema']
+            );
+            if (is_array($existing) === true) {
+                $objectData = $existing;
+            } else {
+                $objectData = $existing->jsonSerialize();
+            }
+
+            // Verify this document has a pending chunked upload.
+            $chunkInfo = $this->parseFileParts(objectData: $objectData);
+            if ($chunkInfo === null || ($chunkInfo['pending'] ?? false) !== true) {
+                return new JSONResponse(
+                    data: ['detail' => $this->l10n->t('This document has no pending chunked upload.')],
+                    statusCode: Http::STATUS_BAD_REQUEST
+                );
+            }
+
+            $totalParts = (int) ($chunkInfo['totalParts'] ?? 0);
+            if ($totalParts <= 0) {
+                return new JSONResponse(
+                    data: ['detail' => $this->l10n->t('Invalid chunk configuration.')],
+                    statusCode: Http::STATUS_BAD_REQUEST
+                );
+            }
+
+            // Get volgnummer from query parameter or request body.
+            $volgnummer = (int) ($this->request->getParam('volgnummer') ?? 0);
+            if ($volgnummer <= 0 || $volgnummer > $totalParts) {
+                return new JSONResponse(
+                    data: ['detail' => $this->l10n->t('Invalid sequence number. Expected 1-%s.', [$totalParts])],
+                    statusCode: Http::STATUS_BAD_REQUEST
+                );
+            }
+
+            // Read raw body content.
+            $content = file_get_contents('php://input');
+            if ($content === false || $content === '') {
+                return new JSONResponse(
+                    data: ['detail' => $this->l10n->t('No file content received.')],
+                    statusCode: Http::STATUS_BAD_REQUEST
+                );
+            }
+
+            // Store the chunk.
+            $docService = $this->zgwService->getDocumentService();
+            $chunkSize  = $docService->storeChunk(
+                uuid: $uuid,
+                volgnummer: $volgnummer,
+                content: $content
+            );
+
+            // Check if all chunks have been uploaded.
+            $uploaded = $docService->getUploadedChunks(uuid: $uuid, totalParts: $totalParts);
+
+            if (count($uploaded) === $totalParts) {
+                // All chunks present — merge into final file.
+                $fileName = $objectData['fileName'] ?? 'document';
+                if ($fileName === '') {
+                    $fileName = 'document';
+                }
+
+                $mergedSize = $docService->mergeChunks(
+                    uuid: $uuid,
+                    fileName: $fileName,
+                    totalParts: $totalParts
+                );
+
+                // Update the object: clear chunk metadata, set file size.
+                unset(
+                    $objectData['@self'],
+                    $objectData['id'],
+                    $objectData['organisation']
+                );
+                $objectData['fileParts'] = '';
+                $objectData['fileSize']  = $mergedSize;
+
+                $objectService->saveObject(
+                    register: $mappingConfig['sourceRegister'],
+                    schema: $mappingConfig['sourceSchema'],
+                    object: $objectData,
+                    uuid: $uuid
+                );
+
+                return new JSONResponse(
+                    data: [
+                        'volgnummer'     => $volgnummer,
+                        'omvang'         => $chunkSize,
+                        'uploadComplete' => true,
+                        'bestandsomvang' => $mergedSize,
+                        'uploadedParts'  => count($uploaded),
+                        'totalParts'     => $totalParts,
+                    ],
+                    statusCode: Http::STATUS_OK
+                );
+            }//end if
+
+            return new JSONResponse(
+                data: [
+                    'volgnummer'     => $volgnummer,
+                    'omvang'         => $chunkSize,
+                    'uploadComplete' => false,
+                    'uploadedParts'  => count($uploaded),
+                    'totalParts'     => $totalParts,
+                ],
+                statusCode: Http::STATUS_OK
+            );
+        } catch (\Throwable $e) {
+            $this->zgwService->getLogger()->error(
+                'DRC chunk upload error: '.$e->getMessage(),
+                ['exception' => $e]
+            );
+
+            return new JSONResponse(
+                data: ['detail' => $e->getMessage()],
+                statusCode: Http::STATUS_BAD_REQUEST
+            );
+        }//end try
+    }//end uploadChunk()
+
+    /**
+     * Enrich a show response with bestandsdelen if a chunked upload is pending.
+     *
+     * @param JSONResponse $response The show response
+     * @param string       $uuid     The document UUID
+     *
+     * @return void
+     */
+    private function enrichWithBestandsdelen(JSONResponse $response, string $uuid): void
+    {
+        $mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
+        if ($mappingConfig === null) {
+            return;
+        }
+
+        try {
+            $existing = $this->zgwService->getObjectService()->find(
+                $uuid,
+                register: $mappingConfig['sourceRegister'],
+                schema: $mappingConfig['sourceSchema']
+            );
+            if (is_array($existing) === true) {
+                $objectData = $existing;
+            } else {
+                $objectData = $existing->jsonSerialize();
+            }
+
+            $data = $response->getData();
+            if (is_array($data) === false) {
+                return;
+            }
+
+            $chunkInfo = $this->parseFileParts(objectData: $objectData);
+            $data['bestandsdelen'] = [];
+            if ($chunkInfo !== null && ($chunkInfo['pending'] ?? false) === true) {
+                $data['bestandsdelen'] = $this->buildBestandsdelenArray(
+                    uuid: $uuid,
+                    fileSize: (int) ($chunkInfo['fileSize'] ?? 0),
+                    totalParts: (int) ($chunkInfo['totalParts'] ?? 1)
+                );
+            }
+
+            $response->setData(data: $data);
+        } catch (\Throwable $e) {
+            // Silently skip enrichment on errors.
+        }//end try
+    }//end enrichWithBestandsdelen()
+
+    /**
+     * Parse the fileParts JSON field from an object data array.
+     *
+     * @param array $objectData The object data array
+     *
+     * @return array|null Decoded chunk info, or null if not set
+     */
+    private function parseFileParts(array $objectData): ?array
+    {
+        $raw = $objectData['fileParts'] ?? '';
+        if ($raw === '') {
+            return null;
+        }
+
+        if (is_string($raw) === true) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded) === true) {
+                return $decoded;
+            }
+
+            return null;
+        }
+
+        if (is_array($raw) === true) {
+            return $raw;
+        }
+
+        return null;
+    }//end parseFileParts()
+
+    /**
+     * Build the bestandsdelen array for a chunked upload response.
+     *
+     * @param string $uuid       The document UUID
+     * @param int    $fileSize   The total file size in bytes
+     * @param int    $totalParts The total number of parts
+     *
+     * @return array The bestandsdelen array with volgnummer, omvang, and url
+     */
+    private function buildBestandsdelenArray(string $uuid, int $fileSize, int $totalParts): array
+    {
+        $baseUrl = $this->zgwService->buildBaseUrl(
+            $this->request,
+            self::ZGW_API,
+            'bestandsdelen'
+        );
+
+        $bestandsdelen = [];
+        $remaining     = $fileSize;
+
+        for ($i = 1; $i <= $totalParts; $i++) {
+            $chunkSize  = min(self::DEFAULT_CHUNK_SIZE, $remaining);
+            $remaining -= $chunkSize;
+
+            $bestandsdelen[] = [
+                'url'        => $baseUrl.'/'.$uuid.'?volgnummer='.$i,
+                'volgnummer' => $i,
+                'omvang'     => $chunkSize,
+                'lock'       => '',
+            ];
+        }
+
+        return $bestandsdelen;
+    }//end buildBestandsdelenArray()
+
+    /**
      * Handle EIO-specific update with lock checking and inhoud handling.
      *
      * @param string $resource The ZGW resource name.
@@ -1401,6 +1720,7 @@ class DrcController extends Controller
                 unset($englishData['content']);
             }
 
+            // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],
@@ -1494,6 +1814,8 @@ class DrcController extends Controller
      * @param bool   $partial       Whether this is a partial (PATCH) update.
      *
      * @return JSONResponse|null Error response if lock check fails, null if OK.
+     *
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $partial distinguishes PUT vs PATCH lock semantics
      */
     private function checkDocumentLock(
         array $mappingConfig,
@@ -1515,12 +1837,12 @@ class DrcController extends Controller
         if ($storedLockId === null) {
             return new JSONResponse(
                 data: [
-                    'detail'        => 'Alleen vergrendelde documenten mogen bewerkt worden.',
+                    'detail'        => $this->l10n->t('Only locked documents may be edited.'),
                     'invalidParams' => [
                         [
                             'name'   => 'nonFieldErrors',
                             'code'   => 'unlocked',
-                            'reason' => 'Het document is niet vergrendeld. Vergrendel het document eerst.',
+                            'reason' => $this->l10n->t('The document is not locked. Lock the document first.'),
                         ],
                     ],
                 ],
@@ -1544,12 +1866,12 @@ class DrcController extends Controller
 
             return new JSONResponse(
                 data: [
-                    'detail'        => 'Lock ID is vereist voor het bewerken van een vergrendeld document.',
+                    'detail'        => $this->l10n->t('Lock ID is required for editing a locked document.'),
                     'invalidParams' => [
                         [
                             'name'   => $errorName,
                             'code'   => $errorCode,
-                            'reason' => 'Lock ID ontbreekt in het verzoek.',
+                            'reason' => $this->l10n->t('Lock ID is missing from the request.'),
                         ],
                     ],
                 ],
@@ -1561,12 +1883,12 @@ class DrcController extends Controller
         if ($providedLockId !== $storedLockId) {
             return new JSONResponse(
                 data: [
-                    'detail'        => 'Lock ID komt niet overeen.',
+                    'detail'        => $this->l10n->t('Lock ID does not match.'),
                     'invalidParams' => [
                         [
                             'name'   => 'nonFieldErrors',
                             'code'   => 'incorrect-lock-id',
-                            'reason' => 'Lock ID komt niet overeen met de opgeslagen vergrendeling.',
+                            'reason' => $this->l10n->t('Lock ID does not match the stored lock.'),
                         ],
                     ],
                 ],

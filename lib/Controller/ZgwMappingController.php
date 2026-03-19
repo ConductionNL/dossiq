@@ -27,6 +27,7 @@ use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\ZgwMappingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 
@@ -42,6 +43,7 @@ class ZgwMappingController extends Controller
      * @param ZgwMappingService $zgwMappingService The ZGW mapping service
      * @param SettingsService   $settingsService   The settings service
      * @param LoggerInterface   $logger            The logger interface
+     * @param IL10N             $l10n              The localization service
      *
      * @return void
      */
@@ -50,6 +52,7 @@ class ZgwMappingController extends Controller
         private readonly ZgwMappingService $zgwMappingService,
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
+        private readonly IL10N $l10n,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -84,7 +87,7 @@ class ZgwMappingController extends Controller
             return new JSONResponse(
                 [
                     'success' => false,
-                    'message' => "No mapping configured for {$resourceKey}",
+                    'message' => $this->l10n->t('No mapping configured for %s', [$resourceKey]),
                 ]
             );
         }
@@ -153,7 +156,7 @@ class ZgwMappingController extends Controller
             return new JSONResponse(
                 [
                     'success' => false,
-                    'message' => 'No Procest register configured',
+                    'message' => $this->l10n->t('No Procest register configured'),
                 ]
             );
         }

@@ -42,6 +42,8 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+ * @SuppressWarnings(PHPMD.NPathComplexity)
  */
 class ZtcController extends Controller
 {
@@ -132,7 +134,7 @@ class ZtcController extends Controller
         }
 
         $data = $response->getData();
-        if (isset($data['results']) === false || is_array($data['results']) === false) {
+        if (is_array($data) === false || isset($data['results']) === false || is_array($data['results']) === false) {
             return $response;
         }
 
@@ -588,7 +590,7 @@ class ZtcController extends Controller
                 'roltypen',
             ];
             foreach ($arrayFields as $field) {
-                if (isset($data[$field]) === false || $data[$field] === null) {
+                if (isset($data[$field]) === false) {
                     $data[$field] = [];
                 }
             }
@@ -609,6 +611,9 @@ class ZtcController extends Controller
      * @param string $uuid          The besluittype UUID.
      *
      * @return array The enriched response data.
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     private function enrichBesluittype(
         array $data,
@@ -634,13 +639,12 @@ class ZtcController extends Controller
             }
 
             // Expand documentTypes UUIDs to informatieobjecttypen URLs.
-            $docTypes = $objectData['documentTypes'] ?? '';
+            $docTypes   = $objectData['documentTypes'] ?? '';
+            $docTypeIds = [];
             if (is_string($docTypes) === true && $docTypes !== '') {
                 $docTypeIds = json_decode($docTypes, true);
             } else if (is_array($docTypes) === true) {
                 $docTypeIds = $docTypes;
-            } else {
-                $docTypeIds = [];
             }
 
             if (empty($docTypeIds) === false) {
@@ -655,13 +659,12 @@ class ZtcController extends Controller
             }
 
             // Expand caseTypes to zaaktypen URLs.
-            $caseTypes = $objectData['caseTypes'] ?? '';
+            $caseTypes   = $objectData['caseTypes'] ?? '';
+            $caseTypeIds = [];
             if (is_string($caseTypes) === true && $caseTypes !== '') {
                 $caseTypeIds = json_decode($caseTypes, true);
             } else if (is_array($caseTypes) === true) {
                 $caseTypeIds = $caseTypes;
-            } else {
-                $caseTypeIds = [];
             }
 
             if (empty($caseTypeIds) === false) {
@@ -693,6 +696,10 @@ class ZtcController extends Controller
      * @param string $uuid          The zaaktype UUID.
      *
      * @return array The enriched response data.
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
     private function enrichZaaktype(
         array $data,
@@ -787,10 +794,9 @@ class ZtcController extends Controller
         // Expand UUIDs in gerelateerdeZaaktypen to all ZTs with same identifier.
         // Read from raw object's relatedCaseTypes (JSON-encoded string) since Twig
         // outbound mapping cannot handle array-of-objects.
+        $relatedRaw = null;
         if (isset($objectData) === true) {
             $relatedRaw = $objectData['relatedCaseTypes'] ?? null;
-        } else {
-            $relatedRaw = null;
         }
 
         if ($relatedRaw === null) {
@@ -1108,13 +1114,13 @@ class ZtcController extends Controller
                     if ($this->isUrlValid(url: $url, schemaKey: $schemaKey, today: $today) === true) {
                         $filtered[] = $item;
                     }
-                } else {
-                    // Simple URL string array.
-                    if (is_string($item) === true
-                        && $this->isUrlValid(url: $item, schemaKey: $schemaKey, today: $today) === true
-                    ) {
-                        $filtered[] = $item;
-                    }
+                }
+
+                if ($nested === false
+                    && is_string($item) === true
+                    && $this->isUrlValid(url: $item, schemaKey: $schemaKey, today: $today) === true
+                ) {
+                    $filtered[] = $item;
                 }
             }
 

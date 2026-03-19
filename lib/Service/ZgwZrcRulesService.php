@@ -58,6 +58,9 @@ namespace OCA\Procest\Service;
  * ZRC (Zaken API) business rule validation and enrichment.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  */
 class ZgwZrcRulesService extends ZgwRulesBase
 {
@@ -76,6 +79,8 @@ class ZgwZrcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
      */
     public function rulesZakenCreate(array $body): array
     {
@@ -95,11 +100,11 @@ class ZgwZrcRulesService extends ZgwRulesBase
         // Zrc-002: Check unique identificatie + bronorganisatie.
         if (empty($body['identificatie']) === false) {
             $error = $this->checkFieldUniqueness(
-                value: $body['identificatie'] ?? '',
-                englishField: 'identifier',
-                secondValue: $body['bronorganisatie'] ?? '',
-                secondEnglishField: 'sourceOrganisation',
-                dutchField: 'identificatie'
+                field1Value: $body['identificatie'],
+                field1Search: 'identifier',
+                field2Value: $body['bronorganisatie'] ?? '',
+                field2Search: 'sourceOrganisation',
+                errorField: 'identificatie'
             );
             if ($error !== null) {
                 return $error;
@@ -121,7 +126,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $body['archiefstatus'] = 'nog_te_archiveren';
         }
 
-        return $this->validateZaakFields(result: $this->ok(body: $body), existingObject: null, isPatch: false);
+        return $this->validateZaakFields(result: $this->isValid(body: $body), existingObject: null, isPatch: false);
     }//end rulesZakenCreate()
 
     /**
@@ -161,7 +166,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         return $this->validateZaakFields(
-            result: $this->ok(body: $body),
+            result: $this->isValid(body: $body),
             existingObject: $existingObject,
             isPatch: false
         );
@@ -198,7 +203,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         return $this->validateZaakFields(
-            result: $this->ok(body: $body),
+            result: $this->isValid(body: $body),
             existingObject: $existingObject,
             isPatch: true
         );
@@ -234,7 +239,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             }
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesStatussenCreate()
 
     /**
@@ -267,7 +272,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             }
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesResultatenCreate()
 
     /**
@@ -300,7 +305,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             }
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesRollenCreate()
 
     /**
@@ -341,7 +346,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         $body['aardRelatieWeergave'] = 'Hoort bij, omgekeerd: kent';
         $body['registratiedatum']    = date('Y-m-d');
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesZaakinformatieobjectenCreate()
 
     /**
@@ -359,7 +364,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      */
     public function rulesZaakinformatieobjectenUpdate(array $body, ?array $existingObject=null): array
     {
-        $result = $this->checkZioImmutability(result: $this->ok(body: $body), existingObject: $existingObject);
+        $result = $this->checkZioImmutability(result: $this->isValid(body: $body), existingObject: $existingObject);
         if ($result['valid'] === false) {
             return $result;
         }
@@ -367,7 +372,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         $body = $result['enrichedBody'];
         $body['aardRelatieWeergave'] = 'Hoort bij, omgekeerd: kent';
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesZaakinformatieobjectenUpdate()
 
     /**
@@ -415,7 +420,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             }
         }
 
-        return $this->ok(body: $body);
+        return $this->isValid(body: $body);
     }//end rulesZaakeigenschappenCreate()
 
     /**
@@ -443,9 +448,9 @@ class ZgwZrcRulesService extends ZgwRulesBase
             return $body;
         }
 
-        $va = $ztData['confidentiality'] ?? ($ztData['confidentialityDesignation'] ?? ($ztData['vertrouwelijkheidaanduiding'] ?? ''));
-        if ($va !== '') {
-            $body['vertrouwelijkheidaanduiding'] = $va;
+        $val = $ztData['confidentiality'] ?? ($ztData['confidentialityDesignation'] ?? ($ztData['vertrouwelijkheidaanduiding'] ?? ''));
+        if ($val !== '') {
+            $body['vertrouwelijkheidaanduiding'] = $val;
         }
 
         return $body;
@@ -464,6 +469,11 @@ class ZgwZrcRulesService extends ZgwRulesBase
      * @param string $zaaktypeField The zaaktype field containing allowed type UUIDs
      *
      * @return array|null Validation error, or null if valid
+     *
+     * @psalm-suppress UnusedParam — $zaaktypeField reserved for future filtering
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $zaaktypeField reserved for future filtering
+     * @SuppressWarnings(PHPMD.NPathComplexity)       — cross-register validation with multiple lookups
      */
     private function validateSubResourceType(
         string $zaakUrl,
@@ -541,6 +551,9 @@ class ZgwZrcRulesService extends ZgwRulesBase
      * @return array|null Validation error, or null if valid
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW cross-register validation
+     * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW cross-register validation
      */
     private function validateZioInformatieobjecttype(string $zaakUrl, string $ioUrl): ?array
     {
@@ -608,7 +621,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                 status: 400,
                 detail: $detail,
                 invalidParams: [$this->fieldError(
-                    field: 'nonFieldErrors',
+                    fieldName: 'nonFieldErrors',
                     code: 'missing-zaaktype-informatieobjecttype-relation',
                     reason: $detail
                 )
@@ -643,6 +656,10 @@ class ZgwZrcRulesService extends ZgwRulesBase
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+     *
+     * @psalm-suppress UnusedParam — $isPatch reserved for partial-update field validation
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $isPatch reserved for partial-update validation
      */
     private function validateZaakFields(array $result, ?array $existingObject, bool $isPatch): array
     {
@@ -665,7 +682,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     detail: 'De communicatiekanaal URL is ongeldig.',
                     invalidParams: [
                         $this->fieldError(
-                            field: 'communicatiekanaal',
+                            fieldName: 'communicatiekanaal',
                             code: 'bad-url',
                             reason: 'De communicatiekanaal URL is ongeldig.'
                         ),
@@ -692,7 +709,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     detail: 'De communicatiekanaal URL is ongeldig.',
                     invalidParams: [
                         $this->fieldError(
-                            field: 'communicatiekanaal',
+                            fieldName: 'communicatiekanaal',
                             code: $code,
                             reason: 'De communicatiekanaal URL is ongeldig.'
                         ),
@@ -711,7 +728,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                         status: 400,
                         detail: 'relevanteAndereZaken bevat een ongeldige URL.',
                         invalidParams: [$this->fieldError(
-                            field: "relevanteAndereZaken.{$idx}.url",
+                            fieldName: "relevanteAndereZaken.{$idx}.url",
                             code: 'bad-url',
                             reason: 'De URL is ongeldig.'
                         )
@@ -727,7 +744,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $errors = [];
             if (($opschorting['indicatie'] ?? null) === null) {
                 $errors[] = $this->fieldError(
-                    field: 'opschorting.indicatie',
+                    fieldName: 'opschorting.indicatie',
                     code: 'required',
                     reason: 'Indicatie is vereist bij opschorting.'
                 );
@@ -735,7 +752,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
 
             if (($opschorting['reden'] ?? '') === '') {
                 $errors[] = $this->fieldError(
-                    field: 'opschorting.reden',
+                    fieldName: 'opschorting.reden',
                     code: 'required',
                     reason: 'Reden is vereist bij opschorting.'
                 );
@@ -756,7 +773,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $errors = [];
             if (($verlenging['reden'] ?? '') === '') {
                 $errors[] = $this->fieldError(
-                    field: 'verlenging.reden',
+                    fieldName: 'verlenging.reden',
                     code: 'required',
                     reason: 'Reden is vereist bij verlenging.'
                 );
@@ -764,7 +781,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
 
             if (($verlenging['duur'] ?? '') === '') {
                 $errors[] = $this->fieldError(
-                    field: 'verlenging.duur',
+                    fieldName: 'verlenging.duur',
                     code: 'required',
                     reason: 'Duur is vereist bij verlenging.'
                 );
@@ -801,7 +818,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                         status: 400,
                         detail: 'Een zaak kan niet zijn eigen hoofdzaak zijn.',
                         invalidParams: [$this->fieldError(
-                            field: 'hoofdzaak',
+                            fieldName: 'hoofdzaak',
                             code: 'self-forbidden',
                             reason: 'Een zaak kan niet zijn eigen hoofdzaak zijn.'
                         )
@@ -837,7 +854,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     status: 400,
                     detail: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.',
                     invalidParams: [$this->fieldError(
-                        field: 'laatsteBetaaldatum',
+                        fieldName: 'laatsteBetaaldatum',
                         code: 'betaling-nvt',
                         reason: 'Als betalingsindicatie "nvt" is, mag laatsteBetaaldatum niet gezet worden.'
                     )
@@ -866,7 +883,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     status: 400,
                     detail: 'archiefnominatie is vereist als archiefstatus niet "nog_te_archiveren" is.',
                     invalidParams: [$this->fieldError(
-                        field: 'archiefnominatie',
+                        fieldName: 'archiefnominatie',
                         code: 'archiefnominatie-not-set',
                         reason: 'Vereist.'
                     )
@@ -879,7 +896,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     status: 400,
                     detail: 'archiefactiedatum is vereist als archiefstatus niet "nog_te_archiveren" is.',
                     invalidParams: [$this->fieldError(
-                        field: 'archiefactiedatum',
+                        fieldName: 'archiefactiedatum',
                         code: 'archiefactiedatum-not-set',
                         reason: 'Vereist.'
                     )
@@ -921,7 +938,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                 status: 400,
                 detail: 'De hoofdzaak is ongeldig.',
                 invalidParams: [$this->fieldError(
-                    field: 'hoofdzaak',
+                    fieldName: 'hoofdzaak',
                     code: 'no_match',
                     reason: 'De hoofdzaak URL verwijst niet naar een bekende zaak.'
                 )
@@ -936,7 +953,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                 status: 400,
                 detail: 'Een deelzaak van een deelzaak is niet toegestaan.',
                 invalidParams: [$this->fieldError(
-                    field: 'hoofdzaak',
+                    fieldName: 'hoofdzaak',
                     code: 'deelzaak-als-hoofdzaak',
                     reason: 'De opgegeven hoofdzaak is zelf een deelzaak.'
                 )
@@ -958,6 +975,9 @@ class ZgwZrcRulesService extends ZgwRulesBase
      * @return array|null Validation error, or null if valid
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
+     * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
      */
     private function validateProductenOfDiensten(array $body): ?array
     {
@@ -1003,7 +1023,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     status: 400,
                     detail: 'productenOfDiensten bevat een ongeldige URL.',
                     invalidParams: [$this->fieldError(
-                        field: 'productenOfDiensten',
+                        fieldName: 'productenOfDiensten',
                         code: 'invalid-products-services',
                         reason: "'{$product}' is geen geldige URL."
                     )
@@ -1018,7 +1038,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     status: 400,
                     detail: 'productenOfDiensten bevat een waarde die niet in het zaaktype voorkomt.',
                     invalidParams: [$this->fieldError(
-                        field: 'productenOfDiensten',
+                        fieldName: 'productenOfDiensten',
                         code: 'invalid-products-services',
                         reason: "Product '{$product}' is niet toegestaan voor dit zaaktype."
                     )
@@ -1041,6 +1061,8 @@ class ZgwZrcRulesService extends ZgwRulesBase
      * @return array The updated validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — immutability check on multiple fields
      */
     private function checkZioImmutability(array $result, ?array $existingObject): array
     {

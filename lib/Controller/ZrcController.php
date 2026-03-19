@@ -26,10 +26,13 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use DateInterval;
+use DateTime;
 use OCA\Procest\Service\ZgwService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 
 /**
@@ -48,6 +51,7 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.NPathComplexity)
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
+ * @SuppressWarnings(PHPMD.UnusedFormalParameter)
  */
 class ZrcController extends Controller
 {
@@ -80,11 +84,13 @@ class ZrcController extends Controller
      * @param string     $appName    The application name
      * @param IRequest   $request    The incoming request
      * @param ZgwService $zgwService The shared ZGW service
+     * @param IL10N      $l10n       The localization service
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly ZgwService $zgwService,
+        private readonly IL10N $l10n,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -164,15 +170,14 @@ class ZrcController extends Controller
             $originalBody = $body;
 
             // ZRC-specific: resolve zaak closed from body before validation.
-            $zaakClosed = $this->zgwService->resolveZaakClosedFromBody($resource, $body);
+            $zaakClosed    = $this->zgwService->resolveZaakClosedFromBody($resource, $body);
+            $hasGeforceerd = true;
             if ($zaakClosed === true) {
                 $hasGeforceerd = $this->zgwService->consumerHasScope(
                     $this->request,
                     'zrc',
                     'zaken.geforceerd-bijwerken'
                 );
-            } else {
-                $hasGeforceerd = true;
             }
 
             $ruleResult = $this->zgwService->getBusinessRulesService()->validate(
@@ -201,6 +206,7 @@ class ZrcController extends Controller
                 mappingConfig: $mappingConfig
             );
 
+            // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],
@@ -211,14 +217,14 @@ class ZrcController extends Controller
             // Zrc-008c: Before saving a status, check if it would reopen a closed zaak
             // and require the zaken.heropenen scope.
             if ($resource === 'statussen') {
-                $reopenError = $this->checkReopenScope(originalBody: $originalBody);
+                $reopenError = $this->checkReopenScope(body: $originalBody);
                 if ($reopenError !== null) {
                     return $reopenError;
                 }
 
                 // Zrc-007q: Before adding an eindstatus, verify all linked IOs
                 // have indicatieGebruiksrecht set (not null).
-                $gebruiksrechtError = $this->checkIndicatieGebruiksrechtBeforeClose(originalBody: $originalBody);
+                $gebruiksrechtError = $this->checkIndicatieGebruiksrechtBeforeClose(body: $originalBody);
                 if ($gebruiksrechtError !== null) {
                     return $gebruiksrechtError;
                 }
@@ -239,13 +245,13 @@ class ZrcController extends Controller
 
             // ZRC-specific: handle eindstatus / heropenen effect for statussen.
             if ($resource === 'statussen') {
-                $this->handleEindstatusEffect(originalBody: $originalBody, objectData: $objectData);
+                $this->handleEindstatusEffect(body: $originalBody, objectData: $objectData);
             }
 
             // Zrc-021: When a resultaat is created, derive archiefactiedatum
             // and archiefnominatie on the parent zaak from the resultaattype.
             if ($resource === 'resultaten') {
-                $this->handleResultaatCreated(originalBody: $originalBody, objectData: $objectData);
+                $this->handleResultaatCreated(body: $originalBody, objectData: $objectData);
             }
 
             $baseUrl         = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
@@ -350,7 +356,7 @@ class ZrcController extends Controller
         // the existing object, so validation errors are returned even
         // when the OpenRegister find() call fails transiently.
         if ($resource === 'zaken') {
-            $preValidation = $this->preValidateZaakBody(partial: false);
+            $preValidation = $this->preValidateZaakBody(isPatch: false);
             if ($preValidation !== null) {
                 return $preValidation;
             }
@@ -406,7 +412,7 @@ class ZrcController extends Controller
         // the existing object, so validation errors are returned even
         // when the OpenRegister find() call fails transiently.
         if ($resource === 'zaken') {
-            $preValidation = $this->preValidateZaakBody(partial: true);
+            $preValidation = $this->preValidateZaakBody(isPatch: true);
             if ($preValidation !== null) {
                 return $preValidation;
             }
@@ -686,6 +692,7 @@ class ZrcController extends Controller
         $response = $this->index(resource: 'zaken');
         $response->setStatus(Http::STATUS_CREATED);
 
+        // @var JSONResponse $response
         return $response;
     }//end zoek()
 
@@ -777,8 +784,6 @@ class ZrcController extends Controller
             $zaakLevel = self::VERTROUWELIJKHEID_LEVELS[$zaakVa] ?? 1;
 
             // Check zaaktype + maxVertrouwelijkheidaanduiding from consumer autorisaties.
-            $zaakTypeUuid = $zaakData['caseType'] ?? ($zaakData['zaaktype'] ?? '');
-
             foreach ($autorisaties as $auth) {
                 $scopes = $auth['scopes'] ?? [];
                 if (in_array('zaken.lezen', $scopes, true) === false) {
@@ -787,7 +792,7 @@ class ZrcController extends Controller
 
                 $maxVa = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
                 if ($maxVa !== null) {
-                    $maxLevel = (self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99);
+                    $maxLevel = self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99;
                 } else {
                     $maxLevel = 99;
                 }
@@ -856,7 +861,7 @@ class ZrcController extends Controller
             foreach ($lezenAuths as $auth) {
                 $maxVa = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
                 if ($maxVa !== null) {
-                    $maxLevel = (self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99);
+                    $maxLevel = self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99;
                 } else {
                     $maxLevel = 99;
                 }
@@ -884,7 +889,7 @@ class ZrcController extends Controller
     {
         return new JSONResponse(
             data: [
-                'detail' => 'U heeft niet de juiste rechten voor deze actie.',
+                'detail' => $this->l10n->t('You do not have the correct permissions for this action.'),
                 'code'   => 'permission_denied',
             ],
             statusCode: Http::STATUS_FORBIDDEN
@@ -905,6 +910,8 @@ class ZrcController extends Controller
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
+     *
+     * @psalm-suppress UnusedParam — $isPatch reserved for partial-update validation
      */
     private function preValidateZaakBody(bool $isPatch): ?JSONResponse
     {
@@ -1041,12 +1048,12 @@ class ZrcController extends Controller
             if (in_array($product, $allowed, true) === false) {
                 return new JSONResponse(
                     data: [
-                        'detail'        => 'productenOfDiensten bevat een waarde die niet in het zaaktype voorkomt.',
+                        'detail'        => $this->l10n->t('productenOfDiensten contains a value not present in the zaaktype.'),
                         'invalidParams' => [
                             [
                                 'name'   => 'productenOfDiensten',
                                 'code'   => 'invalid-products-services',
-                                'reason' => "Product '{$product}' is niet toegestaan voor dit zaaktype.",
+                                'reason' => $this->l10n->t('Product \'%s\' is not allowed for this zaaktype.', [$product]),
                             ],
                         ],
                     ],
@@ -1190,15 +1197,14 @@ class ZrcController extends Controller
                     $existingData = $existingObj->jsonSerialize();
                 }
 
-                $zaakClosed = $this->zgwService->resolveZaakClosed($resource, $existingData);
+                $zaakClosed    = $this->zgwService->resolveZaakClosed($resource, $existingData);
+                $hasGeforceerd = true;
                 if ($zaakClosed === true) {
                     $hasGeforceerd = $this->zgwService->consumerHasScope(
                         $this->request,
                         'zrc',
                         'zaken.geforceerd-bijwerken'
                     );
-                } else {
-                    $hasGeforceerd = true;
                 }
             } catch (\Throwable $e) {
                 // Proceed without zaak closed info.
@@ -1679,7 +1685,7 @@ class ZrcController extends Controller
                     $zaakData[$field] = (string) $zaakData[$field];
                 }
 
-                if ($field === 'title' && (isset($zaakData[$field]) === false || $zaakData[$field] === null)) {
+                if ($field === 'title' && isset($zaakData[$field]) === false) {
                     $zaakData[$field] = '';
                 }
             }
@@ -1697,7 +1703,7 @@ class ZrcController extends Controller
                 $zaakData = $this->deriveArchiefactiedatum(
                     zaakData: $zaakData,
                     zaakConfig: $zaakConfig,
-                    einddatum: $datumStatusGezet
+                    datumStatusGezet: $datumStatusGezet
                 );
 
                 $zaakData['id'] = $zaakMatches[1];
@@ -1710,7 +1716,9 @@ class ZrcController extends Controller
 
                 // Zrc-007b: Set indicatieGebruiksrecht on all related informatieobjecten.
                 $this->setIndicatieGebruiksrechtOnClose(zaakUuid: $zaakMatches[1]);
-            } else {
+            }//end if
+
+            if ($isEindstatus === false) {
                 // Zrc-008: Heropenen zaak — when a non-eindstatus is created on
                 // a zaak that already has an endDate, clear endDate, archiefactiedatum,
                 // and archiefnominatie (reopen the zaak).
@@ -1849,6 +1857,8 @@ class ZrcController extends Controller
      * @param array $objectData The created resultaat object data
      *
      * @return void
+     *
+     * @psalm-suppress UnusedParam — $objectData reserved for future use in result processing
      */
     private function handleResultaatCreated(array $body, array $objectData): void
     {
@@ -1885,7 +1895,7 @@ class ZrcController extends Controller
             $zaakData = $this->deriveArchiefactiedatum(
                 zaakData: $zaakData,
                 zaakConfig: $zaakConfig,
-                einddatum: $einddatum
+                datumStatusGezet: $einddatum
             );
 
             // Type coercion for re-save (OpenRegister stores numeric strings as ints).
@@ -1895,7 +1905,7 @@ class ZrcController extends Controller
                     $zaakData[$field] = (string) $zaakData[$field];
                 }
 
-                if ($field === 'title' && (isset($zaakData[$field]) === false || $zaakData[$field] === null)) {
+                if ($field === 'title' && isset($zaakData[$field]) === false) {
                     $zaakData[$field] = '';
                 }
             }
@@ -2033,8 +2043,8 @@ class ZrcController extends Controller
             $archiefactiedatum = $baseDate;
             if ($procestermijn !== null && $procestermijn !== '') {
                 try {
-                    $dateObj  = new \DateTime($baseDate);
-                    $interval = new \DateInterval($procestermijn);
+                    $dateObj  = new DateTime($baseDate);
+                    $interval = new DateInterval($procestermijn);
                     $dateObj->add($interval);
                     $archiefactiedatum = $dateObj->format('Y-m-d');
                 } catch (\Throwable $e) {
@@ -2341,6 +2351,7 @@ class ZrcController extends Controller
                 mappingConfig: $oioConfig
             );
 
+            // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 $englishData = $oioData;
             }

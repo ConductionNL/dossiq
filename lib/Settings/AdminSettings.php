@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Settings;
 
 use OCA\Procest\AppInfo\Application;
+use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\Settings\ISettings;
 
@@ -31,13 +32,29 @@ use OCP\Settings\ISettings;
 class AdminSettings implements ISettings
 {
     /**
+     * Constructor.
+     *
+     * @param IAppManager $appManager The app manager.
+     */
+    public function __construct(
+        private IAppManager $appManager,
+    ) {
+    }//end __construct()
+
+    /**
      * Get the settings form template.
      *
      * @return TemplateResponse
      */
     public function getForm(): TemplateResponse
     {
-        return new TemplateResponse(Application::APP_ID, 'settings/admin');
+        $version = $this->appManager->getAppVersion(appId: Application::APP_ID);
+
+        return new TemplateResponse(
+            Application::APP_ID,
+            'settings/admin',
+            ['version' => $version]
+        );
     }//end getForm()
 
     /**

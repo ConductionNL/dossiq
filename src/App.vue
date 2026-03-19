@@ -1,6 +1,29 @@
 <template>
 	<NcContent app-name="procest">
-		<template v-if="storesReady">
+		<template v-if="storesReady && !hasOpenRegisters">
+			<NcAppContent class="open-register-missing">
+				<NcEmptyContent
+					:name="t('procest', 'OpenRegister is required')"
+					:description="t('procest', 'Procest needs the OpenRegister app to store and manage data. Please install OpenRegister from the app store to get started.')">
+					<template #icon>
+						<img
+							:src="appIcon"
+							alt=""
+							width="64"
+							height="64">
+					</template>
+					<template #action>
+						<NcButton
+							v-if="isAdmin"
+							type="primary"
+							:href="appStoreUrl">
+							{{ t('procest', 'Install OpenRegister') }}
+						</NcButton>
+					</template>
+				</NcEmptyContent>
+			</NcAppContent>
+		</template>
+		<template v-else-if="storesReady && hasOpenRegisters">
 			<MainMenu />
 			<NcAppContent>
 				<router-view />
@@ -28,16 +51,20 @@
 
 <script>
 import Vue from 'vue'
-import { NcContent, NcAppContent, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcContent, NcAppContent, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import { CnIndexSidebar } from '@conduction/nextcloud-vue'
+import { generateUrl, imagePath } from '@nextcloud/router'
 import MainMenu from './navigation/MainMenu.vue'
 import { initializeStores } from './store/store.js'
+import { useSettingsStore } from './store/modules/settings.js'
 
 export default {
 	name: 'App',
 	components: {
+		NcButton,
 		NcContent,
 		NcAppContent,
+		NcEmptyContent,
 		NcLoadingIcon,
 		CnIndexSidebar,
 		MainMenu,
@@ -65,6 +92,22 @@ export default {
 				onFilterChange: null,
 			}),
 		}
+	},
+	computed: {
+		hasOpenRegisters() {
+			const settingsStore = useSettingsStore()
+			return settingsStore.hasOpenRegisters
+		},
+		isAdmin() {
+			const settingsStore = useSettingsStore()
+			return settingsStore.getIsAdmin
+		},
+		appIcon() {
+			return imagePath('procest', 'app-dark.svg')
+		},
+		appStoreUrl() {
+			return generateUrl('/settings/apps/integration/openregister')
+		},
 	},
 	async created() {
 		await initializeStores()
