@@ -1,0 +1,10 @@
+{
+  "version.label": {
+    "message": "Volgende",
+    "description": "The label for version current"
+  },
+  "sidebar.tutorialSidebar.category.Procest Features": {
+    "message": "Procest Functionaliteiten",
+    "description": "The label for category 'Procest Features' in sidebar 'tutorialSidebar'"
+  }
+}
