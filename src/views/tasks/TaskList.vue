@@ -213,9 +213,9 @@ export default {
 }
 </style>
 
-<style>
-/* Unscoped: rowClass applies to CnDataTable's <tr> elements */
-.row--overdue {
+<style scoped>
+/* rowClass applies to CnDataTable's <tr> elements */
+:deep(.row--overdue) {
 	border-left: 3px solid var(--color-error);
 }
 </style>
