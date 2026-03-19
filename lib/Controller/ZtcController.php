@@ -1335,7 +1335,7 @@ class ZtcController extends Controller
             }
 
             if (($result['total'] ?? 0) > 0) {
-                $iot     = $result['results'][0];
+                $iot = $result['results'][0];
                 if (is_array($iot) === true) {
                     $iotData = $iot;
                 } else {

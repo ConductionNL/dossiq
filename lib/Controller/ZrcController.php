@@ -692,7 +692,7 @@ class ZrcController extends Controller
         $response = $this->index(resource: 'zaken');
         $response->setStatus(Http::STATUS_CREATED);
 
-        /* @var JSONResponse $response */
+        // @var JSONResponse $response
         return $response;
     }//end zoek()
 
@@ -790,7 +790,7 @@ class ZrcController extends Controller
                     continue;
                 }
 
-                $maxVa    = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
+                $maxVa = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
                 if ($maxVa !== null) {
                     $maxLevel = self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99;
                 } else {
@@ -859,7 +859,7 @@ class ZrcController extends Controller
             $zaakLevel = self::VERTROUWELIJKHEID_LEVELS[$zaakVa] ?? 1;
 
             foreach ($lezenAuths as $auth) {
-                $maxVa    = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
+                $maxVa = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
                 if ($maxVa !== null) {
                     $maxLevel = self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99;
                 } else {
@@ -1716,7 +1716,7 @@ class ZrcController extends Controller
 
                 // Zrc-007b: Set indicatieGebruiksrecht on all related informatieobjecten.
                 $this->setIndicatieGebruiksrechtOnClose(zaakUuid: $zaakMatches[1]);
-            }
+            }//end if
 
             if ($isEindstatus === false) {
                 // Zrc-008: Heropenen zaak — when a non-eindstatus is created on
@@ -1966,7 +1966,7 @@ class ZrcController extends Controller
                 return $zaakData;
             }
 
-            $resultaat     = $results[0];
+            $resultaat = $results[0];
             if (is_array($resultaat) === true) {
                 $resultaatData = $resultaat;
             } else {
@@ -2193,7 +2193,7 @@ class ZrcController extends Controller
 
             $results = $result['results'] ?? [];
             if (empty($results) === false) {
-                $propObj  = $results[0];
+                $propObj = $results[0];
                 if (is_array($propObj) === true) {
                     $propData = $propObj;
                 } else {
