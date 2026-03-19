@@ -78,7 +78,11 @@ class HealthController extends Controller
             $status = 'degraded';
         }
 
-        $httpStatus = ($status === 'ok') ? Http::STATUS_OK : Http::STATUS_SERVICE_UNAVAILABLE;
+        if ($status === 'ok') {
+            $httpStatus = Http::STATUS_OK;
+        } else {
+            $httpStatus = Http::STATUS_SERVICE_UNAVAILABLE;
+        }
 
         return new JSONResponse(
             [

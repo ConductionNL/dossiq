@@ -1,162 +1,164 @@
 <template>
-	<div v-if="editing || isNew" class="task-detail">
-		<div class="task-detail__header">
-			<NcButton @click="onCancel">
-				{{ t('procest', 'Back to list') }}
-			</NcButton>
-			<h2 v-if="isNew">
-				{{ t('procest', 'New task') }}
-			</h2>
-			<h2 v-else>
-				{{ taskData.title || t('procest', 'Task') }}
-			</h2>
-		</div>
-
-		<!-- Form -->
-		<div class="task-detail__form">
-			<div class="form-group">
-				<label>{{ t('procest', 'Title') }} *</label>
-				<NcTextField
-					:value="form.title"
-					:error="!!validationErrors.title"
-					@update:value="v => { form.title = v; validationErrors.title = '' }" />
-				<p v-if="validationErrors.title" class="form-error">
-					{{ validationErrors.title }}
-				</p>
-			</div>
-
-			<div class="form-group">
-				<label>{{ t('procest', 'Description') }}</label>
-				<textarea
-					v-model="form.description"
-					rows="4" />
-			</div>
-
-			<div class="form-row">
-				<div class="form-group">
-					<label>{{ t('procest', 'Assignee') }}</label>
-					<NcTextField
-						:value="form.assignee"
-						:placeholder="t('procest', 'Username')"
-						@update:value="v => form.assignee = v" />
-				</div>
-				<div class="form-group">
-					<label>{{ t('procest', 'Due date') }}</label>
-					<NcTextField
-						:value="form.dueDate"
-						type="date"
-						@update:value="v => form.dueDate = v" />
-				</div>
-			</div>
-
-			<div class="form-row">
-				<div class="form-group">
-					<label>{{ t('procest', 'Priority') }}</label>
-					<NcSelect
-						v-model="form.priority"
-						:options="priorityOptions" />
-				</div>
-			</div>
-
-			<!-- Save / Cancel actions -->
-			<div class="task-detail__form-actions">
-				<NcButton
-					type="primary"
-					:disabled="saving"
-					@click="save">
-					<template v-if="saving">
-						<NcLoadingIcon :size="20" />
-					</template>
-					{{ t('procest', 'Save') }}
+	<div>
+		<div v-if="editing || isNew" class="task-detail">
+			<div class="task-detail__header">
+				<NcButton @click="onCancel">
+					{{ t('procest', 'Back to list') }}
 				</NcButton>
-				<NcButton
-					v-if="!isNew"
-					@click="editing = false">
-					{{ t('procest', 'Cancel') }}
-				</NcButton>
+				<h2 v-if="isNew">
+					{{ t('procest', 'New task') }}
+				</h2>
+				<h2 v-else>
+					{{ taskData.title || t('procest', 'Task') }}
+				</h2>
 			</div>
-		</div>
-	</div>
 
-	<CnDetailPage
-		v-else
-		:title="taskData.title || t('procest', 'Task')"
-		:subtitle="t('procest', 'Task')"
-		:back-route="{ name: 'Tasks' }"
-		:back-label="t('procest', 'Back to list')"
-		:loading="loading"
-		:sidebar="!loading"
-		object-type="procest_task"
-		:object-id="taskId"
-		:sidebar-props="sidebarProps">
-		<template #header-actions>
-			<NcButton
-				v-if="!isReadOnly"
-				type="primary"
-				@click="startEditing">
-				{{ t('procest', 'Edit') }}
-			</NcButton>
-			<NcButton type="error" @click="confirmDelete">
-				{{ t('procest', 'Delete') }}
-			</NcButton>
-		</template>
+			<!-- Form -->
+			<div class="task-detail__form">
+				<div class="form-group">
+					<label>{{ t('procest', 'Title') }} *</label>
+					<NcTextField
+						:value="form.title"
+						:error="!!validationErrors.title"
+						@update:value="v => { form.title = v; validationErrors.title = '' }" />
+					<p v-if="validationErrors.title" class="form-error">
+						{{ validationErrors.title }}
+					</p>
+				</div>
 
-		<!-- Status card -->
-		<CnDetailCard :title="t('procest', 'Status')">
-			<div class="status-section">
-				<span class="status-badge" :class="'status-badge--' + taskData.status">
-					{{ getStatusLabel(taskData.status) }}
-				</span>
+				<div class="form-group">
+					<label>{{ t('procest', 'Description') }}</label>
+					<textarea
+						v-model="form.description"
+						rows="4" />
+				</div>
 
-				<div v-if="allowedTransitions.length > 0" class="status-section__actions">
+				<div class="form-row">
+					<div class="form-group">
+						<label>{{ t('procest', 'Assignee') }}</label>
+						<NcTextField
+							:value="form.assignee"
+							:placeholder="t('procest', 'Username')"
+							@update:value="v => form.assignee = v" />
+					</div>
+					<div class="form-group">
+						<label>{{ t('procest', 'Due date') }}</label>
+						<NcTextField
+							:value="form.dueDate"
+							type="date"
+							@update:value="v => form.dueDate = v" />
+					</div>
+				</div>
+
+				<div class="form-row">
+					<div class="form-group">
+						<label>{{ t('procest', 'Priority') }}</label>
+						<NcSelect
+							v-model="form.priority"
+							:options="priorityOptions" />
+					</div>
+				</div>
+
+				<!-- Save / Cancel actions -->
+				<div class="task-detail__form-actions">
 					<NcButton
-						v-for="target in allowedTransitions"
-						:key="target"
-						:type="target === 'completed' ? 'primary' : 'secondary'"
-						@click="transitionTo(target)">
-						{{ getTransitionLabel(target) }}
+						type="primary"
+						:disabled="saving"
+						@click="save">
+						<template v-if="saving">
+							<NcLoadingIcon :size="20" />
+						</template>
+						{{ t('procest', 'Save') }}
+					</NcButton>
+					<NcButton
+						v-if="!isNew"
+						@click="editing = false">
+						{{ t('procest', 'Cancel') }}
 					</NcButton>
 				</div>
-
-				<div v-if="taskData.completedDate" class="status-section__completed-date">
-					{{ t('procest', 'Completed on {date}', { date: formatDueDate(taskData.completedDate) }) }}
-				</div>
 			</div>
-		</CnDetailCard>
+		</div>
 
-		<!-- Task Information card -->
-		<CnDetailCard :title="t('procest', 'Task Information')">
-			<div class="info-grid">
-				<div class="info-field">
-					<label>{{ t('procest', 'Title') }}</label>
-					<span>{{ taskData.title || '-' }}</span>
-				</div>
-				<div class="info-field">
-					<label>{{ t('procest', 'Priority') }}</label>
-					<span>{{ taskData.priority || '-' }}</span>
-				</div>
-				<div class="info-field">
-					<label>{{ t('procest', 'Assignee') }}</label>
-					<span>{{ taskData.assignee || '-' }}</span>
-				</div>
-				<div class="info-field">
-					<label>{{ t('procest', 'Due date') }}</label>
-					<span>{{ taskData.dueDate ? formatDueDate(taskData.dueDate) : '-' }}</span>
-				</div>
-				<div v-if="taskData.description" class="info-field info-field--full">
-					<label>{{ t('procest', 'Description') }}</label>
-					<span>{{ taskData.description }}</span>
-				</div>
-			</div>
-		</CnDetailCard>
+		<CnDetailPage
+			v-else
+			:title="taskData.title || t('procest', 'Task')"
+			:subtitle="t('procest', 'Task')"
+			:back-route="{ name: 'Tasks' }"
+			:back-label="t('procest', 'Back to list')"
+			:loading="loading"
+			:sidebar="!loading"
+			object-type="procest_task"
+			:object-id="taskId"
+			:sidebar-props="sidebarProps">
+			<template #header-actions>
+				<NcButton
+					v-if="!isReadOnly"
+					type="primary"
+					@click="startEditing">
+					{{ t('procest', 'Edit') }}
+				</NcButton>
+				<NcButton type="error" @click="confirmDelete">
+					{{ t('procest', 'Delete') }}
+				</NcButton>
+			</template>
 
-		<!-- Linked Case card -->
-		<CnDetailCard v-if="caseId" :title="t('procest', 'Linked Case')">
-			<a class="case-link" @click="openCase">
-				{{ t('procest', 'Case: {id}', { id: caseTitle }) }}
-			</a>
-		</CnDetailCard>
-	</CnDetailPage>
+			<!-- Status card -->
+			<CnDetailCard :title="t('procest', 'Status')">
+				<div class="status-section">
+					<span class="status-badge" :class="'status-badge--' + taskData.status">
+						{{ getStatusLabel(taskData.status) }}
+					</span>
+
+					<div v-if="allowedTransitions.length > 0" class="status-section__actions">
+						<NcButton
+							v-for="target in allowedTransitions"
+							:key="target"
+							:type="target === 'completed' ? 'primary' : 'secondary'"
+							@click="transitionTo(target)">
+							{{ getTransitionLabel(target) }}
+						</NcButton>
+					</div>
+
+					<div v-if="taskData.completedDate" class="status-section__completed-date">
+						{{ t('procest', 'Completed on {date}', { date: formatDueDate(taskData.completedDate) }) }}
+					</div>
+				</div>
+			</CnDetailCard>
+
+			<!-- Task Information card -->
+			<CnDetailCard :title="t('procest', 'Task Information')">
+				<div class="info-grid">
+					<div class="info-field">
+						<label>{{ t('procest', 'Title') }}</label>
+						<span>{{ taskData.title || '-' }}</span>
+					</div>
+					<div class="info-field">
+						<label>{{ t('procest', 'Priority') }}</label>
+						<span>{{ taskData.priority || '-' }}</span>
+					</div>
+					<div class="info-field">
+						<label>{{ t('procest', 'Assignee') }}</label>
+						<span>{{ taskData.assignee || '-' }}</span>
+					</div>
+					<div class="info-field">
+						<label>{{ t('procest', 'Due date') }}</label>
+						<span>{{ taskData.dueDate ? formatDueDate(taskData.dueDate) : '-' }}</span>
+					</div>
+					<div v-if="taskData.description" class="info-field info-field--full">
+						<label>{{ t('procest', 'Description') }}</label>
+						<span>{{ taskData.description }}</span>
+					</div>
+				</div>
+			</CnDetailCard>
+
+			<!-- Linked Case card -->
+			<CnDetailCard v-if="caseId" :title="t('procest', 'Linked Case')">
+				<a class="case-link" @click="openCase">
+					{{ t('procest', 'Case: {id}', { id: caseTitle }) }}
+				</a>
+			</CnDetailCard>
+		</CnDetailPage>
+	</div>
 </template>
 
 <script>

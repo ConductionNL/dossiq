@@ -144,7 +144,7 @@ class ZgwAuthMiddleware extends Middleware
      *
      * @throws \OCA\Procest\Middleware\ZgwAuthException If authorization fails.
      *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $methodName required by Middleware interface
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function beforeController($controller, $methodName): void
     {
@@ -213,7 +213,7 @@ class ZgwAuthMiddleware extends Middleware
      *
      * @return JSONResponse|null
      *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $controller/$methodName required by Middleware interface
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function afterException($controller, $methodName, \Exception $exception): ?JSONResponse
     {

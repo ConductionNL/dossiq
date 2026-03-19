@@ -202,11 +202,9 @@ export default {
 .deadline--final {
 	color: var(--color-text-maxcontrast);
 }
-</style>
 
-<style>
-/* Unscoped: rowClass applies to CnDataTable's <tr> elements */
-.row--overdue {
+/* rowClass applies to CnDataTable's <tr> elements */
+:deep(.row--overdue) {
 	border-left: 3px solid var(--color-error);
 }
 </style>

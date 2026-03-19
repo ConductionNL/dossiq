@@ -155,7 +155,11 @@ class NotificatieService
         $client        = new Client(['timeout' => 10]);
 
         foreach ($subscriptions as $subscription) {
-            $subData = is_array($subscription) === true ? $subscription : $subscription->jsonSerialize();
+            if (is_array($subscription) === true) {
+                $subData = $subscription;
+            } else {
+                $subData = $subscription->jsonSerialize();
+            }
 
             $this->deliverToSubscription(
                 client: $client,

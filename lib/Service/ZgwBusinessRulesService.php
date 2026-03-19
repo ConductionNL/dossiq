@@ -76,7 +76,7 @@ class ZgwBusinessRulesService
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — ZGW scope flag from middleware
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function validate(
         string $zgwApi,
@@ -271,7 +271,7 @@ class ZgwBusinessRulesService
      *
      * @psalm-suppress UnusedParam — $existingObject reserved for update validation rules
      *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $existingObject reserved for update rules
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     private function dispatchZtc(string $resource, string $action, array $body, ?array $existingObject): array
     {

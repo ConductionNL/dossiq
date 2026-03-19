@@ -1,276 +1,278 @@
 <template>
-	<CnDetailPage
-		:title="caseData.title || t('procest', 'Case')"
-		:subtitle="caseData.identifier ? `${t('procest', 'Case')} — ${caseData.identifier}` : t('procest', 'Case')"
-		:back-route="{ name: 'Cases' }"
-		:back-label="t('procest', 'Back to list')"
-		:loading="loading"
-		:sidebar="!isNew && !loading"
-		object-type="procest_case"
-		:object-id="caseId"
-		:sidebar-props="sidebarProps">
-		<template #header-actions>
-			<NcButton
-				v-if="!isReadOnly"
-				type="primary"
-				:disabled="saving"
-				@click="save">
-				<template v-if="saving">
-					<NcLoadingIcon :size="20" />
-				</template>
-				{{ t('procest', 'Save') }}
-			</NcButton>
-			<NcButton type="error" @click="confirmDelete">
-				{{ t('procest', 'Delete') }}
-			</NcButton>
-		</template>
-
-		<!-- Status card -->
-		<CnDetailCard :title="t('procest', 'Status')">
-			<div class="status-section">
-				<span class="status-badge" :class="currentStatusBadgeClass">
-					{{ currentStatusName }}
-				</span>
-
-				<!-- Status change dropdown -->
-				<div v-if="!isReadOnly && orderedStatusTypes.length > 0" class="status-section__change">
-					<NcSelect
-						v-model="selectedStatus"
-						:options="orderedStatusTypes"
-						label="name"
-						track-by="id"
-						:placeholder="t('procest', 'Change status...')"
-						@input="onStatusSelected" />
-				</div>
-
-				<span v-if="caseData.endDate" class="status-section__closed-info">
-					{{ t('procest', 'Closed on {date}', { date: formatDate(caseData.endDate) }) }}
-				</span>
-			</div>
-
-			<!-- Result prompt (shown when final status selected) -->
-			<div v-if="showResultPrompt" class="result-prompt">
-				<template v-if="resultTypes.length > 0">
-					<NcSelect
-						v-model="selectedResultType"
-						:options="resultTypes"
-						label="name"
-						track-by="id"
-						:placeholder="t('procest', 'Select result type...')" />
-				</template>
-				<template v-else>
-					<NcTextField
-						:value="resultText"
-						:label="t('procest', 'Result (required)')"
-						:error="!!resultError"
-						@update:value="v => { resultText = v; resultError = '' }" />
-				</template>
-				<p v-if="resultError" class="form-error">
-					{{ resultError }}
-				</p>
-				<div class="result-prompt__actions">
-					<NcButton type="primary" @click="confirmStatusChange">
-						{{ t('procest', 'Confirm') }}
-					</NcButton>
-					<NcButton @click="cancelStatusChange">
-						{{ t('procest', 'Cancel') }}
-					</NcButton>
-				</div>
-			</div>
-		</CnDetailCard>
-
-		<!-- Status Timeline card -->
-		<CnDetailCard v-if="orderedStatusTypes.length > 0" :title="t('procest', 'Status Timeline')">
-			<StatusTimeline
-				:status-types="orderedStatusTypes"
-				:current-status-id="caseData.status"
-				:status-history="caseData.statusHistory || []" />
-		</CnDetailCard>
-
-		<!-- Case Information card -->
-		<CnDetailCard :title="t('procest', 'Case Information')">
-			<div class="form-group">
-				<label>{{ t('procest', 'Title') }} *</label>
-				<NcTextField
-					:value="form.title"
-					:disabled="isReadOnly"
-					:error="!!validationErrors.title"
-					@update:value="v => { form.title = v; validationErrors.title = '' }" />
-				<p v-if="validationErrors.title" class="form-error">
-					{{ validationErrors.title }}
-				</p>
-			</div>
-
-			<div class="form-group">
-				<label>{{ t('procest', 'Description') }}</label>
-				<textarea
-					v-model="form.description"
-					:disabled="isReadOnly"
-					rows="3" />
-			</div>
-
-			<div class="form-row">
-				<div class="form-group">
-					<label>{{ t('procest', 'Case type') }}</label>
-					<span class="form-value">{{ caseTypeName }}</span>
-				</div>
-				<div class="form-group">
-					<label>{{ t('procest', 'Identifier') }}</label>
-					<span class="form-value">{{ caseData.identifier || '—' }}</span>
-				</div>
-			</div>
-
-			<div class="form-row">
-				<div class="form-group">
-					<label>{{ t('procest', 'Priority') }}</label>
-					<NcSelect
-						v-model="form.priority"
-						:options="priorityOptions"
-						:disabled="isReadOnly" />
-				</div>
-				<div class="form-group">
-					<label>{{ t('procest', 'Confidentiality') }}</label>
-					<span class="form-value">{{ caseData.confidentiality || '—' }}</span>
-				</div>
-			</div>
-
-			<div class="form-row">
-				<div class="form-group">
-					<label>{{ t('procest', 'Handler') }}</label>
-					<NcTextField
-						:value="form.assignee"
-						:disabled="isReadOnly"
-						:placeholder="t('procest', 'Assign handler...')"
-						@update:value="v => form.assignee = v" />
-				</div>
-				<div class="form-group">
-					<label>{{ t('procest', 'Start date') }}</label>
-					<span class="form-value">{{ formatDate(caseData.startDate) }}</span>
-				</div>
-			</div>
-
-			<ResultSection
-				:result="caseResult"
-				:result-types="resultTypes"
-				:show-empty="isAtFinalStatus && !caseResult" />
-
-			<div v-if="!caseResult && caseData.result" class="form-group">
-				<label>{{ t('procest', 'Result') }}</label>
-				<span class="form-value">{{ caseData.result }}</span>
-			</div>
-		</CnDetailCard>
-
-		<!-- Deadline & Timing card -->
-		<CnDetailCard v-if="caseTypeData" :title="t('procest', 'Deadline & Timing')">
-			<DeadlinePanel
-				:start-date="caseData.startDate"
-				:deadline="caseData.deadline"
-				:processing-deadline="caseTypeData.processingDeadline"
-				:extension-allowed="caseTypeData.extensionAllowed === true || caseTypeData.extensionAllowed === 'true'"
-				:extension-period="caseTypeData.extensionPeriod"
-				:extension-count="caseData.extensionCount || 0"
-				:is-final="isAtFinalStatus"
-				@extend="showExtensionDialog" />
-		</CnDetailCard>
-
-		<!-- Participants card -->
-		<CnDetailCard :title="t('procest', 'Participants')">
-			<ParticipantsSection
-				:case-id="caseId"
-				:is-read-only="isReadOnly"
-				@handler-changed="onHandlerChanged" />
-		</CnDetailCard>
-
-		<!-- Tasks card -->
-		<CnDetailCard :title="`${t('procest', 'Tasks')} (${completedTaskCount}/${tasks.length})`">
-			<template #actions>
-				<NcButton v-if="!isReadOnly" @click="$router.push({ name: 'TaskNew', query: { caseId } })">
-					{{ t('procest', 'New task') }}
+	<div>
+		<CnDetailPage
+			:title="caseData.title || t('procest', 'Case')"
+			:subtitle="caseData.identifier ? `${t('procest', 'Case')} — ${caseData.identifier}` : t('procest', 'Case')"
+			:back-route="{ name: 'Cases' }"
+			:back-label="t('procest', 'Back to list')"
+			:loading="loading"
+			:sidebar="!isNew && !loading"
+			object-type="procest_case"
+			:object-id="caseId"
+			:sidebar-props="sidebarProps">
+			<template #header-actions>
+				<NcButton
+					v-if="!isReadOnly"
+					type="primary"
+					:disabled="saving"
+					@click="save">
+					<template v-if="saving">
+						<NcLoadingIcon :size="20" />
+					</template>
+					{{ t('procest', 'Save') }}
+				</NcButton>
+				<NcButton type="error" @click="confirmDelete">
+					{{ t('procest', 'Delete') }}
 				</NcButton>
 			</template>
 
-			<div v-if="tasks.length === 0" class="section-empty">
-				{{ t('procest', 'No tasks yet') }}
-			</div>
-			<div v-else class="viewTableContainer">
-				<table class="viewTable">
-					<thead>
-						<tr>
-							<th>{{ t('procest', 'Title') }}</th>
-							<th>{{ t('procest', 'Status') }}</th>
-							<th>{{ t('procest', 'Assignee') }}</th>
-							<th>{{ t('procest', 'Due date') }}</th>
-							<th>{{ t('procest', 'Priority') }}</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr
-							v-for="task in sortedTasks"
-							:key="task.id"
-							class="viewTableRow"
-							:class="{ 'viewTableRow--overdue': isOverdue(task) }"
-							@click="$router.push({ name: 'TaskDetail', params: { id: task.id } })">
-							<td>{{ task.title || '—' }}</td>
-							<td>
-								<span class="status-badge" :class="'status-badge--' + task.status">
-									{{ getTaskStatusLabel(task.status) }}
-								</span>
-							</td>
-							<td>{{ task.assignee || '—' }}</td>
-							<td :class="dueDateClass(task)">
-								<template v-if="isOverdue(task)">
-									{{ getOverdueText(task) }}
-								</template>
-								<template v-else-if="isDueToday(task)">
-									{{ t('procest', 'Due today') }}
-								</template>
-								<template v-else>
-									{{ formatDueDate(task.dueDate) }}
-								</template>
-							</td>
-							<td>
-								<span
-									v-if="task.priority && task.priority !== 'normal'"
-									class="priority-badge"
-									:class="'priority-badge--' + task.priority">
-									{{ getTaskPriorityLabel(task.priority) }}
-								</span>
-								<span v-else>—</span>
-							</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-		</CnDetailCard>
+			<!-- Status card -->
+			<CnDetailCard :title="t('procest', 'Status')">
+				<div class="status-section">
+					<span class="status-badge" :class="currentStatusBadgeClass">
+						{{ currentStatusName }}
+					</span>
 
-		<!-- Activity card -->
-		<CnDetailCard :title="t('procest', 'Activity')">
-			<ActivityTimeline
-				:activity="caseData.activity || []"
-				:is-read-only="isReadOnly"
-				@add-note="onAddNote" />
-		</CnDetailCard>
-	</CnDetailPage>
+					<!-- Status change dropdown -->
+					<div v-if="!isReadOnly && orderedStatusTypes.length > 0" class="status-section__change">
+						<NcSelect
+							v-model="selectedStatus"
+							:options="orderedStatusTypes"
+							label="name"
+							track-by="id"
+							:placeholder="t('procest', 'Change status...')"
+							@input="onStatusSelected" />
+					</div>
 
-	<!-- Extension dialog -->
-	<div v-if="showExtension" class="extension-overlay" @click.self="showExtension = false">
-		<div class="extension-dialog">
-			<h3>{{ t('procest', 'Extend Deadline') }}</h3>
-			<p>{{ t('procest', 'This will extend the deadline by {period}.', { period: extensionPeriodText }) }}</p>
-			<div class="form-group">
-				<label>{{ t('procest', 'Reason') }}</label>
-				<textarea
-					v-model="extensionReason"
-					:placeholder="t('procest', 'Why is an extension needed?')"
-					rows="3" />
-			</div>
-			<div class="extension-dialog__actions">
-				<NcButton @click="showExtension = false">
-					{{ t('procest', 'Cancel') }}
-				</NcButton>
-				<NcButton type="primary" @click="confirmExtension">
-					{{ t('procest', 'Extend deadline') }}
-				</NcButton>
+					<span v-if="caseData.endDate" class="status-section__closed-info">
+						{{ t('procest', 'Closed on {date}', { date: formatDate(caseData.endDate) }) }}
+					</span>
+				</div>
+
+				<!-- Result prompt (shown when final status selected) -->
+				<div v-if="showResultPrompt" class="result-prompt">
+					<template v-if="resultTypes.length > 0">
+						<NcSelect
+							v-model="selectedResultType"
+							:options="resultTypes"
+							label="name"
+							track-by="id"
+							:placeholder="t('procest', 'Select result type...')" />
+					</template>
+					<template v-else>
+						<NcTextField
+							:value="resultText"
+							:label="t('procest', 'Result (required)')"
+							:error="!!resultError"
+							@update:value="v => { resultText = v; resultError = '' }" />
+					</template>
+					<p v-if="resultError" class="form-error">
+						{{ resultError }}
+					</p>
+					<div class="result-prompt__actions">
+						<NcButton type="primary" @click="confirmStatusChange">
+							{{ t('procest', 'Confirm') }}
+						</NcButton>
+						<NcButton @click="cancelStatusChange">
+							{{ t('procest', 'Cancel') }}
+						</NcButton>
+					</div>
+				</div>
+			</CnDetailCard>
+
+			<!-- Status Timeline card -->
+			<CnDetailCard v-if="orderedStatusTypes.length > 0" :title="t('procest', 'Status Timeline')">
+				<StatusTimeline
+					:status-types="orderedStatusTypes"
+					:current-status-id="caseData.status"
+					:status-history="caseData.statusHistory || []" />
+			</CnDetailCard>
+
+			<!-- Case Information card -->
+			<CnDetailCard :title="t('procest', 'Case Information')">
+				<div class="form-group">
+					<label>{{ t('procest', 'Title') }} *</label>
+					<NcTextField
+						:value="form.title"
+						:disabled="isReadOnly"
+						:error="!!validationErrors.title"
+						@update:value="v => { form.title = v; validationErrors.title = '' }" />
+					<p v-if="validationErrors.title" class="form-error">
+						{{ validationErrors.title }}
+					</p>
+				</div>
+
+				<div class="form-group">
+					<label>{{ t('procest', 'Description') }}</label>
+					<textarea
+						v-model="form.description"
+						:disabled="isReadOnly"
+						rows="3" />
+				</div>
+
+				<div class="form-row">
+					<div class="form-group">
+						<label>{{ t('procest', 'Case type') }}</label>
+						<span class="form-value">{{ caseTypeName }}</span>
+					</div>
+					<div class="form-group">
+						<label>{{ t('procest', 'Identifier') }}</label>
+						<span class="form-value">{{ caseData.identifier || '—' }}</span>
+					</div>
+				</div>
+
+				<div class="form-row">
+					<div class="form-group">
+						<label>{{ t('procest', 'Priority') }}</label>
+						<NcSelect
+							v-model="form.priority"
+							:options="priorityOptions"
+							:disabled="isReadOnly" />
+					</div>
+					<div class="form-group">
+						<label>{{ t('procest', 'Confidentiality') }}</label>
+						<span class="form-value">{{ caseData.confidentiality || '—' }}</span>
+					</div>
+				</div>
+
+				<div class="form-row">
+					<div class="form-group">
+						<label>{{ t('procest', 'Handler') }}</label>
+						<NcTextField
+							:value="form.assignee"
+							:disabled="isReadOnly"
+							:placeholder="t('procest', 'Assign handler...')"
+							@update:value="v => form.assignee = v" />
+					</div>
+					<div class="form-group">
+						<label>{{ t('procest', 'Start date') }}</label>
+						<span class="form-value">{{ formatDate(caseData.startDate) }}</span>
+					</div>
+				</div>
+
+				<ResultSection
+					:result="caseResult"
+					:result-types="resultTypes"
+					:show-empty="isAtFinalStatus && !caseResult" />
+
+				<div v-if="!caseResult && caseData.result" class="form-group">
+					<label>{{ t('procest', 'Result') }}</label>
+					<span class="form-value">{{ caseData.result }}</span>
+				</div>
+			</CnDetailCard>
+
+			<!-- Deadline & Timing card -->
+			<CnDetailCard v-if="caseTypeData" :title="t('procest', 'Deadline & Timing')">
+				<DeadlinePanel
+					:start-date="caseData.startDate"
+					:deadline="caseData.deadline"
+					:processing-deadline="caseTypeData.processingDeadline"
+					:extension-allowed="caseTypeData.extensionAllowed === true || caseTypeData.extensionAllowed === 'true'"
+					:extension-period="caseTypeData.extensionPeriod"
+					:extension-count="caseData.extensionCount || 0"
+					:is-final="isAtFinalStatus"
+					@extend="showExtensionDialog" />
+			</CnDetailCard>
+
+			<!-- Participants card -->
+			<CnDetailCard :title="t('procest', 'Participants')">
+				<ParticipantsSection
+					:case-id="caseId"
+					:is-read-only="isReadOnly"
+					@handler-changed="onHandlerChanged" />
+			</CnDetailCard>
+
+			<!-- Tasks card -->
+			<CnDetailCard :title="`${t('procest', 'Tasks')} (${completedTaskCount}/${tasks.length})`">
+				<template #actions>
+					<NcButton v-if="!isReadOnly" @click="$router.push({ name: 'TaskNew', query: { caseId } })">
+						{{ t('procest', 'New task') }}
+					</NcButton>
+				</template>
+
+				<div v-if="tasks.length === 0" class="section-empty">
+					{{ t('procest', 'No tasks yet') }}
+				</div>
+				<div v-else class="viewTableContainer">
+					<table class="viewTable">
+						<thead>
+							<tr>
+								<th>{{ t('procest', 'Title') }}</th>
+								<th>{{ t('procest', 'Status') }}</th>
+								<th>{{ t('procest', 'Assignee') }}</th>
+								<th>{{ t('procest', 'Due date') }}</th>
+								<th>{{ t('procest', 'Priority') }}</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr
+								v-for="task in sortedTasks"
+								:key="task.id"
+								class="viewTableRow"
+								:class="{ 'viewTableRow--overdue': isOverdue(task) }"
+								@click="$router.push({ name: 'TaskDetail', params: { id: task.id } })">
+								<td>{{ task.title || '—' }}</td>
+								<td>
+									<span class="status-badge" :class="'status-badge--' + task.status">
+										{{ getTaskStatusLabel(task.status) }}
+									</span>
+								</td>
+								<td>{{ task.assignee || '—' }}</td>
+								<td :class="dueDateClass(task)">
+									<template v-if="isOverdue(task)">
+										{{ getOverdueText(task) }}
+									</template>
+									<template v-else-if="isDueToday(task)">
+										{{ t('procest', 'Due today') }}
+									</template>
+									<template v-else>
+										{{ formatDueDate(task.dueDate) }}
+									</template>
+								</td>
+								<td>
+									<span
+										v-if="task.priority && task.priority !== 'normal'"
+										class="priority-badge"
+										:class="'priority-badge--' + task.priority">
+										{{ getTaskPriorityLabel(task.priority) }}
+									</span>
+									<span v-else>—</span>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</CnDetailCard>
+
+			<!-- Activity card -->
+			<CnDetailCard :title="t('procest', 'Activity')">
+				<ActivityTimeline
+					:activity="caseData.activity || []"
+					:is-read-only="isReadOnly"
+					@add-note="onAddNote" />
+			</CnDetailCard>
+		</CnDetailPage>
+
+		<!-- Extension dialog -->
+		<div v-if="showExtension" class="extension-overlay" @click.self="showExtension = false">
+			<div class="extension-dialog">
+				<h3>{{ t('procest', 'Extend Deadline') }}</h3>
+				<p>{{ t('procest', 'This will extend the deadline by {period}.', { period: extensionPeriodText }) }}</p>
+				<div class="form-group">
+					<label>{{ t('procest', 'Reason') }}</label>
+					<textarea
+						v-model="extensionReason"
+						:placeholder="t('procest', 'Why is an extension needed?')"
+						rows="3" />
+				</div>
+				<div class="extension-dialog__actions">
+					<NcButton @click="showExtension = false">
+						{{ t('procest', 'Cancel') }}
+					</NcButton>
+					<NcButton type="primary" @click="confirmExtension">
+						{{ t('procest', 'Extend deadline') }}
+					</NcButton>
+				</div>
 			</div>
 		</div>
 	</div>

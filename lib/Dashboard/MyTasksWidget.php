@@ -110,7 +110,7 @@ class MyTasksWidget implements IWidget
      * @inheritDoc
      * @return     void
      *
-     * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
+     * @SuppressWarnings(PHPMD.StaticAccess)
      */
     public function load(): void
     {

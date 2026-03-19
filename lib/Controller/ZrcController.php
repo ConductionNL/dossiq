@@ -206,7 +206,7 @@ class ZrcController extends Controller
                 mappingConfig: $mappingConfig
             );
 
-            /** @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change */
+            // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],
@@ -2243,7 +2243,7 @@ class ZrcController extends Controller
                 mappingConfig: $oioConfig
             );
 
-            /** @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change */
+            // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 $englishData = $oioData;
             }

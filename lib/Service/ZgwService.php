@@ -616,8 +616,8 @@ class ZgwService
      *
      * @return bool True if the consumer has the scope or heeftAlleAutorisaties
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — multiple JWT validation paths
-     * @SuppressWarnings(PHPMD.NPathComplexity) — multiple JWT validation paths
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function consumerHasScope(IRequest $request, string $component, string $scope): bool
     {
@@ -687,7 +687,7 @@ class ZgwService
      *
      * @return array|null Array of autorisatie entries, or null if unrestricted
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — multiple JWT validation paths
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     public function getConsumerAuthorisaties(IRequest $request, string $component): ?array
     {
@@ -924,8 +924,8 @@ class ZgwService
      *
      * @return JSONResponse
      *
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — ZGW scope flags from middleware
-     * @SuppressWarnings(PHPMD.ExcessiveMethodLength) — orchestration method with validation + mapping
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
     public function handleCreate(
         IRequest $request,
@@ -979,7 +979,7 @@ class ZgwService
                 mappingConfig: $mappingConfig
             );
 
-            /** @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change */
+            // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],
@@ -1106,7 +1106,7 @@ class ZgwService
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — ZGW scope flags from middleware
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function handleUpdate(
         IRequest $request,
@@ -1312,7 +1312,7 @@ class ZgwService
      *
      * @return JSONResponse
      *
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — ZGW scope flags from middleware
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function handleDestroy(
         IRequest $request,
@@ -1574,8 +1574,8 @@ class ZgwService
      *
      * @return bool|null True if closed, false if open, null if N/A
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
-     * @SuppressWarnings(PHPMD.NPathComplexity) — sub-resource lookup with multiple guard clauses
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function resolveZaakClosed(string $resource, array $existingData): ?bool
     {
@@ -1647,8 +1647,8 @@ class ZgwService
      *
      * @return bool|null True if closed, false if open, null if N/A
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
-     * @SuppressWarnings(PHPMD.NPathComplexity) — sub-resource lookup with multiple guard clauses
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function resolveZaakClosedFromBody(string $resource, array $body): ?bool
     {
@@ -1718,8 +1718,8 @@ class ZgwService
      *
      * @return bool|null True if draft, false if published, null if N/A
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
-     * @SuppressWarnings(PHPMD.NPathComplexity) — sub-resource lookup with multiple guard clauses
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function resolveParentZaaktypeDraft(string $resource, array $existingData): ?bool
     {
@@ -1792,8 +1792,8 @@ class ZgwService
      *
      * @return bool|null True if draft, false if published, null if N/A
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
-     * @SuppressWarnings(PHPMD.NPathComplexity) — sub-resource lookup with multiple guard clauses
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function resolveParentZaaktypeDraftFromBody(string $resource, array $body): ?bool
     {

@@ -37,5 +37,6 @@ module.exports = defineConfig([{
 		'import/no-named-as-default': 'off',
 		'import/no-named-as-default-member': 'off',
 		'import/no-unresolved': ['error', { ignore: ['^@conduction/nextcloud-vue'] }],
+		'import/named': 'off',
 	},
 }])

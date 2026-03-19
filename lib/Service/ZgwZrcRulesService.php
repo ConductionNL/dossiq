@@ -80,7 +80,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     public function rulesZakenCreate(array $body): array
     {
@@ -472,8 +472,8 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @psalm-suppress UnusedParam — $zaaktypeField reserved for future filtering
      *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $zaaktypeField reserved for future filtering
-     * @SuppressWarnings(PHPMD.NPathComplexity) — cross-register validation with multiple lookups
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     private function validateSubResourceType(
         string $zaakUrl,
@@ -552,8 +552,8 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW cross-register validation
-     * @SuppressWarnings(PHPMD.NPathComplexity) — ZGW cross-register validation
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     private function validateZioInformatieobjecttype(string $zaakUrl, string $ioUrl): ?array
     {
@@ -659,7 +659,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @psalm-suppress UnusedParam — $isPatch reserved for partial-update field validation
      *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $isPatch reserved for partial-update validation
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     private function validateZaakFields(array $result, ?array $existingObject, bool $isPatch): array
     {
@@ -698,7 +698,11 @@ class ZgwZrcRulesService extends ZgwRulesBase
                 $segments      = array_filter(explode('/', trim($path, '/')));
                 $last          = end($segments);
                 $looksLikeUuid = preg_match('/[0-9a-f]{4,}-/i', $last) === 1;
-                $code          = ($looksLikeUuid === true) ? 'bad-url' : 'invalid-resource';
+                if ($looksLikeUuid === true) {
+                    $code = 'bad-url';
+                } else {
+                    $code = 'invalid-resource';
+                }
 
                 return $this->error(
                     status: 400,
@@ -972,8 +976,8 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
-     * @SuppressWarnings(PHPMD.NPathComplexity) — ZGW business rules validation
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     private function validateProductenOfDiensten(array $body): ?array
     {
@@ -1058,7 +1062,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — immutability check on multiple fields
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     private function checkZioImmutability(array $result, ?array $existingObject): array
     {
@@ -1071,10 +1075,12 @@ class ZgwZrcRulesService extends ZgwRulesBase
         // Zrc-004: zaak is immutable.
         if (isset($body['zaak']) === true) {
             $existingZaak = $existingObject['case'] ?? ($existingObject['zaak'] ?? '');
-            $newZaakUuid  = $this->extractUuid(url: $body['zaak']);
-            $existZaakId = is_string($existingZaak) === true
-                ? $this->extractUuid(url: $existingZaak)
-                : $existingZaak;
+            $newZaakUuid = $this->extractUuid(url: $body['zaak']);
+            if (is_string($existingZaak) === true) {
+                $existZaakId = $this->extractUuid(url: $existingZaak);
+            } else {
+                $existZaakId = $existingZaak;
+            }
 
             if ($existZaakId !== null && $newZaakUuid !== null && $newZaakUuid !== $existZaakId) {
                 return $this->fieldImmutableError(fieldName: 'zaak');
@@ -1084,10 +1090,12 @@ class ZgwZrcRulesService extends ZgwRulesBase
         // Zrc-004: informatieobject is immutable.
         if (isset($body['informatieobject']) === true) {
             $existingIo = $existingObject['document'] ?? ($existingObject['informatieobject'] ?? '');
-            $newIoUuid  = $this->extractUuid(url: $body['informatieobject']);
-            $existIoId = is_string($existingIo) === true
-                ? $this->extractUuid(url: $existingIo)
-                : $existingIo;
+            $newIoUuid = $this->extractUuid(url: $body['informatieobject']);
+            if (is_string($existingIo) === true) {
+                $existIoId = $this->extractUuid(url: $existingIo);
+            } else {
+                $existIoId = $existingIo;
+            }
 
             if ($existIoId !== null && $newIoUuid !== null && $newIoUuid !== $existIoId) {
                 return $this->fieldImmutableError(fieldName: 'informatieobject');

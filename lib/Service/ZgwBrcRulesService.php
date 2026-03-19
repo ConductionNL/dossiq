@@ -85,7 +85,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     public function rulesBesluitenCreate(array $body): array
     {
@@ -530,7 +530,7 @@ class ZgwBrcRulesService extends ZgwRulesBase
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
-     * @SuppressWarnings(PHPMD.ExcessiveMethodLength) — ZGW cross-register validation
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
     private function validateBioInformatieobjecttype(string $besluitUrl, string $ioUrl): ?array
     {

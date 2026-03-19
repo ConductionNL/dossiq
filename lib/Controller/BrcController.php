@@ -492,7 +492,11 @@ class BrcController extends Controller
             $outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
             $mapped          = [];
             foreach ($objects as $object) {
-                $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
+                if (is_array($object) === true) {
+                    $objectData = $object;
+                } else {
+                    $objectData = $object->jsonSerialize();
+                }
 
                 $mapped[] = $this->zgwService->applyOutboundMapping(
                     objectData: $objectData,
@@ -569,7 +573,7 @@ class BrcController extends Controller
                 mappingConfig: $mappingConfig
             );
 
-            /** @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change */
+            // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],
@@ -582,7 +586,11 @@ class BrcController extends Controller
                 schema: $mappingConfig['sourceSchema'],
                 object: $englishData
             );
-            $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
+            if (is_array($object) === true) {
+                $objectData = $object;
+            } else {
+                $objectData = $object->jsonSerialize();
+            }
 
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
 
@@ -689,7 +697,11 @@ class BrcController extends Controller
             $result = $objectService->searchObjectsPaginated(query: $query);
 
             foreach (($result['results'] ?? []) as $oio) {
-                $oioData = is_array($oio) === true ? $oio : $oio->jsonSerialize();
+                if (is_array($oio) === true) {
+                    $oioData = $oio;
+                } else {
+                    $oioData = $oio->jsonSerialize();
+                }
 
                 $oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
                 if ($oioUuid !== '') {
@@ -734,7 +746,11 @@ class BrcController extends Controller
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $bioData = is_array($bioObj) === true ? $bioObj : $bioObj->jsonSerialize();
+            if (is_array($bioObj) === true) {
+                $bioData = $bioObj;
+            } else {
+                $bioData = $bioObj->jsonSerialize();
+            }
 
             // Build the besluit URL from the stored decision UUID.
             $decisionUuid = $bioData['decision'] ?? '';
@@ -810,7 +826,11 @@ class BrcController extends Controller
             $result = $objectService->searchObjectsPaginated(query: $query);
 
             foreach (($result['results'] ?? []) as $oio) {
-                $oioData = is_array($oio) === true ? $oio : $oio->jsonSerialize();
+                if (is_array($oio) === true) {
+                    $oioData = $oio;
+                } else {
+                    $oioData = $oio->jsonSerialize();
+                }
 
                 $oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
                 if ($oioUuid !== '') {
@@ -857,7 +877,11 @@ class BrcController extends Controller
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $existingData = is_array($existingObj) === true ? $existingObj : $existingObj->jsonSerialize();
+            if (is_array($existingObj) === true) {
+                $existingData = $existingObj;
+            } else {
+                $existingData = $existingObj->jsonSerialize();
+            }
 
             // Run destroy business rules.
             $ruleResult = $this->zgwService->getBusinessRulesService()->validate(

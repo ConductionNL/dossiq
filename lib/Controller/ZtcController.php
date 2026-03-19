@@ -631,7 +631,7 @@ class ZtcController extends Controller
             $docTypeIds = [];
             if (is_string($docTypes) === true && $docTypes !== '') {
                 $docTypeIds = json_decode($docTypes, true);
-            } elseif (is_array($docTypes) === true) {
+            } else if (is_array($docTypes) === true) {
                 $docTypeIds = $docTypes;
             }
 
@@ -651,7 +651,7 @@ class ZtcController extends Controller
             $caseTypeIds = [];
             if (is_string($caseTypes) === true && $caseTypes !== '') {
                 $caseTypeIds = json_decode($caseTypes, true);
-            } elseif (is_array($caseTypes) === true) {
+            } else if (is_array($caseTypes) === true) {
                 $caseTypeIds = $caseTypes;
             }
 

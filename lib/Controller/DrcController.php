@@ -261,7 +261,7 @@ class DrcController extends Controller
                 unset($englishData['content']);
             }
 
-            /** @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change */
+            // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],
@@ -1658,7 +1658,7 @@ class DrcController extends Controller
                 unset($englishData['content']);
             }
 
-            /** @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change */
+            // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],
@@ -1749,7 +1749,7 @@ class DrcController extends Controller
      *
      * @return JSONResponse|null Error response if lock check fails, null if OK.
      *
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $partial distinguishes PUT vs PATCH lock semantics
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     private function checkDocumentLock(
         array $mappingConfig,
