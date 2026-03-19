@@ -51,7 +51,6 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.NPathComplexity)
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
- * @SuppressWarnings(PHPMD.UnusedFormalParameter)
  */
 class ZrcController extends Controller
 {
@@ -510,6 +509,8 @@ class ZrcController extends Controller
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
      */
     public function zaakeigenschappenIndex(string $zaakUuid): JSONResponse
     {
@@ -527,6 +528,8 @@ class ZrcController extends Controller
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
      */
     public function zaakeigenschappenCreate(string $zaakUuid): JSONResponse
     {
@@ -545,6 +548,8 @@ class ZrcController extends Controller
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
      */
     public function zaakeigenschappenShow(string $zaakUuid, string $uuid): JSONResponse
     {
@@ -563,6 +568,8 @@ class ZrcController extends Controller
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
      */
     public function zaakeigenschappenUpdate(string $zaakUuid, string $uuid): JSONResponse
     {
@@ -581,6 +588,8 @@ class ZrcController extends Controller
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
      */
     public function zaakeigenschappenPatch(string $zaakUuid, string $uuid): JSONResponse
     {
@@ -599,6 +608,8 @@ class ZrcController extends Controller
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
      */
     public function zaakeigenschappenDestroy(string $zaakUuid, string $uuid): JSONResponse
     {
@@ -910,6 +921,7 @@ class ZrcController extends Controller
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $isPatch reserved for partial-update validation
      *
      * @psalm-suppress UnusedParam — $isPatch reserved for partial-update validation
      */
@@ -1859,6 +1871,8 @@ class ZrcController extends Controller
      * @return void
      *
      * @psalm-suppress UnusedParam — $objectData reserved for future use in result processing
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $objectData reserved for future result processing
      */
     private function handleResultaatCreated(array $body, array $objectData): void
     {
