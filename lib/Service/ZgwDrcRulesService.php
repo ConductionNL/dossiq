@@ -83,7 +83,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
-     * @SuppressWarnings(PHPMD.NPathComplexity) — ZGW business rules validation
+     * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
      */
     public function rulesEnkelvoudiginformatieobjectenCreate(array $body): array
     {
@@ -259,7 +259,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
-     * @SuppressWarnings(PHPMD.NPathComplexity) — ZGW business rules validation
+     * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
      */
     public function rulesObjectinformatieobjectenCreate(array $body): array
     {
@@ -350,7 +350,11 @@ class ZgwDrcRulesService extends ZgwRulesBase
 
             $ids = [];
             foreach (($result['results'] ?? []) as $obj) {
-                $data = is_array($obj) === true ? $obj : $obj->jsonSerialize();
+                if (is_array($obj) === true) {
+                    $data = $obj;
+                } else {
+                    $data = $obj->jsonSerialize();
+                }
 
                 $id = $data['id'] ?? ($data['@self']['id'] ?? null);
                 if ($id !== null) {
@@ -517,9 +521,11 @@ class ZgwDrcRulesService extends ZgwRulesBase
             $total  = $result['total'] ?? count($result['results'] ?? []);
 
             if ($total === 0) {
-                $detail = ($objectType === 'zaak')
-                    ? 'Er bestaat geen ZaakInformatieObject in de Zaken API voor deze combinatie.'
-                    : 'Er bestaat geen BesluitInformatieObject in de Besluiten API voor deze combinatie.';
+                if ($objectType === 'zaak') {
+                    $detail = 'Er bestaat geen ZaakInformatieObject in de Zaken API voor deze combinatie.';
+                } else {
+                    $detail = 'Er bestaat geen BesluitInformatieObject in de Besluiten API voor deze combinatie.';
+                }
 
                 return $this->error(
                     status: 400,

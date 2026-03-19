@@ -473,7 +473,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      * @psalm-suppress UnusedParam — $zaaktypeField reserved for future filtering
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $zaaktypeField reserved for future filtering
-     * @SuppressWarnings(PHPMD.NPathComplexity) — cross-register validation with multiple lookups
+     * @SuppressWarnings(PHPMD.NPathComplexity)       — cross-register validation with multiple lookups
      */
     private function validateSubResourceType(
         string $zaakUrl,
@@ -553,7 +553,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW cross-register validation
-     * @SuppressWarnings(PHPMD.NPathComplexity) — ZGW cross-register validation
+     * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW cross-register validation
      */
     private function validateZioInformatieobjecttype(string $zaakUrl, string $ioUrl): ?array
     {
@@ -698,7 +698,11 @@ class ZgwZrcRulesService extends ZgwRulesBase
                 $segments      = array_filter(explode('/', trim($path, '/')));
                 $last          = end($segments);
                 $looksLikeUuid = preg_match('/[0-9a-f]{4,}-/i', $last) === 1;
-                $code          = ($looksLikeUuid === true) ? 'bad-url' : 'invalid-resource';
+                if ($looksLikeUuid === true) {
+                    $code = 'bad-url';
+                } else {
+                    $code = 'invalid-resource';
+                }
 
                 return $this->error(
                     status: 400,
@@ -973,7 +977,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
-     * @SuppressWarnings(PHPMD.NPathComplexity) — ZGW business rules validation
+     * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
      */
     private function validateProductenOfDiensten(array $body): ?array
     {
@@ -1072,9 +1076,11 @@ class ZgwZrcRulesService extends ZgwRulesBase
         if (isset($body['zaak']) === true) {
             $existingZaak = $existingObject['case'] ?? ($existingObject['zaak'] ?? '');
             $newZaakUuid  = $this->extractUuid(url: $body['zaak']);
-            $existZaakId = is_string($existingZaak) === true
-                ? $this->extractUuid(url: $existingZaak)
-                : $existingZaak;
+            if (is_string($existingZaak) === true) {
+                $existZaakId = $this->extractUuid(url: $existingZaak);
+            } else {
+                $existZaakId = $existingZaak;
+            }
 
             if ($existZaakId !== null && $newZaakUuid !== null && $newZaakUuid !== $existZaakId) {
                 return $this->fieldImmutableError(fieldName: 'zaak');
@@ -1085,9 +1091,11 @@ class ZgwZrcRulesService extends ZgwRulesBase
         if (isset($body['informatieobject']) === true) {
             $existingIo = $existingObject['document'] ?? ($existingObject['informatieobject'] ?? '');
             $newIoUuid  = $this->extractUuid(url: $body['informatieobject']);
-            $existIoId = is_string($existingIo) === true
-                ? $this->extractUuid(url: $existingIo)
-                : $existingIo;
+            if (is_string($existingIo) === true) {
+                $existIoId = $this->extractUuid(url: $existingIo);
+            } else {
+                $existIoId = $existingIo;
+            }
 
             if ($existIoId !== null && $newIoUuid !== null && $newIoUuid !== $existIoId) {
                 return $this->fieldImmutableError(fieldName: 'informatieobject');

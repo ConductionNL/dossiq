@@ -248,7 +248,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
-     * @SuppressWarnings(PHPMD.NPathComplexity) — ZGW business rules validation
+     * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
      */
     public function rulesZaaktypenCreate(array $body): array
     {
@@ -388,9 +388,9 @@ class ZgwZtcRulesService extends ZgwRulesBase
                 $needsNameLookup = false;
                 if ($isUrl === true) {
                     // URL — let reverse mapping handle UUID extraction.
-                } elseif ($uuid !== null) {
+                } else if ($uuid !== null) {
                     // Bare UUID — verify it exists; if not, treat as omschrijving.
-                    $existing = $this->findBySchemaKey(uuid: $uuid, schemaKey: 'document_type_schema');
+                    $existing        = $this->findBySchemaKey(uuid: $uuid, schemaKey: 'document_type_schema');
                     $needsNameLookup = ($existing === null);
                 }
 
@@ -625,7 +625,11 @@ class ZgwZtcRulesService extends ZgwRulesBase
 
         // Ztc-008: procestermijn required only for termijn.
         $procestermijn = $archief['procestermijn'] ?? null;
-        $ptValue = is_string($procestermijn) === true ? $procestermijn : '';
+        if (is_string($procestermijn) === true) {
+            $ptValue = $procestermijn;
+        } else {
+            $ptValue = '';
+        }
 
         $errors = array_merge(
             $errors,
@@ -908,7 +912,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @return array The body with resolved zaaktype references
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — nested object resolution
-     * @SuppressWarnings(PHPMD.NPathComplexity) — nested object resolution
+     * @SuppressWarnings(PHPMD.NPathComplexity)      — nested object resolution
      */
     private function resolveGerelateerdeZaaktypen(array $body): array
     {

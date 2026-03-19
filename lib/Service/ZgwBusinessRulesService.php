@@ -76,7 +76,7 @@ class ZgwBusinessRulesService
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — ZGW scope flag from middleware
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)    — ZGW scope flag from middleware
      */
     public function validate(
         string $zgwApi,

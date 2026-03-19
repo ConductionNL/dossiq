@@ -158,7 +158,11 @@ class DrcController extends Controller
             $outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
             $mapped          = [];
             foreach ($objects as $object) {
-                $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
+                if (is_array($object) === true) {
+                    $objectData = $object;
+                } else {
+                    $objectData = $object->jsonSerialize();
+                }
 
                 $mapped[] = $this->zgwService->applyOutboundMapping(
                     objectData: $objectData,
@@ -261,7 +265,7 @@ class DrcController extends Controller
                 unset($englishData['content']);
             }
 
-            /** @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change */
+            // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],
@@ -290,7 +294,11 @@ class DrcController extends Controller
                 schema: $mappingConfig['sourceSchema'],
                 object: $englishData
             );
-            $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
+            if (is_array($object) === true) {
+                $objectData = $object;
+            } else {
+                $objectData = $object->jsonSerialize();
+            }
 
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
 
@@ -328,7 +336,7 @@ class DrcController extends Controller
             );
 
             // Add bestandsdelen for chunked upload responses.
-            $chunkInfo               = $this->parseFileParts(objectData: $objectData);
+            $chunkInfo = $this->parseFileParts(objectData: $objectData);
             $mapped['bestandsdelen'] = [];
             if ($chunkInfo !== null && ($chunkInfo['pending'] ?? false) === true) {
                 $mapped['bestandsdelen'] = $this->buildBestandsdelenArray(
@@ -492,7 +500,11 @@ class DrcController extends Controller
                         register: $mappingConfig['sourceRegister'],
                         schema: $mappingConfig['sourceSchema']
                     );
-                    $existingData = is_array($existing) === true ? $existing : $existing->jsonSerialize();
+                    if (is_array($existing) === true) {
+                        $existingData = $existing;
+                    } else {
+                        $existingData = $existing->jsonSerialize();
+                    }
 
                     $fileName = $existingData['fileName'] ?? 'document';
                     if ($fileName === '') {
@@ -586,7 +598,11 @@ class DrcController extends Controller
                 schema: $mappingConfig['sourceSchema'],
                 id: $uuid
             );
-            $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
+            if (is_array($object) === true) {
+                $objectData = $object;
+            } else {
+                $objectData = $object->jsonSerialize();
+            }
 
             $fileName = $objectData['fileName'] ?? 'document';
             if ($fileName === '') {
@@ -716,7 +732,11 @@ class DrcController extends Controller
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $existingData = is_array($existing) === true ? $existing : $existing->jsonSerialize();
+            if (is_array($existing) === true) {
+                $existingData = $existing;
+            } else {
+                $existingData = $existing->jsonSerialize();
+            }
 
             $lockId = bin2hex(random_bytes(16));
 
@@ -801,9 +821,11 @@ class DrcController extends Controller
                 'geforceerd-bijwerken'
             );
             if ($hasForceScope === false) {
-                $detail = ($lockId === '')
-                    ? $this->l10n->t('Forced unlocking is not allowed without the correct scope.')
-                    : $this->l10n->t('Lock ID does not match and forced unlocking is not allowed.');
+                if ($lockId === '') {
+                    $detail = $this->l10n->t('Forced unlocking is not allowed without the correct scope.');
+                } else {
+                    $detail = $this->l10n->t('Lock ID does not match and forced unlocking is not allowed.');
+                }
 
                 return new JSONResponse(
                     data: [
@@ -863,7 +885,11 @@ class DrcController extends Controller
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $existingData = is_array($existing) === true ? $existing : $existing->jsonSerialize();
+            if (is_array($existing) === true) {
+                $existingData = $existing;
+            } else {
+                $existingData = $existing->jsonSerialize();
+            }
 
             unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
             $existingData['locked'] = false;
@@ -1090,7 +1116,11 @@ class DrcController extends Controller
     {
         $ids = [];
         foreach (($result['results'] ?? []) as $obj) {
-            $data = is_array($obj) === true ? $obj : $obj->jsonSerialize();
+            if (is_array($obj) === true) {
+                $data = $obj;
+            } else {
+                $data = $obj->jsonSerialize();
+            }
 
             $id = $data['id'] ?? ($data['@self']['id'] ?? null);
             if ($id !== null) {
@@ -1129,7 +1159,11 @@ class DrcController extends Controller
             $result = $objectService->searchObjectsPaginated(query: $query);
 
             foreach (($result['results'] ?? []) as $gr) {
-                $grData = is_array($gr) === true ? $gr : $gr->jsonSerialize();
+                if (is_array($gr) === true) {
+                    $grData = $gr;
+                } else {
+                    $grData = $gr->jsonSerialize();
+                }
 
                 $grUuid = $grData['id'] ?? ($grData['@self']['id'] ?? '');
                 if ($grUuid !== '') {
@@ -1192,7 +1226,11 @@ class DrcController extends Controller
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $data = is_array($obj) === true ? $obj : $obj->jsonSerialize();
+            if (is_array($obj) === true) {
+                $data = $obj;
+            } else {
+                $data = $obj->jsonSerialize();
+            }
 
             $ioRef       = $data['document'] ?? ($data['informatieobject'] ?? '');
             $uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
@@ -1246,7 +1284,11 @@ class DrcController extends Controller
                             register: $eioConfig['sourceRegister'],
                             schema: $eioConfig['sourceSchema']
                         );
-                        $eioData = is_array($eioObj) === true ? $eioObj : $eioObj->jsonSerialize();
+                        if (is_array($eioObj) === true) {
+                            $eioData = $eioObj;
+                        } else {
+                            $eioData = $eioObj->jsonSerialize();
+                        }
 
                         $eioData['usageRightsIndication'] = null;
 
@@ -1302,7 +1344,11 @@ class DrcController extends Controller
                 register: $eioConfig['sourceRegister'],
                 schema: $eioConfig['sourceSchema']
             );
-            $eioData = is_array($eioObj) === true ? $eioObj : $eioObj->jsonSerialize();
+            if (is_array($eioObj) === true) {
+                $eioData = $eioObj;
+            } else {
+                $eioData = $eioObj->jsonSerialize();
+            }
 
             $eioData['usageRightsIndication'] = $value;
 
@@ -1362,7 +1408,11 @@ class DrcController extends Controller
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $objectData = is_array($existing) === true ? $existing : $existing->jsonSerialize();
+            if (is_array($existing) === true) {
+                $objectData = $existing;
+            } else {
+                $objectData = $existing->jsonSerialize();
+            }
 
             // Verify this document has a pending chunked upload.
             $chunkInfo = $this->parseFileParts(objectData: $objectData);
@@ -1496,14 +1546,18 @@ class DrcController extends Controller
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $objectData = is_array($existing) === true ? $existing : $existing->jsonSerialize();
+            if (is_array($existing) === true) {
+                $objectData = $existing;
+            } else {
+                $objectData = $existing->jsonSerialize();
+            }
 
             $data = $response->getData();
             if (is_array($data) === false) {
                 return;
             }
 
-            $chunkInfo             = $this->parseFileParts(objectData: $objectData);
+            $chunkInfo = $this->parseFileParts(objectData: $objectData);
             $data['bestandsdelen'] = [];
             if ($chunkInfo !== null && ($chunkInfo['pending'] ?? false) === true) {
                 $data['bestandsdelen'] = $this->buildBestandsdelenArray(
@@ -1618,7 +1672,11 @@ class DrcController extends Controller
                 return $lockError;
             }
 
-            $action = ($partial === true) ? 'partial_update' : 'update';
+            if ($partial === true) {
+                $action = 'partial_update';
+            } else {
+                $action = 'update';
+            }
 
             $ruleResult = $this->zgwService->getBusinessRulesService()->validate(
                 zgwApi: self::ZGW_API,
@@ -1645,7 +1703,11 @@ class DrcController extends Controller
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $existingData = is_array($existing) === true ? $existing : $existing->jsonSerialize();
+            if (is_array($existing) === true) {
+                $existingData = $existing;
+            } else {
+                $existingData = $existing->jsonSerialize();
+            }
 
             $inboundMapping = $this->zgwService->createInboundMapping(mappingConfig: $mappingConfig);
             $englishData    = $this->zgwService->applyInboundMapping(
@@ -1658,7 +1720,7 @@ class DrcController extends Controller
                 unset($englishData['content']);
             }
 
-            /** @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change */
+            // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],
@@ -1676,7 +1738,11 @@ class DrcController extends Controller
                 object: $englishData,
                 uuid: $uuid
             );
-            $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
+            if (is_array($object) === true) {
+                $objectData = $object;
+            } else {
+                $objectData = $object->jsonSerialize();
+            }
 
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? $uuid);
 
@@ -1790,8 +1856,13 @@ class DrcController extends Controller
         if ($providedLockId === '') {
             // PUT (full update): lock is a required field (drc-009d).
             // PATCH (partial): lock is missing for lock enforcement (drc-009e).
-            $errorName = ($partial === false) ? 'lock' : 'nonFieldErrors';
-            $errorCode = ($partial === false) ? 'required' : 'missing-lock-id';
+            if ($partial === false) {
+                $errorName = 'lock';
+                $errorCode = 'required';
+            } else {
+                $errorName = 'nonFieldErrors';
+                $errorCode = 'missing-lock-id';
+            }
 
             return new JSONResponse(
                 data: [
@@ -1865,7 +1936,11 @@ class DrcController extends Controller
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $existingData = is_array($existing) === true ? $existing : $existing->jsonSerialize();
+            if (is_array($existing) === true) {
+                $existingData = $existing;
+            } else {
+                $existingData = $existing->jsonSerialize();
+            }
 
             // Check for stored lockId first.
             $lockId = $existingData['lockId'] ?? null;
@@ -1909,7 +1984,11 @@ class DrcController extends Controller
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $existingData = is_array($existing) === true ? $existing : $existing->jsonSerialize();
+            if (is_array($existing) === true) {
+                $existingData = $existing;
+            } else {
+                $existingData = $existing->jsonSerialize();
+            }
 
             unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
             $existingData['locked'] = true;
@@ -1948,7 +2027,11 @@ class DrcController extends Controller
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            $existingData = is_array($existing) === true ? $existing : $existing->jsonSerialize();
+            if (is_array($existing) === true) {
+                $existingData = $existing;
+            } else {
+                $existingData = $existing->jsonSerialize();
+            }
 
             unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
             $existingData['locked'] = false;
