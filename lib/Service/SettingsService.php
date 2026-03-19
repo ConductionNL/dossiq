@@ -133,6 +133,8 @@ class SettingsService
      * @param bool $force Whether to force re-import regardless of version
      *
      * @return array Import result
+     *
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $force is a simple re-import toggle
      */
     public function loadConfiguration(bool $force=false): array
     {

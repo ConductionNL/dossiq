@@ -278,11 +278,7 @@ abstract class ZgwRulesBase
             );
         }
 
-        if (is_array($typeObject) === true) {
-            $typeData = $typeObject;
-        } else {
-            $typeData = $typeObject->jsonSerialize();
-        }
+        $typeData = is_array($typeObject) === true ? $typeObject : $typeObject->jsonSerialize();
 
         $isDraft = $typeData['isDraft'] ?? true;
         if ($isDraft === true) {
@@ -489,12 +485,8 @@ abstract class ZgwRulesBase
                 return null;
             }
 
-            $obj = $results[0];
-            if (is_array($obj) === true) {
-                $data = $obj;
-            } else {
-                $data = $obj->jsonSerialize();
-            }
+            $obj  = $results[0];
+            $data = is_array($obj) === true ? $obj : $obj->jsonSerialize();
 
             return $data['id'] ?? ($data['@self']['id'] ?? null);
         } catch (\Throwable $e) {
@@ -532,11 +524,7 @@ abstract class ZgwRulesBase
 
             $ids = [];
             foreach (($result['results'] ?? []) as $obj) {
-                if (is_array($obj) === true) {
-                    $data = $obj;
-                } else {
-                    $data = $obj->jsonSerialize();
-                }
+                $data = is_array($obj) === true ? $obj : $obj->jsonSerialize();
 
                 $id = $data['id'] ?? ($data['@self']['id'] ?? null);
                 if ($id !== null) {
@@ -649,11 +637,7 @@ abstract class ZgwRulesBase
             // count it as a match (conservative: assume coercion happened).
             $matchCount = 0;
             foreach (($result['results'] ?? []) as $obj) {
-                if (is_array($obj) === true) {
-                    $data = $obj;
-                } else {
-                    $data = $obj->jsonSerialize();
-                }
+                $data = is_array($obj) === true ? $obj : $obj->jsonSerialize();
 
                 $storedVal  = $data[$field2Search] ?? null;
                 $storedStr  = (string) $storedVal;

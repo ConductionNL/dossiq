@@ -103,6 +103,8 @@ class AcController extends Controller
                 $filterClientId = $clientIds;
             }
 
+            $consumers = $this->zgwService->getConsumerMapper()->findAll();
+
             if ($filterClientId !== null) {
                 // Search by name (primary clientId) first.
                 $consumers = $this->zgwService->getConsumerMapper()->findAll(
@@ -120,8 +122,6 @@ class AcController extends Controller
                         }
                     }
                 }
-            } else {
-                $consumers = $this->zgwService->getConsumerMapper()->findAll();
             }
 
             $baseUrl = $this->zgwService->buildBaseUrl($this->request, 'autorisaties', 'applicaties');
@@ -744,13 +744,13 @@ class AcController extends Controller
      */
     private function applicatieToConsumer(array $body): array
     {
-        $clientIds = $body['clientIds'] ?? [];
+        $clientIds      = $body['clientIds'] ?? [];
+        $name           = ($body['label'] ?? 'unknown');
+        $extraClientIds = [];
+
         if (is_array($clientIds) === true && count($clientIds) > 0) {
             $name           = $clientIds[0];
             $extraClientIds = array_slice($clientIds, 1);
-        } else {
-            $name           = ($body['label'] ?? 'unknown');
-            $extraClientIds = [];
         }
 
         $authConfig = [

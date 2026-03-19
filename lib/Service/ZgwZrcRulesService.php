@@ -98,7 +98,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
         // Zrc-002: Check unique identificatie + bronorganisatie.
         if (empty($body['identificatie']) === false) {
             $error = $this->checkFieldUniqueness(
-                field1Value: $body['identificatie'] ?? '',
+                field1Value: $body['identificatie'],
                 field1Search: 'identifier',
                 field2Value: $body['bronorganisatie'] ?? '',
                 field2Search: 'sourceOrganisation',

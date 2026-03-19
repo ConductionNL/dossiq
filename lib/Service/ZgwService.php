@@ -313,11 +313,8 @@ class ZgwService
                     $value = end($parts);
                 }
 
-                if ($operator !== null) {
-                    $filters[$field.'.'.$operator] = $value;
-                } else {
-                    $filters[$field] = $value;
-                }
+                $filterKey           = ($operator !== null) ? $field.'.'.$operator : $field;
+                $filters[$filterKey] = $value;
             }
         }//end foreach
 
@@ -577,7 +574,7 @@ class ZgwService
     {
         $authHeader = $request->getHeader('Authorization');
 
-        if ($authHeader === '' || $authHeader === null) {
+        if ($authHeader === '') {
             return new JSONResponse(
                 data: [
                     'type'   => 'NotAuthenticated',
@@ -618,6 +615,9 @@ class ZgwService
      * @param string   $scope     The required scope
      *
      * @return bool True if the consumer has the scope or heeftAlleAutorisaties
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — multiple JWT validation paths
+     * @SuppressWarnings(PHPMD.NPathComplexity) — multiple JWT validation paths
      */
     public function consumerHasScope(IRequest $request, string $component, string $scope): bool
     {
@@ -686,6 +686,8 @@ class ZgwService
      * @param string   $component The ZGW component (e.g. 'zrc')
      *
      * @return array|null Array of autorisatie entries, or null if unrestricted
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — multiple JWT validation paths
      */
     public function getConsumerAuthorisaties(IRequest $request, string $component): ?array
     {
@@ -878,11 +880,7 @@ class ZgwService
             $outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
             $mapped          = [];
             foreach ($objects as $object) {
-                if (is_array($object) === true) {
-                    $objectData = $object;
-                } else {
-                    $objectData = $object->jsonSerialize();
-                }
+                $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
 
                 $mapped[] = $this->applyOutboundMapping(
                     objectData: $objectData,
@@ -925,6 +923,9 @@ class ZgwService
      * @param bool     $parentZaaktypeDraft Whether parent zaaktype is draft (ztc-010)
      *
      * @return JSONResponse
+     *
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — ZGW scope flags from middleware
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength) — orchestration method with validation + mapping
      */
     public function handleCreate(
         IRequest $request,
@@ -978,6 +979,7 @@ class ZgwService
                 mappingConfig: $mappingConfig
             );
 
+            /** @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change */
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],
@@ -996,11 +998,7 @@ class ZgwService
                 object: $englishData
             );
 
-            if (is_array($object) === true) {
-                $objectData = $object;
-            } else {
-                $objectData = $object->jsonSerialize();
-            }
+            $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
 
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
 
@@ -1069,11 +1067,7 @@ class ZgwService
 
             $baseUrl         = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
             $outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
-            if (is_array($object) === true) {
-                $objectData = $object;
-            } else {
-                $objectData = $object->jsonSerialize();
-            }
+            $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
 
             $mapped = $this->applyOutboundMapping(
                 objectData: $objectData,
@@ -1112,6 +1106,7 @@ class ZgwService
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — ZGW scope flags from middleware
      */
     public function handleUpdate(
         IRequest $request,
@@ -1138,22 +1133,14 @@ class ZgwService
 
         try {
             $body = $this->getRequestBody(request: $request);
-            if ($partial === true) {
-                $action = 'patch';
-            } else {
-                $action = 'update';
-            }
+            $action = ($partial === true) ? 'patch' : 'update';
 
             $existingObj = $this->objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($existingObj) === true) {
-                $existingData = $existingObj;
-            } else {
-                $existingData = $existingObj->jsonSerialize();
-            }
+            $existingData = is_array($existingObj) === true ? $existingObj : $existingObj->jsonSerialize();
 
             $ruleResult = $this->businessRulesService->validate(
                 zgwApi: $zgwApi,
@@ -1283,11 +1270,7 @@ class ZgwService
 
             $baseUrl         = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
             $outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
-            if (is_array($object) === true) {
-                $objectData = $object;
-            } else {
-                $objectData = $object->jsonSerialize();
-            }
+            $objectData = is_array($object) === true ? $object : $object->jsonSerialize();
 
             $mapped = $this->applyOutboundMapping(
                 objectData: $objectData,
@@ -1328,6 +1311,8 @@ class ZgwService
      * @param bool     $hasForceer    Whether consumer has geforceerd-bijwerken
      *
      * @return JSONResponse
+     *
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — ZGW scope flags from middleware
      */
     public function handleDestroy(
         IRequest $request,
@@ -1353,11 +1338,7 @@ class ZgwService
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($existingObj) === true) {
-                $existingData = $existingObj;
-            } else {
-                $existingData = $existingObj->jsonSerialize();
-            }
+            $existingData = is_array($existingObj) === true ? $existingObj : $existingObj->jsonSerialize();
 
             $ruleResult = $this->businessRulesService->validate(
                 zgwApi: $zgwApi,
@@ -1492,11 +1473,7 @@ class ZgwService
             try {
                 $logs = $this->objectService->getLogs($uuid, [], false, false);
                 foreach ($logs as $log) {
-                    if (is_array($log) === true) {
-                        $logData = $log;
-                    } else {
-                        $logData = $log->jsonSerialize();
-                    }
+                    $logData = is_array($log) === true ? $log : $log->jsonSerialize();
 
                     if (($logData['uuid'] ?? '') === $auditUuid) {
                         return new JSONResponse(
@@ -1544,11 +1521,7 @@ class ZgwService
         string $resourceUrl,
         string $resource
     ): array {
-        if (is_array($log) === true) {
-            $logData = $log;
-        } else {
-            $logData = $log->jsonSerialize();
-        }
+        $logData = is_array($log) === true ? $log : $log->jsonSerialize();
 
         // Map OpenRegister action names to ZGW actie names.
         $actionMap = [
@@ -1600,6 +1573,9 @@ class ZgwService
      * @param array  $existingData The existing object data
      *
      * @return bool|null True if closed, false if open, null if N/A
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
+     * @SuppressWarnings(PHPMD.NPathComplexity) — sub-resource lookup with multiple guard clauses
      */
     public function resolveZaakClosed(string $resource, array $existingData): ?bool
     {
@@ -1650,11 +1626,7 @@ class ZgwService
                 return null;
             }
 
-            if (is_array($zaak) === true) {
-                $zaakData = $zaak;
-            } else {
-                $zaakData = $zaak->jsonSerialize();
-            }
+            $zaakData = is_array($zaak) === true ? $zaak : $zaak->jsonSerialize();
 
             $endDate = $zaakData['endDate'] ?? ($zaakData['einddatum'] ?? null);
 
@@ -1674,6 +1646,9 @@ class ZgwService
      * @param array  $body     The request body
      *
      * @return bool|null True if closed, false if open, null if N/A
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
+     * @SuppressWarnings(PHPMD.NPathComplexity) — sub-resource lookup with multiple guard clauses
      */
     public function resolveZaakClosedFromBody(string $resource, array $body): ?bool
     {
@@ -1703,12 +1678,12 @@ class ZgwService
                 '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
                 (string) $zaakUrl,
                 $matches
-            ) === 1
+            ) !== 1
         ) {
-            $zaakUuid = $matches[1];
-        } else {
             return null;
         }
+
+        $zaakUuid = $matches[1];
 
         try {
             $zaakConfig = $this->zgwMappingService->getMapping('zaak');
@@ -1725,11 +1700,7 @@ class ZgwService
                 return null;
             }
 
-            if (is_array($zaak) === true) {
-                $zaakData = $zaak;
-            } else {
-                $zaakData = $zaak->jsonSerialize();
-            }
+            $zaakData = is_array($zaak) === true ? $zaak : $zaak->jsonSerialize();
 
             $endDate = $zaakData['endDate'] ?? ($zaakData['einddatum'] ?? null);
 
@@ -1746,6 +1717,9 @@ class ZgwService
      * @param array  $existingData The existing sub-resource object data
      *
      * @return bool|null True if draft, false if published, null if N/A
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
+     * @SuppressWarnings(PHPMD.NPathComplexity) — sub-resource lookup with multiple guard clauses
      */
     public function resolveParentZaaktypeDraft(string $resource, array $existingData): ?bool
     {
@@ -1790,11 +1764,7 @@ class ZgwService
                 return null;
             }
 
-            if (is_array($zaaktype) === true) {
-                $ztData = $zaaktype;
-            } else {
-                $ztData = $zaaktype->jsonSerialize();
-            }
+            $ztData = is_array($zaaktype) === true ? $zaaktype : $zaaktype->jsonSerialize();
 
             $isDraft = $ztData['isDraft'] ?? ($ztData['concept'] ?? true);
 
@@ -1821,6 +1791,9 @@ class ZgwService
      * @param array  $body     The request body (Dutch field names)
      *
      * @return bool|null True if draft, false if published, null if N/A
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
+     * @SuppressWarnings(PHPMD.NPathComplexity) — sub-resource lookup with multiple guard clauses
      */
     public function resolveParentZaaktypeDraftFromBody(string $resource, array $body): ?bool
     {
@@ -1846,12 +1819,12 @@ class ZgwService
                 '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
                 (string) $zaaktypeRef,
                 $matches
-            ) === 1
+            ) !== 1
         ) {
-            $zaaktypeUuid = $matches[1];
-        } else {
             return null;
         }
+
+        $zaaktypeUuid = $matches[1];
 
         try {
             $zaaktypeConfig = $this->zgwMappingService->getMapping('zaaktype');
@@ -1868,11 +1841,7 @@ class ZgwService
                 return null;
             }
 
-            if (is_array($zaaktype) === true) {
-                $ztData = $zaaktype;
-            } else {
-                $ztData = $zaaktype->jsonSerialize();
-            }
+            $ztData = is_array($zaaktype) === true ? $zaaktype : $zaaktype->jsonSerialize();
 
             $isDraft = $ztData['isDraft'] ?? ($ztData['concept'] ?? true);
 

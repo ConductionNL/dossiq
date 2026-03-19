@@ -81,6 +81,9 @@ class ZgwDrcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
+     * @SuppressWarnings(PHPMD.NPathComplexity) — ZGW business rules validation
      */
     public function rulesEnkelvoudiginformatieobjectenCreate(array $body): array
     {
@@ -120,7 +123,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
         // Drc-008: Check unique identificatie + bronorganisatie.
         if (empty($body['identificatie']) === false) {
             $error = $this->checkFieldUniqueness(
-                field1Value: $body['identificatie'] ?? '',
+                field1Value: $body['identificatie'],
                 field1Search: 'identifier',
                 field2Value: $body['bronorganisatie'] ?? '',
                 field2Search: 'sourceOrganisation',
@@ -254,6 +257,9 @@ class ZgwDrcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
+     * @SuppressWarnings(PHPMD.NPathComplexity) — ZGW business rules validation
      */
     public function rulesObjectinformatieobjectenCreate(array $body): array
     {
@@ -344,11 +350,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
 
             $ids = [];
             foreach (($result['results'] ?? []) as $obj) {
-                if (is_array($obj) === true) {
-                    $data = $obj;
-                } else {
-                    $data = $obj->jsonSerialize();
-                }
+                $data = is_array($obj) === true ? $obj : $obj->jsonSerialize();
 
                 $id = $data['id'] ?? ($data['@self']['id'] ?? null);
                 if ($id !== null) {
@@ -370,11 +372,13 @@ class ZgwDrcRulesService extends ZgwRulesBase
      *
      * @param array $body The request body
      *
-     * @return array|null Validation error, or null if valid
+     * @return array Validation error
      *
      * @psalm-suppress UnusedParam — $body reserved for future gebruiksrechten lookup
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $body reserved for future gebruiksrechten lookup
      */
-    private function validateIndicatieGebruiksrechtTrue(array $body): ?array
+    private function validateIndicatieGebruiksrechtTrue(array $body): array
     {
         // On create, the document does not yet exist so there can be no gebruiksrechten.
         return $this->error(
@@ -467,6 +471,8 @@ class ZgwDrcRulesService extends ZgwRulesBase
      * @param string $objectType The object type (zaak or besluit)
      *
      * @return array|null Validation error if relation doesn't exist, null if valid
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW cross-register validation
      */
     private function validateOioCrossRegister(string $ioUrl, string $objectUrl, string $objectType): ?array
     {
@@ -706,7 +712,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
 
         // Check if the document is locked.
         $existingLock = $existingObject['locked'] ?? ($existingObject['lock'] ?? '');
-        if ($existingLock === '' || $existingLock === false || $existingLock === null) {
+        if ($existingLock === '' || $existingLock === false) {
             return null;
         }
 

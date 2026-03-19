@@ -30,8 +30,6 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
-use Psr\Log\LoggerInterface;
-
 /**
  * Dispatcher for ZGW business rule validation and enrichment.
  *
@@ -44,18 +42,14 @@ class ZgwBusinessRulesService
     /**
      * Constructor.
      *
-     * @param LoggerInterface    $logger          The logger
-     * @param SettingsService    $settingsService The settings service
-     * @param ZgwZrcRulesService $zrcRules        ZRC (Zaken) rules
-     * @param ZgwZtcRulesService $ztcRules        ZTC (Catalogi) rules
-     * @param ZgwDrcRulesService $drcRules        DRC (Documenten) rules
-     * @param ZgwBrcRulesService $brcRules        BRC (Besluiten) rules
+     * @param ZgwZrcRulesService $zrcRules ZRC (Zaken) rules
+     * @param ZgwZtcRulesService $ztcRules ZTC (Catalogi) rules
+     * @param ZgwDrcRulesService $drcRules DRC (Documenten) rules
+     * @param ZgwBrcRulesService $brcRules BRC (Besluiten) rules
      *
      * @return void
      */
     public function __construct(
-        private readonly LoggerInterface $logger,
-        private readonly SettingsService $settingsService,
         private readonly ZgwZrcRulesService $zrcRules,
         private readonly ZgwZtcRulesService $ztcRules,
         private readonly ZgwDrcRulesService $drcRules,
@@ -82,6 +76,7 @@ class ZgwBusinessRulesService
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — ZGW scope flag from middleware
      */
     public function validate(
         string $zgwApi,
@@ -275,6 +270,8 @@ class ZgwBusinessRulesService
      * @return array The validation result
      *
      * @psalm-suppress UnusedParam — $existingObject reserved for update validation rules
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $existingObject reserved for update rules
      */
     private function dispatchZtc(string $resource, string $action, array $body, ?array $existingObject): array
     {

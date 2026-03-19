@@ -99,8 +99,8 @@ class MetricsController extends Controller
         $lines[]    = '# TYPE procest_cases_total gauge';
         $caseCounts = $this->getCaseCounts();
         foreach ($caseCounts as $row) {
-            $status   = $this->sanitizeLabel(value: $row['status'] ?? 'unknown');
-            $caseType = $this->sanitizeLabel(value: $row['case_type'] ?? 'unknown');
+            $status   = $this->sanitizeLabel(value: $row['status']);
+            $caseType = $this->sanitizeLabel(value: $row['case_type']);
             $count    = (int) $row['cnt'];
             $lines[]  = 'procest_cases_total{status="'.$status.'",case_type="'.$caseType.'"} '.$count;
         }
@@ -119,7 +119,7 @@ class MetricsController extends Controller
         $lines[]    = '# TYPE procest_tasks_total gauge';
         $taskCounts = $this->getTaskCounts();
         foreach ($taskCounts as $row) {
-            $status  = $this->sanitizeLabel(value: $row['status'] ?? 'unknown');
+            $status  = $this->sanitizeLabel(value: $row['status']);
             $count   = (int) $row['cnt'];
             $lines[] = 'procest_tasks_total{status="'.$status.'"} '.$count;
         }

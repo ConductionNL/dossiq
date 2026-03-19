@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
@@ -68,7 +69,7 @@ class ZgwDocumentService
      */
     public function storeBase64(string $uuid, string $fileName, string $content): int
     {
-        $decoded = base64_decode(string: $content, strict: false);
+        $decoded = base64_decode(string: $content, strict: true);
         if ($decoded === false || $decoded === '') {
             throw new InvalidArgumentException('Invalid base64 content');
         }
@@ -111,8 +112,12 @@ class ZgwDocumentService
     public function getContent(string $uuid, string $fileName): string
     {
         $folder = $this->getDocumentFolder(uuid: $uuid);
+        $node   = $folder->get(path: $fileName);
+        if ($node instanceof File === false) {
+            throw new NotFoundException('Expected a file, got a folder');
+        }
 
-        return $folder->get(path: $fileName)->getContent();
+        return $node->getContent();
     }//end getContent()
 
     /**
@@ -244,7 +249,11 @@ class ZgwDocumentService
         for ($i = 1; $i <= $totalParts; $i++) {
             $partName = '_part_'.$i;
             try {
-                $part     = $folder->get(path: $partName);
+                $part = $folder->get(path: $partName);
+                if ($part instanceof File === false) {
+                    throw new InvalidArgumentException('Chunk '.$i.' is not a file');
+                }
+
                 $content .= $part->getContent();
             } catch (NotFoundException $e) {
                 throw new InvalidArgumentException(
@@ -285,7 +294,12 @@ class ZgwDocumentService
             $userFolder->newFolder(path: $path);
         }
 
-        return $userFolder->get(path: $path);
+        $node = $userFolder->get(path: $path);
+        if ($node instanceof Folder === false) {
+            throw new NotFoundException('Expected a folder at '.$path);
+        }
+
+        return $node;
     }//end getDocumentFolder()
 
     /**

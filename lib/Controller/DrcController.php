@@ -265,6 +265,7 @@ class DrcController extends Controller
                 unset($englishData['content']);
             }
 
+            /** @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change */
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],
@@ -1585,7 +1586,7 @@ class DrcController extends Controller
     private function parseFileParts(array $objectData): ?array
     {
         $raw = $objectData['fileParts'] ?? '';
-        if ($raw === '' || $raw === null) {
+        if ($raw === '') {
             return null;
         }
 
@@ -1722,6 +1723,7 @@ class DrcController extends Controller
                 unset($englishData['content']);
             }
 
+            /** @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change */
             if (is_array($englishData) === false) {
                 return new JSONResponse(
                     data: ['detail' => 'Invalid mapping result'],

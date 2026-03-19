@@ -588,7 +588,7 @@ class ZtcController extends Controller
                 'roltypen',
             ];
             foreach ($arrayFields as $field) {
-                if (isset($data[$field]) === false || $data[$field] === null) {
+                if (isset($data[$field]) === false) {
                     $data[$field] = [];
                 }
             }

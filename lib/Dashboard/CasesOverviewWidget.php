@@ -100,7 +100,7 @@ class CasesOverviewWidget implements IWidget
      */
     public function getUrl(): ?string
     {
-        return null;
+        return $this->url->linkToRouteAbsolute(Application::APP_ID.'.dashboard.index');
 
     }//end getUrl()
 
@@ -109,6 +109,8 @@ class CasesOverviewWidget implements IWidget
      *
      * @inheritDoc
      * @return     void
+     *
+     * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
      */
     public function load(): void
     {
