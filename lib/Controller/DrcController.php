@@ -842,7 +842,6 @@ class DrcController extends Controller
                     statusCode: Http::STATUS_BAD_REQUEST
                 );
             }//end if
-
         }//end if
 
         // Try OpenRegister's LockHandler, fall back to clearing data blob.

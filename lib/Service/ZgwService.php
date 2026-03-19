@@ -172,7 +172,7 @@ class ZgwService
         }
 
         try {
-            $this->consumerMapper = $container->get(
+            $this->consumerMapper       = $container->get(
                 'OCA\OpenRegister\Db\ConsumerMapper'
             );
             $this->authorizationService = $container->get(

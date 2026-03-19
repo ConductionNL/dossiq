@@ -32,8 +32,6 @@ use OCP\Util;
  */
 class OverdueCasesWidget implements IWidget
 {
-
-
     /**
      * Constructor.
      *
@@ -46,9 +44,11 @@ class OverdueCasesWidget implements IWidget
     ) {
     }//end __construct()
 
-
     /**
+     * Get the unique identifier for this widget.
+     *
      * @inheritDoc
+     * @return     string The widget identifier
      */
     public function getId(): string
     {
@@ -56,9 +56,11 @@ class OverdueCasesWidget implements IWidget
 
     }//end getId()
 
-
     /**
+     * Get the display title for this widget.
+     *
      * @inheritDoc
+     * @return     string The widget title
      */
     public function getTitle(): string
     {
@@ -66,9 +68,11 @@ class OverdueCasesWidget implements IWidget
 
     }//end getTitle()
 
-
     /**
+     * Get the display order for this widget.
+     *
      * @inheritDoc
+     * @return     int The widget order
      */
     public function getOrder(): int
     {
@@ -76,9 +80,11 @@ class OverdueCasesWidget implements IWidget
 
     }//end getOrder()
 
-
     /**
+     * Get the CSS icon class for this widget.
+     *
      * @inheritDoc
+     * @return     string The icon CSS class
      */
     public function getIconClass(): string
     {
@@ -86,9 +92,11 @@ class OverdueCasesWidget implements IWidget
 
     }//end getIconClass()
 
-
     /**
+     * Get the URL for the widget's full view.
+     *
      * @inheritDoc
+     * @return     string|null The widget URL or null
      */
     public function getUrl(): ?string
     {
@@ -96,16 +104,16 @@ class OverdueCasesWidget implements IWidget
 
     }//end getUrl()
 
-
     /**
+     * Load the widget scripts and styles.
+     *
      * @inheritDoc
+     * @return     void
      */
     public function load(): void
     {
-        Util::addScript(Application::APP_ID, Application::APP_ID . '-overdueCasesWidget');
+        Util::addScript(Application::APP_ID, Application::APP_ID.'-overdueCasesWidget');
         Util::addStyle(Application::APP_ID, 'dashboardWidgets');
 
     }//end load()
-
-
 }//end class

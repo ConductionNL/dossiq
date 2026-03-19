@@ -85,7 +85,7 @@ class MetricsController extends Controller
 
         $lines[] = '# HELP procest_info Application information';
         $lines[] = '# TYPE procest_info gauge';
-        $lines[] = 'procest_info{version="' . $version . '",php_version="' . $phpVersion . '"} 1';
+        $lines[] = 'procest_info{version="'.$version.'",php_version="'.$phpVersion.'"} 1';
         $lines[] = '';
 
         // App up gauge.
@@ -95,14 +95,14 @@ class MetricsController extends Controller
         $lines[] = '';
 
         // Cases total by status and case_type.
-        $lines[] = '# HELP procest_cases_total Total cases by status and case_type';
-        $lines[] = '# TYPE procest_cases_total gauge';
+        $lines[]    = '# HELP procest_cases_total Total cases by status and case_type';
+        $lines[]    = '# TYPE procest_cases_total gauge';
         $caseCounts = $this->getCaseCounts();
         foreach ($caseCounts as $row) {
-            $status   = $this->sanitizeLabel($row['status'] ?? 'unknown');
-            $caseType = $this->sanitizeLabel($row['case_type'] ?? 'unknown');
+            $status   = $this->sanitizeLabel(value: $row['status'] ?? 'unknown');
+            $caseType = $this->sanitizeLabel(value: $row['case_type'] ?? 'unknown');
             $count    = (int) $row['cnt'];
-            $lines[]  = 'procest_cases_total{status="' . $status . '",case_type="' . $caseType . '"} ' . $count;
+            $lines[]  = 'procest_cases_total{status="'.$status.'",case_type="'.$caseType.'"} '.$count;
         }
 
         $lines[] = '';
@@ -111,17 +111,17 @@ class MetricsController extends Controller
         $overdueCount = $this->getOverdueCasesCount();
         $lines[]      = '# HELP procest_cases_overdue_total Cases past their deadline';
         $lines[]      = '# TYPE procest_cases_overdue_total gauge';
-        $lines[]      = 'procest_cases_overdue_total ' . $overdueCount;
+        $lines[]      = 'procest_cases_overdue_total '.$overdueCount;
         $lines[]      = '';
 
         // Tasks total by status.
-        $lines[] = '# HELP procest_tasks_total Total tasks by status';
-        $lines[] = '# TYPE procest_tasks_total gauge';
+        $lines[]    = '# HELP procest_tasks_total Total tasks by status';
+        $lines[]    = '# TYPE procest_tasks_total gauge';
         $taskCounts = $this->getTaskCounts();
         foreach ($taskCounts as $row) {
-            $status  = $this->sanitizeLabel($row['status'] ?? 'unknown');
+            $status  = $this->sanitizeLabel(value: $row['status'] ?? 'unknown');
             $count   = (int) $row['cnt'];
-            $lines[] = 'procest_tasks_total{status="' . $status . '"} ' . $count;
+            $lines[] = 'procest_tasks_total{status="'.$status.'"} '.$count;
         }
 
         $lines[] = '';
@@ -130,10 +130,10 @@ class MetricsController extends Controller
         $overdueTasksCount = $this->getOverdueTasksCount();
         $lines[]           = '# HELP procest_tasks_overdue_total Tasks past their deadline';
         $lines[]           = '# TYPE procest_tasks_overdue_total gauge';
-        $lines[]           = 'procest_tasks_overdue_total ' . $overdueTasksCount;
+        $lines[]           = 'procest_tasks_overdue_total '.$overdueTasksCount;
         $lines[]           = '';
 
-        return implode("\n", $lines) . "\n";
+        return implode("\n", $lines)."\n";
     }//end collectMetrics()
 
     /**
@@ -166,7 +166,7 @@ class MetricsController extends Controller
         } catch (\Exception $e) {
             $this->logger->warning('[MetricsController] Failed to get case counts', ['error' => $e->getMessage()]);
             return [];
-        }
+        }//end try
     }//end getCaseCounts()
 
     /**
@@ -184,10 +184,12 @@ class MetricsController extends Controller
                 ->innerJoin('o', 'openregister_schemas', 's', $qb->expr()->eq('o.schema', 's.id'))
                 ->where($qb->expr()->like('s.title', $qb->createNamedParameter('%aak%')))
                 ->andWhere($qb->expr()->isNotNull($qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.uiterlijkeEinddatumAfdoening'))")))
-                ->andWhere($qb->expr()->lt(
+                ->andWhere(
+                        $qb->expr()->lt(
                     $qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.uiterlijkeEinddatumAfdoening'))"),
                     $qb->createNamedParameter($now)
-                ));
+                )
+                        );
 
             $result = $qb->executeQuery();
             $row    = $result->fetch();
@@ -197,7 +199,7 @@ class MetricsController extends Controller
         } catch (\Exception $e) {
             $this->logger->warning('[MetricsController] Failed to get overdue cases', ['error' => $e->getMessage()]);
             return 0;
-        }
+        }//end try
     }//end getOverdueCasesCount()
 
     /**
@@ -244,10 +246,12 @@ class MetricsController extends Controller
                 ->innerJoin('o', 'openregister_schemas', 's', $qb->expr()->eq('o.schema', 's.id'))
                 ->where($qb->expr()->like('s.title', $qb->createNamedParameter('%taak%')))
                 ->andWhere($qb->expr()->isNotNull($qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.deadline'))")))
-                ->andWhere($qb->expr()->lt(
+                ->andWhere(
+                        $qb->expr()->lt(
                     $qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.deadline'))"),
                     $qb->createNamedParameter($now)
-                ));
+                )
+                        );
 
             $result = $qb->executeQuery();
             $row    = $result->fetch();
@@ -257,7 +261,7 @@ class MetricsController extends Controller
         } catch (\Exception $e) {
             $this->logger->warning('[MetricsController] Failed to get overdue tasks', ['error' => $e->getMessage()]);
             return 0;
-        }
+        }//end try
     }//end getOverdueTasksCount()
 
     /**

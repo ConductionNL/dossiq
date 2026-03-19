@@ -68,7 +68,6 @@ class SettingsController extends Controller
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
 
-
     /**
      * Attempts to retrieve the OpenRegister service from the container.
      *
@@ -85,7 +84,6 @@ class SettingsController extends Controller
         throw new RuntimeException('OpenRegister service is not available.');
 
     }//end getObjectService()
-
 
     /**
      * Attempts to retrieve the Configuration service from the container.

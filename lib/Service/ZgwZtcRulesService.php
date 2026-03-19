@@ -441,8 +441,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
         $errors = [];
 
         // Ztc-002: Validate and fetch external URLs for enrichment.
-        $selectieUrl = $body['selectielijstklasse'] ?? '';
-        $selectielijstData      = null;
+        $selectieUrl       = $body['selectielijstklasse'] ?? '';
+        $selectielijstData = null;
         if (empty($selectieUrl) === false) {
             $selectielijstData = $this->fetchExternalUrl(url: $selectieUrl);
             if ($selectielijstData === null) {
