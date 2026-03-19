@@ -246,6 +246,9 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
+     * @SuppressWarnings(PHPMD.NPathComplexity) — ZGW business rules validation
      */
     public function rulesZaaktypenCreate(array $body): array
     {
@@ -364,6 +367,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @param array $body The ZGW request body
      *
      * @return array The validation result
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW resolution of omschrijving/UUID/URL
      */
     public function rulesZaaktypeinformatieobjecttypenCreate(array $body): array
     {
@@ -380,24 +385,17 @@ class ZgwZtcRulesService extends ZgwRulesBase
                 $isUrl = (str_starts_with($iotRef, 'http://') === true
                     || str_starts_with($iotRef, 'https://') === true);
 
+                $needsNameLookup = false;
                 if ($isUrl === true) {
                     // URL — let reverse mapping handle UUID extraction.
-                } else if ($uuid !== null) {
+                } elseif ($uuid !== null) {
                     // Bare UUID — verify it exists; if not, treat as omschrijving.
                     $existing = $this->findBySchemaKey(uuid: $uuid, schemaKey: 'document_type_schema');
-                    if ($existing === null) {
-                        $found = $this->findObjectByField(
-                            register: $register,
-                            schema: $schema,
-                            field: 'name',
-                            value: $iotRef
-                        );
-                        if ($found !== null) {
-                            $body['informatieobjecttype'] = $found;
-                        }
-                    }
-                } else {
-                    // Not a URL or UUID — resolve by name (omschrijving).
+                    $needsNameLookup = ($existing === null);
+                }
+
+                if ($isUrl === false && ($uuid === null || $needsNameLookup === true)) {
+                    // Not a URL, or bare UUID that didn't resolve — resolve by name.
                     $found = $this->findObjectByField(
                         register: $register,
                         schema: $schema,
@@ -627,11 +625,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
 
         // Ztc-008: procestermijn required only for termijn.
         $procestermijn = $archief['procestermijn'] ?? null;
-        if (is_string($procestermijn) === true) {
-            $ptValue = $procestermijn;
-        } else {
-            $ptValue = '';
-        }
+        $ptValue = is_string($procestermijn) === true ? $procestermijn : '';
 
         $errors = array_merge(
             $errors,
@@ -758,27 +752,27 @@ class ZgwZtcRulesService extends ZgwRulesBase
     ): array {
         $hasValue = ($fieldValue !== '' && $fieldValue !== null);
 
-        if (in_array($afleidingswijze, $requiredFor, true) === true) {
-            if ($hasValue === false) {
-                return [
-                    $this->fieldError(
-                        fieldName: $fieldName,
-                        code: 'required',
-                        reason: "{$fieldName} is vereist voor afleidingswijze \"{$afleidingswijze}\"."
-                    ),
-                ];
-            }
-        } else {
-            if ($hasValue === true) {
-                return [
-                    $this->fieldError(
-                        fieldName: $fieldName,
-                        code: 'must-be-empty',
-                        reason: "{$fieldName} mag niet ingevuld zijn voor afleidingswijze \"{$afleidingswijze}\"."
-                    ),
-                ];
-            }
-        }//end if
+        $isRequired = in_array($afleidingswijze, $requiredFor, true);
+
+        if ($isRequired === true && $hasValue === false) {
+            return [
+                $this->fieldError(
+                    fieldName: $fieldName,
+                    code: 'required',
+                    reason: "{$fieldName} is vereist voor afleidingswijze \"{$afleidingswijze}\"."
+                ),
+            ];
+        }
+
+        if ($isRequired === false && $hasValue === true) {
+            return [
+                $this->fieldError(
+                    fieldName: $fieldName,
+                    code: 'must-be-empty',
+                    reason: "{$fieldName} mag niet ingevuld zijn voor afleidingswijze \"{$afleidingswijze}\"."
+                ),
+            ];
+        }
 
         return [];
     }//end validateFieldPresence()
@@ -841,6 +835,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @return array The body with resolved references
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     private function resolveTypeReferences(
         array $body,
@@ -911,6 +906,9 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @param array $body The request body
      *
      * @return array The body with resolved zaaktype references
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — nested object resolution
+     * @SuppressWarnings(PHPMD.NPathComplexity) — nested object resolution
      */
     private function resolveGerelateerdeZaaktypen(array $body): array
     {

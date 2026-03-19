@@ -488,17 +488,15 @@ class ZgwDrcRulesService extends ZgwRulesBase
             return null;
         }
 
-        $schemaKey   = '';
-        $searchField = '';
-        if ($objectType === 'zaak') {
-            $schemaKey   = 'case_document_schema';
-            $searchField = 'case';
-        } else if ($objectType === 'besluit') {
-            $schemaKey   = 'decision_document_schema';
-            $searchField = 'decision';
-        } else {
+        $typeMap = [
+            'zaak'    => ['case_document_schema', 'case'],
+            'besluit' => ['decision_document_schema', 'decision'],
+        ];
+        if (isset($typeMap[$objectType]) === false) {
             return null;
         }
+
+        [$schemaKey, $searchField] = $typeMap[$objectType];
 
         $schema = $this->settingsService->getConfigValue(key: $schemaKey);
         if ($schema === '') {
@@ -519,11 +517,9 @@ class ZgwDrcRulesService extends ZgwRulesBase
             $total  = $result['total'] ?? count($result['results'] ?? []);
 
             if ($total === 0) {
-                if ($objectType === 'zaak') {
-                    $detail = 'Er bestaat geen ZaakInformatieObject in de Zaken API voor deze combinatie.';
-                } else {
-                    $detail = 'Er bestaat geen BesluitInformatieObject in de Besluiten API voor deze combinatie.';
-                }
+                $detail = ($objectType === 'zaak')
+                    ? 'Er bestaat geen ZaakInformatieObject in de Zaken API voor deze combinatie.'
+                    : 'Er bestaat geen BesluitInformatieObject in de Besluiten API voor deze combinatie.';
 
                 return $this->error(
                     status: 400,
