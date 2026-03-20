@@ -21,7 +21,7 @@
         "x-schema-org-type": "schema:Project",
         "x-zgw-equivalent": "ZaakType",
         "title": "Case Type",
-        "description": "Case type definition \u2014 defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+        "description": "Case type definition — defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
         "type": "object",
         "required": [
           "title"
@@ -148,12 +148,16 @@
           },
           "subCaseTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to sub-case types (deelzaaktypen)"
           },
           "decisionTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to decision types (besluittypen) linked to this case type"
           }
         }
@@ -1242,7 +1246,11 @@
         "title": "Case Property",
         "description": "A property value on a specific case",
         "type": "object",
-        "required": ["case", "propertyDefinition", "value"],
+        "required": [
+          "case",
+          "propertyDefinition",
+          "value"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1270,7 +1278,10 @@
         "title": "Case Document Link",
         "description": "Links a document to a case",
         "type": "object",
-        "required": ["case", "document"],
+        "required": [
+          "case",
+          "document"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1307,7 +1318,10 @@
         "title": "Case Object",
         "description": "Links an external object to a case",
         "type": "object",
-        "required": ["case", "objectType"],
+        "required": [
+          "case",
+          "objectType"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1343,7 +1357,9 @@
         "title": "Customer Contact",
         "description": "A customer contact moment for a case",
         "type": "object",
-        "required": ["case"],
+        "required": [
+          "case"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1379,7 +1395,10 @@
         "title": "Decision Document Link",
         "description": "Links a document to a decision",
         "type": "object",
-        "required": ["decision", "document"],
+        "required": [
+          "decision",
+          "document"
+        ],
         "properties": {
           "decision": {
             "type": "string",
@@ -1403,7 +1422,10 @@
         "title": "Dispatch",
         "description": "A document dispatch record",
         "type": "object",
-        "required": ["document", "relationshipType"],
+        "required": [
+          "document",
+          "relationshipType"
+        ],
         "properties": {
           "document": {
             "type": "string",
@@ -1477,6 +1499,186 @@
             "description": "Description of the usage conditions"
           }
         }
+      },
+      "inspectionChecklist": {
+        "slug": "inspectionChecklist",
+        "icon": "ClipboardCheckOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:ItemList",
+        "title": "Inspection Checklist",
+        "description": "Template for a configurable inspection checklist linked to a case type",
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this checklist (e.g., Bouwtoezicht fase 1)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what this checklist covers"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case type this checklist belongs to"
+          },
+          "items": {
+            "type": "string",
+            "description": "JSON array of checklist items with label, photoRequired flag"
+          },
+          "version": {
+            "type": "string",
+            "description": "Version of this checklist template"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this checklist is currently in use"
+          }
+        }
+      },
+      "inspectionResult": {
+        "slug": "inspectionResult",
+        "icon": "ClipboardTextOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Report",
+        "title": "Inspection Result",
+        "description": "Completed inspection checklist with per-item results",
+        "type": "object",
+        "required": [
+          "case",
+          "checklist",
+          "inspector"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case"
+          },
+          "checklist": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the checklist template used"
+          },
+          "inspector": {
+            "type": "string",
+            "description": "Nextcloud user ID of the inspector"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the inspection"
+          },
+          "location": {
+            "type": "string",
+            "description": "GPS coordinates of the inspection location"
+          },
+          "results": {
+            "type": "string",
+            "description": "JSON object with per-item results (result, comment)"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "conform",
+              "niet_conform"
+            ],
+            "description": "Overall inspection outcome"
+          },
+          "passedCount": {
+            "type": "integer",
+            "description": "Number of items that passed"
+          },
+          "failedCount": {
+            "type": "integer",
+            "description": "Number of items that failed"
+          },
+          "naCount": {
+            "type": "integer",
+            "description": "Number of items marked not applicable"
+          }
+        }
+      },
+      "adviceRequest": {
+        "slug": "adviceRequest",
+        "icon": "CommentQuestionOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:AskAction",
+        "title": "Advice Request",
+        "description": "Request for internal or external advice on a case",
+        "type": "object",
+        "required": [
+          "case",
+          "department",
+          "subject"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case"
+          },
+          "department": {
+            "type": "string",
+            "description": "Department or organization being consulted"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Subject of the advice request"
+          },
+          "question": {
+            "type": "string",
+            "description": "Specific question(s) being asked"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Deadline for the advice response"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "in_behandeling",
+              "advies_uitgebracht",
+              "afgesloten"
+            ],
+            "default": "open",
+            "description": "Current status of the advice request"
+          },
+          "requester": {
+            "type": "string",
+            "description": "User ID of the person requesting advice"
+          },
+          "response": {
+            "type": "string",
+            "enum": [
+              "positief",
+              "positief_met_voorwaarden",
+              "negatief",
+              "niet_van_toepassing"
+            ],
+            "description": "The advice response type"
+          },
+          "responseText": {
+            "type": "string",
+            "description": "Detailed advice text"
+          },
+          "conditions": {
+            "type": "string",
+            "description": "JSON array of conditions (if positief_met_voorwaarden)"
+          },
+          "responseDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the advice was given"
+          }
+        }
       }
     },
     "registers": {
@@ -1484,7 +1686,7 @@
         "slug": "procest",
         "title": "Procest",
         "version": "1.0.0",
-        "description": "Case management (zaakgericht werken) register for Procest \u2014 manages case types, status types, cases, tasks, roles, results, and decisions.",
+        "description": "Case management (zaakgericht werken) register for Procest — manages case types, status types, cases, tasks, roles, results, and decisions.",
         "schemas": [
           "caseType",
           "statusType",

@@ -61,6 +61,9 @@ class SettingsService
         'usage_rights_schema',
         'kanaal_schema',
         'abonnement_schema',
+        'inspection_checklist_schema',
+        'inspection_result_schema',
+        'advice_request_schema',
         'default_case_type',
     ];
 
@@ -95,6 +98,9 @@ class SettingsService
         'usageRights'                  => 'usage_rights_schema',
         'kanaal'                       => 'kanaal_schema',
         'abonnement'                   => 'abonnement_schema',
+        'inspectionChecklist'          => 'inspection_checklist_schema',
+        'inspectionResult'             => 'inspection_result_schema',
+        'adviceRequest'                => 'advice_request_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
