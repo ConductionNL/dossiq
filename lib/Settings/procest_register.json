@@ -21,7 +21,7 @@
         "x-schema-org-type": "schema:Project",
         "x-zgw-equivalent": "ZaakType",
         "title": "Case Type",
-        "description": "Case type definition \u2014 defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+        "description": "Case type definition — defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
         "type": "object",
         "required": [
           "title"
@@ -30,11 +30,13 @@
           "title": {
             "type": "string",
             "maxLength": 255,
-            "description": "Name of this case type"
+            "description": "Name of this case type",
+            "x-translatable": true
           },
           "description": {
             "type": "string",
-            "description": "Detailed description of this case type"
+            "description": "Detailed description of this case type",
+            "x-translatable": true
           },
           "identifier": {
             "type": "string",
@@ -47,15 +49,18 @@
           },
           "purpose": {
             "type": "string",
-            "description": "The purpose or goal of this case type"
+            "description": "The purpose or goal of this case type",
+            "x-translatable": true
           },
           "trigger": {
             "type": "string",
-            "description": "What triggers the creation of a case of this type"
+            "description": "What triggers the creation of a case of this type",
+            "x-translatable": true
           },
           "subject": {
             "type": "string",
-            "description": "The subject matter of this case type"
+            "description": "The subject matter of this case type",
+            "x-translatable": true
           },
           "processingDeadline": {
             "type": "string",
@@ -148,12 +153,16 @@
           },
           "subCaseTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to sub-case types (deelzaaktypen)"
           },
           "decisionTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to decision types (besluittypen) linked to this case type"
           }
         }
@@ -176,11 +185,13 @@
           "name": {
             "type": "string",
             "maxLength": 255,
-            "description": "Name of this status (e.g. Ontvangen, In behandeling)"
+            "description": "Name of this status (e.g. Ontvangen, In behandeling)",
+            "x-translatable": true
           },
           "description": {
             "type": "string",
-            "description": "Description of this status phase"
+            "description": "Description of this status phase",
+            "x-translatable": true
           },
           "caseType": {
             "type": "string",
@@ -216,11 +227,13 @@
           "name": {
             "type": "string",
             "maxLength": 255,
-            "description": "Name of this result type (e.g. Vergunning verleend)"
+            "description": "Name of this result type (e.g. Vergunning verleend)",
+            "x-translatable": true
           },
           "description": {
             "type": "string",
-            "description": "Description/toelichting of this result type"
+            "description": "Description/toelichting of this result type",
+            "x-translatable": true
           },
           "genericDescription": {
             "type": "string",
@@ -272,11 +285,13 @@
           "name": {
             "type": "string",
             "maxLength": 255,
-            "description": "Name of this role type (e.g. Behandelaar, Adviseur)"
+            "description": "Name of this role type (e.g. Behandelaar, Adviseur)",
+            "x-translatable": true
           },
           "description": {
             "type": "string",
-            "description": "Description of this role type"
+            "description": "Description of this role type",
+            "x-translatable": true
           },
           "caseType": {
             "type": "string",
@@ -356,11 +371,13 @@
           "name": {
             "type": "string",
             "maxLength": 255,
-            "description": "Name of this document type (e.g. Situatietekening)"
+            "description": "Name of this document type (e.g. Situatietekening)",
+            "x-translatable": true
           },
           "description": {
             "type": "string",
-            "description": "Description of this document type"
+            "description": "Description of this document type",
+            "x-translatable": true
           },
           "catalogus": {
             "type": "string",
@@ -432,11 +449,13 @@
           "name": {
             "type": "string",
             "maxLength": 255,
-            "description": "Name of this decision type"
+            "description": "Name of this decision type",
+            "x-translatable": true
           },
           "description": {
             "type": "string",
-            "description": "Description of this decision type"
+            "description": "Description of this decision type",
+            "x-translatable": true
           },
           "catalogus": {
             "type": "string",
@@ -1242,7 +1261,11 @@
         "title": "Case Property",
         "description": "A property value on a specific case",
         "type": "object",
-        "required": ["case", "propertyDefinition", "value"],
+        "required": [
+          "case",
+          "propertyDefinition",
+          "value"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1270,7 +1293,10 @@
         "title": "Case Document Link",
         "description": "Links a document to a case",
         "type": "object",
-        "required": ["case", "document"],
+        "required": [
+          "case",
+          "document"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1307,7 +1333,10 @@
         "title": "Case Object",
         "description": "Links an external object to a case",
         "type": "object",
-        "required": ["case", "objectType"],
+        "required": [
+          "case",
+          "objectType"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1343,7 +1372,9 @@
         "title": "Customer Contact",
         "description": "A customer contact moment for a case",
         "type": "object",
-        "required": ["case"],
+        "required": [
+          "case"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1379,7 +1410,10 @@
         "title": "Decision Document Link",
         "description": "Links a document to a decision",
         "type": "object",
-        "required": ["decision", "document"],
+        "required": [
+          "decision",
+          "document"
+        ],
         "properties": {
           "decision": {
             "type": "string",
@@ -1403,7 +1437,10 @@
         "title": "Dispatch",
         "description": "A document dispatch record",
         "type": "object",
-        "required": ["document", "relationshipType"],
+        "required": [
+          "document",
+          "relationshipType"
+        ],
         "properties": {
           "document": {
             "type": "string",
@@ -1484,7 +1521,7 @@
         "slug": "procest",
         "title": "Procest",
         "version": "1.0.0",
-        "description": "Case management (zaakgericht werken) register for Procest \u2014 manages case types, status types, cases, tasks, roles, results, and decisions.",
+        "description": "Case management (zaakgericht werken) register for Procest — manages case types, status types, cases, tasks, roles, results, and decisions.",
         "schemas": [
           "caseType",
           "statusType",
