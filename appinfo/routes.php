@@ -107,6 +107,11 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
+        // ── StUF (Legacy SOAP) ────────────────────────────────────────
+        ['name' => 'stuf#zaken', 'url' => '/api/stuf/zaken', 'verb' => 'POST'],
+        ['name' => 'stuf#personen', 'url' => '/api/stuf/personen', 'verb' => 'POST'],
+        ['name' => 'stuf#documenten', 'url' => '/api/stuf/documenten', 'verb' => 'POST'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
