@@ -1479,6 +1479,282 @@
         }
       }
     },
+    "objects": [
+      {
+        "@self": { "register": "procest", "schema": "caseType", "slug": "omgevingsvergunning" },
+        "title": "Omgevingsvergunning",
+        "description": "Vergunning voor het bouwen, verbouwen of slopen van een bouwwerk onder de Omgevingswet.",
+        "processingDeadline": "P56D",
+        "confidentiality": "zaakvertrouwelijk",
+        "isDraft": false,
+        "origin": "aanvraag",
+        "internalOrExternal": "extern",
+        "suspensionAllowed": true,
+        "extensionAllowed": true,
+        "extensionPeriod": "P42D",
+        "publicationRequired": true
+      },
+      {
+        "@self": { "register": "procest", "schema": "caseType", "slug": "subsidieaanvraag" },
+        "title": "Subsidieaanvraag",
+        "description": "Aanvraag voor een gemeentelijke subsidie. Behandeling binnen 6 weken na ontvangst.",
+        "processingDeadline": "P42D",
+        "confidentiality": "zaakvertrouwelijk",
+        "isDraft": false,
+        "origin": "aanvraag",
+        "internalOrExternal": "extern",
+        "suspensionAllowed": false,
+        "extensionAllowed": true,
+        "extensionPeriod": "P28D",
+        "publicationRequired": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "caseType", "slug": "klacht-behandeling" },
+        "title": "Klacht behandeling",
+        "description": "Behandeling van een klacht van een burger over het handelen van de gemeente of haar medewerkers.",
+        "processingDeadline": "P42D",
+        "confidentiality": "vertrouwelijk",
+        "isDraft": false,
+        "origin": "indienen",
+        "internalOrExternal": "extern",
+        "suspensionAllowed": false,
+        "extensionAllowed": true,
+        "extensionPeriod": "P28D",
+        "publicationRequired": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "caseType", "slug": "melding-openbare-ruimte" },
+        "title": "Melding openbare ruimte",
+        "description": "Melding van een probleem in de openbare ruimte, zoals een kapotte lantaarnpaal, losse stoeptegel of zwerfvuil.",
+        "processingDeadline": "P14D",
+        "confidentiality": "openbaar",
+        "isDraft": false,
+        "origin": "melding",
+        "internalOrExternal": "extern",
+        "suspensionAllowed": false,
+        "extensionAllowed": false,
+        "publicationRequired": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "omgevingsvergunning-ontvangen" },
+        "name": "Ontvangen",
+        "description": "De aanvraag is ontvangen en geregistreerd.",
+        "caseType": "@procest/caseType/omgevingsvergunning",
+        "order": 1,
+        "isFinal": false,
+        "informCustomer": true,
+        "informText": "Uw aanvraag is ontvangen."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "omgevingsvergunning-in-behandeling" },
+        "name": "In behandeling",
+        "description": "De aanvraag wordt inhoudelijk beoordeeld.",
+        "caseType": "@procest/caseType/omgevingsvergunning",
+        "order": 2,
+        "isFinal": false,
+        "informCustomer": true,
+        "informText": "Uw aanvraag is in behandeling genomen."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "omgevingsvergunning-besluitvorming" },
+        "name": "Besluitvorming",
+        "description": "Er wordt een besluit voorbereid over de aanvraag.",
+        "caseType": "@procest/caseType/omgevingsvergunning",
+        "order": 3,
+        "isFinal": false,
+        "informCustomer": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "omgevingsvergunning-afgehandeld" },
+        "name": "Afgehandeld",
+        "description": "De zaak is afgehandeld en het besluit is genomen.",
+        "caseType": "@procest/caseType/omgevingsvergunning",
+        "order": 4,
+        "isFinal": true,
+        "informCustomer": true,
+        "informText": "Uw aanvraag is afgehandeld."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "subsidieaanvraag-ontvangen" },
+        "name": "Ontvangen",
+        "description": "De subsidieaanvraag is ontvangen.",
+        "caseType": "@procest/caseType/subsidieaanvraag",
+        "order": 1,
+        "isFinal": false,
+        "informCustomer": true,
+        "informText": "Uw subsidieaanvraag is ontvangen."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "subsidieaanvraag-beoordeling" },
+        "name": "Beoordeling",
+        "description": "De aanvraag wordt inhoudelijk beoordeeld op de subsidiecriteria.",
+        "caseType": "@procest/caseType/subsidieaanvraag",
+        "order": 2,
+        "isFinal": false,
+        "informCustomer": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "subsidieaanvraag-besluitvorming" },
+        "name": "Besluitvorming",
+        "description": "Er wordt een besluit voorbereid over de subsidieaanvraag.",
+        "caseType": "@procest/caseType/subsidieaanvraag",
+        "order": 3,
+        "isFinal": false,
+        "informCustomer": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "subsidieaanvraag-afgehandeld" },
+        "name": "Afgehandeld",
+        "description": "De subsidieaanvraag is afgehandeld.",
+        "caseType": "@procest/caseType/subsidieaanvraag",
+        "order": 4,
+        "isFinal": true,
+        "informCustomer": true,
+        "informText": "Uw subsidieaanvraag is afgehandeld."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "klacht-ontvangen" },
+        "name": "Ontvangen",
+        "description": "De klacht is ontvangen en geregistreerd.",
+        "caseType": "@procest/caseType/klacht-behandeling",
+        "order": 1,
+        "isFinal": false,
+        "informCustomer": true,
+        "informText": "Uw klacht is ontvangen."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "klacht-onderzoek" },
+        "name": "Onderzoek",
+        "description": "De klacht wordt onderzocht.",
+        "caseType": "@procest/caseType/klacht-behandeling",
+        "order": 2,
+        "isFinal": false,
+        "informCustomer": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "klacht-afgehandeld" },
+        "name": "Afgehandeld",
+        "description": "De klacht is afgehandeld.",
+        "caseType": "@procest/caseType/klacht-behandeling",
+        "order": 3,
+        "isFinal": true,
+        "informCustomer": true,
+        "informText": "Uw klacht is afgehandeld."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "melding-ontvangen" },
+        "name": "Ontvangen",
+        "description": "De melding is ontvangen.",
+        "caseType": "@procest/caseType/melding-openbare-ruimte",
+        "order": 1,
+        "isFinal": false,
+        "informCustomer": true,
+        "informText": "Uw melding is ontvangen."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "melding-in-behandeling" },
+        "name": "In behandeling",
+        "description": "De melding wordt behandeld.",
+        "caseType": "@procest/caseType/melding-openbare-ruimte",
+        "order": 2,
+        "isFinal": false,
+        "informCustomer": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "melding-afgehandeld" },
+        "name": "Afgehandeld",
+        "description": "De melding is afgehandeld.",
+        "caseType": "@procest/caseType/melding-openbare-ruimte",
+        "order": 3,
+        "isFinal": true,
+        "informCustomer": true,
+        "informText": "Uw melding is afgehandeld."
+      },
+      {
+        "@self": { "register": "procest", "schema": "roleType", "slug": "behandelaar" },
+        "name": "Behandelaar",
+        "description": "De medewerker die verantwoordelijk is voor de behandeling van de zaak."
+      },
+      {
+        "@self": { "register": "procest", "schema": "roleType", "slug": "aanvrager" },
+        "name": "Aanvrager",
+        "description": "De persoon of organisatie die de aanvraag of melding heeft ingediend."
+      },
+      {
+        "@self": { "register": "procest", "schema": "roleType", "slug": "gemachtigde" },
+        "name": "Gemachtigde",
+        "description": "Een persoon of organisatie die gemachtigd is om namens de aanvrager op te treden."
+      },
+      {
+        "@self": { "register": "procest", "schema": "roleType", "slug": "technisch-adviseur" },
+        "name": "Technisch adviseur",
+        "description": "Een interne of externe specialist die advies uitbrengt over de zaak."
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "vergunning-verleend" },
+        "name": "Vergunning verleend",
+        "description": "De aangevraagde vergunning is verleend.",
+        "caseType": "@procest/caseType/omgevingsvergunning",
+        "archiveAction": "blijvend_bewaren",
+        "retentionPeriod": "P20Y"
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "vergunning-geweigerd" },
+        "name": "Vergunning geweigerd",
+        "description": "De aangevraagde vergunning is geweigerd.",
+        "caseType": "@procest/caseType/omgevingsvergunning",
+        "archiveAction": "vernietigen",
+        "retentionPeriod": "P10Y"
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "ingetrokken" },
+        "name": "Ingetrokken",
+        "description": "De aanvraag is ingetrokken door de aanvrager.",
+        "caseType": "@procest/caseType/omgevingsvergunning",
+        "archiveAction": "vernietigen",
+        "retentionPeriod": "P5Y"
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "subsidie-toegekend" },
+        "name": "Subsidie toegekend",
+        "description": "De subsidie is toegekend.",
+        "caseType": "@procest/caseType/subsidieaanvraag",
+        "archiveAction": "blijvend_bewaren",
+        "retentionPeriod": "P10Y"
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "subsidie-afgewezen" },
+        "name": "Subsidie afgewezen",
+        "description": "De subsidieaanvraag is afgewezen.",
+        "caseType": "@procest/caseType/subsidieaanvraag",
+        "archiveAction": "vernietigen",
+        "retentionPeriod": "P7Y"
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "klacht-gegrond" },
+        "name": "Klacht gegrond",
+        "description": "De klacht is gegrond verklaard.",
+        "caseType": "@procest/caseType/klacht-behandeling",
+        "archiveAction": "blijvend_bewaren",
+        "retentionPeriod": "P10Y"
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "klacht-ongegrond" },
+        "name": "Klacht ongegrond",
+        "description": "De klacht is ongegrond verklaard.",
+        "caseType": "@procest/caseType/klacht-behandeling",
+        "archiveAction": "vernietigen",
+        "retentionPeriod": "P5Y"
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "melding-afgehandeld" },
+        "name": "Afgehandeld",
+        "description": "De melding is afgehandeld.",
+        "caseType": "@procest/caseType/melding-openbare-ruimte",
+        "archiveAction": "vernietigen",
+        "retentionPeriod": "P1Y"
+      }
+    ],
     "registers": {
       "procest": {
         "slug": "procest",
