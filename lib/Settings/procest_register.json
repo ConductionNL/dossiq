@@ -3,7 +3,7 @@
   "info": {
     "title": "Procest Case Management Register",
     "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, and their instance counterparts.",
-    "version": "0.4.0"
+    "version": "0.5.0"
   },
   "x-openregister": {
     "type": "application",
@@ -1479,6 +1479,240 @@
         }
       }
     },
+      "caseShare": {
+        "slug": "caseShare",
+        "icon": "ShareVariantOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:ShareAction",
+        "title": "Case Share",
+        "description": "A share record granting external access to a case via token or partner account",
+        "type": "object",
+        "required": ["caseId", "shareType", "permissionLevel"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Cryptographically secure access token (32 hex chars, 128-bit entropy)"
+          },
+          "caseId": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the shared case"
+          },
+          "shareType": {
+            "type": "string",
+            "enum": ["token", "partner"],
+            "description": "Type of share: token-based link or partner organization"
+          },
+          "partnerId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to partner organization (for partner shares)"
+          },
+          "permissionLevel": {
+            "type": "string",
+            "enum": ["bekijken", "bekijken_reageren", "bekijken_bijdragen"],
+            "description": "Permission level: view only, view+comment, view+contribute"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Expiration datetime (null = no expiration)"
+          },
+          "password": {
+            "type": "string",
+            "description": "Bcrypt hashed password for protected shares"
+          },
+          "failedAttempts": {
+            "type": "integer",
+            "default": 0,
+            "description": "Number of failed password attempts"
+          },
+          "lockedUntil": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Lockout expiry after failed password attempts"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Human-readable share label"
+          },
+          "fieldExclusions": {
+            "type": "string",
+            "description": "JSON-encoded array of field names to exclude from shared view"
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "User ID who created the share"
+          },
+          "lastAccessedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of last external access"
+          },
+          "revokedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Revocation timestamp"
+          },
+          "revokedBy": {
+            "type": "string",
+            "description": "User ID who revoked the share"
+          }
+        }
+      },
+      "partnerOrganization": {
+        "slug": "partnerOrganization",
+        "icon": "DomainPlus",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Organization",
+        "title": "Partner Organization",
+        "description": "A registered ketenpartner organization for inter-organizational collaboration",
+        "type": "object",
+        "required": ["name", "contactEmail"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Organization name"
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "URL-safe identifier"
+          },
+          "oin": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "Organisatie-identificatienummer"
+          },
+          "contactEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Primary contact email address"
+          },
+          "defaultPermissionLevel": {
+            "type": "string",
+            "enum": ["bekijken", "bekijken_reageren", "bekijken_bijdragen"],
+            "default": "bekijken",
+            "description": "Default permission level for new shares with this partner"
+          },
+          "groupId": {
+            "type": "string",
+            "description": "Nextcloud group ID (ketenpartner_{slug})"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether the partner organization is active"
+          }
+        }
+      },
+      "sharePermissionLevel": {
+        "slug": "sharePermissionLevel",
+        "icon": "ShieldLockOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:DigitalDocumentPermission",
+        "title": "Share Permission Level",
+        "description": "Configurable permission level definition for case sharing",
+        "type": "object",
+        "required": ["name", "slug"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Human-readable permission level name"
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Machine-readable identifier"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what this permission level allows"
+          },
+          "canComment": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether external parties can add comments"
+          },
+          "canUpload": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether external parties can upload documents"
+          },
+          "fieldInclusions": {
+            "type": "string",
+            "description": "JSON-encoded array of field names to include (whitelist)"
+          },
+          "fieldExclusions": {
+            "type": "string",
+            "description": "JSON-encoded array of field names to exclude (blacklist)"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this is a system-default permission level"
+          }
+        }
+      },
+      "caseTransfer": {
+        "slug": "caseTransfer",
+        "icon": "SwapHorizontal",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:TransferAction",
+        "title": "Case Transfer",
+        "description": "A case ownership transfer request between organizations",
+        "type": "object",
+        "required": ["caseId", "sourceOrganization", "targetOrganization"],
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case being transferred"
+          },
+          "sourceOrganization": {
+            "type": "string",
+            "description": "Source organization identifier"
+          },
+          "targetOrganization": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to target partner organization"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for transfer"
+          },
+          "requestedDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Requested transfer date"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "accepted", "rejected"],
+            "default": "pending",
+            "description": "Transfer request status"
+          },
+          "rejectionReason": {
+            "type": "string",
+            "description": "Reason for rejection (if rejected)"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when transfer was completed"
+          }
+        }
+      }
+    },
     "registers": {
       "procest": {
         "slug": "procest",
@@ -1511,7 +1745,11 @@
           "dispatch",
           "usageRights",
           "kanaal",
-          "abonnement"
+          "abonnement",
+          "caseShare",
+          "partnerOrganization",
+          "sharePermissionLevel",
+          "caseTransfer"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"
