@@ -102,6 +102,30 @@
 				</div>
 			</template>
 
+			<!-- Cases by Type widget -->
+			<template #widget-cases-by-type>
+				<div class="type-widget-content">
+					<div v-if="typeData.length === 0" class="chart-empty">
+						{{ t('procest', 'No open cases') }}
+					</div>
+					<div v-else class="type-chart">
+						<div
+							v-for="(item, index) in typeData"
+							:key="item.name"
+							class="status-bar-row"
+							@click="$router.push({ name: 'Cases', query: { type: item.name } })">
+							<span class="status-bar-label">{{ item.name }}</span>
+							<div class="status-bar-track">
+								<div
+									class="status-bar-fill"
+									:style="{ width: typeBarWidth(item.count), background: barColor(index) }" />
+							</div>
+							<span class="status-bar-count">{{ item.count }}</span>
+						</div>
+					</div>
+				</div>
+			</template>
+
 			<!-- My Work widget -->
 			<template #widget-my-work>
 				<div class="my-work-widget-content">
@@ -207,7 +231,8 @@ const DEFAULT_LAYOUT = [
 	{ id: 3, widgetId: 'count-completed', gridX: 6, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
 	{ id: 4, widgetId: 'count-my-tasks', gridX: 9, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
 	{ id: 5, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 6, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
+	{ id: 6, widgetId: 'cases-by-type', gridX: 0, gridY: 6, gridWidth: 6, gridHeight: 4 },
+	{ id: 7, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 8 },
 ]
 
 export default {
@@ -238,6 +263,7 @@ export default {
 			statusTypes: [],
 			kpis: { openCount: 0, newToday: 0, overdueCount: 0, completedCount: 0, avgDays: null, taskCount: 0, tasksDueToday: 0 },
 			statusData: [],
+			typeData: [],
 			myWorkItems: [],
 			globalLoading: false,
 			error: null,
@@ -271,6 +297,7 @@ export default {
 				{ id: 'count-completed', title: t('procest', 'Completed This Month'), type: 'custom' },
 				{ id: 'count-my-tasks', title: t('procest', 'My Tasks'), type: 'custom' },
 				{ id: 'cases-by-status', title: t('procest', 'Cases by Status'), type: 'custom' },
+				{ id: 'cases-by-type', title: t('procest', 'Cases by Type'), type: 'custom' },
 				{ id: 'my-work', title: t('procest', 'My Work'), type: 'custom' },
 			]
 		},
@@ -333,6 +360,20 @@ export default {
 				this.kpis = computeKpis(this.openCases, this.completedCases, this.myTasks)
 				this.statusData = aggregateByStatus(this.openCases, this.statusTypes)
 
+				// Aggregate cases by type for Cases by Type chart
+				const typeMap = new Map()
+				const caseTypeNameMap = new Map()
+				for (const ct of this.caseTypes) {
+					caseTypeNameMap.set(ct.id, ct.title || ct.name || 'Unknown')
+				}
+				for (const c of this.openCases) {
+					const typeName = caseTypeNameMap.get(c.caseType) || c.caseType || 'Unknown'
+					typeMap.set(typeName, (typeMap.get(typeName) || 0) + 1)
+				}
+				this.typeData = Array.from(typeMap.entries())
+					.map(([name, count]) => ({ name, count }))
+					.sort((a, b) => b.count - a.count)
+
 				const myCases = this.openCases.filter(c => c.assignee === currentUser)
 				this.myWorkItems = getMyWorkItems(myCases, this.myTasks, 5)
 			} catch (err) {
@@ -349,6 +390,12 @@ export default {
 
 		barWidth(count) {
 			const max = Math.max(1, ...this.statusData.map(s => s.count))
+			const pct = (count / max) * 100
+			return `max(20px, ${pct}%)`
+		},
+
+		typeBarWidth(count) {
+			const max = Math.max(1, ...this.typeData.map(t => t.count))
 			const pct = (count / max) * 100
 			return `max(20px, ${pct}%)`
 		},
@@ -432,6 +479,18 @@ export default {
 	font-weight: 600;
 	text-align: right;
 	flex-shrink: 0;
+}
+
+/* Cases by Type widget */
+.type-widget-content {
+	padding: 12px;
+	height: 100%;
+}
+
+.type-chart {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 }
 
 /* My Work widget */
