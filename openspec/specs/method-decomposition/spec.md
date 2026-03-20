@@ -1,5 +1,5 @@
 ---
-status: draft
+status: redirect
 priority: high
 estimated_effort: large
 ---

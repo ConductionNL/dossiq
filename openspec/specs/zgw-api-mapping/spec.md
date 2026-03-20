@@ -1,5 +1,5 @@
 ---
-status: draft
+status: redirect
 ---
 
 # ZGW API Mapping

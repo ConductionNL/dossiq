@@ -1,5 +1,5 @@
 ---
-status: draft
+status: redirect
 ---
 
 # DSO Omgevingsloket Integration
