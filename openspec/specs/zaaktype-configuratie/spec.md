@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # Zaaktype Configuratie Specification
 
 ## Purpose

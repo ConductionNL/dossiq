@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # case-sharing-collaboration Specification
 
 ## Purpose

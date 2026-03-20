@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # Case Management Specification
 
 ## Purpose

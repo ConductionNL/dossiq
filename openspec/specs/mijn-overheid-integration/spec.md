@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # mijn-overheid-integration Specification
 
 ## Purpose

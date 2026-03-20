@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # Mobiel Inspectie Specification
 
 ## Purpose

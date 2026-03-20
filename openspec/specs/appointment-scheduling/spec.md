@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # appointment-scheduling Specification
 
 ## Purpose

@@ -4,7 +4,7 @@
 
 Implement the MVP tier of the case type system. This delta spec scopes the existing `case-types/spec.md` requirements to what will be built in this change: core CRUD, draft/publish lifecycle, validity periods, status type management, deadline configuration, extension config, default type, validation, General+Statuses tabs, and error scenarios.
 
-## ADDED Requirements
+## Requirements
 
 _No new requirements added. All requirements below reference existing spec requirements scoped to MVP tier._
 

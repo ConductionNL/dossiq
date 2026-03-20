@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # pipelinq-app-scaffold Specification
 
 ## Purpose

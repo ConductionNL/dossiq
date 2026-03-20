@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # Werkvoorraad (Work Queue) Specification
 
 ## Purpose

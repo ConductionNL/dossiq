@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # Legesberekening Specification
 
 ## Purpose

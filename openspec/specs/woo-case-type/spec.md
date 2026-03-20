@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # woo-case-type Specification
 
 ## Purpose

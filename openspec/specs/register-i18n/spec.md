@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # Register Content Internationalization
 
 ## Purpose

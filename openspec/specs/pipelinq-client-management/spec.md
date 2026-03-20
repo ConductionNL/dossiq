@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # pipelinq-client-management Specification
 
 ## Purpose

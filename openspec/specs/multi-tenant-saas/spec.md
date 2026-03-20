@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # multi-tenant-saas Specification
 
 ## Purpose

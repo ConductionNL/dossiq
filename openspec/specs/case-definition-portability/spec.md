@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # case-definition-portability Specification
 
 ## Purpose

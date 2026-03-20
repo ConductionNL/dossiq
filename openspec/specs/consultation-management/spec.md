@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # consultation-management Specification
 
 ## Purpose
