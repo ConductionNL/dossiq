@@ -107,6 +107,11 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
+        // ── Milestones ─────────────────────────────────────────────────
+        ['name' => 'milestone#progress', 'url' => '/api/cases/{caseId}/milestones', 'verb' => 'GET'],
+        ['name' => 'milestone#mark', 'url' => '/api/cases/{caseId}/milestones/{milestoneId}/mark', 'verb' => 'POST'],
+        ['name' => 'milestone#reverse', 'url' => '/api/cases/{caseId}/milestones/{milestoneId}/reverse', 'verb' => 'POST'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.

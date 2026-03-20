@@ -21,7 +21,7 @@
         "x-schema-org-type": "schema:Project",
         "x-zgw-equivalent": "ZaakType",
         "title": "Case Type",
-        "description": "Case type definition \u2014 defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+        "description": "Case type definition — defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
         "type": "object",
         "required": [
           "title"
@@ -148,12 +148,16 @@
           },
           "subCaseTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to sub-case types (deelzaaktypen)"
           },
           "decisionTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to decision types (besluittypen) linked to this case type"
           }
         }
@@ -1242,7 +1246,11 @@
         "title": "Case Property",
         "description": "A property value on a specific case",
         "type": "object",
-        "required": ["case", "propertyDefinition", "value"],
+        "required": [
+          "case",
+          "propertyDefinition",
+          "value"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1270,7 +1278,10 @@
         "title": "Case Document Link",
         "description": "Links a document to a case",
         "type": "object",
-        "required": ["case", "document"],
+        "required": [
+          "case",
+          "document"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1307,7 +1318,10 @@
         "title": "Case Object",
         "description": "Links an external object to a case",
         "type": "object",
-        "required": ["case", "objectType"],
+        "required": [
+          "case",
+          "objectType"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1343,7 +1357,9 @@
         "title": "Customer Contact",
         "description": "A customer contact moment for a case",
         "type": "object",
-        "required": ["case"],
+        "required": [
+          "case"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1379,7 +1395,10 @@
         "title": "Decision Document Link",
         "description": "Links a document to a decision",
         "type": "object",
-        "required": ["decision", "document"],
+        "required": [
+          "decision",
+          "document"
+        ],
         "properties": {
           "decision": {
             "type": "string",
@@ -1403,7 +1422,10 @@
         "title": "Dispatch",
         "description": "A document dispatch record",
         "type": "object",
-        "required": ["document", "relationshipType"],
+        "required": [
+          "document",
+          "relationshipType"
+        ],
         "properties": {
           "document": {
             "type": "string",
@@ -1477,6 +1499,98 @@
             "description": "Description of the usage conditions"
           }
         }
+      },
+      "milestoneDefinition": {
+        "slug": "milestoneDefinition",
+        "icon": "FlagCheckered",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Event",
+        "title": "Milestone Definition",
+        "description": "Definition of a milestone checkpoint in a case type lifecycle",
+        "type": "object",
+        "required": [
+          "label",
+          "caseType",
+          "order"
+        ],
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "description": "Machine-readable identifier (e.g., aanvraag_ontvangen)"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Human-readable label (e.g., Aanvraag ontvangen)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of what this milestone represents"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case type"
+          },
+          "order": {
+            "type": "integer",
+            "description": "Sequence number determining milestone order"
+          },
+          "triggerEvent": {
+            "type": "string",
+            "description": "Workflow event name that auto-triggers this milestone"
+          },
+          "linkedStatusType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional: status type that triggers this milestone when reached"
+          }
+        }
+      },
+      "milestoneRecord": {
+        "slug": "milestoneRecord",
+        "icon": "CheckCircleOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Event",
+        "title": "Milestone Record",
+        "description": "Record of a milestone being reached on a specific case",
+        "type": "object",
+        "required": [
+          "case",
+          "milestoneDefinition",
+          "reachedAt"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case"
+          },
+          "milestoneDefinition": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the milestone definition"
+          },
+          "reachedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the milestone was reached"
+          },
+          "reachedBy": {
+            "type": "string",
+            "description": "User ID who marked the milestone (or 'system' for auto)"
+          },
+          "trigger": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "workflow",
+              "auto",
+              "status_change"
+            ],
+            "description": "How the milestone was triggered"
+          }
+        }
       }
     },
     "registers": {
@@ -1484,7 +1598,7 @@
         "slug": "procest",
         "title": "Procest",
         "version": "1.0.0",
-        "description": "Case management (zaakgericht werken) register for Procest \u2014 manages case types, status types, cases, tasks, roles, results, and decisions.",
+        "description": "Case management (zaakgericht werken) register for Procest — manages case types, status types, cases, tasks, roles, results, and decisions.",
         "schemas": [
           "caseType",
           "statusType",

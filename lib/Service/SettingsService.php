@@ -61,6 +61,8 @@ class SettingsService
         'usage_rights_schema',
         'kanaal_schema',
         'abonnement_schema',
+        'milestone_definition_schema',
+        'milestone_record_schema',
         'default_case_type',
     ];
 
@@ -95,6 +97,8 @@ class SettingsService
         'usageRights'                  => 'usage_rights_schema',
         'kanaal'                       => 'kanaal_schema',
         'abonnement'                   => 'abonnement_schema',
+        'milestoneDefinition'          => 'milestone_definition_schema',
+        'milestoneRecord'              => 'milestone_record_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
