@@ -21,7 +21,7 @@
         "x-schema-org-type": "schema:Project",
         "x-zgw-equivalent": "ZaakType",
         "title": "Case Type",
-        "description": "Case type definition \u2014 defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+        "description": "Case type definition — defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
         "type": "object",
         "required": [
           "title"
@@ -148,12 +148,16 @@
           },
           "subCaseTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to sub-case types (deelzaaktypen)"
           },
           "decisionTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to decision types (besluittypen) linked to this case type"
           }
         }
@@ -1242,7 +1246,11 @@
         "title": "Case Property",
         "description": "A property value on a specific case",
         "type": "object",
-        "required": ["case", "propertyDefinition", "value"],
+        "required": [
+          "case",
+          "propertyDefinition",
+          "value"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1270,7 +1278,10 @@
         "title": "Case Document Link",
         "description": "Links a document to a case",
         "type": "object",
-        "required": ["case", "document"],
+        "required": [
+          "case",
+          "document"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1307,7 +1318,10 @@
         "title": "Case Object",
         "description": "Links an external object to a case",
         "type": "object",
-        "required": ["case", "objectType"],
+        "required": [
+          "case",
+          "objectType"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1343,7 +1357,9 @@
         "title": "Customer Contact",
         "description": "A customer contact moment for a case",
         "type": "object",
-        "required": ["case"],
+        "required": [
+          "case"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1379,7 +1395,10 @@
         "title": "Decision Document Link",
         "description": "Links a document to a decision",
         "type": "object",
-        "required": ["decision", "document"],
+        "required": [
+          "decision",
+          "document"
+        ],
         "properties": {
           "decision": {
             "type": "string",
@@ -1403,7 +1422,10 @@
         "title": "Dispatch",
         "description": "A document dispatch record",
         "type": "object",
-        "required": ["document", "relationshipType"],
+        "required": [
+          "document",
+          "relationshipType"
+        ],
         "properties": {
           "document": {
             "type": "string",
@@ -1477,6 +1499,93 @@
             "description": "Description of the usage conditions"
           }
         }
+      },
+      "consultation": {
+        "slug": "consultation",
+        "icon": "CommentAccountOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:AskAction",
+        "title": "Consultation",
+        "description": "Inter-departmental consultation (adviesaanvraag) linked to a parent case",
+        "type": "object",
+        "required": [
+          "parentZaak",
+          "adviesInstantie",
+          "onderwerp"
+        ],
+        "properties": {
+          "parentZaak": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case"
+          },
+          "adviesInstantie": {
+            "type": "string",
+            "description": "Department or organization being consulted"
+          },
+          "onderwerp": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Subject of the consultation"
+          },
+          "vraagstelling": {
+            "type": "string",
+            "description": "The specific question(s) being asked"
+          },
+          "uiterlijkeReactiedatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Deadline for response"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "in_behandeling",
+              "advies_uitgebracht",
+              "afgesloten"
+            ],
+            "default": "open",
+            "description": "Current status of the consultation"
+          },
+          "aanvrager": {
+            "type": "string",
+            "description": "User ID of the person who initiated the consultation"
+          },
+          "advies": {
+            "type": "string",
+            "enum": [
+              "positief",
+              "positief_met_voorwaarden",
+              "negatief",
+              "niet_van_toepassing"
+            ],
+            "description": "The advice conclusion"
+          },
+          "toelichting": {
+            "type": "string",
+            "description": "Explanation of the advice"
+          },
+          "voorwaarden": {
+            "type": "string",
+            "description": "JSON array of conditions (if positief_met_voorwaarden)"
+          },
+          "adviesDatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the advice was given"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the consultation was created"
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the consultation was closed"
+          }
+        }
       }
     },
     "registers": {
@@ -1484,7 +1593,7 @@
         "slug": "procest",
         "title": "Procest",
         "version": "1.0.0",
-        "description": "Case management (zaakgericht werken) register for Procest \u2014 manages case types, status types, cases, tasks, roles, results, and decisions.",
+        "description": "Case management (zaakgericht werken) register for Procest — manages case types, status types, cases, tasks, roles, results, and decisions.",
         "schemas": [
           "caseType",
           "statusType",

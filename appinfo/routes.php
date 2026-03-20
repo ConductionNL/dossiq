@@ -107,6 +107,13 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
+        // ── Consultations ──────────────────────────────────────────────
+        ['name' => 'consultation#index', 'url' => '/api/cases/{caseId}/consultations', 'verb' => 'GET'],
+        ['name' => 'consultation#create', 'url' => '/api/consultations', 'verb' => 'POST'],
+        ['name' => 'consultation#updateStatus', 'url' => '/api/consultations/{id}/status', 'verb' => 'PUT'],
+        ['name' => 'consultation#submitResponse', 'url' => '/api/consultations/{id}/response', 'verb' => 'POST'],
+        ['name' => 'consultation#overdue', 'url' => '/api/consultations/overdue', 'verb' => 'GET'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
