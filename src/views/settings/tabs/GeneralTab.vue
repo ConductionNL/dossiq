@@ -78,23 +78,21 @@
 		<!-- Processing Deadline -->
 		<div class="form-group">
 			<label class="required">{{ t('procest', 'Processing deadline') }}</label>
-			<NcTextField
+			<DurationPicker
 				:value="form.processingDeadline"
-				:placeholder="t('procest', 'e.g., P56D (56 days)')"
-				:error="!!errors.processingDeadline"
-				:helper-text="errors.processingDeadline || deadlinePreview"
-				@update:value="v => $emit('update', 'processingDeadline', v)" />
+				preset-type="deadline"
+				@input="v => $emit('update', 'processingDeadline', v)" />
+			<span v-if="errors.processingDeadline" class="field-error">{{ errors.processingDeadline }}</span>
 		</div>
 
 		<!-- Service Target -->
 		<div class="form-group">
 			<label>{{ t('procest', 'Service target') }}</label>
-			<NcTextField
+			<DurationPicker
 				:value="form.serviceTarget"
-				:placeholder="t('procest', 'e.g., P42D (42 days)')"
-				:error="!!errors.serviceTarget"
-				:helper-text="errors.serviceTarget || serviceTargetPreview"
-				@update:value="v => $emit('update', 'serviceTarget', v)" />
+				preset-type="deadline"
+				@input="v => $emit('update', 'serviceTarget', v)" />
+			<span v-if="errors.serviceTarget" class="field-error">{{ errors.serviceTarget }}</span>
 		</div>
 
 		<!-- Extension Allowed -->
@@ -109,12 +107,11 @@
 		<!-- Extension Period (conditional) -->
 		<div v-if="form.extensionAllowed" class="form-group">
 			<label class="required">{{ t('procest', 'Extension period') }}</label>
-			<NcTextField
+			<DurationPicker
 				:value="form.extensionPeriod"
-				:placeholder="t('procest', 'e.g., P28D (28 days)')"
-				:error="!!errors.extensionPeriod"
-				:helper-text="errors.extensionPeriod || extensionPreview"
-				@update:value="v => $emit('update', 'extensionPeriod', v)" />
+				preset-type="extension"
+				@input="v => $emit('update', 'extensionPeriod', v)" />
+			<span v-if="errors.extensionPeriod" class="field-error">{{ errors.extensionPeriod }}</span>
 		</div>
 
 		<!-- Confidentiality -->
@@ -199,6 +196,7 @@
 import { NcTextField, NcSelect, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 import { formatDuration } from '../../../utils/durationHelpers.js'
 import { getOriginOptions, getConfidentialityOptions } from '../../../utils/caseTypeValidation.js'
+import DurationPicker from '../components/DurationPicker.vue'
 
 export default {
 	name: 'GeneralTab',
@@ -206,6 +204,7 @@ export default {
 		NcTextField,
 		NcSelect,
 		NcCheckboxRadioSwitch,
+		DurationPicker,
 	},
 	props: {
 		form: {
