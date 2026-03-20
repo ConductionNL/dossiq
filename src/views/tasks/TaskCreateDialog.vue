@@ -62,14 +62,17 @@
 
 				<!-- Case -->
 				<div class="form-group">
-					<label>{{ t('procest', 'Case') }}</label>
+					<label>{{ t('procest', 'Case') }} *</label>
 					<NcSelect
 						v-model="form.case"
 						:options="caseOptions"
 						:clearable="true"
 						label="label"
 						:reduce="o => o.value"
-						:placeholder="t('procest', 'Link to a case (optional)')" />
+						:placeholder="t('procest', 'Link to a case')" />
+					<p v-if="errors.case" class="form-error">
+						{{ errors.case }}
+					</p>
 				</div>
 			</div>
 
@@ -141,6 +144,13 @@ export default {
 
 			if (!this.form.title || !this.form.title.trim()) {
 				this.errors.title = t('procest', 'Title is required')
+			}
+
+			if (!this.form.case) {
+				this.errors.case = t('procest', 'Case is required')
+			}
+
+			if (Object.keys(this.errors).length > 0) {
 				return
 			}
 
