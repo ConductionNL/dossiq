@@ -9,6 +9,12 @@ return [
         ['name' => 'settings#index', 'url' => '/api/settings', 'verb' => 'GET'],
         ['name' => 'settings#create', 'url' => '/api/settings', 'verb' => 'POST'],
         ['name' => 'settings#load',  'url' => '/api/settings/load', 'verb' => 'POST'],
+        // Mobiel Inspectie.
+        ['name' => 'inspection#index', 'url' => '/api/inspections', 'verb' => 'GET'],
+        ['name' => 'inspection#captureLocation', 'url' => '/api/inspections/{id}/location', 'verb' => 'POST'],
+        ['name' => 'inspection#completeChecklistItem', 'url' => '/api/inspections/{id}/checklist/{itemId}', 'verb' => 'POST'],
+        ['name' => 'inspection#addPhoto', 'url' => '/api/inspections/{id}/photos', 'verb' => 'POST'],
+        ['name' => 'inspection#complete', 'url' => '/api/inspections/{id}/complete', 'verb' => 'POST'],
         // ZGW Mapping Management.
         ['name' => 'zgw_mapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
         ['name' => 'zgw_mapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],
