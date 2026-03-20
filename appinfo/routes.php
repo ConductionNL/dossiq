@@ -107,6 +107,16 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
+
+        // ── Multi-Tenant SaaS ──────────────────────────────────────────
+        ['name' => 'tenant#current', 'url' => '/api/tenants/current', 'verb' => 'GET'],
+        ['name' => 'tenant#index', 'url' => '/api/tenants', 'verb' => 'GET'],
+        ['name' => 'tenant#create', 'url' => '/api/tenants', 'verb' => 'POST'],
+        ['name' => 'tenant#show', 'url' => '/api/tenants/{tenantId}', 'verb' => 'GET'],
+        ['name' => 'tenant#update', 'url' => '/api/tenants/{tenantId}', 'verb' => 'PUT'],
+        ['name' => 'tenant#provision', 'url' => '/api/tenants/{tenantId}/provision', 'verb' => 'POST'],
+        ['name' => 'tenant#usage', 'url' => '/api/tenants/{tenantId}/usage', 'verb' => 'GET'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
