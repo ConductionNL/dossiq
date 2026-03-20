@@ -1,6 +1,22 @@
 <template>
-	<div>
+	<div class="case-detail-page">
+		<!-- Not found state -->
+		<NcEmptyContent
+			v-if="notFound"
+			:name="t('procest', 'Case not found')"
+			:description="t('procest', 'The requested case could not be found.')">
+			<template #icon>
+				<AlertCircle :size="64" />
+			</template>
+			<template #action>
+				<NcButton type="primary" @click="$router.push({ name: 'Cases' })">
+					{{ t('procest', 'Back to overview') }}
+				</NcButton>
+			</template>
+		</NcEmptyContent>
+
 		<CnDetailPage
+			v-else
 			:title="caseData.title || t('procest', 'Case')"
 			:subtitle="caseData.identifier ? `${t('procest', 'Case')} — ${caseData.identifier}` : t('procest', 'Case')"
 			:back-route="{ name: 'Cases' }"
@@ -254,7 +270,7 @@
 		</CnDetailPage>
 
 		<!-- Extension dialog -->
-		<div v-if="showExtension" class="extension-overlay" @click.self="showExtension = false">
+		<div v-if="showExtension && !notFound" class="extension-overlay" @click.self="showExtension = false">
 			<div class="extension-dialog">
 				<h3>{{ t('procest', 'Extend Deadline') }}</h3>
 				<p>{{ t('procest', 'This will extend the deadline by {period}.', { period: extensionPeriodText }) }}</p>
@@ -279,7 +295,8 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcTextField, NcSelect, NcEmptyContent } from '@nextcloud/vue'
+import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
 import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { getStatusLabel as getTaskStatusLabel } from '../../utils/taskLifecycle.js'
@@ -299,6 +316,8 @@ export default {
 		NcLoadingIcon,
 		NcTextField,
 		NcSelect,
+		NcEmptyContent,
+		AlertCircle,
 		CnDetailPage,
 		CnDetailCard,
 		StatusTimeline,
@@ -339,6 +358,7 @@ export default {
 			showExtension: false,
 			extensionReason: '',
 			priorityOptions: ['low', 'normal', 'high', 'urgent'],
+			fetchCompleted: false,
 		}
 	},
 	computed: {
@@ -350,6 +370,9 @@ export default {
 		},
 		caseData() {
 			return this.objectStore.getObject('case', this.caseId) || {}
+		},
+		notFound() {
+			return this.fetchCompleted && !this.loading && (!this.caseData || !this.caseData.id)
 		},
 		caseTypeName() {
 			return this.caseTypeData?.title || '—'
@@ -398,12 +421,15 @@ export default {
 	async mounted() {
 		if (!this.isNew) {
 			await this.objectStore.fetchObject('case', this.caseId)
-			this.populateForm()
-			await Promise.all([
-				this.loadCaseTypeData(),
-				this.fetchTasks(),
-				this.fetchCaseResult(),
-			])
+			this.fetchCompleted = true
+			if (this.caseData && this.caseData.id) {
+				this.populateForm()
+				await Promise.all([
+					this.loadCaseTypeData(),
+					this.fetchTasks(),
+					this.fetchCaseResult(),
+				])
+			}
 		}
 	},
 	methods: {
@@ -955,5 +981,86 @@ export default {
 	justify-content: flex-end;
 	gap: 8px;
 	margin-top: 16px;
+}
+
+/* Responsive tablet layout (REQ-CDV-07b) */
+@media (max-width: 1200px) {
+	.case-detail-page :deep(.cn-detail-page__columns) {
+		flex-direction: column;
+	}
+
+	.case-detail-page :deep(.cn-detail-page__main),
+	.case-detail-page :deep(.cn-detail-page__sidebar) {
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.form-row {
+		flex-direction: column;
+	}
+
+	.form-row .form-group {
+		width: 100%;
+	}
+
+	/* Ensure touch targets meet WCAG AA 44x44px minimum */
+	.case-detail-page :deep(button),
+	.case-detail-page :deep(.v-select),
+	.case-detail-page :deep(a) {
+		min-height: 44px;
+		min-width: 44px;
+	}
+}
+
+/* Print view (REQ-CDV-07c) */
+@media print {
+	.case-detail-page {
+		background: white !important;
+	}
+
+	/* Print header with case info */
+	.case-detail-page::before {
+		content: attr(data-print-header);
+		display: block;
+		font-size: 10px;
+		color: #666;
+		border-bottom: 1px solid #ccc;
+		padding-bottom: 8px;
+		margin-bottom: 16px;
+	}
+
+	/* Hide interactive elements */
+	.case-detail-page :deep(button),
+	.case-detail-page :deep(.cn-detail-page__header-actions),
+	.case-detail-page :deep(.v-select),
+	.case-detail-page :deep(.status-section__change),
+	.extension-overlay,
+	.case-detail-page :deep(.cn-detail-page__sidebar-toggle) {
+		display: none !important;
+	}
+
+	/* Stack all columns */
+	.case-detail-page :deep(.cn-detail-page__columns) {
+		flex-direction: column;
+	}
+
+	.case-detail-page :deep(.cn-detail-page__main),
+	.case-detail-page :deep(.cn-detail-page__sidebar) {
+		width: 100%;
+		max-width: 100%;
+	}
+
+	/* Remove shadows and decorative borders */
+	.case-detail-page :deep(.cn-detail-card) {
+		box-shadow: none;
+		border: 1px solid #ddd;
+		break-inside: avoid;
+	}
+
+	/* Make status timeline text-based for print */
+	.case-detail-page :deep(.status-timeline__dot) {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+	}
 }
 </style>
