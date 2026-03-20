@@ -61,6 +61,13 @@ class SettingsService
         'usage_rights_schema',
         'kanaal_schema',
         'abonnement_schema',
+        'berichtenbox_message_schema',
+        'berichtenbox_type_code_schema',
+        'berichtenbox_enabled',
+        'berichtenbox_api_url',
+        'berichtenbox_oin',
+        'berichtenbox_certificate_path',
+        'berichtenbox_default_type_code',
         'default_case_type',
     ];
 
@@ -95,6 +102,8 @@ class SettingsService
         'usageRights'                  => 'usage_rights_schema',
         'kanaal'                       => 'kanaal_schema',
         'abonnement'                   => 'abonnement_schema',
+        'berichtenboxMessage'          => 'berichtenbox_message_schema',
+        'berichtenboxTypeCode'         => 'berichtenbox_type_code_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

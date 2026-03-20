@@ -107,6 +107,13 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
+
+        // ── Mijn Overheid Berichtenbox ─────────────────────────────────
+        ['name' => 'berichtenbox#send', 'url' => '/api/berichtenbox/send', 'verb' => 'POST'],
+        ['name' => 'berichtenbox#messages', 'url' => '/api/berichtenbox/messages', 'verb' => 'GET'],
+        ['name' => 'berichtenbox#types', 'url' => '/api/berichtenbox/types', 'verb' => 'GET'],
+        ['name' => 'berichtenbox#poll', 'url' => '/api/berichtenbox/poll/{messageId}', 'verb' => 'POST'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
