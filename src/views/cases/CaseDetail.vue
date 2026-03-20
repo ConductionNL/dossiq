@@ -182,6 +182,23 @@
 					@handler-changed="onHandlerChanged" />
 			</CnDetailCard>
 
+			<!-- Custom Properties card -->
+			<CnDetailCard v-if="caseTypeData" :title="t('procest', 'Properties')">
+				<CustomPropertiesPanel
+					:case-id="caseId"
+					:case-type-id="caseData.caseType"
+					:is-read-only="isReadOnly" />
+			</CnDetailCard>
+
+			<!-- Documents Checklist card -->
+			<CnDetailCard v-if="caseTypeData" :title="t('procest', 'Documents')">
+				<DocumentChecklist
+					:case-id="caseId"
+					:case-type-id="caseData.caseType"
+					:is-read-only="isReadOnly"
+					:status-types="statusTypes" />
+			</CnDetailCard>
+
 			<!-- Tasks card -->
 			<CnDetailCard :title="`${t('procest', 'Tasks')} (${completedTaskCount}/${tasks.length})`">
 				<template #actions>
@@ -291,6 +308,8 @@ import DeadlinePanel from './components/DeadlinePanel.vue'
 import ActivityTimeline from './components/ActivityTimeline.vue'
 import ParticipantsSection from './components/ParticipantsSection.vue'
 import ResultSection from './components/ResultSection.vue'
+import CustomPropertiesPanel from './components/CustomPropertiesPanel.vue'
+import DocumentChecklist from './components/DocumentChecklist.vue'
 
 export default {
 	name: 'CaseDetail',
@@ -306,6 +325,8 @@ export default {
 		ActivityTimeline,
 		ParticipantsSection,
 		ResultSection,
+		CustomPropertiesPanel,
+		DocumentChecklist,
 	},
 	props: {
 		caseId: {
