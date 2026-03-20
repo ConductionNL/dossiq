@@ -65,6 +65,17 @@
 						:placeholder="t('procest', 'Optional description...')"
 						rows="3" />
 				</div>
+
+				<!-- Intake Channel -->
+				<div class="form-group">
+					<label>{{ t('procest', 'Intake channel') }}</label>
+					<NcSelect
+						v-model="selectedIntakeChannel"
+						:options="intakeChannelOptions"
+						label="label"
+						track-by="value"
+						:placeholder="t('procest', 'Select intake channel...')" />
+				</div>
 			</div>
 
 			<div class="case-create-dialog__footer">
@@ -108,6 +119,7 @@ export default {
 				caseType: null,
 			},
 			selectedCaseType: null,
+			selectedIntakeChannel: null,
 			caseTypes: [],
 			statusTypes: [],
 			errors: {},
@@ -140,6 +152,16 @@ export default {
 			if (!this.selectedCaseType?.processingDeadline) return '—'
 			const deadline = calculateDeadline(new Date(), this.selectedCaseType.processingDeadline)
 			return deadline ? formatDate(deadline.toISOString()) : '—'
+		},
+		intakeChannelOptions() {
+			return [
+				{ value: 'balie', label: t('procest', 'Counter (Balie)') },
+				{ value: 'telefoon', label: t('procest', 'Telephone') },
+				{ value: 'email', label: t('procest', 'E-mail') },
+				{ value: 'post', label: t('procest', 'Postal mail') },
+				{ value: 'website', label: t('procest', 'Website') },
+				{ value: 'overig', label: t('procest', 'Other') },
+			]
 		},
 	},
 	async mounted() {
@@ -182,6 +204,31 @@ export default {
 			const initialStatus = this.initialStatusType
 			const currentUser = OC?.currentUser || 'unknown'
 
+			// Determine assignee from case type default or leave null
+			const assignee = this.selectedCaseType.defaultAssignee || null
+
+			// Determine intake channel: selected value or default to 'manual'
+			const intakeChannel = this.selectedIntakeChannel?.value || 'manual'
+
+			const activityEntries = [
+				{
+					date: now.toISOString(),
+					type: 'created',
+					description: t('procest', 'Case created with type \'{type}\'', { type: this.selectedCaseType.title }),
+					user: currentUser,
+				},
+			]
+
+			// Add auto-assignment activity entry if applicable
+			if (assignee) {
+				activityEntries.push({
+					date: now.toISOString(),
+					type: 'assigned',
+					description: t('procest', 'Case automatically assigned to {assignee}', { assignee }),
+					user: 'system',
+				})
+			}
+
 			const caseData = {
 				title: this.form.title.trim(),
 				description: this.form.description.trim(),
@@ -191,11 +238,12 @@ export default {
 				startDate,
 				deadline: deadline ? deadline.toISOString().split('T')[0] + 'T17:00:00Z' : null,
 				confidentiality: this.selectedCaseType.confidentiality || 'public',
-				assignee: null,
+				assignee,
 				priority: 'normal',
 				endDate: null,
 				result: null,
 				extensionCount: 0,
+				intakeChannel,
 				statusHistory: [
 					{
 						status: initialStatus?.id || null,
@@ -203,14 +251,7 @@ export default {
 						changedBy: currentUser,
 					},
 				],
-				activity: [
-					{
-						date: now.toISOString(),
-						type: 'created',
-						description: t('procest', 'Case created with type \'{type}\'', { type: this.selectedCaseType.title }),
-						user: currentUser,
-					},
-				],
+				activity: activityEntries,
 			}
 
 			const result = await this.objectStore.saveObject('case', caseData)

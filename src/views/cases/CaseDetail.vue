@@ -150,6 +150,13 @@
 					</div>
 				</div>
 
+				<div v-if="caseData.intakeChannel" class="form-row">
+					<div class="form-group">
+						<label>{{ t('procest', 'Source') }}</label>
+						<span class="form-value">{{ intakeChannelLabel }}</span>
+					</div>
+				</div>
+
 				<ResultSection
 					:result="caseResult"
 					:result-types="resultTypes"
@@ -393,6 +400,20 @@ export default {
 				register: config.register || '',
 				schema: config.schema || '',
 			}
+		},
+		intakeChannelLabel() {
+			const channelLabels = {
+				manual: t('procest', 'Manual'),
+				balie: t('procest', 'Counter (Balie)'),
+				telefoon: t('procest', 'Telephone'),
+				email: t('procest', 'E-mail'),
+				post: t('procest', 'Postal mail'),
+				website: t('procest', 'Website'),
+				overig: t('procest', 'Other'),
+				'zgw-api': t('procest', 'ZGW API'),
+				'open-formulieren': t('procest', 'Open Formulieren'),
+			}
+			return channelLabels[this.caseData.intakeChannel] || this.caseData.intakeChannel || '—'
 		},
 	},
 	async mounted() {

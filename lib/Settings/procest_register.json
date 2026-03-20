@@ -155,6 +155,10 @@
             "type": "array",
             "items": { "type": "string" },
             "description": "References to decision types (besluittypen) linked to this case type"
+          },
+          "defaultAssignee": {
+            "type": "string",
+            "description": "Nextcloud user ID or group ID for automatic case handler assignment on intake"
           }
         }
       },
@@ -676,6 +680,23 @@
             "format": "uri",
             "description": "URL reference to the communication channel",
             "visible": false
+          },
+          "intakeChannel": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "balie",
+              "telefoon",
+              "email",
+              "post",
+              "website",
+              "overig",
+              "zgw-api",
+              "open-formulieren"
+            ],
+            "description": "Channel through which this case was initiated",
+            "title": "Intake channel",
+            "facetable": true
           }
         }
       },
