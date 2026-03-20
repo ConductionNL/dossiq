@@ -81,6 +81,22 @@
 					v-else-if="activeTab === 'statuses'"
 					:case-type-id="caseTypeId"
 					:is-create="isCreate" />
+				<ResultTypesTab
+					v-else-if="activeTab === 'results'"
+					:case-type-id="caseTypeId"
+					:is-create="isCreate" />
+				<RoleTypesTab
+					v-else-if="activeTab === 'roles'"
+					:case-type-id="caseTypeId"
+					:is-create="isCreate" />
+				<PropertiesTab
+					v-else-if="activeTab === 'properties'"
+					:case-type-id="caseTypeId"
+					:is-create="isCreate" />
+				<DocumentTypesTab
+					v-else-if="activeTab === 'docs'"
+					:case-type-id="caseTypeId"
+					:is-create="isCreate" />
 			</div>
 		</template>
 	</div>
@@ -91,6 +107,10 @@ import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import ArrowLeftIcon from 'vue-material-design-icons/ArrowLeft.vue'
 import GeneralTab from './tabs/GeneralTab.vue'
 import StatusesTab from './tabs/StatusesTab.vue'
+import ResultTypesTab from './tabs/ResultTypesTab.vue'
+import RoleTypesTab from './tabs/RoleTypesTab.vue'
+import PropertiesTab from './tabs/PropertiesTab.vue'
+import DocumentTypesTab from './tabs/DocumentTypesTab.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { validateCaseType, validateForPublish } from '../../utils/caseTypeValidation.js'
 
@@ -128,6 +148,10 @@ export default {
 		ArrowLeftIcon,
 		GeneralTab,
 		StatusesTab,
+		ResultTypesTab,
+		RoleTypesTab,
+		PropertiesTab,
+		DocumentTypesTab,
 	},
 	props: {
 		caseTypeId: {
@@ -159,6 +183,10 @@ export default {
 			return [
 				{ id: 'general', label: t('procest', 'General') },
 				{ id: 'statuses', label: t('procest', 'Statuses') },
+				{ id: 'results', label: t('procest', 'Results') },
+				{ id: 'roles', label: t('procest', 'Roles') },
+				{ id: 'properties', label: t('procest', 'Properties') },
+				{ id: 'docs', label: t('procest', 'Docs') },
 			]
 		},
 	},
