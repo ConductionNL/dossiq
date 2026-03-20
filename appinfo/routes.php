@@ -9,6 +9,12 @@ return [
         ['name' => 'settings#index', 'url' => '/api/settings', 'verb' => 'GET'],
         ['name' => 'settings#create', 'url' => '/api/settings', 'verb' => 'POST'],
         ['name' => 'settings#load',  'url' => '/api/settings/load', 'verb' => 'POST'],
+        // Legesberekening.
+        ['name' => 'leges#calculate', 'url' => '/api/leges/calculate', 'verb' => 'POST'],
+        ['name' => 'leges#recalculate', 'url' => '/api/leges/recalculate', 'verb' => 'POST'],
+        ['name' => 'leges#verrekening', 'url' => '/api/leges/verrekening', 'verb' => 'POST'],
+        ['name' => 'leges#teruggaaf', 'url' => '/api/leges/teruggaaf', 'verb' => 'POST'],
+        ['name' => 'leges#export', 'url' => '/api/leges/export', 'verb' => 'POST'],
         // ZGW Mapping Management.
         ['name' => 'zgw_mapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
         ['name' => 'zgw_mapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],
