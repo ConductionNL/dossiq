@@ -252,6 +252,7 @@ export function getGroupedMyWorkItems(cases, normalizedTasks) {
 			isCompleted: false,
 			priority: c.priority || 'normal',
 			status: c.status || null,
+			caseType: c.caseType || null,
 		})
 	}
 
