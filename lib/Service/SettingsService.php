@@ -61,6 +61,13 @@ class SettingsService
         'usage_rights_schema',
         'kanaal_schema',
         'abonnement_schema',
+        'appointment_schema',
+        'appointment_product_schema',
+        'appointment_location_schema',
+        'appointment_backend',
+        'appointment_backend_url',
+        'appointment_backend_api_key',
+        'appointment_reminder_days',
         'default_case_type',
     ];
 
@@ -95,6 +102,9 @@ class SettingsService
         'usageRights'                  => 'usage_rights_schema',
         'kanaal'                       => 'kanaal_schema',
         'abonnement'                   => 'abonnement_schema',
+        'appointment'                  => 'appointment_schema',
+        'appointmentProduct'           => 'appointment_product_schema',
+        'appointmentLocation'          => 'appointment_location_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

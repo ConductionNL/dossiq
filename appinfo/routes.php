@@ -107,6 +107,16 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
+
+        // ── Appointment Scheduling ─────────────────────────────────────
+        ['name' => 'appointment#timeslots', 'url' => '/api/appointments/timeslots', 'verb' => 'GET'],
+        ['name' => 'appointment#index', 'url' => '/api/appointments', 'verb' => 'GET'],
+        ['name' => 'appointment#create', 'url' => '/api/appointments', 'verb' => 'POST'],
+        ['name' => 'appointment#cancel', 'url' => '/api/appointments/{appointmentId}', 'verb' => 'DELETE'],
+        ['name' => 'appointment#noShow', 'url' => '/api/appointments/{appointmentId}/no-show', 'verb' => 'POST'],
+        ['name' => 'public_appointment#view', 'url' => '/api/public/appointment/{token}', 'verb' => 'GET'],
+        ['name' => 'public_appointment#cancel', 'url' => '/api/public/appointment/{token}/cancel', 'verb' => 'POST'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
