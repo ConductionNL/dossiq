@@ -107,6 +107,11 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
+        // ── Templates ──────────────────────────────────────────────────
+        ['name' => 'template#index', 'url' => '/api/templates', 'verb' => 'GET'],
+        ['name' => 'template#show', 'url' => '/api/templates/{id}', 'verb' => 'GET'],
+        ['name' => 'template#activate', 'url' => '/api/templates/{id}/activate', 'verb' => 'POST'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
