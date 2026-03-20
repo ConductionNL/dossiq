@@ -244,6 +244,14 @@
 				</div>
 			</CnDetailCard>
 
+			<!-- Decisions card -->
+			<CnDetailCard :title="t('procest', 'Decisions')">
+				<DecisionsSection
+					:case-id="caseId"
+					:case-type-id="caseData.caseType"
+					:is-read-only="isReadOnly" />
+			</CnDetailCard>
+
 			<!-- Activity card -->
 			<CnDetailCard :title="t('procest', 'Activity')">
 				<ActivityTimeline
@@ -291,6 +299,7 @@ import DeadlinePanel from './components/DeadlinePanel.vue'
 import ActivityTimeline from './components/ActivityTimeline.vue'
 import ParticipantsSection from './components/ParticipantsSection.vue'
 import ResultSection from './components/ResultSection.vue'
+import DecisionsSection from './components/DecisionsSection.vue'
 
 export default {
 	name: 'CaseDetail',
@@ -306,6 +315,7 @@ export default {
 		ActivityTimeline,
 		ParticipantsSection,
 		ResultSection,
+		DecisionsSection,
 	},
 	props: {
 		caseId: {
