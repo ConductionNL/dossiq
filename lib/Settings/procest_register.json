@@ -21,7 +21,7 @@
         "x-schema-org-type": "schema:Project",
         "x-zgw-equivalent": "ZaakType",
         "title": "Case Type",
-        "description": "Case type definition \u2014 defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+        "description": "Case type definition — defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
         "type": "object",
         "required": [
           "title"
@@ -148,12 +148,16 @@
           },
           "subCaseTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to sub-case types (deelzaaktypen)"
           },
           "decisionTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to decision types (besluittypen) linked to this case type"
           }
         }
@@ -1242,7 +1246,11 @@
         "title": "Case Property",
         "description": "A property value on a specific case",
         "type": "object",
-        "required": ["case", "propertyDefinition", "value"],
+        "required": [
+          "case",
+          "propertyDefinition",
+          "value"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1270,7 +1278,10 @@
         "title": "Case Document Link",
         "description": "Links a document to a case",
         "type": "object",
-        "required": ["case", "document"],
+        "required": [
+          "case",
+          "document"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1307,7 +1318,10 @@
         "title": "Case Object",
         "description": "Links an external object to a case",
         "type": "object",
-        "required": ["case", "objectType"],
+        "required": [
+          "case",
+          "objectType"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1343,7 +1357,9 @@
         "title": "Customer Contact",
         "description": "A customer contact moment for a case",
         "type": "object",
-        "required": ["case"],
+        "required": [
+          "case"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1379,7 +1395,10 @@
         "title": "Decision Document Link",
         "description": "Links a document to a decision",
         "type": "object",
-        "required": ["decision", "document"],
+        "required": [
+          "decision",
+          "document"
+        ],
         "properties": {
           "decision": {
             "type": "string",
@@ -1403,7 +1422,10 @@
         "title": "Dispatch",
         "description": "A document dispatch record",
         "type": "object",
-        "required": ["document", "relationshipType"],
+        "required": [
+          "document",
+          "relationshipType"
+        ],
         "properties": {
           "document": {
             "type": "string",
@@ -1477,6 +1499,116 @@
             "description": "Description of the usage conditions"
           }
         }
+      },
+      "emailTemplate": {
+        "slug": "emailTemplate",
+        "icon": "EmailEditOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:EmailMessage",
+        "title": "Email Template",
+        "description": "Configurable email template linked to a case type with variable support",
+        "type": "object",
+        "required": [
+          "name",
+          "caseType"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Template name (e.g., Ontvangstbevestiging)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of when to use this template"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case type this template belongs to"
+          },
+          "subjectPattern": {
+            "type": "string",
+            "description": "Subject with variables (e.g., [ZAAK-{{zaakNummer}}] Ontvangstbevestiging)"
+          },
+          "body": {
+            "type": "string",
+            "description": "Email body with {{variable}} placeholders"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this template is currently active"
+          }
+        }
+      },
+      "emailMessage": {
+        "slug": "emailMessage",
+        "icon": "EmailOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:EmailMessage",
+        "title": "Email Message",
+        "description": "Record of a sent or received email linked to a case",
+        "type": "object",
+        "required": [
+          "case",
+          "direction",
+          "subject"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "description": "Whether the email was sent or received"
+          },
+          "from": {
+            "type": "string",
+            "description": "Sender email address"
+          },
+          "to": {
+            "type": "string",
+            "description": "Recipient email address"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject"
+          },
+          "body": {
+            "type": "string",
+            "description": "Email body content"
+          },
+          "messageId": {
+            "type": "string",
+            "description": "Unique message identifier"
+          },
+          "inReplyTo": {
+            "type": "string",
+            "description": "Message-ID of the email this is a reply to (for threading)"
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the email was sent"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the email was received"
+          },
+          "pdfDocument": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the PDF archive of this email"
+          }
+        }
       }
     },
     "registers": {
@@ -1484,7 +1616,7 @@
         "slug": "procest",
         "title": "Procest",
         "version": "1.0.0",
-        "description": "Case management (zaakgericht werken) register for Procest \u2014 manages case types, status types, cases, tasks, roles, results, and decisions.",
+        "description": "Case management (zaakgericht werken) register for Procest — manages case types, status types, cases, tasks, roles, results, and decisions.",
         "schemas": [
           "caseType",
           "statusType",

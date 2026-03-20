@@ -61,6 +61,8 @@ class SettingsService
         'usage_rights_schema',
         'kanaal_schema',
         'abonnement_schema',
+        'email_template_schema',
+        'email_message_schema',
         'default_case_type',
     ];
 
@@ -95,6 +97,8 @@ class SettingsService
         'usageRights'                  => 'usage_rights_schema',
         'kanaal'                       => 'kanaal_schema',
         'abonnement'                   => 'abonnement_schema',
+        'emailTemplate'                => 'email_template_schema',
+        'emailMessage'                 => 'email_message_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

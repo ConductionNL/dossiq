@@ -107,6 +107,12 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
+        // ── Email ──────────────────────────────────────────────────────
+        ['name' => 'email#send', 'url' => '/api/cases/{caseId}/email/send', 'verb' => 'POST'],
+        ['name' => 'email#sendFromTemplate', 'url' => '/api/cases/{caseId}/email/send-template', 'verb' => 'POST'],
+        ['name' => 'email#preview', 'url' => '/api/cases/{caseId}/email/preview', 'verb' => 'POST'],
+        ['name' => 'email#templates', 'url' => '/api/case-types/{caseTypeId}/email-templates', 'verb' => 'GET'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
