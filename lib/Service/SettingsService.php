@@ -61,6 +61,9 @@ class SettingsService
         'usage_rights_schema',
         'kanaal_schema',
         'abonnement_schema',
+        'voorstel_schema',
+        'parafeerroute_schema',
+        'parafeeractie_schema',
         'default_case_type',
     ];
 
@@ -95,6 +98,9 @@ class SettingsService
         'usageRights'                  => 'usage_rights_schema',
         'kanaal'                       => 'kanaal_schema',
         'abonnement'                   => 'abonnement_schema',
+        'voorstel'                     => 'voorstel_schema',
+        'parafeerroute'                => 'parafeerroute_schema',
+        'parafeeractie'                => 'parafeeractie_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

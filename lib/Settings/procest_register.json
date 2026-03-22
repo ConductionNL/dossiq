@@ -2,8 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Procest Case Management Register",
-    "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, and their instance counterparts.",
-    "version": "0.4.0"
+    "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, and their instance counterparts.",
+    "version": "0.5.0"
   },
   "x-openregister": {
     "type": "application",
@@ -1521,6 +1521,280 @@
           }
         }
       },
+      "voorstel": {
+        "slug": "voorstel",
+        "icon": "FileDocumentEditOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:CreativeWork",
+        "title": "Voorstel",
+        "description": "A B&W voorstel (proposal) for decision-making in a case",
+        "type": "object",
+        "required": [
+          "case",
+          "type",
+          "onderwerp",
+          "steller",
+          "status"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the parent case"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "dt_advies",
+              "collegeadvies",
+              "raadsvoorstel"
+            ],
+            "description": "Type of voorstel (DT-advies, Collegeadvies, Raadsvoorstel)",
+            "title": "Type",
+            "facetable": true
+          },
+          "onderwerp": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Subject of the voorstel (usually derived from case title)"
+          },
+          "steller": {
+            "type": "string",
+            "description": "Nextcloud user UID who created the voorstel",
+            "title": "Steller",
+            "facetable": true
+          },
+          "afdeling": {
+            "type": "string",
+            "description": "Department of the steller"
+          },
+          "portefeuillehouder": {
+            "type": "string",
+            "description": "Nextcloud user UID of the responsible portfolio holder (wethouder)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "concept",
+              "in_parafering",
+              "ter_accordering",
+              "geaccordeerd",
+              "aangeboden",
+              "besloten",
+              "gearchiveerd",
+              "teruggestuurd"
+            ],
+            "default": "concept",
+            "description": "Current status of the voorstel in the parafering lifecycle",
+            "title": "Status",
+            "facetable": true
+          },
+          "parafeerroute": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parafeerroute being used"
+          },
+          "routeSnapshot": {
+            "type": "string",
+            "description": "Snapshot of the parafeerroute steps at submission time (JSON-encoded array)",
+            "visible": false
+          },
+          "currentStep": {
+            "type": "integer",
+            "default": 0,
+            "description": "Current step number in the parafeerroute (1-based, 0 = not yet submitted)"
+          },
+          "returnedFromStep": {
+            "type": "integer",
+            "description": "Step number from which the voorstel was returned (for resume on resubmit)",
+            "visible": false
+          },
+          "document": {
+            "type": "string",
+            "description": "Nextcloud file ID of the primary voorstel document"
+          },
+          "bijlagen": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Nextcloud file IDs of attached documents (bijlagen)"
+          },
+          "behandeling": {
+            "type": "string",
+            "enum": [
+              "hamerstuk",
+              "bespreekstuk"
+            ],
+            "description": "Treatment type in the college meeting"
+          },
+          "decision": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the linked decision (set when besluit is registered)",
+            "visible": false
+          }
+        }
+      },
+      "parafeerroute": {
+        "slug": "parafeerroute",
+        "icon": "RoutesClock",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:HowTo",
+        "title": "Parafeerroute",
+        "description": "A configurable endorsement route defining the sequence of parafering steps for a voorstel",
+        "type": "object",
+        "required": [
+          "name",
+          "steps"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this parafeerroute (e.g. Collegeadvies - Omgevingsvergunning)"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case type this route is associated with",
+            "facetable": true
+          },
+          "voorstelType": {
+            "type": "string",
+            "enum": [
+              "dt_advies",
+              "collegeadvies",
+              "raadsvoorstel"
+            ],
+            "description": "Voorstel type this route applies to"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "order": {
+                  "type": "integer",
+                  "description": "Step order (1-based)"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "advies",
+                    "parafering",
+                    "accordering"
+                  ],
+                  "description": "Step type"
+                },
+                "actor": {
+                  "type": "string",
+                  "description": "User UID, group name, or role name"
+                },
+                "actorType": {
+                  "type": "string",
+                  "enum": [
+                    "user",
+                    "group",
+                    "role"
+                  ],
+                  "description": "Type of actor reference"
+                },
+                "mandatory": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Whether this step can be skipped"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Display label for this step"
+                }
+              }
+            },
+            "description": "Ordered list of parafering steps"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this is the default route for the linked case type and voorstel type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of when this route should be used"
+          }
+        }
+      },
+      "parafeeractie": {
+        "slug": "parafeeractie",
+        "icon": "CheckDecagram",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "title": "Parafeeractie",
+        "description": "An immutable record of a parafering action on a voorstel step",
+        "type": "object",
+        "required": [
+          "voorstel",
+          "step",
+          "actor",
+          "action"
+        ],
+        "properties": {
+          "voorstel": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "voorstel",
+            "onDelete": "CASCADE",
+            "description": "Reference to the voorstel"
+          },
+          "step": {
+            "type": "integer",
+            "description": "Step number in the parafeerroute"
+          },
+          "actor": {
+            "type": "string",
+            "description": "Nextcloud user UID who performed the action"
+          },
+          "actorType": {
+            "type": "string",
+            "enum": [
+              "user",
+              "delegate"
+            ],
+            "default": "user",
+            "description": "Whether the actor acted directly or as delegate"
+          },
+          "onBehalfOf": {
+            "type": "string",
+            "description": "Nextcloud user UID of the principal (if acting as delegate)"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "parafered",
+              "returned",
+              "advised",
+              "skipped"
+            ],
+            "description": "The action performed",
+            "title": "Action",
+            "facetable": true
+          },
+          "comment": {
+            "type": "string",
+            "description": "Comment or reason (mandatory for returned/skipped)"
+          },
+          "advice": {
+            "type": "string",
+            "description": "Advisory text (for advies steps)"
+          },
+          "mandate": {
+            "type": "string",
+            "description": "Mandate reference (for delegate actions)"
+          }
+        }
+      },
       "workflowTemplate": {
         "slug": "workflowTemplate",
         "icon": "SitemapOutline",
@@ -1619,7 +1893,10 @@
           "usageRights",
           "workflowTemplate",
           "kanaal",
-          "abonnement"
+          "abonnement",
+          "voorstel",
+          "parafeerroute",
+          "parafeeractie"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"
