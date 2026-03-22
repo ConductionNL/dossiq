@@ -1795,59 +1795,65 @@
           }
         }
       },
-      "inspectionChecklist": {
-        "slug": "inspectionChecklist",
-        "icon": "ClipboardCheckOutline",
+      "milestoneDefinition": {
+        "slug": "milestoneDefinition",
+        "icon": "FlagCheckered",
         "version": "1.0.0",
-        "x-schema-org-type": "schema:ItemList",
-        "title": "Inspection Checklist",
-        "description": "Template for a configurable inspection checklist linked to a case type",
+        "x-schema-org-type": "schema:Event",
+        "title": "Milestone Definition",
+        "description": "Definition of a milestone checkpoint in a case type lifecycle",
         "type": "object",
         "required": [
-          "title"
+          "label",
+          "caseType",
+          "order"
         ],
         "properties": {
-          "title": {
+          "identifier": {
+            "type": "string",
+            "description": "Machine-readable identifier (e.g., aanvraag_ontvangen)"
+          },
+          "label": {
             "type": "string",
             "maxLength": 255,
-            "description": "Name of this checklist (e.g., Bouwtoezicht fase 1)"
+            "description": "Human-readable label (e.g., Aanvraag ontvangen)"
           },
           "description": {
             "type": "string",
-            "description": "Description of what this checklist covers"
+            "description": "Detailed description of what this milestone represents"
           },
           "caseType": {
             "type": "string",
             "format": "uuid",
-            "description": "Reference to the case type this checklist belongs to"
+            "description": "Reference to the parent case type"
           },
-          "items": {
+          "order": {
+            "type": "integer",
+            "description": "Sequence number determining milestone order"
+          },
+          "triggerEvent": {
             "type": "string",
-            "description": "JSON array of checklist items with label, photoRequired flag"
+            "description": "Workflow event name that auto-triggers this milestone"
           },
-          "version": {
+          "linkedStatusType": {
             "type": "string",
-            "description": "Version of this checklist template"
-          },
-          "isActive": {
-            "type": "boolean",
-            "default": true,
-            "description": "Whether this checklist is currently in use"
+            "format": "uuid",
+            "description": "Optional: status type that triggers this milestone when reached"
           }
         }
       },
-      "inspectionResult": {
-        "slug": "inspectionResult",
-        "icon": "ClipboardTextOutline",
+      "milestoneRecord": {
+        "slug": "milestoneRecord",
+        "icon": "CheckCircleOutline",
         "version": "1.0.0",
-        "x-schema-org-type": "schema:Report",
-        "title": "Inspection Result",
-        "description": "Completed inspection checklist with per-item results",
+        "x-schema-org-type": "schema:Event",
+        "title": "Milestone Record",
+        "description": "Record of a milestone being reached on a specific case",
         "type": "object",
         "required": [
           "case",
-          "checklist",
-          "inspector"
+          "milestoneDefinition",
+          "reachedAt"
         ],
         "properties": {
           "case": {
