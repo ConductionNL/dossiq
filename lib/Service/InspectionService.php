@@ -3,7 +3,8 @@
 /**
  * Procest Inspection Service
  *
- * Service for managing inspection checklists and recording inspection results.
+ * Service for managing field inspections: task listing, GPS location
+ * capture and validation, and inspection lifecycle management.
  *
  * @category Service
  * @package  OCA\Procest\Service
@@ -21,15 +22,42 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
-use OCA\Procest\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 
 /**
- * Service for inspection checklist management and completion.
+ * Service for managing field inspections.
+ *
+ * Handles inspection task listing, GPS location capture with distance
+ * validation, photo metadata management, and inspection completion.
+ *
+ * @psalm-suppress UnusedClass
  */
 class InspectionService
 {
+    /**
+     * Inspection status: planned.
+     */
+    public const STATUS_PLANNED = 'planned';
 
+    /**
+     * Inspection status: in progress.
+     */
+    public const STATUS_IN_PROGRESS = 'in_progress';
+
+    /**
+     * Inspection status: completed.
+     */
+    public const STATUS_COMPLETED = 'completed';
+
+    /**
+     * Maximum distance (in meters) before showing a location mismatch warning.
+     */
+    private const LOCATION_WARNING_THRESHOLD = 500;
+
+    /**
+     * Earth radius in meters for Haversine calculation.
+     */
+    private const EARTH_RADIUS = 6371000;
 
     /**
      * Constructor.
@@ -43,178 +71,194 @@ class InspectionService
     ) {
     }
 
-
     /**
-     * Create an inspection checklist template.
+     * Get inspections assigned to an inspector, optionally filtered by date.
      *
-     * @param array<string, mixed> $data Checklist template data
+     * @param string      $inspectorId The inspector's user ID.
+     * @param string|null $date        Optional date filter (Y-m-d format).
+     * @param array<int, array<string, mixed>> $allInspections All inspection data (from OpenRegister).
      *
-     * @return array<string, mixed> Created checklist with ID
+     * @return array<int, array<string, mixed>> Filtered and sorted inspections.
      *
-     * @throws \RuntimeException If OpenRegister unavailable
+     * @psalm-suppress PossiblyUnusedMethod
      */
-    public function createChecklist(array $data): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('inspection_checklist_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            throw new \RuntimeException('Inspection checklist schema not configured');
-        }
-
-        $checklist = $objectService->saveObject($register, $schema, $data);
-
-        $this->logger->info(
-            'Inspection checklist created: ' . $checklist->getUuid(),
-            ['app' => Application::APP_ID],
-        );
-
-        return [
-            'id'    => $checklist->getUuid(),
-            'title' => $data['title'] ?? '',
-            'items' => $data['items'] ?? [],
-        ];
-    }
-
-
-    /**
-     * Record an inspection result (completed checklist).
-     *
-     * @param string               $caseId      The case UUID
-     * @param string               $checklistId The checklist template UUID
-     * @param string               $inspector   The inspector user ID
-     * @param array<string, mixed> $results     Per-item results
-     * @param string|null          $location    GPS coordinates (optional)
-     *
-     * @return array<string, mixed> The inspection result
-     *
-     * @throws \RuntimeException If OpenRegister unavailable
-     */
-    public function recordInspection(
-        string $caseId,
-        string $checklistId,
-        string $inspector,
-        array $results,
-        ?string $location = null,
+    public function getInspections(
+        string $inspectorId,
+        ?string $date,
+        array $allInspections,
     ): array {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
-        }
+        $filtered = array_filter($allInspections, function (array $inspection) use ($inspectorId, $date): bool {
+            if (($inspection['inspectorId'] ?? '') !== $inspectorId) {
+                return false;
+            }
+            if ($date !== null) {
+                $inspectionDate = substr($inspection['plannedDateTime'] ?? '', 0, 10);
+                if ($inspectionDate !== $date) {
+                    return false;
+                }
+            }
+            return true;
+        });
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('inspection_result_schema');
+        // Sort by planned time.
+        usort($filtered, function (array $a, array $b): int {
+            return ($a['plannedDateTime'] ?? '') <=> ($b['plannedDateTime'] ?? '');
+        });
 
-        if (empty($register) === true || empty($schema) === true) {
-            throw new \RuntimeException('Inspection result schema not configured');
-        }
-
-        // Calculate summary: count passed, failed, n/a items.
-        $summary = $this->calculateSummary($results);
-
-        $resultData = [
-            'case'        => $caseId,
-            'checklist'   => $checklistId,
-            'inspector'   => $inspector,
-            'date'        => date('Y-m-d\TH:i:s'),
-            'location'    => $location,
-            'results'     => json_encode($results),
-            'outcome'     => $summary['failed'] > 0 ? 'niet_conform' : 'conform',
-            'passedCount' => $summary['passed'],
-            'failedCount' => $summary['failed'],
-            'naCount'     => $summary['na'],
-        ];
-
-        $inspectionResult = $objectService->saveObject($register, $schema, $resultData);
-
-        $this->logger->info(
-            'Inspection recorded for case ' . $caseId . ': ' . $inspectionResult->getUuid()
-            . ' (' . $resultData['outcome'] . ')',
-            ['app' => Application::APP_ID],
-        );
-
-        return [
-            'id'      => $inspectionResult->getUuid(),
-            'outcome' => $resultData['outcome'],
-            'summary' => $summary,
-        ];
+        return array_values($filtered);
     }
 
-
     /**
-     * Calculate inspection summary from item results.
+     * Capture GPS location for an inspection and validate against planned location.
      *
-     * @param array<string, mixed> $results Per-item results
+     * @param array<string, mixed> $inspection The inspection data.
+     * @param float                $latitude   The captured latitude.
+     * @param float                $longitude  The captured longitude.
+     * @param float                $accuracy   The GPS accuracy in meters.
      *
-     * @return array<string, int> Summary counts
+     * @return array{
+     *     inspection: array<string, mixed>,
+     *     warning: string|null,
+     *     distance: float
+     * }
+     *
+     * @psalm-suppress PossiblyUnusedMethod
      */
-    private function calculateSummary(array $results): array
-    {
-        $summary = ['passed' => 0, 'failed' => 0, 'na' => 0];
+    public function captureLocation(
+        array $inspection,
+        float $latitude,
+        float $longitude,
+        float $accuracy,
+    ): array {
+        $inspection['capturedLocation'] = [
+            'latitude' => $latitude,
+            'longitude' => $longitude,
+            'accuracy' => $accuracy,
+            'capturedAt' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
+        ];
 
-        foreach ($results as $item) {
-            $result = is_array($item) ? ($item['result'] ?? '') : (string) $item;
-            switch ($result) {
-                case 'ja':
-                case 'pass':
-                case 'passed':
-                    $summary['passed']++;
-                    break;
-                case 'nee':
-                case 'fail':
-                case 'failed':
-                    $summary['failed']++;
-                    break;
-                case 'nvt':
-                case 'na':
-                case 'not_applicable':
-                    $summary['na']++;
-                    break;
+        $warning = null;
+        $distance = 0.0;
+
+        // Check distance from planned location.
+        $plannedLat = (float)($inspection['plannedLatitude'] ?? 0.0);
+        $plannedLon = (float)($inspection['plannedLongitude'] ?? 0.0);
+
+        if ($plannedLat !== 0.0 && $plannedLon !== 0.0) {
+            $distance = $this->calculateDistance($latitude, $longitude, $plannedLat, $plannedLon);
+
+            if ($distance > self::LOCATION_WARNING_THRESHOLD) {
+                $warning = sprintf(
+                    'Uw locatie wijkt af van het inspectieadres (%.0f meter afstand)',
+                    $distance
+                );
+                $this->logger->warning(
+                    'Location mismatch for inspection {id}: {distance}m from planned',
+                    [
+                        'id' => $inspection['id'] ?? 'unknown',
+                        'distance' => round($distance),
+                    ]
+                );
             }
         }
 
-        return $summary;
+        if ($inspection['status'] === self::STATUS_PLANNED) {
+            $inspection['status'] = self::STATUS_IN_PROGRESS;
+        }
+
+        return [
+            'inspection' => $inspection,
+            'warning' => $warning,
+            'distance' => round($distance, 1),
+        ];
     }
 
-
     /**
-     * Look up the LHS (Landelijke Handhavingsstrategie) intervention.
+     * Record photo metadata for an inspection.
      *
-     * Maps ernst (severity) x gedrag (behavior) to a recommended intervention.
+     * @param array<string, mixed> $inspection     The inspection data.
+     * @param array<string, mixed> $photoMetadata  Photo info (fileRef, latitude, longitude, checklistItemId).
      *
-     * @param string $ernst  Severity level (gering, aanzienlijk, ernstig)
-     * @param string $gedrag Behavior classification (goedwillend, onverschillig, calculerend, crimineel)
+     * @return array<string, mixed> The updated inspection with photo added.
      *
-     * @return string Recommended intervention
+     * @psalm-suppress PossiblyUnusedMethod
      */
-    public function lookupLhsIntervention(string $ernst, string $gedrag): string
+    public function addPhoto(array $inspection, array $photoMetadata): array
     {
-        $matrix = [
-            'gering' => [
-                'goedwillend'   => 'Waarschuwing',
-                'onverschillig' => 'Last onder dwangsom',
-                'calculerend'   => 'Last onder dwangsom + bestuurlijke boete',
-                'crimineel'     => 'Last onder bestuursdwang + proces-verbaal',
-            ],
-            'aanzienlijk' => [
-                'goedwillend'   => 'Last onder dwangsom',
-                'onverschillig' => 'Last onder dwangsom + proces-verbaal',
-                'calculerend'   => 'Last onder bestuursdwang + bestuurlijke boete',
-                'crimineel'     => 'Last onder bestuursdwang + proces-verbaal + bestuurlijke boete',
-            ],
-            'ernstig' => [
-                'goedwillend'   => 'Last onder bestuursdwang',
-                'onverschillig' => 'Last onder bestuursdwang + proces-verbaal',
-                'calculerend'   => 'Last onder bestuursdwang + bestuurlijke boete + proces-verbaal',
-                'crimineel'     => 'Last onder bestuursdwang + bestuurlijke boete + proces-verbaal + sluiting',
-            ],
+        $photo = [
+            'id' => $photoMetadata['id'] ?? uniqid('photo_', true),
+            'fileRef' => $photoMetadata['fileRef'] ?? '',
+            'latitude' => $photoMetadata['latitude'] ?? null,
+            'longitude' => $photoMetadata['longitude'] ?? null,
+            'checklistItemId' => $photoMetadata['checklistItemId'] ?? null,
+            'capturedAt' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
         ];
 
-        return $matrix[$ernst][$gedrag] ?? 'Waarschuwing';
+        $inspection['photos'] = $inspection['photos'] ?? [];
+        $inspection['photos'][] = $photo;
+
+        return $inspection;
+    }
+
+    /**
+     * Complete an inspection.
+     *
+     * @param array<string, mixed> $inspection The inspection data.
+     * @param string               $conclusion Overall conclusion text.
+     *
+     * @return array<string, mixed> The completed inspection.
+     *
+     * @throws \InvalidArgumentException If not all checklist items are completed.
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function completeInspection(array $inspection, string $conclusion = ''): array
+    {
+        $checklist = $inspection['checklist'] ?? [];
+        $items = $checklist['items'] ?? [];
+
+        // Check if all items are completed.
+        foreach ($items as $item) {
+            if (empty($item['status'])) {
+                throw new \InvalidArgumentException(
+                    'Not all checklist items are completed. Item: ' . ($item['description'] ?? 'unknown')
+                );
+            }
+        }
+
+        $inspection['status'] = self::STATUS_COMPLETED;
+        $inspection['conclusion'] = $conclusion;
+        $inspection['completedAt'] = (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM);
+
+        $this->logger->info(
+            'Inspection {id} completed',
+            ['id' => $inspection['id'] ?? 'unknown']
+        );
+
+        return $inspection;
+    }
+
+    /**
+     * Calculate distance between two GPS coordinates using Haversine formula.
+     *
+     * @param float $lat1 Latitude of point 1.
+     * @param float $lon1 Longitude of point 1.
+     * @param float $lat2 Latitude of point 2.
+     * @param float $lon2 Longitude of point 2.
+     *
+     * @return float Distance in meters.
+     */
+    private function calculateDistance(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2)
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2))
+            * sin($dLon / 2) * sin($dLon / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return self::EARTH_RADIUS * $c;
     }
 }
