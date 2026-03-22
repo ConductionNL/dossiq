@@ -8,6 +8,10 @@ return [
         ['name' => 'settings#index', 'url' => '/api/settings', 'verb' => 'GET'],
         ['name' => 'settings#create', 'url' => '/api/settings', 'verb' => 'POST'],
         ['name' => 'settings#load',  'url' => '/api/settings/load', 'verb' => 'POST'],
+        // Case Definition Portability.
+        ['name' => 'case_definition#export', 'url' => '/api/case-definitions/export', 'verb' => 'POST'],
+        ['name' => 'case_definition#validate', 'url' => '/api/case-definitions/validate', 'verb' => 'POST'],
+        ['name' => 'case_definition#import', 'url' => '/api/case-definitions/import', 'verb' => 'POST'],
         // ZGW Mapping Management.
         ['name' => 'zgw_mapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
         ['name' => 'zgw_mapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],
@@ -89,17 +93,18 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
-        // ── AI-Assisted Processing ────────────────────────────────────
-        ['name' => 'ai#classify', 'url' => '/api/ai/classify', 'verb' => 'POST'],
-        ['name' => 'ai#extract', 'url' => '/api/ai/extract', 'verb' => 'POST'],
-        ['name' => 'ai#ask', 'url' => '/api/ai/ask', 'verb' => 'POST'],
-        ['name' => 'ai#summarize', 'url' => '/api/ai/summarize', 'verb' => 'POST'],
-        ['name' => 'ai#suggestRouting', 'url' => '/api/ai/suggest-routing', 'verb' => 'POST'],
-        ['name' => 'ai#suggestNext', 'url' => '/api/ai/suggest-next', 'verb' => 'POST'],
-        ['name' => 'ai#auditIndex', 'url' => '/api/ai/audit', 'verb' => 'GET'],
-        ['name' => 'ai#getSettings', 'url' => '/api/ai/settings', 'verb' => 'GET'],
-        ['name' => 'ai#updateSettings', 'url' => '/api/ai/settings', 'verb' => 'POST'],
-        ['name' => 'ai#healthCheck', 'url' => '/api/ai/health', 'verb' => 'POST'],
+        // ── Case Sharing & Collaboration ──────────────────────────────
+        // Share management (authenticated).
+        ['name' => 'case_sharing#listShares', 'url' => '/api/shares/{caseId}', 'verb' => 'GET'],
+        ['name' => 'case_sharing#createShare', 'url' => '/api/shares', 'verb' => 'POST'],
+        ['name' => 'case_sharing#revokeShare', 'url' => '/api/shares/{shareId}', 'verb' => 'DELETE'],
+        // Transfer management (authenticated).
+        ['name' => 'case_sharing#initiateTransfer', 'url' => '/api/transfers', 'verb' => 'POST'],
+        ['name' => 'case_sharing#handleTransfer', 'url' => '/api/transfers/{transferId}', 'verb' => 'PUT'],
+        // Public share access (unauthenticated).
+        ['name' => 'public_share#accessShare', 'url' => '/api/public/share/{token}', 'verb' => 'GET'],
+        ['name' => 'public_share#addComment', 'url' => '/api/public/share/{token}/comment', 'verb' => 'POST'],
+        ['name' => 'public_share#viewStatus', 'url' => '/api/public/status/{token}', 'verb' => 'GET'],
 
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
