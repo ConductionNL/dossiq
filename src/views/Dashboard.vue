@@ -135,6 +135,25 @@
 				</div>
 			</template>
 
+			<!-- Deadline Alerts widget -->
+			<template #widget-deadline-alerts>
+				<DeadlineAlerts
+					:overdue="deadlineAlerts.overdue"
+					:at-risk="deadlineAlerts.atRisk" />
+			</template>
+
+			<!-- Task Due Reminders widget -->
+			<template #widget-task-due-reminders>
+				<TaskDueReminders
+					:overdue="taskDueReminders.overdue"
+					:due-soon="taskDueReminders.dueSoon" />
+			</template>
+
+			<!-- Stalled Cases widget -->
+			<template #widget-stalled-cases>
+				<StalledCases :stalled-cases="stalledCases" />
+			</template>
+
 			<!-- Empty state override with welcome message -->
 			<template #empty>
 				<div v-if="showEmptyState" class="welcome-message">
@@ -184,9 +203,15 @@ import {
 	computeKpis,
 	aggregateByStatus,
 	getMyWorkItems,
+	getDeadlineAlerts,
+	getTaskDueReminders,
+	getStalledCases,
 } from '../utils/dashboardHelpers.js'
 import CaseCreateDialog from './cases/CaseCreateDialog.vue'
 import TaskCreateDialog from './tasks/TaskCreateDialog.vue'
+import DeadlineAlerts from './dashboard/DeadlineAlerts.vue'
+import TaskDueReminders from './dashboard/TaskDueReminders.vue'
+import StalledCases from './dashboard/StalledCases.vue'
 
 const BAR_COLORS = [
 	'var(--color-primary)',
@@ -208,6 +233,9 @@ const DEFAULT_LAYOUT = [
 	{ id: 4, widgetId: 'count-my-tasks', gridX: 9, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
 	{ id: 5, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
 	{ id: 6, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
+	{ id: 7, widgetId: 'deadline-alerts', gridX: 0, gridY: 6, gridWidth: 4, gridHeight: 4 },
+	{ id: 8, widgetId: 'task-due-reminders', gridX: 4, gridY: 6, gridWidth: 4, gridHeight: 4 },
+	{ id: 9, widgetId: 'stalled-cases', gridX: 8, gridY: 6, gridWidth: 4, gridHeight: 4 },
 ]
 
 export default {
@@ -220,6 +248,9 @@ export default {
 		Refresh,
 		CaseCreateDialog,
 		TaskCreateDialog,
+		DeadlineAlerts,
+		TaskDueReminders,
+		StalledCases,
 	},
 	emits: ['navigate'],
 	data() {
@@ -239,6 +270,9 @@ export default {
 			kpis: { openCount: 0, newToday: 0, overdueCount: 0, completedCount: 0, avgDays: null, taskCount: 0, tasksDueToday: 0 },
 			statusData: [],
 			myWorkItems: [],
+			deadlineAlerts: { overdue: [], atRisk: [] },
+			taskDueReminders: { overdue: [], dueSoon: [] },
+			stalledCases: [],
 			globalLoading: false,
 			error: null,
 			refreshTimer: null,
@@ -272,6 +306,9 @@ export default {
 				{ id: 'count-my-tasks', title: t('procest', 'My Tasks'), type: 'custom' },
 				{ id: 'cases-by-status', title: t('procest', 'Cases by Status'), type: 'custom' },
 				{ id: 'my-work', title: t('procest', 'My Work'), type: 'custom' },
+				{ id: 'deadline-alerts', title: t('procest', 'Deadline Alerts'), type: 'custom' },
+				{ id: 'task-due-reminders', title: t('procest', 'Task Due Reminders'), type: 'custom' },
+				{ id: 'stalled-cases', title: t('procest', 'Stalled Cases'), type: 'custom' },
 			]
 		},
 	},
@@ -335,6 +372,11 @@ export default {
 
 				const myCases = this.openCases.filter(c => c.assignee === currentUser)
 				this.myWorkItems = getMyWorkItems(myCases, this.myTasks, 5)
+
+				// Signalering widgets
+				this.deadlineAlerts = getDeadlineAlerts(this.openCases, this.caseTypes)
+				this.taskDueReminders = getTaskDueReminders(this.myTasks)
+				this.stalledCases = getStalledCases(this.openCases, this.caseTypes)
 			} catch (err) {
 				this.error = err.message || t('procest', 'Failed to load dashboard data')
 				console.error('Dashboard fetch error:', err)
