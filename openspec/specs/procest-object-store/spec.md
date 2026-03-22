@@ -1,6 +1,7 @@
 ---
 status: implemented
 ---
+
 # procest-object-store Specification
 
 ## Purpose

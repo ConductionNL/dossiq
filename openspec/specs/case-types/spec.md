@@ -1,6 +1,7 @@
 ---
 status: implemented
 ---
+
 # Case Type System Specification
 
 ## Purpose

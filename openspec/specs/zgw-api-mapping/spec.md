@@ -1,5 +1,5 @@
 ---
-status: redirect
+status: implemented
 ---
 
 # ZGW API Mapping

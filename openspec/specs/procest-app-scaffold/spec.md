@@ -1,6 +1,7 @@
 ---
 status: implemented
 ---
+
 # procest-app-scaffold Specification
 
 ## Purpose
