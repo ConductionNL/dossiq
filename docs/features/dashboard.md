@@ -1,63 +1,42 @@
 # Dashboard
 
-Landing page providing an at-a-glance overview of case activity and personal workload with KPI cards, charts, and quick actions.
+The Procest dashboard is the landing page of the application, providing a high-level overview of the current user's case management workload.
 
-## Specs
+![Dashboard](../screenshots/dashboard.png)
 
-- `openspec/specs/dashboard/spec.md`
+## Overview
 
-## Features
+The dashboard displays four summary cards at the top:
 
-### KPI Cards (MVP)
+- **Open Cases** -- Total number of active/open cases (e.g., 15).
+- **Overdue** -- Cases that have exceeded their processing deadline.
+- **Completed This Month** -- Cases resolved within the current calendar month.
+- **My Tasks** -- Tasks assigned to the current user.
 
-Top row of metric cards showing key case management numbers:
+Below the summary cards, two panels provide quick access to key information:
 
-- Open Cases (count of non-terminal cases)
-- Overdue Cases (cases past their deadline)
-- Completed This Month (cases closed in current month)
-- My Tasks (tasks assigned to current user)
+### Cases by Status
+A horizontal bar chart showing the distribution of cases across different statuses. This gives case workers an immediate sense of the pipeline.
 
-### Cases by Status Chart (MVP)
+### My Work
+A list of cases assigned to the current user, showing:
+- Case type badge (CASE)
+- Case identifier (e.g., #ZAAK-TEST-006)
+- Days remaining until the processing deadline
 
-Visual chart showing the distribution of cases across status values, providing a quick overview of workflow bottleneck areas.
+## Actions
 
-### Overdue Cases Panel (MVP)
+Two primary action buttons are available at the top:
+- **New Case** -- Opens the case creation form.
+- **New Task** -- Opens the task creation form.
+- **Refresh dashboard** -- Reloads dashboard data (disabled when already current).
 
-Dedicated panel listing cases past their processing deadline, sorted by urgency. Direct click-through to case detail.
+## Navigation
 
-### My Work Preview (MVP)
-
-Compact preview of the user's top 5 assigned items (cases + tasks), linking to the full My Work view.
-
-### Quick Actions (MVP)
-
-Shortcut buttons for common operations — primarily "+ New Case" for fast case creation.
-
-### Dashboard Data Scope (MVP)
-
-All dashboard data respects RBAC permissions. Users only see metrics and cases they have access to.
-
-### Empty State (MVP)
-
-Fresh installations show a welcoming empty state with getting-started guidance instead of empty charts and zero-count cards.
-
-### Dashboard Refresh (MVP)
-
-Data refreshes on mount and supports manual refresh for up-to-date metrics.
-
-### Dashboard Layout (MVP)
-
-Responsive grid layout adapting to screen size, with KPI cards on top, charts in the middle, and activity/work previews below.
-
-### Planned (V1)
-
-- Cases by type chart (distribution across case types)
-- Recent activity feed (last 10 case events)
-- Average processing time KPI per case type
-
-### Planned (Enterprise)
-
-- Custom dashboards
-- SLA compliance meter
-- Handler workload heatmap
-- Trend analysis (case volume over time)
+The left sidebar provides navigation to all major sections:
+- Dashboard (current)
+- My Work
+- Cases
+- Tasks
+- Documentation
+- Settings (expandable, with Case Types and Configuration sub-pages)
