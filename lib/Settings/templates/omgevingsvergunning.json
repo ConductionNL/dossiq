@@ -1,0 +1,61 @@
+{
+  "id": "omgevingsvergunning",
+  "title": "Omgevingsvergunning",
+  "description": "Zaaktype voor het behandelen van omgevingsvergunningaanvragen conform de Omgevingswet. Ondersteunt reguliere (8 weken) en uitgebreide (26 weken) procedures, DSO-intake, ontvankelijkheidstoets, en adviesaanvragen.",
+  "category": "vth",
+  "version": "1.0.0",
+  "caseType": {
+    "title": "Omgevingsvergunning",
+    "description": "Behandeling van aanvragen voor een omgevingsvergunning op grond van de Omgevingswet",
+    "purpose": "Beoordelen en beslissen op vergunningaanvragen voor de fysieke leefomgeving",
+    "trigger": "Ontvangst van een vergunningaanvraag via DSO/Omgevingsloket of directe indiening",
+    "subject": "Omgevingsvergunning (bouwen, milieu, kappen, uitrit, etc.)",
+    "processingDeadline": "P56D",
+    "confidentiality": "openbaar",
+    "isDraft": false,
+    "extensionAllowed": true,
+    "extensionPeriod": "P42D",
+    "suspensionAllowed": true,
+    "publicationRequired": true,
+    "internalOrExternal": "extern",
+    "handlerAction": "Beoordelen en beslissen op vergunningaanvraag",
+    "origin": "aanvragen"
+  },
+  "statusTypes": [
+    { "name": "Ontvangen", "description": "Aanvraag ontvangen via DSO of direct", "order": 1, "isFinal": false },
+    { "name": "Ontvankelijkheidstoets", "description": "Controle op volledigheid van de aanvraag", "order": 2, "isFinal": false },
+    { "name": "Inhoudelijke toets", "description": "Inhoudelijke beoordeling van de aanvraag", "order": 3, "isFinal": false },
+    { "name": "Advies", "description": "Intern en extern advies inwinnen", "order": 4, "isFinal": false },
+    { "name": "Besluit", "description": "Formeel besluit nemen", "order": 5, "isFinal": false },
+    { "name": "Bekendmaking", "description": "Besluit bekendmaken en publiceren", "order": 6, "isFinal": false },
+    { "name": "Afgehandeld", "description": "Zaak is afgerond", "order": 7, "isFinal": true }
+  ],
+  "propertyDefinitions": [
+    { "name": "dsoZaaknummer", "definition": "DSO zaaknummer", "propertyType": "string", "isRequired": false },
+    { "name": "activiteiten", "definition": "Aangevraagde activiteiten", "propertyType": "string", "isRequired": false },
+    { "name": "locatie", "definition": "Locatie (BAG/kadaster referentie)", "propertyType": "string", "isRequired": false },
+    { "name": "bouwkosten", "definition": "Opgegeven bouwkosten", "propertyType": "number", "isRequired": false },
+    { "name": "procedureType", "definition": "Procedure type (regulier/uitgebreid)", "propertyType": "string", "isRequired": false, "defaultValue": "regulier" },
+    { "name": "aanvragerNaam", "definition": "Naam aanvrager", "propertyType": "string", "isRequired": true },
+    { "name": "aanvragerEmail", "definition": "E-mail aanvrager", "propertyType": "email", "isRequired": false }
+  ],
+  "documentTypes": [
+    { "name": "Aanvraagformulier", "isRequired": true, "category": "incoming" },
+    { "name": "Bouwtekening", "isRequired": false, "category": "incoming" },
+    { "name": "Constructieberekening", "isRequired": false, "category": "incoming" },
+    { "name": "Situatietekening", "isRequired": false, "category": "incoming" },
+    { "name": "Ontvangstbevestiging", "isRequired": true, "category": "outgoing" },
+    { "name": "Aanvulverzoek", "isRequired": false, "category": "outgoing" },
+    { "name": "Vergunningbesluit", "isRequired": true, "category": "outgoing" }
+  ],
+  "decisionTypes": [
+    { "name": "Vergunning verleend", "publicationRequired": true },
+    { "name": "Vergunning geweigerd", "publicationRequired": true },
+    { "name": "Vergunning deels verleend", "publicationRequired": true }
+  ],
+  "roleTypes": [
+    { "name": "Behandelaar", "description": "Vergunningverlener die de aanvraag behandelt" },
+    { "name": "Adviseur", "description": "Interne of externe adviseur (bijv. welstand, brandweer)" },
+    { "name": "Toezichthouder", "description": "Inspecteur voor toezicht na vergunningverlening" }
+  ]
+}

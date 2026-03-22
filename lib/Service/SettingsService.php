@@ -61,7 +61,25 @@ class SettingsService
         'usage_rights_schema',
         'kanaal_schema',
         'abonnement_schema',
+        'case_share_schema',
+        'partner_organization_schema',
+        'share_permission_level_schema',
+        'case_transfer_schema',
         'default_case_type',
+        'ai_audit_entry_schema',
+        'ai_enabled',
+        'ai_model_type',
+        'ai_model_url',
+        'ai_model_name',
+        'ai_api_key',
+        'ai_feature_classification',
+        'ai_feature_extraction',
+        'ai_feature_qa',
+        'ai_feature_summary',
+        'ai_feature_routing',
+        'ai_feature_decision_support',
+        'ai_dpia_acknowledged',
+        'ai_pii_stripping',
     ];
 
     /**
@@ -95,6 +113,10 @@ class SettingsService
         'usageRights'                  => 'usage_rights_schema',
         'kanaal'                       => 'kanaal_schema',
         'abonnement'                   => 'abonnement_schema',
+        'caseShare'                    => 'case_share_schema',
+        'partnerOrganization'          => 'partner_organization_schema',
+        'sharePermissionLevel'         => 'share_permission_level_schema',
+        'caseTransfer'                 => 'case_transfer_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

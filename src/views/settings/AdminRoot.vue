@@ -44,6 +44,13 @@
 			<ZgwMappingSettings v-if="storesReady" />
 		</CnSettingsSection>
 
+		<CnSettingsSection
+			:name="t('procest', 'Case Type Templates')"
+			:description="t('procest', 'Activate pre-configured case type templates for common use cases')"
+			:loading="!storesReady">
+			<TemplatesTab v-if="storesReady" />
+		</CnSettingsSection>
+
 		<!-- Re-import Status -->
 		<div v-if="message" class="actions-section">
 			<NcNoteCard :type="messageType">
@@ -60,6 +67,7 @@ import Refresh from 'vue-material-design-icons/Refresh.vue'
 import Settings from './Settings.vue'
 import CaseTypeAdmin from './CaseTypeAdmin.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
+import TemplatesTab from './tabs/TemplatesTab.vue'
 import { initializeStores } from '../../store/store.js'
 
 export default {
@@ -74,6 +82,7 @@ export default {
 		Settings,
 		CaseTypeAdmin,
 		ZgwMappingSettings,
+		TemplatesTab,
 	},
 	data() {
 		return {
