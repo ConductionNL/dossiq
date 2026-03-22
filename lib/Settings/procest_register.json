@@ -2,8 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Procest Case Management Register",
-    "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, and their instance counterparts.",
-    "version": "0.4.0"
+    "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, and their instance counterparts.",
+    "version": "0.5.0"
   },
   "x-openregister": {
     "type": "application",
@@ -21,7 +21,7 @@
         "x-schema-org-type": "schema:Project",
         "x-zgw-equivalent": "ZaakType",
         "title": "Case Type",
-        "description": "Case type definition \u2014 defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+        "description": "Case type definition — defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
         "type": "object",
         "required": [
           "title"
@@ -148,12 +148,16 @@
           },
           "subCaseTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to sub-case types (deelzaaktypen)"
           },
           "decisionTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to decision types (besluittypen) linked to this case type"
           }
         }
@@ -676,6 +680,17 @@
             "format": "uri",
             "description": "URL reference to the communication channel",
             "visible": false
+          },
+          "workflowTemplate": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the bound workflow template",
+            "visible": false
+          },
+          "workflowVersion": {
+            "type": "integer",
+            "description": "Version number of the bound workflow template",
+            "visible": false
           }
         }
       },
@@ -752,6 +767,16 @@
             "type": "string",
             "format": "date-time",
             "description": "Date the task was completed",
+            "visible": false
+          },
+          "workflowStepId": {
+            "type": "string",
+            "description": "UUID of the workflow step that generated this task",
+            "visible": false
+          },
+          "checklist": {
+            "type": "string",
+            "description": "JSON-encoded array of checklist items ({id, label, checked})",
             "visible": false
           }
         }
@@ -1242,7 +1267,11 @@
         "title": "Case Property",
         "description": "A property value on a specific case",
         "type": "object",
-        "required": ["case", "propertyDefinition", "value"],
+        "required": [
+          "case",
+          "propertyDefinition",
+          "value"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1270,7 +1299,10 @@
         "title": "Case Document Link",
         "description": "Links a document to a case",
         "type": "object",
-        "required": ["case", "document"],
+        "required": [
+          "case",
+          "document"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1307,7 +1339,10 @@
         "title": "Case Object",
         "description": "Links an external object to a case",
         "type": "object",
-        "required": ["case", "objectType"],
+        "required": [
+          "case",
+          "objectType"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1343,7 +1378,9 @@
         "title": "Customer Contact",
         "description": "A customer contact moment for a case",
         "type": "object",
-        "required": ["case"],
+        "required": [
+          "case"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1379,7 +1416,10 @@
         "title": "Decision Document Link",
         "description": "Links a document to a decision",
         "type": "object",
-        "required": ["decision", "document"],
+        "required": [
+          "decision",
+          "document"
+        ],
         "properties": {
           "decision": {
             "type": "string",
@@ -1403,7 +1443,10 @@
         "title": "Dispatch",
         "description": "A document dispatch record",
         "type": "object",
-        "required": ["document", "relationshipType"],
+        "required": [
+          "document",
+          "relationshipType"
+        ],
         "properties": {
           "document": {
             "type": "string",
@@ -1477,6 +1520,1120 @@
             "description": "Description of the usage conditions"
           }
         }
+      },
+      "voorstel": {
+        "slug": "voorstel",
+        "icon": "FileDocumentEditOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:CreativeWork",
+        "title": "Voorstel",
+        "description": "A B&W voorstel (proposal) for decision-making in a case",
+        "type": "object",
+        "required": [
+          "case",
+          "type",
+          "onderwerp",
+          "steller",
+          "status"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the parent case"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "dt_advies",
+              "collegeadvies",
+              "raadsvoorstel"
+            ],
+            "description": "Type of voorstel (DT-advies, Collegeadvies, Raadsvoorstel)",
+            "title": "Type",
+            "facetable": true
+          },
+          "onderwerp": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Subject of the voorstel (usually derived from case title)"
+          },
+          "steller": {
+            "type": "string",
+            "description": "Nextcloud user UID who created the voorstel",
+            "title": "Steller",
+            "facetable": true
+          },
+          "afdeling": {
+            "type": "string",
+            "description": "Department of the steller"
+          },
+          "portefeuillehouder": {
+            "type": "string",
+            "description": "Nextcloud user UID of the responsible portfolio holder (wethouder)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "concept",
+              "in_parafering",
+              "ter_accordering",
+              "geaccordeerd",
+              "aangeboden",
+              "besloten",
+              "gearchiveerd",
+              "teruggestuurd"
+            ],
+            "default": "concept",
+            "description": "Current status of the voorstel in the parafering lifecycle",
+            "title": "Status",
+            "facetable": true
+          },
+          "parafeerroute": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parafeerroute being used"
+          },
+          "routeSnapshot": {
+            "type": "string",
+            "description": "Snapshot of the parafeerroute steps at submission time (JSON-encoded array)",
+            "visible": false
+          },
+          "currentStep": {
+            "type": "integer",
+            "default": 0,
+            "description": "Current step number in the parafeerroute (1-based, 0 = not yet submitted)"
+          },
+          "returnedFromStep": {
+            "type": "integer",
+            "description": "Step number from which the voorstel was returned (for resume on resubmit)",
+            "visible": false
+          },
+          "document": {
+            "type": "string",
+            "description": "Nextcloud file ID of the primary voorstel document"
+          },
+          "bijlagen": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Nextcloud file IDs of attached documents (bijlagen)"
+          },
+          "behandeling": {
+            "type": "string",
+            "enum": [
+              "hamerstuk",
+              "bespreekstuk"
+            ],
+            "description": "Treatment type in the college meeting"
+          },
+          "decision": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the linked decision (set when besluit is registered)",
+            "visible": false
+          }
+        }
+      },
+      "parafeerroute": {
+        "slug": "parafeerroute",
+        "icon": "RoutesClock",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:HowTo",
+        "title": "Parafeerroute",
+        "description": "A configurable endorsement route defining the sequence of parafering steps for a voorstel",
+        "type": "object",
+        "required": [
+          "name",
+          "steps"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this parafeerroute (e.g. Collegeadvies - Omgevingsvergunning)"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case type this route is associated with",
+            "facetable": true
+          },
+          "voorstelType": {
+            "type": "string",
+            "enum": [
+              "dt_advies",
+              "collegeadvies",
+              "raadsvoorstel"
+            ],
+            "description": "Voorstel type this route applies to"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "order": {
+                  "type": "integer",
+                  "description": "Step order (1-based)"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "advies",
+                    "parafering",
+                    "accordering"
+                  ],
+                  "description": "Step type"
+                },
+                "actor": {
+                  "type": "string",
+                  "description": "User UID, group name, or role name"
+                },
+                "actorType": {
+                  "type": "string",
+                  "enum": [
+                    "user",
+                    "group",
+                    "role"
+                  ],
+                  "description": "Type of actor reference"
+                },
+                "mandatory": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Whether this step can be skipped"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Display label for this step"
+                }
+              }
+            },
+            "description": "Ordered list of parafering steps"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this is the default route for the linked case type and voorstel type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of when this route should be used"
+          }
+        }
+      },
+      "parafeeractie": {
+        "slug": "parafeeractie",
+        "icon": "CheckDecagram",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "title": "Parafeeractie",
+        "description": "An immutable record of a parafering action on a voorstel step",
+        "type": "object",
+        "required": [
+          "voorstel",
+          "step",
+          "actor",
+          "action"
+        ],
+        "properties": {
+          "voorstel": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "voorstel",
+            "onDelete": "CASCADE",
+            "description": "Reference to the voorstel"
+          },
+          "step": {
+            "type": "integer",
+            "description": "Step number in the parafeerroute"
+          },
+          "actor": {
+            "type": "string",
+            "description": "Nextcloud user UID who performed the action"
+          },
+          "actorType": {
+            "type": "string",
+            "enum": [
+              "user",
+              "delegate"
+            ],
+            "default": "user",
+            "description": "Whether the actor acted directly or as delegate"
+          },
+          "onBehalfOf": {
+            "type": "string",
+            "description": "Nextcloud user UID of the principal (if acting as delegate)"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "parafered",
+              "returned",
+              "advised",
+              "skipped"
+            ],
+            "description": "The action performed",
+            "title": "Action",
+            "facetable": true
+          },
+          "comment": {
+            "type": "string",
+            "description": "Comment or reason (mandatory for returned/skipped)"
+          },
+          "advice": {
+            "type": "string",
+            "description": "Advisory text (for advies steps)"
+          },
+          "mandate": {
+            "type": "string",
+            "description": "Mandate reference (for delegate actions)"
+          }
+        }
+      },
+      "workflowTemplate": {
+        "slug": "workflowTemplate",
+        "icon": "SitemapOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:HowTo",
+        "x-cmmn-equivalent": "CasePlanModel",
+        "title": "Workflow Template",
+        "description": "A workflow definition for a case type — defines process steps, status transitions, guards, and automatic actions",
+        "type": "object",
+        "required": [
+          "title",
+          "caseType"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this workflow template"
+          },
+          "description": {
+            "type": "string",
+            "description": "Purpose and usage notes for this workflow"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "caseType",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case type this workflow belongs to"
+          },
+          "version": {
+            "type": "integer",
+            "default": 1,
+            "description": "Auto-incrementing version number"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this is the active version for new cases"
+          },
+          "isDraft": {
+            "type": "boolean",
+            "default": true,
+            "description": "Draft templates cannot be used for new cases"
+          },
+          "steps": {
+            "type": "string",
+            "description": "JSON-encoded array of WorkflowStep objects. Each step has: id (UUID), title, description, status (UUID ref to statusType), order (integer), assigneeRole (UUID ref to roleType, optional), isRequired (boolean), checklist (array of {id, label, description}), automaticActions (array of ActionRef)"
+          },
+          "transitions": {
+            "type": "string",
+            "description": "JSON-encoded array of StatusTransition objects. Each transition has: id (UUID), fromStatus (UUID), toStatus (UUID), label (string), guards (array of Guard), automaticActions (array of ActionRef), allowedRoles (array of UUID). Guard types: checklist, requiredField, requiredDocument, roleGuard. Action types: sendEmail, createTask, createSubCase, webhook, setField, notify"
+          },
+          "nodePositions": {
+            "type": "string",
+            "description": "JSON-encoded map of status UUID to {x, y} canvas positions for the visual editor"
+          },
+          "parentWorkflow": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to parent workflow template for inheritance (Enterprise tier)"
+          }
+        }
+      },
+      "objection": {
+        "slug": "objection",
+        "icon": "FileDocumentAlertOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Message",
+        "x-zgw-equivalent": "Bezwaarschrift",
+        "title": "Objection",
+        "description": "Bezwaarschrift (objection letter) — captures the formal objection content linked to a bezwaar case and the contested decision",
+        "type": "object",
+        "required": [
+          "case",
+          "contestedDecision",
+          "grounds",
+          "receivedDate",
+          "receivedChannel"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "The bezwaar case this objection belongs to"
+          },
+          "contestedDecision": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "decision",
+            "description": "The original besluit being contested"
+          },
+          "grounds": {
+            "type": "string",
+            "description": "The grounds for objection (gronden van bezwaar)"
+          },
+          "requestedRelief": {
+            "type": "string",
+            "description": "What outcome the bezwaarmaker seeks"
+          },
+          "receivedDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the bezwaarschrift was received"
+          },
+          "receivedChannel": {
+            "type": "string",
+            "enum": [
+              "brief",
+              "email",
+              "formulier",
+              "balie"
+            ],
+            "description": "How the bezwaarschrift was received"
+          },
+          "isTimely": {
+            "type": "boolean",
+            "description": "Whether the objection was filed within the 6-week term (Awb art. 6:7)"
+          },
+          "timelinessAssessment": {
+            "type": "string",
+            "description": "Explanation of timeliness determination"
+          },
+          "proVoorziening": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether a voorlopige voorziening (interim relief) was requested"
+          },
+          "attachments": {
+            "type": "string",
+            "description": "JSON-encoded array of document references uploaded by bezwaarmaker"
+          }
+        }
+      },
+      "hearingSession": {
+        "slug": "hearingSession",
+        "icon": "AccountGroupOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Event",
+        "x-zgw-equivalent": "Hoorzitting",
+        "title": "Hearing Session",
+        "description": "Hoorzitting (hearing) — manages scheduling, invitations, and minutes for bezwaar hearings per Awb art. 7:2",
+        "type": "object",
+        "required": [
+          "case",
+          "scheduledDate",
+          "chairperson",
+          "invitees",
+          "status"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "The bezwaar case this hearing belongs to"
+          },
+          "scheduledDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the hearing"
+          },
+          "location": {
+            "type": "string",
+            "description": "Physical location or 'Online' for video hearings"
+          },
+          "videoCallUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Video conference link for online hearings"
+          },
+          "chairperson": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "role",
+            "description": "Who chairs the hearing (voorzitter)"
+          },
+          "members": {
+            "type": "string",
+            "description": "JSON-encoded array of committee member role UUIDs"
+          },
+          "invitees": {
+            "type": "string",
+            "description": "JSON-encoded array of invitee objects (name, role, email, status)"
+          },
+          "minutesSummary": {
+            "type": "string",
+            "description": "Summary of what was discussed (verslag)"
+          },
+          "minutesDocument": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to full hearing minutes document"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "gepland",
+              "uitgenodigd",
+              "uitgevoerd",
+              "geannuleerd",
+              "afgezien"
+            ],
+            "default": "gepland",
+            "description": "Hearing session status"
+          },
+          "hearingWaived": {
+            "type": "boolean",
+            "default": false,
+            "description": "Bezwaarmaker has waived the right to be heard"
+          },
+          "waiverReason": {
+            "type": "string",
+            "description": "Reason for waiving hearing right"
+          }
+        }
+      },
+      "advisoryReport": {
+        "slug": "advisoryReport",
+        "icon": "FileDocumentCheckOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Report",
+        "x-zgw-equivalent": "AdviesBezwaarschriftencommissie",
+        "title": "Advisory Report",
+        "description": "Advisory committee report (advies bezwaarschriftencommissie) — records the committee's advice on a bezwaar case per Awb art. 7:13",
+        "type": "object",
+        "required": [
+          "case",
+          "committeeChair",
+          "adviceDate",
+          "adviceType",
+          "summary",
+          "grounds",
+          "recommendation",
+          "deviationFromPrimaryDecision"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "The bezwaar case this report belongs to"
+          },
+          "hearingSession": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "hearingSession",
+            "description": "The hearing session this report is based on"
+          },
+          "committeeChair": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "role",
+            "description": "Voorzitter who signed the report"
+          },
+          "committeeMembers": {
+            "type": "string",
+            "description": "JSON-encoded array of committee member role UUIDs"
+          },
+          "adviceDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the advice was issued"
+          },
+          "adviceType": {
+            "type": "string",
+            "enum": [
+              "gegrond",
+              "ongegrond",
+              "deels_gegrond",
+              "niet_ontvankelijk"
+            ],
+            "description": "Type of advice: upheld, rejected, partially upheld, inadmissible"
+          },
+          "summary": {
+            "type": "string",
+            "description": "Summary of the committee's advice"
+          },
+          "grounds": {
+            "type": "string",
+            "description": "Legal reasoning and grounds for the advice"
+          },
+          "recommendation": {
+            "type": "string",
+            "description": "Recommended action for the bestuursorgaan"
+          },
+          "deviationFromPrimaryDecision": {
+            "type": "boolean",
+            "description": "Whether the committee advises differently from the original decision"
+          },
+          "reportDocument": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to full advisory report document"
+          }
+        }
+      },
+      "appealDecision": {
+        "slug": "appealDecision",
+        "icon": "GavelOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:LegalForceStatus",
+        "x-zgw-equivalent": "BeslissingOpBezwaar",
+        "title": "Appeal Decision",
+        "description": "Beslissing op bezwaar (decision on objection) — formal decision recording with disposition, motivation, and rechtsmiddelenclausule per Awb art. 7:11-7:12",
+        "type": "object",
+        "required": [
+          "case",
+          "contestedDecision",
+          "dispositionType",
+          "dispositionDetails",
+          "decisionDate",
+          "effectiveDate",
+          "appealInformation",
+          "decisionMaker"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "The bezwaar case"
+          },
+          "contestedDecision": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "decision",
+            "description": "The original besluit being contested"
+          },
+          "advisoryReport": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "advisoryReport",
+            "description": "The committee's advisory report"
+          },
+          "dispositionType": {
+            "type": "string",
+            "enum": [
+              "gegrond",
+              "ongegrond",
+              "deels_gegrond",
+              "niet_ontvankelijk"
+            ],
+            "description": "Decision outcome type"
+          },
+          "dispositionDetails": {
+            "type": "string",
+            "description": "Detailed motivation for the decision (motiveringsplicht art. 7:12)"
+          },
+          "followsAdvice": {
+            "type": "boolean",
+            "description": "Whether the decision follows the committee's advice"
+          },
+          "deviationReason": {
+            "type": "string",
+            "description": "Reason for deviating from committee advice (required when followsAdvice is false)"
+          },
+          "remedialAction": {
+            "type": "string",
+            "description": "Corrective action taken if gegrond/deels_gegrond"
+          },
+          "replacementDecision": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "decision",
+            "description": "New besluit that replaces the contested one"
+          },
+          "decisionDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the decision was made"
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the decision takes legal effect"
+          },
+          "appealInformation": {
+            "type": "string",
+            "description": "Information about beroep possibilities (rechtsmiddelenclausule)"
+          },
+          "decisionMaker": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "role",
+            "description": "The person/body that made the decision"
+          },
+          "decisionDocument": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the formal decision letter document"
+          }
+        }
+      },
+      "mapLayer": {
+        "slug": "mapLayer",
+        "icon": "MapOutline",
+        "version": "1.0.0",
+        "title": "Map Layer",
+        "description": "GIS map layer configuration for case maps — defines tile, WMS, WFS, or GeoJSON layers that can be displayed on case map views",
+        "type": "object",
+        "required": [
+          "title",
+          "layerType",
+          "url"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Display name for the layer in the layer switcher"
+          },
+          "layerType": {
+            "type": "string",
+            "enum": [
+              "tile",
+              "wms",
+              "wfs",
+              "geojson"
+            ],
+            "description": "The type of map layer (tile, wms, wfs, or geojson)"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Service URL (tile template, WMS base URL, WFS endpoint, or GeoJSON URL)"
+          },
+          "layers": {
+            "type": "string",
+            "description": "WMS/WFS layer name(s), comma-separated"
+          },
+          "format": {
+            "type": "string",
+            "description": "Image format for WMS (e.g., image/png)",
+            "default": "image/png"
+          },
+          "attribution": {
+            "type": "string",
+            "description": "Attribution text for the layer"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Whether to show this layer on initial load",
+            "default": false
+          },
+          "isBaseLayer": {
+            "type": "boolean",
+            "description": "If true, only one base layer visible at a time",
+            "default": false
+          },
+          "opacity": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Layer opacity from 0.0 (transparent) to 1.0 (opaque)",
+            "default": 1.0
+          },
+          "minZoom": {
+            "type": "integer",
+            "description": "Minimum zoom level for visibility"
+          },
+          "maxZoom": {
+            "type": "integer",
+            "description": "Maximum zoom level for visibility"
+          },
+          "order": {
+            "type": "integer",
+            "description": "Display order in the layer switcher",
+            "default": 0
+          },
+          "style": {
+            "type": "string",
+            "description": "JSON-encoded style object for GeoJSON/WFS features (color, weight, fillColor, fillOpacity)"
+          },
+          "proxyEnabled": {
+            "type": "boolean",
+            "description": "Whether to route requests through the backend GIS proxy (for CORS-restricted services)",
+            "default": false
+          }
+        }
+      },
+      "adviesAanvraag": {
+        "slug": "adviesAanvraag",
+        "icon": "CommentQuestionOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:AskAction",
+        "title": "Advice Request",
+        "description": "A request for internal or external advice on a case, with deadline tracking",
+        "type": "object",
+        "required": [
+          "case",
+          "adviseur",
+          "type"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case this advice is requested for"
+          },
+          "adviseur": {
+            "type": "string",
+            "description": "User UID (internal) or organization name (external)"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "intern",
+              "extern"
+            ],
+            "description": "Whether advice is from internal staff or external party"
+          },
+          "onderwerp": {
+            "type": "string",
+            "description": "Subject/topic of the advice request"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Deadline for receiving the advice"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "aangevraagd",
+              "ontvangen",
+              "verlopen"
+            ],
+            "default": "aangevraagd",
+            "description": "Current status of the advice request"
+          },
+          "adviesDocument": {
+            "type": "string",
+            "description": "Nextcloud file ID of the advice document"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the advice was requested"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the advice was received"
+          },
+          "questions": {
+            "type": "string",
+            "description": "Specific questions for the adviseur"
+          }
+        }
+      },
+      "handhavingsactie": {
+        "slug": "handhavingsactie",
+        "icon": "Gavel",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:LegalForceStatus",
+        "title": "Enforcement Action",
+        "description": "An enforcement action (handhavingsactie) on a case, classified per the Landelijke Handhavingsstrategie (LHS)",
+        "type": "object",
+        "required": [
+          "case",
+          "type",
+          "ernst",
+          "gedrag"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the handhavingszaak"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "waarschuwing",
+              "vooraankondiging",
+              "last_onder_dwangsom",
+              "bestuursdwang",
+              "proces_verbaal"
+            ],
+            "description": "Type of enforcement action"
+          },
+          "ernst": {
+            "type": "string",
+            "enum": [
+              "gering",
+              "aanzienlijk",
+              "ernstig"
+            ],
+            "description": "Severity of the violation (LHS ernst axis)"
+          },
+          "gedrag": {
+            "type": "string",
+            "enum": [
+              "goedwillend",
+              "onverschillig",
+              "calculerend",
+              "crimineel"
+            ],
+            "description": "Behavior of the violator (LHS gedrag axis)"
+          },
+          "interventie": {
+            "type": "string",
+            "description": "Suggested intervention from LHS matrix (may be overridden)"
+          },
+          "begunstigingstermijn": {
+            "type": "integer",
+            "description": "Grace period in days before enforcement takes effect"
+          },
+          "dwangsomBedrag": {
+            "type": "number",
+            "description": "Penalty amount per violation (EUR)"
+          },
+          "dwangsomMaximaal": {
+            "type": "number",
+            "description": "Maximum total penalty amount (EUR)"
+          },
+          "effectueringsDatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Date when enforcement action takes effect"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "opgelegd",
+              "verbeurd",
+              "geeffectueerd",
+              "ingetrokken"
+            ],
+            "default": "opgelegd",
+            "description": "Current status of the enforcement action"
+          },
+          "overrideReason": {
+            "type": "string",
+            "description": "Documented reasoning if the LHS suggestion was overridden"
+          }
+        }
+      },
+      "inspectieChecklist": {
+        "slug": "inspectieChecklist",
+        "icon": "ClipboardCheckOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:HowTo",
+        "title": "Inspection Checklist",
+        "description": "Configurable inspection checklist template linked to a case type, with versioning support",
+        "type": "object",
+        "required": [
+          "name",
+          "caseType"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this checklist (e.g. 'Bouwtoezicht fase 1 - Fundering')"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case type this checklist belongs to"
+          },
+          "version": {
+            "type": "integer",
+            "default": 1,
+            "description": "Version number of this checklist (incremented on edit)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "archived"
+            ],
+            "default": "draft",
+            "description": "Lifecycle status of this checklist version"
+          },
+          "items": {
+            "type": "array",
+            "description": "Ordered list of checklist items",
+            "items": {
+              "type": "object",
+              "properties": {
+                "order": {
+                  "type": "integer",
+                  "description": "Display order of this item"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Label/question for this checklist item"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "ja_nee_nvt",
+                    "tekst",
+                    "getal",
+                    "foto",
+                    "meerkeuze"
+                  ],
+                  "description": "Input type for this item"
+                },
+                "required": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Whether this item must be completed"
+                },
+                "fotoRequired": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Whether a photo is required (especially on failure)"
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Options for meerkeuze type"
+                },
+                "helpText": {
+                  "type": "string",
+                  "description": "Guidance text for the inspector"
+                }
+              }
+            }
+          }
+        }
+      },
+      "inspectieRapport": {
+        "slug": "inspectieRapport",
+        "icon": "FileDocumentCheckOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Report",
+        "title": "Inspection Report",
+        "description": "A completed inspection report generated from a checklist, stored on the case",
+        "type": "object",
+        "required": [
+          "case",
+          "checklist",
+          "inspector",
+          "inspectionDate"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case (toezichtzaak) this report belongs to"
+          },
+          "checklist": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the inspectieChecklist used"
+          },
+          "inspector": {
+            "type": "string",
+            "description": "User UID of the inspector"
+          },
+          "inspectionDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the inspection"
+          },
+          "location": {
+            "type": "string",
+            "description": "GPS coordinates or address of the inspection location"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "conform",
+              "niet_conform",
+              "deels_conform"
+            ],
+            "description": "Overall inspection result (auto-calculated from items)"
+          },
+          "failedItems": {
+            "type": "integer",
+            "default": 0,
+            "description": "Count of failed checklist items"
+          },
+          "items": {
+            "type": "array",
+            "description": "Completed checklist item results",
+            "items": {
+              "type": "object",
+              "properties": {
+                "itemId": {
+                  "type": "string",
+                  "description": "Reference to the original checklist item"
+                },
+                "result": {
+                  "type": "string",
+                  "enum": [
+                    "pass",
+                    "fail",
+                    "nvt"
+                  ],
+                  "description": "Result for this item"
+                },
+                "comment": {
+                  "type": "string",
+                  "description": "Free text comment"
+                },
+                "measurement": {
+                  "type": "number",
+                  "description": "Numeric measurement value (for getal type)"
+                },
+                "photos": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Nextcloud file IDs of photos for this item"
+                }
+              }
+            }
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "All Nextcloud file IDs of photos taken during inspection"
+          },
+          "remarks": {
+            "type": "string",
+            "description": "General remarks about the inspection"
+          },
+          "followUpRequired": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether follow-up action is required"
+          }
+        }
       }
     },
     "registers": {
@@ -1484,7 +2641,7 @@
         "slug": "procest",
         "title": "Procest",
         "version": "1.0.0",
-        "description": "Case management (zaakgericht werken) register for Procest \u2014 manages case types, status types, cases, tasks, roles, results, and decisions.",
+        "description": "Case management (zaakgericht werken) register for Procest — manages case types, status types, cases, tasks, roles, results, and decisions.",
         "schemas": [
           "caseType",
           "statusType",
@@ -1510,8 +2667,21 @@
           "decisionDocument",
           "dispatch",
           "usageRights",
+          "workflowTemplate",
           "kanaal",
-          "abonnement"
+          "abonnement",
+          "objection",
+          "hearingSession",
+          "advisoryReport",
+          "appealDecision",
+          "voorstel",
+          "parafeerroute",
+          "parafeeractie",
+          "mapLayer",
+          "inspectieRapport",
+          "handhavingsactie",
+          "inspectieChecklist",
+          "adviesAanvraag"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"
