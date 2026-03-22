@@ -66,6 +66,9 @@ class SettingsService
         'hearing_session_schema',
         'advisory_report_schema',
         'appeal_decision_schema',
+        'voorstel_schema',
+        'parafeerroute_schema',
+        'parafeeractie_schema',
         'default_case_type',
     ];
 
@@ -105,6 +108,9 @@ class SettingsService
         'hearingSession'               => 'hearing_session_schema',
         'advisoryReport'               => 'advisory_report_schema',
         'appealDecision'               => 'appeal_decision_schema',
+        'voorstel'                     => 'voorstel_schema',
+        'parafeerroute'                => 'parafeerroute_schema',
+        'parafeeractie'                => 'parafeeractie_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

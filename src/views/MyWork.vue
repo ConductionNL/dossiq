@@ -50,8 +50,11 @@
 			</template>
 		</NcEmptyContent>
 
+		<!-- Parafering inbox -->
+		<ParafeerInbox v-if="!loading" />
+
 		<!-- Grouped sections -->
-		<template v-else>
+		<template v-else-if="!loading">
 			<!-- Overdue -->
 			<div v-if="filteredGroups.overdue.length > 0" class="my-work__section my-work__section--overdue">
 				<h3 class="my-work__section-header my-work__section-header--overdue">
@@ -191,6 +194,7 @@
 import { NcLoadingIcon, NcEmptyContent } from '@nextcloud/vue'
 import AccountCheck from 'vue-material-design-icons/AccountCheck.vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
+import ParafeerInbox from './voorstellen/components/ParafeerInbox.vue'
 import { useObjectStore } from '../store/modules/object.js'
 import { getGroupedMyWorkItems } from '../utils/dashboardHelpers.js'
 import { fetchTasksForCases } from '../services/taskApi.js'
@@ -202,6 +206,7 @@ export default {
 		NcEmptyContent,
 		AccountCheck,
 		CheckCircle,
+		ParafeerInbox,
 	},
 	data() {
 		return {

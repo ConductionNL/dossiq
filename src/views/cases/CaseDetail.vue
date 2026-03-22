@@ -184,6 +184,14 @@
 					@extend="showExtensionDialog" />
 			</CnDetailCard>
 
+			<!-- B&W Voorstellen card -->
+			<CnDetailCard :title="t('procest', 'B&W Voorstellen')">
+				<VoorstellenPanel
+					:case-id="caseId"
+					:case-title="caseData.title || ''"
+					:is-read-only="isReadOnly" />
+			</CnDetailCard>
+
 			<!-- Participants card -->
 			<CnDetailCard :title="t('procest', 'Participants')">
 				<ParticipantsSection
@@ -379,6 +387,7 @@ import DeadlinePanel from './components/DeadlinePanel.vue'
 import ActivityTimeline from './components/ActivityTimeline.vue'
 import ParticipantsSection from './components/ParticipantsSection.vue'
 import ResultSection from './components/ResultSection.vue'
+import VoorstellenPanel from './components/VoorstellenPanel.vue'
 import WorkflowTransitions from './components/WorkflowTransitions.vue'
 import BezwaarIntakeForm from './components/bezwaar/BezwaarIntakeForm.vue'
 import HearingPanel from './components/bezwaar/HearingPanel.vue'
@@ -404,6 +413,7 @@ export default {
 		ActivityTimeline,
 		ParticipantsSection,
 		ResultSection,
+		VoorstellenPanel,
 		WorkflowTransitions,
 		BezwaarIntakeForm,
 		HearingPanel,
