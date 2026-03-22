@@ -3,7 +3,7 @@
 ## Purpose
 Define the Nextcloud app scaffolding, build system, translation setup, and admin settings for the Procest case management app. This capability establishes the foundational structure that all other capabilities build upon.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: App MUST be a valid Nextcloud app
 The Procest app MUST be installable as a standard Nextcloud app with proper metadata, namespace, and dependency declarations.

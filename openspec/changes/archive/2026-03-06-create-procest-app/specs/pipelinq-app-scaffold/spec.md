@@ -3,7 +3,7 @@
 ## Purpose
 Define the Nextcloud app scaffolding, build system, translation setup, and admin settings for the Pipelinq client and request management app. Mirrors the Procest scaffold with its own app identity.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: App MUST be a valid Nextcloud app
 The Pipelinq app MUST be installable as a standard Nextcloud app with proper metadata, namespace, and dependency declarations.
