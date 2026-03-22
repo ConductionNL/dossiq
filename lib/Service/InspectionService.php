@@ -62,9 +62,11 @@ class InspectionService
     /**
      * Constructor.
      *
-     * @param LoggerInterface $logger The logger instance.
+     * @param SettingsService $settingsService Settings service
+     * @param LoggerInterface $logger          Logger
      */
     public function __construct(
+        private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
     ) {
     }
