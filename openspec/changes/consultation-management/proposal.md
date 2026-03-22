@@ -1,15 +1,17 @@
 ## Why
 
-consultation-management Specification is not yet implemented in Procest. This change proposes adding this capability based on the detailed spec in `specs/consultation-management/spec.md`.
-
-
+Inter-departmental consultations (adviesaanvragen) currently happen via email, losing auditability. This implements structured consultation as first-class entities with lifecycle, document exchange, structured responses with conditions, timeline integration, and a consultation dashboard.
 
 ## What Changes
 
-See `specs/consultation-management/spec.md` for full requirements and scenarios.
+1. Consultation schema in procest_register.json
+2. ConsultationService for CRUD, lifecycle management, overdue detection
+3. ConsultationController with REST API
+4. ConsultationPanel Vue component for case detail view
+5. ConsultationDashboard Vue component for pending consultations overview
+6. Route additions
 
 ## Impact
 
-- **Code**: New frontend views and/or backend services
-- **Dependencies**: OpenRegister (data storage), Nextcloud platform APIs
-- **Testing**: Unit tests for new services, integration tests for API endpoints
+- New schema, service, controller, 2 Vue components, route additions
+- Extends case detail view with consultations panel

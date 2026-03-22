@@ -1,15 +1,27 @@
-## Why
+# Proposal: mobiel-inspectie
 
-Mobiel Inspectie Specification is not yet implemented in Procest. This change proposes adding this capability based on the detailed spec in `specs/mobiel-inspectie/spec.md`.
+## Summary
+Implement a Progressive Web App (PWA) for field inspectors to conduct inspections on location. Inspectors complete checklists, take photos, capture GPS coordinates, and add observations. V2 provides online PWA; V3 adds offline capability.
 
-**Feature tier**: V2 (online PWA with photo/GPS), V3 (offline capability, sync queue, field signatures)
+## Motivation
+Mobile inspection is found in 16% of tenders (11/69) and is a critical differentiator for VTH tenders -- it is the primary tool for field inspectors at omgevingsdiensten.
 
-## What Changes
+## Affected Projects
+- [x] Project: `procest` -- PWA manifest, inspection service, checklist engine, controller
 
-See `specs/mobiel-inspectie/spec.md` for full requirements and scenarios.
+## Scope
 
-## Impact
+### In Scope
+- PWA manifest and service worker registration
+- InspectionService for managing inspection tasks and checklists
+- ChecklistService for checklist completion with conformity tracking
+- GPS location capture and validation
+- Photo capture metadata (GPS, timestamp, checklist item link)
+- InspectionController with API endpoints
+- Responsive mobile-first UI considerations
 
-- **Code**: New frontend views and/or backend services
-- **Dependencies**: OpenRegister (data storage), Nextcloud platform APIs
-- **Testing**: Unit tests for new services, integration tests for API endpoints
+### Out of Scope
+- Offline capability (V3)
+- Photo annotation tool (V3)
+- Digital field signatures (V3)
+- Report PDF generation (depends on Docudesk)
