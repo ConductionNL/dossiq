@@ -1924,22 +1924,23 @@
             "format": "uuid",
             "description": "Reference to the parent case"
           },
-          "department": {
+          "adviesInstantie": {
             "type": "string",
             "description": "Department or organization being consulted"
           },
-          "subject": {
+          "onderwerp": {
             "type": "string",
-            "description": "Subject of the advice request"
+            "maxLength": 255,
+            "description": "Subject of the consultation"
           },
-          "question": {
+          "vraagstelling": {
             "type": "string",
-            "description": "Specific question(s) being asked"
+            "description": "The specific question(s) being asked"
           },
-          "deadline": {
+          "uiterlijkeReactiedatum": {
             "type": "string",
             "format": "date",
-            "description": "Deadline for the advice response"
+            "description": "Deadline for response"
           },
           "status": {
             "type": "string",
@@ -1950,13 +1951,13 @@
               "afgesloten"
             ],
             "default": "open",
-            "description": "Current status of the advice request"
+            "description": "Current status of the consultation"
           },
-          "requester": {
+          "aanvrager": {
             "type": "string",
-            "description": "User ID of the person requesting advice"
+            "description": "User ID of the person who initiated the consultation"
           },
-          "response": {
+          "advies": {
             "type": "string",
             "enum": [
               "positief",
@@ -1964,20 +1965,30 @@
               "negatief",
               "niet_van_toepassing"
             ],
-            "description": "The advice response type"
+            "description": "The advice conclusion"
           },
-          "responseText": {
+          "toelichting": {
             "type": "string",
-            "description": "Detailed advice text"
+            "description": "Explanation of the advice"
           },
-          "conditions": {
+          "voorwaarden": {
             "type": "string",
             "description": "JSON array of conditions (if positief_met_voorwaarden)"
           },
-          "responseDate": {
+          "adviesDatum": {
             "type": "string",
             "format": "date",
             "description": "Date the advice was given"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the consultation was created"
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the consultation was closed"
           }
         }
       }
