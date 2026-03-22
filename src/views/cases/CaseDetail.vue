@@ -88,6 +88,16 @@
 					:status-history="caseData.statusHistory || []" />
 			</CnDetailCard>
 
+			<!-- Workflow Transitions card -->
+			<CnDetailCard v-if="hasWorkflow" :title="t('procest', 'Workflow Transitions')">
+				<WorkflowTransitions
+					:case-data="caseData"
+					:tasks="tasks"
+					:documents="caseDocuments"
+					:user-roles="userRoleTypeIds"
+					@transition-executed="onWorkflowTransition" />
+			</CnDetailCard>
+
 			<!-- Case Information card -->
 			<CnDetailCard :title="t('procest', 'Case Information')">
 				<div class="form-group">
@@ -291,6 +301,7 @@ import DeadlinePanel from './components/DeadlinePanel.vue'
 import ActivityTimeline from './components/ActivityTimeline.vue'
 import ParticipantsSection from './components/ParticipantsSection.vue'
 import ResultSection from './components/ResultSection.vue'
+import WorkflowTransitions from './components/WorkflowTransitions.vue'
 
 export default {
 	name: 'CaseDetail',
@@ -306,6 +317,7 @@ export default {
 		ActivityTimeline,
 		ParticipantsSection,
 		ResultSection,
+		WorkflowTransitions,
 	},
 	props: {
 		caseId: {
@@ -338,6 +350,8 @@ export default {
 			// Extension state
 			showExtension: false,
 			extensionReason: '',
+			caseRoles: [],
+			caseDocuments: [],
 			priorityOptions: ['low', 'normal', 'high', 'urgent'],
 		}
 	},
@@ -393,6 +407,12 @@ export default {
 				register: config.register || '',
 				schema: config.schema || '',
 			}
+		},
+		hasWorkflow() {
+			return !!(this.caseData.workflowTemplate || this.caseData.workflowVersion)
+		},
+		userRoleTypeIds() {
+			return this.caseRoles ? this.caseRoles.map(r => r.roleType) : []
 		},
 	},
 	async mounted() {
@@ -464,6 +484,12 @@ export default {
 				_limit: 1,
 			})
 			this.caseResult = (results && results.length > 0) ? results[0] : null
+		},
+
+		async onWorkflowTransition({ transition, newStatus }) {
+			await this.objectStore.fetchObject('case', this.caseId)
+			this.populateForm()
+			await this.fetchTasks()
 		},
 
 		async fetchTasks() {

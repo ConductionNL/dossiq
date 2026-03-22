@@ -21,7 +21,7 @@
         "x-schema-org-type": "schema:Project",
         "x-zgw-equivalent": "ZaakType",
         "title": "Case Type",
-        "description": "Case type definition \u2014 defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+        "description": "Case type definition — defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
         "type": "object",
         "required": [
           "title"
@@ -148,12 +148,16 @@
           },
           "subCaseTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to sub-case types (deelzaaktypen)"
           },
           "decisionTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to decision types (besluittypen) linked to this case type"
           }
         }
@@ -676,6 +680,17 @@
             "format": "uri",
             "description": "URL reference to the communication channel",
             "visible": false
+          },
+          "workflowTemplate": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the bound workflow template",
+            "visible": false
+          },
+          "workflowVersion": {
+            "type": "integer",
+            "description": "Version number of the bound workflow template",
+            "visible": false
           }
         }
       },
@@ -752,6 +767,16 @@
             "type": "string",
             "format": "date-time",
             "description": "Date the task was completed",
+            "visible": false
+          },
+          "workflowStepId": {
+            "type": "string",
+            "description": "UUID of the workflow step that generated this task",
+            "visible": false
+          },
+          "checklist": {
+            "type": "string",
+            "description": "JSON-encoded array of checklist items ({id, label, checked})",
             "visible": false
           }
         }
@@ -1242,7 +1267,11 @@
         "title": "Case Property",
         "description": "A property value on a specific case",
         "type": "object",
-        "required": ["case", "propertyDefinition", "value"],
+        "required": [
+          "case",
+          "propertyDefinition",
+          "value"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1270,7 +1299,10 @@
         "title": "Case Document Link",
         "description": "Links a document to a case",
         "type": "object",
-        "required": ["case", "document"],
+        "required": [
+          "case",
+          "document"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1307,7 +1339,10 @@
         "title": "Case Object",
         "description": "Links an external object to a case",
         "type": "object",
-        "required": ["case", "objectType"],
+        "required": [
+          "case",
+          "objectType"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1343,7 +1378,9 @@
         "title": "Customer Contact",
         "description": "A customer contact moment for a case",
         "type": "object",
-        "required": ["case"],
+        "required": [
+          "case"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1379,7 +1416,10 @@
         "title": "Decision Document Link",
         "description": "Links a document to a decision",
         "type": "object",
-        "required": ["decision", "document"],
+        "required": [
+          "decision",
+          "document"
+        ],
         "properties": {
           "decision": {
             "type": "string",
@@ -1403,7 +1443,10 @@
         "title": "Dispatch",
         "description": "A document dispatch record",
         "type": "object",
-        "required": ["document", "relationshipType"],
+        "required": [
+          "document",
+          "relationshipType"
+        ],
         "properties": {
           "document": {
             "type": "string",
@@ -1477,6 +1520,70 @@
             "description": "Description of the usage conditions"
           }
         }
+      },
+      "workflowTemplate": {
+        "slug": "workflowTemplate",
+        "icon": "SitemapOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:HowTo",
+        "x-cmmn-equivalent": "CasePlanModel",
+        "title": "Workflow Template",
+        "description": "A workflow definition for a case type — defines process steps, status transitions, guards, and automatic actions",
+        "type": "object",
+        "required": [
+          "title",
+          "caseType"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this workflow template"
+          },
+          "description": {
+            "type": "string",
+            "description": "Purpose and usage notes for this workflow"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "caseType",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case type this workflow belongs to"
+          },
+          "version": {
+            "type": "integer",
+            "default": 1,
+            "description": "Auto-incrementing version number"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this is the active version for new cases"
+          },
+          "isDraft": {
+            "type": "boolean",
+            "default": true,
+            "description": "Draft templates cannot be used for new cases"
+          },
+          "steps": {
+            "type": "string",
+            "description": "JSON-encoded array of WorkflowStep objects. Each step has: id (UUID), title, description, status (UUID ref to statusType), order (integer), assigneeRole (UUID ref to roleType, optional), isRequired (boolean), checklist (array of {id, label, description}), automaticActions (array of ActionRef)"
+          },
+          "transitions": {
+            "type": "string",
+            "description": "JSON-encoded array of StatusTransition objects. Each transition has: id (UUID), fromStatus (UUID), toStatus (UUID), label (string), guards (array of Guard), automaticActions (array of ActionRef), allowedRoles (array of UUID). Guard types: checklist, requiredField, requiredDocument, roleGuard. Action types: sendEmail, createTask, createSubCase, webhook, setField, notify"
+          },
+          "nodePositions": {
+            "type": "string",
+            "description": "JSON-encoded map of status UUID to {x, y} canvas positions for the visual editor"
+          },
+          "parentWorkflow": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to parent workflow template for inheritance (Enterprise tier)"
+          }
+        }
       }
     },
     "registers": {
@@ -1484,7 +1591,7 @@
         "slug": "procest",
         "title": "Procest",
         "version": "1.0.0",
-        "description": "Case management (zaakgericht werken) register for Procest \u2014 manages case types, status types, cases, tasks, roles, results, and decisions.",
+        "description": "Case management (zaakgericht werken) register for Procest — manages case types, status types, cases, tasks, roles, results, and decisions.",
         "schemas": [
           "caseType",
           "statusType",
@@ -1510,6 +1617,7 @@
           "decisionDocument",
           "dispatch",
           "usageRights",
+          "workflowTemplate",
           "kanaal",
           "abonnement"
         ],

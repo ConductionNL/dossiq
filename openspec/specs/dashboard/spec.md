@@ -433,6 +433,7 @@ The dashboard MUST follow a configurable grid layout using `CnDashboardPage` fro
   3. Two-column layout below the KPI row:
      - Left column (6 cols): Cases by Status chart, My Work preview
      - Right column (6 cols): Overdue Cases panel, Recent Activity feed
+  4. Signalering row (3 equal columns, 4 cols each): Deadline Alerts, Task Due Reminders, Stalled Cases
 - AND the layout MUST be responsive, collapsing to a single column on narrow viewports
 
 #### Scenario DASH-014b: Navigation header
