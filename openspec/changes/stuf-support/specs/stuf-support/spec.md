@@ -1,7 +1,6 @@
 ---
-status: proposed
+status: implemented
 ---
-
 # StUF Protocol Support Specification
 
 ## Purpose

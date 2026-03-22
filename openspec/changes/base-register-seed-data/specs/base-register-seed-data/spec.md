@@ -1,7 +1,6 @@
 ---
-status: proposed
+status: implemented
 ---
-
 # Base Register Seed Data Specification
 
 ## Purpose

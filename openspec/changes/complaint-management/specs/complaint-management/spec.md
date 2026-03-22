@@ -1,7 +1,6 @@
 ---
-status: proposed
+status: implemented
 ---
-
 # complaint-management Specification
 
 ## Purpose

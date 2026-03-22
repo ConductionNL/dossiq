@@ -1,7 +1,6 @@
 ---
-status: proposed
+status: implemented
 ---
-
 # Zaak Intake Flow Specification
 
 ## Purpose

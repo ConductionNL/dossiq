@@ -1,7 +1,6 @@
 ---
-status: proposed
+status: implemented
 ---
-
 # milestone-tracking Specification
 
 ## Purpose

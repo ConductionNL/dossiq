@@ -1,7 +1,6 @@
 ---
-status: proposed
+status: implemented
 ---
-
 # case-email-integration Specification
 
 ## Purpose

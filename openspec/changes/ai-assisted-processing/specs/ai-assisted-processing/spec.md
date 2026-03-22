@@ -1,7 +1,6 @@
 ---
-status: proposed
+status: implemented
 ---
-
 # ai-assisted-processing Specification
 
 ## Purpose

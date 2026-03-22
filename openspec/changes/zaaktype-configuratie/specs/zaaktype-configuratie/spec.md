@@ -1,7 +1,6 @@
 ---
-status: proposed
+status: implemented
 ---
-
 # Zaaktype Configuratie Specification
 
 ## Purpose

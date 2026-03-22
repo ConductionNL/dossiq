@@ -1,7 +1,6 @@
 ---
-status: proposed
+status: implemented
 ---
-
 # pipelinq-object-store Specification
 
 ## Purpose

@@ -1,7 +1,6 @@
 ---
-status: proposed
+status: implemented
 ---
-
 # VTH Module Specification
 
 ## Purpose

@@ -1,7 +1,6 @@
 ---
-status: proposed
+status: implemented
 ---
-
 # B&W Parafering & Besluitvorming Specification
 
 ## Purpose
