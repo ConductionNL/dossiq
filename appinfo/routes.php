@@ -8,6 +8,10 @@ return [
         ['name' => 'settings#index', 'url' => '/api/settings', 'verb' => 'GET'],
         ['name' => 'settings#create', 'url' => '/api/settings', 'verb' => 'POST'],
         ['name' => 'settings#load',  'url' => '/api/settings/load', 'verb' => 'POST'],
+        // Case Definition Portability.
+        ['name' => 'case_definition#export', 'url' => '/api/case-definitions/export', 'verb' => 'POST'],
+        ['name' => 'case_definition#validate', 'url' => '/api/case-definitions/validate', 'verb' => 'POST'],
+        ['name' => 'case_definition#import', 'url' => '/api/case-definitions/import', 'verb' => 'POST'],
         // ZGW Mapping Management.
         ['name' => 'zgw_mapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
         ['name' => 'zgw_mapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],

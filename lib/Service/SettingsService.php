@@ -66,6 +66,10 @@ class SettingsService
         'share_permission_level_schema',
         'case_transfer_schema',
         'default_case_type',
+        'complaint_schema',
+        'hearing_schema',
+        'complaint_disposition_schema',
+        'complaint_category_schema',
     ];
 
     /**
