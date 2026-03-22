@@ -1,15 +1,17 @@
 ## Why
 
-milestone-tracking Specification is not yet implemented in Procest. This change proposes adding this capability based on the detailed spec in `specs/milestone-tracking/spec.md`.
-
-
+Technical workflow states are meaningless to end users. Milestones translate process progress into language everyone understands. This implements configurable milestone sets per case type, automatic/manual marking, visual progress indicators, duration analytics, and a milestone API.
 
 ## What Changes
 
-See `specs/milestone-tracking/spec.md` for full requirements and scenarios.
+1. Milestone schema in procest_register.json (milestoneDefinition, milestoneRecord)
+2. MilestoneService for milestone CRUD and progress calculation
+3. MilestoneProgress Vue component (step indicator in case detail)
+4. MilestoneProgressBar Vue component (compact progress in case list)
+5. Milestone configuration tab in case type admin
+6. API endpoint for milestone data
 
 ## Impact
 
-- **Code**: New frontend views and/or backend services
-- **Dependencies**: OpenRegister (data storage), Nextcloud platform APIs
-- **Testing**: Unit tests for new services, integration tests for API endpoints
+- New schemas, service, 3 Vue components, route additions
+- Extends case detail view and case list with progress indicators

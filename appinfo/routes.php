@@ -8,6 +8,13 @@ return [
         ['name' => 'settings#index', 'url' => '/api/settings', 'verb' => 'GET'],
         ['name' => 'settings#create', 'url' => '/api/settings', 'verb' => 'POST'],
         ['name' => 'settings#load',  'url' => '/api/settings/load', 'verb' => 'POST'],
+        // B&W Parafering.
+        ['name' => 'parafering#createVoorstel', 'url' => '/api/parafering/voorstellen', 'verb' => 'POST'],
+        ['name' => 'parafering#startParafering', 'url' => '/api/parafering/voorstellen/{id}/start', 'verb' => 'POST'],
+        ['name' => 'parafering#paraferen', 'url' => '/api/parafering/voorstellen/{id}/paraferen', 'verb' => 'POST'],
+        ['name' => 'parafering#terugsturen', 'url' => '/api/parafering/voorstellen/{id}/terugsturen', 'verb' => 'POST'],
+        ['name' => 'parafering#adviseren', 'url' => '/api/parafering/voorstellen/{id}/adviseren', 'verb' => 'POST'],
+        ['name' => 'parafering#auditTrail', 'url' => '/api/parafering/voorstellen/{id}/audit-trail', 'verb' => 'GET'],
         // ZGW Mapping Management.
         ['name' => 'zgw_mapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
         ['name' => 'zgw_mapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],
@@ -16,16 +23,12 @@ return [
         ['name' => 'zgw_mapping#reset', 'url' => '/api/zgw-mappings/{resourceKey}/reset', 'verb' => 'POST'],
 
         // ── DRC (Documenten) ────────────────────────────────────────────
-        // Special endpoints (must precede wildcard routes).
         ['name' => 'drc#download', 'url' => '/api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/download', 'verb' => 'GET'],
         ['name' => 'drc#lock', 'url' => '/api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/lock', 'verb' => 'POST'],
         ['name' => 'drc#unlock', 'url' => '/api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/unlock', 'verb' => 'POST'],
-        // Bestandsdelen (chunked upload).
         ['name' => 'drc#uploadChunk', 'url' => '/api/zgw/documenten/v1/bestandsdelen/{uuid}', 'verb' => 'PUT'],
-        // Audit trail.
         ['name' => 'drc#audittrailIndex', 'url' => '/api/zgw/documenten/v1/{resource}/{uuid}/audittrail', 'verb' => 'GET'],
         ['name' => 'drc#audittrailShow', 'url' => '/api/zgw/documenten/v1/{resource}/{uuid}/audittrail/{auditUuid}', 'verb' => 'GET'],
-        // CRUD.
         ['name' => 'drc#index', 'url' => '/api/zgw/documenten/v1/{resource}', 'verb' => 'GET'],
         ['name' => 'drc#create', 'url' => '/api/zgw/documenten/v1/{resource}', 'verb' => 'POST'],
         ['name' => 'drc#show', 'url' => '/api/zgw/documenten/v1/{resource}/{uuid}', 'verb' => 'GET'],
@@ -34,21 +37,16 @@ return [
         ['name' => 'drc#destroy', 'url' => '/api/zgw/documenten/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
         // ── ZRC (Zaken) ─────────────────────────────────────────────────
-        // Nested sub-resource routes (must precede wildcard routes).
         ['name' => 'zrc#zaakeigenschappenIndex', 'url' => '/api/zgw/zaken/v1/zaken/{zaakUuid}/zaakeigenschappen', 'verb' => 'GET'],
         ['name' => 'zrc#zaakeigenschappenCreate', 'url' => '/api/zgw/zaken/v1/zaken/{zaakUuid}/zaakeigenschappen', 'verb' => 'POST'],
         ['name' => 'zrc#zaakeigenschappenShow', 'url' => '/api/zgw/zaken/v1/zaken/{zaakUuid}/zaakeigenschappen/{uuid}', 'verb' => 'GET'],
         ['name' => 'zrc#zaakeigenschappenUpdate', 'url' => '/api/zgw/zaken/v1/zaken/{zaakUuid}/zaakeigenschappen/{uuid}', 'verb' => 'PUT'],
         ['name' => 'zrc#zaakeigenschappenPatch', 'url' => '/api/zgw/zaken/v1/zaken/{zaakUuid}/zaakeigenschappen/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'zrc#zaakeigenschappenDestroy', 'url' => '/api/zgw/zaken/v1/zaken/{zaakUuid}/zaakeigenschappen/{uuid}', 'verb' => 'DELETE'],
-        // Zaakbesluiten sub-resource.
         ['name' => 'zrc#zaakbesluitenIndex', 'url' => '/api/zgw/zaken/v1/zaken/{zaakUuid}/besluiten', 'verb' => 'GET'],
-        // Zoek endpoint.
         ['name' => 'zrc#zoek', 'url' => '/api/zgw/zaken/v1/zaken/_zoek', 'verb' => 'POST'],
-        // Audit trail.
         ['name' => 'zrc#audittrailIndex', 'url' => '/api/zgw/zaken/v1/{resource}/{uuid}/audittrail', 'verb' => 'GET'],
         ['name' => 'zrc#audittrailShow', 'url' => '/api/zgw/zaken/v1/{resource}/{uuid}/audittrail/{auditUuid}', 'verb' => 'GET'],
-        // CRUD.
         ['name' => 'zrc#index', 'url' => '/api/zgw/zaken/v1/{resource}', 'verb' => 'GET'],
         ['name' => 'zrc#create', 'url' => '/api/zgw/zaken/v1/{resource}', 'verb' => 'POST'],
         ['name' => 'zrc#show', 'url' => '/api/zgw/zaken/v1/{resource}/{uuid}', 'verb' => 'GET'],
@@ -57,14 +55,11 @@ return [
         ['name' => 'zrc#destroy', 'url' => '/api/zgw/zaken/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
         // ── ZTC (Catalogi) ──────────────────────────────────────────────
-        // Publish endpoints (must precede wildcard routes).
         ['name' => 'ztc#publishZaaktype', 'url' => '/api/zgw/catalogi/v1/zaaktypen/{uuid}/publish', 'verb' => 'POST'],
         ['name' => 'ztc#publishBesluittype', 'url' => '/api/zgw/catalogi/v1/besluittypen/{uuid}/publish', 'verb' => 'POST'],
         ['name' => 'ztc#publishInformatieobjecttype', 'url' => '/api/zgw/catalogi/v1/informatieobjecttypen/{uuid}/publish', 'verb' => 'POST'],
-        // Audit trail.
         ['name' => 'ztc#audittrailIndex', 'url' => '/api/zgw/catalogi/v1/{resource}/{uuid}/audittrail', 'verb' => 'GET'],
         ['name' => 'ztc#audittrailShow', 'url' => '/api/zgw/catalogi/v1/{resource}/{uuid}/audittrail/{auditUuid}', 'verb' => 'GET'],
-        // CRUD.
         ['name' => 'ztc#index', 'url' => '/api/zgw/catalogi/v1/{resource}', 'verb' => 'GET'],
         ['name' => 'ztc#create', 'url' => '/api/zgw/catalogi/v1/{resource}', 'verb' => 'POST'],
         ['name' => 'ztc#show', 'url' => '/api/zgw/catalogi/v1/{resource}/{uuid}', 'verb' => 'GET'],
@@ -73,10 +68,8 @@ return [
         ['name' => 'ztc#destroy', 'url' => '/api/zgw/catalogi/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
         // ── BRC (Besluiten) ─────────────────────────────────────────────
-        // Audit trail.
         ['name' => 'brc#audittrailIndex', 'url' => '/api/zgw/besluiten/v1/{resource}/{uuid}/audittrail', 'verb' => 'GET'],
         ['name' => 'brc#audittrailShow', 'url' => '/api/zgw/besluiten/v1/{resource}/{uuid}/audittrail/{auditUuid}', 'verb' => 'GET'],
-        // CRUD.
         ['name' => 'brc#index', 'url' => '/api/zgw/besluiten/v1/{resource}', 'verb' => 'GET'],
         ['name' => 'brc#create', 'url' => '/api/zgw/besluiten/v1/{resource}', 'verb' => 'POST'],
         ['name' => 'brc#show', 'url' => '/api/zgw/besluiten/v1/{resource}/{uuid}', 'verb' => 'GET'],
@@ -93,12 +86,9 @@ return [
         ['name' => 'ac#destroy', 'url' => '/api/zgw/autorisaties/v1/applicaties/{uuid}', 'verb' => 'DELETE'],
 
         // ── NRC (Notificaties) ──────────────────────────────────────────
-        // Notificaties webhook endpoint.
         ['name' => 'nrc#notificatieCreate', 'url' => '/api/zgw/notificaties/v1/notificaties', 'verb' => 'POST'],
-        // Audit trail.
         ['name' => 'nrc#audittrailIndex', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}/audittrail', 'verb' => 'GET'],
         ['name' => 'nrc#audittrailShow', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}/audittrail/{auditUuid}', 'verb' => 'GET'],
-        // CRUD.
         ['name' => 'nrc#index', 'url' => '/api/zgw/notificaties/v1/{resource}', 'verb' => 'GET'],
         ['name' => 'nrc#create', 'url' => '/api/zgw/notificaties/v1/{resource}', 'verb' => 'POST'],
         ['name' => 'nrc#show', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'GET'],
@@ -106,12 +96,18 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
-        // ── Consultations ──────────────────────────────────────────────
-        ['name' => 'consultation#index', 'url' => '/api/cases/{caseId}/consultations', 'verb' => 'GET'],
-        ['name' => 'consultation#create', 'url' => '/api/consultations', 'verb' => 'POST'],
-        ['name' => 'consultation#updateStatus', 'url' => '/api/consultations/{id}/status', 'verb' => 'PUT'],
-        ['name' => 'consultation#submitResponse', 'url' => '/api/consultations/{id}/response', 'verb' => 'POST'],
-        ['name' => 'consultation#overdue', 'url' => '/api/consultations/overdue', 'verb' => 'GET'],
+        // ── Case Sharing & Collaboration ──────────────────────────────
+        // Share management (authenticated).
+        ['name' => 'case_sharing#listShares', 'url' => '/api/shares/{caseId}', 'verb' => 'GET'],
+        ['name' => 'case_sharing#createShare', 'url' => '/api/shares', 'verb' => 'POST'],
+        ['name' => 'case_sharing#revokeShare', 'url' => '/api/shares/{shareId}', 'verb' => 'DELETE'],
+        // Transfer management (authenticated).
+        ['name' => 'case_sharing#initiateTransfer', 'url' => '/api/transfers', 'verb' => 'POST'],
+        ['name' => 'case_sharing#handleTransfer', 'url' => '/api/transfers/{transferId}', 'verb' => 'PUT'],
+        // Public share access (unauthenticated).
+        ['name' => 'public_share#accessShare', 'url' => '/api/public/share/{token}', 'verb' => 'GET'],
+        ['name' => 'public_share#addComment', 'url' => '/api/public/share/{token}/comment', 'verb' => 'POST'],
+        ['name' => 'public_share#viewStatus', 'url' => '/api/public/status/{token}', 'verb' => 'GET'],
 
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
