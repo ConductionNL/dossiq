@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: redirect
 ---
 
 # Document en Zaakdossier

@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: redirect
 priority: high
 estimated_effort: large
 ---

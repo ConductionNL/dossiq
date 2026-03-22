@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: redirect
 ---
 
 # DSO Omgevingsloket Integration
