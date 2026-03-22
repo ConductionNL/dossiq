@@ -278,7 +278,7 @@ The system MUST support changing a case's status directly from the case list vie
 
 **Feature tier**: MVP
 
-The system MUST provide a comprehensive detail view for each case. See wireframe 3.3 (Case Detail View) in DESIGN-REFERENCES.md. The detail view MUST include: status timeline, case info panel, deadline and timing panel, participants panel, custom properties panel, required documents checklist, tasks section, decisions section, activity timeline, and sub-cases section.
+The system MUST provide a comprehensive detail view for each case. See wireframe 3.3 (Case Detail View) in DESIGN-REFERENCES.md. The detail view MUST include: status timeline, case info panel, deadline and timing panel, participants panel, B&W Voorstellen panel, custom properties panel, required documents checklist, tasks section, decisions section, activity timeline, and sub-cases section.
 
 #### Scenario CM-06a: Case info panel
 
@@ -486,6 +486,26 @@ The case detail view MUST display decisions linked to the case.
 - WHEN the user views the decisions section
 - THEN the section MUST show "(no decisions yet)"
 - AND an "Add Decision" button MUST be available
+
+#### Scenario CM-06k: B&W Voorstellen panel on case detail
+
+- WHEN the user views a case detail page
+- THEN a "B&W Voorstellen" panel SHALL be displayed in the case detail view
+- AND if no voorstellen exist, the panel SHALL show: "Geen voorstellen" with a "Nieuw voorstel" button
+- AND if voorstellen exist, each SHALL show: type, status, current parafeeerstap, steller
+
+#### Scenario CM-06l: Multiple voorstellen displayed
+
+- WHEN a case has 2 voorstellen (one "besloten", one "in_parafering")
+- THEN both SHALL be listed in the B&W Voorstellen panel
+- AND each SHALL be clickable to navigate to the voorstel detail view
+- AND the active voorstel SHALL be visually distinguished from completed ones
+
+#### Scenario CM-06m: Create voorstel from case detail
+
+- WHEN the user clicks "Nieuw voorstel" in the B&W Voorstellen panel
+- THEN a creation dialog SHALL open pre-filled with the case context
+- AND after creation, the new voorstel SHALL appear in the panel
 
 ---
 

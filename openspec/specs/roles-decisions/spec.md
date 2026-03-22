@@ -428,6 +428,16 @@ The system SHOULD support creating, reading, updating, and deleting formal decis
 - AND it MUST no longer appear in the case detail
 - AND the audit trail MUST record the deletion
 
+#### Scenario: Create decision from voorstel workflow
+
+- GIVEN the secretariaat clicks "Besluit registreren" on a voorstel with status "geaccordeerd"
+- AND enters: besluit tekst, ingangsdatum, besluittype
+- WHEN the besluit registration is submitted
+- THEN a decision object SHALL be created via the existing decision schema
+- AND the decision SHALL be linked to the parent case of the voorstel
+- AND the voorstel status SHALL change to "besloten"
+- AND the case activity timeline SHALL show: "Besluit vastgesteld: [tekst]"
+
 ---
 
 ### REQ-DECISION-002: Decision Validity Periods

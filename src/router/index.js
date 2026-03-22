@@ -7,6 +7,8 @@ import CaseList from '../views/cases/CaseList.vue'
 import CaseDetail from '../views/cases/CaseDetail.vue'
 import TaskList from '../views/tasks/TaskList.vue'
 import TaskDetail from '../views/tasks/TaskDetail.vue'
+import VoorstelList from '../views/voorstellen/VoorstelList.vue'
+import VoorstelDetail from '../views/voorstellen/VoorstelDetail.vue'
 import AdminRoot from '../views/settings/AdminRoot.vue'
 
 Vue.use(Router)
@@ -22,6 +24,8 @@ export default new Router({
 		{ path: '/tasks', name: 'Tasks', component: TaskList },
 		{ path: '/tasks/new', name: 'TaskNew', component: TaskDetail, props: route => ({ taskId: 'new', caseIdProp: route.query.caseId || null }) },
 		{ path: '/tasks/:id', name: 'TaskDetail', component: TaskDetail, props: route => ({ taskId: route.params.id }) },
+		{ path: '/voorstellen', name: 'Voorstellen', component: VoorstelList },
+		{ path: '/voorstellen/:id', name: 'VoorstelDetail', component: VoorstelDetail, props: route => ({ voorstelId: route.params.id }) },
 		{ path: '/settings', name: 'Settings', component: AdminRoot },
 		{ path: '/case-types', name: 'CaseTypes', component: AdminRoot },
 		{ path: '*', redirect: '/' },

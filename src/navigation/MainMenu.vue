@@ -31,6 +31,13 @@
 				</template>
 			</NcAppNavigationItem>
 			<NcAppNavigationItem
+				:name="t('procest', 'Voorstellen')"
+				:to="{ name: 'Voorstellen' }">
+				<template #icon>
+					<FileDocumentEditOutline :size="20" />
+				</template>
+			</NcAppNavigationItem>
+			<NcAppNavigationItem
 				:name="t('procest', 'Documentation')"
 				@click="openLink('https://procest.app', '_blank')">
 				<template #icon>
@@ -65,6 +72,7 @@ import ViewDashboard from 'vue-material-design-icons/ViewDashboard.vue'
 import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'
 import AccountCheck from 'vue-material-design-icons/AccountCheck.vue'
 import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
+import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditOutline.vue'
 import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
 import Cog from 'vue-material-design-icons/Cog.vue'
 import ShapeOutline from 'vue-material-design-icons/ShapeOutline.vue'
@@ -79,6 +87,7 @@ export default {
 		AccountCheck,
 		FolderOpen,
 		ClipboardCheckOutline,
+		FileDocumentEditOutline,
 		BookOpenVariantOutline,
 		Cog,
 		ShapeOutline,
