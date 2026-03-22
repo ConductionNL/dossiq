@@ -10,6 +10,13 @@
 			@layout-change="onLayoutChange">
 			<!-- Header actions: quick action buttons -->
 			<template #header-actions>
+				<NcButton type="tertiary"
+					@click="$router.push({ name: 'Doorlooptijd' })">
+					<template #icon>
+						<ChartTimeline :size="20" />
+					</template>
+					{{ t('procest', 'Doorlooptijd') }}
+				</NcButton>
 				<NcButton type="primary" @click="showCreateDialog = true">
 					<template #icon>
 						<Plus :size="20" />
@@ -77,6 +84,18 @@
 					variant="primary"
 					horizontal
 					:route="{ name: 'Tasks' }" />
+			</template>
+
+			<!-- SLA Compliance count widget -->
+			<template #widget-count-sla>
+				<CnStatsBlock
+					:title="t('procest', 'SLA Compliance')"
+					:count="slaComplianceLabel"
+					:count-label="slaComplianceSub"
+					:icon="ChartTimeline"
+					:variant="slaComplianceVariant"
+					horizontal
+					:route="{ name: 'Doorlooptijd' }" />
 			</template>
 
 			<!-- Cases by Status widget -->
@@ -198,6 +217,7 @@ import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'
 import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
 import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
+import ChartTimeline from 'vue-material-design-icons/ChartTimelineVariant.vue'
 import { useObjectStore } from '../store/modules/object.js'
 import {
 	computeKpis,
@@ -207,6 +227,7 @@ import {
 	getTaskDueReminders,
 	getStalledCases,
 } from '../utils/dashboardHelpers.js'
+import { computeSlaCompliance } from '../utils/doorlooptijdHelpers.js'
 import CaseCreateDialog from './cases/CaseCreateDialog.vue'
 import TaskCreateDialog from './tasks/TaskCreateDialog.vue'
 import DeadlineAlerts from './dashboard/DeadlineAlerts.vue'
@@ -226,16 +247,22 @@ const BAR_COLORS = [
  * Default dashboard layout — 4 count tiles across the top row (3 cols each),
  * then cases-by-status and my-work share the second row.
  */
+/**
+ * Default dashboard layout — 5 count tiles across the top row,
+ * then cases-by-status and my-work share the second row.
+ * Grid is 12 columns: tiles use widths 2+3+3+2+2 = 12.
+ */
 const DEFAULT_LAYOUT = [
-	{ id: 1, widgetId: 'count-open-cases', gridX: 0, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
-	{ id: 2, widgetId: 'count-overdue', gridX: 3, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
-	{ id: 3, widgetId: 'count-completed', gridX: 6, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
-	{ id: 4, widgetId: 'count-my-tasks', gridX: 9, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
-	{ id: 5, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 6, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 7, widgetId: 'deadline-alerts', gridX: 0, gridY: 6, gridWidth: 4, gridHeight: 4 },
-	{ id: 8, widgetId: 'task-due-reminders', gridX: 4, gridY: 6, gridWidth: 4, gridHeight: 4 },
-	{ id: 9, widgetId: 'stalled-cases', gridX: 8, gridY: 6, gridWidth: 4, gridHeight: 4 },
+	{ id: 1, widgetId: 'count-open-cases', gridX: 0, gridY: 0, gridWidth: 2, gridHeight: 2, showTitle: false },
+	{ id: 2, widgetId: 'count-overdue', gridX: 2, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
+	{ id: 3, widgetId: 'count-completed', gridX: 5, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
+	{ id: 4, widgetId: 'count-my-tasks', gridX: 8, gridY: 0, gridWidth: 2, gridHeight: 2, showTitle: false },
+	{ id: 5, widgetId: 'count-sla', gridX: 10, gridY: 0, gridWidth: 2, gridHeight: 2, showTitle: false },
+	{ id: 6, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
+	{ id: 7, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
+	{ id: 8, widgetId: 'deadline-alerts', gridX: 0, gridY: 6, gridWidth: 4, gridHeight: 4 },
+	{ id: 9, widgetId: 'task-due-reminders', gridX: 4, gridY: 6, gridWidth: 4, gridHeight: 4 },
+	{ id: 10, widgetId: 'stalled-cases', gridX: 8, gridY: 6, gridWidth: 4, gridHeight: 4 },
 ]
 
 export default {
@@ -246,6 +273,7 @@ export default {
 		CnStatsBlock,
 		Plus,
 		Refresh,
+		ChartTimeline,
 		CaseCreateDialog,
 		TaskCreateDialog,
 		DeadlineAlerts,
@@ -260,6 +288,8 @@ export default {
 			AlertCircle,
 			CheckCircle,
 			ClipboardCheckOutline,
+			ChartTimeline,
+			slaCompliance: { overallRate: null, withinSla: 0, total: 0 },
 			showCreateDialog: false,
 			showTaskDialog: false,
 			openCases: [],
@@ -298,12 +328,28 @@ export default {
 				&& this.caseTypes.length === 0
 				&& !this.error
 		},
+		slaComplianceLabel() {
+			return this.slaCompliance.overallRate !== null
+				? this.slaCompliance.overallRate + '%'
+				: '—'
+		},
+		slaComplianceSub() {
+			if (this.slaCompliance.total === 0) return t('procest', 'No SLA targets')
+			return `${this.slaCompliance.withinSla}/${this.slaCompliance.total}`
+		},
+		slaComplianceVariant() {
+			if (this.slaCompliance.overallRate === null) return 'default'
+			if (this.slaCompliance.overallRate >= 90) return 'success'
+			if (this.slaCompliance.overallRate >= 70) return 'warning'
+			return 'error'
+		},
 		widgetDefs() {
 			return [
 				{ id: 'count-open-cases', title: t('procest', 'Open Cases'), type: 'custom' },
 				{ id: 'count-overdue', title: t('procest', 'Overdue'), type: 'custom' },
 				{ id: 'count-completed', title: t('procest', 'Completed This Month'), type: 'custom' },
 				{ id: 'count-my-tasks', title: t('procest', 'My Tasks'), type: 'custom' },
+				{ id: 'count-sla', title: t('procest', 'SLA Compliance'), type: 'custom' },
 				{ id: 'cases-by-status', title: t('procest', 'Cases by Status'), type: 'custom' },
 				{ id: 'my-work', title: t('procest', 'My Work'), type: 'custom' },
 				{ id: 'deadline-alerts', title: t('procest', 'Deadline Alerts'), type: 'custom' },
@@ -368,6 +414,7 @@ export default {
 				)
 
 				this.kpis = computeKpis(this.openCases, this.completedCases, this.myTasks)
+				this.slaCompliance = computeSlaCompliance(this.completedCases, this.caseTypes)
 				this.statusData = aggregateByStatus(this.openCases, this.statusTypes)
 
 				const myCases = this.openCases.filter(c => c.assignee === currentUser)
