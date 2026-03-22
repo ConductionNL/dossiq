@@ -1584,6 +1584,341 @@
             "description": "Reference to parent workflow template for inheritance (Enterprise tier)"
           }
         }
+      },
+      "objection": {
+        "slug": "objection",
+        "icon": "FileDocumentAlertOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Message",
+        "x-zgw-equivalent": "Bezwaarschrift",
+        "title": "Objection",
+        "description": "Bezwaarschrift (objection letter) — captures the formal objection content linked to a bezwaar case and the contested decision",
+        "type": "object",
+        "required": [
+          "case",
+          "contestedDecision",
+          "grounds",
+          "receivedDate",
+          "receivedChannel"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "The bezwaar case this objection belongs to"
+          },
+          "contestedDecision": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "decision",
+            "description": "The original besluit being contested"
+          },
+          "grounds": {
+            "type": "string",
+            "description": "The grounds for objection (gronden van bezwaar)"
+          },
+          "requestedRelief": {
+            "type": "string",
+            "description": "What outcome the bezwaarmaker seeks"
+          },
+          "receivedDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the bezwaarschrift was received"
+          },
+          "receivedChannel": {
+            "type": "string",
+            "enum": [
+              "brief",
+              "email",
+              "formulier",
+              "balie"
+            ],
+            "description": "How the bezwaarschrift was received"
+          },
+          "isTimely": {
+            "type": "boolean",
+            "description": "Whether the objection was filed within the 6-week term (Awb art. 6:7)"
+          },
+          "timelinessAssessment": {
+            "type": "string",
+            "description": "Explanation of timeliness determination"
+          },
+          "proVoorziening": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether a voorlopige voorziening (interim relief) was requested"
+          },
+          "attachments": {
+            "type": "string",
+            "description": "JSON-encoded array of document references uploaded by bezwaarmaker"
+          }
+        }
+      },
+      "hearingSession": {
+        "slug": "hearingSession",
+        "icon": "AccountGroupOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Event",
+        "x-zgw-equivalent": "Hoorzitting",
+        "title": "Hearing Session",
+        "description": "Hoorzitting (hearing) — manages scheduling, invitations, and minutes for bezwaar hearings per Awb art. 7:2",
+        "type": "object",
+        "required": [
+          "case",
+          "scheduledDate",
+          "chairperson",
+          "invitees",
+          "status"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "The bezwaar case this hearing belongs to"
+          },
+          "scheduledDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the hearing"
+          },
+          "location": {
+            "type": "string",
+            "description": "Physical location or 'Online' for video hearings"
+          },
+          "videoCallUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Video conference link for online hearings"
+          },
+          "chairperson": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "role",
+            "description": "Who chairs the hearing (voorzitter)"
+          },
+          "members": {
+            "type": "string",
+            "description": "JSON-encoded array of committee member role UUIDs"
+          },
+          "invitees": {
+            "type": "string",
+            "description": "JSON-encoded array of invitee objects (name, role, email, status)"
+          },
+          "minutesSummary": {
+            "type": "string",
+            "description": "Summary of what was discussed (verslag)"
+          },
+          "minutesDocument": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to full hearing minutes document"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "gepland",
+              "uitgenodigd",
+              "uitgevoerd",
+              "geannuleerd",
+              "afgezien"
+            ],
+            "default": "gepland",
+            "description": "Hearing session status"
+          },
+          "hearingWaived": {
+            "type": "boolean",
+            "default": false,
+            "description": "Bezwaarmaker has waived the right to be heard"
+          },
+          "waiverReason": {
+            "type": "string",
+            "description": "Reason for waiving hearing right"
+          }
+        }
+      },
+      "advisoryReport": {
+        "slug": "advisoryReport",
+        "icon": "FileDocumentCheckOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Report",
+        "x-zgw-equivalent": "AdviesBezwaarschriftencommissie",
+        "title": "Advisory Report",
+        "description": "Advisory committee report (advies bezwaarschriftencommissie) — records the committee's advice on a bezwaar case per Awb art. 7:13",
+        "type": "object",
+        "required": [
+          "case",
+          "committeeChair",
+          "adviceDate",
+          "adviceType",
+          "summary",
+          "grounds",
+          "recommendation",
+          "deviationFromPrimaryDecision"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "The bezwaar case this report belongs to"
+          },
+          "hearingSession": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "hearingSession",
+            "description": "The hearing session this report is based on"
+          },
+          "committeeChair": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "role",
+            "description": "Voorzitter who signed the report"
+          },
+          "committeeMembers": {
+            "type": "string",
+            "description": "JSON-encoded array of committee member role UUIDs"
+          },
+          "adviceDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the advice was issued"
+          },
+          "adviceType": {
+            "type": "string",
+            "enum": [
+              "gegrond",
+              "ongegrond",
+              "deels_gegrond",
+              "niet_ontvankelijk"
+            ],
+            "description": "Type of advice: upheld, rejected, partially upheld, inadmissible"
+          },
+          "summary": {
+            "type": "string",
+            "description": "Summary of the committee's advice"
+          },
+          "grounds": {
+            "type": "string",
+            "description": "Legal reasoning and grounds for the advice"
+          },
+          "recommendation": {
+            "type": "string",
+            "description": "Recommended action for the bestuursorgaan"
+          },
+          "deviationFromPrimaryDecision": {
+            "type": "boolean",
+            "description": "Whether the committee advises differently from the original decision"
+          },
+          "reportDocument": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to full advisory report document"
+          }
+        }
+      },
+      "appealDecision": {
+        "slug": "appealDecision",
+        "icon": "GavelOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:LegalForceStatus",
+        "x-zgw-equivalent": "BeslissingOpBezwaar",
+        "title": "Appeal Decision",
+        "description": "Beslissing op bezwaar (decision on objection) — formal decision recording with disposition, motivation, and rechtsmiddelenclausule per Awb art. 7:11-7:12",
+        "type": "object",
+        "required": [
+          "case",
+          "contestedDecision",
+          "dispositionType",
+          "dispositionDetails",
+          "decisionDate",
+          "effectiveDate",
+          "appealInformation",
+          "decisionMaker"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "The bezwaar case"
+          },
+          "contestedDecision": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "decision",
+            "description": "The original besluit being contested"
+          },
+          "advisoryReport": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "advisoryReport",
+            "description": "The committee's advisory report"
+          },
+          "dispositionType": {
+            "type": "string",
+            "enum": [
+              "gegrond",
+              "ongegrond",
+              "deels_gegrond",
+              "niet_ontvankelijk"
+            ],
+            "description": "Decision outcome type"
+          },
+          "dispositionDetails": {
+            "type": "string",
+            "description": "Detailed motivation for the decision (motiveringsplicht art. 7:12)"
+          },
+          "followsAdvice": {
+            "type": "boolean",
+            "description": "Whether the decision follows the committee's advice"
+          },
+          "deviationReason": {
+            "type": "string",
+            "description": "Reason for deviating from committee advice (required when followsAdvice is false)"
+          },
+          "remedialAction": {
+            "type": "string",
+            "description": "Corrective action taken if gegrond/deels_gegrond"
+          },
+          "replacementDecision": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "decision",
+            "description": "New besluit that replaces the contested one"
+          },
+          "decisionDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the decision was made"
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the decision takes legal effect"
+          },
+          "appealInformation": {
+            "type": "string",
+            "description": "Information about beroep possibilities (rechtsmiddelenclausule)"
+          },
+          "decisionMaker": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "role",
+            "description": "The person/body that made the decision"
+          },
+          "decisionDocument": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the formal decision letter document"
+          }
+        }
       }
     },
     "registers": {
@@ -1619,7 +1954,11 @@
           "usageRights",
           "workflowTemplate",
           "kanaal",
-          "abonnement"
+          "abonnement",
+          "objection",
+          "hearingSession",
+          "advisoryReport",
+          "appealDecision"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"

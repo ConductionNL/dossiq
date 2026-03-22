@@ -61,6 +61,11 @@ class SettingsService
         'usage_rights_schema',
         'kanaal_schema',
         'abonnement_schema',
+        'workflow_template_schema',
+        'objection_schema',
+        'hearing_session_schema',
+        'advisory_report_schema',
+        'appeal_decision_schema',
         'default_case_type',
     ];
 
@@ -95,6 +100,11 @@ class SettingsService
         'usageRights'                  => 'usage_rights_schema',
         'kanaal'                       => 'kanaal_schema',
         'abonnement'                   => 'abonnement_schema',
+        'workflowTemplate'             => 'workflow_template_schema',
+        'objection'                    => 'objection_schema',
+        'hearingSession'               => 'hearing_session_schema',
+        'advisoryReport'               => 'advisory_report_schema',
+        'appealDecision'               => 'appeal_decision_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
