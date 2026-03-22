@@ -1,0 +1,217 @@
+{
+  "id": "woo-verzoek",
+  "title": "WOO Verzoek",
+  "description": "Zaaktype voor het afhandelen van verzoeken op grond van de Wet open overheid (WOO). Pre-geconfigureerd met 8 fasen, WOO-specifieke intake velden, termijnbewaking (4 weken + 2 weken verlenging), en documentbeoordeling.",
+  "category": "transparantie",
+  "version": "1.0.0",
+  "caseType": {
+    "title": "WOO Verzoek",
+    "description": "Behandeling van verzoeken op grond van de Wet open overheid",
+    "purpose": "Transparante afhandeling van informatieverzoeken conform de WOO",
+    "trigger": "Ontvangst van een WOO-verzoek van een burger, journalist of organisatie",
+    "subject": "Openbaarmaking van overheidsinformatie",
+    "processingDeadline": "P28D",
+    "confidentiality": "intern",
+    "isDraft": false,
+    "extensionAllowed": true,
+    "extensionPeriod": "P14D",
+    "publicationRequired": true,
+    "internalOrExternal": "extern",
+    "handlerAction": "Beoordelen en beslissen op WOO-verzoek",
+    "origin": "indienen"
+  },
+  "statusTypes": [
+    {
+      "name": "Ontvangst",
+      "description": "Verzoek ontvangen, ontvangstbevestiging verzenden",
+      "order": 1,
+      "isFinal": false
+    },
+    {
+      "name": "Beoordeling ontvankelijkheid",
+      "description": "Controleren of het verzoek aan de formele vereisten voldoet",
+      "order": 2,
+      "isFinal": false
+    },
+    {
+      "name": "Zoeken documenten",
+      "description": "Zoeken en verzamelen van relevante documenten",
+      "order": 3,
+      "isFinal": false
+    },
+    {
+      "name": "Beoordelen documenten",
+      "description": "Per document beoordelen of openbaarmaking mogelijk is",
+      "order": 4,
+      "isFinal": false
+    },
+    {
+      "name": "Lakken / Anonimiseren",
+      "description": "Gevoelige informatie in documenten anonimiseren",
+      "order": 5,
+      "isFinal": false
+    },
+    {
+      "name": "Besluit",
+      "description": "Formeel besluit nemen over openbaarmaking",
+      "order": 6,
+      "isFinal": false
+    },
+    {
+      "name": "Publicatie",
+      "description": "Goedgekeurde documenten publiceren in de leeskamer",
+      "order": 7,
+      "isFinal": false
+    },
+    {
+      "name": "Afgehandeld",
+      "description": "Zaak is afgerond",
+      "order": 8,
+      "isFinal": true
+    }
+  ],
+  "propertyDefinitions": [
+    {
+      "name": "verzoekerNaam",
+      "definition": "Naam van de verzoeker",
+      "description": "Volledige naam van de persoon of organisatie die het WOO-verzoek indient",
+      "propertyType": "string",
+      "isRequired": true
+    },
+    {
+      "name": "verzoekerEmail",
+      "definition": "E-mailadres van de verzoeker",
+      "description": "Contactgegevens van de verzoeker voor correspondentie",
+      "propertyType": "email",
+      "isRequired": true
+    },
+    {
+      "name": "verzoekerType",
+      "definition": "Type verzoeker",
+      "description": "Categorie: burger, journalist of organisatie",
+      "propertyType": "string",
+      "isRequired": false
+    },
+    {
+      "name": "onderwerp",
+      "definition": "Onderwerp van het verzoek",
+      "description": "Het onderwerp waarover informatie wordt gevraagd",
+      "propertyType": "string",
+      "isRequired": true
+    },
+    {
+      "name": "periodeVan",
+      "definition": "Periode van",
+      "description": "Begindatum van de periode waarop het verzoek betrekking heeft",
+      "propertyType": "date",
+      "isRequired": false
+    },
+    {
+      "name": "periodeTot",
+      "definition": "Periode tot",
+      "description": "Einddatum van de periode waarop het verzoek betrekking heeft",
+      "propertyType": "date",
+      "isRequired": false
+    },
+    {
+      "name": "bestuurlijkeAangelegenheid",
+      "definition": "Bestuurlijke aangelegenheid",
+      "description": "De bestuurlijke aangelegenheid waarop het verzoek betrekking heeft",
+      "propertyType": "string",
+      "isRequired": false
+    },
+    {
+      "name": "ontvangstdatum",
+      "definition": "Ontvangstdatum",
+      "description": "Datum waarop het WOO-verzoek is ontvangen (voor termijnberekening)",
+      "propertyType": "date",
+      "isRequired": true
+    },
+    {
+      "name": "gewensteVorm",
+      "definition": "Gewenste vorm van verstrekking",
+      "description": "Hoe de verzoeker de documenten wil ontvangen: papier, digitaal of inzage",
+      "propertyType": "string",
+      "isRequired": false,
+      "defaultValue": "digitaal"
+    },
+    {
+      "name": "verdagingReden",
+      "definition": "Reden verdaging",
+      "description": "Reden voor de verlenging van de beslistermijn",
+      "propertyType": "string",
+      "isRequired": false
+    }
+  ],
+  "documentTypes": [
+    {
+      "name": "WOO-verzoek",
+      "description": "Het ingediende verzoek om openbaarmaking",
+      "isRequired": true,
+      "category": "incoming"
+    },
+    {
+      "name": "Ontvangstbevestiging",
+      "description": "Bevestiging van ontvangst aan de verzoeker",
+      "isRequired": true,
+      "category": "outgoing"
+    },
+    {
+      "name": "Inventarislijst",
+      "description": "Overzicht van alle gevonden documenten met beoordelingsstatus",
+      "isRequired": true,
+      "category": "internal"
+    },
+    {
+      "name": "WOO-besluit",
+      "description": "Het formele besluit op het WOO-verzoek",
+      "isRequired": true,
+      "category": "outgoing"
+    },
+    {
+      "name": "Te beoordelen document",
+      "description": "Document dat beoordeeld moet worden voor openbaarmaking",
+      "isRequired": false,
+      "category": "internal"
+    },
+    {
+      "name": "Geanonimiseerd document",
+      "description": "Geanonimiseerde versie van een deels openbaar document",
+      "isRequired": false,
+      "category": "internal"
+    }
+  ],
+  "decisionTypes": [
+    {
+      "name": "WOO-besluit",
+      "description": "Besluit op een verzoek op grond van de Wet open overheid",
+      "publicationRequired": true
+    }
+  ],
+  "roleTypes": [
+    {
+      "name": "Behandelaar",
+      "description": "Medewerker die het WOO-verzoek inhoudelijk behandelt"
+    },
+    {
+      "name": "WOO-coordinator",
+      "description": "Coordinator die toezicht houdt op WOO-verzoeken"
+    },
+    {
+      "name": "Juridisch adviseur",
+      "description": "Juridisch medewerker die adviseert over weigeringsgronden"
+    }
+  ],
+  "weigeringsgronden": [
+    { "code": "5.1.1", "label": "Eenheid van de Kroon" },
+    { "code": "5.1.2", "label": "Veiligheid van de Staat" },
+    { "code": "5.1.3", "label": "Vertrouwelijk verstrekte bedrijfs- en fabricagegegevens" },
+    { "code": "5.1.4", "label": "Persoonlijke beleidsopvattingen" },
+    { "code": "5.1.5", "label": "Persoonlijke levenssfeer" },
+    { "code": "5.2.1", "label": "Economische of financiele belangen van de Staat" },
+    { "code": "5.2.2", "label": "Opsporing en vervolging van strafbare feiten" },
+    { "code": "5.2.3", "label": "Inspectie, controle en toezicht door bestuursorganen" },
+    { "code": "5.2.4", "label": "Vertrouwelijkheid van beraadslaging" },
+    { "code": "5.2.5", "label": "Het goed functioneren van de Staat" }
+  ]
+}
