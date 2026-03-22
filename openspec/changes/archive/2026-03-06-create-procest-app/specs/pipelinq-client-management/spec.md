@@ -3,7 +3,7 @@
 ## Purpose
 Define the client and request management domain for Pipelinq: clients, requests (verzoeken), and contacts. All entities are stored in OpenRegister under the `client-management` register. Requests represent the pre-state of a case — a yet-to-be-determined or incoming case before it enters formal case management in Procest.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Client-management register MUST be auto-configured on install
 The app MUST create or detect the `client-management` register and its schemas in OpenRegister during app initialization.

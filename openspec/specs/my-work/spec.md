@@ -1,3 +1,7 @@
+---
+status: implemented
+---
+
 # My Work (Werkvoorraad) Specification
 
 ## Purpose
