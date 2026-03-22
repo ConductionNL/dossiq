@@ -66,10 +66,13 @@ class ParaferingNotificationService
                 ->setUser($actorUserId)
                 ->setDateTime(new \DateTime())
                 ->setObject('voorstel', $voorstelId)
-                ->setSubject('parafering_step_activated', [
-                    'onderwerp' => $onderwerp,
-                    'stepLabel' => $stepLabel,
-                ]);
+                ->setSubject(
+                        'parafering_step_activated',
+                        [
+                            'onderwerp' => $onderwerp,
+                            'stepLabel' => $stepLabel,
+                        ]
+                        );
 
             $this->notificationManager->notify($notification);
         } catch (\Throwable $e) {
@@ -108,11 +111,14 @@ class ParaferingNotificationService
                 ->setUser($stellerUserId)
                 ->setDateTime(new \DateTime())
                 ->setObject('voorstel', $voorstelId)
-                ->setSubject('voorstel_returned', [
-                    'onderwerp'  => $onderwerp,
-                    'returnedBy' => $returnedBy,
-                    'comment'    => $comment,
-                ]);
+                ->setSubject(
+                        'voorstel_returned',
+                        [
+                            'onderwerp'  => $onderwerp,
+                            'returnedBy' => $returnedBy,
+                            'comment'    => $comment,
+                        ]
+                        );
 
             $this->notificationManager->notify($notification);
         } catch (\Throwable $e) {
@@ -149,10 +155,13 @@ class ParaferingNotificationService
                 ->setUser($actorUserId)
                 ->setDateTime(new \DateTime())
                 ->setObject('voorstel', $voorstelId)
-                ->setSubject('parafering_reminder', [
-                    'onderwerp'   => $onderwerp,
-                    'daysWaiting' => $daysWaiting,
-                ]);
+                ->setSubject(
+                        'parafering_reminder',
+                        [
+                            'onderwerp'   => $onderwerp,
+                            'daysWaiting' => $daysWaiting,
+                        ]
+                        );
 
             $this->notificationManager->notify($notification);
         } catch (\Throwable $e) {
