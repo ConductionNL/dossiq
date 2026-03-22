@@ -262,6 +262,13 @@
 				</div>
 			</CnDetailCard>
 
+			<!-- Location card -->
+			<CnDetailCard :title="t('procest', 'Location')">
+				<LocationTab
+					:geometry="caseData.geometry || null"
+					:is-read-only="isReadOnly"
+					@update-geometry="onGeometryUpdate" />
+			</CnDetailCard>
 			<!-- Bezwaar-specific sections (shown when case type is Bezwaar) -->
 			<template v-if="isBezwaarCase">
 				<CnDetailCard :title="t('procest', 'Objection Details')">
@@ -399,6 +406,8 @@ import BeroepEscalationPanel from './components/beroep/BeroepEscalationPanel.vue
 import CourtProceedingsPanel from './components/beroep/CourtProceedingsPanel.vue'
 import { useBezwaarStore } from '../../store/modules/bezwaar.js'
 
+const LocationTab = () => import(/* webpackChunkName: "map" */ './components/LocationTab.vue')
+
 export default {
 	name: 'CaseDetail',
 	components: {
@@ -413,6 +422,7 @@ export default {
 		ActivityTimeline,
 		ParticipantsSection,
 		ResultSection,
+		LocationTab,
 		VoorstellenPanel,
 		WorkflowTransitions,
 		BezwaarIntakeForm,
@@ -870,6 +880,16 @@ export default {
 			// Persist the assignee to the backend.
 			await this.objectStore.saveObject('case', { ...this.caseData, assignee: newAssignee })
 			await this.objectStore.fetchObject('case', this.caseId)
+		},
+
+		// --- Location ---
+		async onGeometryUpdate(geometry) {
+			const updateData = {
+				...this.caseData,
+				geometry: typeof geometry === 'string' ? geometry : JSON.stringify(geometry),
+			}
+			await this.objectStore.saveObject('case', updateData)
+			this.caseData.geometry = updateData.geometry
 		},
 
 		// --- Activity ---

@@ -26,6 +26,7 @@ export default new Router({
 		{ path: '/tasks', name: 'Tasks', component: TaskList },
 		{ path: '/tasks/new', name: 'TaskNew', component: TaskDetail, props: route => ({ taskId: 'new', caseIdProp: route.query.caseId || null }) },
 		{ path: '/tasks/:id', name: 'TaskDetail', component: TaskDetail, props: route => ({ taskId: route.params.id }) },
+		{ path: '/map', name: 'CaseMap', component: () => import(/* webpackChunkName: "map" */ '../views/CaseMapView.vue') },
 		{ path: '/voorstellen', name: 'Voorstellen', component: VoorstelList },
 		{ path: '/voorstellen/:id', name: 'VoorstelDetail', component: VoorstelDetail, props: route => ({ voorstelId: route.params.id }) },
 		{ path: '/settings', name: 'Settings', component: AdminRoot },

@@ -154,6 +154,9 @@
 				</div>
 			</template>
 
+			<!-- Case Map widget -->
+			<template #widget-case-map>
+				<CaseMapWidget />
 			<!-- Deadline Alerts widget -->
 			<template #widget-deadline-alerts>
 				<DeadlineAlerts
@@ -234,6 +237,8 @@ import DeadlineAlerts from './dashboard/DeadlineAlerts.vue'
 import TaskDueReminders from './dashboard/TaskDueReminders.vue'
 import StalledCases from './dashboard/StalledCases.vue'
 
+const CaseMapWidget = () => import(/* webpackChunkName: "map" */ './dashboard/CaseMapWidget.vue')
+
 const BAR_COLORS = [
 	'var(--color-primary)',
 	'var(--color-primary-element-light)',
@@ -253,6 +258,13 @@ const BAR_COLORS = [
  * Grid is 12 columns: tiles use widths 2+3+3+2+2 = 12.
  */
 const DEFAULT_LAYOUT = [
+	{ id: 1, widgetId: 'count-open-cases', gridX: 0, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
+	{ id: 2, widgetId: 'count-overdue', gridX: 3, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
+	{ id: 3, widgetId: 'count-completed', gridX: 6, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
+	{ id: 4, widgetId: 'count-my-tasks', gridX: 9, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
+	{ id: 5, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
+	{ id: 6, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
+	{ id: 7, widgetId: 'case-map', gridX: 0, gridY: 6, gridWidth: 12, gridHeight: 6 },
 	{ id: 1, widgetId: 'count-open-cases', gridX: 0, gridY: 0, gridWidth: 2, gridHeight: 2, showTitle: false },
 	{ id: 2, widgetId: 'count-overdue', gridX: 2, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
 	{ id: 3, widgetId: 'count-completed', gridX: 5, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
@@ -276,6 +288,7 @@ export default {
 		ChartTimeline,
 		CaseCreateDialog,
 		TaskCreateDialog,
+		CaseMapWidget,
 		DeadlineAlerts,
 		TaskDueReminders,
 		StalledCases,
@@ -352,6 +365,7 @@ export default {
 				{ id: 'count-sla', title: t('procest', 'SLA Compliance'), type: 'custom' },
 				{ id: 'cases-by-status', title: t('procest', 'Cases by Status'), type: 'custom' },
 				{ id: 'my-work', title: t('procest', 'My Work'), type: 'custom' },
+				{ id: 'case-map', title: t('procest', 'Case Map'), type: 'custom' },
 				{ id: 'deadline-alerts', title: t('procest', 'Deadline Alerts'), type: 'custom' },
 				{ id: 'task-due-reminders', title: t('procest', 'Task Due Reminders'), type: 'custom' },
 				{ id: 'stalled-cases', title: t('procest', 'Stalled Cases'), type: 'custom' },
