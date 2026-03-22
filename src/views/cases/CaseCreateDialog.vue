@@ -116,6 +116,7 @@
 <script>
 import { NcButton, NcTextField, NcSelect, NcLoadingIcon } from '@nextcloud/vue'
 import { useObjectStore } from '../../store/modules/object.js'
+import { useWorkflowStore } from '../../store/modules/workflow.js'
 import { validateCaseCreate, isCaseTypeUsable } from '../../utils/caseValidation.js'
 import { calculateDeadline, generateIdentifier, formatDate, formatDuration } from '../../utils/caseHelpers.js'
 
@@ -144,6 +145,8 @@ export default {
 			caseTypes: [],
 			statusTypes: [],
 			errors: {},
+			activeWorkflowId: null,
+			activeWorkflowVersion: null,
 			saving: false,
 			loadingTypes: false,
 		}
@@ -191,6 +194,19 @@ export default {
 		},
 
 		async onCaseTypeSelected(caseType) {
+			// Look up active workflow version for this case type
+			this.activeWorkflowId = null
+			this.activeWorkflowVersion = null
+			if (caseType) {
+				const workflowStore = useWorkflowStore()
+				workflowStore.getActiveVersion(caseType.id).then((active) => {
+					if (active) {
+						this.activeWorkflowId = active.id
+						this.activeWorkflowVersion = active.version
+					}
+				})
+			}
+
 			this.form.caseType = caseType?.id || null
 			this.errors.caseType = ''
 			this.statusTypes = []
@@ -246,6 +262,8 @@ export default {
 				result: null,
 				geometry: this.form.geometry ? JSON.stringify(this.form.geometry) : null,
 				extensionCount: 0,
+				workflowTemplate: this.activeWorkflowId || null,
+				workflowVersion: this.activeWorkflowVersion || null,
 				statusHistory: [
 					{
 						status: initialStatus?.id || null,

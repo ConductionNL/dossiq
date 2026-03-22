@@ -42,6 +42,10 @@
 			:description="t('procest', 'Configure GIS map layers for case location views (WMS, WFS, PDOK)')"
 			:loading="!storesReady">
 			<MapLayerSettings v-if="storesReady" />
+			:name="t('procest', 'Parafeerroutes')"
+			:description="t('procest', 'Configure parafeerroutes for B&W decision-making workflow')"
+			:loading="!storesReady">
+			<ParafeerRouteAdmin v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
@@ -66,6 +70,7 @@ import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
 import Settings from './Settings.vue'
 import CaseTypeAdmin from './CaseTypeAdmin.vue'
+import ParafeerRouteAdmin from './ParafeerRouteAdmin.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import MapLayerSettings from './MapLayerSettings.vue'
 import { initializeStores } from '../../store/store.js'
@@ -81,6 +86,7 @@ export default {
 		Refresh,
 		Settings,
 		CaseTypeAdmin,
+		ParafeerRouteAdmin,
 		ZgwMappingSettings,
 		MapLayerSettings,
 	},

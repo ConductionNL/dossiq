@@ -35,6 +35,10 @@
 				:to="{ name: 'CaseMap' }">
 				<template #icon>
 					<MapOutline :size="20" />
+				:name="t('procest', 'Voorstellen')"
+				:to="{ name: 'Voorstellen' }">
+				<template #icon>
+					<FileDocumentEditOutline :size="20" />
 				</template>
 			</NcAppNavigationItem>
 			<NcAppNavigationItem
@@ -72,6 +76,7 @@ import ViewDashboard from 'vue-material-design-icons/ViewDashboard.vue'
 import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'
 import AccountCheck from 'vue-material-design-icons/AccountCheck.vue'
 import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
+import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditOutline.vue'
 import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
 import MapOutline from 'vue-material-design-icons/MapOutline.vue'
 import Cog from 'vue-material-design-icons/Cog.vue'
@@ -87,6 +92,7 @@ export default {
 		AccountCheck,
 		FolderOpen,
 		ClipboardCheckOutline,
+		FileDocumentEditOutline,
 		BookOpenVariantOutline,
 		MapOutline,
 		Cog,
