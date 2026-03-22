@@ -1,3 +1,7 @@
+---
+status: implemented
+---
+
 # Roles & Decisions Specification
 
 ## Purpose
