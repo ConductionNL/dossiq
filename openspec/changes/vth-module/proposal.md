@@ -1,15 +1,17 @@
 ## Why
 
-VTH Module Specification is not yet implemented in Procest. This change proposes adding this capability based on the detailed spec in `specs/vth-module/spec.md`.
-
-**Feature tier**: V1 (DSO intake, permit workflow, basic checklists, advice management), V2 (enforcement strategies, supervision planning, mobile inspection, LHS matrix, risk-based scheduling)
+VTH (Vergunningen, Toezicht, Handhaving) is the highest-value domain for Dutch municipalities. 29% of tenders require VTH capabilities. This implements V1 tier: DSO intake service stub, configurable inspection checklists, and advice management workflow.
 
 ## What Changes
 
-See `specs/vth-module/spec.md` for full requirements and scenarios.
+1. VTH case type templates (omgevingsvergunning, toezichtzaak, handhavingszaak)
+2. Inspection checklist schemas and configuration/completion UI
+3. DSO intake service stub for receiving vergunningaanvragen
+4. Advice management service for requesting/tracking specialist advice
+5. LHS enforcement matrix data and lookup utility (V2 foundation)
+6. New schemas in procest_register.json: inspectionChecklist, checklistItem, inspectionResult, adviceRequest
 
 ## Impact
 
-- **Code**: New frontend views and/or backend services
-- **Dependencies**: OpenRegister (data storage), Nextcloud platform APIs
-- **Testing**: Unit tests for new services, integration tests for API endpoints
+- New service classes, Vue components, register schemas, route additions
+- Dependencies: OpenConnector (DSO), OpenRegister

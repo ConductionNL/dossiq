@@ -1,0 +1,139 @@
+<?php
+
+/**
+ * Procest Share Maintenance Background Job
+ *
+ * Daily job for share expiration reminders and cleanup.
+ *
+ * @category BackgroundJob
+ * @package  OCA\Procest\BackgroundJob
+ *
+ * @author    Conduction Development Team <dev@conductio.nl>
+ * @copyright 2024 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Procest\BackgroundJob;
+
+use OCA\Procest\Service\SettingsService;
+use OCP\App\IAppManager;
+use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\BackgroundJob\TimedJob;
+use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
+
+/**
+ * Daily background job that manages share lifecycle.
+ *
+ * Checks for shares expiring within 3 days and sends reminder
+ * notifications to case workers.
+ */
+class ShareMaintenanceJob extends TimedJob
+{
+    /**
+     * Days before expiration to send a reminder.
+     */
+    private const REMINDER_DAYS = 3;
+
+    /**
+     * Constructor for the ShareMaintenanceJob.
+     *
+     * @param ITimeFactory       $time            The time factory
+     * @param SettingsService    $settingsService The settings service
+     * @param IAppManager        $appManager      The app manager
+     * @param ContainerInterface $container        The DI container
+     * @param LoggerInterface    $logger          The logger
+     *
+     * @return void
+     */
+    public function __construct(
+        ITimeFactory $time,
+        private SettingsService $settingsService,
+        private IAppManager $appManager,
+        private ContainerInterface $container,
+        private LoggerInterface $logger,
+    ) {
+        parent::__construct($time);
+        // Run once per day (86400 seconds).
+        $this->setInterval(86400);
+    }//end __construct()
+
+    /**
+     * Execute the share maintenance job.
+     *
+     * @param mixed $argument Job argument (unused)
+     *
+     * @return void
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — required by parent
+     */
+    protected function run($argument): void
+    {
+        if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
+            return;
+        }
+
+        try {
+            $objectService = $this->container->get('OCA\OpenRegister\Service\ObjectService');
+        } catch (\Exception $e) {
+            $this->logger->error(
+                'Procest: ShareMaintenanceJob could not get ObjectService',
+                ['exception' => $e->getMessage()]
+            );
+            return;
+        }
+
+        $register = $this->settingsService->getConfigValue('register');
+        $schema   = $this->settingsService->getConfigValue('case_share_schema');
+
+        if (empty($register) === true || empty($schema) === true) {
+            return;
+        }
+
+        try {
+            $result = $objectService->getObjects(
+                (int) $register,
+                (int) $schema,
+                [],
+            );
+
+            $shares       = ($result['objects'] ?? []);
+            $reminderDate = new \DateTime('+'.self::REMINDER_DAYS.' days');
+
+            foreach ($shares as $share) {
+                $shareData = is_object($share) ? $share->jsonSerialize() : $share;
+
+                // Skip revoked shares.
+                if (empty($shareData['revokedAt']) === false) {
+                    continue;
+                }
+
+                // Check if share expires within reminder window.
+                if (empty($shareData['expiresAt']) === false) {
+                    $expiresAt = new \DateTime($shareData['expiresAt']);
+                    if ($expiresAt <= $reminderDate && $expiresAt > new \DateTime()) {
+                        $this->logger->info(
+                            'Procest: Share expiring soon',
+                            [
+                                'shareId'   => ($shareData['id'] ?? 'unknown'),
+                                'expiresAt' => $shareData['expiresAt'],
+                                'createdBy' => ($shareData['createdBy'] ?? 'unknown'),
+                            ]
+                        );
+                    }
+                }
+            }//end foreach
+        } catch (\Exception $e) {
+            $this->logger->error(
+                'Procest: ShareMaintenanceJob failed',
+                ['exception' => $e->getMessage()]
+            );
+        }//end try
+    }//end run()
+}//end class

@@ -1,15 +1,27 @@
-## Why
+# Proposal: legesberekening
 
-Legesberekening Specification is not yet implemented in Procest. This change proposes adding this capability based on the detailed spec in `specs/legesberekening/spec.md`.
+## Summary
+Implement a rules engine for calculating municipal fees (leges) on permit cases. The module applies the gemeentelijke legesverordening to case attributes and produces a calculated amount with audit trail. It does NOT handle payment -- it calculates and exports to the financial system.
 
-**Feature tier**: V1 (basic calculation, single verordening, manual export), V2 (multiple verordeningen, automatic DSO import, 4-ogen principe, versioned calculations, financial system connectors)
+## Motivation
+Legesberekening is the #1 VTH-specific functional requirement after DSO integration, found in 16 VTH tenders. Every VTH tender requires financial system export.
 
-## What Changes
+## Affected Projects
+- [x] Project: `procest` -- Calculation engine, verordening admin, financial export
 
-See `specs/legesberekening/spec.md` for full requirements and scenarios.
+## Scope
 
-## Impact
+### In Scope
+- Leges calculation engine supporting vast bedrag, percentage, staffel, maximum, combinatie
+- Verordening administration (titel/hoofdstuk/artikel hierarchy)
+- Calculation version history with audit trail
+- Verrekening (deduction) and teruggaaf (refund) support
+- Financial system export (CSV, ASCII, XML formats)
+- LegesberekeningService, LegesVerordeningService, LegesExportService
+- LegesController API endpoints
 
-- **Code**: New frontend views and/or backend services
-- **Dependencies**: OpenRegister (data storage), Nextcloud platform APIs
-- **Testing**: Unit tests for new services, integration tests for API endpoints
+### Out of Scope
+- Payment processing and invoicing
+- Direct financial system connectors (Key2Financien, Civision) -- via OpenConnector
+- 4-ogen principe (V2 feature)
+- Excel import of verordeningen (V2 feature)
