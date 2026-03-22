@@ -62,6 +62,10 @@ class SettingsService
         'kanaal_schema',
         'abonnement_schema',
         'default_case_type',
+        'complaint_schema',
+        'hearing_schema',
+        'complaint_disposition_schema',
+        'complaint_category_schema',
     ];
 
     /**
@@ -95,6 +99,10 @@ class SettingsService
         'usageRights'                  => 'usage_rights_schema',
         'kanaal'                       => 'kanaal_schema',
         'abonnement'                   => 'abonnement_schema',
+        'complaint'                    => 'complaint_schema',
+        'hearing'                      => 'hearing_schema',
+        'complaintDisposition'         => 'complaint_disposition_schema',
+        'complaintCategory'            => 'complaint_category_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
