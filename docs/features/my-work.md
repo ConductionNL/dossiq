@@ -1,62 +1,33 @@
-# My Work (Werkvoorraad)
+# My Work
 
-Personal productivity hub aggregating all work items assigned to the current user — cases where they are the handler plus tasks assigned to them — into a single prioritized view. Answers: "What do I need to work on next?"
+The My Work view shows all cases and tasks assigned to the currently logged-in user, providing a personal work queue.
 
-## Specs
+![My Work](../screenshots/my-work.png)
 
-- `openspec/specs/my-work/spec.md`
+## Overview
 
-## Features
+The page displays a count of total items in the heading (e.g., "My Work (15)") and provides three filter tabs:
 
-### Personal Workload View (MVP)
+- **All (15)** -- Shows both cases and tasks combined.
+- **Cases (15)** -- Filters to show only cases.
+- **Tasks (0)** -- Filters to show only tasks.
 
-Unified list of cases (where user is handler) and tasks (assigned to user), combining both entity types into a single sorted view.
+A **Show completed** checkbox allows toggling visibility of finished items.
 
-- Item cards showing title, type badge (case/task), priority, and deadline/due date
-- Click-through navigation to case or task detail views
+## Work Items
 
-### Filter Tabs (MVP)
+Each item in the list shows:
+- **Type badge** -- "CASE" or "TASK" label.
+- **Title** -- The case or task name (e.g., "Test Case 4").
+- **Identifier** -- The case reference number (e.g., #ZAAK-TEST-004).
+- **Days remaining** -- Time until the processing deadline, with warning indicators (exclamation mark) for items needing attention.
 
-Filter tabs to focus on specific entity types:
+Items are grouped under an **UPCOMING** section header with a count.
 
-- **All**: Cases + tasks combined
-- **Cases**: Only cases where user is handler
-- **Tasks**: Only tasks assigned to user
+## Interaction
 
-### Temporal Grouping (MVP)
+Clicking on a case navigates to the case detail view at `/apps/procest/cases/{uuid}`. Clicking on a task would navigate to the task detail view.
 
-Items organized into urgency-based groups:
+## Data Source
 
-- **Overdue**: Past deadline/due date, highlighted with red indicators
-- **Due This Week**: Due within the current week
-- **Upcoming**: Due in the future beyond this week
-- **No Deadline**: Items without a deadline/due date
-
-### Sorting (MVP)
-
-Items sorted by priority first (urgent → high → normal → low), then by deadline/due date within each priority level.
-
-### Overdue Highlighting (MVP)
-
-Items past their deadline are visually distinct with red color indicators and overdue badges.
-
-### Default Filter (MVP)
-
-By default, only non-final items are shown (excludes completed/terminated cases and tasks). Users can toggle to include completed items.
-
-### Item Navigation (MVP)
-
-Clicking any item navigates to its detail view (case detail or task detail) for full context and actions.
-
-### Empty State (MVP)
-
-When no items are assigned, shows a friendly empty state indicating no current work items.
-
-### Planned (V1)
-
-- Cross-app workload: include Pipelinq leads/requests alongside Procest items
-- Concurrent state change handling (real-time updates)
-
-### Planned (Enterprise)
-
-- Workload analytics (items per user for management visibility)
+My Work items are fetched based on the current user's assignments. The view queries OpenRegister for cases and tasks where the logged-in user is the assigned handler.
