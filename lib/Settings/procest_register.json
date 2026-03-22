@@ -680,6 +680,17 @@
             "format": "uri",
             "description": "URL reference to the communication channel",
             "visible": false
+          },
+          "workflowTemplate": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the bound workflow template",
+            "visible": false
+          },
+          "workflowVersion": {
+            "type": "integer",
+            "description": "Version number of the bound workflow template",
+            "visible": false
           }
         }
       },
@@ -756,6 +767,16 @@
             "type": "string",
             "format": "date-time",
             "description": "Date the task was completed",
+            "visible": false
+          },
+          "workflowStepId": {
+            "type": "string",
+            "description": "UUID of the workflow step that generated this task",
+            "visible": false
+          },
+          "checklist": {
+            "type": "string",
+            "description": "JSON-encoded array of checklist items ({id, label, checked})",
             "visible": false
           }
         }
@@ -1773,6 +1794,70 @@
             "description": "Mandate reference (for delegate actions)"
           }
         }
+      },
+      "workflowTemplate": {
+        "slug": "workflowTemplate",
+        "icon": "SitemapOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:HowTo",
+        "x-cmmn-equivalent": "CasePlanModel",
+        "title": "Workflow Template",
+        "description": "A workflow definition for a case type — defines process steps, status transitions, guards, and automatic actions",
+        "type": "object",
+        "required": [
+          "title",
+          "caseType"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this workflow template"
+          },
+          "description": {
+            "type": "string",
+            "description": "Purpose and usage notes for this workflow"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "caseType",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case type this workflow belongs to"
+          },
+          "version": {
+            "type": "integer",
+            "default": 1,
+            "description": "Auto-incrementing version number"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this is the active version for new cases"
+          },
+          "isDraft": {
+            "type": "boolean",
+            "default": true,
+            "description": "Draft templates cannot be used for new cases"
+          },
+          "steps": {
+            "type": "string",
+            "description": "JSON-encoded array of WorkflowStep objects. Each step has: id (UUID), title, description, status (UUID ref to statusType), order (integer), assigneeRole (UUID ref to roleType, optional), isRequired (boolean), checklist (array of {id, label, description}), automaticActions (array of ActionRef)"
+          },
+          "transitions": {
+            "type": "string",
+            "description": "JSON-encoded array of StatusTransition objects. Each transition has: id (UUID), fromStatus (UUID), toStatus (UUID), label (string), guards (array of Guard), automaticActions (array of ActionRef), allowedRoles (array of UUID). Guard types: checklist, requiredField, requiredDocument, roleGuard. Action types: sendEmail, createTask, createSubCase, webhook, setField, notify"
+          },
+          "nodePositions": {
+            "type": "string",
+            "description": "JSON-encoded map of status UUID to {x, y} canvas positions for the visual editor"
+          },
+          "parentWorkflow": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to parent workflow template for inheritance (Enterprise tier)"
+          }
+        }
       }
     },
     "registers": {
@@ -1806,6 +1891,7 @@
           "decisionDocument",
           "dispatch",
           "usageRights",
+          "workflowTemplate",
           "kanaal",
           "abonnement",
           "voorstel",

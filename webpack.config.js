@@ -35,6 +35,18 @@ webpackConfig.entry = {
 		import: path.join(__dirname, 'src', 'myTasksWidget.js'),
 		filename: appId + '-myTasksWidget.js',
 	},
+	deadlineAlertsWidget: {
+		import: path.join(__dirname, 'src', 'deadlineAlertsWidget.js'),
+		filename: appId + '-deadlineAlertsWidget.js',
+	},
+	taskRemindersWidget: {
+		import: path.join(__dirname, 'src', 'taskRemindersWidget.js'),
+		filename: appId + '-taskRemindersWidget.js',
+	},
+	stalledCasesWidget: {
+		import: path.join(__dirname, 'src', 'stalledCasesWidget.js'),
+		filename: appId + '-stalledCasesWidget.js',
+	},
 }
 
 // Use local source when available (monorepo dev), otherwise fall back to npm package

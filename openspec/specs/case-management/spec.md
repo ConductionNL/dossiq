@@ -58,9 +58,10 @@ Case management is the core capability of Procest. A case represents a coherent 
 
 ### REQ-CM-01: Case Creation
 
+The system MUST support creating new cases. Each case MUST be linked to a published, valid case type. The case type controls initial defaults and behavioral constraints.
+
 **Feature tier**: MVP
 
-The system MUST support creating new cases. Each case MUST be linked to a published, valid case type. The case type controls initial defaults and behavioral constraints.
 
 #### Scenario CM-01a: Create a case with case type selection
 
@@ -75,7 +76,6 @@ The system MUST support creating new cases. Each case MUST be linked to a publis
 - AND the `deadline` MUST be auto-calculated as `startDate + P56D` (e.g., 2026-01-15 + 56 days = 2026-03-12)
 - AND the `confidentiality` MUST default to "internal" (inherited from case type)
 - AND the `status` MUST be set to "Ontvangen" (the first status type by `order`)
-- AND a unique `identifier` MUST be auto-generated
 
 #### Scenario CM-01b: Case type is required at creation
 
@@ -125,9 +125,10 @@ The system MUST support creating new cases. Each case MUST be linked to a publis
 
 ### REQ-CM-02: Case Update
 
+The system MUST support updating case properties. Changes MUST be recorded in the audit trail.
+
 **Feature tier**: MVP
 
-The system MUST support updating case properties. Changes MUST be recorded in the audit trail.
 
 #### Scenario CM-02a: Update case description
 
@@ -150,13 +151,29 @@ The system MUST support updating case properties. Changes MUST be recorded in th
 - THEN the `assignee` field MUST be updated to "Maria van den Berg"
 - AND the audit trail MUST record: "Handler changed from Jan de Vries to Maria van den Berg"
 
+#### Scenario CM-02d: Update deadline manually
+
+- GIVEN a case with deadline "2026-03-12"
+- WHEN an admin adjusts the deadline to "2026-04-15" with reason "Wachten op externe partij"
+- THEN the `deadline` MUST be updated to "2026-04-15"
+- AND the audit trail MUST record the old deadline, new deadline, reason, and user
+
+#### Scenario CM-02e: Concurrent edit conflict
+
+- GIVEN user Jan is editing case "2026-042" description
+- AND user Maria simultaneously edits the same case's priority
+- WHEN both save their changes
+- THEN the system MUST handle concurrent edits without data loss
+- AND both changes MUST be recorded in the audit trail with their respective timestamps
+
 ---
 
 ### REQ-CM-03: Case Deletion
 
+The system MUST support deleting cases. Deletion SHOULD be restricted to cases without a final status.
+
 **Feature tier**: MVP
 
-The system MUST support deleting cases. Deletion SHOULD be restricted to cases without a final status.
 
 #### Scenario CM-03a: Delete a case in initial status
 
@@ -172,13 +189,21 @@ The system MUST support deleting cases. Deletion SHOULD be restricted to cases w
 - THEN the system MUST display a warning: "This case has 3 tasks and 1 decision. Deleting the case will also remove these linked objects."
 - AND the user MUST confirm before proceeding
 
+#### Scenario CM-03c: Delete case in final status
+
+- GIVEN a case with status "Afgehandeld" (isFinal = true) and a result recorded
+- WHEN an authorized user attempts to delete the case
+- THEN the system SHOULD warn: "This case has been completed. Deletion may violate archival requirements."
+- AND the system MUST require admin-level permission to proceed
+
 ---
 
 ### REQ-CM-04: Case List View
 
+The system MUST provide a list view of all cases with search, sort, filter, and pagination capabilities.
+
 **Feature tier**: MVP
 
-The system MUST provide a list view of all cases with search, sort, filter, and pagination capabilities. See wireframe 3.2 (Case List View) in DESIGN-REFERENCES.md.
 
 #### Scenario CM-04a: Default case list
 
@@ -244,9 +269,10 @@ The system MUST provide a list view of all cases with search, sort, filter, and 
 
 ### REQ-CM-05: Quick Status Change from List
 
+The system MUST support changing a case's status directly from the case list view without opening the detail page.
+
 **Feature tier**: MVP
 
-The system MUST support changing a case's status directly from the case list view without opening the detail page. See wireframe 3.2 in DESIGN-REFERENCES.md.
 
 #### Scenario CM-05a: Quick status change via dropdown
 
@@ -272,13 +298,22 @@ The system MUST support changing a case's status directly from the case list vie
 - THEN the system MUST reject the change
 - AND display a message: "Cannot advance to 'In behandeling': required property 'Kadastraal nummer' is missing. Open the case to complete the required fields."
 
+#### Scenario CM-05d: Quick status change to final status prompts for result
+
+- GIVEN a case at status "Besluitvorming"
+- AND the case type requires a result at the final status "Afgehandeld"
+- WHEN the user attempts a quick status change to "Afgehandeld"
+- THEN the system MUST prompt for a result selection before completing the status change
+- AND the result dropdown MUST show only result types defined by the case type
+
 ---
 
 ### REQ-CM-06: Case Detail View
 
+The system MUST provide a comprehensive detail view for each case. The detail view MUST include: status timeline, case info panel, deadline and timing panel, participants panel, custom properties panel, required documents checklist, tasks section, decisions section, activity timeline, and sub-cases section.
+
 **Feature tier**: MVP
 
-The system MUST provide a comprehensive detail view for each case. See wireframe 3.3 (Case Detail View) in DESIGN-REFERENCES.md. The detail view MUST include: status timeline, case info panel, deadline and timing panel, participants panel, B&W Voorstellen panel, custom properties panel, required documents checklist, tasks section, decisions section, activity timeline, and sub-cases section.
 
 #### Scenario CM-06a: Case info panel
 
@@ -328,9 +363,10 @@ The system MUST provide a comprehensive detail view for each case. See wireframe
 
 ### REQ-CM-07: Status Timeline Visualization
 
+The case detail view MUST display a visual status timeline showing all statuses defined by the case type. Passed statuses are filled, the current status is highlighted, and future statuses are greyed out.
+
 **Feature tier**: MVP
 
-The case detail view MUST display a visual status timeline showing all statuses defined by the case type. Passed statuses are filled, the current status is highlighted, and future statuses are greyed out. See wireframe 3.3 in DESIGN-REFERENCES.md.
 
 #### Scenario CM-07a: Status timeline with current status
 
@@ -357,13 +393,21 @@ The case detail view MUST display a visual status timeline showing all statuses 
 - THEN all dots MUST appear as passed/completed (filled)
 - AND the timeline MUST visually indicate the case is complete
 
+#### Scenario CM-07d: Status timeline clickable for status change
+
+- GIVEN a case at "In behandeling"
+- WHEN the user clicks on the "Besluitvorming" dot in the timeline
+- THEN the system SHOULD trigger a status change to "Besluitvorming" (subject to validation)
+- OR the system SHOULD open a confirmation dialog before changing status
+
 ---
 
 ### REQ-CM-08: Participants Panel
 
+The case detail view MUST display assigned participants with their roles.
+
 **Feature tier**: MVP (handler assignment), V1 (full role types)
 
-The case detail view MUST display assigned participants with their roles. See wireframe 3.3 in DESIGN-REFERENCES.md.
 
 #### Scenario CM-08a: Display participants
 
@@ -380,13 +424,21 @@ The case detail view MUST display assigned participants with their roles. See wi
 - THEN the role selection MUST only show roles defined by the case type
 - AND the user MUST NOT be able to assign a role type not in the case type's list
 
+#### Scenario CM-08c: Participant from BRP register
+
+- GIVEN a case with an initiator linked to BRP person BSN "999993653"
+- WHEN the user views the participants panel
+- THEN the initiator MUST show the person's name from BRP (e.g., "Jan Albert de Vries")
+- AND clicking the participant SHOULD show BRP details (address, BSN masked)
+
 ---
 
 ### REQ-CM-09: Custom Properties Panel
 
+The case detail view MUST display custom properties defined by the case type.
+
 **Feature tier**: V1
 
-The case detail view MUST display custom properties defined by the case type. See wireframe 3.3 in DESIGN-REFERENCES.md.
 
 #### Scenario CM-09a: Display custom properties
 
@@ -404,13 +456,20 @@ The case detail view MUST display custom properties defined by the case type. Se
 - THEN all 4 properties MUST be displayed with empty/placeholder values
 - AND the panel SHOULD indicate "0 of 4 properties filled"
 
+#### Scenario CM-09c: Property validation on edit
+
+- GIVEN a property "Bouwkosten" of type number with min=0
+- WHEN the user enters "-5000" as the value
+- THEN the system MUST reject the value with error: "Bouwkosten must be 0 or greater"
+
 ---
 
 ### REQ-CM-10: Required Documents Checklist
 
+The case detail view MUST display a checklist of required documents defined by the case type, showing which are present and which are missing.
+
 **Feature tier**: V1
 
-The case detail view MUST display a checklist of required documents defined by the case type, showing which are present and which are missing. See wireframe 3.3 in DESIGN-REFERENCES.md.
 
 #### Scenario CM-10a: Document checklist with mixed completion
 
@@ -440,13 +499,22 @@ The case detail view MUST display a checklist of required documents defined by t
 - WHEN the user views the case detail
 - THEN the documents panel SHOULD either be hidden or show "No required documents for this case type"
 
+#### Scenario CM-10d: Upload document from checklist
+
+- GIVEN a missing document "Welstandsadvies" in the checklist
+- WHEN the user clicks the upload button next to "Welstandsadvies"
+- THEN the system MUST open a file upload dialog
+- AND the uploaded file MUST be linked to the case with the document type "Welstandsadvies"
+- AND the checklist MUST update to show the document as present
+
 ---
 
 ### REQ-CM-11: Tasks Section
 
+The case detail view MUST display tasks linked to the case.
+
 **Feature tier**: MVP
 
-The case detail view MUST display tasks linked to the case. See wireframe 3.3 in DESIGN-REFERENCES.md.
 
 #### Scenario CM-11a: Display tasks with completion count
 
@@ -465,13 +533,20 @@ The case detail view MUST display tasks linked to the case. See wireframe 3.3 in
 - THEN the section MUST show "No tasks" or an empty state
 - AND the "Add Task" button MUST still be available
 
+#### Scenario CM-11c: Task click navigates to task detail
+
+- GIVEN a task "Review docs" in the tasks section
+- WHEN the user clicks on the task
+- THEN the system MUST navigate to the task detail view
+
 ---
 
 ### REQ-CM-12: Decisions Section
 
+The case detail view MUST display decisions linked to the case.
+
 **Feature tier**: V1
 
-The case detail view MUST display decisions linked to the case.
 
 #### Scenario CM-12a: Display decisions
 
@@ -487,33 +562,21 @@ The case detail view MUST display decisions linked to the case.
 - THEN the section MUST show "(no decisions yet)"
 - AND an "Add Decision" button MUST be available
 
-#### Scenario CM-06k: B&W Voorstellen panel on case detail
+#### Scenario CM-12c: Decision with archival rules
 
-- WHEN the user views a case detail page
-- THEN a "B&W Voorstellen" panel SHALL be displayed in the case detail view
-- AND if no voorstellen exist, the panel SHALL show: "Geen voorstellen" with a "Nieuw voorstel" button
-- AND if voorstellen exist, each SHALL show: type, status, current parafeeerstap, steller
-
-#### Scenario CM-06l: Multiple voorstellen displayed
-
-- WHEN a case has 2 voorstellen (one "besloten", one "in_parafering")
-- THEN both SHALL be listed in the B&W Voorstellen panel
-- AND each SHALL be clickable to navigate to the voorstel detail view
-- AND the active voorstel SHALL be visually distinguished from completed ones
-
-#### Scenario CM-06m: Create voorstel from case detail
-
-- WHEN the user clicks "Nieuw voorstel" in the B&W Voorstellen panel
-- THEN a creation dialog SHALL open pre-filled with the case context
-- AND after creation, the new voorstel SHALL appear in the panel
+- GIVEN a decision "Vergunning verleend" with archiveAction "retain" and retentionPeriod "P20Y"
+- WHEN the user views the decision detail
+- THEN the system MUST display: "Archive: retain for 20 years"
+- AND the retention end date MUST be calculated and shown
 
 ---
 
 ### REQ-CM-13: Activity Timeline
 
+The case detail view MUST display an activity timeline showing all events related to the case in chronological order (newest first).
+
 **Feature tier**: MVP
 
-The case detail view MUST display an activity timeline showing all events related to the case in chronological order (newest first). See wireframe 3.3 in DESIGN-REFERENCES.md.
 
 #### Scenario CM-13a: Activity timeline entries
 
@@ -535,13 +598,21 @@ The case detail view MUST display an activity timeline showing all events relate
 - THEN the note MUST appear in the timeline with the current date and the user's name
 - AND the note MUST be stored via Nextcloud's ICommentsManager
 
+#### Scenario CM-13c: Activity timeline pagination
+
+- GIVEN a case with 50 activity events
+- WHEN the user views the activity timeline
+- THEN the timeline MUST show the most recent 20 events by default
+- AND a "Load more" button MUST be available to fetch older events
+
 ---
 
 ### REQ-CM-14: Status Change
 
+The system MUST support changing a case's status. Status changes MUST respect case type constraints: only statuses defined by the case type are allowed, required properties MUST be satisfied, and required documents MUST be present.
+
 **Feature tier**: MVP
 
-The system MUST support changing a case's status. Status changes MUST respect case type constraints: only statuses defined by the case type are allowed, required properties MUST be satisfied, and required documents MUST be present.
 
 #### Scenario CM-14a: Valid status change
 
@@ -597,9 +668,10 @@ The system MUST support changing a case's status. Status changes MUST respect ca
 
 ### REQ-CM-15: Case Result Recording
 
+The system MUST support recording a result when closing a case.
+
 **Feature tier**: MVP (basic result), V1 (result types from case type)
 
-The system MUST support recording a result when closing a case.
 
 #### Scenario CM-15a: Record result from case type's allowed results (V1)
 
@@ -627,9 +699,10 @@ The system MUST support recording a result when closing a case.
 
 ### REQ-CM-16: Case Deadline Extension
 
+The system MUST support extending a case's deadline when the case type allows it.
+
 **Feature tier**: MVP
 
-The system MUST support extending a case's deadline when the case type allows it.
 
 #### Scenario CM-16a: Extend deadline when allowed
 
@@ -658,9 +731,10 @@ The system MUST support extending a case's deadline when the case type allows it
 
 ### REQ-CM-17: Case Suspension
 
+The system SHALL support suspending a case when the case type allows it. Suspension pauses the deadline countdown.
+
 **Feature tier**: V1
 
-The system SHOULD support suspending a case when the case type allows it. Suspension pauses the deadline countdown.
 
 #### Scenario CM-17a: Suspend a case
 
@@ -685,13 +759,21 @@ The system SHOULD support suspending a case when the case type allows it. Suspen
 - THEN the system MUST reject the request
 - AND display: "Suspension is not allowed for case type 'Melding'"
 
+#### Scenario CM-17d: Suspension visibility in dashboard
+
+- GIVEN 2 suspended cases
+- WHEN the user views the dashboard
+- THEN suspended cases MUST NOT count toward the overdue KPI
+- AND the dashboard MAY show a separate "Suspended" indicator
+
 ---
 
 ### REQ-CM-18: Sub-Cases
 
+The system SHALL support parent/child case hierarchies. A sub-case is a full case linked to a parent case.
+
 **Feature tier**: V1
 
-The system SHOULD support parent/child case hierarchies. A sub-case is a full case linked to a parent case.
 
 #### Scenario CM-18a: Create a sub-case
 
@@ -725,9 +807,10 @@ The system SHOULD support parent/child case hierarchies. A sub-case is a full ca
 
 ### REQ-CM-19: Confidentiality Levels
 
+The system SHALL support confidentiality levels on cases, defaulting from the case type.
+
 **Feature tier**: V1
 
-The system SHOULD support confidentiality levels on cases, defaulting from the case type.
 
 #### Scenario CM-19a: Inherit confidentiality from case type
 
@@ -753,9 +836,10 @@ The system SHOULD support confidentiality levels on cases, defaulting from the c
 
 ### REQ-CM-20: Case Validation Rules
 
+The system MUST enforce validation rules when creating or modifying cases.
+
 **Feature tier**: MVP
 
-The system MUST enforce validation rules when creating or modifying cases.
 
 #### Scenario CM-20a: Title is required
 
@@ -791,9 +875,10 @@ The system MUST enforce validation rules when creating or modifying cases.
 
 ### REQ-CM-21: Case Deadline Countdown Display
 
+The system MUST display deadline countdowns on cases across all views (list, detail, My Work).
+
 **Feature tier**: MVP
 
-The system MUST display deadline countdowns on cases across all views (list, detail, My Work). See wireframes 3.2 and 3.3 in DESIGN-REFERENCES.md.
 
 #### Scenario CM-21a: Days remaining display
 
@@ -827,9 +912,10 @@ The system MUST display deadline countdowns on cases across all views (list, det
 
 ### REQ-CM-22: Audit Trail
 
+The system MUST maintain a complete audit trail for all case modifications. The audit trail is published via Nextcloud's Activity system (`OCP\Activity\IManager`).
+
 **Feature tier**: MVP
 
-The system MUST maintain a complete audit trail for all case modifications. The audit trail is published via Nextcloud's Activity system (`OCP\Activity\IManager`).
 
 #### Scenario CM-22a: Status change audit entry
 
@@ -854,6 +940,49 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 - GIVEN a user creating a new case
 - WHEN the case is successfully created
 - THEN the audit trail MUST record: event type "case_created", user, timestamp, case type, initial status, calculated deadline
+
+#### Scenario CM-22e: Audit trail immutability
+
+- GIVEN an audit trail entry for a status change
+- WHEN any user (including admin) attempts to modify or delete the entry
+- THEN the system MUST reject the modification
+- AND the audit trail MUST remain immutable
+
+---
+
+### REQ-CM-23: Case Search
+
+The system MUST provide full-text search across cases matching against title, description, identifier, and custom property values.
+
+**Feature tier**: MVP
+
+
+#### Scenario CM-23a: Search by identifier
+
+- GIVEN a case with identifier "2026-042"
+- WHEN the user searches for "2026-042"
+- THEN the case MUST appear in results
+- AND the search MUST be an exact or prefix match on the identifier field
+
+#### Scenario CM-23b: Search by title keyword
+
+- GIVEN cases with titles "Bouwvergunning Keizersgracht 100" and "Bouwvergunning Prinsengracht 50"
+- WHEN the user searches for "Prinsengracht"
+- THEN only "Bouwvergunning Prinsengracht 50" MUST appear
+- AND the search MUST be case-insensitive
+
+#### Scenario CM-23c: Search by description content
+
+- GIVEN a case with description "Verbouwing woonhuis, 3 bouwlagen, 180 m2"
+- WHEN the user searches for "bouwlagen"
+- THEN the case MUST appear in results
+
+#### Scenario CM-23d: Search with no results
+
+- GIVEN no cases match the search term "nonexistent"
+- WHEN the user searches
+- THEN the system MUST display "No cases found matching 'nonexistent'"
+- AND the system MUST NOT show an error
 
 ---
 
@@ -905,7 +1034,7 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 - REQ-CM-18: Sub-cases / parent-child relationships (V1).
 - REQ-CM-19: Confidentiality level enforcement (field exists in schema but no access control enforcement).
 - REQ-CM-22: Audit trail via Nextcloud Activity (`OCP\Activity\IManager`) -- not confirmed as implemented; audit trails plugin exists in object store but integration with Nextcloud Activity system unclear.
-- Case search (keyword search against title and description).
+- REQ-CM-23: Case search (keyword search against title and description) -- partial, relies on OpenRegister _search parameter.
 - Filter by priority, handler, overdue status in case list.
 
 ### Standards & References
@@ -918,20 +1047,4 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 - **GEMMA**: Zaakgericht werken reference architecture compliance.
 - **Archiefwet**: Case result types with archival rules (retain/destroy, retention period).
 - **Awb**: Administrative law requirements for case handling deadlines and notifications.
-
-### Specificity Assessment
-
-This is the most detailed spec in the set -- highly implementation-ready with concrete data models, field mappings, and exhaustive scenarios.
-
-**Strengths:** Complete data model with CMMN/Schema.org/ZGW triple mapping. 22 requirements with detailed Gherkin scenarios. Clear feature tier separation. Explicit validation rules.
-
-**Missing/Ambiguous:**
-- No specification of case identifier format generation logic (the spec says `YYYY-NNN` but the implementation may use OpenRegister auto-generation).
-- No specification of how case deletion handles cascade (documents, tasks, decisions, roles).
-- No specification of the "reopen" mechanism after a case reaches final status.
-- Audit trail integration with Nextcloud Activity system needs implementation detail.
-
-**Open questions:**
-1. Is the audit trail stored via Nextcloud Activity (`IManager`) or via OpenRegister's audit trail plugin -- or both?
-2. Should case search use OpenRegister's built-in search or Nextcloud's full-text search?
-3. How are case identifiers guaranteed unique across multiple Nextcloud instances?
+- **Competitor reference**: Dimpact ZAC uses Flowable CMMN engine for case lifecycle, Solr for case search, and OPA for authorization. CaseFabric provides visual CMMN case modeling. Flowable Platform has native CMMN case plan execution with milestone tracking.

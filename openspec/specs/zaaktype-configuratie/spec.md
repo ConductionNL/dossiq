@@ -7,7 +7,7 @@ Zaaktype Configuratie provides a zero-coding admin UI for configuring case types
 **Tender demand**: 23% of tenders (16/69) explicitly require zero-coding zaaktype configuration. Additionally, 36% of all tenders ask for "zero-coding configuratie" as a general principle. This is a key differentiator -- municipalities want to reduce leveranciersafhankelijkheid.
 **Relationship to existing specs**: This spec EXTENDS `case-types` (data model). It does NOT duplicate the data model or validation rules. It adds the admin UI and configuration workflows. Check `case-types` for all entity definitions.
 **Standards**: ZGW Catalogi API (ZaakType, StatusType, ResultaatType, InformatieObjectType), CMMN 1.1 (CaseDefinition)
-**Feature tier**: V1 (basic CRUD UI, status diagram editor, document type config), V2 (visual flow designer, import/export, ZTC sync, versioning)
+**Feature tier**: V1 (basic CRUD UI, status diagram editor, document type config, property definition config, role type config, result type config), V2 (visual flow designer, import/export, ZTC sync, versioning, test mode)
 
 ## Requirements
 
@@ -15,9 +15,10 @@ Zaaktype Configuratie provides a zero-coding admin UI for configuring case types
 
 ### REQ-ZTC-01: Case Type CRUD via Admin UI
 
+The system MUST provide an admin interface for creating, editing, and managing case types without code changes.
+
 **Feature tier**: V1
 
-The system MUST provide an admin interface for creating, editing, and managing case types without code changes.
 
 #### Scenario ZTC-01a: Create new case type
 
@@ -34,20 +35,57 @@ The system MUST provide an admin interface for creating, editing, and managing c
 - THEN the system MUST warn: "Er zijn 10 actieve zaken van dit type. Wijzigingen gelden alleen voor nieuwe zaken."
 - AND the admin MAY choose to create a new version instead of editing in-place
 
+#### Scenario ZTC-01c: Publish a draft case type
+
+- GIVEN a draft case type "Bezwaarschrift" with at least one status type configured
+- WHEN the admin clicks "Publiceren"
+- THEN the system MUST validate that the case type has: at least one status type, at least one status marked as `isFinal`, a valid `processingDeadline`
+- AND if validation passes, the case type `isDraft` MUST be set to `false`
+- AND the case type MUST become available for case creation
+
+#### Scenario ZTC-01d: Publish validation fails
+
+- GIVEN a draft case type "Nieuwe Procedure" with no status types configured
+- WHEN the admin clicks "Publiceren"
+- THEN the system MUST reject the publish with error: "Zaaktype kan niet gepubliceerd worden: geen statustypen geconfigureerd"
+- AND the case type MUST remain in draft status
+
+#### Scenario ZTC-01e: Delete draft case type
+
+- GIVEN a draft case type "Test Zaaktype" with no active cases
+- WHEN the admin clicks "Verwijderen"
+- THEN the system MUST display a confirmation dialog
+- AND upon confirmation, the case type and all linked status types, document types, property definitions, and result types MUST be deleted
+
+#### Scenario ZTC-01f: Delete published case type with active cases blocked
+
+- GIVEN a published case type "Omgevingsvergunning" with 10 active cases
+- WHEN the admin attempts to delete it
+- THEN the system MUST reject: "Kan niet verwijderd worden: er zijn 10 actieve zaken van dit type"
+- AND the case type MUST NOT be deleted
+
+#### Scenario ZTC-01g: Set case type as default
+
+- GIVEN multiple published case types
+- WHEN the admin marks "Omgevingsvergunning" as the default
+- THEN the case creation form MUST pre-select this case type
+- AND only one case type MAY be the default at a time
+
 ---
 
 ### REQ-ZTC-02: Status Diagram Editor
 
+The system MUST provide a visual editor for configuring the status lifecycle of a case type.
+
 **Feature tier**: V1
 
-The system MUST provide a visual editor for configuring the status lifecycle of a case type.
 
 #### Scenario ZTC-02a: Add and order statuses
 
 - GIVEN a new case type "Bezwaarschrift"
 - WHEN the admin opens the status configuration tab
 - THEN the admin MUST be able to add status types: "Ontvangen", "Vooronderzoek", "Hoorzitting", "Beslissing op bezwaar"
-- AND statuses MUST be orderable via drag-and-drop
+- AND statuses MUST be orderable via drag-and-drop or order number input
 - AND the admin MUST mark "Beslissing op bezwaar" as `isFinal = true`
 - AND a visual diagram MUST show the status flow as a horizontal timeline
 
@@ -57,13 +95,34 @@ The system MUST provide a visual editor for configuring the status lifecycle of 
 - WHEN the admin edits the status
 - THEN the admin MUST be able to configure: description, `notifyInitiator` (yes/no), `notificationText`, required properties at this status, required documents at this status
 
+#### Scenario ZTC-02c: Prevent deleting status with active cases
+
+- GIVEN a status type "In behandeling" that is the current status of 5 cases
+- WHEN the admin attempts to delete this status
+- THEN the system MUST reject: "Kan niet verwijderd worden: 5 zaken hebben deze status"
+
+#### Scenario ZTC-02d: Reorder statuses
+
+- GIVEN a case type with statuses in order: "Ontvangen" (1), "In behandeling" (2), "Besluitvorming" (3), "Afgehandeld" (4)
+- WHEN the admin drags "Besluitvorming" before "In behandeling"
+- THEN the order MUST update to: "Ontvangen" (1), "Besluitvorming" (2), "In behandeling" (3), "Afgehandeld" (4)
+- AND the visual timeline MUST reflect the new order immediately
+
+#### Scenario ZTC-02e: Status diagram color coding
+
+- GIVEN the visual status diagram
+- THEN each status type MUST display with a color indicator
+- AND the admin SHOULD be able to assign a color to each status (or use system defaults)
+- AND the colors MUST be used consistently in the case list and case detail views
+
 ---
 
 ### REQ-ZTC-03: Document Type Configuration
 
+The system MUST provide a UI for configuring which document types are required per case type.
+
 **Feature tier**: V1
 
-The system MUST provide a UI for configuring which document types are required per case type.
 
 #### Scenario ZTC-03a: Add required document types
 
@@ -72,13 +131,34 @@ The system MUST provide a UI for configuring which document types are required p
 - THEN the admin MUST be able to add document types with: name, direction (incoming/outgoing/internal), requiredAtStatus (dropdown of configured statuses), description
 - AND example: "Bouwtekening" (incoming, required at "In behandeling")
 
+#### Scenario ZTC-03b: Edit document type
+
+- GIVEN a document type "Bouwtekening" configured as incoming, required at "In behandeling"
+- WHEN the admin changes requiredAtStatus to "Ontvangen"
+- THEN the system MUST update the document type configuration
+- AND the change MUST affect new cases only (existing cases retain their current checklist state)
+
+#### Scenario ZTC-03c: Delete document type
+
+- GIVEN a document type "Welstandsadvies" on case type "Omgevingsvergunning"
+- WHEN the admin deletes it
+- THEN the document type MUST be removed from the case type configuration
+- AND existing cases MUST NOT lose already-uploaded documents of this type
+
+#### Scenario ZTC-03d: Document type direction validation
+
+- GIVEN the admin adding a new document type
+- THEN the direction dropdown MUST only show: "incoming" (van aanvrager), "outgoing" (naar aanvrager), "internal" (intern)
+- AND each direction MUST have a localized label in Dutch and English
+
 ---
 
 ### REQ-ZTC-04: Property Definition Configuration
 
+The system MUST provide a UI for configuring custom property definitions (case-specific data fields) per case type.
+
 **Feature tier**: V1
 
-The system MUST provide a UI for configuring custom property definitions (case-specific data fields) per case type.
 
 #### Scenario ZTC-04a: Add custom properties
 
@@ -94,37 +174,134 @@ The system MUST provide a UI for configuring custom property definitions (case-s
 - THEN the admin MUST be able to define allowed values: ["Woning", "Bedrijfspand", "Bijgebouw", "Overig"]
 - AND the case form MUST render a dropdown with these options
 
+#### Scenario ZTC-04c: Property with validation rules
+
+- GIVEN a property "Bouwkosten" of type "number"
+- WHEN the admin configures validation: min=0, max=10000000
+- THEN the case form MUST enforce these limits
+- AND the admin UI MUST display the configured validation rules clearly
+
+#### Scenario ZTC-04d: Required-at-status property
+
+- GIVEN a property "Kadastraal nummer" with requiredAtStatus = "In behandeling"
+- WHEN the configuration is saved
+- THEN cases of this type MUST NOT be able to advance to "In behandeling" without this property filled
+- AND the case detail MUST visually indicate which properties are required at the next status
+
+#### Scenario ZTC-04e: Reference property to external register
+
+- GIVEN a property "BAG adres" of type "reference"
+- WHEN the admin configures it to reference the BAG register's nummeraanduiding schema
+- THEN the case form MUST show a search field for looking up BAG addresses
+- AND the selected address MUST be stored as a reference to the BAG object
+
 ---
 
-### REQ-ZTC-05: Parafeerroute Configuration
+### REQ-ZTC-05: Role Type Configuration
 
-**Feature tier**: V2
+The system MUST provide a UI for configuring which role types are available per case type.
+
+**Feature tier**: V1
+
+
+#### Scenario ZTC-05a: Add role types
+
+- GIVEN case type "Omgevingsvergunning"
+- WHEN the admin opens the role types tab
+- THEN the admin MUST be able to add role types with: name, description, maxCount (e.g., 1 for handler, unlimited for advisors)
+- AND example: "Behandelaar" (max 1), "Aanvrager" (max 1), "Technisch adviseur" (unlimited)
+
+#### Scenario ZTC-05b: Role type with person/organization restriction
+
+- GIVEN a role type "Aanvrager"
+- WHEN the admin configures it
+- THEN the admin MUST be able to set whether the role can be filled by: person only, organization only, or both
+- AND this restriction MUST be enforced when adding participants to a case
+
+#### Scenario ZTC-05c: Default role types pre-populated
+
+- GIVEN a new case type is created
+- THEN the system SHOULD pre-populate with default role types: "Behandelaar" and "Aanvrager"
+- AND the admin MAY add, edit, or remove these defaults
+
+---
+
+### REQ-ZTC-06: Result Type Configuration
+
+The system MUST provide a UI for configuring which result types are available per case type, including archival rules.
+
+**Feature tier**: V1
+
+
+#### Scenario ZTC-06a: Add result types with archival rules
+
+- GIVEN case type "Omgevingsvergunning"
+- WHEN the admin opens the result types tab
+- THEN the admin MUST be able to add result types with: name, description, archiveAction (retain/destroy), retentionPeriod (ISO 8601 duration), retentionDateSource (case_completed/case_started)
+- AND example: "Vergunning verleend" (retain, P20Y, case_completed)
+
+#### Scenario ZTC-06b: Result type selectielijst alignment
+
+- GIVEN the Dutch Selectielijst for archive management
+- WHEN the admin configures a result type
+- THEN the system SHOULD provide a selectielijst dropdown for common archival categories
+- AND the archiveAction and retentionPeriod SHOULD auto-fill based on the selectielijst selection
+
+#### Scenario ZTC-06c: At least one result type required for publish
+
+- GIVEN a case type with no result types configured
+- WHEN the admin attempts to publish the case type
+- THEN the system MUST warn: "Geen resultaattypen geconfigureerd. Zaken kunnen niet worden afgesloten zonder resultaat."
+- AND the admin MAY proceed (result is optional at some case types) or add result types first
+
+---
+
+### REQ-ZTC-07: Parafeerroute Configuration
 
 The system MUST provide a UI for configuring B&W parafeerroutes per case type and voorstel type.
 
-#### Scenario ZTC-05a: Configure parafeerroute
+**Feature tier**: V2
+
+
+#### Scenario ZTC-07a: Configure parafeerroute
 
 - GIVEN case type "Omgevingsvergunning"
 - WHEN the admin opens the parafeerroute configuration
 - THEN the admin MUST be able to define ordered steps: step name, actor type (role/person/group), action (advise/parafeer/accord), parallel (yes/no)
 - AND the route MUST be previewable as a visual flow diagram
 
+#### Scenario ZTC-07b: Parafeerroute with parallel steps
+
+- GIVEN a parafeerroute with 4 steps
+- WHEN the admin marks steps 2 and 3 as parallel
+- THEN the visual diagram MUST show steps 2 and 3 side by side
+- AND both MUST be completed before step 4 can start
+
+#### Scenario ZTC-07c: Parafeerroute template reuse
+
+- GIVEN a parafeerroute configured on "Omgevingsvergunning"
+- WHEN the admin creates a new case type "Sloopvergunning"
+- THEN the admin SHOULD be able to copy the parafeerroute from "Omgevingsvergunning"
+- AND the copied route MUST be independently editable
+
 ---
 
-### REQ-ZTC-06: Import and Export Configuration
-
-**Feature tier**: V2
+### REQ-ZTC-08: Import and Export Configuration
 
 The system MUST support importing and exporting case type configurations for sharing between environments or municipalities.
 
-#### Scenario ZTC-06a: Export case type as JSON
+**Feature tier**: V2
 
-- GIVEN a fully configured case type "Omgevingsvergunning" with 4 statuses, 5 document types, 8 properties, and a parafeerroute
+
+#### Scenario ZTC-08a: Export case type as JSON
+
+- GIVEN a fully configured case type "Omgevingsvergunning" with 4 statuses, 5 document types, 8 properties, 4 role types, 3 result types, and a parafeerroute
 - WHEN the admin clicks "Exporteren"
 - THEN the system MUST generate a JSON file containing the complete configuration
-- AND the export MUST include all related entities (statuses, document types, properties, parafeerroute)
+- AND the export MUST include all related entities (statuses, document types, properties, role types, result types, parafeerroute)
+- AND the export format MUST follow the OpenRegister JSON format with `@self` references
 
-#### Scenario ZTC-06b: Import case type from JSON
+#### Scenario ZTC-08b: Import case type from JSON
 
 - GIVEN a JSON export from another Procest instance
 - WHEN the admin clicks "Importeren" and uploads the file
@@ -132,22 +309,30 @@ The system MUST support importing and exporting case type configurations for sha
 - AND the admin MUST review and publish before the type becomes active
 - AND conflicts (e.g., duplicate names) MUST be flagged for resolution
 
-#### Scenario ZTC-06c: ZTC catalog sync
+#### Scenario ZTC-08c: ZTC catalog sync
 
 - GIVEN a ZGW Catalogi API endpoint with zaaktypen
 - WHEN the admin configures sync with the external catalog
 - THEN the system MUST import zaaktypen, statustypen, resultaattypen, and informatieobjecttypen
 - AND the imported types MUST be mapped to Procest's internal model
 
+#### Scenario ZTC-08d: Export preserves relationships
+
+- GIVEN a case type with status type "In behandeling" referenced by a property definition (requiredAtStatus)
+- WHEN the case type is exported
+- THEN the export MUST preserve the relationship between property definition and status type
+- AND upon import, the relationship MUST be correctly re-established
+
 ---
 
-### REQ-ZTC-07: Version Management
+### REQ-ZTC-09: Version Management
+
+The system SHALL support versioning of case type configurations.
 
 **Feature tier**: V2
 
-The system SHOULD support versioning of case type configurations.
 
-#### Scenario ZTC-07a: Create new version
+#### Scenario ZTC-09a: Create new version
 
 - GIVEN a published case type "Omgevingsvergunning v1" with 50 active cases
 - AND a new regulation requires changes to the status flow
@@ -157,21 +342,110 @@ The system SHOULD support versioning of case type configurations.
 - AND new cases MUST use v2 once published
 - AND both versions MUST be visible in the admin overview
 
+#### Scenario ZTC-09b: Version comparison
+
+- GIVEN two versions of "Omgevingsvergunning" (v1 and v2)
+- WHEN the admin views the version history
+- THEN the system SHOULD show a diff of changes between versions
+- AND the diff MUST highlight: added statuses, removed statuses, changed properties, changed deadlines
+
+#### Scenario ZTC-09c: Retire old version
+
+- GIVEN "Omgevingsvergunning v1" with 3 remaining active cases (47 completed)
+- WHEN the admin retires v1
+- THEN the 3 active cases MUST remain on v1 until completion
+- AND no new cases can be created with v1
+- AND the admin overview MUST mark v1 as "retired"
+
 ---
 
-### REQ-ZTC-08: Test Mode
+### REQ-ZTC-10: Test Mode
+
+The system SHALL support testing a case type configuration before publishing.
 
 **Feature tier**: V2
 
-The system SHOULD support testing a case type configuration before publishing.
 
-#### Scenario ZTC-08a: Test case type in sandbox
+#### Scenario ZTC-10a: Test case type in sandbox
 
 - GIVEN a draft case type "Nieuwe Subsidie"
 - WHEN the admin clicks "Testen"
 - THEN the system MUST allow creating a test case that does not appear in production views
 - AND the admin MUST be able to walk through the full lifecycle: status changes, document uploads, property filling
 - AND the test case MUST be automatically cleaned up after testing
+
+#### Scenario ZTC-10b: Test mode visual indicator
+
+- GIVEN a test case created from a draft case type
+- WHEN the admin views the test case
+- THEN the case MUST display a prominent "TEST" banner
+- AND the case MUST NOT appear in dashboards, reports, or the main case list
+
+#### Scenario ZTC-10c: Test mode limitations
+
+- GIVEN a test case
+- THEN the system MUST NOT send real notifications (initiator notifications, assignment notifications)
+- AND the test case MUST NOT be counted in KPIs or SLA metrics
+- AND the test case MUST be deletable without audit trail requirements
+
+---
+
+### REQ-ZTC-11: Admin Settings Navigation
+
+The admin UI MUST provide clear navigation between case type configuration areas.
+
+**Feature tier**: V1
+
+
+#### Scenario ZTC-11a: Tab-based configuration
+
+- GIVEN an admin editing case type "Omgevingsvergunning"
+- THEN the configuration screen MUST show tabs: General, Statuses, Document Types, Properties, Role Types, Result Types
+- AND each tab MUST show the count of configured items (e.g., "Statuses (4)")
+- AND switching tabs MUST preserve unsaved changes or prompt to save
+
+#### Scenario ZTC-11b: Case type list overview
+
+- GIVEN 5 case types: 3 published, 2 draft
+- WHEN the admin navigates to Procest Admin > Zaaktypen
+- THEN the list MUST show: title, status (published/draft badge), processing deadline, validity period, active case count, and actions (edit, delete, set default)
+- AND published case types MUST be visually distinct from drafts
+
+#### Scenario ZTC-11c: Inline validation feedback
+
+- GIVEN the admin is configuring a case type
+- WHEN the admin leaves a required field empty (e.g., title)
+- THEN the system MUST show inline validation errors immediately
+- AND the "Save" button MUST be disabled while validation errors exist
+
+---
+
+### REQ-ZTC-12: Duration Picker for Processing Deadline
+
+The system MUST provide a user-friendly duration picker for the ISO 8601 processing deadline.
+
+**Feature tier**: V1
+
+
+#### Scenario ZTC-12a: Duration picker input
+
+- GIVEN the admin is setting `processingDeadline` on a case type
+- THEN the system MUST provide a picker with fields for: weeks and/or days
+- AND the picker MUST convert the input to ISO 8601 duration format (e.g., 8 weeks = "P56D")
+- AND the picker MUST display common presets: "6 weken (P42D)", "8 weken (P56D)", "13 weken (P91D)", "26 weken (P182D)"
+
+#### Scenario ZTC-12b: Custom duration entry
+
+- GIVEN the admin wants a non-standard deadline of 35 days
+- WHEN the admin enters "35 days" in the picker
+- THEN the system MUST store "P35D" as the processingDeadline
+- AND the display MUST show "35 dagen (5 weken)"
+
+#### Scenario ZTC-12c: Duration picker for extension period
+
+- GIVEN a case type with `extensionAllowed = true`
+- THEN the admin MUST be able to set `extensionPeriod` using the same duration picker
+- AND common presets for extensions SHOULD be: "2 weken (P14D)", "4 weken (P28D)", "6 weken (P42D)"
 
 ## Dependencies
 
@@ -185,7 +459,7 @@ The system SHOULD support testing a case type configuration before publishing.
 
 ### Current Implementation Status
 
-**V1 partially implemented.** Basic case type CRUD and status configuration exist. Advanced features (parafeerroute, import/export, versioning, test mode) are not implemented.
+**V1 partially implemented.** Basic case type CRUD and status configuration exist. Advanced features (document type config, property definition config, role type config, result type config, parafeerroute, import/export, versioning, test mode) are not implemented.
 
 **Implemented (with file paths):**
 - **Case type CRUD via admin UI (REQ-ZTC-01)**:
@@ -207,13 +481,16 @@ The system SHOULD support testing a case type configuration before publishing.
 **Not yet implemented:**
 - **REQ-ZTC-03: Document type configuration (V1)**: No admin UI for configuring document types per case type. The `documentType` schema exists but no management UI.
 - **REQ-ZTC-04: Property definition configuration (V1)**: No admin UI for configuring custom properties per case type. The `propertyDefinition` schema exists but no management UI. No enum value editor.
-- **REQ-ZTC-05: Parafeerroute configuration (V2)**: No parafeerroute configuration UI. No visual flow diagram for approval routes.
-- **REQ-ZTC-06: Import/export configuration (V2)**: No JSON export/import for case type configurations. No ZTC catalog sync.
-- **REQ-ZTC-07: Version management (V2)**: No versioning of case type configurations. No clone/new version functionality.
-- **REQ-ZTC-08: Test mode (V2)**: No sandbox/test mode for case types.
+- **REQ-ZTC-05: Role type configuration (V1)**: No admin UI for configuring role types per case type. The `roleType` schema exists but no management UI.
+- **REQ-ZTC-06: Result type configuration (V1)**: No admin UI for configuring result types per case type. The `resultType` schema exists but no management UI.
+- **REQ-ZTC-07: Parafeerroute configuration (V2)**: No parafeerroute configuration UI. No visual flow diagram for approval routes.
+- **REQ-ZTC-08: Import/export configuration (V2)**: No JSON export/import for case type configurations. No ZTC catalog sync.
+- **REQ-ZTC-09: Version management (V2)**: No versioning of case type configurations. No clone/new version functionality.
+- **REQ-ZTC-10: Test mode (V2)**: No sandbox/test mode for case types.
+- **REQ-ZTC-12: Duration picker (V1)**: No duration picker component; processingDeadline is entered as raw ISO 8601 string.
 - **Status drag-and-drop ordering**: Status ordering may be manual (number input) rather than drag-and-drop.
 - **Warning on editing published case type**: No "10 active cases" warning when editing a published case type.
-- **Visual status flow diagram**: `StatusTimeline.vue` shows a horizontal timeline on case detail, but the admin status editor may not have a visual diagram.
+- **Publish validation**: No pre-publish validation checking for status types, final status, and processing deadline.
 
 ### Standards & References
 
@@ -223,17 +500,4 @@ The system SHOULD support testing a case type configuration before publishing.
 - **Common Ground**: Configuration data stored as OpenRegister objects in the information layer.
 - **Selectielijst**: Dutch archival selection list determining retention periods per case type category.
 - **Archiefwet**: Archival rules linked to result types (retain/destroy with retention periods).
-
-### Specificity Assessment
-
-- **V1 requirements are well-specified** with clear scenarios for CRUD, status editing, document types, and property definitions. The basic CRUD and status management are implemented.
-- **V2 requirements need more detail:**
-  - Parafeerroute configuration lacks a data model (how are routes stored? As JSON on the case type? As separate objects?).
-  - Import/export format needs specification (what JSON structure? How are UUID conflicts resolved?).
-  - ZTC catalog sync needs protocol details (how often? One-way or bidirectional? Conflict resolution?).
-  - Version management needs lifecycle rules (can old versions be edited? How are active cases migrated?).
-- **Open questions:**
-  - Should document types and property definitions have their own admin tabs alongside statuses?
-  - Should role types and result types also be configurable via the admin UI? (They are defined in the data model but no admin UI exists.)
-  - How should the visual status flow diagram be rendered? (SVG? Canvas? HTML/CSS?)
-  - Should the "test mode" create real OpenRegister objects marked as test, or use a separate sandbox register?
+- **Competitor reference**: Dimpact ZAC provides a zaaktype admin interface integrated with Flowable CMMN modeling. CaseFabric offers a visual case type designer with drag-and-drop status flows. Flowable Design provides low-code case definition with visual CMMN editor.
