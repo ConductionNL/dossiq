@@ -65,6 +65,34 @@
 						:placeholder="t('procest', 'Optional description...')"
 						rows="3" />
 				</div>
+
+				<!-- Location (optional, required for some case types) -->
+				<div class="form-group">
+					<label>
+						{{ t('procest', 'Location') }}
+						<template v-if="locationRequired">*</template>
+					</label>
+					<div v-if="form.geometry" class="location-preview">
+						<span>{{ t('procest', 'Location set') }}</span>
+						<NcButton type="tertiary-no-background" @click="showLocationPicker = true">
+							{{ t('procest', 'Change') }}
+						</NcButton>
+						<NcButton type="tertiary-no-background" @click="form.geometry = null">
+							{{ t('procest', 'Remove') }}
+						</NcButton>
+					</div>
+					<NcButton v-else @click="showLocationPicker = true">
+						{{ t('procest', 'Set location') }}
+					</NcButton>
+					<p v-if="errors.geometry" class="form-error">
+						{{ errors.geometry }}
+					</p>
+				</div>
+
+				<LocationPicker
+					v-if="showLocationPicker"
+					@save="onLocationSave"
+					@cancel="showLocationPicker = false" />
 			</div>
 
 			<div class="case-create-dialog__footer">
@@ -88,8 +116,11 @@
 <script>
 import { NcButton, NcTextField, NcSelect, NcLoadingIcon } from '@nextcloud/vue'
 import { useObjectStore } from '../../store/modules/object.js'
+import { useWorkflowStore } from '../../store/modules/workflow.js'
 import { validateCaseCreate, isCaseTypeUsable } from '../../utils/caseValidation.js'
 import { calculateDeadline, generateIdentifier, formatDate, formatDuration } from '../../utils/caseHelpers.js'
+
+const LocationPicker = () => import(/* webpackChunkName: "map" */ '../../components/map/LocationPicker.vue')
 
 export default {
 	name: 'CaseCreateDialog',
@@ -98,6 +129,7 @@ export default {
 		NcTextField,
 		NcSelect,
 		NcLoadingIcon,
+		LocationPicker,
 	},
 	emits: ['created', 'close'],
 	data() {
@@ -106,11 +138,15 @@ export default {
 				title: '',
 				description: '',
 				caseType: null,
+				geometry: null,
 			},
+			showLocationPicker: false,
 			selectedCaseType: null,
 			caseTypes: [],
 			statusTypes: [],
 			errors: {},
+			activeWorkflowId: null,
+			activeWorkflowVersion: null,
 			saving: false,
 			loadingTypes: false,
 		}
@@ -141,6 +177,10 @@ export default {
 			const deadline = calculateDeadline(new Date(), this.selectedCaseType.processingDeadline)
 			return deadline ? formatDate(deadline.toISOString()) : '—'
 		},
+		locationRequired() {
+			return this.selectedCaseType?.requiresLocation === true
+				|| this.selectedCaseType?.requiresLocation === 'true'
+		},
 	},
 	async mounted() {
 		await this.loadCaseTypes()
@@ -154,6 +194,19 @@ export default {
 		},
 
 		async onCaseTypeSelected(caseType) {
+			// Look up active workflow version for this case type
+			this.activeWorkflowId = null
+			this.activeWorkflowVersion = null
+			if (caseType) {
+				const workflowStore = useWorkflowStore()
+				workflowStore.getActiveVersion(caseType.id).then((active) => {
+					if (active) {
+						this.activeWorkflowId = active.id
+						this.activeWorkflowVersion = active.version
+					}
+				})
+			}
+
 			this.form.caseType = caseType?.id || null
 			this.errors.caseType = ''
 			this.statusTypes = []
@@ -168,10 +221,22 @@ export default {
 			}
 		},
 
+		onLocationSave(geometry) {
+			this.form.geometry = geometry
+			this.showLocationPicker = false
+			this.errors.geometry = ''
+		},
+
 		async submit() {
 			const validation = validateCaseCreate(this.form, this.caseTypes)
 			if (!validation.valid) {
 				this.errors = validation.errors
+				return
+			}
+
+			// Location validation for case types that require it
+			if (this.locationRequired && !this.form.geometry) {
+				this.errors.geometry = t('procest', 'This case type requires a location')
 				return
 			}
 
@@ -195,7 +260,10 @@ export default {
 				priority: 'normal',
 				endDate: null,
 				result: null,
+				geometry: this.form.geometry ? JSON.stringify(this.form.geometry) : null,
 				extensionCount: 0,
+				workflowTemplate: this.activeWorkflowId || null,
+				workflowVersion: this.activeWorkflowVersion || null,
 				statusHistory: [
 					{
 						status: initialStatus?.id || null,
