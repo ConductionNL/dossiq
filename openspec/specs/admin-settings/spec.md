@@ -1,3 +1,7 @@
+---
+status: implemented
+---
+
 # Admin Settings Specification
 
 ## Purpose
