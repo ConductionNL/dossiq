@@ -38,6 +38,13 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			:name="t('procest', 'Map Layers')"
+			:description="t('procest', 'Configure GIS map layers for case location views (WMS, WFS, PDOK)')"
+			:loading="!storesReady">
+			<MapLayerSettings v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			:name="t('procest', 'ZGW API Mapping')"
 			:description="t('procest', 'Configure property mappings between English OpenRegister fields and Dutch ZGW API fields')"
 			:loading="!storesReady">
@@ -60,6 +67,7 @@ import Refresh from 'vue-material-design-icons/Refresh.vue'
 import Settings from './Settings.vue'
 import CaseTypeAdmin from './CaseTypeAdmin.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
+import MapLayerSettings from './MapLayerSettings.vue'
 import { initializeStores } from '../../store/store.js'
 
 export default {
@@ -74,6 +82,7 @@ export default {
 		Settings,
 		CaseTypeAdmin,
 		ZgwMappingSettings,
+		MapLayerSettings,
 	},
 	data() {
 		return {

@@ -135,6 +135,11 @@
 				</div>
 			</template>
 
+			<!-- Case Map widget -->
+			<template #widget-case-map>
+				<CaseMapWidget />
+			</template>
+
 			<!-- Empty state override with welcome message -->
 			<template #empty>
 				<div v-if="showEmptyState" class="welcome-message">
@@ -188,6 +193,8 @@ import {
 import CaseCreateDialog from './cases/CaseCreateDialog.vue'
 import TaskCreateDialog from './tasks/TaskCreateDialog.vue'
 
+const CaseMapWidget = () => import(/* webpackChunkName: "map" */ './dashboard/CaseMapWidget.vue')
+
 const BAR_COLORS = [
 	'var(--color-primary)',
 	'var(--color-primary-element-light)',
@@ -208,6 +215,7 @@ const DEFAULT_LAYOUT = [
 	{ id: 4, widgetId: 'count-my-tasks', gridX: 9, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
 	{ id: 5, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
 	{ id: 6, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
+	{ id: 7, widgetId: 'case-map', gridX: 0, gridY: 6, gridWidth: 12, gridHeight: 6 },
 ]
 
 export default {
@@ -220,6 +228,7 @@ export default {
 		Refresh,
 		CaseCreateDialog,
 		TaskCreateDialog,
+		CaseMapWidget,
 	},
 	emits: ['navigate'],
 	data() {
@@ -272,6 +281,7 @@ export default {
 				{ id: 'count-my-tasks', title: t('procest', 'My Tasks'), type: 'custom' },
 				{ id: 'cases-by-status', title: t('procest', 'Cases by Status'), type: 'custom' },
 				{ id: 'my-work', title: t('procest', 'My Work'), type: 'custom' },
+				{ id: 'case-map', title: t('procest', 'Case Map'), type: 'custom' },
 			]
 		},
 	},

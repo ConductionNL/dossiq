@@ -31,6 +31,13 @@
 				</template>
 			</NcAppNavigationItem>
 			<NcAppNavigationItem
+				:name="t('procest', 'Map')"
+				:to="{ name: 'CaseMap' }">
+				<template #icon>
+					<MapOutline :size="20" />
+				</template>
+			</NcAppNavigationItem>
+			<NcAppNavigationItem
 				:name="t('procest', 'Documentation')"
 				@click="openLink('https://procest.app', '_blank')">
 				<template #icon>
@@ -66,6 +73,7 @@ import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'
 import AccountCheck from 'vue-material-design-icons/AccountCheck.vue'
 import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
 import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
+import MapOutline from 'vue-material-design-icons/MapOutline.vue'
 import Cog from 'vue-material-design-icons/Cog.vue'
 import ShapeOutline from 'vue-material-design-icons/ShapeOutline.vue'
 
@@ -80,6 +88,7 @@ export default {
 		FolderOpen,
 		ClipboardCheckOutline,
 		BookOpenVariantOutline,
+		MapOutline,
 		Cog,
 		ShapeOutline,
 	},

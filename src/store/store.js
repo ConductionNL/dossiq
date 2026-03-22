@@ -47,6 +47,9 @@ export async function initializeStores() {
 		if (config.register && config.decision_type_schema) {
 			objectStore.registerObjectType('decisionType', config.decision_type_schema, config.register)
 		}
+		if (config.register && config.map_layer_schema) {
+			objectStore.registerObjectType('mapLayer', config.map_layer_schema, config.register)
+		}
 	}
 
 	return { settingsStore, objectStore }

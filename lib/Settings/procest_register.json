@@ -80,6 +80,11 @@
             "default": true,
             "description": "Whether this case type is a draft (not yet published)"
           },
+          "requiresLocation": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether cases of this type require a geometry/location to be set"
+          },
           "validFrom": {
             "type": "string",
             "format": "date",
@@ -1477,6 +1482,88 @@
             "description": "Description of the usage conditions"
           }
         }
+      },
+      "mapLayer": {
+        "slug": "mapLayer",
+        "icon": "MapOutline",
+        "version": "1.0.0",
+        "title": "Map Layer",
+        "description": "GIS map layer configuration for case maps \u2014 defines tile, WMS, WFS, or GeoJSON layers that can be displayed on case map views",
+        "type": "object",
+        "required": [
+          "title",
+          "layerType",
+          "url"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Display name for the layer in the layer switcher"
+          },
+          "layerType": {
+            "type": "string",
+            "enum": ["tile", "wms", "wfs", "geojson"],
+            "description": "The type of map layer (tile, wms, wfs, or geojson)"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Service URL (tile template, WMS base URL, WFS endpoint, or GeoJSON URL)"
+          },
+          "layers": {
+            "type": "string",
+            "description": "WMS/WFS layer name(s), comma-separated"
+          },
+          "format": {
+            "type": "string",
+            "description": "Image format for WMS (e.g., image/png)",
+            "default": "image/png"
+          },
+          "attribution": {
+            "type": "string",
+            "description": "Attribution text for the layer"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Whether to show this layer on initial load",
+            "default": false
+          },
+          "isBaseLayer": {
+            "type": "boolean",
+            "description": "If true, only one base layer visible at a time",
+            "default": false
+          },
+          "opacity": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Layer opacity from 0.0 (transparent) to 1.0 (opaque)",
+            "default": 1.0
+          },
+          "minZoom": {
+            "type": "integer",
+            "description": "Minimum zoom level for visibility"
+          },
+          "maxZoom": {
+            "type": "integer",
+            "description": "Maximum zoom level for visibility"
+          },
+          "order": {
+            "type": "integer",
+            "description": "Display order in the layer switcher",
+            "default": 0
+          },
+          "style": {
+            "type": "string",
+            "description": "JSON-encoded style object for GeoJSON/WFS features (color, weight, fillColor, fillOpacity)"
+          },
+          "proxyEnabled": {
+            "type": "boolean",
+            "description": "Whether to route requests through the backend GIS proxy (for CORS-restricted services)",
+            "default": false
+          }
+        }
       }
     },
     "registers": {
@@ -1511,7 +1598,8 @@
           "dispatch",
           "usageRights",
           "kanaal",
-          "abonnement"
+          "abonnement",
+          "mapLayer"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"

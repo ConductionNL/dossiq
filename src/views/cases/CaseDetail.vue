@@ -244,6 +244,14 @@
 				</div>
 			</CnDetailCard>
 
+			<!-- Location card -->
+			<CnDetailCard :title="t('procest', 'Location')">
+				<LocationTab
+					:geometry="caseData.geometry || null"
+					:is-read-only="isReadOnly"
+					@update-geometry="onGeometryUpdate" />
+			</CnDetailCard>
+
 			<!-- Activity card -->
 			<CnDetailCard :title="t('procest', 'Activity')">
 				<ActivityTimeline
@@ -292,6 +300,8 @@ import ActivityTimeline from './components/ActivityTimeline.vue'
 import ParticipantsSection from './components/ParticipantsSection.vue'
 import ResultSection from './components/ResultSection.vue'
 
+const LocationTab = () => import(/* webpackChunkName: "map" */ './components/LocationTab.vue')
+
 export default {
 	name: 'CaseDetail',
 	components: {
@@ -306,6 +316,7 @@ export default {
 		ActivityTimeline,
 		ParticipantsSection,
 		ResultSection,
+		LocationTab,
 	},
 	props: {
 		caseId: {
@@ -685,6 +696,16 @@ export default {
 			// Persist the assignee to the backend.
 			await this.objectStore.saveObject('case', { ...this.caseData, assignee: newAssignee })
 			await this.objectStore.fetchObject('case', this.caseId)
+		},
+
+		// --- Location ---
+		async onGeometryUpdate(geometry) {
+			const updateData = {
+				...this.caseData,
+				geometry: typeof geometry === 'string' ? geometry : JSON.stringify(geometry),
+			}
+			await this.objectStore.saveObject('case', updateData)
+			this.caseData.geometry = updateData.geometry
 		},
 
 		// --- Activity ---
