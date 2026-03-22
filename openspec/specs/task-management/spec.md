@@ -1,6 +1,7 @@
 ---
 status: implemented
 ---
+
 # Task Management Specification
 
 ## Purpose

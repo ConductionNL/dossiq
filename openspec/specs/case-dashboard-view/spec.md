@@ -1,6 +1,7 @@
 ---
 status: implemented
 ---
+
 # Case Dashboard View Specification
 
 ## Purpose
