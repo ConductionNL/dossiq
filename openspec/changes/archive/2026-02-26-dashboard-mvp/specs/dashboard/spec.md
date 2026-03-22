@@ -4,7 +4,7 @@
 
 Implement the MVP tier of the dashboard spec (`openspec/specs/dashboard/spec.md`). This change implements all requirements tagged [MVP] from the main spec without modifications.
 
-## ADDED Requirements
+## Requirements
 
 All requirements below reference the main spec verbatim. No behavioral changes — this delta confirms the MVP scope being implemented.
 
