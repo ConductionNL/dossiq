@@ -58,9 +58,9 @@ Case management is the core capability of Procest. A case represents a coherent 
 
 ### REQ-CM-01: Case Creation
 
-**Feature tier**: MVP
+**Feature tier**: MVP (base), V1 (sub-case creation)
 
-The system MUST support creating new cases. Each case MUST be linked to a published, valid case type. The case type controls initial defaults and behavioral constraints.
+The system MUST support creating new cases. Each case MUST be linked to a published, valid case type. The case type controls initial defaults and behavioral constraints. When creating a sub-case, the `parentCase` field MUST be set and the case type MUST be restricted to the parent case type's `subCaseTypes`.
 
 #### Scenario CM-01a: Create a case with case type selection
 
@@ -121,6 +121,16 @@ The system MUST support creating new cases. Each case MUST be linked to a publis
 - THEN the case type dropdown MUST pre-select "Omgevingsvergunning"
 - AND the user MAY change the selection to another published, valid case type
 
+#### Scenario CM-01h: Create sub-case with parentCase context
+
+- GIVEN a user viewing case "Omgevingsvergunning Keizersgracht 100" (UUID: `abc-123`)
+- AND the case type "Omgevingsvergunning" has `subCaseTypes` containing "Bouwvergunning"
+- WHEN the user clicks "Create Sub-case" and selects case type "Bouwvergunning"
+- AND enters title "Bouwtoets Keizersgracht 100"
+- AND submits the form
+- THEN the system MUST create a case with `parentCase = "abc-123"`
+- AND all other case creation rules (identifier, startDate, deadline, status) MUST apply normally
+
 ---
 
 ### REQ-CM-02: Case Update
@@ -176,9 +186,9 @@ The system MUST support deleting cases. Deletion SHOULD be restricted to cases w
 
 ### REQ-CM-04: Case List View
 
-**Feature tier**: MVP
+**Feature tier**: MVP (base), V1 (sub-case count)
 
-The system MUST provide a list view of all cases with search, sort, filter, and pagination capabilities. See wireframe 3.2 (Case List View) in DESIGN-REFERENCES.md.
+The system MUST provide a list view of all cases with search, sort, filter, and pagination capabilities. Cases with sub-cases MUST display a sub-case count indicator. See wireframe 3.2 (Case List View) in DESIGN-REFERENCES.md.
 
 #### Scenario CM-04a: Default case list
 
@@ -240,6 +250,13 @@ The system MUST provide a list view of all cases with search, sort, filter, and 
 - AND the system MUST display "Showing 20 of 24 cases -- Page 1 of 2"
 - AND a "Next" button MUST navigate to page 2 (cases 21-24)
 
+#### Scenario CM-04j: Case list shows sub-case count badge
+
+- GIVEN the case list contains case "Omgevingsvergunning Keizersgracht 100" with 3 sub-cases
+- WHEN the user views the case list
+- THEN the case row MUST display a sub-case count badge showing "3 sub-cases"
+- AND cases with zero sub-cases MUST NOT display a sub-case badge
+
 ---
 
 ### REQ-CM-05: Quick Status Change from List
@@ -276,9 +293,9 @@ The system MUST support changing a case's status directly from the case list vie
 
 ### REQ-CM-06: Case Detail View
 
-**Feature tier**: MVP
+**Feature tier**: MVP (base), V1 (sub-cases section, breadcrumb)
 
-The system MUST provide a comprehensive detail view for each case. See wireframe 3.3 (Case Detail View) in DESIGN-REFERENCES.md. The detail view MUST include: status timeline, case info panel, deadline and timing panel, participants panel, custom properties panel, required documents checklist, tasks section, decisions section, activity timeline, and sub-cases section.
+The system MUST provide a comprehensive detail view for each case. See wireframe 3.3 (Case Detail View) in DESIGN-REFERENCES.md. The detail view MUST include: status timeline, case info panel, deadline and timing panel, participants panel, custom properties panel, required documents checklist, tasks section, decisions section, activity timeline, and sub-cases section. For parent cases, it MUST also show a sub-cases section with progress roll-up. For sub-cases, it MUST show a breadcrumb link to the parent case.
 
 #### Scenario CM-06a: Case info panel
 
@@ -323,6 +340,22 @@ The system MUST provide a comprehensive detail view for each case. See wireframe
 - WHEN the user views the deadline panel
 - THEN no "Request Extension" button MUST be displayed
 - AND the panel MUST show "Extension: not allowed"
+
+#### Scenario CM-06g: Case detail shows sub-cases section
+
+- GIVEN a case "Omgevingsvergunning Keizersgracht 100" with 3 sub-cases
+- AND the case type has `subCaseTypes` configured
+- WHEN the user opens the case detail
+- THEN the case detail MUST include a "Sub-cases" section after the existing sections
+- AND the section MUST list sub-cases with title, status, assignee, and deadline columns
+- AND the section header MUST display a roll-up indicator (e.g., "Sub-cases (2/3 completed)")
+
+#### Scenario CM-06h: Sub-case detail shows parent breadcrumb
+
+- GIVEN sub-case "Bouwtoets Keizersgracht 100" with `parentCase` pointing to "Omgevingsvergunning Keizersgracht 100"
+- WHEN the user opens the sub-case detail
+- THEN a breadcrumb MUST be displayed above the case title linking to the parent case
+- AND top-level cases (null `parentCase`) MUST NOT display a breadcrumb
 
 ---
 
