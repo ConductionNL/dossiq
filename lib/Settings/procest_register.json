@@ -3,7 +3,7 @@
   "info": {
     "title": "Procest Case Management Register",
     "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, and their instance counterparts.",
-    "version": "0.4.0"
+    "version": "0.5.0"
   },
   "x-openregister": {
     "type": "application",
@@ -21,7 +21,7 @@
         "x-schema-org-type": "schema:Project",
         "x-zgw-equivalent": "ZaakType",
         "title": "Case Type",
-        "description": "Case type definition \u2014 defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+        "description": "Case type definition — defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
         "type": "object",
         "required": [
           "title"
@@ -148,12 +148,16 @@
           },
           "subCaseTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to sub-case types (deelzaaktypen)"
           },
           "decisionTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to decision types (besluittypen) linked to this case type"
           }
         }
@@ -1242,7 +1246,11 @@
         "title": "Case Property",
         "description": "A property value on a specific case",
         "type": "object",
-        "required": ["case", "propertyDefinition", "value"],
+        "required": [
+          "case",
+          "propertyDefinition",
+          "value"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1270,7 +1278,10 @@
         "title": "Case Document Link",
         "description": "Links a document to a case",
         "type": "object",
-        "required": ["case", "document"],
+        "required": [
+          "case",
+          "document"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1307,7 +1318,10 @@
         "title": "Case Object",
         "description": "Links an external object to a case",
         "type": "object",
-        "required": ["case", "objectType"],
+        "required": [
+          "case",
+          "objectType"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1343,7 +1357,9 @@
         "title": "Customer Contact",
         "description": "A customer contact moment for a case",
         "type": "object",
-        "required": ["case"],
+        "required": [
+          "case"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1379,7 +1395,10 @@
         "title": "Decision Document Link",
         "description": "Links a document to a decision",
         "type": "object",
-        "required": ["decision", "document"],
+        "required": [
+          "decision",
+          "document"
+        ],
         "properties": {
           "decision": {
             "type": "string",
@@ -1403,7 +1422,10 @@
         "title": "Dispatch",
         "description": "A document dispatch record",
         "type": "object",
-        "required": ["document", "relationshipType"],
+        "required": [
+          "document",
+          "relationshipType"
+        ],
         "properties": {
           "document": {
             "type": "string",
@@ -1444,6 +1466,301 @@
           }
         }
       },
+      "complaint": {
+        "slug": "complaint",
+        "icon": "AlertCircleOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Complaint",
+        "title": "Complaint",
+        "description": "A citizen complaint (klacht) under Awb chapter 9 with dedicated lifecycle, deadlines, and disposition tracking",
+        "type": "object",
+        "required": [
+          "onderwerp",
+          "omschrijving",
+          "ontvangstdatum"
+        ],
+        "properties": {
+          "klachtnummer": {
+            "type": "string",
+            "description": "Auto-generated complaint number (format: KL-{year}-{sequence})"
+          },
+          "onderwerp": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Subject of the complaint"
+          },
+          "omschrijving": {
+            "type": "string",
+            "description": "Detailed description of the complaint"
+          },
+          "ontvangstdatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the complaint was received"
+          },
+          "ontvangstkanaal": {
+            "type": "string",
+            "enum": [
+              "balie",
+              "telefoon",
+              "email",
+              "brief",
+              "website",
+              "socialmedia"
+            ],
+            "description": "Intake channel through which the complaint was received"
+          },
+          "categorie": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the complaint category"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ontvangen",
+              "ontvangst_bevestigd",
+              "in_behandeling",
+              "hoorgesprek_gepland",
+              "hoorgesprek_afgerond",
+              "afgehandeld",
+              "ingetrokken"
+            ],
+            "default": "ontvangen",
+            "description": "Current status in the Awb complaint lifecycle",
+            "facetable": true
+          },
+          "prioriteit": {
+            "type": "string",
+            "enum": [
+              "laag",
+              "normaal",
+              "hoog",
+              "urgent"
+            ],
+            "default": "normaal",
+            "description": "Priority level",
+            "facetable": true
+          },
+          "behandelaar": {
+            "type": "string",
+            "description": "Nextcloud user ID of the assigned complaint handler",
+            "facetable": true
+          },
+          "klagerNaam": {
+            "type": "string",
+            "description": "Name of the person filing the complaint"
+          },
+          "klagerEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Email of the complainant"
+          },
+          "klagerTelefoon": {
+            "type": "string",
+            "description": "Phone number of the complainant"
+          },
+          "klagerBsn": {
+            "type": "string",
+            "description": "BSN of the complainant (if known)",
+            "visible": false
+          },
+          "betrokkenMedewerker": {
+            "type": "string",
+            "description": "Reference to the employee the complaint is about",
+            "visible": false
+          },
+          "betrokkenAfdeling": {
+            "type": "string",
+            "description": "Reference to the department the complaint is about",
+            "facetable": true
+          },
+          "ontvangstbevestigingDeadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Awb deadline for sending acknowledgment (5 working days)"
+          },
+          "afhandelDeadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Awb deadline for resolving the complaint (6 weeks)"
+          },
+          "verdagingMogelijk": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether a 4-week extension is still available (only one allowed per Awb)"
+          },
+          "geescaleerdeZaak": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to a formal case created by escalation"
+          },
+          "activity": {
+            "type": "string",
+            "description": "Activity log entries (JSON-encoded array)",
+            "visible": false
+          }
+        }
+      },
+      "hearing": {
+        "slug": "hearing",
+        "icon": "AccountVoice",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Event",
+        "title": "Hearing",
+        "description": "A hearing (hoorgesprek) for a complaint under Awb chapter 9",
+        "type": "object",
+        "required": [
+          "complaint",
+          "datum"
+        ],
+        "properties": {
+          "complaint": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "complaint",
+            "onDelete": "CASCADE",
+            "description": "Reference to the parent complaint"
+          },
+          "datum": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Scheduled date and time of the hearing"
+          },
+          "locatie": {
+            "type": "string",
+            "description": "Location (physical address or video conferencing link)"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "fysiek",
+              "telefonisch",
+              "videogesprek"
+            ],
+            "description": "Hearing type"
+          },
+          "deelnemers": {
+            "type": "string",
+            "description": "List of planned participants (JSON-encoded array)"
+          },
+          "aanwezigen": {
+            "type": "string",
+            "description": "List of actual attendees (JSON-encoded array)"
+          },
+          "verslag": {
+            "type": "string",
+            "description": "Summary of the hearing"
+          },
+          "conclusie": {
+            "type": "string",
+            "description": "Preliminary conclusion from the hearing"
+          },
+          "datumAfgerond": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Actual date the hearing took place"
+          }
+        }
+      },
+      "complaintDisposition": {
+        "slug": "complaintDisposition",
+        "icon": "ScaleBalance",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:ChooseAction",
+        "title": "Complaint Disposition",
+        "description": "The formal disposition (oordeel) recording how a complaint was resolved",
+        "type": "object",
+        "required": [
+          "complaint",
+          "oordeel"
+        ],
+        "properties": {
+          "complaint": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "complaint",
+            "onDelete": "CASCADE",
+            "description": "Reference to the parent complaint"
+          },
+          "oordeel": {
+            "type": "string",
+            "enum": [
+              "gegrond",
+              "deels_gegrond",
+              "ongegrond",
+              "ingetrokken",
+              "niet_ontvankelijk"
+            ],
+            "description": "Judgment outcome"
+          },
+          "toelichting": {
+            "type": "string",
+            "description": "Explanation of the judgment (mandatory for gegrond/deels_gegrond)"
+          },
+          "maatregelen": {
+            "type": "string",
+            "description": "Actions taken or promised (JSON-encoded array with description and responsible party)"
+          },
+          "afsluitdatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of closure"
+          },
+          "afsluitbrief": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the formal response letter document"
+          },
+          "goedkeuringStatus": {
+            "type": "string",
+            "enum": [
+              "concept",
+              "wacht_op_goedkeuring",
+              "goedgekeurd",
+              "afgekeurd"
+            ],
+            "default": "concept",
+            "description": "Approval status of the disposition"
+          }
+        }
+      },
+      "complaintCategory": {
+        "slug": "complaintCategory",
+        "icon": "TagOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:CategoryCode",
+        "title": "Complaint Category",
+        "description": "Configurable complaint category per tenant",
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Category name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Category description"
+          },
+          "defaultHandler": {
+            "type": "string",
+            "description": "Default handler (user or group ID)"
+          },
+          "slaOverride": {
+            "type": "string",
+            "description": "Custom deadline override (ISO 8601 duration)"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this category is active for new complaints"
+          }
+        }
+      },
       "usageRights": {
         "slug": "usageRights",
         "icon": "ShieldKeyOutline",
@@ -1477,14 +1794,470 @@
             "description": "Description of the usage conditions"
           }
         }
+      },
+      "inspectionChecklist": {
+        "slug": "inspectionChecklist",
+        "icon": "ClipboardCheckOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:ItemList",
+        "title": "Inspection Checklist",
+        "description": "Template for a configurable inspection checklist linked to a case type",
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this checklist (e.g., Bouwtoezicht fase 1)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what this checklist covers"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case type this checklist belongs to"
+          },
+          "items": {
+            "type": "string",
+            "description": "JSON array of checklist items with label, photoRequired flag"
+          },
+          "version": {
+            "type": "string",
+            "description": "Version of this checklist template"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this checklist is currently in use"
+          }
+        }
+      },
+      "inspectionResult": {
+        "slug": "inspectionResult",
+        "icon": "ClipboardTextOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Report",
+        "title": "Inspection Result",
+        "description": "Completed inspection checklist with per-item results",
+        "type": "object",
+        "required": [
+          "case",
+          "checklist",
+          "inspector"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case"
+          },
+          "checklist": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the checklist template used"
+          },
+          "inspector": {
+            "type": "string",
+            "description": "Nextcloud user ID of the inspector"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the inspection"
+          },
+          "location": {
+            "type": "string",
+            "description": "GPS coordinates of the inspection location"
+          },
+          "results": {
+            "type": "string",
+            "description": "JSON object with per-item results (result, comment)"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "conform",
+              "niet_conform"
+            ],
+            "description": "Overall inspection outcome"
+          },
+          "passedCount": {
+            "type": "integer",
+            "description": "Number of items that passed"
+          },
+          "failedCount": {
+            "type": "integer",
+            "description": "Number of items that failed"
+          },
+          "naCount": {
+            "type": "integer",
+            "description": "Number of items marked not applicable"
+          }
+        }
+      },
+      "adviceRequest": {
+        "slug": "adviceRequest",
+        "icon": "CommentQuestionOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:AskAction",
+        "title": "Advice Request",
+        "description": "Request for internal or external advice on a case",
+        "type": "object",
+        "required": [
+          "case",
+          "department",
+          "subject"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case"
+          },
+          "department": {
+            "type": "string",
+            "description": "Department or organization being consulted"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Subject of the advice request"
+          },
+          "question": {
+            "type": "string",
+            "description": "Specific question(s) being asked"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Deadline for the advice response"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "in_behandeling",
+              "advies_uitgebracht",
+              "afgesloten"
+            ],
+            "default": "open",
+            "description": "Current status of the advice request"
+          },
+          "requester": {
+            "type": "string",
+            "description": "User ID of the person requesting advice"
+          },
+          "response": {
+            "type": "string",
+            "enum": [
+              "positief",
+              "positief_met_voorwaarden",
+              "negatief",
+              "niet_van_toepassing"
+            ],
+            "description": "The advice response type"
+          },
+          "responseText": {
+            "type": "string",
+            "description": "Detailed advice text"
+          },
+          "conditions": {
+            "type": "string",
+            "description": "JSON array of conditions (if positief_met_voorwaarden)"
+          },
+          "responseDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the advice was given"
+          }
+        }
       }
     },
+    "objects": [
+      {
+        "@self": { "register": "procest", "schema": "caseType", "slug": "omgevingsvergunning" },
+        "title": "Omgevingsvergunning",
+        "description": "Vergunning voor het bouwen, verbouwen of slopen van een bouwwerk onder de Omgevingswet.",
+        "processingDeadline": "P56D",
+        "confidentiality": "zaakvertrouwelijk",
+        "isDraft": false,
+        "origin": "aanvraag",
+        "internalOrExternal": "extern",
+        "suspensionAllowed": true,
+        "extensionAllowed": true,
+        "extensionPeriod": "P42D",
+        "publicationRequired": true
+      },
+      {
+        "@self": { "register": "procest", "schema": "caseType", "slug": "subsidieaanvraag" },
+        "title": "Subsidieaanvraag",
+        "description": "Aanvraag voor een gemeentelijke subsidie. Behandeling binnen 6 weken na ontvangst.",
+        "processingDeadline": "P42D",
+        "confidentiality": "zaakvertrouwelijk",
+        "isDraft": false,
+        "origin": "aanvraag",
+        "internalOrExternal": "extern",
+        "suspensionAllowed": false,
+        "extensionAllowed": true,
+        "extensionPeriod": "P28D",
+        "publicationRequired": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "caseType", "slug": "klacht-behandeling" },
+        "title": "Klacht behandeling",
+        "description": "Behandeling van een klacht van een burger over het handelen van de gemeente of haar medewerkers.",
+        "processingDeadline": "P42D",
+        "confidentiality": "vertrouwelijk",
+        "isDraft": false,
+        "origin": "indienen",
+        "internalOrExternal": "extern",
+        "suspensionAllowed": false,
+        "extensionAllowed": true,
+        "extensionPeriod": "P28D",
+        "publicationRequired": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "caseType", "slug": "melding-openbare-ruimte" },
+        "title": "Melding openbare ruimte",
+        "description": "Melding van een probleem in de openbare ruimte, zoals een kapotte lantaarnpaal, losse stoeptegel of zwerfvuil.",
+        "processingDeadline": "P14D",
+        "confidentiality": "openbaar",
+        "isDraft": false,
+        "origin": "melding",
+        "internalOrExternal": "extern",
+        "suspensionAllowed": false,
+        "extensionAllowed": false,
+        "publicationRequired": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "omgevingsvergunning-ontvangen" },
+        "name": "Ontvangen",
+        "description": "De aanvraag is ontvangen en geregistreerd.",
+        "caseType": "@procest/caseType/omgevingsvergunning",
+        "order": 1,
+        "isFinal": false,
+        "informCustomer": true,
+        "informText": "Uw aanvraag is ontvangen."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "omgevingsvergunning-in-behandeling" },
+        "name": "In behandeling",
+        "description": "De aanvraag wordt inhoudelijk beoordeeld.",
+        "caseType": "@procest/caseType/omgevingsvergunning",
+        "order": 2,
+        "isFinal": false,
+        "informCustomer": true,
+        "informText": "Uw aanvraag is in behandeling genomen."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "omgevingsvergunning-besluitvorming" },
+        "name": "Besluitvorming",
+        "description": "Er wordt een besluit voorbereid over de aanvraag.",
+        "caseType": "@procest/caseType/omgevingsvergunning",
+        "order": 3,
+        "isFinal": false,
+        "informCustomer": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "omgevingsvergunning-afgehandeld" },
+        "name": "Afgehandeld",
+        "description": "De zaak is afgehandeld en het besluit is genomen.",
+        "caseType": "@procest/caseType/omgevingsvergunning",
+        "order": 4,
+        "isFinal": true,
+        "informCustomer": true,
+        "informText": "Uw aanvraag is afgehandeld."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "subsidieaanvraag-ontvangen" },
+        "name": "Ontvangen",
+        "description": "De subsidieaanvraag is ontvangen.",
+        "caseType": "@procest/caseType/subsidieaanvraag",
+        "order": 1,
+        "isFinal": false,
+        "informCustomer": true,
+        "informText": "Uw subsidieaanvraag is ontvangen."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "subsidieaanvraag-beoordeling" },
+        "name": "Beoordeling",
+        "description": "De aanvraag wordt inhoudelijk beoordeeld op de subsidiecriteria.",
+        "caseType": "@procest/caseType/subsidieaanvraag",
+        "order": 2,
+        "isFinal": false,
+        "informCustomer": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "subsidieaanvraag-besluitvorming" },
+        "name": "Besluitvorming",
+        "description": "Er wordt een besluit voorbereid over de subsidieaanvraag.",
+        "caseType": "@procest/caseType/subsidieaanvraag",
+        "order": 3,
+        "isFinal": false,
+        "informCustomer": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "subsidieaanvraag-afgehandeld" },
+        "name": "Afgehandeld",
+        "description": "De subsidieaanvraag is afgehandeld.",
+        "caseType": "@procest/caseType/subsidieaanvraag",
+        "order": 4,
+        "isFinal": true,
+        "informCustomer": true,
+        "informText": "Uw subsidieaanvraag is afgehandeld."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "klacht-ontvangen" },
+        "name": "Ontvangen",
+        "description": "De klacht is ontvangen en geregistreerd.",
+        "caseType": "@procest/caseType/klacht-behandeling",
+        "order": 1,
+        "isFinal": false,
+        "informCustomer": true,
+        "informText": "Uw klacht is ontvangen."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "klacht-onderzoek" },
+        "name": "Onderzoek",
+        "description": "De klacht wordt onderzocht.",
+        "caseType": "@procest/caseType/klacht-behandeling",
+        "order": 2,
+        "isFinal": false,
+        "informCustomer": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "klacht-afgehandeld" },
+        "name": "Afgehandeld",
+        "description": "De klacht is afgehandeld.",
+        "caseType": "@procest/caseType/klacht-behandeling",
+        "order": 3,
+        "isFinal": true,
+        "informCustomer": true,
+        "informText": "Uw klacht is afgehandeld."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "melding-ontvangen" },
+        "name": "Ontvangen",
+        "description": "De melding is ontvangen.",
+        "caseType": "@procest/caseType/melding-openbare-ruimte",
+        "order": 1,
+        "isFinal": false,
+        "informCustomer": true,
+        "informText": "Uw melding is ontvangen."
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "melding-in-behandeling" },
+        "name": "In behandeling",
+        "description": "De melding wordt behandeld.",
+        "caseType": "@procest/caseType/melding-openbare-ruimte",
+        "order": 2,
+        "isFinal": false,
+        "informCustomer": false
+      },
+      {
+        "@self": { "register": "procest", "schema": "statusType", "slug": "melding-afgehandeld" },
+        "name": "Afgehandeld",
+        "description": "De melding is afgehandeld.",
+        "caseType": "@procest/caseType/melding-openbare-ruimte",
+        "order": 3,
+        "isFinal": true,
+        "informCustomer": true,
+        "informText": "Uw melding is afgehandeld."
+      },
+      {
+        "@self": { "register": "procest", "schema": "roleType", "slug": "behandelaar" },
+        "name": "Behandelaar",
+        "description": "De medewerker die verantwoordelijk is voor de behandeling van de zaak."
+      },
+      {
+        "@self": { "register": "procest", "schema": "roleType", "slug": "aanvrager" },
+        "name": "Aanvrager",
+        "description": "De persoon of organisatie die de aanvraag of melding heeft ingediend."
+      },
+      {
+        "@self": { "register": "procest", "schema": "roleType", "slug": "gemachtigde" },
+        "name": "Gemachtigde",
+        "description": "Een persoon of organisatie die gemachtigd is om namens de aanvrager op te treden."
+      },
+      {
+        "@self": { "register": "procest", "schema": "roleType", "slug": "technisch-adviseur" },
+        "name": "Technisch adviseur",
+        "description": "Een interne of externe specialist die advies uitbrengt over de zaak."
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "vergunning-verleend" },
+        "name": "Vergunning verleend",
+        "description": "De aangevraagde vergunning is verleend.",
+        "caseType": "@procest/caseType/omgevingsvergunning",
+        "archiveAction": "blijvend_bewaren",
+        "retentionPeriod": "P20Y"
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "vergunning-geweigerd" },
+        "name": "Vergunning geweigerd",
+        "description": "De aangevraagde vergunning is geweigerd.",
+        "caseType": "@procest/caseType/omgevingsvergunning",
+        "archiveAction": "vernietigen",
+        "retentionPeriod": "P10Y"
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "ingetrokken" },
+        "name": "Ingetrokken",
+        "description": "De aanvraag is ingetrokken door de aanvrager.",
+        "caseType": "@procest/caseType/omgevingsvergunning",
+        "archiveAction": "vernietigen",
+        "retentionPeriod": "P5Y"
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "subsidie-toegekend" },
+        "name": "Subsidie toegekend",
+        "description": "De subsidie is toegekend.",
+        "caseType": "@procest/caseType/subsidieaanvraag",
+        "archiveAction": "blijvend_bewaren",
+        "retentionPeriod": "P10Y"
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "subsidie-afgewezen" },
+        "name": "Subsidie afgewezen",
+        "description": "De subsidieaanvraag is afgewezen.",
+        "caseType": "@procest/caseType/subsidieaanvraag",
+        "archiveAction": "vernietigen",
+        "retentionPeriod": "P7Y"
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "klacht-gegrond" },
+        "name": "Klacht gegrond",
+        "description": "De klacht is gegrond verklaard.",
+        "caseType": "@procest/caseType/klacht-behandeling",
+        "archiveAction": "blijvend_bewaren",
+        "retentionPeriod": "P10Y"
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "klacht-ongegrond" },
+        "name": "Klacht ongegrond",
+        "description": "De klacht is ongegrond verklaard.",
+        "caseType": "@procest/caseType/klacht-behandeling",
+        "archiveAction": "vernietigen",
+        "retentionPeriod": "P5Y"
+      },
+      {
+        "@self": { "register": "procest", "schema": "resultType", "slug": "melding-afgehandeld" },
+        "name": "Afgehandeld",
+        "description": "De melding is afgehandeld.",
+        "caseType": "@procest/caseType/melding-openbare-ruimte",
+        "archiveAction": "vernietigen",
+        "retentionPeriod": "P1Y"
+      }
+    ],
     "registers": {
       "procest": {
         "slug": "procest",
         "title": "Procest",
         "version": "1.0.0",
-        "description": "Case management (zaakgericht werken) register for Procest \u2014 manages case types, status types, cases, tasks, roles, results, and decisions.",
+        "description": "Case management (zaakgericht werken) register for Procest — manages case types, status types, cases, tasks, roles, results, and decisions.",
         "schemas": [
           "caseType",
           "statusType",
@@ -1511,7 +2284,11 @@
           "dispatch",
           "usageRights",
           "kanaal",
-          "abonnement"
+          "abonnement",
+          "caseShare",
+          "partnerOrganization",
+          "sharePermissionLevel",
+          "caseTransfer"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"
