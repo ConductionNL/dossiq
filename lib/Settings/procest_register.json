@@ -21,7 +21,7 @@
         "x-schema-org-type": "schema:Project",
         "x-zgw-equivalent": "ZaakType",
         "title": "Case Type",
-        "description": "Case type definition \u2014 defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+        "description": "Case type definition — defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
         "type": "object",
         "required": [
           "title"
@@ -148,12 +148,16 @@
           },
           "subCaseTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to sub-case types (deelzaaktypen)"
           },
           "decisionTypes": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "References to decision types (besluittypen) linked to this case type"
           }
         }
@@ -1242,7 +1246,11 @@
         "title": "Case Property",
         "description": "A property value on a specific case",
         "type": "object",
-        "required": ["case", "propertyDefinition", "value"],
+        "required": [
+          "case",
+          "propertyDefinition",
+          "value"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1270,7 +1278,10 @@
         "title": "Case Document Link",
         "description": "Links a document to a case",
         "type": "object",
-        "required": ["case", "document"],
+        "required": [
+          "case",
+          "document"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1307,7 +1318,10 @@
         "title": "Case Object",
         "description": "Links an external object to a case",
         "type": "object",
-        "required": ["case", "objectType"],
+        "required": [
+          "case",
+          "objectType"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1343,7 +1357,9 @@
         "title": "Customer Contact",
         "description": "A customer contact moment for a case",
         "type": "object",
-        "required": ["case"],
+        "required": [
+          "case"
+        ],
         "properties": {
           "case": {
             "type": "string",
@@ -1379,7 +1395,10 @@
         "title": "Decision Document Link",
         "description": "Links a document to a decision",
         "type": "object",
-        "required": ["decision", "document"],
+        "required": [
+          "decision",
+          "document"
+        ],
         "properties": {
           "decision": {
             "type": "string",
@@ -1403,7 +1422,10 @@
         "title": "Dispatch",
         "description": "A document dispatch record",
         "type": "object",
-        "required": ["document", "relationshipType"],
+        "required": [
+          "document",
+          "relationshipType"
+        ],
         "properties": {
           "document": {
             "type": "string",
@@ -1477,6 +1499,360 @@
             "description": "Description of the usage conditions"
           }
         }
+      },
+      "inspectieChecklist": {
+        "slug": "inspectieChecklist",
+        "icon": "ClipboardCheckOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:HowTo",
+        "title": "Inspection Checklist",
+        "description": "Configurable inspection checklist template linked to a case type, with versioning support",
+        "type": "object",
+        "required": [
+          "name",
+          "caseType"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this checklist (e.g. 'Bouwtoezicht fase 1 - Fundering')"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case type this checklist belongs to"
+          },
+          "version": {
+            "type": "integer",
+            "default": 1,
+            "description": "Version number of this checklist (incremented on edit)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "archived"
+            ],
+            "default": "draft",
+            "description": "Lifecycle status of this checklist version"
+          },
+          "items": {
+            "type": "array",
+            "description": "Ordered list of checklist items",
+            "items": {
+              "type": "object",
+              "properties": {
+                "order": {
+                  "type": "integer",
+                  "description": "Display order of this item"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Label/question for this checklist item"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "ja_nee_nvt",
+                    "tekst",
+                    "getal",
+                    "foto",
+                    "meerkeuze"
+                  ],
+                  "description": "Input type for this item"
+                },
+                "required": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Whether this item must be completed"
+                },
+                "fotoRequired": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Whether a photo is required (especially on failure)"
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Options for meerkeuze type"
+                },
+                "helpText": {
+                  "type": "string",
+                  "description": "Guidance text for the inspector"
+                }
+              }
+            }
+          }
+        }
+      },
+      "inspectieRapport": {
+        "slug": "inspectieRapport",
+        "icon": "FileDocumentCheckOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Report",
+        "title": "Inspection Report",
+        "description": "A completed inspection report generated from a checklist, stored on the case",
+        "type": "object",
+        "required": [
+          "case",
+          "checklist",
+          "inspector",
+          "inspectionDate"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case (toezichtzaak) this report belongs to"
+          },
+          "checklist": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the inspectieChecklist used"
+          },
+          "inspector": {
+            "type": "string",
+            "description": "User UID of the inspector"
+          },
+          "inspectionDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time of the inspection"
+          },
+          "location": {
+            "type": "string",
+            "description": "GPS coordinates or address of the inspection location"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "conform",
+              "niet_conform",
+              "deels_conform"
+            ],
+            "description": "Overall inspection result (auto-calculated from items)"
+          },
+          "failedItems": {
+            "type": "integer",
+            "default": 0,
+            "description": "Count of failed checklist items"
+          },
+          "items": {
+            "type": "array",
+            "description": "Completed checklist item results",
+            "items": {
+              "type": "object",
+              "properties": {
+                "itemId": {
+                  "type": "string",
+                  "description": "Reference to the original checklist item"
+                },
+                "result": {
+                  "type": "string",
+                  "enum": [
+                    "pass",
+                    "fail",
+                    "nvt"
+                  ],
+                  "description": "Result for this item"
+                },
+                "comment": {
+                  "type": "string",
+                  "description": "Free text comment"
+                },
+                "measurement": {
+                  "type": "number",
+                  "description": "Numeric measurement value (for getal type)"
+                },
+                "photos": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Nextcloud file IDs of photos for this item"
+                }
+              }
+            }
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "All Nextcloud file IDs of photos taken during inspection"
+          },
+          "remarks": {
+            "type": "string",
+            "description": "General remarks about the inspection"
+          },
+          "followUpRequired": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether follow-up action is required"
+          }
+        }
+      },
+      "handhavingsactie": {
+        "slug": "handhavingsactie",
+        "icon": "Gavel",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:LegalForceStatus",
+        "title": "Enforcement Action",
+        "description": "An enforcement action (handhavingsactie) on a case, classified per the Landelijke Handhavingsstrategie (LHS)",
+        "type": "object",
+        "required": [
+          "case",
+          "type",
+          "ernst",
+          "gedrag"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the handhavingszaak"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "waarschuwing",
+              "vooraankondiging",
+              "last_onder_dwangsom",
+              "bestuursdwang",
+              "proces_verbaal"
+            ],
+            "description": "Type of enforcement action"
+          },
+          "ernst": {
+            "type": "string",
+            "enum": [
+              "gering",
+              "aanzienlijk",
+              "ernstig"
+            ],
+            "description": "Severity of the violation (LHS ernst axis)"
+          },
+          "gedrag": {
+            "type": "string",
+            "enum": [
+              "goedwillend",
+              "onverschillig",
+              "calculerend",
+              "crimineel"
+            ],
+            "description": "Behavior of the violator (LHS gedrag axis)"
+          },
+          "interventie": {
+            "type": "string",
+            "description": "Suggested intervention from LHS matrix (may be overridden)"
+          },
+          "begunstigingstermijn": {
+            "type": "integer",
+            "description": "Grace period in days before enforcement takes effect"
+          },
+          "dwangsomBedrag": {
+            "type": "number",
+            "description": "Penalty amount per violation (EUR)"
+          },
+          "dwangsomMaximaal": {
+            "type": "number",
+            "description": "Maximum total penalty amount (EUR)"
+          },
+          "effectueringsDatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Date when enforcement action takes effect"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "opgelegd",
+              "verbeurd",
+              "geeffectueerd",
+              "ingetrokken"
+            ],
+            "default": "opgelegd",
+            "description": "Current status of the enforcement action"
+          },
+          "overrideReason": {
+            "type": "string",
+            "description": "Documented reasoning if the LHS suggestion was overridden"
+          }
+        }
+      },
+      "adviesAanvraag": {
+        "slug": "adviesAanvraag",
+        "icon": "CommentQuestionOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:AskAction",
+        "title": "Advice Request",
+        "description": "A request for internal or external advice on a case, with deadline tracking",
+        "type": "object",
+        "required": [
+          "case",
+          "adviseur",
+          "type"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case this advice is requested for"
+          },
+          "adviseur": {
+            "type": "string",
+            "description": "User UID (internal) or organization name (external)"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "intern",
+              "extern"
+            ],
+            "description": "Whether advice is from internal staff or external party"
+          },
+          "onderwerp": {
+            "type": "string",
+            "description": "Subject/topic of the advice request"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Deadline for receiving the advice"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "aangevraagd",
+              "ontvangen",
+              "verlopen"
+            ],
+            "default": "aangevraagd",
+            "description": "Current status of the advice request"
+          },
+          "adviesDocument": {
+            "type": "string",
+            "description": "Nextcloud file ID of the advice document"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the advice was requested"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the advice was received"
+          },
+          "questions": {
+            "type": "string",
+            "description": "Specific questions for the adviseur"
+          }
+        }
       }
     },
     "registers": {
@@ -1484,7 +1860,7 @@
         "slug": "procest",
         "title": "Procest",
         "version": "1.0.0",
-        "description": "Case management (zaakgericht werken) register for Procest \u2014 manages case types, status types, cases, tasks, roles, results, and decisions.",
+        "description": "Case management (zaakgericht werken) register for Procest — manages case types, status types, cases, tasks, roles, results, and decisions.",
         "schemas": [
           "caseType",
           "statusType",
@@ -1511,7 +1887,11 @@
           "dispatch",
           "usageRights",
           "kanaal",
-          "abonnement"
+          "abonnement",
+          "inspectieChecklist",
+          "inspectieRapport",
+          "handhavingsactie",
+          "adviesAanvraag"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"

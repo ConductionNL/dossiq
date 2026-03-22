@@ -244,6 +244,24 @@
 				</div>
 			</CnDetailCard>
 
+			<!-- VTH Panels (conditionally shown based on case type) -->
+			<InspectionPanel
+				v-if="isToezichtCase"
+				:case-id="caseId"
+				:case-type-id="caseData.caseType"
+				:can-inspect="!isReadOnly" />
+
+			<EnforcementPanel
+				v-if="isHandhavingCase"
+				:case-id="caseId"
+				:case-type-id="caseData.caseType"
+				:is-read-only="isReadOnly" />
+
+			<AdvicePanel
+				v-if="isVthCase"
+				:case-id="caseId"
+				:is-read-only="isReadOnly" />
+
 			<!-- Activity card -->
 			<CnDetailCard :title="t('procest', 'Activity')">
 				<ActivityTimeline
@@ -291,6 +309,9 @@ import DeadlinePanel from './components/DeadlinePanel.vue'
 import ActivityTimeline from './components/ActivityTimeline.vue'
 import ParticipantsSection from './components/ParticipantsSection.vue'
 import ResultSection from './components/ResultSection.vue'
+import InspectionPanel from './components/InspectionPanel.vue'
+import EnforcementPanel from './components/EnforcementPanel.vue'
+import AdvicePanel from './components/AdvicePanel.vue'
 
 export default {
 	name: 'CaseDetail',
@@ -306,6 +327,9 @@ export default {
 		ActivityTimeline,
 		ParticipantsSection,
 		ResultSection,
+		InspectionPanel,
+		EnforcementPanel,
+		AdvicePanel,
 	},
 	props: {
 		caseId: {
@@ -376,6 +400,38 @@ export default {
 		},
 		isNew() {
 			return !this.caseId || this.caseId === 'new'
+		},
+		/**
+		 * Detect if this is a VTH case type (Vergunningen, Toezicht, or Handhaving).
+		 *
+		 * @return {boolean} True if VTH case type
+		 */
+		isVthCase() {
+			const title = (this.caseTypeData?.title || '').toLowerCase()
+			return this.isToezichtCase
+				|| this.isHandhavingCase
+				|| title.includes('omgevingsvergunning')
+				|| title.includes('sloopmelding')
+				|| title.includes('milieumelding')
+				|| title.includes('gebruiksmelding')
+		},
+		/**
+		 * Detect if this is a Toezicht (supervision) case type.
+		 *
+		 * @return {boolean} True if Toezicht case type
+		 */
+		isToezichtCase() {
+			const title = (this.caseTypeData?.title || '').toLowerCase()
+			return title.includes('toezicht')
+		},
+		/**
+		 * Detect if this is a Handhaving (enforcement) case type.
+		 *
+		 * @return {boolean} True if Handhaving case type
+		 */
+		isHandhavingCase() {
+			const title = (this.caseTypeData?.title || '').toLowerCase()
+			return title.includes('handhaving') || title.includes('invorderin')
 		},
 		sortedTasks() {
 			return sortTasks(this.tasks)
