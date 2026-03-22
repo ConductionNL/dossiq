@@ -71,6 +71,11 @@ class SettingsService
         'parafeerroute_schema',
         'parafeeractie_schema',
         'default_case_type',
+        'inspectie_checklist_schema',
+        'inspectie_rapport_schema',
+        'handhavingsactie_schema',
+        'advies_aanvraag_schema',
+        'lhsMatrix',
     ];
 
     /**
@@ -104,6 +109,10 @@ class SettingsService
         'usageRights'                  => 'usage_rights_schema',
         'kanaal'                       => 'kanaal_schema',
         'abonnement'                   => 'abonnement_schema',
+        'inspectieChecklist'           => 'inspectie_checklist_schema',
+        'inspectieRapport'             => 'inspectie_rapport_schema',
+        'handhavingsactie'             => 'handhavingsactie_schema',
+        'adviesAanvraag'               => 'advies_aanvraag_schema',
         'mapLayer'                     => 'map_layer_schema',
         'workflowTemplate'             => 'workflow_template_schema',
         'objection'                    => 'objection_schema',
