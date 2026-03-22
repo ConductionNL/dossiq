@@ -3,7 +3,7 @@
 ## Purpose
 Define the case management domain for Procest: cases, tasks, statuses, roles, results, and decisions. All entities are stored in OpenRegister under the `case-management` register. The frontend provides list and detail views for cases and tasks.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Case-management register MUST be auto-configured on install
 The app MUST create or detect the `case-management` register and its schemas in OpenRegister during app initialization.
