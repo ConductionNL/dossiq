@@ -61,6 +61,10 @@ class SettingsService
         'usage_rights_schema',
         'kanaal_schema',
         'abonnement_schema',
+        'case_share_schema',
+        'partner_organization_schema',
+        'share_permission_level_schema',
+        'case_transfer_schema',
         'default_case_type',
         'complaint_schema',
         'hearing_schema',
@@ -99,10 +103,10 @@ class SettingsService
         'usageRights'                  => 'usage_rights_schema',
         'kanaal'                       => 'kanaal_schema',
         'abonnement'                   => 'abonnement_schema',
-        'complaint'                    => 'complaint_schema',
-        'hearing'                      => 'hearing_schema',
-        'complaintDisposition'         => 'complaint_disposition_schema',
-        'complaintCategory'            => 'complaint_category_schema',
+        'caseShare'                    => 'case_share_schema',
+        'partnerOrganization'          => 'partner_organization_schema',
+        'sharePermissionLevel'         => 'share_permission_level_schema',
+        'caseTransfer'                 => 'case_transfer_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

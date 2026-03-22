@@ -110,10 +110,18 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
-        // ── Templates ──────────────────────────────────────────────────
-        ['name' => 'template#index', 'url' => '/api/templates', 'verb' => 'GET'],
-        ['name' => 'template#show', 'url' => '/api/templates/{id}', 'verb' => 'GET'],
-        ['name' => 'template#activate', 'url' => '/api/templates/{id}/activate', 'verb' => 'POST'],
+        // ── Case Sharing & Collaboration ──────────────────────────────
+        // Share management (authenticated).
+        ['name' => 'case_sharing#listShares', 'url' => '/api/shares/{caseId}', 'verb' => 'GET'],
+        ['name' => 'case_sharing#createShare', 'url' => '/api/shares', 'verb' => 'POST'],
+        ['name' => 'case_sharing#revokeShare', 'url' => '/api/shares/{shareId}', 'verb' => 'DELETE'],
+        // Transfer management (authenticated).
+        ['name' => 'case_sharing#initiateTransfer', 'url' => '/api/transfers', 'verb' => 'POST'],
+        ['name' => 'case_sharing#handleTransfer', 'url' => '/api/transfers/{transferId}', 'verb' => 'PUT'],
+        // Public share access (unauthenticated).
+        ['name' => 'public_share#accessShare', 'url' => '/api/public/share/{token}', 'verb' => 'GET'],
+        ['name' => 'public_share#addComment', 'url' => '/api/public/share/{token}/comment', 'verb' => 'POST'],
+        ['name' => 'public_share#viewStatus', 'url' => '/api/public/status/{token}', 'verb' => 'GET'],
 
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],

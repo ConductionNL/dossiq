@@ -2083,10 +2083,10 @@
           "usageRights",
           "kanaal",
           "abonnement",
-          "complaint",
-          "hearing",
-          "complaintDisposition",
-          "complaintCategory"
+          "caseShare",
+          "partnerOrganization",
+          "sharePermissionLevel",
+          "caseTransfer"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"
