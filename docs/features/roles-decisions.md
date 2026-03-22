@@ -1,53 +1,32 @@
-# Roles & Decisions
+# Roles and Decisions
 
-Participation, outcomes, and formal decision-making on cases. Roles link participants to cases, results record outcomes, and decisions are formal administrative determinations.
+The roles and decisions feature manages the assignment of roles to case participants and the recording of formal decisions (besluiten) within cases.
 
-## Specs
+## Roles
 
-- `openspec/specs/roles-decisions/spec.md`
+Roles define who is involved in a case and in what capacity. Common role types in Dutch government case management include:
 
-## Features
+- **Behandelaar** (Handler) -- The case worker responsible for processing the case.
+- **Initiator** -- The person or organization that initiated the case (e.g., the applicant).
+- **Belanghebbende** (Stakeholder) -- Parties with a vested interest in the case outcome.
+- **Adviseur** (Advisor) -- Internal or external advisors consulted during case processing.
+- **Medeinitiator** -- Co-initiators of a case.
 
-### Role Assignment (MVP)
+### Role Management
+- Assign roles to users or external parties.
+- Track role history (who was assigned when).
+- Role-based access control for case data.
+- ZGW-compatible role types via the roltype mapping.
 
-Roles link participants (Nextcloud users or external contacts) to cases with specific role types.
+## Decisions (Besluiten)
 
-- Handler assignment shortcut: quick assign the primary case handler
-- Built-in generic roles: initiator, handler, advisor
-- Participant display on case detail view
-- Role validation: role type must be valid, participant must exist
+Decisions are formal administrative outcomes recorded against a case:
 
-### Case Result Recording (MVP)
+- **Decision types** -- Configurable via the besluittype ZGW mapping.
+- **Decision recording** -- Capture the decision text, date, and responsible authority.
+- **Decision publication** -- Track whether a decision requires publication.
+- **Appeal tracking** -- Link decisions to subsequent objection (bezwaar) cases.
 
-When a case reaches a terminal status, a result records the outcome.
+## Status
 
-- Result links to the case and optionally to a result type
-- Result description documents the outcome details
-- Closing a case requires recording a result
-
-### Planned (V1) — Role Types
-
-- Role type enforcement from case type configuration
-- Role-based case access (participants can only see cases they have a role on)
-- Custom role types per case type
-
-### Planned (V1) — Decisions
-
-Formal administrative determinations within cases:
-
-- Decision CRUD linked to cases
-- Decision validity periods (effectiveDate, expiryDate)
-- Decision types from case type configuration
-- Decision validation rules
-- Decisions section on case detail view
-
-### Planned (V1) — Result Types
-
-- Result type configuration per case type
-- Archival rules on result types (`bewaren` = preserve, `vernietigen` = destroy)
-- Result type enforcement on case closure
-
-### Planned (Enterprise)
-
-- DMN decision tables (automated decision logic)
-- Decision templates
+This feature is defined in the spec at `openspec/specs/roles-decisions/spec.md` and is partially implemented through the ZGW API mapping configuration.
