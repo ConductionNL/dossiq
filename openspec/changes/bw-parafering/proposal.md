@@ -1,15 +1,25 @@
-## Why
+# Proposal: bw-parafering
 
-B&W Parafering & Besluitvorming Specification is not yet implemented in Procest. This change proposes adding this capability based on the detailed spec in `specs/bw-parafering/spec.md`.
+## Summary
+Implement the ambtelijk (civil servant) workflow for B&W parafering: creating voorstellen, configuring parafeerroutes, executing sequential/parallel parafering steps, and maintaining an audit trail. The bestuurlijk part (college vergadering) is handled by external RIS systems.
 
-**Feature tier**: V1 (ambtelijk parafering, sequential routing, audit trail), V2 (parallel parafering, mobile parafering, iBabs/NotuBiz connector, vergaderbeheer)
+## Motivation
+B&W besluitvorming is found in 20+ tenders (29% of all). It is the #6 Nice-to-have but weighs heavily in scoring (3-8% of total score, up to 68 points).
 
-## What Changes
+## Affected Projects
+- [x] Project: `procest` -- Parafering services, controller, audit trail
 
-See `specs/bw-parafering/spec.md` for full requirements and scenarios.
+## Scope
 
-## Impact
+### In Scope
+- Voorstel creation from case context
+- Configurable parafeerroute per case type and voorstel type
+- Sequential and parallel parafering steps
+- Parafering actions: paraferen, terugsturen, adviseren, paraferen namens
+- Immutable audit trail for all parafering actions
+- ParaferingService, VoorstelService, ParaferingController
 
-- **Code**: New frontend views and/or backend services
-- **Dependencies**: OpenRegister (data storage), Nextcloud platform APIs
-- **Testing**: Unit tests for new services, integration tests for API endpoints
+### Out of Scope
+- RIS connectors (iBabs/NotuBiz) -- V2
+- Mobile parafering -- V2
+- Vergaderbeheer -- V2
