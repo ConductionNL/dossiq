@@ -1,257 +1,110 @@
 <template>
-	<div>
-		<CnDetailPage
-			:title="caseData.title || t('procest', 'Case')"
-			:subtitle="caseData.identifier ? `${t('procest', 'Case')} — ${caseData.identifier}` : t('procest', 'Case')"
-			:back-route="{ name: 'Cases' }"
-			:back-label="t('procest', 'Back to list')"
-			:loading="loading"
-			:sidebar="!isNew && !loading"
-			object-type="procest_case"
-			:object-id="caseId"
-			:sidebar-props="sidebarProps">
-			<template #header-actions>
-				<NcButton
-					v-if="!isReadOnly"
-					type="primary"
-					:disabled="saving"
-					@click="save">
-					<template v-if="saving">
-						<NcLoadingIcon :size="20" />
-					</template>
-					{{ t('procest', 'Save') }}
-				</NcButton>
+	<div class="case-detail-dashboard">
+		<!-- Back navigation and header -->
+		<div class="case-detail-header">
+			<NcButton type="tertiary" @click="$router.push({ name: 'Cases' })">
+				&larr; {{ t('procest', 'Back to list') }}
+			</NcButton>
+			<div class="case-detail-header__title">
+				<h2>{{ caseData.title || t('procest', 'Case') }}</h2>
+				<span v-if="caseData.identifier" class="case-detail-header__subtitle">
+					{{ t('procest', 'Case') }} &mdash; {{ caseData.identifier }}
+				</span>
+			</div>
+			<div class="case-detail-header__actions">
 				<NcButton type="error" @click="confirmDelete">
 					{{ t('procest', 'Delete') }}
 				</NcButton>
+			</div>
+		</div>
+
+		<NcLoadingIcon v-if="loading" :size="44" class="case-detail-loading" />
+
+		<CnDashboardPage
+			v-else-if="!isNew"
+			:widgets="caseWidgets"
+			:layout="caseLayout"
+			:editable="false"
+			title=""
+			:loading="false"
+			:empty-label="t('procest', 'No widgets configured')"
+			:unavailable-label="t('procest', 'Widget not available')">
+			<!-- Case Properties Widget -->
+			<template #widget-case-properties>
+				<CasePropertiesWidget
+					:case-data="caseData"
+					:case-type-name="caseTypeName"
+					:status-name="currentStatusName"
+					:status-badge-class="currentStatusBadgeClass"
+					:is-read-only="isReadOnly"
+					:is-at-final-status="isAtFinalStatus"
+					:case-result="caseResult"
+					:result-types="resultTypes"
+					@save="onPropertiesSave" />
 			</template>
 
-			<!-- Status card -->
-			<CnDetailCard :title="t('procest', 'Status')">
-				<div class="status-section">
-					<span class="status-badge" :class="currentStatusBadgeClass">
-						{{ currentStatusName }}
-					</span>
-
-					<!-- Status change dropdown -->
-					<div v-if="!isReadOnly && orderedStatusTypes.length > 0" class="status-section__change">
-						<NcSelect
-							v-model="selectedStatus"
-							:options="orderedStatusTypes"
-							label="name"
-							track-by="id"
-							:placeholder="t('procest', 'Change status...')"
-							@input="onStatusSelected" />
-					</div>
-
-					<span v-if="caseData.endDate" class="status-section__closed-info">
-						{{ t('procest', 'Closed on {date}', { date: formatDate(caseData.endDate) }) }}
-					</span>
-				</div>
-
-				<!-- Result prompt (shown when final status selected) -->
-				<div v-if="showResultPrompt" class="result-prompt">
-					<template v-if="resultTypes.length > 0">
-						<NcSelect
-							v-model="selectedResultType"
-							:options="resultTypes"
-							label="name"
-							track-by="id"
-							:placeholder="t('procest', 'Select result type...')" />
-					</template>
-					<template v-else>
-						<NcTextField
-							:value="resultText"
-							:label="t('procest', 'Result (required)')"
-							:error="!!resultError"
-							@update:value="v => { resultText = v; resultError = '' }" />
-					</template>
-					<p v-if="resultError" class="form-error">
-						{{ resultError }}
-					</p>
-					<div class="result-prompt__actions">
-						<NcButton type="primary" @click="confirmStatusChange">
-							{{ t('procest', 'Confirm') }}
-						</NcButton>
-						<NcButton @click="cancelStatusChange">
-							{{ t('procest', 'Cancel') }}
-						</NcButton>
-					</div>
-				</div>
-			</CnDetailCard>
-
-			<!-- Status Timeline card -->
-			<CnDetailCard v-if="orderedStatusTypes.length > 0" :title="t('procest', 'Status Timeline')">
-				<StatusTimeline
-					:status-types="orderedStatusTypes"
+			<!-- Case Timeline Widget -->
+			<template #widget-case-timeline>
+				<CaseTimelineWidget
+					:ordered-status-types="orderedStatusTypes"
 					:current-status-id="caseData.status"
-					:status-history="caseData.statusHistory || []" />
-			</CnDetailCard>
-
-			<!-- Case Information card -->
-			<CnDetailCard :title="t('procest', 'Case Information')">
-				<div class="form-group">
-					<label>{{ t('procest', 'Title') }} *</label>
-					<NcTextField
-						:value="form.title"
-						:disabled="isReadOnly"
-						:error="!!validationErrors.title"
-						@update:value="v => { form.title = v; validationErrors.title = '' }" />
-					<p v-if="validationErrors.title" class="form-error">
-						{{ validationErrors.title }}
-					</p>
-				</div>
-
-				<div class="form-group">
-					<label>{{ t('procest', 'Description') }}</label>
-					<textarea
-						v-model="form.description"
-						:disabled="isReadOnly"
-						rows="3" />
-				</div>
-
-				<div class="form-row">
-					<div class="form-group">
-						<label>{{ t('procest', 'Case type') }}</label>
-						<span class="form-value">{{ caseTypeName }}</span>
-					</div>
-					<div class="form-group">
-						<label>{{ t('procest', 'Identifier') }}</label>
-						<span class="form-value">{{ caseData.identifier || '—' }}</span>
-					</div>
-				</div>
-
-				<div class="form-row">
-					<div class="form-group">
-						<label>{{ t('procest', 'Priority') }}</label>
-						<NcSelect
-							v-model="form.priority"
-							:options="priorityOptions"
-							:disabled="isReadOnly" />
-					</div>
-					<div class="form-group">
-						<label>{{ t('procest', 'Confidentiality') }}</label>
-						<span class="form-value">{{ caseData.confidentiality || '—' }}</span>
-					</div>
-				</div>
-
-				<div class="form-row">
-					<div class="form-group">
-						<label>{{ t('procest', 'Handler') }}</label>
-						<NcTextField
-							:value="form.assignee"
-							:disabled="isReadOnly"
-							:placeholder="t('procest', 'Assign handler...')"
-							@update:value="v => form.assignee = v" />
-					</div>
-					<div class="form-group">
-						<label>{{ t('procest', 'Start date') }}</label>
-						<span class="form-value">{{ formatDate(caseData.startDate) }}</span>
-					</div>
-				</div>
-
-				<ResultSection
-					:result="caseResult"
+					:status-history="caseData.statusHistory || []"
 					:result-types="resultTypes"
-					:show-empty="isAtFinalStatus && !caseResult" />
+					:is-read-only="isReadOnly"
+					@status-change="onStatusChange"
+					@status-change-with-result="onStatusChangeWithResult" />
+			</template>
 
-				<div v-if="!caseResult && caseData.result" class="form-group">
-					<label>{{ t('procest', 'Result') }}</label>
-					<span class="form-value">{{ caseData.result }}</span>
-				</div>
-			</CnDetailCard>
+			<!-- Case Tasks Widget -->
+			<template #widget-case-tasks>
+				<CaseTasksWidget
+					:case-id="caseId"
+					:tasks="tasks"
+					:is-read-only="isReadOnly" />
+			</template>
 
-			<!-- Deadline & Timing card -->
-			<CnDetailCard v-if="caseTypeData" :title="t('procest', 'Deadline & Timing')">
-				<DeadlinePanel
-					:start-date="caseData.startDate"
-					:deadline="caseData.deadline"
-					:processing-deadline="caseTypeData.processingDeadline"
-					:extension-allowed="caseTypeData.extensionAllowed === true || caseTypeData.extensionAllowed === 'true'"
-					:extension-period="caseTypeData.extensionPeriod"
-					:extension-count="caseData.extensionCount || 0"
-					:is-final="isAtFinalStatus"
-					@extend="showExtensionDialog" />
-			</CnDetailCard>
+			<!-- Case Documents Widget -->
+			<template #widget-case-documents>
+				<CaseDocumentsWidget
+					:case-id="caseId"
+					:documents="documents" />
+			</template>
 
-			<!-- Participants card -->
-			<CnDetailCard :title="t('procest', 'Participants')">
-				<ParticipantsSection
+			<!-- Case Roles Widget -->
+			<template #widget-case-roles>
+				<CaseRolesWidget
 					:case-id="caseId"
 					:is-read-only="isReadOnly"
 					@handler-changed="onHandlerChanged" />
-			</CnDetailCard>
+			</template>
 
-			<!-- Tasks card -->
-			<CnDetailCard :title="`${t('procest', 'Tasks')} (${completedTaskCount}/${tasks.length})`">
-				<template #actions>
-					<NcButton v-if="!isReadOnly" @click="$router.push({ name: 'TaskNew', query: { caseId } })">
-						{{ t('procest', 'New task') }}
-					</NcButton>
-				</template>
+			<!-- Case Decisions Widget -->
+			<template #widget-case-decisions>
+				<CaseDecisionsWidget
+					:case-id="caseId"
+					:decisions="decisions"
+					:case-result="caseResult"
+					:result-types="resultTypes" />
+			</template>
 
-				<div v-if="tasks.length === 0" class="section-empty">
-					{{ t('procest', 'No tasks yet') }}
-				</div>
-				<div v-else class="viewTableContainer">
-					<table class="viewTable">
-						<thead>
-							<tr>
-								<th>{{ t('procest', 'Title') }}</th>
-								<th>{{ t('procest', 'Status') }}</th>
-								<th>{{ t('procest', 'Assignee') }}</th>
-								<th>{{ t('procest', 'Due date') }}</th>
-								<th>{{ t('procest', 'Priority') }}</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr
-								v-for="task in sortedTasks"
-								:key="task.id"
-								class="viewTableRow"
-								:class="{ 'viewTableRow--overdue': isOverdue(task) }"
-								@click="$router.push({ name: 'TaskDetail', params: { id: task.id } })">
-								<td>{{ task.title || '—' }}</td>
-								<td>
-									<span class="status-badge" :class="'status-badge--' + task.status">
-										{{ getTaskStatusLabel(task.status) }}
-									</span>
-								</td>
-								<td>{{ task.assignee || '—' }}</td>
-								<td :class="dueDateClass(task)">
-									<template v-if="isOverdue(task)">
-										{{ getOverdueText(task) }}
-									</template>
-									<template v-else-if="isDueToday(task)">
-										{{ t('procest', 'Due today') }}
-									</template>
-									<template v-else>
-										{{ formatDueDate(task.dueDate) }}
-									</template>
-								</td>
-								<td>
-									<span
-										v-if="task.priority && task.priority !== 'normal'"
-										class="priority-badge"
-										:class="'priority-badge--' + task.priority">
-										{{ getTaskPriorityLabel(task.priority) }}
-									</span>
-									<span v-else>—</span>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			</CnDetailCard>
+			<!-- Case Milestones Widget -->
+			<template #widget-case-milestones>
+				<CaseMilestonesWidget
+					:case-data="caseData"
+					:case-type-data="caseTypeData"
+					:milestones="milestones"
+					:is-final="isAtFinalStatus"
+					@extend="showExtensionDialog" />
+			</template>
 
-			<!-- Activity card -->
-			<CnDetailCard :title="t('procest', 'Activity')">
-				<ActivityTimeline
+			<!-- Case Notes Widget -->
+			<template #widget-case-notes>
+				<CaseNotesWidget
 					:activity="caseData.activity || []"
 					:is-read-only="isReadOnly"
 					@add-note="onAddNote" />
-			</CnDetailCard>
-		</CnDetailPage>
+			</template>
+		</CnDashboardPage>
 
 		<!-- Extension dialog -->
 		<div v-if="showExtension" class="extension-overlay" @click.self="showExtension = false">
@@ -279,33 +132,51 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
-import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
+import { CnDashboardPage } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
-import { getStatusLabel as getTaskStatusLabel } from '../../utils/taskLifecycle.js'
-import { isOverdue, isDueToday, getOverdueText, formatDueDate, sortTasks, getPriorityLevels } from '../../utils/taskHelpers.js'
 import { calculateDeadline, formatDate, formatDuration } from '../../utils/caseHelpers.js'
 import { validateCaseUpdate } from '../../utils/caseValidation.js'
-import StatusTimeline from './components/StatusTimeline.vue'
-import DeadlinePanel from './components/DeadlinePanel.vue'
-import ActivityTimeline from './components/ActivityTimeline.vue'
-import ParticipantsSection from './components/ParticipantsSection.vue'
-import ResultSection from './components/ResultSection.vue'
+import CasePropertiesWidget from './widgets/CasePropertiesWidget.vue'
+import CaseTimelineWidget from './widgets/CaseTimelineWidget.vue'
+import CaseTasksWidget from './widgets/CaseTasksWidget.vue'
+import CaseDocumentsWidget from './widgets/CaseDocumentsWidget.vue'
+import CaseRolesWidget from './widgets/CaseRolesWidget.vue'
+import CaseDecisionsWidget from './widgets/CaseDecisionsWidget.vue'
+import CaseMilestonesWidget from './widgets/CaseMilestonesWidget.vue'
+import CaseNotesWidget from './widgets/CaseNotesWidget.vue'
+
+/**
+ * Default layout for the case detail dashboard.
+ * 12-column grid: properties and timeline share the top row,
+ * tasks and documents in the second row, roles and decisions
+ * in the third, milestones and notes at the bottom.
+ */
+const DEFAULT_LAYOUT = [
+	{ id: 1, widgetId: 'case-properties', gridX: 0, gridY: 0, gridWidth: 6, gridHeight: 6 },
+	{ id: 2, widgetId: 'case-timeline', gridX: 6, gridY: 0, gridWidth: 6, gridHeight: 3 },
+	{ id: 3, widgetId: 'case-milestones', gridX: 6, gridY: 3, gridWidth: 6, gridHeight: 3 },
+	{ id: 4, widgetId: 'case-tasks', gridX: 0, gridY: 6, gridWidth: 6, gridHeight: 4 },
+	{ id: 5, widgetId: 'case-documents', gridX: 6, gridY: 6, gridWidth: 6, gridHeight: 4 },
+	{ id: 6, widgetId: 'case-roles', gridX: 0, gridY: 10, gridWidth: 4, gridHeight: 4 },
+	{ id: 7, widgetId: 'case-decisions', gridX: 4, gridY: 10, gridWidth: 4, gridHeight: 4 },
+	{ id: 8, widgetId: 'case-notes', gridX: 8, gridY: 10, gridWidth: 4, gridHeight: 4 },
+]
 
 export default {
 	name: 'CaseDetail',
 	components: {
 		NcButton,
 		NcLoadingIcon,
-		NcTextField,
-		NcSelect,
-		CnDetailPage,
-		CnDetailCard,
-		StatusTimeline,
-		DeadlinePanel,
-		ActivityTimeline,
-		ParticipantsSection,
-		ResultSection,
+		CnDashboardPage,
+		CasePropertiesWidget,
+		CaseTimelineWidget,
+		CaseTasksWidget,
+		CaseDocumentsWidget,
+		CaseRolesWidget,
+		CaseDecisionsWidget,
+		CaseMilestonesWidget,
+		CaseNotesWidget,
 	},
 	props: {
 		caseId: {
@@ -315,30 +186,19 @@ export default {
 	},
 	data() {
 		return {
-			form: {
-				title: '',
-				description: '',
-				assignee: '',
-				priority: 'normal',
-			},
-			validationErrors: {},
-			saving: false,
 			tasks: [],
+			documents: [],
+			decisions: [],
+			milestones: [],
 			statusTypes: [],
 			caseTypeData: null,
-			// Status change state
-			selectedStatus: null,
-			pendingStatusChange: null,
-			showResultPrompt: false,
-			resultText: '',
-			resultError: '',
 			resultTypes: [],
-			selectedResultType: null,
 			caseResult: null,
 			// Extension state
 			showExtension: false,
 			extensionReason: '',
-			priorityOptions: ['low', 'normal', 'high', 'urgent'],
+			// Layout
+			caseLayout: [...DEFAULT_LAYOUT],
 		}
 	},
 	computed: {
@@ -352,7 +212,7 @@ export default {
 			return this.objectStore.getObject('case', this.caseId) || {}
 		},
 		caseTypeName() {
-			return this.caseTypeData?.title || '—'
+			return this.caseTypeData?.title || '---'
 		},
 		orderedStatusTypes() {
 			return [...this.statusTypes].sort((a, b) => (a.order || 0) - (b.order || 0))
@@ -362,7 +222,7 @@ export default {
 			return this.statusTypes.find(st => st.id === this.caseData.status) || null
 		},
 		currentStatusName() {
-			return this.currentStatusType?.name || '—'
+			return this.currentStatusType?.name || '---'
 		},
 		currentStatusBadgeClass() {
 			if (this.isAtFinalStatus) return 'status-badge--final'
@@ -377,63 +237,40 @@ export default {
 		isNew() {
 			return !this.caseId || this.caseId === 'new'
 		},
-		sortedTasks() {
-			return sortTasks(this.tasks)
-		},
-		completedTaskCount() {
-			return this.tasks.filter(t => t.status === 'completed').length
-		},
 		extensionPeriodText() {
 			if (!this.caseTypeData?.extensionPeriod) return ''
 			return formatDuration(this.caseTypeData.extensionPeriod)
 		},
-		sidebarProps() {
-			const config = this.objectStore.objectTypeRegistry.case || {}
-			return {
-				register: config.register || '',
-				schema: config.schema || '',
-			}
+		caseWidgets() {
+			return [
+				{ id: 'case-properties', title: t('procest', 'Case Information'), type: 'custom' },
+				{ id: 'case-timeline', title: t('procest', 'Status Timeline'), type: 'custom' },
+				{ id: 'case-tasks', title: t('procest', 'Tasks'), type: 'custom' },
+				{ id: 'case-documents', title: t('procest', 'Documents'), type: 'custom' },
+				{ id: 'case-roles', title: t('procest', 'Participants'), type: 'custom' },
+				{ id: 'case-decisions', title: t('procest', 'Decisions'), type: 'custom' },
+				{ id: 'case-milestones', title: t('procest', 'Deadline & Milestones'), type: 'custom' },
+				{ id: 'case-notes', title: t('procest', 'Activity & Notes'), type: 'custom' },
+			]
 		},
 	},
 	async mounted() {
 		if (!this.isNew) {
 			await this.objectStore.fetchObject('case', this.caseId)
-			this.populateForm()
 			await Promise.all([
 				this.loadCaseTypeData(),
 				this.fetchTasks(),
 				this.fetchCaseResult(),
+				this.fetchDocuments(),
+				this.fetchDecisions(),
+				this.fetchMilestones(),
 			])
 		}
 	},
 	methods: {
-		isOverdue,
-		isDueToday,
-		getOverdueText,
-		formatDueDate,
 		formatDate,
-		getTaskStatusLabel,
 
-		getTaskPriorityLabel(priority) {
-			return getPriorityLevels()[priority]?.label || priority
-		},
-
-		dueDateClass(task) {
-			if (isOverdue(task)) return 'due-date--overdue'
-			if (isDueToday(task)) return 'due-date--today'
-			return ''
-		},
-
-		populateForm() {
-			const data = this.caseData
-			this.form = {
-				title: data.title || '',
-				description: data.description || '',
-				assignee: data.assignee || '',
-				priority: data.priority || 'normal',
-			}
-		},
-
+		// --- Data fetching ---
 		async loadCaseTypeData() {
 			const caseTypeId = this.caseData.caseType
 			if (!caseTypeId) return
@@ -474,63 +311,99 @@ export default {
 			this.tasks = results || []
 		},
 
-		// --- Status Change ---
-		onStatusSelected(status) {
-			if (!status || status.id === this.caseData.status) {
-				this.selectedStatus = null
-				return
-			}
-
-			if (status.isFinal === true || status.isFinal === 'true') {
-				this.pendingStatusChange = status
-				this.showResultPrompt = true
-				this.resultText = ''
-				this.resultError = ''
-			} else {
-				this.executeStatusChange(status)
+		async fetchDocuments() {
+			try {
+				const results = await this.objectStore.fetchCollection('document', {
+					'_filters[case]': this.caseId,
+					_limit: 50,
+				})
+				this.documents = results || []
+			} catch {
+				// Documents collection may not exist yet
+				this.documents = []
 			}
 		},
 
-		async confirmStatusChange() {
-			let resultName = ''
+		async fetchDecisions() {
+			try {
+				const results = await this.objectStore.fetchCollection('decision', {
+					'_filters[case]': this.caseId,
+					_limit: 50,
+				})
+				this.decisions = results || []
+			} catch {
+				// Decisions collection may not exist yet
+				this.decisions = []
+			}
+		},
 
-			if (this.resultTypes.length > 0) {
-				if (!this.selectedResultType) {
-					this.resultError = t('procest', 'Please select a result type')
-					return
-				}
-				// Create a result object.
+		async fetchMilestones() {
+			try {
+				const results = await this.objectStore.fetchCollection('milestone', {
+					'_filters[case]': this.caseId,
+					_limit: 50,
+				})
+				this.milestones = results || []
+			} catch {
+				// Milestones collection may not exist yet
+				this.milestones = []
+			}
+		},
+
+		// --- Properties Save (from widget) ---
+		async onPropertiesSave(formData) {
+			const validation = validateCaseUpdate(formData)
+			if (!validation.valid) return
+
+			const currentUser = OC?.currentUser || 'unknown'
+			const now = new Date().toISOString()
+
+			const activity = [...(this.caseData.activity || [])]
+			const changes = []
+			if (formData.title !== this.caseData.title) changes.push('title')
+			if (formData.description !== (this.caseData.description || '')) changes.push('description')
+			if (formData.assignee !== (this.caseData.assignee || '')) changes.push('handler')
+			if (formData.priority !== (this.caseData.priority || 'normal')) changes.push('priority')
+
+			if (changes.length > 0) {
+				activity.push({
+					date: now,
+					type: 'update',
+					description: t('procest', 'Updated: {fields}', { fields: changes.join(', ') }),
+					user: currentUser,
+				})
+			}
+
+			const updateData = {
+				...this.caseData,
+				title: formData.title,
+				description: formData.description,
+				assignee: formData.assignee || null,
+				priority: formData.priority,
+				activity,
+			}
+
+			await this.objectStore.saveObject('case', updateData)
+		},
+
+		// --- Status Change (from timeline widget) ---
+		async onStatusChange(targetStatus) {
+			await this.executeStatusChange(targetStatus)
+		},
+
+		async onStatusChangeWithResult({ status, resultName, selectedResultType }) {
+			// Create result object if result type was selected
+			if (selectedResultType) {
 				const resultObj = await this.objectStore.saveObject('result', {
-					name: this.selectedResultType.name,
+					name: selectedResultType.name,
 					case: this.caseId,
-					resultType: this.selectedResultType.id,
+					resultType: selectedResultType.id,
 				})
 				if (resultObj) {
 					this.caseResult = resultObj
 				}
-				resultName = this.selectedResultType.name
-			} else {
-				if (!this.resultText.trim()) {
-					this.resultError = t('procest', 'Result is required when closing a case')
-					return
-				}
-				resultName = this.resultText.trim()
 			}
-
-			await this.executeStatusChange(this.pendingStatusChange, resultName)
-			this.showResultPrompt = false
-			this.pendingStatusChange = null
-			this.resultText = ''
-			this.selectedResultType = null
-		},
-
-		cancelStatusChange() {
-			this.showResultPrompt = false
-			this.pendingStatusChange = null
-			this.selectedStatus = null
-			this.resultText = ''
-			this.resultError = ''
-			this.selectedResultType = null
+			await this.executeStatusChange(status, resultName)
 		},
 
 		async executeStatusChange(targetStatus, resultText = null) {
@@ -569,58 +442,7 @@ export default {
 				}
 			}
 
-			const result = await this.objectStore.saveObject('case', updateData)
-			if (result) {
-				this.selectedStatus = null
-				this.populateForm()
-			}
-		},
-
-		// --- Save ---
-		async save() {
-			const validation = validateCaseUpdate(this.form)
-			if (!validation.valid) {
-				this.validationErrors = validation.errors
-				return
-			}
-
-			this.saving = true
-			const currentUser = OC?.currentUser || 'unknown'
-			const now = new Date().toISOString()
-
-			const activity = [...(this.caseData.activity || [])]
-
-			// Track field changes
-			const changes = []
-			if (this.form.title !== this.caseData.title) changes.push('title')
-			if (this.form.description !== (this.caseData.description || '')) changes.push('description')
-			if (this.form.assignee !== (this.caseData.assignee || '')) changes.push('handler')
-			if (this.form.priority !== (this.caseData.priority || 'normal')) changes.push('priority')
-
-			if (changes.length > 0) {
-				activity.push({
-					date: now,
-					type: 'update',
-					description: t('procest', 'Updated: {fields}', { fields: changes.join(', ') }),
-					user: currentUser,
-				})
-			}
-
-			const updateData = {
-				...this.caseData,
-				title: this.form.title,
-				description: this.form.description,
-				assignee: this.form.assignee || null,
-				priority: this.form.priority,
-				activity,
-			}
-
-			const result = await this.objectStore.saveObject('case', updateData)
-			this.saving = false
-
-			if (result) {
-				this.populateForm()
-			}
+			await this.objectStore.saveObject('case', updateData)
 		},
 
 		// --- Delete ---
@@ -679,15 +501,13 @@ export default {
 			}
 		},
 
-		// --- Handler Changed ---
+		// --- Handler Changed (from roles widget) ---
 		async onHandlerChanged(newAssignee) {
-			this.form.assignee = newAssignee
-			// Persist the assignee to the backend.
 			await this.objectStore.saveObject('case', { ...this.caseData, assignee: newAssignee })
 			await this.objectStore.fetchObject('case', this.caseId)
 		},
 
-		// --- Activity ---
+		// --- Activity (from notes widget) ---
 		async onAddNote(text) {
 			const currentUser = OC?.currentUser || 'unknown'
 			const now = new Date().toISOString()
@@ -712,202 +532,42 @@ export default {
 </script>
 
 <style scoped>
-/* Status section */
-.status-section {
+.case-detail-dashboard {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+.case-detail-header {
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	flex-wrap: wrap;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--color-border);
 }
 
-.status-section__change {
-	min-width: 200px;
-}
-
-.status-section__closed-info {
-	color: var(--color-text-maxcontrast);
-	font-size: 13px;
-	margin-left: auto;
-}
-
-/* Result prompt */
-.result-prompt {
-	margin-top: 12px;
-	padding-top: 12px;
-	border-top: 1px solid var(--color-border);
-}
-
-.result-prompt__actions {
-	display: flex;
-	gap: 8px;
-	margin-top: 8px;
-}
-
-/* Form styles */
-.form-group {
-	margin-bottom: 16px;
-}
-
-.form-group label {
-	display: block;
-	margin-bottom: 4px;
-	font-weight: bold;
-}
-
-.form-group textarea {
-	width: 100%;
-	padding: 8px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius);
-	resize: vertical;
-}
-
-.form-group textarea:disabled {
-	opacity: 0.6;
-	cursor: not-allowed;
-}
-
-.form-value {
-	display: block;
-	padding: 6px 0;
-	color: var(--color-main-text);
-}
-
-.form-row {
-	display: flex;
-	gap: 16px;
-}
-
-.form-row .form-group {
+.case-detail-header__title {
 	flex: 1;
 }
 
-.form-error {
-	color: var(--color-error);
+.case-detail-header__title h2 {
+	margin: 0;
+	font-size: 18px;
+	line-height: 1.3;
+}
+
+.case-detail-header__subtitle {
 	font-size: 13px;
-	margin-top: 4px;
-}
-
-/* Status badges */
-.status-badge {
-	display: inline-block;
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 12px;
-	font-weight: 500;
-}
-
-.status-badge--active {
-	background: var(--color-primary-light);
-	color: var(--color-primary-text);
-}
-
-.status-badge--final {
-	background: var(--color-success);
-	color: white;
-}
-
-.status-badge--available {
-	background: var(--color-background-dark);
-	color: var(--color-main-text);
-}
-
-.status-badge--completed {
-	background: var(--color-success);
-	color: white;
-}
-
-.status-badge--terminated {
-	background: var(--color-error);
-	color: white;
-}
-
-.status-badge--disabled {
-	background: var(--color-text-maxcontrast);
-	color: white;
-}
-
-/* Priority badges */
-.priority-badge {
-	display: inline-block;
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 12px;
-	font-weight: 500;
-}
-
-.priority-badge--urgent {
-	background: var(--color-error);
-	color: white;
-}
-
-.priority-badge--high {
-	background: var(--color-warning);
-	color: var(--color-warning-text);
-}
-
-.priority-badge--low {
-	background: var(--color-background-dark);
 	color: var(--color-text-maxcontrast);
 }
 
-/* Due date styles */
-.due-date--overdue {
-	color: var(--color-error);
-	font-weight: 500;
+.case-detail-header__actions {
+	display: flex;
+	gap: 8px;
 }
 
-.due-date--today {
-	color: var(--color-warning);
-	font-weight: 500;
-}
-
-/* Tasks table */
-.section-empty {
-	text-align: center;
-	color: var(--color-text-maxcontrast);
-	padding: 16px;
-}
-
-.viewTableContainer {
-	background: var(--color-main-background);
-	border-radius: var(--border-radius);
-	overflow: hidden;
-	box-shadow: 0 2px 4px var(--color-box-shadow);
-	border: 1px solid var(--color-border);
-}
-
-.viewTable {
-	width: 100%;
-	border-collapse: collapse;
-	background-color: var(--color-main-background);
-}
-
-.viewTable th,
-.viewTable td {
-	padding: 12px;
-	text-align: left;
-	border-bottom: 1px solid var(--color-border);
-	vertical-align: middle;
-}
-
-.viewTable th {
-	background-color: var(--color-background-dark);
-	font-weight: 500;
-	color: var(--color-text-maxcontrast);
-}
-
-.viewTableRow {
-	cursor: pointer;
-	transition: background-color 0.2s ease;
-}
-
-.viewTableRow:hover {
-	background: var(--color-background-hover);
-}
-
-.viewTableRow--overdue {
-	border-left: 3px solid var(--color-error);
+.case-detail-loading {
+	margin: 48px auto;
 }
 
 /* Extension dialog */
@@ -955,5 +615,15 @@ export default {
 	justify-content: flex-end;
 	gap: 8px;
 	margin-top: 16px;
+}
+
+.form-group {
+	margin-bottom: 16px;
+}
+
+.form-group label {
+	display: block;
+	margin-bottom: 4px;
+	font-weight: bold;
 }
 </style>

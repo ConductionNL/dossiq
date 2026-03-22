@@ -4,7 +4,7 @@
 
 Implements the MVP tier of the task management capability as defined in `procest/openspec/specs/task-management/spec.md`. This delta spec captures the subset of requirements being implemented in this change and any implementation-specific clarifications.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: MVP Task CRUD Implementation
 
