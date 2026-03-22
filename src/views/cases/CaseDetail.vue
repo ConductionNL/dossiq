@@ -1,5 +1,14 @@
 <template>
 	<div>
+		<!-- Parent case breadcrumb -->
+		<div v-if="parentCaseData" class="parent-breadcrumb">
+			<router-link :to="{ name: 'CaseDetail', params: { id: caseData.parentCase } }" class="parent-breadcrumb__link">
+				{{ parentCaseData.title }}
+			</router-link>
+			<span class="parent-breadcrumb__separator">&gt;</span>
+			<span class="parent-breadcrumb__current">{{ caseData.title }}</span>
+		</div>
+
 		<CnDetailPage
 			:title="caseData.title || t('procest', 'Case')"
 			:subtitle="caseData.identifier ? `${t('procest', 'Case')} — ${caseData.identifier}` : t('procest', 'Case')"
@@ -199,6 +208,27 @@
 					:is-read-only="isReadOnly"
 					@handler-changed="onHandlerChanged" />
 			</CnDetailCard>
+
+			<!-- Sub-cases card -->
+			<CnDetailCard
+				v-if="hasSubCaseTypes"
+				:title="subCasesSectionTitle">
+				<SubCasesSection
+					:case-id="caseId"
+					:parent-case="caseData.parentCase || null"
+					:end-date="caseData.endDate || null"
+					:sub-case-types="subCaseTypesArray"
+					@create-sub-case="showSubCaseDialog = true"
+					@sub-cases-loaded="onSubCasesLoaded" />
+			</CnDetailCard>
+
+			<!-- Sub-case creation dialog -->
+			<CaseCreateDialog
+				v-if="showSubCaseDialog"
+				:parent-case="caseId"
+				:parent-case-type="caseTypeData"
+				@created="onSubCaseCreated"
+				@close="showSubCaseDialog = false" />
 
 			<!-- Tasks card -->
 			<CnDetailCard :title="`${t('procest', 'Tasks')} (${completedTaskCount}/${tasks.length})`">
@@ -411,6 +441,8 @@ import DeadlinePanel from './components/DeadlinePanel.vue'
 import ActivityTimeline from './components/ActivityTimeline.vue'
 import ParticipantsSection from './components/ParticipantsSection.vue'
 import ResultSection from './components/ResultSection.vue'
+import SubCasesSection from './components/SubCasesSection.vue'
+import CaseCreateDialog from './CaseCreateDialog.vue'
 import InspectionPanel from './components/InspectionPanel.vue'
 import EnforcementPanel from './components/EnforcementPanel.vue'
 import AdvicePanel from './components/AdvicePanel.vue'
@@ -442,6 +474,8 @@ export default {
 		ActivityTimeline,
 		ParticipantsSection,
 		ResultSection,
+		SubCasesSection,
+		CaseCreateDialog,
 		InspectionPanel,
 		EnforcementPanel,
 		AdvicePanel,
@@ -491,6 +525,10 @@ export default {
 			caseRoles: [],
 			caseDocuments: [],
 			priorityOptions: ['low', 'normal', 'high', 'urgent'],
+			// Sub-case state
+			showSubCaseDialog: false,
+			parentCaseData: null,
+			subCases: [],
 			// Bezwaar state
 			bezwaarDeadlines: {},
 			contestedBesluitDate: '',
@@ -576,6 +614,25 @@ export default {
 			if (!this.caseTypeData?.extensionPeriod) return ''
 			return formatDuration(this.caseTypeData.extensionPeriod)
 		},
+		hasSubCaseTypes() {
+			return this.subCaseTypesArray.length > 0
+		},
+		subCaseTypesArray() {
+			if (!this.caseTypeData) return []
+			const types = this.caseTypeData.subCaseTypes
+			if (!types || !Array.isArray(types) || types.length === 0) return []
+			return types
+		},
+		subCasesSectionTitle() {
+			if (this.subCases.length === 0) {
+				return t('procest', 'Sub-cases')
+			}
+			const completed = this.subCases.filter(sc => sc.endDate).length
+			return t('procest', 'Sub-cases ({completed}/{total} completed)', {
+				completed,
+				total: this.subCases.length,
+			})
+		},
 		sidebarProps() {
 			const config = this.objectStore.objectTypeRegistry.case || {}
 			return {
@@ -614,6 +671,7 @@ export default {
 				this.loadCaseTypeData(),
 				this.fetchTasks(),
 				this.fetchCaseResult(),
+				this.fetchParentCase(),
 			])
 
 			// Load bezwaar/beroep data if applicable.
@@ -873,13 +931,52 @@ export default {
 			}
 		},
 
+		// --- Parent Case ---
+		async fetchParentCase() {
+			const parentCaseId = this.caseData.parentCase
+			if (!parentCaseId) {
+				this.parentCaseData = null
+				return
+			}
+			try {
+				const parentCase = await this.objectStore.fetchObject('case', parentCaseId)
+				this.parentCaseData = parentCase || null
+			} catch {
+				this.parentCaseData = null
+			}
+		},
+
+		// --- Sub-cases ---
+		onSubCasesLoaded(subCases) {
+			this.subCases = subCases || []
+		},
+
+		onSubCaseCreated(caseId) {
+			this.showSubCaseDialog = false
+			this.$router.push({ name: 'CaseDetail', params: { id: caseId } })
+		},
+
 		// --- Delete ---
 		async confirmDelete() {
 			let message = t('procest', 'Are you sure you want to delete this case?')
-			if (this.tasks.length > 0) {
+
+			if (this.subCases.length > 0) {
+				message = t('procest', 'This case has {count} sub-cases. Deleting it will detach them from their parent. Continue?', { count: this.subCases.length })
+			} else if (this.tasks.length > 0) {
 				message = t('procest', 'This case has {count} linked tasks. Are you sure you want to delete it?', { count: this.tasks.length })
 			}
+
 			if (confirm(message)) {
+				// Orphan cleanup: clear parentCase on all sub-cases before deleting
+				if (this.subCases.length > 0) {
+					for (const subCase of this.subCases) {
+						await this.objectStore.saveObject('case', {
+							...subCase,
+							parentCase: null,
+						})
+					}
+				}
+
 				const success = await this.objectStore.deleteObject('case', this.caseId)
 				if (success) {
 					this.$router.push({ name: 'Cases' })
@@ -972,6 +1069,33 @@ export default {
 </script>
 
 <style scoped>
+/* Parent breadcrumb */
+.parent-breadcrumb {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 16px;
+	font-size: 13px;
+	color: var(--color-text-maxcontrast);
+}
+
+.parent-breadcrumb__link {
+	color: var(--color-primary-element);
+	text-decoration: none;
+}
+
+.parent-breadcrumb__link:hover {
+	text-decoration: underline;
+}
+
+.parent-breadcrumb__separator {
+	color: var(--color-text-maxcontrast);
+}
+
+.parent-breadcrumb__current {
+	color: var(--color-main-text);
+}
+
 /* Status section */
 .status-section {
 	display: flex;
