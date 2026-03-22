@@ -2,19 +2,25 @@
 	<div class="case-create-overlay" @click.self="$emit('close')">
 		<div class="case-create-dialog">
 			<div class="case-create-dialog__header">
-				<h3>{{ t('procest', 'New Case') }}</h3>
+				<h3>{{ dialogTitle }}</h3>
 				<NcButton type="tertiary" @click="$emit('close')">
-					✕
+					&#10005;
 				</NcButton>
 			</div>
 
 			<div class="case-create-dialog__body">
+				<!-- Parent case context (sub-case mode) -->
+				<div v-if="isSubCaseMode && parentCaseType" class="case-create-dialog__parent-context">
+					<span class="parent-context-label">{{ t('procest', 'Parent case type') }}</span>
+					<span>{{ parentCaseType.title }}</span>
+				</div>
+
 				<!-- Case Type Selection -->
 				<div class="form-group">
 					<label>{{ t('procest', 'Case type') }} *</label>
 					<NcSelect
 						v-model="selectedCaseType"
-						:options="usableCaseTypes"
+						:options="availableCaseTypes"
 						label="title"
 						track-by="id"
 						:placeholder="t('procest', 'Select a case type...')"
@@ -78,7 +84,7 @@
 					<template v-if="saving">
 						<NcLoadingIcon :size="20" />
 					</template>
-					{{ t('procest', 'Create case') }}
+					{{ submitLabel }}
 				</NcButton>
 			</div>
 		</div>
@@ -98,6 +104,16 @@ export default {
 		NcTextField,
 		NcSelect,
 		NcLoadingIcon,
+	},
+	props: {
+		parentCase: {
+			type: String,
+			default: null,
+		},
+		parentCaseType: {
+			type: Object,
+			default: null,
+		},
 	},
 	emits: ['created', 'close'],
 	data() {
@@ -119,17 +135,42 @@ export default {
 		objectStore() {
 			return useObjectStore()
 		},
-		usableCaseTypes() {
-			return this.caseTypes.filter(ct => isCaseTypeUsable(ct))
+		isSubCaseMode() {
+			return !!this.parentCase
+		},
+		dialogTitle() {
+			return this.isSubCaseMode
+				? t('procest', 'Create Sub-case')
+				: t('procest', 'New Case')
+		},
+		submitLabel() {
+			return this.isSubCaseMode
+				? t('procest', 'Create sub-case')
+				: t('procest', 'Create case')
+		},
+		availableCaseTypes() {
+			const usable = this.caseTypes.filter(ct => isCaseTypeUsable(ct))
+
+			// In sub-case mode, filter to only subCaseTypes from parent case type
+			if (this.isSubCaseMode && this.parentCaseType) {
+				const allowedTypes = this.parentCaseType.subCaseTypes || []
+				if (allowedTypes.length > 0) {
+					return usable.filter(ct =>
+						allowedTypes.includes(ct.id) || allowedTypes.includes(ct.title),
+					)
+				}
+			}
+
+			return usable
 		},
 		formattedDeadline() {
-			if (!this.selectedCaseType?.processingDeadline) return '—'
+			if (!this.selectedCaseType?.processingDeadline) return '\u2014'
 			return formatDuration(this.selectedCaseType.processingDeadline)
 		},
 		initialStatusName() {
-			if (this.statusTypes.length === 0) return '—'
+			if (this.statusTypes.length === 0) return '\u2014'
 			const sorted = [...this.statusTypes].sort((a, b) => (a.order || 0) - (b.order || 0))
-			return sorted[0]?.name || '—'
+			return sorted[0]?.name || '\u2014'
 		},
 		initialStatusType() {
 			if (this.statusTypes.length === 0) return null
@@ -137,9 +178,9 @@ export default {
 			return sorted[0]
 		},
 		calculatedDeadlineText() {
-			if (!this.selectedCaseType?.processingDeadline) return '—'
+			if (!this.selectedCaseType?.processingDeadline) return '\u2014'
 			const deadline = calculateDeadline(new Date(), this.selectedCaseType.processingDeadline)
-			return deadline ? formatDate(deadline.toISOString()) : '—'
+			return deadline ? formatDate(deadline.toISOString()) : '\u2014'
 		},
 	},
 	async mounted() {
@@ -182,6 +223,10 @@ export default {
 			const initialStatus = this.initialStatusType
 			const currentUser = OC?.currentUser || 'unknown'
 
+			const activityDescription = this.isSubCaseMode
+				? t('procest', 'Sub-case created with type \'{type}\'', { type: this.selectedCaseType.title })
+				: t('procest', 'Case created with type \'{type}\'', { type: this.selectedCaseType.title })
+
 			const caseData = {
 				title: this.form.title.trim(),
 				description: this.form.description.trim(),
@@ -196,6 +241,7 @@ export default {
 				endDate: null,
 				result: null,
 				extensionCount: 0,
+				parentCase: this.parentCase || null,
 				statusHistory: [
 					{
 						status: initialStatus?.id || null,
@@ -207,7 +253,7 @@ export default {
 					{
 						date: now.toISOString(),
 						type: 'created',
-						description: t('procest', 'Case created with type \'{type}\'', { type: this.selectedCaseType.title }),
+						description: activityDescription,
 						user: currentUser,
 					},
 				],
@@ -262,6 +308,22 @@ export default {
 
 .case-create-dialog__body {
 	padding: 20px;
+}
+
+.case-create-dialog__parent-context {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 8px 12px;
+	margin-bottom: 16px;
+	background: var(--color-primary-element-light);
+	border-radius: var(--border-radius);
+	font-size: 13px;
+}
+
+.parent-context-label {
+	color: var(--color-text-maxcontrast);
+	font-weight: 500;
 }
 
 .case-create-dialog__preview {
