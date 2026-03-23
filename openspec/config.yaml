@@ -56,8 +56,6 @@ rules:
     - Test request-to-case bridge with Pipelinq
     - Follow mandatory task categories from ADRs 005, 009, 010, 011
   archive:
-    - "REQUIRED: Update or create the corresponding feature doc in docs/features/ before archiving. Check docs/features/README.md for the spec-to-feature mapping table."
-    - "If no existing feature doc matches, create a new one in docs/features/{feature-name}.md and add it to the mapping table in docs/features/README.md."
-    - "Feature docs must include: Overview, implemented capabilities, standards references (GEMMA/ZGW/TEC), and implementation status."
     - Merge delta specs from the change's specs/ directory into the canonical spec under openspec/specs/
-    - Update the feature doc Status section to reflect implemented vs planned capabilities
+    # Feature doc creation is handled globally by the opsx:archive command in .claude/commands/opsx/archive.md
+    # Do NOT duplicate feature doc rules here — they apply to all Conduction apps
