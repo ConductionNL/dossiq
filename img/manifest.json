@@ -1,0 +1,18 @@
+{
+    "name": "Procest Inspectie",
+    "short_name": "Inspectie",
+    "description": "Mobiele inspectie-app voor veldinspecties",
+    "start_url": "/apps/procest/inspections",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#ffffff",
+    "theme_color": "#0082c9",
+    "icons": [
+        {
+            "src": "/apps/procest/img/app.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        }
+    ],
+    "categories": ["government", "utilities"]
+}
