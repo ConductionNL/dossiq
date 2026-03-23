@@ -1,65 +1,33 @@
 # Task Management
 
-Work items within cases following CMMN 1.1 HumanTask concepts. Tasks are the primary mechanism for distributing and tracking work within a case.
+The Tasks view provides a list of all tasks in the system, functioning similarly to the Cases view.
 
-## Specs
+![Task Management](../screenshots/task-management.png)
 
-- `openspec/specs/task-management/spec.md`
+## Overview
 
-## Features
+The tasks list supports the same two view modes as cases:
 
-### Task CRUD (MVP)
+- **Table view** (default) -- Sortable column-based table.
+- **Cards view** -- Visual card layout.
 
-Full create, read, update, and delete for tasks linked to cases.
+## Actions
 
-- Fields: title, description, status, assignedTo, dueDate, priority, case (parent case reference)
-- Tasks inherit context from their parent case
+- **Add Item** -- Creates a new task.
+- **Actions** -- Bulk actions menu for selected tasks.
 
-### Task Status Lifecycle (MVP)
+## Current State
 
-Tasks follow CMMN PlanItem states:
+The task list view depends on the OpenRegister object type "task" being properly registered. Task schemas must be configured in the Settings > Configuration page.
 
-- `available` → `active` → `completed` / `terminated`
-- Status transitions are recorded for audit
+## Planned Features
 
-### Task Assignment (MVP)
+Based on the spec, task management will include:
 
-Tasks can be assigned to Nextcloud users. Assigned tasks appear in the user's My Work view.
-
-### Task List View (MVP)
-
-Browsable task list with search, sort, and filter:
-
-- Search across title and description
-- Filter by status, assignee, priority, parent case
-- Sort by due date, priority, status
-
-### Task Due Dates and Priorities (MVP)
-
-- Four priority levels: low, normal, high, urgent
-- Due date tracking with overdue highlighting
-- Priority + due date drive sorting in My Work view
-
-### Task Card Display (MVP)
-
-Compact card layout showing task title, status badge, priority indicator, due date, and assignee. Used in both list views and case detail task sections.
-
-### Task Completion (MVP)
-
-Completing a task transitions it to `completed` status and updates the parent case's task progress.
-
-### Overdue Task Management (MVP)
-
-Tasks past their due date are visually highlighted with red indicators. Overdue tasks surface prominently in My Work and dashboard views.
-
-### Planned (V1)
-
-- Kanban board view with drag-and-drop between statuses
-- Task checklist/sub-items
-- Task dependencies (blocked by)
-- Task templates per case type
-
-### Planned (Enterprise)
-
-- Automated task creation on case status change
-- Workload dashboard (tasks per user)
+- Task creation with title, description, assignee, and due date.
+- Task status workflow (open, in progress, completed, cancelled).
+- Association with parent cases.
+- Priority levels.
+- Task assignment and reassignment.
+- Due date tracking with overdue indicators.
+- Bulk status updates.

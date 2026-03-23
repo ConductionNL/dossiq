@@ -48,6 +48,13 @@
 					{{ getDeadlineText(row) }}
 				</span>
 			</template>
+
+			<template #column-title="{ row, value }">
+				<span>{{ value || '\u2014' }}</span>
+				<span v-if="getSubCaseCount(row.id) > 0" class="sub-case-badge">
+					{{ t('procest', '{count} sub-cases', { count: getSubCaseCount(row.id) }) }}
+				</span>
+			</template>
 		</CnIndexPage>
 	</div>
 </template>
@@ -83,7 +90,19 @@ export default {
 			showCreateDialog: false,
 			caseTypeCache: {},
 			statusTypeCache: {},
+			subCaseCountCache: {},
 		}
+	},
+
+	watch: {
+		objects: {
+			handler(newObjects) {
+				if (newObjects && newObjects.length > 0) {
+					this.loadSubCaseCounts(newObjects)
+				}
+			},
+			immediate: true,
+		},
 	},
 
 	mounted() {
@@ -163,6 +182,35 @@ export default {
 		openCase(row) {
 			this.$router.push({ name: 'CaseDetail', params: { id: row.id } })
 		},
+
+		getSubCaseCount(caseId) {
+			return this.subCaseCountCache[caseId] || 0
+		},
+
+		async loadSubCaseCounts(cases) {
+			// Batch-load sub-case counts for the visible page
+			// Fetch all cases that have a parentCase pointing to any case on this page
+			const objectStore = useObjectStore()
+			const caseIds = cases.map(c => c.id)
+
+			// Query all cases that are sub-cases of visible cases
+			const allSubCases = await objectStore.fetchCollection('case', {
+				_limit: 500,
+				_fields: 'id,parentCase',
+			})
+
+			if (allSubCases) {
+				const counts = {}
+				for (const sc of allSubCases) {
+					if (sc.parentCase && caseIds.includes(sc.parentCase)) {
+						counts[sc.parentCase] = (counts[sc.parentCase] || 0) + 1
+					}
+				}
+				for (const id of Object.keys(counts)) {
+					this.$set(this.subCaseCountCache, id, counts[id])
+				}
+			}
+		},
 	},
 }
 </script>
@@ -201,6 +249,17 @@ export default {
 
 .deadline--final {
 	color: var(--color-text-maxcontrast);
+}
+
+.sub-case-badge {
+	display: inline-block;
+	margin-left: 8px;
+	padding: 1px 6px;
+	border-radius: var(--border-radius-pill);
+	font-size: 11px;
+	font-weight: 500;
+	background: var(--color-primary-element-light);
+	color: var(--color-primary-element-light-text);
 }
 </style>
 

@@ -122,6 +122,9 @@
 					{{ t('procest', 'Completed on {date}', { date: formatDueDate(taskData.completedDate) }) }}
 				</div>
 			</div>
+			<p v-if="transitionError" class="transition-error">
+				{{ transitionError }}
+			</p>
 		</CnDetailCard>
 
 		<!-- Task Information card -->
@@ -165,6 +168,7 @@ import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { getAllowedTransitions, getStatusLabel, getTransitionLabel, isTerminalStatus } from '../../utils/taskLifecycle.js'
 import { formatDueDate } from '../../utils/taskHelpers.js'
+import { validateTaskTransition } from '../../utils/taskValidation.js'
 
 export default {
 	name: 'TaskDetail',
@@ -203,6 +207,7 @@ export default {
 				title: '',
 			},
 			priorityOptions: ['low', 'normal', 'high', 'urgent'],
+			transitionError: '',
 		}
 	},
 	computed: {
@@ -320,6 +325,14 @@ export default {
 		},
 
 		async transitionTo(targetStatus) {
+			this.transitionError = ''
+
+			const validation = validateTaskTransition(this.taskData.status, targetStatus)
+			if (!validation.valid) {
+				this.transitionError = validation.error
+				return
+			}
+
 			const taskData = this.taskData
 			const update = {
 				id: this.taskId,
@@ -338,6 +351,7 @@ export default {
 			}
 
 			await this.objectStore.saveObject('task', update)
+			this.transitionError = ''
 		},
 
 		async confirmDelete() {
@@ -504,5 +518,11 @@ export default {
 
 .case-link:hover {
 	color: var(--color-primary-hover);
+}
+
+.transition-error {
+	color: var(--color-error);
+	font-size: 13px;
+	margin-top: 8px;
 }
 </style>
