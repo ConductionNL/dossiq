@@ -8,13 +8,17 @@
 		</div>
 
 		<!-- Filter tabs -->
-		<div class="my-work__tabs">
+		<div class="my-work__tabs" role="tablist" :aria-label="t('procest', 'Filter by type')">
 			<button
 				v-for="tab in tabs"
 				:key="tab.key"
+				role="tab"
+				:aria-selected="activeTab === tab.key"
 				class="my-work__tab"
 				:class="{ 'my-work__tab--active': activeTab === tab.key }"
-				@click="activeTab = tab.key">
+				@click="activeTab = tab.key"
+				@keydown.enter="activeTab = tab.key"
+				@keydown.space.prevent="activeTab = tab.key">
 				{{ tab.label }} ({{ tab.count }})
 			</button>
 
@@ -50,8 +54,11 @@
 			</template>
 		</NcEmptyContent>
 
+		<!-- Parafering inbox -->
+		<ParafeerInbox v-if="!loading" />
+
 		<!-- Grouped sections -->
-		<template v-else>
+		<template v-else-if="!loading">
 			<!-- Overdue -->
 			<div v-if="filteredGroups.overdue.length > 0" class="my-work__section my-work__section--overdue">
 				<h3 class="my-work__section-header my-work__section-header--overdue">
@@ -62,12 +69,18 @@
 					v-for="item in filteredGroups.overdue"
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row my-work__row--overdue"
-					@click="onItemClick(item)">
+					tabindex="0"
+					role="listitem"
+					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}, ${item.daysText}`"
+					@click="onItemClick(item)"
+					@keydown.enter="onItemClick(item)"
+					@keydown.space.prevent="onItemClick(item)">
 					<span class="my-work__badge" :class="`my-work__badge--${item.type}`">
 						{{ item.type === 'case' ? t('procest', 'CASE') : t('procest', 'TASK') }}
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
 					<div class="my-work__deadline">
@@ -89,12 +102,18 @@
 					v-for="item in filteredGroups.dueThisWeek"
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row"
-					@click="onItemClick(item)">
+					tabindex="0"
+					role="listitem"
+					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}, ${item.daysText}`"
+					@click="onItemClick(item)"
+					@keydown.enter="onItemClick(item)"
+					@keydown.space.prevent="onItemClick(item)">
 					<span class="my-work__badge" :class="`my-work__badge--${item.type}`">
 						{{ item.type === 'case' ? t('procest', 'CASE') : t('procest', 'TASK') }}
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
 					<div class="my-work__deadline">
@@ -116,12 +135,18 @@
 					v-for="item in filteredGroups.upcoming"
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row"
-					@click="onItemClick(item)">
+					tabindex="0"
+					role="listitem"
+					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}, ${item.daysText}`"
+					@click="onItemClick(item)"
+					@keydown.enter="onItemClick(item)"
+					@keydown.space.prevent="onItemClick(item)">
 					<span class="my-work__badge" :class="`my-work__badge--${item.type}`">
 						{{ item.type === 'case' ? t('procest', 'CASE') : t('procest', 'TASK') }}
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
 					<div class="my-work__deadline">
@@ -143,12 +168,18 @@
 					v-for="item in filteredGroups.noDeadline"
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row"
-					@click="onItemClick(item)">
+					tabindex="0"
+					role="listitem"
+					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}`"
+					@click="onItemClick(item)"
+					@keydown.enter="onItemClick(item)"
+					@keydown.space.prevent="onItemClick(item)">
 					<span class="my-work__badge" :class="`my-work__badge--${item.type}`">
 						{{ item.type === 'case' ? t('procest', 'CASE') : t('procest', 'TASK') }}
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
 					<div class="my-work__deadline">
@@ -191,6 +222,7 @@
 import { NcLoadingIcon, NcEmptyContent } from '@nextcloud/vue'
 import AccountCheck from 'vue-material-design-icons/AccountCheck.vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
+import ParafeerInbox from './voorstellen/components/ParafeerInbox.vue'
 import { useObjectStore } from '../store/modules/object.js'
 import { getGroupedMyWorkItems } from '../utils/dashboardHelpers.js'
 import { fetchTasksForCases } from '../services/taskApi.js'
@@ -202,6 +234,7 @@ export default {
 		NcEmptyContent,
 		AccountCheck,
 		CheckCircle,
+		ParafeerInbox,
 	},
 	data() {
 		return {
@@ -212,6 +245,7 @@ export default {
 			normalizedTasks: [],
 			completedCases: [],
 			completedTasks: [],
+			caseTypeMap: {},
 		}
 	},
 	computed: {
@@ -289,10 +323,21 @@ export default {
 		await this.fetchData()
 	},
 	methods: {
+		getCaseTypeName(caseTypeId) {
+			return this.caseTypeMap[caseTypeId] || ''
+		},
 		async fetchData() {
 			this.loading = true
 			try {
 				const currentUser = OC?.currentUser || ''
+
+				// Fetch case types for name resolution.
+				const caseTypes = await this.objectStore.fetchCollection('caseType', { _limit: 100 })
+				const map = {}
+				for (const ct of (caseTypes || [])) {
+					map[ct.id] = ct.title
+				}
+				this.caseTypeMap = map
 
 				// Fetch active cases assigned to current user.
 				const caseResults = await this.objectStore.fetchCollection('case', {
@@ -552,5 +597,44 @@ export default {
 .my-work__priority {
 	color: var(--color-warning);
 	font-weight: bold;
+}
+
+.my-work__case-type {
+	font-size: 11px;
+	color: var(--color-text-maxcontrast);
+	font-style: italic;
+}
+
+/* Focus outline for keyboard navigation */
+.my-work__row:focus {
+	outline: 2px solid var(--color-primary-element);
+	outline-offset: -2px;
+	border-radius: var(--border-radius);
+}
+
+/* Responsive layout */
+@media (max-width: 768px) {
+	.my-work {
+		padding: 12px;
+	}
+
+	.my-work__tabs {
+		flex-wrap: wrap;
+	}
+
+	.my-work__row {
+		flex-wrap: wrap;
+		gap: 6px;
+		padding: 12px 10px;
+	}
+
+	.my-work__info {
+		width: calc(100% - 60px);
+	}
+
+	.my-work__deadline {
+		width: 100%;
+		padding-left: 56px;
+	}
 }
 </style>

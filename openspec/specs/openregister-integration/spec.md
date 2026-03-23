@@ -1,3 +1,7 @@
+---
+status: implemented
+---
+
 # OpenRegister Integration Specification
 
 ## Purpose

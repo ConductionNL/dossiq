@@ -252,6 +252,7 @@ export function getGroupedMyWorkItems(cases, normalizedTasks) {
 			isCompleted: false,
 			priority: c.priority || 'normal',
 			status: c.status || null,
+			caseType: c.caseType || null,
 		})
 	}
 
@@ -305,6 +306,160 @@ export function getGroupedMyWorkItems(cases, normalizedTasks) {
 		noDeadline,
 		totalCount: items.length,
 	}
+}
+
+/**
+ * Default warning threshold in days for deadline alerts.
+ *
+ * @type {number}
+ */
+export const DEADLINE_WARNING_DAYS = 3
+
+/**
+ * Default threshold in days for stalled case detection.
+ *
+ * @type {number}
+ */
+export const STALLED_THRESHOLD_DAYS = 7
+
+/**
+ * Get deadline alerts: cases that are overdue or approaching their deadline
+ * within the warning threshold.
+ *
+ * @param {object[]} openCases Cases with non-final status
+ * @param {object[]} caseTypes All case types (for name resolution)
+ * @param {number} warningDays Number of days before deadline to flag as at-risk
+ * @return {{ overdue: object[], atRisk: object[] }}
+ */
+export function getDeadlineAlerts(openCases, caseTypes, warningDays = DEADLINE_WARNING_DAYS) {
+	const typeMap = new Map()
+	for (const ct of caseTypes) {
+		typeMap.set(ct.id, ct.title || ct.name || 'Unknown')
+	}
+
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+
+	const overdue = []
+	const atRisk = []
+
+	for (const c of openCases) {
+		if (!c.deadline) continue
+
+		const deadline = new Date(c.deadline)
+		deadline.setHours(0, 0, 0, 0)
+
+		const daysRemaining = getDaysRemaining(c.deadline)
+		const item = {
+			id: c.id,
+			title: c.title || '\u2014',
+			identifier: c.identifier || '\u2014',
+			caseTypeName: typeMap.get(c.caseType) || 'Unknown',
+			handler: c.assignee || '\u2014',
+		}
+
+		if (isCaseOverdue(c, false)) {
+			overdue.push({ ...item, daysOverdue: Math.abs(daysRemaining) })
+		} else if (daysRemaining >= 0 && daysRemaining <= warningDays) {
+			atRisk.push({ ...item, daysRemaining })
+		}
+	}
+
+	overdue.sort((a, b) => b.daysOverdue - a.daysOverdue)
+	atRisk.sort((a, b) => a.daysRemaining - b.daysRemaining)
+
+	return { overdue, atRisk }
+}
+
+/**
+ * Get task due reminders: tasks that are overdue or approaching their due date
+ * within the warning threshold.
+ *
+ * @param {object[]} tasks Tasks assigned to the current user
+ * @param {number} warningDays Number of days before due date to flag as due-soon
+ * @return {{ overdue: object[], dueSoon: object[] }}
+ */
+export function getTaskDueReminders(tasks, warningDays = DEADLINE_WARNING_DAYS) {
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+
+	const overdue = []
+	const dueSoon = []
+
+	for (const task of tasks) {
+		if (!task.dueDate) continue
+		if (isTerminalStatus(task.status)) continue
+
+		const dueDate = new Date(task.dueDate)
+		dueDate.setHours(0, 0, 0, 0)
+
+		const diffMs = dueDate - today
+		const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+
+		const item = {
+			id: task.id,
+			title: task.title || '\u2014',
+			caseReference: task.case ? `Case: ${task.case}` : '\u2014',
+			priority: task.priority || 'normal',
+		}
+
+		if (daysRemaining < 0) {
+			overdue.push({ ...item, daysOverdue: Math.abs(daysRemaining) })
+		} else if (daysRemaining <= warningDays) {
+			dueSoon.push({ ...item, daysRemaining })
+		}
+	}
+
+	overdue.sort((a, b) => b.daysOverdue - a.daysOverdue)
+	dueSoon.sort((a, b) => a.daysRemaining - b.daysRemaining)
+
+	return { overdue, dueSoon }
+}
+
+/**
+ * Get stalled cases: open cases that have had no activity (no dateModified update)
+ * for longer than the stalled threshold.
+ *
+ * @param {object[]} openCases Cases with non-final status
+ * @param {object[]} caseTypes All case types (for name resolution)
+ * @param {number} stalledDays Number of days without activity to consider stalled
+ * @return {Array<{ id, title, identifier, caseTypeName, daysSinceActivity, handler }>}
+ */
+export function getStalledCases(openCases, caseTypes, stalledDays = STALLED_THRESHOLD_DAYS) {
+	const typeMap = new Map()
+	for (const ct of caseTypes) {
+		typeMap.set(ct.id, ct.title || ct.name || 'Unknown')
+	}
+
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+
+	const stalled = []
+
+	for (const c of openCases) {
+		const lastActivity = c.dateModified || c.dateCreated || null
+		if (!lastActivity) continue
+
+		const activityDate = new Date(lastActivity)
+		activityDate.setHours(0, 0, 0, 0)
+
+		const diffMs = today - activityDate
+		const daysSinceActivity = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+		if (daysSinceActivity >= stalledDays) {
+			stalled.push({
+				id: c.id,
+				title: c.title || '\u2014',
+				identifier: c.identifier || '\u2014',
+				caseTypeName: typeMap.get(c.caseType) || 'Unknown',
+				daysSinceActivity,
+				handler: c.assignee || '\u2014',
+			})
+		}
+	}
+
+	stalled.sort((a, b) => b.daysSinceActivity - a.daysSinceActivity)
+	return stalled
 }
 
 /**

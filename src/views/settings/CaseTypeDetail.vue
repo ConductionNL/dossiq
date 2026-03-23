@@ -86,6 +86,9 @@
 					v-else-if="activeTab === 'statuses'"
 					:case-type-id="caseTypeId"
 					:is-create="isCreate" />
+				<WorkflowTab
+					v-else-if="activeTab === 'workflow'"
+					:case-type-id="caseTypeId" />
 			</div>
 		</template>
 	</div>
@@ -96,6 +99,7 @@ import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import ArrowLeftIcon from 'vue-material-design-icons/ArrowLeft.vue'
 import GeneralTab from './tabs/GeneralTab.vue'
 import StatusesTab from './tabs/StatusesTab.vue'
+import WorkflowTab from './tabs/WorkflowTab.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { validateCaseType, validateForPublish } from '../../utils/caseTypeValidation.js'
 
@@ -133,6 +137,7 @@ export default {
 		ArrowLeftIcon,
 		GeneralTab,
 		StatusesTab,
+		WorkflowTab,
 	},
 	props: {
 		caseTypeId: {
@@ -165,6 +170,7 @@ export default {
 			return [
 				{ id: 'general', label: t('procest', 'General') },
 				{ id: 'statuses', label: t('procest', 'Statuses') },
+				{ id: 'workflow', label: t('procest', 'Workflow') },
 			]
 		},
 	},

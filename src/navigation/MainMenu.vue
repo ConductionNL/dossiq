@@ -17,6 +17,13 @@
 				</template>
 			</NcAppNavigationItem>
 			<NcAppNavigationItem
+				:name="t('procest', 'Work Queue')"
+				:to="{ name: 'Werkvoorraad' }">
+				<template #icon>
+					<AccountGroup :size="20" />
+				</template>
+			</NcAppNavigationItem>
+			<NcAppNavigationItem
 				:name="t('procest', 'Cases')"
 				:to="{ name: 'Cases' }">
 				<template #icon>
@@ -31,8 +38,19 @@
 				</template>
 			</NcAppNavigationItem>
 			<NcAppNavigationItem
+				:name="t('procest', 'Map')"
+				:to="{ name: 'CaseMap' }">
+				<template #icon>
+					<MapOutline :size="20" />
+				:name="t('procest', 'Voorstellen')"
+				:to="{ name: 'Voorstellen' }">
+				<template #icon>
+					<FileDocumentEditOutline :size="20" />
+				</template>
+			</NcAppNavigationItem>
+			<NcAppNavigationItem
 				:name="t('procest', 'Documentation')"
-				@click="openLink('https://procest.app', '_blank')">
+				@click="openLink('https://conduction.gitbook.io/procest-nextcloud', '_blank')">
 				<template #icon>
 					<BookOpenVariantOutline :size="20" />
 				</template>
@@ -64,8 +82,11 @@ import { NcAppNavigation, NcAppNavigationItem, NcAppNavigationSettings } from '@
 import ViewDashboard from 'vue-material-design-icons/ViewDashboard.vue'
 import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'
 import AccountCheck from 'vue-material-design-icons/AccountCheck.vue'
+import AccountGroup from 'vue-material-design-icons/AccountGroup.vue'
 import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
+import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditOutline.vue'
 import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
+import MapOutline from 'vue-material-design-icons/MapOutline.vue'
 import Cog from 'vue-material-design-icons/Cog.vue'
 import ShapeOutline from 'vue-material-design-icons/ShapeOutline.vue'
 
@@ -77,9 +98,12 @@ export default {
 		NcAppNavigationSettings,
 		ViewDashboard,
 		AccountCheck,
+		AccountGroup,
 		FolderOpen,
 		ClipboardCheckOutline,
+		FileDocumentEditOutline,
 		BookOpenVariantOutline,
+		MapOutline,
 		Cog,
 		ShapeOutline,
 	},
