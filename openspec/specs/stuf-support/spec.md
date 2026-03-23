@@ -116,9 +116,10 @@ StUF and ZGW share the same underlying OpenRegister data. A case created via StU
 
 ### REQ-STUF-001: Outbound StUF-BG Person Lookup via OpenConnector
 
+The system MUST support querying external StUF-BG services for person data (BRP) via OpenConnector's SOAP infrastructure. This enables case handlers to look up citizen information by BSN when creating or processing cases.
+
 **Feature tier**: V1
 
-The system MUST support querying external StUF-BG services for person data (BRP) via OpenConnector's SOAP infrastructure. This enables case handlers to look up citizen information by BSN when creating or processing cases.
 
 #### Scenario STUF-001a: Look up person by BSN
 
@@ -146,13 +147,31 @@ The system MUST support querying external StUF-BG services for person data (BRP)
 - AND return a structured error: `{ "code": "StUF055", "message": "Niet geautoriseerd", "detail": "..." }`
 - AND log the fault at WARNING level
 
+#### Scenario STUF-001d: Look up person by name and date of birth
+
+- GIVEN a valid StUF-BG source configuration
+- AND the case handler does not have the BSN but has the person's name and date of birth
+- WHEN the handler searches with `geslachtsnaam` = "Moulin" and `geboortedatum` = "19750312"
+- THEN the system MUST construct a `npsLv01` with name and date in `gelijk` elements
+- AND parse the `npsLa01` response which may contain multiple results
+- AND present the results as a selectable list showing BSN, full name, date of birth, and address
+
+#### Scenario STUF-001e: Timeout handling for BRP queries
+
+- GIVEN a valid StUF-BG source configuration with a 10-second timeout
+- WHEN the BRP endpoint does not respond within 10 seconds
+- THEN the system MUST abort the SOAP call and return an error: "BRP service niet beschikbaar (timeout na 10 seconden)"
+- AND log the timeout at WARNING level with the endpoint URL
+- AND the case handler MUST be able to continue case processing without the BRP data
+
 ---
 
 ### REQ-STUF-002: Outbound StUF-ZKN Case Notification
 
+The system MUST support sending case status updates to legacy systems via StUF-ZKN messages. This enables Procest to notify legacy zaaksystemen or DMS systems when case events occur.
+
 **Feature tier**: V1
 
-The system MUST support sending case status updates to legacy systems via StUF-ZKN messages. This enables Procest to notify legacy zaaksystemen or DMS systems when case events occur.
 
 #### Scenario STUF-002a: Send status update notification
 
@@ -183,13 +202,31 @@ The system MUST support sending case status updates to legacy systems via StUF-Z
 - AND the system SHOULD queue the notification for retry (via OpenConnector's retry mechanism)
 - AND the audit trail MUST record: "StUF notification to [endpoint] failed: connection timeout"
 
+#### Scenario STUF-002d: Send case closure notification
+
+- GIVEN a case "2026-042" with status "In behandeling"
+- AND a result "Toegekend" is set on the case, triggering automatic status transition to "Afgerond"
+- WHEN the closure status is committed
+- THEN the system MUST send a `zakLk01` with `mutatiesoort="W"` containing the final status, result, and end date
+- AND if an archival action date is set, it MUST be included as `archiefactiedatum`
+
+#### Scenario STUF-002e: Selective notification per case type
+
+- GIVEN case type "Omgevingsvergunning" is configured with StUF notification to endpoint A
+- AND case type "Bezwaar" is configured with StUF notification to endpoint B
+- AND case type "Melding" has no StUF notification configured
+- WHEN a status change occurs on a "Melding" case
+- THEN NO StUF notification MUST be sent
+- AND the audit trail MUST NOT contain a StUF notification entry
+
 ---
 
 ### REQ-STUF-003: Outbound StUF-ZKN Document Linking
 
+The system MUST support sending document metadata to legacy DMS systems via StUF-ZKN `edcLk01` messages when documents are uploaded to a case. OpenConnector's SOAPService already has `edcLk01` awareness (base64 content handling).
+
 **Feature tier**: V1
 
-The system MUST support sending document metadata to legacy DMS systems via StUF-ZKN `edcLk01` messages when documents are uploaded to a case. OpenConnector's SOAPService already has `edcLk01` awareness (base64 content handling).
 
 #### Scenario STUF-003a: Notify legacy DMS of new document
 
@@ -208,13 +245,23 @@ The system MUST support sending document metadata to legacy DMS systems via StUF
 - THEN the system SHOULD use MTOM (Message Transmission Optimization Mechanism) for binary content
 - OR the system MAY skip the `inhoud` element and include only metadata with a download reference
 
+#### Scenario STUF-003c: Document version update notification
+
+- GIVEN a document "Bouwtekening.pdf" previously sent via `edcLk01` with `mutatiesoort="T"`
+- AND the document is replaced with a new version "Bouwtekening_v2.pdf"
+- WHEN the document update is committed
+- THEN the system MUST send a `edcLk01` with `mutatiesoort="W"` (wijziging)
+- AND include the new document content and the same `identificatie` as the original
+- AND include `versie` = "2" to indicate the version number
+
 ---
 
 ### REQ-STUF-004: StUF Stuurgegevens Configuration
 
+The system MUST support configuring StUF `stuurgegevens` (message routing metadata) for each StUF endpoint. Stuurgegevens are mandatory on every StUF message and identify the sender and receiver.
+
 **Feature tier**: V1
 
-The system MUST support configuring StUF `stuurgegevens` (message routing metadata) for each StUF endpoint. Stuurgegevens are mandatory on every StUF message and identify the sender and receiver.
 
 #### Scenario STUF-004a: Configure stuurgegevens for a StUF source
 
@@ -239,13 +286,22 @@ The system MUST support configuring StUF `stuurgegevens` (message routing metada
   - `referentienummer` = newly generated UUID
   - `tijdstipBericht` = current timestamp in `YYYYMMDDHHmmss` format
 
+#### Scenario STUF-004c: Cross-reference in response messages
+
+- GIVEN a StUF source sent a message with `referentienummer` = "550e8400-e29b-41d4-a716-446655440000"
+- WHEN the external service returns a response (La01, Bv01, or Fo01)
+- THEN the response `stuurgegevens` MUST contain `crossRefnummer` matching the original `referentienummer`
+- AND the system MUST validate that `crossRefnummer` matches a known outbound `referentienummer`
+- AND if no match is found, the response MUST be logged at WARNING level and discarded
+
 ---
 
 ### REQ-STUF-005: StUF-ZKN zaakIdentificatie Generation
 
+The system SHALL support the `genereerZaakIdentificatie` service call for obtaining zaak identifiers from external systems that manage identifier sequences.
+
 **Feature tier**: V1
 
-The system SHOULD support the `genereerZaakIdentificatie` service call for obtaining zaak identifiers from external systems that manage identifier sequences.
 
 #### Scenario STUF-005a: Obtain identifier from legacy system
 
@@ -264,13 +320,23 @@ The system SHOULD support the `genereerZaakIdentificatie` service call for obtai
 - THEN the system MUST fall back to local identifier generation (format: `YYYY-NNN`)
 - AND log a warning: "External zaakidentificatie generation failed, using local identifier"
 
+#### Scenario STUF-005c: Identifier uniqueness validation
+
+- GIVEN a StUF-ZKN endpoint returns identifier "2026-042"
+- AND a case with identifier "2026-042" already exists in OpenRegister
+- WHEN the system processes the `Du02` response
+- THEN the system MUST reject the duplicate identifier
+- AND request a new identifier by sending another `Di02` message
+- AND if 3 consecutive duplicates are returned, fall back to local generation with a UUID-based identifier and log an ERROR
+
 ---
 
 ### REQ-STUF-006: Outbound StUF Authentication
 
+The system MUST support the authentication methods required by Dutch government StUF endpoints. OpenConnector's existing certificate handling and AuthenticationService provide the foundation.
+
 **Feature tier**: V1
 
-The system MUST support the authentication methods required by Dutch government StUF endpoints. OpenConnector's existing certificate handling and AuthenticationService provide the foundation.
 
 #### Scenario STUF-006a: mTLS with PKIoverheid certificate
 
@@ -293,14 +359,24 @@ The system MUST support the authentication methods required by Dutch government 
 - GIVEN a StUF source with a PKIoverheid client certificate expiring in 30 days
 - WHEN an admin views the source configuration
 - THEN the system SHOULD display a warning: "Client certificate expires on [date]. Renew before expiry to prevent service interruption."
+- AND at 7 days before expiry, a Nextcloud notification SHOULD be sent to all admin users
+
+#### Scenario STUF-006d: Certificate chain validation failure
+
+- GIVEN a StUF endpoint with a server certificate signed by a CA not in the PKIoverheid chain
+- WHEN the system attempts to send a SOAP message
+- THEN the SOAP call MUST fail with an error: "Server certificate validation failed: unknown CA"
+- AND the system MUST NOT send the SOAP message content to an untrusted endpoint
+- AND the error MUST be logged at ERROR level with the certificate details
 
 ---
 
 ### REQ-STUF-007: Inbound StUF-ZKN Case Creation
 
+The system MUST accept incoming StUF-ZKN `zakLk01` messages (with `mutatiesoort="T"`) to create cases from legacy form systems or legacy case systems pushing data to Procest. This is the SOAP server challenge -- Nextcloud routes are REST-based, so the inbound StUF endpoint is implemented as a raw POST handler that parses SOAP XML.
+
 **Feature tier**: V2
 
-The system MUST accept incoming StUF-ZKN `zakLk01` messages (with `mutatiesoort="T"`) to create cases from legacy form systems or legacy case systems pushing data to Procest. This is the SOAP server challenge -- Nextcloud routes are REST-based, so the inbound StUF endpoint is implemented as a raw POST handler that parses SOAP XML.
 
 #### Scenario STUF-007a: Receive zakLk01 to create a case
 
@@ -342,13 +418,24 @@ The system MUST accept incoming StUF-ZKN `zakLk01` messages (with `mutatiesoort=
 - WHEN a `zakLk01` arrives with `ontvanger/applicatie` = "WrongApp"
 - THEN the system MUST return a StUF `Fo01` fault with `foutcode` = "StUF001" and `foutbeschrijving` = "Onbekende ontvanger"
 
+#### Scenario STUF-007e: Case creation with multiple roles
+
+- GIVEN a `zakLk01` with `mutatiesoort="T"` containing:
+  - `heeftAlsInitiator/gerelateerde/inp.bsn` = "999993653"
+  - `heeftAlsGemachtigde/gerelateerde/vestigingsNummer` = "000012345678"
+  - `heeftAlsBelanghebbende/gerelateerde/inp.bsn` = "999990627"
+- WHEN the message is processed
+- THEN the system MUST create three Role objects: initiator (BSN), gemachtigde (vestigingsnummer), belanghebbende (BSN)
+- AND all three roles MUST be linked to the newly created case
+
 ---
 
 ### REQ-STUF-008: Inbound StUF-ZKN Case Query
 
+The system MUST accept incoming StUF-ZKN `zakLv01` (zaak opvragen) messages and respond with `zakLa01` (zaak antwoord) messages containing case data from OpenRegister.
+
 **Feature tier**: V2
 
-The system MUST accept incoming StUF-ZKN `zakLv01` (zaak opvragen) messages and respond with `zakLa01` (zaak antwoord) messages containing case data from OpenRegister.
 
 #### Scenario STUF-008a: Query case by identifier
 
@@ -382,13 +469,21 @@ The system MUST accept incoming StUF-ZKN `zakLv01` (zaak opvragen) messages and 
 - WHEN the system processes the request
 - THEN the `zakLa01` MUST contain at most 10 zaak objects
 
+#### Scenario STUF-008e: Query cases by date range
+
+- GIVEN 20 cases with `startdatum` between "20260101" and "20260331"
+- WHEN a `zakLv01` queries with `van/startdatum` = "20260201" and `totEnMet/startdatum` = "20260228"
+- THEN the `zakLa01` MUST contain only cases with `startdatum` in February 2026
+- AND the response MUST include `stuurgegevens` with `crossRefnummer` matching the query's `referentienummer`
+
 ---
 
 ### REQ-STUF-009: Inbound StUF-ZKN Case Update
 
+The system MUST accept incoming StUF-ZKN `zakLk01` messages with `mutatiesoort="W"` (wijziging) to update existing cases.
+
 **Feature tier**: V2
 
-The system MUST accept incoming StUF-ZKN `zakLk01` messages with `mutatiesoort="W"` (wijziging) to update existing cases.
 
 #### Scenario STUF-009a: Update case via zakLk01
 
@@ -412,13 +507,29 @@ The system MUST accept incoming StUF-ZKN `zakLk01` messages with `mutatiesoort="
 - WHEN a `zakLk01` with `mutatiesoort="W"` and `identificatie` = "9999-999" arrives
 - THEN the system MUST return a `Fo01` fault with `foutcode` = "StUF064" and `foutbeschrijving` = "Zaak niet gevonden: 9999-999"
 
+#### Scenario STUF-009d: Partial update with only changed fields
+
+- GIVEN a case "2026-042" with title, description, startDate, and deadline set
+- WHEN a `zakLk01` with `mutatiesoort="W"` includes only `toelichting` = "Aangepaste toelichting"
+- THEN the system MUST update only the `description` field
+- AND all other fields (title, startDate, deadline) MUST remain unchanged
+- AND the `Bv01` response MUST confirm the update
+
+#### Scenario STUF-009e: Reject update on closed case
+
+- GIVEN a case "2026-042" with status "Afgerond" (closed)
+- WHEN a `zakLk01` with `mutatiesoort="W"` attempts to change the `omschrijving`
+- THEN the system MUST enforce the `ZgwZrcRulesService` immutability rules
+- AND return a `Fo01` fault with `foutcode` = "StUF062" and `foutbeschrijving` = "Zaak is afgesloten en kan niet meer worden gewijzigd"
+
 ---
 
 ### REQ-STUF-010: Inbound StUF-ZKN Document Handling
 
+The system MUST accept incoming StUF-ZKN `edcLk01` messages to link documents to cases.
+
 **Feature tier**: V2
 
-The system MUST accept incoming StUF-ZKN `edcLk01` messages to link documents to cases.
 
 #### Scenario STUF-010a: Receive document via edcLk01
 
@@ -441,13 +552,21 @@ The system MUST accept incoming StUF-ZKN `edcLk01` messages to link documents to
 - THEN the system MUST create a caseDocument object with the metadata
 - AND mark the document as "metadata only -- no content received"
 
+#### Scenario STUF-010c: Document linked to non-existent case
+
+- GIVEN an `edcLk01` with `isRelevantVoor/gerelateerde/identificatie` = "9999-999"
+- AND no case with that identifier exists
+- WHEN the message is processed
+- THEN the system MUST return a `Fo01` fault with `foutcode` = "StUF064" and `foutbeschrijving` = "Zaak niet gevonden: 9999-999"
+
 ---
 
 ### REQ-STUF-011: StUF XML Message Processing
 
+The system MUST correctly handle StUF XML namespaces, date formats, noValue attributes, and message structure.
+
 **Feature tier**: V1 (outbound), V2 (inbound)
 
-The system MUST correctly handle StUF XML namespaces, date formats, noValue attributes, and message structure.
 
 #### Scenario STUF-011a: XML namespace handling
 
@@ -483,13 +602,21 @@ The system MUST correctly handle StUF XML namespaces, date formats, noValue attr
 - THEN the system SHOULD validate the XML against the relevant XSD before sending
 - AND if validation fails, the system MUST log the validation errors and NOT send the invalid message
 
+#### Scenario STUF-011e: Handle XML entities and special characters
+
+- GIVEN a case title containing special characters: `Vergunning "Café & Bar" <Centrum>`
+- WHEN the title is included in an outbound StUF message
+- THEN XML entities MUST be properly escaped: `&amp;`, `&lt;`, `&gt;`, `&quot;`
+- AND the resulting XML MUST be well-formed and parseable
+
 ---
 
 ### REQ-STUF-012: StUF-BG Inbound Person Query
 
+The system SHALL accept incoming StUF-BG `npsLv01` messages to expose person data stored in OpenRegister. This enables legacy systems to query Procest as if it were a BRP source.
+
 **Feature tier**: V2
 
-The system SHOULD accept incoming StUF-BG `npsLv01` messages to expose person data stored in OpenRegister. This enables legacy systems to query Procest as if it were a BRP source.
 
 #### Scenario STUF-012a: Receive person query
 
@@ -504,13 +631,21 @@ The system SHOULD accept incoming StUF-BG `npsLv01` messages to expose person da
 - WHEN the system processes the request
 - THEN the `npsLa01` MUST include only the requested fields
 
+#### Scenario STUF-012c: Person query with wildcard search
+
+- GIVEN 5 persons in OpenRegister with `geslachtsnaam` starting with "Jan"
+- WHEN a `npsLv01` queries with `gelijk/geslachtsnaam` = "Jan*" (wildcard)
+- THEN the system MUST return all 5 matching persons in the `npsLa01` response
+- AND results MUST be ordered by `geslachtsnaam` ascending
+
 ---
 
 ### REQ-STUF-013: StUF Field Mapping Configuration
 
+The system MUST store field mappings between StUF XML paths and OpenRegister object properties as configurable mapping objects. Default mappings for ZGW-zaak and BRP-person data MUST be pre-seeded.
+
 **Feature tier**: V1
 
-The system MUST store field mappings between StUF XML paths and OpenRegister object properties as configurable mapping objects. Default mappings for ZGW-zaak and BRP-person data MUST be pre-seeded.
 
 #### Scenario STUF-013a: Pre-seeded zaak field mapping
 
@@ -531,13 +666,32 @@ The system MUST store field mappings between StUF XML paths and OpenRegister obj
 - WHEN a StUF message contains `vertrouwelijkAanduiding` = "ZAAKVERTROUWELIJK"
 - THEN the system MUST transform the value to `case_sensitive` using the mapping's transformation table
 
+#### Scenario STUF-013d: Mapping object schema structure
+
+- GIVEN the StUF field mapping is stored as an OpenRegister object
+- THEN the mapping schema MUST include:
+  - `name` (string): mapping set name (e.g., "StUF-ZKN to Procest Case")
+  - `sourceFormat` (enum): "stuf-zkn" | "stuf-bg"
+  - `targetSchema` (string): OpenRegister schema reference (e.g., "case", "person")
+  - `fieldMappings` (array): each entry with `{ stufPath, openRegisterProperty, dataType, transformation, required }`
+  - `dateFormat` (string): date format pattern for this mapping set
+  - `isDefault` (boolean): whether this is a system-provided mapping
+
+#### Scenario STUF-013e: Export and import mapping configurations
+
+- GIVEN an admin who configured custom StUF mappings for municipality A
+- WHEN the admin exports the mapping configuration
+- THEN the system MUST produce a JSON file containing all custom mapping entries
+- AND the exported file MUST be importable on another Procest instance for municipality B
+
 ---
 
 ### REQ-STUF-014: SOAP Server Within Nextcloud
 
+The system SHALL provide a SOAP server within Nextcloud for exposing inbound StUF endpoints. Since Nextcloud routes are REST-based, the StUF controller accepts raw XML POSTs and processes them as SOAP messages without using PHP's built-in SoapServer (which requires WSDL mode and conflicts with Nextcloud's routing).
+
 **Feature tier**: V2
 
-Exposing inbound StUF endpoints within Nextcloud requires a SOAP server implementation. Since Nextcloud routes are REST-based, the StUF controller accepts raw XML POSTs and processes them as SOAP messages without using PHP's built-in SoapServer (which requires WSDL mode and conflicts with Nextcloud's routing).
 
 #### Scenario STUF-014a: Raw SOAP POST handling
 
@@ -563,13 +717,21 @@ Exposing inbound StUF endpoints within Nextcloud requires a SOAP server implemen
 - WHEN the controller processes the request
 - THEN the SOAPAction header MAY be used as a secondary dispatch mechanism alongside XML body inspection
 
+#### Scenario STUF-014d: Request logging for audit compliance
+
+- GIVEN the Procest StUF endpoint receives a SOAP message
+- THEN the system MUST log: timestamp, source IP, SOAPAction header, message type (zakLk01/zakLv01/etc.), stuurgegevens (zender/ontvanger), processing result (success/fault)
+- AND the raw XML MUST be stored in a separate audit log (configurable retention period)
+- AND sensitive data (BSN, personal names) MUST be masked in standard log output but preserved in the audit log
+
 ---
 
 ### REQ-STUF-015: Dual API Coexistence
 
+The system MUST ensure that StUF and ZGW APIs provide consistent views of the same data. Changes made via one protocol MUST be immediately visible via the other.
+
 **Feature tier**: V1
 
-The system MUST ensure that StUF and ZGW APIs provide consistent views of the same data. Changes made via one protocol MUST be immediately visible via the other.
 
 #### Scenario STUF-015a: Case created via StUF visible in ZGW
 
@@ -590,6 +752,17 @@ The system MUST ensure that StUF and ZGW APIs provide consistent views of the sa
 - WHEN a handler changes the status to "In behandeling" via the Procest frontend
 - AND a legacy system immediately sends a `zakLv01` for "2026-042"
 - THEN the response MUST show the new status "In behandeling" with the correct `datumStatusGezet`
+
+#### Scenario STUF-015d: StUF and ZGW audit trail unification
+
+- GIVEN a case "2026-042" that was:
+  1. Created via StUF-ZKN `zakLk01`
+  2. Updated via ZGW Zaken API
+  3. Queried via StUF-ZKN `zakLv01`
+- WHEN viewing the case audit trail in the Procest frontend
+- THEN all three actions MUST appear in chronological order
+- AND each entry MUST show the protocol used ("StUF-ZKN", "ZGW API", "Frontend")
+- AND the audit trail MUST be queryable by protocol type
 
 ---
 
@@ -702,7 +875,7 @@ docker exec -u www-data nextcloud php occ openregister:load-register /var/www/ht
 - **StUF version negotiation**: The spec targets 3.01/3.10 but some municipalities may run older versions. Version detection and fallback behavior is not defined.
 - **Async response patterns**: StUF supports asynchronous Bv03/Fo03 callback patterns for long-running operations. The callback mechanism (how Procest receives async responses) is not detailed.
 - **Performance requirements**: No throughput or latency SLAs for SOAP message processing.
-- **Mapping object schema**: REQ-STUF-013 describes configurable field mappings but does not define the OpenRegister schema structure for mapping objects (which fields, what register).
+- **Mapping object schema**: REQ-STUF-013 now defines the mapping schema structure in scenario STUF-013d.
 - **Multi-source routing**: Can multiple StUF endpoints be configured for different case types, or is there one global StUF endpoint?
 - **StUF-ZKN 3.10e extensions**: The "e" extension adds extra message types not covered in this spec.
 - **Archival-related StUF messages**: StUF defines messages for archival transfers (overbrenging) which relate to the case result archival rules but are not covered here.

@@ -76,6 +76,7 @@ Vrij en open source onder de AGPL-licentie.
         <post-migration>
             <step>OCA\Procest\Repair\InitializeSettings</step>
             <step>OCA\Procest\Repair\LoadDefaultZgwMappings</step>
+            <step>OCA\Procest\Repair\SeedBezwaarBeroepData</step>
         </post-migration>
     </repair-steps>
 
