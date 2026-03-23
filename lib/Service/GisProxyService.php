@@ -121,12 +121,12 @@ class GisProxyService
 
         // Parse XML responses to JSON for WFS/capabilities.
         $contentType = '';
-        if (isset($http_response_header) === true) {
-            foreach ($http_response_header as $header) {
-                if (stripos(haystack: $header, needle: 'Content-Type:') === 0) {
-                    $contentType = trim(string: substr(string: $header, offset: 13));
-                    break;
-                }
+        // $http_response_header is populated by file_get_contents() via PHP.
+        // It is always set after a successful HTTP wrapper call.
+        foreach ($http_response_header as $header) {
+            if (stripos(haystack: $header, needle: 'Content-Type:') === 0) {
+                $contentType = trim(string: substr(string: $header, offset: 13));
+                break;
             }
         }
 
