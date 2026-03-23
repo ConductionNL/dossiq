@@ -66,9 +66,21 @@ Processing deadlines are auto-calculated from the case type's duration configura
 
 Full audit trail tracking who changed what and when, including status transitions, field changes, and participant modifications.
 
+### Sub-cases / Deelzaken (V1)
+
+Hierarchical case support for parent-child case relationships. A parent case can spawn sub-cases (deelzaken) for parallel departmental processing.
+
+- Create sub-case from parent case detail view with case type constraint enforcement
+- Sub-cases section on parent case detail showing title, status, assignee, deadline
+- Sub-case progress roll-up indicator ("X/Y completed") in section header
+- Parent case breadcrumb navigation on sub-case detail views
+- Sub-case count badge on case list for parent cases
+- Nesting prevention: sub-cases cannot have their own sub-cases (single level)
+- Deletion protection: warns about sub-case detachment, clears parentCase on children before deleting parent
+- ZGW compatibility: maps to `hoofdzaak` / `deelzaken` fields
+
 ### Planned (V1)
 
-- Sub-cases (parent/child hierarchy)
 - Document completion checklist (required vs present)
 - Property completion indicator (% required fields filled)
 - Days in current status indicator
