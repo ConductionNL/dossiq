@@ -1,76 +1,43 @@
-# Tasks: ZGW Business Rules Compliance
+## 1. Eindstatus Detection and Side Effects (zrc-007a/b/q)
 
-## Task 1: Fix ZRC-007a Eindstatus Detection
-- **spec_ref**: zgw-business-rules-delta.md#zrc-007-eindstatus-and-zaak-closing
-- **files**: `ZgwZrcRulesService.php`
-- **acceptance**: When statustype has highest volgnummer and isEindstatus is not set, zaak einddatum is populated
+- [x] 1.1 In `ZgwZrcRulesService`, add `detectEindstatus()` helper that fetches all statustypes for a zaaktype and checks whether the given statustype has the highest `volgnummer`
+- [x] 1.2 On status creation, call `detectEindstatus()` as fallback when `isEindstatus` is absent; if eindstatus, set `zaak.einddatum = now()` and persist via ObjectService
+- [x] 1.3 Before allowing eindstatus creation (zrc-007q), query all ZaakInformatieObjecten for the zaak and return HTTP 400 if any has `indicatieGebruiksrecht === null`
+- [x] 1.4 After eindstatus is confirmed (zrc-007b), cascade-update all linked informatieobjecten to `indicatieGebruiksrecht = true` via ObjectService; log but do not abort on individual failures
 
-## Task 2: Fix ZRC-007b Gebruiksrecht on Close
-- **spec_ref**: zgw-business-rules-delta.md#zrc-007b-gebruiksrecht-on-close
-- **files**: `ZgwZrcRulesService.php`
-- **acceptance**: All linked informatieobjecten get indicatieGebruiksrecht set when zaak closes
+## 2. Authorization and Scope Checks (zrc-006, zrc-008c)
 
-## Task 3: Fix ZRC-007q Gebruiksrecht Validation
-- **spec_ref**: zgw-business-rules-delta.md#zrc-007q-gebruiksrecht-validation
-- **files**: `ZgwZrcRulesService.php`
-- **acceptance**: Eindstatus creation rejected when any linked informatieobject lacks indicatieGebruiksrecht
+- [x] 2.1 In `ZgwZrcRulesService`, add `filterZakenForConsumer()` that reads consumer `authorizations` from `ZgwAuthMiddleware` context and injects `_filters` for allowed zaaktypen and `maxVertrouwelijkheidaanduiding` into the ObjectService query
+- [x] 2.2 Add vertrouwelijkheidaanduiding comparison table to `ZgwRulesBase` for ordered severity checking (openbaar < beperkt_openbaar < ... < zeer_geheim)
+- [x] 2.3 Apply authorization filter in the `GET /zaken` handler; fall back to unfiltered when no authorization context is present
+- [x] 2.4 In zaak PATCH handling, detect reopen attempt (removal of `einddatum`); check consumer has `zaken.heropenen` scope; return HTTP 403 if not present (zrc-008c)
 
-## Task 4: Fix ZRC-008c Heropenen Scope Check
-- **spec_ref**: zgw-business-rules-delta.md#zrc-008c-heropenen-scope-check
-- **files**: `ZgwZrcRulesService.php`
-- **acceptance**: 403 returned when consumer lacks zaken.heropenen scope
+## 3. Validation and Error Code Fixes (zrc-010, zrc-013a, zrc-002, zrc-015, zrc-016/018/019/020)
 
-## Task 5: Fix ZRC-010 Error Codes
-- **spec_ref**: zgw-business-rules-delta.md#zrc-010-communicatiekanaal-validation
-- **files**: `ZgwZrcRulesService.php`
-- **acceptance**: Error code is `bad-url` for invalid communicatiekanaal URL
+- [x] 3.1 Fix `communicatiekanaal` validation in `ZgwZrcRulesService` to return error code `invalid-resource` instead of `bad-url` (zrc-010)
+- [x] 3.2 Fix `hoofdzaak` not-found error code to `does-not-exist` instead of `no_match` (zrc-013a)
+- [x] 3.3 Add `identificatie` + `bronorganisatie` uniqueness check on zaak create/update; return HTTP 400 on duplicate (zrc-002)
+- [x] 3.4 Add `productenOfDiensten` subset validation against zaaktype's allowed list on zaak create/update; return HTTP 400 on invalid entry (zrc-015)
+- [x] 3.5 Add cross-zaaktype validation for statustype, resultaattype, eigenschap, and roltype sub-resources — reject if the referenced type belongs to a different zaaktype (zrc-016/018/019/020)
 
-## Task 6: Fix ZRC-013a Error Codes
-- **spec_ref**: zgw-business-rules-delta.md#zrc-013a-hoofdzaak-not-found
-- **files**: `ZgwZrcRulesService.php`
-- **acceptance**: Error code is `does-not-exist` for non-existent hoofdzaak
+## 4. Business Rule Side Effects (zrc-021, zrc-009, zrc-005b/023h)
 
-## Task 7: Fix ZRC-015 ProductenOfDiensten Validation
-- **spec_ref**: zgw-business-rules-delta.md#zrc-015-productenofdiensten-validation
-- **files**: `ZgwZrcRulesService.php`
-- **acceptance**: Zaak creation rejected when productenOfDiensten not subset of zaaktype
+- [x] 4.1 On resultaat creation, derive `zaak.archiefactiedatum` from `resultaattype.brondatumArchiefprocedure` and persist on the zaak (zrc-021)
+- [x] 4.2 On zaak create/update, always fetch and apply `zaaktype.vertrouwelijkheidaanduiding` to override template default; fall back to request value only when zaaktype field is absent (zrc-009)
+- [x] 4.3 On ZIO delete, query DRC register for matching OIO and delete it via ObjectService (zrc-005b)
+- [x] 4.4 On zaak delete, cascade-delete all ZIOs and their corresponding OIOs from DRC register (zrc-023h)
 
-## Task 8: Fix ZRC-016/018/019/020 Cross-Type Validation
-- **spec_ref**: zgw-business-rules-delta.md#zrc-016018019020-cross-type-validation
-- **files**: `ZgwZrcRulesService.php`
-- **acceptance**: Sub-resource creation rejected when type does not belong to zaak's zaaktype
+## 5. Performance Optimisation
 
-## Task 9: Fix ZRC-021 Archiefactiedatum Derivation
-- **spec_ref**: zgw-business-rules-delta.md#zrc-021-archiefactiedatum-derivation
-- **files**: `ZgwZrcRulesService.php`
-- **acceptance**: archiefactiedatum correctly derived from resultaattype brondatumArchiefprocedure
+- [x] 5.1 Replace per-object zaaktype lookups in enrichment loop with a single batched `ObjectService::getObjects()` call with `_filters[uuid][in]` and `_limit=1000`
+- [x] 5.2 Replace per-object statustype lookups with batched query; map results back in-memory
+- [x] 5.3 Replace per-object resultaattype and roltype lookups with batched queries
+- [ ] 5.4 Profile representative endpoints (`GET /zaken`, `GET /zaken/{uuid}`, `POST /zaken`) before and after; confirm p50 latency < 200 ms
 
-## Task 10: Fix ZRC-002 Identification Uniqueness
-- **spec_ref**: zgw-business-rules-delta.md#zrc-002-identification-uniqueness
-- **files**: `ZgwZrcRulesService.php`
-- **acceptance**: Duplicate identificatie + bronorganisatie combination rejected
+## 6. Tests
 
-## Task 11: Fix ZRC-005b/023h Cascade Delete
-- **spec_ref**: zgw-business-rules-delta.md#zrc-005b023h-cascade-delete
-- **files**: `ZgwZrcRulesService.php`, `ZgwService.php`
-- **acceptance**: ObjectInformatieObject deleted when ZaakInformatieObject or zaak deleted
-
-## Task 12: Fix ZRC-009 Vertrouwelijkheidaanduiding Default
-- **spec_ref**: zgw-business-rules-delta.md#zrc-009-vertrouwelijkheidaanduiding-default
-- **files**: `ZgwZrcRulesService.php`
-- **acceptance**: Default derived from zaaktype without template leakage
-
-## Task 13: Fix ZRC-006 Authorization Filtering
-- **spec_ref**: zgw-business-rules-delta.md#zrc-006-authorization-filtering
-- **files**: `ZrcController.php`, `ZgwZrcRulesService.php`
-- **acceptance**: Zaken list filtered by consumer's authorized zaaktypen and vertrouwelijkheidaanduiding
-
-## Task 14: Optimize Endpoint Performance
-- **spec_ref**: zgw-business-rules-delta.md#endpoint-response-time
-- **files**: `ZgwService.php`, `ZgwZrcRulesService.php`, `ZgwZtcRulesService.php`, `ZgwDrcRulesService.php`, `ZgwBrcRulesService.php`
-- **acceptance**: Average endpoint response time under 200ms
-
-## Task 15: Newman Test Suite Validation
-- **spec_ref**: zgw-business-rules-delta.md (all sections)
-- **files**: Newman test collection
-- **acceptance**: 353/353 assertions passing, 0 failures
+- [x] 6.1 Add unit tests for `detectEindstatus()` helper covering volgnummer fallback and explicit `isEindstatus`
+- [x] 6.2 Add unit tests for `filterZakenForConsumer()` covering zaaktype filtering and vertrouwelijkheidaanduiding ordering
+- [x] 6.3 Add unit tests for all error-code fixes (zrc-010, zrc-013a, zrc-002, zrc-015, zrc-016–020)
+- [x] 6.4 Add unit tests for side effects (archiefactiedatum derivation, vertrouwelijkheidaanduiding override, OIO cascade-delete)
+- [ ] 6.5 Run VNG Newman test suite and confirm 353/353 assertions pass with 0 failures

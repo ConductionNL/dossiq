@@ -1,0 +1,271 @@
+/**
+ * Inspection store module for Procest VTH.
+ *
+ * Manages inspection checklists, inspection reports, photo uploads,
+ * and follow-up task creation for VTH supervision cases.
+ */
+import { defineStore } from 'pinia'
+import { useObjectStore } from './object.js'
+
+export const useInspectionStore = defineStore('inspection', {
+	state: () => ({
+		/** @type {Array} Checklists for the current case type */
+		checklists: [],
+		/** @type {object|null} Currently selected checklist */
+		currentChecklist: null,
+		/** @type {Array} Inspection reports for the current case */
+		reports: [],
+		/** @type {boolean} Loading state */
+		loading: false,
+		/** @type {string|null} Error message */
+		error: null,
+	}),
+
+	getters: {
+		/**
+		 * Get active checklists (not archived).
+		 *
+		 * @param {object} state Store state
+		 * @return {Array} Active checklists
+		 */
+		activeChecklists(state) {
+			return state.checklists.filter((c) => c.status === 'active')
+		},
+
+		/**
+		 * Get completed reports count.
+		 *
+		 * @param {object} state Store state
+		 * @return {number} Number of completed reports
+		 */
+		completedReportsCount(state) {
+			return state.reports.length
+		},
+
+		/**
+		 * Get reports with non-conformities.
+		 *
+		 * @param {object} state Store state
+		 * @return {Array} Reports with failed items
+		 */
+		nonConformReports(state) {
+			return state.reports.filter((r) => r.result === 'niet_conform' || r.result === 'deels_conform')
+		},
+	},
+
+	actions: {
+		/**
+		 * Fetch all checklists for a case type.
+		 *
+		 * @param {string} caseTypeId UUID of the case type
+		 * @return {Promise<Array>} Checklists
+		 */
+		async fetchChecklists(caseTypeId) {
+			this.loading = true
+			this.error = null
+			try {
+				const objectStore = useObjectStore()
+				const response = await objectStore.fetchCollection('inspectieChecklist', {
+					filters: { caseType: caseTypeId },
+					limit: 100,
+				})
+				this.checklists = response?.results || response || []
+				return this.checklists
+			} catch (error) {
+				this.error = error.message
+				console.error('Error fetching checklists:', error)
+				return []
+			} finally {
+				this.loading = false
+			}
+		},
+
+		/**
+		 * Save a checklist (create or update).
+		 *
+		 * @param {object} checklistData The checklist data
+		 * @return {Promise<object|null>} Saved checklist
+		 */
+		async saveChecklist(checklistData) {
+			this.loading = true
+			this.error = null
+			try {
+				const objectStore = useObjectStore()
+				const saved = await objectStore.saveObject('inspectieChecklist', checklistData)
+				// Update local list
+				const index = this.checklists.findIndex((c) => c.id === saved.id)
+				if (index >= 0) {
+					this.checklists.splice(index, 1, saved)
+				} else {
+					this.checklists.push(saved)
+				}
+				return saved
+			} catch (error) {
+				this.error = error.message
+				console.error('Error saving checklist:', error)
+				return null
+			} finally {
+				this.loading = false
+			}
+		},
+
+		/**
+		 * Create a new version of a checklist.
+		 *
+		 * @param {object} checklist The checklist to version
+		 * @return {Promise<object|null>} New version
+		 */
+		async createNewVersion(checklist) {
+			const newVersion = {
+				...checklist,
+				id: undefined,
+				version: (checklist.version || 1) + 1,
+				status: 'draft',
+			}
+			// Archive old version
+			if (checklist.id) {
+				await this.saveChecklist({ ...checklist, status: 'archived' })
+			}
+			return this.saveChecklist(newVersion)
+		},
+
+		/**
+		 * Delete a checklist.
+		 *
+		 * @param {string} checklistId UUID of the checklist
+		 * @return {Promise<boolean>} Success
+		 */
+		async deleteChecklist(checklistId) {
+			this.loading = true
+			try {
+				const objectStore = useObjectStore()
+				await objectStore.deleteObject('inspectieChecklist', checklistId)
+				this.checklists = this.checklists.filter((c) => c.id !== checklistId)
+				return true
+			} catch (error) {
+				this.error = error.message
+				return false
+			} finally {
+				this.loading = false
+			}
+		},
+
+		/**
+		 * Fetch inspection reports for a case.
+		 *
+		 * @param {string} caseId UUID of the case
+		 * @return {Promise<Array>} Reports
+		 */
+		async fetchReports(caseId) {
+			this.loading = true
+			this.error = null
+			try {
+				const objectStore = useObjectStore()
+				const response = await objectStore.fetchCollection('inspectieRapport', {
+					filters: { case: caseId },
+					limit: 100,
+				})
+				this.reports = response?.results || response || []
+				return this.reports
+			} catch (error) {
+				this.error = error.message
+				console.error('Error fetching reports:', error)
+				return []
+			} finally {
+				this.loading = false
+			}
+		},
+
+		/**
+		 * Create an inspection report with auto-calculated result.
+		 *
+		 * @param {object} reportData Report data with items array
+		 * @return {Promise<object|null>} Created report
+		 */
+		async createReport(reportData) {
+			this.loading = true
+			this.error = null
+			try {
+				const items = reportData.items || []
+				const failedItems = items.filter((item) => item.result === 'fail').length
+				const nvtItems = items.filter((item) => item.result === 'nvt').length
+				const totalItems = items.length
+
+				// Auto-calculate overall result
+				let result = 'conform'
+				if (failedItems > 0 && failedItems < (totalItems - nvtItems)) {
+					result = 'deels_conform'
+				} else if (failedItems > 0) {
+					result = 'niet_conform'
+				}
+
+				const report = {
+					...reportData,
+					result,
+					failedItems,
+					followUpRequired: failedItems > 0,
+					inspectionDate: reportData.inspectionDate || new Date().toISOString(),
+				}
+
+				const objectStore = useObjectStore()
+				const saved = await objectStore.saveObject('inspectieRapport', report)
+				this.reports.push(saved)
+
+				// Create follow-up task if non-conformities found
+				if (failedItems > 0) {
+					await this.createFollowUpTask(reportData.case, failedItems, saved.id)
+				}
+
+				return saved
+			} catch (error) {
+				this.error = error.message
+				console.error('Error creating report:', error)
+				return null
+			} finally {
+				this.loading = false
+			}
+		},
+
+		/**
+		 * Upload a photo for an inspection item.
+		 *
+		 * @param {string} caseId  UUID of the case
+		 * @param {File}   file    The photo file
+		 * @return {Promise<string|null>} Nextcloud file ID
+		 */
+		async uploadPhoto(caseId, file) {
+			try {
+				const objectStore = useObjectStore()
+				const result = await objectStore.uploadFile(caseId, file)
+				return result?.id || null
+			} catch (error) {
+				console.error('Error uploading inspection photo:', error)
+				return null
+			}
+		},
+
+		/**
+		 * Create a follow-up task when non-conformities are found.
+		 *
+		 * @param {string} caseId      UUID of the case
+		 * @param {number} failedCount Number of failed items
+		 * @param {string} reportId    UUID of the inspection report
+		 * @return {Promise<object|null>} Created task
+		 */
+		async createFollowUpTask(caseId, failedCount, reportId) {
+			try {
+				const objectStore = useObjectStore()
+				return await objectStore.saveObject('task', {
+					case: caseId,
+					title: `Opvolging vereist: ${failedCount} afwijkingen geconstateerd`,
+					description: `Inspectierapport bevat ${failedCount} niet-conforme punten. Beoordeel de afwijkingen en plan opvolging.`,
+					status: 'open',
+					relatedObject: reportId,
+				})
+			} catch (error) {
+				console.error('Error creating follow-up task:', error)
+				return null
+			}
+		},
+	},
+})

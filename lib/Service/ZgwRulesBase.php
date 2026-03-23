@@ -40,6 +40,26 @@ abstract class ZgwRulesBase
 {
 
     /**
+     * Ordered vertrouwelijkheidaanduiding severity levels (zrc-006).
+     *
+     * Used for consumer authorization filtering: a zaak's level must be
+     * less than or equal to the consumer's maxVertrouwelijkheidaanduiding.
+     * Lower integer = less sensitive.
+     *
+     * @var array<string, int>
+     */
+    protected const VERTROUWELIJKHEID_LEVELS = [
+        'openbaar'          => 1,
+        'beperkt_openbaar'  => 2,
+        'intern'            => 3,
+        'zaakvertrouwelijk' => 4,
+        'vertrouwelijk'     => 5,
+        'confidentieel'     => 6,
+        'geheim'            => 7,
+        'zeer_geheim'       => 8,
+    ];
+
+    /**
      * The OpenRegister ObjectService (set per-request).
      *
      * @var object|null

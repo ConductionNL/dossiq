@@ -38,17 +38,21 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			:name="t('procest', 'Map Layers')"
+			:description="t('procest', 'Configure GIS map layers for case location views (WMS, WFS, PDOK)')"
+			:loading="!storesReady">
+			<MapLayerSettings v-if="storesReady" />
+			:name="t('procest', 'Parafeerroutes')"
+			:description="t('procest', 'Configure parafeerroutes for B&W decision-making workflow')"
+			:loading="!storesReady">
+			<ParafeerRouteAdmin v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			:name="t('procest', 'ZGW API Mapping')"
 			:description="t('procest', 'Configure property mappings between English OpenRegister fields and Dutch ZGW API fields')"
 			:loading="!storesReady">
 			<ZgwMappingSettings v-if="storesReady" />
-		</CnSettingsSection>
-
-		<CnSettingsSection
-			:name="t('procest', 'Case Type Templates')"
-			:description="t('procest', 'Activate pre-configured case type templates for common use cases')"
-			:loading="!storesReady">
-			<TemplatesTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<!-- Re-import Status -->
@@ -66,8 +70,9 @@ import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
 import Settings from './Settings.vue'
 import CaseTypeAdmin from './CaseTypeAdmin.vue'
+import ParafeerRouteAdmin from './ParafeerRouteAdmin.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
-import TemplatesTab from './tabs/TemplatesTab.vue'
+import MapLayerSettings from './MapLayerSettings.vue'
 import { initializeStores } from '../../store/store.js'
 
 export default {
@@ -81,8 +86,9 @@ export default {
 		Refresh,
 		Settings,
 		CaseTypeAdmin,
+		ParafeerRouteAdmin,
 		ZgwMappingSettings,
-		TemplatesTab,
+		MapLayerSettings,
 	},
 	data() {
 		return {

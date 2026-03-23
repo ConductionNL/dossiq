@@ -614,26 +614,24 @@ docker exec -u www-data nextcloud php occ openregister:load-register /var/www/ht
 
 ### Current Implementation Status
 
-**Not implemented.** No VTH-specific functionality exists in the Procest codebase. The following foundational elements could support future VTH development:
+**V1 implemented** (via `vth-workflow-configuration` change). The following VTH-specific functionality now exists:
 
-- **Case management infrastructure**: The core case system (case types, statuses, tasks, roles, decisions) exists and could be extended with VTH-specific case types.
-- **ZGW API layer**: Full ZGW-compliant controllers exist (`lib/Controller/ZrcController.php`, `ZtcController.php`, `DrcController.php`, `BrcController.php`) which could serve as the API layer for VTH integrations and DSO status updates.
-- **ZGW mappings**: `lib/Service/ZgwMappingService.php` and `lib/Controller/ZgwMappingController.php` support configurable field mappings between English and ZGW Dutch terminology -- extensible for DSO field mapping.
-- **Case type configuration**: `src/views/settings/CaseTypeAdmin.vue`, `CaseTypeDetail.vue`, and `CaseTypeList.vue` provide the admin UI for configuring case types, which could be used to create VTH-specific case types.
-- **Document management**: The `filesPlugin()` in the object store and the DRC controller provide document handling capabilities for inspection photos and reports.
-- **Register config**: `lib/Settings/procest_register.json` defines `documentType` and `propertyDefinition` schemas that could support inspection checklists and VTH-specific properties.
-- **Deadline panel**: `src/views/cases/components/DeadlinePanel.vue` already supports extension and suspension display.
-- **Notification service**: `lib/Service/NotificatieService.php` for advice deadline reminders.
+- **VTH schemas**: `inspectieChecklist`, `inspectieRapport`, `handhavingsactie`, `adviesAanvraag` schemas in `lib/Settings/procest_register.json`
+- **VTH case type seed data**: 6 case types (Omgevingsvergunning, Sloopmelding, Toezichtzaak Bouw/Milieu, Handhavingszaak, Invorderingszaak) in `lib/Settings/vth_seed_data.json`
+- **Inspection checklists**: Admin UI (`ChecklistAdmin.vue`), Pinia store (`inspection.js`), 3 seed checklists for bouwtoezicht phases
+- **Inspection panel**: Case dashboard panel (`InspectionPanel.vue`) with progress bar, checklist completion form, rapport detail view
+- **Enforcement (LHS)**: LHS matrix admin (`LhsMatrixAdmin.vue`), enforcement store (`enforcement.js`), wizard (`EnforcementWizard.vue`), panel (`EnforcementPanel.vue`)
+- **Advice management**: Advice store (`advice.js`), panel (`AdvicePanel.vue`) with request form, deadline tracking
+- **VTH workflow templates**: 6 importable templates in `lib/Settings/vth-templates/` (procest-workflow-v1 format)
+- **VTH template library**: Browsable template library UI (`VthTemplateLibrary.vue`)
+- **CaseDetail integration**: Conditional VTH panels rendered based on case type title detection
 
-**Nothing VTH-specific exists:**
-- No DSO/Omgevingsloket integration
-- No inspection checklist configuration or completion UI
-- No enforcement strategy (LHS) matrix
+**Not yet implemented (V2 / separate specs):**
+- No DSO/Omgevingsloket integration (requires OpenConnector)
 - No supervision planning (toezichtplan) views
-- No mobile inspection UI
-- No advice management workflow
-- No VTH-specific case type templates
+- No mobile inspection UI / offline support
 - No bekendmaking (publication) workflow
+- No legesberekening integration
 
 ### Standards & References
 

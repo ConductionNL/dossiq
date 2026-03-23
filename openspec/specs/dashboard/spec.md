@@ -22,7 +22,7 @@ All dashboard data comes from OpenRegister queries against the `procest` registe
 
 ### REQ-DASH-001: KPI Cards Row [MVP]
 
-The dashboard MUST display a row of four KPI cards at the top, providing headline metrics for the current user's case management workload.
+The dashboard MUST display a row of five KPI cards at the top, providing headline metrics for the current user's case management workload. The fifth card shows SLA Compliance.
 
 #### Scenario DASH-001a: Open cases count with today indicator
 - GIVEN there are 24 cases with non-final status visible to the current user
@@ -57,12 +57,29 @@ The dashboard MUST display a row of four KPI cards at the top, providing headlin
 - AND the card MUST show the count "7"
 - AND the card MUST show a sub-label "2 due today"
 
-#### Scenario DASH-001e: Zero values in KPI cards
+#### Scenario DASH-001e: SLA Compliance KPI card
+- GIVEN 82 out of 100 completed cases this month were within their SLA target
+- WHEN the user views the dashboard
+- THEN the system MUST display a fifth KPI card titled "SLA Compliance"
+- AND the card MUST show "82%"
+- AND clicking the card MUST navigate to the doorlooptijd dashboard
+
+#### Scenario DASH-001f: Zero values in KPI cards
 - GIVEN no cases exist in the system
 - WHEN the user views the dashboard
-- THEN each KPI card MUST show "0" as the count
+- THEN each KPI card MUST show "0" as the count (or "—" for SLA Compliance)
 - AND sub-labels MUST either show "0 today" / "none" or be omitted gracefully
 - AND the cards MUST NOT show errors or broken layouts
+
+### REQ-DASH-010: Doorlooptijd Navigation Link [V1]
+
+The main dashboard SHALL provide a visible navigation element to access the doorlooptijd analytics view.
+
+#### Scenario DASH-010a: Navigation tab to doorlooptijd
+- GIVEN the user views the main dashboard
+- WHEN the dashboard loads
+- THEN the system MUST display a tab or button labeled "Doorlooptijd" in the dashboard header area
+- AND clicking it MUST navigate to the `/doorlooptijd` route
 
 ### REQ-DASH-002: Cases by Status Chart [MVP]
 
@@ -420,6 +437,7 @@ The dashboard MUST follow a configurable grid layout using `CnDashboardPage` fro
   3. Two-column layout below the KPI row:
      - Left column (6 cols): Cases by Status chart, My Work preview
      - Right column (6 cols): Overdue Cases panel, Recent Activity feed
+  4. Signalering row (3 equal columns, 4 cols each): Deadline Alerts, Task Due Reminders, Stalled Cases
 - AND the layout MUST be responsive, collapsing to a single column on narrow viewports
 
 #### Scenario DASH-014b: Navigation header

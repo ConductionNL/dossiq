@@ -1,4 +1,4 @@
-schema: conduction
+schema: spec-driven
 
 context: |
   Project: Procest
@@ -54,3 +54,4 @@ rules:
     - Test with OpenRegister to verify schema validation works
     - Verify Nextcloud integration features with actual OCP interfaces
     - Test request-to-case bridge with Pipelinq
+    - Follow mandatory task categories from ADRs 005, 009, 010, 011
