@@ -43,7 +43,7 @@
 			</NcAppNavigationItem>
 			<NcAppNavigationItem
 				:name="t('procest', 'Documentation')"
-				@click="openLink('https://procest.app', '_blank')">
+				@click="openLink('https://conduction.gitbook.io/procest-nextcloud', '_blank')">
 				<template #icon>
 					<BookOpenVariantOutline :size="20" />
 				</template>
