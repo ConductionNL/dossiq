@@ -124,9 +124,10 @@ CaseType
 
 ### REQ-CT-01: Case Type CRUD
 
+The system MUST support creating, reading, updating, and deleting case types. Case types are managed by admins via the Nextcloud admin settings page. See wireframe 3.6 (Admin Settings -- Case Type Management) in DESIGN-REFERENCES.md.
+
 **Feature tier**: MVP
 
-The system MUST support creating, reading, updating, and deleting case types. Case types are managed by admins via the Nextcloud admin settings page. See wireframe 3.6 (Admin Settings -- Case Type Management) in DESIGN-REFERENCES.md.
 
 #### Scenario CT-01a: Create a case type
 
@@ -179,9 +180,10 @@ The system MUST support creating, reading, updating, and deleting case types. Ca
 
 ### REQ-CT-02: Case Type Draft/Published Lifecycle
 
+The system MUST support a draft/published lifecycle for case types. Draft case types MUST NOT be usable for creating cases.
+
 **Feature tier**: MVP
 
-The system MUST support a draft/published lifecycle for case types. Draft case types MUST NOT be usable for creating cases.
 
 #### Scenario CT-02a: New case type defaults to draft
 
@@ -232,9 +234,10 @@ The system MUST support a draft/published lifecycle for case types. Draft case t
 
 ### REQ-CT-03: Case Type Validity Periods
 
+The system MUST support validity windows on case types. Cases can only be created with case types that are within their validity window.
+
 **Feature tier**: MVP
 
-The system MUST support validity windows on case types. Cases can only be created with case types that are within their validity window.
 
 #### Scenario CT-03a: Case type within validity window
 
@@ -275,9 +278,10 @@ The system MUST support validity windows on case types. Cases can only be create
 
 ### REQ-CT-04: Status Type Management
 
+The system MUST support defining ordered status types for each case type. Status types control the lifecycle phases a case can go through. See wireframe 3.7 (Admin Settings -- Case Type Detail) in DESIGN-REFERENCES.md.
+
 **Feature tier**: MVP
 
-The system MUST support defining ordered status types for each case type. Status types control the lifecycle phases a case can go through. See wireframe 3.7 (Admin Settings -- Case Type Detail) in DESIGN-REFERENCES.md.
 
 #### Scenario CT-04a: Add status types to a case type
 
@@ -355,9 +359,10 @@ The system MUST support defining ordered status types for each case type. Status
 
 ### REQ-CT-05: Processing Deadline Configuration
 
+The system MUST support configuring a processing deadline on each case type. The deadline is an ISO 8601 duration that controls automatic deadline calculation on cases.
+
 **Feature tier**: MVP
 
-The system MUST support configuring a processing deadline on each case type. The deadline is an ISO 8601 duration that controls automatic deadline calculation on cases.
 
 #### Scenario CT-05a: Set processing deadline
 
@@ -390,9 +395,10 @@ The system MUST support configuring a processing deadline on each case type. The
 
 ### REQ-CT-06: Extension and Suspension Configuration
 
+The system MUST support configuring extension and suspension rules on case types.
+
 **Feature tier**: MVP (extension), V1 (suspension)
 
-The system MUST support configuring extension and suspension rules on case types.
 
 #### Scenario CT-06a: Enable extension with period
 
@@ -430,9 +436,10 @@ The system MUST support configuring extension and suspension rules on case types
 
 ### REQ-CT-07: Result Type Management
 
+The system SHALL support defining result types with archival rules for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
+
 **Feature tier**: V1
 
-The system SHOULD support defining result types with archival rules for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 #### Scenario CT-07a: Add result types to a case type
 
@@ -474,9 +481,10 @@ The system SHOULD support defining result types with archival rules for each cas
 
 ### REQ-CT-08: Role Type Management
 
+The system SHALL support defining allowed role types for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
+
 **Feature tier**: V1
 
-The system SHOULD support defining allowed role types for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 #### Scenario CT-08a: Add role types to a case type
 
@@ -519,9 +527,10 @@ The system SHOULD support defining allowed role types for each case type. See wi
 
 ### REQ-CT-09: Property Definition Management
 
+The system SHALL support defining custom field requirements for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
+
 **Feature tier**: V1
 
-The system SHOULD support defining custom field requirements for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 #### Scenario CT-09a: Add property definitions
 
@@ -572,9 +581,10 @@ The system SHOULD support defining custom field requirements for each case type.
 
 ### REQ-CT-10: Document Type Management
 
+The system SHALL support defining required document types for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
+
 **Feature tier**: V1
 
-The system SHOULD support defining required document types for each case type. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 #### Scenario CT-10a: Add document types
 
@@ -619,9 +629,10 @@ The system SHOULD support defining required document types for each case type. S
 
 ### REQ-CT-11: Decision Type Management
 
+The system SHALL support defining decision types for each case type.
+
 **Feature tier**: V1
 
-The system SHOULD support defining decision types for each case type.
 
 #### Scenario CT-11a: Add decision types
 
@@ -650,9 +661,10 @@ The system SHOULD support defining decision types for each case type.
 
 ### REQ-CT-12: Confidentiality Default
 
+The system SHALL support confidentiality defaults on case types. Cases inherit the case type's confidentiality level.
+
 **Feature tier**: V1
 
-The system SHOULD support confidentiality defaults on case types. Cases inherit the case type's confidentiality level.
 
 #### Scenario CT-12a: Set confidentiality default
 
@@ -679,9 +691,10 @@ The system SHOULD support confidentiality defaults on case types. Cases inherit 
 
 ### REQ-CT-13: Default Case Type Selection
 
+The system MUST support selecting a default case type in admin settings. The default case type is pre-selected when creating new cases.
+
 **Feature tier**: MVP
 
-The system MUST support selecting a default case type in admin settings. The default case type is pre-selected when creating new cases.
 
 #### Scenario CT-13a: Set default case type
 
@@ -708,9 +721,10 @@ The system MUST support selecting a default case type in admin settings. The def
 
 ### REQ-CT-14: Case Type Validation Rules
 
+The system MUST enforce validation rules when creating or modifying case types.
+
 **Feature tier**: MVP
 
-The system MUST enforce validation rules when creating or modifying case types.
 
 #### Scenario CT-14a: Title is required
 
@@ -760,9 +774,10 @@ The system MUST enforce validation rules when creating or modifying case types.
 
 ### REQ-CT-15: Case Type Admin UI Tabs
 
+The case type edit page MUST be organized into tabs for managing the type and its sub-types. See wireframe 3.7 in DESIGN-REFERENCES.md.
+
 **Feature tier**: MVP (General, Statuses), V1 (Results, Roles, Properties, Docs)
 
-The case type edit page MUST be organized into tabs for managing the type and its sub-types. See wireframe 3.7 in DESIGN-REFERENCES.md.
 
 #### Scenario CT-15a: Tab layout
 
@@ -816,9 +831,10 @@ The case type edit page MUST be organized into tabs for managing the type and it
 
 ### REQ-CT-16: Case Type Error Scenarios
 
+The system MUST handle error scenarios gracefully for case type operations.
+
 **Feature tier**: MVP
 
-The system MUST handle error scenarios gracefully for case type operations.
 
 #### Scenario CT-16a: Publish incomplete case type
 
@@ -900,6 +916,39 @@ The system MUST handle error scenarios gracefully for case type operations.
 This is a comprehensive, highly detailed spec that is implementation-ready for both MVP and V1. It includes complete data models with field-level ZGW mappings.
 
 **Strengths:** Exhaustive data model tables with type/required/mapping columns. 16 requirements with detailed scenarios. Clear feature tier separation. Validation rules explicitly specified.
+
+### Requirement: Case Type Pre-Seeded Data
+
+The system SHALL provide pre-seeded case types that are imported via the repair step. In addition to any existing pre-seeded case types, the system SHALL now include Bezwaar and Beroep case types with their associated status types, role types, and workflow templates.
+
+**Feature tier**: V1
+
+The repair step SHALL import the following new case types alongside existing ones:
+
+| Case Type | Processing Deadline | Extension | Suspension | Origin |
+|-----------|-------------------|-----------|------------|--------|
+| Bezwaar | P6W | P6W | Yes | external |
+| Beroep | P26W | No | Yes | external |
+
+Each case type SHALL include its associated:
+- Status types (see bezwaar-lifecycle and beroep-escalation specs)
+- Role types (see bezwaar-lifecycle spec)
+- Workflow template (see workflow-definition-model spec)
+
+#### Scenario: Bezwaar and Beroep case types are available after installation
+
+- **WHEN** the Procest app repair step runs for the first time or after an update
+- **THEN** case types "Bezwaar" and "Beroep" SHALL exist in the procest register
+- **AND** each SHALL have its complete set of status types, role types, and an active workflow template
+- **AND** existing case types SHALL NOT be affected by the addition
+
+#### Scenario: Pre-seeded case types are not duplicated on re-run
+
+- **WHEN** the repair step runs again on an installation that already has Bezwaar and Beroep case types
+- **THEN** the system SHALL NOT create duplicate case types
+- **AND** existing customizations to the case types SHALL be preserved
+
+---
 
 **Missing/Ambiguous:**
 - No specification of how sub-entity schemas (statusType, resultType, etc.) relate to each other via OpenRegister references (reference resolution mechanics).

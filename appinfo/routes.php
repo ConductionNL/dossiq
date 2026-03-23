@@ -107,6 +107,10 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
+        // GIS Proxy endpoints.
+        ['name' => 'gis_proxy#proxy', 'url' => '/api/gis/proxy', 'verb' => 'POST'],
+        ['name' => 'gis_proxy#capabilities', 'url' => '/api/gis/capabilities', 'verb' => 'GET'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.

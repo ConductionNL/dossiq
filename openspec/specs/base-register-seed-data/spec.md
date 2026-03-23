@@ -22,8 +22,7 @@ Define mock/test register JSON files for five Dutch base registrations (BRP, KVK
 ## File Structure
 
 ```
-procest/lib/Settings/
-  procest_register.json       -- existing app register (unchanged)
+openregister/lib/Settings/
   brp_register.json           -- BRP (persons)
   kvk_register.json           -- KVK (businesses)
   bag_register.json           -- BAG (addresses/buildings)
@@ -35,13 +34,16 @@ Each file follows the OpenRegister JSON format: OpenAPI 3.0 envelope with `x-ope
 
 ---
 
-## REQ-SEED-001: BRP Register (Basisregistratie Personen)
+## Requirements
 
-**Feature tier**: MVP
+### REQ-SEED-001: BRP Register (Basisregistratie Personen)
 
 The system MUST provide a `brp_register.json` file containing a BRP register with an `ingeschrevenPersoon` schema and at least 25 fictional person records.
 
-### Register Definition
+**Feature tier**: MVP
+
+
+##### Register Definition
 
 | Field | Value |
 |-------|-------|
@@ -53,7 +55,7 @@ The system MUST provide a `brp_register.json` file containing a BRP register wit
 | folder | `Open Registers/BRP` |
 | schemas | `["ingeschrevenPersoon"]` |
 
-### Schema: `ingeschrevenPersoon`
+##### Schema: `ingeschrevenPersoon`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -125,7 +127,15 @@ The system MUST provide a `brp_register.json` file containing a BRP register wit
   - At least 1 person with registered partnership (partnerschap)
   - Ages ranging from minors (under 18) to elderly (over 75)
 
-### Seed Data Requirements Summary
+#### Scenario SEED-001e: BRP person usable as case initiator
+
+- GIVEN BRP person "Petra Jansen" (BSN 999990027)
+- WHEN a Procest case of type "Omgevingsvergunning" is created
+- THEN the person MUST be linkable as case initiator (betrokkene with role "Aanvrager")
+- AND the person's BSN, naam, and verblijfplaats MUST be displayable in the case participants panel
+- AND the person's address MUST resolve to a valid BAG nummeraanduiding
+
+##### Seed Data Requirements Summary
 
 | Scenario | Min Records | Purpose |
 |----------|-------------|---------|
@@ -143,13 +153,14 @@ The system MUST provide a `brp_register.json` file containing a BRP register wit
 
 ---
 
-## REQ-SEED-002: KVK Register (Kamer van Koophandel)
-
-**Feature tier**: MVP
+### REQ-SEED-002: KVK Register (Kamer van Koophandel)
 
 The system MUST provide a `kvk_register.json` file containing a KVK register with a `maatschappelijkeActiviteit` schema and at least 15 fictional business records.
 
-### Register Definition
+**Feature tier**: MVP
+
+
+##### Register Definition
 
 | Field | Value |
 |-------|-------|
@@ -161,7 +172,7 @@ The system MUST provide a `kvk_register.json` file containing a KVK register wit
 | folder | `Open Registers/KVK` |
 | schemas | `["maatschappelijkeActiviteit", "vestiging"]` |
 
-### Schema: `maatschappelijkeActiviteit`
+##### Schema: `maatschappelijkeActiviteit`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -189,7 +200,7 @@ The system MUST provide a `kvk_register.json` file containing a KVK register wit
 | `emailadres` | string (email) | no | no | Contact email | `"info@devries-bakkerij.nl"` |
 | `telefoonnummer` | string | no | no | Contact phone | `"+31 20 1234567"` |
 
-### Schema: `vestiging`
+##### Schema: `vestiging`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -246,7 +257,14 @@ The system MUST provide a `kvk_register.json` file containing a KVK register wit
   - Nevenvestiging: Beethovenstraat 42, Amsterdam
 - AND both vestigingen MUST reference the same `kvkNummer`
 
-### Seed Data Requirements Summary
+#### Scenario SEED-002e: Business usable as case betrokkene
+
+- GIVEN a KVK business "Architectenbureau Van Dam B.V." (KVK 90005678)
+- WHEN a Procest case of type "Omgevingsvergunning" is created
+- THEN the business MUST be linkable as a case participant (betrokkene with role "Gemachtigde")
+- AND the business's KVK number, handelsnaam, and vestigingsadres MUST be displayable
+
+##### Seed Data Requirements Summary
 
 | Scenario | Min Records | Purpose |
 |----------|-------------|---------|
@@ -264,13 +282,14 @@ The system MUST provide a `kvk_register.json` file containing a KVK register wit
 
 ---
 
-## REQ-SEED-003: BAG Register (Basisregistratie Adressen en Gebouwen)
-
-**Feature tier**: MVP
+### REQ-SEED-003: BAG Register (Basisregistratie Adressen en Gebouwen)
 
 The system MUST provide a `bag_register.json` file containing a BAG register with schemas for `nummeraanduiding`, `openbareRuimte`, `woonplaats`, `verblijfsobject`, and `pand`, with seed data that matches the addresses used in BRP and KVK seed data.
 
-### Register Definition
+**Feature tier**: MVP
+
+
+##### Register Definition
 
 | Field | Value |
 |-------|-------|
@@ -282,7 +301,7 @@ The system MUST provide a `bag_register.json` file containing a BAG register wit
 | folder | `Open Registers/BAG` |
 | schemas | `["nummeraanduiding", "openbareRuimte", "woonplaats", "verblijfsobject", "pand"]` |
 
-### Schema: `nummeraanduiding`
+##### Schema: `nummeraanduiding`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -298,7 +317,7 @@ The system MUST provide a `bag_register.json` file containing a BAG register wit
 | `openbareRuimteId` | string | no | no | Reference to openbareRuimte | `"0363300000000001"` |
 | `verblijfsobjectId` | string | no | no | Reference to verblijfsobject | `"0363010000000001"` |
 
-### Schema: `openbareRuimte`
+##### Schema: `openbareRuimte`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -309,7 +328,7 @@ The system MUST provide a `bag_register.json` file containing a BAG register wit
 | `woonplaatsNaam` | string | yes | yes | City name | `"Amsterdam"` |
 | `woonplaatsId` | string | no | no | Reference to woonplaats | `"3594"` |
 
-### Schema: `woonplaats`
+##### Schema: `woonplaats`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -319,7 +338,7 @@ The system MUST provide a `bag_register.json` file containing a BAG register wit
 | `gemeente` | string | no | yes | Municipality name | `"Amsterdam"` |
 | `provincie` | string | no | yes | Province name | `"Noord-Holland"` |
 
-### Schema: `verblijfsobject`
+##### Schema: `verblijfsobject`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -332,7 +351,7 @@ The system MUST provide a `bag_register.json` file containing a BAG register wit
 | `nummeraanduidingId` | string | no | no | Reference to main nummeraanduiding | `"0363200000000001"` |
 | `bouwjaar` | integer | no | no | Construction year (from pand, denormalized) | `1895` |
 
-### Schema: `pand`
+##### Schema: `pand`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -371,7 +390,14 @@ The system MUST provide a `bag_register.json` file containing a BAG register wit
 - AND the `verblijfsobject` `gebruiksdoel` MUST be `"woonfunctie"`
 - AND all 5 BRP persons MUST reference the same address (postcode + huisnummer + straat + woonplaats)
 
-### Seed Data Requirements Summary
+#### Scenario SEED-003e: Oppervlakte for legesberekening
+
+- GIVEN a Procest case of type "Omgevingsvergunning" at Herengracht 300
+- WHEN the case references a BAG verblijfsobject
+- THEN the `oppervlakte` field MUST be a positive integer representing usable floor area in m2
+- AND the value MUST be usable in the legesberekening formula (fee = base + oppervlakte * rate)
+
+##### Seed Data Requirements Summary
 
 | Entity | Min Records | Notes |
 |--------|-------------|-------|
@@ -383,13 +409,14 @@ The system MUST provide a `bag_register.json` file containing a BAG register wit
 
 ---
 
-## REQ-SEED-004: DSO Register (Digitaal Stelsel Omgevingswet)
-
-**Feature tier**: V1
+### REQ-SEED-004: DSO Register (Digitaal Stelsel Omgevingswet)
 
 The system MUST provide a `dso_register.json` file containing a DSO register with schemas for `vergunningaanvraag` and `activiteit`, with seed data representing permit applications in the Omgevingswet domain.
 
-### Register Definition
+**Feature tier**: V1
+
+
+##### Register Definition
 
 | Field | Value |
 |-------|-------|
@@ -401,7 +428,7 @@ The system MUST provide a `dso_register.json` file containing a DSO register wit
 | folder | `Open Registers/DSO` |
 | schemas | `["vergunningaanvraag", "activiteit"]` |
 
-### Schema: `vergunningaanvraag`
+##### Schema: `vergunningaanvraag`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -425,7 +452,7 @@ The system MUST provide a `dso_register.json` file containing a DSO register wit
 | `besluitdatum` | string (date) | no | no | Date of decision | `null` |
 | `resultaat` | string (enum) | no | yes | `verleend`, `geweigerd`, `deels_verleend` | `null` |
 
-### Schema: `activiteit`
+##### Schema: `activiteit`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -461,7 +488,15 @@ The system MUST provide a `dso_register.json` file containing a DSO register wit
 - AND at least 1 application MUST have `status` = `"verleend"` with `besluitdatum` set
 - AND at least 1 application MUST have `status` = `"geweigerd"`
 
-### Seed Data Requirements Summary
+#### Scenario SEED-004d: DSO intake to Procest case mapping
+
+- GIVEN a DSO vergunningaanvraag with `zaaknummer = "OLO-2026-00001"`
+- WHEN the system maps this to a Procest case
+- THEN the case MUST reference the DSO zaaknummer as external identifier
+- AND the case type MUST map from the DSO procedureType (regulier -> "Omgevingsvergunning regulier")
+- AND the case deadline MUST be calculated from the procedureType (regulier = 8 weeks, uitgebreid = 26 weeks)
+
+##### Seed Data Requirements Summary
 
 | Entity | Min Records | Notes |
 |--------|-------------|-------|
@@ -470,13 +505,14 @@ The system MUST provide a `dso_register.json` file containing a DSO register wit
 
 ---
 
-## REQ-SEED-005: ORI Register (Open Raadsinformatie)
-
-**Feature tier**: V1
+### REQ-SEED-005: ORI Register (Open Raadsinformatie)
 
 The system MUST provide an `ori_register.json` file containing an ORI register with schemas for council meetings, agenda items, motions, votes, council members, and factions, with seed data representing a fictional municipal council.
 
-### Register Definition
+**Feature tier**: V1
+
+
+##### Register Definition
 
 | Field | Value |
 |-------|-------|
@@ -488,7 +524,7 @@ The system MUST provide an `ori_register.json` file containing an ORI register w
 | folder | `Open Registers/ORI` |
 | schemas | `["vergadering", "agendapunt", "document", "motie", "amendement", "stemming", "raadslid", "fractie"]` |
 
-### Schema: `vergadering`
+##### Schema: `vergadering`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -501,7 +537,7 @@ The system MUST provide an `ori_register.json` file containing an ORI register w
 | `status` | string (enum) | yes | yes | `gepland`, `bevestigd`, `afgelopen`, `geannuleerd` | `"afgelopen"` |
 | `voorzitter` | string | no | no | Chair name | `"Burgemeester Van den Berg"` |
 
-### Schema: `agendapunt`
+##### Schema: `agendapunt`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -512,7 +548,7 @@ The system MUST provide an `ori_register.json` file containing an ORI register w
 | `portefeuille` | string | no | yes | Portfolio/department | `"Ruimtelijke Ordening"` |
 | `resultaat` | string | no | yes | Outcome | `"Aangenomen"` |
 
-### Schema: `document`
+##### Schema: `document`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -523,7 +559,7 @@ The system MUST provide an `ori_register.json` file containing an ORI register w
 | `bestandsnaam` | string | no | no | File name | `"RV-2026-001-bestemmingsplan.pdf"` |
 | `samenvatting` | string | no | no | Summary | `"Voorstel tot vaststelling van het bestemmingsplan Centrum-Oost"` |
 
-### Schema: `motie`
+##### Schema: `motie`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -536,7 +572,7 @@ The system MUST provide an `ori_register.json` file containing an ORI register w
 | `voorStemmen` | integer | no | no | Votes in favor | `22` |
 | `tegenStemmen` | integer | no | no | Votes against | `15` |
 
-### Schema: `amendement`
+##### Schema: `amendement`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -550,7 +586,7 @@ The system MUST provide an `ori_register.json` file containing an ORI register w
 | `voorStemmen` | integer | no | no | Votes in favor | `14` |
 | `tegenStemmen` | integer | no | no | Votes against | `23` |
 
-### Schema: `stemming`
+##### Schema: `stemming`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -564,7 +600,7 @@ The system MUST provide an `ori_register.json` file containing an ORI register w
 | `onthouding` | integer | no | no | Abstentions | `0` |
 | `stemmenPerFractie` | array of objects | no | no | `[{fractie, stem, aantalLeden}]` | see below |
 
-### Schema: `raadslid`
+##### Schema: `raadslid`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -577,7 +613,7 @@ The system MUST provide an `ori_register.json` file containing an ORI register w
 | `einddatum` | string (date) | no | no | End of term (null if current) | `null` |
 | `portefeuilles` | array of strings | no | no | Portfolio areas | `["Duurzaamheid","Groen"]` |
 
-### Schema: `fractie`
+##### Schema: `fractie`
 
 | Property | Type | Required | Facetable | Description | Example |
 |----------|------|----------|-----------|-------------|---------|
@@ -616,7 +652,14 @@ The system MUST provide an `ori_register.json` file containing an ORI register w
 - THEN at least 1 commissievergadering MUST exist (e.g., "Commissie Ruimte en Wonen")
 - AND the committee meeting MUST have at least 3 agendapunten of type `bespreekstuk` or `informerend`
 
-### Seed Data Requirements Summary
+#### Scenario SEED-005d: Stemming with complete fractie breakdown
+
+- GIVEN a stemming on "Motie: Meer groen in de binnenstad"
+- THEN `stemmenPerFractie` MUST contain entries for all 7 fracties
+- AND the sum of `aantalLeden` across fracties MUST equal the total council size (30)
+- AND `voorStemmen` + `tegenStemmen` + `onthouding` MUST equal the total council size
+
+##### Seed Data Requirements Summary
 
 | Entity | Min Records | Notes |
 |--------|-------------|-------|
@@ -631,11 +674,12 @@ The system MUST provide an `ori_register.json` file containing an ORI register w
 
 ---
 
-## REQ-SEED-006: Cross-Register Relationship Integrity
+### REQ-SEED-006: Cross-Register Relationship Integrity
+
+All cross-register references between seed data MUST be consistent and resolvable.
 
 **Feature tier**: MVP
 
-All cross-register references between seed data MUST be consistent and resolvable.
 
 #### Scenario SEED-006a: BRP persons live at BAG addresses
 
@@ -680,26 +724,27 @@ All cross-register references between seed data MUST be consistent and resolvabl
 
 ---
 
-## REQ-SEED-007: Seed Data Loading
-
-**Feature tier**: MVP
+### REQ-SEED-007: Seed Data Loading
 
 The register JSON files MUST be loadable by the existing OpenRegister configuration mechanism.
 
-#### Scenario SEED-007a: Auto-load on app install
+**Feature tier**: MVP
 
-- GIVEN the `brp_register.json`, `kvk_register.json`, `bag_register.json` files exist in `procest/lib/Settings/`
-- WHEN the Procest repair step runs (app install or update)
-- THEN the `SettingsService::loadConfiguration()` method MUST load each register file
-- AND registers, schemas, and seed objects MUST be created in OpenRegister
-- AND seed objects MUST be created from the `components.objects` array in each file
+
+#### Scenario SEED-007a: Load via CLI command
+
+- GIVEN the `brp_register.json` file exists in `openregister/lib/Settings/`
+- WHEN the admin runs `docker exec -u www-data nextcloud php occ openregister:load-register /var/www/html/custom_apps/openregister/lib/Settings/brp_register.json`
+- THEN the register, schemas, and seed objects MUST be created in OpenRegister
+- AND seed objects MUST be created from the `components.objects` array in the file
+- AND the command MUST output a summary of created entities
 
 #### Scenario SEED-007b: Skip if already populated
 
 - GIVEN the BRP register already contains person objects
-- WHEN the repair step runs again
+- WHEN the load command runs again
 - THEN existing data MUST NOT be duplicated
-- AND the repair step MUST log that seeding was skipped
+- AND the command MUST log that seeding was skipped
 
 #### Scenario SEED-007c: Seed data uses @self references
 
@@ -720,18 +765,122 @@ The register JSON files MUST be loadable by the existing OpenRegister configurat
 - AND the `slug` MUST be unique within the schema
 - AND the `register` and `schema` values MUST reference definitions in the same file
 
-#### Scenario SEED-007d: Configuration toggle
+#### Scenario SEED-007d: Load via API
 
-- GIVEN an admin sets app config `base_registers_seeding` to `false` (via Procest admin settings or `occ config:app:set`)
-- THEN the repair step MUST skip loading base register seed data
-- AND existing base registers MUST NOT be affected (not deleted)
+- GIVEN the `brp_register.json` file content
+- WHEN the admin calls `POST /index.php/apps/openregister/api/registers/import` with the JSON content
+- THEN the register, schemas, and seed objects MUST be created identically to the CLI method
+- AND the API MUST return HTTP 200 with a summary of created entities
+
+#### Scenario SEED-007e: Loading order independence
+
+- GIVEN registers with cross-references (e.g., DSO referencing BAG)
+- WHEN registers are loaded in any order
+- THEN cross-register references MUST be stored as string values (not resolved UUIDs)
+- AND applications MUST resolve references at query time via search by identifier
+
+---
+
+### REQ-SEED-008: Procest-Specific Seed Data
+
+The `procest_register.json` MUST include seed data for default case types, status types, and role types to enable immediate case management after installation.
+
+**Feature tier**: MVP
+
+
+#### Scenario SEED-008a: Default case types seeded
+
+- GIVEN a fresh Procest installation with the `procest_register.json` loaded
+- THEN the following case types MUST be available:
+  - "Omgevingsvergunning" (processingDeadline: P56D, published)
+  - "Subsidieaanvraag" (processingDeadline: P42D, published)
+  - "Klacht behandeling" (processingDeadline: P42D, published)
+  - "Melding openbare ruimte" (processingDeadline: P14D, published)
+- AND each case type MUST have linked status types in the correct order
+- AND each case type MUST have at least one result type defined
+
+#### Scenario SEED-008b: Default status types per case type
+
+- GIVEN the seeded case type "Omgevingsvergunning"
+- THEN it MUST have the following status types in order:
+  1. "Ontvangen" (order: 1, isFinal: false)
+  2. "In behandeling" (order: 2, isFinal: false)
+  3. "Besluitvorming" (order: 3, isFinal: false)
+  4. "Afgehandeld" (order: 4, isFinal: true)
+- AND the "Klacht behandeling" case type MUST have:
+  1. "Ontvangen" (order: 1)
+  2. "Onderzoek" (order: 2)
+  3. "Afgehandeld" (order: 3, isFinal: true)
+
+#### Scenario SEED-008c: Default role types seeded
+
+- GIVEN the seeded case type "Omgevingsvergunning"
+- THEN the following role types MUST be available:
+  - "Behandelaar" (handler role)
+  - "Aanvrager" (initiator role)
+  - "Gemachtigde" (authorized representative)
+  - "Technisch adviseur" (advisor)
+- AND these role types MUST be linkable to cases of this type
+
+#### Scenario SEED-008d: Default result types seeded
+
+- GIVEN the seeded case type "Omgevingsvergunning"
+- THEN the following result types MUST be available:
+  - "Vergunning verleend" (archiveAction: retain, retentionPeriod: P20Y)
+  - "Vergunning geweigerd" (archiveAction: destroy, retentionPeriod: P10Y)
+  - "Ingetrokken" (archiveAction: destroy, retentionPeriod: P5Y)
+
+#### Scenario SEED-008e: Seed data enables immediate demo
+
+- GIVEN all seed data is loaded (procest register + base registers)
+- WHEN a user creates a case of type "Omgevingsvergunning" with title "Verbouwing woonhuis"
+- THEN the case MUST be creatable without additional configuration
+- AND a BRP person MUST be linkable as initiator
+- AND a BAG address MUST be linkable as case object
+- AND the full case lifecycle (status changes, tasks, decisions) MUST be walkable
+
+---
+
+### REQ-SEED-009: Seed Data Consistency Validation
+
+The seed data MUST be internally consistent and pass validation checks.
+
+**Feature tier**: MVP
+
+
+#### Scenario SEED-009a: No orphan references
+
+- GIVEN all seed data across all registers
+- THEN every `partnerBsn` in BRP MUST reference an existing BRP person
+- AND every `kinderen[].bsn` MUST reference an existing BRP person
+- AND every `eigenaarBsn` in KVK MUST reference an existing BRP person
+- AND every `locatieBagId` in DSO MUST reference an existing BAG nummeraanduiding
+- AND every `vergaderingId` in ORI agendapunten MUST reference an existing vergadering
+
+#### Scenario SEED-009b: Date consistency
+
+- GIVEN all seed data
+- THEN no person MUST have `geboortedatum` in the future
+- AND no person MUST have `overlijdensdatum` before `geboortedatum`
+- AND children MUST be born after both parents
+- AND `datumOprichting` for KVK businesses MUST be before today
+- AND `datumUitschrijving` MUST be after `datumOprichting` when set
+
+#### Scenario SEED-009c: Identifier uniqueness
+
+- GIVEN all seed data within a register
+- THEN every BSN MUST be unique within the BRP register
+- AND every KVK nummer MUST be unique within the KVK register
+- AND every BAG identificatie MUST be unique within the BAG register
+- AND every DSO zaaknummer MUST be unique within the DSO register
 
 ---
 
 ## Dependencies
 
 - **OpenRegister core**: Register, schema, and object management; JSON configuration loading via `ConfigurationService`
-- **Procest repair step**: `InitializeSettings` + `SettingsService::loadConfiguration()` pattern for auto-loading on install
+- **OpenRegister CLI**: `occ openregister:load-register` command for loading register JSON files
+- **Procest register**: `procest_register.json` defines case types, status types, role types, and other configuration
 - **Pipelinq register**: `pipelinq_register.json` client schema -- Pipelinq clients reference KVK/BRP identifiers
 - **GGM (ggm-openregister)**: The GGM schemas in `99-kern.openregister.json` provide an alternative, more detailed data model. The schemas defined in this spec are simplified versions optimized for seed data and app testing, not full GGM compliance.
 
@@ -757,7 +906,7 @@ The register JSON files MUST be loadable by the existing OpenRegister configurat
 
 **Implemented in OpenRegister (not Procest).** All five base register JSON files are available as JSON files that can be loaded on demand from `openregister/lib/Settings/`. The files are NOT in the Procest codebase -- they live in the OpenRegister app which is the canonical home for base registry data. Procest and Pipelinq consume these registers after loading.
 
-### Using Mock Register Data
+##### Using Mock Register Data
 
 All five base registers are available in `openregister/lib/Settings/`:
 
@@ -807,29 +956,3 @@ curl "http://localhost:8080/index.php/apps/openregister/api/objects/{bag_registe
 - The `InitializeSettings` repair step runs on app install/upgrade and calls `loadConfiguration()`.
 - The GGM at `ggm-openregister/` provides full GGM schemas that could serve as a reference or alternative (955 schemas across 12 registers), but they contain no seed data.
 - OpenCatalogi's `publication_register.json` demonstrates the `@self` seed object pattern in `components.objects`.
-
----
-
-## Specificity Assessment
-
-**This spec is implementation-ready for the data model.** All schemas are fully defined with property names, types, constraints, and examples. Cross-register relationships are specified with concrete scenarios.
-
-**Strengths:**
-- Complete property tables for all 16 schemas across 5 registers
-- Concrete seed data requirements with minimum record counts
-- Cross-register integrity scenarios with specific field-level mappings
-- BSN 11-proef validation requirement with algorithm specification
-- File structure and loading mechanism aligned with existing Procest patterns
-
-**What needs further research before implementation:**
-1. **BSN generation**: A utility function or lookup table of 25+ valid test BSNs in the `9999xxxx` range that pass the 11-proef is needed. This is straightforward to compute.
-2. **BAG identificatie format**: The 16-digit BAG identification numbers follow a `GGGG-TT-NNNNNNNNNN` pattern where GGGG = gemeentecode, TT = object type. Need to verify correct gemeentecodes for the 5 seed municipalities.
-3. **DSO zaaknummer format**: The actual DSO/Omgevingsloket zaaknummer format may differ from the `OLO-YYYY-NNNNN` pattern used here. Need to verify with IPLO documentation.
-4. **ORI entity alignment**: The ORI project has been evolving; need to verify that the Popolo-based model used here matches the current ORI API output format.
-5. **Multiple register loading**: The current `SettingsService::loadConfiguration()` loads one register file (`procest_register.json`). It may need to be extended to iterate over multiple files, or each base register file could be loaded by a separate repair step.
-
-**Open questions:**
-1. Should base register seed data live in Procest or in OpenRegister? The mock-registers spec in `openregister/openspec/specs/mock-registers/` suggests OpenRegister as the home. However, Procest-specific test scenarios (e.g., families for case testing) argue for Procest ownership. **Recommendation**: Put the files in Procest (it owns the test scenarios), but keep the schema definitions compatible with the OpenRegister mock-registers spec.
-2. Should Pipelinq also load these registers, or should it depend on Procest to seed them? **Recommendation**: Procest seeds them; Pipelinq reads them. This avoids duplicate seeding when both apps are installed.
-3. How large should the dataset be? The spec defines minimums (25 BRP, 15 KVK, etc.) but larger datasets (100+ per register) would better test pagination, faceting, and search performance. Consider a `--extended` flag for the seeder.
-4. Should the DSO and ORI registers be in separate files or combined? **Recommendation**: Separate files (one per register) for maintainability and independent loading.
