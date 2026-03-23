@@ -1,5 +1,14 @@
 <template>
 	<div>
+		<!-- Parent case breadcrumb -->
+		<div v-if="parentCaseData" class="parent-breadcrumb">
+			<router-link :to="{ name: 'CaseDetail', params: { id: caseData.parentCase } }" class="parent-breadcrumb__link">
+				{{ parentCaseData.title }}
+			</router-link>
+			<span class="parent-breadcrumb__separator">&gt;</span>
+			<span class="parent-breadcrumb__current">{{ caseData.title }}</span>
+		</div>
+
 		<CnDetailPage
 			:title="caseData.title || t('procest', 'Case')"
 			:subtitle="caseData.identifier ? `${t('procest', 'Case')} — ${caseData.identifier}` : t('procest', 'Case')"
@@ -88,6 +97,16 @@
 					:status-history="caseData.statusHistory || []" />
 			</CnDetailCard>
 
+			<!-- Workflow Transitions card -->
+			<CnDetailCard v-if="hasWorkflow" :title="t('procest', 'Workflow Transitions')">
+				<WorkflowTransitions
+					:case-data="caseData"
+					:tasks="tasks"
+					:documents="caseDocuments"
+					:user-roles="userRoleTypeIds"
+					@transition-executed="onWorkflowTransition" />
+			</CnDetailCard>
+
 			<!-- Case Information card -->
 			<CnDetailCard :title="t('procest', 'Case Information')">
 				<div class="form-group">
@@ -174,6 +193,14 @@
 					@extend="showExtensionDialog" />
 			</CnDetailCard>
 
+			<!-- B&W Voorstellen card -->
+			<CnDetailCard :title="t('procest', 'B&W Voorstellen')">
+				<VoorstellenPanel
+					:case-id="caseId"
+					:case-title="caseData.title || ''"
+					:is-read-only="isReadOnly" />
+			</CnDetailCard>
+
 			<!-- Participants card -->
 			<CnDetailCard :title="t('procest', 'Participants')">
 				<ParticipantsSection
@@ -181,6 +208,27 @@
 					:is-read-only="isReadOnly"
 					@handler-changed="onHandlerChanged" />
 			</CnDetailCard>
+
+			<!-- Sub-cases card -->
+			<CnDetailCard
+				v-if="hasSubCaseTypes"
+				:title="subCasesSectionTitle">
+				<SubCasesSection
+					:case-id="caseId"
+					:parent-case="caseData.parentCase || null"
+					:end-date="caseData.endDate || null"
+					:sub-case-types="subCaseTypesArray"
+					@create-sub-case="showSubCaseDialog = true"
+					@sub-cases-loaded="onSubCasesLoaded" />
+			</CnDetailCard>
+
+			<!-- Sub-case creation dialog -->
+			<CaseCreateDialog
+				v-if="showSubCaseDialog"
+				:parent-case="caseId"
+				:parent-case-type="caseTypeData"
+				@created="onSubCaseCreated"
+				@close="showSubCaseDialog = false" />
 
 			<!-- Tasks card -->
 			<CnDetailCard :title="`${t('procest', 'Tasks')} (${completedTaskCount}/${tasks.length})`">
@@ -244,13 +292,107 @@
 				</div>
 			</CnDetailCard>
 
-			<!-- Decisions card -->
-			<CnDetailCard :title="t('procest', 'Decisions')">
-				<DecisionsSection
-					:case-id="caseId"
-					:case-type-id="caseData.caseType"
-					:is-read-only="isReadOnly" />
+			<!-- VTH Panels (conditionally shown based on case type) -->
+			<InspectionPanel
+				v-if="isToezichtCase"
+				:case-id="caseId"
+				:case-type-id="caseData.caseType"
+				:can-inspect="!isReadOnly" />
+
+			<EnforcementPanel
+				v-if="isHandhavingCase"
+				:case-id="caseId"
+				:case-type-id="caseData.caseType"
+				:is-read-only="isReadOnly" />
+
+			<AdvicePanel
+				v-if="isVthCase"
+				:case-id="caseId"
+				:is-read-only="isReadOnly" />
+			<!-- Location card -->
+			<CnDetailCard :title="t('procest', 'Location')">
+				<LocationTab
+					:geometry="caseData.geometry || null"
+					:is-read-only="isReadOnly"
+					@update-geometry="onGeometryUpdate" />
 			</CnDetailCard>
+			<!-- Bezwaar-specific sections (shown when case type is Bezwaar) -->
+			<template v-if="isBezwaarCase">
+				<CnDetailCard :title="t('procest', 'Objection Details')">
+					<BezwaarIntakeForm
+						:case-id="caseId"
+						:case-data="caseData"
+						:is-read-only="isReadOnly"
+						:besluit-date="contestedBesluitDate"
+						@saved="onBezwaarDataChanged"
+						@deadlines-calculated="onDeadlinesCalculated" />
+				</CnDetailCard>
+
+				<CnDetailCard :title="t('procest', 'Bezwaar Deadlines')">
+					<div class="bezwaar-deadlines">
+						<DeadlineIndicator
+							v-if="bezwaarDeadlines.afhandelDeadline"
+							:deadline="bezwaarDeadlines.afhandelDeadline"
+							:label="t('procest', 'Processing deadline')" />
+						<DeadlineIndicator
+							v-if="bezwaarDeadlines.ontvangstbevestigingDeadline"
+							:deadline="bezwaarDeadlines.ontvangstbevestigingDeadline"
+							:label="t('procest', 'Acknowledgment deadline')" />
+					</div>
+				</CnDetailCard>
+
+				<CnDetailCard :title="t('procest', 'Hearing (Hoorzitting)')">
+					<HearingPanel
+						:case-id="caseId"
+						:is-read-only="isReadOnly"
+						@hearing-scheduled="onBezwaarDataChanged"
+						@hearing-completed="onBezwaarDataChanged"
+						@hearing-waived="onBezwaarDataChanged" />
+				</CnDetailCard>
+
+				<CnDetailCard :title="t('procest', 'Advisory Committee')">
+					<AdvisoryReportPanel
+						:case-id="caseId"
+						:is-read-only="isReadOnly"
+						@saved="onBezwaarDataChanged" />
+				</CnDetailCard>
+
+				<CnDetailCard :title="t('procest', 'Decision on Objection')">
+					<BezwaarDecisionForm
+						:case-id="caseId"
+						:is-read-only="isReadOnly"
+						:contested-decision-id="contestedDecisionId"
+						@saved="onBezwaarDataChanged" />
+				</CnDetailCard>
+
+				<CnDetailCard :title="t('procest', 'Bezwaar Timeline')">
+					<BezwaarTimeline
+						:case-data="caseData"
+						:deadlines="bezwaarDeadlines" />
+				</CnDetailCard>
+
+				<CnDetailCard
+					v-if="canEscalateToBeroep"
+					:title="t('procest', 'Appeal (Beroep)')">
+					<BeroepEscalationPanel
+						:case-data="caseData"
+						:can-escalate="canEscalateToBeroep"
+						:is-read-only="isReadOnly"
+						@escalated="onBeroepCreated" />
+				</CnDetailCard>
+			</template>
+
+			<!-- Beroep-specific sections (shown when case type is Beroep) -->
+			<template v-if="isBeroepCase">
+				<CnDetailCard :title="t('procest', 'Court Proceedings')">
+					<CourtProceedingsPanel
+						:case-data="caseData"
+						:parent-case="parentBezwaarCase"
+						:is-read-only="isReadOnly"
+						:show-ruling-form="showRulingForm"
+						@ruling-recorded="onBezwaarDataChanged" />
+				</CnDetailCard>
+			</template>
 
 			<!-- Activity card -->
 			<CnDetailCard :title="t('procest', 'Activity')">
@@ -299,7 +441,24 @@ import DeadlinePanel from './components/DeadlinePanel.vue'
 import ActivityTimeline from './components/ActivityTimeline.vue'
 import ParticipantsSection from './components/ParticipantsSection.vue'
 import ResultSection from './components/ResultSection.vue'
-import DecisionsSection from './components/DecisionsSection.vue'
+import SubCasesSection from './components/SubCasesSection.vue'
+import CaseCreateDialog from './CaseCreateDialog.vue'
+import InspectionPanel from './components/InspectionPanel.vue'
+import EnforcementPanel from './components/EnforcementPanel.vue'
+import AdvicePanel from './components/AdvicePanel.vue'
+import VoorstellenPanel from './components/VoorstellenPanel.vue'
+import WorkflowTransitions from './components/WorkflowTransitions.vue'
+import BezwaarIntakeForm from './components/bezwaar/BezwaarIntakeForm.vue'
+import HearingPanel from './components/bezwaar/HearingPanel.vue'
+import AdvisoryReportPanel from './components/bezwaar/AdvisoryReportPanel.vue'
+import BezwaarDecisionForm from './components/bezwaar/BezwaarDecisionForm.vue'
+import BezwaarTimeline from './components/bezwaar/BezwaarTimeline.vue'
+import DeadlineIndicator from './components/bezwaar/DeadlineIndicator.vue'
+import BeroepEscalationPanel from './components/beroep/BeroepEscalationPanel.vue'
+import CourtProceedingsPanel from './components/beroep/CourtProceedingsPanel.vue'
+import { useBezwaarStore } from '../../store/modules/bezwaar.js'
+
+const LocationTab = () => import(/* webpackChunkName: "map" */ './components/LocationTab.vue')
 
 export default {
 	name: 'CaseDetail',
@@ -315,7 +474,22 @@ export default {
 		ActivityTimeline,
 		ParticipantsSection,
 		ResultSection,
-		DecisionsSection,
+		SubCasesSection,
+		CaseCreateDialog,
+		InspectionPanel,
+		EnforcementPanel,
+		AdvicePanel,
+		LocationTab,
+		VoorstellenPanel,
+		WorkflowTransitions,
+		BezwaarIntakeForm,
+		HearingPanel,
+		AdvisoryReportPanel,
+		BezwaarDecisionForm,
+		BezwaarTimeline,
+		DeadlineIndicator,
+		BeroepEscalationPanel,
+		CourtProceedingsPanel,
 	},
 	props: {
 		caseId: {
@@ -348,7 +522,18 @@ export default {
 			// Extension state
 			showExtension: false,
 			extensionReason: '',
+			caseRoles: [],
+			caseDocuments: [],
 			priorityOptions: ['low', 'normal', 'high', 'urgent'],
+			// Sub-case state
+			showSubCaseDialog: false,
+			parentCaseData: null,
+			subCases: [],
+			// Bezwaar state
+			bezwaarDeadlines: {},
+			contestedBesluitDate: '',
+			contestedDecisionId: '',
+			parentBezwaarCase: null,
 		}
 	},
 	computed: {
@@ -387,6 +572,38 @@ export default {
 		isNew() {
 			return !this.caseId || this.caseId === 'new'
 		},
+		/**
+		 * Detect if this is a VTH case type (Vergunningen, Toezicht, or Handhaving).
+		 *
+		 * @return {boolean} True if VTH case type
+		 */
+		isVthCase() {
+			const title = (this.caseTypeData?.title || '').toLowerCase()
+			return this.isToezichtCase
+				|| this.isHandhavingCase
+				|| title.includes('omgevingsvergunning')
+				|| title.includes('sloopmelding')
+				|| title.includes('milieumelding')
+				|| title.includes('gebruiksmelding')
+		},
+		/**
+		 * Detect if this is a Toezicht (supervision) case type.
+		 *
+		 * @return {boolean} True if Toezicht case type
+		 */
+		isToezichtCase() {
+			const title = (this.caseTypeData?.title || '').toLowerCase()
+			return title.includes('toezicht')
+		},
+		/**
+		 * Detect if this is a Handhaving (enforcement) case type.
+		 *
+		 * @return {boolean} True if Handhaving case type
+		 */
+		isHandhavingCase() {
+			const title = (this.caseTypeData?.title || '').toLowerCase()
+			return title.includes('handhaving') || title.includes('invorderin')
+		},
 		sortedTasks() {
 			return sortTasks(this.tasks)
 		},
@@ -397,12 +614,53 @@ export default {
 			if (!this.caseTypeData?.extensionPeriod) return ''
 			return formatDuration(this.caseTypeData.extensionPeriod)
 		},
+		hasSubCaseTypes() {
+			return this.subCaseTypesArray.length > 0
+		},
+		subCaseTypesArray() {
+			if (!this.caseTypeData) return []
+			const types = this.caseTypeData.subCaseTypes
+			if (!types || !Array.isArray(types) || types.length === 0) return []
+			return types
+		},
+		subCasesSectionTitle() {
+			if (this.subCases.length === 0) {
+				return t('procest', 'Sub-cases')
+			}
+			const completed = this.subCases.filter(sc => sc.endDate).length
+			return t('procest', 'Sub-cases ({completed}/{total} completed)', {
+				completed,
+				total: this.subCases.length,
+			})
+		},
 		sidebarProps() {
 			const config = this.objectStore.objectTypeRegistry.case || {}
 			return {
 				register: config.register || '',
 				schema: config.schema || '',
 			}
+		},
+		hasWorkflow() {
+			return !!(this.caseData.workflowTemplate || this.caseData.workflowVersion)
+		},
+		isBezwaarCase() {
+			return this.caseTypeData?.identifier === 'bezwaar'
+		},
+		isBeroepCase() {
+			return this.caseTypeData?.identifier === 'beroep'
+		},
+		canEscalateToBeroep() {
+			if (!this.isBezwaarCase) return false
+			const statusName = this.currentStatusType?.name || ''
+			return statusName === 'Beslissing op bezwaar' || statusName === 'Afgehandeld'
+		},
+		showRulingForm() {
+			if (!this.isBeroepCase) return false
+			const statusName = this.currentStatusType?.name || ''
+			return statusName === 'Zitting afgerond'
+		},
+		userRoleTypeIds() {
+			return this.caseRoles ? this.caseRoles.map(r => r.roleType) : []
 		},
 	},
 	async mounted() {
@@ -413,7 +671,13 @@ export default {
 				this.loadCaseTypeData(),
 				this.fetchTasks(),
 				this.fetchCaseResult(),
+				this.fetchParentCase(),
 			])
+
+			// Load bezwaar/beroep data if applicable.
+			if (this.isBezwaarCase || this.isBeroepCase) {
+				await this.loadBezwaarBeroepData()
+			}
 		}
 	},
 	methods: {
@@ -474,6 +738,40 @@ export default {
 				_limit: 1,
 			})
 			this.caseResult = (results && results.length > 0) ? results[0] : null
+		},
+
+		async loadBezwaarBeroepData() {
+			const bezwaarStore = useBezwaarStore()
+			await bezwaarStore.loadBezwaarData(this.caseId)
+
+			// Load parent bezwaar case for beroep cases.
+			if (this.isBeroepCase && this.caseData.parentCase) {
+				this.parentBezwaarCase = await this.objectStore.fetchObject('case', this.caseData.parentCase)
+			}
+		},
+
+		onDeadlinesCalculated(deadlines) {
+			this.bezwaarDeadlines = deadlines
+		},
+
+		async onBezwaarDataChanged() {
+			const bezwaarStore = useBezwaarStore()
+			await bezwaarStore.loadBezwaarData(this.caseId)
+		},
+
+		async onBeroepCreated(beroepCase) {
+			if (beroepCase) {
+				this.$router.push({
+					name: 'CaseDetail',
+					params: { id: beroepCase.id },
+				})
+			}
+		},
+
+		async onWorkflowTransition({ transition, newStatus }) {
+			await this.objectStore.fetchObject('case', this.caseId)
+			this.populateForm()
+			await this.fetchTasks()
 		},
 
 		async fetchTasks() {
@@ -633,13 +931,52 @@ export default {
 			}
 		},
 
+		// --- Parent Case ---
+		async fetchParentCase() {
+			const parentCaseId = this.caseData.parentCase
+			if (!parentCaseId) {
+				this.parentCaseData = null
+				return
+			}
+			try {
+				const parentCase = await this.objectStore.fetchObject('case', parentCaseId)
+				this.parentCaseData = parentCase || null
+			} catch {
+				this.parentCaseData = null
+			}
+		},
+
+		// --- Sub-cases ---
+		onSubCasesLoaded(subCases) {
+			this.subCases = subCases || []
+		},
+
+		onSubCaseCreated(caseId) {
+			this.showSubCaseDialog = false
+			this.$router.push({ name: 'CaseDetail', params: { id: caseId } })
+		},
+
 		// --- Delete ---
 		async confirmDelete() {
 			let message = t('procest', 'Are you sure you want to delete this case?')
-			if (this.tasks.length > 0) {
+
+			if (this.subCases.length > 0) {
+				message = t('procest', 'This case has {count} sub-cases. Deleting it will detach them from their parent. Continue?', { count: this.subCases.length })
+			} else if (this.tasks.length > 0) {
 				message = t('procest', 'This case has {count} linked tasks. Are you sure you want to delete it?', { count: this.tasks.length })
 			}
+
 			if (confirm(message)) {
+				// Orphan cleanup: clear parentCase on all sub-cases before deleting
+				if (this.subCases.length > 0) {
+					for (const subCase of this.subCases) {
+						await this.objectStore.saveObject('case', {
+							...subCase,
+							parentCase: null,
+						})
+					}
+				}
+
 				const success = await this.objectStore.deleteObject('case', this.caseId)
 				if (success) {
 					this.$router.push({ name: 'Cases' })
@@ -697,6 +1034,16 @@ export default {
 			await this.objectStore.fetchObject('case', this.caseId)
 		},
 
+		// --- Location ---
+		async onGeometryUpdate(geometry) {
+			const updateData = {
+				...this.caseData,
+				geometry: typeof geometry === 'string' ? geometry : JSON.stringify(geometry),
+			}
+			await this.objectStore.saveObject('case', updateData)
+			this.caseData.geometry = updateData.geometry
+		},
+
 		// --- Activity ---
 		async onAddNote(text) {
 			const currentUser = OC?.currentUser || 'unknown'
@@ -722,6 +1069,33 @@ export default {
 </script>
 
 <style scoped>
+/* Parent breadcrumb */
+.parent-breadcrumb {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 16px;
+	font-size: 13px;
+	color: var(--color-text-maxcontrast);
+}
+
+.parent-breadcrumb__link {
+	color: var(--color-primary-element);
+	text-decoration: none;
+}
+
+.parent-breadcrumb__link:hover {
+	text-decoration: underline;
+}
+
+.parent-breadcrumb__separator {
+	color: var(--color-text-maxcontrast);
+}
+
+.parent-breadcrumb__current {
+	color: var(--color-main-text);
+}
+
 /* Status section */
 .status-section {
 	display: flex;
