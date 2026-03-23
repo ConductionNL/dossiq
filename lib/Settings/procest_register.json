@@ -30,11 +30,13 @@
           "title": {
             "type": "string",
             "maxLength": 255,
-            "description": "Name of this case type"
+            "description": "Name of this case type",
+            "x-translatable": true
           },
           "description": {
             "type": "string",
-            "description": "Detailed description of this case type"
+            "description": "Detailed description of this case type",
+            "x-translatable": true
           },
           "identifier": {
             "type": "string",
@@ -47,15 +49,18 @@
           },
           "purpose": {
             "type": "string",
-            "description": "The purpose or goal of this case type"
+            "description": "The purpose or goal of this case type",
+            "x-translatable": true
           },
           "trigger": {
             "type": "string",
-            "description": "What triggers the creation of a case of this type"
+            "description": "What triggers the creation of a case of this type",
+            "x-translatable": true
           },
           "subject": {
             "type": "string",
-            "description": "The subject matter of this case type"
+            "description": "The subject matter of this case type",
+            "x-translatable": true
           },
           "processingDeadline": {
             "type": "string",
@@ -180,11 +185,13 @@
           "name": {
             "type": "string",
             "maxLength": 255,
-            "description": "Name of this status (e.g. Ontvangen, In behandeling)"
+            "description": "Name of this status (e.g. Ontvangen, In behandeling)",
+            "x-translatable": true
           },
           "description": {
             "type": "string",
-            "description": "Description of this status phase"
+            "description": "Description of this status phase",
+            "x-translatable": true
           },
           "caseType": {
             "type": "string",
@@ -220,11 +227,13 @@
           "name": {
             "type": "string",
             "maxLength": 255,
-            "description": "Name of this result type (e.g. Vergunning verleend)"
+            "description": "Name of this result type (e.g. Vergunning verleend)",
+            "x-translatable": true
           },
           "description": {
             "type": "string",
-            "description": "Description/toelichting of this result type"
+            "description": "Description/toelichting of this result type",
+            "x-translatable": true
           },
           "genericDescription": {
             "type": "string",
@@ -276,11 +285,13 @@
           "name": {
             "type": "string",
             "maxLength": 255,
-            "description": "Name of this role type (e.g. Behandelaar, Adviseur)"
+            "description": "Name of this role type (e.g. Behandelaar, Adviseur)",
+            "x-translatable": true
           },
           "description": {
             "type": "string",
-            "description": "Description of this role type"
+            "description": "Description of this role type",
+            "x-translatable": true
           },
           "caseType": {
             "type": "string",
@@ -360,11 +371,13 @@
           "name": {
             "type": "string",
             "maxLength": 255,
-            "description": "Name of this document type (e.g. Situatietekening)"
+            "description": "Name of this document type (e.g. Situatietekening)",
+            "x-translatable": true
           },
           "description": {
             "type": "string",
-            "description": "Description of this document type"
+            "description": "Description of this document type",
+            "x-translatable": true
           },
           "catalogus": {
             "type": "string",
@@ -436,11 +449,13 @@
           "name": {
             "type": "string",
             "maxLength": 255,
-            "description": "Name of this decision type"
+            "description": "Name of this decision type",
+            "x-translatable": true
           },
           "description": {
             "type": "string",
-            "description": "Description of this decision type"
+            "description": "Description of this decision type",
+            "x-translatable": true
           },
           "catalogus": {
             "type": "string",
