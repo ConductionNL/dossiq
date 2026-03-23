@@ -5,41 +5,11 @@
 			@created="onCaseCreated"
 			@close="showCreateDialog = false" />
 
-		<!-- Filters bar -->
-		<div class="case-list-filters">
-			<div class="case-list-filters__search">
-				<NcTextField
-					:value="searchQuery"
-					:placeholder="t('procest', 'Search cases...')"
-					@update:value="onSearchInput" />
-			</div>
-			<div class="case-list-filters__dropdowns">
-				<NcSelect
-					v-model="filterPriority"
-					:options="priorityFilterOptions"
-					:placeholder="t('procest', 'Priority')"
-					:clearable="true"
-					@input="onFilterChange" />
-				<NcSelect
-					v-model="filterHandler"
-					:options="handlerFilterOptions"
-					:placeholder="t('procest', 'Handler')"
-					:clearable="true"
-					@input="onFilterChange" />
-				<NcSelect
-					v-model="filterOverdue"
-					:options="overdueFilterOptions"
-					:placeholder="t('procest', 'Overdue')"
-					:clearable="true"
-					@input="onFilterChange" />
-			</div>
-		</div>
-
 		<CnIndexPage
 			:title="t('procest', 'Cases')"
 			:description="t('procest', 'Manage cases and workflows')"
 			:schema="schema"
-			:objects="filteredObjects"
+			:objects="objects"
 			:pagination="pagination"
 			:loading="loading"
 			:sort-key="sortKey"
@@ -78,13 +48,19 @@
 					{{ getDeadlineText(row) }}
 				</span>
 			</template>
+
+			<template #column-title="{ row, value }">
+				<span>{{ value || '\u2014' }}</span>
+				<span v-if="getSubCaseCount(row.id) > 0" class="sub-case-badge">
+					{{ t('procest', '{count} sub-cases', { count: getSubCaseCount(row.id) }) }}
+				</span>
+			</template>
 		</CnIndexPage>
 	</div>
 </template>
 
 <script>
 import { inject } from 'vue'
-import { NcTextField, NcSelect } from '@nextcloud/vue'
 import { CnIndexPage, useListView } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { formatDeadlineCountdown, isCaseOverdue } from '../../utils/caseHelpers.js'
@@ -97,8 +73,6 @@ export default {
 		CnIndexPage,
 		CaseCreateDialog,
 		QuickStatusDropdown,
-		NcTextField,
-		NcSelect,
 	},
 
 	setup() {
@@ -116,77 +90,18 @@ export default {
 			showCreateDialog: false,
 			caseTypeCache: {},
 			statusTypeCache: {},
-			searchQuery: '',
-			searchDebounceTimer: null,
-			filterPriority: null,
-			filterHandler: null,
-			filterOverdue: null,
+			subCaseCountCache: {},
 		}
 	},
 
-	computed: {
-		priorityFilterOptions() {
-			return [
-				{ id: 'urgent', label: t('procest', 'Urgent') },
-				{ id: 'high', label: t('procest', 'High') },
-				{ id: 'normal', label: t('procest', 'Normal') },
-				{ id: 'low', label: t('procest', 'Low') },
-			]
-		},
-		handlerFilterOptions() {
-			const handlers = new Set()
-			if (this.objects) {
-				for (const obj of this.objects) {
-					if (obj.assignee) {
-						handlers.add(obj.assignee)
-					}
+	watch: {
+		objects: {
+			handler(newObjects) {
+				if (newObjects && newObjects.length > 0) {
+					this.loadSubCaseCounts(newObjects)
 				}
-			}
-			return Array.from(handlers).map(h => ({ id: h, label: h }))
-		},
-		overdueFilterOptions() {
-			return [
-				{ id: 'yes', label: t('procest', 'Overdue') },
-				{ id: 'no', label: t('procest', 'On track') },
-			]
-		},
-		filteredObjects() {
-			let result = this.objects || []
-
-			// Search filter
-			if (this.searchQuery && this.searchQuery.trim()) {
-				const query = this.searchQuery.trim().toLowerCase()
-				result = result.filter(obj => {
-					const title = (obj.title || '').toLowerCase()
-					const description = (obj.description || '').toLowerCase()
-					const identifier = (obj.identifier || '').toLowerCase()
-					return title.includes(query) || description.includes(query) || identifier.includes(query)
-				})
-			}
-
-			// Priority filter
-			if (this.filterPriority) {
-				const priorityId = this.filterPriority.id || this.filterPriority
-				result = result.filter(obj => obj.priority === priorityId)
-			}
-
-			// Handler filter
-			if (this.filterHandler) {
-				const handlerId = this.filterHandler.id || this.filterHandler
-				result = result.filter(obj => obj.assignee === handlerId)
-			}
-
-			// Overdue filter
-			if (this.filterOverdue) {
-				const overdueId = this.filterOverdue.id || this.filterOverdue
-				result = result.filter(obj => {
-					const isFinal = this.isAtFinalStatus(obj)
-					const overdue = isCaseOverdue(obj, isFinal)
-					return overdueId === 'yes' ? overdue : !overdue
-				})
-			}
-
-			return result
+			},
+			immediate: true,
 		},
 	},
 
@@ -268,48 +183,39 @@ export default {
 			this.$router.push({ name: 'CaseDetail', params: { id: row.id } })
 		},
 
-		onSearchInput(value) {
-			this.searchQuery = value
-			// Debounce search to avoid excessive filtering
-			if (this.searchDebounceTimer) {
-				clearTimeout(this.searchDebounceTimer)
-			}
-			this.searchDebounceTimer = setTimeout(() => {
-				// Filtering is reactive via computed property
-			}, 300)
+		getSubCaseCount(caseId) {
+			return this.subCaseCountCache[caseId] || 0
 		},
 
-		onFilterChange() {
-			// Filtering is reactive via computed property, no action needed
+		async loadSubCaseCounts(cases) {
+			// Batch-load sub-case counts for the visible page
+			// Fetch all cases that have a parentCase pointing to any case on this page
+			const objectStore = useObjectStore()
+			const caseIds = cases.map(c => c.id)
+
+			// Query all cases that are sub-cases of visible cases
+			const allSubCases = await objectStore.fetchCollection('case', {
+				_limit: 500,
+				_fields: 'id,parentCase',
+			})
+
+			if (allSubCases) {
+				const counts = {}
+				for (const sc of allSubCases) {
+					if (sc.parentCase && caseIds.includes(sc.parentCase)) {
+						counts[sc.parentCase] = (counts[sc.parentCase] || 0) + 1
+					}
+				}
+				for (const id of Object.keys(counts)) {
+					this.$set(this.subCaseCountCache, id, counts[id])
+				}
+			}
 		},
 	},
 }
 </script>
 
 <style scoped>
-.case-list-filters {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	margin-bottom: 16px;
-	flex-wrap: wrap;
-}
-
-.case-list-filters__search {
-	flex: 1;
-	min-width: 200px;
-}
-
-.case-list-filters__dropdowns {
-	display: flex;
-	gap: 8px;
-	flex-wrap: wrap;
-}
-
-.case-list-filters__dropdowns .v-select {
-	min-width: 140px;
-}
-
 .case-id {
 	font-family: monospace;
 	font-size: 13px;
@@ -343,6 +249,17 @@ export default {
 
 .deadline--final {
 	color: var(--color-text-maxcontrast);
+}
+
+.sub-case-badge {
+	display: inline-block;
+	margin-left: 8px;
+	padding: 1px 6px;
+	border-radius: var(--border-radius-pill);
+	font-size: 11px;
+	font-weight: 500;
+	background: var(--color-primary-element-light);
+	color: var(--color-primary-element-light-text);
 }
 </style>
 

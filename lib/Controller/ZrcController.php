@@ -700,11 +700,14 @@ class ZrcController extends Controller
      */
     public function zoek(): JSONResponse
     {
-        $response = $this->index(resource: 'zaken');
-        $response->setStatus(Http::STATUS_CREATED);
+        $indexResponse = $this->index(resource: 'zaken');
+        // The zoek endpoint reuses the list handler but returns 201 Created.
+        $responseData = [];
+        if ($indexResponse instanceof JSONResponse) {
+            $responseData = $indexResponse->getData() ?? [];
+        }
 
-        // @var JSONResponse $response
-        return $response;
+        return new JSONResponse(data: $responseData, statusCode: Http::STATUS_CREATED);
     }//end zoek()
 
     /**

@@ -3,7 +3,7 @@
 ## Purpose
 Define the Pinia-based object store that provides the data layer for Pipelinq. Identical pattern to the Procest object store — queries OpenRegister directly from the frontend for all CRUD, search, and pagination operations.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Object store MUST use Pinia with dynamic type registration
 The store MUST support registering object types at runtime, each mapped to an OpenRegister register/schema pair.
