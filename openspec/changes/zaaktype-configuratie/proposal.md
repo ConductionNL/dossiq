@@ -1,15 +1,10 @@
-## Why
+# Zaaktype Configuratie Implementation
 
-Zaaktype Configuratie Specification is not yet implemented in Procest. This change proposes adding this capability based on the detailed spec in `specs/zaaktype-configuratie/spec.md`.
+## Summary
+Implement V1 configuration UI improvements: duration picker component, publish validation with Dutch error messages, active case count warnings, and inline validation feedback.
 
-**Feature tier**: V1 (basic CRUD UI, status diagram editor, document type config, property definition config, role type config, result type config), V2 (visual flow designer, import/export, ZTC sync, versioning, test mode)
-
-## What Changes
-
-See `specs/zaaktype-configuratie/spec.md` for full requirements and scenarios.
-
-## Impact
-
-- **Code**: New frontend views and/or backend services
-- **Dependencies**: OpenRegister (data storage), Nextcloud platform APIs
-- **Testing**: Unit tests for new services, integration tests for API endpoints
+## Scope
+- REQ-ZTC-01: Publish validation with Dutch error messages
+- REQ-ZTC-02: Status diagram visual enhancement (color indicators)
+- REQ-ZTC-11: Tab item counts, inline validation
+- REQ-ZTC-12: Duration picker component for processing deadline

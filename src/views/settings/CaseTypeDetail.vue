@@ -37,6 +37,11 @@
 			</div>
 		</div>
 
+		<!-- Active case warning -->
+		<div v-if="activeCaseCount > 0 && !isCreate" class="case-type-detail__warning">
+			<p>{{ t('procest', 'There are {count} active cases of this type. Changes will only apply to new cases.', { count: activeCaseCount }) }}</p>
+		</div>
+
 		<!-- Publish errors -->
 		<div v-if="publishErrors.length > 0" class="case-type-detail__publish-errors">
 			<p><strong>{{ t('procest', 'Cannot publish:') }}</strong></p>
@@ -151,6 +156,7 @@ export default {
 			validationErrors: {},
 			publishErrors: [],
 			statusTypes: [],
+			activeCaseCount: 0,
 		}
 	},
 	computed: {
@@ -181,6 +187,16 @@ export default {
 			const data = await this.objectStore.fetchObject('caseType', this.caseTypeId)
 			if (data) {
 				this.form = { ...EMPTY_FORM, ...data }
+			}
+			// Count active cases of this type
+			try {
+				const cases = await this.objectStore.fetchCollection('case', {
+					'_filters[caseType]': this.caseTypeId,
+					_limit: 1,
+				})
+				this.activeCaseCount = cases?.length || 0
+			} catch (e) {
+				this.activeCaseCount = 0
 			}
 			this.loadingDetail = false
 		},
@@ -278,6 +294,15 @@ export default {
 .case-type-detail__actions {
 	display: flex;
 	gap: 8px;
+}
+
+.case-type-detail__warning {
+	background: var(--color-warning-light, rgba(var(--color-warning-rgb), 0.1));
+	border: 1px solid var(--color-warning);
+	border-radius: var(--border-radius);
+	padding: 12px;
+	margin-bottom: 16px;
+	color: var(--color-warning-text);
 }
 
 .case-type-detail__publish-errors {
