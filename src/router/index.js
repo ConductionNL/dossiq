@@ -4,6 +4,7 @@ import { generateUrl } from '@nextcloud/router'
 import Dashboard from '../views/Dashboard.vue'
 import DoorlooptijdDashboard from '../views/DoorlooptijdDashboard.vue'
 import MyWork from '../views/MyWork.vue'
+import Werkvoorraad from '../views/Werkvoorraad.vue'
 import CaseList from '../views/cases/CaseList.vue'
 import CaseDetail from '../views/cases/CaseDetail.vue'
 import TaskList from '../views/tasks/TaskList.vue'
@@ -21,6 +22,7 @@ export default new Router({
 		{ path: '/', name: 'Dashboard', component: Dashboard },
 		{ path: '/doorlooptijd', name: 'Doorlooptijd', component: DoorlooptijdDashboard },
 		{ path: '/my-work', name: 'MyWork', component: MyWork },
+		{ path: '/werkvoorraad', name: 'Werkvoorraad', component: Werkvoorraad },
 		{ path: '/cases', name: 'Cases', component: CaseList },
 		{ path: '/cases/:id', name: 'CaseDetail', component: CaseDetail, props: route => ({ caseId: route.params.id }) },
 		{ path: '/tasks', name: 'Tasks', component: TaskList },

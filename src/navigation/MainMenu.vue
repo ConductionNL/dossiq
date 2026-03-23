@@ -17,6 +17,13 @@
 				</template>
 			</NcAppNavigationItem>
 			<NcAppNavigationItem
+				:name="t('procest', 'Work Queue')"
+				:to="{ name: 'Werkvoorraad' }">
+				<template #icon>
+					<AccountGroup :size="20" />
+				</template>
+			</NcAppNavigationItem>
+			<NcAppNavigationItem
 				:name="t('procest', 'Cases')"
 				:to="{ name: 'Cases' }">
 				<template #icon>
@@ -75,6 +82,7 @@ import { NcAppNavigation, NcAppNavigationItem, NcAppNavigationSettings } from '@
 import ViewDashboard from 'vue-material-design-icons/ViewDashboard.vue'
 import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'
 import AccountCheck from 'vue-material-design-icons/AccountCheck.vue'
+import AccountGroup from 'vue-material-design-icons/AccountGroup.vue'
 import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
 import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditOutline.vue'
 import BookOpenVariantOutline from 'vue-material-design-icons/BookOpenVariantOutline.vue'
@@ -90,6 +98,7 @@ export default {
 		NcAppNavigationSettings,
 		ViewDashboard,
 		AccountCheck,
+		AccountGroup,
 		FolderOpen,
 		ClipboardCheckOutline,
 		FileDocumentEditOutline,
