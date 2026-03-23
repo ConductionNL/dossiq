@@ -1,0 +1,114 @@
+{
+  "_format": "procest-workflow-v1",
+  "title": "Handhavingszaak",
+  "description": "Workflow voor handhavingszaken conform de Landelijke Handhavingsstrategie (LHS). Omvat constatering, vooraankondiging, zienswijze, handhavingsbesluit, begunstigingstermijn en hercontrole met escalatiepaden.",
+  "version": 1,
+  "steps": [
+    {
+      "id": "step-constatering",
+      "label": "Constatering",
+      "status": "Constatering",
+      "isInitial": true,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Overtreding is geconstateerd, gekoppeld aan bron-inspectierapport",
+      "checklist": ["LHS classificatie ingevuld (ernst + gedrag)", "Constatering gedocumenteerd"],
+      "actions": []
+    },
+    {
+      "id": "step-vooraankondiging",
+      "label": "Vooraankondiging",
+      "status": "Vooraankondiging",
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Vooraankondiging verstuurd, zienswijzetermijn gestart",
+      "checklist": ["Vooraankondigingsbrief verstuurd"],
+      "actions": [
+        {"type": "notification", "config": {"message": "Vooraankondiging verstuurd — zienswijzetermijn 2 weken", "targetRole": "Teamleider"}}
+      ]
+    },
+    {
+      "id": "step-zienswijze",
+      "label": "Zienswijze",
+      "status": "Zienswijze",
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Beoordeling ontvangen zienswijze of termijn verstreken",
+      "checklist": ["Zienswijzetermijn verstreken of zienswijze ontvangen", "Zienswijze beoordeeld"],
+      "actions": []
+    },
+    {
+      "id": "step-handhavingsbesluit",
+      "label": "Handhavingsbesluit",
+      "status": "Handhavingsbesluit",
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Handhavingsbesluit genomen (last onder dwangsom / bestuursdwang)",
+      "checklist": ["LHS classificatie bevestigd", "Handhavingsbesluit opgesteld"],
+      "actions": []
+    },
+    {
+      "id": "step-begunstigingstermijn",
+      "label": "Begunstigingstermijn",
+      "status": "Begunstigingstermijn",
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": null,
+      "description": "Begunstigingstermijn loopt — overtreder heeft tijd om overtreding op te heffen",
+      "checklist": [],
+      "actions": [
+        {"type": "notification", "config": {"message": "Begunstigingstermijn verlopen — hercontrole uitvoeren", "targetRole": "Behandelaar"}}
+      ]
+    },
+    {
+      "id": "step-hercontrole",
+      "label": "Hercontrole",
+      "status": "Hercontrole",
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Hercontrole of overtreding is opgeheven",
+      "checklist": ["Hercontrole-inspectie uitgevoerd", "Hercontrolerapport opgesteld"],
+      "actions": []
+    },
+    {
+      "id": "step-afgehandeld",
+      "label": "Afgehandeld",
+      "status": "Afgehandeld",
+      "isInitial": false,
+      "isFinal": true,
+      "assigneeRole": null,
+      "description": "Handhavingszaak afgehandeld (overtreding opgeheven of dwangsom verbeurd)",
+      "checklist": [],
+      "actions": []
+    }
+  ],
+  "transitions": [
+    {"id": "tr-1", "label": "Vooraankondiging starten", "fromStatus": "Constatering", "toStatus": "Vooraankondiging", "allowedRoles": ["Behandelaar", "Teamleider"], "guards": [{"type": "checklist", "config": {"message": "LHS classificatie moet zijn ingevuld"}}], "actions": []},
+    {"id": "tr-1b", "label": "Direct waarschuwing (geen verdere handhaving)", "fromStatus": "Constatering", "toStatus": "Afgehandeld", "allowedRoles": ["Behandelaar"], "guards": [], "actions": []},
+    {"id": "tr-2", "label": "Naar zienswijze", "fromStatus": "Vooraankondiging", "toStatus": "Zienswijze", "allowedRoles": ["Behandelaar"], "guards": [{"type": "checklist", "config": {"message": "Vooraankondigingsbrief moet zijn verstuurd"}}], "actions": []},
+    {"id": "tr-3", "label": "Handhavingsbesluit nemen", "fromStatus": "Zienswijze", "toStatus": "Handhavingsbesluit", "allowedRoles": ["Behandelaar", "Teamleider"], "guards": [{"type": "checklist", "config": {"message": "Zienswijze moet zijn beoordeeld"}}], "actions": []},
+    {"id": "tr-3b", "label": "Zaak intrekken na zienswijze", "fromStatus": "Zienswijze", "toStatus": "Afgehandeld", "allowedRoles": ["Behandelaar", "Teamleider"], "guards": [], "actions": []},
+    {"id": "tr-4", "label": "Begunstigingstermijn starten", "fromStatus": "Handhavingsbesluit", "toStatus": "Begunstigingstermijn", "allowedRoles": ["Behandelaar"], "guards": [{"type": "checklist", "config": {"message": "Handhavingsbesluit moet zijn opgesteld"}}], "actions": []},
+    {"id": "tr-5", "label": "Hercontrole uitvoeren", "fromStatus": "Begunstigingstermijn", "toStatus": "Hercontrole", "allowedRoles": ["Behandelaar"], "guards": [], "actions": []},
+    {"id": "tr-6a", "label": "Overtreding opgeheven", "fromStatus": "Hercontrole", "toStatus": "Afgehandeld", "allowedRoles": ["Behandelaar"], "guards": [{"type": "checklist", "config": {"message": "Hercontrole-inspectie moet zijn uitgevoerd"}}], "actions": []},
+    {"id": "tr-6b", "label": "Overtreding voortdurend — dwangsom verbeuren", "fromStatus": "Hercontrole", "toStatus": "Begunstigingstermijn", "allowedRoles": ["Behandelaar", "Teamleider"], "guards": [], "actions": [{"type": "notification", "config": {"message": "Dwangsom verbeurd — overtreding voortdurend", "targetRole": "Teamleider"}}]}
+  ],
+  "nodePositions": {
+    "step-constatering": {"x": 100, "y": 200},
+    "step-vooraankondiging": {"x": 300, "y": 200},
+    "step-zienswijze": {"x": 500, "y": 200},
+    "step-handhavingsbesluit": {"x": 700, "y": 200},
+    "step-begunstigingstermijn": {"x": 900, "y": 200},
+    "step-hercontrole": {"x": 1100, "y": 200},
+    "step-afgehandeld": {"x": 1300, "y": 200}
+  },
+  "manifest": {
+    "statusTypes": ["Constatering", "Vooraankondiging", "Zienswijze", "Handhavingsbesluit", "Begunstigingstermijn", "Hercontrole", "Afgehandeld"],
+    "roleTypes": ["Behandelaar", "Overtreder", "Gemachtigde", "Teamleider"],
+    "documentTypes": ["Constateringsrapport", "Vooraankondigingsbrief", "Handhavingsbesluit", "Dwangsombeschikking", "Hercontrolerapport"]
+  }
+}

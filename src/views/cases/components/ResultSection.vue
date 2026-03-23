@@ -12,6 +12,9 @@
 				<div v-if="resultTypeName" class="result-section__type">
 					{{ t('procest', 'Type: {type}', { type: resultTypeName }) }}
 				</div>
+				<div v-if="archivalInfo" class="result-section__archival">
+					{{ archivalInfo }}
+				</div>
 			</div>
 		</template>
 		<template v-else>
@@ -40,10 +43,44 @@ export default {
 		},
 	},
 	computed: {
+		resultType() {
+			if (!this.result?.resultType) return null
+			return this.resultTypes.find(t => t.id === this.result.resultType) || null
+		},
 		resultTypeName() {
-			if (!this.result?.resultType) return ''
-			const rt = this.resultTypes.find(t => t.id === this.result.resultType)
-			return rt?.name || ''
+			return this.resultType?.name || ''
+		},
+		archivalInfo() {
+			if (!this.resultType) return ''
+			const rt = this.resultType
+			const parts = []
+
+			if (rt.archivalAction) {
+				const actionLabel = rt.archivalAction === 'bewaren'
+					? t('procest', 'retain')
+					: rt.archivalAction === 'vernietigen'
+						? t('procest', 'destroy')
+						: rt.archivalAction === 'blijvend_bewaren'
+							? t('procest', 'permanently retain')
+							: rt.archivalAction
+				parts.push(t('procest', 'Archive: {action}', { action: actionLabel }))
+			}
+
+			if (rt.archivalPeriod) {
+				parts.push(t('procest', 'Retention: {period}', { period: this.formatPeriod(rt.archivalPeriod) }))
+			}
+
+			return parts.join(' — ')
+		},
+	},
+	methods: {
+		formatPeriod(isoDuration) {
+			if (!isoDuration) return ''
+			const match = isoDuration.match(/P(\d+)Y/)
+			if (match) return t('procest', '{years} years', { years: match[1] })
+			const dayMatch = isoDuration.match(/P(\d+)D/)
+			if (dayMatch) return t('procest', '{days} days', { days: dayMatch[1] })
+			return isoDuration
 		},
 	},
 }
@@ -80,6 +117,14 @@ export default {
 .result-section__type {
 	font-size: 12px;
 	color: var(--color-text-maxcontrast);
+}
+
+.result-section__archival {
+	font-size: 12px;
+	color: var(--color-text-maxcontrast);
+	margin-top: 4px;
+	padding-top: 4px;
+	border-top: 1px solid var(--color-border);
 }
 
 .result-section__empty {

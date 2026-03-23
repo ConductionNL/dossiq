@@ -1,0 +1,116 @@
+/**
+ * Decision helper utilities for validity calculations and display.
+ */
+
+/**
+ * Get the validity status of a decision.
+ *
+ * @param {object} decision Decision object with effectiveDate and expiryDate
+ * @return {{ status: string, label: string, style: string, remaining: string|null }}
+ */
+export function getDecisionValidity(decision) {
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+
+	if (decision.effectiveDate) {
+		const effective = new Date(decision.effectiveDate)
+		effective.setHours(0, 0, 0, 0)
+		if (effective > today) {
+			return {
+				status: 'not_effective',
+				label: t('procest', 'Not yet effective'),
+				style: 'validity--pending',
+				remaining: t('procest', 'Effective from {date}', { date: formatDecisionDate(decision.effectiveDate) }),
+			}
+		}
+	}
+
+	if (decision.expiryDate) {
+		const expiry = new Date(decision.expiryDate)
+		expiry.setHours(0, 0, 0, 0)
+
+		if (expiry < today) {
+			return {
+				status: 'expired',
+				label: t('procest', 'Expired'),
+				style: 'validity--expired',
+				remaining: null,
+			}
+		}
+
+		const diffMs = expiry - today
+		const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+		if (diffDays <= 30) {
+			return {
+				status: 'expiring_soon',
+				label: t('procest', 'Expires in {days} days', { days: diffDays }),
+				style: 'validity--warning',
+				remaining: t('procest', 'Expires {date}', { date: formatDecisionDate(decision.expiryDate) }),
+			}
+		}
+
+		return {
+			status: 'active',
+			label: t('procest', 'Active'),
+			style: 'validity--active',
+			remaining: t('procest', 'Valid until {date}', { date: formatDecisionDate(decision.expiryDate) }),
+		}
+	}
+
+	// No expiry date — indefinitely valid
+	if (decision.effectiveDate) {
+		return {
+			status: 'active',
+			label: t('procest', 'Active'),
+			style: 'validity--active',
+			remaining: t('procest', 'From {date}', { date: formatDecisionDate(decision.effectiveDate) }),
+		}
+	}
+
+	return {
+		status: 'unknown',
+		label: '',
+		style: '',
+		remaining: null,
+	}
+}
+
+/**
+ * Format a date string for decision display.
+ *
+ * @param {string} dateString ISO date string
+ * @return {string}
+ */
+export function formatDecisionDate(dateString) {
+	if (!dateString) return '—'
+	const date = new Date(dateString)
+	return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+/**
+ * Validate a decision form.
+ *
+ * @param {object} form Decision form data
+ * @return {{ valid: boolean, errors: object }}
+ */
+export function validateDecision(form) {
+	const errors = {}
+
+	if (!form.title || !form.title.trim()) {
+		errors.title = t('procest', 'Title is required')
+	}
+
+	if (form.effectiveDate && form.expiryDate) {
+		const effective = new Date(form.effectiveDate)
+		const expiry = new Date(form.expiryDate)
+		if (expiry <= effective) {
+			errors.expiryDate = t('procest', 'Expiry date must be after effective date')
+		}
+	}
+
+	return {
+		valid: Object.keys(errors).length === 0,
+		errors,
+	}
+}
