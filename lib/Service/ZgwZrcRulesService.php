@@ -116,8 +116,9 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $body['identificatie'] = $this->generateIdentificatie(prefix: 'ZAAK');
         }
 
-        // Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype if not set.
-        if (empty($body['vertrouwelijkheidaanduiding']) === true && empty($zaaktypeUrl) === false) {
+        // Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype — always override
+        // template defaults to prevent leakage (incoming value used only as fallback).
+        if (empty($zaaktypeUrl) === false) {
             $body = $this->deriveVertrouwelijkheidaanduiding(body: $body, zaaktypeUrl: $zaaktypeUrl);
         }
 
@@ -188,9 +189,9 @@ class ZgwZrcRulesService extends ZgwRulesBase
             }
         }
 
-        // Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype if not set.
+        // Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype — always override.
         $zaaktypeUrl = $body['zaaktype'] ?? '';
-        if (empty($body['vertrouwelijkheidaanduiding']) === true && empty($zaaktypeUrl) === false) {
+        if (empty($zaaktypeUrl) === false) {
             $body = $this->deriveVertrouwelijkheidaanduiding(body: $body, zaaktypeUrl: $zaaktypeUrl);
         }
 
@@ -227,7 +228,8 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $body['zaaktype'] = $zaaktypeUrl;
         }
 
-        if (empty($body['vertrouwelijkheidaanduiding']) === true && empty($zaaktypeUrl) === false) {
+        // Zrc-009: Always override from zaaktype to prevent template leakage.
+        if (empty($zaaktypeUrl) === false) {
             $body = $this->deriveVertrouwelijkheidaanduiding(body: $body, zaaktypeUrl: $zaaktypeUrl);
         }
 
@@ -455,8 +457,9 @@ class ZgwZrcRulesService extends ZgwRulesBase
     /**
      * Derive vertrouwelijkheidaanduiding from zaaktype (zrc-009).
      *
-     * If the client does not send a vertrouwelijkheidaanduiding,
-     * it must be derived from ZaakType.vertrouwelijkheidaanduiding.
+     * The zaaktype's vertrouwelijkheidaanduiding ALWAYS overrides any value from
+     * the request or mapping template to prevent template leakage. The incoming
+     * value is only used as a fallback when the zaaktype field is absent.
      *
      * @param array  $body        The request body
      * @param string $zaaktypeUrl The zaaktype URL
@@ -477,11 +480,13 @@ class ZgwZrcRulesService extends ZgwRulesBase
             return $body;
         }
 
+        // Zrc-009: zaaktype value always overrides template default to prevent leakage.
         $val = $ztData['confidentiality'] ?? ($ztData['confidentialityDesignation'] ?? ($ztData['vertrouwelijkheidaanduiding'] ?? ''));
         if ($val !== '') {
             $body['vertrouwelijkheidaanduiding'] = $val;
         }
 
+        // When zaaktype has no value, preserve any incoming value (fallback).
         return $body;
     }//end deriveVertrouwelijkheidaanduiding()
 
@@ -720,27 +725,16 @@ class ZgwZrcRulesService extends ZgwRulesBase
             }
 
             if ($this->isValidUrl(url: $commKanaal) === false) {
-                // Determine error code: if the last path segment looks like a garbled
-                // UUID (contains hex chars + dashes) → bad-url.
-                // If it's a collection endpoint (word-only) → invalid-resource.
-                $path          = (string) parse_url($commKanaal, PHP_URL_PATH);
-                $segments      = array_filter(explode('/', trim($path, '/')));
-                $last          = end($segments);
-                $looksLikeUuid = preg_match('/[0-9a-f]{4,}-/i', $last) === 1;
-                if ($looksLikeUuid === true) {
-                    $code = 'bad-url';
-                } else {
-                    $code = 'invalid-resource';
-                }
-
+                // Zrc-010: URL is syntactically valid but does not point to a specific
+                // resource (no UUID path segment) → VNG requires 'invalid-resource'.
                 return $this->error(
                     status: 400,
                     detail: 'De communicatiekanaal URL is ongeldig.',
                     invalidParams: [
                         $this->fieldError(
                             fieldName: 'communicatiekanaal',
-                            code: $code,
-                            reason: 'De communicatiekanaal URL is ongeldig.'
+                            code: 'invalid-resource',
+                            reason: 'De communicatiekanaal URL wijst niet naar een geldig object.'
                         ),
                     ]
                 );
@@ -968,7 +962,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                 detail: 'De hoofdzaak is ongeldig.',
                 invalidParams: [$this->fieldError(
                     fieldName: 'hoofdzaak',
-                    code: 'no_match',
+                    code: 'does-not-exist',
                     reason: 'De hoofdzaak URL verwijst niet naar een bekende zaak.'
                 )
                 ]
@@ -1078,6 +1072,145 @@ class ZgwZrcRulesService extends ZgwRulesBase
 
         return null;
     }//end validateProductenOfDiensten()
+
+    /**
+     * Detect whether a statustype is the eindstatus by volgnummer fallback (zrc-007a).
+     *
+     * When `isEindstatus` is not explicitly set on the statustype, the statustype
+     * with the highest `volgnummer` for the zaaktype is treated as the eindstatus.
+     *
+     * @param string $statustypeUuid The statustype UUID to check
+     * @param string $zaaktypeUuid   The zaaktype UUID to fetch all statustypes for
+     *
+     * @return bool True if this statustype is the eindstatus
+     *
+     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     */
+    public function detectEindstatus(string $statustypeUuid, string $zaaktypeUuid): bool
+    {
+        if ($this->objectService === null) {
+            return false;
+        }
+
+        $statusTypeData = $this->findBySchemaKey(uuid: $statustypeUuid, schemaKey: 'status_type_schema');
+        if ($statusTypeData === null) {
+            return false;
+        }
+
+        // If isEindstatus is explicitly set, use it directly.
+        $isEindstatus = $statusTypeData['isEindstatus'] ?? null;
+        if ($isEindstatus !== null) {
+            return $isEindstatus === true || $isEindstatus === 1 || $isEindstatus === 'true';
+        }
+
+        // Fallback: find the statustype with the highest volgnummer for this zaaktype.
+        $register         = $this->mappingConfig['sourceRegister'] ?? '';
+        $statusTypeSchema = $this->settingsService->getConfigValue(key: 'status_type_schema');
+        if (empty($register) === true || empty($statusTypeSchema) === true) {
+            return false;
+        }
+
+        try {
+            $query  = $this->objectService->buildSearchQuery(
+                requestParams: ['caseType' => $zaaktypeUuid, '_limit' => 1000],
+                register: $register,
+                schema: $statusTypeSchema
+            );
+            $result = $this->objectService->searchObjectsPaginated(query: $query);
+
+            $maxVolgnummer     = -1;
+            $maxStatustypeUuid = null;
+            foreach (($result['results'] ?? []) as $obj) {
+                if (is_array($obj) === true) {
+                    $data = $obj;
+                } else {
+                    $data = $obj->jsonSerialize();
+                }
+
+                $volgnummer = (int) ($data['sequenceNumber'] ?? ($data['volgnummer'] ?? 0));
+                $objId      = $data['id'] ?? ($data['@self']['id'] ?? null);
+                if ($volgnummer > $maxVolgnummer) {
+                    $maxVolgnummer     = $volgnummer;
+                    $maxStatustypeUuid = $objId;
+                }
+            }
+
+            return $maxStatustypeUuid === $statustypeUuid;
+        } catch (\Throwable $e) {
+            $this->logger->warning('detectEindstatus failed: '.$e->getMessage());
+            return false;
+        }//end try
+    }//end detectEindstatus()
+
+    /**
+     * Filter a list of zaken by consumer's authorization scope (zrc-006).
+     *
+     * Reads consumer authorizations from context and removes zaken whose
+     * zaaktype is not authorized or whose vertrouwelijkheidaanduiding exceeds
+     * the consumer's maxVertrouwelijkheidaanduiding for the zaaktype.
+     * Falls back to unfiltered when no authorizations context is present.
+     *
+     * @param array $zaken          Array of zaak objects (already serialized to arrays)
+     * @param array $authorizations The consumer's authorizations array from ZgwAuthMiddleware
+     *
+     * @return array The filtered zaken array
+     *
+     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     */
+    public function filterZakenForConsumer(array $zaken, array $authorizations): array
+    {
+        // No authorizations context → return all zaken unfiltered.
+        if (empty($authorizations) === true) {
+            return $zaken;
+        }
+
+        // Build lookup: zaaktype UUID → max vertrouwelijkheidaanduiding level.
+        $allowedZaaktypen = [];
+        foreach ($authorizations as $auth) {
+            $zaaktypeUrl = $auth['zaaktype'] ?? ($auth['zaaktypeUrl'] ?? '');
+            if (empty($zaaktypeUrl) === true) {
+                continue;
+            }
+
+            $zaaktypeUuid = $this->extractUuid(url: (string) $zaaktypeUrl);
+            if ($zaaktypeUuid === null) {
+                continue;
+            }
+
+            $maxVa    = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? 'zeer_geheim');
+            $maxLevel = self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 8;
+
+            // Keep the most permissive level if zaaktype appears in multiple auths.
+            if (isset($allowedZaaktypen[$zaaktypeUuid]) === false
+                || $allowedZaaktypen[$zaaktypeUuid] < $maxLevel
+            ) {
+                $allowedZaaktypen[$zaaktypeUuid] = $maxLevel;
+            }
+        }//end foreach
+
+        return array_values(
+            array_filter(
+                $zaken,
+                function (array $zaak) use ($allowedZaaktypen): bool {
+                    $zaaktypeId   = $zaak['zaaktype'] ?? ($zaak['caseType'] ?? '');
+                    $zaaktypeUuid = $this->extractUuid(url: (string) $zaaktypeId);
+
+                    if ($zaaktypeUuid === null || isset($allowedZaaktypen[$zaaktypeUuid]) === false) {
+                        return false;
+                    }
+
+                    $zaakVa    = $zaak['vertrouwelijkheidaanduiding'] ?? ($zaak['confidentiality'] ?? 'openbaar');
+                    $zaakLevel = self::VERTROUWELIJKHEID_LEVELS[(string) $zaakVa] ?? 1;
+
+                    return $zaakLevel <= $allowedZaaktypen[$zaaktypeUuid];
+                }
+            )
+        );
+    }//end filterZakenForConsumer()
 
     /**
      * Check ZaakInformatieObject field immutability (zrc-004).

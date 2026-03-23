@@ -22,6 +22,12 @@ declare(strict_types=1);
 namespace OCA\Procest\AppInfo;
 
 use OCA\OpenRegister\Event\DeepLinkRegistrationEvent;
+use OCA\Procest\Dashboard\CasesOverviewWidget;
+use OCA\Procest\Dashboard\DeadlineAlertsWidget;
+use OCA\Procest\Dashboard\MyTasksWidget;
+use OCA\Procest\Dashboard\OverdueCasesWidget;
+use OCA\Procest\Dashboard\StalledCasesWidget;
+use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Listener\DeepLinkRegistrationListener;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
 use OCP\AppFramework\App;
@@ -61,6 +67,14 @@ class Application extends App implements IBootstrap
         );
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
+
+        // Dashboard widgets.
+        $context->registerDashboardWidget(CasesOverviewWidget::class);
+        $context->registerDashboardWidget(MyTasksWidget::class);
+        $context->registerDashboardWidget(OverdueCasesWidget::class);
+        $context->registerDashboardWidget(DeadlineAlertsWidget::class);
+        $context->registerDashboardWidget(TaskRemindersWidget::class);
+        $context->registerDashboardWidget(StalledCasesWidget::class);
     }//end register()
 
     /**

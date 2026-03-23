@@ -1,4 +1,4 @@
-schema: conduction
+schema: spec-driven
 
 context: |
   Project: Procest
@@ -36,6 +36,7 @@ rules:
     - Reference docs/ARCHITECTURE.md for data model and standards decisions
     - Consider impact on Pipelinq (request-to-case bridge)
     - Reference docs/FEATURES.md for feature tier (MVP/V1/Enterprise)
+    - "ADR-011: Before implementing ANY utility (validation, formatting, parsing), search OpenRegister lib/Formats/, lib/Service/, and lib/Handler/ for existing implementations. Common duplications: BSN validation (BsnFormat.php), date formatting, slug generation, UUID handling. If found, reuse via DI or document why duplication is necessary."
   specs:
     - Use CMMN concepts for case lifecycle (CasePlanModel, HumanTask, Milestone)
     - Use Schema.org type annotations for all entities (schema:Project, schema:Action, etc.)
@@ -53,3 +54,4 @@ rules:
     - Test with OpenRegister to verify schema validation works
     - Verify Nextcloud integration features with actual OCP interfaces
     - Test request-to-case bridge with Pipelinq
+    - Follow mandatory task categories from ADRs 005, 009, 010, 011
