@@ -72,6 +72,12 @@ class HealthController extends Controller
             $status = 'error';
         }
 
+        // Check OpenRegister dependency (hard dependency).
+        $checks['openregister'] = $this->checkOpenRegister();
+        if ($checks['openregister'] !== 'ok') {
+            $status = 'error';
+        }
+
         // Check filesystem.
         $checks['filesystem'] = $this->checkFilesystem();
         if ($checks['filesystem'] !== 'ok' && $status !== 'error') {
@@ -113,6 +119,28 @@ class HealthController extends Controller
             return 'failed: '.$e->getMessage();
         }
     }//end checkDatabase()
+
+    /**
+     * Check OpenRegister app availability.
+     *
+     * OpenRegister is a hard dependency for Procest. If it is not enabled,
+     * the overall health status MUST be "error".
+     *
+     * @return string 'ok' or error message
+     */
+    private function checkOpenRegister(): string
+    {
+        try {
+            if ($this->appManager->isEnabledForUser('openregister') === true) {
+                return 'ok';
+            }
+
+            return 'failed: app not enabled';
+        } catch (\Exception $e) {
+            $this->logger->error('[HealthController] OpenRegister check failed', ['error' => $e->getMessage()]);
+            return 'failed: '.$e->getMessage();
+        }
+    }//end checkOpenRegister()
 
     /**
      * Check filesystem access.
