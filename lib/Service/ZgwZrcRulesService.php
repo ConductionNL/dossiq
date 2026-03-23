@@ -127,6 +127,35 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $body['archiefstatus'] = 'nog_te_archiveren';
         }
 
+        // Intake channel: mark ZGW API as source channel.
+        if (empty($body['intakeChannel']) === true) {
+            $body['intakeChannel'] = 'zgw-api';
+        }
+
+        // Auto-assign handler from zaaktype defaultAssignee if no handler set.
+        if (empty($body['assignee']) === true && empty($zaaktypeUrl) === false && $this->objectService !== null) {
+            $extractedUuid = $this->extractUuid(url: $zaaktypeUrl);
+            if ($extractedUuid !== null) {
+                $register = $this->mappingConfig['sourceRegister'] ?? '';
+                $schema   = $this->settingsService->getConfigValue(key: 'case_type_schema');
+                if (empty($register) === false && empty($schema) === false) {
+                    try {
+                        $zaaktype = $this->objectService->find(
+                            id: $extractedUuid,
+                            register: $register,
+                            schema: $schema
+                        );
+                        $ztData = is_array($zaaktype) === true ? $zaaktype : $zaaktype->jsonSerialize();
+                        if (empty($ztData['defaultAssignee']) === false) {
+                            $body['assignee'] = $ztData['defaultAssignee'];
+                        }
+                    } catch (\Throwable $e) {
+                        // Zaaktype not found; skip auto-assignment.
+                    }
+                }
+            }
+        }
+
         return $this->validateZaakFields(result: $this->isValid(body: $body), existingObject: null, isPatch: false);
     }//end rulesZakenCreate()
 
