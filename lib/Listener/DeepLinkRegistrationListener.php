@@ -54,17 +54,17 @@ class DeepLinkRegistrationListener implements IEventListener
         // Register case detail deep links.
         $event->register(
             appId: 'procest',
-            registerSlug: 'case-management',
+            registerSlug: 'procest',
             schemaSlug: 'case',
-            urlTemplate: '/apps/procest/#/cases/{uuid}'
+            urlTemplate: '/apps/procest/cases/{uuid}'
         );
 
         // Register task detail deep links.
         $event->register(
             appId: 'procest',
-            registerSlug: 'case-management',
+            registerSlug: 'procest',
             schemaSlug: 'task',
-            urlTemplate: '/apps/procest/#/tasks/{uuid}'
+            urlTemplate: '/apps/procest/tasks/{uuid}'
         );
     }//end handle()
 }//end class

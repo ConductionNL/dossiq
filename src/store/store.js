@@ -50,6 +50,7 @@ export async function initializeStores() {
 		}
 		if (config.register && config.map_layer_schema) {
 			objectStore.registerObjectType('mapLayer', config.map_layer_schema, config.register)
+		}
 		if (config.register && config.objection_schema) {
 			objectStore.registerObjectType('objection', config.objection_schema, config.register)
 		}
