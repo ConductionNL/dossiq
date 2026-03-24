@@ -157,6 +157,7 @@
 			<!-- Case Map widget -->
 			<template #widget-case-map>
 				<CaseMapWidget />
+			</template>
 			<!-- Deadline Alerts widget -->
 			<template #widget-deadline-alerts>
 				<DeadlineAlerts
