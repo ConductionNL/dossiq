@@ -20,6 +20,34 @@ test.describe('Cases page', () => {
 		await expect(page.getByRole('button', { name: 'Add Item' })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Actions' })).toBeVisible()
 	})
+
+	test('new case form has correct sections', async ({ page }) => {
+		await page.goto('/apps/procest/cases/new')
+		await expect(page.getByRole('heading', { name: 'Case', level: 2 })).toBeVisible({ timeout: 10000 })
+		await expect(page.getByRole('heading', { name: 'Status', level: 3 })).toBeVisible()
+		await expect(page.getByRole('heading', { name: 'Case Information', level: 3 })).toBeVisible()
+		await expect(page.getByRole('heading', { name: 'Participants', level: 3 })).toBeVisible()
+		await expect(page.getByRole('heading', { name: /Tasks/, level: 3 })).toBeVisible()
+		await expect(page.getByRole('heading', { name: 'Activity', level: 3 }).first()).toBeVisible()
+	})
+
+	test('new case form has correct fields', async ({ page }) => {
+		await page.goto('/apps/procest/cases/new')
+		await expect(page.getByText('Title')).toBeVisible({ timeout: 10000 })
+		await expect(page.getByText('Description')).toBeVisible()
+		await expect(page.getByText('Case type')).toBeVisible()
+		await expect(page.getByText('Priority')).toBeVisible()
+		await expect(page.getByText('Handler')).toBeVisible()
+		await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
+		await expect(page.getByRole('button', { name: 'Delete' })).toBeVisible()
+		await expect(page.getByRole('button', { name: 'Add Participant' })).toBeVisible()
+	})
+
+	test('activity section has note input', async ({ page }) => {
+		await page.goto('/apps/procest/cases/new')
+		await expect(page.getByRole('textbox', { name: 'Add a note...' })).toBeVisible({ timeout: 10000 })
+		await expect(page.getByRole('button', { name: 'Add note' })).toBeDisabled()
+	})
 })
 
 test.describe('Tasks page', () => {
