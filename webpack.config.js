@@ -47,6 +47,10 @@ webpackConfig.entry = {
 		import: path.join(__dirname, 'src', 'stalledCasesWidget.js'),
 		filename: appId + '-stalledCasesWidget.js',
 	},
+	startCaseWidget: {
+		import: path.join(__dirname, 'src', 'startCaseWidget.js'),
+		filename: appId + '-startCaseWidget.js',
+	},
 }
 
 // Use local source when available (monorepo dev), otherwise fall back to npm package
