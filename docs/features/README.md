@@ -78,6 +78,7 @@ Procest is a Nextcloud case management app (zaaksysteem) for Dutch municipalitie
 | Register i18n | Full Dutch + English translation using Nextcloud gettext/l10n infrastructure | Forum Standaardisatie i18n | Partial | [register-i18n.md](register-i18n.md) |
 | Multi-Tenant SaaS | Tenant isolation, per-tenant configuration, and NL Design System theming per tenant | Nextcloud Groups | Planned | [multi-tenant-saas.md](multi-tenant-saas.md) |
 | Prometheus Metrics | `/metrics` endpoint for Prometheus scraping with SLA compliance and queue depth metrics | OpenMetrics | Planned | [prometheus-metrics.md](prometheus-metrics.md) |
+| Start Case Widget | Dashboard widget for starting new cases directly from the Nextcloud dashboard | Nextcloud Dashboard API | Implemented | [start-case-widget.md](start-case-widget.md) |
 | App Scaffold | PHP/Vue app foundation, OpenRegister wiring, Pinia stores, and build system | Nextcloud OCP | Implemented | [app-scaffold.md](app-scaffold.md) |
 
 ## TEC BPM RFP Template Coverage
@@ -179,4 +180,5 @@ create-procest-app    → app-scaffold.md
 procest-app-scaffold  → app-scaffold.md
 procest-object-store  → app-scaffold.md
 procest-case-management → case-management.md
+start-case-widget     → start-case-widget.md
 ```

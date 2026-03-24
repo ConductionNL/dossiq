@@ -53,7 +53,6 @@ class StartCaseWidget implements IWidget
     public function getId(): string
     {
         return 'procest_start_case_widget';
-
     }//end getId()
 
     /**
@@ -65,7 +64,6 @@ class StartCaseWidget implements IWidget
     public function getTitle(): string
     {
         return $this->l10n->t('Start case');
-
     }//end getTitle()
 
     /**
@@ -77,7 +75,6 @@ class StartCaseWidget implements IWidget
     public function getOrder(): int
     {
         return 15;
-
     }//end getOrder()
 
     /**
@@ -89,7 +86,6 @@ class StartCaseWidget implements IWidget
     public function getIconClass(): string
     {
         return 'icon-procest-widget';
-
     }//end getIconClass()
 
     /**
@@ -100,8 +96,7 @@ class StartCaseWidget implements IWidget
      */
     public function getUrl(): ?string
     {
-        return $this->url->linkToRouteAbsolute(Application::APP_ID . '.dashboard.page');
-
+        return $this->url->linkToRouteAbsolute(Application::APP_ID.'.dashboard.page');
     }//end getUrl()
 
     /**
@@ -114,8 +109,7 @@ class StartCaseWidget implements IWidget
      */
     public function load(): void
     {
-        Util::addScript(Application::APP_ID, Application::APP_ID . '-startCaseWidget');
+        Util::addScript(Application::APP_ID, Application::APP_ID.'-startCaseWidget');
         Util::addStyle(Application::APP_ID, 'dashboardWidgets');
-
     }//end load()
 }//end class
