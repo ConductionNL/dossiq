@@ -636,6 +636,7 @@ export default {
 		sidebarProps() {
 			const config = this.objectStore.objectTypeRegistry.case || {}
 			return {
+				title: t('procest', 'Case'),
 				register: config.register || '',
 				schema: config.schema || '',
 			}

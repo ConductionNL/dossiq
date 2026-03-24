@@ -242,6 +242,7 @@ export default {
 		sidebarProps() {
 			const config = this.objectStore.objectTypeRegistry.task || {}
 			return {
+				title: t('procest', 'Task'),
 				register: config.register || '',
 				schema: config.schema || '',
 			}
