@@ -4,9 +4,17 @@
 /docusaurus/node_modules/
 /docusaurus/build/
 /docusaurus/.docusaurus/
+<<<<<<< Updated upstream
 docs/.docusaurus/
 docs/node_modules/
 
 .phpunit.cache/
 coverage/
 phpmetrics/
+=======
+
+# Test/build artifacts
+.phpunit.cache
+coverage/
+.phpunit.result.cache
+>>>>>>> Stashed changes
