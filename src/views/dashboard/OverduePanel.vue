@@ -51,11 +51,6 @@
 				</div>
 			</div>
 
-			<div class="overdue-panel__footer">
-				<a href="#" @click.prevent="$emit('view-all')">
-					{{ t('procest', 'View all overdue') }} &rarr;
-				</a>
-			</div>
 		</template>
 	</div>
 </template>

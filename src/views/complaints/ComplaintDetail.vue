@@ -24,17 +24,20 @@
 
 			<!-- Status card -->
 			<CnDetailCard :title="t('procest', 'Status')">
+				<template #header-actions>
+					<NcSelect
+						v-if="!isReadOnly"
+						v-model="selectedStatus"
+						:options="availableTransitions"
+						:placeholder="t('procest', 'Change status...')"
+						class="status-select"
+						@input="onStatusChange" />
+				</template>
+
 				<div class="status-section">
 					<span class="status-badge" :class="'status-badge--' + complaint.status">
 						{{ getStatusLabel(complaint.status) }}
 					</span>
-					<div v-if="!isReadOnly" class="status-section__change">
-						<NcSelect
-							v-model="selectedStatus"
-							:options="availableTransitions"
-							:placeholder="t('procest', 'Change status...')"
-							@input="onStatusChange" />
-					</div>
 				</div>
 			</CnDetailCard>
 
@@ -173,7 +176,7 @@
 
 			<!-- Actions card -->
 			<CnDetailCard v-if="!isReadOnly && !isNew" :title="t('procest', 'Actions')">
-				<div class="action-buttons">
+				<template #header-actions>
 					<NcButton
 						v-if="complaint.status === 'in_behandeling'"
 						@click="showHearingDialog = true">
@@ -189,7 +192,7 @@
 						@click="showEscalateDialog = true">
 						{{ t('procest', 'Escalate to Case') }}
 					</NcButton>
-				</div>
+				</template>
 			</CnDetailCard>
 
 			<!-- Activity card -->

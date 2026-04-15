@@ -121,6 +121,16 @@
 				</div>
 			</template>
 
+			<!-- My Work widget actions -->
+			<template #widget-my-work-actions>
+				<NcButton
+					v-if="myWorkItems.length >= 5"
+					type="tertiary"
+					@click="$router.push({ name: 'MyWork' })">
+					{{ t('procest', 'View all') }}
+				</NcButton>
+			</template>
+
 			<!-- My Work widget -->
 			<template #widget-my-work>
 				<div class="my-work-widget-content">
@@ -143,13 +153,6 @@
 								{{ item.daysText }}
 							</span>
 						</div>
-						<NcButton
-							v-if="myWorkItems.length >= 5"
-							type="tertiary"
-							class="view-all-link"
-							@click="$router.push({ name: 'MyWork' })">
-							{{ t('procest', 'View all my work') }}
-						</NcButton>
 					</div>
 				</div>
 			</template>
@@ -157,6 +160,15 @@
 			<!-- Case Map widget -->
 			<template #widget-case-map>
 				<CaseMapWidget />
+			</template>
+
+			<!-- Deadline Alerts widget actions -->
+			<template #widget-deadline-alerts-actions>
+				<NcButton type="tertiary" @click="$router.push({ name: 'Cases', query: { overdue: 'true' } })">
+					{{ t('procest', 'View all') }}
+				</NcButton>
+			</template>
+
 			<!-- Deadline Alerts widget -->
 			<template #widget-deadline-alerts>
 				<DeadlineAlerts
@@ -250,12 +262,8 @@ const BAR_COLORS = [
 
 /**
  * Default dashboard layout — 4 count tiles across the top row (3 cols each),
- * then cases-by-status and my-work share the second row.
- */
-/**
- * Default dashboard layout — 5 count tiles across the top row,
- * then cases-by-status and my-work share the second row.
- * Grid is 12 columns: tiles use widths 2+3+3+2+2 = 12.
+ * then cases-by-status and my-work share the second row,
+ * deadline/task/stalled alerts on the third row.
  */
 const DEFAULT_LAYOUT = [
 	{ id: 1, widgetId: 'count-open-cases', gridX: 0, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
@@ -264,17 +272,9 @@ const DEFAULT_LAYOUT = [
 	{ id: 4, widgetId: 'count-my-tasks', gridX: 9, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
 	{ id: 5, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
 	{ id: 6, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 7, widgetId: 'case-map', gridX: 0, gridY: 6, gridWidth: 12, gridHeight: 6 },
-	{ id: 1, widgetId: 'count-open-cases', gridX: 0, gridY: 0, gridWidth: 2, gridHeight: 2, showTitle: false },
-	{ id: 2, widgetId: 'count-overdue', gridX: 2, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
-	{ id: 3, widgetId: 'count-completed', gridX: 5, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
-	{ id: 4, widgetId: 'count-my-tasks', gridX: 8, gridY: 0, gridWidth: 2, gridHeight: 2, showTitle: false },
-	{ id: 5, widgetId: 'count-sla', gridX: 10, gridY: 0, gridWidth: 2, gridHeight: 2, showTitle: false },
-	{ id: 6, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 7, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 8, widgetId: 'deadline-alerts', gridX: 0, gridY: 6, gridWidth: 4, gridHeight: 4 },
-	{ id: 9, widgetId: 'task-due-reminders', gridX: 4, gridY: 6, gridWidth: 4, gridHeight: 4 },
-	{ id: 10, widgetId: 'stalled-cases', gridX: 8, gridY: 6, gridWidth: 4, gridHeight: 4 },
+	{ id: 7, widgetId: 'deadline-alerts', gridX: 0, gridY: 6, gridWidth: 4, gridHeight: 4 },
+	{ id: 8, widgetId: 'task-due-reminders', gridX: 4, gridY: 6, gridWidth: 4, gridHeight: 4 },
+	{ id: 9, widgetId: 'stalled-cases', gridX: 8, gridY: 6, gridWidth: 4, gridHeight: 4 },
 ]
 
 export default {

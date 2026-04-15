@@ -42,10 +42,6 @@
 				:to="{ name: 'CaseMap' }">
 				<template #icon>
 					<MapOutline :size="20" />
-				:name="t('procest', 'Voorstellen')"
-				:to="{ name: 'Voorstellen' }">
-				<template #icon>
-					<FileDocumentEditOutline :size="20" />
 				</template>
 			</NcAppNavigationItem>
 			<NcAppNavigationItem

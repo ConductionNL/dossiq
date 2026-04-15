@@ -1,5 +1,24 @@
 <template>
 	<CnDetailCard :title="actionTitle" class="parafeer-action-bar">
+		<template #header-actions>
+			<template v-if="isAdvisoryStep">
+				<NcButton type="primary" :disabled="acting" @click="doAdviseren">
+					{{ t('procest', 'Adviseren') }}
+				</NcButton>
+				<NcButton type="error" :disabled="acting" @click="showReturnForm = true">
+					{{ t('procest', 'Terugsturen') }}
+				</NcButton>
+			</template>
+			<template v-else>
+				<NcButton type="primary" :disabled="acting" @click="doParaferen">
+					{{ t('procest', 'Paraferen') }}
+				</NcButton>
+				<NcButton type="error" :disabled="acting" @click="showReturnForm = true">
+					{{ t('procest', 'Terugsturen') }}
+				</NcButton>
+			</template>
+		</template>
+
 		<!-- Advisory step: Adviseren -->
 		<template v-if="isAdvisoryStep">
 			<div class="form-group">
@@ -9,26 +28,10 @@
 					:placeholder="t('procest', 'Geef uw advies...')"
 					rows="3" />
 			</div>
-			<div class="parafeer-action-bar__actions">
-				<NcButton type="primary" :disabled="acting" @click="doAdviseren">
-					{{ t('procest', 'Adviseren') }}
-				</NcButton>
-				<NcButton type="error" :disabled="acting" @click="showReturnForm = true">
-					{{ t('procest', 'Terugsturen') }}
-				</NcButton>
-			</div>
 		</template>
 
 		<!-- Parafering/Accordering step -->
 		<template v-else>
-			<div class="parafeer-action-bar__actions">
-				<NcButton type="primary" :disabled="acting" @click="doParaferen">
-					{{ t('procest', 'Paraferen') }}
-				</NcButton>
-				<NcButton type="error" :disabled="acting" @click="showReturnForm = true">
-					{{ t('procest', 'Terugsturen') }}
-				</NcButton>
-			</div>
 
 			<!-- Delegation option -->
 			<div v-if="!showReturnForm" class="parafeer-action-bar__delegation">

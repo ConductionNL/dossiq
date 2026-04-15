@@ -1,20 +1,10 @@
 <template>
 	<div class="participants-section">
-		<div class="section-header">
-			<h3>{{ t('procest', 'Participants') }} ({{ roles.length }})</h3>
-			<NcButton v-if="!isReadOnly" @click="showAddDialog = true">
-				{{ t('procest', 'Add Participant') }}
-			</NcButton>
-		</div>
-
 		<NcLoadingIcon v-if="loading" />
 
 		<template v-else-if="roles.length === 0">
 			<div class="participants-section__empty">
 				<p>{{ t('procest', 'No participants assigned') }}</p>
-				<NcButton v-if="!isReadOnly" type="primary" @click="onAssignHandler">
-					{{ t('procest', 'Assign Handler') }}
-				</NcButton>
 			</div>
 		</template>
 

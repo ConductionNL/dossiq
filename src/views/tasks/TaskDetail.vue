@@ -103,20 +103,20 @@
 
 		<!-- Status card -->
 		<CnDetailCard :title="t('procest', 'Status')">
+			<template #header-actions>
+				<NcButton
+					v-for="target in allowedTransitions"
+					:key="target"
+					:type="target === 'completed' ? 'primary' : 'secondary'"
+					@click="transitionTo(target)">
+					{{ getTransitionLabel(target) }}
+				</NcButton>
+			</template>
+
 			<div class="status-section">
 				<span class="status-badge" :class="'status-badge--' + taskData.status">
 					{{ getStatusLabel(taskData.status) }}
 				</span>
-
-				<div v-if="allowedTransitions.length > 0" class="status-section__actions">
-					<NcButton
-						v-for="target in allowedTransitions"
-						:key="target"
-						:type="target === 'completed' ? 'primary' : 'secondary'"
-						@click="transitionTo(target)">
-						{{ getTransitionLabel(target) }}
-					</NcButton>
-				</div>
 
 				<div v-if="taskData.completedDate" class="status-section__completed-date">
 					{{ t('procest', 'Completed on {date}', { date: formatDueDate(taskData.completedDate) }) }}

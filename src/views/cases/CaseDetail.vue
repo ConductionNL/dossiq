@@ -35,179 +35,130 @@
 				</NcButton>
 			</template>
 
-			<!-- Status card -->
-			<CnDetailCard :title="t('procest', 'Status')">
-				<div class="status-section">
-					<span class="status-badge" :class="currentStatusBadgeClass">
-						{{ currentStatusName }}
-					</span>
-
-					<!-- Status change dropdown -->
-					<div v-if="!isReadOnly && orderedStatusTypes.length > 0" class="status-section__change">
+			<!-- Detail page grid layout -->
+			<div class="case-detail-grid">
+				<!-- Status card (left) -->
+				<CnDetailCard :title="t('procest', 'Status')">
+					<template #header-actions>
 						<NcSelect
+							v-if="!isReadOnly && orderedStatusTypes.length > 0"
 							v-model="selectedStatus"
 							:options="orderedStatusTypes"
 							label="name"
 							track-by="id"
 							:placeholder="t('procest', 'Change status...')"
+							class="status-select"
 							@input="onStatusSelected" />
-					</div>
-
-					<span v-if="caseData.endDate" class="status-section__closed-info">
-						{{ t('procest', 'Closed on {date}', { date: formatDate(caseData.endDate) }) }}
-					</span>
-				</div>
-
-				<!-- Result prompt (shown when final status selected) -->
-				<div v-if="showResultPrompt" class="result-prompt">
-					<template v-if="resultTypes.length > 0">
-						<NcSelect
-							v-model="selectedResultType"
-							:options="resultTypes"
-							label="name"
-							track-by="id"
-							:placeholder="t('procest', 'Select result type...')" />
 					</template>
-					<template v-else>
-						<NcTextField
-							:value="resultText"
-							:label="t('procest', 'Result (required)')"
-							:error="!!resultError"
-							@update:value="v => { resultText = v; resultError = '' }" />
+
+					<div class="status-section">
+						<span class="status-badge" :class="currentStatusBadgeClass">
+							{{ currentStatusName }}
+						</span>
+
+						<span v-if="caseData.endDate" class="status-section__closed-info">
+							{{ t('procest', 'Closed on {date}', { date: formatDate(caseData.endDate) }) }}
+						</span>
+					</div>
+
+					<!-- Status Timeline -->
+					<CnTimelineStages
+						v-if="timelineStages.length > 0"
+						:stages="timelineStages"
+						:current-stage="activeStatusId"
+						orientation="vertical"
+						size="small" />
+
+					<!-- Result prompt (shown when final status selected) -->
+					<div v-if="showResultPrompt" class="result-prompt">
+						<template v-if="resultTypes.length > 0">
+							<NcSelect
+								v-model="selectedResultType"
+								:options="resultTypes"
+								label="name"
+								track-by="id"
+								:placeholder="t('procest', 'Select result type...')" />
+						</template>
+						<template v-else>
+							<NcTextField
+								:value="resultText"
+								:label="t('procest', 'Result (required)')"
+								:error="!!resultError"
+								@update:value="v => { resultText = v; resultError = '' }" />
+						</template>
+						<p v-if="resultError" class="form-error">
+							{{ resultError }}
+						</p>
+						<div class="result-prompt__actions">
+							<NcButton type="primary" @click="confirmStatusChange">
+								{{ t('procest', 'Confirm') }}
+							</NcButton>
+							<NcButton @click="cancelStatusChange">
+								{{ t('procest', 'Cancel') }}
+							</NcButton>
+						</div>
+					</div>
+				</CnDetailCard>
+
+				<!-- Case Information (right) -->
+				<div>
+					<CnObjectDataWidget
+						v-if="caseData && caseSchema"
+						:schema="caseSchema"
+						:object-data="caseData"
+						object-type="case"
+						:store="objectStore"
+						:columns="2"
+						:overrides="caseDataOverrides"
+						:title="t('procest', 'Case Information')"
+						:save-label="t('procest', 'Save')"
+						:discard-label="t('procest', 'Discard')"
+						@saved="onCaseDataSaved" />
+
+					<ResultSection
+						:result="caseResult"
+						:result-types="resultTypes"
+						:show-empty="isAtFinalStatus && !caseResult" />
+				</div>
+
+				<!-- Row 2: Deadline & Timing + Participants -->
+				<CnDetailCard v-if="caseTypeData" :title="t('procest', 'Deadline & Timing')" class="grid-half">
+					<DeadlinePanel
+						:start-date="caseData.startDate"
+						:deadline="caseData.deadline"
+						:processing-deadline="caseTypeData.processingDeadline"
+						:extension-allowed="caseTypeData.extensionAllowed === true || caseTypeData.extensionAllowed === 'true'"
+						:extension-period="caseTypeData.extensionPeriod"
+						:extension-count="caseData.extensionCount || 0"
+						:is-final="isAtFinalStatus"
+						@extend="showExtensionDialog" />
+				</CnDetailCard>
+
+				<CnDetailCard :title="t('procest', 'Participants')" class="grid-half">
+					<template #header-actions>
+						<NcButton v-if="!isReadOnly" @click="onAddParticipant">
+							{{ t('procest', 'Add Participant') }}
+						</NcButton>
 					</template>
-					<p v-if="resultError" class="form-error">
-						{{ resultError }}
-					</p>
-					<div class="result-prompt__actions">
-						<NcButton type="primary" @click="confirmStatusChange">
-							{{ t('procest', 'Confirm') }}
-						</NcButton>
-						<NcButton @click="cancelStatusChange">
-							{{ t('procest', 'Cancel') }}
-						</NcButton>
-					</div>
-				</div>
-			</CnDetailCard>
+					<ParticipantsSection
+						ref="participantsSection"
+						:case-id="caseId"
+						:is-read-only="isReadOnly"
+						@handler-changed="onHandlerChanged" />
+				</CnDetailCard>
 
-			<!-- Status Timeline card -->
-			<CnDetailCard v-if="orderedStatusTypes.length > 0" :title="t('procest', 'Status Timeline')">
-				<StatusTimeline
-					:status-types="orderedStatusTypes"
-					:current-status-id="caseData.status"
-					:status-history="caseData.statusHistory || []" />
-			</CnDetailCard>
+				<!-- Row 3: Workflow (full width, conditional) -->
+				<CnDetailCard v-if="hasWorkflow" :title="t('procest', 'Workflow Transitions')" class="grid-full">
+					<WorkflowTransitions
+						:case-data="caseData"
+						:tasks="tasks"
+						:documents="caseDocuments"
+						:user-roles="userRoleTypeIds"
+						@transition-executed="onWorkflowTransition" />
+				</CnDetailCard>
 
-			<!-- Workflow Transitions card -->
-			<CnDetailCard v-if="hasWorkflow" :title="t('procest', 'Workflow Transitions')">
-				<WorkflowTransitions
-					:case-data="caseData"
-					:tasks="tasks"
-					:documents="caseDocuments"
-					:user-roles="userRoleTypeIds"
-					@transition-executed="onWorkflowTransition" />
-			</CnDetailCard>
-
-			<!-- Case Information card -->
-			<CnDetailCard :title="t('procest', 'Case Information')">
-				<div class="form-group">
-					<label>{{ t('procest', 'Title') }} *</label>
-					<NcTextField
-						:value="form.title"
-						:disabled="isReadOnly"
-						:error="!!validationErrors.title"
-						@update:value="v => { form.title = v; validationErrors.title = '' }" />
-					<p v-if="validationErrors.title" class="form-error">
-						{{ validationErrors.title }}
-					</p>
-				</div>
-
-				<div class="form-group">
-					<label>{{ t('procest', 'Description') }}</label>
-					<textarea
-						v-model="form.description"
-						:disabled="isReadOnly"
-						rows="3" />
-				</div>
-
-				<div class="form-row">
-					<div class="form-group">
-						<label>{{ t('procest', 'Case type') }}</label>
-						<span class="form-value">{{ caseTypeName }}</span>
-					</div>
-					<div class="form-group">
-						<label>{{ t('procest', 'Identifier') }}</label>
-						<span class="form-value">{{ caseData.identifier || '—' }}</span>
-					</div>
-				</div>
-
-				<div class="form-row">
-					<div class="form-group">
-						<label>{{ t('procest', 'Priority') }}</label>
-						<NcSelect
-							v-model="form.priority"
-							:options="priorityOptions"
-							:disabled="isReadOnly" />
-					</div>
-					<div class="form-group">
-						<label>{{ t('procest', 'Confidentiality') }}</label>
-						<span class="form-value">{{ caseData.confidentiality || '—' }}</span>
-					</div>
-				</div>
-
-				<div class="form-row">
-					<div class="form-group">
-						<label>{{ t('procest', 'Handler') }}</label>
-						<NcTextField
-							:value="form.assignee"
-							:disabled="isReadOnly"
-							:placeholder="t('procest', 'Assign handler...')"
-							@update:value="v => form.assignee = v" />
-					</div>
-					<div class="form-group">
-						<label>{{ t('procest', 'Start date') }}</label>
-						<span class="form-value">{{ formatDate(caseData.startDate) }}</span>
-					</div>
-				</div>
-
-				<ResultSection
-					:result="caseResult"
-					:result-types="resultTypes"
-					:show-empty="isAtFinalStatus && !caseResult" />
-
-				<div v-if="!caseResult && caseData.result" class="form-group">
-					<label>{{ t('procest', 'Result') }}</label>
-					<span class="form-value">{{ caseData.result }}</span>
-				</div>
-			</CnDetailCard>
-
-			<!-- Deadline & Timing card -->
-			<CnDetailCard v-if="caseTypeData" :title="t('procest', 'Deadline & Timing')">
-				<DeadlinePanel
-					:start-date="caseData.startDate"
-					:deadline="caseData.deadline"
-					:processing-deadline="caseTypeData.processingDeadline"
-					:extension-allowed="caseTypeData.extensionAllowed === true || caseTypeData.extensionAllowed === 'true'"
-					:extension-period="caseTypeData.extensionPeriod"
-					:extension-count="caseData.extensionCount || 0"
-					:is-final="isAtFinalStatus"
-					@extend="showExtensionDialog" />
-			</CnDetailCard>
-
-			<!-- B&W Voorstellen card -->
-			<CnDetailCard :title="t('procest', 'B&W Voorstellen')">
-				<VoorstellenPanel
-					:case-id="caseId"
-					:case-title="caseData.title || ''"
-					:is-read-only="isReadOnly" />
-			</CnDetailCard>
-
-			<!-- Participants card -->
-			<CnDetailCard :title="t('procest', 'Participants')">
-				<ParticipantsSection
-					:case-id="caseId"
-					:is-read-only="isReadOnly"
-					@handler-changed="onHandlerChanged" />
-			</CnDetailCard>
+				<!-- Row 4: Sub-cases (full width, conditional) -->
+			</div>
 
 			<!-- Sub-cases card -->
 			<CnDetailCard
@@ -229,68 +180,6 @@
 				:parent-case-type="caseTypeData"
 				@created="onSubCaseCreated"
 				@close="showSubCaseDialog = false" />
-
-			<!-- Tasks card -->
-			<CnDetailCard :title="`${t('procest', 'Tasks')} (${completedTaskCount}/${tasks.length})`">
-				<template #actions>
-					<NcButton v-if="!isReadOnly" @click="$router.push({ name: 'TaskNew', query: { caseId } })">
-						{{ t('procest', 'New task') }}
-					</NcButton>
-				</template>
-
-				<div v-if="tasks.length === 0" class="section-empty">
-					{{ t('procest', 'No tasks yet') }}
-				</div>
-				<div v-else class="viewTableContainer">
-					<table class="viewTable">
-						<thead>
-							<tr>
-								<th>{{ t('procest', 'Title') }}</th>
-								<th>{{ t('procest', 'Status') }}</th>
-								<th>{{ t('procest', 'Assignee') }}</th>
-								<th>{{ t('procest', 'Due date') }}</th>
-								<th>{{ t('procest', 'Priority') }}</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr
-								v-for="task in sortedTasks"
-								:key="task.id"
-								class="viewTableRow"
-								:class="{ 'viewTableRow--overdue': isOverdue(task) }"
-								@click="$router.push({ name: 'TaskDetail', params: { id: task.id } })">
-								<td>{{ task.title || '—' }}</td>
-								<td>
-									<span class="status-badge" :class="'status-badge--' + task.status">
-										{{ getTaskStatusLabel(task.status) }}
-									</span>
-								</td>
-								<td>{{ task.assignee || '—' }}</td>
-								<td :class="dueDateClass(task)">
-									<template v-if="isOverdue(task)">
-										{{ getOverdueText(task) }}
-									</template>
-									<template v-else-if="isDueToday(task)">
-										{{ t('procest', 'Due today') }}
-									</template>
-									<template v-else>
-										{{ formatDueDate(task.dueDate) }}
-									</template>
-								</td>
-								<td>
-									<span
-										v-if="task.priority && task.priority !== 'normal'"
-										class="priority-badge"
-										:class="'priority-badge--' + task.priority">
-										{{ getTaskPriorityLabel(task.priority) }}
-									</span>
-									<span v-else>—</span>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			</CnDetailCard>
 
 			<!-- VTH Panels (conditionally shown based on case type) -->
 			<InspectionPanel
@@ -394,13 +283,6 @@
 				</CnDetailCard>
 			</template>
 
-			<!-- Activity card -->
-			<CnDetailCard :title="t('procest', 'Activity')">
-				<ActivityTimeline
-					:activity="caseData.activity || []"
-					:is-read-only="isReadOnly"
-					@add-note="onAddNote" />
-			</CnDetailCard>
 		</CnDetailPage>
 
 		<!-- Extension dialog -->
@@ -430,15 +312,15 @@
 
 <script>
 import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
-import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
+import { CnDetailPage, CnDetailCard, CnTimelineStages, CnObjectDataWidget, buildHeaders } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { getStatusLabel as getTaskStatusLabel } from '../../utils/taskLifecycle.js'
 import { isOverdue, isDueToday, getOverdueText, formatDueDate, sortTasks, getPriorityLevels } from '../../utils/taskHelpers.js'
 import { calculateDeadline, formatDate, formatDuration } from '../../utils/caseHelpers.js'
 import { validateCaseUpdate } from '../../utils/caseValidation.js'
-import StatusTimeline from './components/StatusTimeline.vue'
+// StatusTimeline replaced by CnTimelineStages from shared library
 import DeadlinePanel from './components/DeadlinePanel.vue'
-import ActivityTimeline from './components/ActivityTimeline.vue'
+// ActivityTimeline removed — sidebar handles notes/tasks
 import ParticipantsSection from './components/ParticipantsSection.vue'
 import ResultSection from './components/ResultSection.vue'
 import SubCasesSection from './components/SubCasesSection.vue'
@@ -446,7 +328,7 @@ import CaseCreateDialog from './CaseCreateDialog.vue'
 import InspectionPanel from './components/InspectionPanel.vue'
 import EnforcementPanel from './components/EnforcementPanel.vue'
 import AdvicePanel from './components/AdvicePanel.vue'
-import VoorstellenPanel from './components/VoorstellenPanel.vue'
+// VoorstellenPanel removed — B&W voorstellen is a separate zaaktype, not a case widget
 import WorkflowTransitions from './components/WorkflowTransitions.vue'
 import BezwaarIntakeForm from './components/bezwaar/BezwaarIntakeForm.vue'
 import HearingPanel from './components/bezwaar/HearingPanel.vue'
@@ -469,9 +351,9 @@ export default {
 		NcSelect,
 		CnDetailPage,
 		CnDetailCard,
-		StatusTimeline,
+		CnTimelineStages,
+		CnObjectDataWidget,
 		DeadlinePanel,
-		ActivityTimeline,
 		ParticipantsSection,
 		ResultSection,
 		SubCasesSection,
@@ -480,7 +362,6 @@ export default {
 		EnforcementPanel,
 		AdvicePanel,
 		LocationTab,
-		VoorstellenPanel,
 		WorkflowTransitions,
 		BezwaarIntakeForm,
 		HearingPanel,
@@ -499,6 +380,7 @@ export default {
 	},
 	data() {
 		return {
+		caseSchema: null,
 			form: {
 				title: '',
 				description: '',
@@ -549,8 +431,42 @@ export default {
 		caseTypeName() {
 			return this.caseTypeData?.title || '—'
 		},
+		caseDataOverrides() {
+			return {
+				title: { order: 1, gridColumn: 2 },
+				description: { order: 2, gridColumn: 2, gridRow: 2 },
+				caseType: { order: 3, editable: false },
+				identifier: { order: 4, editable: false },
+				priority: { order: 5 },
+				confidentiality: { order: 6 },
+				assignee: { order: 7 },
+				startDate: { order: 8, editable: false },
+				// Hide fields managed by other cards
+				status: { hidden: true },
+				endDate: { hidden: true },
+				result: { hidden: true },
+				geometry: { hidden: true },
+				parentCase: { hidden: true },
+				statusHistory: { hidden: true },
+				activity: { hidden: true },
+			}
+		},
 		orderedStatusTypes() {
 			return [...this.statusTypes].sort((a, b) => (a.order || 0) - (b.order || 0))
+		},
+		activeStatusId() {
+			return this.selectedStatus?.id || this.caseData.status || null
+		},
+		timelineStages() {
+			const history = this.caseData.statusHistory || []
+			return this.orderedStatusTypes.map(st => {
+				const entry = history.find(h => h.status === st.id)
+				return {
+					id: st.id,
+					label: st.name,
+					subtitle: entry ? this.formatDate(entry.date) : undefined,
+				}
+			})
 		},
 		currentStatusType() {
 			if (!this.caseData.status) return null
@@ -636,7 +552,10 @@ export default {
 		sidebarProps() {
 			const config = this.objectStore.objectTypeRegistry.case || {}
 			return {
-				title: t('procest', 'Case'),
+				title: this.caseData.title || t('procest', 'Case'),
+				subtitle: this.caseData.identifier
+					? `${t('procest', 'Case')} — ${this.caseData.identifier}`
+					: t('procest', 'Case'),
 				register: config.register || '',
 				schema: config.schema || '',
 			}
@@ -670,6 +589,7 @@ export default {
 			this.populateForm()
 			await Promise.all([
 				this.loadCaseTypeData(),
+				this.loadCaseSchema(),
 				this.fetchTasks(),
 				this.fetchCaseResult(),
 				this.fetchParentCase(),
@@ -707,6 +627,28 @@ export default {
 				assignee: data.assignee || '',
 				priority: data.priority || 'normal',
 			}
+		},
+
+		async loadCaseSchema() {
+			const config = this.objectStore.objectTypeRegistry.case || {}
+			if (!config.schema) return
+			try {
+				const prefix = window.location.pathname.includes('/index.php') ? '/index.php' : ''
+				const response = await fetch(
+					`${prefix}/apps/openregister/api/schemas/${config.schema}`,
+					{ method: 'GET', headers: buildHeaders() },
+				)
+				if (response.ok) {
+					this.caseSchema = await response.json()
+				}
+			} catch (err) {
+				console.warn('Failed to load case schema:', err)
+			}
+		},
+
+		async onCaseDataSaved() {
+			await this.objectStore.fetchObject('case', this.caseId)
+			this.populateForm()
 		},
 
 		async loadCaseTypeData() {
@@ -1028,6 +970,12 @@ export default {
 		},
 
 		// --- Handler Changed ---
+		onAddParticipant() {
+			if (this.$refs.participantsSection) {
+				this.$refs.participantsSection.showAddDialog = true
+			}
+		},
+
 		async onHandlerChanged(newAssignee) {
 			this.form.assignee = newAssignee
 			// Persist the assignee to the backend.
@@ -1070,6 +1018,37 @@ export default {
 </script>
 
 <style scoped>
+/* Detail page grid layout */
+.case-detail-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	align-items: start;
+}
+
+.case-detail-grid .grid-half {
+	grid-column: span 1;
+}
+
+.case-detail-grid .grid-full {
+	grid-column: 1 / -1;
+}
+
+@media (max-width: 900px) {
+	.case-detail-grid {
+		grid-template-columns: 1fr;
+	}
+	.case-detail-grid .grid-half,
+	.case-detail-grid .grid-full {
+		grid-column: 1;
+	}
+}
+
+/* Status select in card title bar */
+.status-select {
+	min-width: 180px;
+}
+
 /* Parent breadcrumb */
 .parent-breadcrumb {
 	display: flex;

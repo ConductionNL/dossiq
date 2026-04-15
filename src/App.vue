@@ -29,7 +29,7 @@
 				<router-view />
 			</NcAppContent>
 			<CnIndexSidebar
-				v-if="sidebarState.active"
+				v-if="sidebarState.active && !objectSidebarState.active"
 				:schema="sidebarState.schema"
 				:visible-columns="sidebarState.visibleColumns"
 				:search-value="sidebarState.searchValue"
@@ -40,6 +40,16 @@
 				@search="onSidebarSearch"
 				@columns-change="onSidebarColumnsChange"
 				@filter-change="onSidebarFilterChange" />
+			<CnObjectSidebar
+				v-if="objectSidebarState.active"
+				:object-type="objectSidebarState.objectType"
+				:object-id="objectSidebarState.objectId"
+				:title="objectSidebarState.title"
+				:subtitle="objectSidebarState.subtitle"
+				:register="objectSidebarState.register"
+				:schema="objectSidebarState.schema"
+				:hidden-tabs="objectSidebarState.hiddenTabs"
+				:open.sync="objectSidebarState.open" />
 		</template>
 		<NcAppContent v-else>
 			<div style="display: flex; justify-content: center; align-items: center; height: 100%;">
@@ -52,7 +62,7 @@
 <script>
 import Vue from 'vue'
 import { NcButton, NcContent, NcAppContent, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
-import { CnIndexSidebar } from '@conduction/nextcloud-vue'
+import { CnIndexSidebar, CnObjectSidebar } from '@conduction/nextcloud-vue'
 import { generateUrl, imagePath } from '@nextcloud/router'
 import MainMenu from './navigation/MainMenu.vue'
 import { initializeStores } from './store/store.js'
@@ -67,18 +77,31 @@ export default {
 		NcEmptyContent,
 		NcLoadingIcon,
 		CnIndexSidebar,
+		CnObjectSidebar,
 		MainMenu,
 	},
 
 	provide() {
 		return {
 			sidebarState: this.sidebarState,
+			objectSidebarState: this.objectSidebarState,
 		}
 	},
 
 	data() {
 		return {
 			storesReady: false,
+			objectSidebarState: Vue.observable({
+				active: false,
+				open: true,
+				objectType: '',
+				objectId: '',
+				title: '',
+				subtitle: '',
+				register: '',
+				schema: '',
+				hiddenTabs: [],
+			}),
 			sidebarState: Vue.observable({
 				active: false,
 				open: true,

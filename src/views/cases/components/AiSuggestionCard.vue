@@ -1,7 +1,16 @@
 <template>
 	<CnDetailCard class="ai-suggestion-card" :title="suggestion.type || t('procest', 'AI Suggestion')">
-		<template #actions>
+		<template #header-actions>
 			<AiConfidenceBadge v-if="suggestion.confidence" :confidence="suggestion.confidence" />
+			<NcButton v-if="!readonly" type="success" :disabled="loading" @click="$emit('accept', suggestion)">
+				{{ t('procest', 'Accept') }}
+			</NcButton>
+			<NcButton v-if="!readonly" type="error" :disabled="loading" @click="showRejectInput = true">
+				{{ t('procest', 'Reject') }}
+			</NcButton>
+			<NcButton v-if="!readonly" :disabled="loading" @click="$emit('modify', suggestion, suggestion.value)">
+				{{ t('procest', 'Modify') }}
+			</NcButton>
 		</template>
 
 		<div class="ai-suggestion-card__content">
@@ -13,18 +22,6 @@
 					<strong>{{ t('procest', 'Suggestion') }}:</strong> {{ formatValue(suggestion.value) }}
 				</div>
 			</slot>
-		</div>
-
-		<div v-if="!readonly" class="ai-suggestion-card__actions">
-			<NcButton type="success" :disabled="loading" @click="$emit('accept', suggestion)">
-				{{ t('procest', 'Accept') }}
-			</NcButton>
-			<NcButton type="error" :disabled="loading" @click="showRejectInput = true">
-				{{ t('procest', 'Reject') }}
-			</NcButton>
-			<NcButton :disabled="loading" @click="$emit('modify', suggestion, suggestion.value)">
-				{{ t('procest', 'Modify') }}
-			</NcButton>
 		</div>
 
 		<div v-if="showRejectInput" class="ai-suggestion-card__reject">

@@ -72,15 +72,14 @@ export default {
 
 <style scoped>
 .task-reminders {
-	background: var(--color-main-background);
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large);
-	padding: 16px;
+	padding: 4px 0;
+	height: 100%;
 }
 
 .task-reminders__list {
-	max-height: 300px;
-	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
 }
 
 .task-reminders__row {

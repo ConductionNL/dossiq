@@ -41,11 +41,6 @@
 				<span class="activity-feed__time">{{ formatTime(entry.date) }}</span>
 			</div>
 
-			<div class="activity-feed__footer">
-				<a href="#" @click.prevent="$emit('view-all')">
-					{{ t('procest', 'View all activity') }} &rarr;
-				</a>
-			</div>
 		</template>
 	</div>
 </template>

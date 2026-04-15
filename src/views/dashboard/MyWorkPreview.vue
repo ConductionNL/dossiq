@@ -46,11 +46,6 @@
 				</div>
 			</div>
 
-			<div class="my-work-preview__footer">
-				<a href="#" @click.prevent="$emit('view-all')">
-					{{ t('procest', 'View all my work') }} &rarr;
-				</a>
-			</div>
 		</template>
 	</div>
 </template>
