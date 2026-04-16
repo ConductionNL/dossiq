@@ -44,7 +44,7 @@ export default {
 			return [
 				{
 					id: 'open',
-					title: t('procest', 'Open Cases'),
+					title: t('procest', 'Open cases'),
 					count: this.openCases,
 					sub: this.newToday > 0
 						? t('procest', '+{n} today', { n: this.newToday })

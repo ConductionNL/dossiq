@@ -104,7 +104,7 @@
 				</div>
 
 				<p v-else class="statuses-tab__empty">
-					{{ t('procest', 'No status types defined. Add at least one to publish this case type.') }}
+					{{ t('procest', 'No status types defined. add at least one to publish this case type.') }}
 				</p>
 
 				<!-- Add new status type form -->

@@ -122,7 +122,7 @@
 				</div>
 
 				<!-- Row 2: Deadline & Timing + Participants -->
-				<CnDetailCard v-if="caseTypeData" :title="t('procest', 'Deadline & Timing')" class="grid-half">
+				<CnDetailCard v-if="caseTypeData" :title="t('procest', 'Deadline & timing')" class="grid-half">
 					<DeadlinePanel
 						:start-date="caseData.startDate"
 						:deadline="caseData.deadline"

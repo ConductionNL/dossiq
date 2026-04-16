@@ -1,7 +1,7 @@
 <template>
 	<div class="deadline-panel">
 		<h3 class="deadline-panel__title">
-			{{ t('procest', 'Deadline & Timing') }}
+			{{ t('procest', 'Deadline & timing') }}
 		</h3>
 
 		<div class="deadline-panel__grid">
@@ -47,7 +47,7 @@
 				v-if="canExtend"
 				type="secondary"
 				@click="$emit('extend')">
-				{{ t('procest', 'Request Extension') }}
+				{{ t('procest', 'Request extension') }}
 			</NcButton>
 		</div>
 	</div>

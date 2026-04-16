@@ -266,7 +266,7 @@ export default {
 
 		async unpublish() {
 			const confirmed = confirm(
-				t('procest', 'Unpublishing this case type will prevent new cases from being created. Existing cases will continue to function. Continue?'),
+				t('procest', 'Unpublishing this case type will prevent new cases from being created. existing cases will continue to function. continue?'),
 			)
 			if (!confirmed) return
 

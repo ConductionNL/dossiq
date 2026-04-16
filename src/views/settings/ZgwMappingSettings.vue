@@ -4,7 +4,7 @@
 			<table>
 				<thead>
 					<tr>
-						<th>{{ t('procest', 'ZGW Resource') }}</th>
+						<th>{{ t('procest', 'ZGW resource') }}</th>
 						<th>{{ t('procest', 'Status') }}</th>
 						<th>{{ t('procest', 'Actions') }}</th>
 					</tr>
@@ -51,7 +51,7 @@
 				</div>
 
 				<div class="form-group">
-					<label>{{ t('procest', 'Source Register') }}</label>
+					<label>{{ t('procest', 'Source register') }}</label>
 					<NcTextField
 						:value="editForm.sourceRegister"
 						:label="t('procest', 'Register ID')"
@@ -59,7 +59,7 @@
 				</div>
 
 				<div class="form-group">
-					<label>{{ t('procest', 'Source Schema') }}</label>
+					<label>{{ t('procest', 'Source schema') }}</label>
 					<NcTextField
 						:value="editForm.sourceSchema"
 						:label="t('procest', 'Schema ID')"
@@ -67,7 +67,7 @@
 				</div>
 
 				<div class="form-group">
-					<label>{{ t('procest', 'Property Mapping (outbound: English → Dutch)') }}</label>
+					<label>{{ t('procest', 'Property mapping (outbound: english → dutch)') }}</label>
 					<textarea
 						v-model="propertyMappingJson"
 						class="mapping-textarea"
@@ -75,7 +75,7 @@
 				</div>
 
 				<div class="form-group">
-					<label>{{ t('procest', 'Reverse Mapping (inbound: Dutch → English)') }}</label>
+					<label>{{ t('procest', 'Reverse mapping (inbound: dutch → english)') }}</label>
 					<textarea
 						v-model="reverseMappingJson"
 						class="mapping-textarea"
@@ -83,7 +83,7 @@
 				</div>
 
 				<div class="form-group">
-					<label>{{ t('procest', 'Value Mappings (enum translations)') }}</label>
+					<label>{{ t('procest', 'Value mappings (enum translations)') }}</label>
 					<textarea
 						v-model="valueMappingJson"
 						class="mapping-textarea"
@@ -91,7 +91,7 @@
 				</div>
 
 				<div class="form-group">
-					<label>{{ t('procest', 'Query Parameter Mapping') }}</label>
+					<label>{{ t('procest', 'Query parameter mapping') }}</label>
 					<textarea
 						v-model="queryParamMappingJson"
 						class="mapping-textarea"

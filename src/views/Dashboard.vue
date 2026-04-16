@@ -41,7 +41,7 @@
 			<!-- Open Cases count widget -->
 			<template #widget-count-open-cases>
 				<CnStatsBlock
-					:title="t('procest', 'Open Cases')"
+					:title="t('procest', 'Open cases')"
 					:count="kpis.openCount"
 					:count-label="t('procest', 'open')"
 					:icon="FolderOpen"
@@ -192,10 +192,10 @@
 			<template #empty>
 				<div v-if="showEmptyState" class="welcome-message">
 					<p v-if="isAdmin">
-						{{ t('procest', 'Welcome to Procest! Get started by creating your first case type in Settings.') }}
+						{{ t('procest', 'Welcome to procest! get started by creating your first case type in settings.') }}
 					</p>
 					<p v-else>
-						{{ t('procest', 'Welcome to Procest! Get started by creating your first case or task using the buttons above.') }}
+						{{ t('procest', 'Welcome to procest! get started by creating your first case or task using the buttons above.') }}
 					</p>
 				</div>
 			</template>
@@ -358,12 +358,12 @@ export default {
 		},
 		widgetDefs() {
 			return [
-				{ id: 'count-open-cases', title: t('procest', 'Open Cases'), type: 'custom' },
+				{ id: 'count-open-cases', title: t('procest', 'Open cases'), type: 'custom' },
 				{ id: 'count-overdue', title: t('procest', 'Overdue'), type: 'custom' },
 				{ id: 'count-completed', title: t('procest', 'Completed This Month'), type: 'custom' },
 				{ id: 'count-my-tasks', title: t('procest', 'My Tasks'), type: 'custom' },
 				{ id: 'count-sla', title: t('procest', 'SLA Compliance'), type: 'custom' },
-				{ id: 'cases-by-status', title: t('procest', 'Cases by Status'), type: 'custom' },
+				{ id: 'cases-by-status', title: t('procest', 'Cases by status'), type: 'custom' },
 				{ id: 'my-work', title: t('procest', 'My Work'), type: 'custom' },
 				{ id: 'case-map', title: t('procest', 'Case Map'), type: 'custom' },
 				{ id: 'deadline-alerts', title: t('procest', 'Deadline Alerts'), type: 'custom' },

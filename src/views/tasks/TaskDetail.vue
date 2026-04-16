@@ -128,7 +128,7 @@
 		</CnDetailCard>
 
 		<!-- Task Information card -->
-		<CnDetailCard :title="t('procest', 'Task Information')">
+		<CnDetailCard :title="t('procest', 'Task information')">
 			<div class="info-grid">
 				<div class="info-field">
 					<label>{{ t('procest', 'Title') }}</label>

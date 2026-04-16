@@ -4,7 +4,7 @@
 			<NcAppContent class="open-register-missing">
 				<NcEmptyContent
 					:name="t('procest', 'OpenRegister is required')"
-					:description="t('procest', 'Procest needs the OpenRegister app to store and manage data. Please install OpenRegister from the app store to get started.')">
+					:description="t('procest', 'Procest needs the OpenRegister app to store and manage data. please install OpenRegister from the app store to get started.')">
 					<template #icon>
 						<img
 							:src="appIcon"

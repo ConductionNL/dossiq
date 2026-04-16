@@ -19,7 +19,7 @@
 				:class="{ 'werkvoorraad__kpi--active': activeFilter === 'all' }"
 				@click="setFilter('all')">
 				<span class="werkvoorraad__kpi-value">{{ kpis.openCount }}</span>
-				<span class="werkvoorraad__kpi-label">{{ t('procest', 'Open Cases') }}</span>
+				<span class="werkvoorraad__kpi-label">{{ t('procest', 'Open cases') }}</span>
 			</div>
 			<div
 				class="werkvoorraad__kpi werkvoorraad__kpi--error"

@@ -1,7 +1,7 @@
 <template>
 	<div class="status-chart">
 		<h3 class="status-chart__title">
-			{{ t('procest', 'Cases by Status') }}
+			{{ t('procest', 'Cases by status') }}
 		</h3>
 
 		<template v-if="loading">

@@ -49,8 +49,8 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'ZGW API Mapping')"
-			:description="t('procest', 'Configure property mappings between English OpenRegister fields and Dutch ZGW API fields')"
+			:name="t('procest', 'ZGW API mapping')"
+			:description="t('procest', 'Configure property mappings between english OpenRegister fields and dutch ZGW API fields')"
 			:loading="!storesReady">
 			<ZgwMappingSettings v-if="storesReady" />
 		</CnSettingsSection>

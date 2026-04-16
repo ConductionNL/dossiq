@@ -1,7 +1,7 @@
 <template>
 	<div class="activity-feed">
 		<h3 class="activity-feed__title">
-			{{ t('procest', 'Recent Activity') }}
+			{{ t('procest', 'Recent activity') }}
 		</h3>
 
 		<template v-if="loading">

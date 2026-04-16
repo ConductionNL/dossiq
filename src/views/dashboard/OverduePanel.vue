@@ -2,7 +2,7 @@
 	<div class="overdue-panel">
 		<div class="overdue-panel__header">
 			<h3 class="overdue-panel__title">
-				{{ t('procest', 'Overdue Cases') }}
+				{{ t('procest', 'Overdue cases') }}
 				<span v-if="cases.length > 0" class="overdue-panel__badge">{{ cases.length }}</span>
 			</h3>
 		</div>
