@@ -1,5 +1,7 @@
 # Design: prometheus-metrics
 
+**Status:** pr-created
+
 ## Architecture
 
 No new classes needed. Enhancements to existing `MetricsController` and `HealthController`.
