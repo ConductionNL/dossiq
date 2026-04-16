@@ -209,6 +209,14 @@
 					@handler-changed="onHandlerChanged" />
 			</CnDetailCard>
 
+			<!-- Decisions card @spec openspec/changes/roles-decisions/tasks.md#task-3 -->
+			<CnDetailCard :title="t('procest', 'Decisions')">
+				<DecisionsSection
+					:case-id="caseId"
+					:case-type-id="caseData.caseType"
+					:is-read-only="isReadOnly" />
+			</CnDetailCard>
+
 			<!-- Sub-cases card -->
 			<CnDetailCard
 				v-if="hasSubCaseTypes"
@@ -448,6 +456,7 @@ import EnforcementPanel from './components/EnforcementPanel.vue'
 import AdvicePanel from './components/AdvicePanel.vue'
 import VoorstellenPanel from './components/VoorstellenPanel.vue'
 import WorkflowTransitions from './components/WorkflowTransitions.vue'
+import DecisionsSection from './components/DecisionsSection.vue'
 import BezwaarIntakeForm from './components/bezwaar/BezwaarIntakeForm.vue'
 import HearingPanel from './components/bezwaar/HearingPanel.vue'
 import AdvisoryReportPanel from './components/bezwaar/AdvisoryReportPanel.vue'
@@ -482,6 +491,7 @@ export default {
 		LocationTab,
 		VoorstellenPanel,
 		WorkflowTransitions,
+		DecisionsSection,
 		BezwaarIntakeForm,
 		HearingPanel,
 		AdvisoryReportPanel,

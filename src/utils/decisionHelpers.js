@@ -1,5 +1,6 @@
 /**
  * Decision helper utilities for validity calculations and display.
+ * @spec openspec/changes/roles-decisions/tasks.md#task-2
  */
 
 /**

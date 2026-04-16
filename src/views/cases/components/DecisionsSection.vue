@@ -123,6 +123,9 @@ import { useObjectStore } from '../../../store/modules/object.js'
 import { getDecisionValidity, formatDecisionDate, validateDecision } from '../../../utils/decisionHelpers.js'
 
 export default {
+	/**
+	 * @spec openspec/changes/roles-decisions/tasks.md#task-1
+	 */
 	name: 'DecisionsSection',
 	components: {
 		NcButton,

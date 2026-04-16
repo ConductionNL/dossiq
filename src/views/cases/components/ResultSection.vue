@@ -27,6 +27,9 @@
 
 <script>
 export default {
+	/**
+	 * @spec openspec/changes/roles-decisions/tasks.md#task-4
+	 */
 	name: 'ResultSection',
 	props: {
 		result: {
