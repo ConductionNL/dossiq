@@ -55,6 +55,37 @@ export function computeKpis(openCases, completedCases, myTasks) {
 }
 
 /**
+ * Aggregate open cases by case type name for the type chart.
+ * Sorted by count descending.
+ *
+ * @spec openspec/changes/dashboard/tasks.md#task-1
+ * @param {object[]} openCases Cases with non-final status
+ * @param {object[]} caseTypes All case types
+ * @return {Array<{ name: string, count: number, typeId: string|null }>} Sorted by count descending
+ */
+export function aggregateByType(openCases, caseTypes) {
+	const typeMap = new Map()
+	for (const ct of caseTypes) {
+		typeMap.set(ct.id, ct.title || ct.name || 'Unknown')
+	}
+
+	const countMap = new Map()
+	const idMap = new Map()
+
+	for (const c of openCases) {
+		const name = typeMap.get(c.caseType) || 'Unknown'
+		countMap.set(name, (countMap.get(name) || 0) + 1)
+		if (!idMap.has(name)) {
+			idMap.set(name, c.caseType || null)
+		}
+	}
+
+	return Array.from(countMap.entries())
+		.map(([name, count]) => ({ name, count, typeId: idMap.get(name) || null }))
+		.sort((a, b) => b.count - a.count)
+}
+
+/**
  * Aggregate open cases by status name for the status chart.
  * Same-named statuses across case types are merged.
  *
