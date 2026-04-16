@@ -1,5 +1,7 @@
 # Design: dashboard
 
+status: pr-created
+
 ## Changes
 
 ### Dashboard.vue
