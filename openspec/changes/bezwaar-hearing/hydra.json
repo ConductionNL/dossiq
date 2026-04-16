@@ -1,0 +1,8 @@
+{
+  "spec_slug": "bezwaar-hearing",
+  "title": "Bezwaar Hearing",
+  "app": "procest",
+  "repo": "https://github.com/ConductionNL/procest",
+  "depends_on": [],
+  "issue": null
+}
