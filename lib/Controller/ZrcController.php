@@ -208,7 +208,7 @@ class ZrcController extends Controller
             // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 return new JSONResponse(
-                    data: ['detail' => 'Invalid mapping result'],
+                    data: ['detail' => $this->l10n->t('Invalid mapping result')],
                     statusCode: Http::STATUS_BAD_REQUEST
                 );
             }
@@ -642,7 +642,7 @@ class ZrcController extends Controller
         $mappingConfig = $this->zgwService->loadMappingConfig('besluiten', 'besluiten');
         if ($mappingConfig === null) {
             return new JSONResponse(
-                data: ['detail' => 'Besluit mapping not configured'],
+                data: ['detail' => $this->l10n->t('Besluit mapping not configured')],
                 statusCode: Http::STATUS_NOT_FOUND
             );
         }
@@ -680,7 +680,7 @@ class ZrcController extends Controller
                 ['exception' => $e]
             );
             return new JSONResponse(
-                data: ['detail' => 'Internal server error'],
+                data: ['detail' => $this->l10n->t('Internal server error')],
                 statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
             );
         }//end try
@@ -937,14 +937,15 @@ class ZrcController extends Controller
             $commKanaal = $body['communicatiekanaal'] ?? null;
             if ($commKanaal !== null && $commKanaal !== '') {
                 if (filter_var($commKanaal, FILTER_VALIDATE_URL) === false) {
+                    $urlMsg = $this->l10n->t('The communicatiekanaal URL is invalid.');
                     return new JSONResponse(
                         data: [
-                            'detail'        => 'De communicatiekanaal URL is ongeldig.',
+                            'detail'        => $urlMsg,
                             'invalidParams' => [
                                 [
                                     'name'   => 'communicatiekanaal',
                                     'code'   => 'bad-url',
-                                    'reason' => 'De communicatiekanaal URL is ongeldig.',
+                                    'reason' => $urlMsg,
                                 ],
                             ],
                         ],
@@ -970,14 +971,15 @@ class ZrcController extends Controller
                         $code = 'invalid-resource';
                     }
 
+                    $urlMsg = $this->l10n->t('The communicatiekanaal URL is invalid.');
                     return new JSONResponse(
                         data: [
-                            'detail'        => 'De communicatiekanaal URL is ongeldig.',
+                            'detail'        => $urlMsg,
                             'invalidParams' => [
                                 [
                                     'name'   => 'communicatiekanaal',
                                     'code'   => $code,
-                                    'reason' => 'De communicatiekanaal URL is ongeldig.',
+                                    'reason' => $urlMsg,
                                 ],
                             ],
                         ],
@@ -1114,7 +1116,7 @@ class ZrcController extends Controller
             );
         } catch (\Throwable $e) {
             return new JSONResponse(
-                data: ['detail' => 'Not found'],
+                data: ['detail' => $this->l10n->t('Not found.')],
                 statusCode: Http::STATUS_NOT_FOUND
             );
         }
@@ -1165,7 +1167,7 @@ class ZrcController extends Controller
             $objectService->deleteObject(uuid: $uuid);
         } catch (\Throwable $e) {
             return new JSONResponse(
-                data: ['detail' => 'Failed to delete zaak: '.$e->getMessage()],
+                data: ['detail' => $this->l10n->t('Failed to save').' '.$e->getMessage()],
                 statusCode: Http::STATUS_BAD_REQUEST
             );
         }
@@ -1468,7 +1470,8 @@ class ZrcController extends Controller
                 $indGr = $docData['usageRightsIndication'] ?? ($docData['usageRightsIndicator'] ?? ($docData['indicatieGebruiksrecht'] ?? null));
 
                 if ($indGr === null || $indGr === '') {
-                    $detail = 'Zaak kan niet afgesloten worden: niet alle informatieobjecten hebben indicatieGebruiksrecht gezet.';
+                    // phpcs:ignore Generic.Files.LineLength.TooLong
+                    $detail = $this->l10n->t('Case cannot be closed: not all information objects have indicatieGebruiksrecht set.');
                     return new JSONResponse(
                         data: [
                             'detail'        => $detail,

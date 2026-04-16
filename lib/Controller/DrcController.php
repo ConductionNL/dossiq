@@ -179,7 +179,7 @@ class DrcController extends Controller
                 ['exception' => $e]
             );
             return new JSONResponse(
-                data: ['detail' => 'Internal server error'],
+                data: ['detail' => $this->l10n->t('Internal server error')],
                 statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
             );
         }//end try
@@ -268,7 +268,7 @@ class DrcController extends Controller
             // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 return new JSONResponse(
-                    data: ['detail' => 'Invalid mapping result'],
+                    data: ['detail' => $this->l10n->t('Invalid mapping result')],
                     statusCode: Http::STATUS_BAD_REQUEST
                 );
             }
@@ -587,7 +587,7 @@ class DrcController extends Controller
         $mappingConfig = $this->zgwService->getZgwMappingService()->getMapping('enkelvoudiginformatieobject');
         if ($mappingConfig === null) {
             return new JSONResponse(
-                data: ['detail' => 'Document mapping not configured'],
+                data: ['detail' => $this->l10n->t('Document mapping not configured')],
                 statusCode: Http::STATUS_NOT_FOUND
             );
         }
@@ -628,7 +628,7 @@ class DrcController extends Controller
             );
 
             return new JSONResponse(
-                data: ['detail' => 'Not found'],
+                data: ['detail' => $this->l10n->t('Not found.')],
                 statusCode: Http::STATUS_NOT_FOUND
             );
         }//end try
@@ -1723,7 +1723,7 @@ class DrcController extends Controller
             // @phpstan-ignore-next-line — defensive guard: applyInboundMapping may change
             if (is_array($englishData) === false) {
                 return new JSONResponse(
-                    data: ['detail' => 'Invalid mapping result'],
+                    data: ['detail' => $this->l10n->t('Invalid mapping result')],
                     statusCode: Http::STATUS_BAD_REQUEST
                 );
             }

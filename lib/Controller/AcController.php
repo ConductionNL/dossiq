@@ -87,7 +87,7 @@ class AcController extends Controller
 
         if ($this->zgwService->getConsumerMapper() === null) {
             return new JSONResponse(
-                data: ['detail' => 'Consumer service not available'],
+                data: ['detail' => $this->l10n->t('Consumer service not available')],
                 statusCode: Http::STATUS_SERVICE_UNAVAILABLE
             );
         }
@@ -142,7 +142,7 @@ class AcController extends Controller
             $this->zgwService->getLogger()->error('AC list error: '.$e->getMessage(), ['exception' => $e]);
 
             return new JSONResponse(
-                data: ['detail' => 'Internal server error'],
+                data: ['detail' => $this->l10n->t('Internal server error')],
                 statusCode: Http::STATUS_INTERNAL_SERVER_ERROR
             );
         }//end try
@@ -170,7 +170,7 @@ class AcController extends Controller
 
         if ($this->zgwService->getConsumerMapper() === null) {
             return new JSONResponse(
-                data: ['detail' => 'Consumer service not available'],
+                data: ['detail' => $this->l10n->t('Consumer service not available')],
                 statusCode: Http::STATUS_SERVICE_UNAVAILABLE
             );
         }
@@ -228,7 +228,7 @@ class AcController extends Controller
 
         if ($this->zgwService->getConsumerMapper() === null) {
             return new JSONResponse(
-                data: ['detail' => 'Consumer service not available'],
+                data: ['detail' => $this->l10n->t('Consumer service not available')],
                 statusCode: Http::STATUS_SERVICE_UNAVAILABLE
             );
         }
@@ -237,7 +237,7 @@ class AcController extends Controller
             $consumer = $this->findConsumerByUuid(uuid: $uuid);
             if ($consumer === null) {
                 return new JSONResponse(
-                    data: ['detail' => 'Not found'],
+                    data: ['detail' => $this->l10n->t('Not found.')],
                     statusCode: Http::STATUS_NOT_FOUND
                 );
             }
@@ -250,7 +250,7 @@ class AcController extends Controller
             $this->zgwService->getLogger()->error('AC show error: '.$e->getMessage(), ['exception' => $e]);
 
             return new JSONResponse(
-                data: ['detail' => 'Not found'],
+                data: ['detail' => $this->l10n->t('Not found.')],
                 statusCode: Http::STATUS_NOT_FOUND
             );
         }//end try
@@ -277,7 +277,7 @@ class AcController extends Controller
 
         if ($this->zgwService->getConsumerMapper() === null) {
             return new JSONResponse(
-                data: ['detail' => 'Consumer service not available'],
+                data: ['detail' => $this->l10n->t('Consumer service not available')],
                 statusCode: Http::STATUS_SERVICE_UNAVAILABLE
             );
         }
@@ -286,7 +286,7 @@ class AcController extends Controller
             $consumer = $this->findConsumerByUuid(uuid: $uuid);
             if ($consumer === null) {
                 return new JSONResponse(
-                    data: ['detail' => 'Not found'],
+                    data: ['detail' => $this->l10n->t('Not found.')],
                     statusCode: Http::STATUS_NOT_FOUND
                 );
             }
@@ -354,7 +354,7 @@ class AcController extends Controller
 
         if ($this->zgwService->getConsumerMapper() === null) {
             return new JSONResponse(
-                data: ['detail' => 'Consumer service not available'],
+                data: ['detail' => $this->l10n->t('Consumer service not available')],
                 statusCode: Http::STATUS_SERVICE_UNAVAILABLE
             );
         }
@@ -363,7 +363,7 @@ class AcController extends Controller
             $consumer = $this->findConsumerByUuid(uuid: $uuid);
             if ($consumer === null) {
                 return new JSONResponse(
-                    data: ['detail' => 'Not found'],
+                    data: ['detail' => $this->l10n->t('Not found.')],
                     statusCode: Http::STATUS_NOT_FOUND
                 );
             }

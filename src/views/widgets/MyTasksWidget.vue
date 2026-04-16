@@ -15,7 +15,6 @@
 
 <script>
 import { NcDashboardWidget, NcEmptyContent } from '@nextcloud/vue'
-import { useObjectStore } from '../../store/modules/object.js'
 import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
 
 export default {
@@ -44,17 +43,14 @@ export default {
 		}
 	},
 	computed: {
-		objectStore() {
-			return useObjectStore()
-		},
 		items() {
 			return this.tasks.map((task) => ({
 				id: task.id,
-				mainText: task.title || t('procest', 'Unnamed task'),
-				subText: task.dueDate
-					? t('procest', 'Deadline: {date}', { date: task.dueDate.slice(0, 10) })
+				mainText: task.summary || t('procest', 'Unnamed task'),
+				subText: task.due
+					? t('procest', 'Deadline: {date}', { date: task.due.slice(0, 10) })
 					: t('procest', 'No deadline'),
-				avatarUrl: '/apps-extra/procest/img/app-dark.svg',
+				avatarUrl: '/custom_apps/procest/img/app-dark.svg',
 			}))
 		},
 	},
@@ -63,31 +59,39 @@ export default {
 	},
 	methods: {
 		/**
-		 * Handle showing a task.
+		 * Handle showing a task — navigate to the linked object in Procest.
 		 *
 		 * @param {object} item The task item to show
 		 * @return {void}
 		 */
 		onShow(item) {
-			window.location.href = `/index.php/apps/procest/#/tasks/${item.id}`
+			const task = this.tasks.find(t => t.id === item.id)
+			if (task?.objectUuid && task?.registerId && task?.schemaId) {
+				window.location.href = `/index.php/apps/procest/#/cases/${task.objectUuid}`
+			}
 		},
 		/**
-		 * Fetch task data for current user.
+		 * Fetch CalDAV tasks for the current user via OpenRegister's task API.
+		 * Filters to non-completed tasks only.
 		 *
 		 * @return {Promise<void>}
 		 */
 		async fetchData() {
 			this.loading = true
 			try {
-				const currentUser = OC?.currentUser || ''
-				const results = await this.objectStore.fetchCollection('task', {
-					'_filters[assignee]': currentUser,
-					_limit: 7,
-				})
-				// Filter to active/available tasks only.
-				this.tasks = (results || []).filter(
-					t => t.status === 'available' || t.status === 'active',
+				const headers = {
+					requesttoken: OC.requestToken,
+					'OCS-APIREQUEST': 'true',
+					'Content-Type': 'application/json',
+				}
+				const response = await fetch(
+					'/index.php/apps/openregister/api/tasks?_limit=7&status=needs-action',
+					{ headers },
 				)
+				if (response.ok) {
+					const data = await response.json()
+					this.tasks = data.results || []
+				}
 			} catch (err) {
 				console.error('[MyTasksWidget] Failed to fetch tasks:', err)
 				this.tasks = []

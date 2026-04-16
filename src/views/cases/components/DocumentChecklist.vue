@@ -22,8 +22,8 @@
 					class="doc-item"
 					:class="{ 'doc-item--present': isDocPresent(docType.id), 'doc-item--missing': !isDocPresent(docType.id) }">
 					<div class="doc-item__icon">
-						<span v-if="isDocPresent(docType.id)" class="doc-item__check" aria-label="Present">&#10003;</span>
-						<span v-else class="doc-item__missing" aria-label="Missing">&#10007;</span>
+						<span v-if="isDocPresent(docType.id)" class="doc-item__check" :aria-label="t('procest', 'Present')">&#10003;</span>
+						<span v-else class="doc-item__missing" :aria-label="t('procest', 'Missing')">&#10007;</span>
 					</div>
 					<div class="doc-item__info">
 						<span class="doc-item__name">{{ docType.name }}</span>

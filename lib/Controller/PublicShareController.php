@@ -27,6 +27,7 @@ use OCA\Procest\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IL10N;
 use OCP\IRequest;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -48,6 +49,7 @@ class PublicShareController extends Controller
      * @param IAppManager        $appManager         The app manager
      * @param ContainerInterface $container           The DI container
      * @param LoggerInterface    $logger             The logger
+     * @param IL10N              $l10n               The localization service
      *
      * @return void
      */
@@ -58,6 +60,7 @@ class PublicShareController extends Controller
         private IAppManager $appManager,
         private ContainerInterface $container,
         private LoggerInterface $logger,
+        private IL10N $l10n,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -88,7 +91,7 @@ class PublicShareController extends Controller
             return new JSONResponse(
                 [
                     'success'          => false,
-                    'error'            => ($validation['error'] ?? 'Toegang geweigerd'),
+                    'error'            => ($validation['error'] ?? $this->l10n->t('Access denied')),
                     'requiresPassword' => ($validation['requiresPassword'] ?? false),
                 ],
                 $status
@@ -101,7 +104,7 @@ class PublicShareController extends Controller
         $caseData = $this->loadCaseData($shareData['caseId']);
         if ($caseData === null) {
             return new JSONResponse(
-                ['success' => false, 'error' => 'Zaak niet gevonden'],
+                ['success' => false, 'error' => $this->l10n->t('Case not found')],
                 404
             );
         }
@@ -147,7 +150,7 @@ class PublicShareController extends Controller
 
         if ($validation['valid'] === false) {
             return new JSONResponse(
-                ['success' => false, 'error' => ($validation['error'] ?? 'Toegang geweigerd')],
+                ['success' => false, 'error' => ($validation['error'] ?? $this->l10n->t('Access denied'))],
                 403
             );
         }
@@ -162,17 +165,17 @@ class PublicShareController extends Controller
 
         if ($canComment === false) {
             return new JSONResponse(
-                ['success' => false, 'error' => 'Geen toestemming om te reageren'],
+                ['success' => false, 'error' => $this->l10n->t('No permission to comment')],
                 403
             );
         }
 
         $comment    = $this->request->getParam('comment', '');
-        $authorName = $this->request->getParam('authorName', 'Extern');
+        $authorName = $this->request->getParam('authorName', 'External');
 
         if (empty($comment) === true) {
             return new JSONResponse(
-                ['success' => false, 'error' => 'Reactie mag niet leeg zijn'],
+                ['success' => false, 'error' => $this->l10n->t('Comment must not be empty')],
                 400
             );
         }
@@ -187,7 +190,7 @@ class PublicShareController extends Controller
 
         return new JSONResponse([
             'success' => true,
-            'message' => 'Reactie toegevoegd',
+            'message' => $this->l10n->t('Comment added'),
         ]);
     }//end addComment()
 
@@ -209,7 +212,7 @@ class PublicShareController extends Controller
 
         if ($validation['valid'] === false) {
             return new JSONResponse(
-                ['success' => false, 'error' => ($validation['error'] ?? 'Status niet beschikbaar')],
+                ['success' => false, 'error' => ($validation['error'] ?? $this->l10n->t('Status not available'))],
                 403
             );
         }
@@ -219,7 +222,7 @@ class PublicShareController extends Controller
 
         if ($caseData === null) {
             return new JSONResponse(
-                ['success' => false, 'error' => 'Zaak niet gevonden'],
+                ['success' => false, 'error' => $this->l10n->t('Case not found')],
                 404
             );
         }
