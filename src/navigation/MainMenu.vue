@@ -63,7 +63,7 @@
 				</NcAppNavigationItem>
 				<NcAppNavigationItem
 					:name="t('procest', 'Configuration')"
-					:to="{ name: 'Settings' }">
+					@click="$emit('open-settings')">
 					<template #icon>
 						<Cog :size="20" />
 					</template>

@@ -31,7 +31,7 @@ export default new Router({
 		{ path: '/map', name: 'CaseMap', component: () => import(/* webpackChunkName: "map" */ '../views/CaseMapView.vue') },
 		{ path: '/voorstellen', name: 'Voorstellen', component: VoorstelList },
 		{ path: '/voorstellen/:id', name: 'VoorstelDetail', component: VoorstelDetail, props: route => ({ voorstelId: route.params.id }) },
-		{ path: '/settings', name: 'Settings', component: AdminRoot },
+		// Settings is a modal dialog (UserSettings.vue), not a route — see ADR-004
 		{ path: '/case-types', name: 'CaseTypes', component: AdminRoot },
 		{ path: '*', redirect: '/' },
 	],
