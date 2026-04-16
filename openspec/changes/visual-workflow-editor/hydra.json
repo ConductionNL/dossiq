@@ -1,0 +1,8 @@
+{
+  "spec_slug": "visual-workflow-editor",
+  "title": "Visual Workflow Editor",
+  "app": "procest",
+  "repo": "https://github.com/ConductionNL/procest",
+  "depends_on": [],
+  "issue": null
+}
