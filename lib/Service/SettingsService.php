@@ -308,6 +308,30 @@ class SettingsService
     }//end setConfigValue()
 
     /**
+     * Get the OpenRegister ObjectService, or null when unavailable.
+     *
+     * @return object|null The ObjectService, or null when OpenRegister is not installed
+     *
+     * @spec openspec/changes/deelzaak-support/tasks.md#T01
+     */
+    public function getObjectService(): ?object
+    {
+        if ($this->isOpenRegisterAvailable() === false) {
+            return null;
+        }
+
+        try {
+            return $this->container->get('OCA\OpenRegister\Service\ObjectService');
+        } catch (\Exception $e) {
+            $this->logger->warning(
+                'SettingsService: Could not get ObjectService',
+                ['exception' => $e->getMessage()]
+            );
+            return null;
+        }
+    }//end getObjectService()
+
+    /**
      * Auto-configure schema and register IDs from the import result.
      *
      * Extracts schema entities from the ConfigurationService import result,

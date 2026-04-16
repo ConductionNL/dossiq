@@ -209,20 +209,37 @@
 					@handler-changed="onHandlerChanged" />
 			</CnDetailCard>
 
-			<!-- Sub-cases card -->
+			<!-- Sub-cases hierarchy card (deelzaak-support) -->
 			<CnDetailCard
-				v-if="hasSubCaseTypes"
+				v-if="deelzaakHierarchy"
 				:title="subCasesSectionTitle">
-				<SubCasesSection
-					:case-id="caseId"
-					:parent-case="caseData.parentCase || null"
-					:end-date="caseData.endDate || null"
-					:sub-case-types="subCaseTypesArray"
-					@create-sub-case="showSubCaseDialog = true"
-					@sub-cases-loaded="onSubCasesLoaded" />
+				<template v-if="!deelzaakHierarchyLoading" #actions>
+					<NcButton
+						v-if="!caseData.endDate && subCaseTypesArray && subCaseTypesArray.length > 0"
+						type="secondary"
+						@click="showCreateDeelzaakDialog = true">
+						{{ t('procest', 'Create sub-case') }}
+					</NcButton>
+				</template>
+				<NcLoadingIcon v-if="deelzaakHierarchyLoading" />
+				<DeelzaakHierarchyTree
+					v-else-if="deelzaakHierarchy"
+					:node="deelzaakHierarchy"
+					:status-type-map="statusTypeMap"
+					:current-case-id="caseId"
+					@navigate="id => $router.push({ name: 'CaseDetail', params: { id } })" />
 			</CnDetailCard>
 
-			<!-- Sub-case creation dialog -->
+			<!-- Sub-case creation dialog (deelzaak-support) -->
+			<CreateDeelzaakDialog
+				v-if="showCreateDeelzaakDialog"
+				:open="showCreateDeelzaakDialog"
+				:case-id="caseId"
+				:allowed-case-types="allowedDeelzaakCaseTypes"
+				@update:open="showCreateDeelzaakDialog = $event"
+				@created="onDeelzaakCreated" />
+
+			<!-- Legacy sub-case creation dialog (kept for backward compatibility) -->
 			<CaseCreateDialog
 				v-if="showSubCaseDialog"
 				:parent-case="caseId"
@@ -431,6 +448,8 @@
 <script>
 import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
 import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
+import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
 import { useObjectStore } from '../../store/modules/object.js'
 import { getStatusLabel as getTaskStatusLabel } from '../../utils/taskLifecycle.js'
 import { isOverdue, isDueToday, getOverdueText, formatDueDate, sortTasks, getPriorityLevels } from '../../utils/taskHelpers.js'
@@ -443,6 +462,8 @@ import ParticipantsSection from './components/ParticipantsSection.vue'
 import ResultSection from './components/ResultSection.vue'
 import SubCasesSection from './components/SubCasesSection.vue'
 import CaseCreateDialog from './CaseCreateDialog.vue'
+import DeelzaakHierarchyTree from './components/DeelzaakHierarchyTree.vue'
+import CreateDeelzaakDialog from './components/CreateDeelzaakDialog.vue'
 import InspectionPanel from './components/InspectionPanel.vue'
 import EnforcementPanel from './components/EnforcementPanel.vue'
 import AdvicePanel from './components/AdvicePanel.vue'
@@ -476,6 +497,8 @@ export default {
 		ResultSection,
 		SubCasesSection,
 		CaseCreateDialog,
+		DeelzaakHierarchyTree,
+		CreateDeelzaakDialog,
 		InspectionPanel,
 		EnforcementPanel,
 		AdvicePanel,
@@ -527,8 +550,14 @@ export default {
 			priorityOptions: ['low', 'normal', 'high', 'urgent'],
 			// Sub-case state
 			showSubCaseDialog: false,
+			showCreateDeelzaakDialog: false,
 			parentCaseData: null,
 			subCases: [],
+			// Deelzaak hierarchy state (deelzaak-support)
+			deelzaakHierarchy: null,
+			deelzaakHierarchyLoading: false,
+			statusTypeMap: {},
+			allowedDeelzaakCaseTypes: [],
 			// Bezwaar state
 			bezwaarDeadlines: {},
 			contestedBesluitDate: '',
@@ -673,6 +702,13 @@ export default {
 				this.fetchTasks(),
 				this.fetchCaseResult(),
 				this.fetchParentCase(),
+			])
+
+			// Load deelzaak hierarchy and status type map (deelzaak-support).
+			await Promise.all([
+				this.loadDeelzaakHierarchy(),
+				this.loadStatusTypeMap(),
+				this.loadAllowedDeelzaakCaseTypes(),
 			])
 
 			// Load bezwaar/beroep data if applicable.
@@ -955,6 +991,81 @@ export default {
 		onSubCaseCreated(caseId) {
 			this.showSubCaseDialog = false
 			this.$router.push({ name: 'CaseDetail', params: { id: caseId } })
+		},
+
+		// --- Deelzaak hierarchy (deelzaak-support) ---
+
+		/**
+		 * Load the full deelzaak hierarchy rooted at this case.
+		 *
+		 * @spec openspec/changes/deelzaak-support/tasks.md#T07
+		 */
+		async loadDeelzaakHierarchy() {
+			if (!this.caseId) return
+			this.deelzaakHierarchyLoading = true
+			try {
+				const url = generateUrl(`/apps/procest/api/procest/deelzaak/${this.caseId}/hierarchy`)
+				const response = await axios.get(url)
+				this.deelzaakHierarchy = response.data
+				// Keep subCases in sync for legacy delete guard.
+				this.subCases = response.data?.children?.map(c => c.case) || []
+			} catch {
+				this.deelzaakHierarchy = null
+			} finally {
+				this.deelzaakHierarchyLoading = false
+			}
+		},
+
+		/**
+		 * Build a statusType UUID→object map for status badge display.
+		 *
+		 * @spec openspec/changes/deelzaak-support/tasks.md#T07
+		 */
+		async loadStatusTypeMap() {
+			try {
+				const types = await this.objectStore.fetchCollection('statusType', { _limit: 500 })
+				const map = {}
+				for (const st of (types || [])) {
+					map[st.id] = st
+				}
+				this.statusTypeMap = map
+			} catch {
+				// Non-blocking; badges will just show '—'.
+			}
+		},
+
+		/**
+		 * Load the full caseType objects for the allowed deelzaaktypen.
+		 *
+		 * @spec openspec/changes/deelzaak-support/tasks.md#T07
+		 */
+		async loadAllowedDeelzaakCaseTypes() {
+			const ids = this.subCaseTypesArray
+			if (!ids || ids.length === 0) {
+				this.allowedDeelzaakCaseTypes = []
+				return
+			}
+			try {
+				const all = await this.objectStore.fetchCollection('caseType', { _limit: 500 })
+				this.allowedDeelzaakCaseTypes = (all || []).filter(ct => ids.includes(ct.id))
+			} catch {
+				this.allowedDeelzaakCaseTypes = []
+			}
+		},
+
+		/**
+		 * Handle a newly-created deelzaak: refresh hierarchy and navigate to child.
+		 *
+		 * @param {object} deelzaak The newly created deelzaak object
+		 *
+		 * @spec openspec/changes/deelzaak-support/tasks.md#T07
+		 */
+		async onDeelzaakCreated(deelzaak) {
+			this.showCreateDeelzaakDialog = false
+			await this.loadDeelzaakHierarchy()
+			if (deelzaak?.id) {
+				this.$router.push({ name: 'CaseDetail', params: { id: deelzaak.id } })
+			}
 		},
 
 		// --- Delete ---

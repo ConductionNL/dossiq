@@ -89,6 +89,11 @@
 				<WorkflowTab
 					v-else-if="activeTab === 'workflow'"
 					:case-type-id="caseTypeId" />
+				<DeelzaakTypenTab
+					v-else-if="activeTab === 'deelzaaktypen'"
+					:is-create="isCreate"
+					:case-type="currentCaseType"
+					@save="onDeelzaakTypenSave" />
 			</div>
 		</template>
 	</div>
@@ -100,6 +105,7 @@ import ArrowLeftIcon from 'vue-material-design-icons/ArrowLeft.vue'
 import GeneralTab from './tabs/GeneralTab.vue'
 import StatusesTab from './tabs/StatusesTab.vue'
 import WorkflowTab from './tabs/WorkflowTab.vue'
+import DeelzaakTypenTab from './tabs/DeelzaakTypenTab.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { validateCaseType, validateForPublish } from '../../utils/caseTypeValidation.js'
 
@@ -138,6 +144,7 @@ export default {
 		GeneralTab,
 		StatusesTab,
 		WorkflowTab,
+		DeelzaakTypenTab,
 	},
 	props: {
 		caseTypeId: {
@@ -171,7 +178,11 @@ export default {
 				{ id: 'general', label: t('procest', 'General') },
 				{ id: 'statuses', label: t('procest', 'Statuses') },
 				{ id: 'workflow', label: t('procest', 'Workflow') },
+				{ id: 'deelzaaktypen', label: t('procest', 'Sub-case types') },
 			]
+		},
+		currentCaseType() {
+			return { ...this.form, id: this.caseTypeId }
 		},
 	},
 	async mounted() {
@@ -208,6 +219,35 @@ export default {
 				const errors = { ...this.validationErrors }
 				delete errors[field]
 				this.validationErrors = errors
+			}
+		},
+
+		/**
+		 * Handle save from DeelzaakTypenTab: patch subCaseTypes and closure flag.
+		 *
+		 * @param {object} payload { subCaseTypes, requireAllDeelzakenClosed }
+		 *
+		 * @spec openspec/changes/deelzaak-support/tasks.md#T08
+		 */
+		async onDeelzaakTypenSave(payload) {
+			this.saveError = ''
+			this.saveSuccess = false
+			this.saving = true
+			const update = {
+				...this.form,
+				id: this.caseTypeId,
+				subCaseTypes: payload.subCaseTypes,
+				requireAllDeelzakenClosed: payload.requireAllDeelzakenClosed,
+			}
+			const result = await this.objectStore.saveObject('caseType', update)
+			this.saving = false
+			if (result) {
+				this.form = { ...EMPTY_FORM, ...result }
+				this.saveSuccess = true
+				setTimeout(() => { this.saveSuccess = false }, 3000)
+			} else {
+				this.saveError = this.objectStore.getError('caseType')
+					|| t('procest', 'Failed to save sub-case type configuration')
 			}
 		},
 

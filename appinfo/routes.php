@@ -107,6 +107,12 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
+        // ── Deelzaak (Sub-case) endpoints ───────────────────────────────────
+        ['name' => 'deelzaak#create',       'url' => '/api/procest/deelzaak/{caseId}',              'verb' => 'POST'],
+        ['name' => 'deelzaak#hierarchy',    'url' => '/api/procest/deelzaak/{caseId}/hierarchy',    'verb' => 'GET'],
+        ['name' => 'deelzaak#closureCheck', 'url' => '/api/procest/deelzaak/{caseId}/closure-check','verb' => 'GET'],
+        ['name' => 'deelzaak#vervolgzaak',  'url' => '/api/procest/deelzaak/{caseId}/vervolgzaak',  'verb' => 'POST'],
+
         // GIS Proxy endpoints.
         ['name' => 'gis_proxy#proxy', 'url' => '/api/gis/proxy', 'verb' => 'POST'],
         ['name' => 'gis_proxy#capabilities', 'url' => '/api/gis/capabilities', 'verb' => 'GET'],
