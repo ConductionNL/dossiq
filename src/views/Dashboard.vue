@@ -9,7 +9,7 @@
 			:unavailable-label="t('procest', 'Widget not available')"
 			@layout-change="onLayoutChange">
 			<!-- Header actions: quick action buttons -->
-			<template #header-actions>
+			<template #actions>
 				<NcButton type="tertiary"
 					@click="$router.push({ name: 'Doorlooptijd' })">
 					<template #icon>

@@ -1,6 +1,6 @@
 <template>
 	<CnDetailCard :title="actionTitle" class="parafeer-action-bar">
-		<template #header-actions>
+		<template #actions>
 			<template v-if="isAdvisoryStep">
 				<NcButton type="primary" :disabled="acting" @click="doAdviseren">
 					{{ t('procest', 'Adviseren') }}

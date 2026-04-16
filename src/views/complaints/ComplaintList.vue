@@ -9,7 +9,7 @@
 			:empty-label="t('procest', 'No complaints found')"
 			:empty-description="t('procest', 'Register a new complaint to get started')"
 			@row-click="onRowClick">
-			<template #header-actions>
+			<template #actions>
 				<NcButton type="primary" @click="showCreateDialog = true">
 					<template #icon>
 						<Plus :size="20" />

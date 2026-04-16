@@ -19,7 +19,7 @@
 			object-type="procest_case"
 			:object-id="caseId"
 			:sidebar-props="sidebarProps">
-			<template #header-actions>
+			<template #actions>
 				<NcButton
 					v-if="!isReadOnly"
 					type="primary"
@@ -39,7 +39,7 @@
 			<div class="case-detail-grid">
 				<!-- Status card (left) -->
 				<CnDetailCard :title="t('procest', 'Status')">
-					<template #header-actions>
+					<template #actions>
 						<NcSelect
 							v-if="!isReadOnly && orderedStatusTypes.length > 0"
 							v-model="selectedStatus"
@@ -135,7 +135,7 @@
 				</CnDetailCard>
 
 				<CnDetailCard :title="t('procest', 'Participants')" class="grid-half">
-					<template #header-actions>
+					<template #actions>
 						<NcButton v-if="!isReadOnly" @click="onAddParticipant">
 							{{ t('procest', 'Add Participant') }}
 						</NcButton>

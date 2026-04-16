@@ -1,6 +1,6 @@
 <template>
 	<CnDetailCard class="ai-suggestion-card" :title="suggestion.type || t('procest', 'AI Suggestion')">
-		<template #header-actions>
+		<template #actions>
 			<AiConfidenceBadge v-if="suggestion.confidence" :confidence="suggestion.confidence" />
 			<NcButton v-if="!readonly" type="success" :disabled="loading" @click="$emit('accept', suggestion)">
 				{{ t('procest', 'Accept') }}

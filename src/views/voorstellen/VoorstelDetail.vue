@@ -7,7 +7,7 @@
 			:back-label="t('procest', 'Terug naar overzicht')"
 			:loading="loading"
 			:sidebar="false">
-			<template #header-actions>
+			<template #actions>
 				<NcButton
 					v-if="canRegisterBesluit"
 					type="primary"

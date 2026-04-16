@@ -9,7 +9,7 @@
 			:sidebar="!isNew && !loading"
 			object-type="procest_complaint"
 			:object-id="complaintId">
-			<template #header-actions>
+			<template #actions>
 				<NcButton
 					v-if="!isReadOnly"
 					type="primary"
@@ -24,7 +24,7 @@
 
 			<!-- Status card -->
 			<CnDetailCard :title="t('procest', 'Status')">
-				<template #header-actions>
+				<template #actions>
 					<NcSelect
 						v-if="!isReadOnly"
 						v-model="selectedStatus"
@@ -176,7 +176,7 @@
 
 			<!-- Actions card -->
 			<CnDetailCard v-if="!isReadOnly && !isNew" :title="t('procest', 'Actions')">
-				<template #header-actions>
+				<template #actions>
 					<NcButton
 						v-if="complaint.status === 'in_behandeling'"
 						@click="showHearingDialog = true">

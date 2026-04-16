@@ -89,7 +89,7 @@
 		object-type="procest_task"
 		:object-id="taskId"
 		:sidebar-props="sidebarProps">
-		<template #header-actions>
+		<template #actions>
 			<NcButton
 				v-if="!isReadOnly"
 				type="primary"
@@ -103,7 +103,7 @@
 
 		<!-- Status card -->
 		<CnDetailCard :title="t('procest', 'Status')">
-			<template #header-actions>
+			<template #actions>
 				<NcButton
 					v-for="target in allowedTransitions"
 					:key="target"
