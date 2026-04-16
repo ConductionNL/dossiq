@@ -1,0 +1,8 @@
+{
+  "spec_slug": "procest-case-management",
+  "title": "Procest Case Management",
+  "app": "procest",
+  "repo": "https://github.com/ConductionNL/procest",
+  "depends_on": [],
+  "issue": null
+}
