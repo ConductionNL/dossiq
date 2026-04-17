@@ -1,3 +1,8 @@
+<!-- ⚠️ EXTENSION NOTICE (auto-inserted by fix_extension_artifacts.py)
+     Parent capability: case-management (Case Management)
+     This spec extends the existing `case-management` capability. Do NOT define new entities or build new CRUD — reuse what `case-management` already provides. Your job is to add configuration, seed data, or workflow templates on top of that capability.
+-->
+
 # Case Location Specification
 
 ## Why
@@ -23,6 +28,8 @@ The `case.geometry` field exists; this change adds the UI layer to make it usabl
 
 ### Modified Capabilities
 - `case-detail`: Case detail view gains a new "Locatie" tab
+- `case-management`: extended by `case-location` — adds configuration, workflow, or seed data
+
 
 ## Impact
 
