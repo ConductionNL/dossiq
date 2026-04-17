@@ -1,3 +1,8 @@
+<!-- ⚠️ EXTENSION NOTICE (auto-inserted by fix_extension_artifacts.py)
+     Parent capability: case-management (Case Management)
+     This spec extends the existing `case-management` capability. Do NOT define new entities or build new CRUD — reuse what `case-management` already provides. Your job is to add configuration, seed data, or workflow templates on top of that capability.
+-->
+
 ---
 status: draft
 ---
