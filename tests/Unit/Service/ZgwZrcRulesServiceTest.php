@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
 interface ObjectServiceStub
 {
     public function find(string $id, string $register, string $schema): ?array;
-    public function buildSearchQuery(array $criteria): array;
+    public function buildSearchQuery(array $requestParams, string $register, string $schema): array;
     public function searchObjectsPaginated(array $query): array;
 
 }//end interface
@@ -122,7 +122,7 @@ class ZgwZrcRulesServiceTest extends TestCase
      */
     public function testDetectEindstatusExplicitTrue(): void
     {
-        $objectService = $this->createMock(\stdClass::class);
+        $objectService = $this->createMock(ObjectServiceStub::class);
         $objectService->method('find')->willReturn([
             'isEindstatus' => true,
             'caseType'     => 'uuid-zt-1',
@@ -161,7 +161,7 @@ class ZgwZrcRulesServiceTest extends TestCase
      */
     public function testDetectEindstatusExplicitFalse(): void
     {
-        $objectService = $this->createMock(\stdClass::class);
+        $objectService = $this->createMock(ObjectServiceStub::class);
         $objectService->method('find')->willReturn([
             'isEindstatus' => false,
             'caseType'     => 'uuid-zt-1',
@@ -192,23 +192,21 @@ class ZgwZrcRulesServiceTest extends TestCase
         $uuidHighest = 'uuid-st-highest';
         $uuidLower   = 'uuid-st-lower';
 
-        $objectService = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['find', 'buildSearchQuery', 'searchObjectsPaginated'])
-            ->getMock();
+        $objectService = $this->createMock(ObjectServiceStub::class);
 
         // find() returns statustype data (no isEindstatus field).
         $objectService->method('find')->willReturn([
-            'id'         => $uuidHighest,
-            'caseType'   => 'uuid-zt-1',
-            'order'      => 10,
+            'id'             => $uuidHighest,
+            'caseType'       => 'uuid-zt-1',
+            'sequenceNumber' => 10,
         ]);
 
         $objectService->method('buildSearchQuery')->willReturn(['caseType' => 'uuid-zt-1']);
 
         $objectService->method('searchObjectsPaginated')->willReturn([
             'results' => [
-                ['id' => $uuidHighest, 'order' => 10],
-                ['id' => $uuidLower, 'order' => 5],
+                ['id' => $uuidHighest, 'sequenceNumber' => 10],
+                ['id' => $uuidLower, 'sequenceNumber' => 5],
             ],
         ]);
 
@@ -248,22 +246,20 @@ class ZgwZrcRulesServiceTest extends TestCase
         $uuidHighest = 'uuid-st-highest';
         $uuidLower   = 'uuid-st-lower';
 
-        $objectService = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['find', 'buildSearchQuery', 'searchObjectsPaginated'])
-            ->getMock();
+        $objectService = $this->createMock(ObjectServiceStub::class);
 
         $objectService->method('find')->willReturn([
-            'id'       => $uuidLower,
-            'caseType' => 'uuid-zt-1',
-            'order'    => 5,
+            'id'             => $uuidLower,
+            'caseType'       => 'uuid-zt-1',
+            'sequenceNumber' => 5,
         ]);
 
         $objectService->method('buildSearchQuery')->willReturn(['caseType' => 'uuid-zt-1']);
 
         $objectService->method('searchObjectsPaginated')->willReturn([
             'results' => [
-                ['id' => $uuidHighest, 'order' => 10],
-                ['id' => $uuidLower, 'order' => 5],
+                ['id' => $uuidHighest, 'sequenceNumber' => 10],
+                ['id' => $uuidLower, 'sequenceNumber' => 5],
             ],
         ]);
 
@@ -429,11 +425,20 @@ class ZgwZrcRulesServiceTest extends TestCase
         $zaaktypeUuid   = 'aabbccdd-1111-2222-3333-444455556666';
         $hoofdzaakUuid  = 'ccddccdd-5555-6666-7777-888899990000';
 
-        // objectService: find() for hoofdzaak returns null (not found).
-        $objectService = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['find', 'buildSearchQuery', 'searchObjectsPaginated'])
-            ->getMock();
-        $objectService->method('find')->willReturn(null);
+        // Zaaktype lookup returns a valid (published) zaaktype; hoofdzaak lookup returns null.
+        $objectService = $this->createMock(ObjectServiceStub::class);
+        $objectService->method('find')->willReturnCallback(
+            static function (string $id, string $register, string $schema) use ($zaaktypeUuid): ?array {
+                if ($id === $zaaktypeUuid) {
+                    return [
+                        'id'      => $zaaktypeUuid,
+                        'isDraft' => false,
+                    ];
+                }
+
+                return null;
+            }
+        );
 
         $this->settingsService
             ->method('getConfigValue')
