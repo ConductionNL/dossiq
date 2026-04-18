@@ -83,6 +83,10 @@ class MetricsController extends Controller
     /**
      * Collect all metrics and format as Prometheus text.
      *
+     * @spec openspec/changes/prometheus-metrics/tasks.md#task-1
+     * @spec openspec/changes/prometheus-metrics/tasks.md#task-2
+     * @spec openspec/changes/prometheus-metrics/tasks.md#task-3
+     *
      * @return string Prometheus exposition format text
      */
     private function collectMetrics(): string
@@ -169,6 +173,8 @@ class MetricsController extends Controller
      * Get a cached value from APCu, computing it on cache miss.
      *
      * Falls back to direct computation if APCu is unavailable.
+     *
+     * @spec openspec/changes/prometheus-metrics/tasks.md#task-3
      *
      * @param string   $key     The cache key
      * @param int      $ttl     Cache TTL in seconds

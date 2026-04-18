@@ -32,6 +32,8 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for the HealthController class.
  *
+ * @spec openspec/changes/prometheus-metrics/tasks.md#task-6
+ *
  * @covers \OCA\Procest\Controller\HealthController
  */
 class HealthControllerTest extends TestCase
