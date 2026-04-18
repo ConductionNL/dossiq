@@ -72,6 +72,10 @@ Vrij en open source onder de AGPL-licentie.
         <php min-version="8.1"/>
     </dependencies>
 
+    <background-jobs>
+        <job>OCA\Procest\BackgroundJob\AdviceDeadlineJob</job>
+    </background-jobs>
+
     <repair-steps>
         <post-migration>
             <step>OCA\Procest\Repair\InitializeSettings</step>

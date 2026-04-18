@@ -66,6 +66,9 @@ export async function initializeStores() {
 		if (config.register && config.workflow_template_schema) {
 			objectStore.registerObjectType('workflowTemplate', config.workflow_template_schema, config.register)
 		}
+		if (config.register && config.advies_aanvraag_schema) {
+			objectStore.registerObjectType('advies-aanvraag', config.advies_aanvraag_schema, config.register)
+		}
 	}
 
 	return { settingsStore, objectStore }
