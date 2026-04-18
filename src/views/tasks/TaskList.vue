@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+<!-- @spec openspec/changes/task-management/tasks.md#TASK-TM-02 -->
+
 <template>
 	<div>
 		<!-- Filters bar -->

@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: EUPL-1.2
+// Copyright (C) 2026 Conduction B.V.
+
 /**
  * Task validation utilities for create and update operations.
+ *
+ * @spec openspec/changes/task-management/tasks.md#TASK-TM-01
  */
 
 import { validateTransition } from './taskLifecycle.js'
@@ -7,6 +12,7 @@ import { validateTransition } from './taskLifecycle.js'
 /**
  * Validate a task creation form.
  *
+ * @spec openspec/changes/task-management/tasks.md#TASK-TM-01
  * @param {object} form The form data
  * @return {{ valid: boolean, errors: object }} Validation result
  */
@@ -30,6 +36,7 @@ export function validateTaskCreate(form) {
 /**
  * Validate a task update form.
  *
+ * @spec openspec/changes/task-management/tasks.md#TASK-TM-01
  * @param {object} form The form data
  * @return {{ valid: boolean, errors: object }} Validation result
  */
@@ -49,6 +56,7 @@ export function validateTaskUpdate(form) {
 /**
  * Validate a task status transition.
  *
+ * @spec openspec/changes/task-management/tasks.md#TASK-TM-03
  * @param {string} from Current status
  * @param {string} to Target status
  * @return {{ valid: boolean, error: string|null }} Validation result

@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+<!-- @spec openspec/changes/task-management/tasks.md#TASK-TM-04 -->
+
 <template>
 	<div class="task-create-overlay" @click.self="$emit('close')">
 		<div class="task-create-dialog">
