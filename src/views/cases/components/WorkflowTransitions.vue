@@ -44,11 +44,16 @@
 import { NcButton } from '@nextcloud/vue'
 import { useWorkflowStore } from '../../../store/modules/workflow.js'
 import { useObjectStore } from '../../../store/modules/object.js'
+import { useI18n } from 'vue-i18n'
 
 export default {
 	name: 'WorkflowTransitions',
 	components: {
 		NcButton,
+	},
+	setup() {
+		const { t } = useI18n()
+		return { t }
 	},
 	props: {
 		caseData: {
@@ -162,19 +167,52 @@ export default {
 			}
 		},
 
-		computeTransitions() {
+		async computeTransitions() {
 			if (!this.workflowTemplate) {
 				this.availableTransitions = []
 				return
 			}
 
-			this.availableTransitions = this.workflowStore.computeAvailableTransitions(
+			let transitions = this.workflowStore.computeAvailableTransitions(
 				this.caseData,
 				this.userRoles,
 				this.workflowTemplate,
 				this.tasks,
 				this.documents,
 			)
+
+			// Check for advice guards asynchronously
+			transitions = await Promise.all(
+				transitions.map(async (tr) => {
+					if (!tr.available) return tr
+
+					const guardDefs = tr.guards || []
+					const hasAdviceGuard = guardDefs.some((g) => g.type === 'advicesGuard')
+
+					if (hasAdviceGuard) {
+						try {
+							const { getAdviceForCase } = await import('../../../services/adviceApi.js')
+							const response = await getAdviceForCase(this.caseData.id)
+							const advice = response.data || response || []
+							const pendingAdvice = advice.filter((a) => a.status === 'aangevraagd')
+
+							if (pendingAdvice.length > 0) {
+								const advisors = pendingAdvice.map((a) => `${a.adviseur} (${a.deadline})`).join(', ')
+								tr.available = false
+								tr.unmetConditions.push(
+									this.t('procest', 'Pending advice: {advisors}', { advisors }),
+								)
+							}
+						} catch (err) {
+							console.error('Failed to check advice guard:', err)
+						}
+					}
+
+					return tr
+				}),
+			)
+
+			this.availableTransitions = transitions
 		},
 
 		async executeTransition(transition) {

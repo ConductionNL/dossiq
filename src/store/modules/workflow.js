@@ -471,6 +471,8 @@ export const useWorkflowStore = defineStore('workflow', {
 					return this.evaluateRequiredFieldGuard(guard, caseData)
 				case 'requiredDocument':
 					return this.evaluateRequiredDocumentGuard(guard, caseDocuments)
+				case 'advicesGuard':
+					return this.evaluateAdvicesGuard(guard, caseData)
 				case 'roleGuard':
 					// Role guards are handled at the transition level (filter)
 					return { met: true, message: '' }
@@ -553,6 +555,20 @@ export const useWorkflowStore = defineStore('workflow', {
 					message: t('procest', 'Required document missing: {type}', { type: requiredType }),
 				}
 			}
+			return { met: true, message: '' }
+		},
+
+		/**
+		 * Evaluate advice guard - checks for pending advice requests.
+		 *
+		 * @param {object} guard    The advice guard definition
+		 * @param {object} caseData The case object
+		 * @return {object} {met: boolean, message: string}
+		 */
+		evaluateAdvicesGuard(guard, caseData) {
+			// This guard is checked asynchronously in the component
+			// For now, we return met: true as a placeholder
+			// The actual check happens in the WorkflowTransitions component
 			return { met: true, message: '' }
 		},
 
