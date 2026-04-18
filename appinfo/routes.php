@@ -111,6 +111,19 @@ return [
         ['name' => 'gis_proxy#proxy', 'url' => '/api/gis/proxy', 'verb' => 'POST'],
         ['name' => 'gis_proxy#capabilities', 'url' => '/api/gis/capabilities', 'verb' => 'GET'],
 
+        // ── Doorlooptijd Analytics ──────────────────────────────────────
+        // Doorlooptijd statistics and analytics endpoints.
+        ['name' => 'doorlooptijd#statistics', 'url' => '/api/doorlooptijd/statistics', 'verb' => 'GET'],
+        ['name' => 'doorlooptijd#bottlenecks', 'url' => '/api/doorlooptijd/bottlenecks', 'verb' => 'GET'],
+        ['name' => 'doorlooptijd#trends', 'url' => '/api/doorlooptijd/trends', 'verb' => 'GET'],
+        ['name' => 'doorlooptijd#sla_trend', 'url' => '/api/doorlooptijd/sla-trend', 'verb' => 'GET'],
+
+        // ── Reporting ───────────────────────────────────────────────────
+        // Management reporting endpoints.
+        ['name' => 'reporting#get_report', 'url' => '/api/reports/doorlooptijd', 'verb' => 'GET'],
+        ['name' => 'reporting#export', 'url' => '/api/reports/doorlooptijd/export', 'verb' => 'GET'],
+        ['name' => 'reporting#get_filter_options', 'url' => '/api/reports/filters', 'verb' => 'GET'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
