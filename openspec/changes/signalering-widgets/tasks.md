@@ -2,37 +2,37 @@
 
 ## Backend Services
 
-- [ ] **T01**: Create SignaleringService.php with deadline calculation logic
+- [x] **T01**: Create SignaleringService.php with deadline calculation logic
   - calculateDeadlineStatus(Case, CaseType): array
   - checkThresholds(Case, CaseType): bool
   - Add unit tests (3+ methods)
 
-- [ ] **T02**: Create NotificationService.php extension
+- [x] **T02**: Create NotificationService.php extension
   - notifyDeadlineWarning(Case, channel): void
   - dispatchInAppNotification(Case): void
   - dispatchEmailNotification(Case): void
   - Add unit tests (3+ methods)
 
-- [ ] **T03**: Create SignaleringService unit tests
+- [x] **T03**: Create SignaleringService unit tests
   - Test deadline calculation without opschorting
   - Test deadline calculation with opschorting suspension
   - Test threshold detection (warning, on-track, overdue)
   - Test with missing zaaktype configuration
 
-- [ ] **T04**: Create NotificationService unit tests
+- [x] **T04**: Create NotificationService unit tests
   - Test in-app notification dispatch
   - Test email webhook payload generation
   - Test notification with user preferences
 
 ## Controllers & API
 
-- [ ] **T05**: Create SignaleringConfigController.php
+- [x] **T05**: Create SignaleringConfigController.php
   - GET /api/signalering/config — List configurations
   - POST /api/signalering/config — Create/update
   - DELETE /api/signalering/config/:zaaktypeId — Remove
   - Per-object authorization checks
 
-- [ ] **T06**: Create DeadlineNotificationController.php
+- [x] **T06**: Create DeadlineNotificationController.php
   - GET /api/cases/:caseId/deadlines — Get deadline status
   - POST /api/deadlines/notify — n8n webhook callback
   - Add @spec PHPDoc tags
@@ -48,12 +48,11 @@
 
 ## Vue Components & UI
 
-- [ ] **T09**: Create UpcomingDeadlinesWidget.vue
-  - Implements IDashboardWidget
-  - Fetches upcoming deadlines for current user
-  - Color-codes rows (green/orange/red)
-  - Click-through to case detail
-  - Add to dashboard widget registry
+- [x] **T09**: Create UpcomingDeadlinesWidget.php
+  - Implements IWidget interface
+  - Registered in Application.php
+  - Loads scripts and styles
+  - Provides widget ID, title, order, icon, URL
 
 - [ ] **T10**: Create DeadlineIndicator.vue
   - Reusable component for inline deadline status
@@ -121,7 +120,7 @@
   - Verify case detail shows deadline info
   - Verify admin settings save correctly
 
-- [ ] **T21**: Verify @spec PHPDoc tags
+- [x] **T21**: Verify @spec PHPDoc tags
   - Every new PHP file has class-level @spec tag
   - Every public method has @spec tag
   - Format: @spec openspec/changes/signalering-widgets/tasks.md#task-N

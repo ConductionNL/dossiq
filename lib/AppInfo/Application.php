@@ -29,6 +29,7 @@ use OCA\Procest\Dashboard\OverdueCasesWidget;
 use OCA\Procest\Dashboard\StalledCasesWidget;
 use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Dashboard\StartCaseWidget;
+use OCA\Procest\Dashboard\UpcomingDeadlinesWidget;
 use OCA\Procest\Listener\DeepLinkRegistrationListener;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
 use OCP\AppFramework\App;
@@ -74,6 +75,7 @@ class Application extends App implements IBootstrap
         $context->registerDashboardWidget(MyTasksWidget::class);
         $context->registerDashboardWidget(OverdueCasesWidget::class);
         $context->registerDashboardWidget(DeadlineAlertsWidget::class);
+        $context->registerDashboardWidget(UpcomingDeadlinesWidget::class);
         $context->registerDashboardWidget(TaskRemindersWidget::class);
         $context->registerDashboardWidget(StalledCasesWidget::class);
         $context->registerDashboardWidget(StartCaseWidget::class);
