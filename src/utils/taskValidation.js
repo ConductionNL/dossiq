@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: EUPL-1.2
+// Copyright (C) 2026 Conduction B.V.
+
 /**
  * Task validation utilities for create and update operations.
+ * @spec openspec/changes/task-management/tasks.md#task-TM-01
  */
 
 import { validateTransition } from './taskLifecycle.js'

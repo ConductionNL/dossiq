@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+<!-- Copyright (C) 2026 Conduction B.V. -->
+
 <template>
 	<div v-if="editing || isNew" class="task-detail">
 		<div class="task-detail__header">
@@ -163,6 +166,10 @@
 </template>
 
 <script>
+/**
+ * @spec openspec/changes/task-management/tasks.md#task-TM-03
+ * Task detail view with lifecycle transition error feedback.
+ */
 import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
 import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'

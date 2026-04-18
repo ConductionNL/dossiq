@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+<!-- Copyright (C) 2026 Conduction B.V. -->
+
 <template>
 	<div>
 		<!-- Filters bar -->
@@ -90,6 +93,10 @@
 </template>
 
 <script>
+/**
+ * @spec openspec/changes/task-management/tasks.md#task-TM-02
+ * Task list view with filters (status, assignee, priority) and search.
+ */
 import { inject } from 'vue'
 import { NcTextField, NcSelect } from '@nextcloud/vue'
 import { CnIndexPage, useListView } from '@conduction/nextcloud-vue'

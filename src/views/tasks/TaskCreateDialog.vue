@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+<!-- Copyright (C) 2026 Conduction B.V. -->
+
 <template>
 	<div class="task-create-overlay" @click.self="$emit('close')">
 		<div class="task-create-dialog">
@@ -95,6 +98,10 @@
 </template>
 
 <script>
+/**
+ * @spec openspec/changes/task-management/tasks.md#task-TM-04
+ * Task creation dialog with case reference validation.
+ */
 import { NcButton, NcTextField, NcSelect, NcLoadingIcon } from '@nextcloud/vue'
 import { useObjectStore } from '../../store/modules/object.js'
 
