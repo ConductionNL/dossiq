@@ -26,3 +26,7 @@ Fetch case types via `objectStore.fetchCollection('caseType')` on mount, build a
 
 1. **Case type fetched once** — all case types loaded at mount, cached in component data
 2. **Keyboard handlers on items** — `@keydown.enter` and `@keydown.space` on each row
+
+## Status
+
+`pr-created`
