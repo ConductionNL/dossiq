@@ -121,6 +121,30 @@
 				</div>
 			</template>
 
+			<!-- Cases by Type widget -->
+			<template #widget-cases-by-type>
+				<div class="type-widget-content">
+					<div v-if="typeData.length === 0" class="chart-empty">
+						{{ t('procest', 'No open cases') }}
+					</div>
+					<div v-else class="type-chart">
+						<div
+							v-for="(item, index) in typeData"
+							:key="item.id"
+							class="type-bar-row"
+							@click="$router.push({ name: 'Cases', query: { caseType: item.id } })">
+							<span class="type-bar-label">{{ item.name }}</span>
+							<div class="type-bar-track">
+								<div
+									class="type-bar-fill"
+									:style="{ width: typeBarWidth(item.count), background: barColor(index) }" />
+							</div>
+							<span class="type-bar-count">{{ item.count }}</span>
+						</div>
+					</div>
+				</div>
+			</template>
+
 			<!-- My Work widget -->
 			<template #widget-my-work>
 				<div class="my-work-widget-content">
@@ -225,6 +249,7 @@ import { useObjectStore } from '../store/modules/object.js'
 import {
 	computeKpis,
 	aggregateByStatus,
+	aggregateByType,
 	getMyWorkItems,
 	getDeadlineAlerts,
 	getTaskDueReminders,
@@ -249,32 +274,23 @@ const BAR_COLORS = [
 ]
 
 /**
- * Default dashboard layout — 4 count tiles across the top row (3 cols each),
- * then cases-by-status and my-work share the second row.
- */
-/**
  * Default dashboard layout — 5 count tiles across the top row,
- * then cases-by-status and my-work share the second row.
+ * then cases-by-status, cases-by-type, and my-work share the middle rows.
  * Grid is 12 columns: tiles use widths 2+3+3+2+2 = 12.
  */
 const DEFAULT_LAYOUT = [
-	{ id: 1, widgetId: 'count-open-cases', gridX: 0, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
-	{ id: 2, widgetId: 'count-overdue', gridX: 3, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
-	{ id: 3, widgetId: 'count-completed', gridX: 6, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
-	{ id: 4, widgetId: 'count-my-tasks', gridX: 9, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
-	{ id: 5, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 6, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 7, widgetId: 'case-map', gridX: 0, gridY: 6, gridWidth: 12, gridHeight: 6 },
 	{ id: 1, widgetId: 'count-open-cases', gridX: 0, gridY: 0, gridWidth: 2, gridHeight: 2, showTitle: false },
 	{ id: 2, widgetId: 'count-overdue', gridX: 2, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
 	{ id: 3, widgetId: 'count-completed', gridX: 5, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
 	{ id: 4, widgetId: 'count-my-tasks', gridX: 8, gridY: 0, gridWidth: 2, gridHeight: 2, showTitle: false },
 	{ id: 5, widgetId: 'count-sla', gridX: 10, gridY: 0, gridWidth: 2, gridHeight: 2, showTitle: false },
 	{ id: 6, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 7, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 8, widgetId: 'deadline-alerts', gridX: 0, gridY: 6, gridWidth: 4, gridHeight: 4 },
-	{ id: 9, widgetId: 'task-due-reminders', gridX: 4, gridY: 6, gridWidth: 4, gridHeight: 4 },
-	{ id: 10, widgetId: 'stalled-cases', gridX: 8, gridY: 6, gridWidth: 4, gridHeight: 4 },
+	{ id: 7, widgetId: 'cases-by-type', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
+	{ id: 8, widgetId: 'my-work', gridX: 0, gridY: 6, gridWidth: 6, gridHeight: 4 },
+	{ id: 9, widgetId: 'deadline-alerts', gridX: 6, gridY: 6, gridWidth: 3, gridHeight: 4 },
+	{ id: 10, widgetId: 'task-due-reminders', gridX: 9, gridY: 6, gridWidth: 3, gridHeight: 4 },
+	{ id: 11, widgetId: 'stalled-cases', gridX: 0, gridY: 10, gridWidth: 12, gridHeight: 4 },
+	{ id: 12, widgetId: 'case-map', gridX: 0, gridY: 14, gridWidth: 12, gridHeight: 6 },
 ]
 
 export default {
@@ -312,6 +328,7 @@ export default {
 			statusTypes: [],
 			kpis: { openCount: 0, newToday: 0, overdueCount: 0, completedCount: 0, avgDays: null, taskCount: 0, tasksDueToday: 0 },
 			statusData: [],
+			typeData: [],
 			myWorkItems: [],
 			deadlineAlerts: { overdue: [], atRisk: [] },
 			taskDueReminders: { overdue: [], dueSoon: [] },
@@ -364,6 +381,7 @@ export default {
 				{ id: 'count-my-tasks', title: t('procest', 'My Tasks'), type: 'custom' },
 				{ id: 'count-sla', title: t('procest', 'SLA Compliance'), type: 'custom' },
 				{ id: 'cases-by-status', title: t('procest', 'Cases by Status'), type: 'custom' },
+				{ id: 'cases-by-type', title: t('procest', 'Cases by Type'), type: 'custom' },
 				{ id: 'my-work', title: t('procest', 'My Work'), type: 'custom' },
 				{ id: 'case-map', title: t('procest', 'Case Map'), type: 'custom' },
 				{ id: 'deadline-alerts', title: t('procest', 'Deadline Alerts'), type: 'custom' },
@@ -430,6 +448,7 @@ export default {
 				this.kpis = computeKpis(this.openCases, this.completedCases, this.myTasks)
 				this.slaCompliance = computeSlaCompliance(this.completedCases, this.caseTypes)
 				this.statusData = aggregateByStatus(this.openCases, this.statusTypes)
+				this.typeData = aggregateByType(this.openCases, this.caseTypes)
 
 				const myCases = this.openCases.filter(c => c.assignee === currentUser)
 				this.myWorkItems = getMyWorkItems(myCases, this.myTasks, 5)
@@ -452,6 +471,12 @@ export default {
 
 		barWidth(count) {
 			const max = Math.max(1, ...this.statusData.map(s => s.count))
+			const pct = (count / max) * 100
+			return `max(20px, ${pct}%)`
+		},
+
+		typeBarWidth(count) {
+			const max = Math.max(1, ...this.typeData.map(t => t.count))
 			const pct = (count / max) * 100
 			return `max(20px, ${pct}%)`
 		},
@@ -530,6 +555,62 @@ export default {
 }
 
 .status-bar-count {
+	width: 30px;
+	font-size: 13px;
+	font-weight: 600;
+	text-align: right;
+	flex-shrink: 0;
+}
+
+/* Type chart widget */
+.type-widget-content {
+	padding: 12px;
+	height: 100%;
+}
+
+.type-chart {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.type-bar-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	padding: 2px 0;
+	border-radius: 4px;
+	transition: background 0.2s ease;
+}
+
+.type-bar-row:hover {
+	background: rgba(0, 0, 0, 0.05);
+}
+
+.type-bar-label {
+	width: 110px;
+	font-size: 13px;
+	text-align: right;
+	flex-shrink: 0;
+}
+
+.type-bar-track {
+	flex: 1;
+	height: 22px;
+	background: var(--color-background-dark);
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.type-bar-fill {
+	height: 100%;
+	border-radius: 4px;
+	min-width: 2px;
+	transition: width 0.3s ease;
+}
+
+.type-bar-count {
 	width: 30px;
 	font-size: 13px;
 	font-weight: 600;

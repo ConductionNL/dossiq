@@ -88,6 +88,36 @@ export function aggregateByStatus(openCases, statusTypes) {
 }
 
 /**
+ * Aggregate open cases by case type name for the type chart.
+ * Sorted by count descending.
+ *
+ * @param {object[]} openCases Cases with non-final status
+ * @param {object[]} caseTypes All case types
+ * @return {Array<{ id: string, name: string, count: number }>} Sorted by count descending
+ */
+export function aggregateByType(openCases, caseTypes) {
+	const typeMap = new Map()
+	const idToName = new Map()
+
+	for (const ct of caseTypes) {
+		idToName.set(ct.id, ct.name || ct.title || 'Unknown')
+	}
+
+	for (const c of openCases) {
+		const typeId = c.caseType || 'unknown'
+		const typeName = idToName.get(typeId) || 'Unknown'
+		if (!typeMap.has(typeName)) {
+			typeMap.set(typeName, { id: typeId, name: typeName, count: 0 })
+		}
+		const entry = typeMap.get(typeName)
+		entry.count += 1
+	}
+
+	return Array.from(typeMap.values())
+		.sort((a, b) => b.count - a.count)
+}
+
+/**
  * Extract overdue cases with display-ready data.
  *
  * @param {object[]} openCases Cases with non-final status
