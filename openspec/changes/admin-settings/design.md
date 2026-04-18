@@ -1,5 +1,8 @@
 # Design: admin-settings
 
+## Status
+**pr-created**
+
 ## Architecture
 
 Three new tab components following the same pattern as StatusesTab.vue: list items, inline edit, add form, delete with confirmation. Each fetches its own data via `useObjectStore().fetchCollection()` filtered by `caseType`.
