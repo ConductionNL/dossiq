@@ -193,6 +193,23 @@
 					@extend="showExtensionDialog" />
 			</CnDetailCard>
 
+			<!-- Custom Properties card -->
+			<CnDetailCard :title="t('procest', 'Case Properties')">
+				<CustomPropertiesPanel
+					:case-id="caseId"
+					:case-type-id="caseData.caseType"
+					:is-read-only="isReadOnly" />
+			</CnDetailCard>
+
+			<!-- Required Documents card -->
+			<CnDetailCard :title="t('procest', 'Required Documents')">
+				<DocumentChecklist
+					:case-id="caseId"
+					:case-type-id="caseData.caseType"
+					:is-read-only="isReadOnly"
+					:status-types="orderedStatusTypes" />
+			</CnDetailCard>
+
 			<!-- B&W Voorstellen card -->
 			<CnDetailCard :title="t('procest', 'B&W Voorstellen')">
 				<VoorstellenPanel
@@ -456,6 +473,8 @@ import BezwaarTimeline from './components/bezwaar/BezwaarTimeline.vue'
 import DeadlineIndicator from './components/bezwaar/DeadlineIndicator.vue'
 import BeroepEscalationPanel from './components/beroep/BeroepEscalationPanel.vue'
 import CourtProceedingsPanel from './components/beroep/CourtProceedingsPanel.vue'
+import CustomPropertiesPanel from './components/CustomPropertiesPanel.vue'
+import DocumentChecklist from './components/DocumentChecklist.vue'
 import { useBezwaarStore } from '../../store/modules/bezwaar.js'
 
 const LocationTab = () => import(/* webpackChunkName: "map" */ './components/LocationTab.vue')
@@ -490,6 +509,8 @@ export default {
 		DeadlineIndicator,
 		BeroepEscalationPanel,
 		CourtProceedingsPanel,
+		CustomPropertiesPanel,
+		DocumentChecklist,
 	},
 	props: {
 		caseId: {

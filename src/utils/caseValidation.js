@@ -33,6 +33,7 @@ export function isCaseTypeUsable(caseType) {
 
 /**
  * Get a specific unusable reason for a case type.
+ * Enhanced with detailed validity window error messages.
  *
  * @param {object} caseType Case type object
  * @return {string|null} Reason why the case type cannot be used, or null if usable
@@ -41,7 +42,7 @@ export function getCaseTypeUnusableReason(caseType) {
 	if (!caseType) return t('procest', 'Case type not found')
 
 	if (caseType.isDraft === true || caseType.isDraft === 'true') {
-		return t('procest', 'Cannot create a case with a draft case type. The case type must be published first.')
+		return t('procest', 'Cannot create a case: this case type is still in draft status. The case type must be published before cases can be created. Contact your administrator.')
 	}
 
 	const today = new Date()
@@ -52,7 +53,11 @@ export function getCaseTypeUnusableReason(caseType) {
 		validFrom.setHours(0, 0, 0, 0)
 		if (validFrom > today) {
 			const dateStr = caseType.validFrom.split('T')[0]
-			return t('procest', 'Cannot create a case with a case type that is not yet valid. The case type is valid from {date}.', { date: dateStr })
+			const daysUntil = Math.ceil((validFrom - today) / (1000 * 60 * 60 * 24))
+			return t('procest', 'Cannot create a case: this case type is not yet valid. It becomes available on {date} ({days} days from now). Check back later or contact your administrator if this is incorrect.', {
+				date: dateStr,
+				days: daysUntil,
+			})
 		}
 	}
 
@@ -61,7 +66,11 @@ export function getCaseTypeUnusableReason(caseType) {
 		validUntil.setHours(0, 0, 0, 0)
 		if (validUntil < today) {
 			const dateStr = caseType.validUntil.split('T')[0]
-			return t('procest', 'Cannot create a case with an expired case type. The case type was valid until {date}.', { date: dateStr })
+			const daysAgo = Math.ceil((today - validUntil) / (1000 * 60 * 60 * 24))
+			return t('procest', 'Cannot create a case: this case type has expired. It was valid until {date} ({days} days ago). If you need to use this case type again, contact your administrator.', {
+				date: dateStr,
+				days: daysAgo,
+			})
 		}
 	}
 
