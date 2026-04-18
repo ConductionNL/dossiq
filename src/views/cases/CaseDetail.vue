@@ -1,7 +1,19 @@
 <template>
 	<div>
+		<!-- Case not found state -->
+		<div v-if="notFound" class="case-not-found">
+			<NcEmptyContent :title="t('procest', 'Case not found')">
+				<template #icon>
+					<span class="icon-alert"></span>
+				</template>
+				<NcButton type="primary" @click="$router.push({ name: 'Cases' })">
+					{{ t('procest', 'Back to list') }}
+				</NcButton>
+			</NcEmptyContent>
+		</div>
+
 		<!-- Parent case breadcrumb -->
-		<div v-if="parentCaseData" class="parent-breadcrumb">
+		<div v-if="!notFound && parentCaseData" class="parent-breadcrumb">
 			<router-link :to="{ name: 'CaseDetail', params: { id: caseData.parentCase } }" class="parent-breadcrumb__link">
 				{{ parentCaseData.title }}
 			</router-link>
@@ -10,6 +22,7 @@
 		</div>
 
 		<CnDetailPage
+			v-if="!notFound"
 			:title="caseData.title || t('procest', 'Case')"
 			:subtitle="caseData.identifier ? `${t('procest', 'Case')} — ${caseData.identifier}` : t('procest', 'Case')"
 			:back-route="{ name: 'Cases' }"
@@ -35,8 +48,17 @@
 				</NcButton>
 			</template>
 
+			<!-- Skeleton loading for Status card -->
+			<div v-if="loading" class="skeleton-card">
+				<div class="skeleton-bar skeleton-bar--title"></div>
+				<div class="skeleton-group">
+					<div class="skeleton-bar skeleton-bar--text"></div>
+					<div class="skeleton-bar skeleton-bar--short"></div>
+				</div>
+			</div>
+
 			<!-- Status card -->
-			<CnDetailCard :title="t('procest', 'Status')">
+			<CnDetailCard v-if="!loading" :title="t('procest', 'Status')">
 				<div class="status-section">
 					<span class="status-badge" :class="currentStatusBadgeClass">
 						{{ currentStatusName }}
@@ -89,8 +111,18 @@
 				</div>
 			</CnDetailCard>
 
+			<!-- Skeleton loading for Status Timeline -->
+			<div v-if="loading" class="skeleton-card">
+				<div class="skeleton-bar skeleton-bar--title"></div>
+				<div class="skeleton-group">
+					<div class="skeleton-bar skeleton-bar--text"></div>
+					<div class="skeleton-bar skeleton-bar--text"></div>
+					<div class="skeleton-bar skeleton-bar--short"></div>
+				</div>
+			</div>
+
 			<!-- Status Timeline card -->
-			<CnDetailCard v-if="orderedStatusTypes.length > 0" :title="t('procest', 'Status Timeline')">
+			<CnDetailCard v-if="!loading && orderedStatusTypes.length > 0" :title="t('procest', 'Status Timeline')">
 				<StatusTimeline
 					:status-types="orderedStatusTypes"
 					:current-status-id="caseData.status"
@@ -98,7 +130,7 @@
 			</CnDetailCard>
 
 			<!-- Workflow Transitions card -->
-			<CnDetailCard v-if="hasWorkflow" :title="t('procest', 'Workflow Transitions')">
+			<CnDetailCard v-if="!loading && hasWorkflow" :title="t('procest', 'Workflow Transitions')">
 				<WorkflowTransitions
 					:case-data="caseData"
 					:tasks="tasks"
@@ -107,8 +139,25 @@
 					@transition-executed="onWorkflowTransition" />
 			</CnDetailCard>
 
+			<!-- Skeleton loading for Case Information -->
+			<div v-if="loading" class="skeleton-card">
+				<div class="skeleton-bar skeleton-bar--title"></div>
+				<div class="skeleton-group">
+					<div class="skeleton-bar skeleton-bar--text"></div>
+					<div class="skeleton-bar skeleton-bar--text"></div>
+				</div>
+				<div class="skeleton-row">
+					<div class="skeleton-group">
+						<div class="skeleton-bar skeleton-bar--text"></div>
+					</div>
+					<div class="skeleton-group">
+						<div class="skeleton-bar skeleton-bar--text"></div>
+					</div>
+				</div>
+			</div>
+
 			<!-- Case Information card -->
-			<CnDetailCard :title="t('procest', 'Case Information')">
+			<CnDetailCard v-if="!loading" :title="t('procest', 'Case Information')">
 				<div class="form-group">
 					<label>{{ t('procest', 'Title') }} *</label>
 					<NcTextField
@@ -180,8 +229,17 @@
 				</div>
 			</CnDetailCard>
 
+			<!-- Skeleton loading for Deadline & Timing -->
+			<div v-if="loading" class="skeleton-card">
+				<div class="skeleton-bar skeleton-bar--title"></div>
+				<div class="skeleton-group">
+					<div class="skeleton-bar skeleton-bar--text"></div>
+					<div class="skeleton-bar skeleton-bar--text"></div>
+				</div>
+			</div>
+
 			<!-- Deadline & Timing card -->
-			<CnDetailCard v-if="caseTypeData" :title="t('procest', 'Deadline & Timing')">
+			<CnDetailCard v-if="!loading && caseTypeData" :title="t('procest', 'Deadline & Timing')">
 				<DeadlinePanel
 					:start-date="caseData.startDate"
 					:deadline="caseData.deadline"
@@ -194,7 +252,7 @@
 			</CnDetailCard>
 
 			<!-- B&W Voorstellen card -->
-			<CnDetailCard :title="t('procest', 'B&W Voorstellen')">
+			<CnDetailCard v-if="!loading" :title="t('procest', 'B&W Voorstellen')">
 				<VoorstellenPanel
 					:case-id="caseId"
 					:case-title="caseData.title || ''"
@@ -202,7 +260,7 @@
 			</CnDetailCard>
 
 			<!-- Participants card -->
-			<CnDetailCard :title="t('procest', 'Participants')">
+			<CnDetailCard v-if="!loading" :title="t('procest', 'Participants')">
 				<ParticipantsSection
 					:case-id="caseId"
 					:is-read-only="isReadOnly"
@@ -211,7 +269,7 @@
 
 			<!-- Sub-cases card -->
 			<CnDetailCard
-				v-if="hasSubCaseTypes"
+				v-if="!loading && hasSubCaseTypes"
 				:title="subCasesSectionTitle">
 				<SubCasesSection
 					:case-id="caseId"
@@ -224,14 +282,14 @@
 
 			<!-- Sub-case creation dialog -->
 			<CaseCreateDialog
-				v-if="showSubCaseDialog"
+				v-if="!loading && showSubCaseDialog"
 				:parent-case="caseId"
 				:parent-case-type="caseTypeData"
 				@created="onSubCaseCreated"
 				@close="showSubCaseDialog = false" />
 
 			<!-- Tasks card -->
-			<CnDetailCard :title="`${t('procest', 'Tasks')} (${completedTaskCount}/${tasks.length})`">
+			<CnDetailCard v-if="!loading" :title="`${t('procest', 'Tasks')} (${completedTaskCount}/${tasks.length})`">
 				<template #actions>
 					<NcButton v-if="!isReadOnly" @click="$router.push({ name: 'TaskNew', query: { caseId } })">
 						{{ t('procest', 'New task') }}
@@ -294,30 +352,30 @@
 
 			<!-- VTH Panels (conditionally shown based on case type) -->
 			<InspectionPanel
-				v-if="isToezichtCase"
+				v-if="!loading && isToezichtCase"
 				:case-id="caseId"
 				:case-type-id="caseData.caseType"
 				:can-inspect="!isReadOnly" />
 
 			<EnforcementPanel
-				v-if="isHandhavingCase"
+				v-if="!loading && isHandhavingCase"
 				:case-id="caseId"
 				:case-type-id="caseData.caseType"
 				:is-read-only="isReadOnly" />
 
 			<AdvicePanel
-				v-if="isVthCase"
+				v-if="!loading && isVthCase"
 				:case-id="caseId"
 				:is-read-only="isReadOnly" />
 			<!-- Location card -->
-			<CnDetailCard :title="t('procest', 'Location')">
+			<CnDetailCard v-if="!loading" :title="t('procest', 'Location')">
 				<LocationTab
 					:geometry="caseData.geometry || null"
 					:is-read-only="isReadOnly"
 					@update-geometry="onGeometryUpdate" />
 			</CnDetailCard>
 			<!-- Bezwaar-specific sections (shown when case type is Bezwaar) -->
-			<template v-if="isBezwaarCase">
+			<template v-if="!loading && isBezwaarCase">
 				<CnDetailCard :title="t('procest', 'Objection Details')">
 					<BezwaarIntakeForm
 						:case-id="caseId"
@@ -383,7 +441,7 @@
 			</template>
 
 			<!-- Beroep-specific sections (shown when case type is Beroep) -->
-			<template v-if="isBeroepCase">
+			<template v-if="!loading && isBeroepCase">
 				<CnDetailCard :title="t('procest', 'Court Proceedings')">
 					<CourtProceedingsPanel
 						:case-data="caseData"
@@ -395,7 +453,7 @@
 			</template>
 
 			<!-- Activity card -->
-			<CnDetailCard :title="t('procest', 'Activity')">
+			<CnDetailCard v-if="!loading" :title="t('procest', 'Activity')">
 				<ActivityTimeline
 					:activity="caseData.activity || []"
 					:is-read-only="isReadOnly"
@@ -404,7 +462,7 @@
 		</CnDetailPage>
 
 		<!-- Extension dialog -->
-		<div v-if="showExtension" class="extension-overlay" @click.self="showExtension = false">
+		<div v-if="!loading && showExtension" class="extension-overlay" @click.self="showExtension = false">
 			<div class="extension-dialog">
 				<h3>{{ t('procest', 'Extend Deadline') }}</h3>
 				<p>{{ t('procest', 'This will extend the deadline by {period}.', { period: extensionPeriodText }) }}</p>
@@ -429,7 +487,7 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcTextField, NcSelect, NcEmptyContent } from '@nextcloud/vue'
 import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { getStatusLabel as getTaskStatusLabel } from '../../utils/taskLifecycle.js'
@@ -467,6 +525,7 @@ export default {
 		NcLoadingIcon,
 		NcTextField,
 		NcSelect,
+		NcEmptyContent,
 		CnDetailPage,
 		CnDetailCard,
 		StatusTimeline,
@@ -510,6 +569,7 @@ export default {
 			tasks: [],
 			statusTypes: [],
 			caseTypeData: null,
+			notFound: false,
 			// Status change state
 			selectedStatus: null,
 			pendingStatusChange: null,
@@ -667,6 +727,13 @@ export default {
 	async mounted() {
 		if (!this.isNew) {
 			await this.objectStore.fetchObject('case', this.caseId)
+
+			// Check if case was found
+			if (!this.caseData || !this.caseData.id) {
+				this.notFound = true
+				return
+			}
+
 			this.populateForm()
 			await Promise.all([
 				this.loadCaseTypeData(),
@@ -1340,5 +1407,278 @@ export default {
 	justify-content: flex-end;
 	gap: 8px;
 	margin-top: 16px;
+}
+
+/* Case not found state */
+.case-not-found {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 500px;
+	padding: 24px;
+}
+
+.case-not-found :deep(.nc-empty-content) {
+	width: 100%;
+}
+
+/* Responsive layout — tablet and below */
+@media screen and (max-width: 1200px) {
+	/* CnDetailPage with sidebar becomes single column */
+	:deep(.cn-detail-page) {
+		display: flex;
+		flex-direction: column;
+	}
+
+	:deep(.cn-detail-page__main) {
+		flex: 1;
+		width: 100%;
+	}
+
+	:deep(.cn-detail-page__sidebar) {
+		width: 100%;
+		border-left: none;
+		border-top: 1px solid var(--color-border);
+		margin-top: 24px;
+	}
+
+	/* Form row — stack on smaller screens */
+	.form-row {
+		flex-direction: column;
+	}
+
+	.form-row .form-group {
+		flex: 1;
+		margin-bottom: 12px;
+	}
+
+	/* Extension dialog — adjust for mobile */
+	.extension-dialog {
+		width: 95vw;
+		max-width: 95vw;
+		padding: 16px;
+	}
+
+	/* Table — horizontal scroll on mobile */
+	.viewTableContainer {
+		overflow-x: auto;
+	}
+
+	/* Touch targets — ensure 44x44px minimum */
+	:deep(.nc-button) {
+		min-height: 44px;
+		min-width: 44px;
+		padding: 6px 12px;
+	}
+
+	/* Status badge - ensure readability on mobile */
+	.status-badge {
+		display: inline-flex;
+		align-items: center;
+		height: 32px;
+		padding: 0 12px;
+		font-size: 13px;
+	}
+}
+
+/* Print view */
+@media print {
+	/* Hide interactive elements */
+	:deep(.cn-detail-page__header),
+	:deep(.cn-detail-page__actions),
+	.parent-breadcrumb,
+	:deep(.nc-action-button),
+	:deep(.nc-button),
+	:deep(.nc-select),
+	:deep(.nc-text-field),
+	textarea,
+	.result-prompt,
+	.status-section__change,
+	.extension-dialog,
+	.extension-overlay,
+	:deep(.cn-detail-page__sidebar) {
+		display: none !important;
+	}
+
+	/* Print-safe colors and background */
+	body {
+		background: white;
+		color: black;
+	}
+
+	:deep(.cn-detail-page),
+	:deep(.cn-detail-card) {
+		box-shadow: none;
+		border: 1px solid #333;
+		page-break-inside: avoid;
+	}
+
+	/* Print header with case info */
+	:deep(.cn-detail-page) {
+		padding: 24px;
+	}
+
+	/* Add case info header for print */
+	:deep(.cn-detail-page)::before {
+		content: attr(data-case-identifier);
+		display: block;
+		font-size: 14px;
+		font-weight: bold;
+		margin-bottom: 12px;
+		border-bottom: 2px solid #333;
+		padding-bottom: 12px;
+	}
+
+	/* Status timeline in print — text list instead of interactive */
+	:deep(.status-timeline) {
+		display: block;
+	}
+
+	:deep(.status-timeline__item) {
+		page-break-inside: avoid;
+		margin-bottom: 12px;
+		padding-bottom: 12px;
+		border-bottom: 1px solid #ccc;
+	}
+
+	/* Form values — make them print-safe */
+	.form-value {
+		color: black;
+		font-weight: normal;
+	}
+
+	/* Remove interactive styling */
+	:deep(.nc-select),
+	:deep(.nc-text-field),
+	textarea,
+	input {
+		display: none !important;
+	}
+
+	/* Show text-based content only */
+	.status-badge {
+		display: inline;
+		padding: 0;
+		background: none !important;
+		color: black;
+		border: 1px solid #333;
+		padding: 2px 4px;
+	}
+
+	/* Table print styles */
+	.viewTable {
+		width: 100%;
+		border-collapse: collapse;
+		page-break-inside: avoid;
+	}
+
+	.viewTable th,
+	.viewTable td {
+		border: 1px solid #333;
+		padding: 6px;
+		page-break-inside: avoid;
+	}
+
+	.viewTable th {
+		background: white;
+		color: black;
+		font-weight: bold;
+	}
+
+	/* Section spacing for print */
+	:deep(.cn-detail-card) {
+		margin-bottom: 24px;
+		page-break-inside: avoid;
+	}
+
+	:deep(.cn-detail-card__title) {
+		font-size: 16px;
+		font-weight: bold;
+		border-bottom: 2px solid #333;
+		padding-bottom: 8px;
+		margin-bottom: 12px;
+	}
+
+	/* Hide icons and complex interactions */
+	:deep(.icon),
+	:deep([class*="icon-"]),
+	:deep(.nc-icon) {
+		display: none;
+	}
+}
+
+/* Skeleton loading animations */
+@keyframes skeleton-loading {
+	0% {
+		background-color: var(--color-background-darker, #f0f0f0);
+	}
+	50% {
+		background-color: var(--color-background-dark, #e8e8e8);
+	}
+	100% {
+		background-color: var(--color-background-darker, #f0f0f0);
+	}
+}
+
+/* Skeleton bar styles */
+.skeleton-bar {
+	display: inline-block;
+	background-color: var(--color-background-darker, #f0f0f0);
+	border-radius: var(--border-radius);
+	animation: skeleton-loading 1.5s ease-in-out infinite;
+	height: 12px;
+	margin-bottom: 8px;
+}
+
+.skeleton-bar--title {
+	width: 60%;
+	height: 20px;
+	margin-bottom: 12px;
+}
+
+.skeleton-bar--text {
+	width: 100%;
+	height: 12px;
+	margin-bottom: 8px;
+}
+
+.skeleton-bar--short {
+	width: 40%;
+	height: 12px;
+	margin-bottom: 8px;
+}
+
+.skeleton-card {
+	padding: 16px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	background: var(--color-main-background);
+}
+
+.skeleton-group {
+	margin-bottom: 16px;
+}
+
+.skeleton-group:last-child {
+	margin-bottom: 0;
+}
+
+.skeleton-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.skeleton-row:last-child {
+	margin-bottom: 0;
+}
+
+/* Touch target minimum size for WCAG AA compliance */
+:deep(.nc-button),
+:deep(.nc-button-group),
+:deep(.nc-text-field),
+:deep(.nc-select) {
+	min-height: 44px;
 }
 </style>
