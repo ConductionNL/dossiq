@@ -5,11 +5,60 @@
 			@created="onCaseCreated"
 			@close="showCreateDialog = false" />
 
+		<!-- Filter and Search Bar -->
+		<div class="case-list-controls">
+			<div class="search-group">
+				<input
+					v-model="searchQuery"
+					type="text"
+					:placeholder="t('procest', 'Search cases...')"
+					class="search-input"
+					@input="onSearchInput" />
+			</div>
+
+			<div class="filter-group">
+				<div class="filter-item">
+					<label>{{ t('procest', 'Priority') }}</label>
+					<select v-model="filterPriority" class="filter-select" @change="onFilterChange">
+						<option value="">{{ t('procest', 'All priorities') }}</option>
+						<option value="low">{{ t('procest', 'Low') }}</option>
+						<option value="normal">{{ t('procest', 'Normal') }}</option>
+						<option value="high">{{ t('procest', 'High') }}</option>
+						<option value="urgent">{{ t('procest', 'Urgent') }}</option>
+					</select>
+				</div>
+
+				<div class="filter-item">
+					<label>{{ t('procest', 'Handler') }}</label>
+					<input
+						v-model="filterHandler"
+						type="text"
+						:placeholder="t('procest', 'Filter by handler...')"
+						class="filter-input"
+						@input="onFilterChange" />
+				</div>
+
+				<div class="filter-item checkbox-filter">
+					<label>
+						<input
+							v-model="filterOverdue"
+							type="checkbox"
+							@change="onFilterChange" />
+						{{ t('procest', 'Show overdue only') }}
+					</label>
+				</div>
+
+				<button v-if="hasActiveFilters" class="clear-filters-btn" @click="clearFilters">
+					{{ t('procest', 'Clear filters') }}
+				</button>
+			</div>
+		</div>
+
 		<CnIndexPage
 			:title="t('procest', 'Cases')"
 			:description="t('procest', 'Manage cases and workflows')"
 			:schema="schema"
-			:objects="objects"
+			:objects="filteredObjects"
 			:pagination="pagination"
 			:loading="loading"
 			:sort-key="sortKey"
@@ -91,7 +140,58 @@ export default {
 			caseTypeCache: {},
 			statusTypeCache: {},
 			subCaseCountCache: {},
+			searchQuery: '',
+			filterPriority: '',
+			filterHandler: '',
+			filterOverdue: false,
 		}
+	},
+
+	computed: {
+		hasActiveFilters() {
+			return this.searchQuery !== '' || this.filterPriority !== '' || this.filterHandler !== '' || this.filterOverdue
+		},
+
+		filteredObjects() {
+			if (!this.objects) return []
+
+			return this.objects.filter(caseObj => {
+				// Search filter (title, description, identifier)
+				if (this.searchQuery) {
+					const query = this.searchQuery.toLowerCase()
+					const title = (caseObj.title || '').toLowerCase()
+					const description = (caseObj.description || '').toLowerCase()
+					const identifier = (caseObj.identifier || '').toLowerCase()
+
+					if (!title.includes(query) && !description.includes(query) && !identifier.includes(query)) {
+						return false
+					}
+				}
+
+				// Priority filter
+				if (this.filterPriority && caseObj.priority !== this.filterPriority) {
+					return false
+				}
+
+				// Handler filter
+				if (this.filterHandler) {
+					const handler = (caseObj.assignee || '').toLowerCase()
+					if (!handler.includes(this.filterHandler.toLowerCase())) {
+						return false
+					}
+				}
+
+				// Overdue filter
+				if (this.filterOverdue) {
+					const isFinal = this.isAtFinalStatus(caseObj)
+					if (!isCaseOverdue(caseObj, isFinal)) {
+						return false
+					}
+				}
+
+				return true
+			})
+		},
 	},
 
 	watch: {
@@ -211,11 +311,123 @@ export default {
 				}
 			}
 		},
+
+		onSearchInput() {
+			// Search is applied via the computed filteredObjects property
+			// This method can be used for debounced API calls if needed in future
+		},
+
+		onFilterChange() {
+			// Filters are applied via the computed filteredObjects property
+			// This method can be extended for advanced filtering in future versions
+		},
+
+		clearFilters() {
+			this.searchQuery = ''
+			this.filterPriority = ''
+			this.filterHandler = ''
+			this.filterOverdue = false
+		},
 	},
 }
 </script>
 
 <style scoped>
+/* Filter and search controls */
+.case-list-controls {
+	padding: 16px;
+	background: var(--color-background-secondary);
+	border-bottom: 1px solid var(--color-border);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.search-group {
+	flex: 1;
+}
+
+.search-input {
+	width: 100%;
+	max-width: 400px;
+	padding: 8px 12px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	font-size: 13px;
+}
+
+.search-input:focus {
+	outline: none;
+	border-color: var(--color-primary-element);
+	box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.filter-group {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+	align-items: flex-end;
+}
+
+.filter-item {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 150px;
+}
+
+.filter-item.checkbox-filter {
+	flex-direction: row;
+	align-items: center;
+	min-width: auto;
+}
+
+.filter-item.checkbox-filter label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+}
+
+.filter-item label {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--color-text-maxcontrast);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.filter-select,
+.filter-input {
+	padding: 6px 8px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	font-size: 13px;
+	background: white;
+}
+
+.filter-select:focus,
+.filter-input:focus {
+	outline: none;
+	border-color: var(--color-primary-element);
+	box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.clear-filters-btn {
+	padding: 6px 12px;
+	background: var(--color-background-dark);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	font-size: 12px;
+	color: var(--color-main-text);
+	cursor: pointer;
+	transition: background-color 0.2s;
+}
+
+.clear-filters-btn:hover {
+	background: var(--color-border);
+}
+
 .case-id {
 	font-family: monospace;
 	font-size: 13px;
