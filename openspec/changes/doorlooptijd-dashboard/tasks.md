@@ -1,3 +1,11 @@
+## Backend API [V2]
+
+- [x] 2.1 Create `lib/Service/DoorlooptijdService.php` with metric calculations (SLA compliance, distribution, trends, at-risk, performance)
+- [x] 2.2 Create `lib/Controller/DoorlooptijdController.php` with GET /api/procest/doorlooptijd/metrics endpoint
+- [x] 2.3 Create unit tests for DoorlooptijdService
+- [x] 2.4 Register API route in appinfo/routes.php
+- [ ] 2.5 Integration test for controller endpoint
+
 ## 1. Utility Functions [V1]
 
 - [x] 1.1 Create `src/utils/doorlooptijdHelpers.js` with ISO 8601 duration parser (`parseDurationToDays`) that converts `P30D`, `P6W`, `P2M` etc. to calendar days

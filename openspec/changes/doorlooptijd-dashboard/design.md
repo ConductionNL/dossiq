@@ -16,11 +16,16 @@ The existing `dashboardHelpers.js` already computes basic KPIs including average
 - All calculations purely client-side using existing OpenRegister data
 
 **Non-Goals:**
-- No backend aggregation endpoints — all computation happens in the browser
 - No pre-computed analytics or materialized views
 - No export/PDF generation of analytics (future scope)
 - No comparison across organizational units (multi-tenant analytics)
 - No predictive analytics or ML-based forecasting
+
+**Optional Backend Addition:**
+- Optional backend aggregation API at GET `/api/procest/doorlooptijd/metrics` for server-side metric calculation
+- Complements client-side approach without breaking changes
+- Supports date range filtering and case type filtering
+- Useful for large datasets where client-side computation may be slow
 
 ## Decisions
 
