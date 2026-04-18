@@ -58,7 +58,7 @@ export function computeKpis(openCases, completedCases, myTasks) {
  * Aggregate open cases by case type name for the type chart.
  * Sorted by count descending.
  *
- * @spec openspec/changes/dashboard/tasks.md#task-1
+ * @see openspec/changes/dashboard/tasks.md#task-1
  * @param {object[]} openCases Cases with non-final status
  * @param {object[]} caseTypes All case types
  * @return {Array<{ name: string, count: number, typeId: string|null }>} Sorted by count descending

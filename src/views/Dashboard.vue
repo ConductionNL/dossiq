@@ -484,7 +484,7 @@ export default {
 		/**
 		 * Compute bar width percentage for the Cases by Type chart.
 		 *
-		 * @spec openspec/changes/dashboard/tasks.md#task-1
+		 * @see openspec/changes/dashboard/tasks.md#task-1
 		 * @param {number} count Number of cases for this type
 		 * @return {string} CSS width value
 		 */
