@@ -60,7 +60,7 @@
 		<!-- Grouped sections -->
 		<template v-else-if="!loading">
 			<!-- Overdue -->
-			<div v-if="filteredGroups.overdue.length > 0" class="my-work__section my-work__section--overdue">
+			<div v-if="filteredGroups.overdue.length > 0" class="my-work__section my-work__section--overdue" role="list">
 				<h3 class="my-work__section-header my-work__section-header--overdue">
 					{{ t('procest', 'Overdue') }}
 					<span class="my-work__section-count">({{ filteredGroups.overdue.length }})</span>
@@ -93,7 +93,7 @@
 			</div>
 
 			<!-- Due this week -->
-			<div v-if="filteredGroups.dueThisWeek.length > 0" class="my-work__section">
+			<div v-if="filteredGroups.dueThisWeek.length > 0" class="my-work__section" role="list">
 				<h3 class="my-work__section-header">
 					{{ t('procest', 'Due this week') }}
 					<span class="my-work__section-count">({{ filteredGroups.dueThisWeek.length }})</span>
@@ -126,7 +126,7 @@
 			</div>
 
 			<!-- Upcoming -->
-			<div v-if="filteredGroups.upcoming.length > 0" class="my-work__section">
+			<div v-if="filteredGroups.upcoming.length > 0" class="my-work__section" role="list">
 				<h3 class="my-work__section-header">
 					{{ t('procest', 'Upcoming') }}
 					<span class="my-work__section-count">({{ filteredGroups.upcoming.length }})</span>
@@ -159,7 +159,7 @@
 			</div>
 
 			<!-- No deadline -->
-			<div v-if="filteredGroups.noDeadline.length > 0" class="my-work__section">
+			<div v-if="filteredGroups.noDeadline.length > 0" class="my-work__section" role="list">
 				<h3 class="my-work__section-header">
 					{{ t('procest', 'No deadline') }}
 					<span class="my-work__section-count">({{ filteredGroups.noDeadline.length }})</span>
@@ -192,7 +192,7 @@
 			</div>
 
 			<!-- Completed section (when toggle is on) -->
-			<div v-if="showCompleted && filteredCompletedItems.length > 0" class="my-work__section my-work__section--completed">
+			<div v-if="showCompleted && filteredCompletedItems.length > 0" class="my-work__section my-work__section--completed" role="list">
 				<h3 class="my-work__section-header my-work__section-header--completed">
 					{{ t('procest', 'Completed') }}
 					<span class="my-work__section-count">({{ filteredCompletedItems.length }})</span>
@@ -201,12 +201,18 @@
 					v-for="item in filteredCompletedItems"
 					:key="`${item.type}-${item.id}-done`"
 					class="my-work__row my-work__row--completed"
-					@click="onItemClick(item)">
+					tabindex="0"
+					role="listitem"
+					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}`"
+					@click="onItemClick(item)"
+					@keydown.enter="onItemClick(item)"
+					@keydown.space.prevent="onItemClick(item)">
 					<span class="my-work__badge" :class="`my-work__badge--${item.type}`">
 						{{ item.type === 'case' ? t('procest', 'CASE') : t('procest', 'TASK') }}
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
 					<div class="my-work__deadline">
@@ -306,6 +312,7 @@ export default {
 					isOverdue: false,
 					isCompleted: true,
 					priority: c.priority || 'normal',
+					caseType: c.caseType || null,
 				})
 			}
 			for (const task of this.completedTasks) {
