@@ -111,6 +111,9 @@ return [
         ['name' => 'gis_proxy#proxy', 'url' => '/api/gis/proxy', 'verb' => 'POST'],
         ['name' => 'gis_proxy#capabilities', 'url' => '/api/gis/capabilities', 'verb' => 'GET'],
 
+        // Doorlooptijd (processing time) analytics endpoint.
+        ['name' => 'doorlooptijd#getMetrics', 'url' => '/api/procest/doorlooptijd/metrics', 'verb' => 'GET'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
