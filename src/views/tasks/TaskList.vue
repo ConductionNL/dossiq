@@ -94,7 +94,7 @@
 
 <script>
 import { inject } from 'vue'
-import { NcTextField, NcSelect } from '@nextcloud/vue'
+import { NcTextField, NcSelect } from '@conduction/nextcloud-vue'
 import { CnIndexPage, useListView } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { getStatusLabel, TASK_STATUSES } from '../../utils/taskLifecycle.js'
@@ -137,10 +137,10 @@ export default {
 		},
 		priorityFilterOptions() {
 			return [
-				{ id: 'urgent', label: t('procest', 'Urgent') },
-				{ id: 'high', label: t('procest', 'High') },
-				{ id: 'normal', label: t('procest', 'Normal') },
-				{ id: 'low', label: t('procest', 'Low') },
+				{ id: 'urgent', label: this.t('procest', 'Urgent') },
+				{ id: 'high', label: this.t('procest', 'High') },
+				{ id: 'normal', label: this.t('procest', 'Normal') },
+				{ id: 'low', label: this.t('procest', 'Low') },
 			]
 		},
 		assigneeFilterOptions() {

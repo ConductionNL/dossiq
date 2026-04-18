@@ -98,7 +98,7 @@
 </template>
 
 <script>
-import { NcButton, NcTextField, NcSelect, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcTextField, NcSelect, NcLoadingIcon } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 
 export default {
@@ -146,11 +146,11 @@ export default {
 			this.errors = {}
 
 			if (!this.form.title || !this.form.title.trim()) {
-				this.errors.title = t('procest', 'Title is required')
+				this.errors.title = this.t('procest', 'Title is required')
 			}
 
 			if (!this.form.case) {
-				this.errors.case = t('procest', 'Case is required')
+				this.errors.case = this.t('procest', 'Case is required')
 			}
 
 			if (Object.keys(this.errors).length > 0) {

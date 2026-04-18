@@ -166,7 +166,7 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@conduction/nextcloud-vue'
 import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { getAllowedTransitions, getStatusLabel, getTransitionLabel, isTerminalStatus } from '../../utils/taskLifecycle.js'
@@ -245,7 +245,7 @@ export default {
 		sidebarProps() {
 			const config = this.objectStore.objectTypeRegistry.task || {}
 			return {
-				title: t('procest', 'Task'),
+				title: this.t('procest', 'Task'),
 				register: config.register || '',
 				schema: config.schema || '',
 			}
@@ -287,7 +287,7 @@ export default {
 		validate() {
 			this.validationErrors = { title: '' }
 			if (!this.form.title.trim()) {
-				this.validationErrors.title = t('procest', 'Title is required')
+				this.validationErrors.title = this.t('procest', 'Title is required')
 				return false
 			}
 			return true
@@ -359,7 +359,7 @@ export default {
 		},
 
 		async confirmDelete() {
-			if (confirm(t('procest', 'Are you sure you want to delete this task?'))) {
+			if (confirm(this.t('procest', 'Are you sure you want to delete this task?'))) {
 				const success = await this.objectStore.deleteObject('task', this.taskId)
 				if (success) {
 					this.$router.push({ name: 'Tasks' })
