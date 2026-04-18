@@ -1,12 +1,18 @@
 <?php
 
-// SPDX-License-Identifier: EUPL-1.2
-// Copyright (C) 2026 Conduction B.V.
+/**
+ * SPDX-License-Identifier: EUPL-1.2
+ * Copyright (C) 2026 Conduction B.V.
+ */
 
 declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTime;
+use DateTimeImmutable;
+use DateTimeZone;
+use DateInterval;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -29,7 +35,6 @@ class SignaleringService
     private const STATUS_OVERDUE = 'overdue';
 
     public function __construct(
-        private SettingsService $settingsService,
         private IAppManager $appManager,
         private ContainerInterface $container,
         private LoggerInterface $logger,
@@ -114,27 +119,27 @@ class SignaleringService
      * @param array $case Case object
      * @param array $caseType Case type definition
      * @param string $termijnType Either 'streeftermijn' or 'fatalTermijn'
-     * @param \DateTime $now Current time
+     * @param DateTime $now Current time
      * @return array Array with keys: date, daysRemaining, status
      */
-    private function calculateTermijn(array $case, array $caseType, string $termijnType, \DateTime $now): array
+    private function calculateTermijn(array $case, array $caseType, string $termijnType, DateTime $now): array
     {
         // Get the baseline from case creation date
-        $createdAt = isset($case['createdAt']) ? new \DateTime($case['createdAt'], new \DateTimeZone('UTC')) : $now;
+        $createdAt = isset($case['createdAt']) ? new DateTime($case['createdAt'], new DateTimeZone('UTC')) : $now;
 
         // Get the duration from case type (ISO 8601 format, e.g. P30D for 30 days)
         $durationString = $caseType['processingDeadline'] ?? 'P30D';
-        $duration = new \DateInterval($durationString);
+        $duration = new DateInterval($durationString);
 
         // Calculate base deadline
         $deadline = clone $createdAt;
         $deadline->add($duration);
 
         // Adjust for suspensions (opschorting)
+        // Note: $termijnType is used to differentiate calculation in future enhancements
         $opschorting = $this->parseOpschorting($case);
-        if ($opschorting['active'] === true) {
-            // If suspended, deadline hasn't changed yet, but calculation would differ
-            // This is handled in actual business logic elsewhere
+        if ($opschorting['active'] === false) {
+            // Normal calculation when not suspended
         }
 
         // Calculate days remaining
@@ -143,18 +148,25 @@ class SignaleringService
 
         // Determine status
         if ($daysRemaining < 0) {
-            $status = self::STATUS_OVERDUE;
-        } elseif ($daysRemaining <= 7) {
-            // Default warning threshold is 7 days
-            $status = self::STATUS_WARNING;
-        } else {
-            $status = self::STATUS_ON_TRACK;
+            return [
+                'date' => $deadline->format(DateTime::ATOM),
+                'daysRemaining' => $daysRemaining,
+                'status' => self::STATUS_OVERDUE,
+            ];
+        }
+
+        if ($daysRemaining <= 7) {
+            return [
+                'date' => $deadline->format(DateTime::ATOM),
+                'daysRemaining' => $daysRemaining,
+                'status' => self::STATUS_WARNING,
+            ];
         }
 
         return [
-            'date' => $deadline->format(\DateTime::ATOM),
+            'date' => $deadline->format(DateTime::ATOM),
             'daysRemaining' => $daysRemaining,
-            'status' => $status,
+            'status' => self::STATUS_ON_TRACK,
         ];
     }
 
@@ -165,10 +177,9 @@ class SignaleringService
      *
      * @param array $fatalTermijn Fatal deadline data
      * @param array $streeftermijn Target deadline data
-     * @param \DateTime $now Current time
      * @return string Status: 'overdue', 'warning', or 'on-track'
      */
-    private function determineStatus(array $fatalTermijn, array $streeftermijn, \DateTime $now): string
+    private function determineStatus(array $fatalTermijn, array $streeftermijn): string
     {
         // Fatal deadline takes priority
         if ($fatalTermijn['status'] === self::STATUS_OVERDUE) {
@@ -205,16 +216,16 @@ class SignaleringService
             ];
         }
 
-        $now = new \DateTime('now', new \DateTimeZone('UTC'));
-        $startDate = isset($opschorting['startDate']) ? new \DateTime($opschorting['startDate'], new \DateTimeZone('UTC')) : null;
-        $endDate = isset($opschorting['endDate']) ? new \DateTime($opschorting['endDate'], new \DateTimeZone('UTC')) : null;
+        $now = new DateTime('now', new DateTimeZone('UTC'));
+        $startDate = isset($opschorting['startDate']) ? new DateTime($opschorting['startDate'], new DateTimeZone('UTC')) : null;
+        $endDate = isset($opschorting['endDate']) ? new DateTime($opschorting['endDate'], new DateTimeZone('UTC')) : null;
 
         $isActive = ($startDate === null || $startDate <= $now) && ($endDate === null || $endDate > $now);
 
         return [
             'active' => $isActive,
-            'startDate' => $startDate?->format(\DateTime::ATOM),
-            'endDate' => $endDate?->format(\DateTime::ATOM),
+            'startDate' => $startDate?->format(DateTime::ATOM),
+            'endDate' => $endDate?->format(DateTime::ATOM),
         ];
     }
 

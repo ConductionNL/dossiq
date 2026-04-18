@@ -1,7 +1,9 @@
 <?php
 
-// SPDX-License-Identifier: EUPL-1.2
-// Copyright (C) 2026 Conduction B.V.
+/**
+ * SPDX-License-Identifier: EUPL-1.2
+ * Copyright (C) 2026 Conduction B.V.
+ */
 
 declare(strict_types=1);
 
@@ -125,18 +127,20 @@ class DeadlineNotificationController extends Controller
     public function notifyWebhook(): JSONResponse
     {
         try {
-            // Get webhook payload
-            $payload = json_decode($this->request->getRawBody(), true);
+            // Get webhook payload from POST parameters
+            $type = $this->request->getParam('type');
+            $caseId = $this->request->getParam('caseId');
+            $status = $this->request->getParam('status');
 
-            if (empty($payload)) {
-                return new JSONResponse(['error' => 'Invalid payload'], 400);
+            if (empty($type) || empty($caseId)) {
+                return new JSONResponse(['error' => 'Missing required fields'], 400);
             }
 
             // Log the notification event
             $this->logger->info('Procest: Notification webhook received', [
-                'type' => $payload['type'] ?? 'unknown',
-                'caseId' => $payload['caseId'] ?? 'unknown',
-                'status' => $payload['status'] ?? 'unknown',
+                'type' => $type,
+                'caseId' => $caseId,
+                'status' => $status ?? 'unknown',
             ]);
 
             // Here you could update the case notification history,

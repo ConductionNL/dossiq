@@ -1,7 +1,9 @@
 <?php
 
-// SPDX-License-Identifier: EUPL-1.2
-// Copyright (C) 2026 Conduction B.V.
+/**
+ * SPDX-License-Identifier: EUPL-1.2
+ * Copyright (C) 2026 Conduction B.V.
+ */
 
 declare(strict_types=1);
 

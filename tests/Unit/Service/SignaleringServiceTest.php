@@ -1,7 +1,9 @@
 <?php
 
-// SPDX-License-Identifier: EUPL-1.2
-// Copyright (C) 2026 Conduction B.V.
+/**
+ * SPDX-License-Identifier: EUPL-1.2
+ * Copyright (C) 2026 Conduction B.V.
+ */
 
 declare(strict_types=1);
 
@@ -21,20 +23,17 @@ use Psr\Log\LoggerInterface;
 class SignaleringServiceTest extends TestCase
 {
     private SignaleringService $service;
-    private \OCA\Procest\Service\SettingsService $settingsService;
     private IAppManager $appManager;
     private ContainerInterface $container;
     private LoggerInterface $logger;
 
     protected function setUp(): void
     {
-        $this->settingsService = $this->createMock(\OCA\Procest\Service\SettingsService::class);
         $this->appManager = $this->createMock(IAppManager::class);
         $this->container = $this->createMock(ContainerInterface::class);
         $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->service = new SignaleringService(
-            $this->settingsService,
             $this->appManager,
             $this->container,
             $this->logger,
