@@ -41,6 +41,7 @@
 </template>
 
 <script>
+import { translate as t } from '@nextcloud/l10n'
 import { NcButton } from '@nextcloud/vue'
 import { useWorkflowStore } from '../../../store/modules/workflow.js'
 import { useObjectStore } from '../../../store/modules/object.js'
@@ -179,6 +180,26 @@ export default {
 
 		async executeTransition(transition) {
 			if (!transition.available) return
+
+			// Check adviesGuard: ensure no pending advice requests
+			if (transition.guards && transition.guards.includes('adviesGuard')) {
+				try {
+					const adviceApi = (await import('../../../services/adviceApi.js')).default || (await import('../../../services/adviceApi.js'))
+					const adviceResponse = await adviceApi.getAdviceForCase(this.caseData.id)
+					const pendingAdvice = (adviceResponse.results || adviceResponse || [])
+						.filter((a) => a.status === 'aangevraagd')
+					if (pendingAdvice.length > 0) {
+						const message = t('procest', 'Cannot transition: {count} advice request(s) pending', { count: pendingAdvice.length })
+						console.warn(message)
+						alert(message)
+						return
+					}
+				} catch (err) {
+					console.error('Failed to check advice guard:', err)
+					alert(t('procest', 'Failed to check advice requirements'))
+					return
+				}
+			}
 
 			this.executing = true
 			try {

@@ -107,6 +107,14 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
+        // ── Advice Management ───────────────────────────────────────────
+        ['name' => 'advice#index',   'url' => '/api/advice',           'verb' => 'GET'],
+        ['name' => 'advice#create',  'url' => '/api/advice',           'verb' => 'POST'],
+        ['name' => 'advice#show',    'url' => '/api/advice/{id}',      'verb' => 'GET'],
+        ['name' => 'advice#update',  'url' => '/api/advice/{id}',      'verb' => 'PUT'],
+        ['name' => 'advice#destroy', 'url' => '/api/advice/{id}',      'verb' => 'DELETE'],
+        ['name' => 'advice#remind',  'url' => '/api/advice/{id}/remind', 'verb' => 'POST'],
+
         // GIS Proxy endpoints.
         ['name' => 'gis_proxy#proxy', 'url' => '/api/gis/proxy', 'verb' => 'POST'],
         ['name' => 'gis_proxy#capabilities', 'url' => '/api/gis/capabilities', 'verb' => 'GET'],

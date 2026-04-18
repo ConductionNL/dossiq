@@ -305,7 +305,7 @@
 				:case-type-id="caseData.caseType"
 				:is-read-only="isReadOnly" />
 
-			<AdvicePanel
+			<AdviesPanel
 				v-if="isVthCase"
 				:case-id="caseId"
 				:is-read-only="isReadOnly" />
@@ -445,7 +445,7 @@ import SubCasesSection from './components/SubCasesSection.vue'
 import CaseCreateDialog from './CaseCreateDialog.vue'
 import InspectionPanel from './components/InspectionPanel.vue'
 import EnforcementPanel from './components/EnforcementPanel.vue'
-import AdvicePanel from './components/AdvicePanel.vue'
+import AdviesPanel from './components/AdviesPanel.vue'
 import VoorstellenPanel from './components/VoorstellenPanel.vue'
 import WorkflowTransitions from './components/WorkflowTransitions.vue'
 import BezwaarIntakeForm from './components/bezwaar/BezwaarIntakeForm.vue'
@@ -478,7 +478,7 @@ export default {
 		CaseCreateDialog,
 		InspectionPanel,
 		EnforcementPanel,
-		AdvicePanel,
+		AdviesPanel,
 		LocationTab,
 		VoorstellenPanel,
 		WorkflowTransitions,

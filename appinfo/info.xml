@@ -80,6 +80,10 @@ Vrij en open source onder de AGPL-licentie.
         </post-migration>
     </repair-steps>
 
+    <background-jobs>
+        <job>OCA\Procest\BackgroundJob\AdviceDeadlineJob</job>
+    </background-jobs>
+
     <navigations>
         <navigation>
             <id>procest</id>
