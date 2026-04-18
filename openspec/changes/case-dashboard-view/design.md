@@ -1,3 +1,6 @@
+## Status
+**pr-created** — PR #250 opened for review
+
 ## Architecture
 
 ### Responsive Layout (REQ-CDV-07b)
