@@ -613,12 +613,12 @@
             "type": "string",
             "format": "uuid",
             "description": "Reference to parent case (for sub-cases)",
-            "visible": false
+            "visible": true
           },
           "relatedCases": {
             "type": "string",
             "description": "References to related cases (JSON-encoded array)",
-            "visible": false
+            "visible": true
           },
           "geometry": {
             "type": "string",
