@@ -7,9 +7,9 @@
 
 ## Deduplication Check
 
-- [ ] **DC01**: Search `openspec/specs/` for existing sub-case or case-relation specs — confirm no overlap with `case-management` spec beyond the V1 stub already listed as "out of scope" (CM-18). Document findings.
-- [ ] **DC02**: Search `src/store/` for existing `fetchSubCases` or `parentCase` store actions — confirm none exist before adding them.
-- [ ] **DC03**: Verify `parentCase` and `relatedCases` fields are visible in the register schema (`lib/Settings/procest_register.json`) — set `visible: true` if currently `false`.
+- [x] **DC01**: Search `openspec/specs/` for existing sub-case or case-relation specs — confirm no overlap with `case-management` spec beyond the V1 stub already listed as "out of scope" (CM-18). Document findings.
+- [x] **DC02**: Search `src/store/` for existing `fetchSubCases` or `parentCase` store actions — confirm none exist before adding them.
+- [x] **DC03**: Verify `parentCase` and `relatedCases` fields are visible in the register schema (`lib/Settings/procest_register.json`) — set `visible: true` if currently `false`.
 
 ## 1. Store Layer
 
@@ -27,7 +27,7 @@
 
 ## 2. SubCasesSection Component
 
-- [ ] **T05**: Create `src/views/cases/components/SubCasesSection.vue`.
+- [x] **T05**: Create `src/views/cases/components/SubCasesSection.vue`.
   - Section header shows "Deelzaken (X/Y voltooid)" roll-up computed from `subCases` where `endDate != null`.
   - Compact table with columns: title (router-link to sub-case detail), status badge, behandelaar, deadline.
   - Empty state: "Nog geen deelzaken aangemaakt" when sub-cases array is empty but caseType has `subCaseTypes`.
@@ -37,32 +37,32 @@
 
 ## 3. Parent Case Breadcrumb
 
-- [ ] **T06**: Add parent case breadcrumb to `src/views/cases/CaseDetail.vue`.
+- [x] **T06**: Add parent case breadcrumb to `src/views/cases/CaseDetail.vue`.
   - On case load: if `case.parentCase` is non-null, call `fetchParentCase(case.parentCase)`.
   - Render breadcrumb above case title: `<router-link :to="parentCaseRoute">{{ parentCase.title }}</router-link> › {{ case.title }}`.
   - Do not render breadcrumb when `case.parentCase` is null.
   - `@spec openspec/changes/deelzaak-support/tasks.md#T06`
 
-- [ ] **T07**: Integrate `SubCasesSection` into `src/views/cases/CaseDetail.vue`.
+- [x] **T07**: Integrate `SubCasesSection` into `src/views/cases/CaseDetail.vue`.
   - Import and register the component.
   - Render in case detail only when `caseType.subCaseTypes` is non-empty.
   - `@spec openspec/changes/deelzaak-support/tasks.md#T07`
 
 ## 4. Sub-case Creation via CaseCreateDialog
 
-- [ ] **T08**: Extend `src/views/cases/CaseCreateDialog.vue` to accept `parentCase` (UUID) and `parentCaseType` props.
+- [x] **T08**: Extend `src/views/cases/CaseCreateDialog.vue` to accept `parentCase` (UUID) and `parentCaseType` props.
   - When `parentCase` prop is provided: change dialog title to `t(appName, 'Deelzaak aanmaken')`.
   - Filter the caseType dropdown to only show types listed in `parentCaseType.subCaseTypes`.
   - Show parent case title as read-only context at the top of the form.
   - On submit: include `parentCase` UUID in the case payload.
   - `@spec openspec/changes/deelzaak-support/tasks.md#T08`
 
-- [ ] **T09**: Wire the "Deelzaak aanmaken" button in `SubCasesSection.vue` to open `CaseCreateDialog` with `parentCase` and `parentCaseType` props.
+- [x] **T09**: Wire the "Deelzaak aanmaken" button in `SubCasesSection.vue` to open `CaseCreateDialog` with `parentCase` and `parentCaseType` props.
   - `@spec openspec/changes/deelzaak-support/tasks.md#T09`
 
 ## 5. Case List Sub-case Count Badge
 
-- [ ] **T10**: Add sub-case count badge to `src/views/cases/CaseList.vue`.
+- [x] **T10**: Add sub-case count badge to `src/views/cases/CaseList.vue`.
   - After fetching the list page, call `fetchSubCaseCounts(pageUuids)` with the UUIDs of all cases on the current page.
   - For each case with count > 0, render a badge: "N deelzaken" (or icon+count).
   - Cases with count 0 MUST NOT show a badge.
@@ -70,7 +70,7 @@
 
 ## 6. Deletion Protection
 
-- [ ] **T11**: Intercept case deletion in `src/views/cases/CaseDetail.vue` (or `CaseList.vue` delete action).
+- [x] **T11**: Intercept case deletion in `src/views/cases/CaseDetail.vue` (or `CaseList.vue` delete action).
   - Before the standard delete confirmation: check if any sub-cases exist for the case (`fetchSubCases` count > 0).
   - If sub-cases exist: show a custom `NcDialog` warning: "Deze zaak heeft N deelzaken. Door te verwijderen worden de deelzaken losgekoppeld van hun hoofdzaak. Wilt u doorgaan?"
   - On confirmation: call `clearParentCase(subCaseUuid)` (PATCH `parentCase: null`) for each sub-case, then delete the parent.
@@ -79,19 +79,19 @@
 
 ## 7. Admin Settings — Sub-case Types Tab
 
-- [ ] **T12**: Create `src/views/settings/tabs/SubCaseTypesTab.vue`.
+- [x] **T12**: Create `src/views/settings/tabs/SubCaseTypesTab.vue`.
   - Multi-select list of all available caseTypes.
   - Pre-selects the current caseType's `subCaseTypes` UUIDs.
   - On save: PATCH the caseType object with updated `subCaseTypes` array.
   - Shows informational note: "Wijzigingen hebben geen effect op bestaande deelzaken."
   - `@spec openspec/changes/deelzaak-support/tasks.md#T12`
 
-- [ ] **T13**: Add `SubCaseTypesTab` to `src/views/settings/CaseTypeDetail.vue` as a new tab.
+- [x] **T13**: Add `SubCaseTypesTab` to `src/views/settings/CaseTypeDetail.vue` as a new tab.
   - `@spec openspec/changes/deelzaak-support/tasks.md#T13`
 
 ## 8. Seed Data
 
-- [ ] **T14**: Add seed data objects to `lib/Settings/procest_register.json`:
+- [x] **T14**: Add seed data objects to `lib/Settings/procest_register.json`:
   - 1 parent `caseType` object ("Omgevingsvergunning") with `subCaseTypes` referencing 2 child caseType slugs.
   - 2 child `caseType` objects ("Bouwtoezicht", "Milieuadvies") with empty `subCaseTypes`.
   - 3 `case` objects: 1 parent case + 2 deelzaken with `parentCase` set to the parent's slug reference.

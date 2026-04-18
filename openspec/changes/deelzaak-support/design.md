@@ -178,8 +178,8 @@ This change leverages the following existing OpenRegister and platform capabilit
 | Filtering by field | OpenRegister REST filter API (`?parentCase=uuid`) | Fetching sub-cases for a parent |
 | List with pagination | `ObjectService.findAll()` + `CnDataTable` | Sub-cases compact table in SubCasesSection |
 | Schema-driven form | `CnFormDialog` / `CaseCreateDialog` | Extended for parentCase context |
-| Object store | `createObjectStore` Pinia pattern | `caseStore` extended with `subCases` state |
+| Object store | `useObjectStore()` via @conduction/nextcloud-vue | Direct CRUD and filtering on case/caseType objects |
 | Audit trail | Automatic via OpenRegister | All sub-case mutations tracked without custom code |
 | Notifications | `NotificationService` | Cross-case handler notification when deelzaak completes |
 
-No new backend services or controllers are required. All data operations go through the existing OpenRegister REST API via the case store.
+No new backend services or controllers are required. All data operations go through the existing OpenRegister REST API via `useObjectStore()`, following the project's established patterns. Sub-case queries use OpenRegister's built-in filter API with `?parentCase={uuid}` parameters.
