@@ -29,6 +29,21 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
+ * Minimal ObjectService shape used by SeedDataService.
+ *
+ * Declares the named-arg signatures used in production so that
+ * `createMock(SeedObjectServiceStub::class)` returns a stub that accepts
+ * named arguments. A `getMockBuilder(\stdClass::class)->addMethods([...])`
+ * stub throws "Unknown named parameter" on named-arg calls in PHPUnit 10.
+ */
+interface SeedObjectServiceStub
+{
+    public function getObjects(string $register, string $schema, array $filters, int $limit): array;
+    public function saveObject(string $register, string $schema, array $object): ?object;
+
+}//end interface
+
+/**
  * Unit tests for SeedDataService.
  *
  * @covers \OCA\Procest\Service\SeedDataService
@@ -170,9 +185,7 @@ class SeedDataServiceTest extends TestCase
         $createdObject = new \stdClass();
         $createdObject->uuid = 'created-uuid-1';
 
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['getObjects', 'saveObject'])
-            ->getMock();
+        $objectServiceMock = $this->createMock(SeedObjectServiceStub::class);
 
         $objectServiceMock
             ->method('getObjects')
@@ -227,9 +240,7 @@ class SeedDataServiceTest extends TestCase
         $existingObject = new \stdClass();
         $existingObject->uuid = 'existing-uuid-1';
 
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['getObjects', 'saveObject'])
-            ->getMock();
+        $objectServiceMock = $this->createMock(SeedObjectServiceStub::class);
 
         // Always return an existing object from getObjects.
         $objectServiceMock
