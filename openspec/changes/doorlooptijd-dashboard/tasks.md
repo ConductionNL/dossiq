@@ -11,7 +11,7 @@
   - Calculate per-process step duration
   - Calculate SLA adherence (cases within SLA vs total)
   - Support multiple time dimensions: case total, per status, per step
-- [ ] Create DoorlooptijdService
+- [x] Create DoorlooptijdService
 
 ### Task 2: Create SlaConfigurationService for SLA management
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md#scope`
@@ -21,7 +21,7 @@
   - Support streeftermijn (target time) and fatale termijn (deadline)
   - Support per-process-step SLA targets
   - Return SLA config in standardized format
-- [ ] Create SlaConfigurationService
+- [x] Create SlaConfigurationService
 
 ### Task 3: Create BottleneckAnalysisService
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md#acceptance-criteria`
@@ -31,7 +31,7 @@
   - Rank steps by duration for a zaaktype
   - Return bottleneck data with step name, avg duration, case count
   - Support filtering by zaaktype and date range
-- [ ] Create BottleneckAnalysisService
+- [x] Create BottleneckAnalysisService
 
 ### Task 4: Create TrendAnalysisService for historical analysis
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md#acceptance-criteria`
@@ -41,7 +41,7 @@
   - Return trend data with improvement/deterioration indicators
   - Support configurable time periods (weekly, monthly, quarterly)
   - Group by zaaktype or process step
-- [ ] Create TrendAnalysisService
+- [x] Create TrendAnalysisService
 
 ### Task 5: Create ReportingService for filtered report generation
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md#acceptance-criteria`
@@ -51,7 +51,7 @@
   - Return aggregated metrics: count, avg doorlooptijd, SLA adherence %
   - Support export data generation in structured format
   - Apply filters dynamically to all report data
-- [ ] Create ReportingService
+- [x] Create ReportingService
 
 ## 2. Controllers
 
@@ -63,7 +63,7 @@
   - GET /api/doorlooptijd/bottlenecks - return process step bottleneck analysis
   - GET /api/doorlooptijd/trends - return historical trend data
   - All endpoints support filtering by zaaktype and date range
-- [ ] Create DoorlooptijdController
+- [x] Create DoorlooptijdController
 
 ### Task 7: Create ReportingController for report management
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md#acceptance-criteria`
@@ -73,7 +73,7 @@
   - POST /api/reports/doorlooptijd/export - export report as CSV
   - Support filter parameters: zaaktype, team, period, status
   - Return formatted chart data and table data
-- [ ] Create ReportingController
+- [x] Create ReportingController
 
 ### Task 8: Register routes for new API endpoints
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md`
@@ -82,7 +82,7 @@
   - All new endpoints registered and routable
   - Endpoints follow REST conventions
   - Proper HTTP method usage (GET, POST)
-- [ ] Register routes in appinfo/routes.php
+- [x] Register routes in appinfo/routes.php
 
 ## 3. Dashboard Widgets
 
@@ -94,9 +94,9 @@
   - Show trend indicator (improving/declining)
   - Show case count within/outside SLA
   - Configurable by user
-- [ ] Create SlaAdherenceWidget PHP class
-- [ ] Create SlaAdherenceWidget Vue component
-- [ ] Register widget in service container
+- [x] Create SlaAdherenceWidget PHP class
+- [x] Create SlaAdherenceWidget Vue component
+- [x] Register widget in service container
 
 ### Task 10: Create AverageProcessingTimeWidget
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md#acceptance-criteria`
@@ -106,9 +106,9 @@
   - Show comparison to SLA target
   - Support filtering by zaaktype
   - Display time range covered
-- [ ] Create AverageProcessingTimeWidget PHP class
-- [ ] Create AverageProcessingTimeWidget Vue component
-- [ ] Register widget in service container
+- [x] Create AverageProcessingTimeWidget PHP class
+- [x] Create AverageProcessingTimeWidget Vue component
+- [x] Register widget in service container
 
 ### Task 11: Create OverdueCountWidget
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md#acceptance-criteria`
@@ -118,9 +118,9 @@
   - Show cases by days overdue
   - Link to overdue case list
   - Update frequently (near deadline)
-- [ ] Create OverdueCountWidget PHP class
-- [ ] Create OverdueCountWidget Vue component
-- [ ] Register widget in service container
+- [x] Create OverdueCountWidget PHP class
+- [x] Create OverdueCountWidget Vue component
+- [x] Register widget in service container
 
 ## 4. Frontend Views
 
@@ -133,7 +133,7 @@
   - Display trend analysis (multi-line chart showing improvement/deterioration)
   - Support date range picker
   - Support zaaktype filter
-- [ ] Create DoorlooptijdDashboard Vue view
+- [x] Create DoorlooptijdDashboard Vue view
 
 ### Task 13: Create ReportingPage
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md#acceptance-criteria`
@@ -144,7 +144,7 @@
   - Show detailed table of cases with doorlooptijd
   - Support column selection and sorting
   - Display chart visualization of metrics
-- [ ] Create ReportingPage Vue view
+- [x] Create ReportingPage Vue view
 
 ### Task 14: Add routes for new frontend views
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md`
@@ -153,7 +153,7 @@
   - DoorlooptijdDashboard view routable at /apps/procest/doorlooptijd
   - ReportingPage view routable at /apps/procest/reporting
   - Routes properly authenticated
-- [ ] Add routes in router configuration
+- [x] Add routes in router configuration
 
 ## 5. Data Export
 
@@ -166,7 +166,7 @@
   - Include all applied filters in export
   - Format dates and numbers appropriately
   - Include summary statistics in export
-- [ ] Create ExportService
+- [x] Create ExportService
 
 ### Task 16: Implement export endpoint in ReportingController
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md#acceptance-criteria`
@@ -176,7 +176,7 @@
   - Supports format parameter (csv, xlsx)
   - Applies all filters before export
   - Returns properly formatted file
-- [ ] Implement export functionality
+- [x] Implement export functionality
 
 ## 6. Configuration & Settings
 
@@ -188,7 +188,7 @@
   - Allow setting opschorting (suspension) status identifiers
   - Allow defining custom report dimensions
   - Settings persist to OpenRegister or app config
-- [ ] Create DoorlooptijdAdmin settings page
+- [x] Create DoorlooptijdAdmin settings page
 
 ## 7. Tests
 
@@ -201,7 +201,7 @@
   - Test SLA adherence percentage calculation
   - Test handling of missing SLA configuration
   - Minimum 3 test methods
-- [ ] Create DoorlooptijdService tests
+- [x] Create DoorlooptijdService tests
 
 ### Task 19: Create SlaConfigurationService tests
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md`
@@ -211,7 +211,7 @@
   - Test handling of missing SLA config
   - Test merging of streeftermijn and fatale termijn
   - Minimum 3 test methods
-- [ ] Create SlaConfigurationService tests
+- [x] Create SlaConfigurationService tests
 
 ### Task 20: Create DoorlooptijdController tests
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md`
@@ -223,7 +223,7 @@
   - Test filter parameter handling
   - Test error responses
   - Minimum 3 test methods
-- [ ] Create DoorlooptijdController tests
+- [x] Create DoorlooptijdController tests
 
 ### Task 21: Create ReportingController tests
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md`
@@ -234,7 +234,7 @@
   - Test filter application (zaaktype, period, etc.)
   - Test CSV export format
   - Minimum 3 test methods
-- [ ] Create ReportingController tests
+- [x] Create ReportingController tests
 
 ## 8. Acceptance & Quality
 
@@ -246,7 +246,7 @@
   - All PSR-12 style compliance
   - No PHP warnings or errors
   - All tests pass
-- [ ] Pass quality gates
+- [x] Pass quality gates
 
 ### Task 23: Verify acceptance criteria implementation
 - **spec_ref**: `openspec/changes/doorlooptijd-dashboard/design.md#acceptance-criteria`
@@ -260,7 +260,7 @@
   - AC6: Manager applies filters to reports ✓
   - AC7: Manager exports report data to CSV/Excel ✓
   - AC8: System excludes opschorting periods from calculation ✓
-- [ ] Verify all acceptance criteria met
+- [x] Verify all acceptance criteria met
 
 ## 9. Documentation & Finalization
 
@@ -270,4 +270,4 @@
 - **acceptance_criteria**:
   - Status field updated to "pr-created"
   - PR link documented
-- [ ] Update design.md
+- [x] Update design.md

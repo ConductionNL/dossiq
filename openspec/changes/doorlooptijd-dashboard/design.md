@@ -1,5 +1,7 @@
 # Doorlooptijd Dashboard
 
+**Status**: pr-created
+
 ## Summary
 
 Add processing time tracking and reporting capabilities to Procest through dashboard widgets and analytics views. This covers measuring actual case processing times against configured SLA targets, identifying bottlenecks in process steps, and providing management reporting on throughput and adherence -- all without requiring external BI tools.
