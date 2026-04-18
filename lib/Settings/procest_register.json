@@ -2699,7 +2699,99 @@
           "adviesAanvraag"
         ],
         "tablePrefix": "",
-        "folder": "Open Registers/Procest"
+        "folder": "Open Registers/Procest",
+        "seedData": [
+          {
+            "@self": {
+              "register": "procest",
+              "schema": "caseType",
+              "slug": "omgevingsvergunning-type"
+            },
+            "title": "Omgevingsvergunning",
+            "description": "Aanvraag omgevingsvergunning voor bouwen, slopen of gebruik",
+            "processingDeadline": "P8W",
+            "extensionAllowed": true,
+            "extensionPeriod": "P6W",
+            "subCaseTypes": ["bouwtoezicht-type", "milieu-type"],
+            "isDraft": false
+          },
+          {
+            "@self": {
+              "register": "procest",
+              "schema": "caseType",
+              "slug": "bouwtoezicht-type"
+            },
+            "title": "Bouwtoezicht",
+            "description": "Toezicht op naleving van de bouwvergunning tijdens uitvoering",
+            "processingDeadline": "P4W",
+            "subCaseTypes": [],
+            "isDraft": false
+          },
+          {
+            "@self": {
+              "register": "procest",
+              "schema": "caseType",
+              "slug": "milieu-type"
+            },
+            "title": "Milieuadvies",
+            "description": "Advies omtrent milieuaspecten bij omgevingsvergunning",
+            "processingDeadline": "P3W",
+            "subCaseTypes": [],
+            "isDraft": false
+          },
+          {
+            "@self": {
+              "register": "procest",
+              "schema": "case",
+              "slug": "hoofdzaak-omgverg-keizersgracht"
+            },
+            "title": "Omgevingsvergunning Keizersgracht 100, Amsterdam",
+            "identifier": "2026-0042",
+            "caseType": "omgevingsvergunning-type",
+            "status": null,
+            "assignee": "j.bakker",
+            "priority": "normaal",
+            "startDate": "2026-04-01",
+            "deadline": "2026-05-27",
+            "parentCase": null,
+            "relatedCases": "[]"
+          },
+          {
+            "@self": {
+              "register": "procest",
+              "schema": "case",
+              "slug": "deelzaak-bouwtoezicht-keizersgracht"
+            },
+            "title": "Bouwtoezicht Keizersgracht 100, Amsterdam",
+            "identifier": "2026-0043",
+            "caseType": "bouwtoezicht-type",
+            "status": null,
+            "assignee": "m.visser",
+            "priority": "normaal",
+            "startDate": "2026-04-03",
+            "deadline": "2026-05-01",
+            "parentCase": "hoofdzaak-omgverg-keizersgracht",
+            "relatedCases": "[]"
+          },
+          {
+            "@self": {
+              "register": "procest",
+              "schema": "case",
+              "slug": "deelzaak-milieu-keizersgracht"
+            },
+            "title": "Milieuadvies Keizersgracht 100, Amsterdam",
+            "identifier": "2026-0044",
+            "caseType": "milieu-type",
+            "status": null,
+            "assignee": "p.de.vries",
+            "priority": "hoog",
+            "startDate": "2026-04-03",
+            "deadline": "2026-04-24",
+            "parentCase": "hoofdzaak-omgverg-keizersgracht",
+            "endDate": "2026-04-15",
+            "relatedCases": "[]"
+          }
+        ]
       }
     }
   }
