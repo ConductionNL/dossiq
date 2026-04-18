@@ -1,7 +1,19 @@
 <template>
 	<div>
+		<!-- Not found state (REQ-CDV-01c) -->
+		<div v-if="caseNotFound" class="not-found-container">
+			<NcEmptyContent>
+				{{ t('procest', 'Zaak niet gevonden') }}
+				<template #action>
+					<NcButton type="secondary" @click="$router.push({ name: 'Cases' })">
+						{{ t('procest', 'Back to list') }}
+					</NcButton>
+				</template>
+			</NcEmptyContent>
+		</div>
+
 		<!-- Parent case breadcrumb -->
-		<div v-if="parentCaseData" class="parent-breadcrumb">
+		<div v-if="!caseNotFound && parentCaseData" class="parent-breadcrumb">
 			<router-link :to="{ name: 'CaseDetail', params: { id: caseData.parentCase } }" class="parent-breadcrumb__link">
 				{{ parentCaseData.title }}
 			</router-link>
@@ -10,6 +22,7 @@
 		</div>
 
 		<CnDetailPage
+			v-if="!caseNotFound"
 			:title="caseData.title || t('procest', 'Case')"
 			:subtitle="caseData.identifier ? `${t('procest', 'Case')} — ${caseData.identifier}` : t('procest', 'Case')"
 			:back-route="{ name: 'Cases' }"
@@ -35,8 +48,39 @@
 				</NcButton>
 			</template>
 
+			<!-- Skeleton loading cards (REQ-CDV-01d) -->
+			<template v-if="loading">
+				<CnDetailCard :title="t('procest', 'Status')">
+					<div class="skeleton-bar skeleton-bar--medium"></div>
+					<div class="skeleton-bar skeleton-bar--short"></div>
+				</CnDetailCard>
+
+				<CnDetailCard :title="t('procest', 'Case Information')">
+					<div class="skeleton-bar skeleton-bar--full"></div>
+					<div class="skeleton-bar skeleton-bar--full"></div>
+					<div class="skeleton-bar skeleton-bar--medium"></div>
+					<div class="skeleton-bar skeleton-bar--short"></div>
+				</CnDetailCard>
+
+				<CnDetailCard :title="t('procest', 'Participants')">
+					<div class="skeleton-bar skeleton-bar--full"></div>
+					<div class="skeleton-bar skeleton-bar--full"></div>
+				</CnDetailCard>
+
+				<CnDetailCard :title="t('procest', 'Tasks')">
+					<div class="skeleton-bar skeleton-bar--full"></div>
+					<div class="skeleton-bar skeleton-bar--full"></div>
+					<div class="skeleton-bar skeleton-bar--full"></div>
+				</CnDetailCard>
+
+				<CnDetailCard :title="t('procest', 'Activity')">
+					<div class="skeleton-bar skeleton-bar--full"></div>
+					<div class="skeleton-bar skeleton-bar--medium"></div>
+				</CnDetailCard>
+			</template>
+
 			<!-- Status card -->
-			<CnDetailCard :title="t('procest', 'Status')">
+			<CnDetailCard v-if="!loading" :title="t('procest', 'Status')">
 				<div class="status-section">
 					<span class="status-badge" :class="currentStatusBadgeClass">
 						{{ currentStatusName }}
@@ -90,7 +134,7 @@
 			</CnDetailCard>
 
 			<!-- Status Timeline card -->
-			<CnDetailCard v-if="orderedStatusTypes.length > 0" :title="t('procest', 'Status Timeline')">
+			<CnDetailCard v-if="!loading && orderedStatusTypes.length > 0" :title="t('procest', 'Status Timeline')">
 				<StatusTimeline
 					:status-types="orderedStatusTypes"
 					:current-status-id="caseData.status"
@@ -98,7 +142,7 @@
 			</CnDetailCard>
 
 			<!-- Workflow Transitions card -->
-			<CnDetailCard v-if="hasWorkflow" :title="t('procest', 'Workflow Transitions')">
+			<CnDetailCard v-if="!loading && hasWorkflow" :title="t('procest', 'Workflow Transitions')">
 				<WorkflowTransitions
 					:case-data="caseData"
 					:tasks="tasks"
@@ -108,7 +152,7 @@
 			</CnDetailCard>
 
 			<!-- Case Information card -->
-			<CnDetailCard :title="t('procest', 'Case Information')">
+			<CnDetailCard v-if="!loading" :title="t('procest', 'Case Information')">
 				<div class="form-group">
 					<label>{{ t('procest', 'Title') }} *</label>
 					<NcTextField
@@ -181,7 +225,7 @@
 			</CnDetailCard>
 
 			<!-- Deadline & Timing card -->
-			<CnDetailCard v-if="caseTypeData" :title="t('procest', 'Deadline & Timing')">
+			<CnDetailCard v-if="!loading && caseTypeData" :title="t('procest', 'Deadline & Timing')">
 				<DeadlinePanel
 					:start-date="caseData.startDate"
 					:deadline="caseData.deadline"
@@ -194,7 +238,7 @@
 			</CnDetailCard>
 
 			<!-- B&W Voorstellen card -->
-			<CnDetailCard :title="t('procest', 'B&W Voorstellen')">
+			<CnDetailCard v-if="!loading" :title="t('procest', 'B&W Voorstellen')">
 				<VoorstellenPanel
 					:case-id="caseId"
 					:case-title="caseData.title || ''"
@@ -202,7 +246,7 @@
 			</CnDetailCard>
 
 			<!-- Participants card -->
-			<CnDetailCard :title="t('procest', 'Participants')">
+			<CnDetailCard v-if="!loading" :title="t('procest', 'Participants')">
 				<ParticipantsSection
 					:case-id="caseId"
 					:is-read-only="isReadOnly"
@@ -211,7 +255,7 @@
 
 			<!-- Sub-cases card -->
 			<CnDetailCard
-				v-if="hasSubCaseTypes"
+				v-if="!loading && hasSubCaseTypes"
 				:title="subCasesSectionTitle">
 				<SubCasesSection
 					:case-id="caseId"
@@ -231,7 +275,7 @@
 				@close="showSubCaseDialog = false" />
 
 			<!-- Tasks card -->
-			<CnDetailCard :title="`${t('procest', 'Tasks')} (${completedTaskCount}/${tasks.length})`">
+			<CnDetailCard v-if="!loading" :title="`${t('procest', 'Tasks')} (${completedTaskCount}/${tasks.length})`">
 				<template #actions>
 					<NcButton v-if="!isReadOnly" @click="$router.push({ name: 'TaskNew', query: { caseId } })">
 						{{ t('procest', 'New task') }}
@@ -294,30 +338,30 @@
 
 			<!-- VTH Panels (conditionally shown based on case type) -->
 			<InspectionPanel
-				v-if="isToezichtCase"
+				v-if="!loading && isToezichtCase"
 				:case-id="caseId"
 				:case-type-id="caseData.caseType"
 				:can-inspect="!isReadOnly" />
 
 			<EnforcementPanel
-				v-if="isHandhavingCase"
+				v-if="!loading && isHandhavingCase"
 				:case-id="caseId"
 				:case-type-id="caseData.caseType"
 				:is-read-only="isReadOnly" />
 
 			<AdvicePanel
-				v-if="isVthCase"
+				v-if="!loading && isVthCase"
 				:case-id="caseId"
 				:is-read-only="isReadOnly" />
 			<!-- Location card -->
-			<CnDetailCard :title="t('procest', 'Location')">
+			<CnDetailCard v-if="!loading" :title="t('procest', 'Location')">
 				<LocationTab
 					:geometry="caseData.geometry || null"
 					:is-read-only="isReadOnly"
 					@update-geometry="onGeometryUpdate" />
 			</CnDetailCard>
 			<!-- Bezwaar-specific sections (shown when case type is Bezwaar) -->
-			<template v-if="isBezwaarCase">
+			<template v-if="!loading && isBezwaarCase">
 				<CnDetailCard :title="t('procest', 'Objection Details')">
 					<BezwaarIntakeForm
 						:case-id="caseId"
@@ -383,7 +427,7 @@
 			</template>
 
 			<!-- Beroep-specific sections (shown when case type is Beroep) -->
-			<template v-if="isBeroepCase">
+			<template v-if="!loading && isBeroepCase">
 				<CnDetailCard :title="t('procest', 'Court Proceedings')">
 					<CourtProceedingsPanel
 						:case-data="caseData"
@@ -395,7 +439,7 @@
 			</template>
 
 			<!-- Activity card -->
-			<CnDetailCard :title="t('procest', 'Activity')">
+			<CnDetailCard v-if="!loading" :title="t('procest', 'Activity')">
 				<ActivityTimeline
 					:activity="caseData.activity || []"
 					:is-read-only="isReadOnly"
@@ -429,7 +473,7 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcTextField, NcSelect, NcEmptyContent } from '@nextcloud/vue'
 import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { getStatusLabel as getTaskStatusLabel } from '../../utils/taskLifecycle.js'
@@ -467,6 +511,7 @@ export default {
 		NcLoadingIcon,
 		NcTextField,
 		NcSelect,
+		NcEmptyContent,
 		CnDetailPage,
 		CnDetailCard,
 		StatusTimeline,
@@ -662,6 +707,11 @@ export default {
 		},
 		userRoleTypeIds() {
 			return this.caseRoles ? this.caseRoles.map(r => r.roleType) : []
+		},
+		caseNotFound() {
+			// Case not found if loading is complete but caseData is empty (REQ-CDV-01c)
+			if (this.loading || this.isNew) return false
+			return !this.caseData || !this.caseData.id
 		},
 	},
 	async mounted() {
@@ -1340,5 +1390,130 @@ export default {
 	justify-content: flex-end;
 	gap: 8px;
 	margin-top: 16px;
+}
+
+/* Not found state (REQ-CDV-01c) */
+.not-found-container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 400px;
+	padding: 24px;
+}
+
+/* Responsive layout for tablets (REQ-CDV-07b) */
+@media (max-width: 1200px) {
+	.form-row {
+		flex-direction: column;
+		gap: 0;
+	}
+
+	.form-row .form-group {
+		flex: none;
+		width: 100%;
+	}
+}
+
+/* Skeleton loading styles (REQ-CDV-01d) */
+@keyframes skeleton-pulse {
+	0% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.6;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+.skeleton-bar {
+	height: 12px;
+	margin-bottom: 8px;
+	background: var(--color-background-dark);
+	border-radius: var(--border-radius);
+	animation: skeleton-pulse 1.5s infinite;
+}
+
+.skeleton-bar--short {
+	width: 60%;
+}
+
+.skeleton-bar--medium {
+	width: 80%;
+}
+
+.skeleton-bar--full {
+	width: 100%;
+}
+
+/* Print stylesheet (REQ-CDV-07c) */
+@media print {
+	/* Hide navigation and interactive elements */
+	.parent-breadcrumb {
+		display: none;
+	}
+
+	[class*="header-actions"],
+	button,
+	.status-section__change,
+	.result-prompt,
+	.extension-overlay,
+	.extension-dialog {
+		display: none !important;
+	}
+
+	/* Format status and timing info for print */
+	.status-badge {
+		background: none;
+		border: 1px solid #000;
+		padding: 2px 4px;
+		color: #000;
+	}
+
+	.status-section {
+		break-inside: avoid;
+		margin-bottom: 12px;
+	}
+
+	/* Hide dropdowns and selects */
+	select,
+	.nc-select,
+	textarea {
+		border: none;
+		display: none;
+	}
+
+	/* Print page headers/footers */
+	.extension-dialog h3,
+	.form-error,
+	.form-group textarea {
+		display: none;
+	}
+
+	/* Clean background for printing */
+	body {
+		background: white;
+	}
+
+	.viewTable {
+		box-shadow: none;
+		border: 1px solid #999;
+	}
+
+	.viewTable th,
+	.viewTable td {
+		border: 1px solid #999;
+	}
+
+	/* Status timeline as text list in print */
+	.status-timeline {
+		break-inside: avoid;
+	}
+
+	/* Ensure case identifier is visible in print */
+	.form-value {
+		color: #000;
+	}
 }
 </style>
