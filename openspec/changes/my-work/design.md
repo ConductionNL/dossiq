@@ -1,3 +1,7 @@
+## Status
+- Current: pr-created
+- PR: https://github.com/ConductionNL/procest/pull/248
+
 ## Architecture
 
 ### Case Type Name Resolution
