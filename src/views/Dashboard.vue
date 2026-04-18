@@ -489,7 +489,7 @@ export default {
 		 * @return {string} CSS width value
 		 */
 		typeBarWidth(count) {
-			const max = Math.max(1, ...this.typeData.map(t => t.count))
+			const max = Math.max(1, ...this.typeData.map(tw => tw.count))
 			const pct = (count / max) * 100
 			return `max(20px, ${pct}%)`
 		},
