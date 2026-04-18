@@ -28,6 +28,25 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * Minimal ObjectService shape used by ZgwZrcRulesService.
+ *
+ * Defined here so the unit tests can `createMock(ObjectServiceStub::class)`
+ * and get a mock whose method signatures match the named-arg calls in
+ * ZgwRulesBase. Using `getMockBuilder(\stdClass::class)->addMethods([...])`
+ * generates parameter-less stubs, which throws
+ * "Error: Unknown named parameter" when production code passes named
+ * arguments. This interface declares the real parameter names so named-arg
+ * calls resolve correctly.
+ */
+interface ObjectServiceStub
+{
+    public function find(string $id, string $register, string $schema): ?array;
+    public function buildSearchQuery(array $criteria): array;
+    public function searchObjectsPaginated(array $query): array;
+
+}//end interface
+
+/**
  * Unit tests for ZgwZrcRulesService.
  *
  * @covers \OCA\Procest\Service\ZgwZrcRulesService
@@ -412,7 +431,7 @@ class ZgwZrcRulesServiceTest extends TestCase
 
         // objectService: find() for hoofdzaak returns null (not found).
         $objectService = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['find'])
+            ->addMethods(['find', 'buildSearchQuery', 'searchObjectsPaginated'])
             ->getMock();
         $objectService->method('find')->willReturn(null);
 
@@ -453,9 +472,7 @@ class ZgwZrcRulesServiceTest extends TestCase
     {
         $zaaktypeUuid = 'aabbccdd-1111-2222-3333-444455556666';
 
-        $objectService = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['find', 'buildSearchQuery', 'searchObjectsPaginated'])
-            ->getMock();
+        $objectService = $this->createMock(ObjectServiceStub::class);
 
         // find() returns zaaktype with confidentiality = 'vertrouwelijk'.
         $objectService->method('find')->willReturn([
@@ -507,9 +524,7 @@ class ZgwZrcRulesServiceTest extends TestCase
     {
         $zaaktypeUuid = 'aabbccdd-1111-2222-3333-444455556666';
 
-        $objectService = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['find', 'buildSearchQuery', 'searchObjectsPaginated'])
-            ->getMock();
+        $objectService = $this->createMock(ObjectServiceStub::class);
 
         // Zaaktype has no confidentiality field.
         $objectService->method('find')->willReturn([
