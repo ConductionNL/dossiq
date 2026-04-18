@@ -1,5 +1,8 @@
 # Design: dashboard
 
+**Status:** pr-created
+**PR:** https://github.com/ConductionNL/procest/pull/233
+
 ## Changes
 
 ### Dashboard.vue
