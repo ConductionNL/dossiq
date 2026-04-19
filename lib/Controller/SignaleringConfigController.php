@@ -35,7 +35,7 @@ class SignaleringConfigController extends Controller
         private LoggerInterface $logger,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
-    }
+    }//end __construct()
 
     /**
      * List all signalering configurations.
@@ -60,7 +60,7 @@ class SignaleringConfigController extends Controller
 
             // Get all signalering configurations from OpenRegister
             $register = $this->getRegisterValue();
-            $schema = $this->getSchemaValue('signalering_config_schema');
+            $schema   = $this->getSchemaValue('signalering_config_schema');
 
             if ($register === null || $schema === null) {
                 return new JSONResponse(['configs' => []]);
@@ -76,12 +76,15 @@ class SignaleringConfigController extends Controller
 
             return new JSONResponse(['configs' => $configs]);
         } catch (\Exception $e) {
-            $this->logger->error('Procest: Error listing signalering configs', [
-                'exception' => $e->getMessage(),
-            ]);
-            return new JSONResponse(['error' => $e->getMessage()], 500);
-        }
-    }
+            $this->logger->error(
+                    'Procest: Error listing signalering configs',
+                    [
+                        'exception' => $e->getMessage(),
+                    ]
+                    );
+            return new JSONResponse(['error' => 'Error listing signalering configurations'], 500);
+        }//end try
+    }//end index()
 
     /**
      * Create or update a signalering configuration for a zaaktype.
@@ -110,18 +113,18 @@ class SignaleringConfigController extends Controller
             }
 
             $register = $this->getRegisterValue();
-            $schema = $this->getSchemaValue('signalering_config_schema');
+            $schema   = $this->getSchemaValue('signalering_config_schema');
 
             if ($register === null || $schema === null) {
                 return new JSONResponse(['error' => 'Configuration not available'], 503);
             }
 
             $configData = [
-                'zaaktypeId' => $zaaktypeId,
-                'warningDaysStreef' => (int) $this->request->getParam('warningDaysStreef', '7'),
-                'warningDaysFatale' => (int) $this->request->getParam('warningDaysFatale', '0'),
+                'zaaktypeId'           => $zaaktypeId,
+                'warningDaysStreef'    => (int) $this->request->getParam('warningDaysStreef', '7'),
+                'warningDaysFatale'    => (int) $this->request->getParam('warningDaysFatale', '0'),
                 'notificationChannels' => $this->request->getParam('notificationChannels', ['in-app']),
-                'enabled' => (bool) $this->request->getParam('enabled', true),
+                'enabled'              => (bool) $this->request->getParam('enabled', true),
             ];
 
             $result = $objectService->saveObject(
@@ -130,25 +133,31 @@ class SignaleringConfigController extends Controller
                 $configData,
             );
 
-            $this->logger->info('Procest: Signalering config created/updated', [
-                'zaaktypeId' => $zaaktypeId,
-            ]);
+            $this->logger->info(
+                    'Procest: Signalering config created/updated',
+                    [
+                        'zaaktypeId' => $zaaktypeId,
+                    ]
+                    );
 
             return new JSONResponse($result->jsonSerialize());
         } catch (\Exception $e) {
-            $this->logger->error('Procest: Error creating signalering config', [
-                'exception' => $e->getMessage(),
-            ]);
-            return new JSONResponse(['error' => $e->getMessage()], 500);
-        }
-    }
+            $this->logger->error(
+                    'Procest: Error creating signalering config',
+                    [
+                        'exception' => $e->getMessage(),
+                    ]
+                    );
+            return new JSONResponse(['error' => 'Error creating signalering configuration'], 500);
+        }//end try
+    }//end create()
 
     /**
      * Delete a signalering configuration for a zaaktype.
      *
      * @spec openspec/changes/signalering-widgets/tasks.md#T05
      *
-     * @param string $zaaktypeId The zaaktype ID
+     * @param  string $zaaktypeId The zaaktype ID
      * @return JSONResponse
      */
     public function delete(string $zaaktypeId): JSONResponse
@@ -170,7 +179,7 @@ class SignaleringConfigController extends Controller
             }
 
             $register = $this->getRegisterValue();
-            $schema = $this->getSchemaValue('signalering_config_schema');
+            $schema   = $this->getSchemaValue('signalering_config_schema');
 
             if ($register === null || $schema === null) {
                 return new JSONResponse(['error' => 'Configuration not available'], 503);
@@ -188,7 +197,7 @@ class SignaleringConfigController extends Controller
                 return new JSONResponse(['error' => 'Configuration not found'], 404);
             }
 
-            $config = reset($configs);
+            $config   = reset($configs);
             $configId = is_object($config) ? $config->getId() : ($config['id'] ?? $config['uuid'] ?? null);
 
             if ($configId === null) {
@@ -202,18 +211,24 @@ class SignaleringConfigController extends Controller
                 (string) $configId,
             );
 
-            $this->logger->info('Procest: Signalering config deleted', [
-                'zaaktypeId' => $zaaktypeId,
-            ]);
+            $this->logger->info(
+                    'Procest: Signalering config deleted',
+                    [
+                        'zaaktypeId' => $zaaktypeId,
+                    ]
+                    );
 
             return new JSONResponse(['success' => true]);
         } catch (\Exception $e) {
-            $this->logger->error('Procest: Error deleting signalering config', [
-                'exception' => $e->getMessage(),
-            ]);
-            return new JSONResponse(['error' => $e->getMessage()], 500);
-        }
-    }
+            $this->logger->error(
+                    'Procest: Error deleting signalering config',
+                    [
+                        'exception' => $e->getMessage(),
+                    ]
+                    );
+            return new JSONResponse(['error' => 'Error deleting signalering configuration'], 500);
+        }//end try
+    }//end delete()
 
     /**
      * Get ObjectService from OpenRegister app.
@@ -228,7 +243,7 @@ class SignaleringConfigController extends Controller
             $this->logger->error('Procest: Could not get ObjectService', ['exception' => $e->getMessage()]);
             return null;
         }
-    }
+    }//end getObjectService()
 
     /**
      * Get the configured register ID.
@@ -243,12 +258,12 @@ class SignaleringConfigController extends Controller
         } catch (\Exception) {
             return null;
         }
-    }
+    }//end getRegisterValue()
 
     /**
      * Get a schema ID by config key.
      *
-     * @param string $configKey The settings key
+     * @param  string $configKey The settings key
      * @return ?string
      */
     private function getSchemaValue(string $configKey): ?string
@@ -259,5 +274,5 @@ class SignaleringConfigController extends Controller
         } catch (\Exception) {
             return null;
         }
-    }
-}
+    }//end getSchemaValue()
+}//end class
