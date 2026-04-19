@@ -49,45 +49,45 @@
 			@sort="onSort"
 			@row-click="openTask"
 			@page-changed="onPageChange">
-		<template #column-case="{ row }">
-			<a
-				v-if="row.case"
-				class="case-link"
-				@click.stop="openCase(row.case)">
-				{{ getCaseTitle(row.case) }}
-			</a>
-			<span v-else>&mdash;</span>
-		</template>
+			<template #column-case="{ row }">
+				<a
+					v-if="row.case"
+					class="case-link"
+					@click.stop="openCase(row.case)">
+					{{ getCaseTitle(row.case) }}
+				</a>
+				<span v-else>&mdash;</span>
+			</template>
 
-		<template #column-status="{ row }">
-			<span class="status-badge" :class="'status-badge--' + row.status">
-				{{ getStatusLabel(row.status) }}
-			</span>
-		</template>
+			<template #column-status="{ row }">
+				<span class="status-badge" :class="'status-badge--' + row.status">
+					{{ getStatusLabel(row.status) }}
+				</span>
+			</template>
 
-		<template #column-dueDate="{ row }">
-			<span :class="dueDateClass(row)">
-				<template v-if="isOverdue(row)">
-					{{ getOverdueText(row) }}
-				</template>
-				<template v-else-if="isDueToday(row)">
-					{{ t('procest', 'Due today') }}
-				</template>
-				<template v-else>
-					{{ formatDueDate(row.dueDate) }}
-				</template>
-			</span>
-		</template>
+			<template #column-dueDate="{ row }">
+				<span :class="dueDateClass(row)">
+					<template v-if="isOverdue(row)">
+						{{ getOverdueText(row) }}
+					</template>
+					<template v-else-if="isDueToday(row)">
+						{{ t('procest', 'Due today') }}
+					</template>
+					<template v-else>
+						{{ formatDueDate(row.dueDate) }}
+					</template>
+				</span>
+			</template>
 
-		<template #column-priority="{ row }">
-			<span
-				v-if="row.priority && row.priority !== 'normal'"
-				class="priority-badge"
-				:class="'priority-badge--' + row.priority">
-				{{ getPriorityLabel(row.priority) }}
-			</span>
-			<span v-else>&mdash;</span>
-		</template>
+			<template #column-priority="{ row }">
+				<span
+					v-if="row.priority && row.priority !== 'normal'"
+					class="priority-badge"
+					:class="'priority-badge--' + row.priority">
+					{{ getPriorityLabel(row.priority) }}
+				</span>
+				<span v-else>&mdash;</span>
+			</template>
 		</CnIndexPage>
 	</div>
 </template>

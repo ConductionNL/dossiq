@@ -104,6 +104,7 @@
  */
 import { NcButton, NcTextField, NcSelect, NcLoadingIcon } from '@nextcloud/vue'
 import { useObjectStore } from '../../store/modules/object.js'
+import { validateTaskCreate } from '../../utils/taskValidation.js'
 
 export default {
 	name: 'TaskCreateDialog',
@@ -147,17 +148,10 @@ export default {
 	},
 	methods: {
 		async submit() {
-			this.errors = {}
+			const { valid, errors } = validateTaskCreate(this.form)
+			this.errors = errors
 
-			if (!this.form.title || !this.form.title.trim()) {
-				this.errors.title = t('procest', 'Title is required')
-			}
-
-			if (!this.form.case) {
-				this.errors.case = t('procest', 'Case is required')
-			}
-
-			if (Object.keys(this.errors).length > 0) {
+			if (!valid) {
 				return
 			}
 
