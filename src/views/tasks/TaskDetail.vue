@@ -175,7 +175,7 @@ import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { getAllowedTransitions, getStatusLabel, getTransitionLabel, isTerminalStatus } from '../../utils/taskLifecycle.js'
 import { formatDueDate } from '../../utils/taskHelpers.js'
-import { validateTaskTransition } from '../../utils/taskValidation.js'
+import { validateTaskTransition, validateTaskUpdate } from '../../utils/taskValidation.js'
 
 export default {
 	name: 'TaskDetail',
@@ -289,12 +289,9 @@ export default {
 		},
 
 		validate() {
-			this.validationErrors = { title: '' }
-			if (!this.form.title.trim()) {
-				this.validationErrors.title = t('procest', 'Title is required')
-				return false
-			}
-			return true
+			const { valid, errors } = validateTaskUpdate(this.form)
+			this.validationErrors = { title: errors.title || '' }
+			return valid
 		},
 
 		async save() {
