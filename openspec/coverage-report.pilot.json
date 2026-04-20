@@ -1,0 +1,197 @@
+{
+  "generated_at": "2026-04-20T00:00:00Z",
+  "app": "procest",
+  "branch": "fix/header-info-email-phpcs",
+  "scanner_version": "1-pilot",
+  "scope": {
+    "php": "lib/**/*.php (89 files scanned)",
+    "frontend": "deferred — src/**/*.{vue,ts,js} (184 files) not yet scanned",
+    "python": "not applicable (procest is PHP)",
+    "classification_depth": "file-level primary, method-level only for Bucket 1 representative examples"
+  },
+  "req_inventory_summary": {
+    "total_specs": 46,
+    "req_numbered_specs": 15,
+    "req_numbered_count": 183,
+    "requirement_named_specs": 31,
+    "requirement_named_count": 160,
+    "total_requirements": 343,
+    "notes": "case-management/spec.md has duplicated REQ blocks; treated as 22 unique. Requirement-named specs need synthesized IDs."
+  },
+  "buckets": {
+    "annotated": [],
+    "plumbing": [
+      {"file": "lib/Dashboard/CasesOverviewWidget.php", "reason": "IWidget boilerplate (getId/Title/Order/IconClass/Url)"},
+      {"file": "lib/Dashboard/DeadlineAlertsWidget.php", "reason": "IWidget boilerplate"},
+      {"file": "lib/Dashboard/MyTasksWidget.php", "reason": "IWidget boilerplate"},
+      {"file": "lib/Dashboard/OverdueCasesWidget.php", "reason": "IWidget boilerplate"},
+      {"file": "lib/Dashboard/StalledCasesWidget.php", "reason": "IWidget boilerplate"},
+      {"file": "lib/Dashboard/StartCaseWidget.php", "reason": "IWidget boilerplate"},
+      {"file": "lib/Dashboard/TaskRemindersWidget.php", "reason": "IWidget boilerplate — note: load() bodies contain real logic and should be Bucket 1 (dashboard#REQ-DASH-015); only getId/Title/etc are plumbing"},
+      {"file": "lib/Middleware/ZgwAuthException.php", "reason": "exception class with getStatusCode()"},
+      {"file": "lib/Service/AppointmentBackend/AppointmentBackendInterface.php", "reason": "interface declaration only"},
+      {"file": "lib/Service/BerichtenboxAdapter/BerichtenboxAdapterInterface.php", "reason": "interface declaration only"}
+    ],
+    "bucket_1": [
+      {"file": "lib/Settings/AdminSettings.php", "capability": "admin-settings", "req": "REQ-ADMIN-001", "methods": ["getForm", "getSection", "getPriority", "getScope"], "confidence": 0.95, "signal": "direct Nextcloud ISettings implementation; spec cites AdminSettings class"},
+      {"file": "lib/Sections/SettingsSection.php", "capability": "admin-settings", "req": "REQ-ADMIN-001", "methods": ["getID", "getName", "getPriority", "getIcon"], "confidence": 0.95, "signal": "spec cites SettingsSection class directly"},
+      {"file": "lib/Controller/SettingsController.php", "capability": "admin-settings", "req": "REQ-ADMIN-014", "methods": ["getSettings", "updateSettings"], "confidence": 0.82, "needs_review": true, "signal": "settings endpoints but spec is UI-focused"},
+      {"file": "lib/Controller/ZrcController.php", "capability": "zgw-api-mapping", "req": "zgw-api-mapping#Requirement-1..6", "methods": ["index", "create", "show", "update", "patch", "destroy"], "confidence": 0.92, "signal": "ZrcController = ZGW Zaakregistratiecomponent; REST verbs match spec"},
+      {"file": "lib/Controller/ZtcController.php", "capability": "zgw-api-mapping", "req": "zgw-api-mapping ZTC requirements", "methods": ["(6 CRUD + 6 ZTC-specific publics)"], "confidence": 0.92, "signal": "ZtcController = Zaaktypecatalogus"},
+      {"file": "lib/Controller/DrcController.php", "capability": "zgw-api-mapping", "req": "zgw-api-mapping DRC requirements", "methods": ["index", "create", "show", "update", "patch", "destroy", "download", "lock", "unlock", "audittrailIndex", "audittrailShow", "uploadChunk"], "confidence": 0.92, "signal": "DrcController = Documentregistratie"},
+      {"file": "lib/Controller/BrcController.php", "capability": "zgw-api-mapping", "req": "zgw-api-mapping BRC requirements", "methods": ["index", "create", "show", "update", "patch", "destroy", "audittrailIndex", "audittrailShow"], "confidence": 0.92, "signal": "BrcController = Besluitregistratie"},
+      {"file": "lib/Controller/NrcController.php", "capability": "zgw-api-mapping", "req": "zgw-api-mapping NRC requirements", "methods": "(10 publics)", "confidence": 0.90, "signal": "NRC = Notificatieroutercomponent"},
+      {"file": "lib/Controller/AcController.php", "capability": "zgw-api-mapping", "req": "zgw-api-mapping AC requirements", "methods": ["index", "create", "show", "update", "patch", "destroy"], "confidence": 0.88, "signal": "AC = Autorisatiecomponent"},
+      {"file": "lib/Service/ZgwService.php", "capability": "zgw-api-mapping", "req": "multiple (needs method-level pass)", "methods": "(36 publics)", "confidence": 0.90, "signal": "central ZGW orchestrator"},
+      {"file": "lib/Service/ZgwMappingService.php", "capability": "zgw-api-mapping", "req": "zgw-api-mapping mapping layer", "methods": "(8 publics)", "confidence": 0.88, "signal": "explicit mapping service"},
+      {"file": "lib/Repair/LoadDefaultZgwMappings.php", "capability": "zgw-api-mapping", "req": "zgw-api-mapping (seed)", "methods": ["getDefaultMappings"], "confidence": 0.90, "signal": "28 private getXxxMapping helpers inherit the single public REQ tag"},
+      {"file": "lib/Controller/MetricsController.php", "capability": "prometheus-metrics", "req": "REQ-PROM-001", "methods": ["index"], "confidence": 0.97, "signal": "direct match — spec explicitly names metrics endpoint"},
+      {"file": "lib/Controller/MetricsController.php", "capability": "prometheus-metrics", "req": "REQ-PROM-001, REQ-PROM-002, REQ-PROM-003, REQ-PROM-009", "methods": ["collectMetrics", "getCached", "checkDatabaseHealth", "getCaseCounts", "getOverdueCasesCount", "getCasesCreatedTodayCount", "getTaskCounts", "getOverdueTasksCount"], "confidence": 0.88, "signal": "Pass B — private helpers inherited from index()"},
+      {"file": "lib/Controller/HealthController.php", "capability": "prometheus-metrics", "req": "REQ-PROM-004", "methods": ["index"], "confidence": 0.97, "signal": "direct match — REQ-PROM-004 Health Check Endpoint"},
+      {"file": "lib/Controller/HealthController.php", "capability": "prometheus-metrics", "req": "REQ-PROM-004", "methods": ["checkDatabase", "checkOpenRegister", "checkFilesystem", "getAppVersion"], "confidence": 0.88, "signal": "Pass B — inherited from index()"},
+      {"file": "lib/AppInfo/Application.php", "capability": "procest-app-scaffold", "req": "procest-app-scaffold Scenario 1.1/1.2", "methods": ["register", "boot"], "confidence": 0.93, "signal": "canonical bootstrap class"},
+      {"file": "lib/Controller/DashboardController.php", "capability": "procest-app-scaffold", "req": "procest-app-scaffold (Vue SPA entry)", "methods": ["page"], "confidence": 0.90, "signal": "main template route"},
+      {"file": "lib/Repair/InitializeSettings.php", "capability": "procest-app-scaffold", "req": "procest-app-scaffold (InitializeSettings repair step)", "methods": ["getName", "run"], "confidence": 0.95, "signal": "spec names class directly"},
+      {"file": "lib/Listener/DeepLinkRegistrationListener.php", "capability": "procest-app-scaffold", "req": "procest-app-scaffold (deep link registration)", "methods": ["handle"], "confidence": 0.85, "signal": "spec mentions deep-link integration"},
+      {"file": "lib/Controller/ParaferingController.php", "capability": "parafering-actions + parafeerroute-engine", "req": "multiple (needs method-level)", "methods": ["createVoorstel", "startParafering", "executeAction", "getAuditTrail", "getCurrentStep", "overrideRoute"], "confidence": 0.85, "signal": "terminology match on all method names"},
+      {"file": "lib/Service/ParaferingService.php", "capability": "parafering-actions + parafeerroute-engine", "req": "multiple", "methods": "(same 7 publics)", "confidence": 0.85, "signal": "service-layer twin"},
+      {"file": "lib/Service/ParaferingNotificationService.php", "capability": "parafering-actions", "req": "parafering-actions notifications", "methods": ["notifyStepActivated", "notifyVoorstelReturned", "notifyParaferingReminder"], "confidence": 0.82, "needs_review": true, "signal": "specific REQ needs reading"},
+      {"file": "lib/Controller/GisProxyController.php", "capability": "wms-wfs-layers", "req": "REQ-LAYER-03, REQ-LAYER-04", "methods": ["proxy", "capabilities"], "confidence": 0.95, "signal": "direct match"},
+      {"file": "lib/Service/GisProxyService.php", "capability": "wms-wfs-layers", "req": "REQ-LAYER-03, REQ-LAYER-04", "methods": ["proxyRequest", "getCapabilities"], "confidence": 0.92, "signal": "service twin"},
+      {"file": "lib/Controller/InspectionController.php", "capability": "inspection-checklists", "req": "inspection-checklists requirements", "methods": ["index", "captureLocation", "completeChecklistItem", "addPhoto", "complete"], "confidence": 0.90, "signal": "name match"},
+      {"file": "lib/Service/InspectionService.php", "capability": "inspection-checklists", "req": "inspection-checklists requirements", "methods": "(5 publics)", "confidence": 0.88, "signal": "service twin"},
+      {"file": "lib/Service/ChecklistService.php", "capability": "inspection-checklists", "req": "inspection-checklists progress/validation", "methods": ["completeItem", "getProgress", "validateCompletion", "getConformitySummary"], "confidence": 0.85, "signal": "verb match"},
+      {"file": "lib/Service/MilestoneService.php", "capability": "doorlooptijd-dashboard", "req": "doorlooptijd-dashboard requirements", "methods": ["getMilestones", "getCaseProgress", "markMilestone", "reverseMilestone", "getDurationAnalytics"], "confidence": 0.85, "signal": "milestones = doorloop milestones"},
+      {"file": "lib/Controller/MilestoneController.php", "capability": "doorlooptijd-dashboard", "req": "doorlooptijd-dashboard", "methods": ["progress"], "confidence": 0.85, "signal": "name match"},
+      {"file": "lib/Repair/SeedBezwaarBeroepData.php", "capability": "vth-case-type-seed", "req": "vth-case-type-seed", "methods": ["getName", "run"], "confidence": 0.92, "signal": "name match"},
+      {"file": "lib/Service/SeedDataService.php", "capability": "vth-case-type-seed", "req": "vth-case-type-seed", "methods": ["seedBezwaarBeroepData"], "confidence": 0.92, "signal": "name match"},
+      {"file": "lib/BackgroundJob/AppointmentReminderJob.php", "capability": "(none)", "req": "(2b cluster: appointments)", "methods": ["run"], "confidence": null, "signal": "moved to Bucket 2b"}
+    ],
+    "bucket_2a": {
+      "case-management": {
+        "methods": [
+          {"file": "lib/Controller/EmailController.php", "methods": ["send", "sendFromTemplate", "preview", "templates"], "observed_behavior": "case email integration not in existing REQs"},
+          {"file": "lib/Service/CaseEmailService.php", "methods": "(8 publics)", "observed_behavior": "outbound email with template rendering per caseType, inbound reply matching by subject"}
+        ]
+      },
+      "admin-settings": {
+        "methods": [
+          {"file": "lib/Controller/SettingsController.php", "methods": ["(non-UI settings-bag endpoints)"], "observed_behavior": "REQ-ADMIN-* covers UI, not the bare settings-bag API"}
+        ]
+      },
+      "inspection-checklists": {
+        "methods": [
+          {"file": "lib/Service/InspectionService.php", "methods": ["calculateDistance"], "observed_behavior": "GPS distance helper not specified"}
+        ]
+      },
+      "zgw-api-mapping": {
+        "methods": [
+          {"file": "lib/Middleware/ZgwAuthMiddleware.php", "methods": "(4 publics + 5 privates)", "observed_behavior": "ZGW scope-based JWT auth not specified in zgw-api-mapping spec"}
+        ]
+      }
+    },
+    "bucket_2b": {
+      "appointments": {
+        "files": [
+          "lib/Controller/AppointmentController.php",
+          "lib/Controller/PublicAppointmentController.php",
+          "lib/BackgroundJob/AppointmentReminderJob.php",
+          "lib/Service/AppointmentService.php",
+          "lib/Service/AppointmentBackend/AppointmentBackendInterface.php",
+          "lib/Service/AppointmentBackend/JccBackend.php",
+          "lib/Service/AppointmentBackend/LocalBackend.php",
+          "lib/Service/AppointmentBackend/QmaticBackend.php"
+        ],
+        "observed_behavior": "Appointment booking with 3 pluggable backends (JCC for municipal self-service, Qmatic for queue management, Local for dev). Book/cancel/reschedule/no-show + public reschedule via token. Nightly reminder job."
+      },
+      "berichtenbox": {
+        "files": [
+          "lib/Controller/BerichtenboxController.php",
+          "lib/BackgroundJob/BerichtenboxReadStatusJob.php",
+          "lib/Service/BerichtenboxService.php",
+          "lib/Service/BerichtenboxAdapter/BerichtenboxAdapterInterface.php",
+          "lib/Service/BerichtenboxAdapter/MockAdapter.php"
+        ],
+        "observed_behavior": "Sends citizen messages to Dutch government MijnOverheid Berichtenbox with BSN validation; polls read status via adapter pattern."
+      },
+      "case-sharing": {
+        "files": [
+          "lib/Controller/CaseSharingController.php",
+          "lib/Controller/PublicShareController.php",
+          "lib/BackgroundJob/ShareMaintenanceJob.php",
+          "lib/Service/CaseSharingService.php",
+          "lib/Service/CaseTransferService.php"
+        ],
+        "observed_behavior": "Tokenized public-read links for cases, partner shares with filtered case data, case transfer between users/orgs with accept/reject workflow."
+      },
+      "stuf-protocol": {
+        "files": [
+          "lib/Controller/StufController.php",
+          "lib/Service/StufFieldMappingService.php",
+          "lib/Service/StufMessageBuilder.php"
+        ],
+        "observed_behavior": "Bidirectional SOAP-based StUF-ZKN / StUF-BG protocol mapping — ISO ↔ StUF date formats, confidentiality level mapping, StUF message construction for legacy ZGW clients."
+      },
+      "leges": {
+        "files": [
+          "lib/Controller/LegesController.php",
+          "lib/Service/LegesCalculationService.php",
+          "lib/Service/LegesExportService.php"
+        ],
+        "observed_behavior": "Tax/fee calculation with 5 strategies (vast, percentage, staffel, maximum, combinatie), recalculation on case changes, verrekening (offset) + teruggaaf (refund) paths, exports to CSV/ASCII/XML."
+      },
+      "ai-assistant": {
+        "files": [
+          "lib/Controller/AiController.php",
+          "lib/Service/AiService.php"
+        ],
+        "observed_behavior": "Case-scoped AI: document classification, data extraction, Q&A, summarization, routing suggestion, next-step suggestion. PII stripping, audit trail, per-feature enable flags."
+      },
+      "multi-tenancy": {
+        "files": [
+          "lib/Controller/TenantController.php",
+          "lib/Middleware/TenantMiddleware.php",
+          "lib/Service/TenantService.php"
+        ],
+        "observed_behavior": "Tenant resolution on requests, tenant-scoped CRUD, per-controller tenant enforcement."
+      },
+      "templates": {
+        "files": [
+          "lib/Controller/TemplateController.php",
+          "lib/Service/TemplateLibraryService.php"
+        ],
+        "observed_behavior": "Template library for case-type configurations (separate from email templates)."
+      },
+      "dso-intake": {
+        "files": ["lib/Service/DsoIntakeService.php"],
+        "observed_behavior": "Receives DSO (Digitaal Stelsel Omgevingswet) aanvraag messages and converts to internal cases."
+      }
+    },
+    "bucket_3a": [],
+    "bucket_3b": [],
+    "bucket_4": {
+      "missing-spec-in-file-docblock": {
+        "count": 89,
+        "note": "expected — this is what retrofit fixes; subsumed by Bucket 1/2 work"
+      }
+    }
+  },
+  "ignored": 0,
+  "notes": [
+    "case-management/spec.md has duplicated REQ blocks (lines 63-945 and 1013-1946) — pre-retrofit cleanup recommended.",
+    "ZrcController is large (17 publics + 22 privates) — chunked annotation by method-group recommended.",
+    "Requirement-named spec dialect (31 specs, 160 reqs) needs synthesized REQ-IDs; confidence scores for these will run lower.",
+    "Vue/TS frontend (184 files) not scanned in this pass — follow-up scan required.",
+    "Consultation cluster likely maps to advice-management (2a, not 2b) — verify before reverse-spec run.",
+    "NotificatieService likely covered by zgw-api-mapping NRC requirements (2a, not 2b) — verify.",
+    "case-definition-export-import may overlap workflow-import-export spec (2a, not 2b) — verify.",
+    "Bucket 3 reverse pass deferred — requires full REQ-to-method coverage map before it's meaningful."
+  ],
+  "suggested_next_steps": [
+    "Review this report; flag any Bucket 1 matches that look wrong.",
+    "Decide 2a vs 2b for borderline clusters (consultation, notifications, case-definition-export-import).",
+    "Decide sequencing for reverse-spec passes — start with self-contained clusters (leges, stuf-protocol).",
+    "Schedule Vue scan follow-up — same skill, wider glob.",
+    "/opsx-annotate procest — will create retrofit-annotate-procest-2026-04-20 ghost change."
+  ]
+}
