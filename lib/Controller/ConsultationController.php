@@ -31,8 +31,6 @@ use OCP\IRequest;
  */
 class ConsultationController extends Controller
 {
-
-
     /**
      * Constructor.
      *
@@ -45,9 +43,8 @@ class ConsultationController extends Controller
         IRequest $request,
         private readonly ConsultationService $consultationService,
     ) {
-        parent::__construct($appName, $request);
-    }
-
+        parent::__construct(appName: $appName, request: $request);
+    }//end __construct()
 
     /**
      * List consultations for a case.
@@ -62,8 +59,7 @@ class ConsultationController extends Controller
     {
         $consultations = $this->consultationService->getConsultationsForCase($caseId);
         return new JSONResponse(['results' => $consultations]);
-    }
-
+    }//end index()
 
     /**
      * Create a new consultation.
@@ -75,14 +71,24 @@ class ConsultationController extends Controller
     public function create(): JSONResponse
     {
         try {
-            $data   = json_decode($this->request->getContent() ?: '{}', true) ?: [];
+            $content = $this->request->getContent();
+            if ($content === '' || $content === false) {
+                $content = '{}';
+            }
+
+            $decoded = json_decode($content, true);
+            if (is_array($decoded) === true) {
+                $data = $decoded;
+            } else {
+                $data = [];
+            }
+
             $result = $this->consultationService->createConsultation($data);
             return new JSONResponse($result, 201);
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 400);
         }
-    }
-
+    }//end create()
 
     /**
      * Update consultation status.
@@ -96,15 +102,25 @@ class ConsultationController extends Controller
     public function updateStatus(string $id): JSONResponse
     {
         try {
-            $data   = json_decode($this->request->getContent() ?: '{}', true) ?: [];
+            $content = $this->request->getContent();
+            if ($content === '' || $content === false) {
+                $content = '{}';
+            }
+
+            $decoded = json_decode($content, true);
+            if (is_array($decoded) === true) {
+                $data = $decoded;
+            } else {
+                $data = [];
+            }
+
             $status = $data['status'] ?? '';
             $result = $this->consultationService->updateStatus($id, $status);
             return new JSONResponse($result);
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 400);
         }
-    }
-
+    }//end updateStatus()
 
     /**
      * Submit advice response.
@@ -118,14 +134,24 @@ class ConsultationController extends Controller
     public function submitResponse(string $id): JSONResponse
     {
         try {
-            $data   = json_decode($this->request->getContent() ?: '{}', true) ?: [];
+            $content = $this->request->getContent();
+            if ($content === '' || $content === false) {
+                $content = '{}';
+            }
+
+            $decoded = json_decode($content, true);
+            if (is_array($decoded) === true) {
+                $data = $decoded;
+            } else {
+                $data = [];
+            }
+
             $result = $this->consultationService->submitResponse($id, $data);
             return new JSONResponse($result);
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 400);
         }
-    }
-
+    }//end submitResponse()
 
     /**
      * Get overdue consultations.
@@ -138,5 +164,5 @@ class ConsultationController extends Controller
     {
         $overdue = $this->consultationService->getOverdueConsultations();
         return new JSONResponse(['results' => $overdue]);
-    }
-}
+    }//end overdue()
+}//end class

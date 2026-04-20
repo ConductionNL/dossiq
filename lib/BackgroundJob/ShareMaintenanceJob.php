@@ -8,7 +8,7 @@
  * @category BackgroundJob
  * @package  OCA\Procest\BackgroundJob
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -47,7 +47,7 @@ class ShareMaintenanceJob extends TimedJob
      * @param ITimeFactory       $time            The time factory
      * @param SettingsService    $settingsService The settings service
      * @param IAppManager        $appManager      The app manager
-     * @param ContainerInterface $container        The DI container
+     * @param ContainerInterface $container       The DI container
      * @param LoggerInterface    $logger          The logger
      *
      * @return void
@@ -59,9 +59,9 @@ class ShareMaintenanceJob extends TimedJob
         private ContainerInterface $container,
         private LoggerInterface $logger,
     ) {
-        parent::__construct($time);
+        parent::__construct(time: $time);
         // Run once per day (86400 seconds).
-        $this->setInterval(86400);
+        $this->setInterval(seconds: 86400);
     }//end __construct()
 
     /**
@@ -107,7 +107,11 @@ class ShareMaintenanceJob extends TimedJob
             $reminderDate = new \DateTime('+'.self::REMINDER_DAYS.' days');
 
             foreach ($shares as $share) {
-                $shareData = is_object($share) ? $share->jsonSerialize() : $share;
+                if (is_object($share) === true) {
+                    $shareData = $share->jsonSerialize();
+                } else {
+                    $shareData = $share;
+                }
 
                 // Skip revoked shares.
                 if (empty($shareData['revokedAt']) === false) {

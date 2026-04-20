@@ -32,8 +32,6 @@ use OCP\IUserSession;
  */
 class MilestoneController extends Controller
 {
-
-
     /**
      * Constructor.
      *
@@ -48,9 +46,8 @@ class MilestoneController extends Controller
         private readonly MilestoneService $milestoneService,
         private readonly IUserSession $userSession,
     ) {
-        parent::__construct($appName, $request);
-    }
-
+        parent::__construct(appName: $appName, request: $request);
+    }//end __construct()
 
     /**
      * Get milestone progress for a case.
@@ -70,8 +67,7 @@ class MilestoneController extends Controller
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 500);
         }
-    }
-
+    }//end progress()
 
     /**
      * Mark a milestone as reached.
@@ -85,8 +81,12 @@ class MilestoneController extends Controller
      */
     public function mark(string $caseId, string $milestoneId): JSONResponse
     {
-        $user   = $this->userSession->getUser();
-        $userId = $user !== null ? $user->getUID() : 'system';
+        $user = $this->userSession->getUser();
+        if ($user !== null) {
+            $userId = $user->getUID();
+        } else {
+            $userId = 'system';
+        }
 
         try {
             $result = $this->milestoneService->markMilestone(
@@ -99,8 +99,7 @@ class MilestoneController extends Controller
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 400);
         }
-    }
-
+    }//end mark()
 
     /**
      * Reverse a milestone.
@@ -122,8 +121,12 @@ class MilestoneController extends Controller
             );
         }
 
-        $user   = $this->userSession->getUser();
-        $userId = $user !== null ? $user->getUID() : 'system';
+        $user = $this->userSession->getUser();
+        if ($user !== null) {
+            $userId = $user->getUID();
+        } else {
+            $userId = 'system';
+        }
 
         try {
             $success = $this->milestoneService->reverseMilestone(
@@ -136,5 +139,5 @@ class MilestoneController extends Controller
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 400);
         }
-    }
-}
+    }//end reverse()
+}//end class
