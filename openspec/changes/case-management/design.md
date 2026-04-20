@@ -1,7 +1,7 @@
 # Case Management Design
 
 ## Status
-pr-created
+pr-created (PR #266)
 
 ## Architecture
 All case data stored as OpenRegister objects. Frontend uses shared object store (`createObjectStore`) with `_filters` and `_search` parameters for filtering and search.
