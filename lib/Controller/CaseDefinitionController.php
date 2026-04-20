@@ -41,11 +41,11 @@ class CaseDefinitionController extends Controller
     /**
      * Constructor.
      *
-     * @param string                        $appName       The app name.
-     * @param IRequest                      $request       The request object.
-     * @param CaseDefinitionExportService   $exportService The export service.
-     * @param CaseDefinitionImportService   $importService The import service.
-     * @param LoggerInterface               $logger        The logger.
+     * @param string                      $appName       The app name.
+     * @param IRequest                    $request       The request object.
+     * @param CaseDefinitionExportService $exportService The export service.
+     * @param CaseDefinitionImportService $importService The import service.
+     * @param LoggerInterface             $logger        The logger.
      */
     public function __construct(
         string $appName,
@@ -54,8 +54,8 @@ class CaseDefinitionController extends Controller
         private readonly CaseDefinitionImportService $importService,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
-    }
+        parent::__construct(appName: $appName, request: $request);
+    }//end __construct()
 
     /**
      * Export a case definition as a ZIP archive.
@@ -70,14 +70,14 @@ class CaseDefinitionController extends Controller
             $caseTypeId = $this->request->getParam('caseTypeId', '');
             $components = $this->request->getParam('components', []);
 
-            if (empty($caseTypeId)) {
+            if (empty($caseTypeId) === true) {
                 return new JSONResponse(
                     ['error' => 'Parameter caseTypeId is required'],
                     Http::STATUS_BAD_REQUEST
                 );
             }
 
-            if (is_string($components)) {
+            if (is_string($components) === true) {
                 $components = json_decode($components, true) ?? [];
             }
 
@@ -104,13 +104,13 @@ class CaseDefinitionController extends Controller
                 Http::STATUS_BAD_REQUEST
             );
         } catch (\Throwable $e) {
-            $this->logger->error('Case definition export failed: ' . $e->getMessage());
+            $this->logger->error('Case definition export failed: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Export failed: ' . $e->getMessage()],
+                ['error' => 'Export failed: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
-    }
+        }//end try
+    }//end export()
 
     /**
      * Validate a case definition package without importing it.
@@ -124,7 +124,7 @@ class CaseDefinitionController extends Controller
         try {
             $file = $this->request->getUploadedFile('package');
 
-            if ($file === null || !isset($file['tmp_name'])) {
+            if (is_array($file) === false || isset($file['tmp_name']) === false) {
                 return new JSONResponse(
                     ['error' => 'No package file uploaded'],
                     Http::STATUS_BAD_REQUEST
@@ -135,13 +135,13 @@ class CaseDefinitionController extends Controller
 
             return new JSONResponse($result);
         } catch (\Throwable $e) {
-            $this->logger->error('Case definition validation failed: ' . $e->getMessage());
+            $this->logger->error('Case definition validation failed: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Validation failed: ' . $e->getMessage()],
+                ['error' => 'Validation failed: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
         }
-    }
+    }//end validate()
 
     /**
      * Import a case definition package.
@@ -153,17 +153,17 @@ class CaseDefinitionController extends Controller
     public function import(): JSONResponse
     {
         try {
-            $file = $this->request->getUploadedFile('package');
+            $file     = $this->request->getUploadedFile('package');
             $strategy = $this->request->getParam('strategy', 'skip');
 
-            if ($file === null || !isset($file['tmp_name'])) {
+            if (is_array($file) === false || isset($file['tmp_name']) === false) {
                 return new JSONResponse(
                     ['error' => 'No package file uploaded'],
                     Http::STATUS_BAD_REQUEST
                 );
             }
 
-            if (!in_array($strategy, ['skip', 'overwrite', 'merge'], true)) {
+            if (in_array($strategy, ['skip', 'overwrite', 'merge'], true) === false) {
                 return new JSONResponse(
                     ['error' => 'Invalid strategy. Must be: skip, overwrite, or merge'],
                     Http::STATUS_BAD_REQUEST
@@ -175,17 +175,19 @@ class CaseDefinitionController extends Controller
                 $strategy
             );
 
-            $statusCode = $result['success']
-                ? Http::STATUS_OK
-                : Http::STATUS_UNPROCESSABLE_ENTITY;
+            if ($result['success'] === true) {
+                $statusCode = Http::STATUS_OK;
+            } else {
+                $statusCode = Http::STATUS_UNPROCESSABLE_ENTITY;
+            }
 
             return new JSONResponse($result, $statusCode);
         } catch (\Throwable $e) {
-            $this->logger->error('Case definition import failed: ' . $e->getMessage());
+            $this->logger->error('Case definition import failed: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Import failed: ' . $e->getMessage()],
+                ['error' => 'Import failed: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
-    }
-}
+        }//end try
+    }//end import()
+}//end class
