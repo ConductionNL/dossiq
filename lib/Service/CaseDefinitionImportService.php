@@ -66,7 +66,7 @@ class CaseDefinitionImportService
         private readonly IAppConfig $appConfig,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Validate a case definition package without importing it.
@@ -80,31 +80,31 @@ class CaseDefinitionImportService
     public function validatePackage(string $zipPath): array
     {
         $result = [
-            'valid' => true,
-            'errors' => [],
-            'warnings' => [],
-            'manifest' => null,
+            'valid'     => true,
+            'errors'    => [],
+            'warnings'  => [],
+            'manifest'  => null,
             'conflicts' => [],
         ];
 
         // Open the ZIP.
-        $zip = new \ZipArchive();
+        $zip        = new \ZipArchive();
         $openResult = $zip->open($zipPath, \ZipArchive::RDONLY);
         if ($openResult !== true) {
-            $result['valid'] = false;
-            $result['errors'][] = 'Failed to open ZIP archive: error code ' . $openResult;
+            $result['valid']    = false;
+            $result['errors'][] = 'Failed to open ZIP archive: error code '.$openResult;
             return $result;
         }
 
         // Check required files.
         foreach (self::REQUIRED_FILES as $requiredFile) {
             if ($zip->locateName($requiredFile) === false) {
-                $result['valid'] = false;
+                $result['valid']    = false;
                 $result['errors'][] = "Missing required file: {$requiredFile}";
             }
         }
 
-        if (!$result['valid']) {
+        if ($result['valid'] === false) {
             $zip->close();
             return $result;
         }
@@ -112,7 +112,7 @@ class CaseDefinitionImportService
         // Parse manifest.
         $manifestJson = $zip->getFromName('manifest.json');
         if ($manifestJson === false) {
-            $result['valid'] = false;
+            $result['valid']    = false;
             $result['errors'][] = 'Failed to read manifest.json';
             $zip->close();
             return $result;
@@ -120,8 +120,8 @@ class CaseDefinitionImportService
 
         $manifest = json_decode($manifestJson, true);
         if ($manifest === null) {
-            $result['valid'] = false;
-            $result['errors'][] = 'Invalid JSON in manifest.json: ' . json_last_error_msg();
+            $result['valid']    = false;
+            $result['errors'][] = 'Invalid JSON in manifest.json: '.json_last_error_msg();
             $zip->close();
             return $result;
         }
@@ -131,8 +131,8 @@ class CaseDefinitionImportService
         // Validate manifest structure.
         $requiredManifestFields = ['version', 'exportDate', 'caseType', 'components'];
         foreach ($requiredManifestFields as $field) {
-            if (!isset($manifest[$field])) {
-                $result['valid'] = false;
+            if (isset($manifest[$field]) === false) {
+                $result['valid']    = false;
                 $result['errors'][] = "Missing required manifest field: {$field}";
             }
         }
@@ -145,35 +145,37 @@ class CaseDefinitionImportService
                 $hasWorkflows = false;
                 for ($i = 0; $i < $zip->numFiles; $i++) {
                     $name = $zip->getNameIndex($i);
-                    if ($name !== false && str_starts_with($name, 'workflows/')) {
+                    if ($name !== false && str_starts_with($name, 'workflows/') === true) {
                         $hasWorkflows = true;
                         break;
                     }
                 }
-                if (!$hasWorkflows) {
+
+                if ($hasWorkflows === false) {
                     $result['warnings'][] = 'Component "workflows" declared but no workflow files found';
                 }
             } else {
-                $componentFile = $component . '.json';
+                $componentFile = $component.'.json';
                 if ($zip->locateName($componentFile) === false) {
-                    $result['valid'] = false;
+                    $result['valid']    = false;
                     $result['errors'][] = "Component '{$component}' declared in manifest but file '{$componentFile}' not found";
                 }
-            }
-        }
+            }//end if
+        }//end foreach
 
         // Validate component JSON.
         foreach ($components as $component) {
             if ($component === 'workflows') {
                 continue;
             }
-            $componentFile = $component . '.json';
-            $content = $zip->getFromName($componentFile);
+
+            $componentFile = $component.'.json';
+            $content       = $zip->getFromName($componentFile);
             if ($content !== false) {
                 $decoded = json_decode($content, true);
                 if ($decoded === null && json_last_error() !== JSON_ERROR_NONE) {
-                    $result['valid'] = false;
-                    $result['errors'][] = "Invalid JSON in {$componentFile}: " . json_last_error_msg();
+                    $result['valid']    = false;
+                    $result['errors'][] = "Invalid JSON in {$componentFile}: ".json_last_error_msg();
                 }
             }
         }
@@ -189,23 +191,29 @@ class CaseDefinitionImportService
 
         $zip->close();
 
+        if ($result['valid'] === true) {
+            $validLabel = 'true';
+        } else {
+            $validLabel = 'false';
+        }
+
         $this->logger->info(
             'Validated case definition package: {valid}, errors: {errorCount}, warnings: {warningCount}',
             [
-                'valid' => $result['valid'] ? 'true' : 'false',
-                'errorCount' => count($result['errors']),
+                'valid'        => $validLabel,
+                'errorCount'   => count($result['errors']),
                 'warningCount' => count($result['warnings']),
             ]
         );
 
         return $result;
-    }
+    }//end validatePackage()
 
     /**
      * Import a case definition package.
      *
-     * @param string $zipPath   Path to the uploaded ZIP file.
-     * @param string $strategy  Conflict resolution strategy: 'skip', 'overwrite', or 'merge'.
+     * @param string $zipPath  Path to the uploaded ZIP file.
+     * @param string $strategy Conflict resolution strategy: 'skip', 'overwrite', or 'merge'.
      *
      * @return array{success: bool, message: string, components: array<string, array{status: string, message: string}>}
      *
@@ -215,38 +223,38 @@ class CaseDefinitionImportService
      */
     public function importCaseDefinition(
         string $zipPath,
-        string $strategy = 'skip',
+        string $strategy='skip',
     ): array {
         // First validate.
-        $validation = $this->validatePackage($zipPath);
-        if (!$validation['valid']) {
+        $validation = $this->validatePackage(zipPath: $zipPath);
+        if ($validation['valid'] === false) {
             return [
-                'success' => false,
-                'message' => 'Package validation failed: ' . implode('; ', $validation['errors']),
+                'success'    => false,
+                'message'    => 'Package validation failed: '.implode('; ', $validation['errors']),
                 'components' => [],
             ];
         }
 
-        $manifest = $validation['manifest'];
+        $manifest   = $validation['manifest'];
         $components = $manifest['components'] ?? [];
-        $results = [];
+        $results    = [];
 
         $zip = new \ZipArchive();
         $zip->open($zipPath, \ZipArchive::RDONLY);
 
         foreach ($components as $component) {
             try {
-                $results[$component] = $this->importComponent($zip, $component, $strategy);
+                $results[$component] = $this->importComponent(zip: $zip, component: $component, strategy: $strategy);
             } catch (\Throwable $e) {
                 $results[$component] = [
-                    'status' => 'error',
+                    'status'  => 'error',
                     'message' => $e->getMessage(),
                 ];
                 $this->logger->error(
                     'Failed to import component {component}: {error}',
                     [
                         'component' => $component,
-                        'error' => $e->getMessage(),
+                        'error'     => $e->getMessage(),
                     ]
                 );
             }
@@ -254,22 +262,30 @@ class CaseDefinitionImportService
 
         $zip->close();
 
-        $allSuccess = !in_array('error', array_column($results, 'status'), true);
+        $allSuccess = in_array('error', array_column($results, 'status'), true) === false;
+
+        if ($allSuccess === true) {
+            $successLabel = 'true';
+            $message      = 'Import completed successfully';
+        } else {
+            $successLabel = 'false';
+            $message      = 'Import completed with errors';
+        }
 
         $this->logger->info(
             'Case definition import completed: {success}, components: {count}',
             [
-                'success' => $allSuccess ? 'true' : 'false',
-                'count' => count($results),
+                'success' => $successLabel,
+                'count'   => count($results),
             ]
         );
 
         return [
-            'success' => $allSuccess,
-            'message' => $allSuccess ? 'Import completed successfully' : 'Import completed with errors',
+            'success'    => $allSuccess,
+            'message'    => $message,
             'components' => $results,
         ];
-    }
+    }//end importCaseDefinition()
 
     /**
      * Import a single component from the ZIP archive.
@@ -286,13 +302,13 @@ class CaseDefinitionImportService
         string $strategy,
     ): array {
         if ($component === 'workflows') {
-            return $this->importWorkflows($zip, $strategy);
+            return $this->importWorkflows(zip: $zip, strategy: $strategy);
         }
 
-        $content = $zip->getFromName($component . '.json');
+        $content = $zip->getFromName($component.'.json');
         if ($content === false) {
             return [
-                'status' => 'skipped',
+                'status'  => 'skipped',
                 'message' => "Component file {$component}.json not found in archive",
             ];
         }
@@ -300,7 +316,7 @@ class CaseDefinitionImportService
         $data = json_decode($content, true);
         if ($data === null) {
             return [
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => "Invalid JSON in {$component}.json",
             ];
         }
@@ -311,15 +327,15 @@ class CaseDefinitionImportService
             'Imported component {component} with strategy {strategy}',
             [
                 'component' => $component,
-                'strategy' => $strategy,
+                'strategy'  => $strategy,
             ]
         );
 
         return [
-            'status' => 'success',
+            'status'  => 'success',
             'message' => "Component '{$component}' imported successfully",
         ];
-    }
+    }//end importComponent()
 
     /**
      * Import workflow files from the ZIP archive.
@@ -335,7 +351,7 @@ class CaseDefinitionImportService
 
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $name = $zip->getNameIndex($i);
-            if ($name !== false && str_starts_with($name, 'workflows/') && str_ends_with($name, '.json')) {
+            if ($name !== false && str_starts_with($name, 'workflows/') === true && str_ends_with($name, '.json') === true) {
                 $content = $zip->getFromIndex($i);
                 if ($content !== false) {
                     // In a full implementation, deploy via n8n API.
@@ -345,8 +361,8 @@ class CaseDefinitionImportService
         }
 
         return [
-            'status' => 'success',
+            'status'  => 'success',
             'message' => "Imported {$workflowCount} workflow(s)",
         ];
-    }
-}
+    }//end importWorkflows()
+}//end class
