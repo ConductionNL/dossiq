@@ -247,6 +247,24 @@
 				@created="onSubCaseCreated"
 				@close="showSubCaseDialog = false" />
 
+			<!-- Custom Properties card -->
+			<CnDetailCard v-if="caseTypeData" :title="t('procest', 'Custom Properties')">
+				<CustomPropertiesPanel
+					:case-id="caseId"
+					:case-type-id="caseData.caseType"
+					:is-read-only="isReadOnly" />
+			</CnDetailCard>
+
+			<!-- Required Documents card -->
+			<CnDetailCard v-if="caseTypeData" :title="t('procest', 'Required Documents')">
+				<DocumentChecklist
+					:case-id="caseId"
+					:case-type-id="caseData.caseType"
+					:is-read-only="isReadOnly"
+					:status-types="allStatusTypes"
+					@upload="onDocumentUpload" />
+			</CnDetailCard>
+
 			<!-- Tasks card -->
 			<CnDetailCard :title="`${t('procest', 'Tasks')} (${completedTaskCount}/${tasks.length})`">
 				<template #actions>
@@ -684,6 +702,9 @@ export default {
 		userRoleTypeIds() {
 			return this.caseRoles ? this.caseRoles.map(r => r.roleType) : []
 		},
+		allStatusTypes() {
+			return this.statusTypes || []
+		},
 	},
 	async mounted() {
 		if (!this.isNew) {
@@ -1085,6 +1106,12 @@ export default {
 			}
 
 			await this.objectStore.saveObject('case', updateData)
+		},
+
+		onDocumentUpload(docType) {
+			// Placeholder for document upload handling
+			// This can be extended to open an upload dialog or handle file selection
+			console.log('Document upload requested for:', docType)
 		},
 	},
 }
