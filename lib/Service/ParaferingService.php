@@ -105,7 +105,7 @@ class ParaferingService
     public function __construct(
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Create a new voorstel linked to a case.
@@ -119,18 +119,18 @@ class ParaferingService
     public function createVoorstel(array $voorstelData): array
     {
         $voorstel = [
-            'id' => $voorstelData['id'] ?? $this->generateId(),
-            'caseId' => $voorstelData['caseId'] ?? '',
-            'type' => $voorstelData['type'] ?? 'collegeadvies',
-            'onderwerp' => $voorstelData['onderwerp'] ?? '',
-            'steller' => $voorstelData['steller'] ?? '',
-            'afdeling' => $voorstelData['afdeling'] ?? '',
+            'id'                 => $voorstelData['id'] ?? $this->generateId(),
+            'caseId'             => $voorstelData['caseId'] ?? '',
+            'type'               => $voorstelData['type'] ?? 'collegeadvies',
+            'onderwerp'          => $voorstelData['onderwerp'] ?? '',
+            'steller'            => $voorstelData['steller'] ?? '',
+            'afdeling'           => $voorstelData['afdeling'] ?? '',
             'portefeuillehouder' => $voorstelData['portefeuillehouder'] ?? '',
-            'status' => self::STATUS_CONCEPT,
-            'currentStep' => 0,
-            'parafeerRoute' => [],
-            'auditTrail' => [],
-            'createdAt' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
+            'status'             => self::STATUS_CONCEPT,
+            'currentStep'        => 0,
+            'parafeerRoute'      => [],
+            'auditTrail'         => [],
+            'createdAt'          => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
         ];
 
         $this->logger->info(
@@ -139,13 +139,13 @@ class ParaferingService
         );
 
         return $voorstel;
-    }
+    }//end createVoorstel()
 
     /**
      * Start the parafering process on a voorstel.
      *
-     * @param array<string, mixed>                         $voorstel The voorstel.
-     * @param array<int, array<string, mixed>> $route     The parafeerroute (ordered steps).
+     * @param array<string, mixed>             $voorstel The voorstel.
+     * @param array<int, array<string, mixed>> $route    The parafeerroute (ordered steps).
      *
      * @return array<string, mixed> The updated voorstel with parafering started.
      *
@@ -163,21 +163,21 @@ class ParaferingService
             );
         }
 
-        if (empty($route)) {
+        if (empty($route) === true) {
             throw new \InvalidArgumentException('Parafeerroute cannot be empty');
         }
 
-        $voorstel['status'] = self::STATUS_IN_PARAFERING;
-        $voorstel['currentStep'] = 0;
+        $voorstel['status']        = self::STATUS_IN_PARAFERING;
+        $voorstel['currentStep']   = 0;
         $voorstel['parafeerRoute'] = $route;
 
         // Record in audit trail.
         $voorstel['auditTrail'][] = [
-            'action' => 'started',
-            'actor' => $voorstel['steller'],
+            'action'    => 'started',
+            'actor'     => $voorstel['steller'],
             'timestamp' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
-            'comment' => 'Parafering gestart',
-            'step' => 0,
+            'comment'   => 'Parafering gestart',
+            'step'      => 0,
         ];
 
         $this->logger->info(
@@ -186,7 +186,7 @@ class ParaferingService
         );
 
         return $voorstel;
-    }
+    }//end startParafering()
 
     /**
      * Execute a parafering action on a voorstel.
@@ -207,17 +207,17 @@ class ParaferingService
         array $voorstel,
         string $action,
         string $actor,
-        string $comment = '',
-        ?string $namens = null,
+        string $comment='',
+        ?string $namens=null,
     ): array {
         if ($voorstel['status'] !== self::STATUS_IN_PARAFERING) {
             throw new \InvalidArgumentException('Voorstel is not in parafering status');
         }
 
         $validActions = [self::ACTION_PARAFEREN, self::ACTION_TERUGSTUREN, self::ACTION_ADVISEREN];
-        if (!in_array($action, $validActions, true)) {
+        if (in_array($action, $validActions, true) === false) {
             throw new \InvalidArgumentException(
-                'Invalid action: ' . $action . '. Valid: ' . implode(', ', $validActions)
+                'Invalid action: '.$action.'. Valid: '.implode(', ', $validActions)
             );
         }
 
@@ -225,16 +225,16 @@ class ParaferingService
 
         // Record the action in audit trail.
         $auditEntry = [
-            'action' => $action,
-            'actor' => $actor,
+            'action'    => $action,
+            'actor'     => $actor,
             'timestamp' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
-            'comment' => $comment,
-            'step' => $currentStep,
+            'comment'   => $comment,
+            'step'      => $currentStep,
         ];
 
         if ($namens !== null) {
-            $auditEntry['namens'] = $namens;
-            $auditEntry['comment'] = "Geparafeerd door {$actor} namens {$namens} (mandaat). " . $comment;
+            $auditEntry['namens']  = $namens;
+            $auditEntry['comment'] = "Geparafeerd door {$actor} namens {$namens} (mandaat). ".$comment;
         }
 
         $voorstel['auditTrail'][] = $auditEntry;
@@ -246,24 +246,24 @@ class ParaferingService
                 'Voorstel {id} returned by {actor}: {comment}',
                 ['id' => $voorstel['id'], 'actor' => $actor, 'comment' => $comment]
             );
-        } elseif ($action === self::ACTION_ADVISEREN) {
+        } else if ($action === self::ACTION_ADVISEREN) {
             // Advisory is non-blocking: advance to next step.
-            $voorstel = $this->advanceStep($voorstel);
-        } elseif ($action === self::ACTION_PARAFEREN) {
+            $voorstel = $this->advanceStep(voorstel: $voorstel);
+        } else if ($action === self::ACTION_PARAFEREN) {
             // Check if this completes a parallel step.
-            $route = $voorstel['parafeerRoute'] ?? [];
-            $step = $route[$currentStep] ?? [];
+            $route      = $voorstel['parafeerRoute'] ?? [];
+            $step       = $route[$currentStep] ?? [];
             $isParallel = $step['parallel'] ?? false;
 
-            if ($isParallel) {
-                $voorstel = $this->handleParallelStep($voorstel, $actor, $currentStep);
+            if ($isParallel === true) {
+                $voorstel = $this->handleParallelStep(voorstel: $voorstel, actor: $actor, stepIndex: $currentStep);
             } else {
-                $voorstel = $this->advanceStep($voorstel);
+                $voorstel = $this->advanceStep(voorstel: $voorstel);
             }
-        }
+        }//end if
 
         return $voorstel;
-    }
+    }//end executeAction()
 
     /**
      * Get the full audit trail for a voorstel.
@@ -277,7 +277,7 @@ class ParaferingService
     public function getAuditTrail(array $voorstel): array
     {
         return $voorstel['auditTrail'] ?? [];
-    }
+    }//end getAuditTrail()
 
     /**
      * Get the current step information for a voorstel.
@@ -294,11 +294,11 @@ class ParaferingService
             return null;
         }
 
-        $route = $voorstel['parafeerRoute'] ?? [];
+        $route       = $voorstel['parafeerRoute'] ?? [];
         $currentStep = $voorstel['currentStep'] ?? 0;
 
         return $route[$currentStep] ?? null;
-    }
+    }//end getCurrentStep()
 
     /**
      * Override (modify) the parafeerroute for a specific voorstel.
@@ -321,11 +321,11 @@ class ParaferingService
         $voorstel['parafeerRoute'] = $newRoute;
 
         $voorstel['auditTrail'][] = [
-            'action' => 'route_overridden',
-            'actor' => $actor,
+            'action'    => 'route_overridden',
+            'actor'     => $actor,
             'timestamp' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
-            'comment' => "Parafeerroute aangepast door {$actor}, reden: {$reason}",
-            'step' => $voorstel['currentStep'] ?? 0,
+            'comment'   => "Parafeerroute aangepast door {$actor}, reden: {$reason}",
+            'step'      => $voorstel['currentStep'] ?? 0,
         ];
 
         $this->logger->info(
@@ -334,7 +334,7 @@ class ParaferingService
         );
 
         return $voorstel;
-    }
+    }//end overrideRoute()
 
     /**
      * Advance to the next step in the parafeerroute.
@@ -345,18 +345,18 @@ class ParaferingService
      */
     private function advanceStep(array $voorstel): array
     {
-        $route = $voorstel['parafeerRoute'] ?? [];
+        $route    = $voorstel['parafeerRoute'] ?? [];
         $nextStep = ($voorstel['currentStep'] ?? 0) + 1;
 
         if ($nextStep >= count($route)) {
             // All steps completed.
-            $voorstel['status'] = self::STATUS_GEPARAFEERD;
+            $voorstel['status']       = self::STATUS_GEPARAFEERD;
             $voorstel['auditTrail'][] = [
-                'action' => 'completed',
-                'actor' => 'system',
+                'action'    => 'completed',
+                'actor'     => 'system',
                 'timestamp' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
-                'comment' => 'Alle paraferingstappen voltooid',
-                'step' => $nextStep,
+                'comment'   => 'Alle paraferingstappen voltooid',
+                'step'      => $nextStep,
             ];
             $this->logger->info('Voorstel {id} parafering completed', ['id' => $voorstel['id']]);
         } else {
@@ -364,25 +364,25 @@ class ParaferingService
         }
 
         return $voorstel;
-    }
+    }//end advanceStep()
 
     /**
      * Handle a parallel parafering step (completes when ALL actors have parafered).
      *
-     * @param array<string, mixed> $voorstel    The voorstel.
-     * @param string               $actor       The actor who just parafered.
-     * @param int                  $stepIndex   The step index.
+     * @param array<string, mixed> $voorstel  The voorstel.
+     * @param string               $actor     The actor who just parafered.
+     * @param int                  $stepIndex The step index.
      *
      * @return array<string, mixed> The updated voorstel.
      */
     private function handleParallelStep(array $voorstel, string $actor, int $stepIndex): array
     {
-        $route = $voorstel['parafeerRoute'] ?? [];
-        $step = $route[$stepIndex] ?? [];
+        $route          = $voorstel['parafeerRoute'] ?? [];
+        $step           = $route[$stepIndex] ?? [];
         $requiredActors = $step['actors'] ?? [];
 
         // Check which actors have already parafered for this step.
-        $auditTrail = $voorstel['auditTrail'] ?? [];
+        $auditTrail      = $voorstel['auditTrail'] ?? [];
         $paraferedActors = [];
         foreach ($auditTrail as $entry) {
             if (($entry['step'] ?? -1) === $stepIndex
@@ -395,19 +395,24 @@ class ParaferingService
         // Check if all required actors have parafered.
         $allDone = true;
         foreach ($requiredActors as $requiredActor) {
-            $actorId = is_array($requiredActor) ? ($requiredActor['id'] ?? '') : $requiredActor;
-            if (!in_array($actorId, $paraferedActors, true)) {
+            if (is_array($requiredActor) === true) {
+                $actorId = $requiredActor['id'] ?? '';
+            } else {
+                $actorId = $requiredActor;
+            }
+
+            if (in_array($actorId, $paraferedActors, true) === false) {
                 $allDone = false;
                 break;
             }
         }
 
-        if ($allDone) {
-            $voorstel = $this->advanceStep($voorstel);
+        if ($allDone === true) {
+            $voorstel = $this->advanceStep(voorstel: $voorstel);
         }
 
         return $voorstel;
-    }
+    }//end handleParallelStep()
 
     /**
      * Generate a unique ID.
@@ -427,5 +432,5 @@ class ParaferingService
             mt_rand(0, 0xffff),
             mt_rand(0, 0xffff)
         );
-    }
-}
+    }//end generateId()
+}//end class
