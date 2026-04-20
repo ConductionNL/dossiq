@@ -1,0 +1,312 @@
+{
+  "spec_slug": "case-types",
+  "app": "procest",
+  "repo": "ConductionNL/procest",
+  "issue": 206,
+  "depends_on": [],
+  "schema_version": 2,
+  "cycles": [
+    {
+      "cycle": 1,
+      "trigger": "build:queued",
+      "started_at": "2026-04-18T20:31:00Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [
+        "reviewer-skipped-full-suite"
+      ],
+      "stages": [
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-18T20:31:00Z",
+          "ended_at": "2026-04-18T20:31:01Z",
+          "turns_used": 80,
+          "turns_budget": 200,
+          "cost_usd": 0.6591,
+          "checks_run": [
+            "composer check:strict"
+          ],
+          "checks_skipped": [],
+          "findings": [
+            {
+              "id": "b-builder-build-0",
+              "severity": "WARNING",
+              "gate": null,
+              "rule": "builder output flagged failure language",
+              "status": "open",
+              "note": "## Implementation Complete \u2705\n\nI have successfully implemented the 'case-types' OpenSpec change for the procest repository. Here's what was accomplished:\n\n### Changes Made\n\n**File Modified:**\n- `src/views/settings/CaseTypeDetail.vue` \u2014 Integrated four new case type management tabs into the Case Type Detail component\n\n### Implementation Details\n\nThe four pre-implemented Vue components have been integrated into the CaseTypeDetail admin interface:\n\n1. **ResultTypesTab.vue** \u2014 Manage case outcome typ",
+              "autofixable": false
+            }
+          ],
+          "decisions": [],
+          "verdict": "fail"
+        },
+        {
+          "stage": "pre-review-quality",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-18T20:31:00Z",
+          "ended_at": "2026-04-18T20:31:01Z",
+          "exit_code": 0,
+          "checks_run": [
+            "php-lint",
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "stylelint",
+            "npm-audit",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "publiccode",
+            "gitleaks",
+            "trivy",
+            "newman"
+          ],
+          "gates": {
+            "php-lint": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpcs": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": true,
+              "failures": 0
+            },
+            "forbidden-patterns": {
+              "pass": true,
+              "failures": 0
+            },
+            "eslint": {
+              "pass": true,
+              "failures": 0
+            },
+            "stylelint": {
+              "pass": true,
+              "failures": 0
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpunit": {
+              "pass": true,
+              "failures": 0
+            }
+          },
+          "findings": [],
+          "verdict": "pass"
+        },
+        {
+          "stage": "code-review",
+          "persona": "Juan Claude van Damme",
+          "model": "sonnet",
+          "container": "hydra-reviewer",
+          "started_at": "2026-04-18T20:44:08Z",
+          "ended_at": "2026-04-18T20:44:09Z",
+          "turns_used": 44,
+          "turns_budget": 40,
+          "cost_usd": 0.5413,
+          "checks_run": [
+            "eslint"
+          ],
+          "checks_skipped": [
+            "hydra-gates",
+            "composer check:strict"
+          ],
+          "findings": [],
+          "verdict": "pass"
+        },
+        {
+          "stage": "security-review",
+          "persona": "Clyde Barcode",
+          "model": "sonnet",
+          "container": "hydra-security",
+          "started_at": "2026-04-18T20:49:29Z",
+          "ended_at": "2026-04-18T20:49:30Z",
+          "turns_used": 12,
+          "turns_budget": 40,
+          "cost_usd": 0.1801,
+          "checks_run": [],
+          "checks_skipped": [
+            "hydra-gates",
+            "composer check:strict"
+          ],
+          "findings": [],
+          "verdict": "pass"
+        }
+      ]
+    },
+    {
+      "cycle": 2,
+      "trigger": "build:queued",
+      "started_at": "2026-04-18T20:53:26Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [],
+      "stages": [
+        {
+          "stage": "quality-recheck",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-18T20:53:26Z",
+          "ended_at": "2026-04-18T20:53:27Z",
+          "exit_code": 1,
+          "checks_run": [
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "stylelint",
+            "npm-audit",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "php-lint",
+            "publiccode",
+            "gitleaks",
+            "trivy",
+            "newman"
+          ],
+          "gates": {
+            "phpcs": {
+              "pass": false,
+              "failures": 1
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": true,
+              "failures": 0
+            },
+            "forbidden-patterns": {
+              "pass": false,
+              "failures": 1
+            },
+            "eslint": {
+              "pass": false,
+              "failures": 1
+            },
+            "stylelint": {
+              "pass": false,
+              "failures": 1
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpunit": {
+              "pass": false,
+              "failures": 1
+            }
+          },
+          "findings": [
+            {
+              "id": "qr-quality-recheck-phpcs",
+              "severity": "CRITICAL",
+              "gate": "phpcs",
+              "rule": "phpcs gate failing",
+              "status": "open",
+              "note": "phpcs reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-forbidden-patterns",
+              "severity": "CRITICAL",
+              "gate": "forbidden-patterns",
+              "rule": "forbidden-patterns gate failing",
+              "status": "open",
+              "note": "forbidden-patterns reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-eslint",
+              "severity": "CRITICAL",
+              "gate": "eslint",
+              "rule": "eslint gate failing",
+              "status": "open",
+              "note": "eslint reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-stylelint",
+              "severity": "CRITICAL",
+              "gate": "stylelint",
+              "rule": "stylelint gate failing",
+              "status": "open",
+              "note": "stylelint reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-phpunit",
+              "severity": "CRITICAL",
+              "gate": "phpunit",
+              "rule": "phpunit gate failing",
+              "status": "open",
+              "note": "phpunit reported status=fail in quality-recheck.json",
+              "autofixable": false
+            }
+          ],
+          "verdict": "fail"
+        }
+      ]
+    }
+  ]
+}
