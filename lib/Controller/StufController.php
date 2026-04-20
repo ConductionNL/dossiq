@@ -82,7 +82,7 @@ class StufController extends Controller
      */
     public function zaken(): DataDisplayResponse
     {
-        return $this->handleSoapMessage('zaken');
+        return $this->handleSoapMessage(service: 'zaken');
     }//end zaken()
 
     /**
@@ -94,7 +94,7 @@ class StufController extends Controller
      */
     public function personen(): DataDisplayResponse
     {
-        return $this->handleSoapMessage('personen');
+        return $this->handleSoapMessage(service: 'personen');
     }//end personen()
 
     /**
@@ -110,7 +110,7 @@ class StufController extends Controller
 
         if ($rawBody === false || $rawBody === '') {
             $response = $this->messageBuilder->buildSoapFault('Leeg bericht ontvangen');
-            return $this->soapResponse($response, Http::STATUS_BAD_REQUEST);
+            return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
         }
 
         // Parse the XML.
@@ -120,10 +120,10 @@ class StufController extends Controller
         $errors      = libxml_get_errors();
         libxml_clear_errors();
 
-        if (!$parseResult || !empty($errors)) {
+        if ($parseResult === false || empty($errors) === false) {
             $this->logger->warning('Invalid XML received at StUF endpoint: '.$service);
             $response = $this->messageBuilder->buildSoapFault('Ongeldig XML bericht');
-            return $this->soapResponse($response, Http::STATUS_BAD_REQUEST);
+            return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
         }
 
         // Extract the SOAP Body content.
@@ -134,13 +134,13 @@ class StufController extends Controller
 
         if ($bodyElements->length === 0) {
             $response = $this->messageBuilder->buildSoapFault('Geen SOAP Body gevonden');
-            return $this->soapResponse($response, Http::STATUS_BAD_REQUEST);
+            return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
         }
 
         $body = $bodyElements->item(0);
-        if ($body === null || !$body->hasChildNodes()) {
+        if ($body === null || $body->hasChildNodes() === false) {
             $response = $this->messageBuilder->buildSoapFault('Lege SOAP Body');
-            return $this->soapResponse($response, Http::STATUS_BAD_REQUEST);
+            return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
         }
 
         // Get the first child element (the StUF message).
@@ -154,7 +154,7 @@ class StufController extends Controller
 
         if ($messageElement === null) {
             $response = $this->messageBuilder->buildSoapFault('Geen StUF bericht element gevonden');
-            return $this->soapResponse($response, Http::STATUS_BAD_REQUEST);
+            return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
         }
 
         // Dispatch based on message type.
@@ -166,11 +166,11 @@ class StufController extends Controller
         );
 
         return match ($messageType) {
-            'zakLk01' => $this->handleZakLk01($messageElement),
-            'zakLv01' => $this->handleZakLv01($messageElement),
-            'npsLv01' => $this->handleNpsLv01($messageElement),
-            'edcLk01' => $this->handleEdcLk01($messageElement),
-            default => $this->handleUnknownMessage($messageType),
+            'zakLk01' => $this->handleZakLk01(message: $messageElement),
+            'zakLv01' => $this->handleZakLv01(message: $messageElement),
+            'npsLv01' => $this->handleNpsLv01(message: $messageElement),
+            'edcLk01' => $this->handleEdcLk01(message: $messageElement),
+            default => $this->handleUnknownMessage(messageType: $messageType),
         };
     }//end handleSoapMessage()
 
@@ -193,7 +193,7 @@ class StufController extends Controller
                 self::DEFAULT_ZENDER,
                 []
             );
-            return $this->soapResponse($response);
+            return $this->soapResponse(xml: $response);
         }
 
         $objectEl     = $objectElements->item(0);
@@ -201,8 +201,8 @@ class StufController extends Controller
 
         // Extract basic fields.
         $stufFields = $this->extractFields(
-                $objectEl,
-                [
+                element: $objectEl,
+                fieldNames: [
                     'identificatie',
                     'omschrijving',
                     'toelichting',
@@ -243,7 +243,7 @@ class StufController extends Controller
             $crossRef
         );
 
-        return $this->soapResponse($response);
+        return $this->soapResponse(xml: $response);
     }//end handleZakLk01()
 
     /**
@@ -262,8 +262,8 @@ class StufController extends Controller
         if ($gelijkElements->length > 0) {
             $gelijk   = $gelijkElements->item(0);
             $criteria = $this->extractFields(
-                    $gelijk,
-                    [
+                    element: $gelijk,
+                    fieldNames: [
                         'identificatie',
                         'omschrijving',
                         'startdatum',
@@ -286,7 +286,7 @@ class StufController extends Controller
 
         $response = $this->messageBuilder->buildSoapEnvelope($body);
 
-        return $this->soapResponse($response);
+        return $this->soapResponse(xml: $response);
     }//end handleZakLv01()
 
     /**
@@ -324,7 +324,7 @@ class StufController extends Controller
 
         $response = $this->messageBuilder->buildSoapEnvelope($body);
 
-        return $this->soapResponse($response);
+        return $this->soapResponse(xml: $response);
     }//end handleNpsLv01()
 
     /**
@@ -354,7 +354,7 @@ class StufController extends Controller
             $crossRef
         );
 
-        return $this->soapResponse($response);
+        return $this->soapResponse(xml: $response);
     }//end handleEdcLk01()
 
     /**
@@ -376,7 +376,7 @@ class StufController extends Controller
             []
         );
 
-        return $this->soapResponse($response, Http::STATUS_BAD_REQUEST);
+        return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
     }//end handleUnknownMessage()
 
     /**
