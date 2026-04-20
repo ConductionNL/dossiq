@@ -1,0 +1,511 @@
+{
+  "spec_slug": "task-management",
+  "app": "procest",
+  "repo": "ConductionNL/procest",
+  "issue": 215,
+  "depends_on": [],
+  "schema_version": 2,
+  "cycles": [
+    {
+      "cycle": 1,
+      "trigger": "build:queued",
+      "started_at": "2026-04-18T20:39:37Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [
+        "reviewer-skipped-full-suite"
+      ],
+      "stages": [
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-18T20:39:37Z",
+          "ended_at": "2026-04-18T20:39:38Z",
+          "turns_used": 75,
+          "turns_budget": 200,
+          "cost_usd": 0.5834,
+          "checks_run": [],
+          "checks_skipped": [],
+          "findings": [
+            {
+              "id": "b-builder-build-0",
+              "severity": "WARNING",
+              "gate": null,
+              "rule": "builder output flagged failure language",
+              "status": "open",
+              "note": "Perfect! The implementation is complete. Let me provide a summary:\n\n## Task Management Implementation \u2014 Complete \u2705\n\n### What Was Accomplished\n\nI have successfully implemented the task-management OpenSpec change for the procest repository (Issue #215). Here's what was delivered:\n\n### Components Implemented\n1. **TaskList.vue** \u2014 Enhanced task list view with:\n   - Filter bar (status, assignee, priority)\n   - Search functionality\n   - Overdue task highlighting with dates\n   - Case reference display ",
+              "autofixable": false
+            }
+          ],
+          "decisions": [],
+          "verdict": "fail"
+        },
+        {
+          "stage": "pre-review-quality",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-18T20:39:37Z",
+          "ended_at": "2026-04-18T20:39:38Z",
+          "exit_code": 0,
+          "checks_run": [
+            "php-lint",
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "stylelint",
+            "npm-audit",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "publiccode",
+            "gitleaks",
+            "trivy",
+            "newman"
+          ],
+          "gates": {
+            "php-lint": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpcs": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": true,
+              "failures": 0
+            },
+            "forbidden-patterns": {
+              "pass": true,
+              "failures": 0
+            },
+            "eslint": {
+              "pass": true,
+              "failures": 0
+            },
+            "stylelint": {
+              "pass": true,
+              "failures": 0
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpunit": {
+              "pass": true,
+              "failures": 0
+            }
+          },
+          "findings": [],
+          "verdict": "pass"
+        },
+        {
+          "stage": "code-review",
+          "persona": "Juan Claude van Damme",
+          "model": "sonnet",
+          "container": "hydra-reviewer",
+          "started_at": "2026-04-18T20:49:19Z",
+          "ended_at": "2026-04-18T20:49:20Z",
+          "turns_used": 41,
+          "turns_budget": 40,
+          "cost_usd": 1.0784,
+          "checks_run": [
+            "eslint"
+          ],
+          "checks_skipped": [
+            "hydra-gates",
+            "composer check:strict"
+          ],
+          "findings": [],
+          "verdict": "none"
+        },
+        {
+          "stage": "security-review",
+          "persona": "Clyde Barcode",
+          "model": "sonnet",
+          "container": "hydra-security",
+          "started_at": "2026-04-18T20:58:04Z",
+          "ended_at": "2026-04-18T20:58:05Z",
+          "turns_used": 18,
+          "turns_budget": 40,
+          "cost_usd": 0.416,
+          "checks_run": [],
+          "checks_skipped": [
+            "hydra-gates",
+            "composer check:strict"
+          ],
+          "findings": [],
+          "verdict": "pass"
+        }
+      ]
+    },
+    {
+      "cycle": 2,
+      "trigger": "build:queued",
+      "started_at": "2026-04-18T21:01:20Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [],
+      "stages": [
+        {
+          "stage": "quality-recheck",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-18T21:01:20Z",
+          "ended_at": "2026-04-18T21:01:21Z",
+          "exit_code": 1,
+          "checks_run": [
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "stylelint",
+            "npm-audit",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "php-lint",
+            "publiccode",
+            "gitleaks",
+            "trivy",
+            "newman"
+          ],
+          "gates": {
+            "phpcs": {
+              "pass": false,
+              "failures": 1
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": true,
+              "failures": 0
+            },
+            "forbidden-patterns": {
+              "pass": false,
+              "failures": 1
+            },
+            "eslint": {
+              "pass": false,
+              "failures": 1
+            },
+            "stylelint": {
+              "pass": false,
+              "failures": 1
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpunit": {
+              "pass": false,
+              "failures": 1
+            }
+          },
+          "findings": [
+            {
+              "id": "qr-quality-recheck-phpcs",
+              "severity": "CRITICAL",
+              "gate": "phpcs",
+              "rule": "phpcs gate failing",
+              "status": "open",
+              "note": "phpcs reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-forbidden-patterns",
+              "severity": "CRITICAL",
+              "gate": "forbidden-patterns",
+              "rule": "forbidden-patterns gate failing",
+              "status": "open",
+              "note": "forbidden-patterns reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-eslint",
+              "severity": "CRITICAL",
+              "gate": "eslint",
+              "rule": "eslint gate failing",
+              "status": "open",
+              "note": "eslint reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-stylelint",
+              "severity": "CRITICAL",
+              "gate": "stylelint",
+              "rule": "stylelint gate failing",
+              "status": "open",
+              "note": "stylelint reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-phpunit",
+              "severity": "CRITICAL",
+              "gate": "phpunit",
+              "rule": "phpunit gate failing",
+              "status": "open",
+              "note": "phpunit reported status=fail in quality-recheck.json",
+              "autofixable": false
+            }
+          ],
+          "verdict": "fail"
+        }
+      ]
+    },
+    {
+      "cycle": 3,
+      "trigger": "build:queued",
+      "started_at": "2026-04-19T17:45:51Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [],
+      "stages": [
+        {
+          "stage": "fix",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-19T17:45:51Z",
+          "ended_at": "2026-04-19T17:45:52Z",
+          "turns_used": 101,
+          "turns_budget": 200,
+          "cost_usd": 0.8229,
+          "checks_run": [],
+          "checks_skipped": [],
+          "findings": [],
+          "decisions": [],
+          "verdict": "pass"
+        }
+      ]
+    },
+    {
+      "cycle": 4,
+      "trigger": "build:queued",
+      "started_at": "2026-04-19T17:45:53Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [
+        "reviewer-skipped-full-suite"
+      ],
+      "stages": [
+        {
+          "stage": "fix",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-19T17:45:53Z",
+          "ended_at": "2026-04-19T17:45:54Z",
+          "turns_used": 68,
+          "turns_budget": 200,
+          "cost_usd": 0.5398,
+          "checks_run": [],
+          "checks_skipped": [],
+          "findings": [],
+          "decisions": [],
+          "verdict": "pass"
+        },
+        {
+          "stage": "code-review",
+          "persona": "Juan Claude van Damme",
+          "model": "sonnet",
+          "container": "hydra-reviewer",
+          "started_at": "2026-04-19T17:54:39Z",
+          "ended_at": "2026-04-19T17:54:40Z",
+          "turns_used": 61,
+          "turns_budget": 40,
+          "cost_usd": 1.3041,
+          "checks_run": [
+            "hydra-gates",
+            "eslint"
+          ],
+          "checks_skipped": [
+            "composer check:strict"
+          ],
+          "findings": [],
+          "verdict": "none"
+        },
+        {
+          "stage": "code-review",
+          "persona": "Juan Claude van Damme",
+          "model": "sonnet",
+          "container": "hydra-reviewer",
+          "started_at": "2026-04-19T18:00:04Z",
+          "ended_at": "2026-04-19T18:00:05Z",
+          "turns_used": 77,
+          "turns_budget": 40,
+          "cost_usd": 1.5658,
+          "checks_run": [
+            "eslint",
+            "phpcs",
+            "composer check:strict",
+            "phpmd",
+            "phpstan",
+            "psalm",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "hydra-gates"
+          ],
+          "findings": [
+            {
+              "id": "co-fix-00",
+              "severity": "WARNING",
+              "gate": "TASK-TM-01",
+              "file": "src/views/tasks/TaskCreateDialog.vue",
+              "line": 151,
+              "rule": "TASK-TM-01",
+              "status": "fixed_in_stage",
+              "note": "Added import of validateTaskCreate and replaced 8-line inline duplicate with validateTaskCreate(this.form)",
+              "autofixable": true
+            },
+            {
+              "id": "co-fix-01",
+              "severity": "WARNING",
+              "gate": "TASK-TM-01",
+              "file": "src/views/tasks/TaskDetail.vue",
+              "line": 291,
+              "rule": "TASK-TM-01",
+              "status": "fixed_in_stage",
+              "note": "Added validateTaskUpdate to existing import and replaced inline validate() body with validateTaskUpdate(this.form)",
+              "autofixable": true
+            },
+            {
+              "id": "F-01",
+              "severity": "SUGGESTION",
+              "gate": "style-convention",
+              "file": "src/views/tasks/TaskList.vue",
+              "line": 344,
+              "rule": "style-convention",
+              "status": "open",
+              "note": "Second scoped block (containing only :deep(.row--overdue)) could be merged into the first scoped block. No functional impact.",
+              "autofixable": false
+            },
+            {
+              "id": "F-02",
+              "severity": "WARNING",
+              "gate": "phpcs / phpmd / phpstan / psalm",
+              "file": "lib/ (multiple unchanged files)",
+              "line": null,
+              "rule": "phpcs / phpmd / phpstan / psalm",
+              "status": "open",
+              "note": "[unfixed: inherited from base] \u2014 phpcs violations in AppointmentReminderJob.php, TemplateLibraryService.php, StufFieldMappingService.php and many others; phpstan 50 errors; psalm 24 errors. All in files not changed by this PR. Volume exceeds bounded-scope fix authority for a single reviewer pass.",
+              "autofixable": false
+            },
+            {
+              "id": "F-03",
+              "severity": "WARNING",
+              "gate": "npm run lint",
+              "file": null,
+              "line": null,
+              "rule": "npm run lint",
+              "status": "open",
+              "note": "npm ci fails due to vue-apexcharts peer-dep conflict. ESLint plugins (eslint-plugin-import, eslint-plugin-n) not installed after --legacy-peer-deps fallback. Changed JS/Vue files were manually reviewed; no obvious lint violations found, but formal gate was not completed.",
+              "autofixable": false
+            }
+          ],
+          "verdict": "fail"
+        },
+        {
+          "stage": "security-review",
+          "persona": "Clyde Barcode",
+          "model": "sonnet",
+          "container": "hydra-security",
+          "started_at": "2026-04-19T18:14:27Z",
+          "ended_at": "2026-04-19T18:14:28Z",
+          "turns_used": 23,
+          "turns_budget": 40,
+          "cost_usd": 0.4377,
+          "checks_run": [],
+          "checks_skipped": [
+            "hydra-gates",
+            "composer check:strict"
+          ],
+          "findings": [],
+          "verdict": "pass"
+        }
+      ]
+    },
+    {
+      "cycle": 5,
+      "trigger": "build:queued",
+      "started_at": "2026-04-19T18:18:16Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [],
+      "stages": [
+        {
+          "stage": "applier",
+          "persona": "Axel Pli\u00e9r",
+          "model": "sonnet",
+          "container": "hydra-applier",
+          "started_at": "2026-04-19T18:18:16Z",
+          "ended_at": "2026-04-19T18:18:17Z",
+          "turns_used": 12,
+          "turns_budget": 20,
+          "cost_usd": 0.2947,
+          "checks_run": [],
+          "checks_skipped": [],
+          "findings": [],
+          "verdict": "pass"
+        }
+      ]
+    }
+  ]
+}
