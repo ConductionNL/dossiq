@@ -68,7 +68,7 @@ class ChecklistService
     public function __construct(
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Complete a checklist item with a conformity status.
@@ -89,39 +89,39 @@ class ChecklistService
         array $checklist,
         string $itemId,
         string $status,
-        string $toelichting = '',
-        array $photoRefs = [],
+        string $toelichting='',
+        array $photoRefs=[],
     ): array {
-        if (!in_array($status, self::VALID_STATUSES, true)) {
+        if (in_array($status, self::VALID_STATUSES, true) === false) {
             throw new \InvalidArgumentException(
-                'Invalid conformity status: ' . $status . '. Valid: ' . implode(', ', self::VALID_STATUSES)
+                'Invalid conformity status: '.$status.'. Valid: '.implode(', ', self::VALID_STATUSES)
             );
         }
 
-        $items = $checklist['items'] ?? [];
+        $items     = $checklist['items'] ?? [];
         $itemFound = false;
 
         foreach ($items as $index => $item) {
             if (($item['id'] ?? '') === $itemId) {
                 // Check mandatory photo for niet-conform.
                 $requiresPhoto = $item['fotoVerplichtBijNietConform'] ?? false;
-                if ($status === self::STATUS_NIET_CONFORM && $requiresPhoto && empty($photoRefs)) {
+                if ($status === self::STATUS_NIET_CONFORM && $requiresPhoto === true && empty($photoRefs) === true) {
                     throw new \InvalidArgumentException(
-                        'Foto verplicht bij niet-conform voor item: ' . ($item['description'] ?? $itemId)
+                        'Foto verplicht bij niet-conform voor item: '.($item['description'] ?? $itemId)
                     );
                 }
 
-                $items[$index]['status'] = $status;
+                $items[$index]['status']      = $status;
                 $items[$index]['toelichting'] = $toelichting;
-                $items[$index]['photoRefs'] = $photoRefs;
+                $items[$index]['photoRefs']   = $photoRefs;
                 $items[$index]['completedAt'] = (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM);
                 $itemFound = true;
                 break;
             }
         }
 
-        if (!$itemFound) {
-            throw new \InvalidArgumentException('Checklist item not found: ' . $itemId);
+        if ($itemFound === false) {
+            throw new \InvalidArgumentException('Checklist item not found: '.$itemId);
         }
 
         $checklist['items'] = $items;
@@ -132,7 +132,7 @@ class ChecklistService
         );
 
         return $checklist;
-    }
+    }//end completeItem()
 
     /**
      * Get the completion progress of a checklist.
@@ -145,22 +145,28 @@ class ChecklistService
      */
     public function getProgress(array $checklist): array
     {
-        $items = $checklist['items'] ?? [];
-        $total = count($items);
+        $items     = $checklist['items'] ?? [];
+        $total     = count($items);
         $completed = 0;
 
         foreach ($items as $item) {
-            if (!empty($item['status'])) {
+            if (empty($item['status']) === false) {
                 $completed++;
             }
         }
 
+        if ($total > 0) {
+            $percentage = round(($completed / $total) * 100, 1);
+        } else {
+            $percentage = 0.0;
+        }
+
         return [
-            'completed' => $completed,
-            'total' => $total,
-            'percentage' => $total > 0 ? round(($completed / $total) * 100, 1) : 0.0,
+            'completed'  => $completed,
+            'total'      => $total,
+            'percentage' => $percentage,
         ];
-    }
+    }//end getProgress()
 
     /**
      * Validate that all checklist items are completed.
@@ -173,20 +179,20 @@ class ChecklistService
      */
     public function validateCompletion(array $checklist): array
     {
-        $items = $checklist['items'] ?? [];
+        $items        = $checklist['items'] ?? [];
         $missingItems = [];
 
         foreach ($items as $item) {
-            if (empty($item['status'])) {
+            if (empty($item['status']) === true) {
                 $missingItems[] = $item['description'] ?? ($item['id'] ?? 'unknown');
             }
         }
 
         return [
-            'valid' => empty($missingItems),
+            'valid'        => empty($missingItems),
             'missingItems' => $missingItems,
         ];
-    }
+    }//end validateCompletion()
 
     /**
      * Get a summary of conformity results.
@@ -199,11 +205,11 @@ class ChecklistService
      */
     public function getConformitySummary(array $checklist): array
     {
-        $items = $checklist['items'] ?? [];
+        $items   = $checklist['items'] ?? [];
         $summary = [
-            'conform' => 0,
-            'nietConform' => 0,
-            'nvt' => 0,
+            'conform'      => 0,
+            'nietConform'  => 0,
+            'nvt'          => 0,
             'notCompleted' => 0,
         ];
 
@@ -218,5 +224,5 @@ class ChecklistService
         }
 
         return $summary;
-    }
-}
+    }//end getConformitySummary()
+}//end class

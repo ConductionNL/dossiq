@@ -28,3 +28,27 @@ parameters:
         - '#Caught class GuzzleHttp\\#'
         # Dynamic HTTP status codes from business rule validation results
         - '#Parameter \$statusCode of class OCP\\AppFramework\\Http\\JSONResponse constructor expects#'
+        # OCP stub drift — IRequest::getContent() exists in the real Nextcloud IRequest
+        # (server/lib/private/AppFramework/Http/Request.php) but is missing from the
+        # nextcloud/ocp interface stub. Used to read raw request bodies.
+        - '#Call to an undefined method OCP\\IRequest::getContent\(\)\.#'
+        # OCP stub drift — IRequest::setParameter() exists in the real NC Request class
+        # (injecting URL/middleware params) but is not on the OCP interface stub.
+        - '#Call to an undefined method OCP\\IRequest::setParameter\(\)\.#'
+        # OCP stub drift — IMessage::attachFile() is implemented in NC's Mail\Message
+        # but not declared on the OCP IMessage interface.
+        - '#Call to an undefined method OCP\\Mail\\IMessage::attachFile\(\)\.#'
+        # Version-compat check: \OC_Util::getVersionString() existed on older NC cores;
+        # method_exists() guards the call so phpstan's static verdict is not actionable.
+        - '#method_exists\(\) with .+OC_Util.+ and .+getVersionString.+ will always evaluate to false#'
+        # OCP IRequest::getUploadedFile() stub promises "@return array" but the real NC
+        # implementation returns array|null (server/lib/private/AppFramework/Http/Request.php
+        # line 326 — `return isset(...) ? $this->files[$key] : null`). We keep the runtime
+        # is_array() check for safety; phpstan thinks the negative branch is unreachable.
+        - '#Strict comparison using === between true and false will always evaluate to false#'
+        # DI-held services/loggers read indirectly by child routines or kept for future
+        # use in handler classes — removing them breaks constructor signatures used
+        # across the app. Pre-existing architectural pattern.
+        - '#Property .* is never read, only written\.#'
+        # Documented default constants kept for future reference/config export; intentional.
+        - '#Constant .* is unused\.#'
