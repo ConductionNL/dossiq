@@ -1,0 +1,333 @@
+{
+  "spec_slug": "prometheus-metrics",
+  "app": "procest",
+  "repo": "ConductionNL/procest",
+  "issue": 212,
+  "depends_on": [],
+  "schema_version": 2,
+  "cycles": [
+    {
+      "cycle": 1,
+      "trigger": "build:queued",
+      "started_at": "2026-04-18T20:32:47Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [
+        "reviewer-skipped-full-suite"
+      ],
+      "stages": [
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-18T20:32:47Z",
+          "ended_at": "2026-04-18T20:32:48Z",
+          "turns_used": 53,
+          "turns_budget": 200,
+          "cost_usd": 0.3818,
+          "checks_run": [
+            "composer check:strict"
+          ],
+          "checks_skipped": [],
+          "findings": [
+            {
+              "id": "b-builder-build-0",
+              "severity": "WARNING",
+              "gate": null,
+              "rule": "builder output flagged failure language",
+              "status": "open",
+              "note": "Perfect! I have successfully implemented the prometheus-metrics OpenSpec change. Here's what was completed:\n\n## Implementation Summary\n\n**PR Created:** [#251 on ConductionNL/procest](https://github.com/ConductionNL/procest/pull/251)\n\n### Changes Made:\n\n1. **MetricsController Enhancements**\n   - Added `nextcloud_version` label to `procest_info` gauge\n   - Implemented `procest_cases_created_today` metric\n   - Added `getCached()` method with APCu caching (30s TTL for standard queries, 60s for overd",
+              "autofixable": false
+            }
+          ],
+          "decisions": [],
+          "verdict": "fail"
+        },
+        {
+          "stage": "pre-review-quality",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-18T20:32:47Z",
+          "ended_at": "2026-04-18T20:32:48Z",
+          "exit_code": 0,
+          "checks_run": [
+            "php-lint",
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "stylelint",
+            "npm-audit",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "publiccode",
+            "gitleaks",
+            "trivy",
+            "newman"
+          ],
+          "gates": {
+            "php-lint": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpcs": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": true,
+              "failures": 0
+            },
+            "forbidden-patterns": {
+              "pass": true,
+              "failures": 0
+            },
+            "eslint": {
+              "pass": true,
+              "failures": 0
+            },
+            "stylelint": {
+              "pass": true,
+              "failures": 0
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpunit": {
+              "pass": true,
+              "failures": 0
+            }
+          },
+          "findings": [],
+          "verdict": "pass"
+        },
+        {
+          "stage": "code-review",
+          "persona": "Juan Claude van Damme",
+          "model": "sonnet",
+          "container": "hydra-reviewer",
+          "started_at": "2026-04-18T20:41:58Z",
+          "ended_at": "2026-04-18T20:41:59Z",
+          "turns_used": 41,
+          "turns_budget": 40,
+          "cost_usd": 1.254,
+          "checks_run": [
+            "composer check:strict",
+            "phpcs"
+          ],
+          "checks_skipped": [
+            "hydra-gates"
+          ],
+          "findings": [],
+          "verdict": "none"
+        },
+        {
+          "stage": "security-review",
+          "persona": "Clyde Barcode",
+          "model": "sonnet",
+          "container": "hydra-security",
+          "started_at": "2026-04-18T20:48:55Z",
+          "ended_at": "2026-04-18T20:48:56Z",
+          "turns_used": 34,
+          "turns_budget": 40,
+          "cost_usd": 0.8284,
+          "checks_run": [],
+          "checks_skipped": [
+            "hydra-gates",
+            "composer check:strict"
+          ],
+          "findings": [
+            {
+              "id": "SEC-01",
+              "severity": "CRITICAL",
+              "gate": "OWASP A01:2021",
+              "file": "lib/Controller/HealthController.php",
+              "line": 66,
+              "rule": "OWASP A01:2021",
+              "status": "open",
+              "note": "Without @PublicPage, Nextcloud auth middleware blocks all unauthenticated requests. Container-orchestration health probes receive a 302 redirect to the login page, making the endpoint non-functional. Fix: add @PublicPage above @NoCSRFRequired in the method docblock. Could not apply: container has no write access to repository files (root-owned).",
+              "autofixable": false
+            },
+            {
+              "id": "SEC-02",
+              "severity": "CRITICAL",
+              "gate": "OWASP A01:2021",
+              "file": "lib/Controller/MetricsController.php",
+              "line": 74,
+              "rule": "OWASP A01:2021",
+              "status": "open",
+              "note": "Without @PublicPage, Nextcloud auth middleware blocks all Prometheus scrape requests. The entire /api/metrics endpoint is non-functional for unauthenticated scrapers. Fix: add @PublicPage above @NoCSRFRequired. Could not apply: container has no write access to repository files (root-owned).",
+              "autofixable": false
+            },
+            {
+              "id": "SEC-03",
+              "severity": "WARNING",
+              "gate": "CWE-209 / OWASP A05:2021",
+              "file": "lib/Controller/HealthController.php",
+              "line": 121,
+              "rule": "CWE-209 / OWASP A05:2021",
+              "status": "open",
+              "note": "checkDatabase() (line 121), checkOpenRegister() (line 145), and checkFilesystem() (line 167) return $e->getMessage() verbatim in the response body. Once @PublicPage is applied, any unauthenticated caller can observe DB connection-string fragments, table names, or file paths. Fix: return generic strings ('failed: database unavailable', etc.) and ensure $this->logger records the full error. checkFilesystem catch block is also missing a logger call. Could not apply: container has no write access to",
+              "autofixable": false
+            }
+          ],
+          "verdict": "fail"
+        }
+      ]
+    },
+    {
+      "cycle": 2,
+      "trigger": "build:queued",
+      "started_at": "2026-04-18T20:53:35Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [],
+      "stages": [
+        {
+          "stage": "quality-recheck",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-18T20:53:35Z",
+          "ended_at": "2026-04-18T20:53:36Z",
+          "exit_code": 1,
+          "checks_run": [
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "npm-audit",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "php-lint",
+            "publiccode",
+            "stylelint",
+            "gitleaks",
+            "trivy",
+            "newman"
+          ],
+          "gates": {
+            "phpcs": {
+              "pass": false,
+              "failures": 1
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": true,
+              "failures": 0
+            },
+            "forbidden-patterns": {
+              "pass": false,
+              "failures": 1
+            },
+            "eslint": {
+              "pass": false,
+              "failures": 1
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpunit": {
+              "pass": false,
+              "failures": 1
+            }
+          },
+          "findings": [
+            {
+              "id": "qr-quality-recheck-phpcs",
+              "severity": "CRITICAL",
+              "gate": "phpcs",
+              "rule": "phpcs gate failing",
+              "status": "open",
+              "note": "phpcs reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-forbidden-patterns",
+              "severity": "CRITICAL",
+              "gate": "forbidden-patterns",
+              "rule": "forbidden-patterns gate failing",
+              "status": "open",
+              "note": "forbidden-patterns reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-eslint",
+              "severity": "CRITICAL",
+              "gate": "eslint",
+              "rule": "eslint gate failing",
+              "status": "open",
+              "note": "eslint reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-phpunit",
+              "severity": "CRITICAL",
+              "gate": "phpunit",
+              "rule": "phpunit gate failing",
+              "status": "open",
+              "note": "phpunit reported status=fail in quality-recheck.json",
+              "autofixable": false
+            }
+          ],
+          "verdict": "fail"
+        }
+      ]
+    }
+  ]
+}
