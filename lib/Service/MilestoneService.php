@@ -136,13 +136,9 @@ class MilestoneService
             ];
         }//end foreach
 
-        $total = count($definitions);
-
-        if ($total > 0) {
-            $percentage = (int) round(($reached / $total) * 100);
-        } else {
-            $percentage = 0;
-        }
+        // $definitions is guaranteed non-empty here (early return above when count === 0).
+        $total      = count($definitions);
+        $percentage = (int) round(($reached / $total) * 100);
 
         return [
             'milestones' => $milestones,

@@ -412,6 +412,8 @@ class StufController extends Controller
      * @param int    $statusCode The HTTP status code.
      *
      * @return DataDisplayResponse
+     *
+     * @phpstan-param \OCP\AppFramework\Http::STATUS_* $statusCode
      */
     private function soapResponse(string $xml, int $statusCode=Http::STATUS_OK): DataDisplayResponse
     {

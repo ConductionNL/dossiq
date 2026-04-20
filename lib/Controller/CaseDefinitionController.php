@@ -124,7 +124,7 @@ class CaseDefinitionController extends Controller
         try {
             $file = $this->request->getUploadedFile('package');
 
-            if ($file === null || isset($file['tmp_name']) === false) {
+            if (is_array($file) === false || isset($file['tmp_name']) === false) {
                 return new JSONResponse(
                     ['error' => 'No package file uploaded'],
                     Http::STATUS_BAD_REQUEST
@@ -156,7 +156,7 @@ class CaseDefinitionController extends Controller
             $file     = $this->request->getUploadedFile('package');
             $strategy = $this->request->getParam('strategy', 'skip');
 
-            if ($file === null || isset($file['tmp_name']) === false) {
+            if (is_array($file) === false || isset($file['tmp_name']) === false) {
                 return new JSONResponse(
                     ['error' => 'No package file uploaded'],
                     Http::STATUS_BAD_REQUEST

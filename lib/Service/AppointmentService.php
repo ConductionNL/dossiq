@@ -247,9 +247,13 @@ class AppointmentService
      */
     private function getBackend(): AppointmentBackendInterface
     {
-        $backendType = $this->settingsService->getConfigValue('appointment_backend') ?? 'local';
-        $apiUrl      = $this->settingsService->getConfigValue('appointment_backend_url') ?? '';
-        $apiKey      = $this->settingsService->getConfigValue('appointment_backend_api_key') ?? '';
+        $backendType = $this->settingsService->getConfigValue('appointment_backend');
+        if ($backendType === '') {
+            $backendType = 'local';
+        }
+
+        $apiUrl = $this->settingsService->getConfigValue('appointment_backend_url');
+        $apiKey = $this->settingsService->getConfigValue('appointment_backend_api_key');
 
         switch ($backendType) {
             case 'jcc':
