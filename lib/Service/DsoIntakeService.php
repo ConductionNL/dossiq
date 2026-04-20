@@ -88,7 +88,11 @@ class DsoIntakeService
         // Build activity description.
         $activityNames = array_map(
             static function ($act) {
-                return is_array($act) ? ($act['naam'] ?? '') : (string) $act;
+                if (is_array($act) === true) {
+                    return $act['naam'] ?? '';
+                }
+
+                return (string) $act;
             },
             $activiteiten,
         );
@@ -99,10 +103,20 @@ class DsoIntakeService
 
         // Create the case.
         $caseSchema = $this->settingsService->getConfigValue('case_schema');
-        $caseData   = [
-            'title'       => 'Omgevingsvergunning'.($activityStr !== '' ? ': '.$activityStr : ''),
-            'description' => 'Vergunningaanvraag ontvangen via DSO/Omgevingsloket'
-                .($dsoZaaknummer !== '' ? ' (DSO: '.$dsoZaaknummer.')' : ''),
+
+        $title = 'Omgevingsvergunning';
+        if ($activityStr !== '') {
+            $title .= ': '.$activityStr;
+        }
+
+        $description = 'Vergunningaanvraag ontvangen via DSO/Omgevingsloket';
+        if ($dsoZaaknummer !== '') {
+            $description .= ' (DSO: '.$dsoZaaknummer.')';
+        }
+
+        $caseData = [
+            'title'       => $title,
+            'description' => $description,
             'startDate'   => date('Y-m-d'),
             'priority'    => 'normal',
         ];
@@ -112,10 +126,16 @@ class DsoIntakeService
 
         // Store DSO-specific properties.
         $propertySchema = $this->settingsService->getConfigValue('case_property_schema');
-        $properties     = [
+        if (is_array($locatie) === true) {
+            $locatieValue = json_encode($locatie);
+        } else {
+            $locatieValue = $locatie;
+        }
+
+        $properties = [
             'dsoZaaknummer' => $dsoZaaknummer,
             'activiteiten'  => $activityStr,
-            'locatie'       => is_array($locatie) ? json_encode($locatie) : $locatie,
+            'locatie'       => $locatieValue,
             'bouwkosten'    => (string) $bouwkosten,
             'procedureType' => $procedureType,
             'aanvragerNaam' => $aanvrager['naam'] ?? '',

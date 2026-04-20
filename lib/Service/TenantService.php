@@ -83,7 +83,7 @@ class TenantService
         foreach ($groups as $group) {
             $groupId = $group->getGID();
             if (str_starts_with($groupId, self::TENANT_GROUP_PREFIX) === true) {
-                return $this->getTenantByGroupId($groupId);
+                return $this->getTenantByGroupId(groupId: $groupId);
             }
         }
 
@@ -123,7 +123,11 @@ class TenantService
         }
 
         $tenant = reset($tenants);
-        return is_object($tenant) ? $tenant->jsonSerialize() : $tenant;
+        if (is_object($tenant) === true) {
+            return $tenant->jsonSerialize();
+        }
+
+        return $tenant;
     }//end getTenantByGroupId()
 
     /**
@@ -145,7 +149,7 @@ class TenantService
             return ['error' => 'OpenRegister is not available'];
         }
 
-        $slug    = $this->slugify($name);
+        $slug    = $this->slugify(name: $name);
         $groupId = self::TENANT_GROUP_PREFIX.$slug;
 
         // Create Nextcloud group.
@@ -257,8 +261,12 @@ class TenantService
         $tenantData = $tenant->jsonSerialize();
 
         // Count users in tenant group.
-        $group     = $this->groupManager->get($tenantData['groupId'] ?? '');
-        $userCount = $group !== null ? count($group->getUsers()) : 0;
+        $group = $this->groupManager->get($tenantData['groupId'] ?? '');
+        if ($group !== null) {
+            $userCount = count($group->getUsers());
+        } else {
+            $userCount = 0;
+        }
 
         return [
             'users'        => $userCount,
@@ -277,7 +285,7 @@ class TenantService
      */
     public function isUserInTenant(string $userId, string $tenantId): bool
     {
-        $tenant = $this->getTenantForUser($userId);
+        $tenant = $this->getTenantForUser(userId: $userId);
         if ($tenant === null) {
             return false;
         }

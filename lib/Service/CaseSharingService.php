@@ -237,8 +237,13 @@ class CaseSharingService
         return array_filter(
             $result['objects'] ?? [],
             static function ($share) {
-                $data = is_object($share) ? $share->jsonSerialize() : $share;
-                return empty($data['revokedAt']);
+                if (is_object($share) === true) {
+                    $data = $share->jsonSerialize();
+                } else {
+                    $data = $share;
+                }
+
+                return empty($data['revokedAt']) === true;
             }
         );
     }//end getSharesByCase()
@@ -319,8 +324,12 @@ class CaseSharingService
             return ['valid' => false, 'error' => 'Token niet gevonden'];
         }
 
-        $share     = reset($shares);
-        $shareData = is_object($share) ? $share->jsonSerialize() : $share;
+        $share = reset($shares);
+        if (is_object($share) === true) {
+            $shareData = $share->jsonSerialize();
+        } else {
+            $shareData = $share;
+        }
 
         // Check if revoked.
         if (empty($shareData['revokedAt']) === false) {
@@ -356,12 +365,12 @@ class CaseSharingService
             }
 
             if (password_verify($password, $shareData['password']) === false) {
-                $this->recordFailedAttempt($shareData, $register, $schema);
+                $this->recordFailedAttempt(shareData: $shareData, register: $register, schema: $schema);
                 return ['valid' => false, 'error' => 'Onjuist wachtwoord'];
             }
 
             // Reset failed attempts on successful password.
-            $this->resetFailedAttempts($shareData, $register, $schema);
+            $this->resetFailedAttempts(shareData: $shareData, register: $register, schema: $schema);
         }
 
         // Update last accessed timestamp.
@@ -399,7 +408,7 @@ class CaseSharingService
 
         // Apply BSN masking for data minimization.
         if (isset($caseData['bsn']) === true) {
-            $caseData['bsn'] = $this->maskBsn($caseData['bsn']);
+            $caseData['bsn'] = $this->maskBsn(bsn: $caseData['bsn']);
         }
 
         return $caseData;
