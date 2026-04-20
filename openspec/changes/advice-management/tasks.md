@@ -2,21 +2,21 @@
 
 ## Deduplication Check
 
-- [ ] **D01**: Search `openspec/specs/` and `lib/Service/` for any existing advice or `adviesAanvraag` handling. Verify `ObjectService`, `NotificatieService`, and `TasksController` signatures match the 3-arg API before implementing `AdviceService`. Document findings here (expected: no overlap — `adviesAanvraag` schema exists in ADR-000 but no service or UI has been built for it).
+- [x] **D01**: Search `openspec/specs/` and `lib/Service/` for any existing advice or `adviesAanvraag` handling. Verify `ObjectService`, `NotificatieService`, and `TasksController` signatures match the 3-arg API before implementing `AdviceService`. Document findings here (expected: no overlap — `adviesAanvraag` schema exists in ADR-000 but no service or UI has been built for it). VERIFIED: adviesAanvraag schema already defined in ADR-000; no conflicting implementations found in lib/Service/.
 
 ---
 
 ## Schema & Configuration
 
-- [ ] **T01**: Add `adviesAanvraag` schema to `lib/Settings/procest_register.json`. Schema fields: `case` (string, required), `adviseur` (string, required), `type` (string enum: intern/extern, required), `onderwerp` (string), `deadline` (string, ISO date), `status` (string enum: aangevraagd/ontvangen/verlopen), `adviesDocument` (string), `requestedAt` (string, ISO datetime), `receivedAt` (string, ISO datetime), `questions` (string). Add 5 Dutch seed objects (slugs: `advies-welstand-2026-0042`, `advies-veiligheidsregio-2026-0038`, `advies-rud-2026-0031`, `advies-juridisch-2026-0055`, `advies-brandweer-2026-0047`) as defined in `design.md`.
+- [x] **T01**: Add `adviesAanvraag` schema to `lib/Settings/procest_register.json`. COMPLETED: Schema already defined with all required fields and properties. Schema fields: `case` (string, required), `adviseur` (string, required), `type` (string enum: intern/extern, required), `onderwerp` (string), `deadline` (string, ISO date), `status` (string enum: aangevraagd/ontvangen/verlopen), `adviesDocument` (string), `requestedAt` (string, ISO datetime), `receivedAt` (string, ISO datetime), `questions` (string). Add 5 Dutch seed objects (slugs: `advies-welstand-2026-0042`, `advies-veiligheidsregio-2026-0038`, `advies-rud-2026-0031`, `advies-juridisch-2026-0055`, `advies-brandweer-2026-0047`) as defined in `design.md`.
 
-- [ ] **T02**: Add config keys to `lib/Service/SettingsService.php`: `advice_schema` (slug of adviesAanvraag schema), `advice_reminder_days` (integer, default 3). Load in `initializeStores()`.
+- [x] **T02**: Add config keys to `lib/Service/SettingsService.php`: `advice_schema` (slug of adviesAanvraag schema), `advice_reminder_days` (integer, default 3). Load in `initializeStores()`.
 
 ---
 
 ## Backend: Service
 
-- [ ] **T03**: Create `lib/Service/AdviceService.php`. Methods:
+- [x] **T03**: Create `lib/Service/AdviceService.php`. Methods:
   - `createAdvice(string $caseId, array $data): array` — calls `ObjectService::saveObject()` with register/schema/object (3 args), then creates task via TasksController ("Advies uitbrengen voor [identifier]"), appends activity entry to case
   - `receiveAdvice(string $adviceId, string $fileId): array` — transitions status to `ontvangen`, sets `receivedAt`, stores `adviesDocument`, sends Nextcloud notification to behandelaar
   - `sendReminder(string $adviceId): void` — sends Nextcloud notification to adviseur via NotificatieService
@@ -28,7 +28,7 @@
 
 ## Backend: Controller
 
-- [ ] **T04**: Create `lib/Controller/AdviceController.php`. Endpoints:
+- [x] **T04**: Create `lib/Controller/AdviceController.php`. Endpoints:
   - `GET /api/advice` — list by `case` query param (calls `AdviceService::getAdviceForCase`)
   - `POST /api/advice` — create (calls `AdviceService::createAdvice`); requires `IGroupManager` or case assignment check
   - `GET /api/advice/{id}` — get single (calls `ObjectService::findObject` 3-arg)
@@ -41,7 +41,7 @@
 
 ## Backend: Background Job
 
-- [ ] **T05**: Create `lib/BackgroundJob/AdviceDeadlineJob.php` (extends `TimedJob`, interval 24h). Logic:
+- [x] **T05**: Create `lib/BackgroundJob/AdviceDeadlineJob.php` (extends `TimedJob`, interval 24h). Logic:
   1. Query all `adviesAanvraag` with `status` = `aangevraagd`
   2. For each with `deadline` < today: transition to `verlopen`, create task for behandelaar ("Advies verlopen: beoordeel of vergunningprocedure kan doorgaan zonder dit advies"), send escalation notification to behandelaar and teamleider
   3. For each with `deadline` = today + 3 days: send reminder notification to behandelaar ("Herinnering: advies van [adviseur] verwacht op [deadline]")
@@ -51,7 +51,7 @@
 
 ## Routes
 
-- [ ] **T06**: Add advice routes to `appinfo/routes.php`:
+- [x] **T06**: Add advice routes to `appinfo/routes.php`:
   ```php
   ['name' => 'advice#index',   'url' => '/api/advice',           'verb' => 'GET'],
   ['name' => 'advice#create',  'url' => '/api/advice',           'verb' => 'POST'],
@@ -65,19 +65,19 @@
 
 ## Frontend: Store
 
-- [ ] **T07**: Register `advies-aanvraag` entity type in `src/store/store.js` via `createObjectStore('advies-aanvraag')` with `relationsPlugin` and `filesPlugin`. Type name MUST be kebab-case. Register ONCE — do NOT duplicate in OBJECT_TYPES and ENTITY_STORES.
+- [x] **T07**: Register `advies-aanvraag` entity type in `src/store/store.js` via `createObjectStore('advies-aanvraag')` with `relationsPlugin` and `filesPlugin`. Type name MUST be kebab-case. Register ONCE — do NOT duplicate in OBJECT_TYPES and ENTITY_STORES.
 
 ---
 
 ## Frontend: API Service
 
-- [ ] **T08**: Create `src/services/adviceApi.js`. Functions: `getAdviceForCase(caseId)`, `createAdvice(data)`, `getAdvice(id)`, `updateAdvice(id, data)`, `deleteAdvice(id)`, `sendReminder(id)`. Use `axios` from `@nextcloud/axios` for ALL calls (CSRF auto-attach). NEVER raw `fetch()`.
+- [x] **T08**: Create `src/services/adviceApi.js`. Functions: `getAdviceForCase(caseId)`, `createAdvice(data)`, `getAdvice(id)`, `updateAdvice(id, data)`, `deleteAdvice(id)`, `sendReminder(id)`. Use `axios` from `@nextcloud/axios` for ALL calls (CSRF auto-attach). NEVER raw `fetch()`.
 
 ---
 
 ## Frontend: Advice Panel Component
 
-- [ ] **T09**: Create `src/views/cases/components/AdviesPanel.vue`. Requirements:
+- [x] **T09**: Create `src/views/cases/components/AdviesPanel.vue`. Requirements:
   - Import ONLY from `@conduction/nextcloud-vue` (NOT `@nextcloud/vue`)
   - List all `adviesAanvraag` for the current case using `adviceApi.getAdviceForCase(caseId)`
   - Every `await` call MUST be in `try/catch` with user-facing error via `NcDialog` or toast
@@ -94,7 +94,7 @@
 
 ## Frontend: Create Advice Dialog
 
-- [ ] **T10**: Create `src/views/cases/components/AdviesAanvraagDialog.vue`. Requirements:
+- [x] **T10**: Create `src/views/cases/components/AdviesAanvraagDialog.vue`. Requirements:
   - Import ONLY from `@conduction/nextcloud-vue`
   - Fields: `type` toggle (Intern/Extern), `adviseur` (NcUserPicker for intern, NcInputField for extern), `onderwerp` (NcInputField, required), `deadline` (NcDateTimePicker, default = today + 14 days), `questions` (NcTextareaField, optional)
   - Validate `adviseur` and `deadline` filled before enabling submit button
@@ -107,7 +107,7 @@
 
 ## Frontend: Case Detail Integration
 
-- [ ] **T11**: Modify `src/views/cases/CaseDetail.vue` to embed `AdviesPanel` component:
+- [x] **T11**: Modify `src/views/cases/CaseDetail.vue` to embed `AdviesPanel` component:
   - Import `AdviesPanel` from `./components/AdviesPanel.vue`
   - Register in `components: { AdviesPanel }`
   - Add `<AdviesPanel :case-id="caseId" />` in the case detail layout (after the existing task/role panels)
@@ -117,7 +117,7 @@
 
 ## Frontend: Workflow Guard Integration
 
-- [ ] **T12**: Modify `src/views/workflow/WorkflowTransitionButton.vue`:
+- [x] **T12**: Modify `src/views/workflow/WorkflowTransitionButton.vue`:
   - Before triggering a transition with a guard of type `adviesGuard`, call `adviceApi.getAdviceForCase(caseId)` and filter for status = `aangevraagd`
   - If any pending advice exists: disable the transition button and show tooltip listing pending advice: "[adviseur]: advies verwacht voor [deadline]"
   - Guard check MUST run on component mount AND after any advice panel update
@@ -127,7 +127,7 @@
 
 ## Seed Data Generation
 
-- [ ] **T13**: Verify the 5 seed `adviesAanvraag` objects defined in `design.md` are present in `lib/Settings/procest_register.json` under `components.objects[]` using the `@self` envelope. Confirm slugs are unique and idempotent. Test by running the import twice and verifying no duplicates are created.
+- [x] **T13**: Verify the 5 seed `adviesAanvraag` objects defined in `design.md` are present in `lib/Settings/procest_register.json` under `components.objects[]` using the `@self` envelope. Confirm slugs are unique and idempotent. Test by running the import twice and verifying no duplicates are created.
 
 ---
 
