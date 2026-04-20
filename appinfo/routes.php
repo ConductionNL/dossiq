@@ -116,6 +116,14 @@ return [
         // Health check endpoint.
         ['name' => 'health#index', 'url' => '/api/health', 'verb' => 'GET'],
 
+        // ── Advice Management ───────────────────────────────────────────
+        ['name' => 'advice#index', 'url' => '/api/advice', 'verb' => 'GET'],
+        ['name' => 'advice#create', 'url' => '/api/advice', 'verb' => 'POST'],
+        ['name' => 'advice#show', 'url' => '/api/advice/{id}', 'verb' => 'GET'],
+        ['name' => 'advice#update', 'url' => '/api/advice/{id}', 'verb' => 'PUT'],
+        ['name' => 'advice#destroy', 'url' => '/api/advice/{id}', 'verb' => 'DELETE'],
+        ['name' => 'advice#remind', 'url' => '/api/advice/{id}/remind', 'verb' => 'POST'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode)
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],

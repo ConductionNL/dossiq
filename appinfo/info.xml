@@ -93,4 +93,8 @@ Vrij en open source onder de AGPL-licentie.
         <admin>OCA\Procest\Settings\AdminSettings</admin>
         <admin-section>OCA\Procest\Sections\SettingsSection</admin-section>
     </settings>
+
+    <background-jobs>
+        <job>OCA\Procest\BackgroundJob\AdviceDeadlineJob</job>
+    </background-jobs>
 </info>
