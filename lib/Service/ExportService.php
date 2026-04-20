@@ -31,7 +31,6 @@ use Psr\Log\LoggerInterface;
  */
 class ExportService
 {
-
     /**
      * Constructor.
      *
@@ -40,8 +39,7 @@ class ExportService
     public function __construct(
         private readonly LoggerInterface $logger,
     ) {
-    }
-
+    }//end __construct()
 
     /**
      * Generate CSV export from report data.
@@ -61,14 +59,15 @@ class ExportService
 
         // Add header with title and generation date
         $csv .= "Doorlooptijd Management Report\n";
-        $csv .= "Generated: " . date('Y-m-d H:i:s') . "\n";
+        $csv .= "Generated: ".date('Y-m-d H:i:s')."\n";
         $csv .= "\n";
 
         // Add filters applied
         $csv .= "Filters Applied:\n";
         foreach ($filters as $key => $value) {
-            $csv .= ucfirst($key) . ": " . $value . "\n";
+            $csv .= ucfirst($key).": ".$value."\n";
         }
+
         $csv .= "\n";
 
         // Add summary statistics
@@ -76,26 +75,30 @@ class ExportService
         if (!empty($reportData['summary'])) {
             $this->appendSummaryToCsv($csv, $reportData['summary']);
         }
+
         $csv .= "\n";
 
         // Add case data table
         $csv .= "Case Details\n";
-        $csv .= implode(',', [
-            'Case ID',
-            'Case Type',
-            'Created',
-            'Closed',
-            'Doorlooptijd (days)',
-            'SLA Target (days)',
-            'SLA Status',
-            'Team',
-            'Assignee',
-            'Status',
-        ]) . "\n";
+        $csv .= implode(
+                ',',
+                [
+                    'Case ID',
+                    'Case Type',
+                    'Created',
+                    'Closed',
+                    'Doorlooptijd (days)',
+                    'SLA Target (days)',
+                    'SLA Status',
+                    'Team',
+                    'Assignee',
+                    'Status',
+                ]
+                )."\n";
 
         if (!empty($reportData['data'])) {
             foreach ($reportData['data'] as $case) {
-                $row = [
+                $row  = [
                     $case['caseId'] ?? '',
                     $case['caseType'] ?? '',
                     $case['createdAt'] ?? '',
@@ -107,16 +110,21 @@ class ExportService
                     $case['assignee'] ?? '',
                     $case['status'] ?? '',
                 ];
-                $csv .= implode(',', array_map(function ($val) {
-                    // Escape quotes and wrap in quotes if contains comma
-                    return '"' . str_replace('"', '""', $val) . '"';
-                }, $row)) . "\n";
-            }
-        }
+                $csv .= implode(
+                        ',',
+                        array_map(
+                        function ($val) {
+                            // Escape quotes and wrap in quotes if contains comma
+                            return '"'.str_replace('"', '""', $val).'"';
+                        },
+                        $row
+                        )
+                        )."\n";
+            }//end foreach
+        }//end if
 
         return $csv;
-    }
-
+    }//end generateCsv()
 
     /**
      * Generate Excel (XLSX) export from report data.
@@ -138,8 +146,7 @@ class ExportService
         // Placeholder: with PhpSpreadsheet, would generate actual XLSX
         // For now, return CSV which Excel can import
         return $this->generateCsv($reportData, $filters);
-    }
-
+    }//end generateExcel()
 
     /**
      * Export report with all applied filters included.
@@ -155,22 +162,21 @@ class ExportService
     public function export(
         array $reportData,
         array $filters,
-        string $format = 'csv'
+        string $format='csv'
     ): string {
-        $this->logger->info('Exporting report in format: ' . $format);
+        $this->logger->info('Exporting report in format: '.$format);
 
         if ($format === 'xlsx') {
             return $this->generateExcel($reportData, $filters);
         }
 
         return $this->generateCsv($reportData, $filters);
-    }
-
+    }//end export()
 
     /**
      * Append summary data to CSV content.
      *
-     * @param string                      $csv     CSV content reference
+     * @param string               $csv     CSV content reference
      * @param array<string, mixed> $summary Summary data
      *
      * @return void
@@ -179,23 +185,22 @@ class ExportService
     {
         foreach ($summary as $key => $value) {
             if (is_array($value)) {
-                $csv .= $key . ":\n";
+                $csv .= $key.":\n";
                 foreach ($value as $subKey => $subValue) {
                     if (is_array($subValue)) {
-                        $csv .= "  " . $subKey . ":\n";
+                        $csv .= "  ".$subKey.":\n";
                         foreach ($subValue as $k => $v) {
-                            $csv .= "    " . $k . ": " . $v . "\n";
+                            $csv .= "    ".$k.": ".$v."\n";
                         }
                     } else {
-                        $csv .= "  " . $subKey . ": " . $subValue . "\n";
+                        $csv .= "  ".$subKey.": ".$subValue."\n";
                     }
                 }
             } else {
-                $csv .= $key . ": " . $value . "\n";
+                $csv .= $key.": ".$value."\n";
             }
         }
-    }
-
+    }//end appendSummaryToCsv()
 
     /**
      * Get available export formats.
@@ -207,8 +212,7 @@ class ExportService
     public function getAvailableFormats(): array
     {
         return ['csv', 'xlsx'];
-    }
-
+    }//end getAvailableFormats()
 
     /**
      * Validate export format.
@@ -222,5 +226,5 @@ class ExportService
     public function isFormatSupported(string $format): bool
     {
         return in_array($format, $this->getAvailableFormats());
-    }
-}
+    }//end isFormatSupported()
+}//end class

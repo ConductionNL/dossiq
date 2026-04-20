@@ -32,7 +32,6 @@ use Psr\Log\LoggerInterface;
  */
 class TrendAnalysisService
 {
-
     /**
      * Constructor.
      *
@@ -41,15 +40,14 @@ class TrendAnalysisService
     public function __construct(
         private readonly LoggerInterface $logger,
     ) {
-    }
-
+    }//end __construct()
 
     /**
      * Get doorlooptijd trend for a case type.
      *
-     * @param string $caseTypeId The case type UUID
-     * @param string $startDate  Start date (ISO 8601)
-     * @param string $endDate    End date (ISO 8601)
+     * @param string $caseTypeId  The case type UUID
+     * @param string $startDate   Start date (ISO 8601)
+     * @param string $endDate     End date (ISO 8601)
      * @param string $granularity Time granularity: 'weekly', 'monthly', 'quarterly'
      *
      * @return array<string, mixed> Trend data
@@ -60,11 +58,11 @@ class TrendAnalysisService
         string $caseTypeId,
         string $startDate,
         string $endDate,
-        string $granularity = 'weekly'
+        string $granularity='weekly'
     ): array {
         $this->logger->debug(
-            'Getting ' . $granularity . ' trend for case type: ' . $caseTypeId
-            . ' from ' . $startDate . ' to ' . $endDate
+            'Getting '.$granularity.' trend for case type: '.$caseTypeId
+            .' from '.$startDate.' to '.$endDate
         );
 
         // Placeholder: would aggregate historical case data
@@ -87,25 +85,24 @@ class TrendAnalysisService
         $direction = $this->determineTrendDirection($trendData);
 
         return [
-            'caseTypeId' => $caseTypeId,
-            'period' => [
+            'caseTypeId'       => $caseTypeId,
+            'period'           => [
                 'start' => $startDate,
-                'end' => $endDate,
+                'end'   => $endDate,
             ],
-            'granularity' => $granularity,
-            'trend' => $trendData,
-            'direction' => $direction,
+            'granularity'      => $granularity,
+            'trend'            => $trendData,
+            'direction'        => $direction,
             'changePercentage' => $this->calculateChangePercentage($trendData),
         ];
-    }
-
+    }//end getTrend()
 
     /**
      * Get SLA adherence trend over time.
      *
-     * @param string $caseTypeId The case type UUID
-     * @param string $startDate  Start date (ISO 8601)
-     * @param string $endDate    End date (ISO 8601)
+     * @param string $caseTypeId  The case type UUID
+     * @param string $startDate   Start date (ISO 8601)
+     * @param string $endDate     End date (ISO 8601)
      * @param string $granularity Time granularity
      *
      * @return array<string, mixed> SLA adherence trend
@@ -116,10 +113,10 @@ class TrendAnalysisService
         string $caseTypeId,
         string $startDate,
         string $endDate,
-        string $granularity = 'weekly'
+        string $granularity='weekly'
     ): array {
         $this->logger->debug(
-            'Getting SLA trend for case type: ' . $caseTypeId
+            'Getting SLA trend for case type: '.$caseTypeId
         );
 
         // Placeholder implementation
@@ -132,18 +129,17 @@ class TrendAnalysisService
         ];
 
         return [
-            'caseTypeId' => $caseTypeId,
-            'period' => [
+            'caseTypeId'       => $caseTypeId,
+            'period'           => [
                 'start' => $startDate,
-                'end' => $endDate,
+                'end'   => $endDate,
             ],
-            'granularity' => $granularity,
-            'trend' => $trendData,
+            'granularity'      => $granularity,
+            'trend'            => $trendData,
             'averageAdherence' => 89.62,
-            'direction' => 'declining',
+            'direction'        => 'declining',
         ];
-    }
-
+    }//end getSLATrend()
 
     /**
      * Get comparison trend between two case types.
@@ -164,16 +160,16 @@ class TrendAnalysisService
         string $endDate
     ): array {
         $this->logger->debug(
-            'Getting comparison trend between ' . $caseTypeId1 . ' and ' . $caseTypeId2
+            'Getting comparison trend between '.$caseTypeId1.' and '.$caseTypeId2
         );
 
         // Placeholder: would fetch individual trends and compare
         return [
-            'caseType1' => $caseTypeId1,
-            'caseType2' => $caseTypeId2,
-            'period' => [
+            'caseType1'  => $caseTypeId1,
+            'caseType2'  => $caseTypeId2,
+            'period'     => [
                 'start' => $startDate,
-                'end' => $endDate,
+                'end'   => $endDate,
             ],
             'comparison' => [
                 'type1' => [
@@ -187,8 +183,7 @@ class TrendAnalysisService
             ],
             'difference' => 'Type 1 is 30% slower',
         ];
-    }
-
+    }//end getComparisonTrend()
 
     /**
      * Get weekly trend data.
@@ -211,8 +206,7 @@ class TrendAnalysisService
             ['week' => '2024-01-22', 'avgDuration' => 28.1, 'cases' => 17, 'slaAdherence' => 82.4],
             ['week' => '2024-01-29', 'avgDuration' => 26.9, 'cases' => 21, 'slaAdherence' => 85.7],
         ];
-    }
-
+    }//end getWeeklyTrend()
 
     /**
      * Get monthly trend data.
@@ -234,8 +228,7 @@ class TrendAnalysisService
             ['month' => '2024-01', 'avgDuration' => 27.1, 'cases' => 75, 'slaAdherence' => 85.9],
             ['month' => '2024-02', 'avgDuration' => 25.3, 'cases' => 68, 'slaAdherence' => 89.7],
         ];
-    }
-
+    }//end getMonthlyTrend()
 
     /**
      * Get quarterly trend data.
@@ -256,8 +249,7 @@ class TrendAnalysisService
             ['quarter' => '2023-Q4', 'avgDuration' => 27.6, 'cases' => 192, 'slaAdherence' => 85.9],
             ['quarter' => '2024-Q1', 'avgDuration' => 26.4, 'cases' => 214, 'slaAdherence' => 87.8],
         ];
-    }
-
+    }//end getQuarterlyTrend()
 
     /**
      * Determine overall trend direction.
@@ -273,17 +265,16 @@ class TrendAnalysisService
         }
 
         $first = $trendData[0]['avgDuration'] ?? 0;
-        $last = $trendData[count($trendData) - 1]['avgDuration'] ?? 0;
+        $last  = $trendData[count($trendData) - 1]['avgDuration'] ?? 0;
 
         if ($last < $first * 0.95) {
             return 'improving';
-        } elseif ($last > $first * 1.05) {
+        } else if ($last > $first * 1.05) {
             return 'declining';
         }
 
         return 'stable';
-    }
-
+    }//end determineTrendDirection()
 
     /**
      * Calculate percentage change over the trend period.
@@ -299,12 +290,12 @@ class TrendAnalysisService
         }
 
         $first = $trendData[0]['avgDuration'] ?? 0;
-        $last = $trendData[count($trendData) - 1]['avgDuration'] ?? 0;
+        $last  = $trendData[count($trendData) - 1]['avgDuration'] ?? 0;
 
         if ($first === 0) {
             return 0.0;
         }
 
         return round((($last - $first) / $first) * 100, 2);
-    }
-}
+    }//end calculateChangePercentage()
+}//end class

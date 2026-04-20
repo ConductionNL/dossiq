@@ -103,7 +103,7 @@ class SlaAdherenceWidget implements IWidget
     public function getUrl(): ?string
     {
         return $this->url->linkToRouteAbsolute(
-            Application::APP_ID . '.doorlooptijd.statistics'
+            Application::APP_ID.'.doorlooptijd.statistics'
         );
 
     }//end getUrl()
@@ -118,7 +118,7 @@ class SlaAdherenceWidget implements IWidget
      */
     public function load(): void
     {
-        Util::addScript(Application::APP_ID, Application::APP_ID . '-slaAdherenceWidget');
+        Util::addScript(Application::APP_ID, Application::APP_ID.'-slaAdherenceWidget');
         Util::addStyle(Application::APP_ID, 'dashboardWidgets');
 
     }//end load()

@@ -38,16 +38,15 @@ use Psr\Log\LoggerInterface;
  */
 class DoorlooptijdController extends Controller
 {
-
     /**
      * Constructor.
      *
-     * @param string                      $appName                  The app name
-     * @param IRequest                    $request                  The request
-     * @param DoorlooptijdService         $doorlooptijdService      Doorlooptijd service
-     * @param BottleneckAnalysisService   $bottleneckAnalysisService Bottleneck service
-     * @param TrendAnalysisService        $trendAnalysisService     Trend service
-     * @param LoggerInterface             $logger                   Logger
+     * @param string                    $appName                   The app name
+     * @param IRequest                  $request                   The request
+     * @param DoorlooptijdService       $doorlooptijdService       Doorlooptijd service
+     * @param BottleneckAnalysisService $bottleneckAnalysisService Bottleneck service
+     * @param TrendAnalysisService      $trendAnalysisService      Trend service
+     * @param LoggerInterface           $logger                    Logger
      */
     public function __construct(
         string $appName,
@@ -58,8 +57,7 @@ class DoorlooptijdController extends Controller
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct($appName, $request);
-    }
-
+    }//end __construct()
 
     /**
      * Get doorlooptijd statistics for a case type.
@@ -71,17 +69,18 @@ class DoorlooptijdController extends Controller
      * @return JSONResponse Statistics data
      *
      * @NoAdminRequired
-     * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#task-6
+     * @spec            openspec/changes/doorlooptijd-dashboard/tasks.md#task-6
      */
     public function statistics(
         string $caseTypeId,
-        string $startDate = '',
-        string $endDate = ''
+        string $startDate='',
+        string $endDate=''
     ): JSONResponse {
         try {
             if (empty($startDate)) {
                 $startDate = date('Y-m-d', strtotime('-90 days'));
             }
+
             if (empty($endDate)) {
                 $endDate = date('Y-m-d');
             }
@@ -94,14 +93,13 @@ class DoorlooptijdController extends Controller
 
             return new JSONResponse($stats);
         } catch (\Exception $e) {
-            $this->logger->error('Error getting statistics: ' . $e->getMessage());
+            $this->logger->error('Error getting statistics: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => $e->getMessage()],
-                400
+                ['error' => 'An error occurred processing your request'],
+                500
             );
-        }
-    }
-
+        }//end try
+    }//end statistics()
 
     /**
      * Get process step bottleneck analysis.
@@ -113,17 +111,18 @@ class DoorlooptijdController extends Controller
      * @return JSONResponse Bottleneck analysis data
      *
      * @NoAdminRequired
-     * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#task-6
+     * @spec            openspec/changes/doorlooptijd-dashboard/tasks.md#task-6
      */
     public function bottlenecks(
         string $caseTypeId,
-        string $startDate = '',
-        string $endDate = ''
+        string $startDate='',
+        string $endDate=''
     ): JSONResponse {
         try {
             if (empty($startDate)) {
                 $startDate = date('Y-m-d', strtotime('-90 days'));
             }
+
             if (empty($endDate)) {
                 $endDate = date('Y-m-d');
             }
@@ -136,14 +135,13 @@ class DoorlooptijdController extends Controller
 
             return new JSONResponse($analysis);
         } catch (\Exception $e) {
-            $this->logger->error('Error analyzing bottlenecks: ' . $e->getMessage());
+            $this->logger->error('Error analyzing bottlenecks: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => $e->getMessage()],
-                400
+                ['error' => 'An error occurred processing your request'],
+                500
             );
-        }
-    }
-
+        }//end try
+    }//end bottlenecks()
 
     /**
      * Get historical trend analysis.
@@ -156,18 +154,19 @@ class DoorlooptijdController extends Controller
      * @return JSONResponse Trend analysis data
      *
      * @NoAdminRequired
-     * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#task-6
+     * @spec            openspec/changes/doorlooptijd-dashboard/tasks.md#task-6
      */
     public function trends(
         string $caseTypeId,
-        string $startDate = '',
-        string $endDate = '',
-        string $granularity = 'weekly'
+        string $startDate='',
+        string $endDate='',
+        string $granularity='weekly'
     ): JSONResponse {
         try {
             if (empty($startDate)) {
                 $startDate = date('Y-m-d', strtotime('-180 days'));
             }
+
             if (empty($endDate)) {
                 $endDate = date('Y-m-d');
             }
@@ -186,14 +185,13 @@ class DoorlooptijdController extends Controller
 
             return new JSONResponse($trend);
         } catch (\Exception $e) {
-            $this->logger->error('Error getting trends: ' . $e->getMessage());
+            $this->logger->error('Error getting trends: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => $e->getMessage()],
-                400
+                ['error' => 'An error occurred processing your request'],
+                500
             );
-        }
-    }
-
+        }//end try
+    }//end trends()
 
     /**
      * Get SLA trend over time.
@@ -206,18 +204,19 @@ class DoorlooptijdController extends Controller
      * @return JSONResponse SLA trend data
      *
      * @NoAdminRequired
-     * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#task-6
+     * @spec            openspec/changes/doorlooptijd-dashboard/tasks.md#task-6
      */
     public function slaTrend(
         string $caseTypeId,
-        string $startDate = '',
-        string $endDate = '',
-        string $granularity = 'weekly'
+        string $startDate='',
+        string $endDate='',
+        string $granularity='weekly'
     ): JSONResponse {
         try {
             if (empty($startDate)) {
                 $startDate = date('Y-m-d', strtotime('-180 days'));
             }
+
             if (empty($endDate)) {
                 $endDate = date('Y-m-d');
             }
@@ -231,11 +230,11 @@ class DoorlooptijdController extends Controller
 
             return new JSONResponse($trend);
         } catch (\Exception $e) {
-            $this->logger->error('Error getting SLA trend: ' . $e->getMessage());
+            $this->logger->error('Error getting SLA trend: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => $e->getMessage()],
-                400
+                ['error' => 'An error occurred processing your request'],
+                500
             );
-        }
-    }
-}
+        }//end try
+    }//end slaTrend()
+}//end class

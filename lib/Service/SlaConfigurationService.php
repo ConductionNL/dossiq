@@ -32,7 +32,6 @@ use Psr\Log\LoggerInterface;
  */
 class SlaConfigurationService
 {
-
     /**
      * Constructor.
      *
@@ -43,8 +42,7 @@ class SlaConfigurationService
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
     ) {
-    }
-
+    }//end __construct()
 
     /**
      * Get SLA configuration for a specific zaaktype.
@@ -57,25 +55,26 @@ class SlaConfigurationService
      */
     public function getSlForCaseType(string $caseTypeId): array
     {
-        $this->logger->debug('Fetching SLA configuration for case type: ' . $caseTypeId);
+        $this->logger->debug('Fetching SLA configuration for case type: '.$caseTypeId);
 
         // Placeholder implementation
         // In production, would fetch from OpenRegister SLA configuration schema
         return [
-            'caseTypeId' => $caseTypeId,
-            'streeftermijn' => 30,           // Target time in days
-            'fatalTermijn' => 60,            // Deadline in days
-            'startDate' => date('Y-m-d'),
-            'endDate' => date('Y-m-d', strtotime('+1 year')),
-            'processSteps' => [],
+            'caseTypeId'    => $caseTypeId,
+            'streeftermijn' => 30,
+        // Target time in days
+            'fatalTermijn'  => 60,
+        // Deadline in days
+            'startDate'     => date('Y-m-d'),
+            'endDate'       => date('Y-m-d', strtotime('+1 year')),
+            'processSteps'  => [],
         ];
-    }
-
+    }//end getSlForCaseType()
 
     /**
      * Get SLA configuration for a specific process step.
      *
-     * @param string $caseTypeId   The case type UUID
+     * @param string $caseTypeId    The case type UUID
      * @param string $processStepId The process step UUID
      *
      * @return array<string, mixed> Step-specific SLA configuration
@@ -85,20 +84,19 @@ class SlaConfigurationService
     public function getSlAforStep(string $caseTypeId, string $processStepId): array
     {
         $this->logger->debug(
-            'Fetching SLA configuration for step: ' . $processStepId
-            . ' in case type: ' . $caseTypeId
+            'Fetching SLA configuration for step: '.$processStepId
+            .' in case type: '.$caseTypeId
         );
 
         // Placeholder implementation
         return [
-            'caseTypeId' => $caseTypeId,
+            'caseTypeId'    => $caseTypeId,
             'processStepId' => $processStepId,
             'streeftermijn' => 10,
-            'fatalTermijn' => 15,
-            'description' => 'Step-specific SLA targets',
+            'fatalTermijn'  => 15,
+            'description'   => 'Step-specific SLA targets',
         ];
-    }
-
+    }//end getSlAforStep()
 
     /**
      * Get all SLA configurations.
@@ -114,24 +112,23 @@ class SlaConfigurationService
         // Placeholder: would fetch from OpenRegister in production
         return [
             [
-                'caseTypeId' => 'example-case-type-1',
+                'caseTypeId'    => 'example-case-type-1',
                 'streeftermijn' => 30,
-                'fatalTermijn' => 60,
+                'fatalTermijn'  => 60,
             ],
             [
-                'caseTypeId' => 'example-case-type-2',
+                'caseTypeId'    => 'example-case-type-2',
                 'streeftermijn' => 14,
-                'fatalTermijn' => 30,
+                'fatalTermijn'  => 30,
             ],
         ];
-    }
-
+    }//end getAllConfigurations()
 
     /**
      * Create or update SLA configuration for a case type.
      *
-     * @param string          $caseTypeId    The case type UUID
-     * @param array<string, mixed> $config        The SLA configuration data
+     * @param string               $caseTypeId The case type UUID
+     * @param array<string, mixed> $config     The SLA configuration data
      *
      * @return array<string, mixed> The saved configuration
      *
@@ -143,7 +140,7 @@ class SlaConfigurationService
     {
         try {
             $this->logger->info(
-                'Saving SLA configuration for case type: ' . $caseTypeId,
+                'Saving SLA configuration for case type: '.$caseTypeId,
                 ['config' => $config]
             );
 
@@ -151,8 +148,8 @@ class SlaConfigurationService
             $savedConfig = array_merge(
                 [
                     'caseTypeId' => $caseTypeId,
-                    'createdAt' => date('Y-m-d\TH:i:s'),
-                    'updatedAt' => date('Y-m-d\TH:i:s'),
+                    'createdAt'  => date('Y-m-d\TH:i:s'),
+                    'updatedAt'  => date('Y-m-d\TH:i:s'),
                 ],
                 $config
             );
@@ -160,12 +157,11 @@ class SlaConfigurationService
             return $savedConfig;
         } catch (\Exception $e) {
             $this->logger->error(
-                'Failed to save SLA configuration: ' . $e->getMessage()
+                'Failed to save SLA configuration: '.$e->getMessage()
             );
             throw new \RuntimeException('Could not save SLA configuration');
-        }
-    }
-
+        }//end try
+    }//end saveConfiguration()
 
     /**
      * Get default SLA configuration.
@@ -177,13 +173,15 @@ class SlaConfigurationService
     public function getDefaultConfiguration(): array
     {
         return [
-            'streeftermijn' => 30,           // 30 days default target
-            'fatalTermijn' => 60,            // 60 days default deadline
-            'description' => 'Default SLA configuration',
+            'streeftermijn'    => 30,
+        // 30 days default target
+            'fatalTermijn'     => 60,
+        // 60 days default deadline
+            'description'      => 'Default SLA configuration',
             'suspensionStatus' => [
                 'suspended',
                 'on_hold',
             ],
         ];
-    }
-}
+    }//end getDefaultConfiguration()
+}//end class

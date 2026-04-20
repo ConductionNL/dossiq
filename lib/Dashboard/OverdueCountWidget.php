@@ -103,7 +103,7 @@ class OverdueCountWidget implements IWidget
     public function getUrl(): ?string
     {
         return $this->url->linkToRouteAbsolute(
-            Application::APP_ID . '.reporting.get_report'
+            Application::APP_ID.'.reporting.get_report'
         );
 
     }//end getUrl()
@@ -118,7 +118,7 @@ class OverdueCountWidget implements IWidget
      */
     public function load(): void
     {
-        Util::addScript(Application::APP_ID, Application::APP_ID . '-overdueCountWidget');
+        Util::addScript(Application::APP_ID, Application::APP_ID.'-overdueCountWidget');
         Util::addStyle(Application::APP_ID, 'dashboardWidgets');
 
     }//end load()

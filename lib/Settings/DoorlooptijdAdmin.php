@@ -33,7 +33,6 @@ use OCP\Settings\IAdminSettings;
  */
 class DoorlooptijdAdmin implements IAdminSettings
 {
-
     /**
      * Constructor.
      *
@@ -42,8 +41,7 @@ class DoorlooptijdAdmin implements IAdminSettings
     public function __construct(
         private IAppConfig $appConfig,
     ) {
-    }
-
+    }//end __construct()
 
     /**
      * Get the form for the settings page.
@@ -54,12 +52,12 @@ class DoorlooptijdAdmin implements IAdminSettings
      */
     public function getForm(): TemplateResponse
     {
-        $streeftermijn = $this->appConfig->getValueString(
+        $streeftermijn      = $this->appConfig->getValueString(
             Application::APP_ID,
             'doorlooptijd_streeftermijn',
             '30'
         );
-        $fatalTermijn = $this->appConfig->getValueString(
+        $fatalTermijn       = $this->appConfig->getValueString(
             Application::APP_ID,
             'doorlooptijd_fatal_termijn',
             '60'
@@ -71,8 +69,8 @@ class DoorlooptijdAdmin implements IAdminSettings
         );
 
         $parameters = [
-            'streeftermijn' => $streeftermijn,
-            'fatalTermijn' => $fatalTermijn,
+            'streeftermijn'      => $streeftermijn,
+            'fatalTermijn'       => $fatalTermijn,
             'suspensionStatuses' => $suspensionStatuses,
         ];
 
@@ -82,8 +80,7 @@ class DoorlooptijdAdmin implements IAdminSettings
             $parameters,
             ''
         );
-    }
-
+    }//end getForm()
 
     /**
      * Get the priority of this settings form.
@@ -93,17 +90,15 @@ class DoorlooptijdAdmin implements IAdminSettings
     public function getPriority(): int
     {
         return 50;
-    }
-
+    }//end getPriority()
 
     /**
      * Get the section ID for this settings page.
      *
-
      * @return string The section identifier
      */
     public function getSection(): string
     {
         return 'procest_doorlooptijd';
-    }
-}
+    }//end getSection()
+}//end class

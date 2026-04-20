@@ -103,7 +103,7 @@ class AverageProcessingTimeWidget implements IWidget
     public function getUrl(): ?string
     {
         return $this->url->linkToRouteAbsolute(
-            Application::APP_ID . '.doorlooptijd.statistics'
+            Application::APP_ID.'.doorlooptijd.statistics'
         );
 
     }//end getUrl()
@@ -120,7 +120,7 @@ class AverageProcessingTimeWidget implements IWidget
     {
         Util::addScript(
             Application::APP_ID,
-            Application::APP_ID . '-avgProcessingTimeWidget'
+            Application::APP_ID.'-avgProcessingTimeWidget'
         );
         Util::addStyle(Application::APP_ID, 'dashboardWidgets');
 
