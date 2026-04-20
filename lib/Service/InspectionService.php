@@ -9,7 +9,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -69,13 +69,13 @@ class InspectionService
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Get inspections assigned to an inspector, optionally filtered by date.
      *
-     * @param string      $inspectorId The inspector's user ID.
-     * @param string|null $date        Optional date filter (Y-m-d format).
+     * @param string                           $inspectorId    The inspector's user ID.
+     * @param string|null                      $date           Optional date filter (Y-m-d format).
      * @param array<int, array<string, mixed>> $allInspections All inspection data (from OpenRegister).
      *
      * @return array<int, array<string, mixed>> Filtered and sorted inspections.
@@ -87,26 +87,34 @@ class InspectionService
         ?string $date,
         array $allInspections,
     ): array {
-        $filtered = array_filter($allInspections, function (array $inspection) use ($inspectorId, $date): bool {
-            if (($inspection['inspectorId'] ?? '') !== $inspectorId) {
-                return false;
-            }
-            if ($date !== null) {
-                $inspectionDate = substr($inspection['plannedDateTime'] ?? '', 0, 10);
-                if ($inspectionDate !== $date) {
-                    return false;
+        $filtered = array_filter(
+                $allInspections,
+                function (array $inspection) use ($inspectorId, $date): bool {
+                    if (($inspection['inspectorId'] ?? '') !== $inspectorId) {
+                        return false;
+                    }
+
+                    if ($date !== null) {
+                        $inspectionDate = substr($inspection['plannedDateTime'] ?? '', 0, 10);
+                        if ($inspectionDate !== $date) {
+                            return false;
+                        }
+                    }
+
+                    return true;
                 }
-            }
-            return true;
-        });
+                );
 
         // Sort by planned time.
-        usort($filtered, function (array $a, array $b): int {
-            return ($a['plannedDateTime'] ?? '') <=> ($b['plannedDateTime'] ?? '');
-        });
+        usort(
+                $filtered,
+                function (array $a, array $b): int {
+                    return ($a['plannedDateTime'] ?? '') <=> ($b['plannedDateTime'] ?? '');
+                }
+                );
 
         return array_values($filtered);
-    }
+    }//end getInspections()
 
     /**
      * Capture GPS location for an inspection and validate against planned location.
@@ -131,21 +139,21 @@ class InspectionService
         float $accuracy,
     ): array {
         $inspection['capturedLocation'] = [
-            'latitude' => $latitude,
-            'longitude' => $longitude,
-            'accuracy' => $accuracy,
+            'latitude'   => $latitude,
+            'longitude'  => $longitude,
+            'accuracy'   => $accuracy,
             'capturedAt' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
         ];
 
-        $warning = null;
+        $warning  = null;
         $distance = 0.0;
 
         // Check distance from planned location.
-        $plannedLat = (float)($inspection['plannedLatitude'] ?? 0.0);
-        $plannedLon = (float)($inspection['plannedLongitude'] ?? 0.0);
+        $plannedLat = (float) ($inspection['plannedLatitude'] ?? 0.0);
+        $plannedLon = (float) ($inspection['plannedLongitude'] ?? 0.0);
 
         if ($plannedLat !== 0.0 && $plannedLon !== 0.0) {
-            $distance = $this->calculateDistance($latitude, $longitude, $plannedLat, $plannedLon);
+            $distance = $this->calculateDistance(lat1: $latitude, lon1: $longitude, lat2: $plannedLat, lon2: $plannedLon);
 
             if ($distance > self::LOCATION_WARNING_THRESHOLD) {
                 $warning = sprintf(
@@ -155,7 +163,7 @@ class InspectionService
                 $this->logger->warning(
                     'Location mismatch for inspection {id}: {distance}m from planned',
                     [
-                        'id' => $inspection['id'] ?? 'unknown',
+                        'id'       => $inspection['id'] ?? 'unknown',
                         'distance' => round($distance),
                     ]
                 );
@@ -168,16 +176,16 @@ class InspectionService
 
         return [
             'inspection' => $inspection,
-            'warning' => $warning,
-            'distance' => round($distance, 1),
+            'warning'    => $warning,
+            'distance'   => round($distance, 1),
         ];
-    }
+    }//end captureLocation()
 
     /**
      * Record photo metadata for an inspection.
      *
-     * @param array<string, mixed> $inspection     The inspection data.
-     * @param array<string, mixed> $photoMetadata  Photo info (fileRef, latitude, longitude, checklistItemId).
+     * @param array<string, mixed> $inspection    The inspection data.
+     * @param array<string, mixed> $photoMetadata Photo info (fileRef, latitude, longitude, checklistItemId).
      *
      * @return array<string, mixed> The updated inspection with photo added.
      *
@@ -186,19 +194,19 @@ class InspectionService
     public function addPhoto(array $inspection, array $photoMetadata): array
     {
         $photo = [
-            'id' => $photoMetadata['id'] ?? uniqid('photo_', true),
-            'fileRef' => $photoMetadata['fileRef'] ?? '',
-            'latitude' => $photoMetadata['latitude'] ?? null,
-            'longitude' => $photoMetadata['longitude'] ?? null,
+            'id'              => $photoMetadata['id'] ?? uniqid('photo_', true),
+            'fileRef'         => $photoMetadata['fileRef'] ?? '',
+            'latitude'        => $photoMetadata['latitude'] ?? null,
+            'longitude'       => $photoMetadata['longitude'] ?? null,
             'checklistItemId' => $photoMetadata['checklistItemId'] ?? null,
-            'capturedAt' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
+            'capturedAt'      => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
         ];
 
-        $inspection['photos'] = $inspection['photos'] ?? [];
+        $inspection['photos']   = $inspection['photos'] ?? [];
         $inspection['photos'][] = $photo;
 
         return $inspection;
-    }
+    }//end addPhoto()
 
     /**
      * Complete an inspection.
@@ -212,22 +220,22 @@ class InspectionService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public function completeInspection(array $inspection, string $conclusion = ''): array
+    public function completeInspection(array $inspection, string $conclusion=''): array
     {
         $checklist = $inspection['checklist'] ?? [];
-        $items = $checklist['items'] ?? [];
+        $items     = $checklist['items'] ?? [];
 
         // Check if all items are completed.
         foreach ($items as $item) {
-            if (empty($item['status'])) {
+            if (empty($item['status']) === true) {
                 throw new \InvalidArgumentException(
-                    'Not all checklist items are completed. Item: ' . ($item['description'] ?? 'unknown')
+                    'Not all checklist items are completed. Item: '.($item['description'] ?? 'unknown')
                 );
             }
         }
 
-        $inspection['status'] = self::STATUS_COMPLETED;
-        $inspection['conclusion'] = $conclusion;
+        $inspection['status']      = self::STATUS_COMPLETED;
+        $inspection['conclusion']  = $conclusion;
         $inspection['completedAt'] = (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM);
 
         $this->logger->info(
@@ -236,7 +244,7 @@ class InspectionService
         );
 
         return $inspection;
-    }
+    }//end completeInspection()
 
     /**
      * Calculate distance between two GPS coordinates using Haversine formula.
@@ -253,12 +261,10 @@ class InspectionService
         $dLat = deg2rad($lat2 - $lat1);
         $dLon = deg2rad($lon2 - $lon1);
 
-        $a = sin($dLat / 2) * sin($dLat / 2)
-            + cos(deg2rad($lat1)) * cos(deg2rad($lat2))
-            * sin($dLon / 2) * sin($dLon / 2);
+        $a = sin($dLat / 2) * sin($dLat / 2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) * sin($dLon / 2);
 
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return self::EARTH_RADIUS * $c;
-    }
-}
+    }//end calculateDistance()
+}//end class

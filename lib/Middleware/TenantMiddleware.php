@@ -8,7 +8,7 @@
  * @category Middleware
  * @package  OCA\Procest\Middleware
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -51,10 +51,10 @@ class TenantMiddleware extends Middleware
     /**
      * Constructor for the TenantMiddleware.
      *
-     * @param TenantService  $tenantService The tenant service
-     * @param IUserSession   $userSession   The user session
-     * @param IRequest       $request       The request object
-     * @param LoggerInterface $logger       The logger
+     * @param TenantService   $tenantService The tenant service
+     * @param IUserSession    $userSession   The user session
+     * @param IRequest        $request       The request object
+     * @param LoggerInterface $logger        The logger
      *
      * @return void
      */
@@ -69,12 +69,10 @@ class TenantMiddleware extends Middleware
     /**
      * Check tenant context before controller execution.
      *
-     * @param \OCP\AppFramework\Controller $controller  The controller
-     * @param string                        $methodName The method name
+     * @param \OCP\AppFramework\Controller $controller The controller
+     * @param string                       $methodName The method name
      *
      * @return void
-     *
-     * @throws \OCP\AppFramework\Http\Response Throws if tenant check fails
      */
     public function beforeController($controller, $methodName): void
     {
@@ -117,9 +115,9 @@ class TenantMiddleware extends Middleware
     /**
      * Handle exceptions from controllers.
      *
-     * @param \OCP\AppFramework\Controller $controller  The controller
-     * @param string                        $methodName The method name
-     * @param \Exception                    $exception  The exception
+     * @param \OCP\AppFramework\Controller $controller The controller
+     * @param string                       $methodName The method name
+     * @param \Exception                   $exception  The exception
      *
      * @return JSONResponse The error response
      *
