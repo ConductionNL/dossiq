@@ -8,7 +8,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -40,13 +40,13 @@ class CaseSharingController extends Controller
     /**
      * Constructor for the CaseSharingController.
      *
-     * @param IRequest             $request             The request object
-     * @param CaseSharingService   $caseSharingService  The sharing service
-     * @param CaseTransferService  $caseTransferService The transfer service
-     * @param SettingsService      $settingsService     The settings service
-     * @param IAppManager          $appManager          The app manager
-     * @param ContainerInterface   $container           The DI container
-     * @param IUserSession         $userSession         The user session
+     * @param IRequest            $request             The request object
+     * @param CaseSharingService  $caseSharingService  The sharing service
+     * @param CaseTransferService $caseTransferService The transfer service
+     * @param SettingsService     $settingsService     The settings service
+     * @param IAppManager         $appManager          The app manager
+     * @param ContainerInterface  $container           The DI container
+     * @param IUserSession        $userSession         The user session
      *
      * @return void
      *
@@ -134,7 +134,7 @@ class CaseSharingController extends Controller
                 $password,
                 $fieldExclusions,
             );
-        }
+        }//end if
 
         return new JSONResponse(['success' => true, 'share' => $share]);
     }//end createShare()
@@ -168,11 +168,11 @@ class CaseSharingController extends Controller
      */
     public function initiateTransfer(): JSONResponse
     {
-        $caseId             = $this->request->getParam('caseId');
+        $caseId = $this->request->getParam('caseId');
         $sourceOrganization = $this->request->getParam('sourceOrganization', '');
         $targetOrganization = $this->request->getParam('targetOrganization');
-        $reason             = $this->request->getParam('reason', '');
-        $requestedDate      = $this->request->getParam('requestedDate', date('Y-m-d'));
+        $reason        = $this->request->getParam('reason', '');
+        $requestedDate = $this->request->getParam('requestedDate', date('Y-m-d'));
 
         if (empty($caseId) === true || empty($targetOrganization) === true) {
             return new JSONResponse(
@@ -207,7 +207,7 @@ class CaseSharingController extends Controller
 
         if ($action === 'accept') {
             $result = $this->caseTransferService->acceptTransfer($transferId);
-        } elseif ($action === 'reject') {
+        } else if ($action === 'reject') {
             $reason = $this->request->getParam('reason', '');
             $result = $this->caseTransferService->rejectTransfer($transferId, $reason);
         } else {

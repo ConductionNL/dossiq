@@ -10,7 +10,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -51,7 +51,7 @@ class StufController extends Controller
      */
     private const DEFAULT_ZENDER = [
         'organisatie' => 'Procest',
-        'applicatie' => 'Procest',
+        'applicatie'  => 'Procest',
     ];
 
     /**
@@ -71,7 +71,7 @@ class StufController extends Controller
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct($appName, $request);
-    }
+    }//end __construct()
 
     /**
      * Handle inbound StUF-ZKN SOAP messages for case operations.
@@ -83,7 +83,7 @@ class StufController extends Controller
     public function zaken(): DataDisplayResponse
     {
         return $this->handleSoapMessage('zaken');
-    }
+    }//end zaken()
 
     /**
      * Handle inbound StUF-BG SOAP messages for person operations.
@@ -95,7 +95,7 @@ class StufController extends Controller
     public function personen(): DataDisplayResponse
     {
         return $this->handleSoapMessage('personen');
-    }
+    }//end personen()
 
     /**
      * Handle an inbound SOAP message.
@@ -117,11 +117,11 @@ class StufController extends Controller
         $dom = new \DOMDocument();
         libxml_use_internal_errors(true);
         $parseResult = $dom->loadXML($rawBody);
-        $errors = libxml_get_errors();
+        $errors      = libxml_get_errors();
         libxml_clear_errors();
 
         if (!$parseResult || !empty($errors)) {
-            $this->logger->warning('Invalid XML received at StUF endpoint: ' . $service);
+            $this->logger->warning('Invalid XML received at StUF endpoint: '.$service);
             $response = $this->messageBuilder->buildSoapFault('Ongeldig XML bericht');
             return $this->soapResponse($response, Http::STATUS_BAD_REQUEST);
         }
@@ -172,7 +172,7 @@ class StufController extends Controller
             'edcLk01' => $this->handleEdcLk01($messageElement),
             default => $this->handleUnknownMessage($messageType),
         };
-    }
+    }//end handleSoapMessage()
 
     /**
      * Handle zakLk01 (case create/update) message.
@@ -196,20 +196,23 @@ class StufController extends Controller
             return $this->soapResponse($response);
         }
 
-        $objectEl = $objectElements->item(0);
+        $objectEl     = $objectElements->item(0);
         $mutatiesoort = $message->getAttribute('mutatiesoort');
 
         // Extract basic fields.
-        $stufFields = $this->extractFields($objectEl, [
-            'identificatie',
-            'omschrijving',
-            'toelichting',
-            'startdatum',
-            'einddatum',
-            'einddatumGepland',
-            'uiterlijkeEinddatumAfdoening',
-            'vertrouwelijkAanduiding',
-        ]);
+        $stufFields = $this->extractFields(
+                $objectEl,
+                [
+                    'identificatie',
+                    'omschrijving',
+                    'toelichting',
+                    'startdatum',
+                    'einddatum',
+                    'einddatumGepland',
+                    'uiterlijkeEinddatumAfdoening',
+                    'vertrouwelijkAanduiding',
+                ]
+                );
 
         // Map to internal properties.
         $internalData = $this->mappingService->mapZknToInternal($stufFields);
@@ -218,13 +221,13 @@ class StufController extends Controller
             'Processed zakLk01 mutatiesoort={mutatiesoort}, identifier={id}',
             [
                 'mutatiesoort' => $mutatiesoort,
-                'id' => $internalData['identifier'] ?? 'none',
+                'id'           => $internalData['identifier'] ?? 'none',
             ]
         );
 
         // Extract referentienummer for cross-reference.
         $stuurgegevens = $message->getElementsByTagName('stuurgegevens');
-        $crossRef = '';
+        $crossRef      = '';
         if ($stuurgegevens->length > 0) {
             $refElements = $stuurgegevens->item(0)->getElementsByTagName('referentienummer');
             if ($refElements->length > 0) {
@@ -241,7 +244,7 @@ class StufController extends Controller
         );
 
         return $this->soapResponse($response);
-    }
+    }//end handleZakLk01()
 
     /**
      * Handle zakLv01 (case query) message.
@@ -254,15 +257,18 @@ class StufController extends Controller
     {
         // Extract query criteria from gelijk element.
         $gelijkElements = $message->getElementsByTagName('gelijk');
-        $criteria = [];
+        $criteria       = [];
 
         if ($gelijkElements->length > 0) {
-            $gelijk = $gelijkElements->item(0);
-            $criteria = $this->extractFields($gelijk, [
-                'identificatie',
-                'omschrijving',
-                'startdatum',
-            ]);
+            $gelijk   = $gelijkElements->item(0);
+            $criteria = $this->extractFields(
+                    $gelijk,
+                    [
+                        'identificatie',
+                        'omschrijving',
+                        'startdatum',
+                    ]
+                    );
         }
 
         $this->logger->info(
@@ -272,8 +278,8 @@ class StufController extends Controller
 
         // In a full implementation, query OpenRegister and build zakLa01 response.
         // For now, return an empty zakLa01 response.
-        $body = '<zkn:zakLa01 xmlns:zkn="' . StufMessageBuilder::NS_ZKN . '" '
-            . 'xmlns:stuf="' . StufMessageBuilder::NS_STUF . '">';
+        $body  = '<zkn:zakLa01 xmlns:zkn="'.StufMessageBuilder::NS_ZKN.'" '
+            .'xmlns:stuf="'.StufMessageBuilder::NS_STUF.'">';
         $body .= $this->messageBuilder->buildStuurgegevens(self::DEFAULT_ZENDER, []);
         $body .= '<zkn:antwoord/>';
         $body .= '</zkn:zakLa01>';
@@ -281,7 +287,7 @@ class StufController extends Controller
         $response = $this->messageBuilder->buildSoapEnvelope($body);
 
         return $this->soapResponse($response);
-    }
+    }//end handleZakLv01()
 
     /**
      * Handle npsLv01 (person query) message.
@@ -294,7 +300,7 @@ class StufController extends Controller
     {
         // Extract BSN from gelijk element.
         $gelijkElements = $message->getElementsByTagName('gelijk');
-        $bsn = '';
+        $bsn            = '';
 
         if ($gelijkElements->length > 0) {
             $bsnElements = $gelijkElements->item(0)->getElementsByTagName('bsn');
@@ -305,13 +311,13 @@ class StufController extends Controller
 
         $this->logger->info(
             'Processed npsLv01 person query for BSN {bsn}',
-            ['bsn' => substr($bsn, 0, 3) . '***']
+            ['bsn' => substr($bsn, 0, 3).'***']
         );
 
         // In a full implementation, query OpenRegister for person data.
         // For now, return an empty npsLa01 response.
-        $body = '<bg:npsLa01 xmlns:bg="' . StufMessageBuilder::NS_BG . '" '
-            . 'xmlns:stuf="' . StufMessageBuilder::NS_STUF . '">';
+        $body  = '<bg:npsLa01 xmlns:bg="'.StufMessageBuilder::NS_BG.'" '
+            .'xmlns:stuf="'.StufMessageBuilder::NS_STUF.'">';
         $body .= $this->messageBuilder->buildStuurgegevens(self::DEFAULT_ZENDER, []);
         $body .= '<bg:antwoord/>';
         $body .= '</bg:npsLa01>';
@@ -319,7 +325,7 @@ class StufController extends Controller
         $response = $this->messageBuilder->buildSoapEnvelope($body);
 
         return $this->soapResponse($response);
-    }
+    }//end handleNpsLv01()
 
     /**
      * Handle edcLk01 (document create/update) message.
@@ -334,7 +340,7 @@ class StufController extends Controller
 
         // Extract referentienummer.
         $stuurgegevens = $message->getElementsByTagName('stuurgegevens');
-        $crossRef = '';
+        $crossRef      = '';
         if ($stuurgegevens->length > 0) {
             $refElements = $stuurgegevens->item(0)->getElementsByTagName('referentienummer');
             if ($refElements->length > 0) {
@@ -349,7 +355,7 @@ class StufController extends Controller
         );
 
         return $this->soapResponse($response);
-    }
+    }//end handleEdcLk01()
 
     /**
      * Handle unknown message type.
@@ -360,18 +366,18 @@ class StufController extends Controller
      */
     private function handleUnknownMessage(string $messageType): DataDisplayResponse
     {
-        $this->logger->warning('Unknown StUF message type: ' . $messageType);
+        $this->logger->warning('Unknown StUF message type: '.$messageType);
 
         $response = $this->messageBuilder->buildFo01(
             'StUF001',
-            'Onbekend berichttype: ' . $messageType,
+            'Onbekend berichttype: '.$messageType,
             'server',
             self::DEFAULT_ZENDER,
             []
         );
 
         return $this->soapResponse($response, Http::STATUS_BAD_REQUEST);
-    }
+    }//end handleUnknownMessage()
 
     /**
      * Extract field values from a DOM element.
@@ -397,7 +403,7 @@ class StufController extends Controller
         }
 
         return $result;
-    }
+    }//end extractFields()
 
     /**
      * Create a SOAP XML response.
@@ -407,10 +413,10 @@ class StufController extends Controller
      *
      * @return DataDisplayResponse
      */
-    private function soapResponse(string $xml, int $statusCode = Http::STATUS_OK): DataDisplayResponse
+    private function soapResponse(string $xml, int $statusCode=Http::STATUS_OK): DataDisplayResponse
     {
         $response = new DataDisplayResponse($xml, $statusCode);
         $response->addHeader('Content-Type', 'text/xml; charset=utf-8');
         return $response;
-    }
-}
+    }//end soapResponse()
+}//end class

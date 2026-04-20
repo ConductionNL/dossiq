@@ -15,15 +15,15 @@ use Psr\Log\LoggerInterface;
  */
 class BerichtenboxService
 {
-    private const MAX_ATTACHMENT_SIZE = 10485760; // 10 MB
-
+    private const MAX_ATTACHMENT_SIZE = 10485760;
+    // 10 MB
     public function __construct(
         private SettingsService $settingsService,
         private IAppManager $appManager,
         private ContainerInterface $container,
         private LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Send a message to the Berichtenbox.
@@ -34,7 +34,7 @@ class BerichtenboxService
         string $subject,
         string $body,
         string $typeCode,
-        ?string $attachmentFileId = null,
+        ?string $attachmentFileId=null,
     ): array {
         // Validate inputs.
         $errors = $this->validateMessage($bsn, $subject, $body);
@@ -51,7 +51,8 @@ class BerichtenboxService
         $attachmentContent = null;
         if ($attachmentFileId !== null) {
             // Attachment validation would check file size here.
-            $attachmentContent = ''; // Placeholder -- actual file reading via IRootFolder.
+            $attachmentContent = '';
+            // Placeholder -- actual file reading via IRootFolder.
         }
 
         // Send via adapter.
@@ -80,13 +81,16 @@ class BerichtenboxService
             $messageData,
         );
 
-        $this->logger->info('Procest: Berichtenbox message sent', [
-            'caseId'    => $caseId,
-            'messageId' => $result['messageId'] ?? '',
-        ]);
+        $this->logger->info(
+                'Procest: Berichtenbox message sent',
+                [
+                    'caseId'    => $caseId,
+                    'messageId' => $result['messageId'] ?? '',
+                ]
+                );
 
         return $saved->jsonSerialize();
-    }
+    }//end sendMessage()
 
     /**
      * Get sent messages for a case.
@@ -108,7 +112,7 @@ class BerichtenboxService
         );
 
         return $result['objects'] ?? [];
-    }
+    }//end getMessagesForCase()
 
     /**
      * Poll read status for a message.
@@ -154,7 +158,7 @@ class BerichtenboxService
         }
 
         return $data;
-    }
+    }//end pollReadStatus()
 
     /**
      * Validate a BSN using the 11-proef.
@@ -169,10 +173,11 @@ class BerichtenboxService
         for ($i = 0; $i < 8; $i++) {
             $sum += (int) $bsn[$i] * (9 - $i);
         }
+
         $sum -= (int) $bsn[8];
 
         return ($sum % 11) === 0 && $sum !== 0;
-    }
+    }//end validateBsn()
 
     /**
      * Validate message inputs.
@@ -183,7 +188,7 @@ class BerichtenboxService
 
         if (empty($bsn) === true) {
             $errors[] = 'BSN is verplicht voor berichten via Mijn Overheid';
-        } elseif ($this->validateBsn($bsn) === false) {
+        } else if ($this->validateBsn($bsn) === false) {
             $errors[] = 'Ongeldig BSN-nummer';
         }
 
@@ -201,13 +206,13 @@ class BerichtenboxService
         }
 
         return $errors;
-    }
+    }//end validateMessage()
 
     private function getAdapter(): BerichtenboxAdapterInterface
     {
         // For MVP, always use mock adapter.
         return new MockAdapter($this->logger);
-    }
+    }//end getAdapter()
 
     private function getObjectService(): ?\OCA\OpenRegister\Service\ObjectService
     {
@@ -221,5 +226,5 @@ class BerichtenboxService
             $this->logger->error('Procest: Could not get ObjectService', ['exception' => $e->getMessage()]);
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

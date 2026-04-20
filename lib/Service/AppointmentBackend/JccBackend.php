@@ -21,7 +21,7 @@ class JccBackend implements AppointmentBackendInterface
         private string $apiUrl,
         private string $apiKey,
     ) {
-    }
+    }//end __construct()
 
     public function getTimeslots(string $productId, string $locationId, string $date): array
     {
@@ -44,7 +44,7 @@ class JccBackend implements AppointmentBackendInterface
             $this->logger->error('JCC API error: '.$e->getMessage());
             return [];
         }
-    }
+    }//end getTimeslots()
 
     public function bookAppointment(array $data): array
     {
@@ -63,7 +63,7 @@ class JccBackend implements AppointmentBackendInterface
             $this->logger->error('JCC booking error: '.$e->getMessage());
             return ['error' => $e->getMessage()];
         }
-    }
+    }//end bookAppointment()
 
     public function cancelAppointment(string $externalId): bool
     {
@@ -78,11 +78,11 @@ class JccBackend implements AppointmentBackendInterface
             $this->logger->error('JCC cancel error: '.$e->getMessage());
             return false;
         }
-    }
+    }//end cancelAppointment()
 
     public function rescheduleAppointment(string $externalId, string $newDateTime): array
     {
         $this->cancelAppointment($externalId);
         return $this->bookAppointment(['dateTime' => $newDateTime, 'externalId' => $externalId]);
-    }
-}
+    }//end rescheduleAppointment()
+}//end class

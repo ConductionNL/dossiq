@@ -17,13 +17,14 @@ class BerichtenboxReadStatusJob extends TimedJob
         private LoggerInterface $logger,
     ) {
         parent::__construct($time);
-        $this->setInterval(86400); // Daily.
-    }
+        $this->setInterval(86400);
+        // Daily.
+    }//end __construct()
 
     protected function run($argument): void
     {
         $this->logger->info('Procest: Running Berichtenbox read status poll');
         // The actual polling happens in BerichtenboxService::pollReadStatus
         // This job would iterate unread messages and poll each one.
-    }
-}
+    }//end run()
+}//end class
