@@ -1,0 +1,606 @@
+{
+  "spec_slug": "signalering-widgets",
+  "app": "procest",
+  "repo": "ConductionNL/procest",
+  "issue": 213,
+  "depends_on": [],
+  "schema_version": 2,
+  "cycles": [
+    {
+      "cycle": 1,
+      "trigger": "build:queued",
+      "started_at": "2026-04-18T20:38:43Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [
+        "reviewer-skipped-full-suite"
+      ],
+      "stages": [
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-18T20:38:43Z",
+          "ended_at": "2026-04-18T20:38:44Z",
+          "turns_used": 111,
+          "turns_budget": 200,
+          "cost_usd": 1.1638,
+          "checks_run": [
+            "composer check:strict"
+          ],
+          "checks_skipped": [],
+          "findings": [],
+          "decisions": [],
+          "verdict": "pass"
+        },
+        {
+          "stage": "pre-review-quality",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-18T20:38:43Z",
+          "ended_at": "2026-04-18T20:38:44Z",
+          "exit_code": 0,
+          "checks_run": [
+            "php-lint",
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "stylelint",
+            "npm-audit",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "publiccode",
+            "gitleaks",
+            "trivy",
+            "newman"
+          ],
+          "gates": {
+            "php-lint": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpcs": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": true,
+              "failures": 0
+            },
+            "forbidden-patterns": {
+              "pass": true,
+              "failures": 0
+            },
+            "eslint": {
+              "pass": true,
+              "failures": 0
+            },
+            "stylelint": {
+              "pass": true,
+              "failures": 0
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpunit": {
+              "pass": true,
+              "failures": 0
+            }
+          },
+          "findings": [],
+          "verdict": "pass"
+        },
+        {
+          "stage": "code-review",
+          "persona": "Juan Claude van Damme",
+          "model": "sonnet",
+          "container": "hydra-reviewer",
+          "started_at": "2026-04-18T20:55:03Z",
+          "ended_at": "2026-04-18T20:55:04Z",
+          "turns_used": 41,
+          "turns_budget": 40,
+          "cost_usd": 0.8573,
+          "checks_run": [
+            "composer check:strict",
+            "phpcs"
+          ],
+          "checks_skipped": [
+            "hydra-gates"
+          ],
+          "findings": [],
+          "verdict": "none"
+        },
+        {
+          "stage": "security-review",
+          "persona": "Clyde Barcode",
+          "model": "sonnet",
+          "container": "hydra-security",
+          "started_at": "2026-04-18T21:01:31Z",
+          "ended_at": "2026-04-18T21:01:32Z",
+          "turns_used": 33,
+          "turns_budget": 40,
+          "cost_usd": 0.7901,
+          "checks_run": [],
+          "checks_skipped": [
+            "hydra-gates",
+            "composer check:strict"
+          ],
+          "findings": [
+            {
+              "id": "SEC-01",
+              "severity": "WARNING",
+              "gate": "OWASP A05:2021 / CWE-209",
+              "file": "lib/Controller/DeadlineNotificationController.php",
+              "line": 113,
+              "rule": "OWASP A05:2021 / CWE-209",
+              "status": "open",
+              "note": "Filesystem read-only prevented in-container fix; replace $e->getMessage() with 'Internal server error' in both 500 responses; logger lines already capture detail",
+              "autofixable": false
+            },
+            {
+              "id": "SEC-02",
+              "severity": "WARNING",
+              "gate": "OWASP A07:2021 / CWE-306",
+              "file": "lib/Controller/DeadlineNotificationController.php",
+              "line": 127,
+              "rule": "OWASP A07:2021 / CWE-306",
+              "status": "open",
+              "note": "Architectural decision needed: service-account auth vs public endpoint with HMAC-SHA256 signature verification",
+              "autofixable": false
+            },
+            {
+              "id": "SEC-03",
+              "severity": "WARNING",
+              "gate": "OWASP A01:2021 / CWE-639",
+              "file": "lib/Controller/DeadlineNotificationController.php",
+              "line": 50,
+              "rule": "OWASP A01:2021 / CWE-639",
+              "status": "open",
+              "note": "Requires review of ObjectService ACL model; add explicit ownership/role check if ObjectService does not enforce per-user access",
+              "autofixable": false
+            },
+            {
+              "id": "SEC-04",
+              "severity": "SUGGESTION",
+              "gate": "OWASP A05:2021 / CWE-209",
+              "file": "lib/Controller/SignaleringConfigController.php",
+              "line": 82,
+              "rule": "OWASP A05:2021 / CWE-209",
+              "status": "open",
+              "note": "Admin-only gating reduces risk; filesystem read-only prevented fix; replace $e->getMessage() with 'Internal server error' in all three catch blocks",
+              "autofixable": false
+            }
+          ],
+          "verdict": "fail"
+        }
+      ]
+    },
+    {
+      "cycle": 2,
+      "trigger": "build:queued",
+      "started_at": "2026-04-18T21:08:31Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [],
+      "stages": [
+        {
+          "stage": "quality-recheck",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-18T21:08:31Z",
+          "ended_at": "2026-04-18T21:08:32Z",
+          "exit_code": 1,
+          "checks_run": [
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "stylelint",
+            "npm-audit",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "php-lint",
+            "publiccode",
+            "gitleaks",
+            "trivy",
+            "newman"
+          ],
+          "gates": {
+            "phpcs": {
+              "pass": false,
+              "failures": 1
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": false,
+              "failures": 1
+            },
+            "forbidden-patterns": {
+              "pass": false,
+              "failures": 1
+            },
+            "eslint": {
+              "pass": false,
+              "failures": 1
+            },
+            "stylelint": {
+              "pass": false,
+              "failures": 1
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpunit": {
+              "pass": false,
+              "failures": 1
+            }
+          },
+          "findings": [
+            {
+              "id": "qr-quality-recheck-phpcs",
+              "severity": "CRITICAL",
+              "gate": "phpcs",
+              "rule": "phpcs gate failing",
+              "status": "open",
+              "note": "phpcs reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-spdx-headers",
+              "severity": "CRITICAL",
+              "gate": "spdx-headers",
+              "rule": "spdx-headers gate failing",
+              "status": "open",
+              "note": "spdx-headers reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-forbidden-patterns",
+              "severity": "CRITICAL",
+              "gate": "forbidden-patterns",
+              "rule": "forbidden-patterns gate failing",
+              "status": "open",
+              "note": "forbidden-patterns reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-eslint",
+              "severity": "CRITICAL",
+              "gate": "eslint",
+              "rule": "eslint gate failing",
+              "status": "open",
+              "note": "eslint reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-stylelint",
+              "severity": "CRITICAL",
+              "gate": "stylelint",
+              "rule": "stylelint gate failing",
+              "status": "open",
+              "note": "stylelint reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-phpunit",
+              "severity": "CRITICAL",
+              "gate": "phpunit",
+              "rule": "phpunit gate failing",
+              "status": "open",
+              "note": "phpunit reported status=fail in quality-recheck.json",
+              "autofixable": false
+            }
+          ],
+          "verdict": "fail"
+        }
+      ]
+    },
+    {
+      "cycle": 3,
+      "trigger": "build:queued",
+      "started_at": "2026-04-19T17:45:31Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [
+        "reviewer-skipped-full-suite"
+      ],
+      "stages": [
+        {
+          "stage": "fix",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-19T17:45:31Z",
+          "ended_at": "2026-04-19T17:45:32Z",
+          "turns_used": 58,
+          "turns_budget": 200,
+          "cost_usd": 0.4931,
+          "checks_run": [],
+          "checks_skipped": [],
+          "findings": [
+            {
+              "id": "b-builder-fix-0",
+              "severity": "WARNING",
+              "gate": null,
+              "rule": "builder output flagged failure language",
+              "status": "open",
+              "note": "## Summary\n\nI've successfully completed the fix retry cycle for PR #254. Here's what was addressed:\n\n### **Security Findings Fixed (4/4)**\n\n1. **OWASP A05:2021 / CWE-209 (Information Exposure)** \u2705\n   - Removed exception message exposure in `DeadlineNotificationController` (lines 118, 164) and `SignaleringConfigController` (lines 85, 151, 229)\n   - Now returns generic error messages instead of exposing sensitive details\n\n2. **OWASP A07:2021 / CWE-306 (Missing Authentication)** \u2705\n   - Added authen",
+              "autofixable": false
+            }
+          ],
+          "decisions": [],
+          "verdict": "fail"
+        },
+        {
+          "stage": "code-review",
+          "persona": "Juan Claude van Damme",
+          "model": "sonnet",
+          "container": "hydra-reviewer",
+          "started_at": "2026-04-19T17:53:38Z",
+          "ended_at": "2026-04-19T17:53:39Z",
+          "turns_used": 61,
+          "turns_budget": 40,
+          "cost_usd": 1.4308,
+          "checks_run": [
+            "phpcs"
+          ],
+          "checks_skipped": [
+            "hydra-gates",
+            "composer check:strict"
+          ],
+          "findings": [],
+          "verdict": "none"
+        },
+        {
+          "stage": "security-review",
+          "persona": "Clyde Barcode",
+          "model": "sonnet",
+          "container": "hydra-security",
+          "started_at": "2026-04-19T18:07:24Z",
+          "ended_at": "2026-04-19T18:07:25Z",
+          "turns_used": 46,
+          "turns_budget": 40,
+          "cost_usd": 1.2156,
+          "checks_run": [
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "hydra-gates",
+            "composer check:strict"
+          ],
+          "findings": [
+            {
+              "id": "SEC-01",
+              "severity": "CRITICAL",
+              "gate": "OWASP A09:2021 / ADR-005",
+              "file": "lib/Service/SignaleringNotificationService.php",
+              "line": 121,
+              "rule": "OWASP A09:2021 / ADR-005",
+              "status": "open",
+              "note": "environment-write-blocked \u2014 root-owned files prevent in-container edit; fix is mechanical: remove 'userEmail' => $userEmail from logger->info() context at line 121",
+              "autofixable": false
+            },
+            {
+              "id": "SEC-02",
+              "severity": "CRITICAL",
+              "gate": "OWASP A09:2021 / ADR-005",
+              "file": "lib/Service/SignaleringNotificationService.php",
+              "line": 129,
+              "rule": "OWASP A09:2021 / ADR-005",
+              "status": "open",
+              "note": "environment-write-blocked \u2014 root-owned files prevent in-container edit; fix is mechanical: remove 'userEmail' => $userEmail from logger->error() context at line 129",
+              "autofixable": false
+            },
+            {
+              "id": "SEC-03",
+              "severity": "WARNING",
+              "gate": "CWE-287 / OWASP A07:2021",
+              "file": "lib/Controller/DeadlineNotificationController.php",
+              "line": 163,
+              "rule": "CWE-287 / OWASP A07:2021",
+              "status": "open",
+              "note": "requires-new-functionality \u2014 load configured secret from settings and compare with hash_equals(); see tasks.md T18",
+              "autofixable": false
+            },
+            {
+              "id": "SEC-04",
+              "severity": "WARNING",
+              "gate": "CWE-918 / OWASP A10:2021",
+              "file": "lib/Service/SignaleringNotificationService.php",
+              "line": 115,
+              "rule": "CWE-918 / OWASP A10:2021",
+              "status": "open",
+              "note": "architectural \u2014 validate URL scheme is https before use; optionally allowlist permitted host suffixes",
+              "autofixable": false
+            }
+          ],
+          "verdict": "fail"
+        }
+      ]
+    },
+    {
+      "cycle": 4,
+      "trigger": "build:queued",
+      "started_at": "2026-04-19T18:15:04Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [],
+      "stages": [
+        {
+          "stage": "quality-recheck",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-19T18:15:04Z",
+          "ended_at": "2026-04-19T18:15:05Z",
+          "exit_code": 1,
+          "checks_run": [
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "stylelint",
+            "npm-audit"
+          ],
+          "checks_skipped": [
+            "php-lint",
+            "publiccode",
+            "stub-scan",
+            "gitleaks",
+            "trivy",
+            "phpunit",
+            "newman"
+          ],
+          "gates": {
+            "phpcs": {
+              "pass": false,
+              "failures": 1
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": false,
+              "failures": 1
+            },
+            "forbidden-patterns": {
+              "pass": true,
+              "failures": 0
+            },
+            "eslint": {
+              "pass": false,
+              "failures": 1
+            },
+            "stylelint": {
+              "pass": false,
+              "failures": 1
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            }
+          },
+          "findings": [
+            {
+              "id": "qr-quality-recheck-phpcs",
+              "severity": "CRITICAL",
+              "gate": "phpcs",
+              "rule": "phpcs gate failing",
+              "status": "open",
+              "note": "phpcs reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-spdx-headers",
+              "severity": "CRITICAL",
+              "gate": "spdx-headers",
+              "rule": "spdx-headers gate failing",
+              "status": "open",
+              "note": "spdx-headers reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-eslint",
+              "severity": "CRITICAL",
+              "gate": "eslint",
+              "rule": "eslint gate failing",
+              "status": "open",
+              "note": "eslint reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-stylelint",
+              "severity": "CRITICAL",
+              "gate": "stylelint",
+              "rule": "stylelint gate failing",
+              "status": "open",
+              "note": "stylelint reported status=fail in quality-recheck.json",
+              "autofixable": true
+            }
+          ],
+          "verdict": "fail"
+        }
+      ]
+    }
+  ]
+}
