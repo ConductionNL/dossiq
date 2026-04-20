@@ -208,9 +208,9 @@
       "cycle": 2,
       "trigger": "build:queued",
       "started_at": "2026-04-18T20:53:35Z",
-      "ended_at": null,
+      "ended_at": "2026-04-20T21:52:50Z",
       "outcome": "aborted",
-      "outcome_reason": "no terminal label seen in timeline",
+      "outcome_reason": "rebuild:queued \u2014 human wiped prior cycle",
       "pattern_tags": [],
       "stages": [
         {
