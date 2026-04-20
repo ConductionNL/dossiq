@@ -1,5 +1,22 @@
 <?php
 
+/**
+ * Procest Qmatic Orchestra Backend.
+ *
+ * Integration with the Qmatic Orchestra REST API for appointment scheduling.
+ *
+ * @category Service
+ * @package  OCA\Procest\Service\AppointmentBackend
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ */
+
 declare(strict_types=1);
 
 namespace OCA\Procest\Service\AppointmentBackend;
@@ -12,6 +29,14 @@ use Psr\Log\LoggerInterface;
  */
 class QmaticBackend implements AppointmentBackendInterface
 {
+    /**
+     * Constructor.
+     *
+     * @param IClientService  $clientService The HTTP client service.
+     * @param LoggerInterface $logger        The logger.
+     * @param string          $apiUrl        The Qmatic API base URL.
+     * @param string          $apiKey        The Qmatic API auth token.
+     */
     public function __construct(
         private IClientService $clientService,
         private LoggerInterface $logger,
@@ -20,6 +45,15 @@ class QmaticBackend implements AppointmentBackendInterface
     ) {
     }//end __construct()
 
+    /**
+     * Fetch available timeslots from the Qmatic API.
+     *
+     * @param string $productId  The Qmatic service identifier.
+     * @param string $locationId The Qmatic branch identifier.
+     * @param string $date       The date (YYYY-MM-DD).
+     *
+     * @return array<int, array<string, mixed>> List of available timeslots.
+     */
     public function getTimeslots(string $productId, string $locationId, string $date): array
     {
         try {
@@ -46,6 +80,13 @@ class QmaticBackend implements AppointmentBackendInterface
         }//end try
     }//end getTimeslots()
 
+    /**
+     * Book an appointment via the Qmatic API.
+     *
+     * @param array<string, mixed> $data Appointment data to POST to Qmatic.
+     *
+     * @return array<string, mixed> Booking result from Qmatic, or error payload.
+     */
     public function bookAppointment(array $data): array
     {
         try {
@@ -65,6 +106,13 @@ class QmaticBackend implements AppointmentBackendInterface
         }
     }//end bookAppointment()
 
+    /**
+     * Cancel an appointment via the Qmatic API.
+     *
+     * @param string $externalId The Qmatic appointment id.
+     *
+     * @return bool True on success, false on API error.
+     */
     public function cancelAppointment(string $externalId): bool
     {
         try {
@@ -80,9 +128,17 @@ class QmaticBackend implements AppointmentBackendInterface
         }
     }//end cancelAppointment()
 
+    /**
+     * Reschedule an appointment via the Qmatic API (cancel then book).
+     *
+     * @param string $externalId  The Qmatic appointment id.
+     * @param string $newDateTime The new datetime (ISO 8601).
+     *
+     * @return array<string, mixed> The new booking result.
+     */
     public function rescheduleAppointment(string $externalId, string $newDateTime): array
     {
-        $this->cancelAppointment($externalId);
-        return $this->bookAppointment(['dateTime' => $newDateTime]);
+        $this->cancelAppointment(externalId: $externalId);
+        return $this->bookAppointment(data: ['dateTime' => $newDateTime]);
     }//end rescheduleAppointment()
 }//end class

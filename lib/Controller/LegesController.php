@@ -9,7 +9,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <info@conduction.nl>
+ * @author    Conduction Development Team <dev@conductio.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -57,7 +57,7 @@ class LegesController extends Controller
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -73,18 +73,18 @@ class LegesController extends Controller
             $caseData    = $this->request->getParam('caseData', []);
             $verordening = $this->request->getParam('verordening', []);
 
-            if (empty($caseData) || empty($verordening)) {
+            if (empty($caseData) === true || empty($verordening) === true) {
                 return new JSONResponse(
                     ['error' => 'Parameters caseData and verordening are required'],
                     Http::STATUS_BAD_REQUEST
                 );
             }
 
-            if (is_string($caseData)) {
+            if (is_string($caseData) === true) {
                 $caseData = json_decode($caseData, true) ?? [];
             }
 
-            if (is_string($verordening)) {
+            if (is_string($verordening) === true) {
                 $verordening = json_decode($verordening, true) ?? [];
             }
 
@@ -117,15 +117,15 @@ class LegesController extends Controller
             $previousCalc = $this->request->getParam('previousCalculation', []);
             $reason       = $this->request->getParam('correctionReason', '');
 
-            if (is_string($caseData)) {
+            if (is_string($caseData) === true) {
                 $caseData = json_decode($caseData, true) ?? [];
             }
 
-            if (is_string($verordening)) {
+            if (is_string($verordening) === true) {
                 $verordening = json_decode($verordening, true) ?? [];
             }
 
-            if (is_string($previousCalc)) {
+            if (is_string($previousCalc) === true) {
                 $previousCalc = json_decode($previousCalc, true) ?? [];
             }
 
@@ -217,11 +217,11 @@ class LegesController extends Controller
             $berekeningen = $this->request->getParam('berekeningen', []);
             $format       = $this->request->getParam('format', LegesExportService::FORMAT_CSV);
 
-            if (is_string($berekeningen)) {
+            if (is_string($berekeningen) === true) {
                 $berekeningen = json_decode($berekeningen, true) ?? [];
             }
 
-            if (empty($berekeningen)) {
+            if (empty($berekeningen) === true) {
                 return new JSONResponse(
                     ['error' => 'No berekeningen provided for export'],
                     Http::STATUS_BAD_REQUEST

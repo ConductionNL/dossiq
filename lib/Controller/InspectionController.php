@@ -9,7 +9,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <info@conduction.nl>
+ * @author    Conduction Development Team <dev@conductio.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -56,7 +56,7 @@ class InspectionController extends Controller
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -250,6 +250,10 @@ class InspectionController extends Controller
         }
 
         $decoded = json_decode($body, true);
-        return is_array($decoded) ? $decoded : [];
+        if (is_array($decoded) === true) {
+            return $decoded;
+        }
+
+        return [];
     }//end getRequestBody()
 }//end class

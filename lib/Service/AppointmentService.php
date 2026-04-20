@@ -1,5 +1,24 @@
 <?php
 
+/**
+ * Procest Appointment Service.
+ *
+ * Orchestrates citizen appointments across pluggable scheduling backends
+ * (JCC, Qmatic, or local fallback) and persists appointment records in
+ * OpenRegister.
+ *
+ * @category Service
+ * @package  OCA\Procest\Service
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ */
+
 declare(strict_types=1);
 
 namespace OCA\Procest\Service;
@@ -21,6 +40,15 @@ use Psr\Log\LoggerInterface;
  */
 class AppointmentService
 {
+    /**
+     * Constructor.
+     *
+     * @param SettingsService    $settingsService The settings service.
+     * @param IAppManager        $appManager      The Nextcloud app manager.
+     * @param IClientService     $clientService   The HTTP client service.
+     * @param ContainerInterface $container       The DI container.
+     * @param LoggerInterface    $logger          The logger.
+     */
     public function __construct(
         private SettingsService $settingsService,
         private IAppManager $appManager,
@@ -32,6 +60,12 @@ class AppointmentService
 
     /**
      * Get available timeslots via the configured backend.
+     *
+     * @param string $productId  The product identifier.
+     * @param string $locationId The location identifier.
+     * @param string $date       The date (YYYY-MM-DD).
+     *
+     * @return array<int, array<string, mixed>> List of available timeslots.
      */
     public function getTimeslots(string $productId, string $locationId, string $date): array
     {
@@ -40,6 +74,11 @@ class AppointmentService
 
     /**
      * Book an appointment linked to a case.
+     *
+     * @param string               $caseId The case UUID.
+     * @param array<string, mixed> $data   Appointment data (product, location, dateTime, citizen info).
+     *
+     * @return array<string, mixed> The stored appointment record or an error payload.
      */
     public function bookAppointment(string $caseId, array $data): array
     {
@@ -85,6 +124,10 @@ class AppointmentService
 
     /**
      * Cancel an appointment.
+     *
+     * @param string $appointmentId The appointment UUID.
+     *
+     * @return array<string, mixed> The updated appointment record.
      */
     public function cancelAppointment(string $appointmentId): array
     {
@@ -112,6 +155,10 @@ class AppointmentService
 
     /**
      * Mark an appointment as no-show.
+     *
+     * @param string $appointmentId The appointment UUID.
+     *
+     * @return array<string, mixed> The updated appointment record.
      */
     public function markNoShow(string $appointmentId): array
     {
@@ -133,6 +180,10 @@ class AppointmentService
 
     /**
      * Get appointments for a case.
+     *
+     * @param string $caseId The case UUID.
+     *
+     * @return array<int, mixed> List of appointments for the case.
      */
     public function getAppointmentsForCase(string $caseId): array
     {
@@ -155,6 +206,10 @@ class AppointmentService
 
     /**
      * Validate cancel token and return appointment.
+     *
+     * @param string $token The appointment public token.
+     *
+     * @return array<string, mixed>|null The appointment data, or null if not found.
      */
     public function getAppointmentByToken(string $token): ?array
     {
@@ -173,33 +228,58 @@ class AppointmentService
         );
 
         $appointments = ($result['objects'] ?? []);
-        if (empty($appointments)) {
+        if (empty($appointments) === true) {
             return null;
         }
 
         $apt = reset($appointments);
-        return is_object($apt) ? $apt->jsonSerialize() : $apt;
+        if (is_object($apt) === true) {
+            return $apt->jsonSerialize();
+        }
+
+        return $apt;
     }//end getAppointmentByToken()
 
     /**
      * Get the configured appointment backend.
+     *
+     * @return AppointmentBackendInterface The backend instance.
      */
     private function getBackend(): AppointmentBackendInterface
     {
-        $backendType = $this->settingsService->getConfigValue('appointment_backend') ?? 'local';
-        $apiUrl      = $this->settingsService->getConfigValue('appointment_backend_url') ?? '';
-        $apiKey      = $this->settingsService->getConfigValue('appointment_backend_api_key') ?? '';
+        $backendType = $this->settingsService->getConfigValue('appointment_backend');
+        if ($backendType === '') {
+            $backendType = 'local';
+        }
+
+        $apiUrl = $this->settingsService->getConfigValue('appointment_backend_url');
+        $apiKey = $this->settingsService->getConfigValue('appointment_backend_api_key');
 
         switch ($backendType) {
             case 'jcc':
-                return new JccBackend($this->clientService, $this->logger, $apiUrl, $apiKey);
+                return new JccBackend(
+                    clientService: $this->clientService,
+                    logger: $this->logger,
+                    apiUrl: $apiUrl,
+                    apiKey: $apiKey
+                );
             case 'qmatic':
-                return new QmaticBackend($this->clientService, $this->logger, $apiUrl, $apiKey);
+                return new QmaticBackend(
+                    clientService: $this->clientService,
+                    logger: $this->logger,
+                    apiUrl: $apiUrl,
+                    apiKey: $apiKey
+                );
             default:
-                return new LocalBackend($this->logger);
+                return new LocalBackend(logger: $this->logger);
         }
     }//end getBackend()
 
+    /**
+     * Resolve the OpenRegister ObjectService if OpenRegister is installed.
+     *
+     * @return \OCA\OpenRegister\Service\ObjectService|null The object service or null.
+     */
     private function getObjectService(): ?\OCA\OpenRegister\Service\ObjectService
     {
         if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {

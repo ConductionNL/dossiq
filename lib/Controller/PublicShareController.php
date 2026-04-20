@@ -67,12 +67,12 @@ class PublicShareController extends Controller
      *
      * Returns filtered case data based on the share's permission level.
      *
-     * @PublicPage
-     * @NoCSRFRequired
-     *
      * @param string $token The share token
      *
      * @return JSONResponse
+     *
+     * @PublicPage
+     * @NoCSRFRequired
      */
     public function accessShare(string $token): JSONResponse
     {
@@ -98,7 +98,7 @@ class PublicShareController extends Controller
         $shareData = $validation['share'];
 
         // Load the case data.
-        $caseData = $this->loadCaseData($shareData['caseId']);
+        $caseData = $this->loadCaseData(caseId: $shareData['caseId']);
         if ($caseData === null) {
             return new JSONResponse(
                 ['success' => false, 'error' => 'Zaak niet gevonden'],
@@ -135,12 +135,12 @@ class PublicShareController extends Controller
     /**
      * Add a comment on a shared case (requires comment permission).
      *
-     * @PublicPage
-     * @NoCSRFRequired
-     *
      * @param string $token The share token
      *
      * @return JSONResponse
+     *
+     * @PublicPage
+     * @NoCSRFRequired
      */
     public function addComment(string $token): JSONResponse
     {
@@ -200,12 +200,12 @@ class PublicShareController extends Controller
      *
      * Returns minimal case progress data for citizen-facing status tracking.
      *
-     * @PublicPage
-     * @NoCSRFRequired
-     *
      * @param string $token The status page token
      *
      * @return JSONResponse
+     *
+     * @PublicPage
+     * @NoCSRFRequired
      */
     public function viewStatus(string $token): JSONResponse
     {
@@ -219,7 +219,7 @@ class PublicShareController extends Controller
         }
 
         $shareData = $validation['share'];
-        $caseData  = $this->loadCaseData($shareData['caseId']);
+        $caseData  = $this->loadCaseData(caseId: $shareData['caseId']);
 
         if ($caseData === null) {
             return new JSONResponse(

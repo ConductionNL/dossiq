@@ -64,7 +64,7 @@ class AiController extends Controller
         private IUserSession $userSession,
         private LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -332,6 +332,10 @@ class AiController extends Controller
     {
         $user = $this->userSession->getUser();
 
-        return ($user !== null) ? $user->getUID() : 'anonymous';
+        if ($user !== null) {
+            return $user->getUID();
+        }
+
+        return 'anonymous';
     }//end getCurrentUserId()
 }//end class

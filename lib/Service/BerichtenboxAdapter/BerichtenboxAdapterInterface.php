@@ -1,5 +1,22 @@
 <?php
 
+/**
+ * Procest Berichtenbox Adapter Interface.
+ *
+ * Contract for Mijn Overheid Berichtenbox API adapter implementations.
+ *
+ * @category Interface
+ * @package  OCA\Procest\Service\BerichtenboxAdapter
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ */
+
 declare(strict_types=1);
 
 namespace OCA\Procest\Service\BerichtenboxAdapter;

@@ -1,5 +1,22 @@
 <?php
 
+/**
+ * Procest Appointment Backend Interface.
+ *
+ * Contract for pluggable appointment scheduling backends used by Procest.
+ *
+ * @category Interface
+ * @package  OCA\Procest\Service\AppointmentBackend
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ */
+
 declare(strict_types=1);
 
 namespace OCA\Procest\Service\AppointmentBackend;

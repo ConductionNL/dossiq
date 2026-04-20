@@ -9,7 +9,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <info@conduction.nl>
+ * @author    Conduction Development Team <dev@conductio.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -83,13 +83,13 @@ class CaseDefinitionExportService
         string $caseTypeId,
         array $components=[],
     ): array {
-        if (empty($components)) {
+        if (empty($components) === true) {
             $components = self::COMPONENTS;
         }
 
         // Validate requested components.
         $invalidComponents = array_diff($components, self::COMPONENTS);
-        if (!empty($invalidComponents)) {
+        if (empty($invalidComponents) === false) {
             throw new \InvalidArgumentException(
                 'Invalid export components: '.implode(', ', $invalidComponents)
             );
@@ -104,7 +104,7 @@ class CaseDefinitionExportService
         );
 
         // Build the manifest.
-        $manifest = $this->buildManifest($caseTypeId, $components);
+        $manifest = $this->buildManifest(caseTypeId: $caseTypeId, components: $components);
 
         // Create temporary ZIP file.
         $tempPath = tempnam(sys_get_temp_dir(), 'procest_export_');
@@ -123,10 +123,9 @@ class CaseDefinitionExportService
 
         // Add selected components.
         foreach ($components as $component) {
-            $data = $this->exportComponent($caseTypeId, $component);
+            $data = $this->exportComponent(caseTypeId: $caseTypeId, component: $component);
             if ($data !== null) {
-                $filename = $component === 'workflows' ? 'workflows/' : $component.'.json';
-                if ($component === 'workflows' && is_array($data)) {
+                if ($component === 'workflows' && is_array($data) === true) {
                     foreach ($data as $workflowName => $workflowData) {
                         $zip->addFromString(
                             'workflows/'.$workflowName.'.json',
@@ -169,7 +168,7 @@ class CaseDefinitionExportService
             '0.0'
         );
 
-        $newVersion = $this->incrementVersion($previousVersion);
+        $newVersion = $this->incrementVersion(version: $previousVersion);
 
         // Store the new version.
         $this->appConfig->setValueString(
@@ -180,9 +179,15 @@ class CaseDefinitionExportService
 
         $excludedComponents = array_values(array_diff(self::COMPONENTS, $components));
 
+        if ($previousVersion !== '0.0') {
+            $previousVersionValue = $previousVersion;
+        } else {
+            $previousVersionValue = null;
+        }
+
         return [
             'version'            => $newVersion,
-            'previousVersion'    => $previousVersion !== '0.0' ? $previousVersion : null,
+            'previousVersion'    => $previousVersionValue,
             'exportDate'         => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
             'sourceEnvironment'  => $this->appConfig->getValueString(
                 Application::APP_ID,

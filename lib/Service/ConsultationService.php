@@ -10,7 +10,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <info@conduction.nl>
+ * @author    Conduction Development Team <dev@conductio.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -143,7 +143,11 @@ class ConsultationService
             100,
         );
 
-        return is_array($results) ? $results : [];
+        if (is_array($results) === true) {
+            return $results;
+        }
+
+        return [];
     }//end getConsultationsForCase()
 
     /**
@@ -213,10 +217,16 @@ class ConsultationService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('consultation_schema');
 
+        if (isset($response['voorwaarden']) === true) {
+            $voorwaarden = json_encode($response['voorwaarden']);
+        } else {
+            $voorwaarden = null;
+        }
+
         $updateData = [
             'advies'      => $advies,
             'toelichting' => $response['toelichting'] ?? '',
-            'voorwaarden' => isset($response['voorwaarden']) ? json_encode($response['voorwaarden']) : null,
+            'voorwaarden' => $voorwaarden,
             'adviesDatum' => date('Y-m-d'),
             'status'      => 'advies_uitgebracht',
         ];
@@ -271,10 +281,19 @@ class ConsultationService
             200,
         );
 
-        $all     = array_merge(
-            is_array($allOpen) ? $allOpen : [],
-            is_array($allInProgress) ? $allInProgress : [],
-        );
+        if (is_array($allOpen) === true) {
+            $openList = $allOpen;
+        } else {
+            $openList = [];
+        }
+
+        if (is_array($allInProgress) === true) {
+            $inProgressList = $allInProgress;
+        } else {
+            $inProgressList = [];
+        }
+
+        $all     = array_merge($openList, $inProgressList);
         $today   = date('Y-m-d');
         $overdue = [];
 

@@ -10,7 +10,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <info@conduction.nl>
+ * @author    Conduction Development Team <dev@conductio.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -116,7 +116,7 @@ class AiService
      */
     public function classifyDocument(string $caseId, string $documentId, string $userId): array
     {
-        if ($this->isFeatureEnabled('classification') === false) {
+        if ($this->isFeatureEnabled(feature: 'classification') === false) {
             return [
                 'success' => false,
                 'message' => 'AI document classification is not enabled',
@@ -126,15 +126,15 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildClassificationPrompt($caseId, $documentId);
-            $prompt = $this->stripPiiIfEnabled($prompt);
+            $prompt = $this->buildClassificationPrompt(caseId: $caseId, documentId: $documentId);
+            $prompt = $this->stripPiiIfEnabled(prompt: $prompt);
 
-            $result = $this->callAiModel($prompt);
+            $result = $this->callAiModel(prompt: $prompt);
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
             $this->recordAuditEntry(
-                    [
+                    entry: [
                         'type'           => 'classification',
                         'action'         => 'suggested',
                         'caseId'         => $caseId,
@@ -176,7 +176,7 @@ class AiService
      */
     public function extractData(string $caseId, ?string $documentId, string $userId): array
     {
-        if ($this->isFeatureEnabled('extraction') === false) {
+        if ($this->isFeatureEnabled(feature: 'extraction') === false) {
             return [
                 'success' => false,
                 'message' => 'AI data extraction is not enabled',
@@ -186,15 +186,15 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildExtractionPrompt($caseId, $documentId);
-            $prompt = $this->stripPiiIfEnabled($prompt);
+            $prompt = $this->buildExtractionPrompt(caseId: $caseId, documentId: $documentId);
+            $prompt = $this->stripPiiIfEnabled(prompt: $prompt);
 
-            $result = $this->callAiModel($prompt);
+            $result = $this->callAiModel(prompt: $prompt);
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
             $this->recordAuditEntry(
-                    [
+                    entry: [
                         'type'           => 'extraction',
                         'action'         => 'suggested',
                         'caseId'         => $caseId,
@@ -236,7 +236,7 @@ class AiService
      */
     public function askQuestion(string $caseId, string $question, string $userId): array
     {
-        if ($this->isFeatureEnabled('qa') === false) {
+        if ($this->isFeatureEnabled(feature: 'qa') === false) {
             return [
                 'success' => false,
                 'message' => 'AI knowledge base Q&A is not enabled',
@@ -246,14 +246,14 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildQaPrompt($caseId, $question);
+            $prompt = $this->buildQaPrompt(caseId: $caseId, question: $question);
 
-            $result = $this->callAiModel($prompt);
+            $result = $this->callAiModel(prompt: $prompt);
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
             $this->recordAuditEntry(
-                    [
+                    entry: [
                         'type'           => 'qa',
                         'action'         => 'suggested',
                         'caseId'         => $caseId,
@@ -296,7 +296,7 @@ class AiService
      */
     public function summarize(string $caseId, string $type, ?string $documentId, string $userId): array
     {
-        if ($this->isFeatureEnabled('summary') === false) {
+        if ($this->isFeatureEnabled(feature: 'summary') === false) {
             return [
                 'success' => false,
                 'message' => 'AI summarization is not enabled',
@@ -306,15 +306,15 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildSummaryPrompt($caseId, $type, $documentId);
-            $prompt = $this->stripPiiIfEnabled($prompt);
+            $prompt = $this->buildSummaryPrompt(caseId: $caseId, type: $type, documentId: $documentId);
+            $prompt = $this->stripPiiIfEnabled(prompt: $prompt);
 
-            $result = $this->callAiModel($prompt);
+            $result = $this->callAiModel(prompt: $prompt);
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
             $this->recordAuditEntry(
-                    [
+                    entry: [
                         'type'           => 'summary',
                         'action'         => 'suggested',
                         'caseId'         => $caseId,
@@ -354,7 +354,7 @@ class AiService
      */
     public function suggestRouting(string $caseId, string $userId): array
     {
-        if ($this->isFeatureEnabled('routing') === false) {
+        if ($this->isFeatureEnabled(feature: 'routing') === false) {
             return [
                 'success' => false,
                 'message' => 'AI case routing is not enabled',
@@ -364,14 +364,14 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildRoutingPrompt($caseId);
+            $prompt = $this->buildRoutingPrompt(caseId: $caseId);
 
-            $result = $this->callAiModel($prompt);
+            $result = $this->callAiModel(prompt: $prompt);
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
             $this->recordAuditEntry(
-                    [
+                    entry: [
                         'type'           => 'routing',
                         'action'         => 'suggested',
                         'caseId'         => $caseId,
@@ -411,7 +411,7 @@ class AiService
      */
     public function suggestNextStep(string $caseId, string $userId): array
     {
-        if ($this->isFeatureEnabled('decision_support') === false) {
+        if ($this->isFeatureEnabled(feature: 'decision_support') === false) {
             return [
                 'success' => false,
                 'message' => 'AI decision support is not enabled',
@@ -421,14 +421,14 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildNextStepPrompt($caseId);
+            $prompt = $this->buildNextStepPrompt(caseId: $caseId);
 
-            $result = $this->callAiModel($prompt);
+            $result = $this->callAiModel(prompt: $prompt);
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
             $this->recordAuditEntry(
-                    [
+                    entry: [
                         'type'           => 'decision_support',
                         'action'         => 'suggested',
                         'caseId'         => $caseId,
@@ -482,7 +482,7 @@ class AiService
         string $userId,
     ): array {
         $this->recordAuditEntry(
-                [
+                entry: [
                     'type'        => $type,
                     'action'      => $userAction,
                     'caseId'      => $caseId,
@@ -509,7 +509,7 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $result = $this->callAiModel('Respond with "ok" to confirm connectivity.');
+            $result = $this->callAiModel(prompt: 'Respond with "ok" to confirm connectivity.');
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
