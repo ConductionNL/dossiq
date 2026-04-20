@@ -51,10 +51,10 @@ class TenantMiddleware extends Middleware
     /**
      * Constructor for the TenantMiddleware.
      *
-     * @param TenantService  $tenantService The tenant service
-     * @param IUserSession   $userSession   The user session
-     * @param IRequest       $request       The request object
-     * @param LoggerInterface $logger       The logger
+     * @param TenantService   $tenantService The tenant service
+     * @param IUserSession    $userSession   The user session
+     * @param IRequest        $request       The request object
+     * @param LoggerInterface $logger        The logger
      *
      * @return void
      */
@@ -69,8 +69,8 @@ class TenantMiddleware extends Middleware
     /**
      * Check tenant context before controller execution.
      *
-     * @param \OCP\AppFramework\Controller $controller  The controller
-     * @param string                        $methodName The method name
+     * @param \OCP\AppFramework\Controller $controller The controller
+     * @param string                       $methodName The method name
      *
      * @return void
      *
@@ -117,9 +117,9 @@ class TenantMiddleware extends Middleware
     /**
      * Handle exceptions from controllers.
      *
-     * @param \OCP\AppFramework\Controller $controller  The controller
-     * @param string                        $methodName The method name
-     * @param \Exception                    $exception  The exception
+     * @param \OCP\AppFramework\Controller $controller The controller
+     * @param string                       $methodName The method name
+     * @param \Exception                   $exception  The exception
      *
      * @return JSONResponse The error response
      *

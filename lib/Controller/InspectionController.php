@@ -41,12 +41,12 @@ class InspectionController extends Controller
     /**
      * Constructor.
      *
-     * @param string             $appName            The app name.
-     * @param IRequest           $request            The request object.
-     * @param InspectionService  $inspectionService  The inspection service.
-     * @param ChecklistService   $checklistService   The checklist service.
-     * @param IUserSession       $userSession        The user session.
-     * @param LoggerInterface    $logger             The logger.
+     * @param string            $appName           The app name.
+     * @param IRequest          $request           The request object.
+     * @param InspectionService $inspectionService The inspection service.
+     * @param ChecklistService  $checklistService  The checklist service.
+     * @param IUserSession      $userSession       The user session.
+     * @param LoggerInterface   $logger            The logger.
      */
     public function __construct(
         string $appName,
@@ -57,7 +57,7 @@ class InspectionController extends Controller
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct($appName, $request);
-    }
+    }//end __construct()
 
     /**
      * List inspections assigned to the current user.
@@ -70,20 +70,20 @@ class InspectionController extends Controller
     {
         try {
             $userId = $this->userSession->getUser()?->getUID() ?? '';
-            $date = $this->request->getParam('date');
+            $date   = $this->request->getParam('date');
 
             // In full implementation, query OpenRegister for inspections.
             $inspections = $this->inspectionService->getInspections($userId, $date, []);
 
             return new JSONResponse(['results' => $inspections]);
         } catch (\Throwable $e) {
-            $this->logger->error('Failed to list inspections: ' . $e->getMessage());
+            $this->logger->error('Failed to list inspections: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Failed to list inspections: ' . $e->getMessage()],
+                ['error' => 'Failed to list inspections: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
         }
-    }
+    }//end index()
 
     /**
      * Record GPS location for an inspection.
@@ -97,10 +97,10 @@ class InspectionController extends Controller
     public function captureLocation(string $id): JSONResponse
     {
         try {
-            $body = $this->getRequestBody();
-            $latitude = (float)($body['latitude'] ?? 0);
-            $longitude = (float)($body['longitude'] ?? 0);
-            $accuracy = (float)($body['accuracy'] ?? 0);
+            $body       = $this->getRequestBody();
+            $latitude   = (float) ($body['latitude'] ?? 0);
+            $longitude  = (float) ($body['longitude'] ?? 0);
+            $accuracy   = (float) ($body['accuracy'] ?? 0);
             $inspection = $body['inspection'] ?? [];
 
             if ($latitude === 0.0 && $longitude === 0.0) {
@@ -119,13 +119,13 @@ class InspectionController extends Controller
 
             return new JSONResponse($result);
         } catch (\Throwable $e) {
-            $this->logger->error('Failed to capture location: ' . $e->getMessage());
+            $this->logger->error('Failed to capture location: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Failed to capture location: ' . $e->getMessage()],
+                ['error' => 'Failed to capture location: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
-    }
+        }//end try
+    }//end captureLocation()
 
     /**
      * Complete a checklist item.
@@ -140,11 +140,11 @@ class InspectionController extends Controller
     public function completeChecklistItem(string $id, string $itemId): JSONResponse
     {
         try {
-            $body = $this->getRequestBody();
-            $status = $body['status'] ?? '';
+            $body        = $this->getRequestBody();
+            $status      = $body['status'] ?? '';
             $toelichting = $body['toelichting'] ?? '';
-            $photoRefs = $body['photoRefs'] ?? [];
-            $checklist = $body['checklist'] ?? [];
+            $photoRefs   = $body['photoRefs'] ?? [];
+            $checklist   = $body['checklist'] ?? [];
 
             $updatedChecklist = $this->checklistService->completeItem(
                 $checklist,
@@ -156,23 +156,25 @@ class InspectionController extends Controller
 
             $progress = $this->checklistService->getProgress($updatedChecklist);
 
-            return new JSONResponse([
-                'checklist' => $updatedChecklist,
-                'progress' => $progress,
-            ]);
+            return new JSONResponse(
+                    [
+                        'checklist' => $updatedChecklist,
+                        'progress'  => $progress,
+                    ]
+                    );
         } catch (\InvalidArgumentException $e) {
             return new JSONResponse(
                 ['error' => $e->getMessage()],
                 Http::STATUS_BAD_REQUEST
             );
         } catch (\Throwable $e) {
-            $this->logger->error('Failed to complete checklist item: ' . $e->getMessage());
+            $this->logger->error('Failed to complete checklist item: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Failed to complete checklist item: ' . $e->getMessage()],
+                ['error' => 'Failed to complete checklist item: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
-    }
+        }//end try
+    }//end completeChecklistItem()
 
     /**
      * Upload a photo for an inspection.
@@ -186,21 +188,21 @@ class InspectionController extends Controller
     public function addPhoto(string $id): JSONResponse
     {
         try {
-            $body = $this->getRequestBody();
-            $inspection = $body['inspection'] ?? [];
+            $body          = $this->getRequestBody();
+            $inspection    = $body['inspection'] ?? [];
             $photoMetadata = $body['photoMetadata'] ?? [];
 
             $updatedInspection = $this->inspectionService->addPhoto($inspection, $photoMetadata);
 
             return new JSONResponse($updatedInspection);
         } catch (\Throwable $e) {
-            $this->logger->error('Failed to add photo: ' . $e->getMessage());
+            $this->logger->error('Failed to add photo: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Failed to add photo: ' . $e->getMessage()],
+                ['error' => 'Failed to add photo: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
         }
-    }
+    }//end addPhoto()
 
     /**
      * Complete an inspection.
@@ -214,7 +216,7 @@ class InspectionController extends Controller
     public function complete(string $id): JSONResponse
     {
         try {
-            $body = $this->getRequestBody();
+            $body       = $this->getRequestBody();
             $inspection = $body['inspection'] ?? [];
             $conclusion = $body['conclusion'] ?? '';
 
@@ -227,13 +229,13 @@ class InspectionController extends Controller
                 Http::STATUS_BAD_REQUEST
             );
         } catch (\Throwable $e) {
-            $this->logger->error('Failed to complete inspection: ' . $e->getMessage());
+            $this->logger->error('Failed to complete inspection: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Failed to complete inspection: ' . $e->getMessage()],
+                ['error' => 'Failed to complete inspection: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
         }
-    }
+    }//end complete()
 
     /**
      * Get the parsed request body.
@@ -249,5 +251,5 @@ class InspectionController extends Controller
 
         $decoded = json_decode($body, true);
         return is_array($decoded) ? $decoded : [];
-    }
-}
+    }//end getRequestBody()
+}//end class

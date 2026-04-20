@@ -85,7 +85,7 @@ class LegesExportService
     public function __construct(
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Export berekeningen to the specified format.
@@ -99,11 +99,11 @@ class LegesExportService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public function export(array $berekeningen, string $format = self::FORMAT_CSV): array
+    public function export(array $berekeningen, string $format=self::FORMAT_CSV): array
     {
         if (!in_array($format, self::SUPPORTED_FORMATS, true)) {
             throw new \InvalidArgumentException(
-                'Unsupported export format: ' . $format . '. Supported: ' . implode(', ', self::SUPPORTED_FORMATS)
+                'Unsupported export format: '.$format.'. Supported: '.implode(', ', self::SUPPORTED_FORMATS)
             );
         }
 
@@ -117,7 +117,7 @@ class LegesExportService
             self::FORMAT_ASCII => $this->exportASCII($berekeningen),
             self::FORMAT_XML => $this->exportXML($berekeningen),
         };
-    }
+    }//end export()
 
     /**
      * Export berekeningen as CSV.
@@ -153,11 +153,11 @@ class LegesExportService
         $date = (new \DateTimeImmutable())->format('Y-m-d');
 
         return [
-            'content' => $content !== false ? $content : '',
-            'filename' => "leges-export-{$date}.csv",
+            'content'     => $content !== false ? $content : '',
+            'filename'    => "leges-export-{$date}.csv",
             'contentType' => 'text/csv; charset=utf-8',
         ];
-    }
+    }//end exportCSV()
 
     /**
      * Export berekeningen as ASCII flat file.
@@ -180,22 +180,22 @@ class LegesExportService
         foreach ($berekeningen as $berekening) {
             $rows = $this->flattenBerekening($berekening);
             foreach ($rows as $row) {
-                $lines[] = 'D|' . implode('|', $row);
+                $lines[] = 'D|'.implode('|', $row);
             }
         }
 
         // Footer line.
-        $total = array_sum(array_column($berekeningen, 'total'));
+        $total   = array_sum(array_column($berekeningen, 'total'));
         $lines[] = sprintf('F|%d|%.2f', count($berekeningen), $total);
 
         $date = (new \DateTimeImmutable())->format('Y-m-d');
 
         return [
-            'content' => implode("\r\n", $lines),
-            'filename' => "leges-export-{$date}.txt",
+            'content'     => implode("\r\n", $lines),
+            'filename'    => "leges-export-{$date}.txt",
             'contentType' => 'text/plain; charset=utf-8',
         ];
-    }
+    }//end exportASCII()
 
     /**
      * Export berekeningen as XML (StUF-FIN compatible structure).
@@ -211,23 +211,23 @@ class LegesExportService
 
         $root = $dom->createElement('legesExport');
         $root->setAttribute('exportDatum', (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM));
-        $root->setAttribute('aantalRecords', (string)count($berekeningen));
+        $root->setAttribute('aantalRecords', (string) count($berekeningen));
         $dom->appendChild($root);
 
         foreach ($berekeningen as $berekening) {
             $berekeningEl = $dom->createElement('berekening');
-            $berekeningEl->setAttribute('zaaknummer', (string)($berekening['zaaknummer'] ?? ''));
+            $berekeningEl->setAttribute('zaaknummer', (string) ($berekening['zaaknummer'] ?? ''));
 
-            $this->addXmlElement($dom, $berekeningEl, 'bsnKvk', (string)($berekening['bsnKvk'] ?? ''));
-            $this->addXmlElement($dom, $berekeningEl, 'naam', (string)($berekening['naam'] ?? ''));
+            $this->addXmlElement($dom, $berekeningEl, 'bsnKvk', (string) ($berekening['bsnKvk'] ?? ''));
+            $this->addXmlElement($dom, $berekeningEl, 'naam', (string) ($berekening['naam'] ?? ''));
             $this->addXmlElement($dom, $berekeningEl, 'totaalBedrag', number_format($berekening['total'] ?? 0.0, 2, '.', ''));
-            $this->addXmlElement($dom, $berekeningEl, 'datumBeschikking', (string)($berekening['datumBeschikking'] ?? ''));
+            $this->addXmlElement($dom, $berekeningEl, 'datumBeschikking', (string) ($berekening['datumBeschikking'] ?? ''));
 
             $breakdown = $berekening['breakdown'] ?? [];
             foreach ($breakdown as $regel) {
                 $regelEl = $dom->createElement('regel');
-                $this->addXmlElement($dom, $regelEl, 'artikelnummer', (string)($regel['artikel'] ?? ''));
-                $this->addXmlElement($dom, $regelEl, 'omschrijving', (string)($regel['description'] ?? ''));
+                $this->addXmlElement($dom, $regelEl, 'artikelnummer', (string) ($regel['artikel'] ?? ''));
+                $this->addXmlElement($dom, $regelEl, 'omschrijving', (string) ($regel['description'] ?? ''));
                 $this->addXmlElement($dom, $regelEl, 'bedrag', number_format($regel['amount'] ?? 0.0, 2, '.', ''));
                 $berekeningEl->appendChild($regelEl);
             }
@@ -236,14 +236,14 @@ class LegesExportService
         }
 
         $content = $dom->saveXML();
-        $date = (new \DateTimeImmutable())->format('Y-m-d');
+        $date    = (new \DateTimeImmutable())->format('Y-m-d');
 
         return [
-            'content' => $content !== false ? $content : '',
-            'filename' => "leges-export-{$date}.xml",
+            'content'     => $content !== false ? $content : '',
+            'filename'    => "leges-export-{$date}.xml",
             'contentType' => 'application/xml; charset=utf-8',
         ];
-    }
+    }//end exportXML()
 
     /**
      * Flatten a berekening into export rows (one row per artikel in breakdown).
@@ -254,45 +254,45 @@ class LegesExportService
      */
     private function flattenBerekening(array $berekening): array
     {
-        $rows = [];
+        $rows      = [];
         $breakdown = $berekening['breakdown'] ?? [];
 
         if (empty($breakdown)) {
             $rows[] = [
-                (string)($berekening['zaaknummer'] ?? ''),
-                (string)($berekening['bsnKvk'] ?? ''),
-                (string)($berekening['naam'] ?? ''),
-                (string)($berekening['adres'] ?? ''),
+                (string) ($berekening['zaaknummer'] ?? ''),
+                (string) ($berekening['bsnKvk'] ?? ''),
+                (string) ($berekening['naam'] ?? ''),
+                (string) ($berekening['adres'] ?? ''),
                 '',
                 'Totaal',
                 number_format($berekening['total'] ?? 0.0, 2, '.', ''),
-                (string)($berekening['datumBeschikking'] ?? ''),
+                (string) ($berekening['datumBeschikking'] ?? ''),
             ];
         } else {
             foreach ($breakdown as $regel) {
                 $rows[] = [
-                    (string)($berekening['zaaknummer'] ?? ''),
-                    (string)($berekening['bsnKvk'] ?? ''),
-                    (string)($berekening['naam'] ?? ''),
-                    (string)($berekening['adres'] ?? ''),
-                    (string)($regel['artikel'] ?? ''),
-                    (string)($regel['description'] ?? ''),
+                    (string) ($berekening['zaaknummer'] ?? ''),
+                    (string) ($berekening['bsnKvk'] ?? ''),
+                    (string) ($berekening['naam'] ?? ''),
+                    (string) ($berekening['adres'] ?? ''),
+                    (string) ($regel['artikel'] ?? ''),
+                    (string) ($regel['description'] ?? ''),
                     number_format($regel['amount'] ?? 0.0, 2, '.', ''),
-                    (string)($berekening['datumBeschikking'] ?? ''),
+                    (string) ($berekening['datumBeschikking'] ?? ''),
                 ];
             }
-        }
+        }//end if
 
         return $rows;
-    }
+    }//end flattenBerekening()
 
     /**
      * Add a text element to an XML parent.
      *
-     * @param \DOMDocument $dom     The DOM document.
-     * @param \DOMElement  $parent  The parent element.
-     * @param string       $name    The element name.
-     * @param string       $value   The text value.
+     * @param \DOMDocument $dom    The DOM document.
+     * @param \DOMElement  $parent The parent element.
+     * @param string       $name   The element name.
+     * @param string       $value  The text value.
      *
      * @return void
      */
@@ -301,5 +301,5 @@ class LegesExportService
         $element = $dom->createElement($name);
         $element->appendChild($dom->createTextNode($value));
         $parent->appendChild($element);
-    }
-}
+    }//end addXmlElement()
+}//end class

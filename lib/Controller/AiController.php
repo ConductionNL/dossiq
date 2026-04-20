@@ -47,12 +47,12 @@ class AiController extends Controller
     /**
      * Constructor for AiController.
      *
-     * @param string           $appName         The application name
-     * @param IRequest         $request         The request object
-     * @param AiService        $aiService       The AI service
-     * @param SettingsService  $settingsService The settings service
-     * @param IUserSession     $userSession     The user session
-     * @param LoggerInterface  $logger          The logger interface
+     * @param string          $appName         The application name
+     * @param IRequest        $request         The request object
+     * @param AiService       $aiService       The AI service
+     * @param SettingsService $settingsService The settings service
+     * @param IUserSession    $userSession     The user session
+     * @param LoggerInterface $logger          The logger interface
      *
      * @return void
      */
@@ -277,11 +277,13 @@ class AiController extends Controller
             'offset' => (int) $this->request->getParam('offset', '0'),
         ];
 
-        return new JSONResponse([
-            'success' => true,
-            'filters' => array_filter($filters),
-            'message' => 'Audit trail query — implement with OpenRegister object listing',
-        ]);
+        return new JSONResponse(
+                [
+                    'success' => true,
+                    'filters' => array_filter($filters),
+                    'message' => 'Audit trail query — implement with OpenRegister object listing',
+                ]
+                );
     }//end auditIndex()
 
     /**

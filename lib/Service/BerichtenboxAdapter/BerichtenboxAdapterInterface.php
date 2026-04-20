@@ -25,7 +25,7 @@ interface BerichtenboxAdapterInterface
         string $subject,
         string $body,
         string $typeCode,
-        ?string $attachment = null,
+        ?string $attachment=null,
     ): array;
 
     /**
@@ -36,4 +36,4 @@ interface BerichtenboxAdapterInterface
      * @return array Status with read (bool), readAt (datetime|null)
      */
     public function getReadStatus(string $messageId): array;
-}
+}//end interface

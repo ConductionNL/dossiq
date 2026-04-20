@@ -32,8 +32,6 @@ use OCP\IUserSession;
  */
 class MilestoneController extends Controller
 {
-
-
     /**
      * Constructor.
      *
@@ -49,8 +47,7 @@ class MilestoneController extends Controller
         private readonly IUserSession $userSession,
     ) {
         parent::__construct($appName, $request);
-    }
-
+    }//end __construct()
 
     /**
      * Get milestone progress for a case.
@@ -70,8 +67,7 @@ class MilestoneController extends Controller
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 500);
         }
-    }
-
+    }//end progress()
 
     /**
      * Mark a milestone as reached.
@@ -99,8 +95,7 @@ class MilestoneController extends Controller
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 400);
         }
-    }
-
+    }//end mark()
 
     /**
      * Reverse a milestone.
@@ -136,5 +131,5 @@ class MilestoneController extends Controller
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 400);
         }
-    }
-}
+    }//end reverse()
+}//end class

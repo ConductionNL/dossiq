@@ -47,7 +47,7 @@ class ShareMaintenanceJob extends TimedJob
      * @param ITimeFactory       $time            The time factory
      * @param SettingsService    $settingsService The settings service
      * @param IAppManager        $appManager      The app manager
-     * @param ContainerInterface $container        The DI container
+     * @param ContainerInterface $container       The DI container
      * @param LoggerInterface    $logger          The logger
      *
      * @return void

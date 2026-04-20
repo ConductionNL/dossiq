@@ -52,15 +52,15 @@ class StufFieldMappingService
      * @var array<string, array{property: string, transform: string|null}>
      */
     private const DEFAULT_ZKN_MAPPINGS = [
-        'identificatie' => ['property' => 'identifier', 'transform' => null],
-        'omschrijving' => ['property' => 'title', 'transform' => null],
-        'toelichting' => ['property' => 'description', 'transform' => null],
-        'startdatum' => ['property' => 'startDate', 'transform' => 'stufDateToIso'],
-        'einddatum' => ['property' => 'endDate', 'transform' => 'stufDateToIso'],
-        'einddatumGepland' => ['property' => 'plannedEndDate', 'transform' => 'stufDateToIso'],
+        'identificatie'                => ['property' => 'identifier', 'transform' => null],
+        'omschrijving'                 => ['property' => 'title', 'transform' => null],
+        'toelichting'                  => ['property' => 'description', 'transform' => null],
+        'startdatum'                   => ['property' => 'startDate', 'transform' => 'stufDateToIso'],
+        'einddatum'                    => ['property' => 'endDate', 'transform' => 'stufDateToIso'],
+        'einddatumGepland'             => ['property' => 'plannedEndDate', 'transform' => 'stufDateToIso'],
         'uiterlijkeEinddatumAfdoening' => ['property' => 'deadline', 'transform' => 'stufDateToIso'],
-        'registratiedatum' => ['property' => 'registrationDate', 'transform' => 'stufDateToIso'],
-        'vertrouwelijkAanduiding' => ['property' => 'confidentiality', 'transform' => 'confidentialityToInternal'],
+        'registratiedatum'             => ['property' => 'registrationDate', 'transform' => 'stufDateToIso'],
+        'vertrouwelijkAanduiding'      => ['property' => 'confidentiality', 'transform' => 'confidentialityToInternal'],
     ];
 
     /**
@@ -69,11 +69,11 @@ class StufFieldMappingService
      * @var array<string, array{property: string, transform: string|null}>
      */
     private const DEFAULT_BG_MAPPINGS = [
-        'inp.bsn' => ['property' => 'bsn', 'transform' => null],
-        'geslachtsnaam' => ['property' => 'lastName', 'transform' => null],
+        'inp.bsn'                  => ['property' => 'bsn', 'transform' => null],
+        'geslachtsnaam'            => ['property' => 'lastName', 'transform' => null],
         'voorvoegselGeslachtsnaam' => ['property' => 'namePrefix', 'transform' => null],
-        'voornamen' => ['property' => 'firstName', 'transform' => null],
-        'geboortedatum' => ['property' => 'dateOfBirth', 'transform' => 'stufDateToIso'],
+        'voornamen'                => ['property' => 'firstName', 'transform' => null],
+        'geboortedatum'            => ['property' => 'dateOfBirth', 'transform' => 'stufDateToIso'],
     ];
 
     /**
@@ -82,14 +82,14 @@ class StufFieldMappingService
      * @var array<string, string>
      */
     private const CONFIDENTIALITY_MAP = [
-        'OPENBAAR' => 'public',
-        'BEPERKT OPENBAAR' => 'restricted',
-        'INTERN' => 'internal',
+        'OPENBAAR'          => 'public',
+        'BEPERKT OPENBAAR'  => 'restricted',
+        'INTERN'            => 'internal',
         'ZAAKVERTROUWELIJK' => 'case_sensitive',
-        'VERTROUWELIJK' => 'confidential',
-        'CONFIDENTIEEL' => 'highly_confidential',
-        'GEHEIM' => 'secret',
-        'ZEER GEHEIM' => 'top_secret',
+        'VERTROUWELIJK'     => 'confidential',
+        'CONFIDENTIEEL'     => 'highly_confidential',
+        'GEHEIM'            => 'secret',
+        'ZEER GEHEIM'       => 'top_secret',
     ];
 
     /**
@@ -107,7 +107,7 @@ class StufFieldMappingService
     public function __construct(
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Map StUF-ZKN fields to OpenRegister case properties.
@@ -126,7 +126,7 @@ class StufFieldMappingService
         );
 
         return $this->applyMappings($stufData, $mappings, 'toInternal');
-    }
+    }//end mapZknToInternal()
 
     /**
      * Map OpenRegister case properties to StUF-ZKN fields.
@@ -145,7 +145,7 @@ class StufFieldMappingService
         );
 
         return $this->applyReverseMappings($internalData, $mappings);
-    }
+    }//end mapInternalToZkn()
 
     /**
      * Map StUF-BG fields to OpenRegister person properties.
@@ -164,7 +164,7 @@ class StufFieldMappingService
         );
 
         return $this->applyMappings($stufData, $mappings, 'toInternal');
-    }
+    }//end mapBgToInternal()
 
     /**
      * Map OpenRegister person properties to StUF-BG fields.
@@ -183,7 +183,7 @@ class StufFieldMappingService
         );
 
         return $this->applyReverseMappings($internalData, $mappings);
-    }
+    }//end mapInternalToBg()
 
     /**
      * Convert a StUF date (YYYYMMDD) to ISO 8601 (YYYY-MM-DD).
@@ -212,7 +212,7 @@ class StufFieldMappingService
 
         $this->logger->warning('Invalid StUF date format: {date}', ['date' => $stufDate]);
         return null;
-    }
+    }//end stufDateToIso()
 
     /**
      * Convert an ISO 8601 date to StUF date format (YYYYMMDD).
@@ -227,7 +227,7 @@ class StufFieldMappingService
     {
         $dt = new \DateTimeImmutable($isoDate);
         return $dt->format(self::STUF_DATE_FORMAT);
-    }
+    }//end isoToStufDate()
 
     /**
      * Convert an ISO 8601 datetime to StUF datetime format (YYYYMMDDHHmmss).
@@ -242,7 +242,7 @@ class StufFieldMappingService
     {
         $dt = new \DateTimeImmutable($isoDateTime);
         return $dt->format(self::STUF_DATETIME_FORMAT);
-    }
+    }//end isoToStufDateTime()
 
     /**
      * Convert a StUF confidentiality value to internal value.
@@ -256,7 +256,7 @@ class StufFieldMappingService
     public function confidentialityToInternal(string $stufValue): string
     {
         return self::CONFIDENTIALITY_MAP[strtoupper($stufValue)] ?? $stufValue;
-    }
+    }//end confidentialityToInternal()
 
     /**
      * Convert an internal confidentiality value to StUF value.
@@ -271,12 +271,12 @@ class StufFieldMappingService
     {
         $flipped = array_flip(self::CONFIDENTIALITY_MAP);
         return $flipped[$internalValue] ?? strtoupper($internalValue);
-    }
+    }//end confidentialityToStuf()
 
     /**
      * Add custom field mappings.
      *
-     * @param string                                                          $type     The mapping type ('zkn' or 'bg').
+     * @param string                                                         $type     The mapping type ('zkn' or 'bg').
      * @param array<string, array{property: string, transform: string|null}> $mappings The custom mappings.
      *
      * @return void
@@ -289,7 +289,7 @@ class StufFieldMappingService
             $this->customMappings[$type] ?? [],
             $mappings
         );
-    }
+    }//end addCustomMappings()
 
     /**
      * Get all default mappings for a type.
@@ -307,14 +307,14 @@ class StufFieldMappingService
             'bg' => self::DEFAULT_BG_MAPPINGS,
             default => [],
         };
-    }
+    }//end getDefaultMappings()
 
     /**
      * Apply mappings to convert StUF data to internal format.
      *
-     * @param array<string, string>                                           $data      The source data.
+     * @param array<string, string>                                          $data      The source data.
      * @param array<string, array{property: string, transform: string|null}> $mappings  The field mappings.
-     * @param string                                                          $direction The direction ('toInternal').
+     * @param string                                                         $direction The direction ('toInternal').
      *
      * @return array<string, mixed> The mapped data.
      */
@@ -327,8 +327,8 @@ class StufFieldMappingService
                 continue;
             }
 
-            $mapping = $mappings[$stufField];
-            $property = $mapping['property'];
+            $mapping   = $mappings[$stufField];
+            $property  = $mapping['property'];
             $transform = $mapping['transform'];
 
             if ($transform !== null && method_exists($this, $transform)) {
@@ -339,12 +339,12 @@ class StufFieldMappingService
         }
 
         return $result;
-    }
+    }//end applyMappings()
 
     /**
      * Apply reverse mappings to convert internal data to StUF format.
      *
-     * @param array<string, mixed>                                            $data     The internal data.
+     * @param array<string, mixed>                                           $data     The internal data.
      * @param array<string, array{property: string, transform: string|null}> $mappings The field mappings.
      *
      * @return array<string, string> The StUF data.
@@ -367,21 +367,21 @@ class StufFieldMappingService
                 continue;
             }
 
-            $info = $reverseLookup[$property];
+            $info      = $reverseLookup[$property];
             $stufField = $info['stufField'];
 
             // Apply reverse transform.
             if ($value !== null && $info['transform'] !== null) {
                 $value = match ($info['transform']) {
-                    'stufDateToIso' => $this->isoToStufDate((string)$value),
-                    'confidentialityToInternal' => $this->confidentialityToStuf((string)$value),
-                    default => (string)$value,
+                    'stufDateToIso' => $this->isoToStufDate((string) $value),
+                    'confidentialityToInternal' => $this->confidentialityToStuf((string) $value),
+                    default => (string) $value,
                 };
             }
 
-            $result[$stufField] = (string)($value ?? '');
+            $result[$stufField] = (string) ($value ?? '');
         }
 
         return $result;
-    }
-}
+    }//end applyReverseMappings()
+}//end class

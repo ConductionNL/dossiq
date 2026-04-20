@@ -17,17 +17,21 @@ class AppointmentController extends Controller
         private AppointmentService $appointmentService,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
-    }
+    }//end __construct()
 
-    /** @NoAdminRequired */
+    /**
+     * @NoAdminRequired
+     */
     public function index(): JSONResponse
     {
         $caseId       = $this->request->getParam('caseId');
         $appointments = $this->appointmentService->getAppointmentsForCase($caseId ?? '');
         return new JSONResponse(['success' => true, 'appointments' => $appointments]);
-    }
+    }//end index()
 
-    /** @NoAdminRequired */
+    /**
+     * @NoAdminRequired
+     */
     public function create(): JSONResponse
     {
         $caseId = $this->request->getParam('caseId');
@@ -48,23 +52,29 @@ class AppointmentController extends Controller
 
         $result = $this->appointmentService->bookAppointment($caseId, $data);
         return new JSONResponse(['success' => true, 'appointment' => $result]);
-    }
+    }//end create()
 
-    /** @NoAdminRequired */
+    /**
+     * @NoAdminRequired
+     */
     public function cancel(string $appointmentId): JSONResponse
     {
         $result = $this->appointmentService->cancelAppointment($appointmentId);
         return new JSONResponse(['success' => true, 'appointment' => $result]);
-    }
+    }//end cancel()
 
-    /** @NoAdminRequired */
+    /**
+     * @NoAdminRequired
+     */
     public function noShow(string $appointmentId): JSONResponse
     {
         $result = $this->appointmentService->markNoShow($appointmentId);
         return new JSONResponse(['success' => true, 'appointment' => $result]);
-    }
+    }//end noShow()
 
-    /** @NoAdminRequired */
+    /**
+     * @NoAdminRequired
+     */
     public function timeslots(): JSONResponse
     {
         $productId  = $this->request->getParam('productId', '');
@@ -73,5 +83,5 @@ class AppointmentController extends Controller
 
         $slots = $this->appointmentService->getTimeslots($productId, $locationId, $date);
         return new JSONResponse(['success' => true, 'timeslots' => $slots]);
-    }
-}
+    }//end timeslots()
+}//end class

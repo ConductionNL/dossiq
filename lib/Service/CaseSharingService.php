@@ -60,8 +60,8 @@ class CaseSharingService
      *
      * @param SettingsService    $settingsService The settings service
      * @param IAppManager        $appManager      The app manager
-     * @param ContainerInterface $container        The DI container
-     * @param LoggerInterface    $logger           The logger
+     * @param ContainerInterface $container       The DI container
+     * @param LoggerInterface    $logger          The logger
      *
      * @return void
      */
@@ -246,7 +246,7 @@ class CaseSharingService
     /**
      * Revoke a share by marking it with revocation timestamp.
      *
-     * @param string $shareId  The UUID of the share to revoke
+     * @param string $shareId   The UUID of the share to revoke
      * @param string $revokedBy The user ID of the revoker
      *
      * @return array The updated share data
@@ -267,7 +267,7 @@ class CaseSharingService
             $shareId,
         );
 
-        $shareData              = $share->jsonSerialize();
+        $shareData = $share->jsonSerialize();
         $shareData['revokedAt'] = (new \DateTime())->format('c');
         $shareData['revokedBy'] = $revokedBy;
 
@@ -441,9 +441,9 @@ class CaseSharingService
         $shareData['failedAttempts'] = (int) ($shareData['failedAttempts'] ?? 0) + 1;
 
         if ($shareData['failedAttempts'] >= self::MAX_FAILED_ATTEMPTS) {
-            $lockUntil                 = new \DateTime();
+            $lockUntil = new \DateTime();
             $lockUntil->modify('+'.self::LOCKOUT_MINUTES.' minutes');
-            $shareData['lockedUntil']  = $lockUntil->format('c');
+            $shareData['lockedUntil']    = $lockUntil->format('c');
             $shareData['failedAttempts'] = 0;
 
             $this->logger->warning(

@@ -55,9 +55,9 @@ class AiService
     /**
      * Constructor for AiService.
      *
-     * @param IAppConfig         $appConfig  The app configuration service
-     * @param ContainerInterface $container  The DI container
-     * @param LoggerInterface    $logger     The logger interface
+     * @param IAppConfig         $appConfig The app configuration service
+     * @param ContainerInterface $container The DI container
+     * @param LoggerInterface    $logger    The logger interface
      *
      * @return void
      */
@@ -133,19 +133,21 @@ class AiService
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
-            $this->recordAuditEntry([
-                'type'           => 'classification',
-                'action'         => 'suggested',
-                'caseId'         => $caseId,
-                'documentId'     => $documentId,
-                'model'          => $this->getModelIdentifier(),
-                'prompt'         => $prompt,
-                'suggestion'     => $result,
-                'confidence'     => ($result['confidence'] ?? 0.0),
-                'userId'         => $userId,
-                'timestamp'      => date('c'),
-                'responseTimeMs' => $responseTimeMs,
-            ]);
+            $this->recordAuditEntry(
+                    [
+                        'type'           => 'classification',
+                        'action'         => 'suggested',
+                        'caseId'         => $caseId,
+                        'documentId'     => $documentId,
+                        'model'          => $this->getModelIdentifier(),
+                        'prompt'         => $prompt,
+                        'suggestion'     => $result,
+                        'confidence'     => ($result['confidence'] ?? 0.0),
+                        'userId'         => $userId,
+                        'timestamp'      => date('c'),
+                        'responseTimeMs' => $responseTimeMs,
+                    ]
+                    );
 
             return [
                 'success'    => true,
@@ -191,19 +193,21 @@ class AiService
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
-            $this->recordAuditEntry([
-                'type'           => 'extraction',
-                'action'         => 'suggested',
-                'caseId'         => $caseId,
-                'documentId'     => ($documentId ?? ''),
-                'model'          => $this->getModelIdentifier(),
-                'prompt'         => $prompt,
-                'suggestion'     => $result,
-                'confidence'     => ($result['averageConfidence'] ?? 0.0),
-                'userId'         => $userId,
-                'timestamp'      => date('c'),
-                'responseTimeMs' => $responseTimeMs,
-            ]);
+            $this->recordAuditEntry(
+                    [
+                        'type'           => 'extraction',
+                        'action'         => 'suggested',
+                        'caseId'         => $caseId,
+                        'documentId'     => ($documentId ?? ''),
+                        'model'          => $this->getModelIdentifier(),
+                        'prompt'         => $prompt,
+                        'suggestion'     => $result,
+                        'confidence'     => ($result['averageConfidence'] ?? 0.0),
+                        'userId'         => $userId,
+                        'timestamp'      => date('c'),
+                        'responseTimeMs' => $responseTimeMs,
+                    ]
+                    );
 
             return [
                 'success' => true,
@@ -248,18 +252,20 @@ class AiService
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
-            $this->recordAuditEntry([
-                'type'           => 'qa',
-                'action'         => 'suggested',
-                'caseId'         => $caseId,
-                'model'          => $this->getModelIdentifier(),
-                'prompt'         => $question,
-                'suggestion'     => $result,
-                'confidence'     => ($result['confidence'] ?? 0.0),
-                'userId'         => $userId,
-                'timestamp'      => date('c'),
-                'responseTimeMs' => $responseTimeMs,
-            ]);
+            $this->recordAuditEntry(
+                    [
+                        'type'           => 'qa',
+                        'action'         => 'suggested',
+                        'caseId'         => $caseId,
+                        'model'          => $this->getModelIdentifier(),
+                        'prompt'         => $question,
+                        'suggestion'     => $result,
+                        'confidence'     => ($result['confidence'] ?? 0.0),
+                        'userId'         => $userId,
+                        'timestamp'      => date('c'),
+                        'responseTimeMs' => $responseTimeMs,
+                    ]
+                    );
 
             return [
                 'success' => true,
@@ -307,18 +313,20 @@ class AiService
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
-            $this->recordAuditEntry([
-                'type'           => 'summary',
-                'action'         => 'suggested',
-                'caseId'         => $caseId,
-                'documentId'     => ($documentId ?? ''),
-                'model'          => $this->getModelIdentifier(),
-                'prompt'         => $prompt,
-                'suggestion'     => ['summary' => ($result['summary'] ?? '')],
-                'userId'         => $userId,
-                'timestamp'      => date('c'),
-                'responseTimeMs' => $responseTimeMs,
-            ]);
+            $this->recordAuditEntry(
+                    [
+                        'type'           => 'summary',
+                        'action'         => 'suggested',
+                        'caseId'         => $caseId,
+                        'documentId'     => ($documentId ?? ''),
+                        'model'          => $this->getModelIdentifier(),
+                        'prompt'         => $prompt,
+                        'suggestion'     => ['summary' => ($result['summary'] ?? '')],
+                        'userId'         => $userId,
+                        'timestamp'      => date('c'),
+                        'responseTimeMs' => $responseTimeMs,
+                    ]
+                    );
 
             return [
                 'success' => true,
@@ -362,18 +370,20 @@ class AiService
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
-            $this->recordAuditEntry([
-                'type'           => 'routing',
-                'action'         => 'suggested',
-                'caseId'         => $caseId,
-                'model'          => $this->getModelIdentifier(),
-                'prompt'         => $prompt,
-                'suggestion'     => $result,
-                'confidence'     => ($result['confidence'] ?? 0.0),
-                'userId'         => $userId,
-                'timestamp'      => date('c'),
-                'responseTimeMs' => $responseTimeMs,
-            ]);
+            $this->recordAuditEntry(
+                    [
+                        'type'           => 'routing',
+                        'action'         => 'suggested',
+                        'caseId'         => $caseId,
+                        'model'          => $this->getModelIdentifier(),
+                        'prompt'         => $prompt,
+                        'suggestion'     => $result,
+                        'confidence'     => ($result['confidence'] ?? 0.0),
+                        'userId'         => $userId,
+                        'timestamp'      => date('c'),
+                        'responseTimeMs' => $responseTimeMs,
+                    ]
+                    );
 
             return [
                 'success'     => true,
@@ -417,17 +427,19 @@ class AiService
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
-            $this->recordAuditEntry([
-                'type'           => 'decision_support',
-                'action'         => 'suggested',
-                'caseId'         => $caseId,
-                'model'          => $this->getModelIdentifier(),
-                'prompt'         => $prompt,
-                'suggestion'     => $result,
-                'userId'         => $userId,
-                'timestamp'      => date('c'),
-                'responseTimeMs' => $responseTimeMs,
-            ]);
+            $this->recordAuditEntry(
+                    [
+                        'type'           => 'decision_support',
+                        'action'         => 'suggested',
+                        'caseId'         => $caseId,
+                        'model'          => $this->getModelIdentifier(),
+                        'prompt'         => $prompt,
+                        'suggestion'     => $result,
+                        'userId'         => $userId,
+                        'timestamp'      => date('c'),
+                        'responseTimeMs' => $responseTimeMs,
+                    ]
+                    );
 
             return [
                 'success'     => true,
@@ -469,18 +481,20 @@ class AiService
         ?string $reason,
         string $userId,
     ): array {
-        $this->recordAuditEntry([
-            'type'        => $type,
-            'action'      => $userAction,
-            'caseId'      => $caseId,
-            'model'       => $this->getModelIdentifier(),
-            'suggestion'  => $suggestion,
-            'userAction'  => $userAction,
-            'actualValue' => ($actualValue ?? []),
-            'reason'      => ($reason ?? ''),
-            'userId'      => $userId,
-            'timestamp'   => date('c'),
-        ]);
+        $this->recordAuditEntry(
+                [
+                    'type'        => $type,
+                    'action'      => $userAction,
+                    'caseId'      => $caseId,
+                    'model'       => $this->getModelIdentifier(),
+                    'suggestion'  => $suggestion,
+                    'userAction'  => $userAction,
+                    'actualValue' => ($actualValue ?? []),
+                    'reason'      => ($reason ?? ''),
+                    'userId'      => $userId,
+                    'timestamp'   => date('c'),
+                ]
+                );
 
         return ['success' => true];
     }//end recordUserAction()
@@ -524,19 +538,19 @@ class AiService
     public function getAiSettings(): array
     {
         return [
-            'ai_enabled'                   => $this->appConfig->getValueString(Application::APP_ID, 'ai_enabled', ''),
-            'ai_model_type'                => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_type', 'local'),
-            'ai_model_url'                 => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_url', ''),
-            'ai_model_name'                => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_name', ''),
-            'ai_api_key_set'               => $this->appConfig->getValueString(Application::APP_ID, 'ai_api_key', '') !== '',
-            'ai_feature_classification'    => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_classification', ''),
-            'ai_feature_extraction'        => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_extraction', ''),
-            'ai_feature_qa'                => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_qa', ''),
-            'ai_feature_summary'           => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_summary', ''),
-            'ai_feature_routing'           => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_routing', ''),
-            'ai_feature_decision_support'  => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_decision_support', ''),
-            'ai_dpia_acknowledged'         => $this->appConfig->getValueString(Application::APP_ID, 'ai_dpia_acknowledged', ''),
-            'ai_pii_stripping'             => $this->appConfig->getValueString(Application::APP_ID, 'ai_pii_stripping', '1'),
+            'ai_enabled'                  => $this->appConfig->getValueString(Application::APP_ID, 'ai_enabled', ''),
+            'ai_model_type'               => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_type', 'local'),
+            'ai_model_url'                => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_url', ''),
+            'ai_model_name'               => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_name', ''),
+            'ai_api_key_set'              => $this->appConfig->getValueString(Application::APP_ID, 'ai_api_key', '') !== '',
+            'ai_feature_classification'   => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_classification', ''),
+            'ai_feature_extraction'       => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_extraction', ''),
+            'ai_feature_qa'               => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_qa', ''),
+            'ai_feature_summary'          => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_summary', ''),
+            'ai_feature_routing'          => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_routing', ''),
+            'ai_feature_decision_support' => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_decision_support', ''),
+            'ai_dpia_acknowledged'        => $this->appConfig->getValueString(Application::APP_ID, 'ai_dpia_acknowledged', ''),
+            'ai_pii_stripping'            => $this->appConfig->getValueString(Application::APP_ID, 'ai_pii_stripping', '1'),
         ];
     }//end getAiSettings()
 
@@ -616,12 +630,14 @@ class AiService
         );
 
         // Build the request payload for Ollama-compatible API.
-        $payload = json_encode([
-            'model'   => $modelName,
-            'prompt'  => $prompt,
-            'stream'  => false,
-            'format'  => 'json',
-        ]);
+        $payload = json_encode(
+                [
+                    'model'  => $modelName,
+                    'prompt' => $prompt,
+                    'stream' => false,
+                    'format' => 'json',
+                ]
+                );
 
         $endpoint = rtrim($modelUrl, '/').'/api/generate';
 
@@ -640,10 +656,14 @@ class AiService
                 ''
             );
             if (empty($apiKey) === false) {
-                curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                    'Content-Type: application/json',
-                    'Authorization: Bearer '.$apiKey,
-                ]);
+                curl_setopt(
+                        $ch,
+                        CURLOPT_HTTPHEADER,
+                        [
+                            'Content-Type: application/json',
+                            'Authorization: Bearer '.$apiKey,
+                        ]
+                        );
             }
         }
 
@@ -696,7 +716,7 @@ class AiService
                 'register',
                 ''
             );
-            $schemaId = $this->appConfig->getValueString(
+            $schemaId   = $this->appConfig->getValueString(
                 Application::APP_ID,
                 'ai_audit_entry_schema',
                 ''
@@ -717,7 +737,7 @@ class AiService
                 'Failed to record AI audit entry',
                 ['error' => $e->getMessage()]
             );
-        }
+        }//end try
     }//end recordAuditEntry()
 
     /**

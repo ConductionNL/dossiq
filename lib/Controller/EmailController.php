@@ -31,8 +31,6 @@ use OCP\IRequest;
  */
 class EmailController extends Controller
 {
-
-
     /**
      * Constructor.
      *
@@ -46,8 +44,7 @@ class EmailController extends Controller
         private readonly CaseEmailService $emailService,
     ) {
         parent::__construct($appName, $request);
-    }
-
+    }//end __construct()
 
     /**
      * Send an email from case context.
@@ -61,7 +58,7 @@ class EmailController extends Controller
     public function send(string $caseId): JSONResponse
     {
         try {
-            $data = json_decode($this->request->getContent() ?: '{}', true) ?: [];
+            $data   = json_decode($this->request->getContent() ?: '{}', true) ?: [];
             $result = $this->emailService->sendEmail(
                 $caseId,
                 $data['to'] ?? '',
@@ -73,8 +70,7 @@ class EmailController extends Controller
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 400);
         }
-    }
-
+    }//end send()
 
     /**
      * Send email using a template.
@@ -98,8 +94,7 @@ class EmailController extends Controller
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 400);
         }
-    }
-
+    }//end sendFromTemplate()
 
     /**
      * Preview a template with case data.
@@ -112,18 +107,20 @@ class EmailController extends Controller
      */
     public function preview(string $caseId): JSONResponse
     {
-        $data = json_decode($this->request->getContent() ?: '{}', true) ?: [];
-        $template   = $data['body'] ?? '';
-        $caseData   = []; // Would load from case.
+        $data     = json_decode($this->request->getContent() ?: '{}', true) ?: [];
+        $template = $data['body'] ?? '';
+        $caseData = [];
+        // Would load from case.
         $resolved   = $this->emailService->resolveVariables($template, $caseData);
         $unresolved = $this->emailService->findUnresolvedVariables($template, $caseData);
 
-        return new JSONResponse([
-            'resolved'   => $resolved,
-            'unresolved' => $unresolved,
-        ]);
-    }
-
+        return new JSONResponse(
+                [
+                    'resolved'   => $resolved,
+                    'unresolved' => $unresolved,
+                ]
+                );
+    }//end preview()
 
     /**
      * Get email templates for a case type.
@@ -138,5 +135,5 @@ class EmailController extends Controller
     {
         $templates = $this->emailService->getTemplatesForCaseType($caseTypeId);
         return new JSONResponse(['results' => $templates]);
-    }
-}
+    }//end templates()
+}//end class
