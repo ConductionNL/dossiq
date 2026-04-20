@@ -1,5 +1,23 @@
 <?php
 
+/**
+ * Procest Berichtenbox Service.
+ *
+ * Sends citizen-facing messages through a pluggable Mijn Overheid
+ * Berichtenbox adapter and records them in OpenRegister.
+ *
+ * @category Service
+ * @package  OCA\Procest\Service
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ */
+
 declare(strict_types=1);
 
 namespace OCA\Procest\Service;
@@ -15,18 +33,39 @@ use Psr\Log\LoggerInterface;
  */
 class BerichtenboxService
 {
-    private const MAX_ATTACHMENT_SIZE = 10485760; // 10 MB
 
+    /**
+     * Maximum allowed attachment size in bytes (10 MB).
+     */
+    private const MAX_ATTACHMENT_SIZE = 10485760;
+
+    /**
+     * Constructor.
+     *
+     * @param SettingsService    $settingsService The settings service.
+     * @param IAppManager        $appManager      The Nextcloud app manager.
+     * @param ContainerInterface $container       The DI container.
+     * @param LoggerInterface    $logger          The logger.
+     */
     public function __construct(
         private SettingsService $settingsService,
         private IAppManager $appManager,
         private ContainerInterface $container,
         private LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Send a message to the Berichtenbox.
+     *
+     * @param string      $caseId           The case UUID.
+     * @param string      $bsn              Citizen BSN.
+     * @param string      $subject          Message subject.
+     * @param string      $body             Plain text message body.
+     * @param string      $typeCode         Bericht type code.
+     * @param string|null $attachmentFileId Optional Nextcloud file ID of the attachment.
+     *
+     * @return array<string, mixed> The stored message record or an error payload.
      */
     public function sendMessage(
         string $caseId,
@@ -34,10 +73,10 @@ class BerichtenboxService
         string $subject,
         string $body,
         string $typeCode,
-        ?string $attachmentFileId = null,
+        ?string $attachmentFileId=null,
     ): array {
         // Validate inputs.
-        $errors = $this->validateMessage($bsn, $subject, $body);
+        $errors = $this->validateMessage(bsn: $bsn, subject: $subject, body: $body);
         if (empty($errors) === false) {
             return ['error' => implode('; ', $errors), 'errors' => $errors];
         }
@@ -51,7 +90,8 @@ class BerichtenboxService
         $attachmentContent = null;
         if ($attachmentFileId !== null) {
             // Attachment validation would check file size here.
-            $attachmentContent = ''; // Placeholder -- actual file reading via IRootFolder.
+            $attachmentContent = '';
+            // Placeholder -- actual file reading via IRootFolder.
         }
 
         // Send via adapter.
@@ -80,16 +120,23 @@ class BerichtenboxService
             $messageData,
         );
 
-        $this->logger->info('Procest: Berichtenbox message sent', [
-            'caseId'    => $caseId,
-            'messageId' => $result['messageId'] ?? '',
-        ]);
+        $this->logger->info(
+                'Procest: Berichtenbox message sent',
+                [
+                    'caseId'    => $caseId,
+                    'messageId' => $result['messageId'] ?? '',
+                ]
+                );
 
         return $saved->jsonSerialize();
-    }
+    }//end sendMessage()
 
     /**
      * Get sent messages for a case.
+     *
+     * @param string $caseId The case UUID.
+     *
+     * @return array<int, mixed> List of stored Berichtenbox messages for the case.
      */
     public function getMessagesForCase(string $caseId): array
     {
@@ -108,10 +155,14 @@ class BerichtenboxService
         );
 
         return $result['objects'] ?? [];
-    }
+    }//end getMessagesForCase()
 
     /**
      * Poll read status for a message.
+     *
+     * @param string $messageId The OpenRegister message UUID.
+     *
+     * @return array<string, mixed> The message record, possibly updated with read status.
      */
     public function pollReadStatus(string $messageId): array
     {
@@ -154,10 +205,14 @@ class BerichtenboxService
         }
 
         return $data;
-    }
+    }//end pollReadStatus()
 
     /**
      * Validate a BSN using the 11-proef.
+     *
+     * @param string $bsn The BSN to validate.
+     *
+     * @return bool True when the BSN is a 9-digit number passing the 11-proef.
      */
     public function validateBsn(string $bsn): bool
     {
@@ -169,13 +224,20 @@ class BerichtenboxService
         for ($i = 0; $i < 8; $i++) {
             $sum += (int) $bsn[$i] * (9 - $i);
         }
+
         $sum -= (int) $bsn[8];
 
         return ($sum % 11) === 0 && $sum !== 0;
-    }
+    }//end validateBsn()
 
     /**
      * Validate message inputs.
+     *
+     * @param string $bsn     Citizen BSN.
+     * @param string $subject Message subject.
+     * @param string $body    Plain text message body.
+     *
+     * @return array<int, string> List of validation error messages, empty when valid.
      */
     private function validateMessage(string $bsn, string $subject, string $body): array
     {
@@ -183,7 +245,7 @@ class BerichtenboxService
 
         if (empty($bsn) === true) {
             $errors[] = 'BSN is verplicht voor berichten via Mijn Overheid';
-        } elseif ($this->validateBsn($bsn) === false) {
+        } else if ($this->validateBsn(bsn: $bsn) === false) {
             $errors[] = 'Ongeldig BSN-nummer';
         }
 
@@ -201,14 +263,24 @@ class BerichtenboxService
         }
 
         return $errors;
-    }
+    }//end validateMessage()
 
+    /**
+     * Get the configured Berichtenbox adapter.
+     *
+     * @return BerichtenboxAdapterInterface The adapter instance.
+     */
     private function getAdapter(): BerichtenboxAdapterInterface
     {
         // For MVP, always use mock adapter.
-        return new MockAdapter($this->logger);
-    }
+        return new MockAdapter(logger: $this->logger);
+    }//end getAdapter()
 
+    /**
+     * Resolve the OpenRegister ObjectService if OpenRegister is installed.
+     *
+     * @return \OCA\OpenRegister\Service\ObjectService|null The object service or null.
+     */
     private function getObjectService(): ?\OCA\OpenRegister\Service\ObjectService
     {
         if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
@@ -221,5 +293,5 @@ class BerichtenboxService
             $this->logger->error('Procest: Could not get ObjectService', ['exception' => $e->getMessage()]);
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

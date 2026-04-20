@@ -8,7 +8,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -60,8 +60,8 @@ class CaseSharingService
      *
      * @param SettingsService    $settingsService The settings service
      * @param IAppManager        $appManager      The app manager
-     * @param ContainerInterface $container        The DI container
-     * @param LoggerInterface    $logger           The logger
+     * @param ContainerInterface $container       The DI container
+     * @param LoggerInterface    $logger          The logger
      *
      * @return void
      */
@@ -237,8 +237,13 @@ class CaseSharingService
         return array_filter(
             $result['objects'] ?? [],
             static function ($share) {
-                $data = is_object($share) ? $share->jsonSerialize() : $share;
-                return empty($data['revokedAt']);
+                if (is_object($share) === true) {
+                    $data = $share->jsonSerialize();
+                } else {
+                    $data = $share;
+                }
+
+                return empty($data['revokedAt']) === true;
             }
         );
     }//end getSharesByCase()
@@ -246,7 +251,7 @@ class CaseSharingService
     /**
      * Revoke a share by marking it with revocation timestamp.
      *
-     * @param string $shareId  The UUID of the share to revoke
+     * @param string $shareId   The UUID of the share to revoke
      * @param string $revokedBy The user ID of the revoker
      *
      * @return array The updated share data
@@ -267,7 +272,7 @@ class CaseSharingService
             $shareId,
         );
 
-        $shareData              = $share->jsonSerialize();
+        $shareData = $share->jsonSerialize();
         $shareData['revokedAt'] = (new \DateTime())->format('c');
         $shareData['revokedBy'] = $revokedBy;
 
@@ -319,8 +324,12 @@ class CaseSharingService
             return ['valid' => false, 'error' => 'Token niet gevonden'];
         }
 
-        $share     = reset($shares);
-        $shareData = is_object($share) ? $share->jsonSerialize() : $share;
+        $share = reset($shares);
+        if (is_object($share) === true) {
+            $shareData = $share->jsonSerialize();
+        } else {
+            $shareData = $share;
+        }
 
         // Check if revoked.
         if (empty($shareData['revokedAt']) === false) {
@@ -356,12 +365,12 @@ class CaseSharingService
             }
 
             if (password_verify($password, $shareData['password']) === false) {
-                $this->recordFailedAttempt($shareData, $register, $schema);
+                $this->recordFailedAttempt(shareData: $shareData, register: $register, schema: $schema);
                 return ['valid' => false, 'error' => 'Onjuist wachtwoord'];
             }
 
             // Reset failed attempts on successful password.
-            $this->resetFailedAttempts($shareData, $register, $schema);
+            $this->resetFailedAttempts(shareData: $shareData, register: $register, schema: $schema);
         }
 
         // Update last accessed timestamp.
@@ -399,7 +408,7 @@ class CaseSharingService
 
         // Apply BSN masking for data minimization.
         if (isset($caseData['bsn']) === true) {
-            $caseData['bsn'] = $this->maskBsn($caseData['bsn']);
+            $caseData['bsn'] = $this->maskBsn(bsn: $caseData['bsn']);
         }
 
         return $caseData;
@@ -441,9 +450,9 @@ class CaseSharingService
         $shareData['failedAttempts'] = (int) ($shareData['failedAttempts'] ?? 0) + 1;
 
         if ($shareData['failedAttempts'] >= self::MAX_FAILED_ATTEMPTS) {
-            $lockUntil                 = new \DateTime();
+            $lockUntil = new \DateTime();
             $lockUntil->modify('+'.self::LOCKOUT_MINUTES.' minutes');
-            $shareData['lockedUntil']  = $lockUntil->format('c');
+            $shareData['lockedUntil']    = $lockUntil->format('c');
             $shareData['failedAttempts'] = 0;
 
             $this->logger->warning(

@@ -32,8 +32,6 @@ use Psr\Log\LoggerInterface;
  */
 class TemplateController extends Controller
 {
-
-
     /**
      * Constructor.
      *
@@ -48,9 +46,8 @@ class TemplateController extends Controller
         private readonly TemplateLibraryService $templateService,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
-    }
-
+        parent::__construct(appName: $appName, request: $request);
+    }//end __construct()
 
     /**
      * List all available templates.
@@ -63,8 +60,7 @@ class TemplateController extends Controller
     {
         $templates = $this->templateService->listTemplates();
         return new JSONResponse(['results' => $templates]);
-    }
-
+    }//end index()
 
     /**
      * Get a single template by ID.
@@ -83,8 +79,7 @@ class TemplateController extends Controller
         }
 
         return new JSONResponse($template);
-    }
-
+    }//end show()
 
     /**
      * Activate a template (create all objects from it).
@@ -106,5 +101,5 @@ class TemplateController extends Controller
                 400,
             );
         }
-    }
-}
+    }//end activate()
+}//end class
