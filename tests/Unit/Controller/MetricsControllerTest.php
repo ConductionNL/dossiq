@@ -31,6 +31,8 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for the MetricsController class.
  *
+ * @spec openspec/changes/prometheus-metrics/tasks.md#task-5
+ *
  * @covers \OCA\Procest\Controller\MetricsController
  */
 class MetricsControllerTest extends TestCase

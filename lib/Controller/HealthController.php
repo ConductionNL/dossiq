@@ -57,6 +57,8 @@ class HealthController extends Controller
     /**
      * Health check endpoint.
      *
+     * @spec openspec/changes/prometheus-metrics/tasks.md#task-4
+     *
      * @NoCSRFRequired
      *
      * @return JSONResponse Health status
@@ -125,6 +127,8 @@ class HealthController extends Controller
      *
      * OpenRegister is a hard dependency for Procest. If it is not enabled,
      * the overall health status MUST be "error".
+     *
+     * @spec openspec/changes/prometheus-metrics/tasks.md#task-4
      *
      * @return string 'ok' or error message
      */
