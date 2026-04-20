@@ -163,7 +163,7 @@ class ParaferingService
             );
         }
 
-        if (empty($route)) {
+        if (empty($route) === true) {
             throw new \InvalidArgumentException('Parafeerroute cannot be empty');
         }
 
@@ -215,7 +215,7 @@ class ParaferingService
         }
 
         $validActions = [self::ACTION_PARAFEREN, self::ACTION_TERUGSTUREN, self::ACTION_ADVISEREN];
-        if (!in_array($action, $validActions, true)) {
+        if (in_array($action, $validActions, true) === false) {
             throw new \InvalidArgumentException(
                 'Invalid action: '.$action.'. Valid: '.implode(', ', $validActions)
             );
@@ -248,17 +248,17 @@ class ParaferingService
             );
         } else if ($action === self::ACTION_ADVISEREN) {
             // Advisory is non-blocking: advance to next step.
-            $voorstel = $this->advanceStep($voorstel);
+            $voorstel = $this->advanceStep(voorstel: $voorstel);
         } else if ($action === self::ACTION_PARAFEREN) {
             // Check if this completes a parallel step.
             $route      = $voorstel['parafeerRoute'] ?? [];
             $step       = $route[$currentStep] ?? [];
             $isParallel = $step['parallel'] ?? false;
 
-            if ($isParallel) {
-                $voorstel = $this->handleParallelStep($voorstel, $actor, $currentStep);
+            if ($isParallel === true) {
+                $voorstel = $this->handleParallelStep(voorstel: $voorstel, actor: $actor, stepIndex: $currentStep);
             } else {
-                $voorstel = $this->advanceStep($voorstel);
+                $voorstel = $this->advanceStep(voorstel: $voorstel);
             }
         }//end if
 
@@ -395,15 +395,20 @@ class ParaferingService
         // Check if all required actors have parafered.
         $allDone = true;
         foreach ($requiredActors as $requiredActor) {
-            $actorId = is_array($requiredActor) ? ($requiredActor['id'] ?? '') : $requiredActor;
-            if (!in_array($actorId, $paraferedActors, true)) {
+            if (is_array($requiredActor) === true) {
+                $actorId = $requiredActor['id'] ?? '';
+            } else {
+                $actorId = $requiredActor;
+            }
+
+            if (in_array($actorId, $paraferedActors, true) === false) {
                 $allDone = false;
                 break;
             }
         }
 
-        if ($allDone) {
-            $voorstel = $this->advanceStep($voorstel);
+        if ($allDone === true) {
+            $voorstel = $this->advanceStep(voorstel: $voorstel);
         }
 
         return $voorstel;

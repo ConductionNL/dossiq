@@ -73,7 +73,11 @@ class MilestoneService
             100,
         );
 
-        return is_array($results) ? $results : [];
+        if (is_array($results) === true) {
+            return $results;
+        }
+
+        return [];
     }//end getMilestones()
 
     /**
@@ -86,7 +90,7 @@ class MilestoneService
      */
     public function getCaseProgress(string $caseId, string $caseTypeId): array
     {
-        $definitions = $this->getMilestones($caseTypeId);
+        $definitions = $this->getMilestones(caseTypeId: $caseTypeId);
         if (count($definitions) === 0) {
             return [
                 'milestones' => [],
@@ -96,7 +100,7 @@ class MilestoneService
             ];
         }
 
-        $records   = $this->getMilestoneRecords($caseId);
+        $records   = $this->getMilestoneRecords(caseId: $caseId);
         $recordMap = [];
         foreach ($records as $record) {
             $recordMap[$record['milestoneDefinition'] ?? ''] = $record;
@@ -113,24 +117,38 @@ class MilestoneService
                 $reached++;
             }
 
+            if ($isReached === true) {
+                $reachedAt = $record['reachedAt'] ?? null;
+                $reachedBy = $record['reachedBy'] ?? null;
+            } else {
+                $reachedAt = null;
+                $reachedBy = null;
+            }
+
             $milestones[] = [
                 'identifier'  => $def['identifier'] ?? '',
                 'label'       => $def['label'] ?? $def['name'] ?? '',
                 'order'       => $def['order'] ?? 0,
                 'description' => $def['description'] ?? '',
                 'reached'     => $isReached,
-                'reachedAt'   => $isReached ? ($record['reachedAt'] ?? null) : null,
-                'reachedBy'   => $isReached ? ($record['reachedBy'] ?? null) : null,
+                'reachedAt'   => $reachedAt,
+                'reachedBy'   => $reachedBy,
             ];
-        }
+        }//end foreach
 
         $total = count($definitions);
+
+        if ($total > 0) {
+            $percentage = (int) round(($reached / $total) * 100);
+        } else {
+            $percentage = 0;
+        }
 
         return [
             'milestones' => $milestones,
             'reached'    => $reached,
             'total'      => $total,
-            'percentage' => $total > 0 ? (int) round(($reached / $total) * 100) : 0,
+            'percentage' => $percentage,
         ];
     }//end getCaseProgress()
 
@@ -294,6 +312,10 @@ class MilestoneService
             100,
         );
 
-        return is_array($results) ? $results : [];
+        if (is_array($results) === true) {
+            return $results;
+        }
+
+        return [];
     }//end getMilestoneRecords()
 }//end class

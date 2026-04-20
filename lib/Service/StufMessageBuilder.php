@@ -60,7 +60,7 @@ class StufMessageBuilder
     public const NS_XSI = 'http://www.w3.org/2001/XMLSchema-instance';
 
     /**
-     * noValue attribute values.
+     * NoValue attribute values.
      *
      * @var array<string, string>
      */
@@ -110,12 +110,17 @@ class StufMessageBuilder
 
         // Import the body XML.
         $bodyDoc = new \DOMDocument();
-        if ($bodyDoc->loadXML($bodyXml)) {
+        if ($bodyDoc->loadXML($bodyXml) === true) {
             $imported = $dom->importNode($bodyDoc->documentElement, true);
             $body->appendChild($imported);
         }
 
-        return $dom->saveXML() ?: '';
+        $saved = $dom->saveXML();
+        if ($saved === false) {
+            return '';
+        }
+
+        return $saved;
     }//end buildSoapEnvelope()
 
     /**
@@ -189,7 +194,7 @@ class StufMessageBuilder
         $body .= '</stuf:stuurgegevens>';
         $body .= '</stuf:Bv01Bericht>';
 
-        return $this->buildSoapEnvelope($body);
+        return $this->buildSoapEnvelope(bodyXml: $body);
     }//end buildBv01()
 
     /**
@@ -235,7 +240,7 @@ class StufMessageBuilder
         $body .= '</stuf:body>';
         $body .= '</stuf:Fo01Bericht>';
 
-        return $this->buildSoapEnvelope($body);
+        return $this->buildSoapEnvelope(bodyXml: $body);
     }//end buildFo01()
 
     /**
@@ -268,7 +273,12 @@ class StufMessageBuilder
         $faultstringEl->appendChild($dom->createTextNode($faultString));
         $fault->appendChild($faultstringEl);
 
-        return $dom->saveXML() ?: '';
+        $saved = $dom->saveXML();
+        if ($saved === false) {
+            return '';
+        }
+
+        return $saved;
     }//end buildSoapFault()
 
     /**
