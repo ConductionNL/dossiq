@@ -9,7 +9,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -30,8 +30,6 @@ use Psr\Log\LoggerInterface;
  */
 class MilestoneService
 {
-
-
     /**
      * Constructor.
      *
@@ -42,8 +40,7 @@ class MilestoneService
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
     ) {
-    }
-
+    }//end __construct()
 
     /**
      * Get milestone definitions for a case type.
@@ -77,8 +74,7 @@ class MilestoneService
         );
 
         return is_array($results) ? $results : [];
-    }
-
+    }//end getMilestones()
 
     /**
      * Get milestone progress for a specific case.
@@ -93,14 +89,14 @@ class MilestoneService
         $definitions = $this->getMilestones($caseTypeId);
         if (count($definitions) === 0) {
             return [
-                'milestones'  => [],
-                'reached'     => 0,
-                'total'       => 0,
-                'percentage'  => 0,
+                'milestones' => [],
+                'reached'    => 0,
+                'total'      => 0,
+                'percentage' => 0,
             ];
         }
 
-        $records = $this->getMilestoneRecords($caseId);
+        $records   = $this->getMilestoneRecords($caseId);
         $recordMap = [];
         foreach ($records as $record) {
             $recordMap[$record['milestoneDefinition'] ?? ''] = $record;
@@ -109,8 +105,8 @@ class MilestoneService
         $milestones = [];
         $reached    = 0;
         foreach ($definitions as $def) {
-            $defId  = $def['id'] ?? $def['uuid'] ?? '';
-            $record = $recordMap[$defId] ?? null;
+            $defId     = $def['id'] ?? $def['uuid'] ?? '';
+            $record    = $recordMap[$defId] ?? null;
             $isReached = $record !== null;
 
             if ($isReached === true) {
@@ -136,8 +132,7 @@ class MilestoneService
             'total'      => $total,
             'percentage' => $total > 0 ? (int) round(($reached / $total) * 100) : 0,
         ];
-    }
-
+    }//end getCaseProgress()
 
     /**
      * Mark a milestone as reached for a case.
@@ -155,7 +150,7 @@ class MilestoneService
         string $caseId,
         string $milestoneDefinitionId,
         string $userId,
-        string $trigger = 'manual',
+        string $trigger='manual',
     ): array {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
@@ -180,7 +175,7 @@ class MilestoneService
         $record = $objectService->saveObject($register, $schema, $recordData);
 
         $this->logger->info(
-            'Milestone marked: ' . $milestoneDefinitionId . ' on case ' . $caseId,
+            'Milestone marked: '.$milestoneDefinitionId.' on case '.$caseId,
             ['app' => Application::APP_ID],
         );
 
@@ -189,8 +184,7 @@ class MilestoneService
             'reachedAt' => $recordData['reachedAt'],
             'reachedBy' => $userId,
         ];
-    }
-
+    }//end markMilestone()
 
     /**
      * Reverse a milestone (with reason for audit trail).
@@ -240,14 +234,13 @@ class MilestoneService
         }
 
         $this->logger->info(
-            'Milestone reversed: ' . $milestoneDefinitionId . ' on case ' . $caseId
-            . ' by ' . $userId . ' reason: ' . $reason,
+            'Milestone reversed: '.$milestoneDefinitionId.' on case '.$caseId
+            .' by '.$userId.' reason: '.$reason,
             ['app' => Application::APP_ID],
         );
 
         return true;
-    }
-
+    }//end reverseMilestone()
 
     /**
      * Calculate average duration between milestones for a case type.
@@ -261,7 +254,7 @@ class MilestoneService
         // Placeholder: in production, this would aggregate milestone records
         // across all cases of this type and calculate averages.
         $this->logger->debug(
-            'Duration analytics requested for case type: ' . $caseTypeId,
+            'Duration analytics requested for case type: '.$caseTypeId,
             ['app' => Application::APP_ID],
         );
 
@@ -270,8 +263,7 @@ class MilestoneService
             'phases'     => [],
             'message'    => 'Duration analytics requires sufficient historical data',
         ];
-    }
-
+    }//end getDurationAnalytics()
 
     /**
      * Get milestone records for a case.
@@ -303,5 +295,5 @@ class MilestoneService
         );
 
         return is_array($results) ? $results : [];
-    }
-}
+    }//end getMilestoneRecords()
+}//end class

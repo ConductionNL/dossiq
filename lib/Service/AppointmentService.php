@@ -28,7 +28,7 @@ class AppointmentService
         private ContainerInterface $container,
         private LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Get available timeslots via the configured backend.
@@ -36,7 +36,7 @@ class AppointmentService
     public function getTimeslots(string $productId, string $locationId, string $date): array
     {
         return $this->getBackend()->getTimeslots($productId, $locationId, $date);
-    }
+    }//end getTimeslots()
 
     /**
      * Book an appointment linked to a case.
@@ -55,13 +55,16 @@ class AppointmentService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('appointment_schema');
 
-        $appointmentData = array_merge($data, [
-            'caseId'       => $caseId,
-            'status'       => 'scheduled',
-            'externalId'   => $backendResult['externalId'] ?? null,
-            'cancelToken'  => bin2hex(random_bytes(16)),
-            'reminderSent' => false,
-        ]);
+        $appointmentData = array_merge(
+                $data,
+                [
+                    'caseId'       => $caseId,
+                    'status'       => 'scheduled',
+                    'externalId'   => $backendResult['externalId'] ?? null,
+                    'cancelToken'  => bin2hex(random_bytes(16)),
+                    'reminderSent' => false,
+                ]
+                );
 
         $result = $objectService->saveObject(
             (int) $register,
@@ -69,13 +72,16 @@ class AppointmentService
             $appointmentData,
         );
 
-        $this->logger->info('Procest: Appointment booked', [
-            'caseId'       => $caseId,
-            'appointmentId' => $result->getUuid(),
-        ]);
+        $this->logger->info(
+                'Procest: Appointment booked',
+                [
+                    'caseId'        => $caseId,
+                    'appointmentId' => $result->getUuid(),
+                ]
+                );
 
         return $result->jsonSerialize();
-    }
+    }//end bookAppointment()
 
     /**
      * Cancel an appointment.
@@ -99,10 +105,10 @@ class AppointmentService
         }
 
         $data['status'] = 'cancelled';
-        $result = $objectService->saveObject((int) $register, (int) $schema, $data);
+        $result         = $objectService->saveObject((int) $register, (int) $schema, $data);
 
         return $result->jsonSerialize();
-    }
+    }//end cancelAppointment()
 
     /**
      * Mark an appointment as no-show.
@@ -117,13 +123,13 @@ class AppointmentService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('appointment_schema');
 
-        $appointment = $objectService->getObject((int) $register, (int) $schema, $appointmentId);
-        $data        = $appointment->jsonSerialize();
+        $appointment    = $objectService->getObject((int) $register, (int) $schema, $appointmentId);
+        $data           = $appointment->jsonSerialize();
         $data['status'] = 'no_show';
 
         $result = $objectService->saveObject((int) $register, (int) $schema, $data);
         return $result->jsonSerialize();
-    }
+    }//end markNoShow()
 
     /**
      * Get appointments for a case.
@@ -145,7 +151,7 @@ class AppointmentService
         );
 
         return $result['objects'] ?? [];
-    }
+    }//end getAppointmentsForCase()
 
     /**
      * Validate cancel token and return appointment.
@@ -173,7 +179,7 @@ class AppointmentService
 
         $apt = reset($appointments);
         return is_object($apt) ? $apt->jsonSerialize() : $apt;
-    }
+    }//end getAppointmentByToken()
 
     /**
      * Get the configured appointment backend.
@@ -192,7 +198,7 @@ class AppointmentService
             default:
                 return new LocalBackend($this->logger);
         }
-    }
+    }//end getBackend()
 
     private function getObjectService(): ?\OCA\OpenRegister\Service\ObjectService
     {
@@ -206,5 +212,5 @@ class AppointmentService
             $this->logger->error('Procest: Could not get ObjectService', ['exception' => $e->getMessage()]);
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

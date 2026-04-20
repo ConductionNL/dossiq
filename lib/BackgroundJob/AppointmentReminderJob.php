@@ -21,8 +21,9 @@ class AppointmentReminderJob extends TimedJob
         private LoggerInterface $logger,
     ) {
         parent::__construct($time);
-        $this->setInterval(86400); // Daily.
-    }
+        $this->setInterval(86400);
+        // Daily.
+    }//end __construct()
 
     protected function run($argument): void
     {
@@ -50,19 +51,22 @@ class AppointmentReminderJob extends TimedJob
             );
 
             foreach (($result['objects'] ?? []) as $apt) {
-                $data = is_object($apt) ? $apt->jsonSerialize() : $apt;
+                $data    = is_object($apt) ? $apt->jsonSerialize() : $apt;
                 $aptDate = substr($data['dateTime'] ?? '', 0, 10);
 
                 if ($aptDate === $tomorrow && empty($data['reminderSent'])) {
                     $data['reminderSent'] = true;
                     $objectService->saveObject((int) $register, (int) $schema, $data);
-                    $this->logger->info('Procest: Reminder sent for appointment', [
-                        'appointmentId' => $data['uuid'] ?? $data['id'] ?? '',
-                    ]);
+                    $this->logger->info(
+                            'Procest: Reminder sent for appointment',
+                            [
+                                'appointmentId' => $data['uuid'] ?? $data['id'] ?? '',
+                            ]
+                            );
                 }
             }
         } catch (\Exception $e) {
             $this->logger->error('Procest: Reminder job error: '.$e->getMessage());
-        }
-    }
-}
+        }//end try
+    }//end run()
+}//end class

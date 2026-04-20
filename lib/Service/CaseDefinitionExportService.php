@@ -9,7 +9,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -65,7 +65,7 @@ class CaseDefinitionExportService
         private readonly IAppConfig $appConfig,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Export a case definition as a ZIP archive.
@@ -81,7 +81,7 @@ class CaseDefinitionExportService
      */
     public function exportCaseDefinition(
         string $caseTypeId,
-        array $components = [],
+        array $components=[],
     ): array {
         if (empty($components)) {
             $components = self::COMPONENTS;
@@ -91,7 +91,7 @@ class CaseDefinitionExportService
         $invalidComponents = array_diff($components, self::COMPONENTS);
         if (!empty($invalidComponents)) {
             throw new \InvalidArgumentException(
-                'Invalid export components: ' . implode(', ', $invalidComponents)
+                'Invalid export components: '.implode(', ', $invalidComponents)
             );
         }
 
@@ -112,10 +112,10 @@ class CaseDefinitionExportService
             throw new \RuntimeException('Failed to create temporary file for export');
         }
 
-        $zip = new \ZipArchive();
+        $zip    = new \ZipArchive();
         $result = $zip->open($tempPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
         if ($result !== true) {
-            throw new \RuntimeException('Failed to create ZIP archive: error code ' . $result);
+            throw new \RuntimeException('Failed to create ZIP archive: error code '.$result);
         }
 
         // Add manifest.
@@ -125,17 +125,17 @@ class CaseDefinitionExportService
         foreach ($components as $component) {
             $data = $this->exportComponent($caseTypeId, $component);
             if ($data !== null) {
-                $filename = $component === 'workflows' ? 'workflows/' : $component . '.json';
+                $filename = $component === 'workflows' ? 'workflows/' : $component.'.json';
                 if ($component === 'workflows' && is_array($data)) {
                     foreach ($data as $workflowName => $workflowData) {
                         $zip->addFromString(
-                            'workflows/' . $workflowName . '.json',
+                            'workflows/'.$workflowName.'.json',
                             json_encode($workflowData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
                         );
                     }
                 } else {
                     $zip->addFromString(
-                        $component . '.json',
+                        $component.'.json',
                         json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
                     );
                 }
@@ -144,14 +144,14 @@ class CaseDefinitionExportService
 
         $zip->close();
 
-        $slug = $manifest['caseType']['slug'] ?? 'unknown';
+        $slug    = $manifest['caseType']['slug'] ?? 'unknown';
         $version = $manifest['version'] ?? '1.0';
 
         return [
-            'path' => $tempPath,
+            'path'     => $tempPath,
             'filename' => "case-definition-{$slug}-v{$version}.zip",
         ];
-    }
+    }//end exportCaseDefinition()
 
     /**
      * Build the manifest for a case definition export.
@@ -165,7 +165,7 @@ class CaseDefinitionExportService
     {
         $previousVersion = $this->appConfig->getValueString(
             Application::APP_ID,
-            'export_version_' . $caseTypeId,
+            'export_version_'.$caseTypeId,
             '0.0'
         );
 
@@ -174,35 +174,35 @@ class CaseDefinitionExportService
         // Store the new version.
         $this->appConfig->setValueString(
             Application::APP_ID,
-            'export_version_' . $caseTypeId,
+            'export_version_'.$caseTypeId,
             $newVersion
         );
 
         $excludedComponents = array_values(array_diff(self::COMPONENTS, $components));
 
         return [
-            'version' => $newVersion,
-            'previousVersion' => $previousVersion !== '0.0' ? $previousVersion : null,
-            'exportDate' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
-            'sourceEnvironment' => $this->appConfig->getValueString(
+            'version'            => $newVersion,
+            'previousVersion'    => $previousVersion !== '0.0' ? $previousVersion : null,
+            'exportDate'         => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
+            'sourceEnvironment'  => $this->appConfig->getValueString(
                 Application::APP_ID,
                 'environment_name',
                 'unknown'
             ),
-            'generator' => 'procest/' . $this->appConfig->getValueString(
+            'generator'          => 'procest/'.$this->appConfig->getValueString(
                 'procest',
                 'installed_version',
                 'unknown'
             ),
-            'caseType' => [
-                'id' => $caseTypeId,
+            'caseType'           => [
+                'id'   => $caseTypeId,
                 'slug' => $caseTypeId,
             ],
-            'components' => $components,
+            'components'         => $components,
             'excludedComponents' => $excludedComponents,
-            'dependencies' => [],
+            'dependencies'       => [],
         ];
-    }
+    }//end buildManifest()
 
     /**
      * Export a single component.
@@ -219,8 +219,8 @@ class CaseDefinitionExportService
         // demonstrate the expected format.
         return match ($component) {
             'schema' => [
-                'caseTypeId' => $caseTypeId,
-                'fields' => [],
+                'caseTypeId'  => $caseTypeId,
+                'fields'      => [],
                 'validations' => [],
             ],
             'statuses' => [
@@ -233,16 +233,16 @@ class CaseDefinitionExportService
             ],
             'documents' => [
                 'documentTypes' => [],
-                'templates' => [],
+                'templates'     => [],
             ],
             'metadata' => [
-                'resultTypes' => [],
+                'resultTypes'   => [],
                 'decisionTypes' => [],
             ],
             'workflows' => [],
             default => null,
-        };
-    }
+        };//end match
+    }//end exportComponent()
 
     /**
      * Increment a version string (e.g., "1.0" -> "1.1").
@@ -254,9 +254,9 @@ class CaseDefinitionExportService
     private function incrementVersion(string $version): string
     {
         $parts = explode('.', $version);
-        $major = (int)($parts[0] ?? 1);
-        $minor = (int)($parts[1] ?? 0);
+        $major = (int) ($parts[0] ?? 1);
+        $minor = (int) ($parts[1] ?? 0);
 
         return sprintf(self::VERSION_FORMAT, $major, $minor + 1);
-    }
-}
+    }//end incrementVersion()
+}//end class

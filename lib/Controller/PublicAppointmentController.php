@@ -17,7 +17,7 @@ class PublicAppointmentController extends Controller
         private AppointmentService $appointmentService,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
-    }
+    }//end __construct()
 
     /**
      * @PublicPage
@@ -30,17 +30,19 @@ class PublicAppointmentController extends Controller
             return new JSONResponse(['error' => 'Afspraak niet gevonden'], 404);
         }
 
-        return new JSONResponse([
-            'success'     => true,
-            'appointment' => [
-                'dateTime'    => $appointment['dateTime'] ?? null,
-                'duration'    => $appointment['duration'] ?? 30,
-                'status'      => $appointment['status'] ?? 'scheduled',
-                'locationId'  => $appointment['locationId'] ?? null,
-                'productId'   => $appointment['productId'] ?? null,
-            ],
-        ]);
-    }
+        return new JSONResponse(
+                [
+                    'success'     => true,
+                    'appointment' => [
+                        'dateTime'   => $appointment['dateTime'] ?? null,
+                        'duration'   => $appointment['duration'] ?? 30,
+                        'status'     => $appointment['status'] ?? 'scheduled',
+                        'locationId' => $appointment['locationId'] ?? null,
+                        'productId'  => $appointment['productId'] ?? null,
+                    ],
+                ]
+                );
+    }//end view()
 
     /**
      * @PublicPage
@@ -60,5 +62,5 @@ class PublicAppointmentController extends Controller
         $id     = $appointment['uuid'] ?? $appointment['id'] ?? '';
         $result = $this->appointmentService->cancelAppointment($id);
         return new JSONResponse(['success' => true, 'appointment' => $result]);
-    }
-}
+    }//end cancel()
+}//end class

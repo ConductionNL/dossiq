@@ -18,7 +18,7 @@ class QmaticBackend implements AppointmentBackendInterface
         private string $apiUrl,
         private string $apiKey,
     ) {
-    }
+    }//end __construct()
 
     public function getTimeslots(string $productId, string $locationId, string $date): array
     {
@@ -38,12 +38,13 @@ class QmaticBackend implements AppointmentBackendInterface
                     'available' => true,
                 ];
             }
+
             return $slots;
         } catch (\Exception $e) {
             $this->logger->error('Qmatic API error: '.$e->getMessage());
             return [];
-        }
-    }
+        }//end try
+    }//end getTimeslots()
 
     public function bookAppointment(array $data): array
     {
@@ -62,7 +63,7 @@ class QmaticBackend implements AppointmentBackendInterface
             $this->logger->error('Qmatic booking error: '.$e->getMessage());
             return ['error' => $e->getMessage()];
         }
-    }
+    }//end bookAppointment()
 
     public function cancelAppointment(string $externalId): bool
     {
@@ -77,11 +78,11 @@ class QmaticBackend implements AppointmentBackendInterface
             $this->logger->error('Qmatic cancel error: '.$e->getMessage());
             return false;
         }
-    }
+    }//end cancelAppointment()
 
     public function rescheduleAppointment(string $externalId, string $newDateTime): array
     {
         $this->cancelAppointment($externalId);
         return $this->bookAppointment(['dateTime' => $newDateTime]);
-    }
-}
+    }//end rescheduleAppointment()
+}//end class

@@ -10,7 +10,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -35,8 +35,7 @@ class TemplateLibraryService
     /**
      * Path to the templates directory.
      */
-    private const TEMPLATES_DIR = __DIR__ . '/../Settings/templates';
-
+    private const TEMPLATES_DIR = __DIR__.'/../Settings/templates';
 
     /**
      * Constructor.
@@ -48,8 +47,7 @@ class TemplateLibraryService
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
     ) {
-    }
-
+    }//end __construct()
 
     /**
      * List all available zaaktype templates.
@@ -67,7 +65,7 @@ class TemplateLibraryService
             return $templates;
         }
 
-        $files = glob($dir . '/*.json');
+        $files = glob($dir.'/*.json');
         if ($files === false) {
             return $templates;
         }
@@ -81,7 +79,7 @@ class TemplateLibraryService
             $data = json_decode($content, true);
             if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
                 $this->logger->warning(
-                    'Invalid template file: ' . basename($file),
+                    'Invalid template file: '.basename($file),
                     ['app' => Application::APP_ID]
                 );
                 continue;
@@ -95,11 +93,10 @@ class TemplateLibraryService
                 'version'     => $data['version'] ?? '1.0.0',
                 'file'        => basename($file),
             ];
-        }
+        }//end foreach
 
         return $templates;
-    }
-
+    }//end listTemplates()
 
     /**
      * Load a template by its ID.
@@ -116,7 +113,7 @@ class TemplateLibraryService
             return null;
         }
 
-        $files = glob($dir . '/*.json');
+        $files = glob($dir.'/*.json');
         if ($files === false) {
             return null;
         }
@@ -139,8 +136,7 @@ class TemplateLibraryService
         }
 
         return null;
-    }
-
+    }//end loadTemplate()
 
     /**
      * Activate a template by creating OpenRegister objects for the case type and related entities.
@@ -163,7 +159,7 @@ class TemplateLibraryService
     {
         $template = $this->loadTemplate($templateId);
         if ($template === null) {
-            throw new \RuntimeException('Template not found: ' . $templateId);
+            throw new \RuntimeException('Template not found: '.$templateId);
         }
 
         $objectService = $this->settingsService->getObjectService();
@@ -187,21 +183,21 @@ class TemplateLibraryService
         ];
 
         // Create the case type.
-        $caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
-        $caseTypeData   = $template['caseType'] ?? [];
-        $caseType       = $objectService->saveObject(
+        $caseTypeSchema     = $this->settingsService->getConfigValue('case_type_schema');
+        $caseTypeData       = $template['caseType'] ?? [];
+        $caseType           = $objectService->saveObject(
             $register,
             $caseTypeSchema,
             $caseTypeData,
         );
-        $caseTypeId     = $caseType->getUuid();
+        $caseTypeId         = $caseType->getUuid();
         $result['caseType'] = $caseTypeId;
 
         // Create status types.
         $statusTypeSchema = $this->settingsService->getConfigValue('status_type_schema');
         foreach (($template['statusTypes'] ?? []) as $statusData) {
             $statusData['caseType'] = $caseTypeId;
-            $status                 = $objectService->saveObject(
+            $status = $objectService->saveObject(
                 $register,
                 $statusTypeSchema,
                 $statusData,
@@ -213,7 +209,7 @@ class TemplateLibraryService
         $propertySchema = $this->settingsService->getConfigValue('property_definition_schema');
         foreach (($template['propertyDefinitions'] ?? []) as $propData) {
             $propData['caseType'] = $caseTypeId;
-            $prop                 = $objectService->saveObject(
+            $prop = $objectService->saveObject(
                 $register,
                 $propertySchema,
                 $propData,
@@ -225,7 +221,7 @@ class TemplateLibraryService
         $docTypeSchema = $this->settingsService->getConfigValue('document_type_schema');
         foreach (($template['documentTypes'] ?? []) as $docData) {
             $docData['caseType'] = $caseTypeId;
-            $doc                 = $objectService->saveObject(
+            $doc = $objectService->saveObject(
                 $register,
                 $docTypeSchema,
                 $docData,
@@ -237,7 +233,7 @@ class TemplateLibraryService
         $decisionTypeSchema = $this->settingsService->getConfigValue('decision_type_schema');
         foreach (($template['decisionTypes'] ?? []) as $decData) {
             $decData['caseType'] = $caseTypeId;
-            $dec                 = $objectService->saveObject(
+            $dec = $objectService->saveObject(
                 $register,
                 $decisionTypeSchema,
                 $decData,
@@ -249,7 +245,7 @@ class TemplateLibraryService
         $roleTypeSchema = $this->settingsService->getConfigValue('role_type_schema');
         foreach (($template['roleTypes'] ?? []) as $roleData) {
             $roleData['caseType'] = $caseTypeId;
-            $role                 = $objectService->saveObject(
+            $role = $objectService->saveObject(
                 $register,
                 $roleTypeSchema,
                 $roleData,
@@ -258,10 +254,10 @@ class TemplateLibraryService
         }
 
         $this->logger->info(
-            'Template activated: ' . $templateId . ' -> caseType ' . $caseTypeId,
+            'Template activated: '.$templateId.' -> caseType '.$caseTypeId,
             ['app' => Application::APP_ID]
         );
 
         return $result;
-    }
-}
+    }//end activateTemplate()
+}//end class

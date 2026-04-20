@@ -17,16 +17,18 @@ class BerichtenboxController extends Controller
         private BerichtenboxService $berichtenboxService,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
-    }
+    }//end __construct()
 
-    /** @NoAdminRequired */
+    /**
+     * @NoAdminRequired
+     */
     public function send(): JSONResponse
     {
-        $caseId           = $this->request->getParam('caseId');
-        $bsn              = $this->request->getParam('bsn', '');
-        $subject          = $this->request->getParam('subject', '');
-        $body             = $this->request->getParam('body', '');
-        $typeCode         = $this->request->getParam('berichtTypeCode', '');
+        $caseId   = $this->request->getParam('caseId');
+        $bsn      = $this->request->getParam('bsn', '');
+        $subject  = $this->request->getParam('subject', '');
+        $body     = $this->request->getParam('body', '');
+        $typeCode = $this->request->getParam('berichtTypeCode', '');
         $attachmentFileId = $this->request->getParam('attachmentFileId');
 
         if (empty($caseId) === true) {
@@ -34,7 +36,12 @@ class BerichtenboxController extends Controller
         }
 
         $result = $this->berichtenboxService->sendMessage(
-            $caseId, $bsn, $subject, $body, $typeCode, $attachmentFileId
+            $caseId,
+                $bsn,
+                $subject,
+                $body,
+                $typeCode,
+                $attachmentFileId
         );
 
         if (isset($result['error']) === true) {
@@ -42,20 +49,24 @@ class BerichtenboxController extends Controller
         }
 
         return new JSONResponse(['success' => true, 'message' => $result]);
-    }
+    }//end send()
 
-    /** @NoAdminRequired */
+    /**
+     * @NoAdminRequired
+     */
     public function messages(): JSONResponse
     {
         $caseId   = $this->request->getParam('caseId', '');
         $messages = $this->berichtenboxService->getMessagesForCase($caseId);
         return new JSONResponse(['success' => true, 'messages' => $messages]);
-    }
+    }//end messages()
 
-    /** @NoAdminRequired */
+    /**
+     * @NoAdminRequired
+     */
     public function poll(string $messageId): JSONResponse
     {
         $result = $this->berichtenboxService->pollReadStatus($messageId);
         return new JSONResponse(['success' => true, 'message' => $result]);
-    }
-}
+    }//end poll()
+}//end class

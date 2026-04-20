@@ -8,7 +8,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -31,8 +31,6 @@ use OCP\IRequest;
  */
 class ConsultationController extends Controller
 {
-
-
     /**
      * Constructor.
      *
@@ -46,8 +44,7 @@ class ConsultationController extends Controller
         private readonly ConsultationService $consultationService,
     ) {
         parent::__construct($appName, $request);
-    }
-
+    }//end __construct()
 
     /**
      * List consultations for a case.
@@ -62,8 +59,7 @@ class ConsultationController extends Controller
     {
         $consultations = $this->consultationService->getConsultationsForCase($caseId);
         return new JSONResponse(['results' => $consultations]);
-    }
-
+    }//end index()
 
     /**
      * Create a new consultation.
@@ -81,8 +77,7 @@ class ConsultationController extends Controller
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 400);
         }
-    }
-
+    }//end create()
 
     /**
      * Update consultation status.
@@ -103,8 +98,7 @@ class ConsultationController extends Controller
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 400);
         }
-    }
-
+    }//end updateStatus()
 
     /**
      * Submit advice response.
@@ -124,8 +118,7 @@ class ConsultationController extends Controller
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 400);
         }
-    }
-
+    }//end submitResponse()
 
     /**
      * Get overdue consultations.
@@ -138,5 +131,5 @@ class ConsultationController extends Controller
     {
         $overdue = $this->consultationService->getOverdueConsultations();
         return new JSONResponse(['results' => $overdue]);
-    }
-}
+    }//end overdue()
+}//end class
