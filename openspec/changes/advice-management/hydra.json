@@ -4,5 +4,328 @@
   "app": "procest",
   "repo": "https://github.com/ConductionNL/procest",
   "depends_on": [],
-  "issue": null
+  "issue": null,
+  "schema_version": 2,
+  "cycles": [
+    {
+      "cycle": 1,
+      "trigger": "build:queued",
+      "started_at": "2026-04-18T16:47:54Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [],
+      "stages": [
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-18T16:47:54Z",
+          "ended_at": "2026-04-18T16:47:55Z",
+          "turns_used": 103,
+          "turns_budget": 200,
+          "cost_usd": 1.1756,
+          "checks_run": [
+            "composer check:strict"
+          ],
+          "checks_skipped": [],
+          "findings": [
+            {
+              "id": "b-builder-build-0",
+              "severity": "WARNING",
+              "gate": null,
+              "rule": "builder output flagged failure language",
+              "status": "open",
+              "note": "## \u2705 Implementation Complete: Advice Management (advice-management)\n\nI've successfully implemented the complete advice request management system for Procest. Here's what was delivered:\n\n### **Backend Implementation**\n- **AdviceService** (`lib/Service/AdviceService.php`) \u2014 Handles CRUD, status transitions, and notification dispatch for advice requests\n- **AdviceController** (`lib/Controller/AdviceController.php`) \u2014 6 REST API endpoints for advice management (`GET/POST /api/advice`, etc.)\n- **Advi",
+              "autofixable": false
+            }
+          ],
+          "decisions": [],
+          "verdict": "fail"
+        },
+        {
+          "stage": "pre-review-quality",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-18T16:47:54Z",
+          "ended_at": "2026-04-18T16:47:55Z",
+          "exit_code": 0,
+          "checks_run": [
+            "php-lint",
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "stylelint",
+            "npm-audit",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "publiccode",
+            "gitleaks",
+            "trivy",
+            "newman"
+          ],
+          "gates": {
+            "php-lint": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpcs": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": true,
+              "failures": 0
+            },
+            "forbidden-patterns": {
+              "pass": true,
+              "failures": 0
+            },
+            "eslint": {
+              "pass": true,
+              "failures": 0
+            },
+            "stylelint": {
+              "pass": true,
+              "failures": 0
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpunit": {
+              "pass": true,
+              "failures": 0
+            }
+          },
+          "findings": [],
+          "verdict": "pass"
+        },
+        {
+          "stage": "code-review",
+          "persona": "Juan Claude van Damme",
+          "model": "sonnet",
+          "container": "hydra-reviewer",
+          "started_at": "2026-04-18T16:55:56Z",
+          "ended_at": "2026-04-18T16:55:57Z",
+          "turns_used": 41,
+          "turns_budget": 40,
+          "cost_usd": 1.2576,
+          "checks_run": [
+            "composer check:strict",
+            "phpcs"
+          ],
+          "checks_skipped": [
+            "hydra-gates"
+          ],
+          "findings": [],
+          "verdict": "none"
+        }
+      ]
+    },
+    {
+      "cycle": 2,
+      "trigger": "build:queued",
+      "started_at": "2026-04-18T19:51:44Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [
+        "reviewer-skipped-full-suite"
+      ],
+      "stages": [
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-18T19:51:44Z",
+          "ended_at": "2026-04-18T19:51:45Z",
+          "turns_used": 107,
+          "turns_budget": 200,
+          "cost_usd": 1.3009,
+          "checks_run": [
+            "composer check:strict"
+          ],
+          "checks_skipped": [],
+          "findings": [
+            {
+              "id": "b-builder-build-0",
+              "severity": "WARNING",
+              "gate": null,
+              "rule": "builder output flagged failure language",
+              "status": "open",
+              "note": "## Implementation Complete \u2705\n\nI've successfully implemented the **advice-management** OpenSpec change for Procest. Here's what was delivered:\n\n### Backend (\u2705 3 files)\n- **AdviceService.php** - Handles advice CRUD, status transitions, notifications, and task creation\n- **AdviceController.php** - REST API with 6 endpoints (list, create, get, update, delete, remind)\n- **AdviceDeadlineJob.php** - Daily background job that expires overdue advice and sends reminders\n\n### Frontend (\u2705 2 components + 1 A",
+              "autofixable": false
+            }
+          ],
+          "decisions": [],
+          "verdict": "fail"
+        },
+        {
+          "stage": "pre-review-quality",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-18T19:51:44Z",
+          "ended_at": "2026-04-18T19:51:45Z",
+          "exit_code": 0,
+          "checks_run": [
+            "php-lint",
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "stylelint",
+            "npm-audit",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "publiccode",
+            "gitleaks",
+            "trivy",
+            "newman"
+          ],
+          "gates": {
+            "php-lint": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpcs": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": true,
+              "failures": 0
+            },
+            "forbidden-patterns": {
+              "pass": true,
+              "failures": 0
+            },
+            "eslint": {
+              "pass": true,
+              "failures": 0
+            },
+            "stylelint": {
+              "pass": true,
+              "failures": 0
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpunit": {
+              "pass": true,
+              "failures": 0
+            }
+          },
+          "findings": [],
+          "verdict": "pass"
+        },
+        {
+          "stage": "code-review",
+          "persona": "Juan Claude van Damme",
+          "model": "sonnet",
+          "container": "hydra-reviewer",
+          "started_at": "2026-04-18T20:13:51Z",
+          "ended_at": "2026-04-18T20:13:52Z",
+          "turns_used": 41,
+          "turns_budget": 40,
+          "cost_usd": 1.5001,
+          "checks_run": [
+            "composer check:strict",
+            "phpcs"
+          ],
+          "checks_skipped": [
+            "hydra-gates"
+          ],
+          "findings": [],
+          "verdict": "none"
+        },
+        {
+          "stage": "security-review",
+          "persona": "Clyde Barcode",
+          "model": "sonnet",
+          "container": "hydra-security",
+          "started_at": "2026-04-18T20:25:07Z",
+          "ended_at": "2026-04-18T20:25:08Z",
+          "turns_used": 46,
+          "turns_budget": 40,
+          "cost_usd": 1.3109,
+          "checks_run": [],
+          "checks_skipped": [
+            "hydra-gates",
+            "composer check:strict"
+          ],
+          "findings": [
+            {
+              "id": "SEC-01",
+              "severity": "SUGGESTION",
+              "gate": "OWASP A09:2021",
+              "file": "src/views/cases/components/AdviesPanel.vue",
+              "line": 223,
+              "rule": "OWASP A09:2021",
+              "status": "open",
+              "note": "Could not apply fix: container filesystem is read-only (root-owned files, no sudo). Fix is two-line removal of console.log('View document:', ...) and console.log('Download document:', ...) in viewDocument/downloadDocument methods.",
+              "autofixable": false
+            }
+          ],
+          "verdict": "pass"
+        }
+      ]
+    }
+  ]
 }
