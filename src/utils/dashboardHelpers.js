@@ -3,6 +3,7 @@
  * overdue extraction, activity aggregation, and my work item merging.
  */
 
+import { translate as t } from '@nextcloud/l10n'
 import { isCaseOverdue, getDaysRemaining, formatDeadlineCountdown } from './caseHelpers.js'
 import { prioritySortWeight } from './taskHelpers.js'
 import { isTerminalStatus } from './taskLifecycle.js'
@@ -78,7 +79,7 @@ export function aggregateByStatus(openCases, statusTypes) {
 	}
 
 	for (const c of openCases) {
-		const name = statusIdToName.get(c.status) || c.status || 'Unknown'
+		const name = statusIdToName.get(c.status) || c.status || t('procest', 'Unknown')
 		statusMap.set(name, (statusMap.get(name) || 0) + 1)
 	}
 
@@ -97,7 +98,7 @@ export function aggregateByStatus(openCases, statusTypes) {
 export function getOverdueCases(openCases, caseTypes) {
 	const typeMap = new Map()
 	for (const ct of caseTypes) {
-		typeMap.set(ct.id, ct.title || ct.name || 'Unknown')
+		typeMap.set(ct.id, ct.title || ct.name || t('procest', 'Unknown'))
 	}
 
 	return openCases
@@ -106,7 +107,7 @@ export function getOverdueCases(openCases, caseTypes) {
 			id: c.id,
 			identifier: c.identifier || '—',
 			title: c.title || '—',
-			caseTypeName: typeMap.get(c.caseType) || 'Unknown',
+			caseTypeName: typeMap.get(c.caseType) || t('procest', 'Unknown'),
 			daysOverdue: Math.abs(getDaysRemaining(c.deadline)),
 			handler: c.assignee || '—',
 		}))
@@ -334,7 +335,7 @@ export const STALLED_THRESHOLD_DAYS = 7
 export function getDeadlineAlerts(openCases, caseTypes, warningDays = DEADLINE_WARNING_DAYS) {
 	const typeMap = new Map()
 	for (const ct of caseTypes) {
-		typeMap.set(ct.id, ct.title || ct.name || 'Unknown')
+		typeMap.set(ct.id, ct.title || ct.name || t('procest', 'Unknown'))
 	}
 
 	const today = new Date()
@@ -354,7 +355,7 @@ export function getDeadlineAlerts(openCases, caseTypes, warningDays = DEADLINE_W
 			id: c.id,
 			title: c.title || '\u2014',
 			identifier: c.identifier || '\u2014',
-			caseTypeName: typeMap.get(c.caseType) || 'Unknown',
+			caseTypeName: typeMap.get(c.caseType) || t('procest', 'Unknown'),
 			handler: c.assignee || '\u2014',
 		}
 
@@ -428,7 +429,7 @@ export function getTaskDueReminders(tasks, warningDays = DEADLINE_WARNING_DAYS) 
 export function getStalledCases(openCases, caseTypes, stalledDays = STALLED_THRESHOLD_DAYS) {
 	const typeMap = new Map()
 	for (const ct of caseTypes) {
-		typeMap.set(ct.id, ct.title || ct.name || 'Unknown')
+		typeMap.set(ct.id, ct.title || ct.name || t('procest', 'Unknown'))
 	}
 
 	const today = new Date()
@@ -451,7 +452,7 @@ export function getStalledCases(openCases, caseTypes, stalledDays = STALLED_THRE
 				id: c.id,
 				title: c.title || '\u2014',
 				identifier: c.identifier || '\u2014',
-				caseTypeName: typeMap.get(c.caseType) || 'Unknown',
+				caseTypeName: typeMap.get(c.caseType) || t('procest', 'Unknown'),
 				daysSinceActivity,
 				handler: c.assignee || '\u2014',
 			})

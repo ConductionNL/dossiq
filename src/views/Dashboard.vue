@@ -44,6 +44,7 @@
 					:title="t('procest', 'Open Cases')"
 					:count="kpis.openCount"
 					:count-label="t('procest', 'open')"
+					:empty-label="t('procest', 'No items found')"
 					:icon="FolderOpen"
 					variant="primary"
 					horizontal
@@ -56,6 +57,7 @@
 					:title="t('procest', 'Overdue')"
 					:count="kpis.overdueCount"
 					:count-label="t('procest', 'overdue')"
+					:empty-label="t('procest', 'No items found')"
 					:icon="AlertCircle"
 					:variant="kpis.overdueCount > 0 ? 'error' : 'default'"
 					horizontal
@@ -68,6 +70,7 @@
 					:title="t('procest', 'Completed This Month')"
 					:count="kpis.completedCount"
 					:count-label="t('procest', 'completed')"
+					:empty-label="t('procest', 'No items found')"
 					:icon="CheckCircle"
 					variant="success"
 					horizontal
@@ -80,6 +83,7 @@
 					:title="t('procest', 'My Tasks')"
 					:count="kpis.taskCount"
 					:count-label="t('procest', 'tasks')"
+					:empty-label="t('procest', 'No items found')"
 					:icon="ClipboardCheckOutline"
 					variant="primary"
 					horizontal
@@ -92,6 +96,7 @@
 					:title="t('procest', 'SLA Compliance')"
 					:count="slaComplianceLabel"
 					:count-label="slaComplianceSub"
+					:empty-label="t('procest', 'No items found')"
 					:icon="ChartTimeline"
 					:variant="slaComplianceVariant"
 					horizontal
@@ -135,7 +140,7 @@
 							:class="{ 'my-work-item--overdue': item.isOverdue }"
 							@click="onWorkItemClick(item.type, item.id)">
 							<span class="entity-badge" :class="'badge--' + item.type">
-								{{ item.type === 'case' ? 'CASE' : 'TASK' }}
+								{{ item.type === 'case' ? t('procest', 'CASE') : t('procest', 'TASK') }}
 							</span>
 							<span class="my-work-title">{{ item.title }}</span>
 							<span class="my-work-stage">{{ item.reference }}</span>

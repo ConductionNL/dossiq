@@ -81,6 +81,10 @@ webpackConfig.module = {
 			use: ['style-loader', 'css-loader'],
 		},
 		{
+			test: /\.scss$/,
+			use: ['style-loader', 'css-loader', 'sass-loader'],
+		},
+		{
 			// Leaflet marker icons and other image assets
 			test: /\.(png|jpe?g|gif|svg)$/,
 			type: 'asset/resource',
