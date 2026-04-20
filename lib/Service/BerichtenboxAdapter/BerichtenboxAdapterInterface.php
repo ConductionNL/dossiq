@@ -1,5 +1,22 @@
 <?php
 
+/**
+ * Procest Berichtenbox Adapter Interface.
+ *
+ * Contract for Mijn Overheid Berichtenbox API adapter implementations.
+ *
+ * @category Interface
+ * @package  OCA\Procest\Service\BerichtenboxAdapter
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ */
+
 declare(strict_types=1);
 
 namespace OCA\Procest\Service\BerichtenboxAdapter;
@@ -25,7 +42,7 @@ interface BerichtenboxAdapterInterface
         string $subject,
         string $body,
         string $typeCode,
-        ?string $attachment = null,
+        ?string $attachment=null,
     ): array;
 
     /**
@@ -36,4 +53,4 @@ interface BerichtenboxAdapterInterface
      * @return array Status with read (bool), readAt (datetime|null)
      */
     public function getReadStatus(string $messageId): array;
-}
+}//end interface

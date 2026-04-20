@@ -145,7 +145,12 @@ class ZgwZrcRulesService extends ZgwRulesBase
                             register: $register,
                             schema: $schema
                         );
-                        $ztData = is_array($zaaktype) === true ? $zaaktype : $zaaktype->jsonSerialize();
+                        if (is_array($zaaktype) === true) {
+                            $ztData = $zaaktype;
+                        } else {
+                            $ztData = $zaaktype->jsonSerialize();
+                        }
+
                         if (empty($ztData['defaultAssignee']) === false) {
                             $body['assignee'] = $ztData['defaultAssignee'];
                         }
@@ -153,8 +158,8 @@ class ZgwZrcRulesService extends ZgwRulesBase
                         // Zaaktype not found; skip auto-assignment.
                     }
                 }
-            }
-        }
+            }//end if
+        }//end if
 
         return $this->validateZaakFields(result: $this->isValid(body: $body), existingObject: null, isPatch: false);
     }//end rulesZakenCreate()
