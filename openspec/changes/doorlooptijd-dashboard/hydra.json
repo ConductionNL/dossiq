@@ -1,0 +1,548 @@
+{
+  "spec_slug": "doorlooptijd-dashboard",
+  "app": "procest",
+  "repo": "ConductionNL/procest",
+  "issue": 137,
+  "depends_on": [],
+  "schema_version": 2,
+  "cycles": [
+    {
+      "cycle": 1,
+      "trigger": "build:queued",
+      "started_at": "2026-04-16T10:32:33Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [],
+      "stages": [
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-16T10:32:33Z",
+          "ended_at": "2026-04-16T10:32:34Z",
+          "turns_used": 190,
+          "turns_budget": 200,
+          "cost_usd": 7.2231,
+          "checks_run": [
+            "composer check:strict"
+          ],
+          "checks_skipped": [],
+          "findings": [],
+          "decisions": [],
+          "verdict": "none"
+        }
+      ]
+    },
+    {
+      "cycle": 2,
+      "trigger": "build:queued",
+      "started_at": "2026-04-16T11:24:16Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [
+        "container-crashed-mid-stage"
+      ],
+      "stages": [
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-16T11:24:16Z",
+          "ended_at": "2026-04-16T11:24:17Z",
+          "turns_used": 0,
+          "turns_budget": 200,
+          "cost_usd": 0.0,
+          "checks_run": [],
+          "checks_skipped": [],
+          "findings": [],
+          "decisions": [],
+          "verdict": "none"
+        }
+      ]
+    },
+    {
+      "cycle": 3,
+      "trigger": "build:queued",
+      "started_at": "2026-04-16T11:36:53Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [
+        "container-crashed-mid-stage"
+      ],
+      "stages": [
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-16T11:36:53Z",
+          "ended_at": "2026-04-16T11:36:54Z",
+          "turns_used": 0,
+          "turns_budget": 200,
+          "cost_usd": 0.0,
+          "checks_run": [],
+          "checks_skipped": [],
+          "findings": [],
+          "decisions": [],
+          "verdict": "none"
+        }
+      ]
+    },
+    {
+      "cycle": 4,
+      "trigger": "build:queued",
+      "started_at": "2026-04-18T16:54:28Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [],
+      "stages": [
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-18T16:54:28Z",
+          "ended_at": "2026-04-18T16:54:29Z",
+          "turns_used": 90,
+          "turns_budget": 200,
+          "cost_usd": 1.0518,
+          "checks_run": [
+            "composer check:strict"
+          ],
+          "checks_skipped": [],
+          "findings": [
+            {
+              "id": "b-builder-build-0",
+              "severity": "WARNING",
+              "gate": null,
+              "rule": "builder output flagged failure language",
+              "status": "open",
+              "note": "Perfect! All syntax checks pass. Let me provide a summary of what has been accomplished:\n\n## Summary\n\nI've successfully implemented the backend API for the doorlooptijd-dashboard feature (#137) on the procest application. Here's what was delivered:\n\n### \u2705 Completed Work\n\n#### Backend Implementation\n1. **DoorlooptijdService** (`lib/Service/DoorlooptijdService.php`)\n   - 600+ lines of production code\n   - Comprehensive metric calculations including:\n     - SLA compliance rates per case type\n     -",
+              "autofixable": false
+            }
+          ],
+          "decisions": [],
+          "verdict": "fail"
+        },
+        {
+          "stage": "pre-review-quality",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-18T16:54:28Z",
+          "ended_at": "2026-04-18T16:54:29Z",
+          "exit_code": 0,
+          "checks_run": [
+            "php-lint",
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "stylelint",
+            "npm-audit",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "publiccode",
+            "gitleaks",
+            "trivy",
+            "newman"
+          ],
+          "gates": {
+            "php-lint": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpcs": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": true,
+              "failures": 0
+            },
+            "forbidden-patterns": {
+              "pass": true,
+              "failures": 0
+            },
+            "eslint": {
+              "pass": true,
+              "failures": 0
+            },
+            "stylelint": {
+              "pass": true,
+              "failures": 0
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpunit": {
+              "pass": true,
+              "failures": 0
+            }
+          },
+          "findings": [],
+          "verdict": "pass"
+        },
+        {
+          "stage": "code-review",
+          "persona": "Juan Claude van Damme",
+          "model": "sonnet",
+          "container": "hydra-reviewer",
+          "started_at": "2026-04-18T17:03:17Z",
+          "ended_at": "2026-04-18T17:03:18Z",
+          "turns_used": 41,
+          "turns_budget": 40,
+          "cost_usd": 1.5602,
+          "checks_run": [
+            "phpcs",
+            "composer check:strict",
+            "psalm",
+            "phpstan"
+          ],
+          "checks_skipped": [
+            "hydra-gates"
+          ],
+          "findings": [],
+          "verdict": "none"
+        }
+      ]
+    },
+    {
+      "cycle": 5,
+      "trigger": "build:queued",
+      "started_at": "2026-04-18T19:54:28Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [
+        "reviewer-skipped-full-suite"
+      ],
+      "stages": [
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-18T19:54:28Z",
+          "ended_at": "2026-04-18T19:54:29Z",
+          "turns_used": 100,
+          "turns_budget": 200,
+          "cost_usd": 1.272,
+          "checks_run": [
+            "composer check:strict"
+          ],
+          "checks_skipped": [],
+          "findings": [],
+          "decisions": [],
+          "verdict": "pass"
+        },
+        {
+          "stage": "pre-review-quality",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-18T19:54:28Z",
+          "ended_at": "2026-04-18T19:54:29Z",
+          "exit_code": 0,
+          "checks_run": [
+            "php-lint",
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "stylelint",
+            "npm-audit",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "publiccode",
+            "gitleaks",
+            "trivy",
+            "newman"
+          ],
+          "gates": {
+            "php-lint": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpcs": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": true,
+              "failures": 0
+            },
+            "forbidden-patterns": {
+              "pass": true,
+              "failures": 0
+            },
+            "eslint": {
+              "pass": true,
+              "failures": 0
+            },
+            "stylelint": {
+              "pass": true,
+              "failures": 0
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpunit": {
+              "pass": true,
+              "failures": 0
+            }
+          },
+          "findings": [],
+          "verdict": "pass"
+        },
+        {
+          "stage": "code-review",
+          "persona": "Juan Claude van Damme",
+          "model": "sonnet",
+          "container": "hydra-reviewer",
+          "started_at": "2026-04-18T20:21:35Z",
+          "ended_at": "2026-04-18T20:21:36Z",
+          "turns_used": 41,
+          "turns_budget": 40,
+          "cost_usd": 1.3938,
+          "checks_run": [
+            "composer check:strict",
+            "phpcs",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "hydra-gates"
+          ],
+          "findings": [],
+          "verdict": "none"
+        },
+        {
+          "stage": "security-review",
+          "persona": "Clyde Barcode",
+          "model": "sonnet",
+          "container": "hydra-security",
+          "started_at": "2026-04-18T20:29:22Z",
+          "ended_at": "2026-04-18T20:29:23Z",
+          "turns_used": 29,
+          "turns_budget": 40,
+          "cost_usd": 0.6286,
+          "checks_run": [],
+          "checks_skipped": [
+            "hydra-gates",
+            "composer check:strict"
+          ],
+          "findings": [
+            {
+              "id": "SEC-01",
+              "severity": "WARNING",
+              "gate": "OWASP A05:2021",
+              "file": "lib/Controller/DoorlooptijdController.php",
+              "line": 98,
+              "rule": "OWASP A05:2021",
+              "status": "open",
+              "note": "All four catch blocks return $e->getMessage() in the HTTP response body, violating ADR-005 ('API responses: NO stack traces, SQL, or internal paths'). Logger already captures full details. Fix: replace with a generic message and use HTTP 500. Could not apply in-container \u2014 repository filesystem is root-owned and non-writable for the review agent.",
+              "autofixable": false
+            }
+          ],
+          "verdict": "fail"
+        }
+      ]
+    },
+    {
+      "cycle": 6,
+      "trigger": "build:queued",
+      "started_at": "2026-04-18T20:33:05Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [],
+      "stages": [
+        {
+          "stage": "quality-recheck",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-18T20:33:05Z",
+          "ended_at": "2026-04-18T20:33:06Z",
+          "exit_code": 1,
+          "checks_run": [
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "stylelint",
+            "npm-audit",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "php-lint",
+            "publiccode",
+            "gitleaks",
+            "trivy",
+            "newman"
+          ],
+          "gates": {
+            "phpcs": {
+              "pass": false,
+              "failures": 1
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": true,
+              "failures": 0
+            },
+            "forbidden-patterns": {
+              "pass": false,
+              "failures": 1
+            },
+            "eslint": {
+              "pass": false,
+              "failures": 1
+            },
+            "stylelint": {
+              "pass": false,
+              "failures": 1
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpunit": {
+              "pass": false,
+              "failures": 1
+            }
+          },
+          "findings": [
+            {
+              "id": "qr-quality-recheck-phpcs",
+              "severity": "CRITICAL",
+              "gate": "phpcs",
+              "rule": "phpcs gate failing",
+              "status": "open",
+              "note": "phpcs reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-forbidden-patterns",
+              "severity": "CRITICAL",
+              "gate": "forbidden-patterns",
+              "rule": "forbidden-patterns gate failing",
+              "status": "open",
+              "note": "forbidden-patterns reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-eslint",
+              "severity": "CRITICAL",
+              "gate": "eslint",
+              "rule": "eslint gate failing",
+              "status": "open",
+              "note": "eslint reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-stylelint",
+              "severity": "CRITICAL",
+              "gate": "stylelint",
+              "rule": "stylelint gate failing",
+              "status": "open",
+              "note": "stylelint reported status=fail in quality-recheck.json",
+              "autofixable": true
+            },
+            {
+              "id": "qr-quality-recheck-phpunit",
+              "severity": "CRITICAL",
+              "gate": "phpunit",
+              "rule": "phpunit gate failing",
+              "status": "open",
+              "note": "phpunit reported status=fail in quality-recheck.json",
+              "autofixable": false
+            }
+          ],
+          "verdict": "fail"
+        }
+      ]
+    }
+  ]
+}
