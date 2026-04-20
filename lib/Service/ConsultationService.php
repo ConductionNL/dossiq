@@ -52,7 +52,6 @@ class ConsultationService
         'niet_van_toepassing',
     ];
 
-
     /**
      * Constructor.
      *
@@ -63,8 +62,7 @@ class ConsultationService
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
     ) {
-    }
-
+    }//end __construct()
 
     /**
      * Create a consultation linked to a parent case.
@@ -105,8 +103,8 @@ class ConsultationService
         $consultation = $objectService->saveObject($register, $schema, $data);
 
         $this->logger->info(
-            'Consultation created: ' . $consultation->getUuid()
-            . ' for case ' . $data['parentZaak'],
+            'Consultation created: '.$consultation->getUuid()
+            .' for case '.$data['parentZaak'],
             ['app' => Application::APP_ID],
         );
 
@@ -114,8 +112,7 @@ class ConsultationService
             'id'     => $consultation->getUuid(),
             'status' => 'open',
         ];
-    }
-
+    }//end createConsultation()
 
     /**
      * Get all consultations for a case.
@@ -146,9 +143,12 @@ class ConsultationService
             100,
         );
 
-        return is_array($results) ? $results : [];
-    }
+        if (is_array($results) === true) {
+            return $results;
+        }
 
+        return [];
+    }//end getConsultationsForCase()
 
     /**
      * Update consultation status.
@@ -163,7 +163,7 @@ class ConsultationService
     public function updateStatus(string $consultationId, string $newStatus): array
     {
         if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
-            throw new \RuntimeException('Invalid status: ' . $newStatus);
+            throw new \RuntimeException('Invalid status: '.$newStatus);
         }
 
         $objectService = $this->settingsService->getObjectService();
@@ -182,7 +182,7 @@ class ConsultationService
         $result = $objectService->saveObject($register, $schema, $updateData, $consultationId);
 
         $this->logger->info(
-            'Consultation ' . $consultationId . ' status updated to ' . $newStatus,
+            'Consultation '.$consultationId.' status updated to '.$newStatus,
             ['app' => Application::APP_ID],
         );
 
@@ -190,8 +190,7 @@ class ConsultationService
             'id'     => $consultationId,
             'status' => $newStatus,
         ];
-    }
-
+    }//end updateStatus()
 
     /**
      * Submit advice response to a consultation.
@@ -207,7 +206,7 @@ class ConsultationService
     {
         $advies = $response['advies'] ?? '';
         if (in_array($advies, self::VALID_RESPONSES, true) === false) {
-            throw new \RuntimeException('Invalid advice type: ' . $advies);
+            throw new \RuntimeException('Invalid advice type: '.$advies);
         }
 
         $objectService = $this->settingsService->getObjectService();
@@ -218,20 +217,24 @@ class ConsultationService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('consultation_schema');
 
+        if (isset($response['voorwaarden']) === true) {
+            $voorwaarden = json_encode($response['voorwaarden']);
+        } else {
+            $voorwaarden = null;
+        }
+
         $updateData = [
-            'advies'       => $advies,
-            'toelichting'  => $response['toelichting'] ?? '',
-            'voorwaarden'  => isset($response['voorwaarden'])
-                ? json_encode($response['voorwaarden'])
-                : null,
-            'adviesDatum'  => date('Y-m-d'),
-            'status'       => 'advies_uitgebracht',
+            'advies'      => $advies,
+            'toelichting' => $response['toelichting'] ?? '',
+            'voorwaarden' => $voorwaarden,
+            'adviesDatum' => date('Y-m-d'),
+            'status'      => 'advies_uitgebracht',
         ];
 
         $result = $objectService->saveObject($register, $schema, $updateData, $consultationId);
 
         $this->logger->info(
-            'Consultation ' . $consultationId . ' advice submitted: ' . $advies,
+            'Consultation '.$consultationId.' advice submitted: '.$advies,
             ['app' => Application::APP_ID],
         );
 
@@ -240,8 +243,7 @@ class ConsultationService
             'advies' => $advies,
             'status' => 'advies_uitgebracht',
         ];
-    }
-
+    }//end submitResponse()
 
     /**
      * Get overdue consultations.
@@ -279,10 +281,19 @@ class ConsultationService
             200,
         );
 
-        $all     = array_merge(
-            is_array($allOpen) ? $allOpen : [],
-            is_array($allInProgress) ? $allInProgress : [],
-        );
+        if (is_array($allOpen) === true) {
+            $openList = $allOpen;
+        } else {
+            $openList = [];
+        }
+
+        if (is_array($allInProgress) === true) {
+            $inProgressList = $allInProgress;
+        } else {
+            $inProgressList = [];
+        }
+
+        $all     = array_merge($openList, $inProgressList);
         $today   = date('Y-m-d');
         $overdue = [];
 
@@ -294,5 +305,5 @@ class ConsultationService
         }
 
         return $overdue;
-    }
-}
+    }//end getOverdueConsultations()
+}//end class

@@ -9,7 +9,7 @@
  * @category Tests
  * @package  OCA\Procest\Tests\Unit\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -278,7 +278,7 @@ class GisProxyServiceTest extends TestCase
         // kadaster.nl URL should not throw a 403.
         try {
             $result = $this->service->proxyRequest(
-                url: 'https://geodata.nationaalgeoregister.nl/kadaster/wms',
+                url: 'https://service.pdok.nl/kadaster/bgt/wms/v1_0',
                 query: [],
                 type: 'wms',
             );

@@ -1,5 +1,23 @@
 <?php
 
+/**
+ * Procest Public Appointment Controller.
+ *
+ * Public (unauthenticated) endpoints for citizens to view or cancel
+ * appointments via a token URL.
+ *
+ * @category Controller
+ * @package  OCA\Procest\Controller
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ */
+
 declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
@@ -10,16 +28,31 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 
+/**
+ * Public (citizen-facing) endpoints for appointment view/cancel by token.
+ */
 class PublicAppointmentController extends Controller
 {
+    /**
+     * Constructor.
+     *
+     * @param IRequest           $request            The request object.
+     * @param AppointmentService $appointmentService The appointment service.
+     */
     public function __construct(
         IRequest $request,
         private AppointmentService $appointmentService,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
-    }
+    }//end __construct()
 
     /**
+     * View an appointment via its public token.
+     *
+     * @param string $token The appointment public token.
+     *
+     * @return JSONResponse
+     *
      * @PublicPage
      * @NoCSRFRequired
      */
@@ -30,19 +63,27 @@ class PublicAppointmentController extends Controller
             return new JSONResponse(['error' => 'Afspraak niet gevonden'], 404);
         }
 
-        return new JSONResponse([
-            'success'     => true,
-            'appointment' => [
-                'dateTime'    => $appointment['dateTime'] ?? null,
-                'duration'    => $appointment['duration'] ?? 30,
-                'status'      => $appointment['status'] ?? 'scheduled',
-                'locationId'  => $appointment['locationId'] ?? null,
-                'productId'   => $appointment['productId'] ?? null,
-            ],
-        ]);
-    }
+        return new JSONResponse(
+                [
+                    'success'     => true,
+                    'appointment' => [
+                        'dateTime'   => $appointment['dateTime'] ?? null,
+                        'duration'   => $appointment['duration'] ?? 30,
+                        'status'     => $appointment['status'] ?? 'scheduled',
+                        'locationId' => $appointment['locationId'] ?? null,
+                        'productId'  => $appointment['productId'] ?? null,
+                    ],
+                ]
+                );
+    }//end view()
 
     /**
+     * Cancel an appointment via its public token.
+     *
+     * @param string $token The appointment public token.
+     *
+     * @return JSONResponse
+     *
      * @PublicPage
      * @NoCSRFRequired
      */
@@ -60,5 +101,5 @@ class PublicAppointmentController extends Controller
         $id     = $appointment['uuid'] ?? $appointment['id'] ?? '';
         $result = $this->appointmentService->cancelAppointment($id);
         return new JSONResponse(['success' => true, 'appointment' => $result]);
-    }
-}
+    }//end cancel()
+}//end class
