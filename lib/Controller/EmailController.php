@@ -43,7 +43,7 @@ class EmailController extends Controller
         IRequest $request,
         private readonly CaseEmailService $emailService,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -58,7 +58,18 @@ class EmailController extends Controller
     public function send(string $caseId): JSONResponse
     {
         try {
-            $data   = json_decode($this->request->getContent() ?: '{}', true) ?: [];
+            $content = $this->request->getContent();
+            if ($content === '' || $content === false) {
+                $content = '{}';
+            }
+
+            $decoded = json_decode($content, true);
+            if (is_array($decoded) === true) {
+                $data = $decoded;
+            } else {
+                $data = [];
+            }
+
             $result = $this->emailService->sendEmail(
                 $caseId,
                 $data['to'] ?? '',
@@ -69,7 +80,7 @@ class EmailController extends Controller
             return new JSONResponse($result);
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 400);
-        }
+        }//end try
     }//end send()
 
     /**
@@ -84,7 +95,18 @@ class EmailController extends Controller
     public function sendFromTemplate(string $caseId): JSONResponse
     {
         try {
-            $data   = json_decode($this->request->getContent() ?: '{}', true) ?: [];
+            $content = $this->request->getContent();
+            if ($content === '' || $content === false) {
+                $content = '{}';
+            }
+
+            $decoded = json_decode($content, true);
+            if (is_array($decoded) === true) {
+                $data = $decoded;
+            } else {
+                $data = [];
+            }
+
             $result = $this->emailService->sendFromTemplate(
                 $caseId,
                 $data['templateId'] ?? '',
@@ -93,7 +115,7 @@ class EmailController extends Controller
             return new JSONResponse($result);
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], 400);
-        }
+        }//end try
     }//end sendFromTemplate()
 
     /**
@@ -107,7 +129,18 @@ class EmailController extends Controller
      */
     public function preview(string $caseId): JSONResponse
     {
-        $data     = json_decode($this->request->getContent() ?: '{}', true) ?: [];
+        $content = $this->request->getContent();
+        if ($content === '' || $content === false) {
+            $content = '{}';
+        }
+
+        $decoded = json_decode($content, true);
+        if (is_array($decoded) === true) {
+            $data = $decoded;
+        } else {
+            $data = [];
+        }
+
         $template = $data['body'] ?? '';
         $caseData = [];
         // Would load from case.

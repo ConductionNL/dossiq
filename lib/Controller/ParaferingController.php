@@ -53,7 +53,7 @@ class ParaferingController extends Controller
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -69,7 +69,7 @@ class ParaferingController extends Controller
             $data   = $this->getRequestBody();
             $userId = $this->userSession->getUser()?->getUID() ?? 'system';
 
-            if (empty($data['caseId'])) {
+            if (empty($data['caseId']) === true) {
                 return new JSONResponse(
                     ['error' => 'Parameter caseId is required'],
                     Http::STATUS_BAD_REQUEST
@@ -105,7 +105,7 @@ class ParaferingController extends Controller
             $voorstel = $data['voorstel'] ?? [];
             $route    = $data['route'] ?? [];
 
-            if (empty($voorstel) || empty($route)) {
+            if (empty($voorstel) === true || empty($route) === true) {
                 return new JSONResponse(
                     ['error' => 'Parameters voorstel and route are required'],
                     Http::STATUS_BAD_REQUEST
@@ -140,7 +140,7 @@ class ParaferingController extends Controller
      */
     public function paraferen(string $id): JSONResponse
     {
-        return $this->handleAction($id, ParaferingService::ACTION_PARAFEREN);
+        return $this->handleAction(id: $id, action: ParaferingService::ACTION_PARAFEREN);
     }//end paraferen()
 
     /**
@@ -154,7 +154,7 @@ class ParaferingController extends Controller
      */
     public function terugsturen(string $id): JSONResponse
     {
-        return $this->handleAction($id, ParaferingService::ACTION_TERUGSTUREN);
+        return $this->handleAction(id: $id, action: ParaferingService::ACTION_TERUGSTUREN);
     }//end terugsturen()
 
     /**
@@ -168,7 +168,7 @@ class ParaferingController extends Controller
      */
     public function adviseren(string $id): JSONResponse
     {
-        return $this->handleAction($id, ParaferingService::ACTION_ADVISEREN);
+        return $this->handleAction(id: $id, action: ParaferingService::ACTION_ADVISEREN);
     }//end adviseren()
 
     /**
@@ -252,6 +252,10 @@ class ParaferingController extends Controller
         }
 
         $decoded = json_decode($body, true);
-        return is_array($decoded) ? $decoded : [];
+        if (is_array($decoded) === true) {
+            return $decoded;
+        }
+
+        return [];
     }//end getRequestBody()
 }//end class

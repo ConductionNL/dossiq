@@ -1,5 +1,23 @@
 <?php
 
+/**
+ * Procest Berichtenbox Controller.
+ *
+ * REST endpoints for sending, listing and polling Mijn Overheid Berichtenbox
+ * messages linked to cases.
+ *
+ * @category Controller
+ * @package  OCA\Procest\Controller
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ */
+
 declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
@@ -10,8 +28,17 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 
+/**
+ * Controller exposing Berichtenbox send/list/poll endpoints.
+ */
 class BerichtenboxController extends Controller
 {
+    /**
+     * Constructor.
+     *
+     * @param IRequest            $request             The request object.
+     * @param BerichtenboxService $berichtenboxService The Berichtenbox service.
+     */
     public function __construct(
         IRequest $request,
         private BerichtenboxService $berichtenboxService,
@@ -20,6 +47,10 @@ class BerichtenboxController extends Controller
     }//end __construct()
 
     /**
+     * Send a Berichtenbox message for a case.
+     *
+     * @return JSONResponse
+     *
      * @NoAdminRequired
      */
     public function send(): JSONResponse
@@ -52,6 +83,10 @@ class BerichtenboxController extends Controller
     }//end send()
 
     /**
+     * List Berichtenbox messages linked to a case.
+     *
+     * @return JSONResponse
+     *
      * @NoAdminRequired
      */
     public function messages(): JSONResponse
@@ -62,6 +97,12 @@ class BerichtenboxController extends Controller
     }//end messages()
 
     /**
+     * Poll read-status for a sent Berichtenbox message.
+     *
+     * @param string $messageId The external message identifier.
+     *
+     * @return JSONResponse
+     *
      * @NoAdminRequired
      */
     public function poll(string $messageId): JSONResponse

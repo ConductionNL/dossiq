@@ -54,7 +54,7 @@ class CaseDefinitionController extends Controller
         private readonly CaseDefinitionImportService $importService,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -70,14 +70,14 @@ class CaseDefinitionController extends Controller
             $caseTypeId = $this->request->getParam('caseTypeId', '');
             $components = $this->request->getParam('components', []);
 
-            if (empty($caseTypeId)) {
+            if (empty($caseTypeId) === true) {
                 return new JSONResponse(
                     ['error' => 'Parameter caseTypeId is required'],
                     Http::STATUS_BAD_REQUEST
                 );
             }
 
-            if (is_string($components)) {
+            if (is_string($components) === true) {
                 $components = json_decode($components, true) ?? [];
             }
 
@@ -124,7 +124,7 @@ class CaseDefinitionController extends Controller
         try {
             $file = $this->request->getUploadedFile('package');
 
-            if ($file === null || !isset($file['tmp_name'])) {
+            if ($file === null || isset($file['tmp_name']) === false) {
                 return new JSONResponse(
                     ['error' => 'No package file uploaded'],
                     Http::STATUS_BAD_REQUEST
@@ -156,14 +156,14 @@ class CaseDefinitionController extends Controller
             $file     = $this->request->getUploadedFile('package');
             $strategy = $this->request->getParam('strategy', 'skip');
 
-            if ($file === null || !isset($file['tmp_name'])) {
+            if ($file === null || isset($file['tmp_name']) === false) {
                 return new JSONResponse(
                     ['error' => 'No package file uploaded'],
                     Http::STATUS_BAD_REQUEST
                 );
             }
 
-            if (!in_array($strategy, ['skip', 'overwrite', 'merge'], true)) {
+            if (in_array($strategy, ['skip', 'overwrite', 'merge'], true) === false) {
                 return new JSONResponse(
                     ['error' => 'Invalid strategy. Must be: skip, overwrite, or merge'],
                     Http::STATUS_BAD_REQUEST
@@ -175,7 +175,11 @@ class CaseDefinitionController extends Controller
                 $strategy
             );
 
-            $statusCode = $result['success'] ? Http::STATUS_OK : Http::STATUS_UNPROCESSABLE_ENTITY;
+            if ($result['success'] === true) {
+                $statusCode = Http::STATUS_OK;
+            } else {
+                $statusCode = Http::STATUS_UNPROCESSABLE_ENTITY;
+            }
 
             return new JSONResponse($result, $statusCode);
         } catch (\Throwable $e) {
