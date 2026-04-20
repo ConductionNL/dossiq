@@ -44,6 +44,7 @@
 import { NcButton } from '@nextcloud/vue'
 import { useWorkflowStore } from '../../../store/modules/workflow.js'
 import { useObjectStore } from '../../../store/modules/object.js'
+import * as adviceApi from '../../../services/adviceApi.js'
 
 export default {
 	name: 'WorkflowTransitions',
@@ -182,6 +183,29 @@ export default {
 
 			this.executing = true
 			try {
+				// Check advicesGuard if present
+				if (transition.guards?.some((g) => g.type === 'adviesGuard')) {
+					try {
+						const response = await adviceApi.getAdviceForCase(this.caseData.id)
+						const pendingAdvice = (response.results || []).filter(
+							(a) => a.status === 'aangevraagd'
+						)
+						if (pendingAdvice.length > 0) {
+							const message = pendingAdvice
+								.map((a) => `${a.adviseur}: advies verwacht voor ${a.deadline || 'onbekend'}`)
+								.join('; ')
+							this.$notify({
+								title: t('procest', 'Cannot proceed'),
+								text: t('procest', 'Pending advice requests: {requests}', { requests: message }),
+								type: 'warning',
+							})
+							return
+						}
+					} catch (err) {
+						console.error('Failed to check advice requests:', err)
+					}
+				}
+
 				// Update case status
 				const updatedCase = await this.objectStore.saveObject('case', {
 					...this.caseData,
