@@ -73,14 +73,14 @@ class LegesCalculationService
     public function __construct(
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Calculate leges for a case based on applicable verordening.
      *
-     * @param array<string, mixed> $caseData      The case data (bouwkosten, activiteiten, etc.).
-     * @param array<string, mixed> $verordening   The applicable verordening with artikelen.
-     * @param string               $calculatedBy  User ID of the person triggering the calculation.
+     * @param array<string, mixed> $caseData     The case data (bouwkosten, activiteiten, etc.).
+     * @param array<string, mixed> $verordening  The applicable verordening with artikelen.
+     * @param string               $calculatedBy User ID of the person triggering the calculation.
      *
      * @return array{
      *     total: float,
@@ -105,33 +105,33 @@ class LegesCalculationService
 
         $artikelen = $verordening['artikelen'] ?? [];
         $breakdown = [];
-        $total = 0.0;
+        $total     = 0.0;
 
         foreach ($artikelen as $artikel) {
-            $result = $this->calculateArtikel($artikel, $caseData);
+            $result = $this->calculateArtikel(artikel: $artikel, caseData: $caseData);
             if ($result !== null) {
                 $breakdown[] = $result;
-                $total += $result['amount'];
+                $total      += $result['amount'];
             }
         }
 
         // Apply global maximum if configured.
         $globalMax = $verordening['globalMaximum'] ?? null;
-        if ($globalMax !== null && $total > (float)$globalMax) {
-            $total = (float)$globalMax;
+        if ($globalMax !== null && $total > (float) $globalMax) {
+            $total = (float) $globalMax;
         }
 
         $total = round($total, self::PRECISION);
 
         return [
-            'total' => $total,
-            'breakdown' => $breakdown,
-            'verordening' => $verordening['name'] ?? '',
+            'total'        => $total,
+            'breakdown'    => $breakdown,
+            'verordening'  => $verordening['name'] ?? '',
             'calculatedBy' => $calculatedBy,
             'calculatedAt' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
-            'version' => 1,
+            'version'      => 1,
         ];
-    }
+    }//end calculate()
 
     /**
      * Recalculate leges with corrected case data, preserving history.
@@ -153,18 +153,18 @@ class LegesCalculationService
         string $calculatedBy,
         string $correctionReason,
     ): array {
-        $newCalc = $this->calculate($caseData, $verordening, $calculatedBy);
+        $newCalc            = $this->calculate(caseData: $caseData, verordening: $verordening, calculatedBy: $calculatedBy);
         $newCalc['version'] = ($previousCalc['version'] ?? 0) + 1;
-        $newCalc['previousVersion'] = $previousCalc['version'] ?? 0;
+        $newCalc['previousVersion']  = $previousCalc['version'] ?? 0;
         $newCalc['correctionReason'] = $correctionReason;
-        $newCalc['previousTotal'] = $previousCalc['total'] ?? 0.0;
-        $newCalc['difference'] = round(
+        $newCalc['previousTotal']    = $previousCalc['total'] ?? 0.0;
+        $newCalc['difference']       = round(
             $newCalc['total'] - ($previousCalc['total'] ?? 0.0),
             self::PRECISION
         );
 
         return $newCalc;
-    }
+    }//end recalculate()
 
     /**
      * Calculate verrekening (deduction of previously imposed fees).
@@ -181,12 +181,12 @@ class LegesCalculationService
         $netAmount = round($currentAmount - $previousAmount, self::PRECISION);
 
         return [
-            'netAmount' => $netAmount,
-            'deduction' => $previousAmount,
-            'currentAmount' => $currentAmount,
+            'netAmount'      => $netAmount,
+            'deduction'      => $previousAmount,
+            'currentAmount'  => $currentAmount,
             'previousAmount' => $previousAmount,
         ];
-    }
+    }//end calculateVerrekening()
 
     /**
      * Calculate teruggaaf (refund).
@@ -201,18 +201,18 @@ class LegesCalculationService
      */
     public function calculateTeruggaaf(
         float $imposedAmount,
-        float $refundFraction = 1.0,
-        string $reason = '',
+        float $refundFraction=1.0,
+        string $reason='',
     ): array {
         $refundAmount = round(-1 * $imposedAmount * $refundFraction, self::PRECISION);
 
         return [
-            'refundAmount' => $refundAmount,
+            'refundAmount'   => $refundAmount,
             'originalAmount' => $imposedAmount,
-            'fraction' => $refundFraction,
-            'reason' => $reason,
+            'fraction'       => $refundFraction,
+            'reason'         => $reason,
         ];
-    }
+    }//end calculateTeruggaaf()
 
     /**
      * Calculate a single artikel.
@@ -224,20 +224,20 @@ class LegesCalculationService
      */
     private function calculateArtikel(array $artikel, array $caseData): ?array
     {
-        $type = $artikel['type'] ?? '';
-        $artikelNr = $artikel['nummer'] ?? '';
+        $type        = $artikel['type'] ?? '';
+        $artikelNr   = $artikel['nummer'] ?? '';
         $description = $artikel['omschrijving'] ?? '';
 
         // Determine the grondslag (base amount) from case data.
         $grondslagField = $artikel['grondslagField'] ?? 'bouwkosten';
-        $grondslag = (float)($caseData[$grondslagField] ?? 0.0);
+        $grondslag      = (float) ($caseData[$grondslagField] ?? 0.0);
 
         $amount = match ($type) {
-            self::TYPE_VAST => $this->calculateVast($artikel),
-            self::TYPE_PERCENTAGE => $this->calculatePercentage($grondslag, $artikel),
-            self::TYPE_STAFFEL => $this->calculateStaffel($grondslag, $artikel),
-            self::TYPE_MAXIMUM => $this->calculateMaximum($grondslag, $artikel),
-            self::TYPE_COMBINATIE => $this->calculateCombinatie($grondslag, $artikel, $caseData),
+            self::TYPE_VAST => $this->calculateVast(artikel: $artikel),
+            self::TYPE_PERCENTAGE => $this->calculatePercentage(grondslag: $grondslag, artikel: $artikel),
+            self::TYPE_STAFFEL => $this->calculateStaffel(grondslag: $grondslag, artikel: $artikel),
+            self::TYPE_MAXIMUM => $this->calculateMaximum(grondslag: $grondslag, artikel: $artikel),
+            self::TYPE_COMBINATIE => $this->calculateCombinatie(grondslag: $grondslag, artikel: $artikel, caseData: $caseData),
             default => null,
         };
 
@@ -246,13 +246,13 @@ class LegesCalculationService
         }
 
         return [
-            'artikel' => $artikelNr,
+            'artikel'     => $artikelNr,
             'description' => $description,
-            'grondslag' => $grondslag,
-            'amount' => round($amount, self::PRECISION),
-            'type' => $type,
+            'grondslag'   => $grondslag,
+            'amount'      => round($amount, self::PRECISION),
+            'type'        => $type,
         ];
-    }
+    }//end calculateArtikel()
 
     /**
      * Calculate a fixed amount (vast bedrag).
@@ -263,8 +263,8 @@ class LegesCalculationService
      */
     private function calculateVast(array $artikel): float
     {
-        return (float)($artikel['bedrag'] ?? 0.0);
-    }
+        return (float) ($artikel['bedrag'] ?? 0.0);
+    }//end calculateVast()
 
     /**
      * Calculate a percentage of the grondslag.
@@ -276,9 +276,9 @@ class LegesCalculationService
      */
     private function calculatePercentage(float $grondslag, array $artikel): float
     {
-        $percentage = (float)($artikel['percentage'] ?? 0.0);
+        $percentage = (float) ($artikel['percentage'] ?? 0.0);
         return $grondslag * ($percentage / 100.0);
-    }
+    }//end calculatePercentage()
 
     /**
      * Calculate using tiered brackets (staffel).
@@ -294,12 +294,12 @@ class LegesCalculationService
     private function calculateStaffel(float $grondslag, array $artikel): float
     {
         $brackets = $artikel['brackets'] ?? [];
-        $total = 0.0;
+        $total    = 0.0;
 
         foreach ($brackets as $bracket) {
-            $from = (float)($bracket['from'] ?? 0.0);
-            $to = (float)($bracket['to'] ?? PHP_FLOAT_MAX);
-            $percentage = (float)($bracket['percentage'] ?? 0.0);
+            $from       = (float) ($bracket['from'] ?? 0.0);
+            $to         = (float) ($bracket['to'] ?? PHP_FLOAT_MAX);
+            $percentage = (float) ($bracket['percentage'] ?? 0.0);
 
             if ($grondslag <= $from) {
                 break;
@@ -312,7 +312,7 @@ class LegesCalculationService
         }
 
         return $total;
-    }
+    }//end calculateStaffel()
 
     /**
      * Calculate with a maximum cap.
@@ -324,17 +324,17 @@ class LegesCalculationService
      */
     private function calculateMaximum(float $grondslag, array $artikel): float
     {
-        $maximum = (float)($artikel['maximum'] ?? PHP_FLOAT_MAX);
+        $maximum = (float) ($artikel['maximum'] ?? PHP_FLOAT_MAX);
         $subType = $artikel['subType'] ?? self::TYPE_PERCENTAGE;
 
         $calculated = match ($subType) {
-            self::TYPE_PERCENTAGE => $this->calculatePercentage($grondslag, $artikel),
-            self::TYPE_STAFFEL => $this->calculateStaffel($grondslag, $artikel),
-            default => $this->calculateVast($artikel),
+            self::TYPE_PERCENTAGE => $this->calculatePercentage(grondslag: $grondslag, artikel: $artikel),
+            self::TYPE_STAFFEL => $this->calculateStaffel(grondslag: $grondslag, artikel: $artikel),
+            default => $this->calculateVast(artikel: $artikel),
         };
 
         return min($calculated, $maximum);
-    }
+    }//end calculateMaximum()
 
     /**
      * Calculate a combination of multiple sub-calculations.
@@ -351,15 +351,15 @@ class LegesCalculationService
         array $caseData,
     ): float {
         $subArtikelen = $artikel['subArtikelen'] ?? [];
-        $total = 0.0;
+        $total        = 0.0;
 
         foreach ($subArtikelen as $subArtikel) {
-            $result = $this->calculateArtikel($subArtikel, $caseData);
+            $result = $this->calculateArtikel(artikel: $subArtikel, caseData: $caseData);
             if ($result !== null) {
                 $total += $result['amount'];
             }
         }
 
         return $total;
-    }
-}
+    }//end calculateCombinatie()
+}//end class

@@ -23,6 +23,8 @@
             <errorLevel type="suppress">
                 <!-- Nextcloud OCP Classes -->
                 <referencedClass name="OCP\AppFramework\App"/>
+                <!-- Version-compat check: \OC_Util only on older NC cores -->
+                <referencedClass name="OC_Util"/>
                 <referencedClass name="OCP\AppFramework\Bootstrap\IBootstrap"/>
                 <referencedClass name="OCP\AppFramework\Controller"/>
                 <referencedClass name="OCP\AppFramework\IAppContainer"/>
@@ -104,6 +106,18 @@
         <InvalidMethodCall errorLevel="suppress"/>
         <UndefinedInterfaceMethod errorLevel="suppress"/>
         <MissingTemplateParam errorLevel="suppress"/>
+        <UndefinedMethod>
+            <errorLevel type="suppress">
+                <!-- DOMNode narrows to DOMElement at runtime; psalm can't track the downcast -->
+                <referencedMethod name="DOMNode::getElementsByTagName"/>
+            </errorLevel>
+        </UndefinedMethod>
+        <UnusedParam>
+            <errorLevel type="suppress">
+                <!-- Interface-contract params / planned-feature hooks kept for API stability -->
+                <directory name="lib/Service"/>
+            </errorLevel>
+        </UnusedParam>
     </issueHandlers>
     <extraFiles>
         <directory name="vendor/nextcloud/ocp" />
