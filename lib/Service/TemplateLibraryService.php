@@ -157,7 +157,7 @@ class TemplateLibraryService
      */
     public function activateTemplate(string $templateId): array
     {
-        $template = $this->loadTemplate($templateId);
+        $template = $this->loadTemplate(templateId: $templateId);
         if ($template === null) {
             throw new \RuntimeException('Template not found: '.$templateId);
         }

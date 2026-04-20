@@ -9,7 +9,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <info@conduction.nl>
+ * @author    Conduction Development Team <dev@conductio.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -92,7 +92,7 @@ class ChecklistService
         string $toelichting='',
         array $photoRefs=[],
     ): array {
-        if (!in_array($status, self::VALID_STATUSES, true)) {
+        if (in_array($status, self::VALID_STATUSES, true) === false) {
             throw new \InvalidArgumentException(
                 'Invalid conformity status: '.$status.'. Valid: '.implode(', ', self::VALID_STATUSES)
             );
@@ -105,7 +105,7 @@ class ChecklistService
             if (($item['id'] ?? '') === $itemId) {
                 // Check mandatory photo for niet-conform.
                 $requiresPhoto = $item['fotoVerplichtBijNietConform'] ?? false;
-                if ($status === self::STATUS_NIET_CONFORM && $requiresPhoto && empty($photoRefs)) {
+                if ($status === self::STATUS_NIET_CONFORM && $requiresPhoto === true && empty($photoRefs) === true) {
                     throw new \InvalidArgumentException(
                         'Foto verplicht bij niet-conform voor item: '.($item['description'] ?? $itemId)
                     );
@@ -120,7 +120,7 @@ class ChecklistService
             }
         }
 
-        if (!$itemFound) {
+        if ($itemFound === false) {
             throw new \InvalidArgumentException('Checklist item not found: '.$itemId);
         }
 
@@ -150,15 +150,21 @@ class ChecklistService
         $completed = 0;
 
         foreach ($items as $item) {
-            if (!empty($item['status'])) {
+            if (empty($item['status']) === false) {
                 $completed++;
             }
+        }
+
+        if ($total > 0) {
+            $percentage = round(($completed / $total) * 100, 1);
+        } else {
+            $percentage = 0.0;
         }
 
         return [
             'completed'  => $completed,
             'total'      => $total,
-            'percentage' => $total > 0 ? round(($completed / $total) * 100, 1) : 0.0,
+            'percentage' => $percentage,
         ];
     }//end getProgress()
 
@@ -177,7 +183,7 @@ class ChecklistService
         $missingItems = [];
 
         foreach ($items as $item) {
-            if (empty($item['status'])) {
+            if (empty($item['status']) === true) {
                 $missingItems[] = $item['description'] ?? ($item['id'] ?? 'unknown');
             }
         }

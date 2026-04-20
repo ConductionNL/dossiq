@@ -9,7 +9,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <info@conduction.nl>
+ * @author    Conduction Development Team <dev@conductio.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -101,7 +101,7 @@ class LegesExportService
      */
     public function export(array $berekeningen, string $format=self::FORMAT_CSV): array
     {
-        if (!in_array($format, self::SUPPORTED_FORMATS, true)) {
+        if (in_array($format, self::SUPPORTED_FORMATS, true) === false) {
             throw new \InvalidArgumentException(
                 'Unsupported export format: '.$format.'. Supported: '.implode(', ', self::SUPPORTED_FORMATS)
             );
@@ -113,9 +113,9 @@ class LegesExportService
         );
 
         return match ($format) {
-            self::FORMAT_CSV => $this->exportCSV($berekeningen),
-            self::FORMAT_ASCII => $this->exportASCII($berekeningen),
-            self::FORMAT_XML => $this->exportXML($berekeningen),
+            self::FORMAT_CSV => $this->exportCSV(berekeningen: $berekeningen),
+            self::FORMAT_ASCII => $this->exportASCII(berekeningen: $berekeningen),
+            self::FORMAT_XML => $this->exportXML(berekeningen: $berekeningen),
         };
     }//end export()
 
@@ -140,7 +140,7 @@ class LegesExportService
         fputcsv($output, self::CSV_HEADERS, ';');
 
         foreach ($berekeningen as $berekening) {
-            $rows = $this->flattenBerekening($berekening);
+            $rows = $this->flattenBerekening(berekening: $berekening);
             foreach ($rows as $row) {
                 fputcsv($output, $row, ';');
             }
@@ -152,8 +152,14 @@ class LegesExportService
 
         $date = (new \DateTimeImmutable())->format('Y-m-d');
 
+        if ($content !== false) {
+            $contentString = $content;
+        } else {
+            $contentString = '';
+        }
+
         return [
-            'content'     => $content !== false ? $content : '',
+            'content'     => $contentString,
             'filename'    => "leges-export-{$date}.csv",
             'contentType' => 'text/csv; charset=utf-8',
         ];
@@ -178,7 +184,7 @@ class LegesExportService
         );
 
         foreach ($berekeningen as $berekening) {
-            $rows = $this->flattenBerekening($berekening);
+            $rows = $this->flattenBerekening(berekening: $berekening);
             foreach ($rows as $row) {
                 $lines[] = 'D|'.implode('|', $row);
             }
@@ -218,28 +224,39 @@ class LegesExportService
             $berekeningEl = $dom->createElement('berekening');
             $berekeningEl->setAttribute('zaaknummer', (string) ($berekening['zaaknummer'] ?? ''));
 
-            $this->addXmlElement($dom, $berekeningEl, 'bsnKvk', (string) ($berekening['bsnKvk'] ?? ''));
-            $this->addXmlElement($dom, $berekeningEl, 'naam', (string) ($berekening['naam'] ?? ''));
-            $this->addXmlElement($dom, $berekeningEl, 'totaalBedrag', number_format($berekening['total'] ?? 0.0, 2, '.', ''));
-            $this->addXmlElement($dom, $berekeningEl, 'datumBeschikking', (string) ($berekening['datumBeschikking'] ?? ''));
+            $this->addXmlElement(dom: $dom, parent: $berekeningEl, name: 'bsnKvk', value: (string) ($berekening['bsnKvk'] ?? ''));
+            $this->addXmlElement(dom: $dom, parent: $berekeningEl, name: 'naam', value: (string) ($berekening['naam'] ?? ''));
+            $this->addXmlElement(
+                dom: $dom,
+                parent: $berekeningEl,
+                name: 'totaalBedrag',
+                value: number_format($berekening['total'] ?? 0.0, 2, '.', '')
+            );
+            $this->addXmlElement(dom: $dom, parent: $berekeningEl, name: 'datumBeschikking', value: (string) ($berekening['datumBeschikking'] ?? ''));
 
             $breakdown = $berekening['breakdown'] ?? [];
             foreach ($breakdown as $regel) {
                 $regelEl = $dom->createElement('regel');
-                $this->addXmlElement($dom, $regelEl, 'artikelnummer', (string) ($regel['artikel'] ?? ''));
-                $this->addXmlElement($dom, $regelEl, 'omschrijving', (string) ($regel['description'] ?? ''));
-                $this->addXmlElement($dom, $regelEl, 'bedrag', number_format($regel['amount'] ?? 0.0, 2, '.', ''));
+                $this->addXmlElement(dom: $dom, parent: $regelEl, name: 'artikelnummer', value: (string) ($regel['artikel'] ?? ''));
+                $this->addXmlElement(dom: $dom, parent: $regelEl, name: 'omschrijving', value: (string) ($regel['description'] ?? ''));
+                $this->addXmlElement(dom: $dom, parent: $regelEl, name: 'bedrag', value: number_format($regel['amount'] ?? 0.0, 2, '.', ''));
                 $berekeningEl->appendChild($regelEl);
             }
 
             $root->appendChild($berekeningEl);
-        }
+        }//end foreach
 
         $content = $dom->saveXML();
         $date    = (new \DateTimeImmutable())->format('Y-m-d');
 
+        if ($content !== false) {
+            $contentString = $content;
+        } else {
+            $contentString = '';
+        }
+
         return [
-            'content'     => $content !== false ? $content : '',
+            'content'     => $contentString,
             'filename'    => "leges-export-{$date}.xml",
             'contentType' => 'application/xml; charset=utf-8',
         ];
@@ -257,7 +274,7 @@ class LegesExportService
         $rows      = [];
         $breakdown = $berekening['breakdown'] ?? [];
 
-        if (empty($breakdown)) {
+        if (empty($breakdown) === true) {
             $rows[] = [
                 (string) ($berekening['zaaknummer'] ?? ''),
                 (string) ($berekening['bsnKvk'] ?? ''),

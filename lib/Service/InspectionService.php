@@ -153,7 +153,7 @@ class InspectionService
         $plannedLon = (float) ($inspection['plannedLongitude'] ?? 0.0);
 
         if ($plannedLat !== 0.0 && $plannedLon !== 0.0) {
-            $distance = $this->calculateDistance($latitude, $longitude, $plannedLat, $plannedLon);
+            $distance = $this->calculateDistance(lat1: $latitude, lon1: $longitude, lat2: $plannedLat, lon2: $plannedLon);
 
             if ($distance > self::LOCATION_WARNING_THRESHOLD) {
                 $warning = sprintf(
@@ -227,7 +227,7 @@ class InspectionService
 
         // Check if all items are completed.
         foreach ($items as $item) {
-            if (empty($item['status'])) {
+            if (empty($item['status']) === true) {
                 throw new \InvalidArgumentException(
                     'Not all checklist items are completed. Item: '.($item['description'] ?? 'unknown')
                 );

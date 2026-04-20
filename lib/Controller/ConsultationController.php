@@ -8,7 +8,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <info@conduction.nl>
+ * @author    Conduction Development Team <dev@conductio.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -43,7 +43,7 @@ class ConsultationController extends Controller
         IRequest $request,
         private readonly ConsultationService $consultationService,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -71,7 +71,18 @@ class ConsultationController extends Controller
     public function create(): JSONResponse
     {
         try {
-            $data   = json_decode($this->request->getContent() ?: '{}', true) ?: [];
+            $content = $this->request->getContent();
+            if ($content === '' || $content === false) {
+                $content = '{}';
+            }
+
+            $decoded = json_decode($content, true);
+            if (is_array($decoded) === true) {
+                $data = $decoded;
+            } else {
+                $data = [];
+            }
+
             $result = $this->consultationService->createConsultation($data);
             return new JSONResponse($result, 201);
         } catch (\RuntimeException $e) {
@@ -91,7 +102,18 @@ class ConsultationController extends Controller
     public function updateStatus(string $id): JSONResponse
     {
         try {
-            $data   = json_decode($this->request->getContent() ?: '{}', true) ?: [];
+            $content = $this->request->getContent();
+            if ($content === '' || $content === false) {
+                $content = '{}';
+            }
+
+            $decoded = json_decode($content, true);
+            if (is_array($decoded) === true) {
+                $data = $decoded;
+            } else {
+                $data = [];
+            }
+
             $status = $data['status'] ?? '';
             $result = $this->consultationService->updateStatus($id, $status);
             return new JSONResponse($result);
@@ -112,7 +134,18 @@ class ConsultationController extends Controller
     public function submitResponse(string $id): JSONResponse
     {
         try {
-            $data   = json_decode($this->request->getContent() ?: '{}', true) ?: [];
+            $content = $this->request->getContent();
+            if ($content === '' || $content === false) {
+                $content = '{}';
+            }
+
+            $decoded = json_decode($content, true);
+            if (is_array($decoded) === true) {
+                $data = $decoded;
+            } else {
+                $data = [];
+            }
+
             $result = $this->consultationService->submitResponse($id, $data);
             return new JSONResponse($result);
         } catch (\RuntimeException $e) {

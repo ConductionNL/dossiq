@@ -10,7 +10,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <info@conduction.nl>
+ * @author    Conduction Development Team <dev@conductio.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -125,7 +125,7 @@ class StufFieldMappingService
             $this->customMappings['zkn'] ?? []
         );
 
-        return $this->applyMappings($stufData, $mappings, 'toInternal');
+        return $this->applyMappings(data: $stufData, mappings: $mappings, direction: 'toInternal');
     }//end mapZknToInternal()
 
     /**
@@ -144,7 +144,7 @@ class StufFieldMappingService
             $this->customMappings['zkn'] ?? []
         );
 
-        return $this->applyReverseMappings($internalData, $mappings);
+        return $this->applyReverseMappings(data: $internalData, mappings: $mappings);
     }//end mapInternalToZkn()
 
     /**
@@ -163,7 +163,7 @@ class StufFieldMappingService
             $this->customMappings['bg'] ?? []
         );
 
-        return $this->applyMappings($stufData, $mappings, 'toInternal');
+        return $this->applyMappings(data: $stufData, mappings: $mappings, direction: 'toInternal');
     }//end mapBgToInternal()
 
     /**
@@ -182,7 +182,7 @@ class StufFieldMappingService
             $this->customMappings['bg'] ?? []
         );
 
-        return $this->applyReverseMappings($internalData, $mappings);
+        return $this->applyReverseMappings(data: $internalData, mappings: $mappings);
     }//end mapInternalToBg()
 
     /**
@@ -323,7 +323,7 @@ class StufFieldMappingService
         $result = [];
 
         foreach ($data as $stufField => $value) {
-            if (!isset($mappings[$stufField])) {
+            if (isset($mappings[$stufField]) === false) {
                 continue;
             }
 
@@ -331,7 +331,7 @@ class StufFieldMappingService
             $property  = $mapping['property'];
             $transform = $mapping['transform'];
 
-            if ($transform !== null && method_exists($this, $transform)) {
+            if ($transform !== null && method_exists($this, $transform) === true) {
                 $value = $this->$transform($value);
             }
 
@@ -363,7 +363,7 @@ class StufFieldMappingService
         }
 
         foreach ($data as $property => $value) {
-            if (!isset($reverseLookup[$property])) {
+            if (isset($reverseLookup[$property]) === false) {
                 continue;
             }
 
@@ -373,8 +373,8 @@ class StufFieldMappingService
             // Apply reverse transform.
             if ($value !== null && $info['transform'] !== null) {
                 $value = match ($info['transform']) {
-                    'stufDateToIso' => $this->isoToStufDate((string) $value),
-                    'confidentialityToInternal' => $this->confidentialityToStuf((string) $value),
+                    'stufDateToIso' => $this->isoToStufDate(isoDate: (string) $value),
+                    'confidentialityToInternal' => $this->confidentialityToStuf(internalValue: (string) $value),
                     default => (string) $value,
                 };
             }

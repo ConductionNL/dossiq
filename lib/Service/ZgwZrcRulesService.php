@@ -8,7 +8,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <info@conduction.nl>
+ * @author    Conduction Development Team <dev@conductio.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -145,7 +145,12 @@ class ZgwZrcRulesService extends ZgwRulesBase
                             register: $register,
                             schema: $schema
                         );
-                        $ztData   = is_array($zaaktype) === true ? $zaaktype : $zaaktype->jsonSerialize();
+                        if (is_array($zaaktype) === true) {
+                            $ztData = $zaaktype;
+                        } else {
+                            $ztData = $zaaktype->jsonSerialize();
+                        }
+
                         if (empty($ztData['defaultAssignee']) === false) {
                             $body['assignee'] = $ztData['defaultAssignee'];
                         }
@@ -153,7 +158,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
                         // Zaaktype not found; skip auto-assignment.
                     }
                 }
-            }
+            }//end if
         }//end if
 
         return $this->validateZaakFields(result: $this->isValid(body: $body), existingObject: null, isPatch: false);

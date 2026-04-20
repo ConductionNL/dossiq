@@ -10,7 +10,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <info@conduction.nl>
+ * @author    Conduction Development Team <dev@conductio.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -108,7 +108,7 @@ class LegesCalculationService
         $total     = 0.0;
 
         foreach ($artikelen as $artikel) {
-            $result = $this->calculateArtikel($artikel, $caseData);
+            $result = $this->calculateArtikel(artikel: $artikel, caseData: $caseData);
             if ($result !== null) {
                 $breakdown[] = $result;
                 $total      += $result['amount'];
@@ -153,7 +153,7 @@ class LegesCalculationService
         string $calculatedBy,
         string $correctionReason,
     ): array {
-        $newCalc            = $this->calculate($caseData, $verordening, $calculatedBy);
+        $newCalc            = $this->calculate(caseData: $caseData, verordening: $verordening, calculatedBy: $calculatedBy);
         $newCalc['version'] = ($previousCalc['version'] ?? 0) + 1;
         $newCalc['previousVersion']  = $previousCalc['version'] ?? 0;
         $newCalc['correctionReason'] = $correctionReason;
@@ -233,11 +233,11 @@ class LegesCalculationService
         $grondslag      = (float) ($caseData[$grondslagField] ?? 0.0);
 
         $amount = match ($type) {
-            self::TYPE_VAST => $this->calculateVast($artikel),
-            self::TYPE_PERCENTAGE => $this->calculatePercentage($grondslag, $artikel),
-            self::TYPE_STAFFEL => $this->calculateStaffel($grondslag, $artikel),
-            self::TYPE_MAXIMUM => $this->calculateMaximum($grondslag, $artikel),
-            self::TYPE_COMBINATIE => $this->calculateCombinatie($grondslag, $artikel, $caseData),
+            self::TYPE_VAST => $this->calculateVast(artikel: $artikel),
+            self::TYPE_PERCENTAGE => $this->calculatePercentage(grondslag: $grondslag, artikel: $artikel),
+            self::TYPE_STAFFEL => $this->calculateStaffel(grondslag: $grondslag, artikel: $artikel),
+            self::TYPE_MAXIMUM => $this->calculateMaximum(grondslag: $grondslag, artikel: $artikel),
+            self::TYPE_COMBINATIE => $this->calculateCombinatie(grondslag: $grondslag, artikel: $artikel, caseData: $caseData),
             default => null,
         };
 
@@ -328,9 +328,9 @@ class LegesCalculationService
         $subType = $artikel['subType'] ?? self::TYPE_PERCENTAGE;
 
         $calculated = match ($subType) {
-            self::TYPE_PERCENTAGE => $this->calculatePercentage($grondslag, $artikel),
-            self::TYPE_STAFFEL => $this->calculateStaffel($grondslag, $artikel),
-            default => $this->calculateVast($artikel),
+            self::TYPE_PERCENTAGE => $this->calculatePercentage(grondslag: $grondslag, artikel: $artikel),
+            self::TYPE_STAFFEL => $this->calculateStaffel(grondslag: $grondslag, artikel: $artikel),
+            default => $this->calculateVast(artikel: $artikel),
         };
 
         return min($calculated, $maximum);
@@ -354,7 +354,7 @@ class LegesCalculationService
         $total        = 0.0;
 
         foreach ($subArtikelen as $subArtikel) {
-            $result = $this->calculateArtikel($subArtikel, $caseData);
+            $result = $this->calculateArtikel(artikel: $subArtikel, caseData: $caseData);
             if ($result !== null) {
                 $total += $result['amount'];
             }

@@ -1,5 +1,23 @@
 <?php
 
+/**
+ * Procest Appointment Controller.
+ *
+ * REST endpoints for citizen appointment scheduling flows (list, create,
+ * cancel, mark no-show, query timeslots).
+ *
+ * @category Controller
+ * @package  OCA\Procest\Controller
+ *
+ * @author    Conduction Development Team <dev@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ */
+
 declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
@@ -10,8 +28,17 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 
+/**
+ * Controller exposing citizen appointment endpoints.
+ */
 class AppointmentController extends Controller
 {
+    /**
+     * Constructor.
+     *
+     * @param IRequest           $request            The request object.
+     * @param AppointmentService $appointmentService The appointment service.
+     */
     public function __construct(
         IRequest $request,
         private AppointmentService $appointmentService,
@@ -20,6 +47,10 @@ class AppointmentController extends Controller
     }//end __construct()
 
     /**
+     * List appointments scheduled for a case.
+     *
+     * @return JSONResponse
+     *
      * @NoAdminRequired
      */
     public function index(): JSONResponse
@@ -30,12 +61,16 @@ class AppointmentController extends Controller
     }//end index()
 
     /**
+     * Book a new citizen appointment for a case.
+     *
+     * @return JSONResponse
+     *
      * @NoAdminRequired
      */
     public function create(): JSONResponse
     {
         $caseId = $this->request->getParam('caseId');
-        if (empty($caseId)) {
+        if (empty($caseId) === true) {
             return new JSONResponse(['success' => false, 'error' => 'caseId required'], 400);
         }
 
@@ -55,6 +90,12 @@ class AppointmentController extends Controller
     }//end create()
 
     /**
+     * Cancel an existing appointment.
+     *
+     * @param string $appointmentId The appointment UUID.
+     *
+     * @return JSONResponse
+     *
      * @NoAdminRequired
      */
     public function cancel(string $appointmentId): JSONResponse
@@ -64,6 +105,12 @@ class AppointmentController extends Controller
     }//end cancel()
 
     /**
+     * Mark an appointment as a no-show.
+     *
+     * @param string $appointmentId The appointment UUID.
+     *
+     * @return JSONResponse
+     *
      * @NoAdminRequired
      */
     public function noShow(string $appointmentId): JSONResponse
@@ -73,6 +120,10 @@ class AppointmentController extends Controller
     }//end noShow()
 
     /**
+     * List available timeslots for a product/location/date combination.
+     *
+     * @return JSONResponse
+     *
      * @NoAdminRequired
      */
     public function timeslots(): JSONResponse

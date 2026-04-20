@@ -73,8 +73,6 @@ class TenantMiddleware extends Middleware
      * @param string                       $methodName The method name
      *
      * @return void
-     *
-     * @throws \OCP\AppFramework\Http\Response Throws if tenant check fails
      */
     public function beforeController($controller, $methodName): void
     {
