@@ -38,8 +38,8 @@ class CaseTransferService
      *
      * @param SettingsService    $settingsService The settings service
      * @param IAppManager        $appManager      The app manager
-     * @param ContainerInterface $container        The DI container
-     * @param LoggerInterface    $logger           The logger
+     * @param ContainerInterface $container       The DI container
+     * @param LoggerInterface    $logger          The logger
      *
      * @return void
      */
@@ -155,7 +155,7 @@ class CaseTransferService
     /**
      * Reject a pending case transfer request.
      *
-     * @param string $transferId     The UUID of the transfer request
+     * @param string $transferId      The UUID of the transfer request
      * @param string $rejectionReason The reason for rejection
      *
      * @return array The updated transfer data

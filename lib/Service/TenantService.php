@@ -48,8 +48,8 @@ class TenantService
      * @param IAppManager        $appManager      The app manager
      * @param IGroupManager      $groupManager    The Nextcloud group manager
      * @param IUserManager       $userManager     The Nextcloud user manager
-     * @param ContainerInterface $container        The DI container
-     * @param LoggerInterface    $logger           The logger
+     * @param ContainerInterface $container       The DI container
+     * @param LoggerInterface    $logger          The logger
      *
      * @return void
      */
@@ -205,10 +205,12 @@ class TenantService
         // Create a dedicated register for this tenant.
         try {
             $registerService = $this->container->get('OCA\OpenRegister\Service\RegisterService');
-            $newRegister     = $registerService->createFromArray([
-                'title'       => 'Procest - '.$tenantData['name'],
-                'description' => 'Case management register for '.$tenantData['name'],
-            ]);
+            $newRegister     = $registerService->createFromArray(
+                    [
+                        'title'       => 'Procest - '.$tenantData['name'],
+                        'description' => 'Case management register for '.$tenantData['name'],
+                    ]
+                    );
 
             $tenantData['registerId'] = (string) $newRegister->getId();
         } catch (\Exception $e) {

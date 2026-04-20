@@ -16,31 +16,34 @@ class MockAdapter implements BerichtenboxAdapterInterface
     public function __construct(
         private LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     public function sendMessage(
         string $bsn,
         string $subject,
         string $body,
         string $typeCode,
-        ?string $attachment = null,
+        ?string $attachment=null,
     ): array {
         $messageId = 'mock-'.bin2hex(random_bytes(8));
 
-        $this->logger->info('MockBerichtenbox: Message sent', [
-            'messageId' => $messageId,
-            'bsn'       => substr($bsn, 0, 4).'*****',
-            'subject'   => $subject,
-            'typeCode'  => $typeCode,
-            'hasAttachment' => $attachment !== null,
-        ]);
+        $this->logger->info(
+                'MockBerichtenbox: Message sent',
+                [
+                    'messageId'     => $messageId,
+                    'bsn'           => substr($bsn, 0, 4).'*****',
+                    'subject'       => $subject,
+                    'typeCode'      => $typeCode,
+                    'hasAttachment' => $attachment !== null,
+                ]
+                );
 
         return [
             'messageId' => $messageId,
             'status'    => 'sent',
             'sentAt'    => (new \DateTime())->format('c'),
         ];
-    }
+    }//end sendMessage()
 
     public function getReadStatus(string $messageId): array
     {
@@ -49,5 +52,5 @@ class MockAdapter implements BerichtenboxAdapterInterface
             'read'   => true,
             'readAt' => (new \DateTime('-1 hour'))->format('c'),
         ];
-    }
-}
+    }//end getReadStatus()
+}//end class

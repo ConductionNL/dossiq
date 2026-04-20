@@ -39,10 +39,9 @@ class DsoIntakeService
      * Deadline durations per procedure type (ISO 8601).
      */
     private const DEADLINE_DURATIONS = [
-        'regulier'    => 'P56D',
-        'uitgebreid'  => 'P182D',
+        'regulier'   => 'P56D',
+        'uitgebreid' => 'P182D',
     ];
-
 
     /**
      * Constructor.
@@ -54,8 +53,7 @@ class DsoIntakeService
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
     ) {
-    }
-
+    }//end __construct()
 
     /**
      * Process a DSO vergunningaanvraag and create a case.
@@ -94,18 +92,17 @@ class DsoIntakeService
             },
             $activiteiten,
         );
-        $activityStr = implode(', ', array_filter($activityNames));
+        $activityStr   = implode(', ', array_filter($activityNames));
 
         // Determine processing deadline.
-        $deadline = self::DEADLINE_DURATIONS[$procedureType]
-            ?? self::DEADLINE_DURATIONS['regulier'];
+        $deadline = self::DEADLINE_DURATIONS[$procedureType] ?? self::DEADLINE_DURATIONS['regulier'];
 
         // Create the case.
         $caseSchema = $this->settingsService->getConfigValue('case_schema');
         $caseData   = [
-            'title'       => 'Omgevingsvergunning' . ($activityStr !== '' ? ': ' . $activityStr : ''),
+            'title'       => 'Omgevingsvergunning'.($activityStr !== '' ? ': '.$activityStr : ''),
             'description' => 'Vergunningaanvraag ontvangen via DSO/Omgevingsloket'
-                . ($dsoZaaknummer !== '' ? ' (DSO: ' . $dsoZaaknummer . ')' : ''),
+                .($dsoZaaknummer !== '' ? ' (DSO: '.$dsoZaaknummer.')' : ''),
             'startDate'   => date('Y-m-d'),
             'priority'    => 'normal',
         ];
@@ -129,15 +126,19 @@ class DsoIntakeService
                 continue;
             }
 
-            $objectService->saveObject($register, $propertySchema, [
-                'case'  => $caseId,
-                'name'  => $name,
-                'value' => $value,
-            ]);
+            $objectService->saveObject(
+                    $register,
+                    $propertySchema,
+                    [
+                        'case'  => $caseId,
+                        'name'  => $name,
+                        'value' => $value,
+                    ]
+                    );
         }
 
         $this->logger->info(
-            'DSO intake processed: case ' . $caseId . ' (DSO: ' . $dsoZaaknummer . ')',
+            'DSO intake processed: case '.$caseId.' (DSO: '.$dsoZaaknummer.')',
             ['app' => Application::APP_ID],
         );
 
@@ -148,8 +149,7 @@ class DsoIntakeService
             'procedureType' => $procedureType,
             'deadline'      => $deadline,
         ];
-    }
-
+    }//end processAanvraag()
 
     /**
      * Get the processing deadline duration for a procedure type.
@@ -160,7 +160,6 @@ class DsoIntakeService
      */
     public function getDeadlineDuration(string $procedureType): string
     {
-        return self::DEADLINE_DURATIONS[$procedureType]
-            ?? self::DEADLINE_DURATIONS['regulier'];
-    }
-}
+        return self::DEADLINE_DURATIONS[$procedureType] ?? self::DEADLINE_DURATIONS['regulier'];
+    }//end getDeadlineDuration()
+}//end class

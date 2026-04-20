@@ -21,7 +21,7 @@ class LocalBackend implements AppointmentBackendInterface
     public function __construct(
         private LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     public function getTimeslots(string $productId, string $locationId, string $date): array
     {
@@ -38,21 +38,21 @@ class LocalBackend implements AppointmentBackendInterface
         }
 
         return $slots;
-    }
+    }//end getTimeslots()
 
     public function bookAppointment(array $data): array
     {
         return ['externalId' => 'local-'.bin2hex(random_bytes(8))];
-    }
+    }//end bookAppointment()
 
     public function cancelAppointment(string $externalId): bool
     {
         $this->logger->info('Local backend: appointment cancelled', ['externalId' => $externalId]);
         return true;
-    }
+    }//end cancelAppointment()
 
     public function rescheduleAppointment(string $externalId, string $newDateTime): array
     {
         return ['externalId' => $externalId];
-    }
-}
+    }//end rescheduleAppointment()
+}//end class

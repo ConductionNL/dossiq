@@ -40,11 +40,11 @@ class ParaferingController extends Controller
     /**
      * Constructor.
      *
-     * @param string             $appName            The app name.
-     * @param IRequest           $request            The request object.
-     * @param ParaferingService  $paraferingService  The parafering service.
-     * @param IUserSession       $userSession        The user session.
-     * @param LoggerInterface    $logger             The logger.
+     * @param string            $appName           The app name.
+     * @param IRequest          $request           The request object.
+     * @param ParaferingService $paraferingService The parafering service.
+     * @param IUserSession      $userSession       The user session.
+     * @param LoggerInterface   $logger            The logger.
      */
     public function __construct(
         string $appName,
@@ -54,7 +54,7 @@ class ParaferingController extends Controller
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct($appName, $request);
-    }
+    }//end __construct()
 
     /**
      * Create a new voorstel.
@@ -66,7 +66,7 @@ class ParaferingController extends Controller
     public function createVoorstel(): JSONResponse
     {
         try {
-            $data = $this->getRequestBody();
+            $data   = $this->getRequestBody();
             $userId = $this->userSession->getUser()?->getUID() ?? 'system';
 
             if (empty($data['caseId'])) {
@@ -77,17 +77,17 @@ class ParaferingController extends Controller
             }
 
             $data['steller'] = $data['steller'] ?? $userId;
-            $voorstel = $this->paraferingService->createVoorstel($data);
+            $voorstel        = $this->paraferingService->createVoorstel($data);
 
             return new JSONResponse($voorstel, Http::STATUS_CREATED);
         } catch (\Throwable $e) {
-            $this->logger->error('Failed to create voorstel: ' . $e->getMessage());
+            $this->logger->error('Failed to create voorstel: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Failed to create voorstel: ' . $e->getMessage()],
+                ['error' => 'Failed to create voorstel: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
-    }
+        }//end try
+    }//end createVoorstel()
 
     /**
      * Start parafering on a voorstel.
@@ -101,9 +101,9 @@ class ParaferingController extends Controller
     public function startParafering(string $id): JSONResponse
     {
         try {
-            $data = $this->getRequestBody();
+            $data     = $this->getRequestBody();
             $voorstel = $data['voorstel'] ?? [];
-            $route = $data['route'] ?? [];
+            $route    = $data['route'] ?? [];
 
             if (empty($voorstel) || empty($route)) {
                 return new JSONResponse(
@@ -121,13 +121,13 @@ class ParaferingController extends Controller
                 Http::STATUS_BAD_REQUEST
             );
         } catch (\Throwable $e) {
-            $this->logger->error('Failed to start parafering: ' . $e->getMessage());
+            $this->logger->error('Failed to start parafering: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Failed to start parafering: ' . $e->getMessage()],
+                ['error' => 'Failed to start parafering: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
-    }
+        }//end try
+    }//end startParafering()
 
     /**
      * Execute a parafering action (paraferen).
@@ -141,7 +141,7 @@ class ParaferingController extends Controller
     public function paraferen(string $id): JSONResponse
     {
         return $this->handleAction($id, ParaferingService::ACTION_PARAFEREN);
-    }
+    }//end paraferen()
 
     /**
      * Execute a terugsturen action.
@@ -155,7 +155,7 @@ class ParaferingController extends Controller
     public function terugsturen(string $id): JSONResponse
     {
         return $this->handleAction($id, ParaferingService::ACTION_TERUGSTUREN);
-    }
+    }//end terugsturen()
 
     /**
      * Execute an adviseren action.
@@ -169,7 +169,7 @@ class ParaferingController extends Controller
     public function adviseren(string $id): JSONResponse
     {
         return $this->handleAction($id, ParaferingService::ACTION_ADVISEREN);
-    }
+    }//end adviseren()
 
     /**
      * Get the audit trail for a voorstel.
@@ -183,20 +183,20 @@ class ParaferingController extends Controller
     public function auditTrail(string $id): JSONResponse
     {
         try {
-            $data = $this->getRequestBody();
+            $data     = $this->getRequestBody();
             $voorstel = $data['voorstel'] ?? [];
 
             $trail = $this->paraferingService->getAuditTrail($voorstel);
 
             return new JSONResponse(['auditTrail' => $trail]);
         } catch (\Throwable $e) {
-            $this->logger->error('Failed to get audit trail: ' . $e->getMessage());
+            $this->logger->error('Failed to get audit trail: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Failed to get audit trail: ' . $e->getMessage()],
+                ['error' => 'Failed to get audit trail: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
         }
-    }
+    }//end auditTrail()
 
     /**
      * Handle a parafering action.
@@ -209,10 +209,10 @@ class ParaferingController extends Controller
     private function handleAction(string $id, string $action): JSONResponse
     {
         try {
-            $data = $this->getRequestBody();
+            $data     = $this->getRequestBody();
             $voorstel = $data['voorstel'] ?? [];
-            $comment = $data['comment'] ?? '';
-            $namens = $data['namens'] ?? null;
+            $comment  = $data['comment'] ?? '';
+            $namens   = $data['namens'] ?? null;
 
             $userId = $this->userSession->getUser()?->getUID() ?? 'system';
 
@@ -231,13 +231,13 @@ class ParaferingController extends Controller
                 Http::STATUS_BAD_REQUEST
             );
         } catch (\Throwable $e) {
-            $this->logger->error("Failed to execute {$action}: " . $e->getMessage());
+            $this->logger->error("Failed to execute {$action}: ".$e->getMessage());
             return new JSONResponse(
-                ['error' => "Failed to execute {$action}: " . $e->getMessage()],
+                ['error' => "Failed to execute {$action}: ".$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
-    }
+        }//end try
+    }//end handleAction()
 
     /**
      * Get the parsed request body.
@@ -253,5 +253,5 @@ class ParaferingController extends Controller
 
         $decoded = json_decode($body, true);
         return is_array($decoded) ? $decoded : [];
-    }
-}
+    }//end getRequestBody()
+}//end class

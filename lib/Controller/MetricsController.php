@@ -109,9 +109,13 @@ class MetricsController extends Controller
         // Cases total by status and case_type.
         $lines[]    = '# HELP procest_cases_total Total cases by status and case_type';
         $lines[]    = '# TYPE procest_cases_total gauge';
-        $caseCounts = $this->getCached('procest_metrics_case_counts', self::CACHE_TTL_DEFAULT, function () {
-            return $this->getCaseCounts();
-        });
+        $caseCounts = $this->getCached(
+                'procest_metrics_case_counts',
+                self::CACHE_TTL_DEFAULT,
+                function () {
+                    return $this->getCaseCounts();
+                }
+                );
         foreach ($caseCounts as $row) {
             $status   = $this->sanitizeLabel(value: $row['status']);
             $caseType = $this->sanitizeLabel(value: $row['case_type']);
@@ -122,29 +126,41 @@ class MetricsController extends Controller
         $lines[] = '';
 
         // Cases overdue total.
-        $overdueCount = $this->getCached('procest_metrics_overdue_cases', self::CACHE_TTL_OVERDUE, function () {
-            return $this->getOverdueCasesCount();
-        });
-        $lines[] = '# HELP procest_cases_overdue_total Cases past their deadline';
-        $lines[] = '# TYPE procest_cases_overdue_total gauge';
-        $lines[] = 'procest_cases_overdue_total '.$overdueCount;
-        $lines[] = '';
+        $overdueCount = $this->getCached(
+                'procest_metrics_overdue_cases',
+                self::CACHE_TTL_OVERDUE,
+                function () {
+                    return $this->getOverdueCasesCount();
+                }
+                );
+        $lines[]      = '# HELP procest_cases_overdue_total Cases past their deadline';
+        $lines[]      = '# TYPE procest_cases_overdue_total gauge';
+        $lines[]      = 'procest_cases_overdue_total '.$overdueCount;
+        $lines[]      = '';
 
         // Cases created today.
-        $createdToday = $this->getCached('procest_metrics_created_today', self::CACHE_TTL_DEFAULT, function () {
-            return $this->getCasesCreatedTodayCount();
-        });
-        $lines[] = '# HELP procest_cases_created_today Cases created today';
-        $lines[] = '# TYPE procest_cases_created_today gauge';
-        $lines[] = 'procest_cases_created_today '.$createdToday;
-        $lines[] = '';
+        $createdToday = $this->getCached(
+                'procest_metrics_created_today',
+                self::CACHE_TTL_DEFAULT,
+                function () {
+                    return $this->getCasesCreatedTodayCount();
+                }
+                );
+        $lines[]      = '# HELP procest_cases_created_today Cases created today';
+        $lines[]      = '# TYPE procest_cases_created_today gauge';
+        $lines[]      = 'procest_cases_created_today '.$createdToday;
+        $lines[]      = '';
 
         // Tasks total by status.
         $lines[]    = '# HELP procest_tasks_total Total tasks by status';
         $lines[]    = '# TYPE procest_tasks_total gauge';
-        $taskCounts = $this->getCached('procest_metrics_task_counts', self::CACHE_TTL_DEFAULT, function () {
-            return $this->getTaskCounts();
-        });
+        $taskCounts = $this->getCached(
+                'procest_metrics_task_counts',
+                self::CACHE_TTL_DEFAULT,
+                function () {
+                    return $this->getTaskCounts();
+                }
+                );
         foreach ($taskCounts as $row) {
             $status  = $this->sanitizeLabel(value: $row['status']);
             $count   = (int) $row['cnt'];
@@ -154,13 +170,17 @@ class MetricsController extends Controller
         $lines[] = '';
 
         // Tasks overdue total.
-        $overdueTasksCount = $this->getCached('procest_metrics_overdue_tasks', self::CACHE_TTL_OVERDUE, function () {
-            return $this->getOverdueTasksCount();
-        });
-        $lines[] = '# HELP procest_tasks_overdue_total Tasks past their deadline';
-        $lines[] = '# TYPE procest_tasks_overdue_total gauge';
-        $lines[] = 'procest_tasks_overdue_total '.$overdueTasksCount;
-        $lines[] = '';
+        $overdueTasksCount = $this->getCached(
+                'procest_metrics_overdue_tasks',
+                self::CACHE_TTL_OVERDUE,
+                function () {
+                    return $this->getOverdueTasksCount();
+                }
+                );
+        $lines[]           = '# HELP procest_tasks_overdue_total Tasks past their deadline';
+        $lines[]           = '# TYPE procest_tasks_overdue_total gauge';
+        $lines[]           = 'procest_tasks_overdue_total '.$overdueTasksCount;
+        $lines[]           = '';
 
         return implode("\n", $lines)."\n";
     }//end collectMetrics()
