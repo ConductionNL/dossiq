@@ -1,0 +1,128 @@
+{
+  "spec_slug": "case-management",
+  "app": "procest",
+  "repo": "ConductionNL/procest",
+  "issue": 180,
+  "depends_on": [],
+  "schema_version": 2,
+  "cycles": [
+    {
+      "cycle": 1,
+      "trigger": "build:queued",
+      "started_at": "2026-04-18T18:02:59Z",
+      "ended_at": null,
+      "outcome": "aborted",
+      "outcome_reason": "no terminal label seen in timeline",
+      "pattern_tags": [],
+      "stages": [
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "haiku",
+          "container": "hydra-builder",
+          "started_at": "2026-04-18T18:02:59Z",
+          "ended_at": "2026-04-18T18:03:00Z",
+          "turns_used": 72,
+          "turns_budget": 200,
+          "cost_usd": 0.812,
+          "checks_run": [],
+          "checks_skipped": [],
+          "findings": [
+            {
+              "id": "b-builder-build-0",
+              "severity": "WARNING",
+              "gate": null,
+              "rule": "builder output flagged failure language",
+              "status": "open",
+              "note": "## Summary\n\nI've successfully completed the implementation of the case-management feature for the Procest repository. Here's what was accomplished:\n\n### Completed Tasks\n\n**TASK-CM-01 & CM-02: CaseList Enhancements** \u2705\n- Added filter controls (priority, handler, overdue status dropdowns)\n- Implemented client-side search across case title, description, and identifier\n- Created filter UI with clear filters button\n- Filters update dynamically via Vue computed properties\n\n**TASK-CM-03 & CM-04: Compon",
+              "autofixable": false
+            }
+          ],
+          "decisions": [],
+          "verdict": "fail"
+        },
+        {
+          "stage": "pre-review-quality",
+          "persona": "orchestrator",
+          "container": "hydra-quality-runner",
+          "started_at": "2026-04-18T18:02:59Z",
+          "ended_at": "2026-04-18T18:03:00Z",
+          "exit_code": 0,
+          "checks_run": [
+            "phpcs",
+            "phpmd",
+            "psalm",
+            "phpstan",
+            "phpmetrics",
+            "composer-audit",
+            "spdx-headers",
+            "forbidden-patterns",
+            "eslint",
+            "stylelint",
+            "npm-audit",
+            "phpunit"
+          ],
+          "checks_skipped": [
+            "php-lint",
+            "publiccode",
+            "gitleaks",
+            "trivy",
+            "newman"
+          ],
+          "gates": {
+            "phpcs": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmd": {
+              "pass": true,
+              "failures": 0
+            },
+            "psalm": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpstan": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpmetrics": {
+              "pass": true,
+              "failures": 0
+            },
+            "composer-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "spdx-headers": {
+              "pass": true,
+              "failures": 0
+            },
+            "forbidden-patterns": {
+              "pass": true,
+              "failures": 0
+            },
+            "eslint": {
+              "pass": true,
+              "failures": 0
+            },
+            "stylelint": {
+              "pass": true,
+              "failures": 0
+            },
+            "npm-audit": {
+              "pass": true,
+              "failures": 0
+            },
+            "phpunit": {
+              "pass": true,
+              "failures": 0
+            }
+          },
+          "findings": [],
+          "verdict": "pass"
+        }
+      ]
+    }
+  ]
+}
