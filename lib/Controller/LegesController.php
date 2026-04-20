@@ -42,12 +42,12 @@ class LegesController extends Controller
     /**
      * Constructor.
      *
-     * @param string                   $appName           The app name.
-     * @param IRequest                 $request           The request object.
-     * @param LegesCalculationService  $calculationService The calculation service.
-     * @param LegesExportService       $exportService     The export service.
-     * @param IUserSession             $userSession       The user session.
-     * @param LoggerInterface          $logger            The logger.
+     * @param string                  $appName            The app name.
+     * @param IRequest                $request            The request object.
+     * @param LegesCalculationService $calculationService The calculation service.
+     * @param LegesExportService      $exportService      The export service.
+     * @param IUserSession            $userSession        The user session.
+     * @param LoggerInterface         $logger             The logger.
      */
     public function __construct(
         string $appName,
@@ -57,8 +57,8 @@ class LegesController extends Controller
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
-    }
+        parent::__construct(appName: $appName, request: $request);
+    }//end __construct()
 
     /**
      * Calculate leges for a case.
@@ -70,20 +70,21 @@ class LegesController extends Controller
     public function calculate(): JSONResponse
     {
         try {
-            $caseData = $this->request->getParam('caseData', []);
+            $caseData    = $this->request->getParam('caseData', []);
             $verordening = $this->request->getParam('verordening', []);
 
-            if (empty($caseData) || empty($verordening)) {
+            if (empty($caseData) === true || empty($verordening) === true) {
                 return new JSONResponse(
                     ['error' => 'Parameters caseData and verordening are required'],
                     Http::STATUS_BAD_REQUEST
                 );
             }
 
-            if (is_string($caseData)) {
+            if (is_string($caseData) === true) {
                 $caseData = json_decode($caseData, true) ?? [];
             }
-            if (is_string($verordening)) {
+
+            if (is_string($verordening) === true) {
                 $verordening = json_decode($verordening, true) ?? [];
             }
 
@@ -93,13 +94,13 @@ class LegesController extends Controller
 
             return new JSONResponse($result);
         } catch (\Throwable $e) {
-            $this->logger->error('Leges calculation failed: ' . $e->getMessage());
+            $this->logger->error('Leges calculation failed: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Calculation failed: ' . $e->getMessage()],
+                ['error' => 'Calculation failed: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
-    }
+        }//end try
+    }//end calculate()
 
     /**
      * Recalculate leges with corrected data.
@@ -111,18 +112,20 @@ class LegesController extends Controller
     public function recalculate(): JSONResponse
     {
         try {
-            $caseData = $this->request->getParam('caseData', []);
-            $verordening = $this->request->getParam('verordening', []);
+            $caseData     = $this->request->getParam('caseData', []);
+            $verordening  = $this->request->getParam('verordening', []);
             $previousCalc = $this->request->getParam('previousCalculation', []);
-            $reason = $this->request->getParam('correctionReason', '');
+            $reason       = $this->request->getParam('correctionReason', '');
 
-            if (is_string($caseData)) {
+            if (is_string($caseData) === true) {
                 $caseData = json_decode($caseData, true) ?? [];
             }
-            if (is_string($verordening)) {
+
+            if (is_string($verordening) === true) {
                 $verordening = json_decode($verordening, true) ?? [];
             }
-            if (is_string($previousCalc)) {
+
+            if (is_string($previousCalc) === true) {
                 $previousCalc = json_decode($previousCalc, true) ?? [];
             }
 
@@ -138,13 +141,13 @@ class LegesController extends Controller
 
             return new JSONResponse($result);
         } catch (\Throwable $e) {
-            $this->logger->error('Leges recalculation failed: ' . $e->getMessage());
+            $this->logger->error('Leges recalculation failed: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Recalculation failed: ' . $e->getMessage()],
+                ['error' => 'Recalculation failed: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
-    }
+        }//end try
+    }//end recalculate()
 
     /**
      * Calculate verrekening (deduction).
@@ -156,20 +159,20 @@ class LegesController extends Controller
     public function verrekening(): JSONResponse
     {
         try {
-            $currentAmount = (float)$this->request->getParam('currentAmount', 0);
-            $previousAmount = (float)$this->request->getParam('previousAmount', 0);
+            $currentAmount  = (float) $this->request->getParam('currentAmount', 0);
+            $previousAmount = (float) $this->request->getParam('previousAmount', 0);
 
             $result = $this->calculationService->calculateVerrekening($currentAmount, $previousAmount);
 
             return new JSONResponse($result);
         } catch (\Throwable $e) {
-            $this->logger->error('Verrekening calculation failed: ' . $e->getMessage());
+            $this->logger->error('Verrekening calculation failed: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Verrekening failed: ' . $e->getMessage()],
+                ['error' => 'Verrekening failed: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
         }
-    }
+    }//end verrekening()
 
     /**
      * Calculate teruggaaf (refund).
@@ -181,9 +184,9 @@ class LegesController extends Controller
     public function teruggaaf(): JSONResponse
     {
         try {
-            $imposedAmount = (float)$this->request->getParam('imposedAmount', 0);
-            $refundFraction = (float)$this->request->getParam('refundFraction', 1.0);
-            $reason = (string)$this->request->getParam('reason', '');
+            $imposedAmount  = (float) $this->request->getParam('imposedAmount', 0);
+            $refundFraction = (float) $this->request->getParam('refundFraction', 1.0);
+            $reason         = (string) $this->request->getParam('reason', '');
 
             $result = $this->calculationService->calculateTeruggaaf(
                 $imposedAmount,
@@ -193,13 +196,13 @@ class LegesController extends Controller
 
             return new JSONResponse($result);
         } catch (\Throwable $e) {
-            $this->logger->error('Teruggaaf calculation failed: ' . $e->getMessage());
+            $this->logger->error('Teruggaaf calculation failed: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Teruggaaf failed: ' . $e->getMessage()],
+                ['error' => 'Teruggaaf failed: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
         }
-    }
+    }//end teruggaaf()
 
     /**
      * Export berekeningen to financial system format.
@@ -212,13 +215,13 @@ class LegesController extends Controller
     {
         try {
             $berekeningen = $this->request->getParam('berekeningen', []);
-            $format = $this->request->getParam('format', LegesExportService::FORMAT_CSV);
+            $format       = $this->request->getParam('format', LegesExportService::FORMAT_CSV);
 
-            if (is_string($berekeningen)) {
+            if (is_string($berekeningen) === true) {
                 $berekeningen = json_decode($berekeningen, true) ?? [];
             }
 
-            if (empty($berekeningen)) {
+            if (empty($berekeningen) === true) {
                 return new JSONResponse(
                     ['error' => 'No berekeningen provided for export'],
                     Http::STATUS_BAD_REQUEST
@@ -238,11 +241,11 @@ class LegesController extends Controller
                 Http::STATUS_BAD_REQUEST
             );
         } catch (\Throwable $e) {
-            $this->logger->error('Leges export failed: ' . $e->getMessage());
+            $this->logger->error('Leges export failed: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Export failed: ' . $e->getMessage()],
+                ['error' => 'Export failed: '.$e->getMessage()],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
-    }
-}
+        }//end try
+    }//end export()
+}//end class

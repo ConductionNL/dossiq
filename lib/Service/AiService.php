@@ -55,9 +55,9 @@ class AiService
     /**
      * Constructor for AiService.
      *
-     * @param IAppConfig         $appConfig  The app configuration service
-     * @param ContainerInterface $container  The DI container
-     * @param LoggerInterface    $logger     The logger interface
+     * @param IAppConfig         $appConfig The app configuration service
+     * @param ContainerInterface $container The DI container
+     * @param LoggerInterface    $logger    The logger interface
      *
      * @return void
      */
@@ -116,7 +116,7 @@ class AiService
      */
     public function classifyDocument(string $caseId, string $documentId, string $userId): array
     {
-        if ($this->isFeatureEnabled('classification') === false) {
+        if ($this->isFeatureEnabled(feature: 'classification') === false) {
             return [
                 'success' => false,
                 'message' => 'AI document classification is not enabled',
@@ -126,26 +126,28 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildClassificationPrompt($caseId, $documentId);
-            $prompt = $this->stripPiiIfEnabled($prompt);
+            $prompt = $this->buildClassificationPrompt(caseId: $caseId, documentId: $documentId);
+            $prompt = $this->stripPiiIfEnabled(prompt: $prompt);
 
-            $result = $this->callAiModel($prompt);
+            $result = $this->callAiModel(prompt: $prompt);
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
-            $this->recordAuditEntry([
-                'type'           => 'classification',
-                'action'         => 'suggested',
-                'caseId'         => $caseId,
-                'documentId'     => $documentId,
-                'model'          => $this->getModelIdentifier(),
-                'prompt'         => $prompt,
-                'suggestion'     => $result,
-                'confidence'     => ($result['confidence'] ?? 0.0),
-                'userId'         => $userId,
-                'timestamp'      => date('c'),
-                'responseTimeMs' => $responseTimeMs,
-            ]);
+            $this->recordAuditEntry(
+                    entry: [
+                        'type'           => 'classification',
+                        'action'         => 'suggested',
+                        'caseId'         => $caseId,
+                        'documentId'     => $documentId,
+                        'model'          => $this->getModelIdentifier(),
+                        'prompt'         => $prompt,
+                        'suggestion'     => $result,
+                        'confidence'     => ($result['confidence'] ?? 0.0),
+                        'userId'         => $userId,
+                        'timestamp'      => date('c'),
+                        'responseTimeMs' => $responseTimeMs,
+                    ]
+                    );
 
             return [
                 'success'    => true,
@@ -174,7 +176,7 @@ class AiService
      */
     public function extractData(string $caseId, ?string $documentId, string $userId): array
     {
-        if ($this->isFeatureEnabled('extraction') === false) {
+        if ($this->isFeatureEnabled(feature: 'extraction') === false) {
             return [
                 'success' => false,
                 'message' => 'AI data extraction is not enabled',
@@ -184,26 +186,28 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildExtractionPrompt($caseId, $documentId);
-            $prompt = $this->stripPiiIfEnabled($prompt);
+            $prompt = $this->buildExtractionPrompt(caseId: $caseId, documentId: $documentId);
+            $prompt = $this->stripPiiIfEnabled(prompt: $prompt);
 
-            $result = $this->callAiModel($prompt);
+            $result = $this->callAiModel(prompt: $prompt);
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
-            $this->recordAuditEntry([
-                'type'           => 'extraction',
-                'action'         => 'suggested',
-                'caseId'         => $caseId,
-                'documentId'     => ($documentId ?? ''),
-                'model'          => $this->getModelIdentifier(),
-                'prompt'         => $prompt,
-                'suggestion'     => $result,
-                'confidence'     => ($result['averageConfidence'] ?? 0.0),
-                'userId'         => $userId,
-                'timestamp'      => date('c'),
-                'responseTimeMs' => $responseTimeMs,
-            ]);
+            $this->recordAuditEntry(
+                    entry: [
+                        'type'           => 'extraction',
+                        'action'         => 'suggested',
+                        'caseId'         => $caseId,
+                        'documentId'     => ($documentId ?? ''),
+                        'model'          => $this->getModelIdentifier(),
+                        'prompt'         => $prompt,
+                        'suggestion'     => $result,
+                        'confidence'     => ($result['averageConfidence'] ?? 0.0),
+                        'userId'         => $userId,
+                        'timestamp'      => date('c'),
+                        'responseTimeMs' => $responseTimeMs,
+                    ]
+                    );
 
             return [
                 'success' => true,
@@ -232,7 +236,7 @@ class AiService
      */
     public function askQuestion(string $caseId, string $question, string $userId): array
     {
-        if ($this->isFeatureEnabled('qa') === false) {
+        if ($this->isFeatureEnabled(feature: 'qa') === false) {
             return [
                 'success' => false,
                 'message' => 'AI knowledge base Q&A is not enabled',
@@ -242,24 +246,26 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildQaPrompt($caseId, $question);
+            $prompt = $this->buildQaPrompt(caseId: $caseId, question: $question);
 
-            $result = $this->callAiModel($prompt);
+            $result = $this->callAiModel(prompt: $prompt);
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
-            $this->recordAuditEntry([
-                'type'           => 'qa',
-                'action'         => 'suggested',
-                'caseId'         => $caseId,
-                'model'          => $this->getModelIdentifier(),
-                'prompt'         => $question,
-                'suggestion'     => $result,
-                'confidence'     => ($result['confidence'] ?? 0.0),
-                'userId'         => $userId,
-                'timestamp'      => date('c'),
-                'responseTimeMs' => $responseTimeMs,
-            ]);
+            $this->recordAuditEntry(
+                    entry: [
+                        'type'           => 'qa',
+                        'action'         => 'suggested',
+                        'caseId'         => $caseId,
+                        'model'          => $this->getModelIdentifier(),
+                        'prompt'         => $question,
+                        'suggestion'     => $result,
+                        'confidence'     => ($result['confidence'] ?? 0.0),
+                        'userId'         => $userId,
+                        'timestamp'      => date('c'),
+                        'responseTimeMs' => $responseTimeMs,
+                    ]
+                    );
 
             return [
                 'success' => true,
@@ -290,7 +296,7 @@ class AiService
      */
     public function summarize(string $caseId, string $type, ?string $documentId, string $userId): array
     {
-        if ($this->isFeatureEnabled('summary') === false) {
+        if ($this->isFeatureEnabled(feature: 'summary') === false) {
             return [
                 'success' => false,
                 'message' => 'AI summarization is not enabled',
@@ -300,25 +306,27 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildSummaryPrompt($caseId, $type, $documentId);
-            $prompt = $this->stripPiiIfEnabled($prompt);
+            $prompt = $this->buildSummaryPrompt(caseId: $caseId, type: $type, documentId: $documentId);
+            $prompt = $this->stripPiiIfEnabled(prompt: $prompt);
 
-            $result = $this->callAiModel($prompt);
+            $result = $this->callAiModel(prompt: $prompt);
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
-            $this->recordAuditEntry([
-                'type'           => 'summary',
-                'action'         => 'suggested',
-                'caseId'         => $caseId,
-                'documentId'     => ($documentId ?? ''),
-                'model'          => $this->getModelIdentifier(),
-                'prompt'         => $prompt,
-                'suggestion'     => ['summary' => ($result['summary'] ?? '')],
-                'userId'         => $userId,
-                'timestamp'      => date('c'),
-                'responseTimeMs' => $responseTimeMs,
-            ]);
+            $this->recordAuditEntry(
+                    entry: [
+                        'type'           => 'summary',
+                        'action'         => 'suggested',
+                        'caseId'         => $caseId,
+                        'documentId'     => ($documentId ?? ''),
+                        'model'          => $this->getModelIdentifier(),
+                        'prompt'         => $prompt,
+                        'suggestion'     => ['summary' => ($result['summary'] ?? '')],
+                        'userId'         => $userId,
+                        'timestamp'      => date('c'),
+                        'responseTimeMs' => $responseTimeMs,
+                    ]
+                    );
 
             return [
                 'success' => true,
@@ -346,7 +354,7 @@ class AiService
      */
     public function suggestRouting(string $caseId, string $userId): array
     {
-        if ($this->isFeatureEnabled('routing') === false) {
+        if ($this->isFeatureEnabled(feature: 'routing') === false) {
             return [
                 'success' => false,
                 'message' => 'AI case routing is not enabled',
@@ -356,24 +364,26 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildRoutingPrompt($caseId);
+            $prompt = $this->buildRoutingPrompt(caseId: $caseId);
 
-            $result = $this->callAiModel($prompt);
+            $result = $this->callAiModel(prompt: $prompt);
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
-            $this->recordAuditEntry([
-                'type'           => 'routing',
-                'action'         => 'suggested',
-                'caseId'         => $caseId,
-                'model'          => $this->getModelIdentifier(),
-                'prompt'         => $prompt,
-                'suggestion'     => $result,
-                'confidence'     => ($result['confidence'] ?? 0.0),
-                'userId'         => $userId,
-                'timestamp'      => date('c'),
-                'responseTimeMs' => $responseTimeMs,
-            ]);
+            $this->recordAuditEntry(
+                    entry: [
+                        'type'           => 'routing',
+                        'action'         => 'suggested',
+                        'caseId'         => $caseId,
+                        'model'          => $this->getModelIdentifier(),
+                        'prompt'         => $prompt,
+                        'suggestion'     => $result,
+                        'confidence'     => ($result['confidence'] ?? 0.0),
+                        'userId'         => $userId,
+                        'timestamp'      => date('c'),
+                        'responseTimeMs' => $responseTimeMs,
+                    ]
+                    );
 
             return [
                 'success'     => true,
@@ -401,7 +411,7 @@ class AiService
      */
     public function suggestNextStep(string $caseId, string $userId): array
     {
-        if ($this->isFeatureEnabled('decision_support') === false) {
+        if ($this->isFeatureEnabled(feature: 'decision_support') === false) {
             return [
                 'success' => false,
                 'message' => 'AI decision support is not enabled',
@@ -411,23 +421,25 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildNextStepPrompt($caseId);
+            $prompt = $this->buildNextStepPrompt(caseId: $caseId);
 
-            $result = $this->callAiModel($prompt);
+            $result = $this->callAiModel(prompt: $prompt);
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
-            $this->recordAuditEntry([
-                'type'           => 'decision_support',
-                'action'         => 'suggested',
-                'caseId'         => $caseId,
-                'model'          => $this->getModelIdentifier(),
-                'prompt'         => $prompt,
-                'suggestion'     => $result,
-                'userId'         => $userId,
-                'timestamp'      => date('c'),
-                'responseTimeMs' => $responseTimeMs,
-            ]);
+            $this->recordAuditEntry(
+                    entry: [
+                        'type'           => 'decision_support',
+                        'action'         => 'suggested',
+                        'caseId'         => $caseId,
+                        'model'          => $this->getModelIdentifier(),
+                        'prompt'         => $prompt,
+                        'suggestion'     => $result,
+                        'userId'         => $userId,
+                        'timestamp'      => date('c'),
+                        'responseTimeMs' => $responseTimeMs,
+                    ]
+                    );
 
             return [
                 'success'     => true,
@@ -469,18 +481,20 @@ class AiService
         ?string $reason,
         string $userId,
     ): array {
-        $this->recordAuditEntry([
-            'type'        => $type,
-            'action'      => $userAction,
-            'caseId'      => $caseId,
-            'model'       => $this->getModelIdentifier(),
-            'suggestion'  => $suggestion,
-            'userAction'  => $userAction,
-            'actualValue' => ($actualValue ?? []),
-            'reason'      => ($reason ?? ''),
-            'userId'      => $userId,
-            'timestamp'   => date('c'),
-        ]);
+        $this->recordAuditEntry(
+                entry: [
+                    'type'        => $type,
+                    'action'      => $userAction,
+                    'caseId'      => $caseId,
+                    'model'       => $this->getModelIdentifier(),
+                    'suggestion'  => $suggestion,
+                    'userAction'  => $userAction,
+                    'actualValue' => ($actualValue ?? []),
+                    'reason'      => ($reason ?? ''),
+                    'userId'      => $userId,
+                    'timestamp'   => date('c'),
+                ]
+                );
 
         return ['success' => true];
     }//end recordUserAction()
@@ -495,7 +509,7 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $result = $this->callAiModel('Respond with "ok" to confirm connectivity.');
+            $result = $this->callAiModel(prompt: 'Respond with "ok" to confirm connectivity.');
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
@@ -524,19 +538,19 @@ class AiService
     public function getAiSettings(): array
     {
         return [
-            'ai_enabled'                   => $this->appConfig->getValueString(Application::APP_ID, 'ai_enabled', ''),
-            'ai_model_type'                => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_type', 'local'),
-            'ai_model_url'                 => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_url', ''),
-            'ai_model_name'                => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_name', ''),
-            'ai_api_key_set'               => $this->appConfig->getValueString(Application::APP_ID, 'ai_api_key', '') !== '',
-            'ai_feature_classification'    => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_classification', ''),
-            'ai_feature_extraction'        => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_extraction', ''),
-            'ai_feature_qa'                => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_qa', ''),
-            'ai_feature_summary'           => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_summary', ''),
-            'ai_feature_routing'           => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_routing', ''),
-            'ai_feature_decision_support'  => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_decision_support', ''),
-            'ai_dpia_acknowledged'         => $this->appConfig->getValueString(Application::APP_ID, 'ai_dpia_acknowledged', ''),
-            'ai_pii_stripping'             => $this->appConfig->getValueString(Application::APP_ID, 'ai_pii_stripping', '1'),
+            'ai_enabled'                  => $this->appConfig->getValueString(Application::APP_ID, 'ai_enabled', ''),
+            'ai_model_type'               => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_type', 'local'),
+            'ai_model_url'                => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_url', ''),
+            'ai_model_name'               => $this->appConfig->getValueString(Application::APP_ID, 'ai_model_name', ''),
+            'ai_api_key_set'              => $this->appConfig->getValueString(Application::APP_ID, 'ai_api_key', '') !== '',
+            'ai_feature_classification'   => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_classification', ''),
+            'ai_feature_extraction'       => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_extraction', ''),
+            'ai_feature_qa'               => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_qa', ''),
+            'ai_feature_summary'          => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_summary', ''),
+            'ai_feature_routing'          => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_routing', ''),
+            'ai_feature_decision_support' => $this->appConfig->getValueString(Application::APP_ID, 'ai_feature_decision_support', ''),
+            'ai_dpia_acknowledged'        => $this->appConfig->getValueString(Application::APP_ID, 'ai_dpia_acknowledged', ''),
+            'ai_pii_stripping'            => $this->appConfig->getValueString(Application::APP_ID, 'ai_pii_stripping', '1'),
         ];
     }//end getAiSettings()
 
@@ -616,12 +630,14 @@ class AiService
         );
 
         // Build the request payload for Ollama-compatible API.
-        $payload = json_encode([
-            'model'   => $modelName,
-            'prompt'  => $prompt,
-            'stream'  => false,
-            'format'  => 'json',
-        ]);
+        $payload = json_encode(
+                [
+                    'model'  => $modelName,
+                    'prompt' => $prompt,
+                    'stream' => false,
+                    'format' => 'json',
+                ]
+                );
 
         $endpoint = rtrim($modelUrl, '/').'/api/generate';
 
@@ -640,10 +656,14 @@ class AiService
                 ''
             );
             if (empty($apiKey) === false) {
-                curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                    'Content-Type: application/json',
-                    'Authorization: Bearer '.$apiKey,
-                ]);
+                curl_setopt(
+                        $ch,
+                        CURLOPT_HTTPHEADER,
+                        [
+                            'Content-Type: application/json',
+                            'Authorization: Bearer '.$apiKey,
+                        ]
+                        );
             }
         }
 
@@ -696,7 +716,7 @@ class AiService
                 'register',
                 ''
             );
-            $schemaId = $this->appConfig->getValueString(
+            $schemaId   = $this->appConfig->getValueString(
                 Application::APP_ID,
                 'ai_audit_entry_schema',
                 ''
@@ -717,7 +737,7 @@ class AiService
                 'Failed to record AI audit entry',
                 ['error' => $e->getMessage()]
             );
-        }
+        }//end try
     }//end recordAuditEntry()
 
     /**
