@@ -111,7 +111,7 @@ class CaseEmailService
         }
 
         // Record the sent email as a case document.
-        $messageId = $this->recordSentEmail($caseId, $to, $subject, $body);
+        $messageId = $this->recordSentEmail(caseId: $caseId, to: $to, subject: $subject, body: $body);
 
         $this->logger->info(
             'Email sent for case '.$caseId.' to '.$to,
@@ -142,19 +142,19 @@ class CaseEmailService
         string $templateId,
         string $to,
     ): array {
-        $template = $this->loadTemplate($templateId);
+        $template = $this->loadTemplate(templateId: $templateId);
         if ($template === null) {
             throw new \RuntimeException('Email template not found');
         }
 
         // Load case data for variable resolution.
-        $caseData = $this->loadCaseData($caseId);
+        $caseData = $this->loadCaseData(caseId: $caseId);
 
         // Resolve template variables.
-        $subject = $this->resolveVariables($template['subjectPattern'] ?? '', $caseData);
-        $body    = $this->resolveVariables($template['body'] ?? '', $caseData);
+        $subject = $this->resolveVariables(template: $template['subjectPattern'] ?? '', data: $caseData);
+        $body    = $this->resolveVariables(template: $template['body'] ?? '', data: $caseData);
 
-        return $this->sendEmail($caseId, $to, $subject, $body);
+        return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body);
     }//end sendFromTemplate()
 
     /**
@@ -240,18 +240,18 @@ class CaseEmailService
         string $body,
         string $inReplyTo='',
     ): array {
-        $caseNumber = $this->extractCaseNumber($subject);
+        $caseNumber = $this->extractCaseNumber(subject: $subject);
 
         if ($caseNumber !== null) {
             // Auto-link to case.
-            $caseId = $this->findCaseByIdentifier($caseNumber);
+            $caseId = $this->findCaseByIdentifier(identifier: $caseNumber);
             if ($caseId !== null) {
                 $messageId = $this->recordReceivedEmail(
-                    $caseId,
-                    $from,
-                    $subject,
-                    $body,
-                    $inReplyTo,
+                    caseId: $caseId,
+                    from: $from,
+                    subject: $subject,
+                    body: $body,
+                    inReplyTo: $inReplyTo,
                 );
 
                 $this->logger->info(
@@ -307,7 +307,11 @@ class CaseEmailService
             100,
         );
 
-        return is_array($results) ? $results : [];
+        if (is_array($results) === true) {
+            return $results;
+        }
+
+        return [];
     }//end getTemplatesForCaseType()
 
     /**
@@ -332,7 +336,11 @@ class CaseEmailService
         }
 
         $result = $objectService->getObject($register, $schema, $templateId);
-        return is_array($result) ? $result : null;
+        if (is_array($result) === true) {
+            return $result;
+        }
+
+        return null;
     }//end loadTemplate()
 
     /**

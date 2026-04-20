@@ -104,7 +104,7 @@ class CaseDefinitionImportService
             }
         }
 
-        if (!$result['valid']) {
+        if ($result['valid'] === false) {
             $zip->close();
             return $result;
         }
@@ -131,7 +131,7 @@ class CaseDefinitionImportService
         // Validate manifest structure.
         $requiredManifestFields = ['version', 'exportDate', 'caseType', 'components'];
         foreach ($requiredManifestFields as $field) {
-            if (!isset($manifest[$field])) {
+            if (isset($manifest[$field]) === false) {
                 $result['valid']    = false;
                 $result['errors'][] = "Missing required manifest field: {$field}";
             }
@@ -145,13 +145,13 @@ class CaseDefinitionImportService
                 $hasWorkflows = false;
                 for ($i = 0; $i < $zip->numFiles; $i++) {
                     $name = $zip->getNameIndex($i);
-                    if ($name !== false && str_starts_with($name, 'workflows/')) {
+                    if ($name !== false && str_starts_with($name, 'workflows/') === true) {
                         $hasWorkflows = true;
                         break;
                     }
                 }
 
-                if (!$hasWorkflows) {
+                if ($hasWorkflows === false) {
                     $result['warnings'][] = 'Component "workflows" declared but no workflow files found';
                 }
             } else {
@@ -191,10 +191,16 @@ class CaseDefinitionImportService
 
         $zip->close();
 
+        if ($result['valid'] === true) {
+            $validLabel = 'true';
+        } else {
+            $validLabel = 'false';
+        }
+
         $this->logger->info(
             'Validated case definition package: {valid}, errors: {errorCount}, warnings: {warningCount}',
             [
-                'valid'        => $result['valid'] ? 'true' : 'false',
+                'valid'        => $validLabel,
                 'errorCount'   => count($result['errors']),
                 'warningCount' => count($result['warnings']),
             ]
@@ -220,8 +226,8 @@ class CaseDefinitionImportService
         string $strategy='skip',
     ): array {
         // First validate.
-        $validation = $this->validatePackage($zipPath);
-        if (!$validation['valid']) {
+        $validation = $this->validatePackage(zipPath: $zipPath);
+        if ($validation['valid'] === false) {
             return [
                 'success'    => false,
                 'message'    => 'Package validation failed: '.implode('; ', $validation['errors']),
@@ -238,7 +244,7 @@ class CaseDefinitionImportService
 
         foreach ($components as $component) {
             try {
-                $results[$component] = $this->importComponent($zip, $component, $strategy);
+                $results[$component] = $this->importComponent(zip: $zip, component: $component, strategy: $strategy);
             } catch (\Throwable $e) {
                 $results[$component] = [
                     'status'  => 'error',
@@ -256,19 +262,27 @@ class CaseDefinitionImportService
 
         $zip->close();
 
-        $allSuccess = !in_array('error', array_column($results, 'status'), true);
+        $allSuccess = in_array('error', array_column($results, 'status'), true) === false;
+
+        if ($allSuccess === true) {
+            $successLabel = 'true';
+            $message      = 'Import completed successfully';
+        } else {
+            $successLabel = 'false';
+            $message      = 'Import completed with errors';
+        }
 
         $this->logger->info(
             'Case definition import completed: {success}, components: {count}',
             [
-                'success' => $allSuccess ? 'true' : 'false',
+                'success' => $successLabel,
                 'count'   => count($results),
             ]
         );
 
         return [
             'success'    => $allSuccess,
-            'message'    => $allSuccess ? 'Import completed successfully' : 'Import completed with errors',
+            'message'    => $message,
             'components' => $results,
         ];
     }//end importCaseDefinition()
@@ -288,7 +302,7 @@ class CaseDefinitionImportService
         string $strategy,
     ): array {
         if ($component === 'workflows') {
-            return $this->importWorkflows($zip, $strategy);
+            return $this->importWorkflows(zip: $zip, strategy: $strategy);
         }
 
         $content = $zip->getFromName($component.'.json');
@@ -337,7 +351,7 @@ class CaseDefinitionImportService
 
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $name = $zip->getNameIndex($i);
-            if ($name !== false && str_starts_with($name, 'workflows/') && str_ends_with($name, '.json')) {
+            if ($name !== false && str_starts_with($name, 'workflows/') === true && str_ends_with($name, '.json') === true) {
                 $content = $zip->getFromIndex($i);
                 if ($content !== false) {
                     // In a full implementation, deploy via n8n API.
