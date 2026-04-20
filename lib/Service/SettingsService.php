@@ -155,6 +155,39 @@ class SettingsService
     }//end isOpenRegisterAvailable()
 
     /**
+     * Resolve the OpenRegister ObjectService from the DI container.
+     *
+     * Returns null when OpenRegister is not installed/enabled, or when the
+     * container cannot resolve the service (e.g. on a fresh install before
+     * configuration). Callers are expected to handle the null case.
+     *
+     * Mirrors the lazy-resolve pattern already used for ConfigurationService
+     * in loadConfiguration() — OpenRegister is an optional runtime dependency
+     * so we cannot type-hint the class directly in the constructor.
+     *
+     * @return object|null The OpenRegister ObjectService or null when unavailable
+     *
+     * @psalm-suppress MixedReturnStatement
+     * @psalm-suppress MixedInferredReturnType
+     */
+    public function getObjectService(): ?object
+    {
+        if ($this->isOpenRegisterAvailable() === false) {
+            return null;
+        }
+
+        try {
+            return $this->container->get('OCA\OpenRegister\Service\ObjectService');
+        } catch (\Exception $e) {
+            $this->logger->error(
+                'Procest: Could not access OpenRegister ObjectService',
+                ['exception' => $e->getMessage()]
+            );
+            return null;
+        }
+    }//end getObjectService()
+
+    /**
      * Load the register configuration from procest_register.json via ConfigurationService.
      *
      * @param bool $force Whether to force re-import regardless of version
