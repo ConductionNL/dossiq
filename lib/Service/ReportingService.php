@@ -61,10 +61,10 @@ class ReportingService
         $endDate    = $filters['endDate'] ?? date('Y-m-d');
         $status     = $filters['status'] ?? null;
 
-        // Generate summary statistics
+        // Generate summary statistics.
         $summary = $this->calculateSummary($caseTypeId, $team, $startDate, $endDate, $status);
 
-        // Generate detailed case data
+        // Generate detailed case data.
         $caseData = $this->generateCaseDetails($caseTypeId, $team, $startDate, $endDate, $status);
 
         return [
@@ -145,7 +145,7 @@ class ReportingService
         string $endDate,
         ?string $status
     ): array {
-        // Placeholder: would fetch actual case data from OpenRegister
+        // Placeholder: would fetch actual case data from OpenRegister.
         return [
             [
                 'caseId'       => 'case-001',
@@ -177,7 +177,7 @@ class ReportingService
                 'createdAt'    => '2024-01-20',
                 'closedAt'     => null,
                 'doorlooptijd' => 59,
-            // ongoing
+                // Ongoing.
                 'slaTarget'    => 30,
                 'slaStatus'    => 'overdue',
                 'team'         => 'Team A',

@@ -57,12 +57,12 @@ class ExportService
 
         $csv = '';
 
-        // Add header with title and generation date
+        // Add header with title and generation date.
         $csv .= "Doorlooptijd Management Report\n";
         $csv .= "Generated: ".date('Y-m-d H:i:s')."\n";
         $csv .= "\n";
 
-        // Add filters applied
+        // Add filters applied.
         $csv .= "Filters Applied:\n";
         foreach ($filters as $key => $value) {
             $csv .= ucfirst($key).": ".$value."\n";
@@ -70,7 +70,7 @@ class ExportService
 
         $csv .= "\n";
 
-        // Add summary statistics
+        // Add summary statistics.
         $csv .= "Summary Statistics\n";
         if (!empty($reportData['summary'])) {
             $this->appendSummaryToCsv($csv, $reportData['summary']);
@@ -78,7 +78,7 @@ class ExportService
 
         $csv .= "\n";
 
-        // Add case data table
+        // Add case data table.
         $csv .= "Case Details\n";
         $csv .= implode(
                 ',',
@@ -114,7 +114,7 @@ class ExportService
                         ',',
                         array_map(
                         function ($val) {
-                            // Escape quotes and wrap in quotes if contains comma
+                            // Escape quotes and wrap in quotes if contains comma.
                             return '"'.str_replace('"', '""', $val).'"';
                         },
                         $row
