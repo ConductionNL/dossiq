@@ -1,0 +1,94 @@
+{
+  "change": "case-management",
+  "project": "procest",
+  "repo": "ConductionNL/procest",
+  "created": "2026-04-20",
+  "tracking_issue": 180,
+  "tasks": [
+    {
+      "id": "TASK-CM-01",
+      "title": "Add filter controls to CaseList.vue (priority, handler, overdue)",
+      "priority": "MVP",
+      "status": "done",
+      "spec_ref": "openspec/changes/case-management/tasks.md#TASK-CM-01",
+      "files_affected": ["src/views/cases/CaseList.vue"],
+      "acceptance_criteria": [
+        "Filter dropdowns for priority (low, normal, high, urgent) and handler text input implemented",
+        "Overdue status indicator displayed via CSS styling based on caseValidation helper",
+        "Filters applied client-side via Vue reactive properties",
+        "Clear filters button available"
+      ]
+    },
+    {
+      "id": "TASK-CM-02",
+      "title": "Add search functionality to CaseList.vue",
+      "priority": "MVP",
+      "status": "done",
+      "spec_ref": "openspec/changes/case-management/tasks.md#TASK-CM-02",
+      "files_affected": ["src/views/cases/CaseList.vue"],
+      "acceptance_criteria": [
+        "Search input field integrated into case list controls",
+        "Search works across title, description, and identifier fields",
+        "Results update dynamically as user types"
+      ]
+    },
+    {
+      "id": "TASK-CM-03",
+      "title": "Create CustomPropertiesPanel.vue component",
+      "priority": "MVP",
+      "status": "done",
+      "spec_ref": "openspec/changes/case-management/tasks.md#TASK-CM-03",
+      "files_affected": ["src/views/cases/components/CustomPropertiesPanel.vue"],
+      "acceptance_criteria": [
+        "Component displays custom properties from property definitions by case type",
+        "Shows count of filled properties",
+        "Edit capability for properties",
+        "Loading state handled",
+        "Empty state message when no properties defined"
+      ]
+    },
+    {
+      "id": "TASK-CM-04",
+      "title": "Create DocumentChecklist.vue component",
+      "priority": "MVP",
+      "status": "done",
+      "spec_ref": "openspec/changes/case-management/tasks.md#TASK-CM-04",
+      "files_affected": ["src/views/cases/components/DocumentChecklist.vue"],
+      "acceptance_criteria": [
+        "Component displays required documents for case type",
+        "Shows present/total count",
+        "Visual indicators for completed vs missing documents",
+        "Upload capability for missing documents",
+        "Loading state and empty state handled"
+      ]
+    },
+    {
+      "id": "TASK-CM-05",
+      "title": "Integrate new panels into CaseDetail.vue",
+      "priority": "MVP",
+      "status": "done",
+      "spec_ref": "openspec/changes/case-management/tasks.md#TASK-CM-05",
+      "files_affected": ["src/views/cases/CaseDetail.vue"],
+      "acceptance_criteria": [
+        "CustomPropertiesPanel integrated as new detail card",
+        "DocumentChecklist integrated as new detail card",
+        "Both panels receive caseId and caseTypeId props",
+        "Proper import statements and component registration"
+      ]
+    },
+    {
+      "id": "TASK-CM-06",
+      "title": "Enhance caseValidation.js error messages",
+      "priority": "MVP",
+      "status": "done",
+      "spec_ref": "openspec/changes/case-management/tasks.md#TASK-CM-06",
+      "files_affected": ["src/utils/caseValidation.js"],
+      "acceptance_criteria": [
+        "getCaseTypeUnusableReason() enhanced with date-specific messages",
+        "Messages include days until/since validity window boundaries",
+        "Administrative guidance provided in error messages",
+        "Backward compatibility maintained"
+      ]
+    }
+  ]
+}
