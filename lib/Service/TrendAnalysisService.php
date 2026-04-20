@@ -65,7 +65,7 @@ class TrendAnalysisService
             .' from '.$startDate.' to '.$endDate
         );
 
-        // Placeholder: would aggregate historical case data
+        // Placeholder: would aggregate historical case data.
         $trendData = [];
 
         switch ($granularity) {
@@ -81,7 +81,7 @@ class TrendAnalysisService
                 break;
         }
 
-        // Calculate trend direction
+        // Calculate trend direction.
         $direction = $this->determineTrendDirection($trendData);
 
         return [
@@ -119,7 +119,7 @@ class TrendAnalysisService
             'Getting SLA trend for case type: '.$caseTypeId
         );
 
-        // Placeholder implementation
+        // Placeholder implementation.
         $trendData = [
             ['period' => '2024-01-01', 'slaAdherence' => 92.5, 'cases' => 20],
             ['period' => '2024-01-08', 'slaAdherence' => 91.2, 'cases' => 21],
@@ -163,7 +163,7 @@ class TrendAnalysisService
             'Getting comparison trend between '.$caseTypeId1.' and '.$caseTypeId2
         );
 
-        // Placeholder: would fetch individual trends and compare
+        // Placeholder: would fetch individual trends and compare.
         return [
             'caseType1'  => $caseTypeId1,
             'caseType2'  => $caseTypeId2,

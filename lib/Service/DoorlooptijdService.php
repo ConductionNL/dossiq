@@ -84,7 +84,7 @@ class DoorlooptijdService
             ];
         }
 
-        // Find all cases of this type created within the date range
+        // Find all cases of this type created within the date range.
         try {
             $cases = $objectService->findObjects(
                 $register,
@@ -102,7 +102,7 @@ class DoorlooptijdService
             ];
         }
 
-        // Calculate statistics from cases
+        // Calculate statistics from cases.
         $cases         = is_array($cases) ? $cases : [];
         $totalCases    = count($cases);
         $totalDuration = 0;
@@ -120,7 +120,7 @@ class DoorlooptijdService
 
         $averageDuration = $closedCases > 0 ? $totalDuration / $closedCases : 0;
 
-        // Get SLA configuration for this case type
+        // Get SLA configuration for this case type.
         $slaConfig    = $this->getSLAConfiguration($caseTypeId);
         $slaAdherence = $this->calculateSLAAdherence($cases, $slaConfig);
 
@@ -151,15 +151,15 @@ class DoorlooptijdService
      */
     public function getSLAConfiguration(string $caseTypeId): array
     {
-        // Placeholder implementation - would be expanded with full SLA service
+        // Placeholder implementation - would be expanded with full SLA service.
         $this->logger->debug('SLA configuration requested for case type: '.$caseTypeId);
 
         return [
             'caseTypeId'    => $caseTypeId,
             'streeftermijn' => 30,
-        // days
+            // Days.
             'fatalTermijn'  => 60,
-        // days
+            // Days.
             'description'   => 'Default SLA configuration',
         ];
     }//end getSLAConfiguration()
