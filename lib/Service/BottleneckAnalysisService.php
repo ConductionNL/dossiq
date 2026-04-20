@@ -65,7 +65,7 @@ class BottleneckAnalysisService
             .' from '.$startDate.' to '.$endDate
         );
 
-        // Placeholder implementation - would aggregate from workflow/case data
+        // Placeholder implementation - would aggregate from workflow/case data.
         $steps = [
             [
                 'id'                => 'step-1',
@@ -114,7 +114,7 @@ class BottleneckAnalysisService
             ],
         ];
 
-        // Sort by duration descending
+        // Sort by duration descending.
         usort(
                 $steps,
                 function ($a, $b) {
@@ -130,7 +130,7 @@ class BottleneckAnalysisService
             ],
             'steps'             => $steps,
             'criticalThreshold' => 20.0,
-            // Days - steps above this are critical
+            // Days - steps above this are critical.
             'criticalSteps'     => array_filter(
                 $steps,
                 fn($step) => $step['avgDuration'] > 20.0
@@ -161,7 +161,7 @@ class BottleneckAnalysisService
             .' in case type: '.$caseTypeId
         );
 
-        // Placeholder: would calculate weekly/monthly trends
+        // Placeholder: would calculate weekly/monthly trends.
         return [
             'caseTypeId'       => $caseTypeId,
             'stepId'           => $processStepId,
@@ -177,9 +177,9 @@ class BottleneckAnalysisService
                 ['week' => '2024-01-29', 'avgDuration' => 19.8, 'cases' => 6],
             ],
             'changePercentage' => 30.8,
-            // % change from start to end
+            // % change from start to end.
             'direction'        => 'increasing',
-            // increasing, stable, or decreasing
+            // Increasing, stable, or decreasing.
         ];
     }//end getStepTrend()
 
@@ -203,7 +203,7 @@ class BottleneckAnalysisService
             'Getting top bottlenecks from '.$startDate.' to '.$endDate
         );
 
-        // Placeholder: would aggregate across all case types
+        // Placeholder: would aggregate across all case types.
         return [
             'period'   => [
                 'start' => $startDate,

@@ -51,6 +51,7 @@ class OverdueCountWidget implements IWidget
      *
      * @inheritDoc
      * @return     string The widget identifier
+     * @spec       openspec/changes/doorlooptijd-dashboard/tasks.md#task-11
      */
     public function getId(): string
     {
@@ -63,6 +64,7 @@ class OverdueCountWidget implements IWidget
      *
      * @inheritDoc
      * @return     string The widget title
+     * @spec       openspec/changes/doorlooptijd-dashboard/tasks.md#task-11
      */
     public function getTitle(): string
     {
@@ -75,6 +77,7 @@ class OverdueCountWidget implements IWidget
      *
      * @inheritDoc
      * @return     int The widget order
+     * @spec       openspec/changes/doorlooptijd-dashboard/tasks.md#task-11
      */
     public function getOrder(): int
     {
@@ -87,6 +90,7 @@ class OverdueCountWidget implements IWidget
      *
      * @inheritDoc
      * @return     string The icon CSS class
+     * @spec       openspec/changes/doorlooptijd-dashboard/tasks.md#task-11
      */
     public function getIconClass(): string
     {
@@ -99,6 +103,7 @@ class OverdueCountWidget implements IWidget
      *
      * @inheritDoc
      * @return     string|null The widget URL or null
+     * @spec       openspec/changes/doorlooptijd-dashboard/tasks.md#task-11
      */
     public function getUrl(): ?string
     {
@@ -113,6 +118,7 @@ class OverdueCountWidget implements IWidget
      *
      * @inheritDoc
      * @return     void
+     * @spec       openspec/changes/doorlooptijd-dashboard/tasks.md#task-11
      *
      * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
      */

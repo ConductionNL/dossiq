@@ -57,14 +57,14 @@ class SlaConfigurationService
     {
         $this->logger->debug('Fetching SLA configuration for case type: '.$caseTypeId);
 
-        // Placeholder implementation
-        // In production, would fetch from OpenRegister SLA configuration schema
+        // Placeholder implementation.
+        // In production, would fetch from OpenRegister SLA configuration schema.
         return [
             'caseTypeId'    => $caseTypeId,
             'streeftermijn' => 30,
-        // Target time in days
+            // Target time in days.
             'fatalTermijn'  => 60,
-        // Deadline in days
+            // Deadline in days.
             'startDate'     => date('Y-m-d'),
             'endDate'       => date('Y-m-d', strtotime('+1 year')),
             'processSteps'  => [],
@@ -88,7 +88,7 @@ class SlaConfigurationService
             .' in case type: '.$caseTypeId
         );
 
-        // Placeholder implementation
+        // Placeholder implementation.
         return [
             'caseTypeId'    => $caseTypeId,
             'processStepId' => $processStepId,
@@ -109,7 +109,7 @@ class SlaConfigurationService
     {
         $this->logger->debug('Fetching all SLA configurations');
 
-        // Placeholder: would fetch from OpenRegister in production
+        // Placeholder: would fetch from OpenRegister in production.
         return [
             [
                 'caseTypeId'    => 'example-case-type-1',
@@ -144,7 +144,7 @@ class SlaConfigurationService
                 ['config' => $config]
             );
 
-            // In production, would save to OpenRegister
+            // In production, would save to OpenRegister.
             $savedConfig = array_merge(
                 [
                     'caseTypeId' => $caseTypeId,
