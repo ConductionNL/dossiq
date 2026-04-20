@@ -39,7 +39,6 @@ class CaseEmailService
      */
     private const CASE_NUMBER_PATTERN = '/\[ZAAK-(\d{4}-\d{4,})\]/';
 
-
     /**
      * Constructor.
      *
@@ -54,17 +53,16 @@ class CaseEmailService
         private readonly IConfig $config,
         private readonly LoggerInterface $logger,
     ) {
-    }
-
+    }//end __construct()
 
     /**
      * Send an email from case context.
      *
-     * @param string               $caseId     The case UUID
-     * @param string               $to         Recipient email address
-     * @param string               $subject    Email subject
-     * @param string               $body       Email body (HTML or plain text)
-     * @param array<string>        $attachments File paths to attach
+     * @param string        $caseId      The case UUID
+     * @param string        $to          Recipient email address
+     * @param string        $subject     Email subject
+     * @param string        $body        Email body (HTML or plain text)
+     * @param array<string> $attachments File paths to attach
      *
      * @return array<string, mixed> Send result with message ID
      *
@@ -75,14 +73,14 @@ class CaseEmailService
         string $to,
         string $subject,
         string $body,
-        array $attachments = [],
+        array $attachments=[],
     ): array {
         $fromAddress = $this->config->getAppValue(
             Application::APP_ID,
             'email_from_address',
             'noreply@example.nl',
         );
-        $fromName = $this->config->getAppValue(
+        $fromName    = $this->config->getAppValue(
             Application::APP_ID,
             'email_from_name',
             'Procest',
@@ -106,17 +104,17 @@ class CaseEmailService
             $this->mailer->send($message);
         } catch (\Exception $e) {
             $this->logger->error(
-                'Failed to send email for case ' . $caseId . ': ' . $e->getMessage(),
+                'Failed to send email for case '.$caseId.': '.$e->getMessage(),
                 ['app' => Application::APP_ID],
             );
-            throw new \RuntimeException('Email sending failed: ' . $e->getMessage());
+            throw new \RuntimeException('Email sending failed: '.$e->getMessage());
         }
 
         // Record the sent email as a case document.
-        $messageId = $this->recordSentEmail($caseId, $to, $subject, $body);
+        $messageId = $this->recordSentEmail(caseId: $caseId, to: $to, subject: $subject, body: $body);
 
         $this->logger->info(
-            'Email sent for case ' . $caseId . ' to ' . $to,
+            'Email sent for case '.$caseId.' to '.$to,
             ['app' => Application::APP_ID],
         );
 
@@ -126,8 +124,7 @@ class CaseEmailService
             'subject'   => $subject,
             'sentAt'    => date('Y-m-d\TH:i:s'),
         ];
-    }
-
+    }//end sendEmail()
 
     /**
      * Send an email using a template.
@@ -145,21 +142,20 @@ class CaseEmailService
         string $templateId,
         string $to,
     ): array {
-        $template = $this->loadTemplate($templateId);
+        $template = $this->loadTemplate(templateId: $templateId);
         if ($template === null) {
             throw new \RuntimeException('Email template not found');
         }
 
         // Load case data for variable resolution.
-        $caseData = $this->loadCaseData($caseId);
+        $caseData = $this->loadCaseData(caseId: $caseId);
 
         // Resolve template variables.
-        $subject = $this->resolveVariables($template['subjectPattern'] ?? '', $caseData);
-        $body    = $this->resolveVariables($template['body'] ?? '', $caseData);
+        $subject = $this->resolveVariables(template: $template['subjectPattern'] ?? '', data: $caseData);
+        $body    = $this->resolveVariables(template: $template['body'] ?? '', data: $caseData);
 
-        return $this->sendEmail($caseId, $to, $subject, $body);
-    }
-
+        return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body);
+    }//end sendFromTemplate()
 
     /**
      * Resolve template variables in a string.
@@ -180,12 +176,13 @@ class CaseEmailService
                 if (isset($data[$key]) === true && is_scalar($data[$key]) === true) {
                     return (string) $data[$key];
                 }
-                return $matches[0]; // Leave unresolved variables as-is.
+
+                return $matches[0];
+                // Leave unresolved variables as-is.
             },
             $template,
         ) ?? $template;
-    }
-
+    }//end resolveVariables()
 
     /**
      * Find unresolved variables in a template string.
@@ -207,8 +204,7 @@ class CaseEmailService
         }
 
         return array_unique($unresolved);
-    }
-
+    }//end findUnresolvedVariables()
 
     /**
      * Extract case number from email subject.
@@ -224,16 +220,15 @@ class CaseEmailService
         }
 
         return null;
-    }
-
+    }//end extractCaseNumber()
 
     /**
      * Process an inbound email and link it to a case.
      *
-     * @param string $from    Sender email address
-     * @param string $to      Recipient email address
-     * @param string $subject Email subject
-     * @param string $body    Email body
+     * @param string $from      Sender email address
+     * @param string $to        Recipient email address
+     * @param string $subject   Email subject
+     * @param string $body      Email body
      * @param string $inReplyTo In-Reply-To header (for threading)
      *
      * @return array<string, mixed> Processing result
@@ -243,24 +238,24 @@ class CaseEmailService
         string $to,
         string $subject,
         string $body,
-        string $inReplyTo = '',
+        string $inReplyTo='',
     ): array {
-        $caseNumber = $this->extractCaseNumber($subject);
+        $caseNumber = $this->extractCaseNumber(subject: $subject);
 
         if ($caseNumber !== null) {
             // Auto-link to case.
-            $caseId = $this->findCaseByIdentifier($caseNumber);
+            $caseId = $this->findCaseByIdentifier(identifier: $caseNumber);
             if ($caseId !== null) {
                 $messageId = $this->recordReceivedEmail(
-                    $caseId,
-                    $from,
-                    $subject,
-                    $body,
-                    $inReplyTo,
+                    caseId: $caseId,
+                    from: $from,
+                    subject: $subject,
+                    body: $body,
+                    inReplyTo: $inReplyTo,
                 );
 
                 $this->logger->info(
-                    'Inbound email auto-linked to case ' . $caseId,
+                    'Inbound email auto-linked to case '.$caseId,
                     ['app' => Application::APP_ID],
                 );
 
@@ -270,19 +265,18 @@ class CaseEmailService
                     'messageId' => $messageId,
                     'method'    => 'auto',
                 ];
-            }
-        }
+            }//end if
+        }//end if
 
         // Could not auto-link; add to unlinked queue.
         return [
-            'linked'       => false,
-            'caseNumber'   => $caseNumber,
-            'from'         => $from,
-            'subject'      => $subject,
-            'method'       => 'unlinked',
+            'linked'     => false,
+            'caseNumber' => $caseNumber,
+            'from'       => $from,
+            'subject'    => $subject,
+            'method'     => 'unlinked',
         ];
-    }
-
+    }//end processInbound()
 
     /**
      * Get email templates for a case type.
@@ -313,9 +307,12 @@ class CaseEmailService
             100,
         );
 
-        return is_array($results) ? $results : [];
-    }
+        if (is_array($results) === true) {
+            return $results;
+        }
 
+        return [];
+    }//end getTemplatesForCaseType()
 
     /**
      * Load an email template.
@@ -339,9 +336,12 @@ class CaseEmailService
         }
 
         $result = $objectService->getObject($register, $schema, $templateId);
-        return is_array($result) ? $result : null;
-    }
+        if (is_array($result) === true) {
+            return $result;
+        }
 
+        return null;
+    }//end loadTemplate()
 
     /**
      * Load case data for template variable resolution.
@@ -367,15 +367,14 @@ class CaseEmailService
 
         // Flatten for variable resolution.
         return [
-            'zaakNummer'   => $caseObj['identifier'] ?? '',
-            'titel'        => $caseObj['title'] ?? '',
-            'startdatum'   => $caseObj['startDate'] ?? '',
-            'deadline'     => $caseObj['deadline'] ?? '',
-            'status'       => $caseObj['status'] ?? '',
-            'behandelaar'  => $caseObj['assignee'] ?? '',
+            'zaakNummer'  => $caseObj['identifier'] ?? '',
+            'titel'       => $caseObj['title'] ?? '',
+            'startdatum'  => $caseObj['startDate'] ?? '',
+            'deadline'    => $caseObj['deadline'] ?? '',
+            'status'      => $caseObj['status'] ?? '',
+            'behandelaar' => $caseObj['assignee'] ?? '',
         ];
-    }
-
+    }//end loadCaseData()
 
     /**
      * Record a sent email as a case document.
@@ -394,7 +393,7 @@ class CaseEmailService
         string $body,
     ): string {
         // Store as activity on the case.
-        $messageId = 'msg-' . uniqid();
+        $messageId = 'msg-'.uniqid();
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
@@ -405,21 +404,24 @@ class CaseEmailService
         $schema   = $this->settingsService->getConfigValue('email_message_schema');
 
         if (empty($register) === false && empty($schema) === false) {
-            $objectService->saveObject($register, $schema, [
-                'case'      => $caseId,
-                'direction' => 'outbound',
-                'from'      => $this->config->getAppValue(Application::APP_ID, 'email_from_address', ''),
-                'to'        => $to,
-                'subject'   => $subject,
-                'body'      => $body,
-                'messageId' => $messageId,
-                'sentAt'    => date('Y-m-d\TH:i:s'),
-            ]);
+            $objectService->saveObject(
+                    $register,
+                    $schema,
+                    [
+                        'case'      => $caseId,
+                        'direction' => 'outbound',
+                        'from'      => $this->config->getAppValue(Application::APP_ID, 'email_from_address', ''),
+                        'to'        => $to,
+                        'subject'   => $subject,
+                        'body'      => $body,
+                        'messageId' => $messageId,
+                        'sentAt'    => date('Y-m-d\TH:i:s'),
+                    ]
+                    );
         }
 
         return $messageId;
-    }
-
+    }//end recordSentEmail()
 
     /**
      * Record a received email.
@@ -439,7 +441,7 @@ class CaseEmailService
         string $body,
         string $inReplyTo,
     ): string {
-        $messageId = 'msg-' . uniqid();
+        $messageId = 'msg-'.uniqid();
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
@@ -450,22 +452,25 @@ class CaseEmailService
         $schema   = $this->settingsService->getConfigValue('email_message_schema');
 
         if (empty($register) === false && empty($schema) === false) {
-            $objectService->saveObject($register, $schema, [
-                'case'       => $caseId,
-                'direction'  => 'inbound',
-                'from'       => $from,
-                'to'         => '',
-                'subject'    => $subject,
-                'body'       => $body,
-                'messageId'  => $messageId,
-                'inReplyTo'  => $inReplyTo,
-                'receivedAt' => date('Y-m-d\TH:i:s'),
-            ]);
+            $objectService->saveObject(
+                    $register,
+                    $schema,
+                    [
+                        'case'       => $caseId,
+                        'direction'  => 'inbound',
+                        'from'       => $from,
+                        'to'         => '',
+                        'subject'    => $subject,
+                        'body'       => $body,
+                        'messageId'  => $messageId,
+                        'inReplyTo'  => $inReplyTo,
+                        'receivedAt' => date('Y-m-d\TH:i:s'),
+                    ]
+                    );
         }
 
         return $messageId;
-    }
-
+    }//end recordReceivedEmail()
 
     /**
      * Find a case by its identifier.
@@ -497,5 +502,5 @@ class CaseEmailService
         }
 
         return null;
-    }
-}
+    }//end findCaseByIdentifier()
+}//end class
