@@ -60,14 +60,14 @@ class StufMessageBuilder
     public const NS_XSI = 'http://www.w3.org/2001/XMLSchema-instance';
 
     /**
-     * noValue attribute values.
+     * NoValue attribute values.
      *
      * @var array<string, string>
      */
     public const NO_VALUE_TYPES = [
-        'geenWaarde' => 'geenWaarde',
-        'waardeOnbekend' => 'waardeOnbekend',
-        'nietOndersteund' => 'nietOndersteund',
+        'geenWaarde'          => 'geenWaarde',
+        'waardeOnbekend'      => 'waardeOnbekend',
+        'nietOndersteund'     => 'nietOndersteund',
         'vastgesteldOnbekend' => 'vastgesteldOnbekend',
     ];
 
@@ -79,7 +79,7 @@ class StufMessageBuilder
     public function __construct(
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Build a complete SOAP envelope wrapping a StUF message body.
@@ -110,19 +110,24 @@ class StufMessageBuilder
 
         // Import the body XML.
         $bodyDoc = new \DOMDocument();
-        if ($bodyDoc->loadXML($bodyXml)) {
+        if ($bodyDoc->loadXML($bodyXml) === true) {
             $imported = $dom->importNode($bodyDoc->documentElement, true);
             $body->appendChild($imported);
         }
 
-        return $dom->saveXML() ?: '';
-    }
+        $saved = $dom->saveXML();
+        if ($saved === false) {
+            return '';
+        }
+
+        return $saved;
+    }//end buildSoapEnvelope()
 
     /**
      * Build stuurgegevens XML element.
      *
-     * @param array<string, string> $zender    Sender info (organisatie, applicatie).
-     * @param array<string, string> $ontvanger Receiver info (organisatie, applicatie).
+     * @param array<string, string> $zender           Sender info (organisatie, applicatie).
+     * @param array<string, string> $ontvanger        Receiver info (organisatie, applicatie).
      * @param string|null           $referentienummer Reference number (auto-generated if null).
      *
      * @return string The stuurgegevens XML fragment.
@@ -132,27 +137,27 @@ class StufMessageBuilder
     public function buildStuurgegevens(
         array $zender,
         array $ontvanger,
-        ?string $referentienummer = null,
+        ?string $referentienummer=null,
     ): string {
-        $refNr = $referentienummer ?? $this->generateUuid();
+        $refNr    = $referentienummer ?? $this->generateUuid();
         $tijdstip = (new \DateTimeImmutable())->format('YmdHis');
 
-        $xml = '<stuf:stuurgegevens>';
+        $xml  = '<stuf:stuurgegevens>';
         $xml .= '<stuf:berichtcode>Lk01</stuf:berichtcode>';
         $xml .= '<stuf:zender>';
-        $xml .= '<stuf:organisatie>' . htmlspecialchars($zender['organisatie'] ?? '') . '</stuf:organisatie>';
-        $xml .= '<stuf:applicatie>' . htmlspecialchars($zender['applicatie'] ?? '') . '</stuf:applicatie>';
+        $xml .= '<stuf:organisatie>'.htmlspecialchars($zender['organisatie'] ?? '').'</stuf:organisatie>';
+        $xml .= '<stuf:applicatie>'.htmlspecialchars($zender['applicatie'] ?? '').'</stuf:applicatie>';
         $xml .= '</stuf:zender>';
         $xml .= '<stuf:ontvanger>';
-        $xml .= '<stuf:organisatie>' . htmlspecialchars($ontvanger['organisatie'] ?? '') . '</stuf:organisatie>';
-        $xml .= '<stuf:applicatie>' . htmlspecialchars($ontvanger['applicatie'] ?? '') . '</stuf:applicatie>';
+        $xml .= '<stuf:organisatie>'.htmlspecialchars($ontvanger['organisatie'] ?? '').'</stuf:organisatie>';
+        $xml .= '<stuf:applicatie>'.htmlspecialchars($ontvanger['applicatie'] ?? '').'</stuf:applicatie>';
         $xml .= '</stuf:ontvanger>';
-        $xml .= '<stuf:referentienummer>' . htmlspecialchars($refNr) . '</stuf:referentienummer>';
-        $xml .= '<stuf:tijdstipBericht>' . $tijdstip . '</stuf:tijdstipBericht>';
+        $xml .= '<stuf:referentienummer>'.htmlspecialchars($refNr).'</stuf:referentienummer>';
+        $xml .= '<stuf:tijdstipBericht>'.$tijdstip.'</stuf:tijdstipBericht>';
         $xml .= '</stuf:stuurgegevens>';
 
         return $xml;
-    }
+    }//end buildStuurgegevens()
 
     /**
      * Build a StUF Bv01 (bevestigingsbericht) response.
@@ -172,25 +177,25 @@ class StufMessageBuilder
     ): string {
         $tijdstip = (new \DateTimeImmutable())->format('YmdHis');
 
-        $body = '<stuf:Bv01Bericht xmlns:stuf="' . self::NS_STUF . '">';
+        $body  = '<stuf:Bv01Bericht xmlns:stuf="'.self::NS_STUF.'">';
         $body .= '<stuf:stuurgegevens>';
         $body .= '<stuf:berichtcode>Bv01</stuf:berichtcode>';
         $body .= '<stuf:zender>';
-        $body .= '<stuf:organisatie>' . htmlspecialchars($zender['organisatie'] ?? '') . '</stuf:organisatie>';
-        $body .= '<stuf:applicatie>' . htmlspecialchars($zender['applicatie'] ?? '') . '</stuf:applicatie>';
+        $body .= '<stuf:organisatie>'.htmlspecialchars($zender['organisatie'] ?? '').'</stuf:organisatie>';
+        $body .= '<stuf:applicatie>'.htmlspecialchars($zender['applicatie'] ?? '').'</stuf:applicatie>';
         $body .= '</stuf:zender>';
         $body .= '<stuf:ontvanger>';
-        $body .= '<stuf:organisatie>' . htmlspecialchars($ontvanger['organisatie'] ?? '') . '</stuf:organisatie>';
-        $body .= '<stuf:applicatie>' . htmlspecialchars($ontvanger['applicatie'] ?? '') . '</stuf:applicatie>';
+        $body .= '<stuf:organisatie>'.htmlspecialchars($ontvanger['organisatie'] ?? '').'</stuf:organisatie>';
+        $body .= '<stuf:applicatie>'.htmlspecialchars($ontvanger['applicatie'] ?? '').'</stuf:applicatie>';
         $body .= '</stuf:ontvanger>';
-        $body .= '<stuf:referentienummer>' . htmlspecialchars($this->generateUuid()) . '</stuf:referentienummer>';
-        $body .= '<stuf:tijdstipBericht>' . $tijdstip . '</stuf:tijdstipBericht>';
-        $body .= '<stuf:crossRefnummer>' . htmlspecialchars($crossRef) . '</stuf:crossRefnummer>';
+        $body .= '<stuf:referentienummer>'.htmlspecialchars($this->generateUuid()).'</stuf:referentienummer>';
+        $body .= '<stuf:tijdstipBericht>'.$tijdstip.'</stuf:tijdstipBericht>';
+        $body .= '<stuf:crossRefnummer>'.htmlspecialchars($crossRef).'</stuf:crossRefnummer>';
         $body .= '</stuf:stuurgegevens>';
         $body .= '</stuf:Bv01Bericht>';
 
-        return $this->buildSoapEnvelope($body);
-    }
+        return $this->buildSoapEnvelope(bodyXml: $body);
+    }//end buildBv01()
 
     /**
      * Build a StUF Fo01 (foutbericht) fault response.
@@ -214,29 +219,29 @@ class StufMessageBuilder
     ): string {
         $tijdstip = (new \DateTimeImmutable())->format('YmdHis');
 
-        $body = '<stuf:Fo01Bericht xmlns:stuf="' . self::NS_STUF . '">';
+        $body  = '<stuf:Fo01Bericht xmlns:stuf="'.self::NS_STUF.'">';
         $body .= '<stuf:stuurgegevens>';
         $body .= '<stuf:berichtcode>Fo01</stuf:berichtcode>';
         $body .= '<stuf:zender>';
-        $body .= '<stuf:organisatie>' . htmlspecialchars($zender['organisatie'] ?? '') . '</stuf:organisatie>';
-        $body .= '<stuf:applicatie>' . htmlspecialchars($zender['applicatie'] ?? '') . '</stuf:applicatie>';
+        $body .= '<stuf:organisatie>'.htmlspecialchars($zender['organisatie'] ?? '').'</stuf:organisatie>';
+        $body .= '<stuf:applicatie>'.htmlspecialchars($zender['applicatie'] ?? '').'</stuf:applicatie>';
         $body .= '</stuf:zender>';
         $body .= '<stuf:ontvanger>';
-        $body .= '<stuf:organisatie>' . htmlspecialchars($ontvanger['organisatie'] ?? '') . '</stuf:organisatie>';
-        $body .= '<stuf:applicatie>' . htmlspecialchars($ontvanger['applicatie'] ?? '') . '</stuf:applicatie>';
+        $body .= '<stuf:organisatie>'.htmlspecialchars($ontvanger['organisatie'] ?? '').'</stuf:organisatie>';
+        $body .= '<stuf:applicatie>'.htmlspecialchars($ontvanger['applicatie'] ?? '').'</stuf:applicatie>';
         $body .= '</stuf:ontvanger>';
-        $body .= '<stuf:referentienummer>' . htmlspecialchars($this->generateUuid()) . '</stuf:referentienummer>';
-        $body .= '<stuf:tijdstipBericht>' . $tijdstip . '</stuf:tijdstipBericht>';
+        $body .= '<stuf:referentienummer>'.htmlspecialchars($this->generateUuid()).'</stuf:referentienummer>';
+        $body .= '<stuf:tijdstipBericht>'.$tijdstip.'</stuf:tijdstipBericht>';
         $body .= '</stuf:stuurgegevens>';
         $body .= '<stuf:body>';
-        $body .= '<stuf:code>' . htmlspecialchars($foutcode) . '</stuf:code>';
-        $body .= '<stuf:plek>' . htmlspecialchars($plek) . '</stuf:plek>';
-        $body .= '<stuf:omschrijving>' . htmlspecialchars($foutbeschrijving) . '</stuf:omschrijving>';
+        $body .= '<stuf:code>'.htmlspecialchars($foutcode).'</stuf:code>';
+        $body .= '<stuf:plek>'.htmlspecialchars($plek).'</stuf:plek>';
+        $body .= '<stuf:omschrijving>'.htmlspecialchars($foutbeschrijving).'</stuf:omschrijving>';
         $body .= '</stuf:body>';
         $body .= '</stuf:Fo01Bericht>';
 
-        return $this->buildSoapEnvelope($body);
-    }
+        return $this->buildSoapEnvelope(bodyXml: $body);
+    }//end buildFo01()
 
     /**
      * Build a SOAP Fault response for invalid XML.
@@ -268,8 +273,13 @@ class StufMessageBuilder
         $faultstringEl->appendChild($dom->createTextNode($faultString));
         $fault->appendChild($faultstringEl);
 
-        return $dom->saveXML() ?: '';
-    }
+        $saved = $dom->saveXML();
+        if ($saved === false) {
+            return '';
+        }
+
+        return $saved;
+    }//end buildSoapFault()
 
     /**
      * Generate a UUID.
@@ -289,5 +299,5 @@ class StufMessageBuilder
             mt_rand(0, 0xffff),
             mt_rand(0, 0xffff)
         );
-    }
-}
+    }//end generateUuid()
+}//end class

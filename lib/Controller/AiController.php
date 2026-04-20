@@ -10,7 +10,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -47,12 +47,12 @@ class AiController extends Controller
     /**
      * Constructor for AiController.
      *
-     * @param string           $appName         The application name
-     * @param IRequest         $request         The request object
-     * @param AiService        $aiService       The AI service
-     * @param SettingsService  $settingsService The settings service
-     * @param IUserSession     $userSession     The user session
-     * @param LoggerInterface  $logger          The logger interface
+     * @param string          $appName         The application name
+     * @param IRequest        $request         The request object
+     * @param AiService       $aiService       The AI service
+     * @param SettingsService $settingsService The settings service
+     * @param IUserSession    $userSession     The user session
+     * @param LoggerInterface $logger          The logger interface
      *
      * @return void
      */
@@ -64,7 +64,7 @@ class AiController extends Controller
         private IUserSession $userSession,
         private LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -277,11 +277,13 @@ class AiController extends Controller
             'offset' => (int) $this->request->getParam('offset', '0'),
         ];
 
-        return new JSONResponse([
-            'success' => true,
-            'filters' => array_filter($filters),
-            'message' => 'Audit trail query — implement with OpenRegister object listing',
-        ]);
+        return new JSONResponse(
+                [
+                    'success' => true,
+                    'filters' => array_filter($filters),
+                    'message' => 'Audit trail query — implement with OpenRegister object listing',
+                ]
+                );
     }//end auditIndex()
 
     /**
@@ -330,6 +332,10 @@ class AiController extends Controller
     {
         $user = $this->userSession->getUser();
 
-        return ($user !== null) ? $user->getUID() : 'anonymous';
+        if ($user !== null) {
+            return $user->getUID();
+        }
+
+        return 'anonymous';
     }//end getCurrentUserId()
 }//end class
