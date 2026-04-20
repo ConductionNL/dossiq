@@ -100,7 +100,12 @@ class MetricsController extends Controller
         $lines[] = '';
 
         // App up gauge.
-        $isUp    = $this->checkDatabaseHealth() ? 1 : 0;
+        if ($this->checkDatabaseHealth() === true) {
+            $isUp = 1;
+        } else {
+            $isUp = 0;
+        }
+
         $lines[] = '# HELP procest_up Whether the application is healthy';
         $lines[] = '# TYPE procest_up gauge';
         $lines[] = 'procest_up '.$isUp;
@@ -110,9 +115,9 @@ class MetricsController extends Controller
         $lines[]    = '# HELP procest_cases_total Total cases by status and case_type';
         $lines[]    = '# TYPE procest_cases_total gauge';
         $caseCounts = $this->getCached(
-                'procest_metrics_case_counts',
-                self::CACHE_TTL_DEFAULT,
-                function () {
+                key: 'procest_metrics_case_counts',
+                ttl: self::CACHE_TTL_DEFAULT,
+                compute: function () {
                     return $this->getCaseCounts();
                 }
                 );
@@ -127,9 +132,9 @@ class MetricsController extends Controller
 
         // Cases overdue total.
         $overdueCount = $this->getCached(
-                'procest_metrics_overdue_cases',
-                self::CACHE_TTL_OVERDUE,
-                function () {
+                key: 'procest_metrics_overdue_cases',
+                ttl: self::CACHE_TTL_OVERDUE,
+                compute: function () {
                     return $this->getOverdueCasesCount();
                 }
                 );
@@ -140,9 +145,9 @@ class MetricsController extends Controller
 
         // Cases created today.
         $createdToday = $this->getCached(
-                'procest_metrics_created_today',
-                self::CACHE_TTL_DEFAULT,
-                function () {
+                key: 'procest_metrics_created_today',
+                ttl: self::CACHE_TTL_DEFAULT,
+                compute: function () {
                     return $this->getCasesCreatedTodayCount();
                 }
                 );
@@ -155,9 +160,9 @@ class MetricsController extends Controller
         $lines[]    = '# HELP procest_tasks_total Total tasks by status';
         $lines[]    = '# TYPE procest_tasks_total gauge';
         $taskCounts = $this->getCached(
-                'procest_metrics_task_counts',
-                self::CACHE_TTL_DEFAULT,
-                function () {
+                key: 'procest_metrics_task_counts',
+                ttl: self::CACHE_TTL_DEFAULT,
+                compute: function () {
                     return $this->getTaskCounts();
                 }
                 );
@@ -171,9 +176,9 @@ class MetricsController extends Controller
 
         // Tasks overdue total.
         $overdueTasksCount = $this->getCached(
-                'procest_metrics_overdue_tasks',
-                self::CACHE_TTL_OVERDUE,
-                function () {
+                key: 'procest_metrics_overdue_tasks',
+                ttl: self::CACHE_TTL_OVERDUE,
+                compute: function () {
                     return $this->getOverdueTasksCount();
                 }
                 );

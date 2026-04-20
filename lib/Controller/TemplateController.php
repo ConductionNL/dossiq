@@ -46,7 +46,7 @@ class TemplateController extends Controller
         private readonly TemplateLibraryService $templateService,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**

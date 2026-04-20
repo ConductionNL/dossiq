@@ -145,7 +145,11 @@ class ZgwZrcRulesService extends ZgwRulesBase
                             register: $register,
                             schema: $schema
                         );
-                        $ztData   = is_array($zaaktype) === true ? $zaaktype : $zaaktype->jsonSerialize();
+                        if (is_array($zaaktype) === true) {
+                            $ztData = $zaaktype;
+                        } else {
+                            $ztData = $zaaktype->jsonSerialize();
+                        }
                         if (empty($ztData['defaultAssignee']) === false) {
                             $body['assignee'] = $ztData['defaultAssignee'];
                         }

@@ -67,11 +67,11 @@ class CaseSharingController extends Controller
     /**
      * List all active shares for a case.
      *
-     * @NoAdminRequired
-     *
      * @param string $caseId The UUID of the case
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      */
     public function listShares(string $caseId): JSONResponse
     {
@@ -142,11 +142,11 @@ class CaseSharingController extends Controller
     /**
      * Revoke a case share.
      *
-     * @NoAdminRequired
-     *
      * @param string $shareId The UUID of the share to revoke
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      */
     public function revokeShare(string $shareId): JSONResponse
     {
@@ -195,11 +195,11 @@ class CaseSharingController extends Controller
     /**
      * Handle a transfer request (accept or reject).
      *
-     * @NoAdminRequired
-     *
      * @param string $transferId The UUID of the transfer request
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      */
     public function handleTransfer(string $transferId): JSONResponse
     {
