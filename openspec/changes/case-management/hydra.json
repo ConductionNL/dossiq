@@ -122,9 +122,9 @@
       "cycle": 2,
       "trigger": "build:queued",
       "started_at": "2026-04-20T21:49:10Z",
-      "ended_at": null,
-      "outcome": "in-flight",
-      "outcome_reason": null,
+      "ended_at": "2026-04-21T07:53:31Z",
+      "outcome": "needs-input",
+      "outcome_reason": "deterministic checks still failing \u2014 reviewers ran but applied no fixes, builder output remains broken",
       "pattern_tags": [
         "browser-test-nc-setup-failed",
         "reviewer-ran-applied-no-fixes"
