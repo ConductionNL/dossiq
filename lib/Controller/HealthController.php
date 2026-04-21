@@ -33,6 +33,8 @@ use Psr\Log\LoggerInterface;
 /**
  * Controller for health check endpoints.
  *
+ * @spec openspec/changes/prometheus-metrics/tasks.md#task-4
+ *
  * @psalm-suppress UnusedClass
  */
 class HealthController extends Controller

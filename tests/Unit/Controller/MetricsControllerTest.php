@@ -73,7 +73,6 @@ class MetricsControllerTest extends TestCase
      */
     private MetricsController $controller;
 
-
     /**
      * Set up test fixtures.
      *
@@ -81,20 +80,19 @@ class MetricsControllerTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->request    = $this->createMock(IRequest::class);
-        $this->db         = $this->createMock(IDBConnection::class);
-        $this->appManager = $this->createMock(IAppManager::class);
-        $this->logger     = $this->createMock(LoggerInterface::class);
+        $this->request    = $this->createMock(originalClassName: IRequest::class);
+        $this->db         = $this->createMock(originalClassName: IDBConnection::class);
+        $this->appManager = $this->createMock(originalClassName: IAppManager::class);
+        $this->logger     = $this->createMock(originalClassName: LoggerInterface::class);
 
         $this->controller = new MetricsController(
-            $this->request,
-            $this->db,
-            $this->appManager,
-            $this->logger,
+            request: $this->request,
+            db: $this->db,
+            appManager: $this->appManager,
+            logger: $this->logger,
         );
 
     }//end setUp()
-
 
     /**
      * Test that the index method returns a TextPlainResponse.
@@ -112,14 +110,13 @@ class MetricsControllerTest extends TestCase
 
         $response = $this->controller->index();
 
-        $this->assertSame(200, $response->getStatus());
+        $this->assertSame(expected: 200, actual: $response->getStatus());
 
         $headers = $response->getHeaders();
-        $this->assertArrayHasKey('Content-Type', $headers);
-        $this->assertSame('text/plain; version=0.0.4; charset=utf-8', $headers['Content-Type']);
+        $this->assertArrayHasKey(key: 'Content-Type', array: $headers);
+        $this->assertSame(expected: 'text/plain; version=0.0.4; charset=utf-8', actual: $headers['Content-Type']);
 
     }//end testIndexReturnsTextPlainResponse()
-
 
     /**
      * Test that the metrics output contains the expected metric families.
@@ -138,20 +135,19 @@ class MetricsControllerTest extends TestCase
         $content  = $response->render();
 
         // Verify required metric families are present.
-        $this->assertStringContainsString('# HELP procest_info Application information', $content);
-        $this->assertStringContainsString('# TYPE procest_info gauge', $content);
-        $this->assertStringContainsString('# HELP procest_up Whether the application is healthy', $content);
-        $this->assertStringContainsString('# TYPE procest_up gauge', $content);
-        $this->assertStringContainsString('# HELP procest_cases_total', $content);
-        $this->assertStringContainsString('# TYPE procest_cases_total gauge', $content);
-        $this->assertStringContainsString('# HELP procest_cases_overdue_total', $content);
-        $this->assertStringContainsString('# HELP procest_cases_created_today', $content);
-        $this->assertStringContainsString('# TYPE procest_cases_created_today gauge', $content);
-        $this->assertStringContainsString('# HELP procest_tasks_total', $content);
-        $this->assertStringContainsString('# HELP procest_tasks_overdue_total', $content);
+        $this->assertStringContainsString(needle: '# HELP procest_info Application information', haystack: $content);
+        $this->assertStringContainsString(needle: '# TYPE procest_info gauge', haystack: $content);
+        $this->assertStringContainsString(needle: '# HELP procest_up Whether the application is healthy', haystack: $content);
+        $this->assertStringContainsString(needle: '# TYPE procest_up gauge', haystack: $content);
+        $this->assertStringContainsString(needle: '# HELP procest_cases_total', haystack: $content);
+        $this->assertStringContainsString(needle: '# TYPE procest_cases_total gauge', haystack: $content);
+        $this->assertStringContainsString(needle: '# HELP procest_cases_overdue_total', haystack: $content);
+        $this->assertStringContainsString(needle: '# HELP procest_cases_created_today', haystack: $content);
+        $this->assertStringContainsString(needle: '# TYPE procest_cases_created_today gauge', haystack: $content);
+        $this->assertStringContainsString(needle: '# HELP procest_tasks_total', haystack: $content);
+        $this->assertStringContainsString(needle: '# HELP procest_tasks_overdue_total', haystack: $content);
 
     }//end testMetricsContainsExpectedFamilies()
-
 
     /**
      * Test that the info gauge includes the nextcloud_version label.
@@ -171,12 +167,11 @@ class MetricsControllerTest extends TestCase
 
         // The info line should contain nextcloud_version label.
         $this->assertMatchesRegularExpression(
-            '/procest_info\{.*nextcloud_version="[^"]*".*\} 1/',
-            $content
+            pattern: '/procest_info\{.*nextcloud_version="[^"]*".*\} 1/',
+            string: $content
         );
 
     }//end testInfoGaugeIncludesNextcloudVersion()
-
 
     /**
      * Test that procest_up is 0 when database is unreachable.
@@ -194,10 +189,9 @@ class MetricsControllerTest extends TestCase
         $response = $this->controller->index();
         $content  = $response->render();
 
-        $this->assertStringContainsString('procest_up 0', $content);
+        $this->assertStringContainsString(needle: 'procest_up 0', haystack: $content);
 
     }//end testUpGaugeReflectsDatabaseHealth()
-
 
     /**
      * Test that the cases_created_today metric has a valid format.
@@ -216,9 +210,7 @@ class MetricsControllerTest extends TestCase
         $content  = $response->render();
 
         // Should have a valid integer value (0 since DB is mocked to fail).
-        $this->assertStringContainsString('procest_cases_created_today 0', $content);
+        $this->assertStringContainsString(needle: 'procest_cases_created_today 0', haystack: $content);
 
     }//end testCasesCreatedTodayMetricFormat()
-
-
 }//end class

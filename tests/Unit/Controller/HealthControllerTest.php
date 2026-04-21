@@ -74,7 +74,6 @@ class HealthControllerTest extends TestCase
      */
     private HealthController $controller;
 
-
     /**
      * Set up test fixtures.
      *
@@ -82,20 +81,19 @@ class HealthControllerTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->request    = $this->createMock(IRequest::class);
-        $this->db         = $this->createMock(IDBConnection::class);
-        $this->appManager = $this->createMock(IAppManager::class);
-        $this->logger     = $this->createMock(LoggerInterface::class);
+        $this->request    = $this->createMock(originalClassName: IRequest::class);
+        $this->db         = $this->createMock(originalClassName: IDBConnection::class);
+        $this->appManager = $this->createMock(originalClassName: IAppManager::class);
+        $this->logger     = $this->createMock(originalClassName: LoggerInterface::class);
 
         $this->controller = new HealthController(
-            $this->request,
-            $this->db,
-            $this->appManager,
-            $this->logger,
+            request: $this->request,
+            db: $this->db,
+            appManager: $this->appManager,
+            logger: $this->logger,
         );
 
     }//end setUp()
-
 
     /**
      * Test healthy system returns 200 with ok status.
@@ -104,8 +102,8 @@ class HealthControllerTest extends TestCase
      */
     public function testHealthySystemReturnsOk(): void
     {
-        $qbMock     = $this->createMock(\OCP\DB\QueryBuilder\IQueryBuilder::class);
-        $resultMock = $this->createMock(\OCP\DB\IResult::class);
+        $qbMock     = $this->createMock(originalClassName: \OCP\DB\QueryBuilder\IQueryBuilder::class);
+        $resultMock = $this->createMock(originalClassName: \OCP\DB\IResult::class);
 
         $qbMock->method('select')->willReturnSelf();
         $qbMock->method('createFunction')->willReturn('1');
@@ -124,14 +122,13 @@ class HealthControllerTest extends TestCase
         $response = $this->controller->index();
         $data     = $response->getData();
 
-        $this->assertSame(Http::STATUS_OK, $response->getStatus());
-        $this->assertSame('ok', $data['status']);
-        $this->assertSame('ok', $data['checks']['database']);
-        $this->assertSame('ok', $data['checks']['openregister']);
-        $this->assertSame('ok', $data['checks']['filesystem']);
+        $this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+        $this->assertSame(expected: 'ok', actual: $data['status']);
+        $this->assertSame(expected: 'ok', actual: $data['checks']['database']);
+        $this->assertSame(expected: 'ok', actual: $data['checks']['openregister']);
+        $this->assertSame(expected: 'ok', actual: $data['checks']['filesystem']);
 
     }//end testHealthySystemReturnsOk()
-
 
     /**
      * Test that OpenRegister unavailable results in error status.
@@ -140,8 +137,8 @@ class HealthControllerTest extends TestCase
      */
     public function testOpenRegisterUnavailableReturnsError(): void
     {
-        $qbMock     = $this->createMock(\OCP\DB\QueryBuilder\IQueryBuilder::class);
-        $resultMock = $this->createMock(\OCP\DB\IResult::class);
+        $qbMock     = $this->createMock(originalClassName: \OCP\DB\QueryBuilder\IQueryBuilder::class);
+        $resultMock = $this->createMock(originalClassName: \OCP\DB\IResult::class);
 
         $qbMock->method('select')->willReturnSelf();
         $qbMock->method('createFunction')->willReturn('1');
@@ -160,13 +157,12 @@ class HealthControllerTest extends TestCase
         $response = $this->controller->index();
         $data     = $response->getData();
 
-        $this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
-        $this->assertSame('error', $data['status']);
-        $this->assertSame('ok', $data['checks']['database']);
-        $this->assertSame('failed: app not enabled', $data['checks']['openregister']);
+        $this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $response->getStatus());
+        $this->assertSame(expected: 'error', actual: $data['status']);
+        $this->assertSame(expected: 'ok', actual: $data['checks']['database']);
+        $this->assertSame(expected: 'failed: app not enabled', actual: $data['checks']['openregister']);
 
     }//end testOpenRegisterUnavailableReturnsError()
-
 
     /**
      * Test that database unreachable results in error status.
@@ -188,12 +184,11 @@ class HealthControllerTest extends TestCase
         $response = $this->controller->index();
         $data     = $response->getData();
 
-        $this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
-        $this->assertSame('error', $data['status']);
-        $this->assertStringContainsString('failed:', $data['checks']['database']);
+        $this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $response->getStatus());
+        $this->assertSame(expected: 'error', actual: $data['status']);
+        $this->assertStringContainsString(needle: 'failed:', haystack: $data['checks']['database']);
 
     }//end testDatabaseUnreachableReturnsError()
-
 
     /**
      * Test that the response includes version information.
@@ -214,9 +209,7 @@ class HealthControllerTest extends TestCase
         $response = $this->controller->index();
         $data     = $response->getData();
 
-        $this->assertSame('1.2.3', $data['version']);
+        $this->assertSame(expected: '1.2.3', actual: $data['version']);
 
     }//end testResponseIncludesVersion()
-
-
 }//end class

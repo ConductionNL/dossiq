@@ -33,6 +33,10 @@ use Psr\Log\LoggerInterface;
 /**
  * Controller for exposing Prometheus metrics.
  *
+ * @spec openspec/changes/prometheus-metrics/tasks.md#task-1
+ * @spec openspec/changes/prometheus-metrics/tasks.md#task-2
+ * @spec openspec/changes/prometheus-metrics/tasks.md#task-3
+ *
  * @psalm-suppress UnusedClass
  */
 class MetricsController extends Controller
@@ -66,6 +70,10 @@ class MetricsController extends Controller
 
     /**
      * Return Prometheus metrics in text exposition format.
+     *
+     * @spec openspec/changes/prometheus-metrics/tasks.md#task-1
+     * @spec openspec/changes/prometheus-metrics/tasks.md#task-2
+     * @spec openspec/changes/prometheus-metrics/tasks.md#task-3
      *
      * @NoCSRFRequired
      *
@@ -199,13 +207,13 @@ class MetricsController extends Controller
      *
      * Falls back to direct computation if APCu is unavailable.
      *
-     * @spec openspec/changes/prometheus-metrics/tasks.md#task-3
-     *
      * @param string   $key     The cache key
      * @param int      $ttl     Cache TTL in seconds
      * @param callable $compute Callable that computes the value on cache miss
      *
      * @return mixed The cached or freshly computed value
+     *
+     * @spec openspec/changes/prometheus-metrics/tasks.md#task-3
      */
     private function getCached(string $key, int $ttl, callable $compute): mixed
     {
