@@ -116,6 +116,15 @@ return [
         // Health check endpoint.
         ['name' => 'health#index', 'url' => '/api/health', 'verb' => 'GET'],
 
+        // Signalering (deadline alerting) endpoints.
+        ['name' => 'signalering_config#index', 'url' => '/api/signalering/config', 'verb' => 'GET'],
+        ['name' => 'signalering_config#create', 'url' => '/api/signalering/config', 'verb' => 'POST'],
+        ['name' => 'signalering_config#delete', 'url' => '/api/signalering/config/{zaaktypeId}', 'verb' => 'DELETE'],
+
+        // Deadline notification endpoints.
+        ['name' => 'deadline_notification#getDeadlines', 'url' => '/api/cases/{caseId}/deadlines', 'verb' => 'GET'],
+        ['name' => 'deadline_notification#notifyWebhook', 'url' => '/api/deadlines/notify', 'verb' => 'POST'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode)
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],

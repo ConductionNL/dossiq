@@ -1,73 +1,192 @@
-# Signalering Widgets — Design & Implementation
+# Design: signalering-widgets
 
-**Status**: In Development
-**Issue**: #213
-**Change**: signalering-widgets
-**Spec**: openspec/specs/signalering-widgets/spec.md
+## Overview
 
-## What Must Be Built
+Signalering (alerting/reminders) provides case handlers with visual indicators and notifications when cases approach or pass their deadlines. This includes:
+- Dashboard widgets showing upcoming deadlines
+- In-app notifications via Nextcloud notification system
+- Email notifications via n8n integration
+- Werkvoorraad (work queue) deadline indicators with color coding (green/orange/red)
+- Case detail timeline showing deadline events
 
-V1 implementation of the Signalering Widgets feature — dashboard widgets for case deadline alerts, task due reminders, and stalled case detection.
+## Architecture
 
-The feature provides three Nextcloud-native dashboard widgets that surface time-sensitive alerts:
-1. **Deadline Alerts Widget** — Shows cases approaching or past processing deadlines, sorted by urgency with color-coded severity (red/overdue, orange/at-risk)
-2. **Task Due Reminders Widget** — Shows the current user's tasks approaching or past due dates
-3. **Stalled Cases Widget** — Identifies cases with no activity for a configurable period (default: 7 days)
+### Data Layer (READ from workflow engine)
+- Read `streeftermijn` (target deadline) and `fatale termijn` (hard deadline) from case type definition
+- Respect `opschorting` (suspension) records that pause deadline calculations
+- Track deadline status: on-track (green), warning (orange ≥7 days before), overdue (red)
 
-All computation is client-side from already-loaded case/task data; no new API calls are required.
+### Notification Engine
+- Nextcloud INotificationManager for in-app alerts
+- n8n integration for email notifications (triggered via webhook)
+- Configurable thresholds per zaaktype
 
-## Why
+### UI Layer
+- UpcomingDeadlinesWidget.vue — Dashboard widget showing user's upcoming deadlines
+- DeadlineIndicator.vue — Reusable component for case list and detail view
+- SignaleringSettingsPage.vue — Admin settings for alert configuration per zaaktype
+- DeadlinesOverviewPage.vue — Bulk management view across all zaaktypen
 
-480+ tender requirements across Signalering (280) and Termijnbewaking (151) demand proactive deadline awareness. Dashboard widgets deliver the most-requested feature (requirement #4: "users view upcoming deadlines on dashboard") without new data infrastructure — the workflow engine provides deadline data, this layer surfaces it.
+### Services
+- SignaleringService — Deadline calculation, threshold checking, event triggering
+- NotificationService — Nextcloud and email notification dispatch
 
-## Implementation Scope
+## Changes
 
-### Included in V1
+### New Controllers
+**SignaleringConfigController.php**
+- GET /api/signalering/config — List alert configurations per zaaktype
+- POST /api/signalering/config — Create/update configuration
+- DELETE /api/signalering/config/:zaaktypeId — Remove configuration
 
-- **Helper functions** (`src/utils/dashboardHelpers.js`):
-  - `getDeadlineAlerts(cases, caseTypes, warningThreshold)` — returns `{overdue, atRisk}` grouped arrays
-  - `getTaskDueReminders(tasks, warningThreshold)` — returns `{overdue, dueSoon}` grouped arrays
-  - `getStalledCases(cases, caseTypes, stalledThreshold)` — returns array of inactive cases
-  
-- **Dashboard integration** (`src/views/dashboard/`):
-  - `DeadlineAlerts.vue` — Dashboard widget component
-  - `TaskDueReminders.vue` — Dashboard widget component
-  - `StalledCases.vue` — Dashboard widget component
-  - Widget registration in dashboard layout (DEFAULT_LAYOUT row 3)
-  
-- **Nextcloud Dashboard IWidget registration** (`lib/Dashboard/`):
-  - `DeadlineAlertsWidget.php` — Nextcloud widget adapter
-  - `TaskRemindersWidget.php` — Nextcloud widget adapter
-  - `StalledCasesWidget.php` — Nextcloud widget adapter
-  - Webpack entry points: `src/deadlineAlertsWidget.js`, `src/taskRemindersWidget.js`, `src/stalledCasesWidget.js`
-  - Widget Vue components: `src/views/widgets/DeadlineAlertsWidget.vue`, `src/views/widgets/TaskRemindersWidget.vue`, `src/views/widgets/StalledCasesWidget.vue`
+**DeadlineNotificationController.php**
+- POST /api/deadlines/notify — Webhook endpoint for n8n callback (internal use)
+- GET /api/cases/:caseId/deadlines — Get deadline status and events for a case
 
-- **Configuration**:
-  - `DEADLINE_WARNING_DAYS = 3` (default threshold for deadline alerts)
-  - `STALLED_THRESHOLD_DAYS = 7` (default threshold for stalled case detection)
-  - Thresholds defined as named constants for future configurability
+### New Services
+**SignaleringService.php**
+- `calculateDeadlineStatus(Case $case, CaseType $caseType): array` — returns {status, daysRemaining, events[]}
+- `checkThresholds(Case $case, CaseType $caseType): bool` — true if threshold crossed
+- `triggerNotifications(Case $case, CaseType $caseType): void` — dispatches in-app + email
 
-### Out of Scope (Separate Changes)
+**NotificationService.php** (extends existing)
+- `notifyDeadlineWarning(Case $case, string $channel): void` — in-app or email
 
-- Configurable per-zaaktype alert thresholds and channels (requires admin settings architecture)
-- In-app notifications (INotificationManager integration)
-- Email notifications via n8n
-- Werkvoorraad and case detail signalering indicators
-- Bulk deadline overview management view
+### New Vue Components
+**UpcomingDeadlinesWidget.vue**
+- Dashboard widget (IDashboardWidget)
+- Shows user's cases with upcoming deadlines sorted by urgency
+- Filters by zaaktype (optional)
+- Color-coded rows (green/orange/red)
 
-## Key Decisions
+**DeadlineIndicator.vue**
+- Reusable inline component for case rows
+- Shows streeftermijn (light) and fatale termijn (bold) status
+- Tooltip with exact dates and days remaining
 
-1. **Client-side computation** — Thresholds applied during dashboard render, not server-side. No new API, no indexing burden.
-2. **Reusable helper functions** — Dashboard views and Nextcloud widgets both consume the same computation logic, reducing duplication.
-3. **Nextcloud Dashboard integration via IWidget** — Native dashboard registration allows users to add/remove widgets from the picker, respect their preferences.
-4. **Open case filtering** — Only non-final-status cases shown; completed cases are not "stalled".
-5. **Per-user task list** — Task Due Reminders filters to `assignee === currentUser`, not all team tasks.
-6. **Severity indicators** — Both color and text (red="overdue", orange="at-risk", yellow="due soon") for colorblind accessibility.
+**SignaleringSettingsPage.vue**
+- Admin page: `/admin/signalering`
+- Per-zaaktype configuration:
+  - Warning threshold (days before deadline, e.g., 7)
+  - Enable/disable in-app notifications
+  - Enable/disable email notifications
+  - Notification channels (or/and logic)
+
+**DeadlinesOverviewPage.vue**
+- Management view: `/deadlines/overview`
+- Table: case ID, zaaktype, handler, streeftermijn, fatale termijn, status, days remaining
+- Bulk filters: zaaktype, team, status (on-track/warning/overdue)
+- Export to CSV
+
+### Werkvoorraad Integration
+- Add deadline indicator column to case table
+- Icon/color badge showing status
+- Click-through to case detail with deadline info
+
+### Case Detail Integration
+- Add "Termijnbewaking" section to case detail header
+- Timeline showing:
+  - Streeftermijn (target) date
+  - Fatale termijn (hard) date
+  - Opschorting (suspension) events with date range
+  - Upcoming warnings based on configuration
+
+### Settings Storage
+- OpenRegister schema: `signaleringConfig`
+  - Fields: zaaktypeId, warningDaysStreef, warningDaysFatale, notificationChannels, enabled
+  - Stored in 'settings' register per OpenRegister conventions
+
+## Data Flow
+
+```
+Case created/updated
+  → SignaleringService.calculateDeadlineStatus()
+     → Read caseType.processingDeadline + opschorting records
+     → Calculate effective deadline
+     → Compare vs. today
+  → SignaleringService.checkThresholds()
+     → Load signaleringConfig for this zaaktype
+     → Check if warning threshold crossed
+  → SignaleringService.triggerNotifications()
+     → Nextcloud INotificationManager.notify() (in-app)
+     → POST to n8n endpoint (email)
+  → Dashboard widget queries SignaleringService for user's upcoming
+  → UI renders color-coded indicators
+```
+
+## API Contract
+
+### GET /api/signalering/config
+List all alert configurations.
+```json
+[
+  {
+    "id": "uuid",
+    "zaaktypeId": "case-type-123",
+    "warningDaysStreef": 7,
+    "warningDaysFatale": 0,
+    "notificationChannels": ["in-app", "email"],
+    "enabled": true
+  }
+]
+```
+
+### POST /api/signalering/config
+Create or update a configuration.
+```json
+{
+  "zaaktypeId": "case-type-123",
+  "warningDaysStreef": 7,
+  "warningDaysFatale": 0,
+  "notificationChannels": ["in-app", "email"],
+  "enabled": true
+}
+```
+
+### GET /api/cases/:caseId/deadlines
+Get deadline status for a case.
+```json
+{
+  "caseId": "case-123",
+  "zaaktypeId": "case-type-456",
+  "streeftermijn": {
+    "date": "2026-05-01T00:00:00Z",
+    "daysRemaining": 13,
+    "status": "warning"
+  },
+  "fatalTermijn": {
+    "date": "2026-05-15T00:00:00Z",
+    "daysRemaining": 27,
+    "status": "on-track"
+  },
+  "opschorting": {
+    "active": false,
+    "startDate": null,
+    "endDate": null
+  },
+  "notifications": [
+    {
+      "type": "warning",
+      "triggeredAt": "2026-04-17T10:30:00Z",
+      "threshold": "7-days-before-streeftermijn"
+    }
+  ]
+}
+```
 
 ## Testing Strategy
 
-- **Unit tests** on helper functions: edge cases (no deadline, deadline today, overdue cases, final-status cases)
-- **Component tests** on Vue widgets: rendering, click navigation, empty state messages
-- **E2E smoke test** (if dashboard E2E suite exists): login → add widget → verify top N items shown
+**Unit tests** (SignaleringService):
+- Deadline calculation with/without opschorting
+- Threshold detection (warning, overdue)
+- Notification triggering
 
-No new database schema; all data from existing `case` and `task` entities with existing `deadline` and `dateModified` fields.
+**Integration tests**:
+- E2E: Case creation → Deadline notification
+- N8n webhook callback handling
+- Nextcloud notification dispatch
+
+**Vue component tests**:
+- UpcomingDeadlinesWidget loads and renders cases
+- DeadlineIndicator shows correct color coding
+- SignaleringSettingsPage save/load per zaaktype
