@@ -16,6 +16,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/signalering-widgets/tasks.md#task-4.3
  */
 
 declare(strict_types=1);
