@@ -126,7 +126,8 @@
       "outcome": "in-flight",
       "outcome_reason": null,
       "pattern_tags": [
-        "browser-test-nc-setup-failed"
+        "browser-test-nc-setup-failed",
+        "reviewer-ran-applied-no-fixes"
       ],
       "stages": [
         {
