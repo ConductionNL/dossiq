@@ -162,6 +162,8 @@
 			<!-- Case Map widget -->
 			<template #widget-case-map>
 				<CaseMapWidget />
+			</template>
+
 			<!-- Deadline Alerts widget -->
 			<template #widget-deadline-alerts>
 				<DeadlineAlerts
@@ -253,23 +255,7 @@ const BAR_COLORS = [
 	'var(--color-text-maxcontrast)',
 ]
 
-/**
- * Default dashboard layout — 4 count tiles across the top row (3 cols each),
- * then cases-by-status and my-work share the second row.
- */
-/**
- * Default dashboard layout — 5 count tiles across the top row,
- * then cases-by-status and my-work share the second row.
- * Grid is 12 columns: tiles use widths 2+3+3+2+2 = 12.
- */
 const DEFAULT_LAYOUT = [
-	{ id: 1, widgetId: 'count-open-cases', gridX: 0, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
-	{ id: 2, widgetId: 'count-overdue', gridX: 3, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
-	{ id: 3, widgetId: 'count-completed', gridX: 6, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
-	{ id: 4, widgetId: 'count-my-tasks', gridX: 9, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
-	{ id: 5, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 6, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 7, widgetId: 'case-map', gridX: 0, gridY: 6, gridWidth: 12, gridHeight: 6 },
 	{ id: 1, widgetId: 'count-open-cases', gridX: 0, gridY: 0, gridWidth: 2, gridHeight: 2, showTitle: false },
 	{ id: 2, widgetId: 'count-overdue', gridX: 2, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
 	{ id: 3, widgetId: 'count-completed', gridX: 5, gridY: 0, gridWidth: 3, gridHeight: 2, showTitle: false },
@@ -277,9 +263,10 @@ const DEFAULT_LAYOUT = [
 	{ id: 5, widgetId: 'count-sla', gridX: 10, gridY: 0, gridWidth: 2, gridHeight: 2, showTitle: false },
 	{ id: 6, widgetId: 'cases-by-status', gridX: 0, gridY: 2, gridWidth: 6, gridHeight: 4 },
 	{ id: 7, widgetId: 'my-work', gridX: 6, gridY: 2, gridWidth: 6, gridHeight: 4 },
-	{ id: 8, widgetId: 'deadline-alerts', gridX: 0, gridY: 6, gridWidth: 4, gridHeight: 4 },
-	{ id: 9, widgetId: 'task-due-reminders', gridX: 4, gridY: 6, gridWidth: 4, gridHeight: 4 },
-	{ id: 10, widgetId: 'stalled-cases', gridX: 8, gridY: 6, gridWidth: 4, gridHeight: 4 },
+	{ id: 8, widgetId: 'case-map', gridX: 0, gridY: 6, gridWidth: 12, gridHeight: 6 },
+	{ id: 9, widgetId: 'deadline-alerts', gridX: 0, gridY: 12, gridWidth: 4, gridHeight: 4 },
+	{ id: 10, widgetId: 'task-due-reminders', gridX: 4, gridY: 12, gridWidth: 4, gridHeight: 4 },
+	{ id: 11, widgetId: 'stalled-cases', gridX: 8, gridY: 12, gridWidth: 4, gridHeight: 4 },
 ]
 
 export default {

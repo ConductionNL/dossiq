@@ -151,9 +151,12 @@ Procest's mail-driven flows (case intake from citizen emails, notifications to b
 **Seed test data:**
 ```bash
 bash ../openregister/docker/mail/seed-mail.sh
+bash ../openregister/docker/mail/seed-cases.sh
 ```
 
-This sends 11 realistic Dutch case-management emails (omgevingsvergunning, kapvergunning, welstandsadvies, klachten, deadline-herinneringen) across 5 auto-created accounts — all explicitly tagged as procest/pipelinq-relevant scenarios.
+`seed-mail.sh` sends 11 realistic Dutch case-management emails (omgevingsvergunning, kapvergunning, welstandsadvies, klachten, deadline-herinneringen) across 5 auto-created accounts.
+
+`seed-cases.sh` creates matching procest cases (`ZK-2026-0142` dakkapel Kerkstraat 42, `ZK-2026-0034` kapvergunning Wilhelminastraat) + their caseTypes in the Procest register, so the OpenRegister mail sidebar can link incoming emails to existing cases.
 
 **Configure the Nextcloud Mail app** (Settings → Mail → Add account → Manual):
 

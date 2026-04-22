@@ -42,6 +42,9 @@
 				:to="{ name: 'CaseMap' }">
 				<template #icon>
 					<MapOutline :size="20" />
+				</template>
+			</NcAppNavigationItem>
+			<NcAppNavigationItem
 				:name="t('procest', 'Voorstellen')"
 				:to="{ name: 'Voorstellen' }">
 				<template #icon>
