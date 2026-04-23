@@ -4,19 +4,19 @@ You are running HEADLESS. Do NOT use AskUserQuestion, interactive prompts, or sk
 Write files directly using the Write tool.
 
 ## Inputs
-- Change: parafeerroute-engine (title: Parafeerroute Engine)
-- Context brief: openspec/changes/parafeerroute-engine/context-brief.md
+- Change: parafering-actions (title: Parafering Actions)
+- Context brief: openspec/changes/parafering-actions/context-brief.md
 - Data model ADR: openspec/architecture/adr-000-data-model.md
 
 ## Step 1: Read context
 Read these files COMPLETELY before writing anything:
-- openspec/changes/parafeerroute-engine/context-brief.md (features, stories, stakeholders, journeys)
+- openspec/changes/parafering-actions/context-brief.md (features, stories, stakeholders, journeys)
 - openspec/architecture/adr-000-data-model.md (entity definitions)
 - All files in openspec/architecture/ (repo-specific ADRs — the ONLY ADRs that live in the app repo)
 - Company-wide ADRs: NOT in this repo — read from hydra/openspec/architecture/ (pre-loaded in the spec-writer container at /home/claude/.claude/openspec/architecture/)
 
 ## Step 2: Get artifact templates
-Run: `openspec instructions proposal --change parafeerroute-engine --json`
+Run: `openspec instructions proposal --change parafering-actions --json`
 This returns the template and rules for the proposal artifact.
 Then do the same for: design, specs, tasks (in that order).
 
@@ -35,8 +35,8 @@ For each artifact (proposal → design → specs → tasks):
 ## Step 4: Commit
 After all 4 artifacts are written:
 ```bash
-git add openspec/changes/parafeerroute-engine/
-git commit -m 'feat: Add OpenSpec change parafeerroute-engine from Specter'
+git add openspec/changes/parafering-actions/
+git commit -m 'feat: Add OpenSpec change parafering-actions from Specter'
 ```
 Do NOT push — the caller handles pushing.
 Do NOT create branches — stay on the current branch.
