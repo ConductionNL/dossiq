@@ -6,5 +6,5 @@
   "depends_on": [
     "parafering-actions"
   ],
-  "issue": null
+  "issue": "https://github.com/ConductionNL/procest/issues/289"
 }
