@@ -3,7 +3,7 @@
   "info": {
     "title": "Procest Case Management Register",
     "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, and their instance counterparts.",
-    "version": "0.5.0"
+    "version": "0.6.0"
   },
   "x-openregister": {
     "type": "application",
@@ -712,7 +712,7 @@
       "task": {
         "slug": "task",
         "icon": "CheckboxMarkedOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:Action",
         "x-zgw-equivalent": "Taak",
         "title": "Task",
@@ -793,6 +793,49 @@
             "type": "string",
             "description": "JSON-encoded array of checklist items ({id, label, checked})",
             "visible": false
+          }
+        },
+        "configuration": {
+          "x-openregister-lifecycle": {
+            "field": "status",
+            "initial": "available",
+            "final": [
+              "completed",
+              "terminated",
+              "disabled"
+            ],
+            "transitions": {
+              "activate": {
+                "from": [
+                  "available"
+                ],
+                "to": "active",
+                "description": "Pick up the task."
+              },
+              "complete": {
+                "from": [
+                  "active"
+                ],
+                "to": "completed",
+                "description": "Mark task as completed."
+              },
+              "terminate": {
+                "from": [
+                  "available",
+                  "active"
+                ],
+                "to": "terminated",
+                "description": "Terminate the task."
+              },
+              "disable": {
+                "from": [
+                  "available",
+                  "active"
+                ],
+                "to": "disabled",
+                "description": "Disable the task."
+              }
+            }
           }
         }
       },
@@ -982,7 +1025,7 @@
       "document": {
         "slug": "document",
         "icon": "FileDocumentOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:DigitalDocument",
         "x-zgw-equivalent": "EnkelvoudigInformatieObject",
         "title": "Document",
@@ -1091,6 +1134,45 @@
             "nullable": true,
             "default": null,
             "description": "Indicates whether usage rights have been set for this document"
+          }
+        },
+        "configuration": {
+          "x-openregister-lifecycle": {
+            "field": "status",
+            "initial": "in_bewerking",
+            "final": [
+              "gearchiveerd"
+            ],
+            "transitions": {
+              "submit": {
+                "from": [
+                  "in_bewerking"
+                ],
+                "to": "ter_vaststelling",
+                "description": "Submit the document for adoption."
+              },
+              "adopt": {
+                "from": [
+                  "ter_vaststelling"
+                ],
+                "to": "definitief",
+                "description": "Adopt the document as final."
+              },
+              "archive": {
+                "from": [
+                  "definitief"
+                ],
+                "to": "gearchiveerd",
+                "description": "Archive the final document."
+              },
+              "sendBack": {
+                "from": [
+                  "ter_vaststelling"
+                ],
+                "to": "in_bewerking",
+                "description": "Send back for revisions."
+              }
+            }
           }
         }
       },
@@ -1539,7 +1621,7 @@
       "voorstel": {
         "slug": "voorstel",
         "icon": "FileDocumentEditOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:CreativeWork",
         "title": "Voorstel",
         "description": "A B&W voorstel (proposal) for decision-making in a case",
@@ -1650,6 +1732,77 @@
             "format": "uuid",
             "description": "Reference to the linked decision (set when besluit is registered)",
             "visible": false
+          }
+        },
+        "configuration": {
+          "x-openregister-lifecycle": {
+            "field": "status",
+            "initial": "concept",
+            "final": [
+              "besloten",
+              "gearchiveerd"
+            ],
+            "transitions": {
+              "startParafering": {
+                "from": [
+                  "concept"
+                ],
+                "to": "in_parafering",
+                "description": "Start initialing route."
+              },
+              "paraferingDone": {
+                "from": [
+                  "in_parafering"
+                ],
+                "to": "ter_accordering",
+                "description": "Initialing complete; ready for accordance."
+              },
+              "accord": {
+                "from": [
+                  "ter_accordering"
+                ],
+                "to": "geaccordeerd",
+                "description": "Accord the proposal."
+              },
+              "submit": {
+                "from": [
+                  "geaccordeerd"
+                ],
+                "to": "aangeboden",
+                "description": "Submit the proposal for decision."
+              },
+              "decide": {
+                "from": [
+                  "aangeboden"
+                ],
+                "to": "besloten",
+                "description": "Decision made on the proposal."
+              },
+              "archive": {
+                "from": [
+                  "besloten"
+                ],
+                "to": "gearchiveerd",
+                "description": "Archive the proposal."
+              },
+              "sendBack": {
+                "from": [
+                  "in_parafering",
+                  "ter_accordering",
+                  "geaccordeerd",
+                  "aangeboden"
+                ],
+                "to": "teruggestuurd",
+                "description": "Send the proposal back for revisions."
+              },
+              "revise": {
+                "from": [
+                  "teruggestuurd"
+                ],
+                "to": "concept",
+                "description": "Take a returned proposal back into draft."
+              }
+            }
           }
         }
       },
@@ -1949,7 +2102,7 @@
       "hearingSession": {
         "slug": "hearingSession",
         "icon": "AccountGroupOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:Event",
         "x-zgw-equivalent": "Hoorzitting",
         "title": "Hearing Session",
@@ -2027,6 +2180,49 @@
           "waiverReason": {
             "type": "string",
             "description": "Reason for waiving hearing right"
+          }
+        },
+        "configuration": {
+          "x-openregister-lifecycle": {
+            "field": "status",
+            "initial": "gepland",
+            "final": [
+              "uitgevoerd",
+              "geannuleerd",
+              "afgezien"
+            ],
+            "transitions": {
+              "invite": {
+                "from": [
+                  "gepland"
+                ],
+                "to": "uitgenodigd",
+                "description": "Send hearing invitations."
+              },
+              "execute": {
+                "from": [
+                  "uitgenodigd"
+                ],
+                "to": "uitgevoerd",
+                "description": "Mark the hearing as carried out."
+              },
+              "cancel": {
+                "from": [
+                  "gepland",
+                  "uitgenodigd"
+                ],
+                "to": "geannuleerd",
+                "description": "Cancel the hearing."
+              },
+              "waive": {
+                "from": [
+                  "gepland",
+                  "uitgenodigd"
+                ],
+                "to": "afgezien",
+                "description": "Waive the hearing."
+              }
+            }
           }
         }
       },
@@ -2299,7 +2495,7 @@
       "adviesAanvraag": {
         "slug": "adviesAanvraag",
         "icon": "CommentQuestionOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:AskAction",
         "title": "Advice Request",
         "description": "A request for internal or external advice on a case, with deadline tracking",
@@ -2364,12 +2560,38 @@
             "type": "string",
             "description": "Specific questions for the adviseur"
           }
+        },
+        "configuration": {
+          "x-openregister-lifecycle": {
+            "field": "status",
+            "initial": "aangevraagd",
+            "final": [
+              "ontvangen",
+              "verlopen"
+            ],
+            "transitions": {
+              "receive": {
+                "from": [
+                  "aangevraagd"
+                ],
+                "to": "ontvangen",
+                "description": "Mark the advice as received."
+              },
+              "expire": {
+                "from": [
+                  "aangevraagd"
+                ],
+                "to": "verlopen",
+                "description": "Mark the advice request as expired."
+              }
+            }
+          }
         }
       },
       "handhavingsactie": {
         "slug": "handhavingsactie",
         "icon": "Gavel",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:LegalForceStatus",
         "title": "Enforcement Action",
         "description": "An enforcement action (handhavingsactie) on a case, classified per the Landelijke Handhavingsstrategie (LHS)",
@@ -2452,12 +2674,46 @@
             "type": "string",
             "description": "Documented reasoning if the LHS suggestion was overridden"
           }
+        },
+        "configuration": {
+          "x-openregister-lifecycle": {
+            "field": "status",
+            "initial": "opgelegd",
+            "final": [
+              "geeffectueerd",
+              "ingetrokken"
+            ],
+            "transitions": {
+              "forfeit": {
+                "from": [
+                  "opgelegd"
+                ],
+                "to": "verbeurd",
+                "description": "Mark the enforcement action as forfeited."
+              },
+              "execute": {
+                "from": [
+                  "verbeurd"
+                ],
+                "to": "geeffectueerd",
+                "description": "Mark the enforcement action as executed."
+              },
+              "withdraw": {
+                "from": [
+                  "opgelegd",
+                  "verbeurd"
+                ],
+                "to": "ingetrokken",
+                "description": "Withdraw the enforcement action."
+              }
+            }
+          }
         }
       },
       "inspectieChecklist": {
         "slug": "inspectieChecklist",
         "icon": "ClipboardCheckOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:HowTo",
         "title": "Inspection Checklist",
         "description": "Configurable inspection checklist template linked to a case type, with versioning support",
@@ -2538,6 +2794,31 @@
                   "type": "string",
                   "description": "Guidance text for the inspector"
                 }
+              }
+            }
+          }
+        },
+        "configuration": {
+          "x-openregister-lifecycle": {
+            "field": "status",
+            "initial": "draft",
+            "final": [
+              "archived"
+            ],
+            "transitions": {
+              "activate": {
+                "from": [
+                  "draft"
+                ],
+                "to": "active",
+                "description": "Activate the checklist."
+              },
+              "archive": {
+                "from": [
+                  "active"
+                ],
+                "to": "archived",
+                "description": "Archive the checklist."
               }
             }
           }
