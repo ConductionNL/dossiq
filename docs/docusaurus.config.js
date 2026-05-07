@@ -1,20 +1,35 @@
 // @ts-check
 
-/** @type {import('@docusaurus/types').Config} */
-const config = {
+/**
+ * Procest documentation site.
+ *
+ * Built on @conduction/docusaurus-preset for brand defaults (tokens,
+ * theme swizzles for Navbar / Footer, four-locale i18n scaffolding,
+ * KvK / BTW copyright). Site-specific overrides — locales, sidebar
+ * path, mermaid theme, custom prism themes, procest-only navbar items —
+ * are passed through createConfig() opts.
+ */
+
+const { createConfig, baseFooterLinks } = require('@conduction/docusaurus-preset');
+
+/* createConfig replaces themes wholesale when `themes:` is passed, so
+   we re-include the brand theme plugin alongside @docusaurus/theme-mermaid.
+   Without the brand theme entry the Navbar/Footer swizzles and
+   brand.css auto-load would silently drop. */
+const BRAND_THEME = require.resolve('@conduction/docusaurus-preset/theme');
+
+const config = createConfig({
   title: 'Procest',
   tagline: 'Case management for Nextcloud',
-  url: 'https://procest.app',
+  url: 'https://procest.conduction.nl',
   baseUrl: '/',
 
-  // GitHub pages deployment config
   organizationName: 'ConductionNL',
   projectName: 'procest',
-  trailingSlash: false,
 
-  onBrokenLinks: 'warn',
-  onBrokenMarkdownLinks: 'warn',
-
+  /* Procest ships en + nl markdown; the brand preset's default i18n
+     block (nl/en/de/fr) is replaced wholesale here so we don't pull
+     in stub locales the docs don't translate yet. */
   i18n: {
     defaultLocale: 'en',
     locales: ['en', 'nl'],
@@ -24,89 +39,93 @@ const config = {
     },
   },
 
+  /* The procest docs source lives at the repo root of `docs/` rather
+     than under a `docs/` subfolder, so we override the preset's default
+     `presets:` block to point `docs.path` at './' and disable the blog
+     plugin. customCss carries procest-specific CSS only — brand tokens
+     and the theme swizzles are auto-loaded by the brand theme entry in
+     `themes:` below. */
   presets: [
     [
       'classic',
-      /** @type {import('@docusaurus/preset-classic').Options} */
-      ({
+      {
         docs: {
           path: './',
-          exclude: ['**/node_modules/**'],
+          /* docs.path: './' makes plugin-content-docs scan every file
+             in docs/, which collides with plugin-content-pages's own
+             scan of docs/src/pages/. The same index would then get
+             processed by both plugins; the docs side runs MDX-ESM
+             over the JSX expression body and trips on it. Exclude
+             src/ (pages live there) plus the standard node_modules
+             bucket. */
+          exclude: ['**/node_modules/**', 'src/**'],
           sidebarPath: require.resolve('./sidebars.js'),
-          editUrl:
-            'https://github.com/ConductionNL/procest/tree/main/docs/',
+          editUrl: 'https://github.com/ConductionNL/procest/tree/main/docs/',
         },
         blog: false,
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
-      }),
+      },
     ],
   ],
 
-  themeConfig:
-    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
-    ({
-      navbar: {
-        title: 'Procest',
-        logo: {
-          alt: 'Procest Logo',
-          src: 'img/logo.svg',
-        },
-        items: [
-          {
-            type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
-            position: 'left',
-            label: 'Documentation',
-          },
-          {
-            href: 'https://github.com/ConductionNL/procest',
-            label: 'GitHub',
-            position: 'right',
-          },
-          {
-            type: 'localeDropdown',
-            position: 'right',
-          },
-        ],
+  themes: [BRAND_THEME, '@docusaurus/theme-mermaid'],
+
+  /* Brand navbar provides locale dropdown + GitHub by default; we
+     replace items[] with procest's own (Documentation sidebar link,
+     procest GitHub link, locale dropdown). Object.assign in
+     createConfig is shallow, so items: replaces wholesale. */
+  navbar: {
+    items: [
+      {
+        type: 'docSidebar',
+        sidebarId: 'tutorialSidebar',
+        position: 'left',
+        label: 'Documentation',
       },
-      footer: {
-        style: 'dark',
-        links: [
-          {
-            title: 'Docs',
-            items: [
-              {
-                label: 'Documentation',
-                to: '/docs/FEATURES',
-              },
-            ],
-          },
-          {
-            title: 'Community',
-            items: [
-              {
-                label: 'GitHub',
-                href: 'https://github.com/ConductionNL/procest',
-              },
-            ],
-          },
-        ],
-        copyright: `Copyright © ${new Date().getFullYear()} for <a href="https://openwebconcept.nl">Open Webconcept</a> by <a href="https://conduction.nl">Conduction B.V.</a>`,
+      {
+        href: 'https://github.com/ConductionNL/procest',
+        label: 'GitHub',
+        position: 'right',
       },
-      prism: {
-        theme: require('prism-react-renderer/themes/github'),
-        darkTheme: require('prism-react-renderer/themes/dracula'),
-      },
-      mermaid: {
-        theme: { light: 'default', dark: 'dark' },
-      },
-    }),
-  markdown: {
-    mermaid: true,
+      { type: 'localeDropdown', position: 'right' },
+    ],
   },
-  themes: ['@docusaurus/theme-mermaid'],
+
+  /* Per-property footer override (preset 1.2.0+): we pass `links` only,
+     so the brand `style: 'dark'` and the brand KvK/BTW/IBAN/address
+     copyright string both inherit unchanged. Single column: the brand
+     "Conduction" anchor. Site-specific Product / Support columns may
+     be added later. */
+  footer: {
+    links: [
+      ...baseFooterLinks().filter((column) => column.title === 'Conduction'),
+    ],
+  },
+
+  /* Drop the canal-footer's boat-sinking + kade-cyclist mini-games
+     on this product-page footer (preset 1.3.0+). The static skyline +
+     canal decoration are kept; the interactive layer goes away. */
+  minigames: false,
+
+  /* themeConfig is shallow-merged into the preset's defaults
+     (colorMode + navbar + footer). prism + mermaid land alongside. */
+  themeConfig: {
+    prism: {
+      theme: require('prism-react-renderer/themes/github'),
+      darkTheme: require('prism-react-renderer/themes/dracula'),
+    },
+    mermaid: {
+      theme: { light: 'default', dark: 'dark' },
+    },
+  },
+});
+
+/* createConfig doesn't pass-through arbitrary top-level fields; assign
+   markdown directly so it makes it into the final Docusaurus config. */
+config.markdown = {
+  mermaid: true,
 };
 
 module.exports = config;
