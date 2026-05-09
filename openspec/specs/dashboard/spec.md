@@ -1,5 +1,7 @@
 ---
 status: implemented
+openspec_changes:
+  - add-server-side-kpi-aggregation
 ---
 
 # Dashboard Specification
