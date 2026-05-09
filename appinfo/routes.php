@@ -116,7 +116,10 @@ return [
         // Health check endpoint.
         ['name' => 'health#index', 'url' => '/api/health', 'verb' => 'GET'],
 
-        // SPA catch-all — serves the Vue app for any frontend route (history mode)
-        ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
+        // SPA catch-all — serves the Vue app for any frontend route (history mode).
+        // `.*` (not `.+`) so the empty-path case `/apps/procest/` also resolves
+        // here; otherwise this overwrites the dedicated `/` route above (same
+        // name) but fails to match empty path, producing a 404 for the index.
+        ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.*'], 'defaults' => ['path' => '']],
     ],
 ];

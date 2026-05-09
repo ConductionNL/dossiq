@@ -95,7 +95,12 @@ webpackConfig.module = {
 	],
 }
 
+// Keep the base plugins from @nextcloud/webpack-vue-config (NodePolyfillPlugin
+// supplies the `process` shim, IgnorePlugin handles moment locales, etc.).
+// Drop only the upstream VueLoaderPlugin so we don't end up with two instances,
+// then append our app-specific defines.
 webpackConfig.plugins = [
+	...webpackConfig.plugins.filter(p => !(p instanceof VueLoaderPlugin)),
 	new VueLoaderPlugin(),
 	new webpack.DefinePlugin({ appName: JSON.stringify(appId) }),
 	new webpack.DefinePlugin({ appVersion: JSON.stringify(process.env.npm_package_version) }),
@@ -104,5 +109,42 @@ webpackConfig.plugins = [
 // Force @nextcloud/dialogs to resolve from this app's node_modules,
 // preventing the nextcloud-vue submodule's nested deps (Vue 3) from leaking in.
 webpackConfig.resolve.alias['@nextcloud/dialogs'] = path.resolve(__dirname, 'node_modules/@nextcloud/dialogs')
+
+// Share Vue + @nextcloud/vue + pinia + icons + @conduction/nextcloud-vue
+// across every entry-point so each widget bundle no longer inlines its own
+// ~5 MB framework copy. Stable filenames (no contenthash in the JS name)
+// mean each widget's `Util::addScript` PHP call can reference the chunk
+// directly without a manifest. The vendor chunk is loaded once and cached
+// across every widget/page in the app.
+webpackConfig.optimization = {
+	...(webpackConfig.optimization || {}),
+	splitChunks: {
+		...(webpackConfig.optimization?.splitChunks || {}),
+		chunks: 'all',
+		cacheGroups: {
+			default: false,
+			defaultVendors: false,
+			ncVue: {
+				name: appId + '-shared-nc-vue',
+				// Matches both node_modules entries AND the monorepo-dev alias
+				// `../nextcloud-vue/src/...` which webpack resolves outside
+				// node_modules when @conduction/nextcloud-vue is aliased to it.
+				test: /[\\/]node_modules[\\/](@nextcloud[\\/]vue|@conduction[\\/]nextcloud-vue)[\\/]|[\\/]nextcloud-vue[\\/]src[\\/]/,
+				priority: 30,
+				reuseExistingChunk: true,
+				enforce: true,
+				filename: appId + '-shared-nc-vue.js',
+			},
+			vendor: {
+				name: appId + '-shared-vendor',
+				test: /[\\/]node_modules[\\/](vue|pinia|vue-material-design-icons|@vueuse|core-js)[\\/]/,
+				priority: 20,
+				reuseExistingChunk: true,
+				enforce: true,
+				filename: appId + '-shared-vendor.js',
+			},
+		},
+	},
+}
 
 module.exports = webpackConfig
