@@ -81,6 +81,11 @@ webpackConfig.module = {
 			use: ['style-loader', 'css-loader'],
 		},
 		{
+			// SCSS used by aliased @conduction/nextcloud-vue components (e.g. CnCard, CnDataTable)
+			test: /\.scss$/,
+			use: ['style-loader', 'css-loader', 'sass-loader'],
+		},
+		{
 			// Leaflet marker icons and other image assets
 			test: /\.(png|jpe?g|gif|svg)$/,
 			type: 'asset/resource',

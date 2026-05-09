@@ -22,10 +22,10 @@
 		"extends @nextcloud/browserslist-config"
 	],
 	"dependencies": {
-		"@conduction/nextcloud-vue": "^0.1.0-beta.17",
+		"@conduction/nextcloud-vue": "^1.0.0-beta.6",
 		"apexcharts": "^3.45.0",
 		"vue-apexcharts": "^1.6.2",
-		"@nextcloud/axios": "^2.5.0",
+		"@nextcloud/axios": "~2.5.2",
 		"@nextcloud/dialogs": "^3.2.0",
 		"@nextcloud/initial-state": "^2.2.0",
 		"@nextcloud/l10n": "^2.0.1",
@@ -40,6 +40,9 @@
 		"vue": "^2.7.14",
 		"vue-material-design-icons": "^5.3.0",
 		"vue-router": "^3.6.5"
+	},
+	"overrides": {
+		"@nextcloud/axios": "~2.5.2"
 	},
 	"devDependencies": {
 		"@cyclonedx/cyclonedx-npm": "^4.2.1",
