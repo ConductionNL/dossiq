@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
 <template>
 	<NcContent app-name="procest">
 		<template v-if="storesReady && !hasOpenRegisters">
@@ -24,22 +25,10 @@
 			</NcAppContent>
 		</template>
 		<template v-else-if="storesReady && hasOpenRegisters">
-			<MainMenu />
-			<NcAppContent>
-				<router-view />
-			</NcAppContent>
-			<CnIndexSidebar
-				v-if="sidebarState.active"
-				:schema="sidebarState.schema"
-				:visible-columns="sidebarState.visibleColumns"
-				:search-value="sidebarState.searchValue"
-				:active-filters="sidebarState.activeFilters"
-				:facet-data="sidebarState.facetData"
-				:open="sidebarState.open"
-				@update:open="sidebarState.open = $event"
-				@search="onSidebarSearch"
-				@columns-change="onSidebarColumnsChange"
-				@filter-change="onSidebarFilterChange" />
+			<CnAppRoot
+				:manifest="manifest"
+				:custom-components="customComponents"
+				:page-types="pageTypes" />
 		</template>
 		<NcAppContent v-else>
 			<div style="display: flex; justify-content: center; align-items: center; height: 100%;">
@@ -52,9 +41,8 @@
 <script>
 import Vue from 'vue'
 import { NcButton, NcContent, NcAppContent, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
-import { CnIndexSidebar } from '@conduction/nextcloud-vue'
+import { CnAppRoot } from '@conduction/nextcloud-vue'
 import { generateUrl, imagePath } from '@nextcloud/router'
-import MainMenu from './navigation/MainMenu.vue'
 import { initializeStores } from './store/store.js'
 import { useSettingsStore } from './store/modules/settings.js'
 
@@ -66,20 +54,41 @@ export default {
 		NcAppContent,
 		NcEmptyContent,
 		NcLoadingIcon,
-		CnIndexSidebar,
-		MainMenu,
+		CnAppRoot,
+	},
+
+	props: {
+		manifest: {
+			type: Object,
+			required: true,
+		},
+		customComponents: {
+			type: Object,
+			default: () => ({}),
+		},
+		pageTypes: {
+			type: Object,
+			default: () => ({}),
+		},
 	},
 
 	provide() {
 		return {
-			sidebarState: this.sidebarState,
+			// Provide/inject channel for index pages that auto-mount sidebar
+			// content; matches the decidesk pattern (App.vue hosts a single
+			// CnObjectSidebar via CnAppRoot's #sidebar slot).
+			objectSidebarState: this.objectSidebarState,
+			// Legacy alias kept for any existing custom components that
+			// inject `sidebarState` (CaseList / TaskList / VoorstelList /
+			// AdminRoot referenced this name in the pre-manifest shell).
+			sidebarState: this.objectSidebarState,
 		}
 	},
 
 	data() {
 		return {
 			storesReady: false,
-			sidebarState: Vue.observable({
+			objectSidebarState: Vue.observable({
 				active: false,
 				open: true,
 				schema: null,
@@ -112,25 +121,6 @@ export default {
 	async created() {
 		await initializeStores()
 		this.storesReady = true
-	},
-	methods: {
-		onSidebarSearch(value) {
-			this.sidebarState.searchValue = value
-			if (typeof this.sidebarState.onSearch === 'function') {
-				this.sidebarState.onSearch(value)
-			}
-		},
-		onSidebarColumnsChange(columns) {
-			this.sidebarState.visibleColumns = columns
-			if (typeof this.sidebarState.onColumnsChange === 'function') {
-				this.sidebarState.onColumnsChange(columns)
-			}
-		},
-		onSidebarFilterChange(filter) {
-			if (typeof this.sidebarState.onFilterChange === 'function') {
-				this.sidebarState.onFilterChange(filter)
-			}
-		},
 	},
 }
 </script>
