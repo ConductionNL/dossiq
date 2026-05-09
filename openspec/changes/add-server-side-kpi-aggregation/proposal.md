@@ -31,7 +31,7 @@ The existing `MetricsController` already demonstrates that DB-side aggregation v
 - Cross-user / org-wide aggregations (per-user only for v1)
 - Custom / configurable KPIs (later change)
 - Live push of KPI updates to UI — the `add-live-updates-plugin` change in nextcloud-vue handles re-poll/subscribe when cache invalidates
-- SLA compliance computation (remains client-side until separate change; the `avgProcessingDays` field is excluded from the v1 KPI response because it requires per-case date arithmetic that needs a follow-up design decision — see DEFERRED_QUESTIONS)
+- SLA compliance computation (remains client-side until separate change; SLA per-case logic is more involved than a flat AVG)
 
 ## Approach
 

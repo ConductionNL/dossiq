@@ -24,6 +24,7 @@ The system MUST expose a `GET /index.php/apps/procest/api/dashboard/kpis` endpoi
   - `taskCount` (integer ≥ 0) — count of tasks assigned to the current user with status `available` or `active`
   - `tasksDueToday` (integer ≥ 0) — count of those tasks whose `dueDate` matches today
   - `statusBreakdown` (array of `{status: string, count: integer}`) — open case counts grouped by status value
+  - `avgProcessingDays` (number ≥ 0, or `null` if no completed cases this month) — average days between `startDate` and `endDate` for cases completed in the current calendar month, computed via `AVG(DATEDIFF(endDate, startDate))`
   - `computedAt` (ISO 8601 datetime string) — when the DB queries that produced this result were executed
   - `cacheHit` (boolean) — whether the response was served from cache
 
@@ -141,6 +142,33 @@ The KPI cache for a user MUST be invalidated (without eager recomputation) when 
 
 ---
 
+### REQ-KPI-005a: Average Processing Days [V1]
+
+The endpoint MUST compute `avgProcessingDays` as the SQL average of date differences between `endDate` and `startDate` for cases whose `endDate` falls in the current calendar month.
+
+**Feature tier**: V1
+
+#### Scenario KPI-005a-1: avgProcessingDays for current month
+
+- GIVEN 4 cases were completed this calendar month with processing durations 3, 5, 7, and 9 days
+- WHEN `GET /api/dashboard/kpis` is called
+- THEN `avgProcessingDays` MUST equal `6.0` (the SQL `AVG(DATEDIFF(endDate, startDate))` result)
+- AND it MUST be computed by the database (`AVG(DATEDIFF(endDate, startDate))`), not by PHP-side iteration
+
+#### Scenario KPI-005a-2: No completed cases this month
+
+- GIVEN no cases have been completed in the current calendar month
+- WHEN the endpoint is called
+- THEN `avgProcessingDays` MUST be `null` (not `0`, since no data is different from "0 days")
+
+#### Scenario KPI-005a-3: avgProcessingDays uses endDate IS NOT NULL filter
+
+- GIVEN open cases (with `endDate IS NULL`) exist alongside completed cases
+- THEN open cases MUST be excluded from the AVG computation
+- AND only cases with both `startDate IS NOT NULL` and `endDate IS NOT NULL` MUST be included
+
+---
+
 ### REQ-KPI-005: Permission-Scoped Task Counts [V1]
 
 Task KPI counts (`taskCount`, `tasksDueToday`) MUST be scoped to the requesting user's assigned tasks. Case counts are register-wide for v1 (matching current behaviour).
@@ -172,4 +200,12 @@ Task KPI counts (`taskCount`, `tasksDueToday`) MUST be scoped to the requesting 
 - `GET /api/dashboard/kpis` MUST respond in < 100ms on a cache hit.
 - `GET /api/dashboard/kpis` MUST respond in < 500ms on a cache miss for up to 10,000 objects.
 - Response time MAY exceed 500ms for > 10,000 objects; adding a generated column index on the status JSON field is the recommended mitigation if this threshold is reached in production.
-- The endpoint MUST NOT perform N+1 queries — all counts MUST be computed in a fixed number of SQL queries (≤ 7 for v1).
+- The endpoint MUST NOT perform N+1 queries — all counts MUST be computed in a fixed number of SQL queries (≤ 8 for v1, including the AVG query).
+
+## Workflow Invariants (NORMATIVE assumption)
+
+- **`endDate` invariant**: A case is considered "open" iff `endDate IS NULL`. The Procest workflow engine MUST set `endDate` whenever a case transitions to a final status (`statusType.isFinal === true`). If a deployment can produce a case in a final status without an `endDate`, the open-case proxy MUST be re-validated by the operator. The `KpiAggregationService` PHP docblock MUST document this invariant. A verification task in tasks.md MUST cover an automated assertion that no `endDate IS NULL` case has a `currentStatus` whose `statusType.isFinal` is `true`.
+
+## Accepted Risks (NORMATIVE)
+
+- **Row-level ACL not applied to case counts in v1.** `openCount`, `overdueCount`, `completedCount`, `newToday`, `statusBreakdown`, and `avgProcessingDays` count every case the user can access at the register-read level. If row-level ACL ever becomes enabled in Procest, totals will over-count relative to what the user can actually see. This matches today's client-side `fetchCollection('case')` behaviour, so v1 introduces no regression. A follow-up change is required if row-level ACL lands in Procest.

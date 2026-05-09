@@ -30,7 +30,13 @@ Three new PHP files, one route addition, no seed data, no schema changes.
 
 All fields are always present. Integer fields default to `0` on error. `statusBreakdown` defaults to `[]`. The `cacheHit` flag is informational (for debugging / monitoring). The `computedAt` field reflects when the DB queries ran (not when the response was served from cache — the cached response preserves the original `computedAt`).
 
-**Excluded from v1**: `avgProcessingDays` (requires per-case date arithmetic in SQL or PHP; deferred — see DEFERRED_QUESTIONS). `slaCompliance` (deferred to separate change).
+**Included in v1**: `avgProcessingDays` — `AVG(DATEDIFF(endDate, startDate))` filtered to cases completed in the current calendar month. Returns `null` (not `0`) when no completed cases exist; excludes cases missing either `startDate` or `endDate`.
+
+**Excluded from v1**: `slaCompliance` (deferred to a separate change — SLA per-case logic is more involved than a flat AVG and benefits from its own design).
+
+**Workflow invariant relied on**: a case is "open" iff `endDate IS NULL`. The Procest workflow engine MUST set `endDate` whenever a case transitions to a final status. `KpiAggregationService` documents this in its class docblock; a verification task asserts no `endDate IS NULL` case has a `currentStatus` whose `statusType.isFinal` is `true`. If a deployment violates the invariant, the open-case proxy must be re-validated by the operator.
+
+**Accepted risk — case counts are register-wide for v1**: case-level counts (`openCount`, `overdueCount`, `completedCount`, `newToday`, `statusBreakdown`, `avgProcessingDays`) are not filtered by row-level ACL. They count every case the requesting user can access at the register-read level. This matches today's client-side `fetchCollection('case')` behaviour, so no regression is introduced. If Procest ever enables row-level ACL, a follow-up change is required to apply the same filter at the SQL level (likely via an OR-provided ACL parameter).
 
 ## File Changes
 
