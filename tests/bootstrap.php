@@ -23,6 +23,22 @@ define('PHPUNIT_RUN', 1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+// Register OCP and NCU namespaces from the nextcloud/ocp stub package so that
+// PHPUnit can mock OCP interfaces without a full Nextcloud installation.
+$loaders = spl_autoload_functions();
+foreach ($loaders as $loader) {
+    if (is_array($loader) && $loader[0] instanceof \Composer\Autoload\ClassLoader) {
+        $loader[0]->addPsr4('OCP\\', __DIR__ . '/../vendor/nextcloud/ocp/OCP/');
+        $loader[0]->addPsr4('NCU\\', __DIR__ . '/../vendor/nextcloud/ocp/NCU/');
+        break;
+    }
+}
+
+// Load Doctrine DBAL and OC internal stubs so that PHPUnit can mock
+// OCP\IDBConnection and OCP\DB\QueryBuilder\IQueryBuilder, which reference
+// Doctrine types not present in this repository's vendor directory.
+require_once __DIR__ . '/Unit/Stubs/DoctrineStubs.php';
+
 if (defined('OC_CONSOLE') === false) {
     if (file_exists(__DIR__ . '/../../../lib/base.php') === true) {
         require_once __DIR__ . '/../../../lib/base.php';

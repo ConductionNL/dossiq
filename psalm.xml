@@ -63,6 +63,9 @@
                 <referencedClass name="OCP\Share\IManager"/>
                 <!-- OpenRegister cross-app classes (loaded dynamically) -->
                 <referencedClass name="OCA\OpenRegister\Event\DeepLinkRegistrationEvent"/>
+                <referencedClass name="OCA\OpenRegister\Event\ObjectCreatedEvent"/>
+                <referencedClass name="OCA\OpenRegister\Event\ObjectUpdatedEvent"/>
+                <referencedClass name="OCA\OpenRegister\Event\ObjectDeletedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Exception\LockedException"/>
                 <referencedClass name="OCA\OpenRegister\Service\ObjectService"/>
                 <referencedClass name="OCA\OpenRegister\Service\ConfigurationService"/>

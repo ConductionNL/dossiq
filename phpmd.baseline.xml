@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <phpmd-baseline>
+  <violation rule="PHPMD\Rule\Design\CouplingBetweenObjects" file="lib/AppInfo/Application.php"/>
   <violation rule="PHPMD\Rule\UnusedFormalParameter" file="lib/BackgroundJob/AppointmentReminderJob.php"/>
   <violation rule="PHPMD\Rule\CleanCode\MissingImport" file="lib/BackgroundJob/AppointmentReminderJob.php"/>
   <violation rule="PHPMD\Rule\CleanCode\ElseExpression" file="lib/BackgroundJob/AppointmentReminderJob.php"/>
