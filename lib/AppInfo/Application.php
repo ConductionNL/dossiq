@@ -25,6 +25,9 @@ declare(strict_types=1);
 namespace OCA\Procest\AppInfo;
 
 use OCA\OpenRegister\Event\DeepLinkRegistrationEvent;
+use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectDeletedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Procest\Dashboard\CasesOverviewWidget;
 use OCA\Procest\Dashboard\DeadlineAlertsWidget;
 use OCA\Procest\Dashboard\MyTasksWidget;
@@ -33,6 +36,7 @@ use OCA\Procest\Dashboard\StalledCasesWidget;
 use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Dashboard\StartCaseWidget;
 use OCA\Procest\Listener\DeepLinkRegistrationListener;
+use OCA\Procest\Listener\KpiCacheInvalidationListener;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -68,6 +72,21 @@ class Application extends App implements IBootstrap
         $context->registerEventListener(
             event: DeepLinkRegistrationEvent::class,
             listener: DeepLinkRegistrationListener::class
+        );
+
+        $context->registerEventListener(
+            event: ObjectCreatedEvent::class,
+            listener: KpiCacheInvalidationListener::class
+        );
+
+        $context->registerEventListener(
+            event: ObjectUpdatedEvent::class,
+            listener: KpiCacheInvalidationListener::class
+        );
+
+        $context->registerEventListener(
+            event: ObjectDeletedEvent::class,
+            listener: KpiCacheInvalidationListener::class
         );
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
