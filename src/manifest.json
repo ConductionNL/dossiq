@@ -1,0 +1,199 @@
+{
+	"$schema": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest.schema.json",
+	"version": "1.0.0",
+	"dependencies": ["openregister"],
+	"menu": [
+		{ "id": "Dashboard", "label": "Dashboard", "icon": "icon-category-dashboard", "route": "Dashboard", "order": 10 },
+		{ "id": "MyWork", "label": "My Work", "icon": "icon-checkmark", "route": "MyWork", "order": 20 },
+		{ "id": "Werkvoorraad", "label": "Work Queue", "icon": "icon-group", "route": "Werkvoorraad", "order": 30 },
+		{ "id": "Cases", "label": "Cases", "icon": "icon-folder", "route": "Cases", "order": 40 },
+		{ "id": "Tasks", "label": "Tasks", "icon": "icon-checkmark", "route": "Tasks", "order": 50 },
+		{ "id": "CaseMap", "label": "Map", "icon": "icon-address", "route": "CaseMap", "order": 60 },
+		{ "id": "Voorstellen", "label": "Voorstellen", "icon": "icon-comment", "route": "Voorstellen", "order": 70 },
+		{ "id": "Documentation", "label": "Documentation", "icon": "icon-info", "href": "https://conduction.gitbook.io/procest-nextcloud", "section": "settings", "order": 90 },
+		{ "id": "CaseTypesMenu", "label": "Case Types", "icon": "icon-category-customization", "route": "CaseTypes", "section": "settings", "order": 95 },
+		{ "id": "SettingsMenu", "label": "Settings", "icon": "icon-settings", "route": "Settings", "section": "settings", "order": 99 }
+	],
+	"pages": [
+		{
+			"id": "Dashboard",
+			"route": "/",
+			"type": "dashboard",
+			"title": "Dashboard",
+			"config": {
+				"widgets": [
+					{ "id": "count-open-cases", "type": "custom", "title": "Open Cases" },
+					{ "id": "count-overdue", "type": "custom", "title": "Overdue" },
+					{ "id": "count-completed", "type": "custom", "title": "Completed This Month" },
+					{ "id": "count-my-tasks", "type": "custom", "title": "My Tasks" },
+					{ "id": "count-sla", "type": "custom", "title": "SLA Compliance" },
+					{ "id": "cases-by-status", "type": "custom", "title": "Cases by Status" },
+					{ "id": "my-work", "type": "custom", "title": "My Work" },
+					{ "id": "case-map", "type": "custom", "title": "Case Map" },
+					{ "id": "deadline-alerts", "type": "custom", "title": "Deadline Alerts" },
+					{ "id": "task-due-reminders", "type": "custom", "title": "Task Due Reminders" },
+					{ "id": "stalled-cases", "type": "custom", "title": "Stalled Cases" }
+				],
+				"layout": [
+					{ "id": "count-open-cases",   "widgetId": "count-open-cases",   "gridX": 0,  "gridY": 0, "gridWidth": 2, "gridHeight": 2, "showTitle": false },
+					{ "id": "count-overdue",      "widgetId": "count-overdue",      "gridX": 2,  "gridY": 0, "gridWidth": 3, "gridHeight": 2, "showTitle": false },
+					{ "id": "count-completed",    "widgetId": "count-completed",    "gridX": 5,  "gridY": 0, "gridWidth": 3, "gridHeight": 2, "showTitle": false },
+					{ "id": "count-my-tasks",     "widgetId": "count-my-tasks",     "gridX": 8,  "gridY": 0, "gridWidth": 2, "gridHeight": 2, "showTitle": false },
+					{ "id": "count-sla",          "widgetId": "count-sla",          "gridX": 10, "gridY": 0, "gridWidth": 2, "gridHeight": 2, "showTitle": false },
+					{ "id": "cases-by-status",    "widgetId": "cases-by-status",    "gridX": 0,  "gridY": 2, "gridWidth": 6, "gridHeight": 4, "showTitle": true },
+					{ "id": "my-work",            "widgetId": "my-work",            "gridX": 6,  "gridY": 2, "gridWidth": 6, "gridHeight": 4, "showTitle": true },
+					{ "id": "deadline-alerts",    "widgetId": "deadline-alerts",    "gridX": 0,  "gridY": 6, "gridWidth": 4, "gridHeight": 4, "showTitle": true },
+					{ "id": "task-due-reminders", "widgetId": "task-due-reminders", "gridX": 4,  "gridY": 6, "gridWidth": 4, "gridHeight": 4, "showTitle": true },
+					{ "id": "stalled-cases",      "widgetId": "stalled-cases",      "gridX": 8,  "gridY": 6, "gridWidth": 4, "gridHeight": 4, "showTitle": true },
+					{ "id": "case-map",           "widgetId": "case-map",           "gridX": 0,  "gridY": 10, "gridWidth": 12, "gridHeight": 6, "showTitle": true }
+				]
+			}
+		},
+		{
+			"id": "MyWork",
+			"route": "/my-work",
+			"type": "custom",
+			"title": "My Work",
+			"component": "MyWorkView"
+		},
+		{
+			"id": "Werkvoorraad",
+			"route": "/werkvoorraad",
+			"type": "custom",
+			"title": "Work Queue",
+			"component": "WerkvoorraadView"
+		},
+		{
+			"id": "Cases",
+			"route": "/cases",
+			"type": "index",
+			"title": "Cases",
+			"config": {
+				"register": "procest",
+				"schema": "case",
+				"columns": ["identifier", "title", "caseType", "status", "assignee", "deadline"],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "CaseDetail",
+			"route": "/cases/:id",
+			"type": "detail",
+			"title": "Case",
+			"config": {
+				"register": "procest",
+				"schema": "case",
+				"sidebarTabs": [
+					{ "id": "overview",  "label": "Overview",    "icon": "icon-info",      "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
+					{ "id": "tasks",     "label": "Tasks",       "icon": "icon-checkmark", "component": "CaseTasksTab",                              "order": 20 },
+					{ "id": "decisions", "label": "Decisions",   "icon": "icon-toggle",    "component": "CaseDecisionsTab",                          "order": 30 },
+					{ "id": "documents", "label": "Documents",   "icon": "icon-files",     "component": "CaseDocumentsTab",                          "order": 40 },
+					{ "id": "audit",     "label": "Audit trail", "icon": "icon-history",   "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+				]
+			}
+		},
+		{
+			"id": "Tasks",
+			"route": "/tasks",
+			"type": "index",
+			"title": "Tasks",
+			"config": {
+				"register": "procest",
+				"schema": "task",
+				"columns": ["title", "case", "assignee", "status", "dueDate"],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "TaskNew",
+			"route": "/tasks/new",
+			"type": "detail",
+			"title": "New task",
+			"config": {
+				"register": "procest",
+				"schema": "task",
+				"sidebarTabs": [
+					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
+					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+				]
+			}
+		},
+		{
+			"id": "TaskDetail",
+			"route": "/tasks/:id",
+			"type": "detail",
+			"title": "Task",
+			"config": {
+				"register": "procest",
+				"schema": "task",
+				"sidebarTabs": [
+					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
+					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+				]
+			}
+		},
+		{
+			"id": "CaseMap",
+			"route": "/map",
+			"type": "custom",
+			"title": "Case map",
+			"component": "CaseMapView"
+		},
+		{
+			"id": "Voorstellen",
+			"route": "/voorstellen",
+			"type": "custom",
+			"title": "Voorstellen",
+			"component": "VoorstellenView"
+		},
+		{
+			"id": "VoorstelDetail",
+			"route": "/voorstellen/:id",
+			"type": "custom",
+			"title": "Voorstel",
+			"component": "VoorstelDetailView"
+		},
+		{
+			"id": "Doorlooptijd",
+			"route": "/doorlooptijd",
+			"type": "custom",
+			"title": "Doorlooptijd",
+			"component": "DoorlooptijdView"
+		},
+		{
+			"id": "Settings",
+			"route": "/settings",
+			"type": "custom",
+			"title": "Settings",
+			"component": "AdminRootView"
+		},
+		{
+			"id": "CaseTypes",
+			"route": "/case-types",
+			"type": "custom",
+			"title": "Case types",
+			"component": "AdminRootView"
+		},
+		{
+			"id": "PublicCase",
+			"route": "/public/cases/:id",
+			"type": "custom",
+			"title": "Public case",
+			"component": "PublicCaseView"
+		},
+		{
+			"id": "PublicAppointment",
+			"route": "/public/appointments/:id",
+			"type": "custom",
+			"title": "Public appointment",
+			"component": "PublicAppointmentPage"
+		},
+		{
+			"id": "PublicStatus",
+			"route": "/public/status/:token",
+			"type": "custom",
+			"title": "Public status",
+			"component": "PublicStatusPage"
+		}
+	]
+}
