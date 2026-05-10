@@ -51,8 +51,8 @@ export default {
 		const objectStore = useObjectStore()
 		const currentUser = OC?.currentUser || ''
 		try {
-			const result = await objectStore.getAll('case')
-			const allCases = result?.results || result || []
+			const result = await objectStore.fetchCollection('case', {})
+			const allCases = result || []
 			// Show current user's assigned cases
 			this.cases = allCases.filter(c => c.assignee === currentUser && c.geometry)
 		} catch {
