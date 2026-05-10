@@ -43,8 +43,8 @@ export const useGisStore = defineStore('gis', {
 			this.loading = true
 			try {
 				const objectStore = useObjectStore()
-				const response = await objectStore.getAll('mapLayer')
-				this.layers = response?.results || response || []
+				const response = await objectStore.fetchCollection('mapLayer', {})
+				this.layers = response || []
 			} catch {
 				this.layers = []
 			} finally {
@@ -60,7 +60,7 @@ export const useGisStore = defineStore('gis', {
 		 */
 		async createLayer(layerData) {
 			const objectStore = useObjectStore()
-			const created = await objectStore.create('mapLayer', layerData)
+			const created = await objectStore.saveObject('mapLayer', layerData)
 			await this.fetchLayers()
 			return created
 		},
@@ -74,7 +74,7 @@ export const useGisStore = defineStore('gis', {
 		 */
 		async updateLayer(id, layerData) {
 			const objectStore = useObjectStore()
-			const updated = await objectStore.update('mapLayer', id, layerData)
+			const updated = await objectStore.saveObject('mapLayer', { id, ...layerData })
 			await this.fetchLayers()
 			return updated
 		},
@@ -86,7 +86,7 @@ export const useGisStore = defineStore('gis', {
 		 */
 		async deleteLayer(id) {
 			const objectStore = useObjectStore()
-			await objectStore.delete('mapLayer', id)
+			await objectStore.deleteObject('mapLayer', id)
 			await this.fetchLayers()
 		},
 

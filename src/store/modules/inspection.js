@@ -229,15 +229,22 @@ export const useInspectionStore = defineStore('inspection', {
 		/**
 		 * Upload a photo for an inspection item.
 		 *
-		 * @param {string} caseId  UUID of the case
+		 * Uses the @conduction/nextcloud-vue filesPlugin (`uploadFiles`),
+		 * which expects FormData and the parent object's registered type.
+		 * Returns the first uploaded file's ID, mirroring the legacy contract.
+		 *
+		 * @param {string} caseId  UUID of the parent case
 		 * @param {File}   file    The photo file
 		 * @return {Promise<string|null>} Nextcloud file ID
 		 */
 		async uploadPhoto(caseId, file) {
 			try {
 				const objectStore = useObjectStore()
-				const result = await objectStore.uploadFile(caseId, file)
-				return result?.id || null
+				const formData = new FormData()
+				formData.append('file', file)
+				const result = await objectStore.uploadFiles('case', caseId, formData)
+				const uploaded = result?.results?.[0] || result?.[0] || result
+				return uploaded?.id || null
 			} catch (error) {
 				console.error('Error uploading inspection photo:', error)
 				return null
