@@ -8,7 +8,9 @@
 			<NcLoadingIcon v-if="loading" :size="32" />
 
 			<div v-else-if="error" class="ai-classify-dialog__error">
-				<NcNoteCard type="error">{{ error }}</NcNoteCard>
+				<NcNoteCard type="error">
+					{{ error }}
+				</NcNoteCard>
 			</div>
 
 			<div v-else-if="result" class="ai-classify-dialog__result">

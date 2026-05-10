@@ -17,7 +17,9 @@
 		</div>
 
 		<div v-if="error">
-			<NcNoteCard type="error">{{ error }}</NcNoteCard>
+			<NcNoteCard type="error">
+				{{ error }}
+			</NcNoteCard>
 		</div>
 	</div>
 </template>

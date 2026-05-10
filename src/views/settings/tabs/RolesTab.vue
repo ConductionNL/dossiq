@@ -117,7 +117,9 @@
 				</div>
 			</template>
 
-			<p v-if="error" class="roles-tab__error">{{ error }}</p>
+			<p v-if="error" class="roles-tab__error">
+				{{ error }}
+			</p>
 		</template>
 	</div>
 </template>

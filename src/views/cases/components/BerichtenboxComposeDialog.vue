@@ -11,7 +11,9 @@
 					:label="t('procest', 'BSN (burgerservicenummer)')"
 					:error="!!errors.bsn"
 					@update:value="v => form.bsn = v" />
-				<p v-if="errors.bsn" class="form-error">{{ errors.bsn }}</p>
+				<p v-if="errors.bsn" class="form-error">
+					{{ errors.bsn }}
+				</p>
 			</div>
 
 			<div class="form-group">
@@ -20,7 +22,9 @@
 					:label="t('procest', 'Subject')"
 					:error="!!errors.subject"
 					@update:value="v => form.subject = v" />
-				<p v-if="errors.subject" class="form-error">{{ errors.subject }}</p>
+				<p v-if="errors.subject" class="form-error">
+					{{ errors.subject }}
+				</p>
 			</div>
 
 			<div class="form-group">
@@ -33,7 +37,9 @@
 				<small class="compose-dialog__char-count">
 					{{ form.body.length }} {{ t('procest', 'characters') }}
 				</small>
-				<p v-if="errors.body" class="form-error">{{ errors.body }}</p>
+				<p v-if="errors.body" class="form-error">
+					{{ errors.body }}
+				</p>
 			</div>
 
 			<div class="form-group">
@@ -54,7 +60,9 @@
 				</NcButton>
 			</div>
 
-			<NcNoteCard v-if="sendError" type="error">{{ sendError }}</NcNoteCard>
+			<NcNoteCard v-if="sendError" type="error">
+				{{ sendError }}
+			</NcNoteCard>
 		</div>
 	</NcDialog>
 </template>

@@ -41,7 +41,9 @@
 				<tr v-for="layer in layers" :key="layer.id">
 					<td>{{ layer.title }}</td>
 					<td>{{ layer.layerType }}</td>
-					<td class="map-layer-settings__url">{{ truncateUrl(layer.url) }}</td>
+					<td class="map-layer-settings__url">
+						{{ truncateUrl(layer.url) }}
+					</td>
 					<td>{{ layer.isDefault ? t('procest', 'Yes') : '' }}</td>
 					<td>
 						<NcButton type="tertiary-no-background" @click="editLayer(layer)">
