@@ -216,7 +216,7 @@ export default {
 		async loadVoorstel() {
 			this.loading = true
 			try {
-				this.voorstel = await this.objectStore.fetchOne('voorstel', this.voorstelId)
+				this.voorstel = await this.objectStore.fetchObject('voorstel', this.voorstelId)
 			} catch (error) {
 				console.error('Failed to load voorstel:', error)
 			} finally {

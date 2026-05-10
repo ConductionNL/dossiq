@@ -168,11 +168,11 @@ export default {
 
 			try {
 				const [caseResult, typeResult] = await Promise.all([
-					objectStore.getAll('case'),
-					objectStore.getAll('caseType'),
+					objectStore.fetchCollection('case', {}),
+					objectStore.fetchCollection('caseType', {}),
 				])
-				this.cases = caseResult?.results || caseResult || []
-				this.caseTypes = typeResult?.results || typeResult || []
+				this.cases = caseResult || []
+				this.caseTypes = typeResult || []
 				await gisStore.fetchLayers()
 			} finally {
 				this.loading = false
