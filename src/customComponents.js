@@ -37,17 +37,17 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 
 export default {
 	// --- Genuine exceptions: no abstract analogue. ---
-	MyWorkView,        // bespoke 4-tab filter UI mixing case + task entities
-	WerkvoorraadView,  // KPI-strip-driven work queue
-	CaseMapView,       // Leaflet map + WMS/WFS layers + marker clusters
+	MyWorkView, // bespoke 4-tab filter UI mixing case + task entities
+	WerkvoorraadView, // KPI-strip-driven work queue
+	CaseMapView, // Leaflet map + WMS/WFS layers + marker clusters
 
 	// --- Lib gaps: would migrate once lib gains the missing primitive. ---
-	DoorlooptijdView,  // KPI dashboard with apexcharts (lib chart-widget gap)
-	AdminRootView,     // multi-tab admin root (lib settings-custom-slot gap)
+	DoorlooptijdView, // KPI dashboard with apexcharts (lib chart-widget gap)
+	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
 
 	// --- Migration cost: deferred to a follow-up. ---
-	VoorstellenView,      // status-tabs filter tied to parafeerroute lifecycle
-	VoorstelDetailView,   // parafeerroute multi-step approver flow
+	VoorstellenView, // status-tabs filter tied to parafeerroute lifecycle
+	VoorstelDetailView, // parafeerroute multi-step approver flow
 
 	// --- Anonymous-public routes (no auth, no main menu). ---
 	PublicCaseView,
@@ -55,7 +55,7 @@ export default {
 	PublicStatusPage,
 
 	// --- Detail-tab components (one per case-detail cross-schema relation). ---
-	CaseTasksTab,      // tasks where task.case === parent.id
-	CaseDecisionsTab,  // decisions where decision.case === parent.id
-	CaseDocumentsTab,  // documents where document.case === parent.id
+	CaseTasksTab, // tasks where task.case === parent.id
+	CaseDecisionsTab, // decisions where decision.case === parent.id
+	CaseDocumentsTab, // documents where document.case === parent.id
 }

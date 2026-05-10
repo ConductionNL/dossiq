@@ -10,15 +10,18 @@
 
 		<template v-if="enabled">
 			<div class="form-group">
-				<NcTextField :value="apiUrl" :label="t('procest', 'API Endpoint URL')"
+				<NcTextField :value="apiUrl"
+					:label="t('procest', 'API Endpoint URL')"
 					@update:value="v => apiUrl = v" />
 			</div>
 			<div class="form-group">
-				<NcTextField :value="oin" :label="t('procest', 'OIN (Organisatie-identificatienummer)')"
+				<NcTextField :value="oin"
+					:label="t('procest', 'OIN (Organisatie-identificatienummer)')"
 					@update:value="v => oin = v" />
 			</div>
 			<div class="form-group">
-				<NcTextField :value="certificatePath" :label="t('procest', 'Certificate path')"
+				<NcTextField :value="certificatePath"
+					:label="t('procest', 'Certificate path')"
 					@update:value="v => certificatePath = v" />
 			</div>
 

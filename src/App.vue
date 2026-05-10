@@ -21,6 +21,19 @@ export default {
 		CnAppRoot,
 	},
 
+	provide() {
+		return {
+			// Provide/inject channel for index pages that auto-mount sidebar
+			// content; matches the decidesk pattern (App.vue hosts a single
+			// CnObjectSidebar via CnAppRoot's #sidebar slot).
+			objectSidebarState: this.objectSidebarState,
+			// Legacy alias kept for any existing custom components that
+			// inject `sidebarState` (CaseList / TaskList / VoorstelList /
+			// AdminRoot referenced this name in the pre-manifest shell).
+			sidebarState: this.objectSidebarState,
+		}
+	},
+
 	props: {
 		manifest: {
 			type: Object,
@@ -34,19 +47,6 @@ export default {
 			type: Object,
 			default: () => ({}),
 		},
-	},
-
-	provide() {
-		return {
-			// Provide/inject channel for index pages that auto-mount sidebar
-			// content; matches the decidesk pattern (App.vue hosts a single
-			// CnObjectSidebar via CnAppRoot's #sidebar slot).
-			objectSidebarState: this.objectSidebarState,
-			// Legacy alias kept for any existing custom components that
-			// inject `sidebarState` (CaseList / TaskList / VoorstelList /
-			// AdminRoot referenced this name in the pre-manifest shell).
-			sidebarState: this.objectSidebarState,
-		}
 	},
 
 	data() {

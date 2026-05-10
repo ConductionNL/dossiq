@@ -102,17 +102,17 @@ export default {
 			return this.propertyDefinitions.filter(pd => this.getPropertyValue(pd.id)).length
 		},
 	},
-	async mounted() {
-		if (this.caseTypeId) {
-			await this.loadData()
-		}
-	},
 	watch: {
 		caseTypeId() {
 			if (this.caseTypeId) {
 				this.loadData()
 			}
 		},
+	},
+	async mounted() {
+		if (this.caseTypeId) {
+			await this.loadData()
+		}
 	},
 	methods: {
 		async loadData() {

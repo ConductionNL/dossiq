@@ -22,7 +22,9 @@
 						{{ getStatusLabel(cons.status) }}
 					</span>
 				</div>
-				<p class="consultation-panel__subject">{{ cons.onderwerp }}</p>
+				<p class="consultation-panel__subject">
+					{{ cons.onderwerp }}
+				</p>
 				<p v-if="cons.vraagstelling" class="consultation-panel__question">
 					{{ cons.vraagstelling }}
 				</p>
