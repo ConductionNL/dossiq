@@ -46,7 +46,7 @@
 			<div v-if="unresolvedVars.length > 0" class="email-composer__warning">
 				{{ t('procest', 'Unresolved variables:') }}
 				<span v-for="v in unresolvedVars" :key="v" class="email-composer__unresolved">
-					{{ '{{' + v + '}}' }}
+					{{ formatVariable(v) }}
 				</span>
 			</div>
 
@@ -56,7 +56,7 @@
 					<summary>{{ t('procest', 'Available variables') }}</summary>
 					<div class="email-composer__variable-list">
 						<code v-for="v in availableVariables" :key="v" @click="insertVariable(v)">
-							{{ '{{' + v + '}}' }}
+							{{ formatVariable(v) }}
 						</code>
 					</div>
 				</details>
@@ -163,6 +163,9 @@ export default {
 		},
 	},
 	methods: {
+		formatVariable(varName) {
+			return '{{' + varName + '}}'
+		},
 		onTemplateSelected(template) {
 			if (!template) return
 			this.form.subject = template.subjectPattern || ''
