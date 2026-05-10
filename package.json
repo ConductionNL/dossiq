@@ -22,7 +22,7 @@
 		"extends @nextcloud/browserslist-config"
 	],
 	"dependencies": {
-		"@conduction/nextcloud-vue": "^1.0.0-beta.12",
+		"@conduction/nextcloud-vue": "^1.0.0-beta.29",
 		"apexcharts": "^3.45.0",
 		"vue-apexcharts": "^1.6.2",
 		"@nextcloud/axios": "~2.5.2",
