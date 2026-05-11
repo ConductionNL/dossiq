@@ -12,6 +12,8 @@
 		{ "id": "Voorstellen", "label": "Voorstellen", "icon": "icon-comment", "route": "Voorstellen", "order": 70 },
 		{ "id": "Documentation", "label": "Documentation", "icon": "icon-info", "href": "https://conduction.gitbook.io/procest-nextcloud", "section": "settings", "order": 90 },
 		{ "id": "CaseTypesMenu", "label": "Case Types", "icon": "icon-category-customization", "route": "CaseTypes", "section": "settings", "order": 95 },
+		{ "id": "LegesverordeningenMenu", "label": "Legesverordeningen", "icon": "icon-category-office", "route": "Legesverordeningen", "section": "settings", "order": 96 },
+		{ "id": "LegesberekeningenMenu", "label": "Legesberekeningen", "icon": "icon-category-monitoring", "route": "Legesberekeningen", "section": "settings", "order": 97 },
 		{ "id": "SettingsMenu", "label": "Settings", "icon": "icon-settings", "route": "Settings", "section": "settings", "order": 99 }
 	],
 	"pages": [
@@ -175,6 +177,108 @@
 			"type": "custom",
 			"title": "Case types",
 			"component": "AdminRootView"
+		},
+		{
+			"id": "Legesverordeningen",
+			"route": "/legesverordeningen",
+			"type": "index",
+			"title": "Legesverordeningen",
+			"config": {
+				"register": "procest",
+				"schema": "legesverordening",
+				"columns": ["name", "year", "effectiveDate", "status", "isActive"],
+				"actions": ["create", "edit", "delete", "view"],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "LegesverordeningDetail",
+			"route": "/legesverordeningen/:id",
+			"type": "detail",
+			"title": "Legesverordening",
+			"config": {
+				"register": "procest",
+				"schema": "legesverordening",
+				"sidebarTabs": [
+					{
+						"id": "overview",
+						"label": "Overview",
+						"icon": "icon-info",
+						"widgets": [
+							{ "type": "data" },
+							{ "type": "metadata" }
+						],
+						"order": 10
+					},
+					{
+						"id": "artikelen",
+						"label": "Artikelen",
+						"icon": "icon-file",
+						"widgets": [
+							{
+								"type": "related-index",
+								"config": {
+									"register": "procest",
+									"schema": "legesartikel",
+									"filter": { "verordening": ":id" },
+									"columns": ["nummer", "omschrijving", "type", "category", "order"],
+									"actions": ["create", "edit", "delete"]
+								}
+							}
+						],
+						"order": 20
+					},
+					{
+						"id": "audit",
+						"label": "Audit trail",
+						"icon": "icon-history",
+						"widgets": [{ "type": "audit-trail" }],
+						"order": 90
+					}
+				]
+			}
+		},
+		{
+			"id": "Legesberekeningen",
+			"route": "/legesberekeningen",
+			"type": "index",
+			"title": "Legesberekeningen",
+			"config": {
+				"register": "procest",
+				"schema": "legesberekening",
+				"columns": ["case", "verordening", "total", "version", "status", "calculatedBy", "calculatedAt"],
+				"actions": ["view", "delete"],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "LegesberekeningDetail",
+			"route": "/legesberekeningen/:id",
+			"type": "detail",
+			"title": "Legesberekening",
+			"config": {
+				"register": "procest",
+				"schema": "legesberekening",
+				"sidebarTabs": [
+					{
+						"id": "overview",
+						"label": "Overview",
+						"icon": "icon-info",
+						"widgets": [
+							{ "type": "data" },
+							{ "type": "metadata" }
+						],
+						"order": 10
+					},
+					{
+						"id": "audit",
+						"label": "Audit trail",
+						"icon": "icon-history",
+						"widgets": [{ "type": "audit-trail" }],
+						"order": 90
+					}
+				]
+			}
 		},
 		{
 			"id": "PublicCase",

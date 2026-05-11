@@ -2389,6 +2389,304 @@
           }
         }
       },
+      "legesverordening": {
+        "slug": "legesverordening",
+        "icon": "CashMultiple",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Legislation",
+        "title": "Legesverordening",
+        "description": "A municipal fee regulation (legesverordening) — the legal basis for charging fees on permit cases, containing a versioned set of articles with calculation rules",
+        "type": "object",
+        "required": [
+          "name",
+          "effectiveDate"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this legesverordening (e.g. Legesverordening 2026)",
+            "x-translatable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the regulation and its scope",
+            "x-translatable": true
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date on which this verordening enters into force",
+            "facetable": true
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date on which this verordening is no longer effective (optional)"
+          },
+          "year": {
+            "type": "integer",
+            "description": "Calendar year this verordening applies to",
+            "facetable": true
+          },
+          "globalMaximum": {
+            "type": "number",
+            "description": "Optional global cap on the total leges calculated under this verordening"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "concept",
+              "vastgesteld",
+              "vervallen"
+            ],
+            "default": "concept",
+            "description": "Lifecycle status of this verordening",
+            "facetable": true
+          },
+          "reference": {
+            "type": "string",
+            "description": "Official reference (raadsbesluit, publication URL, or DROP/CVDR identifier)"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this verordening is currently the active one for new calculations",
+            "facetable": true
+          }
+        }
+      },
+      "legesartikel": {
+        "slug": "legesartikel",
+        "icon": "FileDocumentOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Article",
+        "title": "Legesartikel",
+        "description": "A single article (tariff line) inside a legesverordening, with its calculation rule (vast, percentage, staffel, maximum, combinatie)",
+        "type": "object",
+        "required": [
+          "verordening",
+          "nummer",
+          "type"
+        ],
+        "properties": {
+          "verordening": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent legesverordening",
+            "facetable": true
+          },
+          "nummer": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "Article number (e.g. 2.3.1)",
+            "facetable": true
+          },
+          "omschrijving": {
+            "type": "string",
+            "description": "Description of what this article covers",
+            "x-translatable": true
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "vast",
+              "percentage",
+              "staffel",
+              "maximum",
+              "combinatie"
+            ],
+            "description": "Calculation type for this article",
+            "facetable": true
+          },
+          "grondslagField": {
+            "type": "string",
+            "default": "bouwkosten",
+            "description": "Name of the case-data field used as the calculation base (grondslag)"
+          },
+          "bedrag": {
+            "type": "number",
+            "description": "Fixed amount (used when type is vast)"
+          },
+          "percentage": {
+            "type": "number",
+            "description": "Percentage rate (used when type is percentage)"
+          },
+          "maximum": {
+            "type": "number",
+            "description": "Cap value (used when type is maximum)"
+          },
+          "subType": {
+            "type": "string",
+            "enum": [
+              "vast",
+              "percentage",
+              "staffel"
+            ],
+            "description": "Sub-calculation strategy when type is maximum"
+          },
+          "brackets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "number",
+                  "description": "Lower bound of this bracket (inclusive)"
+                },
+                "to": {
+                  "type": "number",
+                  "description": "Upper bound of this bracket (exclusive); omit for unbounded"
+                },
+                "percentage": {
+                  "type": "number",
+                  "description": "Rate applied within this bracket"
+                }
+              }
+            },
+            "description": "Tiered brackets (used when type is staffel)"
+          },
+          "subArtikelen": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Nested article definitions (used when type is combinatie)"
+          },
+          "category": {
+            "type": "string",
+            "description": "Optional grouping category for display (e.g. Omgevingsvergunning)",
+            "facetable": true
+          },
+          "order": {
+            "type": "integer",
+            "description": "Display order within the verordening"
+          }
+        }
+      },
+      "legesberekening": {
+        "slug": "legesberekening",
+        "icon": "Calculator",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:MonetaryAmount",
+        "title": "Legesberekening",
+        "description": "A single fee calculation produced for a case under a specific legesverordening, with breakdown per artikel, audit trail and version history",
+        "type": "object",
+        "required": [
+          "case",
+          "verordening",
+          "total",
+          "calculatedBy",
+          "calculatedAt"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case this calculation belongs to",
+            "facetable": true
+          },
+          "verordening": {
+            "type": "string",
+            "description": "Name or reference of the applied verordening at calculation time"
+          },
+          "verordeningId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the legesverordening object",
+            "facetable": true
+          },
+          "total": {
+            "type": "number",
+            "description": "Total calculated leges amount (after global maximum is applied)"
+          },
+          "breakdown": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "artikel": {
+                  "type": "string",
+                  "description": "Artikel number"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Artikel description"
+                },
+                "grondslag": {
+                  "type": "number",
+                  "description": "Base amount used"
+                },
+                "amount": {
+                  "type": "number",
+                  "description": "Amount charged for this artikel"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Calculation type used for this artikel"
+                }
+              }
+            },
+            "description": "Per-artikel breakdown of the total"
+          },
+          "calculatedBy": {
+            "type": "string",
+            "description": "User UID of the person who triggered the calculation"
+          },
+          "calculatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the calculation"
+          },
+          "version": {
+            "type": "integer",
+            "default": 1,
+            "description": "Version number; increments on each recalculation"
+          },
+          "previousVersion": {
+            "type": "integer",
+            "description": "Previous version number (when this is a recalculation)"
+          },
+          "previousTotal": {
+            "type": "number",
+            "description": "Total of the previous calculation (when this is a recalculation)"
+          },
+          "difference": {
+            "type": "number",
+            "description": "Difference vs the previous total (positive = higher, negative = lower)"
+          },
+          "correctionReason": {
+            "type": "string",
+            "description": "Reason supplied when this calculation corrects a previous one"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "concept",
+              "opgelegd",
+              "verrekend",
+              "teruggegeven"
+            ],
+            "default": "concept",
+            "description": "Status of the calculation within the billing lifecycle",
+            "facetable": true
+          },
+          "exportedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of last export to the financial system"
+          },
+          "exportFormat": {
+            "type": "string",
+            "enum": [
+              "csv",
+              "xml",
+              "json"
+            ],
+            "description": "Format used during last export"
+          }
+        }
+      },
       "handhavingsactie": {
         "slug": "handhavingsactie",
         "icon": "Gavel",
@@ -2885,7 +3183,10 @@
           "inspectieRapport",
           "handhavingsactie",
           "inspectieChecklist",
-          "adviesAanvraag"
+          "adviesAanvraag",
+          "legesverordening",
+          "legesartikel",
+          "legesberekening"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"
