@@ -164,6 +164,11 @@
               "type": "string"
             },
             "description": "References to decision types (besluittypen) linked to this case type"
+          },
+          "defaultAssignee": {
+            "type": "string",
+            "description": "Nextcloud user UID or group ID for automatic assignment of cases of this type (REQ-INTAKE-03a)",
+            "title": "Default assignee"
           }
         }
       },
@@ -594,6 +599,23 @@
             "type": "string",
             "description": "Nextcloud user ID of the primary handler",
             "title": "Assignee",
+            "facetable": true
+          },
+          "intakeChannel": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "balie",
+              "telefoon",
+              "email",
+              "post",
+              "website",
+              "overig",
+              "zgw-api"
+            ],
+            "default": "manual",
+            "description": "The channel through which this case was intaken (REQ-INTAKE-08b, REQ-INTAKE-11a)",
+            "title": "Intake channel",
             "facetable": true
           },
           "priority": {
