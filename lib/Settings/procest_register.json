@@ -2293,7 +2293,7 @@
             "minimum": 0,
             "maximum": 1,
             "description": "Layer opacity from 0.0 (transparent) to 1.0 (opaque)",
-            "default": 1.0
+            "default": 1
           },
           "minZoom": {
             "type": "integer",
@@ -2672,6 +2672,74 @@
             "description": "Whether follow-up action is required"
           }
         }
+      },
+      "tenant": {
+        "slug": "tenant",
+        "icon": "OfficeBuilding",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Organization",
+        "title": "Tenant",
+        "description": "A tenant (municipality) in a multi-tenant Procest deployment",
+        "type": "object",
+        "required": [
+          "name",
+          "slug"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Municipality name"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-safe identifier"
+          },
+          "oin": {
+            "type": "string",
+            "description": "Organisatie-identificatienummer"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Custom domain"
+          },
+          "registerId": {
+            "type": "string",
+            "description": "OpenRegister register ID for this tenant"
+          },
+          "groupId": {
+            "type": "string",
+            "description": "Nextcloud group ID (tenant_{slug})"
+          },
+          "brandingTokens": {
+            "type": "object",
+            "description": "NL Design System token overrides",
+            "additionalProperties": true
+          },
+          "logoUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Tenant logo URL"
+          },
+          "primaryColor": {
+            "type": "string",
+            "description": "Primary brand color"
+          },
+          "maxUsers": {
+            "type": "integer",
+            "default": 0,
+            "description": "Max users (0 = unlimited)"
+          },
+          "maxStorageMb": {
+            "type": "integer",
+            "default": 0,
+            "description": "Max storage MB (0 = unlimited)"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether tenant is active"
+          }
+        }
       }
     },
     "registers": {
@@ -2737,10 +2805,34 @@
         "isDefault": true,
         "description": "Standaard accorderingslijn voor collegeadviezen over omgevingsvergunningen",
         "steps": [
-          {"order": 1, "type": "advies",      "actor": "juridische-dienst",   "actorType": "group", "mandatory": false},
-          {"order": 2, "type": "parafering",  "actor": "teamleider-vth",      "actorType": "role",  "mandatory": true},
-          {"order": 3, "type": "parafering",  "actor": "afdelingshoofd-vth",  "actorType": "role",  "mandatory": true},
-          {"order": 4, "type": "accordering", "actor": "portefeuillehouder",  "actorType": "role",  "mandatory": true}
+          {
+            "order": 1,
+            "type": "advies",
+            "actor": "juridische-dienst",
+            "actorType": "group",
+            "mandatory": false
+          },
+          {
+            "order": 2,
+            "type": "parafering",
+            "actor": "teamleider-vth",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 3,
+            "type": "parafering",
+            "actor": "afdelingshoofd-vth",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 4,
+            "type": "accordering",
+            "actor": "portefeuillehouder",
+            "actorType": "role",
+            "mandatory": true
+          }
         ]
       },
       {
@@ -2754,11 +2846,41 @@
         "isDefault": false,
         "description": "Uitgebreide route voor bestemmingsplanwijzigingen met planologisch en juridisch advies",
         "steps": [
-          {"order": 1, "type": "advies",      "actor": "planologisch-adviseur",          "actorType": "role",  "mandatory": true},
-          {"order": 2, "type": "advies",      "actor": "juridische-dienst",              "actorType": "group", "mandatory": true},
-          {"order": 3, "type": "parafering",  "actor": "teamleider-ro",                  "actorType": "role",  "mandatory": true},
-          {"order": 4, "type": "parafering",  "actor": "afdelingshoofd-ro",              "actorType": "role",  "mandatory": true},
-          {"order": 5, "type": "accordering", "actor": "wethouder-ruimtelijke-ordening", "actorType": "role",  "mandatory": true}
+          {
+            "order": 1,
+            "type": "advies",
+            "actor": "planologisch-adviseur",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 2,
+            "type": "advies",
+            "actor": "juridische-dienst",
+            "actorType": "group",
+            "mandatory": true
+          },
+          {
+            "order": 3,
+            "type": "parafering",
+            "actor": "teamleider-ro",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 4,
+            "type": "parafering",
+            "actor": "afdelingshoofd-ro",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 5,
+            "type": "accordering",
+            "actor": "wethouder-ruimtelijke-ordening",
+            "actorType": "role",
+            "mandatory": true
+          }
         ]
       },
       {
@@ -2772,8 +2894,20 @@
         "isDefault": true,
         "description": "Standaard directieteam-advies: behandelaar parafering gevolgd door afdelingshoofd accordering",
         "steps": [
-          {"order": 1, "type": "parafering",  "actor": "behandelaar",    "actorType": "role", "mandatory": true},
-          {"order": 2, "type": "accordering", "actor": "afdelingshoofd", "actorType": "role", "mandatory": true}
+          {
+            "order": 1,
+            "type": "parafering",
+            "actor": "behandelaar",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 2,
+            "type": "accordering",
+            "actor": "afdelingshoofd",
+            "actorType": "role",
+            "mandatory": true
+          }
         ]
       },
       {
@@ -2787,12 +2921,48 @@
         "isDefault": true,
         "description": "Volledige route voor raadsvoorstellen: financieel, juridisch, management, gemeentesecretaris en burgemeester",
         "steps": [
-          {"order": 1, "type": "advies",      "actor": "financieel-adviseur",  "actorType": "role",  "mandatory": true},
-          {"order": 2, "type": "advies",      "actor": "juridische-dienst",    "actorType": "group", "mandatory": true},
-          {"order": 3, "type": "parafering",  "actor": "teamleider",           "actorType": "role",  "mandatory": true},
-          {"order": 4, "type": "parafering",  "actor": "afdelingshoofd",       "actorType": "role",  "mandatory": true},
-          {"order": 5, "type": "accordering", "actor": "gemeentesecretaris",   "actorType": "role",  "mandatory": true},
-          {"order": 6, "type": "accordering", "actor": "burgemeester",         "actorType": "role",  "mandatory": true}
+          {
+            "order": 1,
+            "type": "advies",
+            "actor": "financieel-adviseur",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 2,
+            "type": "advies",
+            "actor": "juridische-dienst",
+            "actorType": "group",
+            "mandatory": true
+          },
+          {
+            "order": 3,
+            "type": "parafering",
+            "actor": "teamleider",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 4,
+            "type": "parafering",
+            "actor": "afdelingshoofd",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 5,
+            "type": "accordering",
+            "actor": "gemeentesecretaris",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 6,
+            "type": "accordering",
+            "actor": "burgemeester",
+            "actorType": "role",
+            "mandatory": true
+          }
         ]
       },
       {

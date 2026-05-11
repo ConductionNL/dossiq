@@ -173,6 +173,13 @@ return [
         ['name' => 'leges#teruggaaf',   'url' => '/api/leges/teruggaaf',    'verb' => 'POST'],
         ['name' => 'leges#export',      'url' => '/api/leges/export',       'verb' => 'POST'],
 
+        // Multi-Tenant SaaS — tenant management endpoints (platform admin scoped).
+        ['name' => 'tenant#current',   'url' => '/api/tenants/current',                'verb' => 'GET'],
+        ['name' => 'tenant#index',     'url' => '/api/tenants',                        'verb' => 'GET'],
+        ['name' => 'tenant#create',    'url' => '/api/tenants',                        'verb' => 'POST'],
+        ['name' => 'tenant#provision', 'url' => '/api/tenants/{tenantId}/provision',   'verb' => 'POST'],
+        ['name' => 'tenant#usage',     'url' => '/api/tenants/{tenantId}/usage',       'verb' => 'GET'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],

@@ -75,6 +75,7 @@ class SettingsService
         'inspectie_rapport_schema',
         'handhavingsactie_schema',
         'advies_aanvraag_schema',
+        'tenant_schema',
         'lhsMatrix',
     ];
 
@@ -122,6 +123,7 @@ class SettingsService
         'voorstel'                     => 'voorstel_schema',
         'parafeerroute'                => 'parafeerroute_schema',
         'parafeeractie'                => 'parafeeractie_schema',
+        'tenant'                       => 'tenant_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
