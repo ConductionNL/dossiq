@@ -12,6 +12,7 @@
 		{ "id": "CaseMap", "label": "Map", "icon": "icon-address", "route": "CaseMap", "order": 60 },
 		{ "id": "Voorstellen", "label": "Voorstellen", "icon": "icon-comment", "route": "Voorstellen", "order": 70 },
 		{ "id": "Advice", "label": "Advice", "icon": "icon-comment", "route": "Advice", "order": 75 },
+		{ "id": "BezwaarAdviceRequests", "label": "BAC-adviezen", "icon": "icon-comment", "route": "BezwaarAdviceRequests", "order": 76 },
 		{ "id": "Transfers", "label": "Transfers", "icon": "icon-shared", "route": "Transfers", "order": 80 },
 		{ "id": "Documentation", "label": "Documentation", "icon": "icon-info", "href": "https://conduction.gitbook.io/procest-nextcloud", "section": "settings", "order": 90 },
 		{ "id": "CaseTypesMenu", "label": "Case Types", "icon": "icon-category-customization", "route": "CaseTypes", "section": "settings", "order": 95 },
@@ -26,6 +27,7 @@
 		{ "id": "LhsMatricesMenu", "label": "Handhavingsstrategie", "icon": "icon-category-customization", "route": "LhsMatrices", "section": "settings", "order": 96, "permission": "admin" },
 		{ "id": "LhsRecommendationsMenu", "label": "LHS Recommendations", "icon": "icon-comment", "route": "LhsRecommendations", "section": "settings", "order": 97 },
 		{ "id": "LocationsMenu", "label": "Case locations", "icon": "icon-address", "route": "Locations", "section": "settings", "order": 98, "permission": "admin" },
+		{ "id": "BezwaarCommitteesMenu", "label": "Bezwaaradviescommissies", "icon": "icon-group", "route": "BezwaarCommittees", "section": "settings", "order": 99 },
 		{ "id": "SettingsMenu", "label": "Settings", "icon": "icon-settings", "route": "Settings", "section": "settings", "order": 99 }
 	],
 	"pages": [
@@ -731,6 +733,65 @@
 				"sidebarTabs": [
 					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
 					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+				]
+			}
+		},
+		{
+			"id": "BezwaarCommittees",
+			"route": "/settings/bezwaar-committees",
+			"type": "index",
+			"title": "Bezwaaradviescommissies",
+			"config": {
+				"register": "procest",
+				"schema": "bezwaaradviescommissie",
+				"columns": ["name", "type", "domain", "quorum", "active", "termEndsOn"],
+				"actions": [
+					{ "id": "view", "label": "View", "icon": "icon-info", "handler": "navigate", "route": "BezwaarCommitteeDetail" }
+				],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "BezwaarCommitteeDetail",
+			"route": "/settings/bezwaar-committees/:id",
+			"type": "detail",
+			"title": "Bezwaaradviescommissie",
+			"config": {
+				"register": "procest",
+				"schema": "bezwaaradviescommissie",
+				"sidebarTabs": [
+					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
+					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+				]
+			}
+		},
+		{
+			"id": "BezwaarAdviceRequests",
+			"route": "/bezwaar-advice-requests",
+			"type": "index",
+			"title": "BAC-adviezen",
+			"config": {
+				"register": "procest",
+				"schema": "bacAdviceRequest",
+				"columns": ["bezwaar", "commissie", "status", "assignedAt", "deadline", "conclusion"],
+				"actions": [
+					{ "id": "view", "label": "View", "icon": "icon-info", "handler": "navigate", "route": "BezwaarAdviceRequestDetail" }
+				],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "BezwaarAdviceRequestDetail",
+			"route": "/bezwaar-advice-requests/:id",
+			"type": "detail",
+			"title": "BAC-advies",
+			"config": {
+				"register": "procest",
+				"schema": "bacAdviceRequest",
+				"sidebarTabs": [
+					{ "id": "overview",  "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }],                            "order": 10 },
+					{ "id": "documents", "label": "Documenten",  "icon": "icon-files",   "widgets": [{ "type": "data", "config": { "fields": ["adviceDocuments"] } }],        "order": 20 },
+					{ "id": "audit",     "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                                              "order": 90 }
 				]
 			}
 		}

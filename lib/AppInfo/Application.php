@@ -38,6 +38,7 @@ use OCA\Procest\Dashboard\OverdueCasesWidget;
 use OCA\Procest\Dashboard\StalledCasesWidget;
 use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Dashboard\StartCaseWidget;
+use OCA\Procest\Listener\BezwaarAdviceRequestedListener;
 use OCA\Procest\Listener\BezwaarLifecycleListener;
 use OCA\Procest\Event\ParafeerTransitionEvent;
 use OCA\Procest\Listener\DeepLinkRegistrationListener;
@@ -144,6 +145,14 @@ class Application extends App implements IBootstrap
         $context->registerEventListener(
             event: ObjectDeletingEvent::class,
             listener: ParaferingAuditAppendOnlyValidator::class
+        );
+
+        // Bezwaar-advisory-committee auto-assignment when a bezwaar enters
+        // status "Hoorzitting gepland" — listener defers to
+        // AdvisoryCommitteeService::autoAssignDefaultCommittee.
+        $context->registerEventListener(
+            event: ObjectUpdatedEvent::class,
+            listener: BezwaarAdviceRequestedListener::class
         );
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);

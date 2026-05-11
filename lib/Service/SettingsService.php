@@ -95,6 +95,12 @@ class SettingsService
         'case_transfer_schema',
         'automatic_action_schema',
         'location_schema',
+        // Bezwaar (lifecycle) — Awb Hoofdstuk 7.
+        'bezwaar_schema',
+        // Bezwaar advisory committee (BAC) — Awb Art. 7:13.
+        'bezwaaradviescommissie_schema',
+        'bac_advice_request_schema',
+        'bac_default_committee',
         'lhsMatrix',
         'lhs_matrix_schema',
         'lhs_recommendation_schema',
@@ -192,6 +198,9 @@ class SettingsService
         'lhsMatrix'                    => 'lhs_matrix_schema',
         'lhsRecommendation'            => 'lhs_recommendation_schema',
         'location'                     => 'location_schema',
+        'bezwaar'                      => 'bezwaar_schema',
+        'bezwaaradviescommissie'       => 'bezwaaradviescommissie_schema',
+        'bacAdviceRequest'             => 'bac_advice_request_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
