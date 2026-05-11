@@ -131,62 +131,6 @@ class TenantService
     }//end getTenantByGroupId()
 
     /**
-     * Create a new tenant.
-     *
-     * Creates the tenant record, a Nextcloud group, and (optionally)
-     * a dedicated OpenRegister register.
-     *
-     * @param string      $name   The municipality name
-     * @param string|null $oin    The Organisatie-identificatienummer
-     * @param string|null $domain The custom domain
-     *
-     * @return array The created tenant data
-     */
-    public function createTenant(string $name, ?string $oin=null, ?string $domain=null): array
-    {
-        $objectService = $this->getObjectService();
-        if ($objectService === null) {
-            return ['error' => 'OpenRegister is not available'];
-        }
-
-        $slug    = $this->slugify(name: $name);
-        $groupId = self::TENANT_GROUP_PREFIX.$slug;
-
-        // Create Nextcloud group.
-        if ($this->groupManager->groupExists($groupId) === false) {
-            $this->groupManager->createGroup($groupId);
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('tenant_schema');
-
-        $tenantData = [
-            'name'           => $name,
-            'slug'           => $slug,
-            'oin'            => $oin,
-            'domain'         => $domain,
-            'groupId'        => $groupId,
-            'brandingTokens' => '{}',
-            'maxUsers'       => 0,
-            'maxStorageMb'   => 0,
-            'isActive'       => true,
-        ];
-
-        $result = $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $tenantData,
-        );
-
-        $this->logger->info(
-            'Procest: Tenant created',
-            ['name' => $name, 'slug' => $slug, 'groupId' => $groupId]
-        );
-
-        return $result->jsonSerialize();
-    }//end createTenant()
-
-    /**
      * Provision a tenant with a dedicated OpenRegister register and default schemas.
      *
      * @param string $tenantId The tenant UUID
@@ -304,20 +248,6 @@ class TenantService
     {
         return $this->groupManager->isAdmin($userId);
     }//end isPlatformAdmin()
-
-    /**
-     * Generate a URL-safe slug from a name.
-     *
-     * @param string $name The name to slugify
-     *
-     * @return string The slug
-     */
-    private function slugify(string $name): string
-    {
-        $slug = strtolower($name);
-        $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
-        return trim($slug, '-');
-    }//end slugify()
 
     /**
      * Get the OpenRegister ObjectService.
