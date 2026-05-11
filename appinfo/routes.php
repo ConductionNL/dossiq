@@ -147,6 +147,11 @@ return [
         ['name' => 'parafeer_route#update',       'url' => '/api/parafeer-route/{id}',                                 'verb' => 'PUT'],
         ['name' => 'parafeer_route#destroy',      'url' => '/api/parafeer-route/{id}',                                 'verb' => 'DELETE'],
 
+        // ── StUF (Standaard Uitwisselings Formaat) ──────────────────────
+        // Inbound SOAP endpoints accept raw XML POST.
+        ['name' => 'stuf#zaken',    'url' => '/api/stuf/zaken',    'verb' => 'POST'],
+        ['name' => 'stuf#personen', 'url' => '/api/stuf/personen', 'verb' => 'POST'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.
