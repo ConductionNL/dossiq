@@ -154,6 +154,10 @@ return [
         ['name' => 'gis_proxy#proxy', 'url' => '/api/gis/proxy', 'verb' => 'POST'],
         ['name' => 'gis_proxy#capabilities', 'url' => '/api/gis/capabilities', 'verb' => 'GET'],
 
+        // WMS/WFS per-layer proxy (wms-wfs-layers spec) — action endpoint only;
+        // CRUD on wmsLayer objects is served by OpenRegister manifest pages.
+        ['name' => 'wms_wfs#proxy', 'url' => '/api/wms-wfs/proxy', 'verb' => 'GET'],
+
         // ── Parafeerroute (B&W parafering engine) ───────────────────────
         // CRUD on parafeerroute objects is served by OpenRegister's auto-exposed
         // /api/objects/<register>/<schema> endpoints — only engine routes remain.

@@ -62,6 +62,8 @@ class SettingsService
         'kanaal_schema',
         'abonnement_schema',
         'map_layer_schema',
+        // WMS/WFS overlay layers (wms-wfs-layers spec REQ-WMS-1).
+        'wms_layer_schema',
         'workflow_template_schema',
         // Stable alias for consumer specs (status-transition-engine,
         // role-based-step-routing) that refer to the workflow definition
@@ -178,6 +180,7 @@ class SettingsService
         'handhavingsactie'             => 'handhavingsactie_schema',
         'adviesAanvraag'               => 'advies_aanvraag_schema',
         'mapLayer'                     => 'map_layer_schema',
+        'wmsLayer'                     => 'wms_layer_schema',
         'workflowTemplate'             => 'workflow_template_schema',
         'objection'                    => 'objection_schema',
         'hearingSession'               => 'hearing_session_schema',
