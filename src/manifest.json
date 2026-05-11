@@ -21,6 +21,7 @@
 		{ "id": "ParafeerroutesMenu", "label": "Parafeerroutes", "icon": "icon-category-workflow", "route": "Parafeerroutes", "section": "settings", "order": 96 },
 		{ "id": "WorkflowDefinitionsMenu", "label": "Workflow definitions", "icon": "icon-category-workflow", "route": "WorkflowDefinitions", "section": "settings", "order": 97 },
 		{ "id": "AutomaticActionsMenu", "label": "Automatische acties", "icon": "icon-category-workflow", "route": "AutomaticActions", "section": "settings", "order": 96 },
+		{ "id": "StatusRecordsMenu", "label": "Status history", "icon": "icon-history", "route": "StatusRecords", "section": "settings", "order": 98, "permission": "admin" },
 		{ "id": "SettingsMenu", "label": "Settings", "icon": "icon-settings", "route": "Settings", "section": "settings", "order": 99 }
 	],
 	"pages": [
@@ -535,6 +536,42 @@
 					{ "id": "steps",       "label": "Steps",       "icon": "icon-checkmark","widgets": [{ "type": "data" }],                          "order": 20 },
 					{ "id": "transitions", "label": "Transitions", "icon": "icon-comment",  "widgets": [{ "type": "data" }],                          "order": 30 },
 					{ "id": "audit",       "label": "Audit trail", "icon": "icon-history",  "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+				]
+			}
+		},
+		{
+			"id": "StatusRecords",
+			"route": "/settings/status-records",
+			"type": "index",
+			"title": "Status history",
+			"config": {
+				"register": "procest",
+				"schema": "statusRecord",
+				"columns": [
+					{ "key": "case" },
+					{ "key": "fromStatus" },
+					{ "key": "statusType", "label": "toStatus" },
+					{ "key": "transitionLabel" },
+					{ "key": "noWorkflowTemplate" },
+					{ "key": "createdAt" }
+				],
+				"actions": ["view"],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "StatusRecordDetail",
+			"route": "/settings/status-records/:id",
+			"type": "detail",
+			"title": "Status record",
+			"config": {
+				"register": "procest",
+				"schema": "statusRecord",
+				"sidebarTabs": [
+					{ "id": "overview",     "label": "Overview",         "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
+					{ "id": "guards",       "label": "Evaluated guards", "icon": "icon-checkmark", "widgets": [{ "type": "data", "config": { "fields": ["evaluatedGuards"] } }], "order": 20 },
+					{ "id": "actions",      "label": "Dispatched actions", "icon": "icon-toggle", "widgets": [{ "type": "data", "config": { "fields": ["dispatchedActions"] } }], "order": 30 },
+					{ "id": "audit",        "label": "Audit trail",      "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
 				]
 			}
 		}

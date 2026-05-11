@@ -213,6 +213,16 @@ return [
         ['name' => 'workflowDefinition#active',            'url' => '/api/workflow-definitions/active/{caseTypeId}',  'verb' => 'GET'],
         ['name' => 'workflowDefinition#forCase',           'url' => '/api/workflow-definitions/for-case/{caseId}',    'verb' => 'GET'],
 
+        // ── Status Transition Engine ────────────────────────────────────
+        // Single write-path for case.status. CRUD on statusRecord is rendered
+        // by the manifest (/settings/status-records). Action-style endpoints
+        // live here because guard evaluation + side-effect dispatch are
+        // non-CRUD engine logic.
+        ['name' => 'status_transition#available', 'url' => '/api/case/{caseId}/available-transitions', 'verb' => 'GET'],
+        ['name' => 'status_transition#execute',   'url' => '/api/case/{caseId}/transition',            'verb' => 'POST'],
+        ['name' => 'status_transition#freeform',  'url' => '/api/case/{caseId}/transition-freeform',   'verb' => 'POST'],
+        ['name' => 'status_transition#history',   'url' => '/api/case/{caseId}/transition-history',    'verb' => 'GET'],
+
         // Multi-Tenant SaaS — domain endpoints only. Generic tenant CRUD
         // (list/create/update/destroy) is rendered by the manifest pages
         // at /settings/tenants and proxied directly to OpenRegister; this
