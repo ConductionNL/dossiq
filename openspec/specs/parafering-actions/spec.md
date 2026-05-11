@@ -1,3 +1,20 @@
+---
+status: retired
+retired_in: procest-adopt-or-abstractions
+canonical_home: case-management/spec.md
+---
+
+> **RETIRED — see `case-management/spec.md`.**
+>
+> Action-specific guards and audit recording moved to the consolidated
+> `x-openregister-lifecycle` annotation on the case schema. Per-transition
+> role-based authorization (advies, parafering, accordering) lives in the
+> annotation's `transitions[].roles` array. Audit recording flows through
+> OR's `audit-trail-immutable` capability. See ADR-022, ADR-023.
+>
+> This file is preserved as a historical appendix. Refer to
+> `case-management/spec.md` for the canonical lifecycle annotation.
+
 ## ADDED Requirements
 
 ### Requirement: Parafeeractie Schema Registration

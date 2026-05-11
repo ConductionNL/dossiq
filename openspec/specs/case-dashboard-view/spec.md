@@ -4,6 +4,17 @@ status: implemented
 
 # Case Dashboard View Specification
 
+## OR Capability Citations
+
+This spec consumes the following OpenRegister capabilities (per
+ADR-022, procest-adopt-or-abstractions):
+
+- `aggregations-backend-native` — KPI cards on the case dashboard bind
+  directly to the aggregations endpoint via
+  `x-openregister-aggregations` annotations on the case schema; no
+  custom dashboard service. See
+  `openregister/openspec/changes/aggregations-backend-native/`.
+
 ## Purpose
 
 The Case Dashboard View is the primary working screen for behandelaars. It combines all relevant information for a single case into one integrated view: timeline, documents, status, tasks, contactmomenten, besluiten, and linked objects. While the Case Management spec (`../case-management/spec.md`) defines the data model and individual panels (REQ-CM-06 through REQ-CM-13), this spec defines how those panels are composed into a cohesive working screen with interactions between them.
