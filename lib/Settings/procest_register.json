@@ -2293,7 +2293,7 @@
             "minimum": 0,
             "maximum": 1,
             "description": "Layer opacity from 0.0 (transparent) to 1.0 (opaque)",
-            "default": 1.0
+            "default": 1
           },
           "minZoom": {
             "type": "integer",
@@ -2737,10 +2737,34 @@
         "isDefault": true,
         "description": "Standaard accorderingslijn voor collegeadviezen over omgevingsvergunningen",
         "steps": [
-          {"order": 1, "type": "advies",      "actor": "juridische-dienst",   "actorType": "group", "mandatory": false},
-          {"order": 2, "type": "parafering",  "actor": "teamleider-vth",      "actorType": "role",  "mandatory": true},
-          {"order": 3, "type": "parafering",  "actor": "afdelingshoofd-vth",  "actorType": "role",  "mandatory": true},
-          {"order": 4, "type": "accordering", "actor": "portefeuillehouder",  "actorType": "role",  "mandatory": true}
+          {
+            "order": 1,
+            "type": "advies",
+            "actor": "juridische-dienst",
+            "actorType": "group",
+            "mandatory": false
+          },
+          {
+            "order": 2,
+            "type": "parafering",
+            "actor": "teamleider-vth",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 3,
+            "type": "parafering",
+            "actor": "afdelingshoofd-vth",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 4,
+            "type": "accordering",
+            "actor": "portefeuillehouder",
+            "actorType": "role",
+            "mandatory": true
+          }
         ]
       },
       {
@@ -2754,11 +2778,41 @@
         "isDefault": false,
         "description": "Uitgebreide route voor bestemmingsplanwijzigingen met planologisch en juridisch advies",
         "steps": [
-          {"order": 1, "type": "advies",      "actor": "planologisch-adviseur",          "actorType": "role",  "mandatory": true},
-          {"order": 2, "type": "advies",      "actor": "juridische-dienst",              "actorType": "group", "mandatory": true},
-          {"order": 3, "type": "parafering",  "actor": "teamleider-ro",                  "actorType": "role",  "mandatory": true},
-          {"order": 4, "type": "parafering",  "actor": "afdelingshoofd-ro",              "actorType": "role",  "mandatory": true},
-          {"order": 5, "type": "accordering", "actor": "wethouder-ruimtelijke-ordening", "actorType": "role",  "mandatory": true}
+          {
+            "order": 1,
+            "type": "advies",
+            "actor": "planologisch-adviseur",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 2,
+            "type": "advies",
+            "actor": "juridische-dienst",
+            "actorType": "group",
+            "mandatory": true
+          },
+          {
+            "order": 3,
+            "type": "parafering",
+            "actor": "teamleider-ro",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 4,
+            "type": "parafering",
+            "actor": "afdelingshoofd-ro",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 5,
+            "type": "accordering",
+            "actor": "wethouder-ruimtelijke-ordening",
+            "actorType": "role",
+            "mandatory": true
+          }
         ]
       },
       {
@@ -2772,8 +2826,20 @@
         "isDefault": true,
         "description": "Standaard directieteam-advies: behandelaar parafering gevolgd door afdelingshoofd accordering",
         "steps": [
-          {"order": 1, "type": "parafering",  "actor": "behandelaar",    "actorType": "role", "mandatory": true},
-          {"order": 2, "type": "accordering", "actor": "afdelingshoofd", "actorType": "role", "mandatory": true}
+          {
+            "order": 1,
+            "type": "parafering",
+            "actor": "behandelaar",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 2,
+            "type": "accordering",
+            "actor": "afdelingshoofd",
+            "actorType": "role",
+            "mandatory": true
+          }
         ]
       },
       {
@@ -2787,12 +2853,48 @@
         "isDefault": true,
         "description": "Volledige route voor raadsvoorstellen: financieel, juridisch, management, gemeentesecretaris en burgemeester",
         "steps": [
-          {"order": 1, "type": "advies",      "actor": "financieel-adviseur",  "actorType": "role",  "mandatory": true},
-          {"order": 2, "type": "advies",      "actor": "juridische-dienst",    "actorType": "group", "mandatory": true},
-          {"order": 3, "type": "parafering",  "actor": "teamleider",           "actorType": "role",  "mandatory": true},
-          {"order": 4, "type": "parafering",  "actor": "afdelingshoofd",       "actorType": "role",  "mandatory": true},
-          {"order": 5, "type": "accordering", "actor": "gemeentesecretaris",   "actorType": "role",  "mandatory": true},
-          {"order": 6, "type": "accordering", "actor": "burgemeester",         "actorType": "role",  "mandatory": true}
+          {
+            "order": 1,
+            "type": "advies",
+            "actor": "financieel-adviseur",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 2,
+            "type": "advies",
+            "actor": "juridische-dienst",
+            "actorType": "group",
+            "mandatory": true
+          },
+          {
+            "order": 3,
+            "type": "parafering",
+            "actor": "teamleider",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 4,
+            "type": "parafering",
+            "actor": "afdelingshoofd",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 5,
+            "type": "accordering",
+            "actor": "gemeentesecretaris",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 6,
+            "type": "accordering",
+            "actor": "burgemeester",
+            "actorType": "role",
+            "mandatory": true
+          }
         ]
       },
       {
@@ -2833,6 +2935,389 @@
         "actorType": "user",
         "action": "returned",
         "comment": "Financiële paragraaf ontbreekt. Kosten-batenanalyse moet worden toegevoegd voordat dit voorstel kan worden geparafeerd."
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "caseType",
+          "slug": "omgevingsvergunning"
+        },
+        "title": "Omgevingsvergunning",
+        "identifier": "omgevingsvergunning",
+        "description": "Aanvraag van een omgevingsvergunning conform de Omgevingswet (bouwen, slopen, kappen, milieubelastende activiteiten of afwijken van het omgevingsplan).",
+        "purpose": "Behandeling van aanvragen voor activiteiten in de fysieke leefomgeving",
+        "trigger": "Aanvraag van burger of bedrijf via DSO of intake",
+        "subject": "Omgevingsvergunning",
+        "processingDeadline": "P56D",
+        "extensionAllowed": true,
+        "extensionPeriod": "P42D",
+        "suspensionAllowed": true,
+        "internalOrExternal": "extern",
+        "publicationRequired": true,
+        "isDraft": false,
+        "confidentiality": "openbaar"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "caseType",
+          "slug": "subsidieaanvraag"
+        },
+        "title": "Subsidieaanvraag",
+        "identifier": "subsidieaanvraag",
+        "description": "Aanvraag van een gemeentelijke subsidie conform de Algemene Subsidieverordening (ASV).",
+        "purpose": "Beoordeling en toekenning van subsidieaanvragen",
+        "trigger": "Subsidieaanvraag van burger, vereniging, stichting of bedrijf",
+        "subject": "Subsidie",
+        "processingDeadline": "P42D",
+        "extensionAllowed": true,
+        "extensionPeriod": "P28D",
+        "suspensionAllowed": false,
+        "internalOrExternal": "extern",
+        "publicationRequired": false,
+        "isDraft": false,
+        "confidentiality": "zaakvertrouwelijk"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "caseType",
+          "slug": "klacht-behandeling"
+        },
+        "title": "Klacht behandeling",
+        "identifier": "klacht-behandeling",
+        "description": "Behandeling van een klacht over een gedraging van de gemeente conform Awb hoofdstuk 9.",
+        "purpose": "Behandeling van klachten van burgers en bedrijven",
+        "trigger": "Klacht ingediend door burger of bedrijf",
+        "subject": "Klacht",
+        "processingDeadline": "P42D",
+        "extensionAllowed": true,
+        "extensionPeriod": "P28D",
+        "suspensionAllowed": false,
+        "internalOrExternal": "extern",
+        "publicationRequired": false,
+        "isDraft": false,
+        "confidentiality": "vertrouwelijk"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "caseType",
+          "slug": "melding-openbare-ruimte"
+        },
+        "title": "Melding openbare ruimte",
+        "identifier": "melding-openbare-ruimte",
+        "description": "Melding van een probleem in de openbare ruimte (kapotte lantaarn, losse stoeptegel, zwerfafval, e.d.).",
+        "purpose": "Snelle afhandeling van meldingen over de openbare ruimte",
+        "trigger": "Melding via formulier, app of telefoon",
+        "subject": "Openbare ruimte",
+        "processingDeadline": "P14D",
+        "extensionAllowed": false,
+        "suspensionAllowed": false,
+        "internalOrExternal": "intern",
+        "publicationRequired": false,
+        "isDraft": false,
+        "confidentiality": "openbaar"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "omgevingsvergunning-ontvangen"
+        },
+        "name": "Ontvangen",
+        "caseType": "omgevingsvergunning",
+        "description": "Aanvraag is ontvangen en geregistreerd",
+        "order": 1,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "omgevingsvergunning-in-behandeling"
+        },
+        "name": "In behandeling",
+        "caseType": "omgevingsvergunning",
+        "description": "Aanvraag wordt inhoudelijk getoetst",
+        "order": 2,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "omgevingsvergunning-besluitvorming"
+        },
+        "name": "Besluitvorming",
+        "caseType": "omgevingsvergunning",
+        "description": "Besluit wordt voorbereid en genomen",
+        "order": 3,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "omgevingsvergunning-afgehandeld"
+        },
+        "name": "Afgehandeld",
+        "caseType": "omgevingsvergunning",
+        "description": "Zaak is afgehandeld en gearchiveerd",
+        "order": 4,
+        "isFinal": true
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "subsidieaanvraag-ontvangen"
+        },
+        "name": "Ontvangen",
+        "caseType": "subsidieaanvraag",
+        "description": "Subsidieaanvraag is ontvangen",
+        "order": 1,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "subsidieaanvraag-beoordeling"
+        },
+        "name": "Beoordeling",
+        "caseType": "subsidieaanvraag",
+        "description": "Aanvraag wordt getoetst aan subsidiekader",
+        "order": 2,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "subsidieaanvraag-besluitvorming"
+        },
+        "name": "Besluitvorming",
+        "caseType": "subsidieaanvraag",
+        "description": "Subsidiebesluit wordt voorbereid en genomen",
+        "order": 3,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "subsidieaanvraag-afgehandeld"
+        },
+        "name": "Afgehandeld",
+        "caseType": "subsidieaanvraag",
+        "description": "Subsidie is verleend, geweigerd of ingetrokken",
+        "order": 4,
+        "isFinal": true
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "klacht-ontvangen"
+        },
+        "name": "Ontvangen",
+        "caseType": "klacht-behandeling",
+        "description": "Klacht is ontvangen en geregistreerd",
+        "order": 1,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "klacht-onderzoek"
+        },
+        "name": "Onderzoek",
+        "caseType": "klacht-behandeling",
+        "description": "Klacht wordt onderzocht (hoor en wederhoor)",
+        "order": 2,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "klacht-afgehandeld"
+        },
+        "name": "Afgehandeld",
+        "caseType": "klacht-behandeling",
+        "description": "Klacht is afgehandeld met formeel antwoord",
+        "order": 3,
+        "isFinal": true
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "melding-ontvangen"
+        },
+        "name": "Ontvangen",
+        "caseType": "melding-openbare-ruimte",
+        "description": "Melding is ontvangen en doorgezet",
+        "order": 1,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "melding-in-behandeling"
+        },
+        "name": "In behandeling",
+        "caseType": "melding-openbare-ruimte",
+        "description": "Melding wordt afgehandeld door beheerdienst",
+        "order": 2,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "melding-afgehandeld"
+        },
+        "name": "Afgehandeld",
+        "caseType": "melding-openbare-ruimte",
+        "description": "Melding is opgelost en afgesloten",
+        "order": 3,
+        "isFinal": true
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "roleType",
+          "slug": "rol-behandelaar"
+        },
+        "name": "Behandelaar",
+        "description": "Medewerker die de zaak inhoudelijk behandelt"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "roleType",
+          "slug": "rol-aanvrager"
+        },
+        "name": "Aanvrager",
+        "description": "Initiatiefnemer / aanvrager van de zaak"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "roleType",
+          "slug": "rol-gemachtigde"
+        },
+        "name": "Gemachtigde",
+        "description": "Persoon of organisatie gemachtigd om namens de aanvrager op te treden"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "roleType",
+          "slug": "rol-technisch-adviseur"
+        },
+        "name": "Technisch adviseur",
+        "description": "Inhoudelijk adviseur (intern of extern) die advies uitbrengt in de zaak"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "omgevingsvergunning-verleend"
+        },
+        "name": "Vergunning verleend",
+        "caseType": "omgevingsvergunning",
+        "description": "Omgevingsvergunning is verleend",
+        "archivalAction": "bewaren",
+        "archivalPeriod": "P20Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "omgevingsvergunning-geweigerd"
+        },
+        "name": "Vergunning geweigerd",
+        "caseType": "omgevingsvergunning",
+        "description": "Omgevingsvergunning is geweigerd",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P10Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "omgevingsvergunning-ingetrokken"
+        },
+        "name": "Ingetrokken",
+        "caseType": "omgevingsvergunning",
+        "description": "Aanvraag is door de aanvrager ingetrokken",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P5Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "subsidie-toegekend"
+        },
+        "name": "Subsidie toegekend",
+        "caseType": "subsidieaanvraag",
+        "description": "Subsidie is toegekend",
+        "archivalAction": "bewaren",
+        "archivalPeriod": "P10Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "subsidie-afgewezen"
+        },
+        "name": "Subsidie afgewezen",
+        "caseType": "subsidieaanvraag",
+        "description": "Subsidieaanvraag is afgewezen",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P5Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "klacht-gegrond"
+        },
+        "name": "Klacht gegrond",
+        "caseType": "klacht-behandeling",
+        "description": "Klacht is gegrond verklaard",
+        "archivalAction": "bewaren",
+        "archivalPeriod": "P10Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "klacht-ongegrond"
+        },
+        "name": "Klacht ongegrond",
+        "caseType": "klacht-behandeling",
+        "description": "Klacht is ongegrond verklaard",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P5Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "melding-afgehandeld-result"
+        },
+        "name": "Afgehandeld",
+        "caseType": "melding-openbare-ruimte",
+        "description": "Melding is afgehandeld",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P1Y"
       }
     ]
   }
