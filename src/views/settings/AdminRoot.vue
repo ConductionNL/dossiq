@@ -58,6 +58,13 @@
 			<ZgwMappingSettings v-if="storesReady" />
 		</CnSettingsSection>
 
+		<CnSettingsSection
+			:name="t('procest', 'AI-Assisted Processing')"
+			:description="t('procest', 'Configure AI features for document classification, data extraction, Q&A, summarization, routing and decision support')"
+			:loading="!storesReady">
+			<AiSettingsTab v-if="storesReady" />
+		</CnSettingsSection>
+
 		<!-- Re-import Status -->
 		<div v-if="message" class="actions-section">
 			<NcNoteCard :type="messageType">
@@ -76,6 +83,7 @@ import CaseTypeAdmin from './CaseTypeAdmin.vue'
 import ParafeerRoutesTab from './components/ParafeerRoutesTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import MapLayerSettings from './MapLayerSettings.vue'
+import AiSettingsTab from './tabs/AiSettingsTab.vue'
 import { initializeStores } from '../../store/store.js'
 
 export default {
@@ -92,6 +100,7 @@ export default {
 		ParafeerRoutesTab,
 		ZgwMappingSettings,
 		MapLayerSettings,
+		AiSettingsTab,
 	},
 	data() {
 		return {

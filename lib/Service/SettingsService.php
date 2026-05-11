@@ -77,6 +77,21 @@ class SettingsService
         'advies_aanvraag_schema',
         'tenant_schema',
         'lhsMatrix',
+        // AI-Assisted Processing settings.
+        'ai_audit_entry_schema',
+        'ai_enabled',
+        'ai_model_type',
+        'ai_model_url',
+        'ai_model_name',
+        'ai_api_key',
+        'ai_feature_classification',
+        'ai_feature_extraction',
+        'ai_feature_qa',
+        'ai_feature_summary',
+        'ai_feature_routing',
+        'ai_feature_decision_support',
+        'ai_dpia_acknowledged',
+        'ai_pii_stripping',
     ];
 
     /**
@@ -124,6 +139,7 @@ class SettingsService
         'parafeerroute'                => 'parafeerroute_schema',
         'parafeeractie'                => 'parafeeractie_schema',
         'tenant'                       => 'tenant_schema',
+        'aiAuditEntry'                 => 'ai_audit_entry_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
