@@ -2590,6 +2590,77 @@
           }
         }
       },
+      "location": {
+        "slug": "location",
+        "icon": "MapMarker",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Place",
+        "title": "Case Location",
+        "description": "A geographic location attached to a case (BAG nummeraanduiding, parcel, or free address) — 0..N locations per case via back-reference on `case`.",
+        "type": "object",
+        "required": [
+          "case",
+          "source"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case this location is attached to"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Short human label shown in the case header (e.g. 'Inspectielocatie 1')"
+          },
+          "formattedAddress": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Human-readable address (straat huisnummer[+toev], postcode woonplaats)"
+          },
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90,
+            "description": "WGS84 latitude in decimal degrees"
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "description": "WGS84 longitude in decimal degrees"
+          },
+          "nummeraanduidingId": {
+            "type": "string",
+            "maxLength": 32,
+            "description": "BAG nummeraanduiding identifier (16-digit) — MUST be present when source = bag"
+          },
+          "parcelId": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "BRK kadastrale aanduiding (e.g. AMR00-G-1234)"
+          },
+          "accuracyRadius": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Radius in metres around lat/lng (used when source is gps or free)"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "bag",
+              "pdok-reverse",
+              "gps",
+              "free",
+              "geocoded",
+              "import"
+            ],
+            "description": "Provenance of this location (bag = validated against BAG; pdok-reverse = reverse-geocoded; gps = field capture; free = manual; geocoded = forward-geocoded; import = CSV importer)"
+          }
+        }
+      },
       "adviesAanvraag": {
         "slug": "adviesAanvraag",
         "icon": "CommentQuestionOutline",
@@ -4181,6 +4252,7 @@
           "parafeerroute",
           "parafeeractie",
           "mapLayer",
+          "location",
           "inspectieRapport",
           "handhavingsactie",
           "lhsMatrix",

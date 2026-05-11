@@ -25,6 +25,7 @@
 		{ "id": "StatusRecordsMenu", "label": "Status history", "icon": "icon-history", "route": "StatusRecords", "section": "settings", "order": 98, "permission": "admin" },
 		{ "id": "LhsMatricesMenu", "label": "Handhavingsstrategie", "icon": "icon-category-customization", "route": "LhsMatrices", "section": "settings", "order": 96, "permission": "admin" },
 		{ "id": "LhsRecommendationsMenu", "label": "LHS Recommendations", "icon": "icon-comment", "route": "LhsRecommendations", "section": "settings", "order": 97 },
+		{ "id": "LocationsMenu", "label": "Case locations", "icon": "icon-address", "route": "Locations", "section": "settings", "order": 98, "permission": "admin" },
 		{ "id": "SettingsMenu", "label": "Settings", "icon": "icon-settings", "route": "Settings", "section": "settings", "order": 99 }
 	],
 	"pages": [
@@ -103,6 +104,24 @@
 					{ "id": "tasks",     "label": "Tasks",       "icon": "icon-checkmark", "component": "CaseTasksTab",                              "order": 20 },
 					{ "id": "decisions", "label": "Decisions",   "icon": "icon-toggle",    "component": "CaseDecisionsTab",                          "order": 30 },
 					{ "id": "documents", "label": "Documents",   "icon": "icon-files",     "component": "CaseDocumentsTab",                          "order": 40 },
+					{
+						"id": "locaties",
+						"label": "Locaties",
+						"icon": "icon-address",
+						"widgets": [
+							{
+								"type": "related-index",
+								"config": {
+									"register": "procest",
+									"schema": "location",
+									"filter": { "case": ":id" },
+									"columns": ["label", "formattedAddress", "nummeraanduidingId", "parcelId", "source"],
+									"actions": ["create", "edit", "delete"]
+								}
+							}
+						],
+						"order": 45
+					},
 					{ "id": "advies",    "label": "Advies",      "icon": "icon-comment",   "component": "AdviesPanel",                               "order": 50 },
 					{ "id": "audit",     "label": "Audit trail", "icon": "icon-history",   "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
 				]
@@ -637,6 +656,27 @@
 			}
 		},
 		{
+			"id": "Locations",
+			"route": "/settings/locations",
+			"type": "index",
+			"title": "Case locations",
+			"config": {
+				"register": "procest",
+				"schema": "location",
+				"columns": [
+					{ "key": "label" },
+					{ "key": "case" },
+					{ "key": "formattedAddress" },
+					{ "key": "nummeraanduidingId" },
+					{ "key": "parcelId" },
+					{ "key": "source" },
+					{ "key": "accuracyRadius" }
+				],
+				"actions": ["view", "edit", "delete"],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
 			"id": "LhsMatrixDetail",
 			"route": "/settings/lhs-matrices/:id",
 			"type": "detail",
@@ -674,6 +714,20 @@
 			"config": {
 				"register": "procest",
 				"schema": "lhsRecommendation",
+				"sidebarTabs": [
+					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
+					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+				]
+			}
+		},
+		{
+			"id": "LocationDetail",
+			"route": "/settings/locations/:id",
+			"type": "detail",
+			"title": "Location",
+			"config": {
+				"register": "procest",
+				"schema": "location",
 				"sidebarTabs": [
 					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
 					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }

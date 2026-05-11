@@ -93,6 +93,7 @@ class SettingsService
         'share_permission_level_schema',
         'case_transfer_schema',
         'automatic_action_schema',
+        'location_schema',
         'lhsMatrix',
         'lhs_matrix_schema',
         'lhs_recommendation_schema',
@@ -188,6 +189,7 @@ class SettingsService
         'automaticAction'              => 'automatic_action_schema',
         'lhsMatrix'                    => 'lhs_matrix_schema',
         'lhsRecommendation'            => 'lhs_recommendation_schema',
+        'location'                     => 'location_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
