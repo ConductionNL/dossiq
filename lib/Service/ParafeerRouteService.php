@@ -3,11 +3,14 @@
 /**
  * Procest ParafeerRoute Service
  *
- * Routing engine for the B&W parafering workflow. Owns parafeerroute CRUD
- * (persisted via OpenRegister ObjectService), captures route snapshots on
+ * Routing engine for the B&W parafering workflow. Captures route snapshots on
  * voorstel submission, executes sequential step activation (task + notification),
  * advances the voorstel on step completion, and supports authorized override
  * operations (skip step, add ad-hoc step) with audit trail entries.
+ *
+ * Generic CRUD on parafeerroute objects is delegated to OpenRegister's
+ * auto-exposed /api/objects/<register>/<schema> endpoints — this service
+ * only owns workflow execution and read-only loads of related entities.
  *
  * @category Service
  * @package  OCA\Procest\Service
@@ -34,22 +37,19 @@ use OCA\Procest\AppInfo\Application;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use Throwable;
 
 /**
- * Service implementing the parafeerroute configuration and execution engine.
+ * Service implementing the parafeerroute execution engine.
  *
- * Persists routes and parafeeracties through OpenRegister's ObjectService
- * (3-arg API: register, schema, data/id). All identity is derived from
- * IUserSession, never trusted from caller-supplied data. Real exception
- * details are logged; callers translate failures to static messages.
+ * All identity is derived from IUserSession, never trusted from caller-supplied
+ * data. Real exception details are logged; callers translate failures to static
+ * messages.
  *
  * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
  *
  * @psalm-suppress UnusedClass
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — orchestrates ObjectService + IUserSession
- * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  */
 class ParafeerRouteService
 {
@@ -86,159 +86,6 @@ class ParafeerRouteService
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
-
-    /**
-     * List parafeerroutes, optionally filtered by case type and voorstel type.
-     *
-     * @param array<string, mixed> $filters Optional filters: caseType, voorstelType
-     *
-     * @return array<int, array<string, mixed>>
-     *
-     * @throws RuntimeException When OpenRegister or required configuration is missing
-     *
-     * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
-     */
-    public function listRoutes(array $filters=[]): array
-    {
-        [$objectService, $register, $schema] = $this->bootstrapRoute();
-
-        $whitelisted = [];
-        if (isset($filters['caseType']) === true && $filters['caseType'] !== '') {
-            $whitelisted['caseType'] = (string) $filters['caseType'];
-        }
-
-        if (isset($filters['voorstelType']) === true && $filters['voorstelType'] !== '') {
-            $whitelisted['voorstelType'] = (string) $filters['voorstelType'];
-        }
-
-        $results = $objectService->findObjects($register, $schema, $whitelisted);
-
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
-    }//end listRoutes()
-
-    /**
-     * Fetch a single parafeerroute by UUID.
-     *
-     * @param string $routeId The route UUID
-     *
-     * @return array<string, mixed>
-     *
-     * @throws RuntimeException When OpenRegister or configuration is missing
-     *
-     * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
-     */
-    public function getRoute(string $routeId): array
-    {
-        [$objectService, $register, $schema] = $this->bootstrapRoute();
-        $route = $objectService->findObject($register, $schema, $routeId);
-
-        return $this->toArray(value: $route);
-    }//end getRoute()
-
-    /**
-     * Create a new parafeerroute.
-     *
-     * Enforces the single-default constraint per (caseType, voorstelType).
-     *
-     * @param array<string, mixed> $data The route data
-     *
-     * @return array<string, mixed>
-     *
-     * @throws RuntimeException When OpenRegister or configuration is missing
-     *
-     * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
-     */
-    public function createRoute(array $data): array
-    {
-        [$objectService, $register, $schema] = $this->bootstrapRoute();
-
-        if (($data['isDefault'] ?? false) === true) {
-            $this->clearExistingDefault(
-                objectService: $objectService,
-                register: $register,
-                schema: $schema,
-                caseType: (string) ($data['caseType'] ?? ''),
-                voorstelType: (string) ($data['voorstelType'] ?? ''),
-                excludeId: null,
-            );
-        }
-
-        $route = $objectService->saveObject($register, $schema, $data);
-
-        return $this->toArray(value: $route);
-    }//end createRoute()
-
-    /**
-     * Update an existing parafeerroute.
-     *
-     * @param string               $routeId The route UUID
-     * @param array<string, mixed> $data    The fields to merge
-     *
-     * @return array<string, mixed>
-     *
-     * @throws RuntimeException When OpenRegister or configuration is missing
-     *
-     * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
-     */
-    public function updateRoute(string $routeId, array $data): array
-    {
-        [$objectService, $register, $schema] = $this->bootstrapRoute();
-        $existing = $this->toArray(value: $objectService->findObject($register, $schema, $routeId));
-
-        $merged       = array_merge($existing, $data);
-        $merged['id'] = $existing['id'] ?? $routeId;
-
-        if (($merged['isDefault'] ?? false) === true) {
-            $this->clearExistingDefault(
-                objectService: $objectService,
-                register: $register,
-                schema: $schema,
-                caseType: (string) ($merged['caseType'] ?? ''),
-                voorstelType: (string) ($merged['voorstelType'] ?? ''),
-                excludeId: $existing['id'] ?? $existing['uuid'] ?? $routeId,
-            );
-        }
-
-        $route = $objectService->saveObject($register, $schema, $merged);
-
-        return $this->toArray(value: $route);
-    }//end updateRoute()
-
-    /**
-     * Delete a parafeerroute, blocking if any active voorstel still references it.
-     *
-     * @param string $routeId The route UUID
-     *
-     * @return void
-     *
-     * @throws RuntimeException When the route is in active use or storage is unavailable
-     *
-     * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
-     */
-    public function deleteRoute(string $routeId): void
-    {
-        [$objectService, $register, $schema] = $this->bootstrapRoute();
-        $voorstelSchema = $this->requireConfig(key: 'voorstel_schema');
-
-        $inUse = $objectService->findObjects(
-            $register,
-            $voorstelSchema,
-            [
-                'parafeerroute' => $routeId,
-                'status'        => self::STATUS_IN_PARAFERING,
-            ],
-        );
-
-        if (is_array($inUse) === true && count($inUse) > 0) {
-            throw new RuntimeException('Route is in gebruik door actieve voorstellen');
-        }
-
-        $objectService->deleteObject($register, $schema, $routeId);
-    }//end deleteRoute()
 
     /**
      * Start the parafering workflow for a voorstel.
@@ -617,63 +464,6 @@ class ParafeerRouteService
     }//end activateStep()
 
     /**
-     * Ensure only one default route exists per (caseType, voorstelType) pair.
-     *
-     * @param object      $objectService The OpenRegister ObjectService
-     * @param string      $register      The register slug/UUID
-     * @param string      $schema        The parafeerroute schema slug/UUID
-     * @param string      $caseType      The case type UUID (may be empty)
-     * @param string      $voorstelType  The voorstel type enum value (may be empty)
-     * @param string|null $excludeId     Optional route UUID to exclude (the route being saved)
-     *
-     * @return void
-     */
-    private function clearExistingDefault(
-        object $objectService,
-        string $register,
-        string $schema,
-        string $caseType,
-        string $voorstelType,
-        ?string $excludeId,
-    ): void {
-        $filters = ['isDefault' => true];
-        if ($caseType !== '') {
-            $filters['caseType'] = $caseType;
-        }
-
-        if ($voorstelType !== '') {
-            $filters['voorstelType'] = $voorstelType;
-        }
-
-        $existing = $objectService->findObjects($register, $schema, $filters);
-        if (is_array($existing) === false) {
-            return;
-        }
-
-        foreach ($existing as $route) {
-            $routeArr = $this->toArray(value: $route);
-            $id       = $routeArr['id'] ?? $routeArr['uuid'] ?? null;
-            if ($id === null || $id === $excludeId) {
-                continue;
-            }
-
-            $routeArr['isDefault'] = false;
-            try {
-                $objectService->saveObject($register, $schema, $routeArr);
-            } catch (Throwable $e) {
-                $this->logger->error(
-                    'Procest: failed to clear previous default parafeerroute',
-                    [
-                        'exception' => $e->getMessage(),
-                        'id'        => $id,
-                        'app'       => Application::APP_ID,
-                    ],
-                );
-            }
-        }//end foreach
-    }//end clearExistingDefault()
-
-    /**
      * Append an entry to the voorstel auditTrail field.
      *
      * @param array<string, mixed> $voorstel The voorstel
@@ -773,26 +563,6 @@ class ParafeerRouteService
 
         return [];
     }//end toArray()
-
-    /**
-     * Resolve ObjectService and the (register, parafeerroute schema) pair.
-     *
-     * @return array{0: object, 1: string, 2: string}
-     *
-     * @throws RuntimeException When configuration is missing
-     */
-    private function bootstrapRoute(): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is niet beschikbaar');
-        }
-
-        $register = $this->requireConfig(key: 'register');
-        $schema   = $this->requireConfig(key: 'parafeerroute_schema');
-
-        return [$objectService, $register, $schema];
-    }//end bootstrapRoute()
 
     /**
      * Resolve ObjectService and the (register, voorstel schema) pair.

@@ -3,10 +3,11 @@
 /**
  * Procest ParafeerRoute Controller
  *
- * REST endpoints for parafeerroute administration and voorstel-level override
- * operations. Admin-only operations are gated by an admin group check via
- * IGroupManager. All exceptions are logged with their underlying message,
- * while API responses surface only static, user-safe error strings.
+ * REST endpoints for voorstel-level parafering engine operations
+ * (start, complete step, skip step, ad-hoc step). Generic CRUD on
+ * parafeerroute objects is delegated to OpenRegister's auto-exposed
+ * /api/objects/<register>/<schema> endpoints — this controller only
+ * hosts the workflow engine that has business logic beyond storage.
  *
  * @category Controller
  * @package  OCA\Procest\Controller
@@ -39,7 +40,7 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Controller for parafeerroute CRUD and voorstel routing engine endpoints.
+ * Controller for the voorstel parafering routing engine.
  *
  * @spec openspec/changes/parafeerroute-engine/tasks.md#T05
  *
@@ -67,177 +68,6 @@ class ParafeerRouteController extends Controller
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
-
-    /**
-     * List parafeerroutes (optionally filtered by caseType/voorstelType).
-     *
-     * @return JSONResponse
-     *
-     * @NoAdminRequired
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/parafeerroute-engine/tasks.md#T05
-     */
-    public function index(): JSONResponse
-    {
-        try {
-            $filters = [
-                'caseType'     => (string) $this->request->getParam('caseType', ''),
-                'voorstelType' => (string) $this->request->getParam('voorstelType', ''),
-            ];
-
-            return new JSONResponse(['results' => $this->routeService->listRoutes($filters)]);
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: failed to list parafeerroutes: '.$e->getMessage(),
-            );
-            return new JSONResponse(
-                ['error' => 'Kon parafeerroutes niet ophalen'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }
-    }//end index()
-
-    /**
-     * Show a single parafeerroute.
-     *
-     * @param string $id The route UUID
-     *
-     * @return JSONResponse
-     *
-     * @NoAdminRequired
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/parafeerroute-engine/tasks.md#T05
-     */
-    public function show(string $id): JSONResponse
-    {
-        try {
-            return new JSONResponse($this->routeService->getRoute($id));
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: failed to fetch parafeerroute: '.$e->getMessage(),
-            );
-            return new JSONResponse(
-                ['error' => 'Parafeerroute niet gevonden'],
-                Http::STATUS_NOT_FOUND,
-            );
-        }
-    }//end show()
-
-    /**
-     * Create a new parafeerroute (admin only).
-     *
-     * @return JSONResponse
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/parafeerroute-engine/tasks.md#T05
-     */
-    public function create(): JSONResponse
-    {
-        if ($this->requireAdmin() === false) {
-            return new JSONResponse(
-                ['error' => 'Admin-rechten vereist'],
-                Http::STATUS_FORBIDDEN,
-            );
-        }
-
-        try {
-            $data = $this->getRequestBody();
-            return new JSONResponse(
-                $this->routeService->createRoute($data),
-                Http::STATUS_CREATED,
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: failed to create parafeerroute: '.$e->getMessage(),
-            );
-            return new JSONResponse(
-                ['error' => 'Aanmaken van parafeerroute mislukt'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }
-    }//end create()
-
-    /**
-     * Update a parafeerroute (admin only).
-     *
-     * @param string $id The route UUID
-     *
-     * @return JSONResponse
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/parafeerroute-engine/tasks.md#T05
-     */
-    public function update(string $id): JSONResponse
-    {
-        if ($this->requireAdmin() === false) {
-            return new JSONResponse(
-                ['error' => 'Admin-rechten vereist'],
-                Http::STATUS_FORBIDDEN,
-            );
-        }
-
-        try {
-            $data = $this->getRequestBody();
-            return new JSONResponse($this->routeService->updateRoute($id, $data));
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: failed to update parafeerroute: '.$e->getMessage(),
-            );
-            return new JSONResponse(
-                ['error' => 'Bijwerken van parafeerroute mislukt'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }
-    }//end update()
-
-    /**
-     * Delete a parafeerroute (admin only; blocked if active voorstellen reference it).
-     *
-     * @param string $id The route UUID
-     *
-     * @return JSONResponse
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/parafeerroute-engine/tasks.md#T05
-     */
-    public function destroy(string $id): JSONResponse
-    {
-        if ($this->requireAdmin() === false) {
-            return new JSONResponse(
-                ['error' => 'Admin-rechten vereist'],
-                Http::STATUS_FORBIDDEN,
-            );
-        }
-
-        try {
-            $this->routeService->deleteRoute($id);
-            return new JSONResponse(['success' => true]);
-        } catch (RuntimeException $e) {
-            // Surface the static guard message but log full detail.
-            $this->logger->warning(
-                'Procest: parafeerroute delete blocked: '.$e->getMessage(),
-            );
-            return new JSONResponse(
-                ['error' => 'Route is in gebruik door actieve voorstellen'],
-                Http::STATUS_CONFLICT,
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: failed to delete parafeerroute: '.$e->getMessage(),
-            );
-            return new JSONResponse(
-                ['error' => 'Verwijderen van parafeerroute mislukt'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }//end try
-    }//end destroy()
 
     /**
      * Start parafering on a voorstel.
