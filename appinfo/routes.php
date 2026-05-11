@@ -249,6 +249,10 @@ return [
         ['name' => 'publicShare#uploadDocument',  'url' => '/api/public/share/{token}/upload',   'verb' => 'POST'],
         ['name' => 'publicShare#viewStatus',      'url' => '/api/public/status/{token}',         'verb' => 'GET'],
 
+        // Role-based routing engine action — manual recompute of step assignees.
+        // CRUD of routing rules themselves lives on workflowTemplate (manifest).
+        ['name' => 'routing#reroute', 'url' => '/api/cases/{id}/reroute', 'verb' => 'POST'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],

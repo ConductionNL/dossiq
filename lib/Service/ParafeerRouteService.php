@@ -34,9 +34,11 @@ namespace OCA\Procest\Service;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Routing\RoutingStrategyMissingException;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use Throwable;
 
 /**
  * Service implementing the parafeerroute execution engine.
@@ -76,14 +78,16 @@ class ParafeerRouteService
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService The Procest settings/config bridge to OpenRegister
-     * @param IUserSession    $userSession     The current Nextcloud user session
-     * @param LoggerInterface $logger          The logger
+     * @param SettingsService     $settingsService The Procest settings/config bridge to OpenRegister
+     * @param IUserSession        $userSession     The current Nextcloud user session
+     * @param LoggerInterface     $logger          The logger
+     * @param RoleResolverService $roleResolver    Central role-routing engine
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
+        private readonly RoleResolverService $roleResolver,
     ) {
     }//end __construct()
 
@@ -452,16 +456,76 @@ class ParafeerRouteService
             return;
         }
 
+        $resolvedActors = $this->resolveStepActors(stepInfo: $stepInfo, voorstel: $voorstel);
+
         $this->logger->info(
             'Procest: activated parafering step {step} of voorstel {voorstelId} for actor {actor}',
             [
                 'step'       => $step,
                 'voorstelId' => $voorstel['id'] ?? $voorstel['uuid'] ?? '',
                 'actor'      => (string) ($stepInfo['actor'] ?? ''),
+                'resolved'   => $resolvedActors,
                 'app'        => Application::APP_ID,
             ],
         );
     }//end activateStep()
+
+    /**
+     * Resolve the concrete actor set for a step.
+     *
+     * For role-typed actors, the step's actor UUID is treated as the
+     * `roleType` parameter of an implicit single-role rule and dispatched to
+     * the shared RoleResolverService — this inherits delegation + workload
+     * features automatically. For user-typed actors the original UUID is
+     * returned as-is.
+     *
+     * @param array<string, mixed> $stepInfo The step from routeSnapshot
+     * @param array<string, mixed> $voorstel The voorstel object (provides caseRef + caseType)
+     *
+     * @return array<int, string>
+     *
+     * @spec openspec/changes/role-based-step-routing/tasks.md#T07
+     */
+    private function resolveStepActors(array $stepInfo, array $voorstel): array
+    {
+        $actorType = (string) ($stepInfo['actorType'] ?? 'user');
+        $actor     = (string) ($stepInfo['actor'] ?? '');
+        if ($actor === '') {
+            return [];
+        }
+
+        if ($actorType !== 'role') {
+            return [$actor];
+        }
+
+        $caseRef = (string) ($voorstel['case'] ?? ($voorstel['zaak'] ?? ''));
+        if ($caseRef === '') {
+            return [$actor];
+        }
+
+        $case = ['id' => $caseRef, 'caseType' => (string) ($voorstel['caseType'] ?? '')];
+        $rule = $stepInfo['routingRule'] ?? null;
+        if (is_array($rule) === false || isset($rule['strategy']) === false) {
+            $rule = [
+                'strategy' => RoleResolverService::STRATEGY_SINGLE_ROLE,
+                'roleType' => $actor,
+            ];
+        }
+
+        try {
+            return $this->roleResolver->resolve($rule, $case);
+        } catch (RoutingStrategyMissingException $e) {
+            $this->logger->warning(
+                'Procest: parafering step references unknown routing strategy: '.$e->getMessage(),
+            );
+            return [$actor];
+        } catch (Throwable $e) {
+            $this->logger->warning(
+                'Procest: failed to resolve parafering step actors: '.$e->getMessage(),
+            );
+            return [$actor];
+        }
+    }//end resolveStepActors()
 
     /**
      * Append an entry to the voorstel auditTrail field.

@@ -37,6 +37,7 @@ use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Dashboard\StartCaseWidget;
 use OCA\Procest\Listener\DeepLinkRegistrationListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
+use OCA\Procest\Listener\RoleMutationListener;
 use OCA\Procest\Middleware\TenantMiddleware;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
 use OCP\AppFramework\App;
@@ -88,6 +89,20 @@ class Application extends App implements IBootstrap
         $context->registerEventListener(
             event: ObjectDeletedEvent::class,
             listener: KpiCacheInvalidationListener::class
+        );
+
+        // Role-routing cache invalidation on role mutations.
+        $context->registerEventListener(
+            event: ObjectCreatedEvent::class,
+            listener: RoleMutationListener::class
+        );
+        $context->registerEventListener(
+            event: ObjectUpdatedEvent::class,
+            listener: RoleMutationListener::class
+        );
+        $context->registerEventListener(
+            event: ObjectDeletedEvent::class,
+            listener: RoleMutationListener::class
         );
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
