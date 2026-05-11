@@ -98,7 +98,7 @@ class TenantMiddleware extends Middleware
             return;
         }
 
-        // Resolve tenant for the current user.
+        // Resolve tenant for the current user (delegates to OR Organisation).
         $tenant = $this->tenantService->getTenantForUser($userId);
         if ($tenant === null) {
             $this->logger->warning(
@@ -109,8 +109,20 @@ class TenantMiddleware extends Middleware
             return;
         }
 
+        // Per consume-or-tenant-fleet-wide: lifecycle status enforcement lives
+        // in OR's tenant-lifecycle. Block requests scoped to a non-active tenant.
+        $tenantUuid = ($tenant['uuid'] ?? $tenant['id'] ?? '');
+        $status     = ($tenant['status'] ?? null);
+        if ($status !== null && $status !== '' && $status !== 'active') {
+            $this->logger->info(
+                'Procest: Request blocked because tenant is not active',
+                ['userId' => $userId, 'tenantUuid' => $tenantUuid, 'status' => $status]
+            );
+            throw new \Exception('Organisation is '.$status, 403);
+        }
+
         // Store tenant context for controllers to use.
-        $this->request->setParameter('_tenantId', $tenant['uuid'] ?? $tenant['id'] ?? '');
+        $this->request->setParameter('_tenantId', $tenantUuid);
         $this->request->setParameter('_tenantRegisterId', $tenant['registerId'] ?? '');
         $this->request->setParameter('_tenantSlug', $tenant['slug'] ?? '');
     }//end beforeController()
@@ -132,6 +144,20 @@ class TenantMiddleware extends Middleware
             return new JSONResponse(
                 ['success' => false, 'error' => 'Not found'],
                 404
+            );
+        }
+
+        if ($exception->getCode() === 403) {
+            // Surface OR-Organisation status block to the caller.
+            $message = $exception->getMessage();
+            $status  = 'inactive';
+            if (preg_match('/Organisation is (\\w+)/', $message, $m) === 1) {
+                $status = $m[1];
+            }
+
+            return new JSONResponse(
+                ['success' => false, 'error' => $message, 'status' => $status],
+                403
             );
         }
 
