@@ -3,9 +3,15 @@
 /**
  * Procest Advice Service.
  *
- * Service for managing advice requests (adviesAanvraag) on cases.
- * Handles CRUD, status transitions, deadline tracking, and notification
- * dispatch for internal and external advice.
+ * Workflow service for advice requests (adviesAanvraag). CRUD is delegated
+ * to the manifest renderer (OpenRegister); this service owns the domain
+ * operations that require server-side side-effects:
+ *   - transitionStatus()    — status transitions with notification dispatch
+ *   - dispatchReminder()    — manual + automated reminder notifications
+ *   - applyWorkflowGuard()  — block downstream steps while advice pending
+ *   - getOpenAdvice()       — used by the deadline cron
+ *   - expireAdvice()        — set status=verlopen (cron)
+ *   - getAdviceForCase()    — used by the guard + case-detail tab
  *
  * @category Service
  * @package  OCA\Procest\Service
@@ -32,7 +38,7 @@ use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 
 /**
- * Service for advice request (adviesAanvraag) management.
+ * Service for advice request (adviesAanvraag) workflow.
  */
 class AdviceService
 {
@@ -44,14 +50,6 @@ class AdviceService
         'aangevraagd',
         'ontvangen',
         'verlopen',
-    ];
-
-    /**
-     * Valid advice types.
-     */
-    private const VALID_TYPES = [
-        'intern',
-        'extern',
     ];
 
     /**
@@ -71,82 +69,27 @@ class AdviceService
     }//end __construct()
 
     /**
-     * Create a new advice request linked to a case.
+     * Transition an advice request to a new status and fire notifications.
      *
-     * @param string               $caseId The case UUID this advice is for
-     * @param array<string, mixed> $data   Advice data (adviseur, type, onderwerp, deadline, questions)
+     * Supported transitions:
+     *   - to=aangevraagd: notify the adviseur (used right after manifest create).
+     *   - to=ontvangen:   set receivedAt + optional adviesDocument; notify caller.
+     *   - to=verlopen:    mark expired (cron path).
      *
-     * @return array<string, mixed> Created advice record
-     *
-     * @throws \RuntimeException When OpenRegister unavailable or validation fails
-     */
-    public function createAdvice(string $caseId, array $data): array
-    {
-        if ($caseId === '') {
-            throw new \RuntimeException('Case ID is required');
-        }
-
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            throw new \RuntimeException('Advice schema is not configured');
-        }
-
-        $adviseur = (string) ($data['adviseur'] ?? '');
-        $type     = (string) ($data['type'] ?? '');
-
-        if ($adviseur === '') {
-            throw new \RuntimeException('adviseur is required');
-        }
-
-        if (in_array($type, self::VALID_TYPES, true) === false) {
-            throw new \RuntimeException('Invalid advice type');
-        }
-
-        $payload = [
-            'case'        => $caseId,
-            'adviseur'    => $adviseur,
-            'type'        => $type,
-            'onderwerp'   => (string) ($data['onderwerp'] ?? ''),
-            'deadline'    => (string) ($data['deadline'] ?? ''),
-            'status'      => 'aangevraagd',
-            'requestedAt' => date('c'),
-            'questions'   => (string) ($data['questions'] ?? ''),
-        ];
-
-        try {
-            $advice = $objectService->saveObject($register, $schema, $payload);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: failed to create advice request: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
-            );
-            throw new \RuntimeException('Could not create advice request');
-        }
-
-        $this->notifyAdviseur($adviseur, $caseId, $payload['onderwerp']);
-
-        return $this->normalizeResult($advice);
-    }//end createAdvice()
-
-    /**
-     * Mark an advice request as received (status -> ontvangen).
-     *
-     * @param string $adviceId The advice UUID
-     * @param string $fileId   Nextcloud file ID of the advice document
+     * @param string               $adviceId The advice UUID
+     * @param string               $to       Target status
+     * @param array<string, mixed> $payload  Extra fields (adviesDocument, etc.)
      *
      * @return array<string, mixed> Updated advice record
      *
-     * @throws \RuntimeException When OpenRegister unavailable
+     * @throws \RuntimeException When OpenRegister unavailable / invalid status
      */
-    public function receiveAdvice(string $adviceId, string $fileId): array
+    public function transitionStatus(string $adviceId, string $to, array $payload = []): array
     {
+        if (in_array($to, self::VALID_STATUSES, true) === false) {
+            throw new \RuntimeException('Invalid advice status');
+        }
+
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
             throw new \RuntimeException('OpenRegister is not available');
@@ -159,41 +102,48 @@ class AdviceService
             throw new \RuntimeException('Advice schema is not configured');
         }
 
-        $update = [
-            'status'         => 'ontvangen',
-            'receivedAt'     => date('c'),
-        ];
+        $current = $this->loadAdvice($adviceId);
+        if ($current === null) {
+            throw new \RuntimeException('Advice request not found');
+        }
 
-        if ($fileId !== '') {
-            $update['adviesDocument'] = $fileId;
+        $update = ['status' => $to];
+
+        if ($to === 'ontvangen') {
+            $update['receivedAt'] = date('c');
+            $fileId = (string) ($payload['adviesDocument'] ?? ($payload['fileId'] ?? ''));
+            if ($fileId !== '') {
+                $update['adviesDocument'] = $fileId;
+            }
         }
 
         try {
             $advice = $objectService->saveObject($register, $schema, $update, $adviceId);
         } catch (\Throwable $e) {
             $this->logger->error(
-                'Procest: failed to mark advice received: '.$e->getMessage(),
+                'Procest: failed to transition advice status: '.$e->getMessage(),
                 ['app' => Application::APP_ID]
             );
             throw new \RuntimeException('Could not update advice request');
         }
 
-        $current = $this->getUserId();
-        if ($current !== '') {
-            $this->sendUserNotification($current, 'advies_ontvangen', $adviceId);
-        }
+        $advice = $this->normalizeResult($advice);
 
-        return $this->normalizeResult($advice);
-    }//end receiveAdvice()
+        $this->fireTransitionNotification($to, $current, $adviceId);
+
+        return $advice;
+    }//end transitionStatus()
 
     /**
-     * Send a reminder notification to the adviseur for an advice request.
+     * Dispatch a reminder notification to the adviseur.
+     *
+     * Called by the manual remind endpoint and by the daily deadline cron.
      *
      * @param string $adviceId The advice UUID
      *
      * @return void
      */
-    public function sendReminder(string $adviceId): void
+    public function dispatchReminder(string $adviceId): void
     {
         $advice = $this->loadAdvice($adviceId);
         if ($advice === null) {
@@ -206,10 +156,37 @@ class AdviceService
         }
 
         $this->sendUserNotification($adviseur, 'advies_herinnering', $adviceId);
-    }//end sendReminder()
+    }//end dispatchReminder()
 
     /**
-     * Get all advice requests for a case.
+     * Workflow guard — return pending advice (status=aangevraagd) for a case.
+     *
+     * Callers (case-status transitions, parafering routes) use this to block
+     * downstream steps while advice is still outstanding.
+     *
+     * @param string $caseId The case UUID
+     *
+     * @return array<int, array<string, mixed>> Pending advice records
+     */
+    public function applyWorkflowGuard(string $caseId): array
+    {
+        $all     = $this->getAdviceForCase($caseId);
+        $pending = [];
+
+        foreach ($all as $advice) {
+            $status = (string) ($advice['status'] ?? '');
+            if ($status === 'aangevraagd') {
+                $pending[] = $advice;
+            }
+        }
+
+        return $pending;
+    }//end applyWorkflowGuard()
+
+    /**
+     * Get all advice requests linked to a case.
+     *
+     * Used by the workflow guard and by the case-detail "Adviezen" tab.
      *
      * @param string $caseId The case UUID
      *
@@ -251,28 +228,6 @@ class AdviceService
 
         return [];
     }//end getAdviceForCase()
-
-    /**
-     * Get pending advice (status=aangevraagd) for a case — used as workflow guard.
-     *
-     * @param string $caseId The case UUID
-     *
-     * @return array<int, array<string, mixed>> Pending advice records
-     */
-    public function checkGuard(string $caseId): array
-    {
-        $all     = $this->getAdviceForCase($caseId);
-        $pending = [];
-
-        foreach ($all as $advice) {
-            $status = (string) ($advice['status'] ?? '');
-            if ($status === 'aangevraagd') {
-                $pending[] = $advice;
-            }
-        }
-
-        return $pending;
-    }//end checkGuard()
 
     /**
      * Load all open advice requests across the system (for the deadline job).
@@ -319,31 +274,17 @@ class AdviceService
     /**
      * Mark an advice request as expired (status -> verlopen).
      *
+     * Convenience wrapper used by the deadline cron. Delegates to
+     * transitionStatus() to keep the notification dispatch consistent.
+     *
      * @param string $adviceId The advice UUID
      *
      * @return array<string, mixed> Updated advice record
      */
     public function expireAdvice(string $adviceId): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
-
         try {
-            $advice = $objectService->saveObject(
-                $register,
-                $schema,
-                ['status' => 'verlopen'],
-                $adviceId,
-            );
+            return $this->transitionStatus($adviceId, 'verlopen');
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest: failed to expire advice: '.$e->getMessage(),
@@ -351,8 +292,6 @@ class AdviceService
             );
             return [];
         }
-
-        return $this->normalizeResult($advice);
     }//end expireAdvice()
 
     /**
@@ -388,6 +327,39 @@ class AdviceService
 
         return $this->normalizeResult($advice);
     }//end loadAdvice()
+
+    /**
+     * Fire the notification that matches a status transition.
+     *
+     * @param string               $to       Target status
+     * @param array<string, mixed> $current  Current advice record (pre-update)
+     * @param string               $adviceId The advice UUID
+     *
+     * @return void
+     */
+    private function fireTransitionNotification(string $to, array $current, string $adviceId): void
+    {
+        if ($to === 'aangevraagd') {
+            $adviseur = (string) ($current['adviseur'] ?? '');
+            if ($adviseur !== '') {
+                $this->sendUserNotification(
+                    $adviseur,
+                    'advies_aangevraagd',
+                    $adviceId,
+                    (string) ($current['onderwerp'] ?? '')
+                );
+            }
+
+            return;
+        }
+
+        if ($to === 'ontvangen') {
+            $caller = $this->getUserId();
+            if ($caller !== '') {
+                $this->sendUserNotification($caller, 'advies_ontvangen', $adviceId);
+            }
+        }
+    }//end fireTransitionNotification()
 
     /**
      * Convert an object/array result to an associative array.
@@ -426,24 +398,6 @@ class AdviceService
 
         return $user->getUID();
     }//end getUserId()
-
-    /**
-     * Notify the adviseur (internal) about a new advice request.
-     *
-     * @param string $adviseur Adviseur identifier (UID for internal)
-     * @param string $caseId   The case UUID
-     * @param string $subject  Subject of the advice request
-     *
-     * @return void
-     */
-    private function notifyAdviseur(string $adviseur, string $caseId, string $subject): void
-    {
-        if ($adviseur === '') {
-            return;
-        }
-
-        $this->sendUserNotification($adviseur, 'advies_aangevraagd', $caseId, $subject);
-    }//end notifyAdviseur()
 
     /**
      * Send a Nextcloud notification to a user.

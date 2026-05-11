@@ -3,7 +3,10 @@
 /**
  * Procest Advice Controller.
  *
- * REST API for managing advice requests (adviesAanvraag) on cases.
+ * Workflow endpoints for advice requests (adviesAanvraag). CRUD is delegated
+ * to the manifest renderer (OpenRegister); this controller exposes only the
+ * domain operations that need server-side side-effects: status transitions
+ * (which trigger notifications) and manual reminder dispatch.
  *
  * @category Controller
  * @package  OCA\Procest\Controller
@@ -25,7 +28,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\AdviceService;
-use OCA\Procest\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -33,7 +35,7 @@ use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 
 /**
- * Controller for advice request management on cases.
+ * Controller for advice request workflow operations.
  */
 class AdviceController extends Controller
 {
@@ -41,125 +43,33 @@ class AdviceController extends Controller
     /**
      * Constructor.
      *
-     * @param string          $appName         The app name
-     * @param IRequest        $request         The HTTP request
-     * @param AdviceService   $adviceService   The advice service
-     * @param SettingsService $settingsService The settings service
-     * @param LoggerInterface $logger          The logger
+     * @param string          $appName       The app name
+     * @param IRequest        $request       The HTTP request
+     * @param AdviceService   $adviceService The advice service
+     * @param LoggerInterface $logger        The logger
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly AdviceService $adviceService,
-        private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
-     * List advice requests for a case.
+     * Transition the status of an advice request.
      *
-     * @param string $case The case UUID (query param)
+     * Drives workflow side-effects (notifications to adviseur / requester)
+     * that the manifest CRUD path cannot perform. The CRUD itself (writing
+     * the object) is still performed by this method via the service so the
+     * notification + persistence remain transactional from the caller's
+     * point of view.
      *
-     * @return JSONResponse List of advice records
-     *
-     * @NoAdminRequired
-     */
-    public function index(string $case = ''): JSONResponse
-    {
-        if ($case === '') {
-            return new JSONResponse(
-                ['error' => 'case parameter is required'],
-                Http::STATUS_BAD_REQUEST,
-            );
-        }
-
-        try {
-            $advice = $this->adviceService->getAdviceForCase($case);
-            return new JSONResponse(['results' => $advice]);
-        } catch (\Throwable $e) {
-            $this->logger->error('Procest: advice index failed: '.$e->getMessage());
-            return new JSONResponse(
-                ['error' => 'Could not list advice requests'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }
-    }//end index()
-
-    /**
-     * Create a new advice request.
-     *
-     * @return JSONResponse Created record
-     *
-     * @NoAdminRequired
-     */
-    public function create(): JSONResponse
-    {
-        $data = $this->readJsonBody();
-
-        $caseId = (string) ($data['case'] ?? '');
-
-        try {
-            $advice = $this->adviceService->createAdvice($caseId, $data);
-            return new JSONResponse($advice, Http::STATUS_CREATED);
-        } catch (\RuntimeException $e) {
-            return new JSONResponse(
-                ['error' => $e->getMessage()],
-                Http::STATUS_BAD_REQUEST,
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error('Procest: advice create failed: '.$e->getMessage());
-            return new JSONResponse(
-                ['error' => 'Could not create advice request'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }
-    }//end create()
-
-    /**
-     * Show a single advice request.
-     *
-     * @param string $id The advice UUID
-     *
-     * @return JSONResponse Advice record
-     *
-     * @NoAdminRequired
-     */
-    public function show(string $id): JSONResponse
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return new JSONResponse(
-                ['error' => 'OpenRegister is not available'],
-                Http::STATUS_SERVICE_UNAVAILABLE,
-            );
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return new JSONResponse(
-                ['error' => 'Advice schema is not configured'],
-                Http::STATUS_SERVICE_UNAVAILABLE,
-            );
-        }
-
-        try {
-            $advice = $objectService->findObject($register, $schema, $id);
-            return new JSONResponse($advice);
-        } catch (\Throwable $e) {
-            $this->logger->error('Procest: advice show failed: '.$e->getMessage());
-            return new JSONResponse(
-                ['error' => 'Could not load advice request'],
-                Http::STATUS_NOT_FOUND,
-            );
-        }
-    }//end show()
-
-    /**
-     * Update / mark received an advice request.
+     * Accepted payloads:
+     *   { "to": "aangevraagd" }                  — fire "advies_aangevraagd"
+     *   { "to": "ontvangen", "adviesDocument": "<fileId>" } — mark received
+     *   { "to": "verlopen" }                     — mark expired
      *
      * @param string $id The advice UUID
      *
@@ -167,13 +77,20 @@ class AdviceController extends Controller
      *
      * @NoAdminRequired
      */
-    public function update(string $id): JSONResponse
+    public function transitionStatus(string $id): JSONResponse
     {
-        $data   = $this->readJsonBody();
-        $fileId = (string) ($data['adviesDocument'] ?? ($data['fileId'] ?? ''));
+        $data = $this->readJsonBody();
+        $to   = (string) ($data['to'] ?? '');
+
+        if ($to === '') {
+            return new JSONResponse(
+                ['error' => 'to status is required'],
+                Http::STATUS_BAD_REQUEST,
+            );
+        }
 
         try {
-            $advice = $this->adviceService->receiveAdvice($id, $fileId);
+            $advice = $this->adviceService->transitionStatus($id, $to, $data);
             return new JSONResponse($advice);
         } catch (\RuntimeException $e) {
             return new JSONResponse(
@@ -181,57 +98,16 @@ class AdviceController extends Controller
                 Http::STATUS_BAD_REQUEST,
             );
         } catch (\Throwable $e) {
-            $this->logger->error('Procest: advice update failed: '.$e->getMessage());
+            $this->logger->error('Procest: advice transition failed: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'Could not update advice request'],
+                ['error' => 'Could not transition advice request'],
                 Http::STATUS_INTERNAL_SERVER_ERROR,
             );
         }
-    }//end update()
+    }//end transitionStatus()
 
     /**
-     * Delete an advice request.
-     *
-     * @param string $id The advice UUID
-     *
-     * @return JSONResponse Empty success or error
-     *
-     * @NoAdminRequired
-     */
-    public function destroy(string $id): JSONResponse
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return new JSONResponse(
-                ['error' => 'OpenRegister is not available'],
-                Http::STATUS_SERVICE_UNAVAILABLE,
-            );
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return new JSONResponse(
-                ['error' => 'Advice schema is not configured'],
-                Http::STATUS_SERVICE_UNAVAILABLE,
-            );
-        }
-
-        try {
-            $objectService->deleteObject($register, $schema, $id);
-            return new JSONResponse(['status' => 'deleted']);
-        } catch (\Throwable $e) {
-            $this->logger->error('Procest: advice destroy failed: '.$e->getMessage());
-            return new JSONResponse(
-                ['error' => 'Could not delete advice request'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }
-    }//end destroy()
-
-    /**
-     * Send a manual reminder to the adviseur.
+     * Dispatch a manual reminder notification to the adviseur.
      *
      * @param string $id The advice UUID
      *
@@ -239,19 +115,19 @@ class AdviceController extends Controller
      *
      * @NoAdminRequired
      */
-    public function remind(string $id): JSONResponse
+    public function dispatchReminder(string $id): JSONResponse
     {
         try {
-            $this->adviceService->sendReminder($id);
+            $this->adviceService->dispatchReminder($id);
             return new JSONResponse(['status' => 'reminded']);
         } catch (\Throwable $e) {
-            $this->logger->error('Procest: advice remind failed: '.$e->getMessage());
+            $this->logger->error('Procest: advice dispatchReminder failed: '.$e->getMessage());
             return new JSONResponse(
                 ['error' => 'Could not send reminder'],
                 Http::STATUS_INTERNAL_SERVER_ERROR,
             );
         }
-    }//end remind()
+    }//end dispatchReminder()
 
     /**
      * Decode a JSON request body safely.
