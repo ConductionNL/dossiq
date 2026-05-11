@@ -202,6 +202,17 @@ return [
         ['name' => 'advice#transitionStatus',  'url' => '/api/advice/{id}/transition', 'verb' => 'POST'],
         ['name' => 'advice#dispatchReminder',  'url' => '/api/advice/{id}/remind',     'verb' => 'POST'],
 
+        // ── Workflow Definitions (workflowTemplate) ─────────────────────
+        // CRUD on workflowTemplate is served by the manifest renderer +
+        // OpenRegister auto-routing (/api/objects/<register>/<schema>).
+        // Only the lifecycle transitions and the read-only consumer
+        // contract live on this controller.
+        ['name' => 'workflowDefinition#publish',           'url' => '/api/workflow-definitions/{id}/publish',         'verb' => 'POST'],
+        ['name' => 'workflowDefinition#deprecate',         'url' => '/api/workflow-definitions/{id}/deprecate',       'verb' => 'POST'],
+        ['name' => 'workflowDefinition#cloneDefinition',   'url' => '/api/workflow-definitions/{id}/clone',           'verb' => 'POST'],
+        ['name' => 'workflowDefinition#active',            'url' => '/api/workflow-definitions/active/{caseTypeId}',  'verb' => 'GET'],
+        ['name' => 'workflowDefinition#forCase',           'url' => '/api/workflow-definitions/for-case/{caseId}',    'verb' => 'GET'],
+
         // Multi-Tenant SaaS — domain endpoints only. Generic tenant CRUD
         // (list/create/update/destroy) is rendered by the manifest pages
         // at /settings/tenants and proxied directly to OpenRegister; this
