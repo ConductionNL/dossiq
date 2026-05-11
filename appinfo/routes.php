@@ -166,6 +166,13 @@ return [
         ['name' => 'inspection#addPhoto',             'url' => '/api/inspections/{id}/photos',                       'verb' => 'POST'],
         ['name' => 'inspection#complete',             'url' => '/api/inspections/{id}/complete',                     'verb' => 'POST'],
 
+        // ── Legesberekening (municipal fee calculation) ─────────────────
+        ['name' => 'leges#calculate',   'url' => '/api/leges/calculate',    'verb' => 'POST'],
+        ['name' => 'leges#recalculate', 'url' => '/api/leges/recalculate',  'verb' => 'POST'],
+        ['name' => 'leges#verrekening', 'url' => '/api/leges/verrekening',  'verb' => 'POST'],
+        ['name' => 'leges#teruggaaf',   'url' => '/api/leges/teruggaaf',    'verb' => 'POST'],
+        ['name' => 'leges#export',      'url' => '/api/leges/export',       'verb' => 'POST'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],
