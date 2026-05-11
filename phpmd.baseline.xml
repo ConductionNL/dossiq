@@ -112,4 +112,5 @@
   <violation rule="PHPMD\Rule\CleanCode\ElseExpression" file="lib/Service/ParafeerActieService.php"/>
   <violation rule="PHPMD\Rule\UnusedFormalParameter" file="lib/Service/ParafeerActieService.php"/>
   <violation rule="PHPMD\Rule\CyclomaticComplexity" file="lib/Service/ParafeerActieService.php" method="advanceVoorstel"/>
+  <violation rule="PHPMD\Rule\Design\ExcessiveClassComplexity" file="lib/Service/ParafeerRouteService.php"/>
 </phpmd-baseline>

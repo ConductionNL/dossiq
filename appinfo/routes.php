@@ -136,6 +136,17 @@ return [
         ['name' => 'gis_proxy#proxy', 'url' => '/api/gis/proxy', 'verb' => 'POST'],
         ['name' => 'gis_proxy#capabilities', 'url' => '/api/gis/capabilities', 'verb' => 'GET'],
 
+        // ── Parafeerroute (B&W parafering engine) ───────────────────────
+        ['name' => 'parafeer_route#index',        'url' => '/api/parafeer-route',                                      'verb' => 'GET'],
+        ['name' => 'parafeer_route#create',       'url' => '/api/parafeer-route',                                      'verb' => 'POST'],
+        ['name' => 'parafeer_route#start',        'url' => '/api/parafeer-route/voorstel/{voorstelId}/start',          'verb' => 'POST'],
+        ['name' => 'parafeer_route#completeStep', 'url' => '/api/parafeer-route/voorstel/{voorstelId}/complete-step',  'verb' => 'POST'],
+        ['name' => 'parafeer_route#skipStep',     'url' => '/api/parafeer-route/voorstel/{voorstelId}/skip-step',      'verb' => 'POST'],
+        ['name' => 'parafeer_route#addStep',      'url' => '/api/parafeer-route/voorstel/{voorstelId}/add-step',       'verb' => 'POST'],
+        ['name' => 'parafeer_route#show',         'url' => '/api/parafeer-route/{id}',                                 'verb' => 'GET'],
+        ['name' => 'parafeer_route#update',       'url' => '/api/parafeer-route/{id}',                                 'verb' => 'PUT'],
+        ['name' => 'parafeer_route#destroy',      'url' => '/api/parafeer-route/{id}',                                 'verb' => 'DELETE'],
+
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
         // Health check endpoint.

@@ -54,6 +54,30 @@
 					:voorstel-id="voorstel.id || voorstelId" />
 			</CnDetailCard>
 
+			<!-- Manager override controls -->
+			<CnDetailCard v-if="canOverrideRoute" :title="t('procest', 'Route-aanpassing (manager)')">
+				<div class="voorstel-detail__override-actions">
+					<NcButton :disabled="!currentStepInfo" @click="openSkipDialog">
+						{{ t('procest', 'Stap overslaan') }}
+					</NcButton>
+					<NcButton @click="openAddStepDialog">
+						{{ t('procest', 'Stap toevoegen') }}
+					</NcButton>
+				</div>
+			</CnDetailCard>
+
+			<SkipStepDialog :open="showSkipDialog"
+				:voorstel-id="voorstel.id || voorstelId"
+				:step="currentStepInfo"
+				@skipped="onOverrideCompleted"
+				@close="showSkipDialog = false" />
+
+			<AddStepDialog :open="showAddStepDialog"
+				:voorstel-id="voorstel.id || voorstelId"
+				:route-snapshot="steps"
+				@step-added="onOverrideCompleted"
+				@close="showAddStepDialog = false" />
+
 			<!-- Resubmit for steller -->
 			<CnDetailCard v-if="voorstel.status === 'teruggestuurd' && isSteller" :title="t('procest', 'Teruggestuurd')">
 				<p>{{ t('procest', 'Dit voorstel is teruggestuurd. Pas het document aan en dien het opnieuw in.') }}</p>
@@ -142,6 +166,8 @@ import ParafeerActieDialog from './components/ParafeerActieDialog.vue'
 import ParafeerActieTimeline from './components/ParafeerActieTimeline.vue'
 import AuditTrail from './components/AuditTrail.vue'
 import BesluitRegistration from './components/BesluitRegistration.vue'
+import SkipStepDialog from './components/SkipStepDialog.vue'
+import AddStepDialog from './components/AddStepDialog.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 
 const STATUS_LABELS = {
@@ -172,6 +198,8 @@ export default {
 		ParafeerActieTimeline,
 		AuditTrail,
 		BesluitRegistration,
+		SkipStepDialog,
+		AddStepDialog,
 	},
 	props: {
 		voorstelId: {
@@ -188,6 +216,8 @@ export default {
 			showBesluitDialog: false,
 			actieDialogOpen: false,
 			mandates: [],
+			showSkipDialog: false,
+			showAddStepDialog: false,
 		}
 	},
 	computed: {
@@ -225,6 +255,20 @@ export default {
 		},
 		canRegisterBesluit() {
 			return ['geaccordeerd', 'aangeboden'].includes(this.voorstel.status)
+		},
+		canOverrideRoute() {
+			if (this.voorstel.status !== 'in_parafering' && this.voorstel.status !== 'ter_accordering') {
+				return false
+			}
+			const user = getCurrentUser()
+			if (!user) return false
+			// Group membership is server-enforced; we surface the controls to admins
+			// and to the steller so they can request additional advice.
+			const groups = user.groups || []
+			return groups.includes('admin')
+				|| groups.includes('manager')
+				|| groups.includes('secretariaat')
+				|| this.isSteller
 		},
 	},
 	async created() {
@@ -277,6 +321,20 @@ export default {
 			if (this.$refs.actieTimeline?.load) {
 				await this.$refs.actieTimeline.load()
 			}
+		},
+		openSkipDialog() {
+			this.showSkipDialog = true
+		},
+		openAddStepDialog() {
+			this.showAddStepDialog = true
+		},
+		async onOverrideCompleted() {
+			this.showSkipDialog = false
+			this.showAddStepDialog = false
+			await Promise.all([
+				this.loadVoorstel(),
+				this.loadActies(),
+			])
 		},
 		async resubmit() {
 			try {
