@@ -84,6 +84,10 @@ class SettingsService
         'appointment_backend_url',
         'appointment_backend_api_key',
         'appointment_reminder_days',
+        'case_share_schema',
+        'partner_organization_schema',
+        'share_permission_level_schema',
+        'case_transfer_schema',
         'lhsMatrix',
         // AI-Assisted Processing settings.
         'ai_audit_entry_schema',
@@ -151,6 +155,10 @@ class SettingsService
         'appointment'                  => 'appointment_schema',
         'appointmentProduct'           => 'appointment_product_schema',
         'appointmentLocation'          => 'appointment_location_schema',
+        'caseShare'                    => 'case_share_schema',
+        'partnerOrganization'          => 'partner_organization_schema',
+        'sharePermissionLevel'         => 'share_permission_level_schema',
+        'caseTransfer'                 => 'case_transfer_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
