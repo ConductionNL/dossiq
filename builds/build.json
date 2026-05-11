@@ -29,34 +29,49 @@
       }
     },
     {
-      "change": "inspection-checklists",
+      "change": "bezwaar-lifecycle",
       "appliedAt": "2026-05-11",
-      "tasks": ["T01", "T02", "T03"],
+      "tasks": ["T01", "T02", "T03", "T04", "T05", "T09", "T10"],
       "deferred": [
-        {"task": "T04", "reason": "Vue settings editor — manifest-first; OpenRegister auto-form renders index + detail for inspectionChecklistTemplate"},
-        {"task": "T05", "reason": "Mobile run UI lives in sister spec mobiel-inspectie (already applied); manifest run detail renders responses/photos/followUp tabs"},
-        {"task": "T06", "reason": "Offline sync queue — frontend scope, see mobiel-inspectie V3"},
-        {"task": "T07", "reason": "Evidence upload pipeline — folder structure documented; file routing follows existing FolderManagementHandler"},
-        {"task": "V01", "reason": "openspec validate scope — strict watchdog: lint + jq only"},
-        {"task": "V02", "reason": "delta count via openspec change show — out of watchdog scope"},
-        {"task": "V03", "reason": "Scenario coverage check — out of watchdog scope"},
-        {"task": "V04", "reason": "git diff scope check — handled by PR review"}
+        {"task": "T06", "reason": "No bespoke BezwaarController — REQ-BL forbids it; lifecycle exposed via OR auto-routes on bezwaar schema + status-transition-engine endpoints"},
+        {"task": "T07", "reason": "Manifest-first: Bezwaren index + BezwaarDetail with Overview/Advice/Hearing/Decision/Audit tabs added; dedicated Vue BezwaarLifecycle.vue tracked separately"},
+        {"task": "T08", "reason": "Dwangsom banner — declarative dwangsom computed via x-openregister-calculations; banner UI tracked separately"},
+        {"task": "V01", "reason": "openspec validate scope follow-up (strict watchdog: lint + jq only, 25-min budget)"},
+        {"task": "V02", "reason": "delta-count check scope follow-up"},
+        {"task": "V03", "reason": "scenario-block audit scope follow-up"},
+        {"task": "V04", "reason": "Implementation introduces code beyond docs by explicit prompt instruction — supersedes the spec's GENERATE-only constraint"}
       ],
-      "services": [
-        "OCA\\Procest\\Service\\Inspection\\ChecklistService"
-      ],
-      "listeners": [
-        "OCA\\Procest\\Listener\\ChecklistRunImmutabilityListener"
-      ],
-      "controllers": [],
-      "endpoints": [],
+      "schemas": ["bezwaar"],
       "schemaChanges": {
-        "inspectionChecklistTemplate": ["new schema — name, caseType, version, status (draft|active|retired), active, sections[] with nested items[] (responseType enum [ja_nee_nvt, tekst, getal, meerkeuze, foto, meting], fotoRequired enum [nooit, bij_nee, altijd], numericRange, choices, failureAction with type enum [herinspectie, handhavingstaak, documentVerzoek, geen]), seedKey"],
-        "inspectionChecklistRun": ["new schema — case, inspection, template, templateVersion, templateSnapshot, inspector (server-derived), startedAt, completedAt, submittedAt, status (concept|in_uitvoering|ingediend|gearchiveerd), responses[] with itemId/value/numericValue/choice/comment/photos/audio/syncState, photos[], location, overallResult (conform|niet_conform|deels_conform), syncState (local|queued|synced), followUpType"]
+        "bezwaar": [
+          "case (ref)",
+          "objection (ref)",
+          "status (enum: 10 states)",
+          "awbReference",
+          "ontvangstdatum",
+          "verdaagdOp",
+          "verdagingsperiode",
+          "opschortingStart",
+          "opschortingEnd",
+          "opschorting",
+          "hearingWaived",
+          "waiverReason",
+          "ingebrekestelling",
+          "dwangsom (calculated)",
+          "decisionDeadline (calculated)",
+          "x-openregister-calculations: decisionDeadline (AWB 7:10), dwangsom (AWB 4:17)"
+        ]
       },
-      "configKeys": [
-        "inspection_checklist_template_schema",
-        "inspection_checklist_run_schema"
+      "repair": ["OCA\\Procest\\Repair\\SeedBezwaarWorkflowDefinition"],
+      "listeners": ["OCA\\Procest\\Listener\\BezwaarLifecycleListener"],
+      "manifestPages": ["Bezwaren (index)", "BezwaarDetail (detail with Overview/Advice/Hearing/Decision/Audit tabs)"],
+      "menuItems": ["Bezwaren"],
+      "workflowSeed": "Bezwaar — AWB-compliant workflow (10 statusTypes, 12 transitions incl. wildcard intrekking, requiredField guards on Niet-ontvankelijk + Ingetrokken for awbReference)",
+      "notes": [
+        "NO bespoke BezwaarController CRUD — per REQ-BL",
+        "NO BezwaarDeadlineService — deadlines declared on schema via x-openregister-calculations (ADR-022)",
+        "NO BezwaarLifecycleService — transitions flow through StatusTransitionService",
+        "Listener routes object events into the status-transition-engine; does not own transition logic"
       ]
     }
   ]
