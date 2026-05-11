@@ -920,7 +920,7 @@
       "statusRecord": {
         "slug": "statusRecord",
         "icon": "ProgressClock",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:Event",
         "x-zgw-equivalent": "Status",
         "title": "Status Record",
@@ -941,11 +941,49 @@
           "statusType": {
             "type": "string",
             "format": "uuid",
-            "description": "Reference to the status type"
+            "description": "Reference to the target status type (toStatus)"
           },
           "description": {
             "type": "string",
-            "description": "Status transition description"
+            "description": "Status transition description / free-form comment"
+          },
+          "transitionLabel": {
+            "type": "string",
+            "description": "Label of the workflowTemplate transition that fired"
+          },
+          "fromStatus": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the prior status type (absent on first set)"
+          },
+          "evaluatedGuards": {
+            "type": "array",
+            "description": "Snapshot of guards evaluated for this transition",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string" },
+                "passed": { "type": "boolean" },
+                "details": { "type": "object" }
+              }
+            }
+          },
+          "dispatchedActions": {
+            "type": "array",
+            "description": "Snapshot of automatic actions dispatched for this transition",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string" },
+                "ok": { "type": "boolean" },
+                "error": { "type": "string" }
+              }
+            }
+          },
+          "noWorkflowTemplate": {
+            "type": "boolean",
+            "default": false,
+            "description": "True when the transition was admin free-form on a caseType without an active workflowTemplate"
           }
         }
       },

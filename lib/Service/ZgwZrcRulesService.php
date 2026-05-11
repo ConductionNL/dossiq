@@ -251,9 +251,18 @@ class ZgwZrcRulesService extends ZgwRulesBase
      * Implements:
      * - zrc-016: Validate that statustype belongs to Zaak.zaaktype.statustypen.
      *
+     * NOTE: From `status-transition-engine` onwards, the actual `case.status`
+     * mutation is owned by `StatusTransitionService`. This method retains
+     * the zrc-016 ZGW request-shape validation only; callers that want a
+     * `statusRecord` written for every status mutation should funnel through
+     * `StatusTransitionService::execute()` or `executeFreeForm()`. The legacy
+     * write path remains for ZGW API contract compatibility.
+     *
      * @param array $body The ZGW request body
      *
      * @return array The validation result
+     *
+     * @spec openspec/changes/status-transition-engine/tasks.md#T13
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      */
