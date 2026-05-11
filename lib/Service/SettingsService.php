@@ -76,6 +76,13 @@ class SettingsService
         'handhavingsactie_schema',
         'advies_aanvraag_schema',
         'tenant_schema',
+        'appointment_schema',
+        'appointment_product_schema',
+        'appointment_location_schema',
+        'appointment_backend',
+        'appointment_backend_url',
+        'appointment_backend_api_key',
+        'appointment_reminder_days',
         'lhsMatrix',
         // AI-Assisted Processing settings.
         'ai_audit_entry_schema',
@@ -140,6 +147,9 @@ class SettingsService
         'parafeeractie'                => 'parafeeractie_schema',
         'tenant'                       => 'tenant_schema',
         'aiAuditEntry'                 => 'ai_audit_entry_schema',
+        'appointment'                  => 'appointment_schema',
+        'appointmentProduct'           => 'appointment_product_schema',
+        'appointmentLocation'          => 'appointment_location_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

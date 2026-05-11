@@ -206,6 +206,18 @@ return [
         ['name' => 'tenant#provision', 'url' => '/api/tenants/{tenantId}/provision',   'verb' => 'POST'],
         ['name' => 'tenant#usage',     'url' => '/api/tenants/{tenantId}/usage',       'verb' => 'GET'],
 
+        // ── Appointment Scheduling (afsprakenbeheer) ────────────────────
+        // Specific endpoints (must precede wildcard {appointmentId} routes).
+        ['name' => 'appointment#timeslots', 'url' => '/api/appointments/timeslots',                'verb' => 'GET'],
+        ['name' => 'appointment#noShow',    'url' => '/api/appointments/{appointmentId}/no-show',  'verb' => 'POST'],
+        // CRUD.
+        ['name' => 'appointment#index',     'url' => '/api/appointments',                          'verb' => 'GET'],
+        ['name' => 'appointment#create',    'url' => '/api/appointments',                          'verb' => 'POST'],
+        ['name' => 'appointment#cancel',    'url' => '/api/appointments/{appointmentId}',          'verb' => 'DELETE'],
+        // Public (citizen self-service via token).
+        ['name' => 'public_appointment#view',   'url' => '/api/public/appointment/{token}',         'verb' => 'GET'],
+        ['name' => 'public_appointment#cancel', 'url' => '/api/public/appointment/{token}/cancel',  'verb' => 'POST'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],
