@@ -63,6 +63,10 @@ class SettingsService
         'abonnement_schema',
         'map_layer_schema',
         'workflow_template_schema',
+        // Stable alias for consumer specs (status-transition-engine,
+        // role-based-step-routing) that refer to the workflow definition
+        // independent of the legacy schema slug.
+        'workflow_definition_schema',
         'objection_schema',
         'hearing_session_schema',
         'advisory_report_schema',
@@ -431,6 +435,18 @@ class SettingsService
                 $configKey,
                 $schemaId
             );
+
+            // Mirror the workflowTemplate schema id under the stable
+            // workflow_definition_schema alias so consumer specs
+            // (status-transition-engine, role-based-step-routing) can
+            // resolve it without depending on the legacy slug.
+            if ($slug === 'workflowTemplate') {
+                $this->appConfig->setValueString(
+                    Application::APP_ID,
+                    'workflow_definition_schema',
+                    $schemaId
+                );
+            }
 
             $this->logger->debug(
                 'Procest: Auto-configured schema',

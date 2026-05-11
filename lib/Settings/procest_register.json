@@ -169,6 +169,11 @@
             "type": "string",
             "description": "Nextcloud user UID or group ID for automatic assignment of cases of this type (REQ-INTAKE-03a)",
             "title": "Default assignee"
+          },
+          "workflowDefinition": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID reference to the pinned active workflowTemplate for this case type. When unset, new cases fall through to the latest published workflowTemplate for this caseType. New cases are bound to the version that is published+isActive at the moment of case creation (see case.workflowTemplate + case.workflowVersion)."
           }
         }
       },
@@ -1876,7 +1881,17 @@
           "isDraft": {
             "type": "boolean",
             "default": true,
-            "description": "Draft templates cannot be used for new cases"
+            "description": "Draft templates cannot be used for new cases (legacy flag; lifecycleStatus is authoritative)"
+          },
+          "lifecycleStatus": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "deprecated"
+            ],
+            "default": "draft",
+            "description": "Lifecycle state of this definition. Authoritative going forward; isDraft/isActive remain for backwards compatibility. draft = editable, cannot back new cases. published = immutable, can back new cases (one active per caseType). deprecated = immutable, cannot back new cases, existing cases keep using it."
           },
           "steps": {
             "type": "string",

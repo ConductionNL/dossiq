@@ -19,6 +19,7 @@
 		{ "id": "PartnersMenu", "label": "Partner organisations", "icon": "icon-group", "route": "Partners", "section": "settings", "order": 97 },
 		{ "id": "TenantsMenu", "label": "Tenants", "icon": "icon-group", "route": "Tenants", "section": "settings", "order": 98, "permission": "admin" },
 		{ "id": "ParafeerroutesMenu", "label": "Parafeerroutes", "icon": "icon-category-workflow", "route": "Parafeerroutes", "section": "settings", "order": 96 },
+		{ "id": "WorkflowDefinitionsMenu", "label": "Workflow definitions", "icon": "icon-category-workflow", "route": "WorkflowDefinitions", "section": "settings", "order": 97 },
 		{ "id": "SettingsMenu", "label": "Settings", "icon": "icon-settings", "route": "Settings", "section": "settings", "order": 99 }
 	],
 	"pages": [
@@ -467,6 +468,40 @@
 			"type": "custom",
 			"title": "Public status",
 			"component": "PublicStatusPage"
+		},
+		{
+			"id": "WorkflowDefinitions",
+			"route": "/settings/workflow-definitions",
+			"type": "index",
+			"title": "Workflow definitions",
+			"config": {
+				"register": "procest",
+				"schema": "workflowTemplate",
+				"columns": ["title", "caseType", "version", "lifecycleStatus", "isActive", "updatedAt"],
+				"actions": ["create", "edit", "delete", "view"],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "WorkflowDefinitionDetail",
+			"route": "/settings/workflow-definitions/:id",
+			"type": "detail",
+			"title": "Workflow definition",
+			"config": {
+				"register": "procest",
+				"schema": "workflowTemplate",
+				"actions": [
+					{ "id": "publish",   "label": "Publish",   "icon": "icon-checkmark", "permission": "admin", "primary": true, "handler": "emit" },
+					{ "id": "deprecate", "label": "Deprecate", "icon": "icon-close",     "permission": "admin",                  "handler": "emit" },
+					{ "id": "clone",     "label": "Clone",     "icon": "icon-add",       "permission": "admin",                  "handler": "emit" }
+				],
+				"sidebarTabs": [
+					{ "id": "overview",    "label": "Overview",    "icon": "icon-info",     "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
+					{ "id": "steps",       "label": "Steps",       "icon": "icon-checkmark","widgets": [{ "type": "data" }],                          "order": 20 },
+					{ "id": "transitions", "label": "Transitions", "icon": "icon-comment",  "widgets": [{ "type": "data" }],                          "order": 30 },
+					{ "id": "audit",       "label": "Audit trail", "icon": "icon-history",  "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+				]
+			}
 		}
 	]
 }
