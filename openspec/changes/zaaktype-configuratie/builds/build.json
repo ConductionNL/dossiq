@@ -1,0 +1,34 @@
+{
+  "phase": "apply",
+  "timestamp": "2026-05-11T00:00:00+00:00",
+  "status": "no-op",
+  "reason": "All 4 V1 tasks (DurationPicker.vue, GeneralTab integration, active case count warning, publish validation with Dutch error messages) already implemented on development. Spec marked status: implemented. No code changes required.",
+  "verified_files": [
+    "src/views/settings/components/DurationPicker.vue",
+    "src/views/settings/tabs/GeneralTab.vue",
+    "src/views/settings/CaseTypeDetail.vue",
+    "src/utils/caseTypeValidation.js"
+  ],
+  "tasks_complete": [
+    "TASK-ZC-01",
+    "TASK-ZC-02",
+    "TASK-ZC-03",
+    "TASK-ZC-04"
+  ],
+  "validation": {
+    "php_lint": "pass",
+    "jq": "pass",
+    "composer_check_strict": "deferred per watchdog",
+    "i18n": "deferred per watchdog"
+  },
+  "deferred": [
+    "REQ-ZTC-03 document type admin UI (V1 future)",
+    "REQ-ZTC-04 property definition admin UI (V1 future)",
+    "REQ-ZTC-05 role type admin UI (V1 future)",
+    "REQ-ZTC-06 result type admin UI (V1 future)",
+    "REQ-ZTC-07 parafeerroute admin UI (V2)",
+    "REQ-ZTC-08 import/export (V2)",
+    "REQ-ZTC-09 version management (V2)",
+    "REQ-ZTC-10 test mode (V2)"
+  ]
+}
