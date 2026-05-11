@@ -23,6 +23,7 @@
 		{ "id": "PartnersMenu", "label": "Partner organisations", "icon": "icon-group", "route": "Partners", "section": "settings", "order": 97 },
 		{ "id": "TenantsMenu", "label": "Tenants", "icon": "icon-group", "route": "Tenants", "section": "settings", "order": 98, "permission": "admin" },
 		{ "id": "ParafeerroutesMenu", "label": "Parafeerroutes", "icon": "icon-category-workflow", "route": "Parafeerroutes", "section": "settings", "order": 96 },
+		{ "id": "WmsLayersMenu", "label": "Kaartlagen", "icon": "icon-category-files", "route": "WmsLayers", "section": "settings", "order": 97, "permission": "admin" },
 		{ "id": "WorkflowDefinitionsMenu", "label": "Workflow definitions", "icon": "icon-category-workflow", "route": "WorkflowDefinitions", "section": "settings", "order": 97 },
 		{ "id": "AutomaticActionsMenu", "label": "Automatische acties", "icon": "icon-category-workflow", "route": "AutomaticActions", "section": "settings", "order": 96 },
 		{ "id": "StatusRecordsMenu", "label": "Status history", "icon": "icon-history", "route": "StatusRecords", "section": "settings", "order": 98, "permission": "admin" },
@@ -362,6 +363,70 @@
 					{ "key": "delete" }
 				],
 				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "WmsLayers",
+			"route": "/settings/wms-layers",
+			"type": "index",
+			"title": "Kaartlagen",
+			"permission": "admin",
+			"config": {
+				"register": "procest",
+				"schema": "wmsLayer",
+				"columns": [
+					{ "key": "title" },
+					{ "key": "type" },
+					{ "key": "url" },
+					{ "key": "layerName" },
+					{ "key": "queryable" },
+					{ "key": "active" }
+				],
+				"actions": [
+					{ "key": "create" },
+					{ "key": "edit" },
+					{ "key": "delete" }
+				],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "WmsLayerDetail",
+			"route": "/settings/wms-layers/:id",
+			"type": "detail",
+			"title": "Kaartlaag",
+			"permission": "admin",
+			"config": {
+				"register": "procest",
+				"schema": "wmsLayer",
+				"sidebarTabs": [
+					{
+						"id": "overview",
+						"label": "Overview",
+						"icon": "icon-info",
+						"widgets": [
+							{ "type": "data" },
+							{ "type": "metadata" }
+						],
+						"order": 10
+					},
+					{
+						"id": "test",
+						"label": "Verbinding testen",
+						"icon": "icon-checkmark",
+						"widgets": [
+							{
+								"type": "action",
+								"config": {
+									"endpoint": "/api/wms-wfs/proxy",
+									"params": { "layerId": ":id", "request": "GetCapabilities" },
+									"label": "Verbinding testen"
+								}
+							}
+						],
+						"order": 20
+					}
+				]
 			}
 		},
 		{
