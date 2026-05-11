@@ -20,6 +20,7 @@
 		{ "id": "TenantsMenu", "label": "Tenants", "icon": "icon-group", "route": "Tenants", "section": "settings", "order": 98, "permission": "admin" },
 		{ "id": "ParafeerroutesMenu", "label": "Parafeerroutes", "icon": "icon-category-workflow", "route": "Parafeerroutes", "section": "settings", "order": 96 },
 		{ "id": "WorkflowDefinitionsMenu", "label": "Workflow definitions", "icon": "icon-category-workflow", "route": "WorkflowDefinitions", "section": "settings", "order": 97 },
+		{ "id": "AutomaticActionsMenu", "label": "Automatische acties", "icon": "icon-category-workflow", "route": "AutomaticActions", "section": "settings", "order": 96 },
 		{ "id": "SettingsMenu", "label": "Settings", "icon": "icon-settings", "route": "Settings", "section": "settings", "order": 99 }
 	],
 	"pages": [
@@ -454,6 +455,33 @@
 			"type": "custom",
 			"title": "Workflow editor",
 			"component": "VisualWorkflowEditor"
+		},
+		{
+			"id": "AutomaticActions",
+			"route": "/settings/automatic-actions",
+			"type": "index",
+			"title": "Automatische acties",
+			"config": {
+				"register": "procest",
+				"schema": "automaticAction",
+				"columns": ["slug", "type", "title", "isPublished", "active"],
+				"actions": ["create", "edit", "delete", "view"],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "AutomaticActionDetail",
+			"route": "/settings/automatic-actions/:id",
+			"type": "detail",
+			"title": "Automatische actie",
+			"config": {
+				"register": "procest",
+				"schema": "automaticAction",
+				"sidebarTabs": [
+					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
+					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+				]
+			}
 		},
 		{
 			"id": "PublicCase",
