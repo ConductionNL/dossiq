@@ -29,41 +29,27 @@
       }
     },
     {
-      "change": "pdok-integration",
+      "change": "enforcement-lhs",
       "appliedAt": "2026-05-11",
-      "tasks": ["T01", "T02", "T04-config"],
+      "tasks": ["T01", "T02", "T03", "T05"],
       "deferred": [
-        {"task": "T03", "reason": "Repair step seeding default MapLayer rows — defer to follow-up; manifest-first means MapLayer rows ship via seed-data path, not bespoke repair step"},
-        {"task": "T04-controller", "reason": "Admin UI surface is the existing SettingsService — no new PdokSettingsController/Vue tab per manifest-first constraint; config keys are now persisted via the central SettingsService allow-list"},
-        {"task": "T05", "reason": "case-location LocationService not present in this branch; refactor will land in case-location apply"},
-        {"task": "T06", "reason": "Per-service cache decorator + APCu wrapper — caching is inlined in PdokLocatieserverService + PdokBagService; standalone PdokCache class follow-up"},
-        {"task": "T07", "reason": "Frontend pdokApi.js consumer rewiring — out of scope (no new manifest pages / no admin Vue per constraints)"},
-        {"task": "T08", "reason": "Outage banner Vue — out of scope per manifest-first; backend health flag is in place"},
-        {"task": "V01", "reason": "Verification scope follow-up (strict watchdog: lint + jq only)"},
-        {"task": "V02", "reason": "Verification scope follow-up"},
-        {"task": "V03", "reason": "Verification scope follow-up"},
-        {"task": "V04", "reason": "Verification scope follow-up — repair step not implemented in this pass"}
+        {"task": "T04", "reason": "Vue wizard step1 + admin grid editor — manifest pages cover index/detail views; bespoke wizard component tracked separately"},
+        {"task": "V01", "reason": "openspec strict validate — strict watchdog: php -l + jq only"},
+        {"task": "V02", "reason": "Deltas-only count — strict watchdog scope"},
+        {"task": "V03", "reason": "Scenario keyword check — strict watchdog scope"},
+        {"task": "V04", "reason": "Diff scope guard — apply intentionally touches lib/, src/, appinfo/"}
       ],
-      "services": [
-        "OCA\\Procest\\Service\\Pdok\\PdokLocatieserverService",
-        "OCA\\Procest\\Service\\Pdok\\PdokBagService"
+      "schemas": ["lhsMatrix", "lhsRecommendation"],
+      "manifestPages": ["LhsMatrices", "LhsMatrixDetail", "LhsRecommendations", "LhsRecommendationDetail"],
+      "services": ["OCA\\Procest\\Service\\Vth\\LhsRecommendationService"],
+      "controllers": ["OCA\\Procest\\Controller\\LhsController"],
+      "repairSteps": ["OCA\\Procest\\Repair\\SeedLhsMatrix"],
+      "endpoints": [
+        {"verb": "POST", "url": "/api/lhs/recommend", "name": "lhs#recommend"},
+        {"verb": "POST", "url": "/api/lhs/override",  "name": "lhs#override"}
       ],
-      "configKeys": [
-        "pdok_locatieserver_endpoint",
-        "pdok_bag_endpoint",
-        "pdok_kadaster_endpoint",
-        "pdok_locatieserver_source",
-        "pdok_bag_source",
-        "pdok_kadaster_source",
-        "pdok_cache_lookup_ttl_seconds",
-        "pdok_cache_suggest_ttl_seconds",
-        "pdok_rate_ceiling_rps",
-        "pdok_outage_banner_nl",
-        "pdok_outage_banner_en"
-      ],
-      "controllers": [],
-      "endpoints": [],
-      "schemaChanges": {}
+      "seeds": ["lib/Settings/seed/lhs-matrix-2024.json (48 cells; Landelijke Handhavingsstrategie 2024 v1)"],
+      "notes": "Manifest-first: matrix + recommendation CRUD via OpenRegister auto-form. Override authority enforced in PHP service (override-up = manager-only, REQ-LHS-5/6). Matrix immutable per version; historical recommendations freeze matrixVersion (REQ-LHS-8)."
     }
   ]
 }
