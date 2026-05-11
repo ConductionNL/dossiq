@@ -86,6 +86,18 @@
 					v-else-if="activeTab === 'statuses'"
 					:case-type-id="caseTypeId"
 					:is-create="isCreate" />
+				<ResultsTab
+					v-else-if="activeTab === 'results'"
+					:case-type-id="caseTypeId"
+					:is-create="isCreate" />
+				<RolesTab
+					v-else-if="activeTab === 'roles'"
+					:case-type-id="caseTypeId"
+					:is-create="isCreate" />
+				<PropertiesTab
+					v-else-if="activeTab === 'properties'"
+					:case-type-id="caseTypeId"
+					:is-create="isCreate" />
 				<WorkflowTab
 					v-else-if="activeTab === 'workflow'"
 					:case-type-id="caseTypeId" />
@@ -100,6 +112,9 @@ import ArrowLeftIcon from 'vue-material-design-icons/ArrowLeft.vue'
 import GeneralTab from './tabs/GeneralTab.vue'
 import StatusesTab from './tabs/StatusesTab.vue'
 import WorkflowTab from './tabs/WorkflowTab.vue'
+import ResultsTab from './tabs/ResultsTab.vue'
+import RolesTab from './tabs/RolesTab.vue'
+import PropertiesTab from './tabs/PropertiesTab.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { validateCaseType, validateForPublish } from '../../utils/caseTypeValidation.js'
 
@@ -138,6 +153,9 @@ export default {
 		GeneralTab,
 		StatusesTab,
 		WorkflowTab,
+		ResultsTab,
+		RolesTab,
+		PropertiesTab,
 	},
 	props: {
 		caseTypeId: {
@@ -170,6 +188,9 @@ export default {
 			return [
 				{ id: 'general', label: t('procest', 'General') },
 				{ id: 'statuses', label: t('procest', 'Statuses') },
+				{ id: 'results', label: t('procest', 'Results') },
+				{ id: 'roles', label: t('procest', 'Roles') },
+				{ id: 'properties', label: t('procest', 'Properties') },
 				{ id: 'workflow', label: t('procest', 'Workflow') },
 			]
 		},
