@@ -75,6 +75,7 @@ class SettingsService
         'inspectie_rapport_schema',
         'handhavingsactie_schema',
         'advies_aanvraag_schema',
+        'advice_reminder_days',
         'tenant_schema',
         'appointment_schema',
         'appointment_product_schema',

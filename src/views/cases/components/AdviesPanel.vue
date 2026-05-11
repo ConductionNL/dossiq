@@ -1,0 +1,273 @@
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+<!-- SPDX-FileCopyrightText: 2026 Conduction B.V. -->
+<template>
+	<div class="advies-panel">
+		<div class="advies-panel__header">
+			<h3 class="advies-panel__title">
+				{{ t(appName, 'Adviezen') }}
+			</h3>
+			<NcButton type="primary" @click="openCreateDialog">
+				{{ t(appName, 'Advies aanvragen') }}
+			</NcButton>
+		</div>
+
+		<NcLoadingIcon v-if="loading" :size="32" />
+
+		<CnEmptyState
+			v-else-if="advies.length === 0"
+			:name="t(appName, 'Geen adviezen aangevraagd')"
+			:description="t(appName, 'Vraag advies aan bij interne of externe partijen om hier te tonen.')" />
+
+		<ul v-else class="advies-panel__list">
+			<li
+				v-for="item in advies"
+				:key="item.id || item.uuid"
+				class="advies-panel__item"
+				:class="{ 'advies-panel__item--overdue': isOverdue(item) }">
+				<div class="advies-panel__row">
+					<div class="advies-panel__meta">
+						<strong>{{ item.adviseur }}</strong>
+						<CnStatusBadge :status="typeLabel(item.type)" :type="typeBadgeType(item.type)" />
+						<CnStatusBadge :status="statusLabel(item.status)" :type="statusBadgeType(item.status)" />
+					</div>
+					<div class="advies-panel__deadline">
+						<template v-if="isOverdue(item)">
+							{{ t(appName, '{days} dagen te laat', { days: daysOverdue(item) }) }}
+						</template>
+						<template v-else-if="item.deadline">
+							{{ t(appName, 'Deadline: {date}', { date: formatDate(item.deadline) }) }}
+						</template>
+					</div>
+				</div>
+				<p v-if="item.onderwerp" class="advies-panel__subject">
+					{{ item.onderwerp }}
+				</p>
+				<div class="advies-panel__actions">
+					<NcButton
+						v-if="item.status === 'aangevraagd'"
+						type="secondary"
+						@click="onRemind(item)">
+						{{ t(appName, 'Herinnering sturen') }}
+					</NcButton>
+					<NcButton
+						v-if="item.status === 'aangevraagd' && item.adviesDocument"
+						type="secondary"
+						@click="onMarkReceived(item)">
+						{{ t(appName, 'Markeer als ontvangen') }}
+					</NcButton>
+					<NcButton
+						v-if="item.status === 'ontvangen' && item.adviesDocument"
+						type="tertiary"
+						@click="onViewDocument(item)">
+						{{ t(appName, 'Bekijk advies') }}
+					</NcButton>
+				</div>
+			</li>
+		</ul>
+
+		<AdviesAanvraagDialog
+			v-if="showDialog"
+			:case-id="caseId"
+			@close="showDialog = false"
+			@created="onCreated" />
+	</div>
+</template>
+
+<script>
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
+import { CnEmptyState, CnStatusBadge } from '@conduction/nextcloud-vue'
+import {
+	getAdviceForCase,
+	sendReminder,
+	updateAdvice,
+} from '../../../services/adviceApi.js'
+import AdviesAanvraagDialog from './AdviesAanvraagDialog.vue'
+
+const APP_NAME = 'procest'
+
+export default {
+	name: 'AdviesPanel',
+	components: {
+		NcButton,
+		NcLoadingIcon,
+		CnEmptyState,
+		CnStatusBadge,
+		AdviesAanvraagDialog,
+	},
+	props: {
+		caseId: {
+			type: String,
+			required: true,
+		},
+	},
+	data() {
+		return {
+			appName: APP_NAME,
+			advies: [],
+			loading: false,
+			showDialog: false,
+		}
+	},
+	watch: {
+		caseId: {
+			immediate: true,
+			handler(value) {
+				if (value) {
+					this.fetchAdvies()
+				}
+			},
+		},
+	},
+	methods: {
+		async fetchAdvies() {
+			this.loading = true
+			try {
+				this.advies = await getAdviceForCase(this.caseId)
+			} catch (error) {
+				console.error('Procest: failed to load advice', error)
+				this.advies = []
+			} finally {
+				this.loading = false
+			}
+		},
+		openCreateDialog() {
+			this.showDialog = true
+		},
+		onCreated() {
+			this.showDialog = false
+			this.fetchAdvies()
+		},
+		async onRemind(item) {
+			try {
+				await sendReminder(item.id || item.uuid)
+			} catch (error) {
+				console.error('Procest: failed to send reminder', error)
+			}
+		},
+		async onMarkReceived(item) {
+			try {
+				await updateAdvice(item.id || item.uuid, {
+					adviesDocument: item.adviesDocument || '',
+				})
+				await this.fetchAdvies()
+			} catch (error) {
+				console.error('Procest: failed to mark received', error)
+			}
+		},
+		onViewDocument(item) {
+			if (item.adviesDocument) {
+				window.open(`/index.php/f/${item.adviesDocument}`, '_blank')
+			}
+		},
+		typeLabel(type) {
+			return type === 'intern'
+				? this.t(this.appName, 'Intern')
+				: this.t(this.appName, 'Extern')
+		},
+		typeBadgeType(type) {
+			return type === 'intern' ? 'neutral' : 'info'
+		},
+		statusLabel(status) {
+			const labels = {
+				aangevraagd: this.t(this.appName, 'Aangevraagd'),
+				ontvangen: this.t(this.appName, 'Ontvangen'),
+				verlopen: this.t(this.appName, 'Verlopen'),
+			}
+			return labels[status] || status
+		},
+		statusBadgeType(status) {
+			const types = {
+				aangevraagd: 'info',
+				ontvangen: 'success',
+				verlopen: 'error',
+			}
+			return types[status] || 'neutral'
+		},
+		isOverdue(item) {
+			if (item.status !== 'aangevraagd' || !item.deadline) {
+				return false
+			}
+			return new Date(item.deadline) < new Date()
+		},
+		daysOverdue(item) {
+			if (!item.deadline) {
+				return 0
+			}
+			const diff = Date.now() - new Date(item.deadline).getTime()
+			return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)))
+		},
+		formatDate(value) {
+			if (!value) {
+				return ''
+			}
+			try {
+				return new Date(value).toLocaleDateString('nl-NL')
+			} catch (error) {
+				return value
+			}
+		},
+	},
+}
+</script>
+
+<style scoped>
+.advies-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 1rem;
+}
+
+.advies-panel__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.advies-panel__list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.advies-panel__item {
+	border: 1px solid var(--color-border, #d0d0d0);
+	border-radius: var(--border-radius-large, 8px);
+	padding: 0.75rem 1rem;
+	background: var(--color-main-background, #fff);
+}
+
+.advies-panel__item--overdue {
+	border-color: var(--color-error, #d94343);
+	background: var(--color-error-hover, #fdecec);
+}
+
+.advies-panel__row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.advies-panel__meta {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.advies-panel__subject {
+	margin: 0.25rem 0 0.5rem 0;
+	color: var(--color-text-maxcontrast, #555);
+}
+
+.advies-panel__actions {
+	display: flex;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+</style>

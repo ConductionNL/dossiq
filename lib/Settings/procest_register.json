@@ -3484,6 +3484,82 @@
         "description": "Melding is afgehandeld",
         "archivalAction": "vernietigen",
         "archivalPeriod": "P1Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "adviesAanvraag",
+          "slug": "advies-welstand-2026-0042"
+        },
+        "case": "zaak-omgevingsvergunning-0042",
+        "adviseur": "welstandscommissie",
+        "type": "intern",
+        "onderwerp": "Welstandstoets gevelwijziging Keizersgracht 123",
+        "deadline": "2026-04-30",
+        "status": "aangevraagd",
+        "requestedAt": "2026-04-16T09:00:00+02:00",
+        "questions": "Voldoet de voorgestelde gevelwijziging aan het welstandsbeleid voor de historische binnenstad?"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "adviesAanvraag",
+          "slug": "advies-veiligheidsregio-2026-0038"
+        },
+        "case": "zaak-evenementenvergunning-0038",
+        "adviseur": "Veiligheidsregio Amsterdam-Amstelland",
+        "type": "extern",
+        "onderwerp": "Veiligheidsadvies evenement Museumplein 500+ bezoekers",
+        "deadline": "2026-04-25",
+        "status": "aangevraagd",
+        "requestedAt": "2026-04-10T14:30:00+02:00",
+        "questions": "Is de nooduitgang-capaciteit voldoende voor 500 bezoekers? Zijn er aanvullende EHBO-posten vereist?"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "adviesAanvraag",
+          "slug": "advies-rud-2026-0031"
+        },
+        "case": "zaak-milieumelding-0031",
+        "adviseur": "Regionale Uitvoeringsdienst Noord-Holland",
+        "type": "extern",
+        "onderwerp": "Milieukundig advies lozing grondwater bouwproject",
+        "deadline": "2026-03-28",
+        "status": "verlopen",
+        "requestedAt": "2026-03-07T10:00:00+01:00",
+        "questions": "Is lozing van het opgepompte grondwater toelaatbaar gezien de nabijgelegen watergang?"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "adviesAanvraag",
+          "slug": "advies-juridisch-2026-0055"
+        },
+        "case": "zaak-bezwaar-0055",
+        "adviseur": "juridische-dienst",
+        "type": "intern",
+        "onderwerp": "Juridische toets ontvankelijkheid bezwaarschrift",
+        "deadline": "2026-05-02",
+        "status": "ontvangen",
+        "requestedAt": "2026-04-11T08:45:00+02:00",
+        "receivedAt": "2026-04-15T16:20:00+02:00",
+        "questions": "Is het bezwaar tijdig ingediend en is de bezwaarmaker ontvankelijk?"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "adviesAanvraag",
+          "slug": "advies-brandweer-2026-0047"
+        },
+        "case": "zaak-bouwvergunning-0047",
+        "adviseur": "Brandweer Amsterdam-Amstelland",
+        "type": "extern",
+        "onderwerp": "Brandveiligheidsadvies transformatie kantoorpand naar woningen",
+        "deadline": "2026-05-14",
+        "status": "aangevraagd",
+        "requestedAt": "2026-04-14T11:00:00+02:00",
+        "questions": "Voldoet het vluchtrouteplan aan de eisen uit het Bouwbesluit 2012, art. 2.113 e.v.?"
       }
     ]
   }

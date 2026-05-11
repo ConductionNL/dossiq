@@ -199,6 +199,14 @@ return [
         ['name' => 'leges#teruggaaf',   'url' => '/api/leges/teruggaaf',    'verb' => 'POST'],
         ['name' => 'leges#export',      'url' => '/api/leges/export',       'verb' => 'POST'],
 
+        // ── Advice Management (adviesAanvraag) ──────────────────────────
+        ['name' => 'advice#index',   'url' => '/api/advice',             'verb' => 'GET'],
+        ['name' => 'advice#create',  'url' => '/api/advice',             'verb' => 'POST'],
+        ['name' => 'advice#show',    'url' => '/api/advice/{id}',        'verb' => 'GET'],
+        ['name' => 'advice#update',  'url' => '/api/advice/{id}',        'verb' => 'PUT'],
+        ['name' => 'advice#destroy', 'url' => '/api/advice/{id}',        'verb' => 'DELETE'],
+        ['name' => 'advice#remind',  'url' => '/api/advice/{id}/remind', 'verb' => 'POST'],
+
         // Multi-Tenant SaaS — tenant management endpoints (platform admin scoped).
         ['name' => 'tenant#current',   'url' => '/api/tenants/current',                'verb' => 'GET'],
         ['name' => 'tenant#index',     'url' => '/api/tenants',                        'verb' => 'GET'],
