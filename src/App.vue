@@ -68,7 +68,17 @@ export default {
 
 	computed: {
 		permissions() {
-			return window.OC?.currentUser?.permissions ?? []
+			const base = window.OC?.currentUser?.permissions ?? []
+			// CnAppNav's permission filter is an array-includes check; Nextcloud
+			// does not put the boolean admin flag into the permissions array, so
+			// we inject it here for manifest entries gated on permission: "admin"
+			// (the platform-admin tenant management pages). isUserAdmin() returns
+			// true for users in the Nextcloud admin group, matching the backend
+			// TenantService::isPlatformAdmin() check.
+			const isAdmin = typeof window.OC?.isUserAdmin === 'function'
+				? window.OC.isUserAdmin()
+				: false
+			return isAdmin ? [...base, 'admin'] : base
 		},
 	},
 

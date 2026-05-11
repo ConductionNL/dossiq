@@ -15,6 +15,7 @@
 		{ "id": "CaseTypesMenu", "label": "Case Types", "icon": "icon-category-customization", "route": "CaseTypes", "section": "settings", "order": 95 },
 		{ "id": "LegesverordeningenMenu", "label": "Legesverordeningen", "icon": "icon-category-office", "route": "Legesverordeningen", "section": "settings", "order": 96 },
 		{ "id": "LegesberekeningenMenu", "label": "Legesberekeningen", "icon": "icon-category-monitoring", "route": "Legesberekeningen", "section": "settings", "order": 97 },
+		{ "id": "TenantsMenu", "label": "Tenants", "icon": "icon-group", "route": "Tenants", "section": "settings", "order": 98, "permission": "admin" },
 		{ "id": "SettingsMenu", "label": "Settings", "icon": "icon-settings", "route": "Settings", "section": "settings", "order": 99 }
 	],
 	"pages": [
@@ -220,6 +221,22 @@
 			}
 		},
 		{
+			"id": "Tenants",
+			"route": "/settings/tenants",
+			"type": "index",
+			"title": "Tenants",
+			"config": {
+				"register": "procest",
+				"schema": "tenant",
+				"columns": ["name", "slug", "oin", "domain", "groupId", "isActive"],
+				"actions": [
+					{ "id": "provision", "label": "Provision", "icon": "icon-add", "permission": "admin", "handler": "emit" },
+					{ "id": "view",      "label": "View usage", "icon": "icon-info", "permission": "admin", "handler": "navigate", "route": "TenantDetail" }
+				],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
 			"id": "LegesverordeningDetail",
 			"route": "/legesverordeningen/:id",
 			"type": "detail",
@@ -305,6 +322,25 @@
 						"widgets": [{ "type": "audit-trail" }],
 						"order": 90
 					}
+				]
+			}
+		},
+		{
+			"id": "TenantDetail",
+			"route": "/settings/tenants/:id",
+			"type": "detail",
+			"title": "Tenant",
+			"config": {
+				"register": "procest",
+				"schema": "tenant",
+				"actions": [
+					{ "id": "provision",     "label": "Provision",      "icon": "icon-add",     "permission": "admin", "primary": true, "handler": "emit" },
+					{ "id": "refresh-usage", "label": "Refresh usage",  "icon": "icon-history", "permission": "admin",                  "handler": "emit" }
+				],
+				"sidebarTabs": [
+					{ "id": "overview",     "label": "Overview",             "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
+					{ "id": "usage",        "label": "Usage",                "icon": "icon-quota",   "widgets": [{ "type": "data" }],                          "order": 20 },
+					{ "id": "provisioning", "label": "Provisioning history", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 30 }
 				]
 			}
 		},
