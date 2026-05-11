@@ -3136,6 +3136,194 @@
             "description": "AI response time in milliseconds"
           }
         }
+      },
+      "caseShare": {
+        "slug": "caseShare",
+        "icon": "ShareVariant",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:CreativeWork",
+        "title": "Case share",
+        "description": "Token- or partner-based share over a case for external collaboration",
+        "type": "object",
+        "required": [
+          "token",
+          "caseId",
+          "shareType",
+          "permissionLevel"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Secure 32-char hex access token"
+          },
+          "caseId": {
+            "type": "string",
+            "description": "UUID of the shared case"
+          },
+          "shareType": {
+            "type": "string",
+            "enum": [
+              "token",
+              "partner"
+            ],
+            "description": "Type of share"
+          },
+          "partnerId": {
+            "type": "string",
+            "description": "UUID of the partner organisation (partner shares only)"
+          },
+          "permissionLevel": {
+            "type": "string",
+            "description": "Permission level slug (e.g. bekijken, bekijken_reageren, bekijken_bijdragen)"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Expiration datetime in ISO 8601"
+          },
+          "password": {
+            "type": "string",
+            "description": "Bcrypt hashed password (never returned in plaintext)"
+          },
+          "failedAttempts": {
+            "type": "integer",
+            "default": 0,
+            "description": "Failed password attempts"
+          },
+          "lockedUntil": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Lockout expiry datetime in ISO 8601"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable share label"
+          },
+          "fieldExclusions": {
+            "type": "string",
+            "description": "JSON-encoded list of field names to exclude from the shared view"
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "User ID of the share creator"
+          },
+          "lastAccessedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last external access datetime in ISO 8601"
+          },
+          "revokedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Revocation datetime in ISO 8601"
+          },
+          "revokedBy": {
+            "type": "string",
+            "description": "User ID of the revoker"
+          }
+        }
+      },
+      "partnerOrganization": {
+        "slug": "partnerOrganization",
+        "icon": "AccountGroup",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Organization",
+        "title": "Partner organization",
+        "description": "External organisation (ketenpartner) participating in shared cases",
+        "type": "object",
+        "required": [
+          "name",
+          "contactEmail"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Organisation name"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-safe identifier"
+          },
+          "oin": {
+            "type": "string",
+            "description": "Organisatie-identificatienummer"
+          },
+          "contactEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Primary contact email"
+          },
+          "defaultPermissionLevel": {
+            "type": "string",
+            "default": "bekijken",
+            "description": "Default permission level for new shares"
+          },
+          "groupId": {
+            "type": "string",
+            "description": "Nextcloud group ID (ketenpartner_{slug})"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether the partner is active"
+          }
+        }
+      },
+      "casetransfer": {
+        "slug": "casetransfer",
+        "icon": "SwapHorizontal",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "title": "Case transfer",
+        "description": "Hand-off of a case from one organisation to another (initiate / accept / reject)",
+        "type": "object",
+        "required": [
+          "caseId",
+          "targetOrganization",
+          "status"
+        ],
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "UUID of the case being transferred"
+          },
+          "sourceOrganization": {
+            "type": "string",
+            "description": "Source organisation identifier"
+          },
+          "targetOrganization": {
+            "type": "string",
+            "description": "Target partner organisation UUID"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for the transfer"
+          },
+          "requestedDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Requested transfer date (ISO 8601)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "rejected"
+            ],
+            "default": "pending",
+            "description": "Transfer status"
+          },
+          "rejectionReason": {
+            "type": "string",
+            "description": "Reason given when transfer is rejected"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the transfer was completed (ISO 8601)"
+          }
+        }
       }
     },
     "registers": {
