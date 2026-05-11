@@ -101,6 +101,8 @@ class SettingsService
         'bezwaaradviescommissie_schema',
         'bac_advice_request_schema',
         'bac_default_committee',
+        // Beroep escalation (beroep-escalation spec) — Awb hoofdstuk 8.
+        'beroep_schema',
         'lhsMatrix',
         'lhs_matrix_schema',
         'lhs_recommendation_schema',
@@ -201,6 +203,7 @@ class SettingsService
         'bezwaar'                      => 'bezwaar_schema',
         'bezwaaradviescommissie'       => 'bezwaaradviescommissie_schema',
         'bacAdviceRequest'             => 'bac_advice_request_schema',
+        'beroep'                       => 'beroep_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
