@@ -72,6 +72,7 @@
 			v-if="selectedStep"
 			:step="selectedStep"
 			:role-types="roleTypes"
+			:read-only="isPublished"
 			@update="onStepUpdate"
 			@close="selectedStep = null" />
 
@@ -167,6 +168,22 @@ export default {
 		selectedTransitionData() {
 			if (!this.selectedTransition) return null
 			return this.transitions.find((t) => t.id === this.selectedTransition) || null
+		},
+		/**
+		 * True when the loaded workflow template is published (not a draft).
+		 *
+		 * Used to render the step `Geavanceerd` panel read-only per
+		 * process-step-configuration REQ-PSC-7-002. Falls back to false
+		 * (editable) when no template is loaded yet, preserving the
+		 * pre-existing creation flow.
+		 *
+		 * @returns {boolean} Whether the current template is published.
+		 */
+		isPublished() {
+			const tpl = this.workflowStore.currentTemplate || null
+			if (!tpl) return false
+			// isDraft true ⇒ editable; isDraft false ⇒ published/deprecated
+			return tpl.isDraft === false
 		},
 		canvasStyle() {
 			return {

@@ -1836,11 +1836,11 @@
       "workflowTemplate": {
         "slug": "workflowTemplate",
         "icon": "SitemapOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:HowTo",
         "x-cmmn-equivalent": "CasePlanModel",
         "title": "Workflow Template",
-        "description": "A workflow definition for a case type — defines process steps, status transitions, guards, and automatic actions",
+        "description": "A workflow definition for a case type — defines process steps, status transitions, guards, and automatic actions. v1.1: each step entry MAY carry an additive `config` sub-object ({sla, requiredFields, autoActions, escalationRule}); absent config preserves v1 behaviour (see process-step-configuration spec).",
         "type": "object",
         "required": [
           "title",
@@ -1880,7 +1880,7 @@
           },
           "steps": {
             "type": "string",
-            "description": "JSON-encoded array of WorkflowStep objects. Each step has: id (UUID), title, description, status (UUID ref to statusType), order (integer), assigneeRole (UUID ref to roleType, optional), isRequired (boolean), checklist (array of {id, label, description}), automaticActions (array of ActionRef)"
+            "description": "JSON-encoded array of WorkflowStep objects. Each step has: id (UUID), title, description, status (UUID ref to statusType), order (integer), assigneeRole (UUID ref to roleType, optional), isRequired (boolean), checklist (array of {id, label, description}), automaticActions (array of ActionRef). v1.1 additive: optional `config` sub-object = {sla:{value:int 1-10000, unit:hours|businessDays|calendarDays}, requiredFields:string[] (case-field property paths), autoActions:ActionRef[] fired before transition-level actions on step completion, escalationRule:{trigger:preBreach|slaBreached, offset:int, offsetUnit:hours|businessDays, notifyRole:UUID, escalateToRole:UUID, openIncident:boolean} — requires sla present; preBreach offset must be <= sla.value}. Absent config preserves v1 behaviour."
           },
           "transitions": {
             "type": "string",
