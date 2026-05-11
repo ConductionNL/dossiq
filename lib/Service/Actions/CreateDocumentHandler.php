@@ -1,0 +1,141 @@
+<?php
+
+/**
+ * Procest CreateDocumentHandler
+ *
+ * Renders a document template against the case (merge fields) and attaches
+ * the resulting file to the case folder. In dry-run mode it returns the
+ * rendered output name + byte count without persisting any file.
+ *
+ * @category Service
+ * @package  OCA\Procest\Service\Actions
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2024 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Procest\Service\Actions;
+
+use OCA\Procest\AppInfo\Application;
+use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
+
+/**
+ * Handler for `createDocument` automatic actions.
+ */
+class CreateDocumentHandler implements ActionHandlerInterface
+{
+    use HandlesTemplates;
+
+    /**
+     * Constructor for CreateDocumentHandler.
+     *
+     * @param ContainerInterface $container DI container — used to resolve
+     *                                      the document service lazily.
+     * @param LoggerInterface    $logger    PSR-3 logger.
+     *
+     * @return void
+     */
+    public function __construct(
+        private readonly ContainerInterface $container,
+        private readonly LoggerInterface $logger,
+    ) {
+    }//end __construct()
+
+    /**
+     * {@inheritDoc}
+     */
+    public function type(): string
+    {
+        return 'createDocument';
+    }//end type()
+
+    /**
+     * {@inheritDoc}
+     */
+    public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
+    {
+        try {
+            $templateSlug = (string) ($actionConfig['templateSlug'] ?? '');
+            $outputName   = $this->renderTemplate(
+                (string) ($actionConfig['outputName'] ?? 'document.pdf'),
+                $case
+            );
+            $mergeFields = (array) ($actionConfig['mergeFields'] ?? []);
+            $renderedFields = [];
+            foreach ($mergeFields as $key => $tpl) {
+                $renderedFields[(string) $key] = $this->renderTemplate((string) $tpl, $case);
+            }
+
+            $preview = [
+                'templateSlug' => $templateSlug,
+                'outputName'   => $outputName,
+                'mergeFields'  => $renderedFields,
+            ];
+
+            if (($transitionContext['dryRun'] ?? false) === true) {
+                return ActionResult::success($preview);
+            }
+
+            if ($templateSlug === '') {
+                return ActionResult::failure('missing_template_slug', $preview);
+            }
+
+            $documentService = $this->resolveDocumentService();
+            if ($documentService === null) {
+                return ActionResult::failure('document_service_unavailable', $preview);
+            }
+
+            // The document service is owned by status-transition-engine's
+            // sibling feature `ZgwDocumentService`; signature is intentionally
+            // soft-bound to avoid a hard dependency before that change lands.
+            $documentId = null;
+            if (method_exists($documentService, 'renderAndAttach') === true) {
+                // @phpstan-ignore-next-line — signature owned by service.
+                $documentId = $documentService->renderAndAttach(
+                    $templateSlug,
+                    (string) ($case['id'] ?? ''),
+                    $outputName,
+                    $renderedFields
+                );
+            }
+
+            $preview['documentId'] = $documentId;
+            return ActionResult::success($preview);
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'CreateDocumentHandler: failed to render document',
+                [
+                    'app'       => Application::APP_ID,
+                    'slug'      => (string) ($actionConfig['slug'] ?? ''),
+                    'exception' => $e->getMessage(),
+                ]
+            );
+            return ActionResult::failure('document_create_failed');
+        }
+    }//end handle()
+
+    /**
+     * Resolve ZgwDocumentService lazily.
+     *
+     * @return object|null
+     */
+    private function resolveDocumentService(): ?object
+    {
+        try {
+            return $this->container->get('OCA\Procest\Service\ZgwDocumentService');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }//end resolveDocumentService()
+}//end class

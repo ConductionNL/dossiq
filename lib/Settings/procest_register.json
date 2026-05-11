@@ -2,8 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Procest Case Management Register",
-    "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, and their instance counterparts.",
-    "version": "0.6.0"
+    "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, automaticAction, and their instance counterparts.",
+    "version": "0.7.0"
   },
   "x-openregister": {
     "type": "application",
@@ -1923,6 +1923,74 @@
             "type": "string",
             "format": "uuid",
             "description": "Reference to parent workflow template for inheritance (Enterprise tier)"
+          }
+        }
+      },
+      "automaticAction": {
+        "slug": "automaticAction",
+        "icon": "RobotOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "title": "Automatic Action",
+        "description": "Declarative automatic action attached to a status transition. The slug is referenced from transitions[].automaticActions[].ref and resolved at dispatch time by ActionRegistry. Six built-in handler types are supported; per-tenant scoped; unpublished actions are not resolvable.",
+        "type": "object",
+        "required": [
+          "slug",
+          "type",
+          "tenantId",
+          "title"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Tenant-unique slug used in transitions[].automaticActions[].ref (e.g. send-decision-email)"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "sendEmail",
+              "createDocument",
+              "notifyRole",
+              "callWebhook",
+              "mergeTemplate",
+              "scheduleReminder"
+            ],
+            "description": "Action handler type — must match a registered ActionHandlerInterface implementation"
+          },
+          "tenantId": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "tenant",
+            "description": "Owning tenant — cross-tenant resolution is rejected by the registry"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Admin-facing label"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional human description of what this action does"
+          },
+          "config": {
+            "type": "string",
+            "description": "JSON-encoded handler-specific config (e.g. for sendEmail: {recipientRef, subjectTemplate, bodyTemplate}; for callWebhook: {urlSlug, payloadTemplate, timeoutSec})"
+          },
+          "version": {
+            "type": "integer",
+            "default": 1,
+            "description": "Optimistic-lock counter; incremented on every save"
+          },
+          "isPublished": {
+            "type": "boolean",
+            "default": false,
+            "description": "Only published actions are dispatched by SideEffectDispatcher"
+          },
+          "active": {
+            "type": "boolean",
+            "default": true,
+            "description": "Soft-disable flag; inactive actions are filtered out of admin listings"
           }
         }
       },
