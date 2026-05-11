@@ -81,6 +81,7 @@ class KpiAggregationService
      *     taskCount: int,
      *     tasksDueToday: int,
      *     statusBreakdown: array<int, array{status: string, count: int}>,
+     *     typeBreakdown: array<int, array{type: string, count: int}>,
      *     avgProcessingDays: float|null
      * } Aggregated KPI data
      *
@@ -96,6 +97,7 @@ class KpiAggregationService
             'taskCount'         => $this->getTaskCount(userId: $userId),
             'tasksDueToday'     => $this->getTasksDueToday(userId: $userId),
             'statusBreakdown'   => $this->getStatusBreakdown(),
+            'typeBreakdown'     => $this->getTypeBreakdown(),
             'avgProcessingDays' => $this->getAvgProcessingDays(),
         ];
     }//end computeKpis()
@@ -395,6 +397,59 @@ class KpiAggregationService
             return [];
         }//end try
     }//end getStatusBreakdown()
+
+    /**
+     * Group open cases by case type and return counts ordered descending.
+     *
+     * Returns an array of arrays with 'type' and 'count' keys, ordered by
+     * count descending. Only counts open cases (endDate IS NULL or empty),
+     * matching the same open-case definition used by getStatusBreakdown().
+     *
+     * @return array<int, array{type: string, count: int}> Type breakdown
+     *
+     * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-003
+     */
+    private function getTypeBreakdown(): array
+    {
+        try {
+            $qb = $this->db->getQueryBuilder();
+            $qb->select(
+                $qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.caseType')) AS case_type"),
+            )
+                ->selectAlias($qb->func()->count('o.id'), 'cnt')
+                ->from('openregister_objects', 'o')
+                ->innerJoin('o', 'openregister_schemas', 's', $qb->expr()->eq('o.schema', 's.id'))
+                ->where($qb->expr()->like('s.title', $qb->createNamedParameter('%zaak%')))
+                ->andWhere(
+                    $qb->expr()->orX(
+                        $qb->expr()->isNull($qb->createFunction("JSON_EXTRACT(o.object, '$.endDate')")),
+                        $qb->expr()->eq(
+                            $qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.endDate'))"),
+                            $qb->createNamedParameter('')
+                        )
+                    )
+                )
+                ->groupBy('case_type')
+                ->orderBy('cnt', 'DESC');
+
+            $result = $qb->executeQuery();
+            $rows   = $result->fetchAll();
+            $result->closeCursor();
+
+            return array_map(
+                static function (array $row): array {
+                    return [
+                        'type'  => (string) ($row['case_type'] ?? ''),
+                        'count' => (int) ($row['cnt'] ?? 0),
+                    ];
+                },
+                $rows
+            );
+        } catch (\Exception $e) {
+            $this->logger->warning('[KpiAggregationService] Failed to get type breakdown', ['error' => $e->getMessage()]);
+            return [];
+        }//end try
+    }//end getTypeBreakdown()
 
     /**
      * Compute the average processing time in days for cases completed this month.

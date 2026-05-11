@@ -1,17 +1,10 @@
 {
   "phase": "build",
-  "timestamp": "2026-04-18T19:57:13.161578+00:00",
-  "pr": 135,
-  "commit": "50db73f",
-  "turns": 55,
-  "cost_usd": 0.4886,
-  "tokens": {
-    "input": 443,
-    "output": 17461,
-    "cache_read": 3100095,
-    "cache_create": 72636
-  },
-  "model": "claude-haiku-4-5-20251001",
-  "maxed_out": false,
-  "cost_eur": 0.4495
+  "timestamp": "2026-05-11T00:00:00+00:00",
+  "pr": null,
+  "commit": null,
+  "previous_pr": 135,
+  "previous_commit": "50db73f",
+  "note": "Re-applied on top of manifest-v1 migration; original PR #135 targeted Dashboard.vue which no longer exists as a top-level view. T01 implemented as CasesByType.vue widget + manifest entry + KpiAggregationService.getTypeBreakdown(). T02/T03 already in place, plus fixed .dashboard.index route in 5 sibling widgets (OverdueCases, MyTasks, Stalled, TaskReminders, DeadlineAlerts).",
+  "model": "claude-opus-4-7"
 }
