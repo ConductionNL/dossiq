@@ -66,7 +66,7 @@
 
 <script>
 import { NcButton, NcDialog, NcTextField } from '@nextcloud/vue'
-import { createAdvice } from '../../../services/adviceApi.js'
+import { createAdviceWithNotification } from '../../../services/adviceApi.js'
 
 const APP_NAME = 'procest'
 
@@ -130,7 +130,7 @@ export default {
 					deadline: this.form.deadline,
 					questions: this.form.questions.trim(),
 				}
-				await createAdvice(payload)
+				await createAdviceWithNotification(payload)
 				this.$emit('created')
 			} catch (error) {
 				console.error('Procest: failed to create advice', error)

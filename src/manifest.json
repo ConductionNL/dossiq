@@ -10,6 +10,7 @@
 		{ "id": "Tasks", "label": "Tasks", "icon": "icon-checkmark", "route": "Tasks", "order": 50 },
 		{ "id": "CaseMap", "label": "Map", "icon": "icon-address", "route": "CaseMap", "order": 60 },
 		{ "id": "Voorstellen", "label": "Voorstellen", "icon": "icon-comment", "route": "Voorstellen", "order": 70 },
+		{ "id": "Advice", "label": "Advice", "icon": "icon-comment", "route": "Advice", "order": 75 },
 		{ "id": "Documentation", "label": "Documentation", "icon": "icon-info", "href": "https://conduction.gitbook.io/procest-nextcloud", "section": "settings", "order": 90 },
 		{ "id": "CaseTypesMenu", "label": "Case Types", "icon": "icon-category-customization", "route": "CaseTypes", "section": "settings", "order": 95 },
 		{ "id": "SettingsMenu", "label": "Settings", "icon": "icon-settings", "route": "Settings", "section": "settings", "order": 99 }
@@ -90,6 +91,7 @@
 					{ "id": "tasks",     "label": "Tasks",       "icon": "icon-checkmark", "component": "CaseTasksTab",                              "order": 20 },
 					{ "id": "decisions", "label": "Decisions",   "icon": "icon-toggle",    "component": "CaseDecisionsTab",                          "order": 30 },
 					{ "id": "documents", "label": "Documents",   "icon": "icon-files",     "component": "CaseDocumentsTab",                          "order": 40 },
+					{ "id": "advies",    "label": "Advies",      "icon": "icon-comment",   "component": "AdviesPanel",                               "order": 50 },
 					{ "id": "audit",     "label": "Audit trail", "icon": "icon-history",   "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
 				]
 			}
@@ -154,6 +156,32 @@
 			"type": "custom",
 			"title": "Voorstel",
 			"component": "VoorstelDetailView"
+		},
+		{
+			"id": "Advice",
+			"route": "/advice",
+			"type": "index",
+			"title": "Advice requests",
+			"config": {
+				"register": "procest",
+				"schema": "adviesAanvraag",
+				"columns": ["onderwerp", "case", "adviseur", "type", "status", "deadline"],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "AdviceDetail",
+			"route": "/advice/:id",
+			"type": "detail",
+			"title": "Advice request",
+			"config": {
+				"register": "procest",
+				"schema": "adviesAanvraag",
+				"sidebarTabs": [
+					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
+					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+				]
+			}
 		},
 		{
 			"id": "Doorlooptijd",

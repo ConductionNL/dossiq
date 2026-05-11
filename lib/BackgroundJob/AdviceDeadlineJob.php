@@ -115,7 +115,7 @@ class AdviceDeadlineJob extends TimedJob
             }
 
             if ($deadlineDate === $reminderOn) {
-                $this->adviceService->sendReminder($adviceId);
+                $this->adviceService->dispatchReminder($adviceId);
                 $this->logger->info(
                     'Procest: advice reminder dispatched',
                     [

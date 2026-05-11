@@ -77,9 +77,9 @@
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { CnEmptyState, CnStatusBadge } from '@conduction/nextcloud-vue'
 import {
+	dispatchReminder,
 	getAdviceForCase,
-	sendReminder,
-	updateAdvice,
+	transitionStatus,
 } from '../../../services/adviceApi.js'
 import AdviesAanvraagDialog from './AdviesAanvraagDialog.vue'
 
@@ -139,14 +139,15 @@ export default {
 		},
 		async onRemind(item) {
 			try {
-				await sendReminder(item.id || item.uuid)
+				await dispatchReminder(item.id || item.uuid)
 			} catch (error) {
 				console.error('Procest: failed to send reminder', error)
 			}
 		},
 		async onMarkReceived(item) {
 			try {
-				await updateAdvice(item.id || item.uuid, {
+				await transitionStatus(item.id || item.uuid, {
+					to: 'ontvangen',
 					adviesDocument: item.adviesDocument || '',
 				})
 				await this.fetchAdvies()
