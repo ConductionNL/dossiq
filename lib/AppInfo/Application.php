@@ -39,6 +39,7 @@ use OCA\Procest\Dashboard\StalledCasesWidget;
 use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Dashboard\StartCaseWidget;
 use OCA\Procest\Listener\BezwaarAdviceRequestedListener;
+use OCA\Procest\Listener\BezwaarDecisionListener;
 use OCA\Procest\Listener\BezwaarHearingScheduledListener;
 use OCA\Procest\Listener\BezwaarLifecycleListener;
 use OCA\Procest\Event\ParafeerTransitionEvent;
@@ -162,6 +163,15 @@ class Application extends App implements IBootstrap
         $context->registerEventListener(
             event: ObjectUpdatedEvent::class,
             listener: BezwaarHearingScheduledListener::class
+        );
+
+        // Bezwaar-decision guard: a bezwaar may only enter status
+        // "Beslissing op bezwaar" when a published bezwaarDecision
+        // exists for it. The listener reverts illegal transitions
+        // without bypassing the status-transition-engine.
+        $context->registerEventListener(
+            event: ObjectUpdatedEvent::class,
+            listener: BezwaarDecisionListener::class
         );
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
