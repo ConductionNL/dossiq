@@ -75,6 +75,13 @@ class SettingsService
         'inspectie_rapport_schema',
         'handhavingsactie_schema',
         'advies_aanvraag_schema',
+        'berichtenbox_message_schema',
+        'berichtenbox_type_code_schema',
+        'berichtenbox_enabled',
+        'berichtenbox_api_url',
+        'berichtenbox_oin',
+        'berichtenbox_certificate_path',
+        'berichtenbox_default_type_code',
         'lhsMatrix',
     ];
 
@@ -122,6 +129,8 @@ class SettingsService
         'voorstel'                     => 'voorstel_schema',
         'parafeerroute'                => 'parafeerroute_schema',
         'parafeeractie'                => 'parafeeractie_schema',
+        'berichtenboxMessage'          => 'berichtenbox_message_schema',
+        'berichtenboxTypeCode'         => 'berichtenbox_type_code_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

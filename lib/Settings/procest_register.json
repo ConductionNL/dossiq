@@ -2293,7 +2293,7 @@
             "minimum": 0,
             "maximum": 1,
             "description": "Layer opacity from 0.0 (transparent) to 1.0 (opaque)",
-            "default": 1.0
+            "default": 1
           },
           "minZoom": {
             "type": "integer",
@@ -2672,6 +2672,131 @@
             "description": "Whether follow-up action is required"
           }
         }
+      },
+      "berichtenboxMessage": {
+        "slug": "berichtenboxMessage",
+        "icon": "EmailSendOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Message",
+        "title": "Berichtenbox Message",
+        "description": "A message sent to a citizen via Mijn Overheid Berichtenbox, linked to a case for audit trail",
+        "type": "object",
+        "required": [
+          "caseId",
+          "bsn",
+          "subject",
+          "body"
+        ],
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "description": "Reference to the parent case",
+            "title": "Case",
+            "facetable": true
+          },
+          "bsn": {
+            "type": "string",
+            "maxLength": 9,
+            "description": "Burgerservicenummer (BSN) of the recipient citizen"
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Message subject (max 100 chars per Mijn Overheid spec)"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 10000,
+            "description": "Plain text message body (max 10,000 chars per Mijn Overheid spec)"
+          },
+          "berichtTypeCode": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Bericht type code for routing and categorization in Mijn Overheid",
+            "title": "Bericht Type",
+            "facetable": true
+          },
+          "attachmentFileId": {
+            "type": "string",
+            "description": "Nextcloud file ID of the optional PDF attachment"
+          },
+          "externalMessageId": {
+            "type": "string",
+            "description": "Berichtenbox API reference ID returned on send"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "sent",
+              "delivered",
+              "read",
+              "unread_flagged",
+              "failed"
+            ],
+            "default": "draft",
+            "description": "Current message status",
+            "title": "Status",
+            "facetable": true
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp the message was sent to Berichtenbox"
+          },
+          "readAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp the citizen read the message"
+          },
+          "readPolledAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the last read-status poll"
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "Error details when the send fails"
+          }
+        }
+      },
+      "berichtenboxTypeCode": {
+        "slug": "berichtenboxTypeCode",
+        "icon": "TagOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:DefinedTerm",
+        "title": "Berichtenbox Type Code",
+        "description": "A configurable bericht type code for Mijn Overheid Berichtenbox messages, optionally bound to a zaaktype as default",
+        "type": "object",
+        "required": [
+          "code",
+          "label"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The bericht type code as registered with Mijn Overheid"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Human-readable Dutch description of the bericht type"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "caseType",
+            "description": "Optional zaaktype this code applies to"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, this code is the default for the bound zaaktype"
+          }
+        }
       }
     },
     "registers": {
@@ -2737,10 +2862,34 @@
         "isDefault": true,
         "description": "Standaard accorderingslijn voor collegeadviezen over omgevingsvergunningen",
         "steps": [
-          {"order": 1, "type": "advies",      "actor": "juridische-dienst",   "actorType": "group", "mandatory": false},
-          {"order": 2, "type": "parafering",  "actor": "teamleider-vth",      "actorType": "role",  "mandatory": true},
-          {"order": 3, "type": "parafering",  "actor": "afdelingshoofd-vth",  "actorType": "role",  "mandatory": true},
-          {"order": 4, "type": "accordering", "actor": "portefeuillehouder",  "actorType": "role",  "mandatory": true}
+          {
+            "order": 1,
+            "type": "advies",
+            "actor": "juridische-dienst",
+            "actorType": "group",
+            "mandatory": false
+          },
+          {
+            "order": 2,
+            "type": "parafering",
+            "actor": "teamleider-vth",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 3,
+            "type": "parafering",
+            "actor": "afdelingshoofd-vth",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 4,
+            "type": "accordering",
+            "actor": "portefeuillehouder",
+            "actorType": "role",
+            "mandatory": true
+          }
         ]
       },
       {
@@ -2754,11 +2903,41 @@
         "isDefault": false,
         "description": "Uitgebreide route voor bestemmingsplanwijzigingen met planologisch en juridisch advies",
         "steps": [
-          {"order": 1, "type": "advies",      "actor": "planologisch-adviseur",          "actorType": "role",  "mandatory": true},
-          {"order": 2, "type": "advies",      "actor": "juridische-dienst",              "actorType": "group", "mandatory": true},
-          {"order": 3, "type": "parafering",  "actor": "teamleider-ro",                  "actorType": "role",  "mandatory": true},
-          {"order": 4, "type": "parafering",  "actor": "afdelingshoofd-ro",              "actorType": "role",  "mandatory": true},
-          {"order": 5, "type": "accordering", "actor": "wethouder-ruimtelijke-ordening", "actorType": "role",  "mandatory": true}
+          {
+            "order": 1,
+            "type": "advies",
+            "actor": "planologisch-adviseur",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 2,
+            "type": "advies",
+            "actor": "juridische-dienst",
+            "actorType": "group",
+            "mandatory": true
+          },
+          {
+            "order": 3,
+            "type": "parafering",
+            "actor": "teamleider-ro",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 4,
+            "type": "parafering",
+            "actor": "afdelingshoofd-ro",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 5,
+            "type": "accordering",
+            "actor": "wethouder-ruimtelijke-ordening",
+            "actorType": "role",
+            "mandatory": true
+          }
         ]
       },
       {
@@ -2772,8 +2951,20 @@
         "isDefault": true,
         "description": "Standaard directieteam-advies: behandelaar parafering gevolgd door afdelingshoofd accordering",
         "steps": [
-          {"order": 1, "type": "parafering",  "actor": "behandelaar",    "actorType": "role", "mandatory": true},
-          {"order": 2, "type": "accordering", "actor": "afdelingshoofd", "actorType": "role", "mandatory": true}
+          {
+            "order": 1,
+            "type": "parafering",
+            "actor": "behandelaar",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 2,
+            "type": "accordering",
+            "actor": "afdelingshoofd",
+            "actorType": "role",
+            "mandatory": true
+          }
         ]
       },
       {
@@ -2787,12 +2978,48 @@
         "isDefault": true,
         "description": "Volledige route voor raadsvoorstellen: financieel, juridisch, management, gemeentesecretaris en burgemeester",
         "steps": [
-          {"order": 1, "type": "advies",      "actor": "financieel-adviseur",  "actorType": "role",  "mandatory": true},
-          {"order": 2, "type": "advies",      "actor": "juridische-dienst",    "actorType": "group", "mandatory": true},
-          {"order": 3, "type": "parafering",  "actor": "teamleider",           "actorType": "role",  "mandatory": true},
-          {"order": 4, "type": "parafering",  "actor": "afdelingshoofd",       "actorType": "role",  "mandatory": true},
-          {"order": 5, "type": "accordering", "actor": "gemeentesecretaris",   "actorType": "role",  "mandatory": true},
-          {"order": 6, "type": "accordering", "actor": "burgemeester",         "actorType": "role",  "mandatory": true}
+          {
+            "order": 1,
+            "type": "advies",
+            "actor": "financieel-adviseur",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 2,
+            "type": "advies",
+            "actor": "juridische-dienst",
+            "actorType": "group",
+            "mandatory": true
+          },
+          {
+            "order": 3,
+            "type": "parafering",
+            "actor": "teamleider",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 4,
+            "type": "parafering",
+            "actor": "afdelingshoofd",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 5,
+            "type": "accordering",
+            "actor": "gemeentesecretaris",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 6,
+            "type": "accordering",
+            "actor": "burgemeester",
+            "actorType": "role",
+            "mandatory": true
+          }
         ]
       },
       {

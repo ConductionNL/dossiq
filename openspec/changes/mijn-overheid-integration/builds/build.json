@@ -1,0 +1,52 @@
+{
+  "phase": "apply",
+  "timestamp": "2026-05-11T00:00:00+00:00",
+  "status": "applied",
+  "summary": "Wired up the existing Berichtenbox backend (Service, Controller, MockAdapter, ReadStatusJob) and frontend (BerichtenboxTab, BerichtenboxComposeDialog, BerichtenboxSettingsTab, berichtenboxApi.js) by adding the missing register schemas, SettingsService config keys, and HTTP routes. MVP per proposal.md.",
+  "tasks_complete": [
+    "T01",
+    "T02",
+    "T03",
+    "T04",
+    "T05",
+    "T06",
+    "T07",
+    "T08",
+    "T09",
+    "T10",
+    "T11"
+  ],
+  "changed_files": [
+    "lib/Settings/procest_register.json",
+    "lib/Service/SettingsService.php",
+    "appinfo/routes.php"
+  ],
+  "pre_existing_files": [
+    "lib/Service/BerichtenboxService.php",
+    "lib/Service/BerichtenboxAdapter/BerichtenboxAdapterInterface.php",
+    "lib/Service/BerichtenboxAdapter/MockAdapter.php",
+    "lib/Controller/BerichtenboxController.php",
+    "lib/BackgroundJob/BerichtenboxReadStatusJob.php",
+    "src/services/berichtenboxApi.js",
+    "src/views/cases/components/BerichtenboxTab.vue",
+    "src/views/cases/components/BerichtenboxComposeDialog.vue",
+    "src/views/settings/tabs/BerichtenboxSettingsTab.vue"
+  ],
+  "validation": {
+    "php_lint": "pass",
+    "jq": "pass",
+    "composer_check_strict": "deferred per watchdog",
+    "i18n": "deferred per watchdog"
+  },
+  "deferred": [
+    "REQ-5 case status push to Mijn Overheid Zaakstatus API (out of MVP scope)",
+    "REQ-6 DigiD-authenticated citizen portal (out of MVP scope, lives in municipality portal)",
+    "REQ-7.3 PKIoverheid certificate expiration monitoring (out of MVP scope)",
+    "REQ-7.4 stuuromgeving test mode toggle (out of MVP scope)",
+    "REQ-7.5 OpenConnector adapter (only MockAdapter shipped; real adapter is post-MVP)",
+    "REQ-8 multi-channel sending and postal fallback (out of MVP scope)",
+    "REQ-10 deceased / minor / KVK handling (out of MVP scope)",
+    "GET /api/berichtenbox/types endpoint and controller method (no consumer yet; BerichtenboxSettingsTab manages codes via OpenRegister directly)"
+  ],
+  "notes": "Bulk of the implementation already existed on development; this apply commit closes the loop by registering schemas + config keys + routes so the controller is reachable and the service can resolve the schema IDs. MockAdapter remains the default per design.md — real Berichtenbox API integration is a follow-up change."
+}

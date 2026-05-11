@@ -173,6 +173,11 @@ return [
         ['name' => 'leges#teruggaaf',   'url' => '/api/leges/teruggaaf',    'verb' => 'POST'],
         ['name' => 'leges#export',      'url' => '/api/leges/export',       'verb' => 'POST'],
 
+        // ── Mijn Overheid Berichtenbox ──────────────────────────────────
+        ['name' => 'berichtenbox#messages', 'url' => '/api/berichtenbox/messages', 'verb' => 'GET'],
+        ['name' => 'berichtenbox#send',     'url' => '/api/berichtenbox/send',     'verb' => 'POST'],
+        ['name' => 'berichtenbox#poll',     'url' => '/api/berichtenbox/poll/{messageId}', 'verb' => 'POST'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],
