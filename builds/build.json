@@ -29,23 +29,41 @@
       }
     },
     {
-      "change": "case-map-overview",
+      "change": "pdok-integration",
       "appliedAt": "2026-05-11",
-      "tasks": ["D01", "D02", "T01", "T02", "T03", "T07"],
+      "tasks": ["T01", "T02", "T04-config"],
       "deferred": [
-        {"task": "T04", "reason": "CnMapPage onClick router dispatch is lib-internal — confirmed via design.md; no app-side handler required"},
-        {"task": "T05", "reason": "filterRegistry wiring is lib-internal — config.filters references shared filter ids resolved by CnMapPage"},
-        {"task": "T06", "reason": "leaflet.markercluster is a transitive dep of @conduction/nextcloud-vue beta.30; no app-side package.json change required"},
-        {"task": "T08", "reason": "emptyState block declared inline in manifest; CnMapPage renders NcEmptyContent automatically"},
-        {"task": "V01", "reason": "Manual dev-env walkthrough — strict watchdog scope (lint + jq only)"},
-        {"task": "V02", "reason": "Manual click-through — strict watchdog scope"},
-        {"task": "V03", "reason": "Filter sidebar smoke test — strict watchdog scope"},
-        {"task": "V04", "reason": "5k-pin perf benchmark — separate performance change"}
+        {"task": "T03", "reason": "Repair step seeding default MapLayer rows — defer to follow-up; manifest-first means MapLayer rows ship via seed-data path, not bespoke repair step"},
+        {"task": "T04-controller", "reason": "Admin UI surface is the existing SettingsService — no new PdokSettingsController/Vue tab per manifest-first constraint; config keys are now persisted via the central SettingsService allow-list"},
+        {"task": "T05", "reason": "case-location LocationService not present in this branch; refactor will land in case-location apply"},
+        {"task": "T06", "reason": "Per-service cache decorator + APCu wrapper — caching is inlined in PdokLocatieserverService + PdokBagService; standalone PdokCache class follow-up"},
+        {"task": "T07", "reason": "Frontend pdokApi.js consumer rewiring — out of scope (no new manifest pages / no admin Vue per constraints)"},
+        {"task": "T08", "reason": "Outage banner Vue — out of scope per manifest-first; backend health flag is in place"},
+        {"task": "V01", "reason": "Verification scope follow-up (strict watchdog: lint + jq only)"},
+        {"task": "V02", "reason": "Verification scope follow-up"},
+        {"task": "V03", "reason": "Verification scope follow-up"},
+        {"task": "V04", "reason": "Verification scope follow-up — repair step not implemented in this pass"}
       ],
-      "manifestPages": ["CaseMap (type:'custom' → type:'map')"],
-      "services": ["src/services/mapFormatters.js"],
-      "registrations": ["caseMarkerFormatter (mapFormatters registry, src/main.js)"],
-      "removedFiles": ["src/views/CaseMapView.vue"]
+      "services": [
+        "OCA\\Procest\\Service\\Pdok\\PdokLocatieserverService",
+        "OCA\\Procest\\Service\\Pdok\\PdokBagService"
+      ],
+      "configKeys": [
+        "pdok_locatieserver_endpoint",
+        "pdok_bag_endpoint",
+        "pdok_kadaster_endpoint",
+        "pdok_locatieserver_source",
+        "pdok_bag_source",
+        "pdok_kadaster_source",
+        "pdok_cache_lookup_ttl_seconds",
+        "pdok_cache_suggest_ttl_seconds",
+        "pdok_rate_ceiling_rps",
+        "pdok_outage_banner_nl",
+        "pdok_outage_banner_en"
+      ],
+      "controllers": [],
+      "endpoints": [],
+      "schemaChanges": {}
     }
   ]
 }
