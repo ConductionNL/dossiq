@@ -2032,6 +2032,142 @@
           }
         }
       },
+      "bezwaar": {
+        "slug": "bezwaar",
+        "icon": "Gavel",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:LegalCase",
+        "x-zgw-equivalent": "Bezwaarzaak",
+        "title": "Bezwaar",
+        "description": "Bezwaar lifecycle entity — captures the AWB objection case state, statutory deadlines, hearing waiver, and dwangsom accrual. Status transitions flow through the status-transition-engine; deadlines are computed declaratively via x-openregister-calculations (ADR-022). NO bespoke deadline service.",
+        "type": "object",
+        "required": [
+          "case",
+          "ontvangstdatum",
+          "status"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "The underlying procest case (zaaktype = Bezwaar) this lifecycle record belongs to"
+          },
+          "objection": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "objection",
+            "description": "The bezwaarschrift (objection letter) tied to this lifecycle record"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Ontvangen",
+              "Ontvankelijkheidstoets",
+              "In behandeling",
+              "Hoorzitting gepland",
+              "Hoorzitting afgerond",
+              "Advies uitgebracht",
+              "Beslissing op bezwaar",
+              "Afgehandeld",
+              "Niet-ontvankelijk",
+              "Ingetrokken"
+            ],
+            "default": "Ontvangen",
+            "description": "Bezwaar lifecycle status — drives the status-transition-engine state machine",
+            "facetable": true
+          },
+          "awbReference": {
+            "type": "string",
+            "description": "AWB article reference for the most recent legal-posture transition (e.g. 'Awb 7:10 lid 3'); required by guards on verdaging/opschorting/niet-ontvankelijk/intrekking transitions"
+          },
+          "ontvangstdatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the bezwaarschrift was received (start of the AWB 7:10 lid 1 termijn)"
+          },
+          "verdaagdOp": {
+            "type": "string",
+            "format": "date",
+            "description": "Date verdaging (extension) was recorded per AWB 7:10 lid 3"
+          },
+          "verdagingsperiode": {
+            "type": "integer",
+            "default": 0,
+            "description": "Verdaging in days (0 = no verdaging; 42 = standard 6-week extension)"
+          },
+          "opschortingStart": {
+            "type": "string",
+            "format": "date",
+            "description": "Opschorting start date per AWB 7:10 lid 4"
+          },
+          "opschortingEnd": {
+            "type": "string",
+            "format": "date",
+            "description": "Opschorting end date — adds (end - start) days to decisionDeadline"
+          },
+          "opschorting": {
+            "type": "integer",
+            "default": 0,
+            "description": "Opschorting in days (computed elapsed delta between opschortingStart/End)"
+          },
+          "hearingWaived": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the belanghebbende has waived the hoorrecht per AWB 7:3"
+          },
+          "waiverReason": {
+            "type": "string",
+            "description": "Required motivation when hearingWaived = true"
+          },
+          "ingebrekestelling": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the bezwaarmaker submitted an ingebrekestelling per AWB 4:17 — starts the 14-day grace clock"
+          },
+          "dwangsom": {
+            "type": "number",
+            "default": 0,
+            "description": "Accrued dwangsom liability in euros — computed declaratively, capped at €1442 (AWB 4:17 lid 2)"
+          },
+          "decisionDeadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Statutory deadline for the beslissing op bezwaar — computed as ontvangstdatum + 6 weeks + verdagingsperiode + opschorting (AWB 7:10)"
+          }
+        },
+        "x-openregister-calculations": [
+          {
+            "field": "decisionDeadline",
+            "label": {
+              "nl": "Beslistermijn bezwaar (AWB 7:10)",
+              "en": "Bezwaar decision deadline (AWB 7:10)"
+            },
+            "expression": "addDays(addDays(addWeeks($.ontvangstdatum, 6), $.verdagingsperiode), $.opschorting)",
+            "inputs": [
+              "ontvangstdatum",
+              "verdagingsperiode",
+              "opschorting"
+            ],
+            "outputField": "decisionDeadline",
+            "legalSource": "AWB Art. 7:10 lid 1, 3, 4"
+          },
+          {
+            "field": "dwangsom",
+            "label": {
+              "nl": "Dwangsom bij niet tijdig beslissen (AWB 4:17)",
+              "en": "Dwangsom on missed deadline (AWB 4:17)"
+            },
+            "expression": "min(1442, max(0, daysSince(addDays($.ingebrekestelling, 14)) * 23))",
+            "inputs": [
+              "ingebrekestelling"
+            ],
+            "outputField": "dwangsom",
+            "legalSource": "AWB Art. 4:17 lid 1-2"
+          }
+        ]
+      },
       "objection": {
         "slug": "objection",
         "icon": "FileDocumentAlertOutline",

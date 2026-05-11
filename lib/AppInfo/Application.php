@@ -35,7 +35,7 @@ use OCA\Procest\Dashboard\OverdueCasesWidget;
 use OCA\Procest\Dashboard\StalledCasesWidget;
 use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Dashboard\StartCaseWidget;
-use OCA\Procest\Listener\ChecklistRunImmutabilityListener;
+use OCA\Procest\Listener\BezwaarLifecycleListener;
 use OCA\Procest\Listener\DeepLinkRegistrationListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
 use OCA\Procest\Listener\RoleMutationListener;
@@ -92,12 +92,6 @@ class Application extends App implements IBootstrap
             listener: KpiCacheInvalidationListener::class
         );
 
-        // Inspection checklist run append-only enforcement (REQ-IC-8).
-        $context->registerEventListener(
-            event: ObjectUpdatedEvent::class,
-            listener: ChecklistRunImmutabilityListener::class
-        );
-
         // Role-routing cache invalidation on role mutations.
         $context->registerEventListener(
             event: ObjectCreatedEvent::class,
@@ -110,6 +104,18 @@ class Application extends App implements IBootstrap
         $context->registerEventListener(
             event: ObjectDeletedEvent::class,
             listener: RoleMutationListener::class
+        );
+
+        // Bezwaar-lifecycle observer — routes bezwaar/hearing/advice/decision
+        // events onto the status-transition-engine without duplicating
+        // transition logic. See ADR-022 + REQ-BL-8.
+        $context->registerEventListener(
+            event: ObjectCreatedEvent::class,
+            listener: BezwaarLifecycleListener::class
+        );
+        $context->registerEventListener(
+            event: ObjectUpdatedEvent::class,
+            listener: BezwaarLifecycleListener::class
         );
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);

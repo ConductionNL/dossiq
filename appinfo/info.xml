@@ -77,9 +77,8 @@ Vrij en open source onder de AGPL-licentie.
             <step>OCA\Procest\Repair\InitializeSettings</step>
             <step>OCA\Procest\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Procest\Repair\SeedBezwaarBeroepData</step>
-            <step>OCA\Procest\Repair\SeedLhsMatrix</step>
             <step>OCA\Procest\Repair\MigrateWorkflowDefinitions</step>
-            <step>OCA\Procest\Repair\SeedVthWorkflowTemplates</step>
+            <step>OCA\Procest\Repair\SeedBezwaarWorkflowDefinition</step>
         </post-migration>
     </repair-steps>
 
