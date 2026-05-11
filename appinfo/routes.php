@@ -147,6 +147,14 @@ return [
         ['name' => 'parafeer_route#update',       'url' => '/api/parafeer-route/{id}',                                 'verb' => 'PUT'],
         ['name' => 'parafeer_route#destroy',      'url' => '/api/parafeer-route/{id}',                                 'verb' => 'DELETE'],
 
+        // ── B&W Parafering (voorstellen workflow) ───────────────────────
+        ['name' => 'parafering#createVoorstel',   'url' => '/api/parafering/voorstellen',                              'verb' => 'POST'],
+        ['name' => 'parafering#startParafering',  'url' => '/api/parafering/voorstellen/{id}/start',                   'verb' => 'POST'],
+        ['name' => 'parafering#paraferen',        'url' => '/api/parafering/voorstellen/{id}/paraferen',               'verb' => 'POST'],
+        ['name' => 'parafering#terugsturen',     'url' => '/api/parafering/voorstellen/{id}/terugsturen',             'verb' => 'POST'],
+        ['name' => 'parafering#adviseren',        'url' => '/api/parafering/voorstellen/{id}/adviseren',               'verb' => 'POST'],
+        ['name' => 'parafering#auditTrail',       'url' => '/api/parafering/voorstellen/{id}/audit-trail',             'verb' => 'GET'],
+
         // ── StUF (Standaard Uitwisselings Formaat) ──────────────────────
         // Inbound SOAP endpoints accept raw XML POST.
         ['name' => 'stuf#zaken',    'url' => '/api/stuf/zaken',    'verb' => 'POST'],
