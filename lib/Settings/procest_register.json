@@ -2910,6 +2910,196 @@
           }
         }
       },
+      "lhsMatrix": {
+        "slug": "lhsMatrix",
+        "icon": "TableLarge",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Intangible",
+        "title": "LHS Matrix",
+        "description": "Versioned 3-dimensional Landelijke Handhavingsstrategie matrix (ernst x gedrag x actorType). Immutable per version; edits create new versions.",
+        "type": "object",
+        "required": [
+          "name",
+          "version",
+          "active",
+          "ernstAxis",
+          "gedragAxis",
+          "actorTypeAxis",
+          "cells"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this matrix version (e.g. 'Landelijke Handhavingsstrategie 2024')"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Monotonic version number; new edits create a new version (immutable history)"
+          },
+          "active": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this is the currently active matrix. Exactly one matrix is active=true per tenant."
+          },
+          "ernstAxis": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Ordered severity axis values, e.g. [gering, aanzienlijk, ernstig]"
+          },
+          "gedragAxis": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Ordered behaviour axis values, e.g. [goedwillend, onverschillig, calculerend, crimineel]"
+          },
+          "actorTypeAxis": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Ordered actor-type axis values, e.g. [burger, bedrijf, overheid, recidivist]"
+          },
+          "cells": {
+            "type": "array",
+            "description": "Dense matrix; one entry per (ernst, gedrag, actorType) triple",
+            "items": {
+              "type": "object",
+              "required": ["ernst", "gedrag", "actorType", "interventie"],
+              "properties": {
+                "ernst": { "type": "string" },
+                "gedrag": { "type": "string" },
+                "actorType": { "type": "string" },
+                "interventie": {
+                  "type": "string",
+                  "enum": [
+                    "waarschuwing",
+                    "herstelactie",
+                    "last_onder_dwangsom",
+                    "last_plus_pv",
+                    "bestuursdwang",
+                    "pv_plus_bestuursdwang"
+                  ]
+                },
+                "note": { "type": "string" }
+              }
+            }
+          },
+          "auditTrail": {
+            "type": "array",
+            "description": "Edit log capturing who, when, and which cells changed across versions",
+            "items": {
+              "type": "object",
+              "properties": {
+                "version": { "type": "integer" },
+                "actor": { "type": "string" },
+                "at": { "type": "string", "format": "date-time" },
+                "note": { "type": "string" }
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When this version was created"
+          }
+        }
+      },
+      "lhsRecommendation": {
+        "slug": "lhsRecommendation",
+        "icon": "ScaleBalance",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Recommendation",
+        "title": "LHS Recommendation",
+        "description": "Per-enforcement record of the LHS matrix lookup, the recommended intervention, and any inspector override with justification.",
+        "type": "object",
+        "required": [
+          "case",
+          "ernst",
+          "gedrag",
+          "actorType",
+          "matrixVersion",
+          "recommendedInterventie",
+          "recommendedBy"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case"
+          },
+          "inspection": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional reference to the originating inspection rapport"
+          },
+          "ernst": {
+            "type": "string",
+            "enum": ["gering", "aanzienlijk", "ernstig"],
+            "description": "Severity of the violation (LHS ernst axis)"
+          },
+          "gedrag": {
+            "type": "string",
+            "enum": ["goedwillend", "onverschillig", "calculerend", "crimineel"],
+            "description": "Behaviour of the violator (LHS gedrag axis)"
+          },
+          "actorType": {
+            "type": "string",
+            "enum": ["burger", "bedrijf", "overheid", "recidivist"],
+            "description": "Actor type of the violator (LHS actorType axis)"
+          },
+          "matrixVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Frozen lhsMatrix version this recommendation was looked up against"
+          },
+          "recommendedInterventie": {
+            "type": "string",
+            "enum": [
+              "waarschuwing",
+              "herstelactie",
+              "last_onder_dwangsom",
+              "last_plus_pv",
+              "bestuursdwang",
+              "pv_plus_bestuursdwang"
+            ],
+            "description": "Intervention prescribed by the matrix cell"
+          },
+          "finalIntervention": {
+            "type": "string",
+            "enum": [
+              "waarschuwing",
+              "herstelactie",
+              "last_onder_dwangsom",
+              "last_plus_pv",
+              "bestuursdwang",
+              "pv_plus_bestuursdwang"
+            ],
+            "description": "Intervention actually applied (may differ from recommended when override=true)"
+          },
+          "override": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the inspector overrode the matrix recommendation"
+          },
+          "overrideJustification": {
+            "type": "string",
+            "minLength": 20,
+            "description": "Mandatory justification when override=true (minimum 20 non-whitespace characters)"
+          },
+          "overrideBy": {
+            "type": "string",
+            "description": "NC UID of the user who submitted the override"
+          },
+          "overrideAuthority": {
+            "type": "string",
+            "enum": ["inspector", "manager"],
+            "description": "Role authority under which the override was applied. override-up requires manager."
+          },
+          "recommendedBy": {
+            "type": "string",
+            "description": "NC UID of the authenticated user who invoked the recommendation. Server-derived; never trusted from request body."
+          }
+        }
+      },
       "inspectieChecklist": {
         "slug": "inspectieChecklist",
         "icon": "ClipboardCheckOutline",
@@ -3505,6 +3695,8 @@
           "mapLayer",
           "inspectieRapport",
           "handhavingsactie",
+          "lhsMatrix",
+          "lhsRecommendation",
           "inspectieChecklist",
           "adviesAanvraag",
           "legesverordening",

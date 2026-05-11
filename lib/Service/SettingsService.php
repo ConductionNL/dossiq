@@ -94,6 +94,8 @@ class SettingsService
         'case_transfer_schema',
         'automatic_action_schema',
         'lhsMatrix',
+        'lhs_matrix_schema',
+        'lhs_recommendation_schema',
         // AI-Assisted Processing settings.
         'ai_audit_entry_schema',
         'ai_enabled',
@@ -182,6 +184,8 @@ class SettingsService
         'sharePermissionLevel'         => 'share_permission_level_schema',
         'casetransfer'                 => 'case_transfer_schema',
         'automaticAction'              => 'automatic_action_schema',
+        'lhsMatrix'                    => 'lhs_matrix_schema',
+        'lhsRecommendation'            => 'lhs_recommendation_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

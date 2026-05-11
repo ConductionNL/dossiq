@@ -1,0 +1,69 @@
+{
+    "name": "Landelijke Handhavingsstrategie 2024",
+    "version": 1,
+    "active": true,
+    "ernstAxis": ["gering", "aanzienlijk", "ernstig"],
+    "gedragAxis": ["goedwillend", "onverschillig", "calculerend", "crimineel"],
+    "actorTypeAxis": ["burger", "bedrijf", "overheid", "recidivist"],
+    "cells": [
+        { "ernst": "gering", "gedrag": "goedwillend", "actorType": "burger", "interventie": "waarschuwing", "note": "Eenvoudige overtreding, eerste signaal." },
+        { "ernst": "gering", "gedrag": "goedwillend", "actorType": "bedrijf", "interventie": "waarschuwing" },
+        { "ernst": "gering", "gedrag": "goedwillend", "actorType": "overheid", "interventie": "waarschuwing" },
+        { "ernst": "gering", "gedrag": "goedwillend", "actorType": "recidivist", "interventie": "herstelactie", "note": "Recidive verzwaart een trap." },
+
+        { "ernst": "gering", "gedrag": "onverschillig", "actorType": "burger", "interventie": "waarschuwing" },
+        { "ernst": "gering", "gedrag": "onverschillig", "actorType": "bedrijf", "interventie": "herstelactie" },
+        { "ernst": "gering", "gedrag": "onverschillig", "actorType": "overheid", "interventie": "herstelactie" },
+        { "ernst": "gering", "gedrag": "onverschillig", "actorType": "recidivist", "interventie": "last_onder_dwangsom" },
+
+        { "ernst": "gering", "gedrag": "calculerend", "actorType": "burger", "interventie": "herstelactie" },
+        { "ernst": "gering", "gedrag": "calculerend", "actorType": "bedrijf", "interventie": "last_onder_dwangsom" },
+        { "ernst": "gering", "gedrag": "calculerend", "actorType": "overheid", "interventie": "last_onder_dwangsom" },
+        { "ernst": "gering", "gedrag": "calculerend", "actorType": "recidivist", "interventie": "last_plus_pv" },
+
+        { "ernst": "gering", "gedrag": "crimineel", "actorType": "burger", "interventie": "last_plus_pv" },
+        { "ernst": "gering", "gedrag": "crimineel", "actorType": "bedrijf", "interventie": "last_plus_pv" },
+        { "ernst": "gering", "gedrag": "crimineel", "actorType": "overheid", "interventie": "last_plus_pv" },
+        { "ernst": "gering", "gedrag": "crimineel", "actorType": "recidivist", "interventie": "bestuursdwang" },
+
+        { "ernst": "aanzienlijk", "gedrag": "goedwillend", "actorType": "burger", "interventie": "waarschuwing" },
+        { "ernst": "aanzienlijk", "gedrag": "goedwillend", "actorType": "bedrijf", "interventie": "herstelactie" },
+        { "ernst": "aanzienlijk", "gedrag": "goedwillend", "actorType": "overheid", "interventie": "herstelactie" },
+        { "ernst": "aanzienlijk", "gedrag": "goedwillend", "actorType": "recidivist", "interventie": "last_onder_dwangsom" },
+
+        { "ernst": "aanzienlijk", "gedrag": "onverschillig", "actorType": "burger", "interventie": "herstelactie" },
+        { "ernst": "aanzienlijk", "gedrag": "onverschillig", "actorType": "bedrijf", "interventie": "last_onder_dwangsom" },
+        { "ernst": "aanzienlijk", "gedrag": "onverschillig", "actorType": "overheid", "interventie": "last_onder_dwangsom" },
+        { "ernst": "aanzienlijk", "gedrag": "onverschillig", "actorType": "recidivist", "interventie": "last_plus_pv" },
+
+        { "ernst": "aanzienlijk", "gedrag": "calculerend", "actorType": "burger", "interventie": "last_onder_dwangsom" },
+        { "ernst": "aanzienlijk", "gedrag": "calculerend", "actorType": "bedrijf", "interventie": "last_plus_pv" },
+        { "ernst": "aanzienlijk", "gedrag": "calculerend", "actorType": "overheid", "interventie": "last_plus_pv" },
+        { "ernst": "aanzienlijk", "gedrag": "calculerend", "actorType": "recidivist", "interventie": "bestuursdwang" },
+
+        { "ernst": "aanzienlijk", "gedrag": "crimineel", "actorType": "burger", "interventie": "last_plus_pv" },
+        { "ernst": "aanzienlijk", "gedrag": "crimineel", "actorType": "bedrijf", "interventie": "bestuursdwang" },
+        { "ernst": "aanzienlijk", "gedrag": "crimineel", "actorType": "overheid", "interventie": "bestuursdwang" },
+        { "ernst": "aanzienlijk", "gedrag": "crimineel", "actorType": "recidivist", "interventie": "pv_plus_bestuursdwang" },
+
+        { "ernst": "ernstig", "gedrag": "goedwillend", "actorType": "burger", "interventie": "herstelactie" },
+        { "ernst": "ernstig", "gedrag": "goedwillend", "actorType": "bedrijf", "interventie": "last_onder_dwangsom" },
+        { "ernst": "ernstig", "gedrag": "goedwillend", "actorType": "overheid", "interventie": "last_onder_dwangsom" },
+        { "ernst": "ernstig", "gedrag": "goedwillend", "actorType": "recidivist", "interventie": "last_plus_pv" },
+
+        { "ernst": "ernstig", "gedrag": "onverschillig", "actorType": "burger", "interventie": "last_onder_dwangsom" },
+        { "ernst": "ernstig", "gedrag": "onverschillig", "actorType": "bedrijf", "interventie": "last_plus_pv" },
+        { "ernst": "ernstig", "gedrag": "onverschillig", "actorType": "overheid", "interventie": "last_plus_pv" },
+        { "ernst": "ernstig", "gedrag": "onverschillig", "actorType": "recidivist", "interventie": "bestuursdwang" },
+
+        { "ernst": "ernstig", "gedrag": "calculerend", "actorType": "burger", "interventie": "last_plus_pv" },
+        { "ernst": "ernstig", "gedrag": "calculerend", "actorType": "bedrijf", "interventie": "bestuursdwang" },
+        { "ernst": "ernstig", "gedrag": "calculerend", "actorType": "overheid", "interventie": "bestuursdwang" },
+        { "ernst": "ernstig", "gedrag": "calculerend", "actorType": "recidivist", "interventie": "pv_plus_bestuursdwang" },
+
+        { "ernst": "ernstig", "gedrag": "crimineel", "actorType": "burger", "interventie": "bestuursdwang" },
+        { "ernst": "ernstig", "gedrag": "crimineel", "actorType": "bedrijf", "interventie": "pv_plus_bestuursdwang" },
+        { "ernst": "ernstig", "gedrag": "crimineel", "actorType": "overheid", "interventie": "pv_plus_bestuursdwang" },
+        { "ernst": "ernstig", "gedrag": "crimineel", "actorType": "recidivist", "interventie": "pv_plus_bestuursdwang", "note": "Maximale interventie; PV bij OM + bestuursdwang." }
+    ]
+}
