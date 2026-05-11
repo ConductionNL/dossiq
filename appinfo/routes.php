@@ -226,6 +226,23 @@ return [
         ['name' => 'public_appointment#view',   'url' => '/api/public/appointment/{token}',         'verb' => 'GET'],
         ['name' => 'public_appointment#cancel', 'url' => '/api/public/appointment/{token}/cancel',  'verb' => 'POST'],
 
+        // Case sharing & collaboration — share management endpoints.
+        ['name' => 'caseSharing#listShares',       'url' => '/api/shares/{caseId}',          'verb' => 'GET'],
+        ['name' => 'caseSharing#createShare',      'url' => '/api/shares',                   'verb' => 'POST'],
+        ['name' => 'caseSharing#modifyShare',      'url' => '/api/shares/{shareId}',         'verb' => 'PUT'],
+        ['name' => 'caseSharing#revokeShare',      'url' => '/api/shares/{shareId}',         'verb' => 'DELETE'],
+        ['name' => 'caseSharing#listPartners',     'url' => '/api/partners',                 'verb' => 'GET'],
+        ['name' => 'caseSharing#createPartner',    'url' => '/api/partners',                 'verb' => 'POST'],
+        ['name' => 'caseSharing#updatePartner',    'url' => '/api/partners/{partnerId}',     'verb' => 'PUT'],
+        ['name' => 'caseSharing#initiateTransfer', 'url' => '/api/transfers',                'verb' => 'POST'],
+        ['name' => 'caseSharing#handleTransfer',   'url' => '/api/transfers/{transferId}',   'verb' => 'PUT'],
+
+        // Public share endpoints — unauthenticated token-based access.
+        ['name' => 'publicShare#accessShare',     'url' => '/api/public/share/{token}',          'verb' => 'GET'],
+        ['name' => 'publicShare#addComment',      'url' => '/api/public/share/{token}/comment',  'verb' => 'POST'],
+        ['name' => 'publicShare#uploadDocument',  'url' => '/api/public/share/{token}/upload',   'verb' => 'POST'],
+        ['name' => 'publicShare#viewStatus',      'url' => '/api/public/status/{token}',         'verb' => 'GET'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],

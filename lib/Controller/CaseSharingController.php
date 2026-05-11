@@ -222,4 +222,96 @@ class CaseSharingController extends Controller
 
         return new JSONResponse(['success' => true, 'transfer' => $result]);
     }//end handleTransfer()
+
+    /**
+     * Modify an existing share (permission level, expiration, label).
+     *
+     * @param string $shareId The UUID of the share to modify
+     *
+     * @return JSONResponse
+     *
+     * @NoAdminRequired
+     */
+    public function modifyShare(string $shareId): JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], 401);
+        }
+
+        $data = [
+            'permissionLevel' => $this->request->getParam('permissionLevel'),
+            'expiresAt'       => $this->request->getParam('expiresAt'),
+            'label'           => $this->request->getParam('label'),
+            'fieldExclusions' => $this->request->getParam('fieldExclusions'),
+        ];
+
+        $share = $this->caseSharingService->modifyShare($shareId, array_filter($data));
+        return new JSONResponse(['success' => true, 'share' => $share]);
+    }//end modifyShare()
+
+    /**
+     * List all registered partner organizations.
+     *
+     * @return JSONResponse
+     *
+     * @NoAdminRequired
+     */
+    public function listPartners(): JSONResponse
+    {
+        $partners = $this->caseSharingService->listPartners();
+        return new JSONResponse(['success' => true, 'partners' => array_values($partners)]);
+    }//end listPartners()
+
+    /**
+     * Create a new partner organization.
+     *
+     * @return JSONResponse
+     *
+     * @NoAdminRequired
+     */
+    public function createPartner(): JSONResponse
+    {
+        $data = [
+            'name'                   => $this->request->getParam('name'),
+            'slug'                   => $this->request->getParam('slug'),
+            'oin'                    => $this->request->getParam('oin'),
+            'contactEmail'           => $this->request->getParam('contactEmail'),
+            'defaultPermissionLevel' => $this->request->getParam('defaultPermissionLevel', 'bekijken'),
+            'isActive'               => (bool) $this->request->getParam('isActive', true),
+        ];
+
+        if (empty($data['name']) === true || empty($data['contactEmail']) === true) {
+            return new JSONResponse(
+                ['success' => false, 'error' => 'name and contactEmail are required'],
+                400
+            );
+        }
+
+        $partner = $this->caseSharingService->createPartner($data);
+        return new JSONResponse(['success' => true, 'partner' => $partner]);
+    }//end createPartner()
+
+    /**
+     * Update an existing partner organization.
+     *
+     * @param string $partnerId The UUID of the partner to update
+     *
+     * @return JSONResponse
+     *
+     * @NoAdminRequired
+     */
+    public function updatePartner(string $partnerId): JSONResponse
+    {
+        $data = array_filter([
+            'name'                   => $this->request->getParam('name'),
+            'oin'                    => $this->request->getParam('oin'),
+            'contactEmail'           => $this->request->getParam('contactEmail'),
+            'defaultPermissionLevel' => $this->request->getParam('defaultPermissionLevel'),
+            'isActive'               => $this->request->getParam('isActive'),
+        ], static fn ($v) => $v !== null);
+
+        $partner = $this->caseSharingService->updatePartner($partnerId, $data);
+        return new JSONResponse(['success' => true, 'partner' => $partner]);
+    }//end updatePartner()
 }//end class
