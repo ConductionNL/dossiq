@@ -89,6 +89,14 @@ The system SHALL automatically calculate legal deadlines when a bezwaar case is 
 
 **Feature tier**: V1
 
+**Implementation**: Deadlines SHALL be declared via OR's
+`x-openregister-calculations` annotation on the bezwaar case schema,
+not via a procest-specific `BezwaarDeadlineService`. Each AWB article
+maps to a calculation rule with `formula`, `inputs`, and `outputField`
+(per ADR-022, procest-adopt-or-abstractions; cross-reference
+Algemene wet bestuursrecht art. 6:7, 6:8, 7:10, 7:24). See OR's
+computed-fields capability (`RenderObject.php:1418`).
+
 #### Scenario: Standard deadline calculation on case creation
 
 - **WHEN** a bezwaar case is created with `ontvangstdatum` 2026-03-01 (Monday)

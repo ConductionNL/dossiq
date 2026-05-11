@@ -1,3 +1,19 @@
+---
+status: retired
+retired_in: procest-adopt-or-abstractions
+canonical_home: case-management/spec.md
+---
+
+> **RETIRED — consume OR `audit-trail-immutable`.**
+>
+> Delegation tracking (`actorType`, `onBehalfOf`) is recorded as audit
+> context on lifecycle transitions in the consolidated case-management
+> annotation. Immutability is provided by OR's `audit-trail-immutable`
+> capability, not a procest-specific custom service. See ADR-022.
+>
+> This file is preserved as a historical appendix. Refer to
+> `case-management/spec.md` for canonical audit semantics.
+
 ## ADDED Requirements
 
 ### Requirement: Immutable Parafering Audit Trail
