@@ -64,6 +64,44 @@
       "controllers": [],
       "endpoints": [],
       "schemaChanges": {}
+    },
+    {
+      "change": "bezwaar-advisory-committee",
+      "appliedAt": "2026-05-11",
+      "tasks": ["T01", "T02", "T03", "T04", "T05", "T06", "T07"],
+      "deferred": [
+        {"task": "V01", "reason": "openspec validate not part of strict watchdog (php -l + jq only); deferred to opsx-verify"},
+        {"task": "V02", "reason": "deltaCount jq verification covered by openspec validate; deferred"},
+        {"task": "V03", "reason": "Scenario coverage check covered by openspec validate strict; deferred"}
+      ],
+      "schemas": [
+        "bezwaaradviescommissie",
+        "bacAdviceRequest"
+      ],
+      "manifestPages": [
+        "BezwaarCommittees",
+        "BezwaarCommitteeDetail",
+        "BezwaarAdviceRequests",
+        "BezwaarAdviceRequestDetail"
+      ],
+      "menuEntries": [
+        "BezwaarAdviceRequests",
+        "BezwaarCommitteesMenu"
+      ],
+      "services": [
+        "OCA\\Procest\\Service\\Bezwaar\\AdvisoryCommitteeService"
+      ],
+      "listeners": [
+        "OCA\\Procest\\Listener\\BezwaarAdviceRequestedListener"
+      ],
+      "controllers": [],
+      "endpoints": [],
+      "configKeys": [
+        "bezwaaradviescommissie_schema",
+        "bac_advice_request_schema",
+        "bac_default_committee"
+      ],
+      "notes": "Manifest-first: CRUD via OpenRegister auto-forms. Independence check (Awb 7:13(3)) + advice lifecycle FSM live in AdvisoryCommitteeService. Listener auto-assigns default committee when bezwaar.status='Advies aangevraagd'. Depends on bezwaar-lifecycle landing for the council-deviation guard hook on besluit finalisation; the recordCouncilDeviation() entry-point is in place to be called from that service."
     }
   ]
 }

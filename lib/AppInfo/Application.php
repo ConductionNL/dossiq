@@ -35,6 +35,7 @@ use OCA\Procest\Dashboard\OverdueCasesWidget;
 use OCA\Procest\Dashboard\StalledCasesWidget;
 use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Dashboard\StartCaseWidget;
+use OCA\Procest\Listener\BezwaarAdviceRequestedListener;
 use OCA\Procest\Listener\DeepLinkRegistrationListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
 use OCA\Procest\Listener\RoleMutationListener;
@@ -103,6 +104,13 @@ class Application extends App implements IBootstrap
         $context->registerEventListener(
             event: ObjectDeletedEvent::class,
             listener: RoleMutationListener::class
+        );
+
+        // Bezwaar-advisory-committee auto-assignment when a bezwaar case
+        // enters status "Advies aangevraagd".
+        $context->registerEventListener(
+            event: ObjectUpdatedEvent::class,
+            listener: BezwaarAdviceRequestedListener::class
         );
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);

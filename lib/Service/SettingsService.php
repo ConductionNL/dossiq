@@ -93,6 +93,10 @@ class SettingsService
         'share_permission_level_schema',
         'case_transfer_schema',
         'automatic_action_schema',
+        // Bezwaar advisory committee (BAC) — Awb Art. 7:13.
+        'bezwaaradviescommissie_schema',
+        'bac_advice_request_schema',
+        'bac_default_committee',
         'lhsMatrix',
         // AI-Assisted Processing settings.
         'ai_audit_entry_schema',
@@ -182,6 +186,8 @@ class SettingsService
         'sharePermissionLevel'         => 'share_permission_level_schema',
         'casetransfer'                 => 'case_transfer_schema',
         'automaticAction'              => 'automatic_action_schema',
+        'bezwaaradviescommissie'       => 'bezwaaradviescommissie_schema',
+        'bacAdviceRequest'             => 'bac_advice_request_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

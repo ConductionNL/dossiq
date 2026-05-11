@@ -962,9 +962,15 @@
             "items": {
               "type": "object",
               "properties": {
-                "type": { "type": "string" },
-                "passed": { "type": "boolean" },
-                "details": { "type": "object" }
+                "type": {
+                  "type": "string"
+                },
+                "passed": {
+                  "type": "boolean"
+                },
+                "details": {
+                  "type": "object"
+                }
               }
             }
           },
@@ -974,9 +980,15 @@
             "items": {
               "type": "object",
               "properties": {
-                "type": { "type": "string" },
-                "ok": { "type": "boolean" },
-                "error": { "type": "string" }
+                "type": {
+                  "type": "string"
+                },
+                "ok": {
+                  "type": "boolean"
+                },
+                "error": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -3457,6 +3469,259 @@
             "type": "string",
             "format": "date-time",
             "description": "When the transfer was completed (ISO 8601)"
+          }
+        }
+      },
+      "bezwaaradviescommissie": {
+        "slug": "bezwaaradviescommissie",
+        "icon": "AccountGroupOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:GovernmentOrganization",
+        "title": "Bezwaaradviescommissie",
+        "description": "Independent advisory committee (BAC, VKK or VTH) that reviews objections under Awb Art. 7:13 and issues a written advice to the council. Long-lived configuration entity owned by the council; member independence is enforced per case at advice-request assignment.",
+        "type": "object",
+        "required": [
+          "name",
+          "type",
+          "members"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Display name (e.g. 'Bezwaarcommissie sociaal domein')"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "BAC",
+              "VKK",
+              "VTH"
+            ],
+            "default": "BAC",
+            "description": "Committee type: BAC (Bezwaar Advies), VKK (Vaste Kamer/Klachten), VTH (Vergunning Toezicht Handhaving)"
+          },
+          "domain": {
+            "type": "string",
+            "enum": [
+              "algemeen",
+              "sociaal_domein",
+              "wabo",
+              "belasting",
+              "personeel"
+            ],
+            "description": "Optional jurisdiction filter for auto-assignment by case type / domain"
+          },
+          "jurisdiction": {
+            "type": "string",
+            "description": "Free-text jurisdiction descriptor (e.g. municipal area, region, or 'all')"
+          },
+          "chair": {
+            "type": "string",
+            "description": "Nextcloud UID of the committee chair (voorzitter, Awb Art. 7:13(1))"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uid": {
+                  "type": "string",
+                  "description": "Nextcloud UID or external party reference"
+                },
+                "displayName": {
+                  "type": "string",
+                  "description": "Human-readable member name"
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "chair",
+                    "member",
+                    "deputy"
+                  ],
+                  "default": "member",
+                  "description": "Member role on the committee"
+                },
+                "external": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Whether this member is external to the council (not a civil servant)"
+                }
+              }
+            },
+            "description": "Committee members; chair + at least two members required (Awb Art. 7:13(1))"
+          },
+          "secretary": {
+            "type": "string",
+            "description": "Nextcloud UID of the secretary (civil servant per Awb Art. 7:13(2))"
+          },
+          "quorum": {
+            "type": "integer",
+            "minimum": 2,
+            "default": 3,
+            "description": "Minimum members needed to issue advice"
+          },
+          "termStartsOn": {
+            "type": "string",
+            "format": "date",
+            "description": "Validity window start"
+          },
+          "termEndsOn": {
+            "type": "string",
+            "format": "date",
+            "description": "Validity window end"
+          },
+          "active": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether the committee is active and can be assigned new cases"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server timestamp at creation"
+          }
+        }
+      },
+      "bacAdviceRequest": {
+        "slug": "bacAdviceRequest",
+        "icon": "CommentTextOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:AskAction",
+        "x-zgw-equivalent": "Adviesdocument",
+        "title": "BAC Advice Request",
+        "description": "Per-bezwaar referral of an objection case to a bezwaaradviescommissie. Tracks the advice deliverable through the assigned -> in-deliberation -> advice-issued lifecycle (Awb Art. 7:13). One-way transitions; withdrawn bezwaaren leave the request in its last state for audit.",
+        "type": "object",
+        "required": [
+          "bezwaar",
+          "commissie",
+          "status"
+        ],
+        "properties": {
+          "bezwaar": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "The bezwaar case being reviewed (reference to case)"
+          },
+          "commissie": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "bezwaaradviescommissie",
+            "description": "The assigned bezwaaradviescommissie"
+          },
+          "panel": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Subset of commissie.members.uid actually sitting on this case (used for independence check per Awb Art. 7:13(3))"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "assigned",
+              "in-deliberation",
+              "advice-issued",
+              "niet-ontvankelijk"
+            ],
+            "default": "assigned",
+            "description": "Lifecycle state. niet-ontvankelijk represents the terminal advice that the bezwaar is inadmissible (Awb Art. 7:13(7))"
+          },
+          "assignedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server timestamp when the council referred the bezwaar to the committee"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Target advice date — defaults to assignedAt + 12 weeks (Awb Art. 7:24(1))"
+          },
+          "advice": {
+            "type": "string",
+            "description": "Advice text (findings + legal_assessment + recommendation). Free-text fallback when no structured document is uploaded"
+          },
+          "adviceDocuments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "References (Nextcloud file IDs or OpenRegister doc refs) of the signed advice and supporting documents"
+          },
+          "adviceIssuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp the chair signed and issued the advice"
+          },
+          "signatureEvidence": {
+            "type": "string",
+            "description": "Reference (NC file ID or signing-app evidence ref) to the chair's signature evidence"
+          },
+          "hearingReportRef": {
+            "type": "string",
+            "description": "Link to the hoorzittingverslag owned by the bezwaar-lifecycle / hearing-session"
+          },
+          "conclusion": {
+            "type": "string",
+            "enum": [
+              "gegrond",
+              "ongegrond",
+              "gedeeltelijk_gegrond",
+              "niet_ontvankelijk"
+            ],
+            "description": "Committee's conclusion per Awb Art. 7:13(7)"
+          },
+          "recommendation": {
+            "type": "string",
+            "description": "Free-text recommendation to the council"
+          },
+          "dissentingOpinions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "memberUid": {
+                  "type": "string"
+                },
+                "opinion": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Optional dissenting opinions when panel disagreement exists"
+          },
+          "auditTrail": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "event": {
+                  "type": "string",
+                  "enum": [
+                    "panel-member-added",
+                    "panel-member-removed",
+                    "independence-check-failed",
+                    "advice-signed-by-chair",
+                    "council-deviation-recorded"
+                  ]
+                },
+                "actor": {
+                  "type": "string"
+                },
+                "at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "payload": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            },
+            "description": "Append-only audit trail for BAC-specific events (Archiefwet 1995). Complements the OpenRegister automatic per-save log."
           }
         }
       }
