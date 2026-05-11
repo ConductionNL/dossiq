@@ -148,9 +148,24 @@
 		{
 			"id": "CaseMap",
 			"route": "/map",
-			"type": "custom",
+			"type": "map",
 			"title": "Case map",
-			"component": "CaseMapView"
+			"config": {
+				"register": "procest",
+				"schema": "case",
+				"geometryField": "geometry",
+				"filters": ["status", "caseType", "assignee", "deadlineRange"],
+				"marker": { "formatter": "caseMarkerFormatter" },
+				"clustering": { "enabled": true, "disableAtZoom": 14, "priority": ["blocked", "in_progress", "open", "closed"] },
+				"bboxQuery": { "threshold": 5000 },
+				"tileLayer": "pdok-brt",
+				"sidebar": { "enabled": true, "filtersOpen": true },
+				"emptyState": {
+					"icon": "icon-address",
+					"title": "Geen zaken op de kaart",
+					"body": "Pas filters aan of voeg locaties toe aan bestaande zaken."
+				}
+			}
 		},
 		{
 			"id": "Voorstellen",

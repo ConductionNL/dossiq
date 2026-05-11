@@ -29,27 +29,23 @@
       }
     },
     {
-      "change": "map-component",
+      "change": "case-map-overview",
       "appliedAt": "2026-05-11",
-      "tasks": ["T01", "T02"],
+      "tasks": ["D01", "D02", "T01", "T02", "T03", "T07"],
       "deferred": [
-        {"task": "D01", "reason": "Deduplication note: existing src/components/map/CaseMap.vue is the legacy direct-Leaflet wrapper used by CaseMapView and CaseMapWidget; MapComponent is the new CnMapWidget-based wrapper. Consumer migration (T03/T04/T05) belongs to case-location, case-map-overview, and public case page specs respectively."},
-        {"task": "D02", "reason": "Order-of-arrival: mapFormatters registry created here as case-map-overview has not yet landed in main; future spec adoption can import from the same module path."},
-        {"task": "T03", "reason": "Case detail map tab integration — tracked by case-location spec, not this manifest-first MapComponent spec."},
-        {"task": "T04", "reason": "Dashboard CaseMapWidget integration — tracked by case-map-overview spec."},
-        {"task": "T05", "reason": "Public case page integration — tracked by public-case-page spec."},
-        {"task": "V01", "reason": "Unit test scope follow-up (strict watchdog: jq + lint only)."},
-        {"task": "V02", "reason": "Case detail integration verification — bound to T03 follow-up."},
-        {"task": "V03", "reason": "Dashboard clustering verification — bound to T04 follow-up."},
-        {"task": "V04", "reason": "Public read-only axe-core verification — bound to T05 follow-up."}
+        {"task": "T04", "reason": "CnMapPage onClick router dispatch is lib-internal — confirmed via design.md; no app-side handler required"},
+        {"task": "T05", "reason": "filterRegistry wiring is lib-internal — config.filters references shared filter ids resolved by CnMapPage"},
+        {"task": "T06", "reason": "leaflet.markercluster is a transitive dep of @conduction/nextcloud-vue beta.30; no app-side package.json change required"},
+        {"task": "T08", "reason": "emptyState block declared inline in manifest; CnMapPage renders NcEmptyContent automatically"},
+        {"task": "V01", "reason": "Manual dev-env walkthrough — strict watchdog scope (lint + jq only)"},
+        {"task": "V02", "reason": "Manual click-through — strict watchdog scope"},
+        {"task": "V03", "reason": "Filter sidebar smoke test — strict watchdog scope"},
+        {"task": "V04", "reason": "5k-pin perf benchmark — separate performance change"}
       ],
-      "components": [
-        "src/components/map/MapComponent.vue"
-      ],
-      "services": [
-        "src/services/mapFormatters.js"
-      ],
-      "customComponents": ["MapComponent"]
+      "manifestPages": ["CaseMap (type:'custom' → type:'map')"],
+      "services": ["src/services/mapFormatters.js"],
+      "registrations": ["caseMarkerFormatter (mapFormatters registry, src/main.js)"],
+      "removedFiles": ["src/views/CaseMapView.vue"]
     }
   ]
 }
