@@ -37,6 +37,7 @@ use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Dashboard\StartCaseWidget;
 use OCA\Procest\Listener\DeepLinkRegistrationListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
+use OCA\Procest\Middleware\TenantMiddleware;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -90,6 +91,7 @@ class Application extends App implements IBootstrap
         );
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
+        $context->registerMiddleware(class: TenantMiddleware::class);
 
         // Dashboard widgets.
         $context->registerDashboardWidget(CasesOverviewWidget::class);
