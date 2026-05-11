@@ -13,6 +13,7 @@
 		{ "id": "Voorstellen", "label": "Voorstellen", "icon": "icon-comment", "route": "Voorstellen", "order": 70 },
 		{ "id": "Advice", "label": "Advice", "icon": "icon-comment", "route": "Advice", "order": 75 },
 		{ "id": "BezwaarAdviceRequests", "label": "BAC-adviezen", "icon": "icon-comment", "route": "BezwaarAdviceRequests", "order": 76 },
+		{ "id": "BezwaarHearings", "label": "Hoorzittingen", "icon": "icon-calendar", "route": "BezwaarHearings", "order": 77 },
 		{ "id": "Transfers", "label": "Transfers", "icon": "icon-shared", "route": "Transfers", "order": 80 },
 		{ "id": "Documentation", "label": "Documentation", "icon": "icon-info", "href": "https://conduction.gitbook.io/procest-nextcloud", "section": "settings", "order": 90 },
 		{ "id": "CaseTypesMenu", "label": "Case Types", "icon": "icon-category-customization", "route": "CaseTypes", "section": "settings", "order": 95 },
@@ -792,6 +793,38 @@
 					{ "id": "overview",  "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }],                            "order": 10 },
 					{ "id": "documents", "label": "Documenten",  "icon": "icon-files",   "widgets": [{ "type": "data", "config": { "fields": ["adviceDocuments"] } }],        "order": 20 },
 					{ "id": "audit",     "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                                              "order": 90 }
+				]
+			}
+		},
+		{
+			"id": "BezwaarHearings",
+			"route": "/bezwaar-hearings",
+			"type": "index",
+			"title": "Hoorzittingen",
+			"config": {
+				"register": "procest",
+				"schema": "hearingSession",
+				"columns": ["case", "scheduledDate", "location", "chairperson", "status", "inspectionDeadline"],
+				"actions": [
+					{ "id": "view", "label": "View", "icon": "icon-info", "handler": "navigate", "route": "BezwaarHearingDetail" }
+				],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "BezwaarHearingDetail",
+			"route": "/bezwaar-hearings/:id",
+			"type": "detail",
+			"title": "Hoorzitting",
+			"config": {
+				"register": "procest",
+				"schema": "hearingSession",
+				"sidebarTabs": [
+					{ "id": "overview",    "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }],                                                                               "order": 10 },
+					{ "id": "invitations", "label": "Invitations", "icon": "icon-mail",    "widgets": [{ "type": "data", "config": { "fields": ["invitees", "inspectionAvailableFrom", "inspectionDeadline"] } }],                "order": 20 },
+					{ "id": "attendees",   "label": "Attendees",   "icon": "icon-group",   "widgets": [{ "type": "data", "config": { "fields": ["attendance", "members", "attendanceFrozenAt"] } }],                              "order": 30 },
+					{ "id": "minutes",     "label": "Minutes",     "icon": "icon-files",   "widgets": [{ "type": "data", "config": { "fields": ["minutesSummary", "minutesDocument", "audioRecording", "recordingConsent"] } }],  "order": 40 },
+					{ "id": "audit",       "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }, { "type": "data", "config": { "fields": ["auditTrail"] } }],                                    "order": 90 }
 				]
 			}
 		}
