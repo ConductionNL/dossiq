@@ -3,7 +3,7 @@
   "info": {
     "title": "Procest Case Management Register",
     "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, and their instance counterparts.",
-    "version": "0.5.0"
+    "version": "0.6.0"
   },
   "x-openregister": {
     "type": "application",
@@ -1790,7 +1790,8 @@
               "parafered",
               "returned",
               "advised",
-              "skipped"
+              "skipped",
+              "accorded"
             ],
             "description": "The action performed",
             "title": "Action",
@@ -2701,6 +2702,116 @@
         "tablePrefix": "",
         "folder": "Open Registers/Procest"
       }
-    }
+    },
+    "objects": [
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "parafeerroute",
+          "slug": "route-collegeadvies-omgevingsvergunning"
+        },
+        "name": "Collegeadvies - Omgevingsvergunning",
+        "voorstelType": "collegeadvies",
+        "isDefault": true,
+        "description": "Standaard accorderingslijn voor collegeadviezen over omgevingsvergunningen",
+        "steps": [
+          {"order": 1, "type": "advies",      "actor": "juridische-dienst",   "actorType": "group", "mandatory": false},
+          {"order": 2, "type": "parafering",  "actor": "teamleider-vth",      "actorType": "role",  "mandatory": true},
+          {"order": 3, "type": "parafering",  "actor": "afdelingshoofd-vth",  "actorType": "role",  "mandatory": true},
+          {"order": 4, "type": "accordering", "actor": "portefeuillehouder",  "actorType": "role",  "mandatory": true}
+        ]
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "parafeerroute",
+          "slug": "route-collegeadvies-bestemmingsplan"
+        },
+        "name": "Collegeadvies - Bestemmingsplan",
+        "voorstelType": "collegeadvies",
+        "isDefault": false,
+        "description": "Uitgebreide route voor bestemmingsplanwijzigingen met planologisch en juridisch advies",
+        "steps": [
+          {"order": 1, "type": "advies",      "actor": "planologisch-adviseur",          "actorType": "role",  "mandatory": true},
+          {"order": 2, "type": "advies",      "actor": "juridische-dienst",              "actorType": "group", "mandatory": true},
+          {"order": 3, "type": "parafering",  "actor": "teamleider-ro",                  "actorType": "role",  "mandatory": true},
+          {"order": 4, "type": "parafering",  "actor": "afdelingshoofd-ro",              "actorType": "role",  "mandatory": true},
+          {"order": 5, "type": "accordering", "actor": "wethouder-ruimtelijke-ordening", "actorType": "role",  "mandatory": true}
+        ]
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "parafeerroute",
+          "slug": "route-dt-advies-standaard"
+        },
+        "name": "DT-advies - Standaard",
+        "voorstelType": "dt_advies",
+        "isDefault": true,
+        "description": "Standaard directieteam-advies: behandelaar parafering gevolgd door afdelingshoofd accordering",
+        "steps": [
+          {"order": 1, "type": "parafering",  "actor": "behandelaar",    "actorType": "role", "mandatory": true},
+          {"order": 2, "type": "accordering", "actor": "afdelingshoofd", "actorType": "role", "mandatory": true}
+        ]
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "parafeerroute",
+          "slug": "route-raadsvoorstel-groot-project"
+        },
+        "name": "Raadsvoorstel - Groot project",
+        "voorstelType": "raadsvoorstel",
+        "isDefault": true,
+        "description": "Volledige route voor raadsvoorstellen: financieel, juridisch, management, gemeentesecretaris en burgemeester",
+        "steps": [
+          {"order": 1, "type": "advies",      "actor": "financieel-adviseur",  "actorType": "role",  "mandatory": true},
+          {"order": 2, "type": "advies",      "actor": "juridische-dienst",    "actorType": "group", "mandatory": true},
+          {"order": 3, "type": "parafering",  "actor": "teamleider",           "actorType": "role",  "mandatory": true},
+          {"order": 4, "type": "parafering",  "actor": "afdelingshoofd",       "actorType": "role",  "mandatory": true},
+          {"order": 5, "type": "accordering", "actor": "gemeentesecretaris",   "actorType": "role",  "mandatory": true},
+          {"order": 6, "type": "accordering", "actor": "burgemeester",         "actorType": "role",  "mandatory": true}
+        ]
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "parafeeractie",
+          "slug": "parafeeractie-stap1-advies-2026-0042"
+        },
+        "voorstel": "voorstel-collegeadvies-0042",
+        "step": 1,
+        "actor": "j.devries",
+        "actorType": "user",
+        "action": "advised",
+        "advice": "Akkoord, mits de bouwtekeningen worden bijgewerkt conform het welstandsadvies van 12 april 2026."
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "parafeeractie",
+          "slug": "parafeeractie-stap2-parafering-2026-0042"
+        },
+        "voorstel": "voorstel-collegeadvies-0042",
+        "step": 2,
+        "actor": "m.bakker",
+        "actorType": "user",
+        "action": "parafered",
+        "comment": "Geparafeerd na beoordeling welstandsadvies. Tekeningen conform bijgewerkt."
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "parafeeractie",
+          "slug": "parafeeractie-stap2-geretourneerd-2026-0055"
+        },
+        "voorstel": "voorstel-collegeadvies-0055",
+        "step": 2,
+        "actor": "p.janssen",
+        "actorType": "user",
+        "action": "returned",
+        "comment": "Financiële paragraaf ontbreekt. Kosten-batenanalyse moet worden toegevoegd voordat dit voorstel kan worden geparafeerd."
+      }
+    ]
   }
 }
