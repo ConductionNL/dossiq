@@ -448,6 +448,13 @@
 			}
 		},
 		{
+			"id": "WorkflowTemplateEditor",
+			"route": "/settings/workflow-templates/:id/edit",
+			"type": "custom",
+			"title": "Workflow editor",
+			"component": "VisualWorkflowEditor"
+		},
+		{
 			"id": "PublicCase",
 			"route": "/public/cases/:id",
 			"type": "custom",
