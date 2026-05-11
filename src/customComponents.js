@@ -20,7 +20,8 @@
 // --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
 import MyWorkView from './views/MyWork.vue'
 import WerkvoorraadView from './views/Werkvoorraad.vue'
-import CaseMapView from './views/CaseMapView.vue'
+// CaseMapView removed — superseded by manifest `type: 'map'` CnMapPage
+// (see openspec/changes/case-map-overview/design.md).
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
 import VoorstellenView from './views/voorstellen/VoorstelList.vue'
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
@@ -50,7 +51,7 @@ export default {
 	// --- Genuine exceptions: no abstract analogue. ---
 	MyWorkView, // bespoke 4-tab filter UI mixing case + task entities
 	WerkvoorraadView, // KPI-strip-driven work queue
-	CaseMapView, // Leaflet map + WMS/WFS layers + marker clusters
+	// CaseMapView removed — see import comment above.
 
 	// --- Lib gaps: would migrate once lib gains the missing primitive. ---
 	DoorlooptijdView, // KPI dashboard with apexcharts (lib chart-widget gap)

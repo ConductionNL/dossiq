@@ -16,6 +16,7 @@ import pinia from './pinia.js'
 import App from './App.vue'
 import bundledManifest from './manifest.json'
 import customComponents from './customComponents.js'
+import mapFormatters from './services/mapFormatters.js'
 
 // Library CSS — must be explicit import (webpack tree-shakes side-effect imports from aliased packages)
 import '@conduction/nextcloud-vue/css/index.css'
@@ -102,6 +103,13 @@ tryLoadTranslations()
 // the values the lib resolves at render time.
 const pageTypesProp = { ...defaultPageTypes }
 const customComponentsProp = { ...customComponents }
+const mapFormattersProp = { ...mapFormatters }
+
+// Expose the map formatter registry as a Vue global so `CnMapPage`
+// (and any future map-type pages) can resolve named formatters from
+// `config.marker.formatter`. Mirrors the existing customComponents
+// resolution pattern — see customComponents.js for context.
+Vue.prototype.$mapFormatters = mapFormattersProp
 
 new Vue({
 	pinia,
@@ -111,6 +119,7 @@ new Vue({
 			manifest: bundledManifest,
 			customComponents: customComponentsProp,
 			pageTypes: pageTypesProp,
+			mapFormatters: mapFormattersProp,
 		},
 	}),
 }).$mount('#content')

@@ -1,159 +1,143 @@
-// SPDX-License-Identifier: EUPL-1.2
-// Copyright (C) 2026 Conduction B.V.
-//
-// Map-formatter registry — shared by every Procest surface that renders
-// the `MapComponent` wrapper around `CnMapWidget`. A formatter takes an
-// input "location" object (case, address, generic geometry-bearing
-// record) and returns a marker descriptor consumable by the lib widget:
-//
-//   {
-//     lat:    Number,
-//     lon:    Number,
-//     color:  String,  // CSS variable token or inherited token
-//     icon:   String,  // material-design-icons name
-//     popup:  { title: String, body?: String },
-//     onClick: Function (optional),
-//   }
-//
-// Polygons are reduced to their arithmetic-mean centroid here so the
-// MapComponent wrapper never has to know about geometry types.
-//
-// Resolution: `MapComponent` reads the registry via the `markerFormatter`
-// prop (a name, not a function reference) so manifest-driven pages can
-// configure formatters by string. The default formatter
-// `caseMarkerFormatter` is appropriate for the bulk of Procest surfaces
-// that show case-shaped objects.
+/**
+ * Map marker formatters for manifest-driven `type: 'map'` pages.
+ *
+ * Registered into the lib's `mapFormatters` registry from `main.js`,
+ * mirroring the `customComponents` resolution pattern. `CnMapPage`
+ * looks up `config.marker.formatter` by name and invokes the resolved
+ * function once per object in the result set.
+ *
+ * Each formatter receives a single domain object and returns either a
+ * marker descriptor `{ lat, lon, color, icon, popup, onClick }` or
+ * `null` to skip objects without usable geometry.
+ *
+ * @file src/services/mapFormatters.js
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V.
+ */
 
 /**
- * Compute the arithmetic-mean centroid of a polygon ring.
+ * Status → NL Design System colour token. No hardcoded hex anywhere;
+ * the lib resolves the CSS variable at render time so the same palette
+ * adapts to light/dark/high-contrast themes.
  *
- * @param {Array<Array<number>>} ring GeoJSON ring — array of [lon, lat] pairs.
- * @return {{lat: number, lon: number}|null} Centroid or null when ring is empty.
+ * Priority for cluster colours (most severe first):
+ *   blocked > in_progress > open > closed
+ *
+ * @param {string} status The case status.
+ * @return {string} CSS variable reference.
  */
-function polygonCentroid(ring) {
-	if (!Array.isArray(ring) || ring.length === 0) {
-		return null
-	}
-	let lonSum = 0
-	let latSum = 0
-	for (const [lon, lat] of ring) {
-		lonSum += lon
-		latSum += lat
-	}
-	return {
-		lon: lonSum / ring.length,
-		lat: latSum / ring.length,
+export function statusColor(status) {
+	switch (status) {
+	case 'blocked':
+		return 'var(--color-status-error)'
+	case 'in_progress':
+		return 'var(--color-status-warning)'
+	case 'open':
+		return 'var(--color-status-info)'
+	case 'closed':
+		return 'var(--color-text-maxcontrast)'
+	default:
+		return 'var(--color-text-maxcontrast)'
 	}
 }
 
 /**
- * Extract a {lat, lon} centroid from a GeoJSON geometry. Points return
- * their own coordinates; polygons reduce to the centroid of their
- * outer ring; everything else returns null (caller should skip).
+ * Status → Material Design icon glyph name.
  *
- * @param {object|null} geometry GeoJSON geometry object.
- * @return {{lat: number, lon: number}|null}
+ * @param {string} status The case status.
+ * @return {string} Icon glyph name.
  */
-export function geometryCentroid(geometry) {
-	if (!geometry || !geometry.type) {
+export function statusIcon(status) {
+	switch (status) {
+	case 'blocked':
+		return 'alert-circle'
+	case 'in_progress':
+		return 'progress-clock'
+	case 'open':
+		return 'map-marker'
+	case 'closed':
+		return 'check-circle'
+	default:
+		return 'map-marker'
+	}
+}
+
+/**
+ * Extract `{ lat, lon }` from a GeoJSON geometry. Supports:
+ *
+ *   - `Point`:   coordinates are `[lon, lat]` per RFC 7946.
+ *   - `Polygon`: arithmetic-mean centroid of the outer ring (sufficient
+ *                for pin placement — matches `case-location` REQ-LOC-03b).
+ *
+ * Any other geometry type, or missing/invalid input, returns `null`
+ * so the caller can skip that object.
+ *
+ * @param {object} geometry GeoJSON geometry object.
+ * @return {{lat: number, lon: number}|null} Coordinates or null.
+ */
+function extractCoords(geometry) {
+	if (!geometry || typeof geometry !== 'object') {
 		return null
 	}
-	if (geometry.type === 'Point' && Array.isArray(geometry.coordinates)) {
+	if (geometry.type === 'Point' && Array.isArray(geometry.coordinates) && geometry.coordinates.length >= 2) {
 		const [lon, lat] = geometry.coordinates
-		return { lat, lon }
+		if (Number.isFinite(lat) && Number.isFinite(lon)) {
+			return { lat, lon }
+		}
+		return null
 	}
-	if (geometry.type === 'Polygon' && Array.isArray(geometry.coordinates) && geometry.coordinates[0]) {
-		return polygonCentroid(geometry.coordinates[0])
+	if (geometry.type === 'Polygon' && Array.isArray(geometry.coordinates) && Array.isArray(geometry.coordinates[0])) {
+		const ring = geometry.coordinates[0]
+		let sumLat = 0
+		let sumLon = 0
+		let count = 0
+		for (const pair of ring) {
+			if (Array.isArray(pair) && pair.length >= 2 && Number.isFinite(pair[0]) && Number.isFinite(pair[1])) {
+				sumLon += pair[0]
+				sumLat += pair[1]
+				count++
+			}
+		}
+		if (count === 0) {
+			return null
+		}
+		return { lat: sumLat / count, lon: sumLon / count }
 	}
 	return null
 }
 
 /**
- * Default Procest formatter — turns a case-shaped object into a marker.
+ * Project a case object onto a Leaflet marker descriptor.
  *
- * Status-driven palette uses NL Design System tokens (the colour is
- * resolved by the lib widget against CSS variables; we just name the
- * token here so changes propagate from the theme, not from a hex).
- *
- * @param {object} location Case-shaped object with `geometry` and `status` fields.
- * @return {object|null} Marker descriptor or null when geometry missing.
+ * @param {object} caseObj Case object from OpenRegister.
+ * @return {object|null}   Marker descriptor or `null` if no geometry.
  */
-export function caseMarkerFormatter(location) {
-	if (!location) {
+export function caseMarkerFormatter(caseObj) {
+	if (!caseObj || typeof caseObj !== 'object') {
 		return null
 	}
-	const centroid = geometryCentroid(location.geometry)
-	if (!centroid) {
+	const coords = extractCoords(caseObj.geometry)
+	if (!coords) {
 		return null
-	}
-	const status = (location.status || '').toLowerCase()
-	let color = 'var(--color-primary-element)'
-	if (status === 'closed' || status === 'archived' || status === 'gesloten') {
-		color = 'var(--color-success)'
-	} else if (status === 'overdue' || status === 'verlopen') {
-		color = 'var(--color-error)'
-	} else if (status === 'pending' || status === 'in_progress' || status === 'in_behandeling') {
-		color = 'var(--color-warning)'
 	}
 	return {
-		lat: centroid.lat,
-		lon: centroid.lon,
-		color,
-		icon: 'map-marker',
+		lat: coords.lat,
+		lon: coords.lon,
+		color: statusColor(caseObj.status),
+		icon: statusIcon(caseObj.status),
 		popup: {
-			title: location.title || location.name || location.id || '',
-			body: location.summary || location.description || '',
+			title: caseObj.title,
+			subtitle: caseObj.identifier,
+			status: caseObj.status,
+		},
+		onClick: {
+			route: 'CaseDetail',
+			params: { id: caseObj.id },
 		},
 	}
 }
 
-/**
- * Generic location formatter — minimal, no status-driven palette.
- * Useful for address-style records that don't carry case status.
- *
- * @param {object} location Object with `geometry` and free-form `label`.
- * @return {object|null}
- */
-export function locationMarkerFormatter(location) {
-	if (!location) {
-		return null
-	}
-	const centroid = geometryCentroid(location.geometry)
-	if (!centroid) {
-		return null
-	}
-	return {
-		lat: centroid.lat,
-		lon: centroid.lon,
-		color: 'var(--color-primary-element)',
-		icon: 'map-marker',
-		popup: {
-			title: location.label || location.title || '',
-			body: location.body || '',
-		},
-	}
-}
-
-/**
- * Registry of named formatters. Keys are referenced by string from the
- * `MapComponent.markerFormatter` prop and from manifest entries.
- */
-const mapFormatters = {
+export default {
 	caseMarkerFormatter,
-	locationMarkerFormatter,
 }
-
-/**
- * Resolve a formatter by name, falling back to `caseMarkerFormatter`
- * when the name is unknown. Returning a default rather than throwing
- * keeps the map rendering — bad-name bugs surface as misformatted pins
- * rather than blank screens.
- *
- * @param {string} name Registry key.
- * @return {Function} Formatter function.
- */
-export function resolveFormatter(name) {
-	return mapFormatters[name] || mapFormatters.caseMarkerFormatter
-}
-
-export default mapFormatters
