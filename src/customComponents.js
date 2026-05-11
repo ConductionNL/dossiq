@@ -41,6 +41,11 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // openspec/changes/visual-workflow-editor/design.md.
 import VisualWorkflowEditor from './components/workflow/VisualWorkflowEditor.vue'
 
+// --- Shared map surface (case detail map tab, dashboard widget, public case page). ---
+// Thin wrapper around CnMapWidget; registered here so manifest entries
+// MAY reference it by string name. See openspec/changes/map-component/.
+import MapComponent from './components/map/MapComponent.vue'
+
 export default {
 	// --- Genuine exceptions: no abstract analogue. ---
 	MyWorkView, // bespoke 4-tab filter UI mixing case + task entities
@@ -67,4 +72,7 @@ export default {
 
 	// --- Visual workflow editor (drag-and-drop, no manifest analogue). ---
 	VisualWorkflowEditor,
+
+	// --- Shared map surface — referenceable from manifest pages. ---
+	MapComponent,
 }

@@ -27,6 +27,29 @@
         "role": ["delegate", "delegateFrom", "delegateUntil"],
         "workflowTemplate": ["routingRule documented inline on steps/transitions JSON description"]
       }
+    },
+    {
+      "change": "map-component",
+      "appliedAt": "2026-05-11",
+      "tasks": ["T01", "T02"],
+      "deferred": [
+        {"task": "D01", "reason": "Deduplication note: existing src/components/map/CaseMap.vue is the legacy direct-Leaflet wrapper used by CaseMapView and CaseMapWidget; MapComponent is the new CnMapWidget-based wrapper. Consumer migration (T03/T04/T05) belongs to case-location, case-map-overview, and public case page specs respectively."},
+        {"task": "D02", "reason": "Order-of-arrival: mapFormatters registry created here as case-map-overview has not yet landed in main; future spec adoption can import from the same module path."},
+        {"task": "T03", "reason": "Case detail map tab integration — tracked by case-location spec, not this manifest-first MapComponent spec."},
+        {"task": "T04", "reason": "Dashboard CaseMapWidget integration — tracked by case-map-overview spec."},
+        {"task": "T05", "reason": "Public case page integration — tracked by public-case-page spec."},
+        {"task": "V01", "reason": "Unit test scope follow-up (strict watchdog: jq + lint only)."},
+        {"task": "V02", "reason": "Case detail integration verification — bound to T03 follow-up."},
+        {"task": "V03", "reason": "Dashboard clustering verification — bound to T04 follow-up."},
+        {"task": "V04", "reason": "Public read-only axe-core verification — bound to T05 follow-up."}
+      ],
+      "components": [
+        "src/components/map/MapComponent.vue"
+      ],
+      "services": [
+        "src/services/mapFormatters.js"
+      ],
+      "customComponents": ["MapComponent"]
     }
   ]
 }
