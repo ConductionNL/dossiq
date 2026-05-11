@@ -163,6 +163,8 @@ class SettingsService
         'abonnement'                   => 'abonnement_schema',
         'inspectieChecklist'           => 'inspectie_checklist_schema',
         'inspectieRapport'             => 'inspectie_rapport_schema',
+        'inspectionChecklistTemplate'  => 'inspection_checklist_template_schema',
+        'inspectionChecklistRun'       => 'inspection_checklist_run_schema',
         'handhavingsactie'             => 'handhavingsactie_schema',
         'adviesAanvraag'               => 'advies_aanvraag_schema',
         'mapLayer'                     => 'map_layer_schema',

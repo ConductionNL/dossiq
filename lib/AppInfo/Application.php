@@ -35,6 +35,7 @@ use OCA\Procest\Dashboard\OverdueCasesWidget;
 use OCA\Procest\Dashboard\StalledCasesWidget;
 use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Dashboard\StartCaseWidget;
+use OCA\Procest\Listener\ChecklistRunImmutabilityListener;
 use OCA\Procest\Listener\DeepLinkRegistrationListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
 use OCA\Procest\Listener\RoleMutationListener;
@@ -89,6 +90,12 @@ class Application extends App implements IBootstrap
         $context->registerEventListener(
             event: ObjectDeletedEvent::class,
             listener: KpiCacheInvalidationListener::class
+        );
+
+        // Inspection checklist run append-only enforcement (REQ-IC-8).
+        $context->registerEventListener(
+            event: ObjectUpdatedEvent::class,
+            listener: ChecklistRunImmutabilityListener::class
         );
 
         // Role-routing cache invalidation on role mutations.
