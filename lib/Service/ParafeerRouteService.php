@@ -34,7 +34,9 @@ namespace OCA\Procest\Service;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Event\ParafeerTransitionEvent;
 use OCA\Procest\Service\Routing\RoutingStrategyMissingException;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -88,8 +90,55 @@ class ParafeerRouteService
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
         private readonly RoleResolverService $roleResolver,
+        private readonly IEventDispatcher $eventDispatcher,
     ) {
     }//end __construct()
+
+    /**
+     * Best-effort dispatch of a ParafeerTransitionEvent.
+     *
+     * Failures MUST NOT propagate back to the routing service — operational
+     * transitions must not be blocked by audit-listener outages.
+     *
+     * @param string      $voorstelId The voorstel UUID/slug
+     * @param string      $action     The transition action
+     * @param string|null $step       Step identifier when applicable
+     * @param string      $actor      The actor user UID
+     * @param string      $actorRole  The actor role
+     * @param string|null $reason     Reason text when applicable
+     *
+     * @return void
+     */
+    private function dispatchTransition(
+        string $voorstelId,
+        string $action,
+        ?string $step,
+        string $actor,
+        string $actorRole,
+        ?string $reason = null,
+    ): void {
+        try {
+            $this->eventDispatcher->dispatchTyped(
+                new ParafeerTransitionEvent(
+                    voorstelId: $voorstelId,
+                    action: $action,
+                    step: $step,
+                    actor: $actor,
+                    actorRole: $actorRole,
+                    reason: $reason,
+                ),
+            );
+        } catch (Throwable $e) {
+            $this->logger->warning(
+                'Procest: ParafeerTransitionEvent dispatch failed',
+                [
+                    'voorstel'  => $voorstelId,
+                    'action'    => $action,
+                    'exception' => $e->getMessage(),
+                ],
+            );
+        }
+    }//end dispatchTransition()
 
     /**
      * Start the parafering workflow for a voorstel.
@@ -131,6 +180,14 @@ class ParafeerRouteService
         $voorstel = $this->toArray(value: $objectService->saveObject($register, $voorstelSchema, $voorstel));
 
         $this->activateStep(voorstel: $voorstel, step: 1, steps: $steps);
+
+        $this->dispatchTransition(
+            voorstelId: (string) ($voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId),
+            action: 'started',
+            step: '1',
+            actor: $this->requireUserId(),
+            actorRole: 'steller',
+        );
 
         return $voorstel;
     }//end startParafering()
@@ -182,6 +239,18 @@ class ParafeerRouteService
         }
 
         $objectService->saveObject($register, $actieSchema, $actieData);
+
+        $action     = (string) ($actionData['action'] ?? 'parafered');
+        $transition = ($action === 'advised') ? 'advised' : 'paraferd';
+        $actorRole  = ($action === 'advised') ? 'adviseur' : 'parafeerder';
+
+        $this->dispatchTransition(
+            voorstelId: (string) ($voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId),
+            action: $transition,
+            step: (string) $currentStep,
+            actor: $actieData['actor'],
+            actorRole: $actorRole,
+        );
 
         $voorstel = $this->advanceVoorstel(
             objectService: $objectService,
@@ -284,6 +353,15 @@ class ParafeerRouteService
             ],
         );
 
+        $this->dispatchTransition(
+            voorstelId: (string) ($voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId),
+            action: 'route-changed',
+            step: (string) $step,
+            actor: $userId,
+            actorRole: 'beheerder',
+            reason: $reason,
+        );
+
         if ((int) ($voorstel['currentStep'] ?? 0) === $step) {
             return $this->advanceVoorstel(
                 objectService: $objectService,
@@ -377,7 +455,18 @@ class ParafeerRouteService
             ],
         );
 
-        return $this->toArray(value: $objectService->saveObject($register, $voorstelSchema, $voorstel));
+        $saved = $this->toArray(value: $objectService->saveObject($register, $voorstelSchema, $voorstel));
+
+        $this->dispatchTransition(
+            voorstelId: (string) ($saved['id'] ?? $saved['uuid'] ?? $voorstelId),
+            action: 'route-changed',
+            step: (string) $newStep['order'],
+            actor: $userId,
+            actorRole: 'beheerder',
+            reason: sprintf('Ad-hoc step inserted after step %d', $insertAfter),
+        );
+
+        return $saved;
     }//end addAdhocStep()
 
     /**
@@ -419,6 +508,15 @@ class ParafeerRouteService
                     'app' => Application::APP_ID,
                 ],
             );
+
+            $this->dispatchTransition(
+                voorstelId: (string) ($voorstel['id'] ?? $voorstel['uuid'] ?? ''),
+                action: 'completed',
+                step: (string) $fromStep,
+                actor: $this->safeUserId(),
+                actorRole: 'accorderend',
+            );
+
             return $voorstel;
         }
 
@@ -682,4 +780,20 @@ class ParafeerRouteService
 
         return $user->getUID();
     }//end requireUserId()
+
+    /**
+     * Resolve the current user UID, falling back to "system" when no session
+     * user is present (used by best-effort audit dispatch).
+     *
+     * @return string
+     */
+    private function safeUserId(): string
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return 'system';
+        }
+
+        return $user->getUID();
+    }//end safeUserId()
 }//end class
