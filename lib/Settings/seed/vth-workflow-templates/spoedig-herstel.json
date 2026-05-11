@@ -1,0 +1,84 @@
+{
+  "_format": "procest-vth-workflow-template-v1",
+  "slug": "spoedig-herstel",
+  "title": "Spoedig herstel (Awb 5:31)",
+  "description": "Workflow voor spoedeisende bestuursdwang: het bestuursorgaan herstelt direct en neemt het besluit achteraf (Awb 5:31).",
+  "version": 1,
+  "caseTypeSlug": "handhavingszaak",
+  "statutoryFramework": "Awb 5:31",
+  "steps": [
+    {
+      "slug": "geconstateerd",
+      "title": "Overtreding geconstateerd",
+      "statusName": "Constatering",
+      "order": 1,
+      "isInitial": true,
+      "isFinal": false,
+      "assigneeRole": "Inspecteur",
+      "description": "Acute overtreding ter plaatse vastgesteld; gevaar voor veiligheid/milieu."
+    },
+    {
+      "slug": "herstel-uitgevoerd",
+      "title": "Herstel uitgevoerd",
+      "statusName": "Vooraankondiging",
+      "order": 2,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Bestuursdwang is direct uitgevoerd om de overtreding te beëindigen."
+    },
+    {
+      "slug": "besluit-achteraf",
+      "title": "Besluit achteraf",
+      "statusName": "Handhavingsbesluit",
+      "order": 3,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Teamleider",
+      "description": "Schriftelijk besluit wordt zo spoedig mogelijk achteraf opgemaakt (Awb 5:31 lid 2)."
+    },
+    {
+      "slug": "afgehandeld",
+      "title": "Afgehandeld",
+      "statusName": "Afgehandeld",
+      "order": 4,
+      "isInitial": false,
+      "isFinal": true,
+      "assigneeRole": null,
+      "description": "Spoedig-herstel-traject is afgehandeld; eventuele kostenverhaal in separate zaak."
+    }
+  ],
+  "transitions": [
+    {
+      "slug": "geconstateerd-naar-herstel",
+      "fromStatus": "Constatering",
+      "toStatus": "Vooraankondiging",
+      "label": "Spoedeisend herstel uitvoeren",
+      "allowedRoles": ["Inspecteur", "Behandelaar"],
+      "deadline": {
+        "duration": "PT4H",
+        "source": "Awb 5:31 (onverwijld)",
+        "escalationRole": "BOA"
+      }
+    },
+    {
+      "slug": "herstel-naar-besluit",
+      "fromStatus": "Vooraankondiging",
+      "toStatus": "Handhavingsbesluit",
+      "label": "Besluit achteraf opmaken",
+      "allowedRoles": ["Teamleider"],
+      "deadline": {
+        "duration": "P7D",
+        "source": "Awb 5:31 lid 2 (zo spoedig mogelijk)",
+        "escalationRole": "afdelingsmanager"
+      }
+    },
+    {
+      "slug": "besluit-naar-afgehandeld",
+      "fromStatus": "Handhavingsbesluit",
+      "toStatus": "Afgehandeld",
+      "label": "Afhandelen",
+      "allowedRoles": ["Behandelaar"]
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "_format": "procest-vth-workflow-template-v1",
+  "slug": "aanvraag-omgevingsvergunning",
+  "title": "Aanvraag omgevingsvergunning",
+  "description": "Workflow voor reguliere aanvraag omgevingsvergunning onder de Omgevingswet. 8 weken beslistermijn (Awb art. 4:13), verlengbaar met 6 weken (Awb art. 4:14).",
+  "version": 1,
+  "caseTypeSlug": "omgevingsvergunning-bouwactiviteit",
+  "statutoryFramework": "Awb 4:13 + Omgevingswet",
+  "steps": [
+    {
+      "slug": "ontvangen",
+      "title": "Aanvraag ontvangen",
+      "statusName": "Ontvangen",
+      "order": 1,
+      "isInitial": true,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Aanvraag binnengekomen via DSO of handmatig — registratie en ontvangstbevestiging."
+    },
+    {
+      "slug": "ontvankelijkheidstoets",
+      "title": "Ontvankelijkheidstoets",
+      "statusName": "Ontvankelijkheidstoets",
+      "order": 2,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Controle op volledigheid en ontvankelijkheid van de aanvraag (Awb 4:5)."
+    },
+    {
+      "slug": "in-behandeling",
+      "title": "In behandeling",
+      "statusName": "In behandeling",
+      "order": 3,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Inhoudelijke beoordeling van de aanvraag, eventueel met externe adviezen."
+    },
+    {
+      "slug": "besluit",
+      "title": "Besluit",
+      "statusName": "Besluitvorming",
+      "order": 4,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Teamleider",
+      "description": "Besluit over verlening of weigering van de vergunning."
+    },
+    {
+      "slug": "bekendmaking",
+      "title": "Bekendmaking",
+      "statusName": "Bekendmaking",
+      "order": 5,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Behandelaar",
+      "description": "Bekendmaking van het besluit; bezwaartermijn start."
+    },
+    {
+      "slug": "afgehandeld",
+      "title": "Afgehandeld",
+      "statusName": "Afgehandeld",
+      "order": 6,
+      "isInitial": false,
+      "isFinal": true,
+      "assigneeRole": null,
+      "description": "Aanvraag is afgehandeld; bezwaartermijn verstreken of bezwaar separaat gestart."
+    }
+  ],
+  "transitions": [
+    {
+      "slug": "ontvangen-naar-ontvankelijkheid",
+      "fromStatus": "Ontvangen",
+      "toStatus": "Ontvankelijkheidstoets",
+      "label": "Start ontvankelijkheidstoets",
+      "allowedRoles": ["Behandelaar"]
+    },
+    {
+      "slug": "ontvankelijkheid-naar-in-behandeling",
+      "fromStatus": "Ontvankelijkheidstoets",
+      "toStatus": "In behandeling",
+      "label": "Ontvankelijk verklaren en in behandeling nemen",
+      "allowedRoles": ["Behandelaar"]
+    },
+    {
+      "slug": "in-behandeling-naar-besluit",
+      "fromStatus": "In behandeling",
+      "toStatus": "Besluitvorming",
+      "label": "Besluit nemen",
+      "allowedRoles": ["Teamleider"],
+      "deadline": {
+        "duration": "P56D",
+        "source": "Awb 4:13",
+        "escalationRole": "afdelingsmanager"
+      }
+    },
+    {
+      "slug": "besluit-naar-bekendmaking",
+      "fromStatus": "Besluitvorming",
+      "toStatus": "Bekendmaking",
+      "label": "Besluit bekendmaken",
+      "allowedRoles": ["Behandelaar"]
+    },
+    {
+      "slug": "bekendmaking-naar-afgehandeld",
+      "fromStatus": "Bekendmaking",
+      "toStatus": "Afgehandeld",
+      "label": "Afhandelen",
+      "allowedRoles": ["Behandelaar"]
+    }
+  ]
+}
