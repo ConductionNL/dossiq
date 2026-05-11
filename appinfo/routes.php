@@ -223,14 +223,12 @@ return [
         ['name' => 'public_appointment#view',   'url' => '/api/public/appointment/{token}',         'verb' => 'GET'],
         ['name' => 'public_appointment#cancel', 'url' => '/api/public/appointment/{token}/cancel',  'verb' => 'POST'],
 
-        // Case sharing & collaboration — share management endpoints.
-        ['name' => 'caseSharing#listShares',       'url' => '/api/shares/{caseId}',          'verb' => 'GET'],
+        // Case sharing & collaboration — domain endpoints only.
+        // CRUD over caseShare / partnerOrganization / casetransfer is
+        // served by the OpenRegister manifest renderer; these routes only
+        // own the token-generation + audit + transfer workflow actions.
         ['name' => 'caseSharing#createShare',      'url' => '/api/shares',                   'verb' => 'POST'],
-        ['name' => 'caseSharing#modifyShare',      'url' => '/api/shares/{shareId}',         'verb' => 'PUT'],
         ['name' => 'caseSharing#revokeShare',      'url' => '/api/shares/{shareId}',         'verb' => 'DELETE'],
-        ['name' => 'caseSharing#listPartners',     'url' => '/api/partners',                 'verb' => 'GET'],
-        ['name' => 'caseSharing#createPartner',    'url' => '/api/partners',                 'verb' => 'POST'],
-        ['name' => 'caseSharing#updatePartner',    'url' => '/api/partners/{partnerId}',     'verb' => 'PUT'],
         ['name' => 'caseSharing#initiateTransfer', 'url' => '/api/transfers',                'verb' => 'POST'],
         ['name' => 'caseSharing#handleTransfer',   'url' => '/api/transfers/{transferId}',   'verb' => 'PUT'],
 

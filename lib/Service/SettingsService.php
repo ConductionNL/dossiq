@@ -158,7 +158,7 @@ class SettingsService
         'caseShare'                    => 'case_share_schema',
         'partnerOrganization'          => 'partner_organization_schema',
         'sharePermissionLevel'         => 'share_permission_level_schema',
-        'caseTransfer'                 => 'case_transfer_schema',
+        'casetransfer'                 => 'case_transfer_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
