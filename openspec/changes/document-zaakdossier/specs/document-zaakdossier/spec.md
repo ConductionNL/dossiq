@@ -11,8 +11,7 @@ Provide case dossier (zaakdossier) management within Procest, integrating docume
 
 **Tender demand**: 80% of analyzed government tenders require document management in case dossiers. 65% specifically reference ZGW DRC compliance (informatieobjecten, vertrouwelijkheidaanduiding, document status lifecycle).
 
-## Requirements
-
+## ADDED Requirements
 ### Requirement: Register objects MUST support linked documents with ZGW informatieobject metadata
 Objects MUST be able to reference one or more documents stored in Nextcloud Files. Each document link MUST carry ZGW DRC-compliant metadata fields stored as properties on an `informatieobject` schema within the register. The link between a zaak object and an informatieobject MUST follow the ZGW `zaakinformatieobject` pattern (a separate join entity with metadata about the relationship).
 
