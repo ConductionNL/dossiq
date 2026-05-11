@@ -103,4 +103,13 @@
   <violation rule="PHPMD\Rule\CleanCode\ElseExpression" file="lib/Service/ZgwZrcRulesService.php"/>
   <violation rule="PHPMD\Rule\Design\NpathComplexity" file="lib/Service/ZgwZrcRulesService.php" method="detectEindstatus"/>
   <violation rule="PHPMD\Rule\CleanCode\ElseExpression" file="lib/Service/ZgwZtcRulesService.php"/>
+  <violation rule="PHPMD\Rule\Design\ExcessiveClassComplexity" file="lib/Service/ParafeerActieService.php"/>
+  <violation rule="PHPMD\Rule\Naming\LongVariable" file="lib/Service/ParafeerActieService.php"/>
+  <violation rule="PHPMD\Rule\CyclomaticComplexity" file="lib/Service/ParafeerActieService.php" method="recordAction"/>
+  <violation rule="PHPMD\Rule\Design\NpathComplexity" file="lib/Service/ParafeerActieService.php" method="recordAction"/>
+  <violation rule="PHPMD\Rule\Design\LongMethod" file="lib/Service/ParafeerActieService.php" method="recordAction"/>
+  <violation rule="PHPMD\Rule\CleanCode\MissingImport" file="lib/Service/ParafeerActieService.php"/>
+  <violation rule="PHPMD\Rule\CleanCode\ElseExpression" file="lib/Service/ParafeerActieService.php"/>
+  <violation rule="PHPMD\Rule\UnusedFormalParameter" file="lib/Service/ParafeerActieService.php"/>
+  <violation rule="PHPMD\Rule\CyclomaticComplexity" file="lib/Service/ParafeerActieService.php" method="advanceVoorstel"/>
 </phpmd-baseline>

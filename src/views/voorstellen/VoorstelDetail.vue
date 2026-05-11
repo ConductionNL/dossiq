@@ -31,11 +31,28 @@
 			</CnDetailCard>
 
 			<!-- Actions for active parafeerder -->
-			<ParafeerActionBar
+			<CnDetailCard
 				v-if="isActiveActor && !isTerminalStatus"
-				:voorstel="voorstel"
-				:current-step-info="currentStepInfo"
-				@action-completed="onActionCompleted" />
+				:title="t('procest', 'Take action')">
+				<NcButton type="primary" @click="actieDialogOpen = true">
+					{{ t('procest', 'Take action') }}
+				</NcButton>
+			</CnDetailCard>
+
+			<ParafeerActieDialog
+				v-if="isActiveActor && !isTerminalStatus && currentStepInfo"
+				:voorstel-id="voorstel.id"
+				:step="currentStepInfo"
+				:open.sync="actieDialogOpen"
+				:mandates="mandates"
+				@action-recorded="onActionCompleted" />
+
+			<!-- Parafering History (action history timeline). -->
+			<CnDetailCard :title="t('procest', 'Parafering history')">
+				<ParafeerActieTimeline
+					ref="actieTimeline"
+					:voorstel-id="voorstel.id || voorstelId" />
+			</CnDetailCard>
 
 			<!-- Resubmit for steller -->
 			<CnDetailCard v-if="voorstel.status === 'teruggestuurd' && isSteller" :title="t('procest', 'Teruggestuurd')">
@@ -121,7 +138,8 @@ import { NcButton } from '@nextcloud/vue'
 import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
 import { getCurrentUser } from '@nextcloud/auth'
 import ProgressTimeline from './components/ProgressTimeline.vue'
-import ParafeerActionBar from './components/ParafeerActionBar.vue'
+import ParafeerActieDialog from './components/ParafeerActieDialog.vue'
+import ParafeerActieTimeline from './components/ParafeerActieTimeline.vue'
 import AuditTrail from './components/AuditTrail.vue'
 import BesluitRegistration from './components/BesluitRegistration.vue'
 import { useObjectStore } from '../../store/modules/object.js'
@@ -150,7 +168,8 @@ export default {
 		CnDetailPage,
 		CnDetailCard,
 		ProgressTimeline,
-		ParafeerActionBar,
+		ParafeerActieDialog,
+		ParafeerActieTimeline,
 		AuditTrail,
 		BesluitRegistration,
 	},
@@ -167,6 +186,8 @@ export default {
 			voorstel: {},
 			acties: [],
 			showBesluitDialog: false,
+			actieDialogOpen: false,
+			mandates: [],
 		}
 	},
 	computed: {
@@ -247,10 +268,15 @@ export default {
 			return STATUS_LABELS[status] || status || '-'
 		},
 		async onActionCompleted() {
+			this.actieDialogOpen = false
 			await Promise.all([
 				this.loadVoorstel(),
 				this.loadActies(),
 			])
+			// Reload the timeline component (it loads on mount).
+			if (this.$refs.actieTimeline?.load) {
+				await this.$refs.actieTimeline.load()
+			}
 		},
 		async resubmit() {
 			try {
