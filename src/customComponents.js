@@ -35,6 +35,12 @@ import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 
+// --- Visual workflow editor (only legitimate custom-UI page). ---
+// Custom because vue-flow drag-and-drop graph editing has no analogue in
+// the manifest's built-in page/widget types. See
+// openspec/changes/visual-workflow-editor/design.md.
+import VisualWorkflowEditor from './components/workflow/VisualWorkflowEditor.vue'
+
 export default {
 	// --- Genuine exceptions: no abstract analogue. ---
 	MyWorkView, // bespoke 4-tab filter UI mixing case + task entities
@@ -58,4 +64,7 @@ export default {
 	CaseTasksTab, // tasks where task.case === parent.id
 	CaseDecisionsTab, // decisions where decision.case === parent.id
 	CaseDocumentsTab, // documents where document.case === parent.id
+
+	// --- Visual workflow editor (drag-and-drop, no manifest analogue). ---
+	VisualWorkflowEditor,
 }
