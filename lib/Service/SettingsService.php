@@ -109,6 +109,23 @@ class SettingsService
         'ai_feature_decision_support',
         'ai_dpia_acknowledged',
         'ai_pii_stripping',
+        // PDOK integration settings (pdok-integration spec).
+        // Endpoint overrides — empty falls back to PDOK service defaults.
+        'pdok_locatieserver_endpoint',
+        'pdok_bag_endpoint',
+        'pdok_kadaster_endpoint',
+        // OpenConnector source slugs — empty = call PDOK directly.
+        'pdok_locatieserver_source',
+        'pdok_bag_source',
+        'pdok_kadaster_source',
+        // Cache TTLs (seconds).
+        'pdok_cache_lookup_ttl_seconds',
+        'pdok_cache_suggest_ttl_seconds',
+        // Per-service rate ceiling (requests / second).
+        'pdok_rate_ceiling_rps',
+        // Outage banner copy (nl + en).
+        'pdok_outage_banner_nl',
+        'pdok_outage_banner_en',
     ];
 
     /**
