@@ -154,6 +154,13 @@ return [
         // Dashboard KPI aggregation endpoint.
         ['name' => 'kpi#index', 'url' => '/api/dashboard/kpis', 'verb' => 'GET'],
 
+        // ── Mobile Inspection (PWA) ─────────────────────────────────────
+        ['name' => 'inspection#index',                'url' => '/api/inspections',                                   'verb' => 'GET'],
+        ['name' => 'inspection#captureLocation',      'url' => '/api/inspections/{id}/location',                     'verb' => 'POST'],
+        ['name' => 'inspection#completeChecklistItem','url' => '/api/inspections/{id}/checklist/{itemId}',           'verb' => 'POST'],
+        ['name' => 'inspection#addPhoto',             'url' => '/api/inspections/{id}/photos',                       'verb' => 'POST'],
+        ['name' => 'inspection#complete',             'url' => '/api/inspections/{id}/complete',                     'verb' => 'POST'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],
