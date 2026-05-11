@@ -2650,6 +2650,155 @@
           }
         }
       },
+      "beroep": {
+        "slug": "beroep",
+        "icon": "ScaleBalance",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:LegalAction",
+        "title": "Beroep",
+        "description": "Beroep escalation envelope — the municipality's tracking record around a citizen's appeal of a beslissing op bezwaar at the administrative court (rechtbank, Awb hoofdstuk 8). Procest does NOT run the court process; this schema captures filing window, court reference, chamber, file-inspection requests (Awb 8:42), judgment outcome, and cascade back into the bezwaar workflow. Immutability after appellantFilingDate is enforced by BeroepService; OpenRegister provides the per-save audit trail.",
+        "type": "object",
+        "required": [
+          "case",
+          "sourceBezwaar",
+          "contestedDecision",
+          "appellantFilingDate"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "The procest case that wraps the beroep (zaaktype = Beroep)"
+          },
+          "sourceBezwaar": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "bezwaar",
+            "description": "The bezwaar lifecycle record that escalated to beroep — immutable after appellantFilingDate is set"
+          },
+          "contestedDecision": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "appealDecision",
+            "description": "The beslissing op bezwaar being contested — immutable after appellantFilingDate is set"
+          },
+          "courtReference": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Rechtbank zaaknummer (e.g. 'UTR 26/1234'), populated once the court assigns one"
+          },
+          "responsibleChamber": {
+            "type": "string",
+            "enum": [
+              "enkelvoudig",
+              "meervoudig",
+              "voorzieningenrechter"
+            ],
+            "description": "Court chamber composition; defaults to enkelvoudig, may be upgraded by the rechtbank"
+          },
+          "competentCourt": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of the competent rechtbank (e.g. 'Rechtbank Midden-Nederland')"
+          },
+          "appellantFilingDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the beroepschrift was filed at the court (Awb 6:7)"
+          },
+          "appellantNotifiedDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the municipality received the rechtbank notification of the beroep"
+          },
+          "filingDeadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Computed: contestedDecision.effectiveDate + P6W (Awb 6:7, 6:8). The system NEVER decides timeliness itself; the rechtbank does."
+          },
+          "voorzieningRequested": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether a voorlopige voorziening (provisional ruling) was also filed alongside the beroep"
+          },
+          "latefilingNotice": {
+            "type": "boolean",
+            "default": false,
+            "description": "Computed: true when appellantFilingDate > filingDeadline. Informational only — only the rechtbank weighs verschoonbare termijnoverschrijding."
+          },
+          "fileInspectionRequests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "requestedAt": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "Date the rechtbank issued the file inspection request (Awb 8:42)"
+                },
+                "deadline": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "Computed: requestedAt + P4W"
+                },
+                "submittedAt": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "Date the bestuursorgaan submitted the dossier"
+                },
+                "dossierBundle": {
+                  "type": "string",
+                  "description": "Reference to the compiled bundle (NC file ID or document-zaakdossier artifact)"
+                }
+              },
+              "required": [
+                "requestedAt"
+              ]
+            },
+            "description": "Sub-records tracking each Awb 8:42 file inspection request. Procest records the linkage; Juridische Zaken curates the bundle."
+          },
+          "judgmentOutcome": {
+            "type": "string",
+            "enum": [
+              "vernietigd",
+              "in_stand_gelaten",
+              "niet_ontvankelijk",
+              "ongegrond",
+              "gegrond_rechtsgevolgen_in_stand",
+              "ingetrokken",
+              "schikking"
+            ],
+            "description": "Categorical outcome of the rechtbank's uitspraak. Procest persists the category and the uploaded ruling; never paraphrases the ruling."
+          },
+          "judgmentDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of the uitspraak"
+          },
+          "judgmentDocument": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Nextcloud file ID of the rechtbank's uitspraak document"
+          },
+          "cascadeAction": {
+            "type": "string",
+            "enum": [
+              "reopen_bezwaar",
+              "new_primary_decision",
+              "none"
+            ],
+            "description": "Cascade action triggered by the judgment outcome. reopen_bezwaar forks a new bezwaar via status-transition-engine; new_primary_decision opens a fresh decision case; none clears the dwingende marker on the source bezwaar."
+          },
+          "cascadeBezwaarCase": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "description": "The reopened bezwaar case created by cascadeAction = reopen_bezwaar"
+          }
+        }
+      },
       "mapLayer": {
         "slug": "mapLayer",
         "icon": "MapOutline",

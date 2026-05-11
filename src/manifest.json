@@ -8,12 +8,12 @@
 		{ "id": "Werkvoorraad", "label": "Work Queue", "icon": "icon-group", "route": "Werkvoorraad", "order": 30 },
 		{ "id": "Cases", "label": "Cases", "icon": "icon-folder", "route": "Cases", "order": 40 },
 		{ "id": "Bezwaren", "label": "Bezwaren", "icon": "icon-toggle-filelist", "route": "Bezwaren", "order": 45 },
+		{ "id": "Beroepen", "label": "Beroepen", "icon": "icon-toggle-filelist", "route": "Beroepen", "order": 46 },
 		{ "id": "Tasks", "label": "Tasks", "icon": "icon-checkmark", "route": "Tasks", "order": 50 },
 		{ "id": "CaseMap", "label": "Map", "icon": "icon-address", "route": "CaseMap", "order": 60 },
 		{ "id": "Voorstellen", "label": "Voorstellen", "icon": "icon-comment", "route": "Voorstellen", "order": 70 },
 		{ "id": "Advice", "label": "Advice", "icon": "icon-comment", "route": "Advice", "order": 75 },
 		{ "id": "BezwaarAdviceRequests", "label": "BAC-adviezen", "icon": "icon-comment", "route": "BezwaarAdviceRequests", "order": 76 },
-		{ "id": "BezwaarHearings", "label": "Hoorzittingen", "icon": "icon-calendar", "route": "BezwaarHearings", "order": 77 },
 		{ "id": "Transfers", "label": "Transfers", "icon": "icon-shared", "route": "Transfers", "order": 80 },
 		{ "id": "Documentation", "label": "Documentation", "icon": "icon-info", "href": "https://conduction.gitbook.io/procest-nextcloud", "section": "settings", "order": 90 },
 		{ "id": "CaseTypesMenu", "label": "Case Types", "icon": "icon-category-customization", "route": "CaseTypes", "section": "settings", "order": 95 },
@@ -797,34 +797,34 @@
 			}
 		},
 		{
-			"id": "BezwaarHearings",
-			"route": "/bezwaar-hearings",
+			"id": "Beroepen",
+			"route": "/beroepen",
 			"type": "index",
-			"title": "Hoorzittingen",
+			"title": "Beroepen",
 			"config": {
 				"register": "procest",
-				"schema": "hearingSession",
-				"columns": ["case", "scheduledDate", "location", "chairperson", "status", "inspectionDeadline"],
+				"schema": "beroep",
+				"columns": ["case", "sourceBezwaar", "courtReference", "competentCourt", "appellantFilingDate", "filingDeadline", "judgmentOutcome", "cascadeAction"],
 				"actions": [
-					{ "id": "view", "label": "View", "icon": "icon-info", "handler": "navigate", "route": "BezwaarHearingDetail" }
+					{ "id": "view", "label": "View", "icon": "icon-info", "handler": "navigate", "route": "BeroepDetail" }
 				],
 				"sidebar": { "enabled": true, "showMetadata": true }
 			}
 		},
 		{
-			"id": "BezwaarHearingDetail",
-			"route": "/bezwaar-hearings/:id",
+			"id": "BeroepDetail",
+			"route": "/beroepen/:id",
 			"type": "detail",
-			"title": "Hoorzitting",
+			"title": "Beroep",
 			"config": {
 				"register": "procest",
-				"schema": "hearingSession",
+				"schema": "beroep",
 				"sidebarTabs": [
-					{ "id": "overview",    "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }],                                                                               "order": 10 },
-					{ "id": "invitations", "label": "Invitations", "icon": "icon-mail",    "widgets": [{ "type": "data", "config": { "fields": ["invitees", "inspectionAvailableFrom", "inspectionDeadline"] } }],                "order": 20 },
-					{ "id": "attendees",   "label": "Attendees",   "icon": "icon-group",   "widgets": [{ "type": "data", "config": { "fields": ["attendance", "members", "attendanceFrozenAt"] } }],                              "order": 30 },
-					{ "id": "minutes",     "label": "Minutes",     "icon": "icon-files",   "widgets": [{ "type": "data", "config": { "fields": ["minutesSummary", "minutesDocument", "audioRecording", "recordingConsent"] } }],  "order": 40 },
-					{ "id": "audit",       "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }, { "type": "data", "config": { "fields": ["auditTrail"] } }],                                    "order": 90 }
+					{ "id": "overview",        "label": "Overview",                 "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }],                                                                  "order": 10 },
+					{ "id": "file-inspection", "label": "File-inspection requests", "icon": "icon-files",   "widgets": [{ "type": "data", "config": { "fields": ["fileInspectionRequests"] } }],                                      "order": 20 },
+					{ "id": "judgment",        "label": "Judgment",                 "icon": "icon-toggle",  "widgets": [{ "type": "data", "config": { "fields": ["judgmentOutcome", "judgmentDate", "judgmentDocument"] } }],          "order": 30 },
+					{ "id": "cascade",         "label": "Cascade",                  "icon": "icon-history", "widgets": [{ "type": "data", "config": { "fields": ["cascadeAction", "cascadeBezwaarCase"] } }],                          "order": 40 },
+					{ "id": "audit",           "label": "Audit trail",              "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                                                                                   "order": 90 }
 				]
 			}
 		}
