@@ -30,8 +30,10 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Event\ParafeerTransitionEvent;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\AppFramework\OCS\OCSForbiddenException;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
@@ -125,8 +127,71 @@ class ParafeerActieService
         private readonly ParaferingNotificationService $paraferingNotificationService,
         private readonly IRootFolder $rootFolder,
         private readonly LoggerInterface $logger,
+        private readonly IEventDispatcher $eventDispatcher,
     ) {
     }//end __construct()
+
+    /**
+     * Map a parafeeractie action to a parafering audit transition.
+     *
+     * @param string $action Operational action (parafered, advised, returned, skipped, accorded)
+     *
+     * @return array{0:string,1:string} Tuple of [transitionType, actorRole]
+     */
+    private function transitionForAction(string $action): array
+    {
+        return match ($action) {
+            'parafered' => ['paraferd',    'parafeerder'],
+            'advised'   => ['advised',     'adviseur'],
+            'returned'  => ['terugsturen', 'parafeerder'],
+            'accorded'  => ['completed',   'accorderend'],
+            'skipped'   => ['route-changed', 'beheerder'],
+            default     => ['paraferd', 'parafeerder'],
+        };
+    }//end transitionForAction()
+
+    /**
+     * Best-effort dispatch of a ParafeerTransitionEvent.
+     *
+     * @param string      $voorstelId The voorstel UUID
+     * @param string      $action     Transition action
+     * @param string|null $step       Step identifier
+     * @param string      $actor      The actor user UID
+     * @param string      $actorRole  The actor role
+     * @param string|null $reason     Reason text when applicable
+     *
+     * @return void
+     */
+    private function dispatchTransition(
+        string $voorstelId,
+        string $action,
+        ?string $step,
+        string $actor,
+        string $actorRole,
+        ?string $reason = null,
+    ): void {
+        try {
+            $this->eventDispatcher->dispatchTyped(
+                new ParafeerTransitionEvent(
+                    voorstelId: $voorstelId,
+                    action: $action,
+                    step: $step,
+                    actor: $actor,
+                    actorRole: $actorRole,
+                    reason: $reason,
+                ),
+            );
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'Procest: ParafeerTransitionEvent dispatch failed',
+                [
+                    'voorstel'  => $voorstelId,
+                    'action'    => $action,
+                    'exception' => $e->getMessage(),
+                ],
+            );
+        }
+    }//end dispatchTransition()
 
     /**
      * Record a parafering action for the current step of a voorstel.
@@ -231,6 +296,17 @@ class ParafeerActieService
 
             // Persist the parafeeractie.
             $savedActie = $objectService->saveObject($register, $actieSchema, $actieData);
+
+            // Emit the parafering transition event for the audit listener.
+            [$transitionType, $actorRoleForAudit] = $this->transitionForAction($action);
+            $this->dispatchTransition(
+                voorstelId: $voorstelId,
+                action: $transitionType,
+                step: (string) ((int) ($step['order'] ?? ($voorstel['currentStep'] ?? 0))),
+                actor: $currentUser->getUID(),
+                actorRole: $actorRoleForAudit,
+                reason: ($action === self::ACTION_RETURNED || $action === self::ACTION_SKIPPED) ? $comment : null,
+            );
 
             // Handle terugsturen: set voorstel status + notify steller, no route advance.
             if ($action === self::ACTION_RETURNED) {

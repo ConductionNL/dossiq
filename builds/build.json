@@ -29,90 +29,37 @@
       }
     },
     {
-      "change": "pdok-integration",
+      "change": "parafering-audit-trail",
       "appliedAt": "2026-05-11",
-      "tasks": ["T01", "T02", "T04-config"],
+      "tasks": ["T01", "T02", "T03", "T04", "T05", "T06", "T07"],
       "deferred": [
-        {"task": "T03", "reason": "Repair step seeding default MapLayer rows — defer to follow-up; manifest-first means MapLayer rows ship via seed-data path, not bespoke repair step"},
-        {"task": "T04-controller", "reason": "Admin UI surface is the existing SettingsService — no new PdokSettingsController/Vue tab per manifest-first constraint; config keys are now persisted via the central SettingsService allow-list"},
-        {"task": "T05", "reason": "case-location LocationService not present in this branch; refactor will land in case-location apply"},
-        {"task": "T06", "reason": "Per-service cache decorator + APCu wrapper — caching is inlined in PdokLocatieserverService + PdokBagService; standalone PdokCache class follow-up"},
-        {"task": "T07", "reason": "Frontend pdokApi.js consumer rewiring — out of scope (no new manifest pages / no admin Vue per constraints)"},
-        {"task": "T08", "reason": "Outage banner Vue — out of scope per manifest-first; backend health flag is in place"},
-        {"task": "V01", "reason": "Verification scope follow-up (strict watchdog: lint + jq only)"},
-        {"task": "V02", "reason": "Verification scope follow-up"},
-        {"task": "V03", "reason": "Verification scope follow-up"},
-        {"task": "V04", "reason": "Verification scope follow-up — repair step not implemented in this pass"}
+        {"task": "T08", "reason": "i18n keys deferred per strict watchdog (no i18n)"},
+        {"task": "V01", "reason": "Pre-commit verification follow-up (strict watchdog: lint + jq only)"},
+        {"task": "V02", "reason": "Static exception-message grep follow-up"},
+        {"task": "V03", "reason": "Manual curl verification follow-up"},
+        {"task": "V04", "reason": "End-to-end transition coverage follow-up"},
+        {"task": "V05", "reason": "Export endpoint integration test follow-up"}
       ],
+      "schemas": ["paraferingAuditEntry"],
       "services": [
-        "OCA\\Procest\\Service\\Pdok\\PdokLocatieserverService",
-        "OCA\\Procest\\Service\\Pdok\\PdokBagService"
+        "OCA\\Procest\\Service\\Parafering\\AuditTrailService"
       ],
-      "configKeys": [
-        "pdok_locatieserver_endpoint",
-        "pdok_bag_endpoint",
-        "pdok_kadaster_endpoint",
-        "pdok_locatieserver_source",
-        "pdok_bag_source",
-        "pdok_kadaster_source",
-        "pdok_cache_lookup_ttl_seconds",
-        "pdok_cache_suggest_ttl_seconds",
-        "pdok_rate_ceiling_rps",
-        "pdok_outage_banner_nl",
-        "pdok_outage_banner_en"
+      "events": ["OCA\\Procest\\Event\\ParafeerTransitionEvent"],
+      "listeners": [
+        "OCA\\Procest\\Listener\\ParaferingAuditListener",
+        "OCA\\Procest\\Validator\\ParaferingAuditAppendOnlyValidator"
       ],
-      "controllers": [],
-      "endpoints": [],
-      "schemaChanges": {}
-    },
-    {
-      "change": "case-location",
-      "appliedAt": "2026-05-11",
-      "tasks": ["T01", "T02", "T04"],
-      "deferred": [
-        {"task": "T03", "reason": "PdokLocatieserverClient is now PdokLocatieserverService (pdok-integration #390) — LocationService.reverseGeocode() delegates to it; no separate client class needed"},
-        {"task": "T05", "reason": "Manifest-first: no bespoke LocationController for CRUD — OpenRegister object endpoint covers GET/POST/PUT/DELETE; suggest/reverse stay on PdokLocatieserverService; import preview/commit follow with T07"},
-        {"task": "T06", "reason": "Manifest-driven case detail 'Locaties' tab via related-index widget — Vue-side CaseLocationsTab.vue not needed for MVP; map preview lands with map-component"},
-        {"task": "T07", "reason": "CSV importer + admin import tab — follow-up issue (manifest-first apps render admin index/detail; OCC command + import preview/commit lands separately)"},
-        {"task": "T08", "reason": "CSV export endpoint — follow-up issue tied to T07"},
-        {"task": "V01", "reason": "PDOK 422 validation test — Newman/PHPUnit scope follow-up (strict watchdog: lint + jq only)"},
-        {"task": "V02", "reason": "Reverse-geocode persistence test — PHPUnit scope follow-up"},
-        {"task": "V03", "reason": "CSV preview test — depends on importer (T07)"},
-        {"task": "V04", "reason": "Case detail tab E2E test — Playwright scope follow-up"}
+      "controllers": ["OCA\\Procest\\Controller\\ParaferingAuditExportController"],
+      "endpoints": [
+        {"verb": "GET", "url": "/api/voorstellen/{id}/audit-trail/export", "name": "parafering_audit_export#export"}
       ],
-      "services": [
-        "OCA\\Procest\\Service\\LocationService"
-      ],
-      "controllers": [],
-      "endpoints": [],
       "manifestPages": [
-        {"id": "Locations", "route": "/settings/locations", "type": "index"},
-        {"id": "LocationDetail", "route": "/settings/locations/:id", "type": "detail"}
+        {"slug": "parafering-audit-trail", "type": "index", "path": "/voorstellen/:voorstelId/audit-trail"}
       ],
-      "manifestMenu": [
-        {"id": "LocationsMenu", "section": "settings"}
-      ],
-      "manifestSidebarTabs": [
-        {"page": "CaseDetail", "tab": "locaties", "widget": "related-index", "schema": "location"}
-      ],
-      "schemaChanges": {
-        "location": [
-          "case (back-reference to case schema, onDelete CASCADE)",
-          "label",
-          "formattedAddress",
-          "latitude",
-          "longitude",
-          "nummeraanduidingId",
-          "parcelId",
-          "accuracyRadius",
-          "source (enum: bag|pdok-reverse|gps|free|geocoded|import)"
-        ]
-      },
-      "settingsKeys": [
-        "location_schema"
-      ],
-      "dependsOn": ["pdok-integration"],
-      "notes": "Manifest-first apply: location entity CRUD via OpenRegister auto-form; case detail 'Locaties' sidebar tab via related-index widget filtered by case UUID; admin browse via Locations index + LocationDetail pages. LocationService.reverseGeocode() delegates to PdokLocatieserverService (from pdok-integration spec) and falls back to null when the service is unavailable. No bespoke LocationController — REST is the OpenRegister object endpoint."
+      "registryChanges": {
+        "configKeys": ["parafering_audit_entry_schema"],
+        "slugToConfigKey": {"paraferingAuditEntry": "parafering_audit_entry_schema"}
+      }
     }
   ]
 }

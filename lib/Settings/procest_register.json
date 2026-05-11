@@ -1964,6 +1964,81 @@
           }
         }
       },
+      "paraferingAuditEntry": {
+        "slug": "paraferingAuditEntry",
+        "icon": "ShieldCheckOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "title": "Parafering audit entry",
+        "description": "Append-only, regulator-grade audit entry for a parafeerroute transition. One entry per transition (started, paraferd, advised, terugsturen, route-changed, completed). Captures actor, role, timestamp, reason, content snapshot at action moment, redacted IP, and SHA-256 hash of the canonical payload for tamper detection. UPDATE and DELETE are blocked by the ParaferingAuditAppendOnlyValidator listener.",
+        "type": "object",
+        "required": [
+          "voorstel",
+          "action",
+          "actor",
+          "actorRole",
+          "timestamp",
+          "contentSnapshot",
+          "auditEntryHash"
+        ],
+        "properties": {
+          "voorstel": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "voorstel",
+            "onDelete": "CASCADE",
+            "description": "Reference to the voorstel that this transition occurred on"
+          },
+          "step": {
+            "type": "string",
+            "description": "Step identifier or order within the routeSnapshot at action moment (string to support both numeric orders and UUID refs)"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "started",
+              "paraferd",
+              "terugsturen",
+              "advised",
+              "route-changed",
+              "completed"
+            ],
+            "title": "Action",
+            "description": "Transition type that produced this audit entry",
+            "facetable": true
+          },
+          "actor": {
+            "type": "string",
+            "description": "Nextcloud user UID who triggered the transition (always the session user, never request body)"
+          },
+          "actorRole": {
+            "type": "string",
+            "description": "Role at the moment of action (steller, adviseur, parafeerder, accorderend, beheerder, secretariaat) derived from the routeSnapshot step or admin-override context",
+            "facetable": true
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-side ISO 8601 (UTC) timestamp at write moment, never accepted from client"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason text; mandatory for terugsturen and route-changed, optional for others"
+          },
+          "contentSnapshot": {
+            "type": "object",
+            "description": "Immutable JSON copy of voorstel.{onderwerp, document, bijlagen, routeSnapshot, currentStep, status} at transition moment"
+          },
+          "ipAddress": {
+            "type": "string",
+            "description": "Originating IP address redacted to /24 (IPv4) or /48 (IPv6) per AVG minimisation"
+          },
+          "auditEntryHash": {
+            "type": "string",
+            "description": "SHA-256 (64 lowercase hex) of canonical JSON of the entry excluding this field, for tamper detection"
+          }
+        }
+      },
       "automaticAction": {
         "slug": "automaticAction",
         "icon": "RobotOutline",
@@ -4251,6 +4326,7 @@
           "voorstel",
           "parafeerroute",
           "parafeeractie",
+          "paraferingAuditEntry",
           "mapLayer",
           "location",
           "inspectieRapport",
@@ -4269,6 +4345,67 @@
         "folder": "Open Registers/Procest"
       }
     },
+    "x-pages": [
+      {
+        "slug": "parafering-audit-trail",
+        "type": "index",
+        "title": "Parafering audit trail",
+        "schema": "paraferingAuditEntry",
+        "register": "procest",
+        "path": "/voorstellen/:voorstelId/audit-trail",
+        "description": "Append-only audit trail of every parafeerroute transition on a voorstel. Visible to auditors, secretariaat, and beheerders.",
+        "listing": {
+          "defaultSort": {
+            "field": "timestamp",
+            "direction": "desc"
+          },
+          "filters": [
+            {
+              "field": "action",
+              "type": "enum"
+            },
+            {
+              "field": "actor",
+              "type": "string"
+            },
+            {
+              "field": "voorstel",
+              "type": "string"
+            },
+            {
+              "field": "timestamp",
+              "type": "dateRange"
+            }
+          ],
+          "columns": [
+            {
+              "field": "timestamp",
+              "label": "Timestamp"
+            },
+            {
+              "field": "action",
+              "label": "Transition"
+            },
+            {
+              "field": "actor",
+              "label": "Actor"
+            },
+            {
+              "field": "actorRole",
+              "label": "Actor role"
+            },
+            {
+              "field": "voorstel",
+              "label": "Voorstel"
+            },
+            {
+              "field": "reason",
+              "label": "Reason"
+            }
+          ]
+        }
+      }
+    ],
     "objects": [
       {
         "@self": {
