@@ -41,6 +41,11 @@ return [
         ['name' => 'zgw_mapping#destroy', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'DELETE'],
         ['name' => 'zgw_mapping#reset', 'url' => '/api/zgw-mappings/{resourceKey}/reset', 'verb' => 'POST'],
 
+        // Case Definition Portability (export/import zaaktype packages).
+        ['name' => 'case_definition#export', 'url' => '/api/case-definitions/export', 'verb' => 'POST'],
+        ['name' => 'case_definition#validate', 'url' => '/api/case-definitions/validate', 'verb' => 'POST'],
+        ['name' => 'case_definition#import', 'url' => '/api/case-definitions/import', 'verb' => 'POST'],
+
         // ── DRC (Documenten) ────────────────────────────────────────────
         // Special endpoints (must precede wildcard routes).
         ['name' => 'drc#download', 'url' => '/api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/download', 'verb' => 'GET'],
