@@ -863,6 +863,20 @@
           "description": {
             "type": "string",
             "description": "Description of this role assignment"
+          },
+          "delegate": {
+            "type": "string",
+            "description": "Optional participant (Nextcloud user ID or contact ref) acting on behalf of the original participant during the delegation window"
+          },
+          "delegateFrom": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Start of the delegation window (ISO 8601). When now is within [delegateFrom, delegateUntil] the resolver substitutes the delegate"
+          },
+          "delegateUntil": {
+            "type": "string",
+            "format": "date-time",
+            "description": "End of the delegation window (ISO 8601). MUST be greater than or equal to delegateFrom"
           }
         }
       },
@@ -1895,11 +1909,11 @@
           },
           "steps": {
             "type": "string",
-            "description": "JSON-encoded array of WorkflowStep objects. Each step has: id (UUID), title, description, status (UUID ref to statusType), order (integer), assigneeRole (UUID ref to roleType, optional), isRequired (boolean), checklist (array of {id, label, description}), automaticActions (array of ActionRef). v1.1 additive: optional `config` sub-object = {sla:{value:int 1-10000, unit:hours|businessDays|calendarDays}, requiredFields:string[] (case-field property paths), autoActions:ActionRef[] fired before transition-level actions on step completion, escalationRule:{trigger:preBreach|slaBreached, offset:int, offsetUnit:hours|businessDays, notifyRole:UUID, escalateToRole:UUID, openIncident:boolean} — requires sla present; preBreach offset must be <= sla.value}. Absent config preserves v1 behaviour."
+            "description": "JSON-encoded array of WorkflowStep objects. Each step has: id (UUID), title, description, status (UUID ref to statusType), order (integer), assigneeRole (UUID ref to roleType, optional — legacy, normalised on read to routingRule.single-role), routingRule (optional object {strategy: single-role|or-set|hierarchical|round-robin|least-loaded, roleType: UUID, roleTypes: [UUID], fallback: UUID}), isRequired (boolean), checklist (array of {id, label, description}), automaticActions (array of ActionRef). v1.1 additive: optional `config` sub-object = {sla:{value:int 1-10000, unit:hours|businessDays|calendarDays}, requiredFields:string[] (case-field property paths), autoActions:ActionRef[] fired before transition-level actions on step completion, escalationRule:{trigger:preBreach|slaBreached, offset:int, offsetUnit:hours|businessDays, notifyRole:UUID, escalateToRole:UUID, openIncident:boolean} — requires sla present; preBreach offset must be <= sla.value}. Absent config preserves v1 behaviour."
           },
           "transitions": {
             "type": "string",
-            "description": "JSON-encoded array of StatusTransition objects. Each transition has: id (UUID), fromStatus (UUID), toStatus (UUID), label (string), guards (array of Guard), automaticActions (array of ActionRef), allowedRoles (array of UUID). Guard types: checklist, requiredField, requiredDocument, roleGuard. Action types: sendEmail, createTask, createSubCase, webhook, setField, notify"
+            "description": "JSON-encoded array of StatusTransition objects. Each transition has: id (UUID), fromStatus (UUID), toStatus (UUID), label (string), guards (array of Guard), automaticActions (array of ActionRef), allowedRoles (array of UUID — legacy, normalised on read to routingRule.or-set), routingRule (optional object same shape as workflowStep.routingRule). Guard types: checklist, requiredField, requiredDocument, roleGuard. Action types: sendEmail, createTask, createSubCase, webhook, setField, notify"
           },
           "nodePositions": {
             "type": "string",

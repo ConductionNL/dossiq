@@ -1,0 +1,32 @@
+{
+  "applied": [
+    {
+      "change": "role-based-step-routing",
+      "appliedAt": "2026-05-11",
+      "tasks": ["T01", "T02", "T03", "T04", "T05", "T07"],
+      "deferred": [
+        {"task": "T06", "reason": "Admin UI for rule editor — manifest-first apps surface routing rule via OpenRegister auto-form; Vue-side specimen tracked separately"},
+        {"task": "V01", "reason": "Unit tests scope follow-up (strict watchdog: lint + jq only)"},
+        {"task": "V02", "reason": "Integration test scope follow-up"},
+        {"task": "V03", "reason": "Newman collection scope follow-up"},
+        {"task": "V04", "reason": "Performance benchmark scope follow-up"}
+      ],
+      "services": [
+        "OCA\\Procest\\Service\\RoleResolverService",
+        "OCA\\Procest\\Service\\Routing\\StrategyRegistry",
+        "OCA\\Procest\\Service\\Routing\\Strategy\\SingleRoleStrategy",
+        "OCA\\Procest\\Service\\Routing\\Strategy\\OrSetStrategy",
+        "OCA\\Procest\\Service\\Routing\\Strategy\\HierarchicalStrategy",
+        "OCA\\Procest\\Service\\Routing\\Strategy\\RoundRobinStrategy",
+        "OCA\\Procest\\Service\\Routing\\Strategy\\LeastLoadedStrategy"
+      ],
+      "listeners": ["OCA\\Procest\\Listener\\RoleMutationListener"],
+      "controllers": ["OCA\\Procest\\Controller\\RoutingController"],
+      "endpoints": [{"verb": "POST", "url": "/api/cases/{id}/reroute", "name": "routing#reroute"}],
+      "schemaChanges": {
+        "role": ["delegate", "delegateFrom", "delegateUntil"],
+        "workflowTemplate": ["routingRule documented inline on steps/transitions JSON description"]
+      }
+    }
+  ]
+}
