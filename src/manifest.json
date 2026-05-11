@@ -7,6 +7,7 @@
 		{ "id": "MyWork", "label": "My Work", "icon": "icon-checkmark", "route": "MyWork", "order": 20 },
 		{ "id": "Werkvoorraad", "label": "Work Queue", "icon": "icon-group", "route": "Werkvoorraad", "order": 30 },
 		{ "id": "Cases", "label": "Cases", "icon": "icon-folder", "route": "Cases", "order": 40 },
+		{ "id": "Bezwaren", "label": "Bezwaren", "icon": "icon-toggle-filelist", "route": "Bezwaren", "order": 45 },
 		{ "id": "Tasks", "label": "Tasks", "icon": "icon-checkmark", "route": "Tasks", "order": 50 },
 		{ "id": "CaseMap", "label": "Map", "icon": "icon-address", "route": "CaseMap", "order": 60 },
 		{ "id": "Voorstellen", "label": "Voorstellen", "icon": "icon-comment", "route": "Voorstellen", "order": 70 },
@@ -23,6 +24,8 @@
 		{ "id": "WorkflowDefinitionsMenu", "label": "Workflow definitions", "icon": "icon-category-workflow", "route": "WorkflowDefinitions", "section": "settings", "order": 97 },
 		{ "id": "AutomaticActionsMenu", "label": "Automatische acties", "icon": "icon-category-workflow", "route": "AutomaticActions", "section": "settings", "order": 96 },
 		{ "id": "StatusRecordsMenu", "label": "Status history", "icon": "icon-history", "route": "StatusRecords", "section": "settings", "order": 98, "permission": "admin" },
+		{ "id": "LhsMatricesMenu", "label": "Handhavingsstrategie", "icon": "icon-category-customization", "route": "LhsMatrices", "section": "settings", "order": 96, "permission": "admin" },
+		{ "id": "LhsRecommendationsMenu", "label": "LHS Recommendations", "icon": "icon-comment", "route": "LhsRecommendations", "section": "settings", "order": 97 },
 		{ "id": "BezwaarCommitteesMenu", "label": "Bezwaaradviescommissies", "icon": "icon-group", "route": "BezwaarCommittees", "section": "settings", "order": 99 },
 		{ "id": "SettingsMenu", "label": "Settings", "icon": "icon-settings", "route": "Settings", "section": "settings", "order": 99 }
 	],
@@ -104,6 +107,35 @@
 					{ "id": "documents", "label": "Documents",   "icon": "icon-files",     "component": "CaseDocumentsTab",                          "order": 40 },
 					{ "id": "advies",    "label": "Advies",      "icon": "icon-comment",   "component": "AdviesPanel",                               "order": 50 },
 					{ "id": "audit",     "label": "Audit trail", "icon": "icon-history",   "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+				]
+			}
+		},
+		{
+			"id": "Bezwaren",
+			"route": "/bezwaren",
+			"type": "index",
+			"title": "Bezwaren",
+			"config": {
+				"register": "procest",
+				"schema": "bezwaar",
+				"columns": ["case", "status", "ontvangstdatum", "decisionDeadline", "awbReference", "dwangsom"],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "BezwaarDetail",
+			"route": "/bezwaren/:id",
+			"type": "detail",
+			"title": "Bezwaar",
+			"config": {
+				"register": "procest",
+				"schema": "bezwaar",
+				"sidebarTabs": [
+					{ "id": "overview", "label": "Overview", "icon": "icon-info",     "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
+					{ "id": "advice",   "label": "Advice",   "icon": "icon-comment",  "component": "AdviesPanel",                              "order": 20 },
+					{ "id": "hearing",  "label": "Hearing",  "icon": "icon-group",    "component": "CaseTasksTab",                             "order": 30 },
+					{ "id": "decision", "label": "Decision", "icon": "icon-toggle",   "component": "CaseDecisionsTab",                         "order": 40 },
+					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                "order": 90 }
 				]
 			}
 		},
@@ -589,6 +621,64 @@
 					{ "id": "guards",       "label": "Evaluated guards", "icon": "icon-checkmark", "widgets": [{ "type": "data", "config": { "fields": ["evaluatedGuards"] } }], "order": 20 },
 					{ "id": "actions",      "label": "Dispatched actions", "icon": "icon-toggle", "widgets": [{ "type": "data", "config": { "fields": ["dispatchedActions"] } }], "order": 30 },
 					{ "id": "audit",        "label": "Audit trail",      "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+				]
+			}
+		},
+		{
+			"id": "LhsMatrices",
+			"route": "/settings/lhs-matrices",
+			"type": "index",
+			"title": "Handhavingsstrategie",
+			"permission": "admin",
+			"config": {
+				"register": "procest",
+				"schema": "lhsMatrix",
+				"columns": ["name", "version", "active", "createdAt"],
+				"actions": ["create", "view"],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "LhsMatrixDetail",
+			"route": "/settings/lhs-matrices/:id",
+			"type": "detail",
+			"title": "LHS Matrix",
+			"permission": "admin",
+			"config": {
+				"register": "procest",
+				"schema": "lhsMatrix",
+				"sidebarTabs": [
+					{ "id": "overview",   "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
+					{ "id": "cells",      "label": "Cells",       "icon": "icon-category-customization", "widgets": [{ "type": "data", "config": { "fields": ["cells"] } }], "order": 20 },
+					{ "id": "auditTrail", "label": "Edit log",    "icon": "icon-history", "widgets": [{ "type": "data", "config": { "fields": ["auditTrail"] } }], "order": 30 },
+					{ "id": "audit",      "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+				]
+			}
+		},
+		{
+			"id": "LhsRecommendations",
+			"route": "/settings/lhs-recommendations",
+			"type": "index",
+			"title": "LHS Recommendations",
+			"config": {
+				"register": "procest",
+				"schema": "lhsRecommendation",
+				"columns": ["case", "ernst", "gedrag", "actorType", "recommendedInterventie", "finalIntervention", "override", "matrixVersion"],
+				"actions": ["view"],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "LhsRecommendationDetail",
+			"route": "/settings/lhs-recommendations/:id",
+			"type": "detail",
+			"title": "LHS Recommendation",
+			"config": {
+				"register": "procest",
+				"schema": "lhsRecommendation",
+				"sidebarTabs": [
+					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
+					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
 				]
 			}
 		},

@@ -2044,6 +2044,142 @@
           }
         }
       },
+      "bezwaar": {
+        "slug": "bezwaar",
+        "icon": "Gavel",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:LegalCase",
+        "x-zgw-equivalent": "Bezwaarzaak",
+        "title": "Bezwaar",
+        "description": "Bezwaar lifecycle entity — captures the AWB objection case state, statutory deadlines, hearing waiver, and dwangsom accrual. Status transitions flow through the status-transition-engine; deadlines are computed declaratively via x-openregister-calculations (ADR-022). NO bespoke deadline service.",
+        "type": "object",
+        "required": [
+          "case",
+          "ontvangstdatum",
+          "status"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "The underlying procest case (zaaktype = Bezwaar) this lifecycle record belongs to"
+          },
+          "objection": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "objection",
+            "description": "The bezwaarschrift (objection letter) tied to this lifecycle record"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Ontvangen",
+              "Ontvankelijkheidstoets",
+              "In behandeling",
+              "Hoorzitting gepland",
+              "Hoorzitting afgerond",
+              "Advies uitgebracht",
+              "Beslissing op bezwaar",
+              "Afgehandeld",
+              "Niet-ontvankelijk",
+              "Ingetrokken"
+            ],
+            "default": "Ontvangen",
+            "description": "Bezwaar lifecycle status — drives the status-transition-engine state machine",
+            "facetable": true
+          },
+          "awbReference": {
+            "type": "string",
+            "description": "AWB article reference for the most recent legal-posture transition (e.g. 'Awb 7:10 lid 3'); required by guards on verdaging/opschorting/niet-ontvankelijk/intrekking transitions"
+          },
+          "ontvangstdatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the bezwaarschrift was received (start of the AWB 7:10 lid 1 termijn)"
+          },
+          "verdaagdOp": {
+            "type": "string",
+            "format": "date",
+            "description": "Date verdaging (extension) was recorded per AWB 7:10 lid 3"
+          },
+          "verdagingsperiode": {
+            "type": "integer",
+            "default": 0,
+            "description": "Verdaging in days (0 = no verdaging; 42 = standard 6-week extension)"
+          },
+          "opschortingStart": {
+            "type": "string",
+            "format": "date",
+            "description": "Opschorting start date per AWB 7:10 lid 4"
+          },
+          "opschortingEnd": {
+            "type": "string",
+            "format": "date",
+            "description": "Opschorting end date — adds (end - start) days to decisionDeadline"
+          },
+          "opschorting": {
+            "type": "integer",
+            "default": 0,
+            "description": "Opschorting in days (computed elapsed delta between opschortingStart/End)"
+          },
+          "hearingWaived": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the belanghebbende has waived the hoorrecht per AWB 7:3"
+          },
+          "waiverReason": {
+            "type": "string",
+            "description": "Required motivation when hearingWaived = true"
+          },
+          "ingebrekestelling": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the bezwaarmaker submitted an ingebrekestelling per AWB 4:17 — starts the 14-day grace clock"
+          },
+          "dwangsom": {
+            "type": "number",
+            "default": 0,
+            "description": "Accrued dwangsom liability in euros — computed declaratively, capped at €1442 (AWB 4:17 lid 2)"
+          },
+          "decisionDeadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Statutory deadline for the beslissing op bezwaar — computed as ontvangstdatum + 6 weeks + verdagingsperiode + opschorting (AWB 7:10)"
+          }
+        },
+        "x-openregister-calculations": [
+          {
+            "field": "decisionDeadline",
+            "label": {
+              "nl": "Beslistermijn bezwaar (AWB 7:10)",
+              "en": "Bezwaar decision deadline (AWB 7:10)"
+            },
+            "expression": "addDays(addDays(addWeeks($.ontvangstdatum, 6), $.verdagingsperiode), $.opschorting)",
+            "inputs": [
+              "ontvangstdatum",
+              "verdagingsperiode",
+              "opschorting"
+            ],
+            "outputField": "decisionDeadline",
+            "legalSource": "AWB Art. 7:10 lid 1, 3, 4"
+          },
+          {
+            "field": "dwangsom",
+            "label": {
+              "nl": "Dwangsom bij niet tijdig beslissen (AWB 4:17)",
+              "en": "Dwangsom on missed deadline (AWB 4:17)"
+            },
+            "expression": "min(1442, max(0, daysSince(addDays($.ingebrekestelling, 14)) * 23))",
+            "inputs": [
+              "ingebrekestelling"
+            ],
+            "outputField": "dwangsom",
+            "legalSource": "AWB Art. 4:17 lid 1-2"
+          }
+        ]
+      },
       "objection": {
         "slug": "objection",
         "icon": "FileDocumentAlertOutline",
@@ -2922,6 +3058,196 @@
           }
         }
       },
+      "lhsMatrix": {
+        "slug": "lhsMatrix",
+        "icon": "TableLarge",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Intangible",
+        "title": "LHS Matrix",
+        "description": "Versioned 3-dimensional Landelijke Handhavingsstrategie matrix (ernst x gedrag x actorType). Immutable per version; edits create new versions.",
+        "type": "object",
+        "required": [
+          "name",
+          "version",
+          "active",
+          "ernstAxis",
+          "gedragAxis",
+          "actorTypeAxis",
+          "cells"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this matrix version (e.g. 'Landelijke Handhavingsstrategie 2024')"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Monotonic version number; new edits create a new version (immutable history)"
+          },
+          "active": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this is the currently active matrix. Exactly one matrix is active=true per tenant."
+          },
+          "ernstAxis": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Ordered severity axis values, e.g. [gering, aanzienlijk, ernstig]"
+          },
+          "gedragAxis": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Ordered behaviour axis values, e.g. [goedwillend, onverschillig, calculerend, crimineel]"
+          },
+          "actorTypeAxis": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Ordered actor-type axis values, e.g. [burger, bedrijf, overheid, recidivist]"
+          },
+          "cells": {
+            "type": "array",
+            "description": "Dense matrix; one entry per (ernst, gedrag, actorType) triple",
+            "items": {
+              "type": "object",
+              "required": ["ernst", "gedrag", "actorType", "interventie"],
+              "properties": {
+                "ernst": { "type": "string" },
+                "gedrag": { "type": "string" },
+                "actorType": { "type": "string" },
+                "interventie": {
+                  "type": "string",
+                  "enum": [
+                    "waarschuwing",
+                    "herstelactie",
+                    "last_onder_dwangsom",
+                    "last_plus_pv",
+                    "bestuursdwang",
+                    "pv_plus_bestuursdwang"
+                  ]
+                },
+                "note": { "type": "string" }
+              }
+            }
+          },
+          "auditTrail": {
+            "type": "array",
+            "description": "Edit log capturing who, when, and which cells changed across versions",
+            "items": {
+              "type": "object",
+              "properties": {
+                "version": { "type": "integer" },
+                "actor": { "type": "string" },
+                "at": { "type": "string", "format": "date-time" },
+                "note": { "type": "string" }
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When this version was created"
+          }
+        }
+      },
+      "lhsRecommendation": {
+        "slug": "lhsRecommendation",
+        "icon": "ScaleBalance",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Recommendation",
+        "title": "LHS Recommendation",
+        "description": "Per-enforcement record of the LHS matrix lookup, the recommended intervention, and any inspector override with justification.",
+        "type": "object",
+        "required": [
+          "case",
+          "ernst",
+          "gedrag",
+          "actorType",
+          "matrixVersion",
+          "recommendedInterventie",
+          "recommendedBy"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case"
+          },
+          "inspection": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional reference to the originating inspection rapport"
+          },
+          "ernst": {
+            "type": "string",
+            "enum": ["gering", "aanzienlijk", "ernstig"],
+            "description": "Severity of the violation (LHS ernst axis)"
+          },
+          "gedrag": {
+            "type": "string",
+            "enum": ["goedwillend", "onverschillig", "calculerend", "crimineel"],
+            "description": "Behaviour of the violator (LHS gedrag axis)"
+          },
+          "actorType": {
+            "type": "string",
+            "enum": ["burger", "bedrijf", "overheid", "recidivist"],
+            "description": "Actor type of the violator (LHS actorType axis)"
+          },
+          "matrixVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Frozen lhsMatrix version this recommendation was looked up against"
+          },
+          "recommendedInterventie": {
+            "type": "string",
+            "enum": [
+              "waarschuwing",
+              "herstelactie",
+              "last_onder_dwangsom",
+              "last_plus_pv",
+              "bestuursdwang",
+              "pv_plus_bestuursdwang"
+            ],
+            "description": "Intervention prescribed by the matrix cell"
+          },
+          "finalIntervention": {
+            "type": "string",
+            "enum": [
+              "waarschuwing",
+              "herstelactie",
+              "last_onder_dwangsom",
+              "last_plus_pv",
+              "bestuursdwang",
+              "pv_plus_bestuursdwang"
+            ],
+            "description": "Intervention actually applied (may differ from recommended when override=true)"
+          },
+          "override": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the inspector overrode the matrix recommendation"
+          },
+          "overrideJustification": {
+            "type": "string",
+            "minLength": 20,
+            "description": "Mandatory justification when override=true (minimum 20 non-whitespace characters)"
+          },
+          "overrideBy": {
+            "type": "string",
+            "description": "NC UID of the user who submitted the override"
+          },
+          "overrideAuthority": {
+            "type": "string",
+            "enum": ["inspector", "manager"],
+            "description": "Role authority under which the override was applied. override-up requires manager."
+          },
+          "recommendedBy": {
+            "type": "string",
+            "description": "NC UID of the authenticated user who invoked the recommendation. Server-derived; never trusted from request body."
+          }
+        }
+      },
       "inspectieChecklist": {
         "slug": "inspectieChecklist",
         "icon": "ClipboardCheckOutline",
@@ -3115,6 +3441,358 @@
             "type": "boolean",
             "default": false,
             "description": "Whether follow-up action is required"
+          }
+        }
+      },
+      "inspectionChecklistTemplate": {
+        "slug": "inspectionChecklistTemplate",
+        "icon": "ClipboardListOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:HowTo",
+        "title": "Inspection Checklist Template",
+        "description": "Long-lived configuration template for an inspection checklist (REQ-IC-1). Owns sections, items, response-type rules, and follow-up action defaults. Versioned per REQ-IC-8 — published edits create a new version and retire the prior one.",
+        "type": "object",
+        "required": [
+          "name",
+          "version",
+          "status",
+          "sections"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Template label, e.g. 'Bouwtoezicht — Fundering'"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional case-type binding; null means any case type"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1,
+            "description": "Monotonic template version, frozen once a run consumes it"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "retired"
+            ],
+            "default": "draft",
+            "description": "Lifecycle status of this template version"
+          },
+          "active": {
+            "type": "boolean",
+            "default": false,
+            "description": "Convenience flag mirroring status=active for list filtering"
+          },
+          "sections": {
+            "type": "array",
+            "description": "Ordered sections each carrying their own items[]",
+            "items": {
+              "type": "object",
+              "required": ["name"],
+              "properties": {
+                "order": {
+                  "type": "integer",
+                  "description": "Display order"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Section name, e.g. 'Wapening'"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Optional section guidance text"
+                },
+                "items": {
+                  "type": "array",
+                  "description": "Ordered checklist items in this section",
+                  "items": {
+                    "type": "object",
+                    "required": ["label", "responseType"],
+                    "properties": {
+                      "order": {
+                        "type": "integer",
+                        "description": "Display order of the item"
+                      },
+                      "label": {
+                        "type": "string",
+                        "description": "Question / item label"
+                      },
+                      "helpText": {
+                        "type": "string",
+                        "description": "Optional inspector guidance"
+                      },
+                      "responseType": {
+                        "type": "string",
+                        "enum": [
+                          "ja_nee_nvt",
+                          "tekst",
+                          "getal",
+                          "meerkeuze",
+                          "foto",
+                          "meting"
+                        ],
+                        "description": "Input type — drives validation in REQ-IC-3"
+                      },
+                      "required": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether the item must be answered"
+                      },
+                      "fotoRequired": {
+                        "type": "string",
+                        "enum": [
+                          "nooit",
+                          "bij_nee",
+                          "altijd"
+                        ],
+                        "default": "nooit",
+                        "description": "Photo requirement gate (REQ-IC-3)"
+                      },
+                      "numericRange": {
+                        "type": "object",
+                        "description": "Only used when responseType is getal or meting",
+                        "properties": {
+                          "min": {
+                            "type": "number"
+                          },
+                          "max": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "choices": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Allowed values when responseType is meerkeuze"
+                      },
+                      "failureAction": {
+                        "type": "object",
+                        "description": "Conditional follow-up dispatched on failure (REQ-IC-7)",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "herinspectie",
+                              "handhavingstaak",
+                              "documentVerzoek",
+                              "geen"
+                            ],
+                            "default": "geen"
+                          },
+                          "template": {
+                            "type": "string",
+                            "description": "Optional template ref for the follow-up artefact"
+                          },
+                          "deadlineDays": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Days from submit to follow-up deadline"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "seedKey": {
+            "type": "string",
+            "description": "Idempotent seed identifier when shipped via repair-step seeds"
+          }
+        }
+      },
+      "inspectionChecklistRun": {
+        "slug": "inspectionChecklistRun",
+        "icon": "ClipboardCheckMultipleOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "title": "Inspection Checklist Run",
+        "description": "Per-inspection runtime instance of an inspectionChecklistTemplate (REQ-IC-2). Once submitted (status=ingediend) the run is append-only: edits are rejected by REQ-IC-8 enforcement.",
+        "type": "object",
+        "required": [
+          "case",
+          "template",
+          "templateVersion",
+          "inspector",
+          "status"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Parent case (zaak) reference"
+          },
+          "inspection": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional parent inspection reference (mobiel-inspectie session)"
+          },
+          "template": {
+            "type": "string",
+            "format": "uuid",
+            "description": "inspectionChecklistTemplate reference chosen at run start"
+          },
+          "templateVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Template version captured at run start (REQ-IC-8)"
+          },
+          "templateSnapshot": {
+            "type": "object",
+            "description": "Frozen JSON copy of the template sections+items at run start — hidden from default API output",
+            "additionalProperties": true
+          },
+          "inspector": {
+            "type": "string",
+            "description": "NC user UID — server-derived from IUserSession, never accepted from body"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the run was created"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the run was submitted"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Alias of completedAt; populated on submit"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "concept",
+              "in_uitvoering",
+              "ingediend",
+              "gearchiveerd"
+            ],
+            "default": "concept",
+            "description": "Run lifecycle status"
+          },
+          "responses": {
+            "type": "array",
+            "description": "Per-item responses (append-only post-submit)",
+            "items": {
+              "type": "object",
+              "required": ["itemId"],
+              "properties": {
+                "itemId": {
+                  "type": "string",
+                  "description": "Reference to checklist item id"
+                },
+                "value": {
+                  "type": "string",
+                  "description": "Primary value (ja/nee/nvt, text, choice)"
+                },
+                "numericValue": {
+                  "type": "number",
+                  "description": "Numeric value for getal/meting"
+                },
+                "choice": {
+                  "type": "string",
+                  "description": "Selected option for meerkeuze"
+                },
+                "comment": {
+                  "type": "string",
+                  "maxLength": 2000,
+                  "description": "Free-text comment"
+                },
+                "photos": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Nextcloud file IDs for photos"
+                },
+                "audio": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Nextcloud file IDs for audio recordings"
+                },
+                "respondedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "syncState": {
+                  "type": "string",
+                  "enum": ["local", "queued", "synced"],
+                  "description": "Offline-sync state for this response"
+                }
+              }
+            }
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "All Nextcloud file IDs of photos attached to this run"
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "lat": {
+                "type": "number"
+              },
+              "lng": {
+                "type": "number"
+              },
+              "accuracy": {
+                "type": "number"
+              },
+              "source": {
+                "type": "string"
+              }
+            },
+            "description": "GPS context from mobiel-inspectie"
+          },
+          "overallResult": {
+            "type": "string",
+            "enum": [
+              "conform",
+              "niet_conform",
+              "deels_conform"
+            ],
+            "description": "Aggregate result — derived on submit by ChecklistService::aggregateResult (REQ-IC-6); user-supplied values are ignored"
+          },
+          "syncState": {
+            "type": "string",
+            "enum": [
+              "local",
+              "queued",
+              "synced"
+            ],
+            "default": "local",
+            "description": "Offline-sync state for the whole run (REQ-IC-5)"
+          },
+          "followUpType": {
+            "type": "string",
+            "enum": [
+              "herinspectie",
+              "handhavingstaak",
+              "documentVerzoek",
+              "geen"
+            ],
+            "default": "geen",
+            "description": "Highest-priority follow-up type dispatched on submit (REQ-IC-7)"
           }
         }
       },
@@ -3602,9 +4280,9 @@
           "bezwaar": {
             "type": "string",
             "format": "uuid",
-            "$ref": "case",
+            "$ref": "bezwaar",
             "onDelete": "CASCADE",
-            "description": "The bezwaar case being reviewed (reference to case)"
+            "description": "The bezwaar (lifecycle record) being reviewed; the wrapped procest case is resolved via bezwaar.case"
           },
           "commissie": {
             "type": "string",
@@ -3770,7 +4448,11 @@
           "mapLayer",
           "inspectieRapport",
           "handhavingsactie",
+          "lhsMatrix",
+          "lhsRecommendation",
           "inspectieChecklist",
+          "inspectionChecklistTemplate",
+          "inspectionChecklistRun",
           "adviesAanvraag",
           "legesverordening",
           "legesartikel",

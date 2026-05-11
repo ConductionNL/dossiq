@@ -8,6 +8,12 @@
  * the manifest renderer / OpenRegister auto-routing; this service owns the
  * domain logic that CRUD cannot express:
  *
+ *   - createDraft()          — create a new draft definition from a
+ *                              fully-resolved payload (used by seed-data
+ *                              and catalog-import flows; mutations to
+ *                              workflowTemplate MUST go through this
+ *                              service to respect the immutability
+ *                              invariant of published rows).
  *   - publish()              — flip a draft to published, deprecate the
  *                              previously active version, pin the
  *                              caseType.workflowDefinition reference.
@@ -449,6 +455,84 @@ class WorkflowDefinitionService
 
         return $this->normalize($new);
     }//end cloneDefinition()
+
+
+    /**
+     * Create a brand-new draft definition from a fully-resolved payload.
+     * Used by seed-data / catalog import flows where the caller has already
+     * resolved caseType slug → UUID and statusType names → UUIDs.
+     *
+     * The payload SHALL provide:
+     *   - title (string, required)
+     *   - description (string, optional)
+     *   - caseType (UUID string, required)
+     *   - version (int, optional — defaults to next version for caseType)
+     *   - steps (array of step rows, will be JSON-encoded if not already a string)
+     *   - transitions (array of transition rows, will be JSON-encoded if not already a string)
+     *
+     * The method enforces lifecycleStatus=draft, isDraft=true, isActive=false.
+     * Returns the created definition (with id) or null on failure.
+     *
+     * @param array<string, mixed> $payload The fully-resolved draft payload
+     *
+     * @return array<string, mixed>|null The created draft or null on failure
+     */
+    public function createDraft(array $payload): ?array
+    {
+        $caseTypeId = (string) ($payload['caseType'] ?? '');
+        if ($caseTypeId === '' || (string) ($payload['title'] ?? '') === '') {
+            $this->logger->warning(
+                'Procest: createDraft() — missing caseType or title',
+                ['app' => Application::APP_ID]
+            );
+            return null;
+        }
+
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            return null;
+        }
+
+        $register = $this->settingsService->getConfigValue('register');
+        $schema   = $this->settingsService->getConfigValue('workflow_template_schema');
+
+        if ($register === '' || $schema === '') {
+            return null;
+        }
+
+        $version = (int) ($payload['version'] ?? 0);
+        if ($version <= 0) {
+            $version = $this->nextVersionFor($caseTypeId);
+        }
+
+        $steps       = $payload['steps'] ?? [];
+        $transitions = $payload['transitions'] ?? [];
+
+        $draft = [
+            'title'           => (string) $payload['title'],
+            'description'     => (string) ($payload['description'] ?? ''),
+            'caseType'        => $caseTypeId,
+            'version'         => $version,
+            'isActive'        => false,
+            'isDraft'         => true,
+            'lifecycleStatus' => self::STATUS_DRAFT,
+            'steps'           => is_string($steps) === true ? $steps : json_encode($steps),
+            'transitions'     => is_string($transitions) === true ? $transitions : json_encode($transitions),
+            'nodePositions'   => (string) ($payload['nodePositions'] ?? ''),
+        ];
+
+        try {
+            $new = $objectService->saveObject($register, $schema, $draft);
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Procest: failed to create workflow draft',
+                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+            );
+            return null;
+        }
+
+        return $this->normalize($new);
+    }//end createDraft()
 
 
     // -----------------------------------------------------------------

@@ -263,6 +263,11 @@ return [
         // CRUD of routing rules themselves lives on workflowTemplate (manifest).
         ['name' => 'routing#reroute', 'url' => '/api/cases/{id}/reroute', 'verb' => 'POST'],
 
+        // LHS engine actions — matrix lookup + inspector override.
+        // CRUD of matrices and recommendations lives on lhsMatrix/lhsRecommendation (manifest).
+        ['name' => 'lhs#recommend', 'url' => '/api/lhs/recommend', 'verb' => 'POST'],
+        ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],

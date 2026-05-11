@@ -114,17 +114,17 @@ class AdvisoryCommitteeService
      * deferred until the advance-to-in-deliberation transition because a
      * committee MAY be valid for one bezwaar and invalid for another.
      *
-     * @param string               $bezwaarCaseId UUID of the bezwaar case
-     * @param string               $commissieId   UUID of the committee
-     * @param array<string, mixed> $payload       Optional extra fields
-     *                                            (panel, deadline, etc.)
+     * @param string               $bezwaarId   UUID of the bezwaar (lifecycle)
+     * @param string               $commissieId UUID of the committee
+     * @param array<string, mixed> $payload     Optional extra fields
+     *                                          (panel, deadline, etc.)
      *
      * @return array<string, mixed> The created bacAdviceRequest record
      *
      * @throws RuntimeException When OpenRegister unavailable or refs invalid
      */
     public function assignToCommittee(
-        string $bezwaarCaseId,
+        string $bezwaarId,
         string $commissieId,
         array $payload = []
     ): array {
@@ -176,7 +176,7 @@ class AdvisoryCommitteeService
             ],
             $payload,
             [
-                'bezwaar'    => $bezwaarCaseId,
+                'bezwaar'    => $bezwaarId,
                 'commissie'  => $commissieId,
                 'status'     => 'assigned',
                 'assignedAt' => $now,
@@ -188,9 +188,9 @@ class AdvisoryCommitteeService
             existing: [],
             event: 'panel-member-added',
             payload: [
-                'panel'        => $record['panel'],
-                'commissieId'  => $commissieId,
-                'bezwaarCase'  => $bezwaarCaseId,
+                'panel'       => $record['panel'],
+                'commissieId' => $commissieId,
+                'bezwaar'     => $bezwaarId,
             ],
         );
 
@@ -267,7 +267,7 @@ class AdvisoryCommitteeService
             }
 
             $independence = $this->checkPanelIndependence(
-                bezwaarCaseId: (string) ($current['bezwaar'] ?? ''),
+                bezwaarId: (string) ($current['bezwaar'] ?? ''),
                 panel: $panel,
             );
 
@@ -359,17 +359,17 @@ class AdvisoryCommitteeService
     }//end transitionAdviceStatus()
 
     /**
-     * Listener entry-point: when a bezwaar case enters status
-     * "Advies aangevraagd", auto-assign the default committee for the
-     * case's jurisdiction.
+     * Listener entry-point: when a bezwaar enters status
+     * "Hoorzitting gepland", auto-assign the default committee for the
+     * bezwaar's jurisdiction.
      *
-     * @param string $bezwaarCaseId The bezwaar case UUID
+     * @param string $bezwaarId The bezwaar (lifecycle) UUID
      *
      * @return array<string, mixed>|null The created advice request, or
      *                                    null when no default committee
      *                                    is configured.
      */
-    public function autoAssignDefaultCommittee(string $bezwaarCaseId): ?array
+    public function autoAssignDefaultCommittee(string $bezwaarId): ?array
     {
         $defaultId = $this->settingsService->getConfigValue(
             key: 'bac_default_committee'
@@ -377,20 +377,20 @@ class AdvisoryCommitteeService
         if ($defaultId === '') {
             $this->logger->info(
                 'Procest BAC: no default committee configured; '
-                .'skipping auto-assignment for case '.$bezwaarCaseId
+                .'skipping auto-assignment for bezwaar '.$bezwaarId
             );
             return null;
         }
 
         try {
             return $this->assignToCommittee(
-                bezwaarCaseId: $bezwaarCaseId,
+                bezwaarId: $bezwaarId,
                 commissieId: $defaultId,
             );
         } catch (\Throwable $e) {
             $this->logger->error(
-                'Procest BAC: auto-assignment failed for case '
-                .$bezwaarCaseId.': '.$e->getMessage()
+                'Procest BAC: auto-assignment failed for bezwaar '
+                .$bezwaarId.': '.$e->getMessage()
             );
             return null;
         }
@@ -459,20 +459,21 @@ class AdvisoryCommitteeService
      * Member-independence check per Awb Art. 7:13(3).
      *
      * Compares each panel member UID against the `createdBy` (steller) of
-     * the bezwaar case's contested decision (resolved via the linked
-     * objection.contestedDecision pointer). A direct match blocks the
-     * transition.
+     * the contested primair besluit. Resolution chain:
+     *   bacAdviceRequest.bezwaar → bezwaar (lifecycle record) → bezwaar.case
+     *   (procest case) → objection (filed on that case) →
+     *   objection.contestedDecision → decision.createdBy (steller).
      *
-     * @param string        $bezwaarCaseId The bezwaar case UUID
-     * @param array<string> $panel         Panel member UIDs
+     * @param string        $bezwaarId The bezwaar (lifecycle) UUID
+     * @param array<string> $panel     Panel member UIDs
      *
      * @return array{ok: bool, member: ?string, reason: ?string}
      */
     private function checkPanelIndependence(
-        string $bezwaarCaseId,
+        string $bezwaarId,
         array $panel
     ): array {
-        if ($bezwaarCaseId === '' || $panel === []) {
+        if ($bezwaarId === '' || $panel === []) {
             return ['ok' => true, 'member' => null, 'reason' => null];
         }
 
@@ -482,6 +483,9 @@ class AdvisoryCommitteeService
         }
 
         $register        = $this->settingsService->getConfigValue(key: 'register');
+        $bezwaarSchema   = $this->settingsService->getConfigValue(
+            key: 'bezwaar_schema'
+        );
         $objectionSchema = $this->settingsService->getConfigValue(
             key: 'objection_schema'
         );
@@ -499,10 +503,26 @@ class AdvisoryCommitteeService
         }
 
         try {
+            // Resolve the underlying procest case via the bezwaar entity
+            // when the bezwaar_schema is registered. When unavailable
+            // (e.g. legacy callers passing a case UUID directly), fall back
+            // to treating the input as the case id.
+            $caseId = $bezwaarId;
+            if ($bezwaarSchema !== '') {
+                $bezwaar = $objectService->findObject(
+                    $register,
+                    $bezwaarSchema,
+                    $bezwaarId
+                );
+                if (is_array($bezwaar) === true) {
+                    $caseId = (string) ($bezwaar['case'] ?? $bezwaarId);
+                }
+            }
+
             $objections = $objectService->findObjects(
                 $register,
                 $objectionSchema,
-                ['case' => $bezwaarCaseId]
+                ['case' => $caseId]
             );
             $objection = (is_array($objections) && $objections !== [])
                 ? $objections[0]

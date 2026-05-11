@@ -93,11 +93,15 @@ class SettingsService
         'share_permission_level_schema',
         'case_transfer_schema',
         'automatic_action_schema',
+        // Bezwaar (lifecycle) — Awb Hoofdstuk 7.
+        'bezwaar_schema',
         // Bezwaar advisory committee (BAC) — Awb Art. 7:13.
         'bezwaaradviescommissie_schema',
         'bac_advice_request_schema',
         'bac_default_committee',
         'lhsMatrix',
+        'lhs_matrix_schema',
+        'lhs_recommendation_schema',
         // AI-Assisted Processing settings.
         'ai_audit_entry_schema',
         'ai_enabled',
@@ -165,6 +169,8 @@ class SettingsService
         'abonnement'                   => 'abonnement_schema',
         'inspectieChecklist'           => 'inspectie_checklist_schema',
         'inspectieRapport'             => 'inspectie_rapport_schema',
+        'inspectionChecklistTemplate'  => 'inspection_checklist_template_schema',
+        'inspectionChecklistRun'       => 'inspection_checklist_run_schema',
         'handhavingsactie'             => 'handhavingsactie_schema',
         'adviesAanvraag'               => 'advies_aanvraag_schema',
         'mapLayer'                     => 'map_layer_schema',
@@ -186,6 +192,9 @@ class SettingsService
         'sharePermissionLevel'         => 'share_permission_level_schema',
         'casetransfer'                 => 'case_transfer_schema',
         'automaticAction'              => 'automatic_action_schema',
+        'lhsMatrix'                    => 'lhs_matrix_schema',
+        'lhsRecommendation'            => 'lhs_recommendation_schema',
+        'bezwaar'                      => 'bezwaar_schema',
         'bezwaaradviescommissie'       => 'bezwaaradviescommissie_schema',
         'bacAdviceRequest'             => 'bac_advice_request_schema',
     ];

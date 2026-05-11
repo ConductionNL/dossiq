@@ -3,11 +3,12 @@
 /**
  * Procest Bezwaar Advice Requested Listener.
  *
- * Watches OpenRegister `case` object updates for the bezwaar status
- * transition to "Advies aangevraagd" and triggers the auto-assignment of
- * the default bezwaaradviescommissie via AdvisoryCommitteeService. This
- * realises the spec workflow step where the council formally refers the
- * objection to its independent advisory committee (Awb Art. 7:13(1)).
+ * Watches OpenRegister `bezwaar` (lifecycle) object updates for the
+ * status transition to "Hoorzitting gepland" (the canonical state where
+ * the bezwaar is formally referred to an advisory committee for the
+ * hearing+advice track) and triggers the auto-assignment of the default
+ * bezwaaradviescommissie via AdvisoryCommitteeService. The bezwaar
+ * lifecycle states are owned by the sister bezwaar-lifecycle capability.
  *
  * The listener intentionally swallows infrastructure errors: failure to
  * auto-assign SHALL NOT block the parent bezwaar transition; operators
@@ -41,7 +42,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Auto-assigns the default BAC when bezwaar enters "Advies aangevraagd".
+ * Auto-assigns the default BAC when bezwaar enters "Hoorzitting gepland".
  *
  * @implements IEventListener<Event>
  *
@@ -49,7 +50,7 @@ use Throwable;
  */
 class BezwaarAdviceRequestedListener implements IEventListener
 {
-    private const TRIGGER_STATUS = 'Advies aangevraagd';
+    private const TRIGGER_STATUS = 'Hoorzitting gepland';
 
     /**
      * Constructor.
@@ -87,7 +88,7 @@ class BezwaarAdviceRequestedListener implements IEventListener
                 return;
             }
 
-            if ($this->isCaseSchema(object: $object) === false) {
+            if ($this->isBezwaarSchema(object: $object) === false) {
                 return;
             }
 
@@ -102,16 +103,16 @@ class BezwaarAdviceRequestedListener implements IEventListener
                 return;
             }
 
-            $caseId = (string) (
+            $bezwaarId = (string) (
                 $object['@self']['id']
                 ?? ($object['id'] ?? ($object['uuid'] ?? ''))
             );
-            if ($caseId === '') {
+            if ($bezwaarId === '') {
                 return;
             }
 
             $this->bacService->autoAssignDefaultCommittee(
-                bezwaarCaseId: $caseId
+                bezwaarId: $bezwaarId
             );
         } catch (Throwable $e) {
             $this->logger->debug(
@@ -122,15 +123,17 @@ class BezwaarAdviceRequestedListener implements IEventListener
     }//end handle()
 
     /**
-     * Whether the object belongs to the `case` schema.
+     * Whether the object belongs to the `bezwaar` schema.
      *
      * @param array<string, mixed> $object The object payload
      *
      * @return bool
      */
-    private function isCaseSchema(array $object): bool
+    private function isBezwaarSchema(array $object): bool
     {
-        $schemaSlug = $this->settingsService->getConfigValue(key: 'case_schema');
+        $schemaSlug = $this->settingsService->getConfigValue(
+            key: 'bezwaar_schema'
+        );
         if ($schemaSlug === '') {
             return false;
         }
@@ -144,7 +147,7 @@ class BezwaarAdviceRequestedListener implements IEventListener
             $candidate === $schemaSlug
             || str_ends_with($candidate, '/'.$schemaSlug)
         );
-    }//end isCaseSchema()
+    }//end isBezwaarSchema()
 
     /**
      * Extract the new object payload from the update event.

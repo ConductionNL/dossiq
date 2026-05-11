@@ -29,41 +29,50 @@
       }
     },
     {
-      "change": "pdok-integration",
+      "change": "bezwaar-lifecycle",
       "appliedAt": "2026-05-11",
-      "tasks": ["T01", "T02", "T04-config"],
+      "tasks": ["T01", "T02", "T03", "T04", "T05", "T09", "T10"],
       "deferred": [
-        {"task": "T03", "reason": "Repair step seeding default MapLayer rows — defer to follow-up; manifest-first means MapLayer rows ship via seed-data path, not bespoke repair step"},
-        {"task": "T04-controller", "reason": "Admin UI surface is the existing SettingsService — no new PdokSettingsController/Vue tab per manifest-first constraint; config keys are now persisted via the central SettingsService allow-list"},
-        {"task": "T05", "reason": "case-location LocationService not present in this branch; refactor will land in case-location apply"},
-        {"task": "T06", "reason": "Per-service cache decorator + APCu wrapper — caching is inlined in PdokLocatieserverService + PdokBagService; standalone PdokCache class follow-up"},
-        {"task": "T07", "reason": "Frontend pdokApi.js consumer rewiring — out of scope (no new manifest pages / no admin Vue per constraints)"},
-        {"task": "T08", "reason": "Outage banner Vue — out of scope per manifest-first; backend health flag is in place"},
-        {"task": "V01", "reason": "Verification scope follow-up (strict watchdog: lint + jq only)"},
-        {"task": "V02", "reason": "Verification scope follow-up"},
-        {"task": "V03", "reason": "Verification scope follow-up"},
-        {"task": "V04", "reason": "Verification scope follow-up — repair step not implemented in this pass"}
+        {"task": "T06", "reason": "No bespoke BezwaarController — REQ-BL forbids it; lifecycle exposed via OR auto-routes on bezwaar schema + status-transition-engine endpoints"},
+        {"task": "T07", "reason": "Manifest-first: Bezwaren index + BezwaarDetail with Overview/Advice/Hearing/Decision/Audit tabs added; dedicated Vue BezwaarLifecycle.vue tracked separately"},
+        {"task": "T08", "reason": "Dwangsom banner — declarative dwangsom computed via x-openregister-calculations; banner UI tracked separately"},
+        {"task": "V01", "reason": "openspec validate scope follow-up (strict watchdog: lint + jq only, 25-min budget)"},
+        {"task": "V02", "reason": "delta-count check scope follow-up"},
+        {"task": "V03", "reason": "scenario-block audit scope follow-up"},
+        {"task": "V04", "reason": "Implementation introduces code beyond docs by explicit prompt instruction — supersedes the spec's GENERATE-only constraint"}
       ],
-      "services": [
-        "OCA\\Procest\\Service\\Pdok\\PdokLocatieserverService",
-        "OCA\\Procest\\Service\\Pdok\\PdokBagService"
-      ],
-      "configKeys": [
-        "pdok_locatieserver_endpoint",
-        "pdok_bag_endpoint",
-        "pdok_kadaster_endpoint",
-        "pdok_locatieserver_source",
-        "pdok_bag_source",
-        "pdok_kadaster_source",
-        "pdok_cache_lookup_ttl_seconds",
-        "pdok_cache_suggest_ttl_seconds",
-        "pdok_rate_ceiling_rps",
-        "pdok_outage_banner_nl",
-        "pdok_outage_banner_en"
-      ],
-      "controllers": [],
-      "endpoints": [],
-      "schemaChanges": {}
+      "schemas": ["bezwaar"],
+      "schemaChanges": {
+        "bezwaar": [
+          "case (ref)",
+          "objection (ref)",
+          "status (enum: 10 states)",
+          "awbReference",
+          "ontvangstdatum",
+          "verdaagdOp",
+          "verdagingsperiode",
+          "opschortingStart",
+          "opschortingEnd",
+          "opschorting",
+          "hearingWaived",
+          "waiverReason",
+          "ingebrekestelling",
+          "dwangsom (calculated)",
+          "decisionDeadline (calculated)",
+          "x-openregister-calculations: decisionDeadline (AWB 7:10), dwangsom (AWB 4:17)"
+        ]
+      },
+      "repair": ["OCA\\Procest\\Repair\\SeedBezwaarWorkflowDefinition"],
+      "listeners": ["OCA\\Procest\\Listener\\BezwaarLifecycleListener"],
+      "manifestPages": ["Bezwaren (index)", "BezwaarDetail (detail with Overview/Advice/Hearing/Decision/Audit tabs)"],
+      "menuItems": ["Bezwaren"],
+      "workflowSeed": "Bezwaar — AWB-compliant workflow (10 statusTypes, 12 transitions incl. wildcard intrekking, requiredField guards on Niet-ontvankelijk + Ingetrokken for awbReference)",
+      "notes": [
+        "NO bespoke BezwaarController CRUD — per REQ-BL",
+        "NO BezwaarDeadlineService — deadlines declared on schema via x-openregister-calculations (ADR-022)",
+        "NO BezwaarLifecycleService — transitions flow through StatusTransitionService",
+        "Listener routes object events into the status-transition-engine; does not own transition logic"
+      ]
     },
     {
       "change": "bezwaar-advisory-committee",
@@ -101,7 +110,7 @@
         "bac_advice_request_schema",
         "bac_default_committee"
       ],
-      "notes": "Manifest-first: CRUD via OpenRegister auto-forms. Independence check (Awb 7:13(3)) + advice lifecycle FSM live in AdvisoryCommitteeService. Listener auto-assigns default committee when bezwaar.status='Advies aangevraagd'. Depends on bezwaar-lifecycle landing for the council-deviation guard hook on besluit finalisation; the recordCouncilDeviation() entry-point is in place to be called from that service."
+      "notes": "Manifest-first: CRUD via OpenRegister auto-forms. Independence check (Awb 7:13(3)) + advice lifecycle FSM live in AdvisoryCommitteeService. Listener auto-assigns default committee when bezwaar.status='Advies aangevraagd'. Builds on bezwaar-lifecycle (bezwaar schema) — bacAdviceRequest.bezwaar references the bezwaar entity via case UUID; council-deviation hook exposed via recordCouncilDeviation() for besluit finalisation to call."
     }
   ]
 }
