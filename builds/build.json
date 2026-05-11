@@ -99,6 +99,26 @@
         "bac_default_committee"
       ],
       "notes": "Manifest-first: CRUD via OpenRegister auto-forms. Independence check (Awb 7:13(3)) + advice lifecycle FSM live in AdvisoryCommitteeService. Listener auto-assigns default committee when bezwaar.status='Hoorzitting gepland'. Builds on bezwaar-lifecycle (bezwaar schema); council-deviation hook exposed via recordCouncilDeviation() for besluit finalisation to call."
+    },
+    {
+      "change": "bezwaar-hearing",
+      "appliedAt": "2026-05-11",
+      "tasks": ["T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09"],
+      "deferred": [
+        {"task": "V01", "reason": "openspec validate not part of strict watchdog (php -l + jq only); deferred to opsx-verify"},
+        {"task": "V02", "reason": "deltaCount jq verification covered by openspec validate; deferred"},
+        {"task": "V03", "reason": "Scenario coverage check covered by openspec validate strict; deferred"},
+        {"task": "V04", "reason": "git diff path scope check covered by PR review; deferred"}
+      ],
+      "schemas": ["hearingSession"],
+      "manifestPages": ["BezwaarHearings", "BezwaarHearingDetail"],
+      "menuEntries": ["BezwaarHearings"],
+      "services": ["OCA\\Procest\\Service\\Bezwaar\\HearingService"],
+      "listeners": ["OCA\\Procest\\Listener\\BezwaarHearingScheduledListener"],
+      "controllers": [],
+      "endpoints": [],
+      "configKeys": ["hearing_session_schema", "bezwaar_schema", "register"],
+      "notes": "Manifest-first: hearingSession CRUD via OpenRegister auto-forms; BezwaarHearings index + BezwaarHearingDetail with sidebar tabs Overview/Invitations/Attendees/Minutes/Audit. Updated hearingSession schema (v1.1.0) per REQ-BH-1: added inspectionAvailableFrom/inspectionDeadline/attendance/audioRecording/recordingConsent/followUpQuestions/attendanceFrozenAt/auditTrail; required list now matches spec; status enum extended with dossier_beschikbaar; members and invitees converted from JSON-string to native arrays. HearingService owns schedule()/waive()/recordAttendance() (1h grace then correctionReason mandatory)/addMinutes() with audio consent gate. Listener BezwaarHearingScheduledListener seeds a default hearing when bezwaar.status='Hoorzitting gepland' and no hearing exists. Audit tags catalogued via class constants (awb-art-7:2|7:3|7:4|7:6|7:7|7:13, avg-art-6). NO bespoke CRUD controller."
     }
   ]
 }

@@ -2330,17 +2330,19 @@
       "hearingSession": {
         "slug": "hearingSession",
         "icon": "AccountGroupOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:Event",
         "x-zgw-equivalent": "Hoorzitting",
         "title": "Hearing Session",
-        "description": "Hoorzitting (hearing) — manages scheduling, invitations, and minutes for bezwaar hearings per Awb art. 7:2",
+        "description": "Hoorzitting (hearing) — manages scheduling, invitations, inspection-of-file, attendance, minutes and audit hooks for bezwaar hearings per Awb art. 7:2-7:7",
         "type": "object",
         "required": [
           "case",
           "scheduledDate",
           "chairperson",
           "invitees",
+          "inspectionAvailableFrom",
+          "inspectionDeadline",
           "status"
         ],
         "properties": {
@@ -2372,27 +2374,73 @@
             "description": "Who chairs the hearing (voorzitter)"
           },
           "members": {
-            "type": "string",
-            "description": "JSON-encoded array of committee member role UUIDs"
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Committee member role UUIDs present at the hearing"
           },
           "invitees": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Invitees array: each entry {role, name, channel (berichtenbox|email|post|in_person), accessibilityNeeds[], requestedLanguage?, invitedAt?}"
+          },
+          "inspectionAvailableFrom": {
             "type": "string",
-            "description": "JSON-encoded array of invitee objects (name, role, email, status)"
+            "format": "date",
+            "description": "First date the bezwaardossier is available for inspection (Awb art. 7:4)"
+          },
+          "inspectionDeadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Inspection-of-file deadline = scheduledDate - 7 days (Awb art. 7:4 lid 2). Computed by HearingService on save."
+          },
+          "attendance": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Captured during/after hearing: {invitee, present (bool), arrivalTime?, correctionReason?}"
           },
           "minutesSummary": {
             "type": "string",
-            "description": "Summary of what was discussed (verslag)"
+            "description": "Summary of what was discussed (verslag, Awb art. 7:7)"
           },
           "minutesDocument": {
             "type": "string",
             "format": "uuid",
             "description": "Reference to full hearing minutes document"
           },
+          "audioRecording": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional audio capture; only accepted when recordingConsent = granted (Awb art. 7:7 + AVG art. 6)"
+          },
+          "recordingConsent": {
+            "type": "string",
+            "enum": [
+              "granted",
+              "denied",
+              "not_requested"
+            ],
+            "default": "not_requested",
+            "description": "Bezwaarmaker consent for audio recording"
+          },
+          "followUpQuestions": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Post-hearing questions: {question, askedTo, deadline, answeredAt?, withdrawnAt?}"
+          },
           "status": {
             "type": "string",
             "enum": [
               "gepland",
               "uitgenodigd",
+              "dossier_beschikbaar",
               "uitgevoerd",
               "geannuleerd",
               "afgezien"
@@ -2403,11 +2451,23 @@
           "hearingWaived": {
             "type": "boolean",
             "default": false,
-            "description": "Bezwaarmaker has waived the right to be heard"
+            "description": "Bezwaarmaker has waived the right to be heard (Awb art. 7:3)"
           },
           "waiverReason": {
             "type": "string",
-            "description": "Reason for waiving hearing right"
+            "description": "Reason for waiving hearing right; required when hearingWaived = true"
+          },
+          "attendanceFrozenAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp after which the attendance array becomes append-only (1-hour grace window after hearing concludes)"
+          },
+          "auditTrail": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Append-only audit entries tagged with applicable Awb article (awb-art-7:2|7:3|7:4|7:6|7:7|7:13 or avg-art-6)"
           }
         }
       },
