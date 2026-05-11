@@ -170,6 +170,12 @@ return [
         ['name' => 'parafering#adviseren',        'url' => '/api/parafering/voorstellen/{id}/adviseren',               'verb' => 'POST'],
         ['name' => 'parafering#auditTrail',       'url' => '/api/parafering/voorstellen/{id}/audit-trail',             'verb' => 'GET'],
 
+        // Parafering audit trail Archiefwet-aligned export (action, not CRUD).
+        // CRUD on paraferingAuditEntry objects is served by OpenRegister's
+        // auto-exposed /api/objects/<register>/<schema> endpoints — only the
+        // export action lives here.
+        ['name' => 'parafering_audit_export#export', 'url' => '/api/voorstellen/{id}/audit-trail/export',              'verb' => 'GET'],
+
         // ── StUF (Standaard Uitwisselings Formaat) ──────────────────────
         // Inbound SOAP endpoints accept raw XML POST.
         ['name' => 'stuf#zaken',    'url' => '/api/stuf/zaken',    'verb' => 'POST'],

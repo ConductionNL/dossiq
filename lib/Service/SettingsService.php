@@ -74,6 +74,7 @@ class SettingsService
         'voorstel_schema',
         'parafeerroute_schema',
         'parafeeractie_schema',
+        'parafering_audit_entry_schema',
         'default_case_type',
         'inspectie_checklist_schema',
         'inspectie_rapport_schema',
@@ -93,6 +94,7 @@ class SettingsService
         'share_permission_level_schema',
         'case_transfer_schema',
         'automatic_action_schema',
+        'location_schema',
         // Bezwaar (lifecycle) — Awb Hoofdstuk 7.
         'bezwaar_schema',
         // Bezwaar advisory committee (BAC) — Awb Art. 7:13.
@@ -182,6 +184,7 @@ class SettingsService
         'voorstel'                     => 'voorstel_schema',
         'parafeerroute'                => 'parafeerroute_schema',
         'parafeeractie'                => 'parafeeractie_schema',
+        'paraferingAuditEntry'         => 'parafering_audit_entry_schema',
         'tenant'                       => 'tenant_schema',
         'aiAuditEntry'                 => 'ai_audit_entry_schema',
         'appointment'                  => 'appointment_schema',
@@ -194,6 +197,7 @@ class SettingsService
         'automaticAction'              => 'automatic_action_schema',
         'lhsMatrix'                    => 'lhs_matrix_schema',
         'lhsRecommendation'            => 'lhs_recommendation_schema',
+        'location'                     => 'location_schema',
         'bezwaar'                      => 'bezwaar_schema',
         'bezwaaradviescommissie'       => 'bezwaaradviescommissie_schema',
         'bacAdviceRequest'             => 'bac_advice_request_schema',

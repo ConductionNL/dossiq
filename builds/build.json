@@ -29,50 +29,37 @@
       }
     },
     {
-      "change": "bezwaar-lifecycle",
+      "change": "parafering-audit-trail",
       "appliedAt": "2026-05-11",
-      "tasks": ["T01", "T02", "T03", "T04", "T05", "T09", "T10"],
+      "tasks": ["T01", "T02", "T03", "T04", "T05", "T06", "T07"],
       "deferred": [
-        {"task": "T06", "reason": "No bespoke BezwaarController — REQ-BL forbids it; lifecycle exposed via OR auto-routes on bezwaar schema + status-transition-engine endpoints"},
-        {"task": "T07", "reason": "Manifest-first: Bezwaren index + BezwaarDetail with Overview/Advice/Hearing/Decision/Audit tabs added; dedicated Vue BezwaarLifecycle.vue tracked separately"},
-        {"task": "T08", "reason": "Dwangsom banner — declarative dwangsom computed via x-openregister-calculations; banner UI tracked separately"},
-        {"task": "V01", "reason": "openspec validate scope follow-up (strict watchdog: lint + jq only, 25-min budget)"},
-        {"task": "V02", "reason": "delta-count check scope follow-up"},
-        {"task": "V03", "reason": "scenario-block audit scope follow-up"},
-        {"task": "V04", "reason": "Implementation introduces code beyond docs by explicit prompt instruction — supersedes the spec's GENERATE-only constraint"}
+        {"task": "T08", "reason": "i18n keys deferred per strict watchdog (no i18n)"},
+        {"task": "V01", "reason": "Pre-commit verification follow-up (strict watchdog: lint + jq only)"},
+        {"task": "V02", "reason": "Static exception-message grep follow-up"},
+        {"task": "V03", "reason": "Manual curl verification follow-up"},
+        {"task": "V04", "reason": "End-to-end transition coverage follow-up"},
+        {"task": "V05", "reason": "Export endpoint integration test follow-up"}
       ],
-      "schemas": ["bezwaar"],
-      "schemaChanges": {
-        "bezwaar": [
-          "case (ref)",
-          "objection (ref)",
-          "status (enum: 10 states)",
-          "awbReference",
-          "ontvangstdatum",
-          "verdaagdOp",
-          "verdagingsperiode",
-          "opschortingStart",
-          "opschortingEnd",
-          "opschorting",
-          "hearingWaived",
-          "waiverReason",
-          "ingebrekestelling",
-          "dwangsom (calculated)",
-          "decisionDeadline (calculated)",
-          "x-openregister-calculations: decisionDeadline (AWB 7:10), dwangsom (AWB 4:17)"
-        ]
-      },
-      "repair": ["OCA\\Procest\\Repair\\SeedBezwaarWorkflowDefinition"],
-      "listeners": ["OCA\\Procest\\Listener\\BezwaarLifecycleListener"],
-      "manifestPages": ["Bezwaren (index)", "BezwaarDetail (detail with Overview/Advice/Hearing/Decision/Audit tabs)"],
-      "menuItems": ["Bezwaren"],
-      "workflowSeed": "Bezwaar — AWB-compliant workflow (10 statusTypes, 12 transitions incl. wildcard intrekking, requiredField guards on Niet-ontvankelijk + Ingetrokken for awbReference)",
-      "notes": [
-        "NO bespoke BezwaarController CRUD — per REQ-BL",
-        "NO BezwaarDeadlineService — deadlines declared on schema via x-openregister-calculations (ADR-022)",
-        "NO BezwaarLifecycleService — transitions flow through StatusTransitionService",
-        "Listener routes object events into the status-transition-engine; does not own transition logic"
-      ]
+      "schemas": ["paraferingAuditEntry"],
+      "services": [
+        "OCA\\Procest\\Service\\Parafering\\AuditTrailService"
+      ],
+      "events": ["OCA\\Procest\\Event\\ParafeerTransitionEvent"],
+      "listeners": [
+        "OCA\\Procest\\Listener\\ParaferingAuditListener",
+        "OCA\\Procest\\Validator\\ParaferingAuditAppendOnlyValidator"
+      ],
+      "controllers": ["OCA\\Procest\\Controller\\ParaferingAuditExportController"],
+      "endpoints": [
+        {"verb": "GET", "url": "/api/voorstellen/{id}/audit-trail/export", "name": "parafering_audit_export#export"}
+      ],
+      "manifestPages": [
+        {"slug": "parafering-audit-trail", "type": "index", "path": "/voorstellen/:voorstelId/audit-trail"}
+      ],
+      "registryChanges": {
+        "configKeys": ["parafering_audit_entry_schema"],
+        "slugToConfigKey": {"paraferingAuditEntry": "parafering_audit_entry_schema"}
+      }
     },
     {
       "change": "bezwaar-advisory-committee",
@@ -106,11 +93,12 @@
       "controllers": [],
       "endpoints": [],
       "configKeys": [
+        "bezwaar_schema",
         "bezwaaradviescommissie_schema",
         "bac_advice_request_schema",
         "bac_default_committee"
       ],
-      "notes": "Manifest-first: CRUD via OpenRegister auto-forms. Independence check (Awb 7:13(3)) + advice lifecycle FSM live in AdvisoryCommitteeService. Listener auto-assigns default committee when bezwaar.status='Advies aangevraagd'. Builds on bezwaar-lifecycle (bezwaar schema) — bacAdviceRequest.bezwaar references the bezwaar entity via case UUID; council-deviation hook exposed via recordCouncilDeviation() for besluit finalisation to call."
+      "notes": "Manifest-first: CRUD via OpenRegister auto-forms. Independence check (Awb 7:13(3)) + advice lifecycle FSM live in AdvisoryCommitteeService. Listener auto-assigns default committee when bezwaar.status='Hoorzitting gepland'. Builds on bezwaar-lifecycle (bezwaar schema); council-deviation hook exposed via recordCouncilDeviation() for besluit finalisation to call."
     }
   ]
 }

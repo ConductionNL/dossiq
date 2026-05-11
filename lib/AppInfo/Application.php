@@ -26,8 +26,11 @@ namespace OCA\Procest\AppInfo;
 
 use OCA\OpenRegister\Event\DeepLinkRegistrationEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
+use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Procest\Dashboard\CasesOverviewWidget;
 use OCA\Procest\Dashboard\DeadlineAlertsWidget;
 use OCA\Procest\Dashboard\MyTasksWidget;
@@ -37,11 +40,14 @@ use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Dashboard\StartCaseWidget;
 use OCA\Procest\Listener\BezwaarAdviceRequestedListener;
 use OCA\Procest\Listener\BezwaarLifecycleListener;
+use OCA\Procest\Event\ParafeerTransitionEvent;
 use OCA\Procest\Listener\DeepLinkRegistrationListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
+use OCA\Procest\Listener\ParaferingAuditListener;
 use OCA\Procest\Listener\RoleMutationListener;
 use OCA\Procest\Middleware\TenantMiddleware;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
+use OCA\Procest\Validator\ParaferingAuditAppendOnlyValidator;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -119,8 +125,31 @@ class Application extends App implements IBootstrap
             listener: BezwaarLifecycleListener::class
         );
 
-        // Bezwaar-advisory-committee auto-assignment when a bezwaar case
-        // enters status "Advies aangevraagd".
+        // Parafering audit trail: one listener writes append-only audit entries
+        // for every parafeerroute transition (spec parafering-audit-trail).
+        $context->registerEventListener(
+            event: ParafeerTransitionEvent::class,
+            listener: ParaferingAuditListener::class
+        );
+
+        // Parafering audit trail: append-only validator blocks UPDATE/DELETE
+        // on paraferingAuditEntry objects via OR's pre-save hooks.
+        $context->registerEventListener(
+            event: ObjectCreatingEvent::class,
+            listener: ParaferingAuditAppendOnlyValidator::class
+        );
+        $context->registerEventListener(
+            event: ObjectUpdatingEvent::class,
+            listener: ParaferingAuditAppendOnlyValidator::class
+        );
+        $context->registerEventListener(
+            event: ObjectDeletingEvent::class,
+            listener: ParaferingAuditAppendOnlyValidator::class
+        );
+
+        // Bezwaar-advisory-committee auto-assignment when a bezwaar enters
+        // status "Hoorzitting gepland" — listener defers to
+        // AdvisoryCommitteeService::autoAssignDefaultCommittee.
         $context->registerEventListener(
             event: ObjectUpdatedEvent::class,
             listener: BezwaarAdviceRequestedListener::class
