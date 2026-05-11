@@ -160,6 +160,7 @@ class KpiAggregationServiceTest extends TestCase
         $this->assertArrayHasKey('taskCount', $result);
         $this->assertArrayHasKey('tasksDueToday', $result);
         $this->assertArrayHasKey('statusBreakdown', $result);
+        $this->assertArrayHasKey('typeBreakdown', $result);
         $this->assertArrayHasKey('avgProcessingDays', $result);
     }//end testComputeKpisReturnsAllExpectedKeys()
 
@@ -185,6 +186,7 @@ class KpiAggregationServiceTest extends TestCase
         $this->assertSame(0, $result['taskCount']);
         $this->assertSame(0, $result['tasksDueToday']);
         $this->assertSame([], $result['statusBreakdown']);
+        $this->assertSame([], $result['typeBreakdown']);
         $this->assertNull($result['avgProcessingDays']);
     }//end testComputeKpisReturnsZeroDefaultsOnDbError()
 
@@ -265,13 +267,13 @@ class KpiAggregationServiceTest extends TestCase
 
 
     /**
-     * Test that computeKpis calls getQueryBuilder 8 times (once per KPI).
+     * Test that computeKpis calls getQueryBuilder 9 times (once per KPI).
      *
      * @return void
      */
     public function testComputeKpisCallsDbForEachKpi(): void
     {
-        $this->db->expects($this->exactly(8))
+        $this->db->expects($this->exactly(9))
             ->method('getQueryBuilder')
             ->willReturn($this->buildQbMock(singleRow: ['cnt' => '0', 'avg_days' => null]));
 
