@@ -16,6 +16,7 @@
 		{ "id": "LegesverordeningenMenu", "label": "Legesverordeningen", "icon": "icon-category-office", "route": "Legesverordeningen", "section": "settings", "order": 96 },
 		{ "id": "LegesberekeningenMenu", "label": "Legesberekeningen", "icon": "icon-category-monitoring", "route": "Legesberekeningen", "section": "settings", "order": 97 },
 		{ "id": "TenantsMenu", "label": "Tenants", "icon": "icon-group", "route": "Tenants", "section": "settings", "order": 98, "permission": "admin" },
+		{ "id": "ParafeerroutesMenu", "label": "Parafeerroutes", "icon": "icon-category-workflow", "route": "Parafeerroutes", "section": "settings", "order": 96 },
 		{ "id": "SettingsMenu", "label": "Settings", "icon": "icon-settings", "route": "Settings", "section": "settings", "order": 99 }
 	],
 	"pages": [
@@ -237,6 +238,27 @@
 			}
 		},
 		{
+			"id": "Parafeerroutes",
+			"route": "/settings/parafeerroutes",
+			"type": "index",
+			"title": "Parafeerroutes",
+			"config": {
+				"register": "procest",
+				"schema": "parafeerroute",
+				"columns": [
+					{ "key": "name" },
+					{ "key": "voorstelType" },
+					{ "key": "caseType" },
+					{ "key": "isDefault" }
+				],
+				"actions": [
+					{ "key": "edit" },
+					{ "key": "delete" }
+				],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
 			"id": "LegesverordeningDetail",
 			"route": "/legesverordeningen/:id",
 			"type": "detail",
@@ -341,6 +363,20 @@
 					{ "id": "overview",     "label": "Overview",             "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
 					{ "id": "usage",        "label": "Usage",                "icon": "icon-quota",   "widgets": [{ "type": "data" }],                          "order": 20 },
 					{ "id": "provisioning", "label": "Provisioning history", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 30 }
+				]
+			}
+		},
+		{
+			"id": "ParafeerrouteDetail",
+			"route": "/settings/parafeerroutes/:id",
+			"type": "detail",
+			"title": "Parafeerroute",
+			"config": {
+				"register": "procest",
+				"schema": "parafeerroute",
+				"sidebarTabs": [
+					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
+					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
 				]
 			}
 		},

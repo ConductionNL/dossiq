@@ -45,13 +45,6 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'Parafeerroutes')"
-			:description="t('procest', 'Configure parafeerroutes for B&W decision-making workflow')"
-			:loading="!storesReady">
-			<ParafeerRoutesTab v-if="storesReady" />
-		</CnSettingsSection>
-
-		<CnSettingsSection
 			:name="t('procest', 'ZGW API Mapping')"
 			:description="t('procest', 'Configure property mappings between English OpenRegister fields and Dutch ZGW API fields')"
 			:loading="!storesReady">
@@ -80,7 +73,6 @@ import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
 import Settings from './Settings.vue'
 import CaseTypeAdmin from './CaseTypeAdmin.vue'
-import ParafeerRoutesTab from './components/ParafeerRoutesTab.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import MapLayerSettings from './MapLayerSettings.vue'
 import AiSettingsTab from './tabs/AiSettingsTab.vue'
@@ -97,7 +89,6 @@ export default {
 		Refresh,
 		Settings,
 		CaseTypeAdmin,
-		ParafeerRoutesTab,
 		ZgwMappingSettings,
 		MapLayerSettings,
 		AiSettingsTab,
