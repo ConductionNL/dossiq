@@ -30,6 +30,19 @@ return [
         ['name' => 'settings#create', 'url' => '/api/settings', 'verb' => 'POST'],
         ['name' => 'settings#load',  'url' => '/api/settings/load', 'verb' => 'POST'],
 
+        // AI-Assisted Processing (specific endpoints precede wildcard routes).
+        ['name' => 'ai#classify',        'url' => '/api/ai/classify',        'verb' => 'POST'],
+        ['name' => 'ai#extract',         'url' => '/api/ai/extract',         'verb' => 'POST'],
+        ['name' => 'ai#ask',             'url' => '/api/ai/ask',             'verb' => 'POST'],
+        ['name' => 'ai#summarize',       'url' => '/api/ai/summarize',       'verb' => 'POST'],
+        ['name' => 'ai#suggestRouting',  'url' => '/api/ai/suggest-routing', 'verb' => 'POST'],
+        ['name' => 'ai#suggestNext',     'url' => '/api/ai/suggest-next',    'verb' => 'POST'],
+        ['name' => 'ai#recordAction',    'url' => '/api/ai/record-action',   'verb' => 'POST'],
+        ['name' => 'ai#auditIndex',      'url' => '/api/ai/audit',           'verb' => 'GET'],
+        ['name' => 'ai#getSettings',     'url' => '/api/ai/settings',        'verb' => 'GET'],
+        ['name' => 'ai#updateSettings',  'url' => '/api/ai/settings',        'verb' => 'POST'],
+        ['name' => 'ai#healthCheck',     'url' => '/api/ai/health',          'verb' => 'POST'],
+
         // Parafering Actions (must precede any wildcard routes).
         ['name' => 'parafeer_actie#create', 'url' => '/api/parafeer-actie', 'verb' => 'POST'],
         ['name' => 'parafeer_actie#index',  'url' => '/api/parafeer-actie', 'verb' => 'GET'],

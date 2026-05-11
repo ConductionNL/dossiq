@@ -2740,6 +2740,104 @@
             "description": "Whether tenant is active"
           }
         }
+      },
+      "aiAuditEntry": {
+        "slug": "aiAuditEntry",
+        "icon": "RobotOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:DigitalDocument",
+        "title": "AI Audit Entry",
+        "description": "Immutable audit log entry for AI-assisted processing interactions",
+        "type": "object",
+        "required": [
+          "type",
+          "action",
+          "userId",
+          "timestamp"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "classification",
+              "extraction",
+              "qa",
+              "summary",
+              "routing",
+              "decision_support"
+            ],
+            "description": "AI feature type that produced the entry",
+            "title": "Type",
+            "facetable": true
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "suggestion",
+              "accepted",
+              "rejected",
+              "modified"
+            ],
+            "description": "Outcome of the AI suggestion",
+            "title": "Action",
+            "facetable": true
+          },
+          "caseId": {
+            "type": "string",
+            "description": "Reference to the case (zaak) the AI was invoked on"
+          },
+          "documentId": {
+            "type": "string",
+            "description": "Reference to the document (informatieobject) if applicable"
+          },
+          "model": {
+            "type": "string",
+            "description": "Identifier of the AI model used (e.g. qwen3.5:9b)"
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Prompt sent to the AI model (PII-stripped if enabled)"
+          },
+          "suggestion": {
+            "type": "object",
+            "description": "Structured AI suggestion payload"
+          },
+          "confidence": {
+            "type": "number",
+            "description": "AI confidence score between 0.0 and 1.0"
+          },
+          "userAction": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "rejected",
+              "modified",
+              "ignored"
+            ],
+            "description": "Action taken by the human user on the suggestion"
+          },
+          "actualValue": {
+            "type": "object",
+            "description": "Final value applied by the user (if modified)"
+          },
+          "reason": {
+            "type": "string",
+            "description": "User-provided reason (e.g. for rejection)"
+          },
+          "userId": {
+            "type": "string",
+            "description": "Nextcloud user UID who triggered the AI call"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the AI call was made"
+          },
+          "responseTimeMs": {
+            "type": "integer",
+            "description": "AI response time in milliseconds"
+          }
+        }
       }
     },
     "registers": {
