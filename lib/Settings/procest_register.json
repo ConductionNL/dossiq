@@ -2650,6 +2650,186 @@
           }
         }
       },
+      "bezwaarDecision": {
+        "slug": "bezwaarDecision",
+        "icon": "GavelOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "x-zgw-equivalent": "BeslissingOpBezwaar",
+        "title": "Bezwaar Decision",
+        "description": "Beslissing op bezwaar — canonical decision entity per Awb art. 7:11/7:12 with the 5-value disposition enum, structured rechtsmiddelenclausule, proceskostenvergoeding, and publication flow",
+        "type": "object",
+        "required": [
+          "bezwaar",
+          "dispositionType",
+          "reasoning",
+          "legalBasis"
+        ],
+        "properties": {
+          "bezwaar": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "bezwaar",
+            "onDelete": "CASCADE",
+            "description": "The bezwaar case this decision belongs to"
+          },
+          "dispositionType": {
+            "type": "string",
+            "enum": [
+              "niet_ontvankelijk",
+              "ongegrond",
+              "gegrond_handhaven",
+              "gegrond_herroepen",
+              "gegrond_wijzigen"
+            ],
+            "description": "Awb art. 7:11 canonical outcome — drives mandatory fields, replacement besluit, and proceskosten eligibility"
+          },
+          "reasoning": {
+            "type": "string",
+            "description": "Substantive motivation (motiveringsplicht Awb art. 7:12); for niet_ontvankelijk MUST cite Awb 6:5/6:6/6:7"
+          },
+          "legalBasis": {
+            "type": "string",
+            "description": "Awb article(s) and/or sectoral wettelijke grondslag the decision rests on"
+          },
+          "advisoryOpinion": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "bacAdviceRequest",
+            "description": "Linked BAC advisory request (Awb 7:13); when set, followsAdvice and deviationRationale apply"
+          },
+          "followsAdvice": {
+            "type": "boolean",
+            "description": "Whether this decision follows the BAC advisory opinion"
+          },
+          "deviationRationale": {
+            "type": "string",
+            "description": "Required when advisoryOpinion is set and the decision deviates from the committee advice (Awb art. 7:13 lid 7)"
+          },
+          "replacementDecision": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "decision",
+            "description": "New besluit replacing the primair besluit — required when dispositionType is gegrond_wijzigen, optional for gegrond_herroepen, MUST NOT be set otherwise"
+          },
+          "appealNotice": {
+            "type": "object",
+            "description": "Structured rechtsmiddelenclausule — replaces free-form prose; every required sub-field MUST be filled before publication",
+            "properties": {
+              "competentCourt": {
+                "type": "string",
+                "description": "Bevoegde rechter (e.g. 'Rechtbank Midden-Nederland, sector bestuursrecht')"
+              },
+              "beroepTerm": {
+                "type": "string",
+                "description": "ISO 8601 duration of the beroep filing window; default P6W (Awb 6:7)",
+                "default": "P6W"
+              },
+              "effectiveDate": {
+                "type": "string",
+                "format": "date",
+                "description": "Date from which beroepTerm runs"
+              },
+              "filingMethod": {
+                "type": "string",
+                "enum": ["digitaal", "schriftelijk", "beide"],
+                "description": "How beroep may be filed; drives whether filingUrl and/or filingAddress are required"
+              },
+              "filingUrl": {
+                "type": "string",
+                "description": "Digital filing URL (required when filingMethod is digitaal or beide)"
+              },
+              "filingAddress": {
+                "type": "string",
+                "description": "Postal filing address (required when filingMethod is schriftelijk or beide)"
+              },
+              "griffierecht": {
+                "type": "string",
+                "description": "Griffierecht copy (amount + payment instructions)"
+              },
+              "voorlopigeVoorziening": {
+                "type": "boolean",
+                "description": "Mentions option to request voorlopige voorziening at the court"
+              }
+            }
+          },
+          "proceskostenvergoeding": {
+            "type": "object",
+            "description": "Awb art. 7:15 cost award — awardable only when dispositionType is gegrond_herroepen or gegrond_wijzigen, the bezwaarmaker requested it, and the herroeping is attributable to onrechtmatigheid van het primair besluit; totalAmount is calculated as awardedPoints * pointValue",
+            "properties": {
+              "requested": {
+                "type": "boolean",
+                "description": "Whether the bezwaarmaker requested proceskostenvergoeding before the beslissing"
+              },
+              "awarded": {
+                "type": "boolean",
+                "description": "Explicit awarded/declined decision; MUST be set with reasoning when requested is true and disposition is gegrond_herroepen or gegrond_wijzigen"
+              },
+              "pointBasis": {
+                "type": "string",
+                "description": "BPB-puntensysteem reference (Besluit proceskosten bestuursrecht)"
+              },
+              "awardedPoints": {
+                "type": "number",
+                "description": "Number of points awarded (BPB-puntensysteem)"
+              },
+              "pointValue": {
+                "type": "number",
+                "description": "EUR per point at the time of beslissing"
+              },
+              "totalAmount": {
+                "type": "number",
+                "description": "Calculated total = awardedPoints * pointValue"
+              },
+              "reasoning": {
+                "type": "string",
+                "description": "Motivation for awarding or refusing proceskostenvergoeding"
+              },
+              "paymentDate": {
+                "type": "string",
+                "format": "date",
+                "description": "Date the proceskosten were paid out"
+              }
+            }
+          },
+          "decisionDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the decision was made; validated against bezwaar.afhandelDeadline (Awb 7:10)"
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the decision takes legal effect; beroep-clock runs from here"
+          },
+          "decisionMaker": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "role",
+            "description": "Bestuursorgaan or mandated official; derived from mandate config, never from request body"
+          },
+          "decisionDocument": {
+            "type": "string",
+            "description": "Nextcloud file ID of the generated PDF beslissing op bezwaar"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Set on transition to published; once set the bezwaarDecision is immutable"
+          },
+          "notifiedRecipients": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Audit of UIDs/email addresses notified on publication; berichtenbox deliveries are prefixed 'berichtenbox:'"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "published"],
+            "default": "draft",
+            "description": "Draft until publish() validates required fields and sets publishedAt"
+          }
+        }
+      },
       "beroep": {
         "slug": "beroep",
         "icon": "ScaleBalance",

@@ -8,6 +8,7 @@
 		{ "id": "Werkvoorraad", "label": "Work Queue", "icon": "icon-group", "route": "Werkvoorraad", "order": 30 },
 		{ "id": "Cases", "label": "Cases", "icon": "icon-folder", "route": "Cases", "order": 40 },
 		{ "id": "Bezwaren", "label": "Bezwaren", "icon": "icon-toggle-filelist", "route": "Bezwaren", "order": 45 },
+		{ "id": "BezwaarDecisions", "label": "Beslissingen op bezwaar", "icon": "icon-toggle", "route": "BezwaarDecisions", "order": 47 },
 		{ "id": "Beroepen", "label": "Beroepen", "icon": "icon-toggle-filelist", "route": "Beroepen", "order": 46 },
 		{ "id": "Tasks", "label": "Tasks", "icon": "icon-checkmark", "route": "Tasks", "order": 50 },
 		{ "id": "CaseMap", "label": "Map", "icon": "icon-address", "route": "CaseMap", "order": 60 },
@@ -156,6 +157,37 @@
 					{ "id": "hearing",  "label": "Hearing",  "icon": "icon-group",    "component": "CaseTasksTab",                             "order": 30 },
 					{ "id": "decision", "label": "Decision", "icon": "icon-toggle",   "component": "CaseDecisionsTab",                         "order": 40 },
 					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                "order": 90 }
+				]
+			}
+		},
+		{
+			"id": "BezwaarDecisions",
+			"route": "/bezwaar-decisions",
+			"type": "index",
+			"title": "Beslissingen op bezwaar",
+			"config": {
+				"register": "procest",
+				"schema": "bezwaarDecision",
+				"columns": ["bezwaar", "dispositionType", "decisionDate", "effectiveDate", "status", "publishedAt"],
+				"actions": [
+					{ "id": "view", "label": "View", "icon": "icon-info", "handler": "navigate", "route": "BezwaarDecisionDetail" }
+				],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
+		},
+		{
+			"id": "BezwaarDecisionDetail",
+			"route": "/bezwaar-decisions/:id",
+			"type": "detail",
+			"title": "Beslissing op bezwaar",
+			"config": {
+				"register": "procest",
+				"schema": "bezwaarDecision",
+				"sidebarTabs": [
+					{ "id": "overview",      "label": "Overview",      "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }],                                                                                                                                "order": 10 },
+					{ "id": "appeal-notice", "label": "Appeal notice", "icon": "icon-toggle",  "widgets": [{ "type": "data", "config": { "fields": ["appealNotice"] } }],                                                                                                                "order": 20 },
+					{ "id": "documents",     "label": "Documents",     "icon": "icon-files",   "widgets": [{ "type": "data", "config": { "fields": ["decisionDocument", "replacementDecision"] } }],                                                                                    "order": 30 },
+					{ "id": "audit",         "label": "Audit",         "icon": "icon-history", "widgets": [{ "type": "audit-trail" }, { "type": "data", "config": { "fields": ["publishedAt", "notifiedRecipients"] } }],                                                               "order": 90 }
 				]
 			}
 		},
