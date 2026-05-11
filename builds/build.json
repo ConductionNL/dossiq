@@ -29,39 +29,35 @@
       }
     },
     {
-      "change": "vth-workflow-templates",
+      "change": "inspection-checklists",
       "appliedAt": "2026-05-11",
-      "tasks": ["T01", "T02"],
+      "tasks": ["T01", "T02", "T03"],
       "deferred": [
-        {"task": "T03", "reason": "VthWorkflowTemplateCatalogService — manifest-first apply: catalog exposed via repair step + OpenRegister, follow-up change for ad-hoc admin import service"},
-        {"task": "T03b", "reason": "VthWorkflowTemplateCatalogController — follow-up change; out of strict-watchdog scope (no controllers in this apply)"},
-        {"task": "T04", "reason": "Routes registration — follows controller in a follow-up change"},
-        {"task": "T04b", "reason": "Vue store + axios service — Vue work deferred to a separate UI apply"},
-        {"task": "T05", "reason": "VthWorkflowTemplatesTab.vue — manifest-first; UI deferred to a separate UI apply"},
-        {"task": "T06", "reason": "VthWorkflowTemplateDetailDialog.vue — manifest-first; UI deferred to a separate UI apply"},
-        {"task": "T07", "reason": "Selective install / uninstall UX — requires controller and Vue tab from T03b/T05"},
-        {"task": "V01", "reason": "SPDX grep — N/A for files not yet authored (only repair step + catalog JSON in this apply)"},
-        {"task": "V02", "reason": "Service-API grep — partial: covered for repair step (no findObject/saveObject on workflowTemplate); rest covered by follow-up"},
-        {"task": "V03", "reason": "Controller getMessage() grep — controller deferred to follow-up apply"},
-        {"task": "V04", "reason": "Manual QA — strict watchdog: php -l + jq only; QA deferred to verify step"}
+        {"task": "T04", "reason": "Vue settings editor — manifest-first; OpenRegister auto-form renders index + detail for inspectionChecklistTemplate"},
+        {"task": "T05", "reason": "Mobile run UI lives in sister spec mobiel-inspectie (already applied); manifest run detail renders responses/photos/followUp tabs"},
+        {"task": "T06", "reason": "Offline sync queue — frontend scope, see mobiel-inspectie V3"},
+        {"task": "T07", "reason": "Evidence upload pipeline — folder structure documented; file routing follows existing FolderManagementHandler"},
+        {"task": "V01", "reason": "openspec validate scope — strict watchdog: lint + jq only"},
+        {"task": "V02", "reason": "delta count via openspec change show — out of watchdog scope"},
+        {"task": "V03", "reason": "Scenario coverage check — out of watchdog scope"},
+        {"task": "V04", "reason": "git diff scope check — handled by PR review"}
       ],
       "services": [
-        "OCA\\Procest\\Service\\WorkflowDefinitionService::createDraft"
+        "OCA\\Procest\\Service\\Inspection\\ChecklistService"
       ],
-      "repairSteps": ["OCA\\Procest\\Repair\\SeedVthWorkflowTemplates"],
-      "seedCatalog": {
-        "directory": "lib/Settings/seed/vth-workflow-templates",
-        "templates": [
-          "aanvraag-omgevingsvergunning",
-          "toezichtbezoek",
-          "handhavingstraject",
-          "bezwaar",
-          "klacht-toezicht",
-          "spoedig-herstel"
-        ],
-        "crossLinkOnly": ["bezwaar"]
+      "listeners": [
+        "OCA\\Procest\\Listener\\ChecklistRunImmutabilityListener"
+      ],
+      "controllers": [],
+      "endpoints": [],
+      "schemaChanges": {
+        "inspectionChecklistTemplate": ["new schema — name, caseType, version, status (draft|active|retired), active, sections[] with nested items[] (responseType enum [ja_nee_nvt, tekst, getal, meerkeuze, foto, meting], fotoRequired enum [nooit, bij_nee, altijd], numericRange, choices, failureAction with type enum [herinspectie, handhavingstaak, documentVerzoek, geen]), seedKey"],
+        "inspectionChecklistRun": ["new schema — case, inspection, template, templateVersion, templateSnapshot, inspector (server-derived), startedAt, completedAt, submittedAt, status (concept|in_uitvoering|ingediend|gearchiveerd), responses[] with itemId/value/numericValue/choice/comment/photos/audio/syncState, photos[], location, overallResult (conform|niet_conform|deels_conform), syncState (local|queued|synced), followUpType"]
       },
-      "notes": "Manifest-first apply: workflow templates are seeded data delivered via Repair step that calls WorkflowDefinitionService::createDraft() + publish(). No new manifest pages or schemas. The bezwaar entry is a cross-link to bezwaar-lifecycle (extra guards documented in JSON; no new workflowTemplate row). Soft-deps on base-register-seed-data — missing caseTypes warn + skip."
+      "configKeys": [
+        "inspection_checklist_template_schema",
+        "inspection_checklist_run_schema"
+      ]
     }
   ]
 }

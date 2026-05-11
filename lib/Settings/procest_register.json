@@ -3296,6 +3296,358 @@
           }
         }
       },
+      "inspectionChecklistTemplate": {
+        "slug": "inspectionChecklistTemplate",
+        "icon": "ClipboardListOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:HowTo",
+        "title": "Inspection Checklist Template",
+        "description": "Long-lived configuration template for an inspection checklist (REQ-IC-1). Owns sections, items, response-type rules, and follow-up action defaults. Versioned per REQ-IC-8 — published edits create a new version and retire the prior one.",
+        "type": "object",
+        "required": [
+          "name",
+          "version",
+          "status",
+          "sections"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Template label, e.g. 'Bouwtoezicht — Fundering'"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional case-type binding; null means any case type"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1,
+            "description": "Monotonic template version, frozen once a run consumes it"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "retired"
+            ],
+            "default": "draft",
+            "description": "Lifecycle status of this template version"
+          },
+          "active": {
+            "type": "boolean",
+            "default": false,
+            "description": "Convenience flag mirroring status=active for list filtering"
+          },
+          "sections": {
+            "type": "array",
+            "description": "Ordered sections each carrying their own items[]",
+            "items": {
+              "type": "object",
+              "required": ["name"],
+              "properties": {
+                "order": {
+                  "type": "integer",
+                  "description": "Display order"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Section name, e.g. 'Wapening'"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Optional section guidance text"
+                },
+                "items": {
+                  "type": "array",
+                  "description": "Ordered checklist items in this section",
+                  "items": {
+                    "type": "object",
+                    "required": ["label", "responseType"],
+                    "properties": {
+                      "order": {
+                        "type": "integer",
+                        "description": "Display order of the item"
+                      },
+                      "label": {
+                        "type": "string",
+                        "description": "Question / item label"
+                      },
+                      "helpText": {
+                        "type": "string",
+                        "description": "Optional inspector guidance"
+                      },
+                      "responseType": {
+                        "type": "string",
+                        "enum": [
+                          "ja_nee_nvt",
+                          "tekst",
+                          "getal",
+                          "meerkeuze",
+                          "foto",
+                          "meting"
+                        ],
+                        "description": "Input type — drives validation in REQ-IC-3"
+                      },
+                      "required": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether the item must be answered"
+                      },
+                      "fotoRequired": {
+                        "type": "string",
+                        "enum": [
+                          "nooit",
+                          "bij_nee",
+                          "altijd"
+                        ],
+                        "default": "nooit",
+                        "description": "Photo requirement gate (REQ-IC-3)"
+                      },
+                      "numericRange": {
+                        "type": "object",
+                        "description": "Only used when responseType is getal or meting",
+                        "properties": {
+                          "min": {
+                            "type": "number"
+                          },
+                          "max": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "choices": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Allowed values when responseType is meerkeuze"
+                      },
+                      "failureAction": {
+                        "type": "object",
+                        "description": "Conditional follow-up dispatched on failure (REQ-IC-7)",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "herinspectie",
+                              "handhavingstaak",
+                              "documentVerzoek",
+                              "geen"
+                            ],
+                            "default": "geen"
+                          },
+                          "template": {
+                            "type": "string",
+                            "description": "Optional template ref for the follow-up artefact"
+                          },
+                          "deadlineDays": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Days from submit to follow-up deadline"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "seedKey": {
+            "type": "string",
+            "description": "Idempotent seed identifier when shipped via repair-step seeds"
+          }
+        }
+      },
+      "inspectionChecklistRun": {
+        "slug": "inspectionChecklistRun",
+        "icon": "ClipboardCheckMultipleOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "title": "Inspection Checklist Run",
+        "description": "Per-inspection runtime instance of an inspectionChecklistTemplate (REQ-IC-2). Once submitted (status=ingediend) the run is append-only: edits are rejected by REQ-IC-8 enforcement.",
+        "type": "object",
+        "required": [
+          "case",
+          "template",
+          "templateVersion",
+          "inspector",
+          "status"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Parent case (zaak) reference"
+          },
+          "inspection": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional parent inspection reference (mobiel-inspectie session)"
+          },
+          "template": {
+            "type": "string",
+            "format": "uuid",
+            "description": "inspectionChecklistTemplate reference chosen at run start"
+          },
+          "templateVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Template version captured at run start (REQ-IC-8)"
+          },
+          "templateSnapshot": {
+            "type": "object",
+            "description": "Frozen JSON copy of the template sections+items at run start — hidden from default API output",
+            "additionalProperties": true
+          },
+          "inspector": {
+            "type": "string",
+            "description": "NC user UID — server-derived from IUserSession, never accepted from body"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the run was created"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the run was submitted"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Alias of completedAt; populated on submit"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "concept",
+              "in_uitvoering",
+              "ingediend",
+              "gearchiveerd"
+            ],
+            "default": "concept",
+            "description": "Run lifecycle status"
+          },
+          "responses": {
+            "type": "array",
+            "description": "Per-item responses (append-only post-submit)",
+            "items": {
+              "type": "object",
+              "required": ["itemId"],
+              "properties": {
+                "itemId": {
+                  "type": "string",
+                  "description": "Reference to checklist item id"
+                },
+                "value": {
+                  "type": "string",
+                  "description": "Primary value (ja/nee/nvt, text, choice)"
+                },
+                "numericValue": {
+                  "type": "number",
+                  "description": "Numeric value for getal/meting"
+                },
+                "choice": {
+                  "type": "string",
+                  "description": "Selected option for meerkeuze"
+                },
+                "comment": {
+                  "type": "string",
+                  "maxLength": 2000,
+                  "description": "Free-text comment"
+                },
+                "photos": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Nextcloud file IDs for photos"
+                },
+                "audio": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Nextcloud file IDs for audio recordings"
+                },
+                "respondedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "syncState": {
+                  "type": "string",
+                  "enum": ["local", "queued", "synced"],
+                  "description": "Offline-sync state for this response"
+                }
+              }
+            }
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "All Nextcloud file IDs of photos attached to this run"
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "lat": {
+                "type": "number"
+              },
+              "lng": {
+                "type": "number"
+              },
+              "accuracy": {
+                "type": "number"
+              },
+              "source": {
+                "type": "string"
+              }
+            },
+            "description": "GPS context from mobiel-inspectie"
+          },
+          "overallResult": {
+            "type": "string",
+            "enum": [
+              "conform",
+              "niet_conform",
+              "deels_conform"
+            ],
+            "description": "Aggregate result — derived on submit by ChecklistService::aggregateResult (REQ-IC-6); user-supplied values are ignored"
+          },
+          "syncState": {
+            "type": "string",
+            "enum": [
+              "local",
+              "queued",
+              "synced"
+            ],
+            "default": "local",
+            "description": "Offline-sync state for the whole run (REQ-IC-5)"
+          },
+          "followUpType": {
+            "type": "string",
+            "enum": [
+              "herinspectie",
+              "handhavingstaak",
+              "documentVerzoek",
+              "geen"
+            ],
+            "default": "geen",
+            "description": "Highest-priority follow-up type dispatched on submit (REQ-IC-7)"
+          }
+        }
+      },
       "tenant": {
         "slug": "tenant",
         "icon": "OfficeBuilding",
@@ -3698,6 +4050,8 @@
           "lhsMatrix",
           "lhsRecommendation",
           "inspectieChecklist",
+          "inspectionChecklistTemplate",
+          "inspectionChecklistRun",
           "adviesAanvraag",
           "legesverordening",
           "legesartikel",
