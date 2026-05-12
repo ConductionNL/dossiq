@@ -2,7 +2,7 @@
 
 The zaaktype configuration is part of the Settings area and provides ZGW-compliant case type management.
 
-![Zaaktype Configuration](../screenshots/zaaktype-configuratie.png)
+![Zaaktype Configuration](/screenshots/zaaktype-configuratie.png)
 
 ## Overview
 

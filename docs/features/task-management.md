@@ -2,7 +2,7 @@
 
 The Tasks view provides a list of all tasks in the system, functioning similarly to the Cases view.
 
-![Task Management](../screenshots/task-management.png)
+![Task Management](/screenshots/task-management.png)
 
 ## Overview
 

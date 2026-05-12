@@ -2,7 +2,7 @@
 
 The My Work view shows all cases and tasks assigned to the currently logged-in user, providing a personal work queue.
 
-![My Work](../screenshots/my-work.png)
+![My Work](/screenshots/my-work.png)
 
 ## Overview
 

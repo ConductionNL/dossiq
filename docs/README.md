@@ -6,13 +6,13 @@ Procest is a case management (zaakgericht werken) application for Nextcloud, des
 
 | Feature | Screenshot |
 |---------|------------|
-| Dashboard | ![Dashboard](screenshots/dashboard.png) |
-| My Work | ![My Work](screenshots/my-work.png) |
-| Cases | ![Cases](screenshots/case-management.png) |
-| Tasks | ![Tasks](screenshots/task-management.png) |
-| Case Types | ![Case Types](screenshots/case-types.png) |
-| Admin Settings | ![Settings](screenshots/admin-settings.png) |
-| ZGW Configuration | ![ZGW Config](screenshots/zaaktype-configuratie.png) |
+| Dashboard | ![Dashboard](/screenshots/dashboard.png) |
+| My Work | ![My Work](/screenshots/my-work.png) |
+| Cases | ![Cases](/screenshots/case-management.png) |
+| Tasks | ![Tasks](/screenshots/task-management.png) |
+| Case Types | ![Case Types](/screenshots/case-types.png) |
+| Admin Settings | ![Settings](/screenshots/admin-settings.png) |
+| ZGW Configuration | ![ZGW Config](/screenshots/zaaktype-configuratie.png) |
 
 ## Feature Documentation
 
