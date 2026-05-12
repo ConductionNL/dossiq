@@ -52,7 +52,8 @@ test.describe('Tasks page', () => {
 		await expect(page.getByRole('radio', { name: 'Table' })).toBeChecked({ timeout: 10000 })
 		await expect(page.getByRole('button', { name: 'Add Item' })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
-		await expect(page.getByPlaceholder('Search tasks')).toBeVisible()
+		// CnIndexSidebar's search field — placeholder is "Type to search..." (lib default).
+		await expect(page.getByPlaceholder('Type to search')).toBeVisible()
 	})
 })
 
@@ -61,9 +62,10 @@ test.describe('My Work page', () => {
 	test('renders with correct filter controls', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/my-work')
 		await expect(page.getByRole('heading', { name: 'My Work', level: 2 })).toBeVisible({ timeout: 10000 })
-		await expect(page.getByRole('button', { name: /All/ })).toBeVisible()
-		await expect(page.getByRole('button', { name: /Cases/ })).toBeVisible()
-		await expect(page.getByRole('button', { name: /Tasks/ })).toBeVisible()
+		// Filter tabs are <button role="tab">All (n)</button> — not plain buttons.
+		await expect(page.getByRole('tab', { name: /All/ })).toBeVisible()
+		await expect(page.getByRole('tab', { name: /Cases/ })).toBeVisible()
+		await expect(page.getByRole('tab', { name: /Tasks/ })).toBeVisible()
 		await expect(page.getByRole('checkbox', { name: 'Show completed' })).toBeVisible()
 	})
 })
