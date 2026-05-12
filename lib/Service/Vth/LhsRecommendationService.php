@@ -262,11 +262,11 @@ class LhsRecommendationService
         }
 
         try {
-            $results = $objectService->getObjects(
-                register: $register,
-                schema: $schema,
-                filters: $filters,
-                limit: 1,
+            $results = $objectService->findAll(
+                [
+                    'filters' => (['register' => $register, 'schema' => $schema] + $filters),
+                    'limit'   => 1,
+                ],
             );
         } catch (Throwable $e) {
             $this->logger->error(

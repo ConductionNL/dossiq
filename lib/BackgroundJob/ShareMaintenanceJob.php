@@ -100,13 +100,10 @@ class ShareMaintenanceJob extends TimedJob
         }
 
         try {
-            $result = $objectService->getObjects(
-                (int) $register,
-                (int) $schema,
-                [],
+            $shares = $objectService->findAll(
+                ['filters' => ['register' => (int) $register, 'schema' => (int) $schema]],
             );
 
-            $shares       = ($result['objects'] ?? []);
             $reminderDate = new \DateTime('+'.self::REMINDER_DAYS.' days');
 
             foreach ($shares as $share) {
