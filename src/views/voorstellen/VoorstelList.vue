@@ -106,6 +106,7 @@ import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import FileDocumentEditOutline from 'vue-material-design-icons/FileDocumentEditOutline.vue'
 import BellRing from 'vue-material-design-icons/BellRing.vue'
 import VoorstelCreateDialog from './components/VoorstelCreateDialog.vue'
+import { generateUrl } from '@nextcloud/router'
 import { useObjectStore } from '../../store/modules/object.js'
 
 const STATUS_LABELS = {
@@ -255,7 +256,7 @@ export default {
 		async sendReminder(voorstel) {
 			const actor = this.getWaitingActor(voorstel)
 			try {
-				await fetch('/apps/procest/api/notifications/parafering-reminder', {
+				await fetch(generateUrl('/apps/procest/api/notifications/parafering-reminder'), {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',

@@ -76,6 +76,7 @@ import CaseTypeAdmin from './CaseTypeAdmin.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import MapLayerSettings from './MapLayerSettings.vue'
 import AiSettingsTab from './tabs/AiSettingsTab.vue'
+import { generateUrl } from '@nextcloud/router'
 import { initializeStores } from '../../store/store.js'
 
 export default {
@@ -112,7 +113,7 @@ export default {
 			this.message = ''
 
 			try {
-				const response = await fetch('/apps/procest/api/settings/load', {
+				const response = await fetch(generateUrl('/apps/procest/api/settings/load'), {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',

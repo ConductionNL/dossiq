@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { generateUrl } from '@nextcloud/router'
 
 export const useZgwMappingStore = defineStore('zgwMapping', {
 	state: () => ({
@@ -17,7 +18,7 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 			this.error = null
 
 			try {
-				const response = await fetch('/apps/procest/api/zgw-mappings', {
+				const response = await fetch(generateUrl('/apps/procest/api/zgw-mappings'), {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
@@ -47,7 +48,7 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 			this.error = null
 
 			try {
-				const response = await fetch(`/apps/procest/api/zgw-mappings/${resourceKey}`, {
+				const response = await fetch(generateUrl(`/apps/procest/api/zgw-mappings/${resourceKey}`), {
 					method: 'PUT',
 					headers: {
 						'Content-Type': 'application/json',
@@ -78,7 +79,7 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 			this.error = null
 
 			try {
-				const response = await fetch(`/apps/procest/api/zgw-mappings/${resourceKey}/reset`, {
+				const response = await fetch(generateUrl(`/apps/procest/api/zgw-mappings/${resourceKey}/reset`), {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
