@@ -11,16 +11,19 @@ export default defineConfig({
 	retries: 1,
 	workers: 1,
 	reporter: [
-		['html', { open: 'never', outputFolder: 'tests/e2e/playwright-report' }],
-		['junit', { outputFile: 'tests/e2e/test-results/results.xml' }],
+		// Output paths match the shared quality.yml workflow's artifact-upload
+		// paths (server/apps/<app>/playwright-report and .../test-results) so
+		// the HTML report + failure screenshots/traces actually get uploaded.
+		['html', { open: 'never', outputFolder: 'playwright-report' }],
+		['junit', { outputFile: 'test-results/results.xml' }],
 	],
-	outputDir: 'tests/e2e/test-results',
+	outputDir: 'test-results',
 	globalSetup: './tests/e2e/global-setup.ts',
 
 	use: {
 		baseURL: process.env.NEXTCLOUD_URL || 'http://localhost:8080',
 		storageState: STORAGE_STATE,
-		trace: 'on-first-retry',
+		trace: 'retain-on-failure',
 		screenshot: 'only-on-failure',
 	},
 

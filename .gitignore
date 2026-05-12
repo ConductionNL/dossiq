@@ -13,3 +13,7 @@ docs/node_modules/
 .phpunit.result.cache
 coverage/
 phpmetrics/
+
+# Playwright output (paths align with the shared quality.yml artifact uploads)
+/test-results/
+/playwright-report/
