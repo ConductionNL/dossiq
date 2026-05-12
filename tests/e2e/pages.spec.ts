@@ -18,7 +18,7 @@ test.describe('Cases page', () => {
 		await expect(page.getByRole('radio', { name: 'Cards' })).toBeVisible({ timeout: 10000 })
 		await expect(page.getByRole('radio', { name: 'Table' })).toBeChecked()
 		await expect(page.getByRole('button', { name: 'Add Item' })).toBeVisible()
-		await expect(page.getByRole('button', { name: 'Actions' })).toBeVisible()
+		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
 	})
 
 	test('new case modal has correct fields', async ({ page }) => {
@@ -51,7 +51,7 @@ test.describe('Tasks page', () => {
 		await page.goto('/index.php/apps/procest/tasks')
 		await expect(page.getByRole('radio', { name: 'Table' })).toBeChecked({ timeout: 10000 })
 		await expect(page.getByRole('button', { name: 'Add Item' })).toBeVisible()
-		await expect(page.getByRole('button', { name: 'Actions' })).toBeVisible()
+		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
 		await expect(page.getByPlaceholder('Search tasks')).toBeVisible()
 	})
 })
