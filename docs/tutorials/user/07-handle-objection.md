@@ -10,26 +10,26 @@ Step-by-step guide to Handle an objection (bezwaar)
 
 ## Goal
 
-{{TODO: write the goal}}
+<!-- {{TODO: write the goal}} -->
 
 ## Prerequisites
 
-{{TODO: list prerequisites}}
+<!-- {{TODO: list prerequisites}} -->
 
 ## Steps
 
-{{TODO: numbered steps, each with one inline screenshot — see /journeydoc-add-story}}
+<!-- {{TODO: numbered steps, each with one inline screenshot — see /journeydoc-add-story}} -->
 
 ## Verification
 
-{{TODO: how the user confirms it worked}}
+<!-- {{TODO: how the user confirms it worked}} -->
 
 ## Common issues
 
 | Symptom | Fix |
 |---|---|
-{{TODO: rows}}
+<!-- {{TODO: rows}} -->
 
 ## Reference
 
-{{TODO: cross-link into features/*.md}}
+<!-- {{TODO: cross-link into features/*.md}} -->
