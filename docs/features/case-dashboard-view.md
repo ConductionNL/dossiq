@@ -2,7 +2,7 @@
 
 The case dashboard view shows the detail page for an individual case, accessible by clicking on a case from the My Work list or the Cases list.
 
-![Case Dashboard View](../screenshots/case-dashboard-view.png)
+![Case Dashboard View](/screenshots/case-dashboard-view.png)
 
 ## Overview
 

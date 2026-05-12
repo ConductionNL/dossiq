@@ -27,15 +27,18 @@ const config = createConfig({
   organizationName: 'ConductionNL',
   projectName: 'procest',
 
-  /* Procest ships en + nl markdown; the brand preset's default i18n
-     block (nl/en/de/fr) is replaced wholesale here so we don't pull
-     in stub locales the docs don't translate yet. */
+  /* English-only until the docs actually ship translated markdown.
+     Per ADR-030: a `locales` array carrying `nl` without a populated
+     `docs/i18n/nl/docusaurus-plugin-content-docs/current/` directory
+     of translated markdown triggers SSR rendering errors ("Cannot read
+     properties of undefined (reading 'id')") on tutorial pages when the
+     docs source moves faster than the locale's `current.json`. Trim to
+     `['en']`; re-add `nl` once the translation backfill lands. */
   i18n: {
     defaultLocale: 'en',
-    locales: ['en', 'nl'],
+    locales: ['en'],
     localeConfigs: {
       en: { label: 'English' },
-      nl: { label: 'Nederlands' },
     },
   },
 
@@ -126,6 +129,14 @@ const config = createConfig({
    markdown directly so it makes it into the final Docusaurus config. */
 config.markdown = {
   mermaid: true,
+  /* Tutorial pages (docs/tutorials/) reference screenshots populated by
+     tests/e2e/docs-screenshots.spec.ts. The Playwright capture run is
+     separate from the docs build, so the build must succeed even when a
+     fresh checkout doesn't have every PNG yet. Warn instead of failing
+     (ADR-030); flip to 'throw' once all screenshots are committed. */
+  hooks: {
+    onBrokenMarkdownImages: 'warn',
+  },
 };
 
 module.exports = config;

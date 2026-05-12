@@ -2,7 +2,7 @@
 
 The Case Types page (under Settings) allows administrators to manage case type definitions and their configurations.
 
-![Case Types](../screenshots/case-types.png)
+![Case Types](/screenshots/case-types.png)
 
 ## Overview
 
