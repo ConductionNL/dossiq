@@ -31,7 +31,8 @@
 		{ "id": "LhsRecommendationsMenu", "label": "LHS Recommendations", "icon": "icon-comment", "route": "LhsRecommendations", "section": "settings", "order": 97 },
 		{ "id": "LocationsMenu", "label": "Case locations", "icon": "icon-address", "route": "Locations", "section": "settings", "order": 98, "permission": "admin" },
 		{ "id": "BezwaarCommitteesMenu", "label": "Bezwaaradviescommissies", "icon": "icon-group", "route": "BezwaarCommittees", "section": "settings", "order": 99 },
-		{ "id": "SettingsMenu", "label": "Settings", "icon": "icon-settings", "route": "Settings", "section": "settings", "order": 99 }
+		{ "id": "SettingsMenu", "label": "Settings", "icon": "icon-settings", "route": "Settings", "section": "settings", "order": 99 },
+		{ "id": "FeaturesRoadmapMenu", "label": "Features & roadmap", "icon": "icon-toggle", "route": "FeaturesRoadmap", "section": "settings", "order": 100 }
 	],
 	"pages": [
 		{
@@ -924,6 +925,13 @@
 					{ "id": "audit",           "label": "Audit trail",              "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                                                                                   "order": 90 }
 				]
 			}
+		},
+		{
+			"id": "FeaturesRoadmap",
+			"route": "/features-roadmap",
+			"type": "custom",
+			"title": "Features & roadmap",
+			"component": "FeaturesRoadmap"
 		}
 	]
 }

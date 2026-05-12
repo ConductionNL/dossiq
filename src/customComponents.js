@@ -47,6 +47,11 @@ import VisualWorkflowEditor from './components/workflow/VisualWorkflowEditor.vue
 // MAY reference it by string name. See openspec/changes/map-component/.
 import MapComponent from './components/map/MapComponent.vue'
 
+// --- Features & Roadmap page — thin wrapper around the lib's
+//     CnFeaturesAndRoadmapView (the in-product roadmap surface powered by
+//     OpenRegister's github-issue-proxy). See ConductionNL/hydra#251. ---
+import FeaturesRoadmapView from './views/FeaturesRoadmap.vue'
+
 export default {
 	// --- Genuine exceptions: no abstract analogue. ---
 	MyWorkView, // bespoke 4-tab filter UI mixing case + task entities
@@ -76,4 +81,7 @@ export default {
 
 	// --- Shared map surface — referenceable from manifest pages. ---
 	MapComponent,
+
+	// --- Features & Roadmap page (lib's CnFeaturesAndRoadmapView). ---
+	FeaturesRoadmap: FeaturesRoadmapView,
 }
