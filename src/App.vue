@@ -4,6 +4,7 @@
 		:manifest="manifest"
 		:custom-components="customComponents"
 		:page-types="pageTypes"
+		:formatters="formatters"
 		app-id="procest"
 		:translate="translateForApp"
 		:permissions="permissions" />
@@ -44,6 +45,15 @@ export default {
 			default: () => ({}),
 		},
 		pageTypes: {
+			type: Object,
+			default: () => ({}),
+		},
+		/**
+		 * Cell-formatter registry — forwarded to CnAppRoot as `cnFormatters`.
+		 * Resolves `pages[].config.columns[].formatter` ids on index/logs
+		 * pages (see src/services/formatters.js).
+		 */
+		formatters: {
 			type: Object,
 			default: () => ({}),
 		},

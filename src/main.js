@@ -17,6 +17,7 @@ import App from './App.vue'
 import bundledManifest from './manifest.json'
 import customComponents from './customComponents.js'
 import mapFormatters from './services/mapFormatters.js'
+import formatters from './services/formatters.js'
 
 // Library CSS — must be explicit import (webpack tree-shakes side-effect imports from aliased packages)
 import '@conduction/nextcloud-vue/css/index.css'
@@ -104,6 +105,7 @@ tryLoadTranslations()
 const pageTypesProp = { ...defaultPageTypes }
 const customComponentsProp = { ...customComponents }
 const mapFormattersProp = { ...mapFormatters }
+const formattersProp = { ...formatters }
 
 // Expose the map formatter registry as a Vue global so `CnMapPage`
 // (and any future map-type pages) can resolve named formatters from
@@ -120,6 +122,7 @@ new Vue({
 			customComponents: customComponentsProp,
 			pageTypes: pageTypesProp,
 			mapFormatters: mapFormattersProp,
+			formatters: formattersProp,
 		},
 	}),
 }).$mount('#content')
