@@ -408,11 +408,11 @@ class SeedDataService
         array $filters,
     ): ?object {
         try {
-            $results = $objectService->getObjects(
-                register: $registerId,
-                schema: $schemaId,
-                filters: $filters,
-                limit: 1,
+            $results = $objectService->findAll(
+                [
+                    'filters' => (['register' => $registerId, 'schema' => $schemaId] + $filters),
+                    'limit'   => 1,
+                ],
             );
 
             if (is_array($results) === true && count($results) > 0) {

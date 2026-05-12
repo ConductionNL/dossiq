@@ -195,13 +195,9 @@ class AppointmentService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('appointment_schema');
 
-        $result = $objectService->getObjects(
-            (int) $register,
-            (int) $schema,
-            ['caseId' => $caseId],
+        return $objectService->findAll(
+            ['filters' => ['register' => (int) $register, 'schema' => (int) $schema, 'caseId' => $caseId]],
         );
-
-        return $result['objects'] ?? [];
     }//end getAppointmentsForCase()
 
     /**
@@ -221,13 +217,9 @@ class AppointmentService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('appointment_schema');
 
-        $result = $objectService->getObjects(
-            (int) $register,
-            (int) $schema,
-            ['cancelToken' => $token],
+        $appointments = $objectService->findAll(
+            ['filters' => ['register' => (int) $register, 'schema' => (int) $schema, 'cancelToken' => $token]],
         );
-
-        $appointments = ($result['objects'] ?? []);
         if (empty($appointments) === true) {
             return null;
         }

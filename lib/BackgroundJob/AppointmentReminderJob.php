@@ -81,13 +81,11 @@ class AppointmentReminderJob extends TimedJob
 
             $tomorrow = (new \DateTime('+1 day'))->format('Y-m-d');
 
-            $result = $objectService->getObjects(
-                (int) $register,
-                (int) $schema,
-                ['status' => 'scheduled'],
+            $appointments = $objectService->findAll(
+                ['filters' => ['register' => (int) $register, 'schema' => (int) $schema, 'status' => 'scheduled']],
             );
 
-            foreach (($result['objects'] ?? []) as $apt) {
+            foreach ($appointments as $apt) {
                 if (is_object($apt) === true) {
                     $data = $apt->jsonSerialize();
                 } else {
