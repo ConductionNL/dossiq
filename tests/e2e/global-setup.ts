@@ -9,7 +9,7 @@ async function globalSetup(config: FullConfig) {
 	const browser = await chromium.launch()
 	const page = await browser.newPage()
 
-	await page.goto(`${baseURL}/login`)
+	await page.goto(`${baseURL}/index.php/login`)
 	await page.fill('input[name="user"]', user)
 	await page.fill('input[name="password"]', password)
 	await page.click('button[type="submit"], input[type="submit"]')
