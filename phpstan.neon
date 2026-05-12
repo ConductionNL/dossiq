@@ -19,6 +19,9 @@ parameters:
         - '#OCA\\OpenRegister\\[a-zA-Z\\]+.*not found#'
         - '#on an unknown class OCA\\OpenRegister\\#'
         - '#has invalid return type OCA\\OpenRegister\\#'
+        # IMcpToolProvider ships in openregister PR #1466; procest implements the
+        # stub at tests/Stubs/Mcp/IMcpToolProvider.php until it merges.
+        - '#implements unknown interface OCA\\OpenRegister\\#'
         - '#Class OCA\\Procest\\Controller\\ZgwController not found#'
         # GuzzleHttp is available at runtime via Nextcloud but not in composer require
         - '#unknown class GuzzleHttp\\#'

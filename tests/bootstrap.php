@@ -39,6 +39,14 @@ foreach ($loaders as $loader) {
 // Doctrine types not present in this repository's vendor directory.
 require_once __DIR__ . '/Unit/Stubs/DoctrineStubs.php';
 
+// IMcpToolProvider stub — loaded when the openregister runtime (PR #1466,
+// ai-chat-companion-orchestrator) is absent. ProcestToolProvider implements
+// OCA\OpenRegister\Mcp\IMcpToolProvider; the stub no-ops when the real
+// interface is present (e.g. when the openregister app is installed).
+if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
+    require_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
+}
+
 if (defined('OC_CONSOLE') === false) {
     if (file_exists(__DIR__ . '/../../../lib/base.php') === true) {
         require_once __DIR__ . '/../../../lib/base.php';

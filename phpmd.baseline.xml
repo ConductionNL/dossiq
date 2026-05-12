@@ -29,6 +29,8 @@
   <violation rule="PHPMD\Rule\CleanCode\MissingImport" file="lib/Controller/StufController.php"/>
   <violation rule="PHPMD\Rule\CleanCode\ElseExpression" file="lib/Controller/ZrcController.php"/>
   <violation rule="PHPMD\Rule\CleanCode\ElseExpression" file="lib/Controller/ZtcController.php"/>
+  <!-- ProcestToolProvider: single-class IMcpToolProvider design (mirrors decidesk's exemplar). -->
+  <violation rule="PHPMD\Rule\Design\WeightedMethodCount" file="lib/Mcp/ProcestToolProvider.php"/>
   <violation rule="PHPMD\Rule\UnusedFormalParameter" file="lib/Middleware/TenantMiddleware.php"/>
   <violation rule="PHPMD\Rule\UnusedLocalVariable" file="lib/Service/AiService.php"/>
   <violation rule="PHPMD\Rule\CyclomaticComplexity" file="lib/Service/AiService.php" method="callAiModel"/>
