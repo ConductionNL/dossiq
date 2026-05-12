@@ -50,6 +50,7 @@ interface ObjectServiceStub
  * Unit tests for ZgwZrcRulesService.
  *
  * @covers \OCA\Procest\Service\ZgwZrcRulesService
+ * @covers \OCA\Procest\Service\ZgwRulesBase
  */
 class ZgwZrcRulesServiceTest extends TestCase
 {
