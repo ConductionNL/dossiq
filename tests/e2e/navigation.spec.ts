@@ -30,8 +30,10 @@ test.describe('Sidebar Navigation', () => {
 
 	test('settings button is visible', async ({ page }) => {
 		await page.goto('/index.php/apps/procest')
-		// Settings button at bottom of sidebar
-		await expect(page.getByText('Settings')).toBeVisible()
+		// Settings button at the bottom of the app sidebar — scope to the
+		// app-navigation so it doesn't collide with the "Personal settings" /
+		// "Administration settings" entries in Nextcloud's user menu.
+		await expect(sidebarNav(page).getByText('Settings', { exact: true })).toBeVisible()
 	})
 
 	test('clicking nav item navigates', async ({ page }) => {
