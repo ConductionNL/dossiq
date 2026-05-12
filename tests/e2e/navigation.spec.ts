@@ -5,7 +5,7 @@ const sidebarNav = (page: Page) => page.locator('[id^="app-navigation"]').first(
 test.describe('Sidebar Navigation', () => {
 
 	test('shows all navigation items', async ({ page }) => {
-		await page.goto('/index.php/apps/procest')
+		await page.goto('/index.php/apps/procest/')
 		const nav = sidebarNav(page)
 
 		for (const label of ['Dashboard', 'My Work', 'Cases', 'Tasks', 'Documentation']) {
@@ -14,7 +14,7 @@ test.describe('Sidebar Navigation', () => {
 	})
 
 	test('sidebar links point to correct URLs', async ({ page }) => {
-		await page.goto('/index.php/apps/procest')
+		await page.goto('/index.php/apps/procest/')
 		const nav = sidebarNav(page)
 
 		const expected: Record<string, string> = {
@@ -29,7 +29,7 @@ test.describe('Sidebar Navigation', () => {
 	})
 
 	test('settings button is visible', async ({ page }) => {
-		await page.goto('/index.php/apps/procest')
+		await page.goto('/index.php/apps/procest/')
 		// Settings button at the bottom of the app sidebar — scope to the
 		// app-navigation so it doesn't collide with the "Personal settings" /
 		// "Administration settings" entries in Nextcloud's user menu.
@@ -37,7 +37,7 @@ test.describe('Sidebar Navigation', () => {
 	})
 
 	test('clicking nav item navigates', async ({ page }) => {
-		await page.goto('/index.php/apps/procest')
+		await page.goto('/index.php/apps/procest/')
 		const nav = sidebarNav(page)
 		await nav.getByRole('link', { name: 'Cases' }).click()
 		await expect(page).toHaveURL(/.*cases/)

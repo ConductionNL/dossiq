@@ -3,8 +3,11 @@ import { test, expect } from '@playwright/test'
 test.describe('Dashboard', () => {
 
 	test('shows heading and action buttons', async ({ page }) => {
-		await page.goto('/index.php/apps/procest')
-		await expect(page.getByRole('heading', { name: 'Dashboard', level: 2 })).toBeVisible({ timeout: 10000 })
+		// Trailing slash: vue-router (history mode, base = .../apps/procest)
+		// only resolves the '/' route when the path ends in a slash; without
+		// it the page renders an empty router-view.
+		await page.goto('/index.php/apps/procest/')
+		await expect(page.getByRole('heading', { name: 'Dashboard', level: 2 })).toBeVisible({ timeout: 15000 })
 		await expect(page.getByRole('button', { name: 'New Case' })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'New Task' })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Refresh dashboard' })).toBeVisible()
@@ -17,25 +20,30 @@ test.describe('Cases page', () => {
 		await page.goto('/index.php/apps/procest/cases')
 		await expect(page.getByRole('radio', { name: 'Cards' })).toBeVisible({ timeout: 10000 })
 		await expect(page.getByRole('radio', { name: 'Table' })).toBeChecked()
-		await expect(page.getByRole('button', { name: 'Add Item' })).toBeVisible()
+		await expect(page.getByRole('button', { name: /^Add (Item|Case|Task)$/ })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
 	})
 
 	test('new case modal has correct fields', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/cases')
-		await page.getByRole('button', { name: 'Add Item' }).click()
-		await expect(page.getByRole('heading', { name: 'New Case' })).toBeVisible({ timeout: 5000 })
-		await expect(page.getByRole('combobox', { name: /case type/i })).toBeVisible()
-		await expect(page.getByPlaceholder('Enter case title')).toBeVisible()
-		await expect(page.getByPlaceholder('Optional description')).toBeVisible()
-		await expect(page.getByRole('button', { name: 'Set location' })).toBeVisible()
-		await expect(page.getByRole('button', { name: 'Create case' })).toBeVisible()
-		await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible()
+		// CnIndexPage labels the create button "Add <SchemaTitle>" when the
+		// schema title resolves, "Add Item" otherwise — match either.
+		await page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }).click()
+		// procest's custom CaseCreateDialog (.case-create-dialog) — scope to it
+		// so e.g. the case-type combobox doesn't collide with the sidebar filter.
+		const modal = page.locator('.case-create-dialog')
+		await expect(modal.getByRole('heading', { name: 'New Case' })).toBeVisible({ timeout: 15000 })
+		await expect(modal.getByRole('combobox')).toBeVisible()
+		await expect(modal.getByPlaceholder('Enter case title')).toBeVisible()
+		await expect(modal.getByPlaceholder('Optional description')).toBeVisible()
+		await expect(modal.getByRole('button', { name: 'Set location' })).toBeVisible()
+		await expect(modal.getByRole('button', { name: 'Create case' })).toBeVisible()
+		await expect(modal.getByRole('button', { name: 'Cancel' })).toBeVisible()
 	})
 
 	test('sidebar has search and filter controls', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/cases')
-		await page.getByRole('button', { name: 'Add Item' }).click()
+		await page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }).click()
 		await page.getByRole('button', { name: 'Cancel' }).click()
 		// Sidebar should have filter comboboxes
 		const sidebar = page.locator('[role="complementary"], .app-sidebar')
@@ -50,7 +58,7 @@ test.describe('Tasks page', () => {
 	test('renders list view with search and filters', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/tasks')
 		await expect(page.getByRole('radio', { name: 'Table' })).toBeChecked({ timeout: 10000 })
-		await expect(page.getByRole('button', { name: 'Add Item' })).toBeVisible()
+		await expect(page.getByRole('button', { name: /^Add (Item|Case|Task)$/ })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
 		// CnIndexSidebar's search field — placeholder is "Type to search..." (lib default).
 		await expect(page.getByPlaceholder('Type to search')).toBeVisible()
