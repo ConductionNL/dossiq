@@ -3,10 +3,12 @@ import { test, expect } from '@playwright/test'
 test.describe('Dashboard', () => {
 
 	test('shows heading and action buttons', async ({ page }) => {
-		// Trailing slash: vue-router (history mode, base = .../apps/procest)
-		// only resolves the '/' route when the path ends in a slash; without
-		// it the page renders an empty router-view.
-		await page.goto('/index.php/apps/procest/')
+		// Land on a route that resolves, then navigate to the dashboard via the
+		// sidebar (client-side). A direct GET of the bare app root leaves
+		// vue-router's history-mode location empty so the '/' route never
+		// resolves and the dashboard renders an empty router-view.
+		await page.goto('/index.php/apps/procest/cases')
+		await page.locator('[id^="app-navigation"]').first().getByRole('link', { name: 'Dashboard' }).click()
 		await expect(page.getByRole('heading', { name: 'Dashboard', level: 2 })).toBeVisible({ timeout: 15000 })
 		await expect(page.getByRole('button', { name: 'New Case' })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'New Task' })).toBeVisible()
