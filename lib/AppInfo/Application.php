@@ -47,6 +47,7 @@ use OCA\Procest\Listener\DeepLinkRegistrationListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
 use OCA\Procest\Listener\ParaferingAuditListener;
 use OCA\Procest\Listener\RoleMutationListener;
+use OCA\Procest\Mcp\ProcestToolProvider;
 use OCA\Procest\Middleware\TenantMiddleware;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
 use OCA\Procest\Validator\ParaferingAuditAppendOnlyValidator;
@@ -115,6 +116,23 @@ class Application extends App implements IBootstrap
             listener: RoleMutationListener::class
         );
 
+        $this->registerBezwaarListeners(context: $context);
+
+        $context->registerMiddleware(class: ZgwAuthMiddleware::class);
+        $context->registerMiddleware(class: TenantMiddleware::class);
+
+        $this->registerWidgetsAndProviders(context: $context);
+    }//end register()
+
+    /**
+     * Register bezwaar-lifecycle and parafering-audit event listeners.
+     *
+     * @param IRegistrationContext $context The registration context
+     *
+     * @return void
+     */
+    private function registerBezwaarListeners(IRegistrationContext $context): void
+    {
         // Bezwaar-lifecycle observer — routes bezwaar/hearing/advice/decision
         // events onto the status-transition-engine without duplicating
         // transition logic. See ADR-022 + REQ-BL-8.
@@ -173,10 +191,17 @@ class Application extends App implements IBootstrap
             event: ObjectUpdatedEvent::class,
             listener: BezwaarDecisionListener::class
         );
+    }//end registerBezwaarListeners()
 
-        $context->registerMiddleware(class: ZgwAuthMiddleware::class);
-        $context->registerMiddleware(class: TenantMiddleware::class);
-
+    /**
+     * Register dashboard widgets and the MCP tool provider.
+     *
+     * @param IRegistrationContext $context The registration context
+     *
+     * @return void
+     */
+    private function registerWidgetsAndProviders(IRegistrationContext $context): void
+    {
         // Dashboard widgets.
         $context->registerDashboardWidget(CasesOverviewWidget::class);
         $context->registerDashboardWidget(MyTasksWidget::class);
@@ -185,7 +210,18 @@ class Application extends App implements IBootstrap
         $context->registerDashboardWidget(TaskRemindersWidget::class);
         $context->registerDashboardWidget(StalledCasesWidget::class);
         $context->registerDashboardWidget(StartCaseWidget::class);
-    }//end register()
+
+        // Register ProcestToolProvider as the MCP tool provider for the AI Chat
+        // Companion. The alias key 'OCA\OpenRegister\Mcp\IMcpToolProvider::procest'
+        // is the format that OR's McpToolsService enumerates to discover per-app
+        // providers (hydra ADR-034 / ADR-035, design D3). The interface ships in
+        // openregister PR #1466 (ai-chat-companion-orchestrator); until it merges
+        // procest implements the stub at tests/Stubs/Mcp/IMcpToolProvider.php.
+        $context->registerServiceAlias(
+            'OCA\\OpenRegister\\Mcp\\IMcpToolProvider::procest',
+            ProcestToolProvider::class
+        );
+    }//end registerWidgetsAndProviders()
 
     /**
      * Boot the application.
