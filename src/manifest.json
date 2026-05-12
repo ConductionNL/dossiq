@@ -257,9 +257,25 @@
 		{
 			"id": "Voorstellen",
 			"route": "/voorstellen",
-			"type": "custom",
+			"type": "index",
 			"title": "Voorstellen",
-			"component": "VoorstellenView"
+			"config": {
+				"register": "procest",
+				"schema": "voorstel",
+				"columns": [
+					{ "key": "onderwerp", "label": "Onderwerp" },
+					{ "key": "type", "label": "Type", "formatter": "voorstelType" },
+					{ "key": "status", "label": "Status", "formatter": "voorstelStatus", "widget": "badge" },
+					{ "key": "currentStep", "label": "Stap", "formatter": "voorstelStepProgress", "sortable": false },
+					{ "key": "routeSnapshot", "label": "Wacht op", "formatter": "voorstelWaitingActor", "sortable": false },
+					{ "key": "@self.updated", "label": "Dagen in stap", "formatter": "voorstelDaysInStep", "align": "right" },
+					{ "key": "steller", "label": "Steller" }
+				],
+				"actions": [
+					{ "id": "reminder", "label": "Herinnering sturen", "icon": "BellRing", "handler": "voorstelReminder" }
+				],
+				"sidebar": { "enabled": true, "showMetadata": true }
+			}
 		},
 		{
 			"id": "VoorstelDetail",
