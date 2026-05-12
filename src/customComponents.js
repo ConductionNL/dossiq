@@ -53,6 +53,11 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // MAY reference it by string name. See openspec/changes/map-component/.
 import MapComponent from './components/map/MapComponent.vue'
 
+// --- Features & Roadmap page — thin wrapper around the lib's
+//     CnFeaturesAndRoadmapView (the in-product roadmap surface powered by
+//     OpenRegister's github-issue-proxy). See ConductionNL/hydra#251. ---
+import FeaturesRoadmapView from './views/FeaturesRoadmap.vue'
+
 /**
  * Row-action handler for the Voorstellen index: POST a parafering-reminder
  * notification for the step the voorstel is currently waiting on. Registered
@@ -122,4 +127,7 @@ export default {
 
 	// --- Shared map surface — referenceable from manifest pages. ---
 	MapComponent,
+
+	// --- Features & Roadmap page (lib's CnFeaturesAndRoadmapView). ---
+	FeaturesRoadmap: FeaturesRoadmapView,
 }
