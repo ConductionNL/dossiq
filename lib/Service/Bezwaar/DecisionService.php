@@ -214,7 +214,7 @@ class DecisionService
                 'status'  => 'draft',
             ]
         );
-        // publishedAt and notifiedRecipients are owned by publish().
+        // The publishedAt and notifiedRecipients fields are owned by publish().
         unset($record['publishedAt'], $record['notifiedRecipients']);
 
         try {

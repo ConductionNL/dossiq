@@ -121,6 +121,7 @@ class ParafeerActieService
      * @param ParaferingNotificationService $paraferingNotificationService The Nextcloud notification service.
      * @param IRootFolder                   $rootFolder                    The Nextcloud root folder (for PDF signing).
      * @param LoggerInterface               $logger                        The logger.
+     * @param IEventDispatcher              $eventDispatcher               The event dispatcher (parafering transition events).
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -298,14 +299,19 @@ class ParafeerActieService
             $savedActie = $objectService->saveObject($register, $actieSchema, $actieData);
 
             // Emit the parafering transition event for the audit listener.
-            [$transitionType, $actorRoleForAudit] = $this->transitionForAction($action);
+            [$transitionType, $actorRoleForAudit] = $this->transitionForAction(action: $action);
+            $dispatchReason = null;
+            if ($action === self::ACTION_RETURNED || $action === self::ACTION_SKIPPED) {
+                $dispatchReason = $comment;
+            }
+
             $this->dispatchTransition(
                 voorstelId: $voorstelId,
                 action: $transitionType,
                 step: (string) ((int) ($step['order'] ?? ($voorstel['currentStep'] ?? 0))),
                 actor: $currentUser->getUID(),
                 actorRole: $actorRoleForAudit,
-                reason: ($action === self::ACTION_RETURNED || $action === self::ACTION_SKIPPED) ? $comment : null,
+                reason: $dispatchReason,
             );
 
             // Handle terugsturen: set voorstel status + notify steller, no route advance.

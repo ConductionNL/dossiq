@@ -401,7 +401,7 @@ class PdokBagService
     }//end normaliseFeature()
 
     /**
-     * snake_case → camelCase.
+     * Convert a snake_case string to camelCase.
      *
      * @param string $snake Input string.
      *

@@ -297,7 +297,8 @@ class AdvisoryCommitteeService
                 }
 
                 throw new GuardFailedException(
-                    'Panel member conflict (Awb Art. 7:13 lid 3): '
+                    failedGuards: [],
+                    message: 'Panel member conflict (Awb Art. 7:13 lid 3): '
                     .$independence['reason']
                 );
             }//end if
@@ -522,7 +523,11 @@ class AdvisoryCommitteeService
                 $objectionSchema,
                 ['case' => $caseId]
             );
-            $objection  = (is_array($objections) && $objections !== []) ? $objections[0] : null;
+            $objection  = null;
+            if (is_array($objections) === true && $objections !== []) {
+                $objection = $objections[0];
+            }
+
             if (is_array($objection) === false) {
                 return ['ok' => true, 'member' => null, 'reason' => null];
             }

@@ -102,7 +102,7 @@ class SeedLhsMatrix implements IRepairStep
                 filters: ['active' => true],
                 limit: 1,
             );
-            if ($this->hasRow($existing) === true) {
+            if ($this->hasRow(results: $existing) === true) {
                 $output->info('Active LHS matrix already exists. Skipping seed.');
                 return;
             }
@@ -128,7 +128,11 @@ class SeedLhsMatrix implements IRepairStep
                 object: $payload,
             );
 
-            $cellCount = (is_array($payload['cells'] ?? null) === true) ? count($payload['cells']) : 0;
+            $cellCount = 0;
+            if (is_array($payload['cells'] ?? null) === true) {
+                $cellCount = count($payload['cells']);
+            }
+
             $output->info('LHS matrix seeded: 1 matrix with '.$cellCount.' cells.');
         } catch (Throwable $e) {
             $output->warning('Could not seed LHS matrix: '.$e->getMessage());

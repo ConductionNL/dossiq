@@ -78,7 +78,10 @@ class CreateSubCaseHandler implements ActionHandlerInterface
             ];
 
             $created = $objectService->saveObject($register, $caseSchema, $subCase);
-            $subId   = is_array($created) === true ? (string) ($created['id'] ?? '') : '';
+            $subId   = '';
+            if (is_array($created) === true) {
+                $subId = (string) ($created['id'] ?? '');
+            }
 
             return ActionResult::success(data: ['subCaseId' => $subId]);
         } catch (\Throwable $e) {

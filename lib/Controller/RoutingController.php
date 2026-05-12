@@ -172,7 +172,10 @@ class RoutingController extends Controller
     {
         if (is_string($value) === true) {
             $decoded = json_decode($value, true);
-            $value   = is_array($decoded) === true ? $decoded : [];
+            $value   = [];
+            if (is_array($decoded) === true) {
+                $value = $decoded;
+            }
         }
 
         if (is_array($value) === false) {

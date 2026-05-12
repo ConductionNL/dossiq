@@ -79,7 +79,10 @@ class CreateTaskHandler implements ActionHandlerInterface
             ];
 
             $created = $objectService->saveObject($register, $taskSchema, $task);
-            $taskId  = is_array($created) === true ? (string) ($created['id'] ?? '') : '';
+            $taskId  = '';
+            if (is_array($created) === true) {
+                $taskId = (string) ($created['id'] ?? '');
+            }
 
             return ActionResult::success(data: ['taskId' => $taskId]);
         } catch (\Throwable $e) {

@@ -51,7 +51,7 @@ class GuardFailedException extends RuntimeException
      */
     public function __construct(array $failedGuards, string $message='guard_failed')
     {
-        parent::__construct($message);
+        parent::__construct(message: $message);
         $this->failedGuards = $failedGuards;
     }//end __construct()
 

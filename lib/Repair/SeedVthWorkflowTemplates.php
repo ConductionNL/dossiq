@@ -475,8 +475,13 @@ class SeedVthWorkflowTemplates implements IRepairStep
             return [];
         }
 
-        $map = [];
-        foreach ((is_array($rows) === true ? $rows : []) as $row) {
+        $map      = [];
+        $rowsList = [];
+        if (is_array($rows) === true) {
+            $rowsList = $rows;
+        }
+
+        foreach ($rowsList as $row) {
             $normalized = $this->normalizeRow(row: $row);
             if ($normalized === null) {
                 continue;
