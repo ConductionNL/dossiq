@@ -73,10 +73,13 @@ test.describe('Work Queue page', () => {
 	test('renders with heading and stat cards', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/werkvoorraad')
 		await expect(page.getByRole('heading', { name: 'Work Queue', level: 2 })).toBeVisible({ timeout: 10000 })
-		await expect(page.getByText('Open Cases')).toBeVisible()
-		await expect(page.getByText('Overdue')).toBeVisible()
-		await expect(page.getByText('Completed This Week')).toBeVisible()
-		await expect(page.getByText('Unassigned')).toBeVisible()
+		// Scope to the KPI strip — bare getByText('Open Cases') also matches the
+		// "No open cases match the current filters" empty-state copy.
+		const kpis = page.locator('.werkvoorraad__kpis')
+		await expect(kpis.getByText('Open Cases', { exact: true })).toBeVisible()
+		await expect(kpis.getByText('Overdue', { exact: true })).toBeVisible()
+		await expect(kpis.getByText('Completed This Week', { exact: true })).toBeVisible()
+		await expect(kpis.getByText('Unassigned', { exact: true })).toBeVisible()
 	})
 
 	test('has filter buttons', async ({ page }) => {
@@ -130,10 +133,15 @@ test.describe('Settings page', () => {
 
 	test('has schema configuration fields', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/settings')
-		await expect(page.getByText('Register')).toBeVisible({ timeout: 10000 })
-		await expect(page.getByText('Case schema')).toBeVisible()
-		await expect(page.getByText('Task schema')).toBeVisible()
-		await expect(page.getByText('Status schema')).toBeVisible()
+		// Scope to the configuration form — "Register" otherwise also matches
+		// section descriptions ("Register and schema settings", etc.). Each
+		// field renders its own <label> plus the NcTextField's label, so take
+		// the first exact match per name.
+		const form = page.locator('.settings-form')
+		await expect(form.getByText('Register', { exact: true }).first()).toBeVisible({ timeout: 10000 })
+		await expect(form.getByText('Case schema', { exact: true }).first()).toBeVisible()
+		await expect(form.getByText('Task schema', { exact: true }).first()).toBeVisible()
+		await expect(form.getByText('Status schema', { exact: true }).first()).toBeVisible()
 	})
 
 	test('has case type management section', async ({ page }) => {
