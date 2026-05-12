@@ -93,7 +93,10 @@
 				:issues="issues"
 				:read-only="readOnly"
 				@update="onEdgePropsUpdate" />
-			<NodeProperties v-else :node="null" :issues="issues" :read-only="readOnly" />
+			<NodeProperties v-else
+				:node="null"
+				:issues="issues"
+				:read-only="readOnly" />
 		</div>
 
 		<!-- Hidden file input for import -->

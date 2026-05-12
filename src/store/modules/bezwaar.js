@@ -10,7 +10,6 @@
  */
 import { defineStore } from 'pinia'
 import { useObjectStore } from './object.js'
-import { useSettingsStore } from './settings.js'
 
 /**
  * Add working days to a date (skipping weekends).
@@ -496,7 +495,6 @@ export const useBezwaarStore = defineStore('bezwaar', {
 
 			try {
 				const objectStore = useObjectStore()
-				const settingsStore = useSettingsStore()
 
 				// Find the Beroep case type.
 				const caseTypes = await objectStore.fetchCollection('caseType', {
