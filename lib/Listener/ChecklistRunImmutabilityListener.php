@@ -119,7 +119,7 @@ class ChecklistRunImmutabilityListener implements IEventListener
             $this->logger->debug(
                 'Procest: checklist immutability listener swallowed exception: '.$e->getMessage(),
             );
-        }
+        }//end try
     }//end handle()
 
     /**
@@ -137,8 +137,7 @@ class ChecklistRunImmutabilityListener implements IEventListener
         }
 
         $candidate = (string) (
-            $object['@self']['schema']
-            ?? ($object['schema'] ?? '')
+            $object['@self']['schema'] ?? ($object['schema'] ?? '')
         );
 
         return $candidate !== '' && (

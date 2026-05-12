@@ -84,7 +84,7 @@ class RoleMutationListener implements IEventListener
         }
 
         try {
-            $object = $this->extractObject($event);
+            $object = $this->extractObject(event: $event);
             if ($object === null) {
                 return;
             }
@@ -103,7 +103,7 @@ class RoleMutationListener implements IEventListener
             $this->logger->debug(
                 'Procest: role mutation listener swallowed exception: '.$e->getMessage(),
             );
-        }
+        }//end try
     }//end handle()
 
     /**
@@ -121,8 +121,7 @@ class RoleMutationListener implements IEventListener
         }
 
         $candidate = (string) (
-            $object['@self']['schema']
-            ?? ($object['schema'] ?? '')
+            $object['@self']['schema'] ?? ($object['schema'] ?? '')
         );
 
         return $candidate !== '' && (
@@ -165,7 +164,7 @@ class RoleMutationListener implements IEventListener
                     }
                 }
             }
-        }
+        }//end foreach
 
         return null;
     }//end extractObject()

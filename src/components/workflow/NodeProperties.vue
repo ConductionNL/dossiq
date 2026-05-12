@@ -46,7 +46,7 @@
 					@input="updateField('guard', $event.target.value)" />
 			</label>
 
-			<div class="node-properties__issues" v-if="nodeIssues.length">
+			<div v-if="nodeIssues.length" class="node-properties__issues">
 				<h4>{{ t('procest', 'Issues') }}</h4>
 				<ul>
 					<li

@@ -49,8 +49,9 @@ interface RoutingStrategyInterface
      * to assign. An empty array means "no eligible assignee" — callers MUST
      * surface this to the case admin.
      *
-     * @param array<string, mixed> $rule  The routing rule (strategy + parameters)
-     * @param array<string, mixed> $case  The case object (id, caseType, …)
+     * @param array<string, mixed>             $rule  The routing rule (strategy + parameters)
+     * @param array<string, mixed>             $case  The case object (id, caseType,
+     *                                                …)
      * @param array<int, array<string, mixed>> $roles Role objects bound to the case
      *
      * @return array<int, string> Ordered participant references

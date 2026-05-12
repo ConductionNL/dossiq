@@ -58,6 +58,8 @@ class MergeTemplateHandler implements ActionHandlerInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @return string The action type slug handled by this handler.
      */
     public function type(): string
     {
@@ -66,13 +68,19 @@ class MergeTemplateHandler implements ActionHandlerInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @param array $actionConfig      Resolved action config array.
+     * @param array $case              The full case object.
+     * @param array $transitionContext Transition context (carries dryRun).
+     *
+     * @return ActionResult The outcome of the template merge.
      */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {
             $template    = (string) ($actionConfig['template'] ?? ($actionConfig['templateSlug'] ?? ''));
             $targetField = (string) ($actionConfig['targetField'] ?? '');
-            $rendered    = $this->renderTemplate($template, $case);
+            $rendered    = $this->renderTemplate(template: $template, case: $case);
 
             $preview = [
                 'targetField' => $targetField,
@@ -97,7 +105,7 @@ class MergeTemplateHandler implements ActionHandlerInterface
                 'register',
                 ''
             );
-            $schema = $this->appConfig->getValueString(
+            $schema   = $this->appConfig->getValueString(
                 Application::APP_ID,
                 'case_schema',
                 ''
@@ -125,7 +133,7 @@ class MergeTemplateHandler implements ActionHandlerInterface
                 ]
             );
             return ActionResult::failure('merge_template_failed');
-        }
+        }//end try
     }//end handle()
 
     /**

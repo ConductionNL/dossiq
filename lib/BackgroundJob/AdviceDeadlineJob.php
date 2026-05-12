@@ -39,7 +39,6 @@ use Psr\Log\LoggerInterface;
  */
 class AdviceDeadlineJob extends TimedJob
 {
-
     /**
      * Constructor.
      *
@@ -124,6 +123,6 @@ class AdviceDeadlineJob extends TimedJob
                     ],
                 );
             }
-        }
+        }//end foreach
     }//end run()
 }//end class

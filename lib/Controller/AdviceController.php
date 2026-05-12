@@ -39,7 +39,6 @@ use Psr\Log\LoggerInterface;
  */
 class AdviceController extends Controller
 {
-
     /**
      * Constructor.
      *

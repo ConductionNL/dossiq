@@ -84,6 +84,7 @@ class ParafeerRouteService
      * @param IUserSession        $userSession     The current Nextcloud user session
      * @param LoggerInterface     $logger          The logger
      * @param RoleResolverService $roleResolver    Central role-routing engine
+     * @param IEventDispatcher    $eventDispatcher The event dispatcher
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -115,7 +116,7 @@ class ParafeerRouteService
         ?string $step,
         string $actor,
         string $actorRole,
-        ?string $reason = null,
+        ?string $reason=null,
     ): void {
         try {
             $this->eventDispatcher->dispatchTyped(
@@ -137,7 +138,7 @@ class ParafeerRouteService
                     'exception' => $e->getMessage(),
                 ],
             );
-        }
+        }//end try
     }//end dispatchTransition()
 
     /**
@@ -240,9 +241,14 @@ class ParafeerRouteService
 
         $objectService->saveObject($register, $actieSchema, $actieData);
 
-        $action     = (string) ($actionData['action'] ?? 'parafered');
-        $transition = ($action === 'advised') ? 'advised' : 'paraferd';
-        $actorRole  = ($action === 'advised') ? 'adviseur' : 'parafeerder';
+        $action = (string) ($actionData['action'] ?? 'parafered');
+        if ($action === 'advised') {
+            $transition = 'advised';
+            $actorRole  = 'adviseur';
+        } else {
+            $transition = 'paraferd';
+            $actorRole  = 'parafeerder';
+        }
 
         $this->dispatchTransition(
             voorstelId: (string) ($voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId),
@@ -518,7 +524,7 @@ class ParafeerRouteService
             );
 
             return $voorstel;
-        }
+        }//end if
 
         $voorstel['currentStep'] = $nextStep;
         $voorstel = $this->toArray(value: $objectService->saveObject($register, $voorstelSchema, $voorstel));

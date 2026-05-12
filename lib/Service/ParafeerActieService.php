@@ -168,7 +168,7 @@ class ParafeerActieService
         ?string $step,
         string $actor,
         string $actorRole,
-        ?string $reason = null,
+        ?string $reason=null,
     ): void {
         try {
             $this->eventDispatcher->dispatchTyped(
@@ -190,7 +190,7 @@ class ParafeerActieService
                     'exception' => $e->getMessage(),
                 ],
             );
-        }
+        }//end try
     }//end dispatchTransition()
 
     /**

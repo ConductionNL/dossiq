@@ -267,7 +267,7 @@ class PublicShareController extends Controller
             );
         }
 
-        $share = $validation['share'];
+        $share           = $validation['share'];
         $permissionLevel = ($share['permissionLevel'] ?? 'bekijken');
 
         if ($permissionLevel !== 'bijdragen' && $permissionLevel !== 'contribute') {

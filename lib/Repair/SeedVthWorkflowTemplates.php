@@ -61,7 +61,6 @@ class SeedVthWorkflowTemplates implements IRepairStep
      */
     private const NS_UUID = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
 
-
     /**
      * Constructor for SeedVthWorkflowTemplates.
      *
@@ -78,7 +77,6 @@ class SeedVthWorkflowTemplates implements IRepairStep
     ) {
     }//end __construct()
 
-
     /**
      * Get the name of this repair step.
      *
@@ -88,7 +86,6 @@ class SeedVthWorkflowTemplates implements IRepairStep
     {
         return 'Seed VTH (Vergunningen, Toezicht, Handhaving) workflow templates for Procest';
     }//end getName()
-
 
     /**
      * Run the repair step.
@@ -131,7 +128,7 @@ class SeedVthWorkflowTemplates implements IRepairStep
 
         foreach ($files as $file) {
             try {
-                $result = $this->processCatalogFile(file: $file, output: $output);
+                $result           = $this->processCatalogFile(file: $file, output: $output);
                 $summary[$result] = ($summary[$result] ?? 0) + 1;
             } catch (\Throwable $e) {
                 $summary['failed']++;
@@ -158,7 +155,6 @@ class SeedVthWorkflowTemplates implements IRepairStep
             .$summary['failed'].' failed.'
         );
     }//end run()
-
 
     /**
      * Process a single catalog file.
@@ -335,7 +331,6 @@ class SeedVthWorkflowTemplates implements IRepairStep
         return 'seeded';
     }//end processCatalogFile()
 
-
     /**
      * Resolve a caseType by its slug — uses the `identifier` field on the
      * caseType schema (the canonical slug-like field across procest seed
@@ -387,11 +382,10 @@ class SeedVthWorkflowTemplates implements IRepairStep
             if ($id !== '') {
                 return $id;
             }
-        }
+        }//end foreach
 
         return '';
     }//end resolveCaseTypeId()
-
 
     /**
      * Check whether a workflowTemplate with the given title is already
@@ -438,11 +432,10 @@ class SeedVthWorkflowTemplates implements IRepairStep
                 ]
             );
             return false;
-        }
+        }//end try
 
         return $this->extractFirstId(rows: $rows) !== '';
     }//end isAlreadySeeded()
-
 
     /**
      * Build a status name → UUID map for the statusTypes belonging to a
@@ -499,14 +492,14 @@ class SeedVthWorkflowTemplates implements IRepairStep
         return $map;
     }//end buildStatusMap()
 
-
     /**
      * Resolve the steps[] block against the status name → UUID map.
      * Returns null when any status name does not resolve.
      *
-     * @param string                          $slug      The template slug (for UUID5 ids)
+     * @param string                           $slug      The template slug (for UUID5 ids)
      * @param array<int, array<string, mixed>> $rawSteps  Steps from the catalog file
-     * @param array<string, string>           $statusMap Name → UUID map
+     * @param array<string, string>            $statusMap Name → UUID
+     *                                                    map
      *
      * @return array<int, array<string, mixed>>|null Resolved steps, or null
      */
@@ -523,7 +516,7 @@ class SeedVthWorkflowTemplates implements IRepairStep
                 return null;
             }
 
-            $stepSlug = (string) ($step['slug'] ?? '');
+            $stepSlug   = (string) ($step['slug'] ?? '');
             $resolved[] = [
                 'id'           => $this->deterministicId(template: $slug, child: 'step-'.$stepSlug),
                 'slug'         => $stepSlug,
@@ -541,15 +534,15 @@ class SeedVthWorkflowTemplates implements IRepairStep
         return $resolved;
     }//end resolveSteps()
 
-
     /**
      * Resolve the transitions[] block against the status name → UUID map.
      * Accepts "*" as a wildcard for fromStatus (any status). Returns null
      * when any non-wildcard status name does not resolve.
      *
-     * @param string                          $slug           The template slug (for UUID5 ids)
+     * @param string                           $slug           The template slug (for UUID5 ids)
      * @param array<int, array<string, mixed>> $rawTransitions Transitions from the catalog file
-     * @param array<string, string>           $statusMap      Name → UUID map
+     * @param array<string, string>            $statusMap      Name → UUID
+     *                                                         map
      *
      * @return array<int, array<string, mixed>>|null Resolved transitions, or null
      */
@@ -570,14 +563,14 @@ class SeedVthWorkflowTemplates implements IRepairStep
 
             if ($fromName === '*') {
                 $fromId = '*';
-            } elseif ($fromName === '' || isset($statusMap[$fromName]) === false) {
+            } else if ($fromName === '' || isset($statusMap[$fromName]) === false) {
                 return null;
             } else {
                 $fromId = $statusMap[$fromName];
             }
 
             $transitionSlug = (string) ($transition['slug'] ?? '');
-            $resolved[] = [
+            $resolved[]     = [
                 'id'               => $this->deterministicId(template: $slug, child: 'transition-'.$transitionSlug),
                 'slug'             => $transitionSlug,
                 'label'            => (string) ($transition['label'] ?? ''),
@@ -594,7 +587,6 @@ class SeedVthWorkflowTemplates implements IRepairStep
 
         return $resolved;
     }//end resolveTransitions()
-
 
     /**
      * Generate a deterministic UUID5 from a template slug + child slug.
@@ -621,7 +613,6 @@ class SeedVthWorkflowTemplates implements IRepairStep
             substr($hash, 20, 12)
         );
     }//end deterministicId()
-
 
     /**
      * Extract the first row id from an OpenRegister result set.
@@ -656,7 +647,6 @@ class SeedVthWorkflowTemplates implements IRepairStep
         return '';
     }//end extractFirstId()
 
-
     /**
      * Coerce an OpenRegister result row to an associative array.
      *
@@ -683,6 +673,4 @@ class SeedVthWorkflowTemplates implements IRepairStep
 
         return null;
     }//end normalizeRow()
-
-
 }//end class

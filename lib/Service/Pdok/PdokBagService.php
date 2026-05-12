@@ -409,9 +409,9 @@ class PdokBagService
      */
     private function toCamel(string $snake): string
     {
-        $parts  = explode(separator: '_', string: $snake);
-        $first  = array_shift(array: $parts);
-        $tail   = array_map(callback: 'ucfirst', array: $parts);
+        $parts = explode(separator: '_', string: $snake);
+        $first = array_shift(array: $parts);
+        $tail  = array_map(callback: 'ucfirst', array: $parts);
         return $first.implode(separator: '', array: $tail);
     }//end toCamel()
 }//end class

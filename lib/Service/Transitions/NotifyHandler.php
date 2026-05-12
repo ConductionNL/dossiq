@@ -35,7 +35,6 @@ use Psr\Log\LoggerInterface;
  */
 class NotifyHandler implements ActionHandlerInterface
 {
-
     /**
      * Constructor.
      *

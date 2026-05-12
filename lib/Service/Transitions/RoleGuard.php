@@ -43,7 +43,6 @@ use Psr\Log\LoggerInterface;
  */
 class RoleGuard implements GuardEvaluatorInterface
 {
-
     /**
      * Constructor.
      *
@@ -88,6 +87,7 @@ class RoleGuard implements GuardEvaluatorInterface
                 if (is_array($entry) === false) {
                     continue;
                 }
+
                 $entryUser = (string) ($entry['userId'] ?? ($entry['user'] ?? ''));
                 $entryRole = (string) ($entry['role'] ?? ($entry['roleType'] ?? ''));
                 if ($entryUser === $userId && in_array($entryRole, $allowed, true) === true) {
@@ -105,6 +105,7 @@ class RoleGuard implements GuardEvaluatorInterface
                     if ($groupId === '') {
                         continue;
                     }
+
                     if ($this->groupManager->isInGroup($userId, $groupId) === true) {
                         return GuardResult::pass(details: ['matchedRole' => $role, 'via' => 'group']);
                     }

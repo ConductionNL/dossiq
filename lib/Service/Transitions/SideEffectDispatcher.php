@@ -37,7 +37,6 @@ use Psr\Log\LoggerInterface;
  */
 class SideEffectDispatcher
 {
-
     /**
      * Constructor.
      *
@@ -66,6 +65,7 @@ class SideEffectDispatcher
             if (is_array($action) === false) {
                 continue;
             }
+
             $type = (string) ($action['type'] ?? '');
             if ($type === '') {
                 continue;
@@ -90,8 +90,9 @@ class SideEffectDispatcher
             if ($result->ok === false) {
                 $entry['error'] = (string) ($result->error ?? 'action_failed');
             }
+
             $results[] = $entry;
-        }
+        }//end foreach
 
         return $results;
     }//end dispatch()

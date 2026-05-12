@@ -64,7 +64,6 @@ class BezwaarLifecycleListener implements IEventListener
         'decision',
     ];
 
-
     /**
      * Constructor.
      *
@@ -76,7 +75,6 @@ class BezwaarLifecycleListener implements IEventListener
         private LoggerInterface $logger,
     ) {
     }//end __construct()
-
 
     /**
      * Handle an OR object event.
@@ -93,12 +91,12 @@ class BezwaarLifecycleListener implements IEventListener
             return;
         }
 
-        $payload = $this->extractObject($event);
+        $payload = $this->extractObject(event: $event);
         if ($payload === null) {
             return;
         }
 
-        $schemaSlug = $this->resolveSchemaSlug($payload);
+        $schemaSlug = $this->resolveSchemaSlug(payload: $payload);
         if (in_array($schemaSlug, self::RELEVANT_SCHEMAS, true) === false) {
             return;
         }
@@ -113,15 +111,14 @@ class BezwaarLifecycleListener implements IEventListener
         $this->logger->debug(
             'Procest bezwaar-lifecycle: observed '.$schemaSlug.' '.$event::class,
             [
-                'app'        => Application::APP_ID,
-                'schema'     => $schemaSlug,
-                'objectId'   => (string) ($payload['id'] ?? ''),
-                'caseId'     => (string) ($payload['case'] ?? ''),
-                'status'     => (string) ($payload['status'] ?? ''),
+                'app'      => Application::APP_ID,
+                'schema'   => $schemaSlug,
+                'objectId' => (string) ($payload['id'] ?? ''),
+                'caseId'   => (string) ($payload['case'] ?? ''),
+                'status'   => (string) ($payload['status'] ?? ''),
             ]
         );
     }//end handle()
-
 
     /**
      * Extract the OR object array from an event.
@@ -144,12 +141,15 @@ class BezwaarLifecycleListener implements IEventListener
 
         if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
             $serialized = $object->jsonSerialize();
-            return is_array($serialized) ? $serialized : null;
+            if (is_array($serialized) === true) {
+                return $serialized;
+            }
+
+            return null;
         }
 
         return null;
     }//end extractObject()
-
 
     /**
      * Resolve the schema slug for an OR object payload.
@@ -166,6 +166,7 @@ class BezwaarLifecycleListener implements IEventListener
             if (isset($self['schemaSlug']) === true) {
                 return (string) $self['schemaSlug'];
             }
+
             if (isset($self['schema']) === true && is_string($self['schema']) === true) {
                 return $self['schema'];
             }
@@ -181,5 +182,4 @@ class BezwaarLifecycleListener implements IEventListener
 
         return '';
     }//end resolveSchemaSlug()
-
 }//end class

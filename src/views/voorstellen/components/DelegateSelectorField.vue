@@ -17,7 +17,9 @@
 			class="delegate-selector-field__select"
 			:value="selected"
 			@change="onChange">
-			<option value="">{{ t('procest', 'Self (no mandate)') }}</option>
+			<option value="">
+				{{ t('procest', 'Self (no mandate)') }}
+			</option>
 			<option
 				v-for="entry in mandates"
 				:key="entry.mandateReference"

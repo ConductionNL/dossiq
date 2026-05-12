@@ -35,7 +35,6 @@ use Psr\Log\LoggerInterface;
  */
 class CreateTaskHandler implements ActionHandlerInterface
 {
-
     /**
      * Constructor.
      *
@@ -89,6 +88,6 @@ class CreateTaskHandler implements ActionHandlerInterface
                 ['exception' => $e->getMessage(), 'context' => $transitionContext],
             );
             return ActionResult::failure(error: 'create_task_failed');
-        }
+        }//end try
     }//end handle()
 }//end class

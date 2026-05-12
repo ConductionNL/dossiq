@@ -201,5 +201,4 @@ class CaseSharingController extends Controller
 
         return new JSONResponse(['success' => true, 'transfer' => $result]);
     }//end handleTransfer()
-
 }//end class

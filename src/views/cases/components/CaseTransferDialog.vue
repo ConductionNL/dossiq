@@ -34,19 +34,19 @@
 					v-model="form.requestedDate"
 					type="date" />
 			</div>
-
-			<template #actions>
-				<NcButton @click="$emit('update:open', false)">
-					{{ t('procest', 'Cancel') }}
-				</NcButton>
-				<NcButton
-					type="primary"
-					:disabled="!isValid || saving"
-					@click="submitTransfer">
-					{{ saving ? t('procest', 'Submitting...') : t('procest', 'Submit transfer request') }}
-				</NcButton>
-			</template>
 		</div>
+
+		<template #actions>
+			<NcButton @click="$emit('update:open', false)">
+				{{ t('procest', 'Cancel') }}
+			</NcButton>
+			<NcButton
+				type="primary"
+				:disabled="!isValid || saving"
+				@click="submitTransfer">
+				{{ saving ? t('procest', 'Submitting...') : t('procest', 'Submit transfer request') }}
+			</NcButton>
+		</template>
 	</NcDialog>
 </template>
 

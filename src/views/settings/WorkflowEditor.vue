@@ -177,7 +177,7 @@ export default {
 		 * (editable) when no template is loaded yet, preserving the
 		 * pre-existing creation flow.
 		 *
-		 * @returns {boolean} Whether the current template is published.
+		 * @return {boolean} Whether the current template is published.
 		 */
 		isPublished() {
 			const tpl = this.workflowStore.currentTemplate || null

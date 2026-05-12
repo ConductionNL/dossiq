@@ -49,6 +49,8 @@ class RoundRobinStrategy implements RoutingStrategyInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @return string The strategy name.
      */
     public function name(): string
     {
@@ -61,8 +63,8 @@ class RoundRobinStrategy implements RoutingStrategyInterface
      * Returns a single-element array. When no participants match the rule's
      * `roleType` for the case, returns an empty array.
      *
-     * @param array<string, mixed> $rule  The routing rule
-     * @param array<string, mixed> $case  The case object
+     * @param array<string, mixed>             $rule  The routing rule
+     * @param array<string, mixed>             $case  The case object
      * @param array<int, array<string, mixed>> $roles Roles bound to the case
      *
      * @return array<int, string>

@@ -5329,45 +5329,6 @@
       {
         "@self": {
           "register": "procest",
-          "schema": "parafeeractie",
-          "slug": "parafeeractie-stap1-advies-2026-0042"
-        },
-        "voorstel": "voorstel-collegeadvies-0042",
-        "step": 1,
-        "actor": "j.devries",
-        "actorType": "user",
-        "action": "advised",
-        "advice": "Akkoord, mits de bouwtekeningen worden bijgewerkt conform het welstandsadvies van 12 april 2026."
-      },
-      {
-        "@self": {
-          "register": "procest",
-          "schema": "parafeeractie",
-          "slug": "parafeeractie-stap2-parafering-2026-0042"
-        },
-        "voorstel": "voorstel-collegeadvies-0042",
-        "step": 2,
-        "actor": "m.bakker",
-        "actorType": "user",
-        "action": "parafered",
-        "comment": "Geparafeerd na beoordeling welstandsadvies. Tekeningen conform bijgewerkt."
-      },
-      {
-        "@self": {
-          "register": "procest",
-          "schema": "parafeeractie",
-          "slug": "parafeeractie-stap2-geretourneerd-2026-0055"
-        },
-        "voorstel": "voorstel-collegeadvies-0055",
-        "step": 2,
-        "actor": "p.janssen",
-        "actorType": "user",
-        "action": "returned",
-        "comment": "Financiële paragraaf ontbreekt. Kosten-batenanalyse moet worden toegevoegd voordat dit voorstel kan worden geparafeerd."
-      },
-      {
-        "@self": {
-          "register": "procest",
           "schema": "caseType",
           "slug": "omgevingsvergunning"
         },

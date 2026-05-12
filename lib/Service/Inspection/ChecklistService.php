@@ -51,7 +51,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — orchestrates ObjectService + IUserSession + follow-up dispatch
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)   — orchestrates ObjectService + IUserSession + follow-up dispatch
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — guarded by validateResponse branches per response type
  */
 class ChecklistService
@@ -94,8 +94,8 @@ class ChecklistService
     /**
      * Follow-up types matching the failureAction.type enum.
      */
-    public const FOLLOWUP_HERINSPECTIE = 'herinspectie';
-    public const FOLLOWUP_HANDHAVINGSTAAK = 'handhavingstaak';
+    public const FOLLOWUP_HERINSPECTIE     = 'herinspectie';
+    public const FOLLOWUP_HANDHAVINGSTAAK  = 'handhavingstaak';
     public const FOLLOWUP_DOCUMENT_VERZOEK = 'documentVerzoek';
     public const FOLLOWUP_GEEN = 'geen';
 
@@ -116,8 +116,8 @@ class ChecklistService
     /**
      * Start a new run against a template, freezing the snapshot and inspector identity.
      *
-     * @param string      $templateId  Template UUID
-     * @param string      $caseId      Parent case UUID
+     * @param string      $templateId   Template UUID
+     * @param string      $caseId       Parent case UUID
      * @param string|null $inspectionId Optional parent mobiel-inspectie session id
      *
      * @return array<string, mixed> The persisted run
@@ -125,7 +125,7 @@ class ChecklistService
      * @throws RuntimeException When configuration is missing, the template
      *                          cannot be loaded, or persistence fails.
      */
-    public function createRun(string $templateId, string $caseId, ?string $inspectionId = null): array
+    public function createRun(string $templateId, string $caseId, ?string $inspectionId=null): array
     {
         [$objectService, $register] = $this->bootstrap();
         $templateSchema = $this->requireConfig(key: 'inspection_checklist_template_schema');
@@ -281,13 +281,13 @@ class ChecklistService
                 continue;
             }
 
-            $itemId = (string) ($response['itemId'] ?? '');
-            $item   = $itemsByOrder[$itemId] ?? null;
+            $itemId  = (string) ($response['itemId'] ?? '');
+            $item    = $itemsByOrder[$itemId] ?? null;
             $verdict = $this->classifyResponse(response: $response, item: $item);
 
             if ($verdict === 'fail') {
                 $fails++;
-            } elseif ($verdict === 'skip') {
+            } else if ($verdict === 'skip') {
                 $skipped++;
             }
         }
@@ -330,13 +330,23 @@ class ChecklistService
             $range = $item['numericRange'] ?? null;
             if (is_array($range) === true && array_key_exists('numericValue', $payload) === true) {
                 $val = (float) $payload['numericValue'];
-                $min = array_key_exists('min', $range) === true ? (float) $range['min'] : null;
-                $max = array_key_exists('max', $range) === true ? (float) $range['max'] : null;
+                if (array_key_exists('min', $range) === true) {
+                    $min = (float) $range['min'];
+                } else {
+                    $min = null;
+                }
+
+                if (array_key_exists('max', $range) === true) {
+                    $max = (float) $range['max'];
+                } else {
+                    $max = null;
+                }
+
                 if (($min !== null && $val < $min) || ($max !== null && $val > $max)) {
                     throw new RuntimeException('OUT_OF_RANGE');
                 }
-            }
-        }
+            }//end if
+        }//end if
 
         if ($type === 'meerkeuze') {
             $choices = $item['choices'] ?? [];
@@ -398,9 +408,9 @@ class ChecklistService
         [$objectService, $register] = $this->bootstrap();
         $taskSchema = (string) $this->settingsService->getConfigValue('task_schema');
 
-        $created = [];
-        $runId   = (string) ($run['id'] ?? '');
-        $caseId  = (string) ($run['case'] ?? '');
+        $created     = [];
+        $runId       = (string) ($run['id'] ?? '');
+        $caseId      = (string) ($run['case'] ?? '');
         $submittedAt = (string) ($run['submittedAt'] ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM));
 
         foreach ($responses as $response) {
@@ -426,7 +436,7 @@ class ChecklistService
             }
 
             $deadlineDays = (int) ($action['deadlineDays'] ?? 0);
-            $deadline = null;
+            $deadline     = null;
             if ($deadlineDays > 0) {
                 $deadline = (new DateTimeImmutable($submittedAt))
                     ->modify('+'.$deadlineDays.' days')
@@ -434,11 +444,11 @@ class ChecklistService
             }
 
             $task = [
-                'case'        => $caseId,
-                'title'       => $this->describeFollowUp(type: $actionType, item: $item),
-                'description' => 'Follow-up automatically created from inspection checklist run',
-                'sourceRun'   => $runId,
-                'sourceItem'  => $itemId,
+                'case'         => $caseId,
+                'title'        => $this->describeFollowUp(type: $actionType, item: $item),
+                'description'  => 'Follow-up automatically created from inspection checklist run',
+                'sourceRun'    => $runId,
+                'sourceItem'   => $itemId,
                 'followUpType' => $actionType,
             ];
 
@@ -468,7 +478,7 @@ class ChecklistService
             } else {
                 $created[] = $task;
             }
-        }
+        }//end foreach
 
         return $created;
     }//end dispatchFollowUps()
@@ -571,14 +581,24 @@ class ChecklistService
             }
 
             $val = (float) $response['numericValue'];
-            $min = array_key_exists('min', $range) === true ? (float) $range['min'] : null;
-            $max = array_key_exists('max', $range) === true ? (float) $range['max'] : null;
+            if (array_key_exists('min', $range) === true) {
+                $min = (float) $range['min'];
+            } else {
+                $min = null;
+            }
+
+            if (array_key_exists('max', $range) === true) {
+                $max = (float) $range['max'];
+            } else {
+                $max = null;
+            }
+
             if (($min !== null && $val < $min) || ($max !== null && $val > $max)) {
                 return 'fail';
             }
 
             return 'pass';
-        }
+        }//end if
 
         if ($type === 'meerkeuze') {
             $choices = $item['choices'] ?? [];
@@ -613,13 +633,13 @@ class ChecklistService
     private function resolvePrimaryFollowUp(array $responses, array $snapshot): ?string
     {
         $priority = [
-            self::FOLLOWUP_HANDHAVINGSTAAK => 3,
-            self::FOLLOWUP_HERINSPECTIE    => 2,
+            self::FOLLOWUP_HANDHAVINGSTAAK  => 3,
+            self::FOLLOWUP_HERINSPECTIE     => 2,
             self::FOLLOWUP_DOCUMENT_VERZOEK => 1,
-            self::FOLLOWUP_GEEN            => 0,
+            self::FOLLOWUP_GEEN             => 0,
         ];
 
-        $items = $this->indexItemsBySnapshot(snapshot: $snapshot);
+        $items  = $this->indexItemsBySnapshot(snapshot: $snapshot);
         $winner = null;
         $best   = -1;
 
@@ -649,7 +669,7 @@ class ChecklistService
                 $best   = $rank;
                 $winner = $type;
             }
-        }
+        }//end foreach
 
         return $winner;
     }//end resolvePrimaryFollowUp()
@@ -674,7 +694,7 @@ class ChecklistService
                     continue;
                 }
 
-                $id = (string) ($item['id'] ?? ($item['order'] ?? (string) $idx));
+                $id       = (string) ($item['id'] ?? ($item['order'] ?? (string) $idx));
                 $out[$id] = $item;
             }
         };

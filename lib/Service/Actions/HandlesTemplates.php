@@ -57,18 +57,21 @@ trait HandlesTemplates
         return (string) preg_replace_callback(
             '/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/',
             static function (array $match) use ($context): string {
-                $path = explode('.', $match[1]);
+                $path   = explode('.', $match[1]);
                 $cursor = $context;
                 foreach ($path as $segment) {
                     if (is_array($cursor) === true && array_key_exists($segment, $cursor) === true) {
                         $cursor = $cursor[$segment];
                         continue;
                     }
+
                     return '';
                 }
+
                 if (is_scalar($cursor) === true) {
                     return (string) $cursor;
                 }
+
                 return '';
             },
             $template
@@ -105,9 +108,11 @@ trait HandlesTemplates
         if (is_array($value) === true) {
             return (string) ($value['email'] ?? '');
         }
+
         if (is_scalar($value) === true) {
             return (string) $value;
         }
+
         return '';
     }//end resolveRecipient()
 }//end trait

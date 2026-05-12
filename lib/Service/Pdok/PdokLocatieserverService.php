@@ -231,7 +231,7 @@ class PdokLocatieserverService
      * normalised full query string so that filtered variants are distinct.
      *
      * @param string $method Endpoint suffix (`suggest`, `free`, `lookup`,
-     *                      `reverse`).
+     *                       `reverse`).
      * @param array  $params Query string parameters.
      * @param int    $ttl    Cache TTL in seconds.
      *
@@ -456,9 +456,12 @@ class PdokLocatieserverService
         }
 
         $now      = time();
-        $failures = array_filter(array: $failures, callback: static function (int $ts) use ($now): bool {
-            return ($now - $ts) <= self::OUTAGE_WINDOW;
-        });
+        $failures = array_filter(
+                array: $failures,
+                callback: static function (int $ts) use ($now): bool {
+                    return ($now - $ts) <= self::OUTAGE_WINDOW;
+                }
+                );
 
         $failures[] = $now;
 

@@ -111,18 +111,19 @@ final class StepConfigValidator
      * keys `path`, `code`, and `message`. The `message` is an internal
      * description — callers MUST NOT include it in user-facing responses.
      *
-     * @param array<string, mixed> $step               The step (with optional `config`).
-     * @param array<string, mixed> $caseTypeSchema     The linked caseType — properties + roleTypes.
-     * @param array<int, string>   $actionCatalog      Optional override of recognised action keys.
-     * @param int                  $stepIndex          The step's index in `steps[]` for path prefix.
+     * @param array<string, mixed> $step           The step (with optional `config`).
+     * @param array<string, mixed> $caseTypeSchema The linked caseType — properties +
+     *                                             roleTypes.
+     * @param array<int, string>   $actionCatalog  Optional override of recognised action keys.
+     * @param int                  $stepIndex      The step's index in `steps[]` for path prefix.
      *
      * @return array<int, array{path: string, code: string, message: string}>
      */
     public static function validate(
         array $step,
-        array $caseTypeSchema = [],
-        array $actionCatalog = self::DEFAULT_ACTION_CATALOG,
-        int $stepIndex = 0
+        array $caseTypeSchema=[],
+        array $actionCatalog=self::DEFAULT_ACTION_CATALOG,
+        int $stepIndex=0
     ): array {
         $errors = [];
         $config = ($step['config'] ?? null);
@@ -132,9 +133,9 @@ final class StepConfigValidator
 
         if (is_array($config) === false) {
             $errors[] = self::error(
-                "steps[$stepIndex].config",
-                'malformed_config',
-                'config must be an object'
+                path: "steps[$stepIndex].config",
+                code: 'malformed_config',
+                message: 'config must be an object'
             );
             return $errors;
         }
@@ -143,34 +144,34 @@ final class StepConfigValidator
 
         $errors = array_merge(
             $errors,
-            self::validateSla($config['sla'] ?? null, $base.'.sla')
+            self::validateSla(sla: ($config['sla'] ?? null), path: $base.'.sla')
         );
 
         $errors = array_merge(
             $errors,
             self::validateRequiredFields(
-                ($config['requiredFields'] ?? null),
-                ($caseTypeSchema['properties'] ?? []),
-                $base.'.requiredFields'
+                fields: ($config['requiredFields'] ?? null),
+                caseTypeProperties: ($caseTypeSchema['properties'] ?? []),
+                path: $base.'.requiredFields'
             )
         );
 
         $errors = array_merge(
             $errors,
             self::validateAutoActions(
-                ($config['autoActions'] ?? null),
-                $actionCatalog,
-                $base.'.autoActions'
+                actions: ($config['autoActions'] ?? null),
+                actionCatalog: $actionCatalog,
+                path: $base.'.autoActions'
             )
         );
 
         $errors = array_merge(
             $errors,
             self::validateEscalationRule(
-                ($config['escalationRule'] ?? null),
-                ($config['sla'] ?? null),
-                ($caseTypeSchema['roleTypes'] ?? []),
-                $base.'.escalationRule'
+                rule: ($config['escalationRule'] ?? null),
+                sla: ($config['sla'] ?? null),
+                roleTypes: ($caseTypeSchema['roleTypes'] ?? []),
+                path: $base.'.escalationRule'
             )
         );
 
@@ -210,8 +211,9 @@ final class StepConfigValidator
         if ($sla === null) {
             return [];
         }
+
         if (is_array($sla) === false) {
-            return [self::error($path, 'malformed_sla', 'sla must be an object')];
+            return [self::error(path: $path, code: 'malformed_sla', message: 'sla must be an object')];
         }
 
         $errors = [];
@@ -219,9 +221,9 @@ final class StepConfigValidator
         $value = ($sla['value'] ?? null);
         if (is_int($value) === false || $value < 1 || $value > self::SLA_VALUE_MAX) {
             $errors[] = self::error(
-                $path.'.value',
-                'out_of_range',
-                'sla.value must be a positive integer not greater than '
+                path: $path.'.value',
+                code: 'out_of_range',
+                message: 'sla.value must be a positive integer not greater than '
                 .self::SLA_VALUE_MAX
             );
         }
@@ -229,9 +231,9 @@ final class StepConfigValidator
         $unit = ($sla['unit'] ?? null);
         if (is_string($unit) === false || in_array($unit, self::SLA_UNITS, true) === false) {
             $errors[] = self::error(
-                $path.'.unit',
-                'unknown_sla_unit',
-                'sla.unit must be one of: '.implode(', ', self::SLA_UNITS)
+                path: $path.'.unit',
+                code: 'unknown_sla_unit',
+                message: 'sla.unit must be one of: '.implode(', ', self::SLA_UNITS)
             );
         }
 
@@ -257,8 +259,9 @@ final class StepConfigValidator
         if ($fields === null) {
             return [];
         }
+
         if (is_array($fields) === false) {
-            return [self::error($path, 'malformed_required_fields', 'requiredFields must be an array')];
+            return [self::error(path: $path, code: 'malformed_required_fields', message: 'requiredFields must be an array')];
         }
 
         $errors = [];
@@ -268,17 +271,18 @@ final class StepConfigValidator
         foreach ($fields as $index => $field) {
             if (is_string($field) === false || $field === '') {
                 $errors[] = self::error(
-                    $path."[$index]",
-                    'malformed_required_field',
-                    'requiredFields entries must be non-empty strings'
+                    path: $path."[$index]",
+                    code: 'malformed_required_field',
+                    message: 'requiredFields entries must be non-empty strings'
                 );
                 continue;
             }
+
             if ($checkRefs === true && array_key_exists($field, $caseTypeProperties) === false) {
                 $errors[] = self::error(
-                    $path."[$index]",
-                    'unknown_field_reference',
-                    'requiredFields entry does not resolve to a caseType property'
+                    path: $path."[$index]",
+                    code: 'unknown_field_reference',
+                    message: 'requiredFields entry does not resolve to a caseType property'
                 );
             }
         }
@@ -305,37 +309,40 @@ final class StepConfigValidator
         if ($actions === null) {
             return [];
         }
+
         if (is_array($actions) === false) {
-            return [self::error($path, 'malformed_auto_actions', 'autoActions must be an array')];
+            return [self::error(path: $path, code: 'malformed_auto_actions', message: 'autoActions must be an array')];
         }
 
         $errors = [];
         foreach ($actions as $index => $action) {
             if (is_array($action) === false) {
                 $errors[] = self::error(
-                    $path."[$index]",
-                    'malformed_action_ref',
-                    'autoActions entries must be objects with `key` and `parameters`'
+                    path: $path."[$index]",
+                    code: 'malformed_action_ref',
+                    message: 'autoActions entries must be objects with `key` and `parameters`'
                 );
                 continue;
             }
+
             $key = ($action['key'] ?? null);
             if (is_string($key) === false || $key === '') {
                 $errors[] = self::error(
-                    $path."[$index].key",
-                    'malformed_action_key',
-                    'autoActions[i].key must be a non-empty string'
+                    path: $path."[$index].key",
+                    code: 'malformed_action_key',
+                    message: 'autoActions[i].key must be a non-empty string'
                 );
                 continue;
             }
+
             if (in_array($key, $actionCatalog, true) === false) {
                 $errors[] = self::error(
-                    $path."[$index].key",
-                    'unknown_action_key',
-                    'autoActions[i].key is not registered in the action catalog'
+                    path: $path."[$index].key",
+                    code: 'unknown_action_key',
+                    message: 'autoActions[i].key is not registered in the action catalog'
                 );
             }
-        }
+        }//end foreach
 
         return $errors;
     }//end validateAutoActions()
@@ -361,8 +368,9 @@ final class StepConfigValidator
         if ($rule === null) {
             return [];
         }
+
         if (is_array($rule) === false) {
-            return [self::error($path, 'malformed_escalation_rule', 'escalationRule must be an object')];
+            return [self::error(path: $path, code: 'malformed_escalation_rule', message: 'escalationRule must be an object')];
         }
 
         $errors = [];
@@ -370,27 +378,27 @@ final class StepConfigValidator
         // Rule 6: escalationRule requires an SLA.
         if ($sla === null) {
             $errors[] = self::error(
-                $path,
-                'escalation_requires_sla',
-                'escalationRule cannot be set without a sla'
+                path: $path,
+                code: 'escalation_requires_sla',
+                message: 'escalationRule cannot be set without a sla'
             );
         }
 
         $trigger = ($rule['trigger'] ?? null);
         if (is_string($trigger) === false || in_array($trigger, self::TRIGGERS, true) === false) {
             $errors[] = self::error(
-                $path.'.trigger',
-                'unknown_trigger',
-                'escalationRule.trigger must be one of: '.implode(', ', self::TRIGGERS)
+                path: $path.'.trigger',
+                code: 'unknown_trigger',
+                message: 'escalationRule.trigger must be one of: '.implode(', ', self::TRIGGERS)
             );
         }
 
         $offset = ($rule['offset'] ?? null);
         if (is_int($offset) === false || $offset < 0) {
             $errors[] = self::error(
-                $path.'.offset',
-                'out_of_range',
-                'escalationRule.offset must be a non-negative integer'
+                path: $path.'.offset',
+                code: 'out_of_range',
+                message: 'escalationRule.offset must be a non-negative integer'
             );
         }
 
@@ -399,9 +407,9 @@ final class StepConfigValidator
             || in_array($offsetUnit, self::OFFSET_UNITS, true) === false
         ) {
             $errors[] = self::error(
-                $path.'.offsetUnit',
-                'unknown_offset_unit',
-                'escalationRule.offsetUnit must be one of: '.implode(', ', self::OFFSET_UNITS)
+                path: $path.'.offsetUnit',
+                code: 'unknown_offset_unit',
+                message: 'escalationRule.offsetUnit must be one of: '.implode(', ', self::OFFSET_UNITS)
             );
         }
 
@@ -413,9 +421,9 @@ final class StepConfigValidator
             && $offset > $sla['value']
         ) {
             $errors[] = self::error(
-                $path.'.offset',
-                'offset_exceeds_sla',
-                'escalationRule.offset must not exceed sla.value when trigger is preBreach'
+                path: $path.'.offset',
+                code: 'offset_exceeds_sla',
+                message: 'escalationRule.offset must not exceed sla.value when trigger is preBreach'
             );
         }
 
@@ -426,29 +434,31 @@ final class StepConfigValidator
             if ($role === null) {
                 continue;
             }
+
             if (is_string($role) === false || $role === '') {
                 $errors[] = self::error(
-                    $path.'.'.$roleKey,
-                    'malformed_role_reference',
-                    $roleKey.' must be a non-empty role reference'
+                    path: $path.'.'.$roleKey,
+                    code: 'malformed_role_reference',
+                    message: $roleKey.' must be a non-empty role reference'
                 );
                 continue;
             }
+
             if ($checkRoles === true && array_key_exists($role, $roleTypes) === false) {
                 $errors[] = self::error(
-                    $path.'.'.$roleKey,
-                    'unknown_role_reference',
-                    $roleKey.' does not resolve to a roleType on the linked caseType'
+                    path: $path.'.'.$roleKey,
+                    code: 'unknown_role_reference',
+                    message: $roleKey.' does not resolve to a roleType on the linked caseType'
                 );
             }
-        }
+        }//end foreach
 
         $openIncident = ($rule['openIncident'] ?? null);
         if ($openIncident !== null && is_bool($openIncident) === false) {
             $errors[] = self::error(
-                $path.'.openIncident',
-                'malformed_open_incident',
-                'escalationRule.openIncident must be a boolean'
+                path: $path.'.openIncident',
+                code: 'malformed_open_incident',
+                message: 'escalationRule.openIncident must be a boolean'
             );
         }
 

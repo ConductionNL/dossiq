@@ -39,8 +39,6 @@ use Psr\Log\LoggerInterface;
  */
 class MigrateWorkflowDefinitions implements IRepairStep
 {
-
-
     /**
      * Constructor.
      *
@@ -55,7 +53,6 @@ class MigrateWorkflowDefinitions implements IRepairStep
     ) {
     }//end __construct()
 
-
     /**
      * Get the name of this repair step.
      *
@@ -65,7 +62,6 @@ class MigrateWorkflowDefinitions implements IRepairStep
     {
         return 'Backfill workflowTemplate definitions for existing caseTypes';
     }//end getName()
-
 
     /**
      * Run the backfill.
@@ -87,11 +83,11 @@ class MigrateWorkflowDefinitions implements IRepairStep
             return;
         }
 
-        $register        = $this->settingsService->getConfigValue('register');
-        $caseTypeSchema  = $this->settingsService->getConfigValue('case_type_schema');
-        $statusSchema    = $this->settingsService->getConfigValue('status_type_schema');
-        $templateSchema  = $this->settingsService->getConfigValue('workflow_template_schema');
-        $caseSchema      = $this->settingsService->getConfigValue('case_schema');
+        $register       = $this->settingsService->getConfigValue('register');
+        $caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
+        $statusSchema   = $this->settingsService->getConfigValue('status_type_schema');
+        $templateSchema = $this->settingsService->getConfigValue('workflow_template_schema');
+        $caseSchema     = $this->settingsService->getConfigValue('case_schema');
 
         if ($register === ''
             || $caseTypeSchema === ''
@@ -120,7 +116,7 @@ class MigrateWorkflowDefinitions implements IRepairStep
         $migrated = 0;
         $skipped  = 0;
         foreach ($caseTypes as $caseType) {
-            $row = $this->normalize($caseType);
+            $row = $this->normalize(row: $caseType);
             if ($row === null) {
                 continue;
             }
@@ -144,11 +140,11 @@ class MigrateWorkflowDefinitions implements IRepairStep
             }
 
             $template = $this->buildTemplateFor(
-                $caseTypeId,
-                $row,
-                $objectService,
-                $register,
-                $statusSchema,
+                caseTypeId: $caseTypeId,
+                caseType: $row,
+                objectService: $objectService,
+                register: $register,
+                statusSchema: $statusSchema,
             );
 
             if ($template === null) {
@@ -169,7 +165,7 @@ class MigrateWorkflowDefinitions implements IRepairStep
                 continue;
             }
 
-            $createdNormalized = $this->normalize($created);
+            $createdNormalized = $this->normalize(row: $created);
             $newId = (string) ($createdNormalized['id'] ?? '');
 
             // Pin the caseType to the new template.
@@ -191,14 +187,14 @@ class MigrateWorkflowDefinitions implements IRepairStep
                 // Pin existing open cases to workflowVersion = 1.
                 if ($caseSchema !== '') {
                     $this->pinOpenCases(
-                        $objectService,
-                        $register,
-                        $caseSchema,
-                        $caseTypeId,
-                        $newId,
+                        objectService: $objectService,
+                        register: $register,
+                        caseSchema: $caseSchema,
+                        caseTypeId: $caseTypeId,
+                        templateId: $newId,
                     );
                 }
-            }
+            }//end if
 
             $migrated++;
         }//end foreach
@@ -208,16 +204,15 @@ class MigrateWorkflowDefinitions implements IRepairStep
         );
     }//end run()
 
-
     /**
      * Build a workflowTemplate payload from a caseType's statusType
      * records.
      *
-     * @param string                                                $caseTypeId    The caseType UUID
-     * @param array<string, mixed>                                  $caseType      Normalized caseType row
-     * @param object                                                $objectService Resolved OR ObjectService
-     * @param string                                                $register      The register id
-     * @param string                                                $statusSchema  The statusType schema id
+     * @param string               $caseTypeId    The caseType UUID
+     * @param array<string, mixed> $caseType      Normalized caseType row
+     * @param object               $objectService Resolved OR ObjectService
+     * @param string               $register      The register id
+     * @param string               $statusSchema  The statusType schema id
      *
      * @return array<string, mixed>|null
      */
@@ -250,7 +245,7 @@ class MigrateWorkflowDefinitions implements IRepairStep
 
         $statuses = [];
         foreach ($statusRows as $raw) {
-            $row = $this->normalize($raw);
+            $row = $this->normalize(row: $raw);
             if ($row !== null && (string) ($row['id'] ?? '') !== '') {
                 $statuses[] = $row;
             }
@@ -274,14 +269,14 @@ class MigrateWorkflowDefinitions implements IRepairStep
             }
 
             $steps[] = [
-                'id'           => $this->uuid(),
-                'title'        => (string) ($status['name'] ?? 'Stap'),
-                'description'  => (string) ($status['description'] ?? ''),
-                'status'       => (string) ($status['id'] ?? ''),
-                'order'        => (int) ($status['order'] ?? 0),
-                'assigneeRole' => '',
-                'isRequired'   => false,
-                'checklist'    => [],
+                'id'               => $this->uuid(),
+                'title'            => (string) ($status['name'] ?? 'Stap'),
+                'description'      => (string) ($status['description'] ?? ''),
+                'status'           => (string) ($status['id'] ?? ''),
+                'order'            => (int) ($status['order'] ?? 0),
+                'assigneeRole'     => '',
+                'isRequired'       => false,
+                'checklist'        => [],
                 'automaticActions' => [],
             ];
         }
@@ -293,13 +288,13 @@ class MigrateWorkflowDefinitions implements IRepairStep
             $to   = $statuses[($i + 1)];
 
             $transitions[] = [
-                'id'         => $this->uuid(),
-                'fromStatus' => (string) ($from['id'] ?? ''),
-                'toStatus'   => (string) ($to['id'] ?? ''),
-                'label'      => (string) ($to['name'] ?? 'Door'),
-                'guards'     => [],
+                'id'               => $this->uuid(),
+                'fromStatus'       => (string) ($from['id'] ?? ''),
+                'toStatus'         => (string) ($to['id'] ?? ''),
+                'label'            => (string) ($to['name'] ?? 'Door'),
+                'guards'           => [],
                 'automaticActions' => [],
-                'allowedRoles' => [],
+                'allowedRoles'     => [],
             ];
         }
 
@@ -310,7 +305,7 @@ class MigrateWorkflowDefinitions implements IRepairStep
 
         return [
             'title'           => $title.' — basis',
-            'description'    => 'Backfilled from implicit statusType ordering.',
+            'description'     => 'Backfilled from implicit statusType ordering.',
             'caseType'        => $caseTypeId,
             'version'         => 1,
             'isActive'        => true,
@@ -321,7 +316,6 @@ class MigrateWorkflowDefinitions implements IRepairStep
             'nodePositions'   => '',
         ];
     }//end buildTemplateFor()
-
 
     /**
      * Pin every open case of a caseType to workflowVersion 1 and bind it
@@ -363,7 +357,7 @@ class MigrateWorkflowDefinitions implements IRepairStep
         }
 
         foreach ($cases as $row) {
-            $case = $this->normalize($row);
+            $case = $this->normalize(row: $row);
             if ($case === null) {
                 continue;
             }
@@ -394,9 +388,8 @@ class MigrateWorkflowDefinitions implements IRepairStep
                     ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
                 );
             }
-        }
+        }//end foreach
     }//end pinOpenCases()
-
 
     /**
      * Coerce an OpenRegister result row to an associative array.
@@ -421,7 +414,6 @@ class MigrateWorkflowDefinitions implements IRepairStep
         return null;
     }//end normalize()
 
-
     /**
      * Generate a UUID v4 for embedded step / transition identifiers.
      *
@@ -440,6 +432,4 @@ class MigrateWorkflowDefinitions implements IRepairStep
             .substr($hex, 16, 4).'-'
             .substr($hex, 20, 12);
     }//end uuid()
-
-
 }//end class

@@ -62,7 +62,6 @@ class WmsWfsService
      */
     private const DEFAULT_EXTENT_CUTOFF_KM = 50.0;
 
-
     /**
      * Constructor for WmsWfsService.
      *
@@ -80,7 +79,6 @@ class WmsWfsService
         private LoggerInterface $logger,
     ) {
     }//end __construct()
-
 
     /**
      * Resolve the set of wmsLayer objects active for a given case type.
@@ -147,7 +145,6 @@ class WmsWfsService
         return $result;
     }//end getLayersForCaseType()
 
-
     /**
      * Validate a wmsLayer object before persistence.
      *
@@ -196,7 +193,7 @@ class WmsWfsService
         // We surface it here as a soft pre-flight via a no-op proxyRequest with empty query,
         // but to avoid a real outbound HTTP at validation time we skip and rely on the
         // proxy enforcing it. The save-time controller can call assertUrlAllowed().
-        if ($url !== '' && $this->isUrlAllowed($url) === false) {
+        if ($url !== '' && $this->isUrlAllowed(url: $url) === false) {
             $errors[] = [
                 'field'   => 'url',
                 'code'    => 'wms.url_not_allowed',
@@ -206,7 +203,6 @@ class WmsWfsService
 
         return ['ok' => count($errors) === 0, 'errors' => $errors];
     }//end validateLayer()
-
 
     /**
      * Proxy a WMS/WFS request for a specific layer through the GIS proxy.
@@ -261,7 +257,7 @@ class WmsWfsService
             }
 
             $cutoffKm = (float) ($layer['extentCutoffKm'] ?? self::DEFAULT_EXTENT_CUTOFF_KM);
-            if ($bbox !== '' && $this->bboxExceedsCutoff($bbox, $cutoffKm) === true) {
+            if ($bbox !== '' && $this->bboxExceedsCutoff(bbox: $bbox, cutoffKm: $cutoffKm) === true) {
                 throw new \RuntimeException('Visible extent exceeds layer cutoff; zoom in for details', 413);
             }
         }
@@ -269,10 +265,14 @@ class WmsWfsService
         // Build the upstream query.
         $version = (string) ($layer['version'] ?? '');
         if ($version === '') {
-            $version = ($type === 'WFS') ? self::DEFAULT_WFS_VERSION : self::DEFAULT_WMS_VERSION;
+            if ($type === 'WFS') {
+                $version = self::DEFAULT_WFS_VERSION;
+            } else {
+                $version = self::DEFAULT_WMS_VERSION;
+            }
         }
 
-        $query = array_change_key_case($params, CASE_UPPER);
+        $query            = array_change_key_case($params, CASE_UPPER);
         $query['SERVICE'] = $type;
         $query['VERSION'] = $version;
         $query['REQUEST'] = $request;
@@ -297,7 +297,6 @@ class WmsWfsService
         // Delegate ALL outbound HTTP to GisProxyService — enforces allowlist + rate limit.
         return $this->gisProxyService->proxyRequest($url, $query, strtolower($type));
     }//end proxyRequest()
-
 
     /**
      * Build a GetMap URL fragment (delegated to proxy for fetch).
@@ -344,7 +343,6 @@ class WmsWfsService
         return $url.$separator.http_build_query($query);
     }//end buildGetMapUrl()
 
-
     /**
      * Build a GetFeature URL fragment with BBOX scoped to the visible extent.
      *
@@ -382,7 +380,6 @@ class WmsWfsService
 
         return $url.$separator.http_build_query($query);
     }//end buildGetFeatureUrl()
-
 
     /**
      * Fetch a single wmsLayer object by id from OpenRegister.
@@ -432,7 +429,6 @@ class WmsWfsService
 
         return null;
     }//end getLayerById()
-
 
     /**
      * Determine whether a URL is acceptable to the GIS proxy.
@@ -511,7 +507,6 @@ class WmsWfsService
         return false;
     }//end isUrlAllowed()
 
-
     /**
      * Fetch all wmsLayer objects from OpenRegister.
      *
@@ -543,9 +538,8 @@ class WmsWfsService
                 ['exception' => $e->getMessage()]
             );
             return [];
-        }
+        }//end try
     }//end fetchAllLayers()
-
 
     /**
      * Check whether a BBOX string spans more than the cutoff distance.
@@ -587,6 +581,4 @@ class WmsWfsService
         $cutoffDeg = ($cutoffKm / 111.0);
         return ($spanX > $cutoffDeg || $spanY > $cutoffDeg);
     }//end bboxExceedsCutoff()
-
-
 }//end class

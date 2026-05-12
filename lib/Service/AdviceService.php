@@ -84,7 +84,7 @@ class AdviceService
      *
      * @throws \RuntimeException When OpenRegister unavailable / invalid status
      */
-    public function transitionStatus(string $adviceId, string $to, array $payload = []): array
+    public function transitionStatus(string $adviceId, string $to, array $payload=[]): array
     {
         if (in_array($to, self::VALID_STATUSES, true) === false) {
             throw new \RuntimeException('Invalid advice status');
@@ -102,7 +102,7 @@ class AdviceService
             throw new \RuntimeException('Advice schema is not configured');
         }
 
-        $current = $this->loadAdvice($adviceId);
+        $current = $this->loadAdvice(adviceId: $adviceId);
         if ($current === null) {
             throw new \RuntimeException('Advice request not found');
         }
@@ -127,9 +127,9 @@ class AdviceService
             throw new \RuntimeException('Could not update advice request');
         }
 
-        $advice = $this->normalizeResult($advice);
+        $advice = $this->normalizeResult(result: $advice);
 
-        $this->fireTransitionNotification($to, $current, $adviceId);
+        $this->fireTransitionNotification(to: $to, current: $current, adviceId: $adviceId);
 
         return $advice;
     }//end transitionStatus()
@@ -145,7 +145,7 @@ class AdviceService
      */
     public function dispatchReminder(string $adviceId): void
     {
-        $advice = $this->loadAdvice($adviceId);
+        $advice = $this->loadAdvice(adviceId: $adviceId);
         if ($advice === null) {
             return;
         }
@@ -155,7 +155,7 @@ class AdviceService
             return;
         }
 
-        $this->sendUserNotification($adviseur, 'advies_herinnering', $adviceId);
+        $this->sendUserNotification(userId: $adviseur, subject: 'advies_herinnering', objectId: $adviceId);
     }//end dispatchReminder()
 
     /**
@@ -170,7 +170,7 @@ class AdviceService
      */
     public function applyWorkflowGuard(string $caseId): array
     {
-        $all     = $this->getAdviceForCase($caseId);
+        $all     = $this->getAdviceForCase(caseId: $caseId);
         $pending = [];
 
         foreach ($all as $advice) {
@@ -284,7 +284,7 @@ class AdviceService
     public function expireAdvice(string $adviceId): array
     {
         try {
-            return $this->transitionStatus($adviceId, 'verlopen');
+            return $this->transitionStatus(adviceId: $adviceId, to: 'verlopen');
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest: failed to expire advice: '.$e->getMessage(),
@@ -325,7 +325,7 @@ class AdviceService
             return null;
         }
 
-        return $this->normalizeResult($advice);
+        return $this->normalizeResult(result: $advice);
     }//end loadAdvice()
 
     /**
@@ -343,10 +343,10 @@ class AdviceService
             $adviseur = (string) ($current['adviseur'] ?? '');
             if ($adviseur !== '') {
                 $this->sendUserNotification(
-                    $adviseur,
-                    'advies_aangevraagd',
-                    $adviceId,
-                    (string) ($current['onderwerp'] ?? '')
+                    userId: $adviseur,
+                    subject: 'advies_aangevraagd',
+                    objectId: $adviceId,
+                    message: (string) ($current['onderwerp'] ?? '')
                 );
             }
 
@@ -356,7 +356,7 @@ class AdviceService
         if ($to === 'ontvangen') {
             $caller = $this->getUserId();
             if ($caller !== '') {
-                $this->sendUserNotification($caller, 'advies_ontvangen', $adviceId);
+                $this->sendUserNotification(userId: $caller, subject: 'advies_ontvangen', objectId: $adviceId);
             }
         }
     }//end fireTransitionNotification()
@@ -413,7 +413,7 @@ class AdviceService
         string $userId,
         string $subject,
         string $objectId,
-        string $message = '',
+        string $message='',
     ): void {
         try {
             $notification = $this->notificationManager->createNotification();

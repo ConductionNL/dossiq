@@ -9,8 +9,8 @@
 		@drop="onDrop"
 		@dragover.prevent>
 		<VueFlow
-			v-model:nodes="localNodes"
-			v-model:edges="localEdges"
+			:nodes.sync="localNodes"
+			:edges.sync="localEdges"
 			:default-edge-options="defaultEdgeOptions"
 			:fit-view-on-init="true"
 			:nodes-draggable="!readOnly"

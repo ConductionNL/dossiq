@@ -287,7 +287,7 @@ class DecisionService
         $totalAmount = $this->computeProceskostenTotal(decision: $current);
         if ($totalAmount !== null) {
             $proceskosten = (array) ($current['proceskostenvergoeding'] ?? []);
-            $proceskosten['totalAmount']    = $totalAmount;
+            $proceskosten['totalAmount']     = $totalAmount;
             $patch['proceskostenvergoeding'] = $proceskosten;
         }
 
@@ -414,8 +414,8 @@ class DecisionService
         // set and the decision deviates.
         $advisory = (string) ($decision['advisoryOpinion'] ?? '');
         if ($advisory !== '') {
-            $follows  = (bool) ($decision['followsAdvice'] ?? true);
-            $reason   = (string) ($decision['deviationRationale'] ?? '');
+            $follows = (bool) ($decision['followsAdvice'] ?? true);
+            $reason  = (string) ($decision['deviationRationale'] ?? '');
             if ($follows === false && $reason === '') {
                 throw new RuntimeException(
                     'deviationRationale is required when followsAdvice is '

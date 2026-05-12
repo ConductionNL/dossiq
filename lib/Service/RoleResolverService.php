@@ -70,6 +70,8 @@ class RoleResolverService
 
     /**
      * The local cache instance (APCu when available).
+     *
+     * @var ICache
      */
     private ICache $cache;
 
@@ -123,10 +125,12 @@ class RoleResolverService
         if (is_array($allowedRoles) === true && $allowedRoles !== []) {
             return [
                 'strategy'  => self::STRATEGY_OR_SET,
-                'roleTypes' => array_values(array_map(
+                'roleTypes' => array_values(
+                        array_map(
                     static fn ($value): string => (string) $value,
                     $allowedRoles,
-                )),
+                )
+                        ),
             ];
         }
 
@@ -148,23 +152,30 @@ class RoleResolverService
         $strategyName = (string) ($rule['strategy'] ?? '');
         if ($this->registry->has($strategyName) === false) {
             throw new RoutingStrategyMissingException(
-                sprintf('Routing strategy "%s" is not registered', $strategyName)
+                message: sprintf('Routing strategy "%s" is not registered', $strategyName)
             );
         }
 
-        $caseId    = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
-        $cacheKey  = $this->cacheKey(rule: $rule, caseId: $caseId);
-        $cacheHit  = ($caseId !== '') ? $this->cache->get($cacheKey) : null;
-        if (is_array($cacheHit) === true) {
-            return array_values(array_map(
-                static fn ($value): string => (string) $value,
-                $cacheHit,
-            ));
+        $caseId   = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
+        $cacheKey = $this->cacheKey(rule: $rule, caseId: $caseId);
+        if ($caseId !== '') {
+            $cacheHit = $this->cache->get($cacheKey);
+        } else {
+            $cacheHit = null;
         }
 
-        $roles      = $this->loadCaseRoles($caseId);
-        $strategy   = $this->registry->get($strategyName);
-        $primary    = $strategy->resolve($rule, $case, $roles);
+        if (is_array($cacheHit) === true) {
+            return array_values(
+                    array_map(
+                static fn ($value): string => (string) $value,
+                $cacheHit,
+            )
+                    );
+        }
+
+        $roles    = $this->loadCaseRoles(caseId: $caseId);
+        $strategy = $this->registry->get($strategyName);
+        $primary  = $strategy->resolve($rule, $case, $roles);
 
         $fallback = (string) ($rule['fallback'] ?? '');
         if ($primary === [] && $fallback !== '' && $strategyName !== 'hierarchical') {
@@ -183,10 +194,10 @@ class RoleResolverService
             $this->logger->info(
                 'Procest: routing rule resolved to empty set',
                 [
-                    'event'    => 'RoleRoutingEmpty',
-                    'rule'     => $rule,
-                    'caseId'   => $caseId,
-                    'app'      => Application::APP_ID,
+                    'event'  => 'RoleRoutingEmpty',
+                    'rule'   => $rule,
+                    'caseId' => $caseId,
+                    'app'    => Application::APP_ID,
                 ],
             );
         }
@@ -212,7 +223,7 @@ class RoleResolverService
         }
 
         try {
-            $allowed = $this->resolve($rule, $case);
+            $allowed = $this->resolve(rule: $rule, case: $case);
         } catch (RoutingStrategyMissingException $e) {
             $this->logger->warning(
                 'Procest: routing guard rejected — missing strategy: '.$e->getMessage(),
@@ -269,9 +280,9 @@ class RoleResolverService
             $visited  = [$participant => true];
             $hops     = 0;
             while (isset($byUser[$resolved]) === true) {
-                $role = $byUser[$resolved];
-                $from = (string) ($role['delegateFrom'] ?? '');
-                $until = (string) ($role['delegateUntil'] ?? '');
+                $role     = $byUser[$resolved];
+                $from     = (string) ($role['delegateFrom'] ?? '');
+                $until    = (string) ($role['delegateUntil'] ?? '');
                 $delegate = (string) ($role['delegate'] ?? '');
                 if ($delegate === '' || $from === '' || $until === '') {
                     break;
@@ -308,10 +319,10 @@ class RoleResolverService
                     // Per spec: break after exactly one hop.
                     break;
                 }
-            }
+            }//end while
 
             $result[] = $resolved;
-        }
+        }//end foreach
 
         return $result;
     }//end applyDelegation()
@@ -369,7 +380,7 @@ class RoleResolverService
 
         $rows = [];
         foreach ((array) $records as $record) {
-            $row = $this->toArray($record);
+            $row = $this->toArray(value: $record);
             if ($row !== []) {
                 $rows[] = $row;
             }

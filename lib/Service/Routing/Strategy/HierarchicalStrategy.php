@@ -37,6 +37,8 @@ class HierarchicalStrategy implements RoutingStrategyInterface
 {
     /**
      * {@inheritDoc}
+     *
+     * @return string The strategy name.
      */
     public function name(): string
     {
@@ -48,8 +50,8 @@ class HierarchicalStrategy implements RoutingStrategyInterface
      * participant set. When all listed roles are empty, fall through to the
      * optional `fallback` roleType. Returns an empty array when nothing matches.
      *
-     * @param array<string, mixed> $rule  The routing rule
-     * @param array<string, mixed> $case  The case object
+     * @param array<string, mixed>             $rule  The routing rule
+     * @param array<string, mixed>             $case  The case object
      * @param array<int, array<string, mixed>> $roles Roles bound to the case
      *
      * @return array<int, string>

@@ -110,7 +110,7 @@ class BeroepEscalationListener implements IEventListener
         }
 
         try {
-            $object = $this->extractObject($event);
+            $object = $this->extractObject(event: $event);
             if ($object === null) {
                 return;
             }
@@ -170,7 +170,7 @@ class BeroepEscalationListener implements IEventListener
                 'Procest beroep: dwingendStatus derivation swallowed '
                 .'exception: '.$e->getMessage(),
             );
-        }
+        }//end try
     }//end handle()
 
     /**
@@ -195,8 +195,7 @@ class BeroepEscalationListener implements IEventListener
     private function shouldFlagDwingend(array $beroep, array $bezwaar): bool
     {
         $bezwaarStatus = (string) ($bezwaar['status'] ?? '');
-        if (in_array($bezwaarStatus, self::TERMINAL_BEZWAAR_STATUSES, true)
-            === false
+        if (in_array($bezwaarStatus, self::TERMINAL_BEZWAAR_STATUSES, true) === false
         ) {
             return false;
         }
@@ -235,8 +234,7 @@ class BeroepEscalationListener implements IEventListener
         $deadline = (string) ($beroep['filingDeadline'] ?? '');
         if ($deadline !== '') {
             try {
-                return (new DateTimeImmutable($filing))
-                    <= (new DateTimeImmutable($deadline));
+                return (new DateTimeImmutable($filing)) <= (new DateTimeImmutable($deadline));
             } catch (Throwable $e) {
                 return true;
             }
@@ -267,9 +265,7 @@ class BeroepEscalationListener implements IEventListener
         }
 
         $candidate = (string) (
-            $object['@self']['schema']
-            ?? ($object['@self']['schemaSlug']
-                ?? ($object['schema'] ?? ($object['_schemaSlug'] ?? '')))
+            $object['@self']['schema'] ?? ($object['@self']['schemaSlug'] ?? ($object['schema'] ?? ($object['_schemaSlug'] ?? '')))
         );
 
         return $candidate !== '' && (

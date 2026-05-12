@@ -37,7 +37,6 @@ use Psr\Log\LoggerInterface;
  */
 class SetFieldHandler implements ActionHandlerInterface
 {
-
     /**
      * Constructor.
      *
@@ -95,6 +94,6 @@ class SetFieldHandler implements ActionHandlerInterface
                 ['exception' => $e->getMessage(), 'context' => $transitionContext],
             );
             return ActionResult::failure(error: 'set_field_failed');
-        }
+        }//end try
     }//end handle()
 }//end class

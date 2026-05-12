@@ -78,14 +78,14 @@ class HearingService
      * hearingSession (REQ-BH-8). Values are the canonical tags every
      * downstream consumer (beroep export, accessibility report) reads.
      */
-    public const TAG_SCHEDULED            = 'awb-art-7:2';
-    public const TAG_INVITATION_SENT      = 'awb-art-7:2';
-    public const TAG_WAIVER               = 'awb-art-7:3';
-    public const TAG_INSPECTION           = 'awb-art-7:4';
+    public const TAG_SCHEDULED       = 'awb-art-7:2';
+    public const TAG_INVITATION_SENT = 'awb-art-7:2';
+    public const TAG_WAIVER          = 'awb-art-7:3';
+    public const TAG_INSPECTION      = 'awb-art-7:4';
     public const TAG_CONFIDENTIAL_WITHELD = 'awb-art-7:6';
-    public const TAG_VERSLAG              = 'awb-art-7:7';
-    public const TAG_BAC_REFERRAL         = 'awb-art-7:13';
-    public const TAG_RECORDING_CONSENT    = 'avg-art-6';
+    public const TAG_VERSLAG           = 'awb-art-7:7';
+    public const TAG_BAC_REFERRAL      = 'awb-art-7:13';
+    public const TAG_RECORDING_CONSENT = 'avg-art-6';
 
     /**
      * Constructor.
@@ -125,7 +125,7 @@ class HearingService
         string $scheduledDate,
         string $chairpersonId,
         array $invitees,
-        array $payload = []
+        array $payload=[]
     ): array {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
@@ -147,8 +147,8 @@ class HearingService
             );
         }
 
-        $scheduled = $this->parseDateTime($scheduledDate);
-        $deadline  = $this->computeInspectionDeadline($scheduled);
+        $scheduled = $this->parseDateTime(value: $scheduledDate);
+        $deadline  = $this->computeInspectionDeadline(scheduled: $scheduled);
         $now       = new \DateTimeImmutable();
 
         $this->guardInspectionFloor(
@@ -156,9 +156,11 @@ class HearingService
             today: $now,
         );
 
-        $available = isset($payload['inspectionAvailableFrom']) === true
-            ? $this->parseDate((string) $payload['inspectionAvailableFrom'])
-            : $now->setTime(0, 0, 0);
+        if (isset($payload['inspectionAvailableFrom']) === true) {
+            $available = $this->parseDate(value: (string) $payload['inspectionAvailableFrom']);
+        } else {
+            $available = $now->setTime(0, 0, 0);
+        }
 
         if ($available > $deadline) {
             // Per design.md: inspectionAvailableFrom must be ≤ inspectionDeadline.
@@ -167,9 +169,9 @@ class HearingService
 
         $record = array_merge(
             [
-                'location'    => null,
+                'location'     => null,
                 'videoCallUrl' => null,
-                'members'     => [],
+                'members'      => [],
             ],
             $payload,
             [
@@ -186,8 +188,7 @@ class HearingService
                 'inspectionDeadline'      => $deadline->format('Y-m-d'),
                 'status'                  => 'gepland',
                 'hearingWaived'           => false,
-                'recordingConsent'        => $payload['recordingConsent']
-                    ?? 'not_requested',
+                'recordingConsent'        => $payload['recordingConsent'] ?? 'not_requested',
             ]
         );
 
@@ -196,8 +197,8 @@ class HearingService
             event: 'hearing-scheduled',
             tag: self::TAG_SCHEDULED,
             payload: [
-                'case'                => $caseId,
-                'scheduledDate'       => $record['scheduledDate'],
+                'case'               => $caseId,
+                'scheduledDate'      => $record['scheduledDate'],
                 'inspectionDeadline' => $record['inspectionDeadline'],
             ],
         );
@@ -229,7 +230,7 @@ class HearingService
     public function waive(
         string $caseId,
         string $reason,
-        array $payload = []
+        array $payload=[]
     ): array {
         $reason = trim($reason);
         if ($reason === '') {
@@ -259,8 +260,7 @@ class HearingService
             [
                 'case'                    => $caseId,
                 'scheduledDate'           => $now->format(\DateTimeInterface::ATOM),
-                'chairperson'             => $payload['chairperson']
-                    ?? ($payload['chairpersonId'] ?? 'system'),
+                'chairperson'             => $payload['chairperson'] ?? ($payload['chairpersonId'] ?? 'system'),
                 'invitees'                => $payload['invitees'] ?? [],
                 'inspectionAvailableFrom' => $now->format('Y-m-d'),
                 'inspectionDeadline'      => $now->format('Y-m-d'),
@@ -298,8 +298,8 @@ class HearingService
      * any correction SHALL carry a non-empty correctionReason that is
      * logged as an awb-art-7:7 audit entry.
      *
-     * @param string                              $sessionId   UUID of the hearingSession
-     * @param array<int, array<string, mixed>>    $entries     Attendance entries: each {invitee, present, arrivalTime?, correctionReason?}
+     * @param string                           $sessionId UUID of the hearingSession
+     * @param array<int, array<string, mixed>> $entries   Attendance entries: each {invitee, present, arrivalTime?, correctionReason?}
      *
      * @return array<string, mixed> The updated hearingSession record
      *
@@ -330,19 +330,22 @@ class HearingService
             throw new RuntimeException('Hearing session not found');
         }
 
-        $now           = new \DateTimeImmutable();
-        $scheduledRaw  = (string) ($current['scheduledDate'] ?? '');
-        $scheduled     = $scheduledRaw !== ''
-            ? $this->parseDateTime($scheduledRaw)
-            : $now;
-        $freezeAt      = $scheduled->modify(
+        $now          = new \DateTimeImmutable();
+        $scheduledRaw = (string) ($current['scheduledDate'] ?? '');
+        if ($scheduledRaw !== '') {
+            $scheduled = $this->parseDateTime(value: $scheduledRaw);
+        } else {
+            $scheduled = $now;
+        }
+
+        $freezeAt = $scheduled->modify(
             '+'.self::ATTENDANCE_GRACE_HOURS.' hour'
         );
-        $isFrozen      = $now > $freezeAt;
+        $isFrozen = $now > $freezeAt;
 
-        $existing      = (array) ($current['attendance'] ?? []);
-        $merged        = $existing;
-        $audit         = (array) ($current['auditTrail'] ?? []);
+        $existing = (array) ($current['attendance'] ?? []);
+        $merged   = $existing;
+        $audit    = (array) ($current['auditTrail'] ?? []);
 
         foreach ($entries as $entry) {
             if (is_array($entry) === false) {
@@ -371,7 +374,7 @@ class HearingService
             }
 
             $merged[] = $entry;
-        }
+        }//end foreach
 
         $update = [
             'attendance'         => $merged,
@@ -428,12 +431,10 @@ class HearingService
         }
 
         $summary  = (string) (
-            $payload['minutesSummary']
-            ?? ($current['minutesSummary'] ?? '')
+            $payload['minutesSummary'] ?? ($current['minutesSummary'] ?? '')
         );
         $document = (string) (
-            $payload['minutesDocument']
-            ?? ($current['minutesDocument'] ?? '')
+            $payload['minutesDocument'] ?? ($current['minutesDocument'] ?? '')
         );
 
         if (trim($summary) === '' && trim($document) === '') {
@@ -449,8 +450,7 @@ class HearingService
             && (string) $payload['audioRecording'] !== ''
         ) {
             $consent = (string) (
-                $payload['recordingConsent']
-                ?? ($current['recordingConsent'] ?? 'not_requested')
+                $payload['recordingConsent'] ?? ($current['recordingConsent'] ?? 'not_requested')
             );
             if ($consent !== 'granted') {
                 $audit = $this->appendAudit(
@@ -479,12 +479,24 @@ class HearingService
                 throw new RuntimeException(
                     'Bezwaarmaker heeft geen toestemming gegeven voor audio-opname'
                 );
-            }
+            }//end if
+        }//end if
+
+        if ($summary !== '') {
+            $minutesSummary = $summary;
+        } else {
+            $minutesSummary = null;
+        }
+
+        if ($document !== '') {
+            $minutesDocument = $document;
+        } else {
+            $minutesDocument = null;
         }
 
         $update = [
-            'minutesSummary'  => $summary !== '' ? $summary : null,
-            'minutesDocument' => $document !== '' ? $document : null,
+            'minutesSummary'  => $minutesSummary,
+            'minutesDocument' => $minutesDocument,
             'status'          => 'uitgevoerd',
         ];
 
@@ -583,8 +595,8 @@ class HearingService
                 chairpersonId: 'system',
                 invitees: [
                     [
-                        'role'                => 'bezwaarmaker',
-                        'channel'             => 'email',
+                        'role'               => 'bezwaarmaker',
+                        'channel'            => 'email',
                         'accessibilityNeeds' => [],
                     ],
                 ],

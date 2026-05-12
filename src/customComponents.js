@@ -36,11 +36,15 @@ import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 
-// --- Visual workflow editor (only legitimate custom-UI page). ---
-// Custom because vue-flow drag-and-drop graph editing has no analogue in
-// the manifest's built-in page/widget types. See
+// --- Visual workflow editor — TEMPORARILY UNWIRED. ---
+// `@vue-flow/{core,controls,background}` v1.x are Vue-3-only (they import
+// Fragment / Teleport / createElementVNode / toValue from 'vue'), which breaks
+// the webpack build under procest's Vue 2.7 base (272 errors). The component
+// files remain in src/components/workflow/ but are no longer pulled into the
+// bundle. Re-wire once @vue-flow is replaced with a Vue-2-compatible flow
+// library (or procest migrates to Vue 3). See
 // openspec/changes/visual-workflow-editor/design.md.
-import VisualWorkflowEditor from './components/workflow/VisualWorkflowEditor.vue'
+// import VisualWorkflowEditor from './components/workflow/VisualWorkflowEditor.vue'
 
 // --- Shared map surface (case detail map tab, dashboard widget, public case page). ---
 // Thin wrapper around CnMapWidget; registered here so manifest entries
@@ -71,8 +75,8 @@ export default {
 	CaseDecisionsTab, // decisions where decision.case === parent.id
 	CaseDocumentsTab, // documents where document.case === parent.id
 
-	// --- Visual workflow editor (drag-and-drop, no manifest analogue). ---
-	VisualWorkflowEditor,
+	// --- Visual workflow editor — temporarily unwired (see import comment above). ---
+	// VisualWorkflowEditor,
 
 	// --- Shared map surface — referenceable from manifest pages. ---
 	MapComponent,

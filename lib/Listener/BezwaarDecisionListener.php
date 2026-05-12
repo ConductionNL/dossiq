@@ -83,7 +83,7 @@ class BezwaarDecisionListener implements IEventListener
         }
 
         try {
-            $object = $this->extractObject($event);
+            $object = $this->extractObject(event: $event);
             if ($object === null) {
                 return;
             }
@@ -108,7 +108,7 @@ class BezwaarDecisionListener implements IEventListener
                 'Procest bezwaar-decision: guard derivation swallowed '
                 .'exception: '.$e->getMessage()
             );
-        }
+        }//end try
     }//end handle()
 
     /**
@@ -257,9 +257,7 @@ class BezwaarDecisionListener implements IEventListener
         }
 
         $candidate = (string) (
-            $object['@self']['schema']
-            ?? ($object['@self']['schemaSlug']
-                ?? ($object['schema'] ?? ($object['_schemaSlug'] ?? '')))
+            $object['@self']['schema'] ?? ($object['@self']['schemaSlug'] ?? ($object['schema'] ?? ($object['_schemaSlug'] ?? '')))
         );
 
         return $candidate !== '' && (

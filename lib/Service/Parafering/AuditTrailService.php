@@ -132,7 +132,7 @@ class AuditTrailService
                 'actorRole'       => $actorRole,
                 'timestamp'       => $timestamp,
                 'contentSnapshot' => $contentSnapshot,
-                'ipAddress'       => $this->redactIp((string) $this->request->getRemoteAddress()),
+                'ipAddress'       => $this->redactIp(ip: (string) $this->request->getRemoteAddress()),
             ];
 
             if ($step !== null && $step !== '') {
@@ -143,11 +143,11 @@ class AuditTrailService
                 $entry['reason'] = $reason;
             }
 
-            $entry['auditEntryHash'] = $this->computeHash($entry);
+            $entry['auditEntryHash'] = $this->computeHash(entry: $entry);
 
             $saved = $objectService->saveObject($register, $schema, $entry);
 
-            return $this->toArray($saved);
+            return $this->toArray(value: $saved);
         } catch (Throwable $e) {
             // Audit-write failure MUST NOT propagate back to the routing
             // service — operational transitions must not be blocked by audit
@@ -175,8 +175,8 @@ class AuditTrailService
      * "Audit entries are append-only" for any UPDATE or DELETE attempt, and
      * additionally validates INSERT payload shape (enums + hash format).
      *
-     * @param array<string, mixed> $entry        The pending entry
-     * @param bool                 $isUpdate     True when this is an UPDATE/DELETE (existing id present)
+     * @param array<string, mixed> $entry    The pending entry
+     * @param bool                 $isUpdate True when this is an UPDATE/DELETE (existing id present)
      *
      * @return void
      *
@@ -212,7 +212,7 @@ class AuditTrailService
     /**
      * Export the full audit trail for a voorstel as an Archiefwet-aligned envelope.
      *
-     * @param string $voorstelId       The voorstel UUID/slug
+     * @param string $voorstelId        The voorstel UUID/slug
      * @param string $voorstelOnderwerp Voorstel onderwerp (for the metadata block)
      * @param string $exportedBy        UID of the auditor performing the export
      *
@@ -244,7 +244,7 @@ class AuditTrailService
         $entries = [];
         if (is_array($results) === true) {
             foreach ($results as $row) {
-                $entries[] = $this->toArray($row);
+                $entries[] = $this->toArray(value: $row);
             }
         }
 
@@ -263,7 +263,13 @@ class AuditTrailService
             }
         }
 
-        $retentionUntil = $this->computeRetentionUntil($completed);
+        $retentionUntil = $this->computeRetentionUntil(completedEntry: $completed);
+
+        if ($completed !== null) {
+            $selectielijstCategory = 'Bestuurlijke besluitvorming — bewaartermijn 20 jaar';
+        } else {
+            $selectielijstCategory = 'Algemene administratieve correspondentie — bewaartermijn 7 jaar';
+        }
 
         return [
             'metadata' => [
@@ -274,9 +280,7 @@ class AuditTrailService
                 'voorstel'              => $voorstelId,
                 'voorstelOnderwerp'     => $voorstelOnderwerp,
                 'retentionUntil'        => $retentionUntil,
-                'selectielijstCategory' => $completed !== null
-                    ? 'Bestuurlijke besluitvorming — bewaartermijn 20 jaar'
-                    : 'Algemene administratieve correspondentie — bewaartermijn 7 jaar',
+                'selectielijstCategory' => $selectielijstCategory,
                 'exportedBy'            => $exportedBy,
                 'entryCount'            => count($entries),
             ],
@@ -343,9 +347,19 @@ class AuditTrailService
         }
 
         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false) {
-            $expanded = inet_ntop(inet_pton($ip) ?: '');
+            $packed = inet_pton($ip);
+            if ($packed === false) {
+                $packed = '';
+            }
+
+            $expanded = inet_ntop($packed);
             if (is_string($expanded) === true) {
-                $hex = bin2hex(inet_pton($expanded) ?: '');
+                $packedExpanded = inet_pton($expanded);
+                if ($packedExpanded === false) {
+                    $packedExpanded = '';
+                }
+
+                $hex = bin2hex($packedExpanded);
                 if (strlen($hex) === 32) {
                     return implode(
                         ':',
@@ -361,8 +375,8 @@ class AuditTrailService
                         ],
                     );
                 }
-            }
-        }
+            }//end if
+        }//end if
 
         return '';
     }//end redactIp()

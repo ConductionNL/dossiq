@@ -47,14 +47,23 @@ class DashboardController extends Controller
     }//end __construct()
 
     /**
-     * Render the main dashboard page.
+     * Render the manifest-driven SPA shell.
+     *
+     * Bound to both `/` and the catch-all `/{path}` route so deep links
+     * (e.g. `/apps/procest/cases`) serve the same shell; vue-router resolves
+     * the actual view client-side in history mode.
+     *
+     * @param string $path Sub-path segment from the catch-all route; ignored
+     *                     server-side, resolved by vue-router on the client.
      *
      * @NoAdminRequired
      * @NoCSRFRequired
      *
      * @return TemplateResponse
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function page(): TemplateResponse
+    public function page(string $path=''): TemplateResponse
     {
         return new TemplateResponse(Application::APP_ID, 'index');
     }//end page()

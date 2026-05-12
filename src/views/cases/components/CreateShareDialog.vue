@@ -88,19 +88,19 @@
 					</NcButton>
 				</div>
 			</div>
-
-			<template #actions>
-				<NcButton @click="$emit('update:open', false)">
-					{{ t('procest', 'Cancel') }}
-				</NcButton>
-				<NcButton
-					type="primary"
-					:disabled="saving"
-					@click="createShare">
-					{{ saving ? t('procest', 'Creating...') : t('procest', 'Create share') }}
-				</NcButton>
-			</template>
 		</div>
+
+		<template #actions>
+			<NcButton @click="$emit('update:open', false)">
+				{{ t('procest', 'Cancel') }}
+			</NcButton>
+			<NcButton
+				type="primary"
+				:disabled="saving"
+				@click="createShare">
+				{{ saving ? t('procest', 'Creating...') : t('procest', 'Create share') }}
+			</NcButton>
+		</template>
 	</NcDialog>
 </template>
 

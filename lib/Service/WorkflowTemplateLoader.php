@@ -69,8 +69,13 @@ class WorkflowTemplateLoader
         if ($caseTypeId === '') {
             return null;
         }
+
         if (isset($this->cache[$caseTypeId]) === true) {
-            return $this->cache[$caseTypeId] === false ? null : $this->cache[$caseTypeId];
+            if ($this->cache[$caseTypeId] === false) {
+                return null;
+            }
+
+            return $this->cache[$caseTypeId];
         }
 
         $objectService = $this->settingsService->getObjectService();
@@ -130,18 +135,22 @@ class WorkflowTemplateLoader
         if ($template === null) {
             return null;
         }
+
         $transitions = $template['transitions'] ?? [];
         if (is_array($transitions) === false) {
             return null;
         }
+
         foreach ($transitions as $transition) {
             if (is_array($transition) === false) {
                 continue;
             }
+
             if ((string) ($transition['id'] ?? '') === $transitionId) {
                 return $transition;
             }
         }
+
         return null;
     }//end getTransitionById()
 
@@ -167,12 +176,14 @@ class WorkflowTemplateLoader
         if (is_array($value) === false) {
             return [];
         }
+
         $list = [];
         foreach ($value as $item) {
             if (is_array($item) === true) {
                 $list[] = $item;
                 continue;
             }
+
             if (is_object($item) === true && method_exists($item, 'jsonSerialize') === true) {
                 $serialized = $item->jsonSerialize();
                 if (is_array($serialized) === true) {
@@ -180,6 +191,7 @@ class WorkflowTemplateLoader
                 }
             }
         }
+
         return $list;
     }//end normalise()
 

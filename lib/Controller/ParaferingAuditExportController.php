@@ -52,13 +52,13 @@ class ParaferingAuditExportController extends Controller
     /**
      * Constructor.
      *
-     * @param string            $appName            Nextcloud app id
-     * @param IRequest          $request            Incoming request
-     * @param IUserSession      $userSession        Current user session
-     * @param IGroupManager     $groupManager       Group manager (for RBAC check)
-     * @param AuditTrailService $auditTrailService  The audit-trail service
-     * @param SettingsService   $settingsService    Procest settings bridge
-     * @param LoggerInterface   $logger             PSR-3 logger
+     * @param string            $appName           Nextcloud app id
+     * @param IRequest          $request           Incoming request
+     * @param IUserSession      $userSession       Current user session
+     * @param IGroupManager     $groupManager      Group manager (for RBAC check)
+     * @param AuditTrailService $auditTrailService The audit-trail service
+     * @param SettingsService   $settingsService   Procest settings bridge
+     * @param LoggerInterface   $logger            PSR-3 logger
      */
     public function __construct(
         string $appName,
@@ -69,7 +69,7 @@ class ParaferingAuditExportController extends Controller
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -81,7 +81,7 @@ class ParaferingAuditExportController extends Controller
      * @return JSONResponse
      */
     #[NoAdminRequired]
-    public function export(string $id, string $format = 'json'): JSONResponse
+    public function export(string $id, string $format='json'): JSONResponse
     {
         try {
             $user = $this->userSession->getUser();
@@ -92,8 +92,8 @@ class ParaferingAuditExportController extends Controller
                 );
             }
 
-            $uid       = $user->getUID();
-            $allowed   = false;
+            $uid     = $user->getUID();
+            $allowed = false;
             foreach (self::ALLOWED_GROUPS as $group) {
                 if ($this->groupManager->isInGroup($uid, $group) === true) {
                     $allowed = true;
@@ -120,7 +120,7 @@ class ParaferingAuditExportController extends Controller
                 );
             }
 
-            $voorstelOnderwerp = $this->resolveVoorstelOnderwerp($id);
+            $voorstelOnderwerp = $this->resolveVoorstelOnderwerp(voorstelId: $id);
             if ($voorstelOnderwerp === null) {
                 return new JSONResponse(
                     ['message' => 'Voorstel not found'],
@@ -182,13 +182,13 @@ class ParaferingAuditExportController extends Controller
             $array = [];
             if (is_array($voorstel) === true) {
                 $array = $voorstel;
-            } elseif (is_object($voorstel) === true) {
+            } else if (is_object($voorstel) === true) {
                 if (method_exists($voorstel, 'jsonSerialize') === true) {
                     $serialized = $voorstel->jsonSerialize();
                     if (is_array($serialized) === true) {
                         $array = $serialized;
                     }
-                } elseif (method_exists($voorstel, 'toArray') === true) {
+                } else if (method_exists($voorstel, 'toArray') === true) {
                     $arr = $voorstel->toArray();
                     if (is_array($arr) === true) {
                         $array = $arr;
@@ -204,6 +204,6 @@ class ParaferingAuditExportController extends Controller
             );
 
             return null;
-        }
+        }//end try
     }//end resolveVoorstelOnderwerp()
 }//end class

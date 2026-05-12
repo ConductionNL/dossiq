@@ -36,7 +36,6 @@ use Psr\Log\LoggerInterface;
  */
 class WebhookHandler implements ActionHandlerInterface
 {
-
     /**
      * Constructor.
      *
@@ -96,6 +95,6 @@ class WebhookHandler implements ActionHandlerInterface
                 ['exception' => $e->getMessage(), 'context' => $transitionContext],
             );
             return ActionResult::failure(error: 'webhook_failed');
-        }
+        }//end try
     }//end handle()
 }//end class

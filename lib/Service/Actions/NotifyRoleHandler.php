@@ -54,6 +54,8 @@ class NotifyRoleHandler implements ActionHandlerInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @return string The action type slug handled by this handler.
      */
     public function type(): string
     {
@@ -62,18 +64,24 @@ class NotifyRoleHandler implements ActionHandlerInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @param array $actionConfig      Resolved action config array.
+     * @param array $case              The full case object.
+     * @param array $transitionContext Transition context (carries dryRun).
+     *
+     * @return ActionResult The outcome of the role notification.
      */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {
             $roleSlug = (string) ($actionConfig['roleSlug'] ?? '');
             $message  = $this->renderTemplate(
-                (string) ($actionConfig['messageTemplate'] ?? ''),
-                $case
+                template: (string) ($actionConfig['messageTemplate'] ?? ''),
+                case: $case
             );
 
-            $recipients = $this->resolveRoleMembers($roleSlug, $case);
-            $preview = [
+            $recipients = $this->resolveRoleMembers(roleSlug: $roleSlug, case: $case);
+            $preview    = [
                 'roleSlug'   => $roleSlug,
                 'recipients' => $recipients,
                 'message'    => $message,
@@ -110,7 +118,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
                 ]
             );
             return ActionResult::failure('notify_role_failed');
-        }
+        }//end try
     }//end handle()
 
     /**
@@ -135,6 +143,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
         if (is_string($single) === true && $single !== '') {
             return [$single];
         }
+
         if (is_array($single) === true) {
             $id = (string) ($single['id'] ?? ($single['userId'] ?? ''));
             if ($id !== '') {
@@ -143,7 +152,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
         }
 
         $multiKey = $roleSlug.'Members';
-        $multi = ($case[$multiKey] ?? null);
+        $multi    = ($case[$multiKey] ?? null);
         if (is_array($multi) === true) {
             $out = [];
             foreach ($multi as $member) {
@@ -156,6 +165,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
                     }
                 }
             }
+
             return $out;
         }
 

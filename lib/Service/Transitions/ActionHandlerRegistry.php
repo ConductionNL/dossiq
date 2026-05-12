@@ -74,8 +74,8 @@ class ActionHandlerRegistry
     /**
      * Register an additional handler (DI extension point).
      *
-     * @param string                  $type    Action type identifier
-     * @param ActionHandlerInterface  $handler Handler implementation
+     * @param string                 $type    Action type identifier
+     * @param ActionHandlerInterface $handler Handler implementation
      *
      * @return void
      */

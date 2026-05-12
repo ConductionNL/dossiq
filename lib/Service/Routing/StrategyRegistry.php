@@ -44,6 +44,7 @@ use OCA\Procest\Service\Routing\Strategy\SingleRoleStrategy;
  */
 class StrategyRegistry
 {
+
     /**
      * The registered strategies keyed by name.
      *
@@ -67,11 +68,11 @@ class StrategyRegistry
         RoundRobinStrategy $roundRobin,
         LeastLoadedStrategy $leastLoaded,
     ) {
-        $this->register($singleRole);
-        $this->register($orSet);
-        $this->register($hierarchical);
-        $this->register($roundRobin);
-        $this->register($leastLoaded);
+        $this->register(strategy: $singleRole);
+        $this->register(strategy: $orSet);
+        $this->register(strategy: $hierarchical);
+        $this->register(strategy: $roundRobin);
+        $this->register(strategy: $leastLoaded);
     }//end __construct()
 
     /**
