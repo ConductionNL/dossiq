@@ -34,11 +34,11 @@ foreach ($loaders as $loader) {
     }
 }
 
-// Load Doctrine DBAL and OC internal stubs so that PHPUnit can mock
-// OCP\IDBConnection and OCP\DB\QueryBuilder\IQueryBuilder, which reference
-// Doctrine types not present in this repository's vendor directory.
-require_once __DIR__ . '/Unit/Stubs/DoctrineStubs.php';
-
+// Load a real Nextcloud server first when one is present (CI). This must happen
+// BEFORE the stub file below — base.php declares the real `OC`, Doctrine DBAL
+// classes, etc., and the stubs self-skip via class_exists() guards when those
+// already exist. Loading the stubs first would declare a stub `OC` and then
+// crash with "Cannot declare class OC" the moment base.php runs.
 if (defined('OC_CONSOLE') === false) {
     if (file_exists(__DIR__ . '/../../../lib/base.php') === true) {
         require_once __DIR__ . '/../../../lib/base.php';
@@ -47,10 +47,17 @@ if (defined('OC_CONSOLE') === false) {
     if (file_exists(__DIR__ . '/../../../tests/autoload.php') === true) {
         require_once __DIR__ . '/../../../tests/autoload.php';
     }
+}
 
-    if (class_exists('\OC_App') === true) {
-        \OC_App::loadApps();
-        \OC_App::loadApp('procest');
-        OC_Hook::clear();
-    }
+// Load Doctrine DBAL and OC internal stubs so that PHPUnit can mock
+// OCP\IDBConnection and OCP\DB\QueryBuilder\IQueryBuilder, which reference
+// Doctrine types not present in this repository's vendor directory. Every
+// declaration here is guarded by class_exists()/interface_exists(), so this is
+// a no-op when a real Nextcloud (loaded above) already provides the classes.
+require_once __DIR__ . '/Unit/Stubs/DoctrineStubs.php';
+
+if (defined('OC_CONSOLE') === false && class_exists('\OC_App') === true) {
+    \OC_App::loadApps();
+    \OC_App::loadApp('procest');
+    OC_Hook::clear();
 }
