@@ -56,6 +56,8 @@ class SendEmailHandler implements ActionHandlerInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @return string The action type slug handled by this handler.
      */
     public function type(): string
     {
@@ -64,21 +66,27 @@ class SendEmailHandler implements ActionHandlerInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @param array $actionConfig      Resolved action config array.
+     * @param array $case              The full case object.
+     * @param array $transitionContext Transition context (carries dryRun).
+     *
+     * @return ActionResult The outcome of sending the email.
      */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {
             $subject   = $this->renderTemplate(
-                (string) ($actionConfig['subjectTemplate'] ?? ''),
-                $case
+                template: (string) ($actionConfig['subjectTemplate'] ?? ''),
+                case: $case
             );
             $body      = $this->renderTemplate(
-                (string) ($actionConfig['bodyTemplate'] ?? ''),
-                $case
+                template: (string) ($actionConfig['bodyTemplate'] ?? ''),
+                case: $case
             );
             $recipient = $this->resolveRecipient(
-                (string) ($actionConfig['recipientRef'] ?? ''),
-                $case
+                recipientRef: (string) ($actionConfig['recipientRef'] ?? ''),
+                case: $case
             );
 
             $preview = [

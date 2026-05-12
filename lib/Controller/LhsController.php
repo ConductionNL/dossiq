@@ -113,9 +113,18 @@ class LhsController extends Controller
         }
 
         $versionParam = $this->request->getParam('lhsVersion');
-        $version      = ($versionParam === null) ? null : (int) $versionParam;
-        $inspection   = $this->request->getParam('inspection');
-        $inspectionId = (is_string($inspection) === true && $inspection !== '') ? $inspection : null;
+        if ($versionParam === null) {
+            $version = null;
+        } else {
+            $version = (int) $versionParam;
+        }
+
+        $inspection = $this->request->getParam('inspection');
+        if (is_string($inspection) === true && $inspection !== '') {
+            $inspectionId = $inspection;
+        } else {
+            $inspectionId = null;
+        }
 
         try {
             $recommendation = $this->lhsService->recommend(
@@ -183,7 +192,11 @@ class LhsController extends Controller
 
         $declaredRole = (string) $this->request->getParam('userRole', '');
         $isManager    = $this->groupManager->isAdmin($user->getUID());
-        $userRole     = ($declaredRole === 'manager' && $isManager === true) ? 'manager' : 'inspector';
+        if ($declaredRole === 'manager' && $isManager === true) {
+            $userRole = 'manager';
+        } else {
+            $userRole = 'inspector';
+        }
 
         try {
             $updated = $this->lhsService->override(

@@ -135,7 +135,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
             return;
         }
 
-        $caseType = $this->normalize($caseTypes[0]);
+        $caseType = $this->normalize(object: $caseTypes[0]);
         if ($caseType === null) {
             return;
         }
@@ -176,7 +176,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
 
         $statusByName = [];
         foreach ($statusRows as $raw) {
-            $row = $this->normalize($raw);
+            $row = $this->normalize(object: $raw);
             if ($row === null) {
                 continue;
             }
@@ -208,12 +208,16 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
             }
         }
 
-        $steps       = $this->buildSteps($statusByName, $required);
-        $transitions = $this->buildTransitions($statusByName);
+        $steps       = $this->buildSteps(statusByName: $statusByName, ordered: $required);
+        $transitions = $this->buildTransitions(statusByName: $statusByName);
+
+        $description = 'Canonical bezwaar lifecycle state machine: Ontvangen → Afgehandeld with terminal '
+            .'Niet-ontvankelijk/Ingetrokken. Transitions wired through the status-transition-engine; '
+            .'deadlines computed declaratively on the bezwaar schema (x-openregister-calculations, ADR-022).';
 
         $template = [
             'title'           => 'Bezwaar — AWB-compliant workflow',
-            'description'     => 'Canonical bezwaar lifecycle state machine: Ontvangen → Afgehandeld with terminal Niet-ontvankelijk/Ingetrokken. Transitions wired through the status-transition-engine; deadlines computed declaratively on the bezwaar schema (x-openregister-calculations, ADR-022).',
+            'description'     => $description,
             'caseType'        => $caseTypeId,
             'version'         => 1,
             'isActive'        => true,
@@ -239,7 +243,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
             return;
         }
 
-        $createdNormalized = $this->normalize($created);
+        $createdNormalized = $this->normalize(object: $created);
         $newId = (string) ($createdNormalized['id'] ?? '');
 
         if ($newId !== '') {
@@ -319,8 +323,13 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
         $transitions = [];
         foreach ($matrix as $row) {
             [$fromName, $toName, $label] = $row;
-            $fromId = ($fromName === '*') ? '*' : (string) ($statusByName[$fromName]['id'] ?? '');
-            $toId   = (string) ($statusByName[$toName]['id'] ?? '');
+            if ($fromName === '*') {
+                $fromId = '*';
+            } else {
+                $fromId = (string) ($statusByName[$fromName]['id'] ?? '');
+            }
+
+            $toId = (string) ($statusByName[$toName]['id'] ?? '');
 
             $guards = [];
             if (isset(self::LEGAL_POSTURE_TARGETS[$toName]) === true) {
@@ -362,7 +371,11 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
 
         if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
             $serialized = $object->jsonSerialize();
-            return is_array($serialized) ? $serialized : null;
+            if (is_array($serialized) === true) {
+                return $serialized;
+            }
+
+            return null;
         }
 
         return null;

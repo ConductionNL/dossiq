@@ -83,7 +83,7 @@ class BezwaarDecisionListener implements IEventListener
         }
 
         try {
-            $object = $this->extractObject($event);
+            $object = $this->extractObject(event: $event);
             if ($object === null) {
                 return;
             }

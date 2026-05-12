@@ -56,6 +56,8 @@ class CallWebhookHandler implements ActionHandlerInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @return string The action type slug handled by this handler.
      */
     public function type(): string
     {
@@ -64,14 +66,25 @@ class CallWebhookHandler implements ActionHandlerInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @param array $actionConfig      Resolved action config array.
+     * @param array $case              The full case object.
+     * @param array $transitionContext Transition context (carries dryRun, tenantId).
+     *
+     * @return ActionResult The outcome of the webhook dispatch.
      */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {
-            $url = $this->resolveUrl($actionConfig, $transitionContext);
+            $url = $this->resolveUrl(config: $actionConfig, context: $transitionContext);
             $payloadTemplate = (string) ($actionConfig['payloadTemplate'] ?? '');
-            $payload         = $payloadTemplate === '' ? json_encode(['case' => $case], JSON_THROW_ON_ERROR) : $this->renderTemplate($payloadTemplate, $case);
-            $timeoutSec      = (int) ($actionConfig['timeoutSec'] ?? self::DEFAULT_TIMEOUT_SEC);
+            if ($payloadTemplate === '') {
+                $payload = json_encode(['case' => $case], JSON_THROW_ON_ERROR);
+            } else {
+                $payload = $this->renderTemplate(template: $payloadTemplate, case: $case);
+            }
+
+            $timeoutSec = (int) ($actionConfig['timeoutSec'] ?? self::DEFAULT_TIMEOUT_SEC);
 
             $preview = [
                 'url'        => $url,
@@ -98,7 +111,7 @@ class CallWebhookHandler implements ActionHandlerInterface
                     ]
                 );
             } catch (\Throwable $e) {
-                $errorCode = $this->classifyHttpException($e);
+                $errorCode = $this->classifyHttpException(e: $e);
                 $this->logger->error(
                     'CallWebhookHandler: webhook call failed',
                     [

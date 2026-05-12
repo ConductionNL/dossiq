@@ -71,7 +71,11 @@ class WorkflowTemplateLoader
         }
 
         if (isset($this->cache[$caseTypeId]) === true) {
-            return $this->cache[$caseTypeId] === false ? null : $this->cache[$caseTypeId];
+            if ($this->cache[$caseTypeId] === false) {
+                return null;
+            }
+
+            return $this->cache[$caseTypeId];
         }
 
         $objectService = $this->settingsService->getObjectService();

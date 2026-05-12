@@ -37,6 +37,8 @@ class SingleRoleStrategy implements RoutingStrategyInterface
 {
     /**
      * {@inheritDoc}
+     *
+     * @return string The strategy name.
      */
     public function name(): string
     {

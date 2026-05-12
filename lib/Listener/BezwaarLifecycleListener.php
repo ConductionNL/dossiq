@@ -91,12 +91,12 @@ class BezwaarLifecycleListener implements IEventListener
             return;
         }
 
-        $payload = $this->extractObject($event);
+        $payload = $this->extractObject(event: $event);
         if ($payload === null) {
             return;
         }
 
-        $schemaSlug = $this->resolveSchemaSlug($payload);
+        $schemaSlug = $this->resolveSchemaSlug(payload: $payload);
         if (in_array($schemaSlug, self::RELEVANT_SCHEMAS, true) === false) {
             return;
         }
@@ -141,7 +141,11 @@ class BezwaarLifecycleListener implements IEventListener
 
         if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
             $serialized = $object->jsonSerialize();
-            return is_array($serialized) ? $serialized : null;
+            if (is_array($serialized) === true) {
+                return $serialized;
+            }
+
+            return null;
         }
 
         return null;

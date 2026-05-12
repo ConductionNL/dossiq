@@ -70,6 +70,8 @@ class RoleResolverService
 
     /**
      * The local cache instance (APCu when available).
+     *
+     * @var ICache
      */
     private ICache $cache;
 
@@ -150,13 +152,18 @@ class RoleResolverService
         $strategyName = (string) ($rule['strategy'] ?? '');
         if ($this->registry->has($strategyName) === false) {
             throw new RoutingStrategyMissingException(
-                sprintf('Routing strategy "%s" is not registered', $strategyName)
+                message: sprintf('Routing strategy "%s" is not registered', $strategyName)
             );
         }
 
         $caseId   = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
         $cacheKey = $this->cacheKey(rule: $rule, caseId: $caseId);
-        $cacheHit = ($caseId !== '') ? $this->cache->get($cacheKey) : null;
+        if ($caseId !== '') {
+            $cacheHit = $this->cache->get($cacheKey);
+        } else {
+            $cacheHit = null;
+        }
+
         if (is_array($cacheHit) === true) {
             return array_values(
                     array_map(
@@ -166,7 +173,7 @@ class RoleResolverService
                     );
         }
 
-        $roles    = $this->loadCaseRoles($caseId);
+        $roles    = $this->loadCaseRoles(caseId: $caseId);
         $strategy = $this->registry->get($strategyName);
         $primary  = $strategy->resolve($rule, $case, $roles);
 
@@ -216,7 +223,7 @@ class RoleResolverService
         }
 
         try {
-            $allowed = $this->resolve($rule, $case);
+            $allowed = $this->resolve(rule: $rule, case: $case);
         } catch (RoutingStrategyMissingException $e) {
             $this->logger->warning(
                 'Procest: routing guard rejected — missing strategy: '.$e->getMessage(),
@@ -373,7 +380,7 @@ class RoleResolverService
 
         $rows = [];
         foreach ((array) $records as $record) {
-            $row = $this->toArray($record);
+            $row = $this->toArray(value: $record);
             if ($row !== []) {
                 $rows[] = $row;
             }

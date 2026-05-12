@@ -69,7 +69,7 @@ class ParaferingAuditExportController extends Controller
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -120,7 +120,7 @@ class ParaferingAuditExportController extends Controller
                 );
             }
 
-            $voorstelOnderwerp = $this->resolveVoorstelOnderwerp($id);
+            $voorstelOnderwerp = $this->resolveVoorstelOnderwerp(voorstelId: $id);
             if ($voorstelOnderwerp === null) {
                 return new JSONResponse(
                     ['message' => 'Voorstel not found'],

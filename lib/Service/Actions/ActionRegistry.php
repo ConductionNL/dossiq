@@ -121,7 +121,7 @@ class ActionRegistry
         }
 
         try {
-            $action = $this->findAction($slug);
+            $action = $this->findAction(slug: $slug);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'ActionRegistry: failed to load automaticAction',

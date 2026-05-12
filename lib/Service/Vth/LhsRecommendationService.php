@@ -121,8 +121,8 @@ class LhsRecommendationService
             throw new RuntimeException('Authenticatie vereist voor LHS-aanbeveling');
         }
 
-        $matrix    = $this->loadMatrix($lhsVersion);
-        $cellIndex = $this->indexCells($matrix['cells'] ?? []);
+        $matrix    = $this->loadMatrix(version: $lhsVersion);
+        $cellIndex = $this->indexCells(cells: ($matrix['cells'] ?? []));
         $key       = $ernst.':'.$gedrag.':'.$actorType;
 
         if (isset($cellIndex[$key]) === false) {
@@ -149,7 +149,7 @@ class LhsRecommendationService
             unset($recommendation['inspection']);
         }
 
-        return $this->persistRecommendation($recommendation);
+        return $this->persistRecommendation(row: $recommendation);
     }//end recommend()
 
     /**
@@ -199,7 +199,12 @@ class LhsRecommendationService
         }
 
         $overrideUp = ($newSeverity > $recSeverity);
-        $authority  = ($userRole === 'manager') ? 'manager' : 'inspector';
+        if ($userRole === 'manager') {
+            $authority = 'manager';
+        } else {
+            $authority = 'inspector';
+        }
+
         if ($overrideUp === true && $authority !== 'manager') {
             throw new RuntimeException('Verzwaring vereist managerrol');
         }
@@ -220,7 +225,7 @@ class LhsRecommendationService
             ]
         );
 
-        return $this->persistRecommendation($updated, $recommendationId);
+        return $this->persistRecommendation(row: $updated, id: $recommendationId);
     }//end override()
 
     /**
@@ -250,7 +255,11 @@ class LhsRecommendationService
             throw new RuntimeException('LHS-matrix register/schema is niet geconfigureerd');
         }
 
-        $filters = ($version === null) ? ['active' => true] : ['version' => $version];
+        if ($version === null) {
+            $filters = ['active' => true];
+        } else {
+            $filters = ['version' => $version];
+        }
 
         try {
             $results = $objectService->getObjects(
@@ -266,12 +275,12 @@ class LhsRecommendationService
             throw new RuntimeException('LHS-matrix lookup mislukt');
         }
 
-        $row = $this->firstRow($results);
+        $row = $this->firstRow(results: $results);
         if ($row === null) {
             throw new RuntimeException('Geen actieve LHS-matrix gevonden');
         }
 
-        return $this->toArray($row);
+        return $this->toArray(value: $row);
     }//end loadMatrix()
 
     /**
@@ -314,7 +323,7 @@ class LhsRecommendationService
             throw new RuntimeException('Opslaan LHS-aanbeveling mislukt');
         }
 
-        return $this->toArray($saved);
+        return $this->toArray(value: $saved);
     }//end persistRecommendation()
 
     /**
@@ -331,7 +340,11 @@ class LhsRecommendationService
     {
         if (is_string($cells) === true) {
             $decoded = json_decode($cells, true);
-            $cells   = is_array($decoded) === true ? $decoded : [];
+            if (is_array($decoded) === true) {
+                $cells = $decoded;
+            } else {
+                $cells = [];
+            }
         }
 
         if (is_array($cells) === false) {

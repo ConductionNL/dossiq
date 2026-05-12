@@ -54,6 +54,8 @@ class NotifyRoleHandler implements ActionHandlerInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @return string The action type slug handled by this handler.
      */
     public function type(): string
     {
@@ -62,17 +64,23 @@ class NotifyRoleHandler implements ActionHandlerInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @param array $actionConfig      Resolved action config array.
+     * @param array $case              The full case object.
+     * @param array $transitionContext Transition context (carries dryRun).
+     *
+     * @return ActionResult The outcome of the role notification.
      */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {
             $roleSlug = (string) ($actionConfig['roleSlug'] ?? '');
             $message  = $this->renderTemplate(
-                (string) ($actionConfig['messageTemplate'] ?? ''),
-                $case
+                template: (string) ($actionConfig['messageTemplate'] ?? ''),
+                case: $case
             );
 
-            $recipients = $this->resolveRoleMembers($roleSlug, $case);
+            $recipients = $this->resolveRoleMembers(roleSlug: $roleSlug, case: $case);
             $preview    = [
                 'roleSlug'   => $roleSlug,
                 'recipients' => $recipients,

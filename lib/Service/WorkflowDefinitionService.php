@@ -113,13 +113,13 @@ class WorkflowDefinitionService
             return null;
         }
 
-        $versions = $this->listVersionsInternal($caseTypeId);
+        $versions = $this->listVersionsInternal(caseTypeId: $caseTypeId);
         if ($versions === []) {
             return null;
         }
 
         foreach ($versions as $candidate) {
-            if ($this->statusOf($candidate) !== self::STATUS_PUBLISHED) {
+            if ($this->statusOf(row: $candidate) !== self::STATUS_PUBLISHED) {
                 continue;
             }
 
@@ -140,7 +140,7 @@ class WorkflowDefinitionService
      */
     public function getDefinition(string $id): ?array
     {
-        return $this->loadDefinition($id);
+        return $this->loadDefinition(id: $id);
     }//end getDefinition()
 
     /**
@@ -176,14 +176,14 @@ class WorkflowDefinitionService
             return null;
         }
 
-        $case = $this->normalize($case);
+        $case = $this->normalize(row: $case);
         if ($case === null) {
             return null;
         }
 
         $templateId = (string) ($case['workflowTemplate'] ?? '');
         if ($templateId !== '') {
-            return $this->loadDefinition($templateId);
+            return $this->loadDefinition(id: $templateId);
         }
 
         $caseTypeId = (string) ($case['caseType'] ?? '');
@@ -191,7 +191,7 @@ class WorkflowDefinitionService
             return null;
         }
 
-        return $this->getActiveDefinitionFor($caseTypeId);
+        return $this->getActiveDefinitionFor(caseTypeId: $caseTypeId);
     }//end getDefinitionForCase()
 
     /**
@@ -204,7 +204,7 @@ class WorkflowDefinitionService
      */
     public function listVersions(string $caseTypeId): array
     {
-        return $this->listVersionsInternal($caseTypeId);
+        return $this->listVersionsInternal(caseTypeId: $caseTypeId);
     }//end listVersions()
 
     /**
@@ -222,7 +222,7 @@ class WorkflowDefinitionService
      */
     public function publish(string $id): ?array
     {
-        $current = $this->loadDefinition($id);
+        $current = $this->loadDefinition(id: $id);
         if ($current === null) {
             $this->logger->warning(
                 'Procest: publish() — definition not found',
@@ -231,7 +231,7 @@ class WorkflowDefinitionService
             return null;
         }
 
-        if ($this->statusOf($current) !== self::STATUS_DRAFT) {
+        if ($this->statusOf(row: $current) !== self::STATUS_DRAFT) {
             $this->logger->warning(
                 'Procest: publish() — definition is not a draft',
                 ['app' => Application::APP_ID, 'id' => $id]
@@ -240,7 +240,7 @@ class WorkflowDefinitionService
         }
 
         $caseTypeId = (string) ($current['caseType'] ?? '');
-        if ($caseTypeId === '' || $this->transitionsReferenceForeignStatuses($current) === true) {
+        if ($caseTypeId === '' || $this->transitionsReferenceForeignStatuses(definition: $current) === true) {
             $this->logger->warning(
                 'Procest: publish() — referential integrity failure',
                 ['app' => Application::APP_ID, 'id' => $id]
@@ -262,7 +262,7 @@ class WorkflowDefinitionService
         }
 
         // Deprecate previously active versions of the same caseType.
-        $previousActive = $this->getActiveDefinitionFor($caseTypeId);
+        $previousActive = $this->getActiveDefinitionFor(caseTypeId: $caseTypeId);
         if ($previousActive !== null && (string) ($previousActive['id'] ?? '') !== $id) {
             try {
                 $objectService->saveObject(
@@ -321,7 +321,7 @@ class WorkflowDefinitionService
             );
         }
 
-        return $this->normalize($updated);
+        return $this->normalize(row: $updated);
     }//end publish()
 
     /**
@@ -335,12 +335,12 @@ class WorkflowDefinitionService
      */
     public function deprecate(string $id): ?array
     {
-        $current = $this->loadDefinition($id);
+        $current = $this->loadDefinition(id: $id);
         if ($current === null) {
             return null;
         }
 
-        if ($this->statusOf($current) !== self::STATUS_PUBLISHED) {
+        if ($this->statusOf(row: $current) !== self::STATUS_PUBLISHED) {
             $this->logger->warning(
                 'Procest: deprecate() — definition is not published',
                 ['app' => Application::APP_ID, 'id' => $id]
@@ -349,8 +349,8 @@ class WorkflowDefinitionService
         }
 
         $caseTypeId = (string) ($current['caseType'] ?? '');
-        if ($caseTypeId !== '' && $this->isLastPublishedForCaseType($id, $caseTypeId) === true
-            && $this->hasOpenCasesFor($caseTypeId) === true
+        if ($caseTypeId !== '' && $this->isLastPublishedForCaseType(id: $id, caseTypeId: $caseTypeId) === true
+            && $this->hasOpenCasesFor(caseTypeId: $caseTypeId) === true
         ) {
             $this->logger->warning(
                 'Procest: deprecate() — last published definition with open cases',
@@ -389,7 +389,7 @@ class WorkflowDefinitionService
             return null;
         }
 
-        return $this->normalize($updated);
+        return $this->normalize(row: $updated);
     }//end deprecate()
 
     /**
@@ -402,7 +402,7 @@ class WorkflowDefinitionService
      */
     public function cloneDefinition(string $id): ?array
     {
-        $source = $this->loadDefinition($id);
+        $source = $this->loadDefinition(id: $id);
         if ($source === null) {
             return null;
         }
@@ -420,10 +420,10 @@ class WorkflowDefinitionService
         }
 
         $caseTypeId  = (string) ($source['caseType'] ?? '');
-        $nextVersion = $this->nextVersionFor($caseTypeId);
+        $nextVersion = $this->nextVersionFor(caseTypeId: $caseTypeId);
 
         $draft = [
-            'title'           => $this->cloneTitle((string) ($source['title'] ?? 'Workflow')),
+            'title'           => $this->cloneTitle(base: (string) ($source['title'] ?? 'Workflow')),
             'description'     => (string) ($source['description'] ?? ''),
             'caseType'        => $caseTypeId,
             'version'         => $nextVersion,
@@ -445,7 +445,7 @@ class WorkflowDefinitionService
             return null;
         }
 
-        return $this->normalize($new);
+        return $this->normalize(row: $new);
     }//end cloneDefinition()
 
     /**
@@ -493,11 +493,23 @@ class WorkflowDefinitionService
 
         $version = (int) ($payload['version'] ?? 0);
         if ($version <= 0) {
-            $version = $this->nextVersionFor($caseTypeId);
+            $version = $this->nextVersionFor(caseTypeId: $caseTypeId);
         }
 
         $steps       = $payload['steps'] ?? [];
         $transitions = $payload['transitions'] ?? [];
+
+        if (is_string($steps) === true) {
+            $stepsValue = $steps;
+        } else {
+            $stepsValue = json_encode($steps);
+        }
+
+        if (is_string($transitions) === true) {
+            $transitionsValue = $transitions;
+        } else {
+            $transitionsValue = json_encode($transitions);
+        }
 
         $draft = [
             'title'           => (string) $payload['title'],
@@ -507,8 +519,8 @@ class WorkflowDefinitionService
             'isActive'        => false,
             'isDraft'         => true,
             'lifecycleStatus' => self::STATUS_DRAFT,
-            'steps'           => is_string($steps) === true ? $steps : json_encode($steps),
-            'transitions'     => is_string($transitions) === true ? $transitions : json_encode($transitions),
+            'steps'           => $stepsValue,
+            'transitions'     => $transitionsValue,
             'nodePositions'   => (string) ($payload['nodePositions'] ?? ''),
         ];
 
@@ -522,7 +534,7 @@ class WorkflowDefinitionService
             return null;
         }
 
-        return $this->normalize($new);
+        return $this->normalize(row: $new);
     }//end createDraft()
 
     // -----------------------------------------------------------------
@@ -573,7 +585,7 @@ class WorkflowDefinitionService
 
         $rows = [];
         foreach ($results as $row) {
-            $normalized = $this->normalize($row);
+            $normalized = $this->normalize(row: $row);
             if ($normalized !== null) {
                 $rows[] = $normalized;
             }
@@ -624,7 +636,7 @@ class WorkflowDefinitionService
             return null;
         }
 
-        return $this->normalize($obj);
+        return $this->normalize(row: $obj);
     }//end loadDefinition()
 
     /**
@@ -637,7 +649,7 @@ class WorkflowDefinitionService
      */
     private function nextVersionFor(string $caseTypeId): int
     {
-        $versions = $this->listVersionsInternal($caseTypeId);
+        $versions = $this->listVersionsInternal(caseTypeId: $caseTypeId);
         $max      = 0;
         foreach ($versions as $row) {
             $candidate = (int) ($row['version'] ?? 0);
@@ -660,12 +672,12 @@ class WorkflowDefinitionService
     private function isLastPublishedForCaseType(string $id, string $caseTypeId): bool
     {
         $count = 0;
-        foreach ($this->listVersionsInternal($caseTypeId) as $row) {
+        foreach ($this->listVersionsInternal(caseTypeId: $caseTypeId) as $row) {
             if ((string) ($row['id'] ?? '') === $id) {
                 continue;
             }
 
-            if ($this->statusOf($row) === self::STATUS_PUBLISHED) {
+            if ($this->statusOf(row: $row) === self::STATUS_PUBLISHED) {
                 $count++;
             }
         }
@@ -726,13 +738,13 @@ class WorkflowDefinitionService
     private function transitionsReferenceForeignStatuses(array $definition): bool
     {
         $caseTypeId  = (string) ($definition['caseType'] ?? '');
-        $transitions = $this->decodeArray($definition['transitions'] ?? '');
+        $transitions = $this->decodeArray(raw: ($definition['transitions'] ?? ''));
 
         if ($caseTypeId === '' || $transitions === []) {
             return false;
         }
 
-        $statusIds = $this->collectStatusTypeIdsFor($caseTypeId);
+        $statusIds = $this->collectStatusTypeIdsFor(caseTypeId: $caseTypeId);
         if ($statusIds === []) {
             // No statusTypes yet — cannot validate. Treat as ok.
             return false;
@@ -797,7 +809,7 @@ class WorkflowDefinitionService
 
         $ids = [];
         foreach ($rows as $row) {
-            $normalized = $this->normalize($row);
+            $normalized = $this->normalize(row: $row);
             if ($normalized === null) {
                 continue;
             }

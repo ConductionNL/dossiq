@@ -54,6 +54,8 @@ class CreateDocumentHandler implements ActionHandlerInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @return string The action type slug handled by this handler.
      */
     public function type(): string
     {
@@ -62,19 +64,25 @@ class CreateDocumentHandler implements ActionHandlerInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @param array $actionConfig      Resolved action config array.
+     * @param array $case              The full case object.
+     * @param array $transitionContext Transition context (carries dryRun).
+     *
+     * @return ActionResult The outcome of the document creation.
      */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {
             $templateSlug   = (string) ($actionConfig['templateSlug'] ?? '');
             $outputName     = $this->renderTemplate(
-                (string) ($actionConfig['outputName'] ?? 'document.pdf'),
-                $case
+                template: (string) ($actionConfig['outputName'] ?? 'document.pdf'),
+                case: $case
             );
             $mergeFields    = (array) ($actionConfig['mergeFields'] ?? []);
             $renderedFields = [];
             foreach ($mergeFields as $key => $tpl) {
-                $renderedFields[(string) $key] = $this->renderTemplate((string) $tpl, $case);
+                $renderedFields[(string) $key] = $this->renderTemplate(template: (string) $tpl, case: $case);
             }
 
             $preview = [

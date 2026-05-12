@@ -315,8 +315,14 @@ class StatusTransitionService
             return ['history' => [], 'replayable' => false];
         }
 
+        if (is_array($records) === true) {
+            $recordList = $records;
+        } else {
+            $recordList = [];
+        }
+
         $list = [];
-        foreach ((is_array($records) === true ? $records : []) as $record) {
+        foreach ($recordList as $record) {
             $list[] = $this->toArray(value: $record);
         }
 
@@ -376,7 +382,11 @@ class StatusTransitionService
         }
 
         $user = $this->userSession->getUser();
-        return $user === null ? '' : $user->getUID();
+        if ($user === null) {
+            return '';
+        }
+
+        return $user->getUID();
     }//end resolveUserId()
 
     /**
@@ -543,7 +553,12 @@ class StatusTransitionService
         }
 
         foreach ($statuses as $entry) {
-            $id = is_array($entry) === true ? (string) ($entry['id'] ?? ($entry['uuid'] ?? '')) : (string) $entry;
+            if (is_array($entry) === true) {
+                $id = (string) ($entry['id'] ?? ($entry['uuid'] ?? ''));
+            } else {
+                $id = (string) $entry;
+            }
+
             if ($id === $statusTypeId) {
                 return;
             }

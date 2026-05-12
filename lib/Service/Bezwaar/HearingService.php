@@ -147,8 +147,8 @@ class HearingService
             );
         }
 
-        $scheduled = $this->parseDateTime($scheduledDate);
-        $deadline  = $this->computeInspectionDeadline($scheduled);
+        $scheduled = $this->parseDateTime(value: $scheduledDate);
+        $deadline  = $this->computeInspectionDeadline(scheduled: $scheduled);
         $now       = new \DateTimeImmutable();
 
         $this->guardInspectionFloor(
@@ -156,7 +156,11 @@ class HearingService
             today: $now,
         );
 
-        $available = isset($payload['inspectionAvailableFrom']) === true ? $this->parseDate((string) $payload['inspectionAvailableFrom']) : $now->setTime(0, 0, 0);
+        if (isset($payload['inspectionAvailableFrom']) === true) {
+            $available = $this->parseDate(value: (string) $payload['inspectionAvailableFrom']);
+        } else {
+            $available = $now->setTime(0, 0, 0);
+        }
 
         if ($available > $deadline) {
             // Per design.md: inspectionAvailableFrom must be ≤ inspectionDeadline.
@@ -328,11 +332,16 @@ class HearingService
 
         $now          = new \DateTimeImmutable();
         $scheduledRaw = (string) ($current['scheduledDate'] ?? '');
-        $scheduled    = $scheduledRaw !== '' ? $this->parseDateTime($scheduledRaw) : $now;
-        $freezeAt     = $scheduled->modify(
+        if ($scheduledRaw !== '') {
+            $scheduled = $this->parseDateTime(value: $scheduledRaw);
+        } else {
+            $scheduled = $now;
+        }
+
+        $freezeAt = $scheduled->modify(
             '+'.self::ATTENDANCE_GRACE_HOURS.' hour'
         );
-        $isFrozen     = $now > $freezeAt;
+        $isFrozen = $now > $freezeAt;
 
         $existing = (array) ($current['attendance'] ?? []);
         $merged   = $existing;
@@ -473,9 +482,21 @@ class HearingService
             }//end if
         }//end if
 
+        if ($summary !== '') {
+            $minutesSummary = $summary;
+        } else {
+            $minutesSummary = null;
+        }
+
+        if ($document !== '') {
+            $minutesDocument = $document;
+        } else {
+            $minutesDocument = null;
+        }
+
         $update = [
-            'minutesSummary'  => $summary !== '' ? $summary : null,
-            'minutesDocument' => $document !== '' ? $document : null,
+            'minutesSummary'  => $minutesSummary,
+            'minutesDocument' => $minutesDocument,
             'status'          => 'uitgevoerd',
         ];
 

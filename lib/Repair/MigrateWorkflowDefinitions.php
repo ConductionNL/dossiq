@@ -116,7 +116,7 @@ class MigrateWorkflowDefinitions implements IRepairStep
         $migrated = 0;
         $skipped  = 0;
         foreach ($caseTypes as $caseType) {
-            $row = $this->normalize($caseType);
+            $row = $this->normalize(row: $caseType);
             if ($row === null) {
                 continue;
             }
@@ -140,11 +140,11 @@ class MigrateWorkflowDefinitions implements IRepairStep
             }
 
             $template = $this->buildTemplateFor(
-                $caseTypeId,
-                $row,
-                $objectService,
-                $register,
-                $statusSchema,
+                caseTypeId: $caseTypeId,
+                caseType: $row,
+                objectService: $objectService,
+                register: $register,
+                statusSchema: $statusSchema,
             );
 
             if ($template === null) {
@@ -165,7 +165,7 @@ class MigrateWorkflowDefinitions implements IRepairStep
                 continue;
             }
 
-            $createdNormalized = $this->normalize($created);
+            $createdNormalized = $this->normalize(row: $created);
             $newId = (string) ($createdNormalized['id'] ?? '');
 
             // Pin the caseType to the new template.
@@ -187,11 +187,11 @@ class MigrateWorkflowDefinitions implements IRepairStep
                 // Pin existing open cases to workflowVersion = 1.
                 if ($caseSchema !== '') {
                     $this->pinOpenCases(
-                        $objectService,
-                        $register,
-                        $caseSchema,
-                        $caseTypeId,
-                        $newId,
+                        objectService: $objectService,
+                        register: $register,
+                        caseSchema: $caseSchema,
+                        caseTypeId: $caseTypeId,
+                        templateId: $newId,
                     );
                 }
             }//end if
@@ -245,7 +245,7 @@ class MigrateWorkflowDefinitions implements IRepairStep
 
         $statuses = [];
         foreach ($statusRows as $raw) {
-            $row = $this->normalize($raw);
+            $row = $this->normalize(row: $raw);
             if ($row !== null && (string) ($row['id'] ?? '') !== '') {
                 $statuses[] = $row;
             }
@@ -357,7 +357,7 @@ class MigrateWorkflowDefinitions implements IRepairStep
         }
 
         foreach ($cases as $row) {
-            $case = $this->normalize($row);
+            $case = $this->normalize(row: $row);
             if ($case === null) {
                 continue;
             }

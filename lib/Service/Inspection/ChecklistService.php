@@ -330,13 +330,23 @@ class ChecklistService
             $range = $item['numericRange'] ?? null;
             if (is_array($range) === true && array_key_exists('numericValue', $payload) === true) {
                 $val = (float) $payload['numericValue'];
-                $min = array_key_exists('min', $range) === true ? (float) $range['min'] : null;
-                $max = array_key_exists('max', $range) === true ? (float) $range['max'] : null;
+                if (array_key_exists('min', $range) === true) {
+                    $min = (float) $range['min'];
+                } else {
+                    $min = null;
+                }
+
+                if (array_key_exists('max', $range) === true) {
+                    $max = (float) $range['max'];
+                } else {
+                    $max = null;
+                }
+
                 if (($min !== null && $val < $min) || ($max !== null && $val > $max)) {
                     throw new RuntimeException('OUT_OF_RANGE');
                 }
-            }
-        }
+            }//end if
+        }//end if
 
         if ($type === 'meerkeuze') {
             $choices = $item['choices'] ?? [];
@@ -571,14 +581,24 @@ class ChecklistService
             }
 
             $val = (float) $response['numericValue'];
-            $min = array_key_exists('min', $range) === true ? (float) $range['min'] : null;
-            $max = array_key_exists('max', $range) === true ? (float) $range['max'] : null;
+            if (array_key_exists('min', $range) === true) {
+                $min = (float) $range['min'];
+            } else {
+                $min = null;
+            }
+
+            if (array_key_exists('max', $range) === true) {
+                $max = (float) $range['max'];
+            } else {
+                $max = null;
+            }
+
             if (($min !== null && $val < $min) || ($max !== null && $val > $max)) {
                 return 'fail';
             }
 
             return 'pass';
-        }
+        }//end if
 
         if ($type === 'meerkeuze') {
             $choices = $item['choices'] ?? [];

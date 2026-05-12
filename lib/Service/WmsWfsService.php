@@ -193,7 +193,7 @@ class WmsWfsService
         // We surface it here as a soft pre-flight via a no-op proxyRequest with empty query,
         // but to avoid a real outbound HTTP at validation time we skip and rely on the
         // proxy enforcing it. The save-time controller can call assertUrlAllowed().
-        if ($url !== '' && $this->isUrlAllowed($url) === false) {
+        if ($url !== '' && $this->isUrlAllowed(url: $url) === false) {
             $errors[] = [
                 'field'   => 'url',
                 'code'    => 'wms.url_not_allowed',
@@ -257,7 +257,7 @@ class WmsWfsService
             }
 
             $cutoffKm = (float) ($layer['extentCutoffKm'] ?? self::DEFAULT_EXTENT_CUTOFF_KM);
-            if ($bbox !== '' && $this->bboxExceedsCutoff($bbox, $cutoffKm) === true) {
+            if ($bbox !== '' && $this->bboxExceedsCutoff(bbox: $bbox, cutoffKm: $cutoffKm) === true) {
                 throw new \RuntimeException('Visible extent exceeds layer cutoff; zoom in for details', 413);
             }
         }
@@ -265,7 +265,11 @@ class WmsWfsService
         // Build the upstream query.
         $version = (string) ($layer['version'] ?? '');
         if ($version === '') {
-            $version = ($type === 'WFS') ? self::DEFAULT_WFS_VERSION : self::DEFAULT_WMS_VERSION;
+            if ($type === 'WFS') {
+                $version = self::DEFAULT_WFS_VERSION;
+            } else {
+                $version = self::DEFAULT_WMS_VERSION;
+            }
         }
 
         $query            = array_change_key_case($params, CASE_UPPER);

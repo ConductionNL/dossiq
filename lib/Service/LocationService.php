@@ -105,14 +105,24 @@ class LocationService
     {
         $errors = [];
 
-        $source = isset($payload['source']) === true ? (string) $payload['source'] : '';
+        if (isset($payload['source']) === true) {
+            $source = (string) $payload['source'];
+        } else {
+            $source = '';
+        }
+
         if ($source === '') {
             $errors[] = 'source.required';
         } else if (in_array($source, self::VALID_SOURCES, true) === false) {
             $errors[] = 'source.invalid';
         }
 
-        $caseId = isset($payload['case']) === true ? (string) $payload['case'] : '';
+        if (isset($payload['case']) === true) {
+            $caseId = (string) $payload['case'];
+        } else {
+            $caseId = '';
+        }
+
         if ($caseId === '') {
             $errors[] = 'case.required';
         }
@@ -232,13 +242,17 @@ class LocationService
         // envelope: response.docs[]. Each doc may carry `nummeraanduiding_id`
         // (or `id` when type = 'adres'), `weergavenaam` (the formatted
         // address), and `afstand` (distance from the query point in metres).
-        $docs = $this->extractDocs($response);
+        $docs = $this->extractDocs(response: $response);
         if ($docs === []) {
             return null;
         }
 
-        $best     = $docs[0];
-        $distance = isset($best['afstand']) === true && is_numeric($best['afstand']) === true ? (float) $best['afstand'] : null;
+        $best = $docs[0];
+        if (isset($best['afstand']) === true && is_numeric($best['afstand']) === true) {
+            $distance = (float) $best['afstand'];
+        } else {
+            $distance = null;
+        }
 
         if ($distance !== null && $distance > (float) self::REVERSE_MAX_DISTANCE_M) {
             return null;
@@ -254,7 +268,11 @@ class LocationService
             $nummeraanduidingId = (string) $best['id'];
         }
 
-        $formattedAddress = isset($best['weergavenaam']) === true ? (string) $best['weergavenaam'] : '';
+        if (isset($best['weergavenaam']) === true) {
+            $formattedAddress = (string) $best['weergavenaam'];
+        } else {
+            $formattedAddress = '';
+        }
 
         if ($nummeraanduidingId === '' && $formattedAddress === '') {
             return null;
@@ -346,7 +364,7 @@ class LocationService
         $payload         = $location;
         $payload['case'] = $caseId;
 
-        $errors = $this->validate($payload);
+        $errors = $this->validate(payload: $payload);
         if (count($errors) > 0) {
             throw new \RuntimeException(
                 'Location payload failed validation: '.implode(', ', $errors)

@@ -71,7 +71,7 @@ class ParaferingAuditListener implements IEventListener
         }
 
         try {
-            $contentSnapshot = $this->fetchContentSnapshot($event->getVoorstelId());
+            $contentSnapshot = $this->fetchContentSnapshot(voorstelId: $event->getVoorstelId());
 
             $this->auditTrailService->record(
                 voorstelId: $event->getVoorstelId(),

@@ -63,6 +63,8 @@ class ScheduleReminderHandler implements ActionHandlerInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @return string The action type slug handled by this handler.
      */
     public function type(): string
     {
@@ -71,24 +73,36 @@ class ScheduleReminderHandler implements ActionHandlerInterface
 
     /**
      * {@inheritDoc}
+     *
+     * @param array $actionConfig      Resolved action config array.
+     * @param array $case              The full case object.
+     * @param array $transitionContext Transition context (carries dryRun).
+     *
+     * @return ActionResult The outcome of scheduling the reminder.
      */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {
             $offsetIso = (string) ($actionConfig['offsetIso8601'] ?? '');
             $message   = $this->renderTemplate(
-                (string) ($actionConfig['messageTemplate'] ?? ''),
-                $case
+                template: (string) ($actionConfig['messageTemplate'] ?? ''),
+                case: $case
             );
             $recipient = $this->resolveRecipient(
-                (string) ($actionConfig['recipientRef'] ?? ''),
-                $case
+                recipientRef: (string) ($actionConfig['recipientRef'] ?? ''),
+                case: $case
             );
 
-            $fireAt  = $this->computeFireTime($offsetIso);
+            $fireAt = $this->computeFireTime(offsetIso: $offsetIso);
+            if ($fireAt === null) {
+                $fireAtIso = null;
+            } else {
+                $fireAtIso = $fireAt->format(\DateTimeInterface::ATOM);
+            }
+
             $preview = [
                 'offsetIso8601' => $offsetIso,
-                'fireAtIso'     => $fireAt === null ? null : $fireAt->format(\DateTimeInterface::ATOM),
+                'fireAtIso'     => $fireAtIso,
                 'recipient'     => $recipient,
                 'message'       => $message,
             ];
