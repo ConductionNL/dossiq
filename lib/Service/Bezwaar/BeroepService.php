@@ -134,22 +134,23 @@ class BeroepService
      * record. The OpenRegister audit trail captures actor + change diff
      * automatically; this method writes no bespoke audit entries.
      *
-     * @param string               $caseId             UUID of the procest case
-     *                                                 wrapping the beroep
-     * @param string               $sourceBezwaarId    UUID of the bezwaar
-     *                                                 lifecycle record being
-     *                                                 escalated
+     * @param string               $caseId              UUID of the procest case
+     *                                                  wrapping the beroep
+     * @param string               $sourceBezwaarId     UUID of the bezwaar
+     *                                                  lifecycle record
+     *                                                  being escalated
      * @param string               $contestedDecisionId UUID of the
      *                                                  appealDecision being
      *                                                  contested
-     * @param string               $filingDate         ISO date the
-     *                                                 beroepschrift was filed
-     *                                                 at the court
-     * @param array<string, mixed> $payload            Optional extra fields
-     *                                                 (courtReference,
-     *                                                 competentCourt,
-     *                                                 responsibleChamber,
-     *                                                 voorzieningRequested)
+     * @param string               $filingDate          ISO date the
+     *                                                  beroepschrift
+     *                                                  was filed at
+     *                                                  the court
+     * @param array<string, mixed> $payload             Optional extra fields
+     *                                                  (courtReference,
+     *                                                  competentCourt,
+     *                                                  responsibleChamber,
+     *                                                  voorzieningRequested)
      *
      * @return array<string, mixed> The created beroep record
      *
@@ -162,14 +163,14 @@ class BeroepService
         string $sourceBezwaarId,
         string $contestedDecisionId,
         string $filingDate,
-        array $payload = []
+        array $payload=[]
     ): array {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
             throw new RuntimeException('OpenRegister is not available');
         }
 
-        $register = $this->settingsService->getConfigValue(key: 'register');
+        $register     = $this->settingsService->getConfigValue(key: 'register');
         $beroepSchema = $this->settingsService->getConfigValue(
             key: 'beroep_schema'
         );
@@ -203,7 +204,7 @@ class BeroepService
 
         $record = array_merge(
             [
-                'responsibleChamber' => 'enkelvoudig',
+                'responsibleChamber'   => 'enkelvoudig',
                 'voorzieningRequested' => false,
             ],
             $payload,
@@ -234,8 +235,8 @@ class BeroepService
      * curates it via existing dossier tooling; this method records the
      * linkage with a computed deadline of requestedAt + P4W.
      *
-     * @param string $beroepId    UUID of the beroep
-     * @param string $requestedAt ISO date the rechtbank issued the request
+     * @param string      $beroepId      UUID of the beroep
+     * @param string      $requestedAt   ISO date the rechtbank issued the request
      * @param string|null $dossierBundle Optional NC file ID / dossier ref
      *
      * @return array<string, mixed> The updated beroep record
@@ -246,7 +247,7 @@ class BeroepService
     public function addFileInspectionRequest(
         string $beroepId,
         string $requestedAt,
-        ?string $dossierBundle = null
+        ?string $dossierBundle=null
     ): array {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
@@ -280,7 +281,7 @@ class BeroepService
             $entry['dossierBundle'] = $dossierBundle;
         }
 
-        $requests = (array) ($current['fileInspectionRequests'] ?? []);
+        $requests   = (array) ($current['fileInspectionRequests'] ?? []);
         $requests[] = $entry;
 
         try {
@@ -323,7 +324,7 @@ class BeroepService
         string $beroepId,
         string $outcome,
         string $judgmentDate,
-        ?string $judgmentDocument = null
+        ?string $judgmentDocument=null
     ): array {
         if (in_array($outcome, self::VALID_OUTCOMES, true) === false) {
             throw new RuntimeException('Invalid judgment outcome');
@@ -405,8 +406,8 @@ class BeroepService
             throw new RuntimeException('OpenRegister is not available');
         }
 
-        $register     = $this->settingsService->getConfigValue(key: 'register');
-        $beroepSchema = $this->settingsService->getConfigValue(
+        $register      = $this->settingsService->getConfigValue(key: 'register');
+        $beroepSchema  = $this->settingsService->getConfigValue(
             key: 'beroep_schema'
         );
         $bezwaarSchema = $this->settingsService->getConfigValue(
@@ -457,9 +458,9 @@ class BeroepService
                             );
                         }
                     }
-                }
-            }
-        }
+                }//end if
+            }//end if
+        }//end if
 
         if ($action === 'new_primary_decision') {
             // The follow-up primary-decision case is opened via the

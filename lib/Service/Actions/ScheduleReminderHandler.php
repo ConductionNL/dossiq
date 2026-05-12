@@ -85,7 +85,7 @@ class ScheduleReminderHandler implements ActionHandlerInterface
                 $case
             );
 
-            $fireAt = $this->computeFireTime($offsetIso);
+            $fireAt  = $this->computeFireTime($offsetIso);
             $preview = [
                 'offsetIso8601' => $offsetIso,
                 'fireAtIso'     => $fireAt === null ? null : $fireAt->format(\DateTimeInterface::ATOM),
@@ -121,7 +121,7 @@ class ScheduleReminderHandler implements ActionHandlerInterface
                 ]
             );
             return ActionResult::failure('schedule_reminder_failed');
-        }
+        }//end try
     }//end handle()
 
     /**
@@ -136,11 +136,13 @@ class ScheduleReminderHandler implements ActionHandlerInterface
         if ($offsetIso === '') {
             return null;
         }
+
         try {
             $interval = new \DateInterval($offsetIso);
         } catch (\Throwable $e) {
             return null;
         }
+
         return (new \DateTimeImmutable('now'))->add($interval);
     }//end computeFireTime()
 }//end class

@@ -36,7 +36,6 @@ use Psr\Log\LoggerInterface;
  */
 class SendEmailHandler implements ActionHandlerInterface
 {
-
     /**
      * Constructor.
      *
@@ -90,6 +89,6 @@ class SendEmailHandler implements ActionHandlerInterface
                 ['exception' => $e->getMessage(), 'context' => $transitionContext],
             );
             return ActionResult::failure(error: 'send_email_failed');
-        }
+        }//end try
     }//end handle()
 }//end class

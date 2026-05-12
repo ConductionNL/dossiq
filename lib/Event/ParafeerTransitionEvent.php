@@ -52,7 +52,7 @@ class ParafeerTransitionEvent extends Event
         private readonly ?string $step,
         private readonly string $actor,
         private readonly string $actorRole,
-        private readonly ?string $reason = null,
+        private readonly ?string $reason=null,
     ) {
         parent::__construct();
     }//end __construct()

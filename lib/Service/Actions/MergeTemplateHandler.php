@@ -97,7 +97,7 @@ class MergeTemplateHandler implements ActionHandlerInterface
                 'register',
                 ''
             );
-            $schema = $this->appConfig->getValueString(
+            $schema   = $this->appConfig->getValueString(
                 Application::APP_ID,
                 'case_schema',
                 ''
@@ -125,7 +125,7 @@ class MergeTemplateHandler implements ActionHandlerInterface
                 ]
             );
             return ActionResult::failure('merge_template_failed');
-        }
+        }//end try
     }//end handle()
 
     /**

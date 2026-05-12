@@ -117,13 +117,13 @@ class LocationService
             $errors[] = 'case.required';
         }
 
-        $hasLatLng = (
+        $hasLatLng    = (
             isset($payload['latitude']) === true
             && isset($payload['longitude']) === true
             && is_numeric($payload['latitude']) === true
             && is_numeric($payload['longitude']) === true
         );
-        $hasBag = (
+        $hasBag       = (
             isset($payload['nummeraanduidingId']) === true
             && (string) $payload['nummeraanduidingId'] !== ''
         );
@@ -133,35 +133,35 @@ class LocationService
         );
 
         switch ($source) {
-        case 'bag':
-            if ($hasBag === false) {
-                $errors[] = 'nummeraanduidingId.required';
-            }
-            break;
+            case 'bag':
+                if ($hasBag === false) {
+                    $errors[] = 'nummeraanduidingId.required';
+                }
+                break;
 
-        case 'pdok-reverse':
-            if ($hasLatLng === false) {
-                $errors[] = 'latitude-longitude.required';
-            }
-            break;
+            case 'pdok-reverse':
+                if ($hasLatLng === false) {
+                    $errors[] = 'latitude-longitude.required';
+                }
+                break;
 
-        case 'gps':
-            if ($hasLatLng === false) {
-                $errors[] = 'latitude-longitude.required';
-            }
+            case 'gps':
+                if ($hasLatLng === false) {
+                    $errors[] = 'latitude-longitude.required';
+                }
 
-            if (isset($payload['accuracyRadius']) === false
-                || is_numeric($payload['accuracyRadius']) === false
-            ) {
-                $errors[] = 'accuracyRadius.required';
-            }
-            break;
+                if (isset($payload['accuracyRadius']) === false
+                    || is_numeric($payload['accuracyRadius']) === false
+                ) {
+                    $errors[] = 'accuracyRadius.required';
+                }
+                break;
 
-        case 'free':
-            if ($hasFormatted === false && $hasLatLng === false) {
-                $errors[] = 'formattedAddress-or-coordinates.required';
-            }
-            break;
+            case 'free':
+                if ($hasFormatted === false && $hasLatLng === false) {
+                    $errors[] = 'formattedAddress-or-coordinates.required';
+                }
+                break;
         }//end switch
 
         // Universal anchor rule: every location MUST have either a BAG
@@ -237,10 +237,8 @@ class LocationService
             return null;
         }
 
-        $best = $docs[0];
-        $distance = isset($best['afstand']) === true && is_numeric($best['afstand']) === true
-            ? (float) $best['afstand']
-            : null;
+        $best     = $docs[0];
+        $distance = isset($best['afstand']) === true && is_numeric($best['afstand']) === true ? (float) $best['afstand'] : null;
 
         if ($distance !== null && $distance > (float) self::REVERSE_MAX_DISTANCE_M) {
             return null;
@@ -256,9 +254,7 @@ class LocationService
             $nummeraanduidingId = (string) $best['id'];
         }
 
-        $formattedAddress = isset($best['weergavenaam']) === true
-            ? (string) $best['weergavenaam']
-            : '';
+        $formattedAddress = isset($best['weergavenaam']) === true ? (string) $best['weergavenaam'] : '';
 
         if ($nummeraanduidingId === '' && $formattedAddress === '') {
             return null;

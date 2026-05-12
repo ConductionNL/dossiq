@@ -505,11 +505,11 @@ class CaseSharingService
         );
 
         return [
-            'caseId'      => $caseId,
-            'shareId'     => $shareId,
-            'name'        => ($uploadedFile['name'] ?? 'unknown'),
-            'size'        => ($uploadedFile['size'] ?? 0),
-            'uploadedAt'  => (new \DateTime())->format('c'),
+            'caseId'     => $caseId,
+            'shareId'    => $shareId,
+            'name'       => ($uploadedFile['name'] ?? 'unknown'),
+            'size'       => ($uploadedFile['size'] ?? 0),
+            'uploadedAt' => (new \DateTime())->format('c'),
         ];
     }//end storeExternalDocument()
 }//end class

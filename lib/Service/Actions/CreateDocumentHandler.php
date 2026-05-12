@@ -66,12 +66,12 @@ class CreateDocumentHandler implements ActionHandlerInterface
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {
-            $templateSlug = (string) ($actionConfig['templateSlug'] ?? '');
-            $outputName   = $this->renderTemplate(
+            $templateSlug   = (string) ($actionConfig['templateSlug'] ?? '');
+            $outputName     = $this->renderTemplate(
                 (string) ($actionConfig['outputName'] ?? 'document.pdf'),
                 $case
             );
-            $mergeFields = (array) ($actionConfig['mergeFields'] ?? []);
+            $mergeFields    = (array) ($actionConfig['mergeFields'] ?? []);
             $renderedFields = [];
             foreach ($mergeFields as $key => $tpl) {
                 $renderedFields[(string) $key] = $this->renderTemplate((string) $tpl, $case);
@@ -122,7 +122,7 @@ class CreateDocumentHandler implements ActionHandlerInterface
                 ]
             );
             return ActionResult::failure('document_create_failed');
-        }
+        }//end try
     }//end handle()
 
     /**

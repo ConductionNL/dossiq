@@ -47,8 +47,8 @@ class OrSetStrategy implements RoutingStrategyInterface
      * Union over `roleTypes`. Duplicate participants are collapsed; the order
      * follows first-match across the supplied role types.
      *
-     * @param array<string, mixed> $rule  The routing rule
-     * @param array<string, mixed> $case  The case object
+     * @param array<string, mixed>             $rule  The routing rule
+     * @param array<string, mixed>             $case  The case object
      * @param array<int, array<string, mixed>> $roles Roles bound to the case
      *
      * @return array<int, string>

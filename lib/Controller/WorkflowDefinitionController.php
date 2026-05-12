@@ -39,8 +39,6 @@ use OCP\IRequest;
  */
 class WorkflowDefinitionController extends Controller
 {
-
-
     /**
      * Constructor.
      *
@@ -53,7 +51,6 @@ class WorkflowDefinitionController extends Controller
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
-
 
     /**
      * Publish a draft definition.
@@ -79,7 +76,6 @@ class WorkflowDefinitionController extends Controller
         return new JSONResponse(['success' => true, 'definition' => $result]);
     }//end publish()
 
-
     /**
      * Deprecate a published definition.
      *
@@ -103,7 +99,6 @@ class WorkflowDefinitionController extends Controller
         return new JSONResponse(['success' => true, 'definition' => $result]);
     }//end deprecate()
 
-
     /**
      * Clone an existing definition into a new draft.
      *
@@ -123,7 +118,6 @@ class WorkflowDefinitionController extends Controller
 
         return new JSONResponse(['success' => true, 'definition' => $result]);
     }//end cloneDefinition()
-
 
     /**
      * Read-only consumer endpoint — returns the active definition for a
@@ -147,7 +141,6 @@ class WorkflowDefinitionController extends Controller
         return new JSONResponse(['success' => true, 'definition' => $definition]);
     }//end active()
 
-
     /**
      * Read-only consumer endpoint — returns the definition pinned to a
      * specific case via case.workflowTemplate + case.workflowVersion.
@@ -168,6 +161,4 @@ class WorkflowDefinitionController extends Controller
 
         return new JSONResponse(['success' => true, 'definition' => $definition]);
     }//end forCase()
-
-
 }//end class

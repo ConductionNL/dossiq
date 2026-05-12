@@ -37,7 +37,6 @@ use Psr\Log\LoggerInterface;
  */
 class ChecklistGuard implements GuardEvaluatorInterface
 {
-
     /**
      * Constructor.
      *
@@ -98,6 +97,7 @@ class ChecklistGuard implements GuardEvaluatorInterface
             if (is_array($item) === false) {
                 continue;
             }
+
             $label   = (string) ($item['label'] ?? ($item['name'] ?? ''));
             $checked = (bool) ($item['checked'] ?? false);
 
@@ -135,12 +135,14 @@ class ChecklistGuard implements GuardEvaluatorInterface
         if (is_array($value) === true) {
             return $value;
         }
+
         if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
             $serialized = $value->jsonSerialize();
             if (is_array($serialized) === true) {
                 return $serialized;
             }
         }
+
         return [];
     }//end toArray()
 }//end class

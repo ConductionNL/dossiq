@@ -50,7 +50,6 @@ use RuntimeException;
  */
 class StatusTransitionController extends Controller
 {
-
     /**
      * Constructor.
      *
@@ -107,9 +106,9 @@ class StatusTransitionController extends Controller
      */
     public function execute(string $caseId): JSONResponse
     {
-        $body          = $this->readJsonBody();
-        $transitionId  = (string) ($body['transitionId'] ?? '');
-        $comment       = isset($body['comment']) === true ? (string) $body['comment'] : null;
+        $body         = $this->readJsonBody();
+        $transitionId = (string) ($body['transitionId'] ?? '');
+        $comment      = isset($body['comment']) === true ? (string) $body['comment'] : null;
 
         if ($transitionId === '') {
             return new JSONResponse(
@@ -131,12 +130,13 @@ class StatusTransitionController extends Controller
                 Http::STATUS_CONFLICT,
             );
         } catch (RuntimeException $e) {
-            $code    = $e->getMessage();
-            $status  = match ($code) {
+            $code   = $e->getMessage();
+            $status = match ($code) {
                 'case_not_found', 'transition_not_found' => Http::STATUS_NOT_FOUND,
                 'forbidden_admin_only'                   => Http::STATUS_FORBIDDEN,
                 default                                  => Http::STATUS_BAD_REQUEST,
             };
+
             $this->logger->info('StatusTransitionController: execute rejected', ['code' => $code]);
             return new JSONResponse(['error' => 'Could not execute transition'], $status);
         } catch (\Throwable $e) {
@@ -148,7 +148,7 @@ class StatusTransitionController extends Controller
                 ['error' => 'Could not execute transition'],
                 Http::STATUS_INTERNAL_SERVER_ERROR,
             );
-        }
+        }//end try
     }//end execute()
 
     /**
@@ -195,6 +195,7 @@ class StatusTransitionController extends Controller
                 'case_not_found', 'case_type_not_found' => Http::STATUS_NOT_FOUND,
                 default                               => Http::STATUS_BAD_REQUEST,
             };
+
             $this->logger->info('StatusTransitionController: freeform rejected', ['code' => $code]);
             return new JSONResponse(['error' => 'Could not execute free-form transition'], $status);
         } catch (\Throwable $e) {
@@ -206,7 +207,7 @@ class StatusTransitionController extends Controller
                 ['error' => 'Could not execute free-form transition'],
                 Http::STATUS_INTERNAL_SERVER_ERROR,
             );
-        }
+        }//end try
     }//end freeform()
 
     /**
@@ -246,10 +247,12 @@ class StatusTransitionController extends Controller
         if ($content === '' || $content === false) {
             return [];
         }
+
         $decoded = json_decode($content, true);
         if (is_array($decoded) === true) {
             return $decoded;
         }
+
         return [];
     }//end readJsonBody()
 }//end class

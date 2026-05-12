@@ -35,7 +35,6 @@ use Psr\Log\LoggerInterface;
  */
 class CreateSubCaseHandler implements ActionHandlerInterface
 {
-
     /**
      * Constructor.
      *
@@ -78,8 +77,8 @@ class CreateSubCaseHandler implements ActionHandlerInterface
                 'hoofdzaak' => $parentId,
             ];
 
-            $created  = $objectService->saveObject($register, $caseSchema, $subCase);
-            $subId    = is_array($created) === true ? (string) ($created['id'] ?? '') : '';
+            $created = $objectService->saveObject($register, $caseSchema, $subCase);
+            $subId   = is_array($created) === true ? (string) ($created['id'] ?? '') : '';
 
             return ActionResult::success(data: ['subCaseId' => $subId]);
         } catch (\Throwable $e) {
@@ -88,6 +87,6 @@ class CreateSubCaseHandler implements ActionHandlerInterface
                 ['exception' => $e->getMessage(), 'context' => $transitionContext],
             );
             return ActionResult::failure(error: 'create_sub_case_failed');
-        }
+        }//end try
     }//end handle()
 }//end class

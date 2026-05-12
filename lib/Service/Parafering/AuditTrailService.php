@@ -175,8 +175,8 @@ class AuditTrailService
      * "Audit entries are append-only" for any UPDATE or DELETE attempt, and
      * additionally validates INSERT payload shape (enums + hash format).
      *
-     * @param array<string, mixed> $entry        The pending entry
-     * @param bool                 $isUpdate     True when this is an UPDATE/DELETE (existing id present)
+     * @param array<string, mixed> $entry    The pending entry
+     * @param bool                 $isUpdate True when this is an UPDATE/DELETE (existing id present)
      *
      * @return void
      *
@@ -212,7 +212,7 @@ class AuditTrailService
     /**
      * Export the full audit trail for a voorstel as an Archiefwet-aligned envelope.
      *
-     * @param string $voorstelId       The voorstel UUID/slug
+     * @param string $voorstelId        The voorstel UUID/slug
      * @param string $voorstelOnderwerp Voorstel onderwerp (for the metadata block)
      * @param string $exportedBy        UID of the auditor performing the export
      *
@@ -274,9 +274,7 @@ class AuditTrailService
                 'voorstel'              => $voorstelId,
                 'voorstelOnderwerp'     => $voorstelOnderwerp,
                 'retentionUntil'        => $retentionUntil,
-                'selectielijstCategory' => $completed !== null
-                    ? 'Bestuurlijke besluitvorming — bewaartermijn 20 jaar'
-                    : 'Algemene administratieve correspondentie — bewaartermijn 7 jaar',
+                'selectielijstCategory' => $completed !== null ? 'Bestuurlijke besluitvorming — bewaartermijn 20 jaar' : 'Algemene administratieve correspondentie — bewaartermijn 7 jaar',
                 'exportedBy'            => $exportedBy,
                 'entryCount'            => count($entries),
             ],
@@ -362,7 +360,7 @@ class AuditTrailService
                     );
                 }
             }
-        }
+        }//end if
 
         return '';
     }//end redactIp()

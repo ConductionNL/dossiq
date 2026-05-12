@@ -34,7 +34,6 @@ namespace OCA\Procest\Service\Transitions;
  */
 interface ActionHandlerInterface
 {
-
     /**
      * Handle a single automatic action.
      *

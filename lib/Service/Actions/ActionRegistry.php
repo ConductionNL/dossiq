@@ -50,6 +50,7 @@ use Psr\Log\LoggerInterface;
  */
 class ActionRegistry
 {
+
     /**
      * In-process cache keyed by "{tenantId}::{slug}".
      *
@@ -115,6 +116,7 @@ class ActionRegistry
             if ($cached === false) {
                 return null;
             }
+
             return $cached;
         }
 
@@ -188,6 +190,7 @@ class ActionRegistry
                 $action['config'] = $decoded;
             }
         }
+
         if (isset($action['config']) === false || is_array($action['config']) === false) {
             $action['config'] = [];
         }
@@ -227,11 +230,14 @@ class ActionRegistry
             if ((string) ($action['tenantId'] ?? '') !== $tenantId) {
                 continue;
             }
+
             if ($typeFilter !== null && (string) ($action['type'] ?? '') !== $typeFilter) {
                 continue;
             }
+
             $out[] = $action;
         }
+
         return $out;
     }//end listForTenant()
 
@@ -275,11 +281,12 @@ class ActionRegistry
                     );
                     continue;
                 }
+
                 if ($handler instanceof ActionHandlerInterface) {
                     $this->handlerIndex[$handler->type()] = $handler;
                 }
             }
-        }
+        }//end if
 
         return ($this->handlerIndex[$type] ?? null);
     }//end getHandler()
@@ -303,7 +310,7 @@ class ActionRegistry
             'register',
             ''
         );
-        $schema = $this->appConfig->getValueString(
+        $schema   = $this->appConfig->getValueString(
             Application::APP_ID,
             'automatic_action_schema',
             ''
@@ -330,6 +337,7 @@ class ActionRegistry
         if (is_object($first) === true && method_exists($first, 'jsonSerialize') === true) {
             $first = $first->jsonSerialize();
         }
+
         return (array) $first;
     }//end findAction()
 
@@ -350,7 +358,7 @@ class ActionRegistry
             'register',
             ''
         );
-        $schema = $this->appConfig->getValueString(
+        $schema   = $this->appConfig->getValueString(
             Application::APP_ID,
             'automatic_action_schema',
             ''
@@ -374,8 +382,10 @@ class ActionRegistry
             if (is_object($entry) === true && method_exists($entry, 'jsonSerialize') === true) {
                 $entry = $entry->jsonSerialize();
             }
+
             $out[] = (array) $entry;
         }
+
         return $out;
     }//end fetchAll()
 

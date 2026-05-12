@@ -51,8 +51,8 @@ class LeastLoadedStrategy implements RoutingStrategyInterface
      * int). Ties are broken by participant order (first match wins).
      * Returns an empty array when no participants match the rule.
      *
-     * @param array<string, mixed> $rule  The routing rule
-     * @param array<string, mixed> $case  The case object (must include `openTaskCountsByParticipant`)
+     * @param array<string, mixed>             $rule  The routing rule
+     * @param array<string, mixed>             $case  The case object (must include `openTaskCountsByParticipant`)
      * @param array<int, array<string, mixed>> $roles Roles bound to the case
      *
      * @return array<int, string>

@@ -70,10 +70,8 @@ class CallWebhookHandler implements ActionHandlerInterface
         try {
             $url = $this->resolveUrl($actionConfig, $transitionContext);
             $payloadTemplate = (string) ($actionConfig['payloadTemplate'] ?? '');
-            $payload = $payloadTemplate === ''
-                ? json_encode(['case' => $case], JSON_THROW_ON_ERROR)
-                : $this->renderTemplate($payloadTemplate, $case);
-            $timeoutSec = (int) ($actionConfig['timeoutSec'] ?? self::DEFAULT_TIMEOUT_SEC);
+            $payload         = $payloadTemplate === '' ? json_encode(['case' => $case], JSON_THROW_ON_ERROR) : $this->renderTemplate($payloadTemplate, $case);
+            $timeoutSec      = (int) ($actionConfig['timeoutSec'] ?? self::DEFAULT_TIMEOUT_SEC);
 
             $preview = [
                 'url'        => $url,
@@ -111,12 +109,13 @@ class CallWebhookHandler implements ActionHandlerInterface
                     ]
                 );
                 return ActionResult::failure($errorCode, $preview);
-            }
+            }//end try
 
             $statusCode = (int) $response->getStatusCode();
             if ($statusCode >= 500) {
                 return ActionResult::failure('webhook_http_5xx', $preview);
             }
+
             if ($statusCode >= 400) {
                 return ActionResult::failure('webhook_http_4xx', $preview);
             }
@@ -133,7 +132,7 @@ class CallWebhookHandler implements ActionHandlerInterface
                 ]
             );
             return ActionResult::failure('webhook_dispatch_failed');
-        }
+        }//end try
     }//end handle()
 
     /**
@@ -153,17 +152,20 @@ class CallWebhookHandler implements ActionHandlerInterface
             // Tenant secret store lookup will land with the secret-store
             // change; meanwhile we honour an inline `urlSlug` => `url` map
             // on the action config itself for early adoption.
-            $slug = (string) $config['urlSlug'];
+            $slug   = (string) $config['urlSlug'];
             $tenant = (string) ($context['tenantId'] ?? '');
-            $map = (array) ($config['urlMap'] ?? []);
+            $map    = (array) ($config['urlMap'] ?? []);
             if (isset($map[$tenant][$slug]) === true) {
                 return (string) $map[$tenant][$slug];
             }
+
             if (isset($map[$slug]) === true) {
                 return (string) $map[$slug];
             }
+
             // Fall through — `url` may still be set for legacy inline configs.
         }
+
         return (string) ($config['url'] ?? '');
     }//end resolveUrl()
 
@@ -180,9 +182,11 @@ class CallWebhookHandler implements ActionHandlerInterface
         if (str_contains($message, 'timeout') === true || str_contains($message, 'timed out') === true) {
             return 'webhook_timeout';
         }
+
         if (str_contains($message, 'could not resolve host') === true || str_contains($message, 'name resolution') === true) {
             return 'webhook_dns_failure';
         }
+
         return 'webhook_network_error';
     }//end classifyHttpException()
 }//end class

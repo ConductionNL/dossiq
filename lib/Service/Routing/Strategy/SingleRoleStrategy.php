@@ -50,8 +50,8 @@ class SingleRoleStrategy implements RoutingStrategyInterface
      * `@self.created`) so callers see a stable, predictable order. Missing
      * timestamps degrade gracefully to the input order.
      *
-     * @param array<string, mixed> $rule  The routing rule
-     * @param array<string, mixed> $case  The case object
+     * @param array<string, mixed>             $rule  The routing rule
+     * @param array<string, mixed>             $case  The case object
      * @param array<int, array<string, mixed>> $roles Roles bound to the case
      *
      * @return array<int, string>
@@ -77,8 +77,7 @@ class SingleRoleStrategy implements RoutingStrategyInterface
             $matches[] = [
                 'participant' => $participant,
                 'sortKey'     => (string) (
-                    $role['created']
-                    ?? ($role['@self']['created'] ?? '')
+                    $role['created'] ?? ($role['@self']['created'] ?? '')
                 ),
             ];
         }
@@ -90,9 +89,11 @@ class SingleRoleStrategy implements RoutingStrategyInterface
             },
         );
 
-        return array_values(array_map(
+        return array_values(
+                array_map(
             static fn (array $match): string => (string) $match['participant'],
             $matches,
-        ));
+        )
+                );
     }//end resolve()
 }//end class

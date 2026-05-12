@@ -64,7 +64,6 @@ class BezwaarLifecycleListener implements IEventListener
         'decision',
     ];
 
-
     /**
      * Constructor.
      *
@@ -76,7 +75,6 @@ class BezwaarLifecycleListener implements IEventListener
         private LoggerInterface $logger,
     ) {
     }//end __construct()
-
 
     /**
      * Handle an OR object event.
@@ -113,15 +111,14 @@ class BezwaarLifecycleListener implements IEventListener
         $this->logger->debug(
             'Procest bezwaar-lifecycle: observed '.$schemaSlug.' '.$event::class,
             [
-                'app'        => Application::APP_ID,
-                'schema'     => $schemaSlug,
-                'objectId'   => (string) ($payload['id'] ?? ''),
-                'caseId'     => (string) ($payload['case'] ?? ''),
-                'status'     => (string) ($payload['status'] ?? ''),
+                'app'      => Application::APP_ID,
+                'schema'   => $schemaSlug,
+                'objectId' => (string) ($payload['id'] ?? ''),
+                'caseId'   => (string) ($payload['case'] ?? ''),
+                'status'   => (string) ($payload['status'] ?? ''),
             ]
         );
     }//end handle()
-
 
     /**
      * Extract the OR object array from an event.
@@ -150,7 +147,6 @@ class BezwaarLifecycleListener implements IEventListener
         return null;
     }//end extractObject()
 
-
     /**
      * Resolve the schema slug for an OR object payload.
      *
@@ -166,6 +162,7 @@ class BezwaarLifecycleListener implements IEventListener
             if (isset($self['schemaSlug']) === true) {
                 return (string) $self['schemaSlug'];
             }
+
             if (isset($self['schema']) === true && is_string($self['schema']) === true) {
                 return $self['schema'];
             }
@@ -181,5 +178,4 @@ class BezwaarLifecycleListener implements IEventListener
 
         return '';
     }//end resolveSchemaSlug()
-
 }//end class

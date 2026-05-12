@@ -33,7 +33,6 @@ namespace OCA\Procest\Service\Transitions;
  */
 interface GuardEvaluatorInterface
 {
-
     /**
      * Evaluate the guard.
      *

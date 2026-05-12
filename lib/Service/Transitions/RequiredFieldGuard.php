@@ -32,7 +32,6 @@ namespace OCA\Procest\Service\Transitions;
  */
 class RequiredFieldGuard implements GuardEvaluatorInterface
 {
-
     /**
      * Evaluate the required-field guard.
      *

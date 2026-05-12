@@ -63,13 +63,13 @@ class StatusTransitionService
     /**
      * Constructor.
      *
-     * @param SettingsService         $settingsService         Bridge to OpenRegister + config
-     * @param WorkflowTemplateLoader  $templateLoader          Active workflowTemplate loader
-     * @param GuardRegistry           $guardRegistry           Guard registry
-     * @param SideEffectDispatcher    $sideEffectDispatcher    Side-effect dispatcher
-     * @param IUserSession            $userSession             Current session
-     * @param IGroupManager           $groupManager            Group manager (admin gate)
-     * @param LoggerInterface         $logger                  Logger
+     * @param SettingsService        $settingsService      Bridge to OpenRegister + config
+     * @param WorkflowTemplateLoader $templateLoader       Active workflowTemplate loader
+     * @param GuardRegistry          $guardRegistry        Guard registry
+     * @param SideEffectDispatcher   $sideEffectDispatcher Side-effect dispatcher
+     * @param IUserSession           $userSession          Current session
+     * @param IGroupManager          $groupManager         Group manager (admin gate)
+     * @param LoggerInterface        $logger               Logger
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -120,6 +120,7 @@ class StatusTransitionService
             if (is_array($transition) === false) {
                 continue;
             }
+
             if ((string) ($transition['fromStatus'] ?? '') !== $currentId) {
                 continue;
             }
@@ -135,11 +136,11 @@ class StatusTransitionService
             $failed = array_values(array_filter($eval, static fn(array $g): bool => ($g['passed'] ?? false) === false));
 
             $result['transitions'][] = [
-                'id'            => (string) ($transition['id'] ?? ''),
-                'label'         => (string) ($transition['label'] ?? ''),
-                'toStatus'      => (string) ($transition['toStatus'] ?? ''),
-                'guardsPassed'  => count($failed) === 0,
-                'failedGuards'  => $failed,
+                'id'           => (string) ($transition['id'] ?? ''),
+                'label'        => (string) ($transition['label'] ?? ''),
+                'toStatus'     => (string) ($transition['toStatus'] ?? ''),
+                'guardsPassed' => count($failed) === 0,
+                'failedGuards' => $failed,
             ];
         }//end foreach
 
@@ -173,7 +174,7 @@ class StatusTransitionService
             throw new RuntimeException('transition_not_found');
         }
 
-        $currentId = (string) ($case['status'] ?? '');
+        $currentId  = (string) ($case['status'] ?? '');
         $fromStatus = (string) ($transition['fromStatus'] ?? '');
         if ($fromStatus !== '' && $fromStatus !== $currentId) {
             throw new RuntimeException('transition_from_status_mismatch');
@@ -267,9 +268,9 @@ class StatusTransitionService
         $caseTypeId = (string) ($case['caseType'] ?? '');
         $this->validateStatusBelongsToCaseType(caseTypeId: $caseTypeId, statusTypeId: $toStatusId);
 
-        $currentId        = (string) ($case['status'] ?? '');
-        $case['status']   = $toStatusId;
-        $case             = $this->saveCase(case: $case);
+        $currentId      = (string) ($case['status'] ?? '');
+        $case['status'] = $toStatusId;
+        $case           = $this->saveCase(case: $case);
 
         $record = $this->writeStatusRecord(
             caseId: $caseId,
@@ -343,11 +344,13 @@ class StatusTransitionService
         if ($userId === '') {
             return false;
         }
+
         try {
             // Accept membership in either the dedicated procest admin group OR the global admin group.
             if ($this->groupManager->isInGroup($userId, self::ADMIN_GROUP_ID) === true) {
                 return true;
             }
+
             return $this->groupManager->isInGroup($userId, 'admin');
         } catch (\Throwable $e) {
             $this->logger->error('StatusTransitionService: admin check failed', ['exception' => $e->getMessage()]);
@@ -371,6 +374,7 @@ class StatusTransitionService
         if ($explicit !== null && $explicit !== '') {
             return $explicit;
         }
+
         $user = $this->userSession->getUser();
         return $user === null ? '' : $user->getUID();
     }//end resolveUserId()
@@ -388,11 +392,13 @@ class StatusTransitionService
         if ($objectService === null) {
             return null;
         }
+
         $register   = $this->settingsService->getConfigValue(key: 'register');
         $caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
         if ($register === '' || $caseSchema === '') {
             return null;
         }
+
         try {
             return $this->toArray(value: $objectService->findObject($register, $caseSchema, $caseId));
         } catch (\Throwable $e) {
@@ -417,24 +423,26 @@ class StatusTransitionService
         if ($objectService === null) {
             throw new RuntimeException('storage_unavailable');
         }
+
         $register   = $this->settingsService->getConfigValue(key: 'register');
         $caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
         if ($register === '' || $caseSchema === '') {
             throw new RuntimeException('case_schema_not_configured');
         }
+
         return $this->toArray(value: $objectService->saveObject($register, $caseSchema, $case));
     }//end saveCase()
 
     /**
      * Write a statusRecord row for a transition.
      *
-     * @param string                                $caseId             Case UUID
-     * @param string                                $toStatus           Target statusType UUID
-     * @param string                                $fromStatus         Prior statusType UUID
-     * @param string                                $label              Transition label
-     * @param string|null                           $comment            Free-form comment
-     * @param array<int, array<string, mixed>>      $evaluatedGuards    Guard snapshots
-     * @param bool                                  $noWorkflowTemplate Flag for free-form transitions
+     * @param string                           $caseId             Case UUID
+     * @param string                           $toStatus           Target statusType UUID
+     * @param string                           $fromStatus         Prior statusType UUID
+     * @param string                           $label              Transition label
+     * @param string|null                      $comment            Free-form comment
+     * @param array<int, array<string, mixed>> $evaluatedGuards    Guard snapshots
+     * @param bool                             $noWorkflowTemplate Flag for free-form transitions
      *
      * @return array<string, mixed>
      */
@@ -451,6 +459,7 @@ class StatusTransitionService
         if ($objectService === null) {
             throw new RuntimeException('storage_unavailable');
         }
+
         $register     = $this->settingsService->getConfigValue(key: 'register');
         $recordSchema = $this->settingsService->getConfigValue(key: 'status_record_schema');
         if ($register === '' || $recordSchema === '') {
@@ -468,6 +477,7 @@ class StatusTransitionService
         if ($fromStatus !== '') {
             $payload['fromStatus'] = $fromStatus;
         }
+
         if ($comment !== null && $comment !== '') {
             $payload['description'] = $comment;
         }
@@ -488,11 +498,13 @@ class StatusTransitionService
         if ($objectService === null) {
             return $record;
         }
+
         $register     = $this->settingsService->getConfigValue(key: 'register');
         $recordSchema = $this->settingsService->getConfigValue(key: 'status_record_schema');
         if ($register === '' || $recordSchema === '') {
             return $record;
         }
+
         return $this->toArray(value: $objectService->saveObject($register, $recordSchema, $record));
     }//end updateStatusRecord()
 
@@ -512,8 +524,9 @@ class StatusTransitionService
         if ($objectService === null) {
             throw new RuntimeException('storage_unavailable');
         }
-        $register         = $this->settingsService->getConfigValue(key: 'register');
-        $caseTypeSchema   = $this->settingsService->getConfigValue(key: 'case_type_schema');
+
+        $register       = $this->settingsService->getConfigValue(key: 'register');
+        $caseTypeSchema = $this->settingsService->getConfigValue(key: 'case_type_schema');
         if ($register === '' || $caseTypeSchema === '' || $caseTypeId === '' || $statusTypeId === '') {
             throw new RuntimeException('case_type_not_configured');
         }
@@ -551,20 +564,24 @@ class StatusTransitionService
         if ($statusTypeId === '') {
             return '';
         }
+
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
             return '';
         }
+
         $register         = $this->settingsService->getConfigValue(key: 'register');
         $statusTypeSchema = $this->settingsService->getConfigValue(key: 'status_type_schema');
         if ($register === '' || $statusTypeSchema === '') {
             return '';
         }
+
         try {
             $statusType = $this->toArray(value: $objectService->findObject($register, $statusTypeSchema, $statusTypeId));
         } catch (\Throwable $e) {
             return '';
         }
+
         return (string) ($statusType['name'] ?? ($statusType['title'] ?? ''));
     }//end lookupStatusName()
 
@@ -595,6 +612,7 @@ class StatusTransitionService
                 $list[] = $guard;
             }
         }
+
         return $list;
     }//end extractGuards()
 
@@ -611,12 +629,14 @@ class StatusTransitionService
         if (is_array($actions) === false) {
             return [];
         }
+
         $list = [];
         foreach ($actions as $action) {
             if (is_array($action) === true) {
                 $list[] = $action;
             }
         }
+
         return $list;
     }//end extractActions()
 
@@ -637,6 +657,7 @@ class StatusTransitionService
                 return true;
             }
         }
+
         return false;
     }//end isRoleHidden()
 
@@ -652,6 +673,7 @@ class StatusTransitionService
         if (is_array($value) === true) {
             return $value;
         }
+
         if (is_object($value) === true) {
             if (method_exists($value, 'jsonSerialize') === true) {
                 $serialized = $value->jsonSerialize();
@@ -660,6 +682,7 @@ class StatusTransitionService
                 }
             }
         }
+
         return [];
     }//end toArray()
 }//end class

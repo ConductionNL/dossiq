@@ -34,7 +34,6 @@ namespace OCA\Procest\Service\Transitions;
  */
 class RequiredDocumentGuard implements GuardEvaluatorInterface
 {
-
     /**
      * Evaluate the required-document guard.
      *
@@ -65,6 +64,7 @@ class RequiredDocumentGuard implements GuardEvaluatorInterface
             if (is_array($doc) === false) {
                 continue;
             }
+
             $type = (string) ($doc['documentType'] ?? ($doc['type'] ?? ''));
             if ($type === $required) {
                 return GuardResult::pass(details: ['documentType' => $required]);

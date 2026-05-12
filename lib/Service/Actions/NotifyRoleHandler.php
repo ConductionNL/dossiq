@@ -73,7 +73,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
             );
 
             $recipients = $this->resolveRoleMembers($roleSlug, $case);
-            $preview = [
+            $preview    = [
                 'roleSlug'   => $roleSlug,
                 'recipients' => $recipients,
                 'message'    => $message,
@@ -110,7 +110,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
                 ]
             );
             return ActionResult::failure('notify_role_failed');
-        }
+        }//end try
     }//end handle()
 
     /**
@@ -135,6 +135,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
         if (is_string($single) === true && $single !== '') {
             return [$single];
         }
+
         if (is_array($single) === true) {
             $id = (string) ($single['id'] ?? ($single['userId'] ?? ''));
             if ($id !== '') {
@@ -143,7 +144,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
         }
 
         $multiKey = $roleSlug.'Members';
-        $multi = ($case[$multiKey] ?? null);
+        $multi    = ($case[$multiKey] ?? null);
         if (is_array($multi) === true) {
             $out = [];
             foreach ($multi as $member) {
@@ -156,6 +157,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
                     }
                 }
             }
+
             return $out;
         }
 

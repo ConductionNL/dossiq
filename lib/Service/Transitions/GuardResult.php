@@ -33,7 +33,6 @@ namespace OCA\Procest\Service\Transitions;
  */
 final class GuardResult
 {
-
     /**
      * Constructor.
      *

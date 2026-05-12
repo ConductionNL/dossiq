@@ -54,7 +54,6 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
         'Ingetrokken'       => 'Intrekking vergt AWB-motivering (6:21)',
     ];
 
-
     /**
      * Constructor.
      *
@@ -69,7 +68,6 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
     ) {
     }//end __construct()
 
-
     /**
      * Get the name of this repair step.
      *
@@ -79,7 +77,6 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
     {
         return 'Seed canonical bezwaar workflow definition (AWB-compliant state machine)';
     }//end getName()
-
 
     /**
      * Run the repair step.
@@ -101,10 +98,10 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
             return;
         }
 
-        $register        = $this->settingsService->getConfigValue('register');
-        $caseTypeSchema  = $this->settingsService->getConfigValue('case_type_schema');
-        $statusSchema    = $this->settingsService->getConfigValue('status_type_schema');
-        $templateSchema  = $this->settingsService->getConfigValue('workflow_template_schema');
+        $register       = $this->settingsService->getConfigValue('register');
+        $caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
+        $statusSchema   = $this->settingsService->getConfigValue('status_type_schema');
+        $templateSchema = $this->settingsService->getConfigValue('workflow_template_schema');
 
         if ($register === ''
             || $caseTypeSchema === ''
@@ -183,6 +180,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
             if ($row === null) {
                 continue;
             }
+
             $name = (string) ($row['name'] ?? '');
             $id   = (string) ($row['id'] ?? '');
             if ($name !== '' && $id !== '') {
@@ -215,7 +213,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
 
         $template = [
             'title'           => 'Bezwaar — AWB-compliant workflow',
-            'description'    => 'Canonical bezwaar lifecycle state machine: Ontvangen → Afgehandeld with terminal Niet-ontvankelijk/Ingetrokken. Transitions wired through the status-transition-engine; deadlines computed declaratively on the bezwaar schema (x-openregister-calculations, ADR-022).',
+            'description'     => 'Canonical bezwaar lifecycle state machine: Ontvangen → Afgehandeld with terminal Niet-ontvankelijk/Ingetrokken. Transitions wired through the status-transition-engine; deadlines computed declaratively on the bezwaar schema (x-openregister-calculations, ADR-022).',
             'caseType'        => $caseTypeId,
             'version'         => 1,
             'isActive'        => true,
@@ -263,7 +261,6 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
         $output->info('Seeded canonical bezwaar workflow definition.');
     }//end run()
 
-
     /**
      * Build step records from statusType rows.
      *
@@ -277,7 +274,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
         $steps = [];
         $order = 1;
         foreach ($ordered as $name) {
-            $row = $statusByName[$name];
+            $row     = $statusByName[$name];
             $steps[] = [
                 'id'               => $this->uuid(),
                 'title'            => $name,
@@ -291,9 +288,9 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
             ];
             $order++;
         }
+
         return $steps;
     }//end buildSteps()
-
 
     /**
      * Build the bezwaar state-machine transition matrix.
@@ -345,11 +342,10 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
                 'automaticActions' => [],
                 'allowedRoles'     => [],
             ];
-        }
+        }//end foreach
 
         return $transitions;
     }//end buildTransitions()
-
 
     /**
      * Normalize an OR object into a flat array.
@@ -363,13 +359,14 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
         if (is_array($object) === true) {
             return $object;
         }
+
         if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
             $serialized = $object->jsonSerialize();
             return is_array($serialized) ? $serialized : null;
         }
+
         return null;
     }//end normalize()
-
 
     /**
      * Generate a v4 UUID.
@@ -383,5 +380,4 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
         $data[8] = chr((ord($data[8]) & 0x3F) | 0x80);
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }//end uuid()
-
 }//end class

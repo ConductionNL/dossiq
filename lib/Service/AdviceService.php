@@ -84,7 +84,7 @@ class AdviceService
      *
      * @throws \RuntimeException When OpenRegister unavailable / invalid status
      */
-    public function transitionStatus(string $adviceId, string $to, array $payload = []): array
+    public function transitionStatus(string $adviceId, string $to, array $payload=[]): array
     {
         if (in_array($to, self::VALID_STATUSES, true) === false) {
             throw new \RuntimeException('Invalid advice status');
@@ -413,7 +413,7 @@ class AdviceService
         string $userId,
         string $subject,
         string $objectId,
-        string $message = '',
+        string $message='',
     ): void {
         try {
             $notification = $this->notificationManager->createNotification();

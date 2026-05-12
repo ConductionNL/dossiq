@@ -38,14 +38,12 @@ use OCP\IRequest;
  */
 class WmsWfsController extends Controller
 {
-
-
     /**
      * Constructor for WmsWfsController.
      *
-     * @param string        $appName        The application name
-     * @param IRequest      $request        The request object
-     * @param WmsWfsService $wmsWfsService  The WMS/WFS service
+     * @param string        $appName       The application name
+     * @param IRequest      $request       The request object
+     * @param WmsWfsService $wmsWfsService The WMS/WFS service
      *
      * @return void
      */
@@ -56,7 +54,6 @@ class WmsWfsController extends Controller
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
-
 
     /**
      * Proxy a request to a configured wmsLayer's upstream endpoint.
@@ -121,6 +118,4 @@ class WmsWfsController extends Controller
             );
         }
     }//end proxy()
-
-
 }//end class

@@ -115,7 +115,7 @@ class ParafeerRouteService
         ?string $step,
         string $actor,
         string $actorRole,
-        ?string $reason = null,
+        ?string $reason=null,
     ): void {
         try {
             $this->eventDispatcher->dispatchTyped(
@@ -137,7 +137,7 @@ class ParafeerRouteService
                     'exception' => $e->getMessage(),
                 ],
             );
-        }
+        }//end try
     }//end dispatchTransition()
 
     /**
@@ -518,7 +518,7 @@ class ParafeerRouteService
             );
 
             return $voorstel;
-        }
+        }//end if
 
         $voorstel['currentStep'] = $nextStep;
         $voorstel = $this->toArray(value: $objectService->saveObject($register, $voorstelSchema, $voorstel));

@@ -137,7 +137,7 @@ class LhsController extends Controller
                 ['error' => 'LHS-aanbeveling mislukt'],
                 Http::STATUS_INTERNAL_SERVER_ERROR,
             );
-        }
+        }//end try
 
         return new JSONResponse($recommendation);
     }//end recommend()
@@ -206,7 +206,7 @@ class LhsController extends Controller
                 ['error' => 'LHS-override mislukt'],
                 Http::STATUS_INTERNAL_SERVER_ERROR,
             );
-        }
+        }//end try
 
         return new JSONResponse($updated);
     }//end override()

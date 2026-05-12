@@ -91,9 +91,11 @@ final class ActionResult
         if ($this->error !== null) {
             $out['error'] = $this->error;
         }
+
         if ($this->data !== []) {
             $out['data'] = $this->data;
         }
+
         return $out;
     }//end toArray()
 }//end class

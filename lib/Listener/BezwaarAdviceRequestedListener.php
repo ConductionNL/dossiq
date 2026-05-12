@@ -104,8 +104,7 @@ class BezwaarAdviceRequestedListener implements IEventListener
             }
 
             $bezwaarId = (string) (
-                $object['@self']['id']
-                ?? ($object['id'] ?? ($object['uuid'] ?? ''))
+                $object['@self']['id'] ?? ($object['id'] ?? ($object['uuid'] ?? ''))
             );
             if ($bezwaarId === '') {
                 return;
@@ -119,7 +118,7 @@ class BezwaarAdviceRequestedListener implements IEventListener
                 'Procest BAC: advice-requested listener swallowed '
                 .'exception: '.$e->getMessage(),
             );
-        }
+        }//end try
     }//end handle()
 
     /**
@@ -139,8 +138,7 @@ class BezwaarAdviceRequestedListener implements IEventListener
         }
 
         $candidate = (string) (
-            $object['@self']['schema']
-            ?? ($object['schema'] ?? '')
+            $object['@self']['schema'] ?? ($object['schema'] ?? '')
         );
 
         return $candidate !== '' && (

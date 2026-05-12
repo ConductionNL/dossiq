@@ -68,11 +68,11 @@ class SendEmailHandler implements ActionHandlerInterface
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {
-            $subject = $this->renderTemplate(
+            $subject   = $this->renderTemplate(
                 (string) ($actionConfig['subjectTemplate'] ?? ''),
                 $case
             );
-            $body = $this->renderTemplate(
+            $body      = $this->renderTemplate(
                 (string) ($actionConfig['bodyTemplate'] ?? ''),
                 $case
             );
@@ -115,7 +115,7 @@ class SendEmailHandler implements ActionHandlerInterface
                 ]
             );
             return ActionResult::failure('email_dispatch_failed');
-        }
+        }//end try
     }//end handle()
 
     /**

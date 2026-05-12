@@ -125,13 +125,13 @@ class ParaferingAuditListener implements IEventListener
             $array    = [];
             if (is_array($voorstel) === true) {
                 $array = $voorstel;
-            } elseif (is_object($voorstel) === true) {
+            } else if (is_object($voorstel) === true) {
                 if (method_exists($voorstel, 'jsonSerialize') === true) {
                     $serialized = $voorstel->jsonSerialize();
                     if (is_array($serialized) === true) {
                         $array = $serialized;
                     }
-                } elseif (method_exists($voorstel, 'toArray') === true) {
+                } else if (method_exists($voorstel, 'toArray') === true) {
                     $arr = $voorstel->toArray();
                     if (is_array($arr) === true) {
                         $array = $arr;
@@ -152,6 +152,6 @@ class ParaferingAuditListener implements IEventListener
             );
 
             return [];
-        }
+        }//end try
     }//end fetchContentSnapshot()
 }//end class

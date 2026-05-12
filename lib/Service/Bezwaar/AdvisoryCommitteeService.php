@@ -70,9 +70,9 @@ class AdvisoryCommitteeService
      * in-deliberation per Awb Art. 7:13(7).
      */
     private const ALLOWED_TRANSITIONS = [
-        'assigned'        => ['in-deliberation'],
-        'in-deliberation' => ['advice-issued', 'niet-ontvankelijk'],
-        'advice-issued'   => [],
+        'assigned'          => ['in-deliberation'],
+        'in-deliberation'   => ['advice-issued', 'niet-ontvankelijk'],
+        'advice-issued'     => [],
         'niet-ontvankelijk' => [],
     ];
 
@@ -126,15 +126,15 @@ class AdvisoryCommitteeService
     public function assignToCommittee(
         string $bezwaarId,
         string $commissieId,
-        array $payload = []
+        array $payload=[]
     ): array {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
             throw new RuntimeException('OpenRegister is not available');
         }
 
-        $register   = $this->settingsService->getConfigValue(key: 'register');
-        $requestSchema = $this->settingsService->getConfigValue(
+        $register        = $this->settingsService->getConfigValue(key: 'register');
+        $requestSchema   = $this->settingsService->getConfigValue(
             key: 'bac_advice_request_schema'
         );
         $committeeSchema = $this->settingsService->getConfigValue(
@@ -222,7 +222,7 @@ class AdvisoryCommitteeService
     public function transitionAdviceStatus(
         string $requestId,
         string $newStatus,
-        array $payload = []
+        array $payload=[]
     ): array {
         if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
             throw new RuntimeException('Invalid BAC advice status');
@@ -247,7 +247,7 @@ class AdvisoryCommitteeService
             throw new RuntimeException('Advice request not found');
         }
 
-        $from = (string) ($current['status'] ?? 'assigned');
+        $from    = (string) ($current['status'] ?? 'assigned');
         $allowed = self::ALLOWED_TRANSITIONS[$from] ?? [];
 
         if (in_array($newStatus, $allowed, true) === false) {
@@ -300,8 +300,8 @@ class AdvisoryCommitteeService
                     'Panel member conflict (Awb Art. 7:13 lid 3): '
                     .$independence['reason']
                 );
-            }
-        }
+            }//end if
+        }//end if
 
         // Guard: in-deliberation → advice-issued requires the structured
         // advice content (REQ-BAC-4).
@@ -321,19 +321,17 @@ class AdvisoryCommitteeService
         $userId = $this->resolveUserId();
 
         // Compose the update.
-        $update = $payload;
+        $update           = $payload;
         $update['status'] = $newStatus;
 
         if ($newStatus === 'advice-issued' || $newStatus === 'niet-ontvankelijk') {
             $update['adviceIssuedAt'] = (new \DateTimeImmutable())
                 ->format(\DateTimeInterface::ATOM);
-            $auditEvent = 'advice-signed-by-chair';
-            $auditPayload = [
+            $auditEvent           = 'advice-signed-by-chair';
+            $auditPayload         = [
                 'chair'             => $userId,
-                'signatureEvidence' => $update['signatureEvidence']
-                    ?? ($current['signatureEvidence'] ?? null),
-                'conclusion'        => $update['conclusion']
-                    ?? ($current['conclusion'] ?? null),
+                'signatureEvidence' => $update['signatureEvidence'] ?? ($current['signatureEvidence'] ?? null),
+                'conclusion'        => $update['conclusion'] ?? ($current['conclusion'] ?? null),
             ];
             $update['auditTrail'] = $this->appendAudit(
                 existing: (array) ($current['auditTrail'] ?? []),
@@ -436,8 +434,8 @@ class AdvisoryCommitteeService
                 existing: (array) ($current['auditTrail'] ?? []),
                 event: 'council-deviation-recorded',
                 payload: [
-                    'besluit'     => $besluitId,
-                    'motivatie'   => $motivatieRef,
+                    'besluit'   => $besluitId,
+                    'motivatie' => $motivatieRef,
                 ],
             );
 
@@ -452,7 +450,7 @@ class AdvisoryCommitteeService
                 'Procest BAC: failed to record council deviation: '
                 .$e->getMessage()
             );
-        }
+        }//end try
     }//end recordCouncilDeviation()
 
     /**
@@ -524,9 +522,7 @@ class AdvisoryCommitteeService
                 $objectionSchema,
                 ['case' => $caseId]
             );
-            $objection = (is_array($objections) && $objections !== [])
-                ? $objections[0]
-                : null;
+            $objection  = (is_array($objections) && $objections !== []) ? $objections[0] : null;
             if (is_array($objection) === false) {
                 return ['ok' => true, 'member' => null, 'reason' => null];
             }
@@ -546,9 +542,7 @@ class AdvisoryCommitteeService
             }
 
             $steller = (string) (
-                $decision['@self']['owner']
-                ?? ($decision['createdBy']
-                    ?? ($decision['steller'] ?? ''))
+                $decision['@self']['owner'] ?? ($decision['createdBy'] ?? ($decision['steller'] ?? ''))
             );
             if ($steller === '') {
                 return ['ok' => true, 'member' => null, 'reason' => null];
@@ -569,7 +563,7 @@ class AdvisoryCommitteeService
                 'Procest BAC: independence check error: '.$e->getMessage()
             );
             // Fail-open here is intentional: do not block on infra issues.
-        }
+        }//end try
 
         return ['ok' => true, 'member' => null, 'reason' => null];
     }//end checkPanelIndependence()

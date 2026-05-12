@@ -162,7 +162,7 @@ class LhsRecommendationService
      * persisted with `overrideAuthority = "manager"`.
      *
      * @param array<string, mixed> $recommendation Original recommendation row
-     *                                              (must include id, recommendedInterventie)
+     *                                             (must include id, recommendedInterventie)
      * @param string               $intervention   Chosen intervention (enum value)
      * @param string               $justification  Mandatory justification (>= 20 chars)
      * @param string               $userRole       Caller role: "inspector" or "manager"
@@ -344,7 +344,7 @@ class LhsRecommendationService
                 continue;
             }
 
-            $key = ((string) ($cell['ernst'] ?? ''))
+            $key         = ((string) ($cell['ernst'] ?? ''))
                 .':'.((string) ($cell['gedrag'] ?? ''))
                 .':'.((string) ($cell['actorType'] ?? ''));
             $index[$key] = $cell;

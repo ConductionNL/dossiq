@@ -72,18 +72,17 @@ class WorkflowDefinitionService
      * Static error strings — never leak OpenRegister exception details to
      * the HTTP layer.
      */
-    private const ERR_OR_UNAVAILABLE      = 'Workflow definition store is not available';
-    private const ERR_SCHEMA_NOT_CONFIG   = 'Workflow definition schema is not configured';
-    private const ERR_NOT_FOUND           = 'Workflow definition not found';
-    private const ERR_PUBLISH_FAILED      = 'Could not publish workflow definition';
-    private const ERR_DEPRECATE_FAILED    = 'Could not deprecate workflow definition';
-    private const ERR_CLONE_FAILED        = 'Could not clone workflow definition';
-    private const ERR_NOT_DRAFT           = 'Only draft definitions can be edited';
-    private const ERR_NOT_PUBLISHABLE     = 'Only draft definitions can be published';
-    private const ERR_NOT_DEPRECATABLE    = 'Only published definitions can be deprecated';
-    private const ERR_INVALID_REFERENCES  = 'Definition references statuses not belonging to its case type';
-    private const ERR_LAST_PUBLISHED      = 'Cannot deprecate the last published definition while open cases remain';
-
+    private const ERR_OR_UNAVAILABLE     = 'Workflow definition store is not available';
+    private const ERR_SCHEMA_NOT_CONFIG  = 'Workflow definition schema is not configured';
+    private const ERR_NOT_FOUND          = 'Workflow definition not found';
+    private const ERR_PUBLISH_FAILED     = 'Could not publish workflow definition';
+    private const ERR_DEPRECATE_FAILED   = 'Could not deprecate workflow definition';
+    private const ERR_CLONE_FAILED       = 'Could not clone workflow definition';
+    private const ERR_NOT_DRAFT          = 'Only draft definitions can be edited';
+    private const ERR_NOT_PUBLISHABLE    = 'Only draft definitions can be published';
+    private const ERR_NOT_DEPRECATABLE   = 'Only published definitions can be deprecated';
+    private const ERR_INVALID_REFERENCES = 'Definition references statuses not belonging to its case type';
+    private const ERR_LAST_PUBLISHED     = 'Cannot deprecate the last published definition while open cases remain';
 
     /**
      * Constructor.
@@ -98,7 +97,6 @@ class WorkflowDefinitionService
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
-
 
     /**
      * Resolve the latest published+active definition for a caseType, or
@@ -133,7 +131,6 @@ class WorkflowDefinitionService
         return null;
     }//end getActiveDefinitionFor()
 
-
     /**
      * Read a single definition by UUID. Returns null when not found.
      *
@@ -145,7 +142,6 @@ class WorkflowDefinitionService
     {
         return $this->loadDefinition($id);
     }//end getDefinition()
-
 
     /**
      * Resolve the definition pinned to a case via case.workflowTemplate +
@@ -198,7 +194,6 @@ class WorkflowDefinitionService
         return $this->getActiveDefinitionFor($caseTypeId);
     }//end getDefinitionForCase()
 
-
     /**
      * List every version of the definition for a given caseType, ordered
      * by version descending. Used by the admin UI.
@@ -211,7 +206,6 @@ class WorkflowDefinitionService
     {
         return $this->listVersionsInternal($caseTypeId);
     }//end listVersions()
-
 
     /**
      * Publish a draft definition. Atomically:
@@ -259,9 +253,9 @@ class WorkflowDefinitionService
             return null;
         }
 
-        $register     = $this->settingsService->getConfigValue('register');
-        $schema       = $this->settingsService->getConfigValue('workflow_template_schema');
-        $caseTypeSch  = $this->settingsService->getConfigValue('case_type_schema');
+        $register    = $this->settingsService->getConfigValue('register');
+        $schema      = $this->settingsService->getConfigValue('workflow_template_schema');
+        $caseTypeSch = $this->settingsService->getConfigValue('case_type_schema');
 
         if ($register === '' || $schema === '' || $caseTypeSch === '') {
             return null;
@@ -329,7 +323,6 @@ class WorkflowDefinitionService
 
         return $this->normalize($updated);
     }//end publish()
-
 
     /**
      * Deprecate a published definition. Refuses (returns null + logs) if
@@ -399,7 +392,6 @@ class WorkflowDefinitionService
         return $this->normalize($updated);
     }//end deprecate()
 
-
     /**
      * Clone an existing published or deprecated definition into a new
      * draft with version + 1.
@@ -427,7 +419,7 @@ class WorkflowDefinitionService
             return null;
         }
 
-        $caseTypeId = (string) ($source['caseType'] ?? '');
+        $caseTypeId  = (string) ($source['caseType'] ?? '');
         $nextVersion = $this->nextVersionFor($caseTypeId);
 
         $draft = [
@@ -455,7 +447,6 @@ class WorkflowDefinitionService
 
         return $this->normalize($new);
     }//end cloneDefinition()
-
 
     /**
      * Create a brand-new draft definition from a fully-resolved payload.
@@ -534,11 +525,9 @@ class WorkflowDefinitionService
         return $this->normalize($new);
     }//end createDraft()
 
-
     // -----------------------------------------------------------------
     // Internal helpers.
     // -----------------------------------------------------------------
-
 
     /**
      * Internal — fetch all versions of the definition for a caseType,
@@ -600,7 +589,6 @@ class WorkflowDefinitionService
         return $rows;
     }//end listVersionsInternal()
 
-
     /**
      * Load a single definition by UUID.
      *
@@ -639,7 +627,6 @@ class WorkflowDefinitionService
         return $this->normalize($obj);
     }//end loadDefinition()
 
-
     /**
      * Resolve the next monotonically increasing version number for a
      * given caseType. Falls back to 1 when no prior versions exist.
@@ -661,7 +648,6 @@ class WorkflowDefinitionService
 
         return ($max + 1);
     }//end nextVersionFor()
-
 
     /**
      * Whether this id is the last published row for its caseType.
@@ -686,7 +672,6 @@ class WorkflowDefinitionService
 
         return ($count === 0);
     }//end isLastPublishedForCaseType()
-
 
     /**
      * Whether the caseType has any open cases (status not in a final
@@ -730,7 +715,6 @@ class WorkflowDefinitionService
         return (is_array($results) === true && count($results) > 0);
     }//end hasOpenCasesFor()
 
-
     /**
      * Validate that every status referenced in transitions belongs to the
      * linked caseType. Returns true when the references are *invalid*.
@@ -769,7 +753,6 @@ class WorkflowDefinitionService
 
         return false;
     }//end transitionsReferenceForeignStatuses()
-
 
     /**
      * Fetch every statusType id belonging to a given caseType.
@@ -828,7 +811,6 @@ class WorkflowDefinitionService
         return $ids;
     }//end collectStatusTypeIdsFor()
 
-
     /**
      * Decode a JSON-encoded array property; returns an empty array on any
      * decoding error or non-array payload.
@@ -855,7 +837,6 @@ class WorkflowDefinitionService
         return [];
     }//end decodeArray()
 
-
     /**
      * Coerce an OpenRegister result row to an associative array.
      *
@@ -878,7 +859,6 @@ class WorkflowDefinitionService
 
         return null;
     }//end normalize()
-
 
     /**
      * Resolve the authoritative lifecycle status of a row. Prefers the
@@ -914,7 +894,6 @@ class WorkflowDefinitionService
         return self::STATUS_DEPRECATED;
     }//end statusOf()
 
-
     /**
      * Build a title for a cloned draft.
      *
@@ -926,6 +905,4 @@ class WorkflowDefinitionService
     {
         return rtrim($base).' (kopie)';
     }//end cloneTitle()
-
-
 }//end class

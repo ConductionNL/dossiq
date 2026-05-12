@@ -71,8 +71,8 @@ class GuardRegistry
     /**
      * Register an additional evaluator (DI extension point).
      *
-     * @param string                   $type      Guard type identifier
-     * @param GuardEvaluatorInterface  $evaluator Evaluator implementation
+     * @param string                  $type      Guard type identifier
+     * @param GuardEvaluatorInterface $evaluator Evaluator implementation
      *
      * @return void
      */
@@ -97,10 +97,12 @@ class GuardRegistry
             if (is_array($guard) === false) {
                 continue;
             }
+
             $type = (string) ($guard['type'] ?? '');
             if ($type === '') {
                 continue;
             }
+
             if (isset($this->evaluators[$type]) === false) {
                 $this->logger->warning('Unknown guard type', ['type' => $type]);
                 $results[] = [
@@ -119,7 +121,7 @@ class GuardRegistry
                 'failureMessage' => $result->failureMessage,
                 'details'        => $result->details,
             ];
-        }
+        }//end foreach
 
         return $results;
     }//end evaluateAll()
@@ -138,6 +140,7 @@ class GuardRegistry
                 return false;
             }
         }
+
         return true;
     }//end allPassed()
 }//end class

@@ -116,9 +116,9 @@ class RoutingController extends Controller
                 );
             }
 
-            $register      = $this->settingsService->getConfigValue('register');
-            $caseSchema    = $this->settingsService->getConfigValue('case_schema');
-            $workflowSlug  = $this->settingsService->getConfigValue('workflow_template_schema');
+            $register     = $this->settingsService->getConfigValue('register');
+            $caseSchema   = $this->settingsService->getConfigValue('case_schema');
+            $workflowSlug = $this->settingsService->getConfigValue('workflow_template_schema');
 
             $case = $this->toArray(value: $objectService->findObject($register, $caseSchema, $id));
 
@@ -136,8 +136,8 @@ class RoutingController extends Controller
                     continue;
                 }
 
-                $assignees      = $this->resolver->resolve($rule, $case);
-                $affected[]     = [
+                $assignees  = $this->resolver->resolve($rule, $case);
+                $affected[] = [
                     'stepId'    => (string) ($step['id'] ?? ''),
                     'order'     => (int) ($step['order'] ?? 0),
                     'assignees' => $assignees,
@@ -158,7 +158,7 @@ class RoutingController extends Controller
                 ['error' => 'Herberekening mislukt'],
                 Http::STATUS_INTERNAL_SERVER_ERROR,
             );
-        }
+        }//end try
     }//end reroute()
 
     /**

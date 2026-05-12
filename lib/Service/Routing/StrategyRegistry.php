@@ -44,6 +44,7 @@ use OCA\Procest\Service\Routing\Strategy\SingleRoleStrategy;
  */
 class StrategyRegistry
 {
+
     /**
      * The registered strategies keyed by name.
      *
