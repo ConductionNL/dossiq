@@ -23,9 +23,7 @@ import WerkvoorraadView from './views/Werkvoorraad.vue'
 // CaseMapView removed — superseded by manifest `type: 'map'` CnMapPage
 // (see openspec/changes/case-map-overview/design.md).
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
-// VoorstellenView removed — the Voorstellen list page is now a declarative
-// `type:"index"` on the `voorstel` schema (formatter columns + status badge,
-// see src/manifest.json + src/services/formatters.js).
+import VoorstellenView from './views/voorstellen/VoorstelList.vue'
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import AdminRootView from './views/settings/AdminRoot.vue'
 import PublicCaseView from './views/public/PublicCaseView.vue'
@@ -41,60 +39,16 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // --- Visual workflow editor — TEMPORARILY UNWIRED. ---
 // `@vue-flow/{core,controls,background}` v1.x are Vue-3-only (they import
 // Fragment / Teleport / createElementVNode / toValue from 'vue'), which breaks
-// the webpack build under procest's Vue 2.7 base (272 errors). The component
-// files remain in src/components/workflow/ but are no longer pulled into the
-// bundle. Re-wire once @vue-flow is replaced with a Vue-2-compatible flow
-// library (or procest migrates to Vue 3). See
-// openspec/changes/visual-workflow-editor/design.md.
+// the webpack build under procest's Vue 2.7 base. The component files remain in
+// src/components/workflow/ but are no longer pulled into the bundle. Re-wire
+// once @vue-flow is replaced with a Vue-2-compatible flow library (or procest
+// migrates to Vue 3). See openspec/changes/visual-workflow-editor/design.md.
 // import VisualWorkflowEditor from './components/workflow/VisualWorkflowEditor.vue'
 
 // --- Shared map surface (case detail map tab, dashboard widget, public case page). ---
 // Thin wrapper around CnMapWidget; registered here so manifest entries
 // MAY reference it by string name. See openspec/changes/map-component/.
 import MapComponent from './components/map/MapComponent.vue'
-
-// --- Features & Roadmap page — thin wrapper around the lib's
-//     CnFeaturesAndRoadmapView (the in-product roadmap surface powered by
-//     OpenRegister's github-issue-proxy). See ConductionNL/hydra#251. ---
-import FeaturesRoadmapView from './views/FeaturesRoadmap.vue'
-
-/**
- * Row-action handler for the Voorstellen index: POST a parafering-reminder
- * notification for the step the voorstel is currently waiting on. Registered
- * below as a "function" entry so the manifest action
- * `{ id: "reminder", handler: "voorstelReminder" }` can dispatch to it —
- * CnIndexPage calls a function-typed `customComponents[handler]` with
- * `{ actionId, item }` on row-action click. (Replaces the bespoke
- * `sendReminder()` that lived in the deleted VoorstelList.vue.)
- *
- * @param {object} ctx Dispatch context.
- * @param {string} ctx.actionId The action id (`"reminder"`).
- * @param {object} ctx.item The voorstel row.
- * @return {Promise<void>}
- */
-async function voorstelReminder({ actionId, item }) {
-	const steps = (() => {
-		const snap = item && item.routeSnapshot
-		if (!snap) return []
-		try { return typeof snap === 'string' ? JSON.parse(snap) : snap } catch { return [] }
-	})()
-	const current = steps.find((s) => s.order === item.currentStep)
-	const actor = current ? (current.label || current.actor || '-') : '-'
-	try {
-		await fetch('/apps/procest/api/notifications/parafering-reminder', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				requesttoken: window.OC?.requestToken,
-				'OCS-APIREQUEST': 'true',
-			},
-			body: JSON.stringify({ voorstelId: item.id, actor, onderwerp: item.onderwerp }),
-		})
-	} catch (error) {
-		// eslint-disable-next-line no-console
-		console.error('[procest] parafering reminder failed', error)
-	}
-}
 
 export default {
 	// --- Genuine exceptions: no abstract analogue. ---
@@ -107,10 +61,8 @@ export default {
 	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
 
 	// --- Migration cost: deferred to a follow-up. ---
+	VoorstellenView, // status-tabs filter tied to parafeerroute lifecycle
 	VoorstelDetailView, // parafeerroute multi-step approver flow
-
-	// --- Row-action handlers (function entries — dispatched by manifest `handler` id). ---
-	voorstelReminder, // Voorstellen index → POST a parafering reminder
 
 	// --- Anonymous-public routes (no auth, no main menu). ---
 	PublicCaseView,
@@ -127,7 +79,4 @@ export default {
 
 	// --- Shared map surface — referenceable from manifest pages. ---
 	MapComponent,
-
-	// --- Features & Roadmap page (lib's CnFeaturesAndRoadmapView). ---
-	FeaturesRoadmap: FeaturesRoadmapView,
 }
