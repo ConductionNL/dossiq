@@ -103,7 +103,9 @@
 						'werkvoorraad__row--unassigned': !caseItem.assignee,
 					}"
 					@click="openCase(caseItem)">
-					<td class="werkvoorraad__cell-id">{{ caseItem.identifier || '—' }}</td>
+					<td class="werkvoorraad__cell-id">
+						{{ caseItem.identifier || '—' }}
+					</td>
 					<td>{{ caseItem.title }}</td>
 					<td>{{ getCaseTypeName(caseItem.caseType) }}</td>
 					<td>

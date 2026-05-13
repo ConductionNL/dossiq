@@ -1,0 +1,35 @@
+{
+  "phase": "build",
+  "timestamp": "2026-05-11T00:00:00+00:00",
+  "model": "claude-opus-4-7",
+  "spec": "visual-workflow-editor",
+  "scope": "frontend-only",
+  "approach": "manifest-first + single custom page",
+  "components_added": [
+    "src/components/workflow/VisualWorkflowEditor.vue",
+    "src/components/workflow/NodePalette.vue",
+    "src/components/workflow/WorkflowCanvas.vue",
+    "src/components/workflow/NodeProperties.vue",
+    "src/components/workflow/EdgeProperties.vue",
+    "src/components/workflow/validator.js"
+  ],
+  "custom_components_registered": ["VisualWorkflowEditor"],
+  "manifest_pages_added": [
+    {
+      "id": "WorkflowTemplateEditor",
+      "route": "/settings/workflow-templates/:id/edit",
+      "type": "custom",
+      "component": "VisualWorkflowEditor"
+    }
+  ],
+  "npm_dependencies_added": [
+    "@vue-flow/core@^1.48.2",
+    "@vue-flow/background@^1.3.2",
+    "@vue-flow/controls@^1.1.3"
+  ],
+  "data_layer": "useWorkflowStore (createObjectStore) — getTemplate, saveTemplate, publishVersion",
+  "validation": "frontend mirror in components/workflow/validator.js (NO_FINAL_STATUS, UNREACHABLE_FINAL, ORPHAN_NODE, DANGLING_EDGE, DUPLICATE_TRANSITION, MISSING_LABEL, CYCLE_NO_EXIT)",
+  "no_php_changes": true,
+  "i18n_deferred": true,
+  "strict_quality_check": false
+}

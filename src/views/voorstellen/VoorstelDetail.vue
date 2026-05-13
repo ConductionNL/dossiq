@@ -31,11 +31,52 @@
 			</CnDetailCard>
 
 			<!-- Actions for active parafeerder -->
-			<ParafeerActionBar
+			<CnDetailCard
 				v-if="isActiveActor && !isTerminalStatus"
-				:voorstel="voorstel"
-				:current-step-info="currentStepInfo"
-				@action-completed="onActionCompleted" />
+				:title="t('procest', 'Take action')">
+				<NcButton type="primary" @click="actieDialogOpen = true">
+					{{ t('procest', 'Take action') }}
+				</NcButton>
+			</CnDetailCard>
+
+			<ParafeerActieDialog
+				v-if="isActiveActor && !isTerminalStatus && currentStepInfo"
+				:voorstel-id="voorstel.id"
+				:step="currentStepInfo"
+				:open.sync="actieDialogOpen"
+				:mandates="mandates"
+				@action-recorded="onActionCompleted" />
+
+			<!-- Parafering History (action history timeline). -->
+			<CnDetailCard :title="t('procest', 'Parafering history')">
+				<ParafeerActieTimeline
+					ref="actieTimeline"
+					:voorstel-id="voorstel.id || voorstelId" />
+			</CnDetailCard>
+
+			<!-- Manager override controls -->
+			<CnDetailCard v-if="canOverrideRoute" :title="t('procest', 'Route-aanpassing (manager)')">
+				<div class="voorstel-detail__override-actions">
+					<NcButton :disabled="!currentStepInfo" @click="openSkipDialog">
+						{{ t('procest', 'Stap overslaan') }}
+					</NcButton>
+					<NcButton @click="openAddStepDialog">
+						{{ t('procest', 'Stap toevoegen') }}
+					</NcButton>
+				</div>
+			</CnDetailCard>
+
+			<SkipStepDialog :open="showSkipDialog"
+				:voorstel-id="voorstel.id || voorstelId"
+				:step="currentStepInfo"
+				@skipped="onOverrideCompleted"
+				@close="showSkipDialog = false" />
+
+			<AddStepDialog :open="showAddStepDialog"
+				:voorstel-id="voorstel.id || voorstelId"
+				:route-snapshot="steps"
+				@step-added="onOverrideCompleted"
+				@close="showAddStepDialog = false" />
 
 			<!-- Resubmit for steller -->
 			<CnDetailCard v-if="voorstel.status === 'teruggestuurd' && isSteller" :title="t('procest', 'Teruggestuurd')">
@@ -121,9 +162,12 @@ import { NcButton } from '@nextcloud/vue'
 import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
 import { getCurrentUser } from '@nextcloud/auth'
 import ProgressTimeline from './components/ProgressTimeline.vue'
-import ParafeerActionBar from './components/ParafeerActionBar.vue'
+import ParafeerActieDialog from './components/ParafeerActieDialog.vue'
+import ParafeerActieTimeline from './components/ParafeerActieTimeline.vue'
 import AuditTrail from './components/AuditTrail.vue'
 import BesluitRegistration from './components/BesluitRegistration.vue'
+import SkipStepDialog from './components/SkipStepDialog.vue'
+import AddStepDialog from './components/AddStepDialog.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 
 const STATUS_LABELS = {
@@ -150,9 +194,12 @@ export default {
 		CnDetailPage,
 		CnDetailCard,
 		ProgressTimeline,
-		ParafeerActionBar,
+		ParafeerActieDialog,
+		ParafeerActieTimeline,
 		AuditTrail,
 		BesluitRegistration,
+		SkipStepDialog,
+		AddStepDialog,
 	},
 	props: {
 		voorstelId: {
@@ -167,6 +214,10 @@ export default {
 			voorstel: {},
 			acties: [],
 			showBesluitDialog: false,
+			actieDialogOpen: false,
+			mandates: [],
+			showSkipDialog: false,
+			showAddStepDialog: false,
 		}
 	},
 	computed: {
@@ -205,6 +256,20 @@ export default {
 		canRegisterBesluit() {
 			return ['geaccordeerd', 'aangeboden'].includes(this.voorstel.status)
 		},
+		canOverrideRoute() {
+			if (this.voorstel.status !== 'in_parafering' && this.voorstel.status !== 'ter_accordering') {
+				return false
+			}
+			const user = getCurrentUser()
+			if (!user) return false
+			// Group membership is server-enforced; we surface the controls to admins
+			// and to the steller so they can request additional advice.
+			const groups = user.groups || []
+			return groups.includes('admin')
+				|| groups.includes('manager')
+				|| groups.includes('secretariaat')
+				|| this.isSteller
+		},
 	},
 	async created() {
 		await Promise.all([
@@ -216,7 +281,7 @@ export default {
 		async loadVoorstel() {
 			this.loading = true
 			try {
-				this.voorstel = await this.objectStore.fetchOne('voorstel', this.voorstelId)
+				this.voorstel = await this.objectStore.fetchObject('voorstel', this.voorstelId)
 			} catch (error) {
 				console.error('Failed to load voorstel:', error)
 			} finally {
@@ -247,6 +312,25 @@ export default {
 			return STATUS_LABELS[status] || status || '-'
 		},
 		async onActionCompleted() {
+			this.actieDialogOpen = false
+			await Promise.all([
+				this.loadVoorstel(),
+				this.loadActies(),
+			])
+			// Reload the timeline component (it loads on mount).
+			if (this.$refs.actieTimeline?.load) {
+				await this.$refs.actieTimeline.load()
+			}
+		},
+		openSkipDialog() {
+			this.showSkipDialog = true
+		},
+		openAddStepDialog() {
+			this.showAddStepDialog = true
+		},
+		async onOverrideCompleted() {
+			this.showSkipDialog = false
+			this.showAddStepDialog = false
 			await Promise.all([
 				this.loadVoorstel(),
 				this.loadActies(),

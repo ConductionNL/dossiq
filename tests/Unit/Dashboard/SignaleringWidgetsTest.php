@@ -38,6 +38,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Procest\Dashboard\DeadlineAlertsWidget
  * @covers \OCA\Procest\Dashboard\OverdueCasesWidget
  * @covers \OCA\Procest\Dashboard\StalledCasesWidget
+ * @covers \OCA\Procest\Dashboard\MyTasksWidget
+ * @covers \OCA\Procest\Dashboard\TaskRemindersWidget
  */
 class SignaleringWidgetsTest extends TestCase
 {

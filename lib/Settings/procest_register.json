@@ -2,8 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Procest Case Management Register",
-    "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, and their instance counterparts.",
-    "version": "0.5.0"
+    "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, automaticAction, and their instance counterparts.",
+    "version": "0.7.0"
   },
   "x-openregister": {
     "type": "application",
@@ -164,6 +164,26 @@
               "type": "string"
             },
             "description": "References to decision types (besluittypen) linked to this case type"
+          },
+          "defaultAssignee": {
+            "type": "string",
+            "description": "Nextcloud user UID or group ID for automatic assignment of cases of this type (REQ-INTAKE-03a)",
+            "title": "Default assignee"
+          },
+          "workflowDefinition": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID reference to the pinned active workflowTemplate for this case type. When unset, new cases fall through to the latest published workflowTemplate for this caseType. New cases are bound to the version that is published+isActive at the moment of case creation (see case.workflowTemplate + case.workflowVersion)."
+          },
+          "layerIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "wmsLayer"
+            },
+            "default": [],
+            "description": "Subscribed wmsLayer UUIDs visible on this case type's maps (wms-wfs-layers REQ-WMS-4). Empty array = only isDefault layers visible."
           }
         }
       },
@@ -596,6 +616,23 @@
             "title": "Assignee",
             "facetable": true
           },
+          "intakeChannel": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "balie",
+              "telefoon",
+              "email",
+              "post",
+              "website",
+              "overig",
+              "zgw-api"
+            ],
+            "default": "manual",
+            "description": "The channel through which this case was intaken (REQ-INTAKE-08b, REQ-INTAKE-11a)",
+            "title": "Intake channel",
+            "facetable": true
+          },
           "priority": {
             "type": "string",
             "enum": [
@@ -836,6 +873,20 @@
           "description": {
             "type": "string",
             "description": "Description of this role assignment"
+          },
+          "delegate": {
+            "type": "string",
+            "description": "Optional participant (Nextcloud user ID or contact ref) acting on behalf of the original participant during the delegation window"
+          },
+          "delegateFrom": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Start of the delegation window (ISO 8601). When now is within [delegateFrom, delegateUntil] the resolver substitutes the delegate"
+          },
+          "delegateUntil": {
+            "type": "string",
+            "format": "date-time",
+            "description": "End of the delegation window (ISO 8601). MUST be greater than or equal to delegateFrom"
           }
         }
       },
@@ -879,7 +930,7 @@
       "statusRecord": {
         "slug": "statusRecord",
         "icon": "ProgressClock",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:Event",
         "x-zgw-equivalent": "Status",
         "title": "Status Record",
@@ -900,11 +951,61 @@
           "statusType": {
             "type": "string",
             "format": "uuid",
-            "description": "Reference to the status type"
+            "description": "Reference to the target status type (toStatus)"
           },
           "description": {
             "type": "string",
-            "description": "Status transition description"
+            "description": "Status transition description / free-form comment"
+          },
+          "transitionLabel": {
+            "type": "string",
+            "description": "Label of the workflowTemplate transition that fired"
+          },
+          "fromStatus": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the prior status type (absent on first set)"
+          },
+          "evaluatedGuards": {
+            "type": "array",
+            "description": "Snapshot of guards evaluated for this transition",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "passed": {
+                  "type": "boolean"
+                },
+                "details": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "dispatchedActions": {
+            "type": "array",
+            "description": "Snapshot of automatic actions dispatched for this transition",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "ok": {
+                  "type": "boolean"
+                },
+                "error": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "noWorkflowTemplate": {
+            "type": "boolean",
+            "default": false,
+            "description": "True when the transition was admin free-form on a caseType without an active workflowTemplate"
           }
         }
       },
@@ -1790,7 +1891,8 @@
               "parafered",
               "returned",
               "advised",
-              "skipped"
+              "skipped",
+              "accorded"
             ],
             "description": "The action performed",
             "title": "Action",
@@ -1813,11 +1915,11 @@
       "workflowTemplate": {
         "slug": "workflowTemplate",
         "icon": "SitemapOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:HowTo",
         "x-cmmn-equivalent": "CasePlanModel",
         "title": "Workflow Template",
-        "description": "A workflow definition for a case type — defines process steps, status transitions, guards, and automatic actions",
+        "description": "A workflow definition for a case type — defines process steps, status transitions, guards, and automatic actions. v1.1: each step entry MAY carry an additive `config` sub-object ({sla, requiredFields, autoActions, escalationRule}); absent config preserves v1 behaviour (see process-step-configuration spec).",
         "type": "object",
         "required": [
           "title",
@@ -1853,15 +1955,25 @@
           "isDraft": {
             "type": "boolean",
             "default": true,
-            "description": "Draft templates cannot be used for new cases"
+            "description": "Draft templates cannot be used for new cases (legacy flag; lifecycleStatus is authoritative)"
+          },
+          "lifecycleStatus": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "deprecated"
+            ],
+            "default": "draft",
+            "description": "Lifecycle state of this definition. Authoritative going forward; isDraft/isActive remain for backwards compatibility. draft = editable, cannot back new cases. published = immutable, can back new cases (one active per caseType). deprecated = immutable, cannot back new cases, existing cases keep using it."
           },
           "steps": {
             "type": "string",
-            "description": "JSON-encoded array of WorkflowStep objects. Each step has: id (UUID), title, description, status (UUID ref to statusType), order (integer), assigneeRole (UUID ref to roleType, optional), isRequired (boolean), checklist (array of {id, label, description}), automaticActions (array of ActionRef)"
+            "description": "JSON-encoded array of WorkflowStep objects. Each step has: id (UUID), title, description, status (UUID ref to statusType), order (integer), assigneeRole (UUID ref to roleType, optional — legacy, normalised on read to routingRule.single-role), routingRule (optional object {strategy: single-role|or-set|hierarchical|round-robin|least-loaded, roleType: UUID, roleTypes: [UUID], fallback: UUID}), isRequired (boolean), checklist (array of {id, label, description}), automaticActions (array of ActionRef). v1.1 additive: optional `config` sub-object = {sla:{value:int 1-10000, unit:hours|businessDays|calendarDays}, requiredFields:string[] (case-field property paths), autoActions:ActionRef[] fired before transition-level actions on step completion, escalationRule:{trigger:preBreach|slaBreached, offset:int, offsetUnit:hours|businessDays, notifyRole:UUID, escalateToRole:UUID, openIncident:boolean} — requires sla present; preBreach offset must be <= sla.value}. Absent config preserves v1 behaviour."
           },
           "transitions": {
             "type": "string",
-            "description": "JSON-encoded array of StatusTransition objects. Each transition has: id (UUID), fromStatus (UUID), toStatus (UUID), label (string), guards (array of Guard), automaticActions (array of ActionRef), allowedRoles (array of UUID). Guard types: checklist, requiredField, requiredDocument, roleGuard. Action types: sendEmail, createTask, createSubCase, webhook, setField, notify"
+            "description": "JSON-encoded array of StatusTransition objects. Each transition has: id (UUID), fromStatus (UUID), toStatus (UUID), label (string), guards (array of Guard), automaticActions (array of ActionRef), allowedRoles (array of UUID — legacy, normalised on read to routingRule.or-set), routingRule (optional object same shape as workflowStep.routingRule). Guard types: checklist, requiredField, requiredDocument, roleGuard. Action types: sendEmail, createTask, createSubCase, webhook, setField, notify"
           },
           "nodePositions": {
             "type": "string",
@@ -1873,6 +1985,285 @@
             "description": "Reference to parent workflow template for inheritance (Enterprise tier)"
           }
         }
+      },
+      "paraferingAuditEntry": {
+        "slug": "paraferingAuditEntry",
+        "icon": "ShieldCheckOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "title": "Parafering audit entry",
+        "description": "Append-only, regulator-grade audit entry for a parafeerroute transition. One entry per transition (started, paraferd, advised, terugsturen, route-changed, completed). Captures actor, role, timestamp, reason, content snapshot at action moment, redacted IP, and SHA-256 hash of the canonical payload for tamper detection. UPDATE and DELETE are blocked by the ParaferingAuditAppendOnlyValidator listener.",
+        "type": "object",
+        "required": [
+          "voorstel",
+          "action",
+          "actor",
+          "actorRole",
+          "timestamp",
+          "contentSnapshot",
+          "auditEntryHash"
+        ],
+        "properties": {
+          "voorstel": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "voorstel",
+            "onDelete": "CASCADE",
+            "description": "Reference to the voorstel that this transition occurred on"
+          },
+          "step": {
+            "type": "string",
+            "description": "Step identifier or order within the routeSnapshot at action moment (string to support both numeric orders and UUID refs)"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "started",
+              "paraferd",
+              "terugsturen",
+              "advised",
+              "route-changed",
+              "completed"
+            ],
+            "title": "Action",
+            "description": "Transition type that produced this audit entry",
+            "facetable": true
+          },
+          "actor": {
+            "type": "string",
+            "description": "Nextcloud user UID who triggered the transition (always the session user, never request body)"
+          },
+          "actorRole": {
+            "type": "string",
+            "description": "Role at the moment of action (steller, adviseur, parafeerder, accorderend, beheerder, secretariaat) derived from the routeSnapshot step or admin-override context",
+            "facetable": true
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server-side ISO 8601 (UTC) timestamp at write moment, never accepted from client"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason text; mandatory for terugsturen and route-changed, optional for others"
+          },
+          "contentSnapshot": {
+            "type": "object",
+            "description": "Immutable JSON copy of voorstel.{onderwerp, document, bijlagen, routeSnapshot, currentStep, status} at transition moment"
+          },
+          "ipAddress": {
+            "type": "string",
+            "description": "Originating IP address redacted to /24 (IPv4) or /48 (IPv6) per AVG minimisation"
+          },
+          "auditEntryHash": {
+            "type": "string",
+            "description": "SHA-256 (64 lowercase hex) of canonical JSON of the entry excluding this field, for tamper detection"
+          }
+        }
+      },
+      "automaticAction": {
+        "slug": "automaticAction",
+        "icon": "RobotOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "title": "Automatic Action",
+        "description": "Declarative automatic action attached to a status transition. The slug is referenced from transitions[].automaticActions[].ref and resolved at dispatch time by ActionRegistry. Six built-in handler types are supported; per-tenant scoped; unpublished actions are not resolvable.",
+        "type": "object",
+        "required": [
+          "slug",
+          "type",
+          "tenantId",
+          "title"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Tenant-unique slug used in transitions[].automaticActions[].ref (e.g. send-decision-email)"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "sendEmail",
+              "createDocument",
+              "notifyRole",
+              "callWebhook",
+              "mergeTemplate",
+              "scheduleReminder"
+            ],
+            "description": "Action handler type — must match a registered ActionHandlerInterface implementation"
+          },
+          "tenantId": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "tenant",
+            "description": "Owning tenant — cross-tenant resolution is rejected by the registry"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Admin-facing label"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional human description of what this action does"
+          },
+          "config": {
+            "type": "string",
+            "description": "JSON-encoded handler-specific config (e.g. for sendEmail: {recipientRef, subjectTemplate, bodyTemplate}; for callWebhook: {urlSlug, payloadTemplate, timeoutSec})"
+          },
+          "version": {
+            "type": "integer",
+            "default": 1,
+            "description": "Optimistic-lock counter; incremented on every save"
+          },
+          "isPublished": {
+            "type": "boolean",
+            "default": false,
+            "description": "Only published actions are dispatched by SideEffectDispatcher"
+          },
+          "active": {
+            "type": "boolean",
+            "default": true,
+            "description": "Soft-disable flag; inactive actions are filtered out of admin listings"
+          }
+        }
+      },
+      "bezwaar": {
+        "slug": "bezwaar",
+        "icon": "Gavel",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:LegalCase",
+        "x-zgw-equivalent": "Bezwaarzaak",
+        "title": "Bezwaar",
+        "description": "Bezwaar lifecycle entity — captures the AWB objection case state, statutory deadlines, hearing waiver, and dwangsom accrual. Status transitions flow through the status-transition-engine; deadlines are computed declaratively via x-openregister-calculations (ADR-022). NO bespoke deadline service.",
+        "type": "object",
+        "required": [
+          "case",
+          "ontvangstdatum",
+          "status"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "The underlying procest case (zaaktype = Bezwaar) this lifecycle record belongs to"
+          },
+          "objection": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "objection",
+            "description": "The bezwaarschrift (objection letter) tied to this lifecycle record"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Ontvangen",
+              "Ontvankelijkheidstoets",
+              "In behandeling",
+              "Hoorzitting gepland",
+              "Hoorzitting afgerond",
+              "Advies uitgebracht",
+              "Beslissing op bezwaar",
+              "Afgehandeld",
+              "Niet-ontvankelijk",
+              "Ingetrokken"
+            ],
+            "default": "Ontvangen",
+            "description": "Bezwaar lifecycle status — drives the status-transition-engine state machine",
+            "facetable": true
+          },
+          "awbReference": {
+            "type": "string",
+            "description": "AWB article reference for the most recent legal-posture transition (e.g. 'Awb 7:10 lid 3'); required by guards on verdaging/opschorting/niet-ontvankelijk/intrekking transitions"
+          },
+          "ontvangstdatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the bezwaarschrift was received (start of the AWB 7:10 lid 1 termijn)"
+          },
+          "verdaagdOp": {
+            "type": "string",
+            "format": "date",
+            "description": "Date verdaging (extension) was recorded per AWB 7:10 lid 3"
+          },
+          "verdagingsperiode": {
+            "type": "integer",
+            "default": 0,
+            "description": "Verdaging in days (0 = no verdaging; 42 = standard 6-week extension)"
+          },
+          "opschortingStart": {
+            "type": "string",
+            "format": "date",
+            "description": "Opschorting start date per AWB 7:10 lid 4"
+          },
+          "opschortingEnd": {
+            "type": "string",
+            "format": "date",
+            "description": "Opschorting end date — adds (end - start) days to decisionDeadline"
+          },
+          "opschorting": {
+            "type": "integer",
+            "default": 0,
+            "description": "Opschorting in days (computed elapsed delta between opschortingStart/End)"
+          },
+          "hearingWaived": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the belanghebbende has waived the hoorrecht per AWB 7:3"
+          },
+          "waiverReason": {
+            "type": "string",
+            "description": "Required motivation when hearingWaived = true"
+          },
+          "ingebrekestelling": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the bezwaarmaker submitted an ingebrekestelling per AWB 4:17 — starts the 14-day grace clock"
+          },
+          "dwangsom": {
+            "type": "number",
+            "default": 0,
+            "description": "Accrued dwangsom liability in euros — computed declaratively, capped at €1442 (AWB 4:17 lid 2)"
+          },
+          "decisionDeadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Statutory deadline for the beslissing op bezwaar — computed as ontvangstdatum + 6 weeks + verdagingsperiode + opschorting (AWB 7:10)"
+          }
+        },
+        "x-openregister-calculations": [
+          {
+            "field": "decisionDeadline",
+            "label": {
+              "nl": "Beslistermijn bezwaar (AWB 7:10)",
+              "en": "Bezwaar decision deadline (AWB 7:10)"
+            },
+            "expression": "addDays(addDays(addWeeks($.ontvangstdatum, 6), $.verdagingsperiode), $.opschorting)",
+            "inputs": [
+              "ontvangstdatum",
+              "verdagingsperiode",
+              "opschorting"
+            ],
+            "outputField": "decisionDeadline",
+            "legalSource": "AWB Art. 7:10 lid 1, 3, 4"
+          },
+          {
+            "field": "dwangsom",
+            "label": {
+              "nl": "Dwangsom bij niet tijdig beslissen (AWB 4:17)",
+              "en": "Dwangsom on missed deadline (AWB 4:17)"
+            },
+            "expression": "min(1442, max(0, daysSince(addDays($.ingebrekestelling, 14)) * 23))",
+            "inputs": [
+              "ingebrekestelling"
+            ],
+            "outputField": "dwangsom",
+            "legalSource": "AWB Art. 4:17 lid 1-2"
+          }
+        ]
       },
       "objection": {
         "slug": "objection",
@@ -1949,17 +2340,19 @@
       "hearingSession": {
         "slug": "hearingSession",
         "icon": "AccountGroupOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:Event",
         "x-zgw-equivalent": "Hoorzitting",
         "title": "Hearing Session",
-        "description": "Hoorzitting (hearing) — manages scheduling, invitations, and minutes for bezwaar hearings per Awb art. 7:2",
+        "description": "Hoorzitting (hearing) — manages scheduling, invitations, inspection-of-file, attendance, minutes and audit hooks for bezwaar hearings per Awb art. 7:2-7:7",
         "type": "object",
         "required": [
           "case",
           "scheduledDate",
           "chairperson",
           "invitees",
+          "inspectionAvailableFrom",
+          "inspectionDeadline",
           "status"
         ],
         "properties": {
@@ -1991,27 +2384,73 @@
             "description": "Who chairs the hearing (voorzitter)"
           },
           "members": {
-            "type": "string",
-            "description": "JSON-encoded array of committee member role UUIDs"
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Committee member role UUIDs present at the hearing"
           },
           "invitees": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Invitees array: each entry {role, name, channel (berichtenbox|email|post|in_person), accessibilityNeeds[], requestedLanguage?, invitedAt?}"
+          },
+          "inspectionAvailableFrom": {
             "type": "string",
-            "description": "JSON-encoded array of invitee objects (name, role, email, status)"
+            "format": "date",
+            "description": "First date the bezwaardossier is available for inspection (Awb art. 7:4)"
+          },
+          "inspectionDeadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Inspection-of-file deadline = scheduledDate - 7 days (Awb art. 7:4 lid 2). Computed by HearingService on save."
+          },
+          "attendance": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Captured during/after hearing: {invitee, present (bool), arrivalTime?, correctionReason?}"
           },
           "minutesSummary": {
             "type": "string",
-            "description": "Summary of what was discussed (verslag)"
+            "description": "Summary of what was discussed (verslag, Awb art. 7:7)"
           },
           "minutesDocument": {
             "type": "string",
             "format": "uuid",
             "description": "Reference to full hearing minutes document"
           },
+          "audioRecording": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional audio capture; only accepted when recordingConsent = granted (Awb art. 7:7 + AVG art. 6)"
+          },
+          "recordingConsent": {
+            "type": "string",
+            "enum": [
+              "granted",
+              "denied",
+              "not_requested"
+            ],
+            "default": "not_requested",
+            "description": "Bezwaarmaker consent for audio recording"
+          },
+          "followUpQuestions": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Post-hearing questions: {question, askedTo, deadline, answeredAt?, withdrawnAt?}"
+          },
           "status": {
             "type": "string",
             "enum": [
               "gepland",
               "uitgenodigd",
+              "dossier_beschikbaar",
               "uitgevoerd",
               "geannuleerd",
               "afgezien"
@@ -2022,11 +2461,23 @@
           "hearingWaived": {
             "type": "boolean",
             "default": false,
-            "description": "Bezwaarmaker has waived the right to be heard"
+            "description": "Bezwaarmaker has waived the right to be heard (Awb art. 7:3)"
           },
           "waiverReason": {
             "type": "string",
-            "description": "Reason for waiving hearing right"
+            "description": "Reason for waiving hearing right; required when hearingWaived = true"
+          },
+          "attendanceFrozenAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp after which the attendance array becomes append-only (1-hour grace window after hearing concludes)"
+          },
+          "auditTrail": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Append-only audit entries tagged with applicable Awb article (awb-art-7:2|7:3|7:4|7:6|7:7|7:13 or avg-art-6)"
           }
         }
       },
@@ -2209,6 +2660,335 @@
           }
         }
       },
+      "bezwaarDecision": {
+        "slug": "bezwaarDecision",
+        "icon": "GavelOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "x-zgw-equivalent": "BeslissingOpBezwaar",
+        "title": "Bezwaar Decision",
+        "description": "Beslissing op bezwaar — canonical decision entity per Awb art. 7:11/7:12 with the 5-value disposition enum, structured rechtsmiddelenclausule, proceskostenvergoeding, and publication flow",
+        "type": "object",
+        "required": [
+          "bezwaar",
+          "dispositionType",
+          "reasoning",
+          "legalBasis"
+        ],
+        "properties": {
+          "bezwaar": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "bezwaar",
+            "onDelete": "CASCADE",
+            "description": "The bezwaar case this decision belongs to"
+          },
+          "dispositionType": {
+            "type": "string",
+            "enum": [
+              "niet_ontvankelijk",
+              "ongegrond",
+              "gegrond_handhaven",
+              "gegrond_herroepen",
+              "gegrond_wijzigen"
+            ],
+            "description": "Awb art. 7:11 canonical outcome — drives mandatory fields, replacement besluit, and proceskosten eligibility"
+          },
+          "reasoning": {
+            "type": "string",
+            "description": "Substantive motivation (motiveringsplicht Awb art. 7:12); for niet_ontvankelijk MUST cite Awb 6:5/6:6/6:7"
+          },
+          "legalBasis": {
+            "type": "string",
+            "description": "Awb article(s) and/or sectoral wettelijke grondslag the decision rests on"
+          },
+          "advisoryOpinion": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "bacAdviceRequest",
+            "description": "Linked BAC advisory request (Awb 7:13); when set, followsAdvice and deviationRationale apply"
+          },
+          "followsAdvice": {
+            "type": "boolean",
+            "description": "Whether this decision follows the BAC advisory opinion"
+          },
+          "deviationRationale": {
+            "type": "string",
+            "description": "Required when advisoryOpinion is set and the decision deviates from the committee advice (Awb art. 7:13 lid 7)"
+          },
+          "replacementDecision": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "decision",
+            "description": "New besluit replacing the primair besluit — required when dispositionType is gegrond_wijzigen, optional for gegrond_herroepen, MUST NOT be set otherwise"
+          },
+          "appealNotice": {
+            "type": "object",
+            "description": "Structured rechtsmiddelenclausule — replaces free-form prose; every required sub-field MUST be filled before publication",
+            "properties": {
+              "competentCourt": {
+                "type": "string",
+                "description": "Bevoegde rechter (e.g. 'Rechtbank Midden-Nederland, sector bestuursrecht')"
+              },
+              "beroepTerm": {
+                "type": "string",
+                "description": "ISO 8601 duration of the beroep filing window; default P6W (Awb 6:7)",
+                "default": "P6W"
+              },
+              "effectiveDate": {
+                "type": "string",
+                "format": "date",
+                "description": "Date from which beroepTerm runs"
+              },
+              "filingMethod": {
+                "type": "string",
+                "enum": ["digitaal", "schriftelijk", "beide"],
+                "description": "How beroep may be filed; drives whether filingUrl and/or filingAddress are required"
+              },
+              "filingUrl": {
+                "type": "string",
+                "description": "Digital filing URL (required when filingMethod is digitaal or beide)"
+              },
+              "filingAddress": {
+                "type": "string",
+                "description": "Postal filing address (required when filingMethod is schriftelijk or beide)"
+              },
+              "griffierecht": {
+                "type": "string",
+                "description": "Griffierecht copy (amount + payment instructions)"
+              },
+              "voorlopigeVoorziening": {
+                "type": "boolean",
+                "description": "Mentions option to request voorlopige voorziening at the court"
+              }
+            }
+          },
+          "proceskostenvergoeding": {
+            "type": "object",
+            "description": "Awb art. 7:15 cost award — awardable only when dispositionType is gegrond_herroepen or gegrond_wijzigen, the bezwaarmaker requested it, and the herroeping is attributable to onrechtmatigheid van het primair besluit; totalAmount is calculated as awardedPoints * pointValue",
+            "properties": {
+              "requested": {
+                "type": "boolean",
+                "description": "Whether the bezwaarmaker requested proceskostenvergoeding before the beslissing"
+              },
+              "awarded": {
+                "type": "boolean",
+                "description": "Explicit awarded/declined decision; MUST be set with reasoning when requested is true and disposition is gegrond_herroepen or gegrond_wijzigen"
+              },
+              "pointBasis": {
+                "type": "string",
+                "description": "BPB-puntensysteem reference (Besluit proceskosten bestuursrecht)"
+              },
+              "awardedPoints": {
+                "type": "number",
+                "description": "Number of points awarded (BPB-puntensysteem)"
+              },
+              "pointValue": {
+                "type": "number",
+                "description": "EUR per point at the time of beslissing"
+              },
+              "totalAmount": {
+                "type": "number",
+                "description": "Calculated total = awardedPoints * pointValue"
+              },
+              "reasoning": {
+                "type": "string",
+                "description": "Motivation for awarding or refusing proceskostenvergoeding"
+              },
+              "paymentDate": {
+                "type": "string",
+                "format": "date",
+                "description": "Date the proceskosten were paid out"
+              }
+            }
+          },
+          "decisionDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the decision was made; validated against bezwaar.afhandelDeadline (Awb 7:10)"
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the decision takes legal effect; beroep-clock runs from here"
+          },
+          "decisionMaker": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "role",
+            "description": "Bestuursorgaan or mandated official; derived from mandate config, never from request body"
+          },
+          "decisionDocument": {
+            "type": "string",
+            "description": "Nextcloud file ID of the generated PDF beslissing op bezwaar"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Set on transition to published; once set the bezwaarDecision is immutable"
+          },
+          "notifiedRecipients": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Audit of UIDs/email addresses notified on publication; berichtenbox deliveries are prefixed 'berichtenbox:'"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "published"],
+            "default": "draft",
+            "description": "Draft until publish() validates required fields and sets publishedAt"
+          }
+        }
+      },
+      "beroep": {
+        "slug": "beroep",
+        "icon": "ScaleBalance",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:LegalAction",
+        "title": "Beroep",
+        "description": "Beroep escalation envelope — the municipality's tracking record around a citizen's appeal of a beslissing op bezwaar at the administrative court (rechtbank, Awb hoofdstuk 8). Procest does NOT run the court process; this schema captures filing window, court reference, chamber, file-inspection requests (Awb 8:42), judgment outcome, and cascade back into the bezwaar workflow. Immutability after appellantFilingDate is enforced by BeroepService; OpenRegister provides the per-save audit trail.",
+        "type": "object",
+        "required": [
+          "case",
+          "sourceBezwaar",
+          "contestedDecision",
+          "appellantFilingDate"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "The procest case that wraps the beroep (zaaktype = Beroep)"
+          },
+          "sourceBezwaar": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "bezwaar",
+            "description": "The bezwaar lifecycle record that escalated to beroep — immutable after appellantFilingDate is set"
+          },
+          "contestedDecision": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "appealDecision",
+            "description": "The beslissing op bezwaar being contested — immutable after appellantFilingDate is set"
+          },
+          "courtReference": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Rechtbank zaaknummer (e.g. 'UTR 26/1234'), populated once the court assigns one"
+          },
+          "responsibleChamber": {
+            "type": "string",
+            "enum": [
+              "enkelvoudig",
+              "meervoudig",
+              "voorzieningenrechter"
+            ],
+            "description": "Court chamber composition; defaults to enkelvoudig, may be upgraded by the rechtbank"
+          },
+          "competentCourt": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of the competent rechtbank (e.g. 'Rechtbank Midden-Nederland')"
+          },
+          "appellantFilingDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the beroepschrift was filed at the court (Awb 6:7)"
+          },
+          "appellantNotifiedDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the municipality received the rechtbank notification of the beroep"
+          },
+          "filingDeadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Computed: contestedDecision.effectiveDate + P6W (Awb 6:7, 6:8). The system NEVER decides timeliness itself; the rechtbank does."
+          },
+          "voorzieningRequested": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether a voorlopige voorziening (provisional ruling) was also filed alongside the beroep"
+          },
+          "latefilingNotice": {
+            "type": "boolean",
+            "default": false,
+            "description": "Computed: true when appellantFilingDate > filingDeadline. Informational only — only the rechtbank weighs verschoonbare termijnoverschrijding."
+          },
+          "fileInspectionRequests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "requestedAt": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "Date the rechtbank issued the file inspection request (Awb 8:42)"
+                },
+                "deadline": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "Computed: requestedAt + P4W"
+                },
+                "submittedAt": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "Date the bestuursorgaan submitted the dossier"
+                },
+                "dossierBundle": {
+                  "type": "string",
+                  "description": "Reference to the compiled bundle (NC file ID or document-zaakdossier artifact)"
+                }
+              },
+              "required": [
+                "requestedAt"
+              ]
+            },
+            "description": "Sub-records tracking each Awb 8:42 file inspection request. Procest records the linkage; Juridische Zaken curates the bundle."
+          },
+          "judgmentOutcome": {
+            "type": "string",
+            "enum": [
+              "vernietigd",
+              "in_stand_gelaten",
+              "niet_ontvankelijk",
+              "ongegrond",
+              "gegrond_rechtsgevolgen_in_stand",
+              "ingetrokken",
+              "schikking"
+            ],
+            "description": "Categorical outcome of the rechtbank's uitspraak. Procest persists the category and the uploaded ruling; never paraphrases the ruling."
+          },
+          "judgmentDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of the uitspraak"
+          },
+          "judgmentDocument": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Nextcloud file ID of the rechtbank's uitspraak document"
+          },
+          "cascadeAction": {
+            "type": "string",
+            "enum": [
+              "reopen_bezwaar",
+              "new_primary_decision",
+              "none"
+            ],
+            "description": "Cascade action triggered by the judgment outcome. reopen_bezwaar forks a new bezwaar via status-transition-engine; new_primary_decision opens a fresh decision case; none clears the dwingende marker on the source bezwaar."
+          },
+          "cascadeBezwaarCase": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "description": "The reopened bezwaar case created by cascadeAction = reopen_bezwaar"
+          }
+        }
+      },
       "mapLayer": {
         "slug": "mapLayer",
         "icon": "MapOutline",
@@ -2270,7 +3050,7 @@
             "minimum": 0,
             "maximum": 1,
             "description": "Layer opacity from 0.0 (transparent) to 1.0 (opaque)",
-            "default": 1.0
+            "default": 1
           },
           "minZoom": {
             "type": "integer",
@@ -2293,6 +3073,161 @@
             "type": "boolean",
             "description": "Whether to route requests through the backend GIS proxy (for CORS-restricted services)",
             "default": false
+          }
+        }
+      },
+      "wmsLayer": {
+        "slug": "wmsLayer",
+        "icon": "LayersOutline",
+        "version": "1.0.0",
+        "title": "WMS/WFS Layer",
+        "description": "Tenant-configurable OGC WMS/WFS overlay layer for case maps. Subscribed per case type via caseType.layerIds. All outbound traffic routed through the GIS proxy (wms-wfs-layers REQ-WMS-3).",
+        "type": "object",
+        "required": [
+          "title",
+          "type",
+          "url",
+          "layerName"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Display name shown in legend and layer switcher"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "WMS",
+              "WFS"
+            ],
+            "description": "OGC service type (WMS for raster overlays, WFS for vector features)"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Service base URL — MUST match an entry in the GIS proxy allowlist (REQ-WMS-3)"
+          },
+          "layerName": {
+            "type": "string",
+            "description": "WMS LAYERS parameter or WFS typeName"
+          },
+          "srs": {
+            "type": "string",
+            "default": "EPSG:28992",
+            "description": "Spatial reference system. EPSG:28992 = Rijksdriehoek (RD); EPSG:3857 = Web Mercator"
+          },
+          "opacity": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0.7,
+            "description": "Default overlay opacity (0.0 transparent — 1.0 opaque)"
+          },
+          "attribution": {
+            "type": "string",
+            "description": "Attribution text rendered as escaped text in legend (no HTML)"
+          },
+          "queryable": {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, the map binds GetFeatureInfo (WMS) or feature popup (WFS) on click (REQ-WMS-7)"
+          },
+          "format": {
+            "type": "string",
+            "default": "image/png",
+            "description": "WMS image format (image/png, image/jpeg)"
+          },
+          "version": {
+            "type": "string",
+            "description": "OGC version. Default: 1.3.0 for WMS, 2.0.0 for WFS"
+          },
+          "extentCutoffKm": {
+            "type": "number",
+            "default": 50,
+            "minimum": 1,
+            "description": "Maximum visible extent in km before WFS requests are suppressed and 'Zoom in voor details' is shown (REQ-WMS-8)"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show on initial load even without case-type subscription"
+          },
+          "active": {
+            "type": "boolean",
+            "default": true,
+            "description": "If false, the layer is hidden from selection but kept for audit"
+          }
+        }
+      },
+      "location": {
+        "slug": "location",
+        "icon": "MapMarker",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Place",
+        "title": "Case Location",
+        "description": "A geographic location attached to a case (BAG nummeraanduiding, parcel, or free address) — 0..N locations per case via back-reference on `case`.",
+        "type": "object",
+        "required": [
+          "case",
+          "source"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case this location is attached to"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Short human label shown in the case header (e.g. 'Inspectielocatie 1')"
+          },
+          "formattedAddress": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Human-readable address (straat huisnummer[+toev], postcode woonplaats)"
+          },
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90,
+            "description": "WGS84 latitude in decimal degrees"
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "description": "WGS84 longitude in decimal degrees"
+          },
+          "nummeraanduidingId": {
+            "type": "string",
+            "maxLength": 32,
+            "description": "BAG nummeraanduiding identifier (16-digit) — MUST be present when source = bag"
+          },
+          "parcelId": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "BRK kadastrale aanduiding (e.g. AMR00-G-1234)"
+          },
+          "accuracyRadius": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Radius in metres around lat/lng (used when source is gps or free)"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "bag",
+              "pdok-reverse",
+              "gps",
+              "free",
+              "geocoded",
+              "import"
+            ],
+            "description": "Provenance of this location (bag = validated against BAG; pdok-reverse = reverse-geocoded; gps = field capture; free = manual; geocoded = forward-geocoded; import = CSV importer)"
           }
         }
       },
@@ -2363,6 +3298,304 @@
           "questions": {
             "type": "string",
             "description": "Specific questions for the adviseur"
+          }
+        }
+      },
+      "legesverordening": {
+        "slug": "legesverordening",
+        "icon": "CashMultiple",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Legislation",
+        "title": "Legesverordening",
+        "description": "A municipal fee regulation (legesverordening) — the legal basis for charging fees on permit cases, containing a versioned set of articles with calculation rules",
+        "type": "object",
+        "required": [
+          "name",
+          "effectiveDate"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this legesverordening (e.g. Legesverordening 2026)",
+            "x-translatable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the regulation and its scope",
+            "x-translatable": true
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date on which this verordening enters into force",
+            "facetable": true
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date on which this verordening is no longer effective (optional)"
+          },
+          "year": {
+            "type": "integer",
+            "description": "Calendar year this verordening applies to",
+            "facetable": true
+          },
+          "globalMaximum": {
+            "type": "number",
+            "description": "Optional global cap on the total leges calculated under this verordening"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "concept",
+              "vastgesteld",
+              "vervallen"
+            ],
+            "default": "concept",
+            "description": "Lifecycle status of this verordening",
+            "facetable": true
+          },
+          "reference": {
+            "type": "string",
+            "description": "Official reference (raadsbesluit, publication URL, or DROP/CVDR identifier)"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this verordening is currently the active one for new calculations",
+            "facetable": true
+          }
+        }
+      },
+      "legesartikel": {
+        "slug": "legesartikel",
+        "icon": "FileDocumentOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Article",
+        "title": "Legesartikel",
+        "description": "A single article (tariff line) inside a legesverordening, with its calculation rule (vast, percentage, staffel, maximum, combinatie)",
+        "type": "object",
+        "required": [
+          "verordening",
+          "nummer",
+          "type"
+        ],
+        "properties": {
+          "verordening": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent legesverordening",
+            "facetable": true
+          },
+          "nummer": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "Article number (e.g. 2.3.1)",
+            "facetable": true
+          },
+          "omschrijving": {
+            "type": "string",
+            "description": "Description of what this article covers",
+            "x-translatable": true
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "vast",
+              "percentage",
+              "staffel",
+              "maximum",
+              "combinatie"
+            ],
+            "description": "Calculation type for this article",
+            "facetable": true
+          },
+          "grondslagField": {
+            "type": "string",
+            "default": "bouwkosten",
+            "description": "Name of the case-data field used as the calculation base (grondslag)"
+          },
+          "bedrag": {
+            "type": "number",
+            "description": "Fixed amount (used when type is vast)"
+          },
+          "percentage": {
+            "type": "number",
+            "description": "Percentage rate (used when type is percentage)"
+          },
+          "maximum": {
+            "type": "number",
+            "description": "Cap value (used when type is maximum)"
+          },
+          "subType": {
+            "type": "string",
+            "enum": [
+              "vast",
+              "percentage",
+              "staffel"
+            ],
+            "description": "Sub-calculation strategy when type is maximum"
+          },
+          "brackets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "number",
+                  "description": "Lower bound of this bracket (inclusive)"
+                },
+                "to": {
+                  "type": "number",
+                  "description": "Upper bound of this bracket (exclusive); omit for unbounded"
+                },
+                "percentage": {
+                  "type": "number",
+                  "description": "Rate applied within this bracket"
+                }
+              }
+            },
+            "description": "Tiered brackets (used when type is staffel)"
+          },
+          "subArtikelen": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Nested article definitions (used when type is combinatie)"
+          },
+          "category": {
+            "type": "string",
+            "description": "Optional grouping category for display (e.g. Omgevingsvergunning)",
+            "facetable": true
+          },
+          "order": {
+            "type": "integer",
+            "description": "Display order within the verordening"
+          }
+        }
+      },
+      "legesberekening": {
+        "slug": "legesberekening",
+        "icon": "Calculator",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:MonetaryAmount",
+        "title": "Legesberekening",
+        "description": "A single fee calculation produced for a case under a specific legesverordening, with breakdown per artikel, audit trail and version history",
+        "type": "object",
+        "required": [
+          "case",
+          "verordening",
+          "total",
+          "calculatedBy",
+          "calculatedAt"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case this calculation belongs to",
+            "facetable": true
+          },
+          "verordening": {
+            "type": "string",
+            "description": "Name or reference of the applied verordening at calculation time"
+          },
+          "verordeningId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the legesverordening object",
+            "facetable": true
+          },
+          "total": {
+            "type": "number",
+            "description": "Total calculated leges amount (after global maximum is applied)"
+          },
+          "breakdown": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "artikel": {
+                  "type": "string",
+                  "description": "Artikel number"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Artikel description"
+                },
+                "grondslag": {
+                  "type": "number",
+                  "description": "Base amount used"
+                },
+                "amount": {
+                  "type": "number",
+                  "description": "Amount charged for this artikel"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Calculation type used for this artikel"
+                }
+              }
+            },
+            "description": "Per-artikel breakdown of the total"
+          },
+          "calculatedBy": {
+            "type": "string",
+            "description": "User UID of the person who triggered the calculation"
+          },
+          "calculatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the calculation"
+          },
+          "version": {
+            "type": "integer",
+            "default": 1,
+            "description": "Version number; increments on each recalculation"
+          },
+          "previousVersion": {
+            "type": "integer",
+            "description": "Previous version number (when this is a recalculation)"
+          },
+          "previousTotal": {
+            "type": "number",
+            "description": "Total of the previous calculation (when this is a recalculation)"
+          },
+          "difference": {
+            "type": "number",
+            "description": "Difference vs the previous total (positive = higher, negative = lower)"
+          },
+          "correctionReason": {
+            "type": "string",
+            "description": "Reason supplied when this calculation corrects a previous one"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "concept",
+              "opgelegd",
+              "verrekend",
+              "teruggegeven"
+            ],
+            "default": "concept",
+            "description": "Status of the calculation within the billing lifecycle",
+            "facetable": true
+          },
+          "exportedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of last export to the financial system"
+          },
+          "exportFormat": {
+            "type": "string",
+            "enum": [
+              "csv",
+              "xml",
+              "json"
+            ],
+            "description": "Format used during last export"
           }
         }
       },
@@ -2451,6 +3684,196 @@
           "overrideReason": {
             "type": "string",
             "description": "Documented reasoning if the LHS suggestion was overridden"
+          }
+        }
+      },
+      "lhsMatrix": {
+        "slug": "lhsMatrix",
+        "icon": "TableLarge",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Intangible",
+        "title": "LHS Matrix",
+        "description": "Versioned 3-dimensional Landelijke Handhavingsstrategie matrix (ernst x gedrag x actorType). Immutable per version; edits create new versions.",
+        "type": "object",
+        "required": [
+          "name",
+          "version",
+          "active",
+          "ernstAxis",
+          "gedragAxis",
+          "actorTypeAxis",
+          "cells"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this matrix version (e.g. 'Landelijke Handhavingsstrategie 2024')"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Monotonic version number; new edits create a new version (immutable history)"
+          },
+          "active": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this is the currently active matrix. Exactly one matrix is active=true per tenant."
+          },
+          "ernstAxis": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Ordered severity axis values, e.g. [gering, aanzienlijk, ernstig]"
+          },
+          "gedragAxis": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Ordered behaviour axis values, e.g. [goedwillend, onverschillig, calculerend, crimineel]"
+          },
+          "actorTypeAxis": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Ordered actor-type axis values, e.g. [burger, bedrijf, overheid, recidivist]"
+          },
+          "cells": {
+            "type": "array",
+            "description": "Dense matrix; one entry per (ernst, gedrag, actorType) triple",
+            "items": {
+              "type": "object",
+              "required": ["ernst", "gedrag", "actorType", "interventie"],
+              "properties": {
+                "ernst": { "type": "string" },
+                "gedrag": { "type": "string" },
+                "actorType": { "type": "string" },
+                "interventie": {
+                  "type": "string",
+                  "enum": [
+                    "waarschuwing",
+                    "herstelactie",
+                    "last_onder_dwangsom",
+                    "last_plus_pv",
+                    "bestuursdwang",
+                    "pv_plus_bestuursdwang"
+                  ]
+                },
+                "note": { "type": "string" }
+              }
+            }
+          },
+          "auditTrail": {
+            "type": "array",
+            "description": "Edit log capturing who, when, and which cells changed across versions",
+            "items": {
+              "type": "object",
+              "properties": {
+                "version": { "type": "integer" },
+                "actor": { "type": "string" },
+                "at": { "type": "string", "format": "date-time" },
+                "note": { "type": "string" }
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When this version was created"
+          }
+        }
+      },
+      "lhsRecommendation": {
+        "slug": "lhsRecommendation",
+        "icon": "ScaleBalance",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Recommendation",
+        "title": "LHS Recommendation",
+        "description": "Per-enforcement record of the LHS matrix lookup, the recommended intervention, and any inspector override with justification.",
+        "type": "object",
+        "required": [
+          "case",
+          "ernst",
+          "gedrag",
+          "actorType",
+          "matrixVersion",
+          "recommendedInterventie",
+          "recommendedBy"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case"
+          },
+          "inspection": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional reference to the originating inspection rapport"
+          },
+          "ernst": {
+            "type": "string",
+            "enum": ["gering", "aanzienlijk", "ernstig"],
+            "description": "Severity of the violation (LHS ernst axis)"
+          },
+          "gedrag": {
+            "type": "string",
+            "enum": ["goedwillend", "onverschillig", "calculerend", "crimineel"],
+            "description": "Behaviour of the violator (LHS gedrag axis)"
+          },
+          "actorType": {
+            "type": "string",
+            "enum": ["burger", "bedrijf", "overheid", "recidivist"],
+            "description": "Actor type of the violator (LHS actorType axis)"
+          },
+          "matrixVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Frozen lhsMatrix version this recommendation was looked up against"
+          },
+          "recommendedInterventie": {
+            "type": "string",
+            "enum": [
+              "waarschuwing",
+              "herstelactie",
+              "last_onder_dwangsom",
+              "last_plus_pv",
+              "bestuursdwang",
+              "pv_plus_bestuursdwang"
+            ],
+            "description": "Intervention prescribed by the matrix cell"
+          },
+          "finalIntervention": {
+            "type": "string",
+            "enum": [
+              "waarschuwing",
+              "herstelactie",
+              "last_onder_dwangsom",
+              "last_plus_pv",
+              "bestuursdwang",
+              "pv_plus_bestuursdwang"
+            ],
+            "description": "Intervention actually applied (may differ from recommended when override=true)"
+          },
+          "override": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the inspector overrode the matrix recommendation"
+          },
+          "overrideJustification": {
+            "type": "string",
+            "minLength": 20,
+            "description": "Mandatory justification when override=true (minimum 20 non-whitespace characters)"
+          },
+          "overrideBy": {
+            "type": "string",
+            "description": "NC UID of the user who submitted the override"
+          },
+          "overrideAuthority": {
+            "type": "string",
+            "enum": ["inspector", "manager"],
+            "description": "Role authority under which the override was applied. override-up requires manager."
+          },
+          "recommendedBy": {
+            "type": "string",
+            "description": "NC UID of the authenticated user who invoked the recommendation. Server-derived; never trusted from request body."
           }
         }
       },
@@ -2649,6 +4072,965 @@
             "description": "Whether follow-up action is required"
           }
         }
+      },
+      "inspectionChecklistTemplate": {
+        "slug": "inspectionChecklistTemplate",
+        "icon": "ClipboardListOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:HowTo",
+        "title": "Inspection Checklist Template",
+        "description": "Long-lived configuration template for an inspection checklist (REQ-IC-1). Owns sections, items, response-type rules, and follow-up action defaults. Versioned per REQ-IC-8 — published edits create a new version and retire the prior one.",
+        "type": "object",
+        "required": [
+          "name",
+          "version",
+          "status",
+          "sections"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Template label, e.g. 'Bouwtoezicht — Fundering'"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional case-type binding; null means any case type"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1,
+            "description": "Monotonic template version, frozen once a run consumes it"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "retired"
+            ],
+            "default": "draft",
+            "description": "Lifecycle status of this template version"
+          },
+          "active": {
+            "type": "boolean",
+            "default": false,
+            "description": "Convenience flag mirroring status=active for list filtering"
+          },
+          "sections": {
+            "type": "array",
+            "description": "Ordered sections each carrying their own items[]",
+            "items": {
+              "type": "object",
+              "required": ["name"],
+              "properties": {
+                "order": {
+                  "type": "integer",
+                  "description": "Display order"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Section name, e.g. 'Wapening'"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Optional section guidance text"
+                },
+                "items": {
+                  "type": "array",
+                  "description": "Ordered checklist items in this section",
+                  "items": {
+                    "type": "object",
+                    "required": ["label", "responseType"],
+                    "properties": {
+                      "order": {
+                        "type": "integer",
+                        "description": "Display order of the item"
+                      },
+                      "label": {
+                        "type": "string",
+                        "description": "Question / item label"
+                      },
+                      "helpText": {
+                        "type": "string",
+                        "description": "Optional inspector guidance"
+                      },
+                      "responseType": {
+                        "type": "string",
+                        "enum": [
+                          "ja_nee_nvt",
+                          "tekst",
+                          "getal",
+                          "meerkeuze",
+                          "foto",
+                          "meting"
+                        ],
+                        "description": "Input type — drives validation in REQ-IC-3"
+                      },
+                      "required": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether the item must be answered"
+                      },
+                      "fotoRequired": {
+                        "type": "string",
+                        "enum": [
+                          "nooit",
+                          "bij_nee",
+                          "altijd"
+                        ],
+                        "default": "nooit",
+                        "description": "Photo requirement gate (REQ-IC-3)"
+                      },
+                      "numericRange": {
+                        "type": "object",
+                        "description": "Only used when responseType is getal or meting",
+                        "properties": {
+                          "min": {
+                            "type": "number"
+                          },
+                          "max": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "choices": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Allowed values when responseType is meerkeuze"
+                      },
+                      "failureAction": {
+                        "type": "object",
+                        "description": "Conditional follow-up dispatched on failure (REQ-IC-7)",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "herinspectie",
+                              "handhavingstaak",
+                              "documentVerzoek",
+                              "geen"
+                            ],
+                            "default": "geen"
+                          },
+                          "template": {
+                            "type": "string",
+                            "description": "Optional template ref for the follow-up artefact"
+                          },
+                          "deadlineDays": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Days from submit to follow-up deadline"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "seedKey": {
+            "type": "string",
+            "description": "Idempotent seed identifier when shipped via repair-step seeds"
+          }
+        }
+      },
+      "inspectionChecklistRun": {
+        "slug": "inspectionChecklistRun",
+        "icon": "ClipboardCheckMultipleOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "title": "Inspection Checklist Run",
+        "description": "Per-inspection runtime instance of an inspectionChecklistTemplate (REQ-IC-2). Once submitted (status=ingediend) the run is append-only: edits are rejected by REQ-IC-8 enforcement.",
+        "type": "object",
+        "required": [
+          "case",
+          "template",
+          "templateVersion",
+          "inspector",
+          "status"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Parent case (zaak) reference"
+          },
+          "inspection": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional parent inspection reference (mobiel-inspectie session)"
+          },
+          "template": {
+            "type": "string",
+            "format": "uuid",
+            "description": "inspectionChecklistTemplate reference chosen at run start"
+          },
+          "templateVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Template version captured at run start (REQ-IC-8)"
+          },
+          "templateSnapshot": {
+            "type": "object",
+            "description": "Frozen JSON copy of the template sections+items at run start — hidden from default API output",
+            "additionalProperties": true
+          },
+          "inspector": {
+            "type": "string",
+            "description": "NC user UID — server-derived from IUserSession, never accepted from body"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the run was created"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the run was submitted"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Alias of completedAt; populated on submit"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "concept",
+              "in_uitvoering",
+              "ingediend",
+              "gearchiveerd"
+            ],
+            "default": "concept",
+            "description": "Run lifecycle status"
+          },
+          "responses": {
+            "type": "array",
+            "description": "Per-item responses (append-only post-submit)",
+            "items": {
+              "type": "object",
+              "required": ["itemId"],
+              "properties": {
+                "itemId": {
+                  "type": "string",
+                  "description": "Reference to checklist item id"
+                },
+                "value": {
+                  "type": "string",
+                  "description": "Primary value (ja/nee/nvt, text, choice)"
+                },
+                "numericValue": {
+                  "type": "number",
+                  "description": "Numeric value for getal/meting"
+                },
+                "choice": {
+                  "type": "string",
+                  "description": "Selected option for meerkeuze"
+                },
+                "comment": {
+                  "type": "string",
+                  "maxLength": 2000,
+                  "description": "Free-text comment"
+                },
+                "photos": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Nextcloud file IDs for photos"
+                },
+                "audio": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Nextcloud file IDs for audio recordings"
+                },
+                "respondedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "syncState": {
+                  "type": "string",
+                  "enum": ["local", "queued", "synced"],
+                  "description": "Offline-sync state for this response"
+                }
+              }
+            }
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "All Nextcloud file IDs of photos attached to this run"
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "lat": {
+                "type": "number"
+              },
+              "lng": {
+                "type": "number"
+              },
+              "accuracy": {
+                "type": "number"
+              },
+              "source": {
+                "type": "string"
+              }
+            },
+            "description": "GPS context from mobiel-inspectie"
+          },
+          "overallResult": {
+            "type": "string",
+            "enum": [
+              "conform",
+              "niet_conform",
+              "deels_conform"
+            ],
+            "description": "Aggregate result — derived on submit by ChecklistService::aggregateResult (REQ-IC-6); user-supplied values are ignored"
+          },
+          "syncState": {
+            "type": "string",
+            "enum": [
+              "local",
+              "queued",
+              "synced"
+            ],
+            "default": "local",
+            "description": "Offline-sync state for the whole run (REQ-IC-5)"
+          },
+          "followUpType": {
+            "type": "string",
+            "enum": [
+              "herinspectie",
+              "handhavingstaak",
+              "documentVerzoek",
+              "geen"
+            ],
+            "default": "geen",
+            "description": "Highest-priority follow-up type dispatched on submit (REQ-IC-7)"
+          }
+        }
+      },
+      "tenant": {
+        "slug": "tenant",
+        "icon": "OfficeBuilding",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Organization",
+        "title": "Tenant",
+        "description": "A tenant (municipality) in a multi-tenant Procest deployment",
+        "type": "object",
+        "required": [
+          "name",
+          "slug"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Municipality name"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-safe identifier"
+          },
+          "oin": {
+            "type": "string",
+            "description": "Organisatie-identificatienummer"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Custom domain"
+          },
+          "registerId": {
+            "type": "string",
+            "description": "OpenRegister register ID for this tenant"
+          },
+          "groupId": {
+            "type": "string",
+            "description": "Nextcloud group ID (tenant_{slug})"
+          },
+          "brandingTokens": {
+            "type": "object",
+            "description": "NL Design System token overrides",
+            "additionalProperties": true
+          },
+          "logoUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Tenant logo URL"
+          },
+          "primaryColor": {
+            "type": "string",
+            "description": "Primary brand color"
+          },
+          "maxUsers": {
+            "type": "integer",
+            "default": 0,
+            "description": "Max users (0 = unlimited)"
+          },
+          "maxStorageMb": {
+            "type": "integer",
+            "default": 0,
+            "description": "Max storage MB (0 = unlimited)"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether tenant is active"
+          }
+        }
+      },
+      "aiAuditEntry": {
+        "slug": "aiAuditEntry",
+        "icon": "RobotOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:DigitalDocument",
+        "title": "AI Audit Entry",
+        "description": "Immutable audit log entry for AI-assisted processing interactions",
+        "type": "object",
+        "required": [
+          "type",
+          "action",
+          "userId",
+          "timestamp"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "classification",
+              "extraction",
+              "qa",
+              "summary",
+              "routing",
+              "decision_support"
+            ],
+            "description": "AI feature type that produced the entry",
+            "title": "Type",
+            "facetable": true
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "suggestion",
+              "accepted",
+              "rejected",
+              "modified"
+            ],
+            "description": "Outcome of the AI suggestion",
+            "title": "Action",
+            "facetable": true
+          },
+          "caseId": {
+            "type": "string",
+            "description": "Reference to the case (zaak) the AI was invoked on"
+          },
+          "documentId": {
+            "type": "string",
+            "description": "Reference to the document (informatieobject) if applicable"
+          },
+          "model": {
+            "type": "string",
+            "description": "Identifier of the AI model used (e.g. qwen3.5:9b)"
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Prompt sent to the AI model (PII-stripped if enabled)"
+          },
+          "suggestion": {
+            "type": "object",
+            "description": "Structured AI suggestion payload"
+          },
+          "confidence": {
+            "type": "number",
+            "description": "AI confidence score between 0.0 and 1.0"
+          },
+          "userAction": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "rejected",
+              "modified",
+              "ignored"
+            ],
+            "description": "Action taken by the human user on the suggestion"
+          },
+          "actualValue": {
+            "type": "object",
+            "description": "Final value applied by the user (if modified)"
+          },
+          "reason": {
+            "type": "string",
+            "description": "User-provided reason (e.g. for rejection)"
+          },
+          "userId": {
+            "type": "string",
+            "description": "Nextcloud user UID who triggered the AI call"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the AI call was made"
+          },
+          "responseTimeMs": {
+            "type": "integer",
+            "description": "AI response time in milliseconds"
+          }
+        }
+      },
+      "caseShare": {
+        "slug": "caseShare",
+        "icon": "ShareVariant",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:CreativeWork",
+        "title": "Case share",
+        "description": "Token- or partner-based share over a case for external collaboration",
+        "type": "object",
+        "required": [
+          "token",
+          "caseId",
+          "shareType",
+          "permissionLevel"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Secure 32-char hex access token"
+          },
+          "caseId": {
+            "type": "string",
+            "description": "UUID of the shared case"
+          },
+          "shareType": {
+            "type": "string",
+            "enum": [
+              "token",
+              "partner"
+            ],
+            "description": "Type of share"
+          },
+          "partnerId": {
+            "type": "string",
+            "description": "UUID of the partner organisation (partner shares only)"
+          },
+          "permissionLevel": {
+            "type": "string",
+            "description": "Permission level slug (e.g. bekijken, bekijken_reageren, bekijken_bijdragen)"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Expiration datetime in ISO 8601"
+          },
+          "password": {
+            "type": "string",
+            "description": "Bcrypt hashed password (never returned in plaintext)"
+          },
+          "failedAttempts": {
+            "type": "integer",
+            "default": 0,
+            "description": "Failed password attempts"
+          },
+          "lockedUntil": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Lockout expiry datetime in ISO 8601"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable share label"
+          },
+          "fieldExclusions": {
+            "type": "string",
+            "description": "JSON-encoded list of field names to exclude from the shared view"
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "User ID of the share creator"
+          },
+          "lastAccessedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last external access datetime in ISO 8601"
+          },
+          "revokedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Revocation datetime in ISO 8601"
+          },
+          "revokedBy": {
+            "type": "string",
+            "description": "User ID of the revoker"
+          }
+        }
+      },
+      "partnerOrganization": {
+        "slug": "partnerOrganization",
+        "icon": "AccountGroup",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Organization",
+        "title": "Partner organization",
+        "description": "External organisation (ketenpartner) participating in shared cases",
+        "type": "object",
+        "required": [
+          "name",
+          "contactEmail"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Organisation name"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-safe identifier"
+          },
+          "oin": {
+            "type": "string",
+            "description": "Organisatie-identificatienummer"
+          },
+          "contactEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Primary contact email"
+          },
+          "defaultPermissionLevel": {
+            "type": "string",
+            "default": "bekijken",
+            "description": "Default permission level for new shares"
+          },
+          "groupId": {
+            "type": "string",
+            "description": "Nextcloud group ID (ketenpartner_{slug})"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether the partner is active"
+          }
+        }
+      },
+      "casetransfer": {
+        "slug": "casetransfer",
+        "icon": "SwapHorizontal",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "title": "Case transfer",
+        "description": "Hand-off of a case from one organisation to another (initiate / accept / reject)",
+        "type": "object",
+        "required": [
+          "caseId",
+          "targetOrganization",
+          "status"
+        ],
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "description": "UUID of the case being transferred"
+          },
+          "sourceOrganization": {
+            "type": "string",
+            "description": "Source organisation identifier"
+          },
+          "targetOrganization": {
+            "type": "string",
+            "description": "Target partner organisation UUID"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for the transfer"
+          },
+          "requestedDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Requested transfer date (ISO 8601)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "rejected"
+            ],
+            "default": "pending",
+            "description": "Transfer status"
+          },
+          "rejectionReason": {
+            "type": "string",
+            "description": "Reason given when transfer is rejected"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the transfer was completed (ISO 8601)"
+          }
+        }
+      },
+      "bezwaaradviescommissie": {
+        "slug": "bezwaaradviescommissie",
+        "icon": "AccountGroupOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:GovernmentOrganization",
+        "title": "Bezwaaradviescommissie",
+        "description": "Independent advisory committee (BAC, VKK or VTH) that reviews objections under Awb Art. 7:13 and issues a written advice to the council. Long-lived configuration entity owned by the council; member independence is enforced per case at advice-request assignment.",
+        "type": "object",
+        "required": [
+          "name",
+          "type",
+          "members"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Display name (e.g. 'Bezwaarcommissie sociaal domein')"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "BAC",
+              "VKK",
+              "VTH"
+            ],
+            "default": "BAC",
+            "description": "Committee type: BAC (Bezwaar Advies), VKK (Vaste Kamer/Klachten), VTH (Vergunning Toezicht Handhaving)"
+          },
+          "domain": {
+            "type": "string",
+            "enum": [
+              "algemeen",
+              "sociaal_domein",
+              "wabo",
+              "belasting",
+              "personeel"
+            ],
+            "description": "Optional jurisdiction filter for auto-assignment by case type / domain"
+          },
+          "jurisdiction": {
+            "type": "string",
+            "description": "Free-text jurisdiction descriptor (e.g. municipal area, region, or 'all')"
+          },
+          "chair": {
+            "type": "string",
+            "description": "Nextcloud UID of the committee chair (voorzitter, Awb Art. 7:13(1))"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uid": {
+                  "type": "string",
+                  "description": "Nextcloud UID or external party reference"
+                },
+                "displayName": {
+                  "type": "string",
+                  "description": "Human-readable member name"
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "chair",
+                    "member",
+                    "deputy"
+                  ],
+                  "default": "member",
+                  "description": "Member role on the committee"
+                },
+                "external": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Whether this member is external to the council (not a civil servant)"
+                }
+              }
+            },
+            "description": "Committee members; chair + at least two members required (Awb Art. 7:13(1))"
+          },
+          "secretary": {
+            "type": "string",
+            "description": "Nextcloud UID of the secretary (civil servant per Awb Art. 7:13(2))"
+          },
+          "quorum": {
+            "type": "integer",
+            "minimum": 2,
+            "default": 3,
+            "description": "Minimum members needed to issue advice"
+          },
+          "termStartsOn": {
+            "type": "string",
+            "format": "date",
+            "description": "Validity window start"
+          },
+          "termEndsOn": {
+            "type": "string",
+            "format": "date",
+            "description": "Validity window end"
+          },
+          "active": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether the committee is active and can be assigned new cases"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server timestamp at creation"
+          }
+        }
+      },
+      "bacAdviceRequest": {
+        "slug": "bacAdviceRequest",
+        "icon": "CommentTextOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:AskAction",
+        "x-zgw-equivalent": "Adviesdocument",
+        "title": "BAC Advice Request",
+        "description": "Per-bezwaar referral of an objection case to a bezwaaradviescommissie. Tracks the advice deliverable through the assigned -> in-deliberation -> advice-issued lifecycle (Awb Art. 7:13). One-way transitions; withdrawn bezwaaren leave the request in its last state for audit.",
+        "type": "object",
+        "required": [
+          "bezwaar",
+          "commissie",
+          "status"
+        ],
+        "properties": {
+          "bezwaar": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "bezwaar",
+            "onDelete": "CASCADE",
+            "description": "The bezwaar (lifecycle record) being reviewed; the wrapped procest case is resolved via bezwaar.case"
+          },
+          "commissie": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "bezwaaradviescommissie",
+            "description": "The assigned bezwaaradviescommissie"
+          },
+          "panel": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Subset of commissie.members.uid actually sitting on this case (used for independence check per Awb Art. 7:13(3))"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "assigned",
+              "in-deliberation",
+              "advice-issued",
+              "niet-ontvankelijk"
+            ],
+            "default": "assigned",
+            "description": "Lifecycle state. niet-ontvankelijk represents the terminal advice that the bezwaar is inadmissible (Awb Art. 7:13(7))"
+          },
+          "assignedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server timestamp when the council referred the bezwaar to the committee"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Target advice date — defaults to assignedAt + 12 weeks (Awb Art. 7:24(1))"
+          },
+          "advice": {
+            "type": "string",
+            "description": "Advice text (findings + legal_assessment + recommendation). Free-text fallback when no structured document is uploaded"
+          },
+          "adviceDocuments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "References (Nextcloud file IDs or OpenRegister doc refs) of the signed advice and supporting documents"
+          },
+          "adviceIssuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp the chair signed and issued the advice"
+          },
+          "signatureEvidence": {
+            "type": "string",
+            "description": "Reference (NC file ID or signing-app evidence ref) to the chair's signature evidence"
+          },
+          "hearingReportRef": {
+            "type": "string",
+            "description": "Link to the hoorzittingverslag owned by the bezwaar-lifecycle / hearing-session"
+          },
+          "conclusion": {
+            "type": "string",
+            "enum": [
+              "gegrond",
+              "ongegrond",
+              "gedeeltelijk_gegrond",
+              "niet_ontvankelijk"
+            ],
+            "description": "Committee's conclusion per Awb Art. 7:13(7)"
+          },
+          "recommendation": {
+            "type": "string",
+            "description": "Free-text recommendation to the council"
+          },
+          "dissentingOpinions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "memberUid": {
+                  "type": "string"
+                },
+                "opinion": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Optional dissenting opinions when panel disagreement exists"
+          },
+          "auditTrail": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "event": {
+                  "type": "string",
+                  "enum": [
+                    "panel-member-added",
+                    "panel-member-removed",
+                    "independence-check-failed",
+                    "advice-signed-by-chair",
+                    "council-deviation-recorded"
+                  ]
+                },
+                "actor": {
+                  "type": "string"
+                },
+                "at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "payload": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            },
+            "description": "Append-only audit trail for BAC-specific events (Archiefwet 1995). Complements the OpenRegister automatic per-save log."
+          }
+        }
       }
     },
     "registers": {
@@ -2692,15 +5074,717 @@
           "voorstel",
           "parafeerroute",
           "parafeeractie",
+          "paraferingAuditEntry",
           "mapLayer",
+          "location",
           "inspectieRapport",
           "handhavingsactie",
+          "lhsMatrix",
+          "lhsRecommendation",
           "inspectieChecklist",
-          "adviesAanvraag"
+          "inspectionChecklistTemplate",
+          "inspectionChecklistRun",
+          "adviesAanvraag",
+          "legesverordening",
+          "legesartikel",
+          "legesberekening"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"
       }
-    }
+    },
+    "x-pages": [
+      {
+        "slug": "parafering-audit-trail",
+        "type": "index",
+        "title": "Parafering audit trail",
+        "schema": "paraferingAuditEntry",
+        "register": "procest",
+        "path": "/voorstellen/:voorstelId/audit-trail",
+        "description": "Append-only audit trail of every parafeerroute transition on a voorstel. Visible to auditors, secretariaat, and beheerders.",
+        "listing": {
+          "defaultSort": {
+            "field": "timestamp",
+            "direction": "desc"
+          },
+          "filters": [
+            {
+              "field": "action",
+              "type": "enum"
+            },
+            {
+              "field": "actor",
+              "type": "string"
+            },
+            {
+              "field": "voorstel",
+              "type": "string"
+            },
+            {
+              "field": "timestamp",
+              "type": "dateRange"
+            }
+          ],
+          "columns": [
+            {
+              "field": "timestamp",
+              "label": "Timestamp"
+            },
+            {
+              "field": "action",
+              "label": "Transition"
+            },
+            {
+              "field": "actor",
+              "label": "Actor"
+            },
+            {
+              "field": "actorRole",
+              "label": "Actor role"
+            },
+            {
+              "field": "voorstel",
+              "label": "Voorstel"
+            },
+            {
+              "field": "reason",
+              "label": "Reason"
+            }
+          ]
+        }
+      }
+    ],
+    "objects": [
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "parafeerroute",
+          "slug": "route-collegeadvies-omgevingsvergunning"
+        },
+        "name": "Collegeadvies - Omgevingsvergunning",
+        "voorstelType": "collegeadvies",
+        "isDefault": true,
+        "description": "Standaard accorderingslijn voor collegeadviezen over omgevingsvergunningen",
+        "steps": [
+          {
+            "order": 1,
+            "type": "advies",
+            "actor": "juridische-dienst",
+            "actorType": "group",
+            "mandatory": false
+          },
+          {
+            "order": 2,
+            "type": "parafering",
+            "actor": "teamleider-vth",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 3,
+            "type": "parafering",
+            "actor": "afdelingshoofd-vth",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 4,
+            "type": "accordering",
+            "actor": "portefeuillehouder",
+            "actorType": "role",
+            "mandatory": true
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "parafeerroute",
+          "slug": "route-collegeadvies-bestemmingsplan"
+        },
+        "name": "Collegeadvies - Bestemmingsplan",
+        "voorstelType": "collegeadvies",
+        "isDefault": false,
+        "description": "Uitgebreide route voor bestemmingsplanwijzigingen met planologisch en juridisch advies",
+        "steps": [
+          {
+            "order": 1,
+            "type": "advies",
+            "actor": "planologisch-adviseur",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 2,
+            "type": "advies",
+            "actor": "juridische-dienst",
+            "actorType": "group",
+            "mandatory": true
+          },
+          {
+            "order": 3,
+            "type": "parafering",
+            "actor": "teamleider-ro",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 4,
+            "type": "parafering",
+            "actor": "afdelingshoofd-ro",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 5,
+            "type": "accordering",
+            "actor": "wethouder-ruimtelijke-ordening",
+            "actorType": "role",
+            "mandatory": true
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "parafeerroute",
+          "slug": "route-dt-advies-standaard"
+        },
+        "name": "DT-advies - Standaard",
+        "voorstelType": "dt_advies",
+        "isDefault": true,
+        "description": "Standaard directieteam-advies: behandelaar parafering gevolgd door afdelingshoofd accordering",
+        "steps": [
+          {
+            "order": 1,
+            "type": "parafering",
+            "actor": "behandelaar",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 2,
+            "type": "accordering",
+            "actor": "afdelingshoofd",
+            "actorType": "role",
+            "mandatory": true
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "parafeerroute",
+          "slug": "route-raadsvoorstel-groot-project"
+        },
+        "name": "Raadsvoorstel - Groot project",
+        "voorstelType": "raadsvoorstel",
+        "isDefault": true,
+        "description": "Volledige route voor raadsvoorstellen: financieel, juridisch, management, gemeentesecretaris en burgemeester",
+        "steps": [
+          {
+            "order": 1,
+            "type": "advies",
+            "actor": "financieel-adviseur",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 2,
+            "type": "advies",
+            "actor": "juridische-dienst",
+            "actorType": "group",
+            "mandatory": true
+          },
+          {
+            "order": 3,
+            "type": "parafering",
+            "actor": "teamleider",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 4,
+            "type": "parafering",
+            "actor": "afdelingshoofd",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 5,
+            "type": "accordering",
+            "actor": "gemeentesecretaris",
+            "actorType": "role",
+            "mandatory": true
+          },
+          {
+            "order": 6,
+            "type": "accordering",
+            "actor": "burgemeester",
+            "actorType": "role",
+            "mandatory": true
+          }
+        ]
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "caseType",
+          "slug": "omgevingsvergunning"
+        },
+        "title": "Omgevingsvergunning",
+        "identifier": "omgevingsvergunning",
+        "description": "Aanvraag van een omgevingsvergunning conform de Omgevingswet (bouwen, slopen, kappen, milieubelastende activiteiten of afwijken van het omgevingsplan).",
+        "purpose": "Behandeling van aanvragen voor activiteiten in de fysieke leefomgeving",
+        "trigger": "Aanvraag van burger of bedrijf via DSO of intake",
+        "subject": "Omgevingsvergunning",
+        "processingDeadline": "P56D",
+        "extensionAllowed": true,
+        "extensionPeriod": "P42D",
+        "suspensionAllowed": true,
+        "internalOrExternal": "extern",
+        "publicationRequired": true,
+        "isDraft": false,
+        "confidentiality": "openbaar"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "caseType",
+          "slug": "subsidieaanvraag"
+        },
+        "title": "Subsidieaanvraag",
+        "identifier": "subsidieaanvraag",
+        "description": "Aanvraag van een gemeentelijke subsidie conform de Algemene Subsidieverordening (ASV).",
+        "purpose": "Beoordeling en toekenning van subsidieaanvragen",
+        "trigger": "Subsidieaanvraag van burger, vereniging, stichting of bedrijf",
+        "subject": "Subsidie",
+        "processingDeadline": "P42D",
+        "extensionAllowed": true,
+        "extensionPeriod": "P28D",
+        "suspensionAllowed": false,
+        "internalOrExternal": "extern",
+        "publicationRequired": false,
+        "isDraft": false,
+        "confidentiality": "zaakvertrouwelijk"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "caseType",
+          "slug": "klacht-behandeling"
+        },
+        "title": "Klacht behandeling",
+        "identifier": "klacht-behandeling",
+        "description": "Behandeling van een klacht over een gedraging van de gemeente conform Awb hoofdstuk 9.",
+        "purpose": "Behandeling van klachten van burgers en bedrijven",
+        "trigger": "Klacht ingediend door burger of bedrijf",
+        "subject": "Klacht",
+        "processingDeadline": "P42D",
+        "extensionAllowed": true,
+        "extensionPeriod": "P28D",
+        "suspensionAllowed": false,
+        "internalOrExternal": "extern",
+        "publicationRequired": false,
+        "isDraft": false,
+        "confidentiality": "vertrouwelijk"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "caseType",
+          "slug": "melding-openbare-ruimte"
+        },
+        "title": "Melding openbare ruimte",
+        "identifier": "melding-openbare-ruimte",
+        "description": "Melding van een probleem in de openbare ruimte (kapotte lantaarn, losse stoeptegel, zwerfafval, e.d.).",
+        "purpose": "Snelle afhandeling van meldingen over de openbare ruimte",
+        "trigger": "Melding via formulier, app of telefoon",
+        "subject": "Openbare ruimte",
+        "processingDeadline": "P14D",
+        "extensionAllowed": false,
+        "suspensionAllowed": false,
+        "internalOrExternal": "intern",
+        "publicationRequired": false,
+        "isDraft": false,
+        "confidentiality": "openbaar"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "omgevingsvergunning-ontvangen"
+        },
+        "name": "Ontvangen",
+        "caseType": "omgevingsvergunning",
+        "description": "Aanvraag is ontvangen en geregistreerd",
+        "order": 1,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "omgevingsvergunning-in-behandeling"
+        },
+        "name": "In behandeling",
+        "caseType": "omgevingsvergunning",
+        "description": "Aanvraag wordt inhoudelijk getoetst",
+        "order": 2,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "omgevingsvergunning-besluitvorming"
+        },
+        "name": "Besluitvorming",
+        "caseType": "omgevingsvergunning",
+        "description": "Besluit wordt voorbereid en genomen",
+        "order": 3,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "omgevingsvergunning-afgehandeld"
+        },
+        "name": "Afgehandeld",
+        "caseType": "omgevingsvergunning",
+        "description": "Zaak is afgehandeld en gearchiveerd",
+        "order": 4,
+        "isFinal": true
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "subsidieaanvraag-ontvangen"
+        },
+        "name": "Ontvangen",
+        "caseType": "subsidieaanvraag",
+        "description": "Subsidieaanvraag is ontvangen",
+        "order": 1,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "subsidieaanvraag-beoordeling"
+        },
+        "name": "Beoordeling",
+        "caseType": "subsidieaanvraag",
+        "description": "Aanvraag wordt getoetst aan subsidiekader",
+        "order": 2,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "subsidieaanvraag-besluitvorming"
+        },
+        "name": "Besluitvorming",
+        "caseType": "subsidieaanvraag",
+        "description": "Subsidiebesluit wordt voorbereid en genomen",
+        "order": 3,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "subsidieaanvraag-afgehandeld"
+        },
+        "name": "Afgehandeld",
+        "caseType": "subsidieaanvraag",
+        "description": "Subsidie is verleend, geweigerd of ingetrokken",
+        "order": 4,
+        "isFinal": true
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "klacht-ontvangen"
+        },
+        "name": "Ontvangen",
+        "caseType": "klacht-behandeling",
+        "description": "Klacht is ontvangen en geregistreerd",
+        "order": 1,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "klacht-onderzoek"
+        },
+        "name": "Onderzoek",
+        "caseType": "klacht-behandeling",
+        "description": "Klacht wordt onderzocht (hoor en wederhoor)",
+        "order": 2,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "klacht-afgehandeld"
+        },
+        "name": "Afgehandeld",
+        "caseType": "klacht-behandeling",
+        "description": "Klacht is afgehandeld met formeel antwoord",
+        "order": 3,
+        "isFinal": true
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "melding-ontvangen"
+        },
+        "name": "Ontvangen",
+        "caseType": "melding-openbare-ruimte",
+        "description": "Melding is ontvangen en doorgezet",
+        "order": 1,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "melding-in-behandeling"
+        },
+        "name": "In behandeling",
+        "caseType": "melding-openbare-ruimte",
+        "description": "Melding wordt afgehandeld door beheerdienst",
+        "order": 2,
+        "isFinal": false
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "statusType",
+          "slug": "melding-afgehandeld"
+        },
+        "name": "Afgehandeld",
+        "caseType": "melding-openbare-ruimte",
+        "description": "Melding is opgelost en afgesloten",
+        "order": 3,
+        "isFinal": true
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "roleType",
+          "slug": "rol-behandelaar"
+        },
+        "name": "Behandelaar",
+        "description": "Medewerker die de zaak inhoudelijk behandelt"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "roleType",
+          "slug": "rol-aanvrager"
+        },
+        "name": "Aanvrager",
+        "description": "Initiatiefnemer / aanvrager van de zaak"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "roleType",
+          "slug": "rol-gemachtigde"
+        },
+        "name": "Gemachtigde",
+        "description": "Persoon of organisatie gemachtigd om namens de aanvrager op te treden"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "roleType",
+          "slug": "rol-technisch-adviseur"
+        },
+        "name": "Technisch adviseur",
+        "description": "Inhoudelijk adviseur (intern of extern) die advies uitbrengt in de zaak"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "omgevingsvergunning-verleend"
+        },
+        "name": "Vergunning verleend",
+        "caseType": "omgevingsvergunning",
+        "description": "Omgevingsvergunning is verleend",
+        "archivalAction": "bewaren",
+        "archivalPeriod": "P20Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "omgevingsvergunning-geweigerd"
+        },
+        "name": "Vergunning geweigerd",
+        "caseType": "omgevingsvergunning",
+        "description": "Omgevingsvergunning is geweigerd",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P10Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "omgevingsvergunning-ingetrokken"
+        },
+        "name": "Ingetrokken",
+        "caseType": "omgevingsvergunning",
+        "description": "Aanvraag is door de aanvrager ingetrokken",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P5Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "subsidie-toegekend"
+        },
+        "name": "Subsidie toegekend",
+        "caseType": "subsidieaanvraag",
+        "description": "Subsidie is toegekend",
+        "archivalAction": "bewaren",
+        "archivalPeriod": "P10Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "subsidie-afgewezen"
+        },
+        "name": "Subsidie afgewezen",
+        "caseType": "subsidieaanvraag",
+        "description": "Subsidieaanvraag is afgewezen",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P5Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "klacht-gegrond"
+        },
+        "name": "Klacht gegrond",
+        "caseType": "klacht-behandeling",
+        "description": "Klacht is gegrond verklaard",
+        "archivalAction": "bewaren",
+        "archivalPeriod": "P10Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "klacht-ongegrond"
+        },
+        "name": "Klacht ongegrond",
+        "caseType": "klacht-behandeling",
+        "description": "Klacht is ongegrond verklaard",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P5Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "resultType",
+          "slug": "melding-afgehandeld-result"
+        },
+        "name": "Afgehandeld",
+        "caseType": "melding-openbare-ruimte",
+        "description": "Melding is afgehandeld",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P1Y"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "adviesAanvraag",
+          "slug": "advies-welstand-2026-0042"
+        },
+        "case": "zaak-omgevingsvergunning-0042",
+        "adviseur": "welstandscommissie",
+        "type": "intern",
+        "onderwerp": "Welstandstoets gevelwijziging Keizersgracht 123",
+        "deadline": "2026-04-30",
+        "status": "aangevraagd",
+        "requestedAt": "2026-04-16T09:00:00+02:00",
+        "questions": "Voldoet de voorgestelde gevelwijziging aan het welstandsbeleid voor de historische binnenstad?"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "adviesAanvraag",
+          "slug": "advies-veiligheidsregio-2026-0038"
+        },
+        "case": "zaak-evenementenvergunning-0038",
+        "adviseur": "Veiligheidsregio Amsterdam-Amstelland",
+        "type": "extern",
+        "onderwerp": "Veiligheidsadvies evenement Museumplein 500+ bezoekers",
+        "deadline": "2026-04-25",
+        "status": "aangevraagd",
+        "requestedAt": "2026-04-10T14:30:00+02:00",
+        "questions": "Is de nooduitgang-capaciteit voldoende voor 500 bezoekers? Zijn er aanvullende EHBO-posten vereist?"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "adviesAanvraag",
+          "slug": "advies-rud-2026-0031"
+        },
+        "case": "zaak-milieumelding-0031",
+        "adviseur": "Regionale Uitvoeringsdienst Noord-Holland",
+        "type": "extern",
+        "onderwerp": "Milieukundig advies lozing grondwater bouwproject",
+        "deadline": "2026-03-28",
+        "status": "verlopen",
+        "requestedAt": "2026-03-07T10:00:00+01:00",
+        "questions": "Is lozing van het opgepompte grondwater toelaatbaar gezien de nabijgelegen watergang?"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "adviesAanvraag",
+          "slug": "advies-juridisch-2026-0055"
+        },
+        "case": "zaak-bezwaar-0055",
+        "adviseur": "juridische-dienst",
+        "type": "intern",
+        "onderwerp": "Juridische toets ontvankelijkheid bezwaarschrift",
+        "deadline": "2026-05-02",
+        "status": "ontvangen",
+        "requestedAt": "2026-04-11T08:45:00+02:00",
+        "receivedAt": "2026-04-15T16:20:00+02:00",
+        "questions": "Is het bezwaar tijdig ingediend en is de bezwaarmaker ontvankelijk?"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "adviesAanvraag",
+          "slug": "advies-brandweer-2026-0047"
+        },
+        "case": "zaak-bouwvergunning-0047",
+        "adviseur": "Brandweer Amsterdam-Amstelland",
+        "type": "extern",
+        "onderwerp": "Brandveiligheidsadvies transformatie kantoorpand naar woningen",
+        "deadline": "2026-05-14",
+        "status": "aangevraagd",
+        "requestedAt": "2026-04-14T11:00:00+02:00",
+        "questions": "Voldoet het vluchtrouteplan aan de eisen uit het Bouwbesluit 2012, art. 2.113 e.v.?"
+      }
+    ]
   }
 }

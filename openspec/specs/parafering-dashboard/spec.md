@@ -1,3 +1,13 @@
+## OR Capability Citations
+
+This spec consumes the following OpenRegister capabilities (per
+ADR-022, procest-adopt-or-abstractions):
+
+- `aggregations-backend-native` — count-by-status queries for the
+  parafering dashboard are expressed as `x-openregister-aggregations`
+  annotations on the case schema, not a custom dashboard service. See
+  `openregister/openspec/changes/aggregations-backend-native/`.
+
 ## ADDED Requirements
 
 ### Requirement: Secretariaat Parafering Overview

@@ -66,6 +66,15 @@ export async function initializeStores() {
 		if (config.register && config.workflow_template_schema) {
 			objectStore.registerObjectType('workflowTemplate', config.workflow_template_schema, config.register)
 		}
+		if (config.register && config.voorstel_schema) {
+			objectStore.registerObjectType('voorstel', config.voorstel_schema, config.register)
+		}
+		if (config.register && config.parafeerroute_schema) {
+			objectStore.registerObjectType('parafeerroute', config.parafeerroute_schema, config.register)
+		}
+		if (config.register && config.parafeeractie_schema) {
+			objectStore.registerObjectType('parafeeractie', config.parafeeractie_schema, config.register)
+		}
 	}
 
 	return { settingsStore, objectStore }

@@ -81,6 +81,11 @@ webpackConfig.module = {
 			use: ['style-loader', 'css-loader'],
 		},
 		{
+			// SCSS used by aliased @conduction/nextcloud-vue components (e.g. CnCard, CnDataTable)
+			test: /\.scss$/,
+			use: ['style-loader', 'css-loader', 'sass-loader'],
+		},
+		{
 			// Leaflet marker icons and other image assets
 			test: /\.(png|jpe?g|gif|svg)$/,
 			type: 'asset/resource',
@@ -100,6 +105,12 @@ webpackConfig.plugins = [
 // Force @nextcloud/dialogs to resolve from this app's node_modules,
 // preventing the nextcloud-vue submodule's nested deps (Vue 3) from leaking in.
 webpackConfig.resolve.alias['@nextcloud/dialogs'] = path.resolve(__dirname, 'node_modules/@nextcloud/dialogs')
+
+// @nextcloud/axios is pinned to ~2.5.2 (via package.json overrides) which still
+// declares both `import` and `require` exports conditions, so the package can
+// be required from @nextcloud/vue's CJS bundle without webpack 5 tripping on
+// the exports field. No alias needed; the pin alone is sufficient. Mirrors
+// decidesk's working webpack config.
 
 // Share Vue + @nextcloud/vue + pinia + icons + @conduction/nextcloud-vue
 // across every entry-point so each widget bundle no longer inlines its own

@@ -7,6 +7,15 @@ Enable location display and editing on cases. Cases already have a `geometry` fi
 **Standards**: GeoJSON (RFC 7946), PDOK Locatieserver API v3, BAG (Basisregistratie Adressen en Gebouwen)
 **Feature tier**: V1
 
+## OR Capability Citations
+
+This spec consumes the following OpenRegister capabilities (per
+ADR-022, procest-adopt-or-abstractions):
+
+- `geo-metadata-kaart` — geo metadata is annotation-driven on the case
+  schema, not a custom location service. See
+  `openregister/openspec/changes/geo-metadata-kaart/`.
+
 ## Requirements
 
 ---

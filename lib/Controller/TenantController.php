@@ -3,7 +3,10 @@
 /**
  * Procest Tenant Controller
  *
- * Controller for managing tenants in a multi-tenant deployment.
+ * Controller for tenant provisioning, usage aggregation, and current-tenant
+ * resolution. Generic tenant CRUD (list/create/update/delete) is delegated
+ * to OpenRegister via the manifest renderer; this controller only owns
+ * the multi-tenant domain logic that cannot be expressed declaratively.
  *
  * @category Controller
  * @package  OCA\Procest\Controller
@@ -32,10 +35,12 @@ use OCP\IRequest;
 use OCP\IUserSession;
 
 /**
- * Controller for tenant management operations.
+ * Controller for tenant domain operations (provisioning, usage, current tenant).
  *
- * Provides CRUD operations for tenants, provisioning, and resource usage tracking.
- * Most endpoints are restricted to platform administrators.
+ * Generic CRUD (list/create/update/destroy) is no longer routed here — manifest
+ * pages call the OpenRegister object endpoints directly. Only the three domain
+ * methods below remain: they wrap provisioning workflow, resource-usage
+ * aggregation, and current-tenant resolution.
  */
 class TenantController extends Controller
 {
@@ -55,47 +60,6 @@ class TenantController extends Controller
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
-
-    /**
-     * List all tenants.
-     *
-     * @return JSONResponse List of tenants
-     */
-    public function index(): JSONResponse
-    {
-        if ($this->isPlatformAdmin() === false) {
-            return new JSONResponse(['success' => false, 'error' => 'Admin required'], 403);
-        }
-
-        // This would list all tenant objects from OpenRegister.
-        return new JSONResponse(['success' => true, 'tenants' => []]);
-    }//end index()
-
-    /**
-     * Create a new tenant.
-     *
-     * @return JSONResponse The created tenant
-     */
-    public function create(): JSONResponse
-    {
-        if ($this->isPlatformAdmin() === false) {
-            return new JSONResponse(['success' => false, 'error' => 'Admin required'], 403);
-        }
-
-        $name   = $this->request->getParam('name');
-        $oin    = $this->request->getParam('oin');
-        $domain = $this->request->getParam('domain');
-
-        if (empty($name) === true) {
-            return new JSONResponse(
-                ['success' => false, 'error' => 'Tenant name is required'],
-                400
-            );
-        }
-
-        $tenant = $this->tenantService->createTenant($name, $oin, $domain);
-        return new JSONResponse(['success' => true, 'tenant' => $tenant]);
-    }//end create()
 
     /**
      * Provision a tenant with register, group, and default schemas.

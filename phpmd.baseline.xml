@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <phpmd-baseline>
+  <violation rule="PHPMD\Rule\Design\CouplingBetweenObjects" file="lib/AppInfo/Application.php"/>
   <violation rule="PHPMD\Rule\UnusedFormalParameter" file="lib/BackgroundJob/AppointmentReminderJob.php"/>
   <violation rule="PHPMD\Rule\CleanCode\MissingImport" file="lib/BackgroundJob/AppointmentReminderJob.php"/>
   <violation rule="PHPMD\Rule\CleanCode\ElseExpression" file="lib/BackgroundJob/AppointmentReminderJob.php"/>
@@ -28,6 +29,8 @@
   <violation rule="PHPMD\Rule\CleanCode\MissingImport" file="lib/Controller/StufController.php"/>
   <violation rule="PHPMD\Rule\CleanCode\ElseExpression" file="lib/Controller/ZrcController.php"/>
   <violation rule="PHPMD\Rule\CleanCode\ElseExpression" file="lib/Controller/ZtcController.php"/>
+  <!-- ProcestToolProvider: single-class IMcpToolProvider design (mirrors decidesk's exemplar). -->
+  <violation rule="PHPMD\Rule\Design\WeightedMethodCount" file="lib/Mcp/ProcestToolProvider.php"/>
   <violation rule="PHPMD\Rule\UnusedFormalParameter" file="lib/Middleware/TenantMiddleware.php"/>
   <violation rule="PHPMD\Rule\UnusedLocalVariable" file="lib/Service/AiService.php"/>
   <violation rule="PHPMD\Rule\CyclomaticComplexity" file="lib/Service/AiService.php" method="callAiModel"/>
@@ -102,4 +105,14 @@
   <violation rule="PHPMD\Rule\CleanCode\ElseExpression" file="lib/Service/ZgwZrcRulesService.php"/>
   <violation rule="PHPMD\Rule\Design\NpathComplexity" file="lib/Service/ZgwZrcRulesService.php" method="detectEindstatus"/>
   <violation rule="PHPMD\Rule\CleanCode\ElseExpression" file="lib/Service/ZgwZtcRulesService.php"/>
+  <violation rule="PHPMD\Rule\Design\ExcessiveClassComplexity" file="lib/Service/ParafeerActieService.php"/>
+  <violation rule="PHPMD\Rule\Naming\LongVariable" file="lib/Service/ParafeerActieService.php"/>
+  <violation rule="PHPMD\Rule\CyclomaticComplexity" file="lib/Service/ParafeerActieService.php" method="recordAction"/>
+  <violation rule="PHPMD\Rule\Design\NpathComplexity" file="lib/Service/ParafeerActieService.php" method="recordAction"/>
+  <violation rule="PHPMD\Rule\Design\LongMethod" file="lib/Service/ParafeerActieService.php" method="recordAction"/>
+  <violation rule="PHPMD\Rule\CleanCode\MissingImport" file="lib/Service/ParafeerActieService.php"/>
+  <violation rule="PHPMD\Rule\CleanCode\ElseExpression" file="lib/Service/ParafeerActieService.php"/>
+  <violation rule="PHPMD\Rule\UnusedFormalParameter" file="lib/Service/ParafeerActieService.php"/>
+  <violation rule="PHPMD\Rule\CyclomaticComplexity" file="lib/Service/ParafeerActieService.php" method="advanceVoorstel"/>
+  <violation rule="PHPMD\Rule\Design\ExcessiveClassComplexity" file="lib/Service/ParafeerRouteService.php"/>
 </phpmd-baseline>

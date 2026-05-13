@@ -11,8 +11,7 @@ Provide VTH (Vergunningen, Toezicht, Handhaving) case management for DSO (Digita
 
 **Tender demand**: 32% of analyzed government tenders require VTH (Vergunningen, Toezicht, Handhaving) capabilities aligned with the Omgevingswet/DSO. Municipalities need a register to store and query omgevingsvergunning data locally while maintaining compatibility with the national DSO-LV system. VTH-specific requirements appear in 20 of 69 procest-relevant tenders, with municipalities such as Zoetermeer (282155) and Westerkwartier (264852) specifying detailed DSO-LV integration requirements including triggerbericht ontvangst, verzoek ophalen, samenwerkfunctionaliteit, and beschikking generation.
 
-## Requirements
-
+## ADDED Requirements
 ### Requirement: REQ-DSO-001 -- Register schemas for core DSO entities
 OpenRegister MUST provide register schemas for the core DSO entity types, enabling structured storage of omgevingsvergunning-related data. All schemas MUST be defined as OpenRegister schemas per ADR-001 (OpenRegister as Universal Data Layer) and MUST NOT use custom database tables. Schemas SHALL be registered during installation via repair steps or the `openregister:load-register` CLI command using the `dso_register.json` template.
 

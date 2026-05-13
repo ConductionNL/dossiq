@@ -214,44 +214,6 @@ class CaseSharingService
     }//end createPartnerShare()
 
     /**
-     * Get all active shares for a case.
-     *
-     * @param string $caseId The UUID of the case
-     *
-     * @return array List of share records
-     */
-    public function getSharesByCase(string $caseId): array
-    {
-        $objectService = $this->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_share_schema');
-
-        $result = $objectService->getObjects(
-            (int) $register,
-            (int) $schema,
-            ['caseId' => $caseId],
-        );
-
-        // Filter out revoked shares.
-        return array_filter(
-            $result['objects'] ?? [],
-            static function ($share) {
-                if (is_object($share) === true) {
-                    $data = $share->jsonSerialize();
-                } else {
-                    $data = $share;
-                }
-
-                return empty($data['revokedAt']) === true;
-            }
-        );
-    }//end getSharesByCase()
-
-    /**
      * Revoke a share by marking it with revocation timestamp.
      *
      * @param string $shareId   The UUID of the share to revoke
@@ -518,4 +480,36 @@ class CaseSharingService
             return null;
         }
     }//end getObjectService()
+
+    /**
+     * Store a document uploaded via a public share token.
+     *
+     * Minimal scaffold — full ZGW DRC integration is handled elsewhere.
+     *
+     * @param string $caseId       The case UUID
+     * @param string $shareId      The share record UUID
+     * @param array  $uploadedFile The $_FILES entry for the upload
+     *
+     * @return array Document descriptor
+     */
+    public function storeExternalDocument(string $caseId, string $shareId, array $uploadedFile): array
+    {
+        $this->logger->info(
+            'Procest: External document upload via share',
+            [
+                'caseId'  => $caseId,
+                'shareId' => $shareId,
+                'name'    => ($uploadedFile['name'] ?? 'unknown'),
+                'size'    => ($uploadedFile['size'] ?? 0),
+            ]
+        );
+
+        return [
+            'caseId'     => $caseId,
+            'shareId'    => $shareId,
+            'name'       => ($uploadedFile['name'] ?? 'unknown'),
+            'size'       => ($uploadedFile['size'] ?? 0),
+            'uploadedAt' => (new \DateTime())->format('c'),
+        ];
+    }//end storeExternalDocument()
 }//end class

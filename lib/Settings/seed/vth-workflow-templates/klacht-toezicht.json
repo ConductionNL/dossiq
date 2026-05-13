@@ -1,0 +1,79 @@
+{
+  "_format": "procest-vth-workflow-template-v1",
+  "slug": "klacht-toezicht",
+  "title": "Klacht over toezicht",
+  "description": "Workflow voor de behandeling van een klacht over gedragingen van een toezichthouder of de uitvoering van het toezicht. 6 weken beslistermijn (Awb 9:11).",
+  "version": 1,
+  "caseTypeSlug": "klacht-toezicht",
+  "statutoryFramework": "Awb 9:11",
+  "steps": [
+    {
+      "slug": "ontvangen",
+      "title": "Klacht ontvangen",
+      "statusName": "Ontvangen",
+      "order": 1,
+      "isInitial": true,
+      "isFinal": false,
+      "assigneeRole": "klachtcoördinator",
+      "description": "Klacht is binnengekomen; ontvangstbevestiging verstuurd."
+    },
+    {
+      "slug": "in-behandeling",
+      "title": "In behandeling",
+      "statusName": "In behandeling",
+      "order": 2,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "klachtcoördinator",
+      "description": "Klacht wordt onderzocht; partijen worden gehoord (Awb 9:10)."
+    },
+    {
+      "slug": "beoordeeld",
+      "title": "Beoordeeld",
+      "statusName": "Beoordeeld",
+      "order": 3,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "klachtcoördinator",
+      "description": "Klacht is beoordeeld; oordeel met motivering opgesteld."
+    },
+    {
+      "slug": "afgehandeld",
+      "title": "Afgehandeld",
+      "statusName": "Afgehandeld",
+      "order": 4,
+      "isInitial": false,
+      "isFinal": true,
+      "assigneeRole": null,
+      "description": "Klacht is afgehandeld; oordeel verzonden."
+    }
+  ],
+  "transitions": [
+    {
+      "slug": "ontvangen-naar-in-behandeling",
+      "fromStatus": "Ontvangen",
+      "toStatus": "In behandeling",
+      "label": "Klacht in behandeling nemen",
+      "allowedRoles": ["klachtcoördinator"]
+    },
+    {
+      "slug": "in-behandeling-naar-beoordeeld",
+      "fromStatus": "In behandeling",
+      "toStatus": "Beoordeeld",
+      "label": "Oordeel formuleren",
+      "allowedRoles": ["klachtcoördinator"],
+      "deadline": {
+        "duration": "P42D",
+        "source": "Awb 9:11",
+        "escalationRole": "klachtcoördinator"
+      }
+    },
+    {
+      "slug": "beoordeeld-naar-afgehandeld",
+      "fromStatus": "Beoordeeld",
+      "toStatus": "Afgehandeld",
+      "label": "Klacht afhandelen",
+      "allowedRoles": ["klachtcoördinator"]
+    }
+  ]
+}

@@ -62,7 +62,13 @@ class SettingsService
         'kanaal_schema',
         'abonnement_schema',
         'map_layer_schema',
+        // WMS/WFS overlay layers (wms-wfs-layers spec REQ-WMS-1).
+        'wms_layer_schema',
         'workflow_template_schema',
+        // Stable alias for consumer specs (status-transition-engine,
+        // role-based-step-routing) that refer to the workflow definition
+        // independent of the legacy schema slug.
+        'workflow_definition_schema',
         'objection_schema',
         'hearing_session_schema',
         'advisory_report_schema',
@@ -70,12 +76,72 @@ class SettingsService
         'voorstel_schema',
         'parafeerroute_schema',
         'parafeeractie_schema',
+        'parafering_audit_entry_schema',
         'default_case_type',
         'inspectie_checklist_schema',
         'inspectie_rapport_schema',
         'handhavingsactie_schema',
         'advies_aanvraag_schema',
+        'advice_reminder_days',
+        'tenant_schema',
+        'appointment_schema',
+        'appointment_product_schema',
+        'appointment_location_schema',
+        'appointment_backend',
+        'appointment_backend_url',
+        'appointment_backend_api_key',
+        'appointment_reminder_days',
+        'case_share_schema',
+        'partner_organization_schema',
+        'share_permission_level_schema',
+        'case_transfer_schema',
+        'automatic_action_schema',
+        'location_schema',
+        // Bezwaar (lifecycle) — Awb Hoofdstuk 7.
+        'bezwaar_schema',
+        // Bezwaar advisory committee (BAC) — Awb Art. 7:13.
+        'bezwaaradviescommissie_schema',
+        'bac_advice_request_schema',
+        'bac_default_committee',
+        // Beroep escalation (beroep-escalation spec) — Awb hoofdstuk 8.
+        'beroep_schema',
+        // Bezwaar decision (bezwaar-decision spec) — Awb art. 7:11/7:12.
+        'bezwaar_decision_schema',
         'lhsMatrix',
+        'lhs_matrix_schema',
+        'lhs_recommendation_schema',
+        // AI-Assisted Processing settings.
+        'ai_audit_entry_schema',
+        'ai_enabled',
+        'ai_model_type',
+        'ai_model_url',
+        'ai_model_name',
+        'ai_api_key',
+        'ai_feature_classification',
+        'ai_feature_extraction',
+        'ai_feature_qa',
+        'ai_feature_summary',
+        'ai_feature_routing',
+        'ai_feature_decision_support',
+        'ai_dpia_acknowledged',
+        'ai_pii_stripping',
+        // PDOK integration settings (pdok-integration spec).
+        // Endpoint overrides — empty falls back to PDOK service defaults.
+        'pdok_locatieserver_endpoint',
+        'pdok_bag_endpoint',
+        'pdok_kadaster_endpoint',
+        // OpenConnector source slugs — empty = call PDOK directly.
+        'pdok_locatieserver_source',
+        'pdok_bag_source',
+        'pdok_kadaster_source',
+        // Cache TTLs (seconds).
+        'pdok_cache_lookup_ttl_seconds',
+        'pdok_cache_suggest_ttl_seconds',
+        // Per-service rate ceiling (requests / second).
+        'pdok_rate_ceiling_rps',
+        // Outage banner copy (nl + en).
+        'pdok_outage_banner_nl',
+        'pdok_outage_banner_en',
     ];
 
     /**
@@ -111,9 +177,12 @@ class SettingsService
         'abonnement'                   => 'abonnement_schema',
         'inspectieChecklist'           => 'inspectie_checklist_schema',
         'inspectieRapport'             => 'inspectie_rapport_schema',
+        'inspectionChecklistTemplate'  => 'inspection_checklist_template_schema',
+        'inspectionChecklistRun'       => 'inspection_checklist_run_schema',
         'handhavingsactie'             => 'handhavingsactie_schema',
         'adviesAanvraag'               => 'advies_aanvraag_schema',
         'mapLayer'                     => 'map_layer_schema',
+        'wmsLayer'                     => 'wms_layer_schema',
         'workflowTemplate'             => 'workflow_template_schema',
         'objection'                    => 'objection_schema',
         'hearingSession'               => 'hearing_session_schema',
@@ -122,6 +191,25 @@ class SettingsService
         'voorstel'                     => 'voorstel_schema',
         'parafeerroute'                => 'parafeerroute_schema',
         'parafeeractie'                => 'parafeeractie_schema',
+        'paraferingAuditEntry'         => 'parafering_audit_entry_schema',
+        'tenant'                       => 'tenant_schema',
+        'aiAuditEntry'                 => 'ai_audit_entry_schema',
+        'appointment'                  => 'appointment_schema',
+        'appointmentProduct'           => 'appointment_product_schema',
+        'appointmentLocation'          => 'appointment_location_schema',
+        'caseShare'                    => 'case_share_schema',
+        'partnerOrganization'          => 'partner_organization_schema',
+        'sharePermissionLevel'         => 'share_permission_level_schema',
+        'casetransfer'                 => 'case_transfer_schema',
+        'automaticAction'              => 'automatic_action_schema',
+        'lhsMatrix'                    => 'lhs_matrix_schema',
+        'lhsRecommendation'            => 'lhs_recommendation_schema',
+        'location'                     => 'location_schema',
+        'bezwaar'                      => 'bezwaar_schema',
+        'bezwaaradviescommissie'       => 'bezwaaradviescommissie_schema',
+        'bacAdviceRequest'             => 'bac_advice_request_schema',
+        'beroep'                       => 'beroep_schema',
+        'bezwaarDecision'              => 'bezwaar_decision_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
@@ -394,6 +482,18 @@ class SettingsService
                 $configKey,
                 $schemaId
             );
+
+            // Mirror the workflowTemplate schema id under the stable
+            // workflow_definition_schema alias so consumer specs
+            // (status-transition-engine, role-based-step-routing) can
+            // resolve it without depending on the legacy slug.
+            if ($slug === 'workflowTemplate') {
+                $this->appConfig->setValueString(
+                    Application::APP_ID,
+                    'workflow_definition_schema',
+                    $schemaId
+                );
+            }
 
             $this->logger->debug(
                 'Procest: Auto-configured schema',

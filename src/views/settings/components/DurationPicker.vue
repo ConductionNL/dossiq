@@ -28,7 +28,7 @@
 
 <script>
 import { NcTextField } from '@nextcloud/vue'
-import { parseDuration, formatDuration, isValidDuration } from '../../../utils/durationHelpers.js'
+import { parseDuration, isValidDuration } from '../../../utils/durationHelpers.js'
 
 export default {
 	name: 'DurationPicker',

@@ -43,12 +43,13 @@
 		<!-- Success feedback -->
 		<div v-if="activationResult" class="templates-tab__result">
 			<p>{{ t('procest', 'Template activated successfully!') }}</p>
-			<p>{{ t('procest', 'Case type created with {statuses} statuses, {properties} properties, {documents} document types.',
-				{
-					statuses: activationResult.statuses.length,
-					properties: activationResult.properties.length,
-					documents: activationResult.documents.length,
-				}) }}
+			<p>
+				{{ t('procest', 'Case type created with {statuses} statuses, {properties} properties, {documents} document types.',
+					{
+						statuses: activationResult.statuses.length,
+						properties: activationResult.properties.length,
+						documents: activationResult.documents.length,
+					}) }}
 			</p>
 		</div>
 

@@ -27,9 +27,6 @@ const config = createConfig({
   organizationName: 'ConductionNL',
   projectName: 'procest',
 
-  /* Procest ships en + nl markdown; the brand preset's default i18n
-     block (nl/en/de/fr) is replaced wholesale here so we don't pull
-     in stub locales the docs don't translate yet. */
   i18n: {
     defaultLocale: 'en',
     locales: ['en', 'nl'],
@@ -68,6 +65,17 @@ const config = createConfig({
         },
       },
     ],
+    [
+      'redocusaurus',
+      {
+        specs: [
+          {
+            spec: 'static/oas/procest.json',
+            route: '/api/',
+          },
+        ],
+      },
+    ],
   ],
 
   themes: [BRAND_THEME, '@docusaurus/theme-mermaid'],
@@ -83,6 +91,11 @@ const config = createConfig({
         sidebarId: 'tutorialSidebar',
         position: 'left',
         label: 'Documentation',
+      },
+      {
+        to: '/api/',
+        label: 'API Documentation',
+        position: 'left',
       },
       {
         href: 'https://github.com/ConductionNL/procest',
@@ -126,6 +139,14 @@ const config = createConfig({
    markdown directly so it makes it into the final Docusaurus config. */
 config.markdown = {
   mermaid: true,
+  /* Tutorial pages (docs/tutorials/) reference screenshots populated by
+     tests/e2e/docs-screenshots.spec.ts. The Playwright capture run is
+     separate from the docs build, so the build must succeed even when a
+     fresh checkout doesn't have every PNG yet. Warn instead of failing
+     (ADR-030); flip to 'throw' once all screenshots are committed. */
+  hooks: {
+    onBrokenMarkdownImages: 'warn',
+  },
 };
 
 module.exports = config;

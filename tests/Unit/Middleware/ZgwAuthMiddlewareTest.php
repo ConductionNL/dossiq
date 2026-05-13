@@ -30,6 +30,7 @@ use Psr\Log\LoggerInterface;
  * Unit tests for the ZgwAuthMiddleware class.
  *
  * @covers \OCA\Procest\Middleware\ZgwAuthMiddleware
+ * @uses \OCA\Procest\Middleware\ZgwAuthException
  */
 class ZgwAuthMiddlewareTest extends TestCase
 {

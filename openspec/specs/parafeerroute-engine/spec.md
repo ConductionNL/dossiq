@@ -1,3 +1,20 @@
+---
+status: retired
+retired_in: procest-adopt-or-abstractions
+canonical_home: case-management/spec.md
+---
+
+> **RETIRED — route modification expressed as `requires` guards on
+> lifecycle transitions.**
+>
+> Skip-step and ad-hoc-step semantics live in the consolidated
+> `x-openregister-lifecycle` annotation on the case schema. Routes
+> become a data attribute on case-types, not a separate engine. See
+> ADR-022 and `case-management/spec.md`.
+>
+> This file is preserved as a historical appendix. Refer to
+> `case-management/spec.md` for canonical route semantics.
+
 ## ADDED Requirements
 
 ### Requirement: Parafeerroute Schema Registration

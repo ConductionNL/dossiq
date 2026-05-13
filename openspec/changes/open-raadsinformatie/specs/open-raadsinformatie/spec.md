@@ -14,8 +14,7 @@ Provide case management capabilities for Open Raadsinformatie (ORI) -- the Dutch
 
 **Competitive context**: Existing solutions (Open State Foundation's central aggregator, Argu/OpenRaadsinformatie.nl) are centralized SaaS platforms. This spec enables municipalities to self-host their council information within Nextcloud, retaining data sovereignty while still producing ORI-compliant output for aggregators and open data portals.
 
-## Requirements
-
+## ADDED Requirements
 ### Requirement: ORI register MUST be provisionable with all entity schemas
 
 The system MUST provide a pre-configured "Open Raadsinformatie" register containing all ORI entity schemas, deployable via a repair step, CLI command, or admin action. The register template MUST follow the OpenAPI 3.0.0 + `x-openregister` extension pattern used by other mock registers (BRP, KVK, BAG, DSO) and MUST be loadable via the `ConfigurationService -> ImportHandler` pipeline.
