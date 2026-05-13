@@ -263,6 +263,12 @@
 			"config": {
 				"register": "procest",
 				"schema": "voorstel",
+				"quickFilters": [
+					{ "label": "Alle", "filter": {}, "default": true },
+					{ "label": "Concept", "filter": { "status": "concept" } },
+					{ "label": "In behandeling", "filter": { "status": ["in_parafering", "ter_accordering", "geaccordeerd", "aangeboden", "teruggestuurd"] } },
+					{ "label": "Afgerond", "filter": { "status": ["besloten", "gearchiveerd"] } }
+				],
 				"columns": [
 					{ "key": "onderwerp", "label": "Onderwerp" },
 					{ "key": "type", "label": "Type", "formatter": "voorstelType" },
