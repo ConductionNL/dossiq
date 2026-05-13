@@ -16,7 +16,10 @@
 		"stylelint-fix": "stylelint src/**/*.vue src/**/*.scss src/**/*.css --fix",
 		"test:zgw": "cd tests/zgw && bash run-zgw-tests.sh",
 		"test:zgw:oas": "cd tests/zgw && bash run-zgw-tests.sh --oas-only",
-		"test:zgw:business": "cd tests/zgw && bash run-zgw-tests.sh --business-only"
+		"test:zgw:business": "cd tests/zgw && bash run-zgw-tests.sh --business-only",
+		"test:e2e": "playwright test",
+		"test:e2e:docs": "playwright test --project docs-capture",
+		"test:e2e:install": "playwright install chromium"
 	},
 	"browserslist": [
 		"extends @nextcloud/browserslist-config"
@@ -60,6 +63,7 @@
 		"@nextcloud/eslint-plugin": "^2.2.1",
 		"@nextcloud/stylelint-config": "^2.4.0",
 		"@nextcloud/webpack-vue-config": "^6.0.1",
+		"@playwright/test": "^1.49.0",
 		"@vue/eslint-config-typescript": "^13.0.0",
 		"css-loader": "~7.1.1",
 		"eslint": "^8.56.0",
