@@ -244,6 +244,57 @@ class PublicShareController extends Controller
     }//end viewStatus()
 
     /**
+     * Upload a document to a shared case via public token.
+     *
+     * Requires contribute-level permission. Validates token, password, and lockout.
+     *
+     * @param string $token The share access token
+     *
+     * @return JSONResponse
+     *
+     * @PublicPage
+     * @NoCSRFRequired
+     */
+    public function uploadDocument(string $token): JSONResponse
+    {
+        $password   = $this->request->getParam('password');
+        $validation = $this->caseSharingService->validateToken($token, $password);
+
+        if ($validation['valid'] === false) {
+            return new JSONResponse(
+                ['success' => false, 'error' => ($validation['error'] ?? 'Toegang geweigerd')],
+                403
+            );
+        }
+
+        $share           = $validation['share'];
+        $permissionLevel = ($share['permissionLevel'] ?? 'bekijken');
+
+        if ($permissionLevel !== 'bijdragen' && $permissionLevel !== 'contribute') {
+            return new JSONResponse(
+                ['success' => false, 'error' => 'Geen rechten om documenten te uploaden'],
+                403
+            );
+        }
+
+        $uploadedFile = ($_FILES['file'] ?? null);
+        if ($uploadedFile === null || ($uploadedFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            return new JSONResponse(
+                ['success' => false, 'error' => 'Geen geldig bestand ontvangen'],
+                400
+            );
+        }
+
+        $result = $this->caseSharingService->storeExternalDocument(
+            $share['caseId'],
+            $share['id'] ?? '',
+            $uploadedFile,
+        );
+
+        return new JSONResponse(['success' => true, 'document' => $result]);
+    }//end uploadDocument()
+
+    /**
      * Load case data from OpenRegister.
      *
      * @param string $caseId The UUID of the case

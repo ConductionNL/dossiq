@@ -7,19 +7,22 @@
 		<div class="booking-dialog">
 			<div class="form-group">
 				<label>{{ t('procest', 'Product') }}</label>
-				<NcTextField :value="form.productId" :label="t('procest', 'Product ID')"
+				<NcTextField :value="form.productId"
+					:label="t('procest', 'Product ID')"
 					@update:value="v => form.productId = v" />
 			</div>
 
 			<div class="form-group">
 				<label>{{ t('procest', 'Location') }}</label>
-				<NcTextField :value="form.locationId" :label="t('procest', 'Location ID')"
+				<NcTextField :value="form.locationId"
+					:label="t('procest', 'Location ID')"
 					@update:value="v => form.locationId = v" />
 			</div>
 
 			<div class="form-group">
 				<label>{{ t('procest', 'Date') }}</label>
-				<NcTextField :value="form.date" type="date"
+				<NcTextField :value="form.date"
+					type="date"
 					@update:value="v => { form.date = v; loadSlots() }" />
 			</div>
 
@@ -39,12 +42,14 @@
 			</div>
 
 			<div class="form-group">
-				<NcTextField :value="form.citizenName" :label="t('procest', 'Citizen name')"
+				<NcTextField :value="form.citizenName"
+					:label="t('procest', 'Citizen name')"
 					@update:value="v => form.citizenName = v" />
 			</div>
 
 			<div class="form-group">
-				<NcTextField :value="form.citizenEmail" :label="t('procest', 'Citizen email')"
+				<NcTextField :value="form.citizenEmail"
+					:label="t('procest', 'Citizen email')"
 					@update:value="v => form.citizenEmail = v" />
 			</div>
 

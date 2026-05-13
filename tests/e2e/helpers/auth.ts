@@ -7,7 +7,7 @@ export async function login(page: Page, user?: string, password?: string) {
 	const username = user ?? process.env.ADMIN_USER ?? 'admin'
 	const pass = password ?? process.env.ADMIN_PASSWORD ?? 'admin'
 
-	await page.goto('/login')
+	await page.goto('/index.php/login')
 	await page.fill('input[name="user"]', username)
 	await page.fill('input[name="password"]', pass)
 	await page.click('button[type="submit"], input[type="submit"]')

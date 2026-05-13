@@ -58,7 +58,7 @@
 		<ParafeerInbox v-if="!loading" />
 
 		<!-- Grouped sections -->
-		<template v-else-if="!loading">
+		<template v-if="!loading">
 			<!-- Overdue -->
 			<div v-if="filteredGroups.overdue.length > 0" class="my-work__section my-work__section--overdue">
 				<h3 class="my-work__section-header my-work__section-header--overdue">

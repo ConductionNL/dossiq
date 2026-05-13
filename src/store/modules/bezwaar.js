@@ -10,7 +10,6 @@
  */
 import { defineStore } from 'pinia'
 import { useObjectStore } from './object.js'
-import { useSettingsStore } from './settings.js'
 
 /**
  * Add working days to a date (skipping weekends).
@@ -136,29 +135,29 @@ export const useBezwaarStore = defineStore('bezwaar', {
 				const objectStore = useObjectStore()
 
 				// Load objection.
-				const objections = await objectStore.getObjects('objection', {
-					filters: { case: caseId },
-					limit: 1,
+				const objections = await objectStore.fetchCollection('objection', {
+					'_filters[case]': caseId,
+					_limit: 1,
 				})
 				this.currentObjection = objections?.[0] || null
 
 				// Load hearing sessions.
-				const hearings = await objectStore.getObjects('hearingSession', {
-					filters: { case: caseId },
+				const hearings = await objectStore.fetchCollection('hearingSession', {
+					'_filters[case]': caseId,
 				})
 				this.hearingSessions = hearings || []
 
 				// Load advisory report.
-				const reports = await objectStore.getObjects('advisoryReport', {
-					filters: { case: caseId },
-					limit: 1,
+				const reports = await objectStore.fetchCollection('advisoryReport', {
+					'_filters[case]': caseId,
+					_limit: 1,
 				})
 				this.currentAdvisoryReport = reports?.[0] || null
 
 				// Load appeal decision.
-				const decisions = await objectStore.getObjects('appealDecision', {
-					filters: { case: caseId },
-					limit: 1,
+				const decisions = await objectStore.fetchCollection('appealDecision', {
+					'_filters[case]': caseId,
+					_limit: 1,
 				})
 				this.currentAppealDecision = decisions?.[0] || null
 			} catch (error) {
@@ -496,12 +495,11 @@ export const useBezwaarStore = defineStore('bezwaar', {
 
 			try {
 				const objectStore = useObjectStore()
-				const settingsStore = useSettingsStore()
 
 				// Find the Beroep case type.
-				const caseTypes = await objectStore.getObjects('caseType', {
-					filters: { identifier: 'beroep' },
-					limit: 1,
+				const caseTypes = await objectStore.fetchCollection('caseType', {
+					'_filters[identifier]': 'beroep',
+					_limit: 1,
 				})
 				const beroepCaseType = caseTypes?.[0]
 

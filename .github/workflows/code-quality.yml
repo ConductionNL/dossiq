@@ -21,6 +21,7 @@ jobs:
       enable-frontend: true
       enable-eslint: true
       enable-phpunit: true
+      enable-coverage-guard: true
       # Newman disabled: ZGW compliance tests have 95%+ failure rate because
       # the ZGW API implementation is still in progress. Re-enable once the
       # API passes at least the core CRUD assertions.
@@ -29,7 +30,14 @@ jobs:
       newman-environment-path: "tests/zgw/zgw-environment.json"
       newman-seed-command: "bash apps/procest/tests/zgw/seed-consumers.sh"
       additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"feature/php-linting"}]'
-      enable-sbom: true
+      # SBOM disabled until @conduction/nextcloud-vue's dependency declarations
+      # are cleaned up — its `npm ls` tree fails ELSPROBLEMS (bootstrap-vue is a
+      # non-optional peer, apexcharts/pinia/vue version ranges don't match what
+      # apps install, @types/react comes from a transitive rehype-react), which
+      # @cyclonedx/cyclonedx-npm propagates as a hard failure (it always runs
+      # `npm ls` under the hood; `--package-lock-only` doesn't sidestep it).
+      # No other Conduction app enables SBOM today. Tracked in #434.
+      enable-sbom: false
       enable-playwright: true
       enable-playwright-coverage: true
       playwright-coverage-threshold: 75

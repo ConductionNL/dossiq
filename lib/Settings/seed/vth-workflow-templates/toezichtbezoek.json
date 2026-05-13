@@ -1,0 +1,101 @@
+{
+  "_format": "procest-vth-workflow-template-v1",
+  "slug": "toezichtbezoek",
+  "title": "Toezichtbezoek",
+  "description": "Workflow voor een toezichtbezoek (inspectie ter plaatse). Geen wettelijke beslistermijn. Bij constatering van een overtreding wordt een handhavingstraject gespawned via automaticAction.",
+  "version": 1,
+  "caseTypeSlug": "toezichtzaak-bouw",
+  "statutoryFramework": "Awb hoofdstuk 5 (toezicht)",
+  "steps": [
+    {
+      "slug": "gepland",
+      "title": "Inspectie gepland",
+      "statusName": "Gepland",
+      "order": 1,
+      "isInitial": true,
+      "isFinal": false,
+      "assigneeRole": "Inspecteur",
+      "description": "Toezichtbezoek is ingepland, datum afgestemd met contactpersoon."
+    },
+    {
+      "slug": "uitgevoerd",
+      "title": "Inspectie uitgevoerd",
+      "statusName": "Inspectie",
+      "order": 2,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Inspecteur",
+      "description": "Inspectie ter plaatse is afgerond, constateringen vastgelegd."
+    },
+    {
+      "slug": "rapport",
+      "title": "Rapport opgesteld",
+      "statusName": "Rapport",
+      "order": 3,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Inspecteur",
+      "description": "Inspectierapport is opgesteld en intern beoordeeld."
+    },
+    {
+      "slug": "opvolging",
+      "title": "Opvolging",
+      "statusName": "Opvolging",
+      "order": 4,
+      "isInitial": false,
+      "isFinal": false,
+      "assigneeRole": "Inspecteur",
+      "description": "Constateringen worden opgevolgd; bij overtreding wordt een handhavingstraject gespawned."
+    },
+    {
+      "slug": "afgehandeld",
+      "title": "Afgehandeld",
+      "statusName": "Afgehandeld",
+      "order": 5,
+      "isInitial": false,
+      "isFinal": true,
+      "assigneeRole": null,
+      "description": "Toezichtbezoek is afgehandeld."
+    }
+  ],
+  "transitions": [
+    {
+      "slug": "gepland-naar-uitgevoerd",
+      "fromStatus": "Gepland",
+      "toStatus": "Inspectie",
+      "label": "Inspectie uitvoeren",
+      "allowedRoles": ["Inspecteur"]
+    },
+    {
+      "slug": "uitgevoerd-naar-rapport",
+      "fromStatus": "Inspectie",
+      "toStatus": "Rapport",
+      "label": "Rapport opstellen",
+      "allowedRoles": ["Inspecteur"]
+    },
+    {
+      "slug": "rapport-naar-opvolging",
+      "fromStatus": "Rapport",
+      "toStatus": "Opvolging",
+      "label": "Opvolging starten",
+      "allowedRoles": ["Inspecteur"],
+      "automaticActions": [
+        {
+          "type": "spawnCase",
+          "config": {
+            "targetWorkflowSlug": "handhavingstraject",
+            "condition": "constatering.severity in ['aanzienlijk', 'ernstig']",
+            "comment": "Spawn handhavingstraject zodra rapport een aanzienlijke of ernstige overtreding bevat."
+          }
+        }
+      ]
+    },
+    {
+      "slug": "opvolging-naar-afgehandeld",
+      "fromStatus": "Opvolging",
+      "toStatus": "Afgehandeld",
+      "label": "Afhandelen",
+      "allowedRoles": ["Inspecteur"]
+    }
+  ]
+}

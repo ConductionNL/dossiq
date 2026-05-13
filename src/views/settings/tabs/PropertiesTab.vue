@@ -61,10 +61,18 @@
 											:value="editForm.format"
 											class="format-select"
 											@change="editForm.format = $event.target.value">
-											<option value="text">{{ t('procest', 'Text') }}</option>
-											<option value="number">{{ t('procest', 'Number') }}</option>
-											<option value="date">{{ t('procest', 'Date') }}</option>
-											<option value="datetime">{{ t('procest', 'Date & Time') }}</option>
+											<option value="text">
+												{{ t('procest', 'Text') }}
+											</option>
+											<option value="number">
+												{{ t('procest', 'Number') }}
+											</option>
+											<option value="date">
+												{{ t('procest', 'Date') }}
+											</option>
+											<option value="datetime">
+												{{ t('procest', 'Date & Time') }}
+											</option>
 										</select>
 									</div>
 									<NcTextField
@@ -81,7 +89,9 @@
 											:value="editForm.requiredAtStatus || ''"
 											class="format-select"
 											@change="editForm.requiredAtStatus = $event.target.value || null">
-											<option value="">{{ t('procest', 'Optional') }}</option>
+											<option value="">
+												{{ t('procest', 'Optional') }}
+											</option>
 											<option v-for="st in statusTypes" :key="st.id" :value="st.name">
 												{{ st.name }}
 											</option>
@@ -130,10 +140,18 @@
 									:value="newForm.format"
 									class="format-select"
 									@change="newForm.format = $event.target.value">
-									<option value="text">{{ t('procest', 'Text') }}</option>
-									<option value="number">{{ t('procest', 'Number') }}</option>
-									<option value="date">{{ t('procest', 'Date') }}</option>
-									<option value="datetime">{{ t('procest', 'Date & Time') }}</option>
+									<option value="text">
+										{{ t('procest', 'Text') }}
+									</option>
+									<option value="number">
+										{{ t('procest', 'Number') }}
+									</option>
+									<option value="date">
+										{{ t('procest', 'Date') }}
+									</option>
+									<option value="datetime">
+										{{ t('procest', 'Date & Time') }}
+									</option>
 								</select>
 							</div>
 							<NcTextField
@@ -150,7 +168,9 @@
 									:value="newForm.requiredAtStatus || ''"
 									class="format-select"
 									@change="newForm.requiredAtStatus = $event.target.value || null">
-									<option value="">{{ t('procest', 'Optional') }}</option>
+									<option value="">
+										{{ t('procest', 'Optional') }}
+									</option>
 									<option v-for="st in statusTypes" :key="st.id" :value="st.name">
 										{{ st.name }}
 									</option>
@@ -165,7 +185,9 @@
 				</div>
 			</template>
 
-			<p v-if="error" class="properties-tab__error">{{ error }}</p>
+			<p v-if="error" class="properties-tab__error">
+				{{ error }}
+			</p>
 		</template>
 	</div>
 </template>

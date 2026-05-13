@@ -8,7 +8,9 @@
 			<NcLoadingIcon v-if="loading" :size="32" />
 
 			<div v-else-if="error" class="ai-extract-dialog__error">
-				<NcNoteCard type="error">{{ error }}</NcNoteCard>
+				<NcNoteCard type="error">
+					{{ error }}
+				</NcNoteCard>
 			</div>
 
 			<div v-else-if="fields.length > 0" class="ai-extract-dialog__result">
@@ -59,7 +61,9 @@
 			</div>
 
 			<div v-else>
-				<NcNoteCard type="info">{{ t('procest', 'No data could be extracted from this document.') }}</NcNoteCard>
+				<NcNoteCard type="info">
+					{{ t('procest', 'No data could be extracted from this document.') }}
+				</NcNoteCard>
 			</div>
 		</div>
 	</NcDialog>

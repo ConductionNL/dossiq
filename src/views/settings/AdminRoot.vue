@@ -42,10 +42,6 @@
 			:description="t('procest', 'Configure GIS map layers for case location views (WMS, WFS, PDOK)')"
 			:loading="!storesReady">
 			<MapLayerSettings v-if="storesReady" />
-			:name="t('procest', 'Parafeerroutes')"
-			:description="t('procest', 'Configure parafeerroutes for B&W decision-making workflow')"
-			:loading="!storesReady">
-			<ParafeerRouteAdmin v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
@@ -53,6 +49,13 @@
 			:description="t('procest', 'Configure property mappings between English OpenRegister fields and Dutch ZGW API fields')"
 			:loading="!storesReady">
 			<ZgwMappingSettings v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('procest', 'AI-Assisted Processing')"
+			:description="t('procest', 'Configure AI features for document classification, data extraction, Q&A, summarization, routing and decision support')"
+			:loading="!storesReady">
+			<AiSettingsTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<!-- Re-import Status -->
@@ -70,9 +73,10 @@ import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
 import Settings from './Settings.vue'
 import CaseTypeAdmin from './CaseTypeAdmin.vue'
-import ParafeerRouteAdmin from './ParafeerRouteAdmin.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import MapLayerSettings from './MapLayerSettings.vue'
+import AiSettingsTab from './tabs/AiSettingsTab.vue'
+import { generateUrl } from '@nextcloud/router'
 import { initializeStores } from '../../store/store.js'
 
 export default {
@@ -86,9 +90,9 @@ export default {
 		Refresh,
 		Settings,
 		CaseTypeAdmin,
-		ParafeerRouteAdmin,
 		ZgwMappingSettings,
 		MapLayerSettings,
+		AiSettingsTab,
 	},
 	data() {
 		return {
@@ -109,7 +113,7 @@ export default {
 			this.message = ''
 
 			try {
-				const response = await fetch('/apps/procest/api/settings/load', {
+				const response = await fetch(generateUrl('/apps/procest/api/settings/load'), {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',

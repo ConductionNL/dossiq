@@ -103,7 +103,7 @@ class MyTasksWidget implements IWidget
      */
     public function getUrl(): ?string
     {
-        return $this->url->linkToRouteAbsolute(Application::APP_ID.'.dashboard.index');
+        return $this->url->linkToRouteAbsolute(Application::APP_ID.'.dashboard.page');
 
     }//end getUrl()
 

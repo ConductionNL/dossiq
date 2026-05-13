@@ -11,6 +11,88 @@ Case management is the core capability of Procest. A case represents a coherent 
 **Standards**: CMMN 1.1 (CasePlanModel), Schema.org (`Project`), ZGW (`Zaak`)
 **Feature tier**: MVP (core case CRUD, list, detail, status, deadline), V1 (sub-cases, confidentiality, result types, document checklist, suspension)
 
+## Consolidated Lifecycle (procest-adopt-or-abstractions)
+
+Procest case lifecycle is expressed as an OR `x-openregister-lifecycle`
+annotation on the case schema. **This spec is the canonical home;
+previously sibling specs (`parafering-actions`, `parafering-audit-trail`,
+`parafeerroute-engine`) are retired and their requirements live here.**
+
+### OR Capabilities Consumed
+
+Per ADR-022 and the `procest-adopt-or-abstractions` change, this spec
+consumes:
+
+- `object-lifecycle` — six lifecycle states (`concept`,
+  `in_parafering`, `teruggestuurd`, `geparafeerd`, `aangeboden`,
+  `besloten`) with guarded transitions, role-based authorization
+  (ADR-023), and `requires` guards encoding skip-step / ad-hoc-step
+  rules previously in `parafeerroute-engine`.
+- `audit-trail-immutable` — replaces custom parafeeractie versioning
+  from `parafering-audit-trail`; transition events capture `actorType`,
+  `onBehalfOf`, `comment`, transition action, from/to state, timestamp.
+- `notificatie-engine` — three per-transition notifications previously
+  in `ParaferingNotificationService.php` are declared via
+  `x-openregister-notifications` annotations on the case schema.
+- `register-i18n` — state and transition labels, notification subjects
+  and bodies flow through OR's i18n source of truth (ADR-025);
+  Dutch + English minimum per `feedback_i18n-requirement.md`.
+- `aggregations-backend-native` — count-by-status queries for
+  parafering / case dashboards via `x-openregister-aggregations`.
+- `register-resolver-service` (forthcoming) — replaces direct
+  `IAppConfig::getValueString(APP_ID, 'foo_register', '')` lookups
+  with `RegisterResolver::resolve('case')`. See ADR-022.
+
+### Lifecycle States
+
+| Lifecycle state | STATUS_* constant | i18n key |
+|-----------------|-------------------|----------|
+| `concept` | `STATUS_CONCEPT` | `case.status.concept` |
+| `in_parafering` | `STATUS_IN_PARAFERING` | `case.status.in_parafering` |
+| `teruggestuurd` | `STATUS_TERUGGESTUURD` | `case.status.teruggestuurd` |
+| `geparafeerd` | `STATUS_GEPARAFEERD` | `case.status.geparafeerd` |
+| `aangeboden` | `STATUS_AANGEBODEN` | `case.status.aangeboden` |
+| `besloten` | `STATUS_BESLOTEN` | `case.status.besloten` |
+
+### Migration Map (retired specs → consolidated home)
+
+| Retired spec | New home in this spec |
+|--------------|------------------------|
+| `parafering-actions/spec.md` | Lifecycle transitions with `roles` array (advies, parafering, accordering). |
+| `parafering-audit-trail/spec.md` | OR `audit-trail-immutable` capability; delegation captured as audit context. |
+| `parafeerroute-engine/spec.md` | Lifecycle transitions with `requires` guards (skip-step / ad-hoc-step semantics). |
+
+### ZGW Notificaties API boundary preserved
+
+`lib/Service/NotificatieService.php` remains **app-local**. It dispatches
+messages to the VNG ZGW Notificaties API per Dutch government protocol
+and is NOT subsumed by OR's `AnnotationNotificationDispatcher`.
+Lifecycle notifications to NC users flow through schema annotations;
+ZGW protocol notifications flow through `NotificatieService`.
+
+### Manifest (ADR-024)
+
+Procest declares itself **Tier 2** (ramps to 3 once full lifecycle
+adoption code change lands) with
+`dependencies: ["openregister", "openconnector"]`. See follow-up code
+change `procest-implement-or-lifecycle`.
+
+### Follow-up code changes
+
+This spec consolidation is spec-only. The corresponding implementation
+refactor is tracked separately and will:
+
+1. Replace `ParaferingService.php:43-353` guarded transitions with calls
+   to OR's lifecycle engine.
+2. Delete `ParaferingNotificationService.php` (subsumed by
+   `AnnotationNotificationDispatcher`).
+3. Move `ShareMaintenanceJob::REMINDER_DAYS`,
+   `MetricsController::CACHE_TTL_*` to admin-config; move
+   `CaseEmailService::setSubject()` PHP-built copy to schema-declared
+   notification copy.
+4. Fix the `ZgwDocumentService::getUserFolder('admin')` fallback to
+   throw on missing user rather than silently fall back to admin.
+
 ## Data Model
 
 ### Case Entity

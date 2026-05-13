@@ -3,7 +3,12 @@
 /**
  * Procest Case Sharing Controller
  *
- * Controller for managing case shares and partner organizations.
+ * Controller for case share creation/revocation and case transfer workflow.
+ *
+ * Pure CRUD over the caseShare / partnerOrganization / casetransfer schemas
+ * is handled by the OpenRegister manifest renderer; this controller only
+ * owns the domain-specific endpoints (token generation, audit logging,
+ * transfer accept/reject).
  *
  * @category Controller
  * @package  OCA\Procest\Controller
@@ -27,16 +32,13 @@ namespace OCA\Procest\Controller;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\CaseSharingService;
 use OCA\Procest\Service\CaseTransferService;
-use OCA\Procest\Service\SettingsService;
-use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
-use Psr\Container\ContainerInterface;
 
 /**
- * Controller for managing case shares, partner organizations, and transfers.
+ * Controller for case share token actions and transfer workflow.
  */
 class CaseSharingController extends Controller
 {
@@ -46,41 +48,18 @@ class CaseSharingController extends Controller
      * @param IRequest            $request             The request object
      * @param CaseSharingService  $caseSharingService  The sharing service
      * @param CaseTransferService $caseTransferService The transfer service
-     * @param SettingsService     $settingsService     The settings service
-     * @param IAppManager         $appManager          The app manager
-     * @param ContainerInterface  $container           The DI container
      * @param IUserSession        $userSession         The user session
      *
      * @return void
-     *
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList) — all params needed for DI
      */
     public function __construct(
         IRequest $request,
         private CaseSharingService $caseSharingService,
         private CaseTransferService $caseTransferService,
-        private SettingsService $settingsService,
-        private IAppManager $appManager,
-        private ContainerInterface $container,
         private IUserSession $userSession,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
-
-    /**
-     * List all active shares for a case.
-     *
-     * @param string $caseId The UUID of the case
-     *
-     * @return JSONResponse
-     *
-     * @NoAdminRequired
-     */
-    public function listShares(string $caseId): JSONResponse
-    {
-        $shares = $this->caseSharingService->getSharesByCase($caseId);
-        return new JSONResponse(['success' => true, 'shares' => array_values($shares)]);
-    }//end listShares()
 
     /**
      * Create a new case share (token or partner).

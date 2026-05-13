@@ -86,17 +86,17 @@ export default {
 			return this.documentTypes.filter(dt => this.isDocPresent(dt.id)).length
 		},
 	},
-	async mounted() {
-		if (this.caseTypeId) {
-			await this.loadData()
-		}
-	},
 	watch: {
 		caseTypeId() {
 			if (this.caseTypeId) {
 				this.loadData()
 			}
 		},
+	},
+	async mounted() {
+		if (this.caseTypeId) {
+			await this.loadData()
+		}
 	},
 	methods: {
 		async loadData() {

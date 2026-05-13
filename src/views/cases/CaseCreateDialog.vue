@@ -71,6 +71,23 @@
 						:placeholder="t('procest', 'Optional description...')"
 						rows="3" />
 				</div>
+
+				<!-- Intake channel (REQ-INTAKE-11a/b) -->
+				<div class="form-group">
+					<label>{{ t('procest', 'Intake channel') }}</label>
+					<NcSelect
+						v-model="selectedIntakeChannel"
+						:options="intakeChannelOptions"
+						label="label"
+						track-by="value"
+						:placeholder="t('procest', 'Select intake channel...')"
+						:clearable="false" />
+				</div>
+
+				<!-- Auto-assign preview (REQ-INTAKE-03a) -->
+				<div v-if="selectedCaseType && selectedCaseType.defaultAssignee" class="case-create-dialog__assignee-hint">
+					{{ t('procest', 'Will be auto-assigned to: {assignee}', { assignee: selectedCaseType.defaultAssignee }) }}
+				</div>
 			</div>
 
 			<div class="case-create-dialog__footer">
@@ -129,6 +146,7 @@ export default {
 			errors: {},
 			saving: false,
 			loadingTypes: false,
+			selectedIntakeChannel: { value: 'manual', label: 'Manual' },
 		}
 	},
 	computed: {
@@ -137,6 +155,19 @@ export default {
 		},
 		isSubCaseMode() {
 			return !!this.parentCase
+		},
+		intakeChannelOptions() {
+			// REQ-INTAKE-11a: channel options (Balie, Telefoon, E-mail, Post, Website, Overig)
+			// Default is "manual" per REQ-INTAKE-11b.
+			return [
+				{ value: 'manual', label: t('procest', 'Manual') },
+				{ value: 'balie', label: t('procest', 'Counter (Balie)') },
+				{ value: 'telefoon', label: t('procest', 'Phone') },
+				{ value: 'email', label: t('procest', 'E-mail') },
+				{ value: 'post', label: t('procest', 'Mail (Post)') },
+				{ value: 'website', label: t('procest', 'Website') },
+				{ value: 'overig', label: t('procest', 'Other') },
+			]
 		},
 		dialogTitle() {
 			return this.isSubCaseMode
@@ -227,6 +258,13 @@ export default {
 				? t('procest', 'Sub-case created with type \'{type}\'', { type: this.selectedCaseType.title })
 				: t('procest', 'Case created with type \'{type}\'', { type: this.selectedCaseType.title })
 
+			// REQ-INTAKE-03a: auto-assign handler from caseType.defaultAssignee
+			// REQ-INTAKE-03c: cases with no default assignee remain unassigned (null).
+			const autoAssignee = this.selectedCaseType.defaultAssignee || null
+
+			// REQ-INTAKE-11a/b: store selected intake channel (defaults to 'manual').
+			const intakeChannel = this.selectedIntakeChannel?.value || 'manual'
+
 			const caseData = {
 				title: this.form.title.trim(),
 				description: this.form.description.trim(),
@@ -236,7 +274,8 @@ export default {
 				startDate,
 				deadline: deadline ? deadline.toISOString().split('T')[0] + 'T17:00:00Z' : null,
 				confidentiality: this.selectedCaseType.confidentiality || 'public',
-				assignee: null,
+				assignee: autoAssignee,
+				intakeChannel,
 				priority: 'normal',
 				endDate: null,
 				result: null,
@@ -270,112 +309,6 @@ export default {
 }
 </script>
 
-<style scoped>
-.case-create-overlay {
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	background: rgba(0, 0, 0, 0.5);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	z-index: 10000;
-}
-
-.case-create-dialog {
-	background: var(--color-main-background);
-	border-radius: var(--border-radius-large);
-	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
-	width: 560px;
-	max-width: 90vw;
-	max-height: 85vh;
-	overflow-y: auto;
-}
-
-.case-create-dialog__header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 16px 20px;
-	border-bottom: 1px solid var(--color-border);
-}
-
-.case-create-dialog__header h3 {
-	margin: 0;
-}
-
-.case-create-dialog__body {
-	padding: 20px;
-}
-
-.case-create-dialog__parent-context {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	padding: 8px 12px;
-	margin-bottom: 16px;
-	background: var(--color-primary-element-light);
-	border-radius: var(--border-radius);
-	font-size: 13px;
-}
-
-.parent-context-label {
-	color: var(--color-text-maxcontrast);
-	font-weight: 500;
-}
-
-.case-create-dialog__preview {
-	background: var(--color-background-dark);
-	border-radius: var(--border-radius);
-	padding: 12px 16px;
-	margin-bottom: 16px;
-}
-
-.preview-row {
-	display: flex;
-	justify-content: space-between;
-	padding: 4px 0;
-}
-
-.preview-label {
-	color: var(--color-text-maxcontrast);
-	font-size: 13px;
-}
-
-.case-create-dialog__footer {
-	display: flex;
-	justify-content: flex-end;
-	gap: 8px;
-	padding: 16px 20px;
-	border-top: 1px solid var(--color-border);
-}
-
-.form-group {
-	margin-bottom: 16px;
-}
-
-.form-group label {
-	display: block;
-	margin-bottom: 4px;
-	font-weight: bold;
-}
-
-.form-group textarea {
-	width: 100%;
-	padding: 8px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius);
-	resize: vertical;
-}
-
-.form-error {
-	color: var(--color-error);
-	font-size: 13px;
-	margin-top: 4px;
-}
-</style>
 <template>
 	<div class="case-create-overlay" @click.self="$emit('close')">
 		<div class="case-create-dialog">
@@ -490,7 +423,6 @@ export default {
 		</div>
 	</div>
 </template>
-
 <script>
 import { NcButton, NcTextField, NcSelect, NcLoadingIcon } from '@nextcloud/vue'
 import { useObjectStore } from '../../store/modules/object.js'
@@ -669,6 +601,122 @@ export default {
 	},
 }
 </script>
+
+<style scoped>
+.case-create-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.5);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 10000;
+}
+
+.case-create-dialog {
+	background: var(--color-main-background);
+	border-radius: var(--border-radius-large);
+	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+	width: 560px;
+	max-width: 90vw;
+	max-height: 85vh;
+	overflow-y: auto;
+}
+
+.case-create-dialog__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.case-create-dialog__header h3 {
+	margin: 0;
+}
+
+.case-create-dialog__body {
+	padding: 20px;
+}
+
+.case-create-dialog__parent-context {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 8px 12px;
+	margin-bottom: 16px;
+	background: var(--color-primary-element-light);
+	border-radius: var(--border-radius);
+	font-size: 13px;
+}
+
+.parent-context-label {
+	color: var(--color-text-maxcontrast);
+	font-weight: 500;
+}
+
+.case-create-dialog__preview {
+	background: var(--color-background-dark);
+	border-radius: var(--border-radius);
+	padding: 12px 16px;
+	margin-bottom: 16px;
+}
+
+.preview-row {
+	display: flex;
+	justify-content: space-between;
+	padding: 4px 0;
+}
+
+.preview-label {
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+}
+
+.case-create-dialog__assignee-hint {
+	background: var(--color-primary-element-light);
+	border-radius: var(--border-radius);
+	padding: 8px 12px;
+	margin-bottom: 16px;
+	font-size: 13px;
+	color: var(--color-main-text);
+}
+
+.case-create-dialog__footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	padding: 16px 20px;
+	border-top: 1px solid var(--color-border);
+}
+
+.form-group {
+	margin-bottom: 16px;
+}
+
+.form-group label {
+	display: block;
+	margin-bottom: 4px;
+	font-weight: bold;
+}
+
+.form-group textarea {
+	width: 100%;
+	padding: 8px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	resize: vertical;
+}
+
+.form-error {
+	color: var(--color-error);
+	font-size: 13px;
+	margin-top: 4px;
+}
+</style>
 
 <style scoped>
 .case-create-overlay {

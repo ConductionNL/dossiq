@@ -92,6 +92,158 @@
 				</NcButton>
 			</div>
 
+			<!-- Geavanceerd: SLA / required fields / escalation (process-step-configuration spec) -->
+			<div class="step-config-panel__section">
+				<button
+					type="button"
+					class="step-config-panel__advanced-toggle"
+					@click="advancedOpen = !advancedOpen">
+					<span>{{ t('procest', 'Geavanceerd') }}</span>
+					<span class="step-config-panel__advanced-caret">{{ advancedOpen ? '▾' : '▸' }}</span>
+				</button>
+
+				<div
+					v-if="readOnly"
+					class="step-config-panel__advanced-banner">
+					{{ t('procest', 'Gepubliceerde versies zijn niet bewerkbaar — kloon eerst een nieuwe versie.') }}
+				</div>
+
+				<div v-if="advancedOpen" class="step-config-panel__advanced-body">
+					<!-- SLA -->
+					<div class="step-config-panel__field">
+						<label>{{ t('procest', 'SLA') }}</label>
+						<div class="step-config-panel__sla-row">
+							<input
+								v-model.number="localConfig.sla.value"
+								type="number"
+								min="1"
+								:max="slaValueMax"
+								class="step-config-panel__input step-config-panel__sla-value"
+								:disabled="readOnly"
+								@input="emitUpdate">
+							<select
+								v-model="localConfig.sla.unit"
+								class="step-config-panel__select"
+								:disabled="readOnly"
+								@change="emitUpdate">
+								<option value="">
+									{{ t('procest', 'Geen SLA') }}
+								</option>
+								<option value="hours">
+									{{ t('procest', 'uren') }}
+								</option>
+								<option value="businessDays">
+									{{ t('procest', 'werkdagen') }}
+								</option>
+								<option value="calendarDays">
+									{{ t('procest', 'kalenderdagen') }}
+								</option>
+							</select>
+						</div>
+					</div>
+
+					<!-- Required fields -->
+					<div class="step-config-panel__field">
+						<label>{{ t('procest', 'Verplichte velden bij afronden') }}</label>
+						<div
+							v-for="(field, index) in localConfig.requiredFields"
+							:key="`field-${index}`"
+							class="step-config-panel__required-field">
+							<input
+								v-model="localConfig.requiredFields[index]"
+								type="text"
+								:placeholder="t('procest', 'Veldnaam (property path)')"
+								class="step-config-panel__input"
+								:disabled="readOnly"
+								@input="emitUpdate">
+							<NcButton
+								type="tertiary"
+								:disabled="readOnly"
+								@click="removeRequiredField(index)">
+								<template #icon>
+									<CloseIcon :size="16" />
+								</template>
+							</NcButton>
+						</div>
+						<NcButton
+							type="secondary"
+							:disabled="readOnly"
+							@click="addRequiredField">
+							{{ t('procest', 'Veld toevoegen') }}
+						</NcButton>
+					</div>
+
+					<!-- Escalation -->
+					<div class="step-config-panel__field">
+						<label>
+							<input
+								v-model="escalationEnabled"
+								type="checkbox"
+								:disabled="readOnly"
+								@change="onEscalationToggle">
+							{{ t('procest', 'Escalatie inschakelen') }}
+						</label>
+						<div v-if="escalationEnabled" class="step-config-panel__escalation">
+							<select
+								v-model="localConfig.escalationRule.trigger"
+								class="step-config-panel__select"
+								:disabled="readOnly"
+								@change="emitUpdate">
+								<option value="preBreach">
+									{{ t('procest', 'Vóór deadline (pre-breach)') }}
+								</option>
+								<option value="slaBreached">
+									{{ t('procest', 'Na deadline (sla-breached)') }}
+								</option>
+							</select>
+							<div class="step-config-panel__sla-row">
+								<input
+									v-model.number="localConfig.escalationRule.offset"
+									type="number"
+									min="0"
+									class="step-config-panel__input step-config-panel__sla-value"
+									:disabled="readOnly"
+									@input="emitUpdate">
+								<select
+									v-model="localConfig.escalationRule.offsetUnit"
+									class="step-config-panel__select"
+									:disabled="readOnly"
+									@change="emitUpdate">
+									<option value="hours">
+										{{ t('procest', 'uren') }}
+									</option>
+									<option value="businessDays">
+										{{ t('procest', 'werkdagen') }}
+									</option>
+								</select>
+							</div>
+							<input
+								v-model="localConfig.escalationRule.notifyRole"
+								type="text"
+								:placeholder="t('procest', 'Waarschuw rol (UUID)')"
+								class="step-config-panel__input"
+								:disabled="readOnly"
+								@input="emitUpdate">
+							<input
+								v-model="localConfig.escalationRule.escalateToRole"
+								type="text"
+								:placeholder="t('procest', 'Escaleer naar rol (UUID)')"
+								class="step-config-panel__input"
+								:disabled="readOnly"
+								@input="emitUpdate">
+							<label class="step-config-panel__inline-check">
+								<input
+									v-model="localConfig.escalationRule.openIncident"
+									type="checkbox"
+									:disabled="readOnly"
+									@change="emitUpdate">
+								{{ t('procest', 'Maak ook een incident aan') }}
+							</label>
+						</div>
+					</div>
+				</div>
+			</div>
+
 			<!-- Automatic Actions -->
 			<div class="step-config-panel__section">
 				<h5>{{ t('procest', 'Automatic actions on completion') }}</h5>
@@ -173,6 +325,10 @@ export default {
 			type: Array,
 			default: () => [],
 		},
+		readOnly: {
+			type: Boolean,
+			default: false,
+		},
 	},
 	emits: ['update', 'close'],
 	data() {
@@ -180,6 +336,10 @@ export default {
 			localStep: { ...this.step },
 			localChecklist: this.parseChecklist(this.step.checklist),
 			localActions: this.parseActions(this.step.automaticActions),
+			localConfig: this.parseConfig(this.step.config),
+			advancedOpen: false,
+			escalationEnabled: !!(this.step && this.step.config && this.step.config.escalationRule),
+			slaValueMax: 10000,
 			dragCheckIndex: null,
 		}
 	},
@@ -189,11 +349,78 @@ export default {
 				this.localStep = { ...newStep }
 				this.localChecklist = this.parseChecklist(newStep.checklist)
 				this.localActions = this.parseActions(newStep.automaticActions)
+				this.localConfig = this.parseConfig(newStep.config)
+				this.escalationEnabled = !!(newStep && newStep.config && newStep.config.escalationRule)
 			},
 			deep: true,
 		},
 	},
 	methods: {
+		parseConfig(config) {
+			let raw = config
+			if (typeof raw === 'string') {
+				try { raw = JSON.parse(raw) } catch { raw = null }
+			}
+			const safe = raw && typeof raw === 'object' ? raw : {}
+			return {
+				sla: {
+					value: safe.sla && Number.isFinite(safe.sla.value) ? safe.sla.value : null,
+					unit: safe.sla && typeof safe.sla.unit === 'string' ? safe.sla.unit : '',
+				},
+				requiredFields: Array.isArray(safe.requiredFields) ? [...safe.requiredFields] : [],
+				autoActions: Array.isArray(safe.autoActions) ? [...safe.autoActions] : [],
+				escalationRule: safe.escalationRule && typeof safe.escalationRule === 'object'
+					? {
+						trigger: typeof safe.escalationRule.trigger === 'string' ? safe.escalationRule.trigger : 'preBreach',
+						offset: Number.isFinite(safe.escalationRule.offset) ? safe.escalationRule.offset : 0,
+						offsetUnit: typeof safe.escalationRule.offsetUnit === 'string' ? safe.escalationRule.offsetUnit : 'businessDays',
+						notifyRole: typeof safe.escalationRule.notifyRole === 'string' ? safe.escalationRule.notifyRole : '',
+						escalateToRole: typeof safe.escalationRule.escalateToRole === 'string' ? safe.escalationRule.escalateToRole : '',
+						openIncident: !!safe.escalationRule.openIncident,
+					}
+					: {
+						trigger: 'preBreach',
+						offset: 0,
+						offsetUnit: 'businessDays',
+						notifyRole: '',
+						escalateToRole: '',
+						openIncident: false,
+					},
+			}
+		},
+
+		buildConfigPayload() {
+			const out = {}
+			if (this.localConfig.sla.value != null && this.localConfig.sla.unit !== '') {
+				out.sla = { value: this.localConfig.sla.value, unit: this.localConfig.sla.unit }
+			}
+			const fields = this.localConfig.requiredFields.filter(f => typeof f === 'string' && f.trim() !== '')
+			if (fields.length > 0) {
+				out.requiredFields = fields
+			}
+			if (Array.isArray(this.localConfig.autoActions) && this.localConfig.autoActions.length > 0) {
+				out.autoActions = this.localConfig.autoActions
+			}
+			if (this.escalationEnabled) {
+				out.escalationRule = { ...this.localConfig.escalationRule }
+			}
+			return Object.keys(out).length > 0 ? out : undefined
+		},
+
+		addRequiredField() {
+			this.localConfig.requiredFields.push('')
+			this.emitUpdate()
+		},
+
+		removeRequiredField(index) {
+			this.localConfig.requiredFields.splice(index, 1)
+			this.emitUpdate()
+		},
+
+		onEscalationToggle() {
+			this.emitUpdate()
+		},
+
 		parseChecklist(checklist) {
 			if (!checklist) return []
 			if (typeof checklist === 'string') {
@@ -211,11 +438,18 @@ export default {
 		},
 
 		emitUpdate() {
-			this.$emit('update', {
+			const payload = {
 				...this.localStep,
 				checklist: this.localChecklist,
 				automaticActions: this.localActions,
-			})
+			}
+			const config = this.buildConfigPayload()
+			if (config !== undefined) {
+				payload.config = config
+			} else {
+				delete payload.config
+			}
+			this.$emit('update', payload)
 		},
 
 		addChecklistItem() {
@@ -376,5 +610,70 @@ export default {
 	padding: 8px;
 	background: var(--color-background-dark);
 	border-radius: var(--border-radius);
+}
+
+.step-config-panel__advanced-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: 6px 0;
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--color-text-maxcontrast);
+}
+
+.step-config-panel__advanced-caret {
+	font-size: 14px;
+}
+
+.step-config-panel__advanced-banner {
+	padding: 8px;
+	background: var(--color-warning, #fff4d6);
+	border-radius: var(--border-radius);
+	font-size: 12px;
+	margin-bottom: 8px;
+}
+
+.step-config-panel__advanced-body {
+	margin-top: 8px;
+}
+
+.step-config-panel__sla-row {
+	display: flex;
+	gap: 8px;
+}
+
+.step-config-panel__sla-value {
+	width: 80px;
+	flex: 0 0 80px;
+}
+
+.step-config-panel__required-field {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-bottom: 4px;
+}
+
+.step-config-panel__escalation {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 6px;
+	padding: 8px;
+	background: var(--color-background-dark);
+	border-radius: var(--border-radius);
+}
+
+.step-config-panel__inline-check {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
 }
 </style>

@@ -57,15 +57,24 @@
 				<div v-if="isDwangsom" class="enforcement-wizard__dwangsom-fields">
 					<div class="enforcement-wizard__field">
 						<label>{{ t('procest', 'Penalty per violation (EUR)') }}</label>
-						<input v-model.number="dwangsomBedrag" type="number" class="enforcement-wizard__input" min="0">
+						<input v-model.number="dwangsomBedrag"
+							type="number"
+							class="enforcement-wizard__input"
+							min="0">
 					</div>
 					<div class="enforcement-wizard__field">
 						<label>{{ t('procest', 'Maximum penalty (EUR)') }}</label>
-						<input v-model.number="dwangsomMaximaal" type="number" class="enforcement-wizard__input" min="0">
+						<input v-model.number="dwangsomMaximaal"
+							type="number"
+							class="enforcement-wizard__input"
+							min="0">
 					</div>
 					<div class="enforcement-wizard__field">
 						<label>{{ t('procest', 'Grace period (days)') }}</label>
-						<input v-model.number="begunstigingstermijn" type="number" class="enforcement-wizard__input" min="1">
+						<input v-model.number="begunstigingstermijn"
+							type="number"
+							class="enforcement-wizard__input"
+							min="1">
 					</div>
 				</div>
 
@@ -89,7 +98,10 @@
 
 				<div class="enforcement-wizard__field">
 					<label>{{ t('procest', 'Zienswijze period (days)') }}</label>
-					<input v-model.number="zienswijzetermijn" type="number" class="enforcement-wizard__input" min="1">
+					<input v-model.number="zienswijzetermijn"
+						type="number"
+						class="enforcement-wizard__input"
+						min="1">
 				</div>
 
 				<div class="enforcement-wizard__summary">
@@ -111,10 +123,16 @@
 				<NcButton v-if="step > 1" @click="step--">
 					{{ t('procest', 'Previous') }}
 				</NcButton>
-				<NcButton v-if="step < 3" type="primary" :disabled="!canProceed" @click="step++">
+				<NcButton v-if="step < 3"
+					type="primary"
+					:disabled="!canProceed"
+					@click="step++">
 					{{ t('procest', 'Next') }}
 				</NcButton>
-				<NcButton v-if="step === 3" type="primary" :disabled="submitting" @click="submit">
+				<NcButton v-if="step === 3"
+					type="primary"
+					:disabled="submitting"
+					@click="submit">
 					{{ submitting ? t('procest', 'Creating...') : t('procest', 'Create enforcement action') }}
 				</NcButton>
 				<NcButton @click="$emit('close')">

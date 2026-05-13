@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { generateUrl } from '@nextcloud/router'
 
 export const useSettingsStore = defineStore('settings', {
 	state: () => ({
@@ -23,7 +24,7 @@ export const useSettingsStore = defineStore('settings', {
 			this.error = null
 
 			try {
-				const response = await fetch('/apps/procest/api/settings', {
+				const response = await fetch(generateUrl('/apps/procest/api/settings'), {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
@@ -57,7 +58,7 @@ export const useSettingsStore = defineStore('settings', {
 			this.error = null
 
 			try {
-				const response = await fetch('/apps/procest/api/settings', {
+				const response = await fetch(generateUrl('/apps/procest/api/settings'), {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',

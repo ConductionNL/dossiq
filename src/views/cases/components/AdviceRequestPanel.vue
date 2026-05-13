@@ -17,7 +17,9 @@
 						{{ getStatusLabel(req.status) }}
 					</span>
 				</div>
-				<p class="advice-request__subject">{{ req.subject }}</p>
+				<p class="advice-request__subject">
+					{{ req.subject }}
+				</p>
 				<div class="advice-request__meta">
 					<span>{{ t('procest', 'Deadline: {date}', { date: formatDate(req.deadline) }) }}</span>
 					<span v-if="req.response">
