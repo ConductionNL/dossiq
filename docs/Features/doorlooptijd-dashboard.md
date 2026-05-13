@@ -9,16 +9,16 @@ Adds a dedicated Doorlooptijd (processing time) analytics view to the Procest da
 
 ## Features
 
-- **SLA compliance rate widget** — Percentage of cases completed within their `processingDeadline`, broken down by case type
-- **Processing time distribution chart** — Histogram of actual vs. allowed processing days per case type
-- **Trend line chart** — Monthly SLA compliance rate over the last 12 months (ApexCharts)
-- **At-risk cases panel** — Open cases where remaining time is less than 25% of the allowed processing deadline
-- **Average processing time table** — Per-case-type performance table with SLA target comparison
-- **Dashboard KPI card** — Summary SLA compliance card added to the main dashboard KPI row
+- **SLA compliance rate widget**: Percentage of cases completed within their `processingDeadline`, broken down by case type
+- **Processing time distribution chart**: Histogram of actual vs. allowed processing days per case type
+- **Trend line chart**: Monthly SLA compliance rate over the last 12 months (ApexCharts)
+- **At-risk cases panel**: Open cases where remaining time is less than 25% of the allowed processing deadline
+- **Average processing time table**: Per-case-type performance table with SLA target comparison
+- **Dashboard KPI card**: Summary SLA compliance card added to the main dashboard KPI row
 
 ## Data Sources
 
-All data derived from existing case fields — no schema changes required:
+All data derived from existing case fields: no schema changes required:
 - `case.startDate`, `case.endDate`, `case.deadline`, `case.plannedEndDate`, `case.status`, `case.caseType`
 - `caseType.processingDeadline`
 - `statusType.isFinal`

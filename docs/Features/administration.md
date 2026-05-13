@@ -36,7 +36,7 @@ One case type can be marked as the default, pre-selected when creating new cases
 
 Transition a case type from draft to published state, making it available for case creation. Validates completeness before publishing.
 
-### Planned (V1) — Admin Tabs
+### Planned (V1): Admin Tabs
 
 Additional case type configuration tabs:
 
@@ -47,23 +47,23 @@ Additional case type configuration tabs:
 
 ### OpenRegister Integration (MVP)
 
-Procest owns no database tables — all data is stored as OpenRegister objects in the `procest` register with 12 schemas:
+Procest owns no database tables: all data is stored as OpenRegister objects in the `procest` register with 12 schemas:
 
 **Configuration schemas (admin-managed):**
-- `caseType` — Case behavior configuration
-- `statusType` — Allowed statuses per case type
-- `resultType` — Outcome types with archival rules
-- `roleType` — Participant role definitions
-- `propertyDefinition` — Custom field definitions
-- `documentType` — Required document types
-- `decisionType` — Decision type definitions
+- `caseType`: Case behavior configuration
+- `statusType`: Allowed statuses per case type
+- `resultType`: Outcome types with archival rules
+- `roleType`: Participant role definitions
+- `propertyDefinition`: Custom field definitions
+- `documentType`: Required document types
+- `decisionType`: Decision type definitions
 
 **Instance schemas (user-created):**
-- `case` — Case records
-- `task` — Task work items
-- `role` — Participant assignments
-- `result` — Case outcomes
-- `decision` — Formal decisions
+- `case`: Case records
+- `task`: Task work items
+- `role`: Participant assignments
+- `result`: Case outcomes
+- `decision`: Formal decisions
 
 ### Auto-Configuration on Install (MVP)
 

@@ -1,4 +1,4 @@
-# Procest — Developer Guide
+# Procest: Developer Guide
 
 ## Branching Strategy
 

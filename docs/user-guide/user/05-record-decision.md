@@ -6,7 +6,7 @@ description: Capture an advisory (advies) or a formal decision (besluit) on a ca
 
 # Record advice or a decision on a case
 
-A decision is the formal outcome of a case — granted, refused, partially granted, withdrawn. Advice is the non-binding recommendation that often precedes it. Both are first-class objects in Procest and live in their own lists.
+A decision is the formal outcome of a case: granted, refused, partially granted, withdrawn. Advice is the non-binding recommendation that often precedes it. Both are first-class objects in Procest and live in their own lists.
 
 ## Goal
 
@@ -32,7 +32,7 @@ By the end you will have added a piece of advice to a case, recorded a formal de
 
    ![Decision dialog](/screenshots/tutorials/user/05-record-decision-03.png)
 
-4. Pick the outcome — typically one of *Granted*, *Refused*, *Partially granted*, *Withdrawn*. The decision-maker role is filled from the case's participants; override it if needed. Click **Save**.
+4. Pick the outcome: typically one of *Granted*, *Refused*, *Partially granted*, *Withdrawn*. The decision-maker role is filled from the case's participants; override it if needed. Click **Save**.
 
    ![Decision outcome](/screenshots/tutorials/user/05-record-decision-04.png)
 
@@ -49,10 +49,10 @@ You have recorded the decision correctly when: the case header shows the new out
 | Symptom | Fix |
 |---|---|
 | **Add advice** / **Record decision** is missing from the Actions menu | The current status does not permit it; transition the case to an "advisory" or "decision-ready" status first (see [Move a case through its workflow](./04-advance-case.md)). |
-| Dialog opens but fields are empty / unmapped | The Advice or Decision schema is not mapped — re-import the register configuration (see [Manage Procest settings](../admin/03-admin-settings.md)). |
+| Dialog opens but fields are empty / unmapped | The Advice or Decision schema is not mapped: re-import the register configuration (see [Manage Procest settings](../admin/03-admin-settings.md)). |
 | Outcome dropdown is empty | The Result schema has no seed values; an admin populates them via the **Result** schema in OpenRegister. |
 
 ## Reference
 
-- [Besluitvorming workflow](../../features/besluitvorming-workflow.md) — the advisory-to-decision pattern.
-- [Configure case types and workflows](../admin/01-configure-case-types.md) — controlling when advice / decisions are permitted.
+- [Besluitvorming workflow](../../Features/besluitvorming-workflow.md): the advisory-to-decision pattern.
+- [Configure case types and workflows](../admin/01-configure-case-types.md): controlling when advice / decisions are permitted.

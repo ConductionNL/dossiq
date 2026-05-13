@@ -30,10 +30,10 @@ Adds a zero-code visual workflow builder that allows administrators to define pr
   - Pan/zoom via CSS transform
 
 - **Configuration Panels:**
-  - `StepConfigPanel.vue` — checklist editor, guard configuration
-  - `TransitionConfigPanel.vue` — action configuration per transition
+  - `StepConfigPanel.vue`: checklist editor, guard configuration
+  - `TransitionConfigPanel.vue`: action configuration per transition
 
-- **Case Detail Integration:** `WorkflowTransitions.vue` — shows available transitions filtered by role/guards
+- **Case Detail Integration:** `WorkflowTransitions.vue`: shows available transitions filtered by role/guards
 
 ## Guards
 

@@ -16,7 +16,7 @@ By the end you will have opened a bezwaar from the Bezwaren list, walked it to t
 
 - Completed [Move a case through its workflow](./04-advance-case.md).
 - A bezwaar in the register (you can register one from the Bezwaren list with **Add Item**, or one was filed against an existing decision).
-- A *bezwaaradviescommissie* configured under **Bezwaaradviescommissies** (see [Bezwaar-beroep workflow](../../features/bezwaar-beroep-workflow.md)).
+- A *bezwaaradviescommissie* configured under **Bezwaaradviescommissies** (see [Bezwaar-beroep workflow](../../Features/bezwaar-beroep-workflow.md)).
 
 ## Steps
 
@@ -28,11 +28,11 @@ By the end you will have opened a bezwaar from the Bezwaren list, walked it to t
 
    ![Routing to BAC](/screenshots/tutorials/user/07-handle-objection-02.png)
 
-3. From the navigation, click **BAC-adviezen**. The new request shows up as *Open*. Click it to record the committee's advisory — *Outcome*, *Motivation*, *Hearing date*. Save.
+3. From the navigation, click **BAC-adviezen**. The new request shows up as *Open*. Click it to record the committee's advisory: *Outcome*, *Motivation*, *Hearing date*. Save.
 
    ![BAC advice form](/screenshots/tutorials/user/07-handle-objection-03.png)
 
-4. Back on the bezwaar, click **Record beslissing op bezwaar**. A dialog opens — pre-filled with the BAC advisory outcome as a default. Adjust if the authority departs from the advisory, add a motivation, and save.
+4. Back on the bezwaar, click **Record beslissing op bezwaar**. A dialog opens: pre-filled with the BAC advisory outcome as a default. Adjust if the authority departs from the advisory, add a motivation, and save.
 
    ![Beslissing op bezwaar dialog](/screenshots/tutorials/user/07-handle-objection-04.png)
 
@@ -48,11 +48,11 @@ You have handled the bezwaar correctly when: a row exists in **BAC-adviezen** re
 
 | Symptom | Fix |
 |---|---|
-| **Route to BAC** is missing | The current status of the bezwaar does not permit it — transition to a status that has *Naar BAC* as an allowed next step. |
-| BAC-advies form fields are empty | The Advice schema is not mapped to the bezwaar register — see [Manage Procest settings](../admin/03-admin-settings.md). |
+| **Route to BAC** is missing | The current status of the bezwaar does not permit it: transition to a status that has *Naar BAC* as an allowed next step. |
+| BAC-advies form fields are empty | The Advice schema is not mapped to the bezwaar register: see [Manage Procest settings](../admin/03-admin-settings.md). |
 | Beslissing op bezwaar opens but does not pre-fill from BAC advice | The BAC advisory has not been saved as *Afgerond*; reopen it and finalise before recording the decision. |
 
 ## Reference
 
-- [Bezwaar-beroep workflow](../../features/bezwaar-beroep-workflow.md) — the full objection / appeal flow.
-- [Besluitvorming workflow](../../features/besluitvorming-workflow.md) — the underlying advisory-to-decision pattern.
+- [Bezwaar-beroep workflow](../../Features/bezwaar-beroep-workflow.md): the full objection / appeal flow.
+- [Besluitvorming workflow](../../Features/besluitvorming-workflow.md): the underlying advisory-to-decision pattern.

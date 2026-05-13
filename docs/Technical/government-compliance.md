@@ -1,4 +1,4 @@
-# Procest — Overheidsfunctionaliteiten
+# Procest: Overheidsfunctionaliteiten
 
 > Functiepagina voor Nederlandse overheidsorganisaties.
 > Gebruik deze checklist om te toetsen aan uw Programma van Eisen.
@@ -123,7 +123,7 @@
 | P-02 | Recht op vergetelheid | Gepland (V1) | Zaak- en persoonsgegevens verwijdering |
 | P-03 | Recht op rectificatie | Via platform | Object wijzigen via OpenRegister |
 | P-04 | Bewaartermijnen | Gepland (Enterprise) | Automatische vernietiging |
-| P-05 | Data minimalisatie | Beschikbaar | Schema-gebaseerd — alleen gedefinieerde velden |
+| P-05 | Data minimalisatie | Beschikbaar | Schema-gebaseerd: alleen gedefinieerde velden |
 
 ---
 
@@ -202,10 +202,10 @@
 
 | Kenmerk | Toelichting |
 |---------|-------------|
-| **Nextcloud-native** | Geen apart systeem — case management in uw bestaande samenwerkingsplatform |
-| **Lichtgewicht** | Geen Java/Spring stack — draait als Nextcloud-app |
+| **Nextcloud-native** | Geen apart systeem: case management in uw bestaande samenwerkingsplatform |
+| **Lichtgewicht** | Geen Java/Spring stack: draait als Nextcloud-app |
 | **CRM + Zaak in één** | Pipelinq (CRM) → Procest (zaak) is een unieke geïntegreerde workflow |
 | **NL Design System** | Overheidshuisstijl via design tokens |
 | **Data-hergebruik** | Zaakdata op OpenRegister is herbruikbaar door andere apps |
 | **Gefedereerd** | Cross-organisatie zaakafhandeling via Nextcloud federatie |
-| **~50% infrastructuur gratis** | Taken, bestanden, notificaties, chat — al ingebouwd |
+| **~50% infrastructuur gratis** | Taken, bestanden, notificaties, chat: al ingebouwd |

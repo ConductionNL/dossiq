@@ -1,4 +1,4 @@
-# Procest — Architecture & Data Model
+# Procest: Architecture & Data Model
 
 ## 1. Overview
 
@@ -38,14 +38,14 @@ Procest owns **no database tables**. All data is stored as OpenRegister objects,
 
 | Standard | Type | Coverage | Maturity | Relevance |
 |----------|------|----------|----------|-----------|
-| **CMMN 1.1** | International (OMG) | Case plans, tasks, milestones, sentries, case file items | Mature | **HIGH** — designed for case management |
-| **BPMN 2.0** | International (OMG) | Processes, tasks, gateways, events | Very mature, widely adopted | **HIGH** — task/workflow modeling |
-| **DMN 1.x** | International (OMG) | Decision tables, decision logic | Mature, growing | **MEDIUM** — decision modeling |
-| **Schema.org** | International (W3C) | Action, Project, GovernmentService, Role | Very mature | **MEDIUM** — semantic vocabulary |
-| **Dublin Core (ISO 15836)** | International | 15 metadata elements for documents | Very mature | **LOW** — document metadata |
-| **ZGW APIs (VNG)** | Dutch gov | Zaak, Status, Resultaat, Besluit, Rol | Production, mandated NL | **HIGH** — Dutch API interoperability |
-| **RGBZ** | Dutch gov | Information model behind ZGW | Stable (v1.0) | **HIGH** — field-level reference |
-| **ZGW Catalogi API** | Dutch gov | ZaakType, StatusType, ResultaatType, RolType, etc. | Production (v1.3.x) | **HIGH** — case type system reference |
+| **CMMN 1.1** | International (OMG) | Case plans, tasks, milestones, sentries, case file items | Mature | **HIGH**: designed for case management |
+| **BPMN 2.0** | International (OMG) | Processes, tasks, gateways, events | Very mature, widely adopted | **HIGH**: task/workflow modeling |
+| **DMN 1.x** | International (OMG) | Decision tables, decision logic | Mature, growing | **MEDIUM**: decision modeling |
+| **Schema.org** | International (W3C) | Action, Project, GovernmentService, Role | Very mature | **MEDIUM**: semantic vocabulary |
+| **Dublin Core (ISO 15836)** | International | 15 metadata elements for documents | Very mature | **LOW**: document metadata |
+| **ZGW APIs (VNG)** | Dutch gov | Zaak, Status, Resultaat, Besluit, Rol | Production, mandated NL | **HIGH**: Dutch API interoperability |
+| **RGBZ** | Dutch gov | Information model behind ZGW | Stable (v1.0) | **HIGH**: field-level reference |
+| **ZGW Catalogi API** | Dutch gov | ZaakType, StatusType, ResultaatType, RolType, etc. | Production (v1.3.x) | **HIGH**: case type system reference |
 
 ### 2.2 Design Principle: International First
 
@@ -66,7 +66,7 @@ This means:
 
 4. **ZGW Catalogi API** defines `ZaakType` as a comprehensive case type system controlling: allowed statuses, result types with archival rules, role types, custom properties, required documents, processing deadlines, confidentiality defaults, and publication rules. This is the most complete case type reference available.
 
-5. **Schema.org** provides `Action` (with `actionStatus`, `agent`, `result`), `Project`, and `Role` — useful as semantic annotations but not domain-specific enough for case management.
+5. **Schema.org** provides `Action` (with `actionStatus`, `agent`, `result`), `Project`, and `Role`: useful as semantic annotations but not domain-specific enough for case management.
 
 6. **Nextcloud** provides built-in Calendar (CalDAV), activity tracking, and file management that we reuse where possible. Deck was evaluated but is not suitable (no PHP API, model doesn't fit).
 
@@ -91,7 +91,7 @@ A case type is a configurable definition that controls the behavior of cases: wh
 | Aspect | Decision | Rationale |
 |--------|----------|-----------|
 | **CMMN concept** | `CaseDefinition` / `CasePlanModel` template | CMMN separates case definition from case instance |
-| **ZGW equivalent** | `ZaakType` (Catalogi API 1.3.x) | Full behavioral case type — our primary reference |
+| **ZGW equivalent** | `ZaakType` (Catalogi API 1.3.x) | Full behavioral case type: our primary reference |
 | **Versioning** | Case types have validity periods and draft/published status | From ZGW: `concept`, `validFrom`, `validUntil` |
 
 **Core properties**:
@@ -101,26 +101,26 @@ A case type is a configurable definition that controls the behavior of cases: wh
 | `title` | string | `schema:name` | `zaaktype_omschrijving` | Yes |
 | `description` | string | `schema:description` | `toelichting` | No |
 | `identifier` | string | `schema:identifier` | `identificatie` | Auto |
-| `purpose` | string | — | `doel` | Yes |
-| `trigger` | string | — | `aanleiding` | Yes |
-| `subject` | string | — | `onderwerp` | Yes |
-| `initiatorAction` | string | — | `handeling_initiator` | Yes |
-| `handlerAction` | string | — | `handeling_behandelaar` | Yes |
-| `origin` | enum: internal, external | — | `indicatie_intern_of_extern` | Yes |
+| `purpose` | string |: | `doel` | Yes |
+| `trigger` | string |: | `aanleiding` | Yes |
+| `subject` | string |: | `onderwerp` | Yes |
+| `initiatorAction` | string |: | `handeling_initiator` | Yes |
+| `handlerAction` | string |: | `handeling_behandelaar` | Yes |
+| `origin` | enum: internal, external |: | `indicatie_intern_of_extern` | Yes |
 | `processingDeadline` | duration (ISO 8601) | CMMN TimerEventListener | `doorlooptijd_behandeling` | Yes |
-| `serviceTarget` | duration (ISO 8601) | — | `servicenorm_behandeling` | No |
-| `suspensionAllowed` | boolean | — | `opschorting_en_aanhouding_mogelijk` | Yes |
-| `extensionAllowed` | boolean | — | `verlenging_mogelijk` | Yes |
-| `extensionPeriod` | duration (ISO 8601) | — | `verlengingstermijn` | Conditional |
-| `confidentiality` | enum | — | `vertrouwelijkheidaanduiding` | Yes |
-| `publicationRequired` | boolean | — | `publicatie_indicatie` | Yes |
-| `publicationText` | string | — | `publicatietekst` | No |
-| `responsibleUnit` | string | — | `verantwoordelijke` | Yes |
-| `referenceProcess` | string | — | `referentieproces_naam` | No |
-| `isDraft` | boolean | — | `concept` | No (default: true) |
-| `validFrom` | date | — | `datum_begin_geldigheid` | Yes |
-| `validUntil` | date | — | `datum_einde_geldigheid` | No |
-| `keywords` | string[] | — | `trefwoorden` | No |
+| `serviceTarget` | duration (ISO 8601) |: | `servicenorm_behandeling` | No |
+| `suspensionAllowed` | boolean |: | `opschorting_en_aanhouding_mogelijk` | Yes |
+| `extensionAllowed` | boolean |: | `verlenging_mogelijk` | Yes |
+| `extensionPeriod` | duration (ISO 8601) |: | `verlengingstermijn` | Conditional |
+| `confidentiality` | enum |: | `vertrouwelijkheidaanduiding` | Yes |
+| `publicationRequired` | boolean |: | `publicatie_indicatie` | Yes |
+| `publicationText` | string |: | `publicatietekst` | No |
+| `responsibleUnit` | string |: | `verantwoordelijke` | Yes |
+| `referenceProcess` | string |: | `referentieproces_naam` | No |
+| `isDraft` | boolean |: | `concept` | No (default: true) |
+| `validFrom` | date |: | `datum_begin_geldigheid` | Yes |
+| `validUntil` | date |: | `datum_einde_geldigheid` | No |
+| `keywords` | string[] |: | `trefwoorden` | No |
 | `subCaseTypes` | reference[] | CMMN CaseTask | `deelzaaktypen` | No |
 
 **Confidentiality levels** (from ZGW, internationally applicable):
@@ -155,9 +155,9 @@ A configurable status definition linked to a case type. Controls which lifecycle
 | `caseType` | reference | Parent case type | `zaaktype` | Yes |
 | `order` | integer (1–9999) | CMMN Milestone sequence | `statustypevolgnummer` | Yes |
 | `isFinal` | boolean | CMMN terminal state | (last in order) | No (default: false) |
-| `targetDuration` | duration | — | `doorlooptijd` | No |
-| `notifyInitiator` | boolean | — | `informeren` | No (default: false) |
-| `notificationText` | string | — | `statustekst` | No |
+| `targetDuration` | duration |: | `doorlooptijd` | No |
+| `notifyInitiator` | boolean |: | `informeren` | No (default: false) |
+| `notificationText` | string |: | `statustekst` | No |
 
 #### Result Type
 
@@ -175,9 +175,9 @@ A configurable result definition linked to a case type. Controls which outcomes 
 | `name` | string | `schema:name` | `omschrijving` | Yes |
 | `description` | string | `schema:description` | `toelichting` | No |
 | `caseType` | reference | Parent case type | `zaaktype` | Yes |
-| `archiveAction` | enum: retain, destroy | — | `archiefnominatie` | No |
-| `retentionPeriod` | duration (ISO 8601) | — | `archiefactietermijn` | No |
-| `retentionDateSource` | enum | — | `afleidingswijze` | No |
+| `archiveAction` | enum: retain, destroy |: | `archiefnominatie` | No |
+| `retentionPeriod` | duration (ISO 8601) |: | `archiefactietermijn` | No |
+| `retentionDateSource` | enum |: | `afleidingswijze` | No |
 
 **Retention date source values** (from ZGW, internationally applicable):
 
@@ -207,7 +207,7 @@ A configurable role definition linked to a case type. Controls which participant
 |----------|------|--------|-------------|----------|
 | `name` | string | `schema:roleName` | `omschrijving` | Yes |
 | `caseType` | reference | Parent case type | `zaaktype` | Yes |
-| `genericRole` | enum | — | `omschrijvingGeneriek` | Yes |
+| `genericRole` | enum |: | `omschrijvingGeneriek` | Yes |
 
 **Standard generic roles** (from ZGW, internationally applicable):
 
@@ -238,9 +238,9 @@ A configurable custom field definition linked to a case type. Controls which add
 | `name` | string | `schema:name` | `eigenschapnaam` | Yes |
 | `definition` | string | `schema:description` | `definitie` | Yes |
 | `caseType` | reference | Parent case type | `zaaktype` | Yes |
-| `format` | enum: text, number, date, datetime | — | `formaat` | Yes |
-| `maxLength` | integer | — | `lengte` | No |
-| `allowedValues` | string[] | — | `waardenverzameling` | No |
+| `format` | enum: text, number, date, datetime |: | `formaat` | Yes |
+| `maxLength` | integer |: | `lengte` | No |
+| `allowedValues` | string[] |: | `waardenverzameling` | No |
 | `requiredAtStatus` | reference | Status at which this must be filled | `statustype` | No |
 
 #### Document Type
@@ -257,11 +257,11 @@ A configurable document type definition linked to a case type. Controls which do
 | Property | Type | Source | ZGW Mapping | Required |
 |----------|------|--------|-------------|----------|
 | `name` | string | `schema:name` | `omschrijving` | Yes |
-| `category` | string | — | `informatieobjectcategorie` | Yes |
+| `category` | string |: | `informatieobjectcategorie` | Yes |
 | `caseType` | reference | Parent case type | `zaaktype` (via through table) | Yes |
-| `direction` | enum: incoming, internal, outgoing | — | `richting` | Yes |
-| `order` | integer | — | `volgnummer` | Yes |
-| `confidentiality` | enum | — | `vertrouwelijkheidaanduiding` | No |
+| `direction` | enum: incoming, internal, outgoing |: | `richting` | Yes |
+| `order` | integer |: | `volgnummer` | Yes |
+| `confidentiality` | enum |: | `vertrouwelijkheidaanduiding` | No |
 | `requiredAtStatus` | reference | Status requiring this document | `statustype` | No |
 
 #### Decision Type
@@ -279,10 +279,10 @@ A configurable decision type definition linked to a case type.
 |----------|------|--------|-------------|----------|
 | `name` | string | `schema:name` | `omschrijving` | Yes |
 | `description` | string | `schema:description` | `toelichting` | No |
-| `category` | string | — | `besluitcategorie` | No |
-| `objectionPeriod` | duration (ISO 8601) | — | `reactietermijn` | No |
-| `publicationRequired` | boolean | — | `publicatie_indicatie` | Yes |
-| `publicationPeriod` | duration (ISO 8601) | — | `publicatietermijn` | No |
+| `category` | string |: | `besluitcategorie` | No |
+| `objectionPeriod` | duration (ISO 8601) |: | `reactietermijn` | No |
+| `publicationRequired` | boolean |: | `publicatie_indicatie` | Yes |
+| `publicationPeriod` | duration (ISO 8601) |: | `publicatietermijn` | No |
 
 #### Case (Zaak)
 
@@ -290,7 +290,7 @@ A case is a coherent body of work with a defined lifecycle, initiation, and resu
 
 | Aspect | Decision | Rationale |
 |--------|----------|-----------|
-| **CMMN concept** | `CasePlanModel` / Case instance | CMMN's core concept — a case with a plan |
+| **CMMN concept** | `CasePlanModel` / Case instance | CMMN's core concept: a case with a plan |
 | **Schema.org type** | `schema:Project` | "An enterprise planned to achieve a particular aim" |
 | **ZGW mapping** | `Zaak` | Direct mapping for Dutch API compatibility |
 
@@ -306,13 +306,13 @@ A case is a coherent body of work with a defined lifecycle, initiation, and resu
 | `result` | reference | CMMN case outcome | `resultaat` (URL ref) | No |
 | `startDate` | date | `schema:startDate` | `startdatum` | Yes |
 | `endDate` | date | `schema:endDate` | `einddatum` | No |
-| `plannedEndDate` | date | — | `einddatumGepland` | No |
-| `deadline` | date | — | `uiterlijkeEinddatumAfdoening` | Auto (from caseType) |
-| `confidentiality` | enum | — | `vertrouwelijkheidaanduiding` | No (default from caseType) |
-| `assignee` | string | CMMN HumanTask.assignee | — | No |
-| `priority` | enum | `schema:priority` | — | No |
+| `plannedEndDate` | date |: | `einddatumGepland` | No |
+| `deadline` | date |: | `uiterlijkeEinddatumAfdoening` | Auto (from caseType) |
+| `confidentiality` | enum |: | `vertrouwelijkheidaanduiding` | No (default from caseType) |
+| `assignee` | string | CMMN HumanTask.assignee |: | No |
+| `priority` | enum | `schema:priority` |: | No |
 | `parentCase` | reference | CMMN CaseTask (sub-case) | `hoofdzaak` | No |
-| `relatedCases` | array | — | `relevanteAndereZaken` | No |
+| `relatedCases` | array |: | `relevanteAndereZaken` | No |
 | `geometry` | GeoJSON | `schema:geo` | `zaakgeometrie` | No |
 
 **Case type behavioral controls on cases**:
@@ -365,8 +365,8 @@ The relationship between a person/organization and a case.
 |----------|------|------------------|-------------|----------|
 | `name` | string | `schema:roleName` | `omschrijving` | Yes |
 | `description` | string | `schema:description` | `roltoelichting` | No |
-| `roleType` | reference | — | `omschrijvingGeneriek` (via RoleType) | Yes |
-| `case` | reference | — | `zaak` | Yes |
+| `roleType` | reference |: | `omschrijvingGeneriek` (via RoleType) | Yes |
+| `case` | reference |: | `zaak` | Yes |
 | `participant` | string (user UID or contact ref) | `schema:agent` | `betrokkene` | Yes |
 
 #### Result (Resultaat)
@@ -390,11 +390,11 @@ A formal decision made on a case.
 
 | Property | Type | Schema.org Source | ZGW Mapping | Required |
 |----------|------|------------------|-------------|----------|
-| `title` | string | `schema:name` | — | Yes |
+| `title` | string | `schema:name` |: | Yes |
 | `description` | string | `schema:description` | `toelichting` | No |
-| `case` | reference | — | `zaak` | No |
-| `decisionType` | reference | — | `besluittype` | No |
-| `decidedBy` | string | `schema:agent` | — | No |
+| `case` | reference |: | `zaak` | No |
+| `decisionType` | reference |: | `besluittype` | No |
+| `decidedBy` | string | `schema:agent` |: | No |
 | `decidedAt` | datetime | `schema:endTime` | `datum` | No |
 | `effectiveDate` | date | `schema:startTime` | `ingangsdatum` | No |
 | `expiryDate` | date | `schema:endTime` | `vervaldatum` | No |
@@ -405,13 +405,13 @@ The case type system forms a hierarchy where the CaseType is the central configu
 
 ```
 CaseType
-├── StatusType[]         — Allowed lifecycle phases (ordered)
-├── ResultType[]         — Allowed outcomes (with archival rules)
-├── RoleType[]           — Allowed participant roles
-├── PropertyDefinition[] — Required custom data fields
-├── DocumentType[]       — Required document types
-├── DecisionType[]       — Allowed decision types
-└── subCaseTypes[]       — Allowed sub-case types
+├── StatusType[]        : Allowed lifecycle phases (ordered)
+├── ResultType[]        : Allowed outcomes (with archival rules)
+├── RoleType[]          : Allowed participant roles
+├── PropertyDefinition[]: Required custom data fields
+├── DocumentType[]      : Required document types
+├── DecisionType[]      : Allowed decision types
+└── subCaseTypes[]      : Allowed sub-case types
 ```
 
 **Behavioral controls**:
@@ -431,7 +431,7 @@ CaseType
 
 ### 3.4 My Work (Werkvoorraad)
 
-A cross-entity workload view showing all items assigned to the current user. No new entity is needed — this is a frontend aggregation pattern.
+A cross-entity workload view showing all items assigned to the current user. No new entity is needed: this is a frontend aggregation pattern.
 
 **How it works**:
 - Query cases with `assignee == currentUser` and non-final status
@@ -445,7 +445,7 @@ A cross-entity workload view showing all items assigned to the current user. No 
 |-------|------|------|--------------|-----------------|
 | `assignee` / `assignedTo` | Yes | Yes | Yes | Yes |
 | `priority` | Yes | Yes | Yes | Yes |
-| `deadline` / `dueDate` | Yes | Yes | Yes | — |
+| `deadline` / `dueDate` | Yes | Yes | Yes |: |
 | `status` | Yes | Yes | (via stage) | Yes |
 | Entity type label | "Case" | "Task" | "Lead" | "Request" |
 
@@ -573,18 +573,18 @@ $conversation = $broker->createConversation('Case: ' . $caseTitle, $participantI
 Schemas MUST be defined in `lib/Settings/procest_register.json` using OpenAPI 3.0.0 format, following the pattern used by opencatalogi and softwarecatalog.
 
 **Schemas**:
-- `caseType` — Case type definition (CMMN CaseDefinition)
-- `statusType` — Status type per case type (CMMN Milestone)
-- `resultType` — Result type per case type (with archival rules)
-- `roleType` — Role type per case type (schema:Role)
-- `propertyDefinition` — Custom field definition (schema:PropertyValueSpecification)
-- `documentType` — Document type requirement (schema:DigitalDocument)
-- `decisionType` — Decision type definition (schema:ChooseAction)
-- `case` — Case instance (schema:Project)
-- `task` — Task within a case (schema:Action)
-- `role` — Role assignment on a case (schema:Role instance)
-- `result` — Case outcome (schema:Action.result)
-- `decision` — Formal decision (schema:ChooseAction instance)
+- `caseType`: Case type definition (CMMN CaseDefinition)
+- `statusType`: Status type per case type (CMMN Milestone)
+- `resultType`: Result type per case type (with archival rules)
+- `roleType`: Role type per case type (schema:Role)
+- `propertyDefinition`: Custom field definition (schema:PropertyValueSpecification)
+- `documentType`: Document type requirement (schema:DigitalDocument)
+- `decisionType`: Decision type definition (schema:ChooseAction)
+- `case`: Case instance (schema:Project)
+- `task`: Task within a case (schema:Action)
+- `role`: Role assignment on a case (schema:Role instance)
+- `result`: Case outcome (schema:Action.result)
+- `decision`: Formal decision (schema:ChooseAction instance)
 
 The configuration is imported via `ConfigurationService::importFromApp()` in the repair step.
 
@@ -611,45 +611,45 @@ Field-level mappings are documented per entity in section 3.2 above.
 
 ## 6. Open Research Questions
 
-1. ~~**Nextcloud Deck reuse**~~ — **RESOLVED**: Deck is not suitable. No PHP API, model doesn't fit case lifecycle.
+1. ~~**Nextcloud Deck reuse**~~: **RESOLVED**: Deck is not suitable. No PHP API, model doesn't fit case lifecycle.
 
-2. ~~**Case type system**~~ — **RESOLVED**: Case types are a core feature with full behavioral controls, modeled after ZGW ZaakType but using international terminology.
+2. ~~**Case type system**~~: **RESOLVED**: Case types are a core feature with full behavioral controls, modeled after ZGW ZaakType but using international terminology.
 
-3. **CMMN runtime** — Should Procest implement CMMN runtime semantics (sentries, entry/exit criteria) or keep the simpler status-based lifecycle? Current decision: start with ordered status progression, add CMMN features as needed.
+3. **CMMN runtime**: Should Procest implement CMMN runtime semantics (sentries, entry/exit criteria) or keep the simpler status-based lifecycle? Current decision: start with ordered status progression, add CMMN features as needed.
 
-4. **Archival** — ZGW has detailed archival rules. The case type system now includes result-based archival configuration (`archiveAction`, `retentionPeriod`, `retentionDateSource`). Runtime archival enforcement is deferred until compliance requirements emerge.
+4. **Archival**: ZGW has detailed archival rules. The case type system now includes result-based archival configuration (`archiveAction`, `retentionPeriod`, `retentionDateSource`). Runtime archival enforcement is deferred until compliance requirements emerge.
 
-5. **DMN for decisions** — Should Procest support DMN decision tables for automated decision logic? This is ambitious but aligns with the OMG "Triple Crown" (BPMN + CMMN + DMN). Deferred.
+5. **DMN for decisions**: Should Procest support DMN decision tables for automated decision logic? This is ambitious but aligns with the OMG "Triple Crown" (BPMN + CMMN + DMN). Deferred.
 
-6. **Case type versioning** — ZGW supports versioning of case types (new versions when modifications are made). Should Procest implement version chains? Current decision: `validFrom`/`validUntil` for validity windows, explicit versioning deferred.
+6. **Case type versioning**: ZGW supports versioning of case types (new versions when modifications are made). Should Procest implement version chains? Current decision: `validFrom`/`validUntil` for validity windows, explicit versioning deferred.
 
-7. **Cross-app My Work** — Should the My Work view in Procest also show Pipelinq leads/requests? Requires cross-app API calls or a shared dashboard widget.
+7. **Cross-app My Work**: Should the My Work view in Procest also show Pipelinq leads/requests? Requires cross-app API calls or a shared dashboard widget.
 
 ## 7. References
 
 ### Primary Standards (International)
-- [CMMN 1.1 (OMG)](https://www.omg.org/spec/CMMN/1.1/About-CMMN) — Case Management Model and Notation
-- [BPMN 2.0 (OMG)](https://www.omg.org/spec/BPMN/2.0.2/) — Business Process Model and Notation
-- [DMN (OMG)](https://www.omg.org/dmn/) — Decision Model and Notation
-- [Schema.org](https://schema.org/) — Linked data vocabulary
+- [CMMN 1.1 (OMG)](https://www.omg.org/spec/CMMN/1.1/About-CMMN): Case Management Model and Notation
+- [BPMN 2.0 (OMG)](https://www.omg.org/spec/BPMN/2.0.2/): Business Process Model and Notation
+- [DMN (OMG)](https://www.omg.org/dmn/): Decision Model and Notation
+- [Schema.org](https://schema.org/): Linked data vocabulary
 
 ### Schema.org Types Used
-- [schema:Project](https://schema.org/Project) — Case
-- [schema:Action](https://schema.org/Action) — Task (with ActionStatusType)
-- [schema:Role](https://schema.org/Role) — Case participant role
-- [schema:ChooseAction](https://schema.org/ChooseAction) — Decision
-- [schema:PropertyValueSpecification](https://schema.org/PropertyValueSpecification) — Custom field definition
-- [schema:DigitalDocument](https://schema.org/DigitalDocument) — Document type
-- [schema:identifier](https://schema.org/identifier) — Unique identifiers
+- [schema:Project](https://schema.org/Project): Case
+- [schema:Action](https://schema.org/Action): Task (with ActionStatusType)
+- [schema:Role](https://schema.org/Role): Case participant role
+- [schema:ChooseAction](https://schema.org/ChooseAction): Decision
+- [schema:PropertyValueSpecification](https://schema.org/PropertyValueSpecification): Custom field definition
+- [schema:DigitalDocument](https://schema.org/DigitalDocument): Document type
+- [schema:identifier](https://schema.org/identifier): Unique identifiers
 
 ### Dutch Standards (API Mapping Layer)
-- [ZGW API Standards](https://vng-realisatie.github.io/gemma-zaken/standaard/) — Zaken, Besluiten, Catalogi, Documenten APIs
-- [ZGW Catalogi API](https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/index) — Case type definitions (ZaakType, StatusType, etc.)
-- [RGBZ](https://vng-realisatie.github.io/RGBZ/) — Information model for ZGW
-- [GEMMA Online](https://www.gemmaonline.nl/) — Dutch municipal architecture
+- [ZGW API Standards](https://vng-realisatie.github.io/gemma-zaken/standaard/): Zaken, Besluiten, Catalogi, Documenten APIs
+- [ZGW Catalogi API](https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/index): Case type definitions (ZaakType, StatusType, etc.)
+- [RGBZ](https://vng-realisatie.github.io/RGBZ/): Information model for ZGW
+- [GEMMA Online](https://www.gemmaonline.nl/): Dutch municipal architecture
 
 ### Industry References
-- [OpenZaak](https://github.com/open-zaak/open-zaak) — ZGW reference implementation (ZaakType model source)
-- [Valtimo](https://docs.valtimo.nl/) — Case management platform with ZGW integration
-- [Flowable CMMN](https://www.flowable.com/open-source/docs/cmmn/ch06-cmmn) — CMMN engine reference
-- [Camunda CMMN Patterns via BPMN](https://camunda.com/blog/2023/07/cmmn-patterns-bpmn/) — Pragmatic CMMN approach
+- [OpenZaak](https://github.com/open-zaak/open-zaak): ZGW reference implementation (ZaakType model source)
+- [Valtimo](https://docs.valtimo.nl/): Case management platform with ZGW integration
+- [Flowable CMMN](https://www.flowable.com/open-source/docs/cmmn/ch06-cmmn): CMMN engine reference
+- [Camunda CMMN Patterns via BPMN](https://camunda.com/blog/2023/07/cmmn-patterns-bpmn/): Pragmatic CMMN approach

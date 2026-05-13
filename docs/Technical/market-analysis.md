@@ -1,10 +1,10 @@
-# Procest — Feature Analysis & Product Strategy
+# Procest: Feature Analysis & Product Strategy
 
 ## Executive Summary
 
 There is **no lightweight, self-hosted case management system that integrates with a collaboration platform**. The market has enterprise BPM suites that are heavyweight and expensive (Camunda, Flowable), Dutch government implementations that are API-only without user-facing UI (OpenZaak), and SaaS platforms with data sovereignty issues (ServiceNow, Monday.com). Procest fills all three gaps by being lightweight, Nextcloud-native, and government-ready.
 
-**Key insight**: Case management is fundamentally about coordination — tracking work, assigning tasks, meeting deadlines, managing documents, and making decisions. Nextcloud already provides task management (Calendar/VTODO), file management, real-time chat, and activity feeds. A Nextcloud-native case manager orchestrates these capabilities rather than rebuilding them.
+**Key insight**: Case management is fundamentally about coordination: tracking work, assigning tasks, meeting deadlines, managing documents, and making decisions. Nextcloud already provides task management (Calendar/VTODO), file management, real-time chat, and activity feeds. A Nextcloud-native case manager orchestrates these capabilities rather than rebuilding them.
 
 ## 1. Competitive Landscape
 
@@ -12,9 +12,9 @@ There is **no lightweight, self-hosted case management system that integrates wi
 
 | Name | Status | Approach |
 |------|--------|----------|
-| **Nextcloud Deck** | Bundled, active | Kanban board for tasks — not case management |
-| **Nextcloud Tasks** | Available | CalDAV VTODO client — individual task tracking |
-| **Nextcloud Forms** | Available | Form builder — intake only, no workflow |
+| **Nextcloud Deck** | Bundled, active | Kanban board for tasks: not case management |
+| **Nextcloud Tasks** | Available | CalDAV VTODO client: individual task tracking |
+| **Nextcloud Forms** | Available | Form builder: intake only, no workflow |
 
 **Finding**: No case management solution exists in Nextcloud. Deck and Tasks handle individual work items but lack case lifecycle, roles, decisions, and compliance features.
 
@@ -22,7 +22,7 @@ There is **no lightweight, self-hosted case management system that integrates wi
 
 | Name | Positioning | Strengths | Weaknesses |
 |------|------------|-----------|------------|
-| **OpenZaak** | ZGW API reference implementation | Full ZGW compliance, production-proven (40+ municipalities) | API-only — no end-user UI, requires frontend |
+| **OpenZaak** | ZGW API reference implementation | Full ZGW compliance, production-proven (40+ municipalities) | API-only: no end-user UI, requires frontend |
 | **Valtimo/GZAC** | Commercial case platform + ZGW | BPMN/DMN engine, document handling, ZGW connector | Proprietary core (Ritense), Java/Spring stack, heavy |
 | **ZAC (Dimpact)** | Municipal frontend on OpenZaak | Full zaakgericht werken workflow | Tightly coupled to OpenZaak, limited outside NL |
 | **Camunda ZGW** | BPMN engine + ZGW connectors | Powerful process automation | Complex setup, Java, enterprise pricing |
@@ -278,21 +278,21 @@ There is **no lightweight, self-hosted case management system that integrates wi
 | Air-gapped deployment | Enterprise platforms cannot function without internet |
 | Talk rooms per case | Built-in real-time chat; no BPM engine has this |
 | Calendar-native deadlines | Case deadlines appear in user's calendar without sync |
-| ~40-50% infrastructure free | Tasks, files, notifications, activity, comments — already built |
+| ~40-50% infrastructure free | Tasks, files, notifications, activity, comments: already built |
 
 ## 4. Strategic Positioning
 
 ### Positioning Statement
 
-**Procest is case management that lives where your team already works.** Built natively into Nextcloud, it turns your existing collaboration platform into a case management system — with files, calendar, chat, and activity already connected.
+**Procest is case management that lives where your team already works.** Built natively into Nextcloud, it turns your existing collaboration platform into a case management system: with files, calendar, chat, and activity already connected.
 
 ### Differentiation Strategy
 
 Three pillars:
 
-1. **Platform leverage** — Every Nextcloud feature (AI, workflows, federation, files) automatically benefits Procest
-2. **Government-first** — ZGW standard alignment, NL Design System, GDPR-by-architecture, archival-ready
-3. **Lightweight simplicity** — No Java stack, no separate deployment; runs inside existing Nextcloud with zero additional infrastructure
+1. **Platform leverage**: Every Nextcloud feature (AI, workflows, federation, files) automatically benefits Procest
+2. **Government-first**: ZGW standard alignment, NL Design System, GDPR-by-architecture, archival-ready
+3. **Lightweight simplicity**: No Java stack, no separate deployment; runs inside existing Nextcloud with zero additional infrastructure
 
 ### Target Segments
 

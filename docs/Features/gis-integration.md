@@ -23,11 +23,11 @@ Two new PHP classes handle secure GIS data proxying:
 - XML-to-JSON conversion via SimpleXML
 
 **`lib/Controller/GisProxyController`**
-- `proxy()` endpoint — forwards WMS/WFS requests, returns `JSONResponse`
-- `capabilities()` endpoint — fetches and parses GetCapabilities from a service URL
+- `proxy()` endpoint: forwards WMS/WFS requests, returns `JSONResponse`
+- `capabilities()` endpoint: fetches and parses GetCapabilities from a service URL
 - Error codes: 400 (missing URL), 403 (URL blocked), 429 (rate limited), 502 (upstream error)
 
-**`lib/Service/SettingsService`** — new config keys: `map_layer_schema`
+**`lib/Service/SettingsService`**: new config keys: `map_layer_schema`
 
 ### Frontend
 
@@ -44,5 +44,5 @@ All external GIS requests are proxied through Nextcloud to avoid CORS issues and
 ## Testing
 
 Unit tests are in:
-- `tests/Unit/Service/GisProxyServiceTest.php` — URL allowlist validation, cache hit returns, rate limiting
-- `tests/Unit/Controller/GisProxyControllerTest.php` — HTTP status codes for success/403/429/502, missing URL → 400
+- `tests/Unit/Service/GisProxyServiceTest.php`: URL allowlist validation, cache hit returns, rate limiting
+- `tests/Unit/Controller/GisProxyControllerTest.php`: HTTP status codes for success/403/429/502, missing URL → 400

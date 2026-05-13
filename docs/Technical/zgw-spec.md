@@ -21,50 +21,50 @@ Shared knowledge file for sub-agents working on Procest's ZGW API implementation
 All controllers depend on `ZgwService` (`lib/Service/ZgwService.php`). Key methods:
 
 **CRUD orchestration** (handles auth, mapping, validation, save, notification):
-- `handleIndex(IRequest, zgwApi, resource)` — paginated list
-- `handleCreate(IRequest, zgwApi, resource, ?zaakClosed, hasForceer)` — create with business rules
-- `handleShow(IRequest, zgwApi, resource, uuid)` — get single
-- `handleUpdate(IRequest, zgwApi, resource, uuid, partial, ?parentZtDraft, ?zaakClosed, hasForceer)` — PUT/PATCH
-- `handleDestroy(IRequest, zgwApi, resource, uuid, ?parentZtDraft, ?zaakClosed, hasForceer)` — DELETE
+- `handleIndex(IRequest, zgwApi, resource)`: paginated list
+- `handleCreate(IRequest, zgwApi, resource, ?zaakClosed, hasForceer)`: create with business rules
+- `handleShow(IRequest, zgwApi, resource, uuid)`: get single
+- `handleUpdate(IRequest, zgwApi, resource, uuid, partial, ?parentZtDraft, ?zaakClosed, hasForceer)`: PUT/PATCH
+- `handleDestroy(IRequest, zgwApi, resource, uuid, ?parentZtDraft, ?zaakClosed, hasForceer)`: DELETE
 
 **Utility methods:**
-- `validateJwtAuth(IRequest)` — returns JSONResponse on failure, null on success
-- `loadMappingConfig(zgwApi, resource)` — loads Twig mapping from IAppConfig
-- `getRequestBody(IRequest)` — parses JSON body (with malformed JSON fallback)
-- `buildBaseUrl(IRequest, zgwApi, resource)` — constructs ZGW-style URL
-- `createOutboundMapping/createInboundMapping(mappingConfig)` — builds Mapping objects
-- `applyOutboundMapping/applyInboundMapping(...)` — executes Twig-based field translation
-- `translateQueryParams(params, mappingConfig)` — ZGW query params to OpenRegister filters
-- `consumerHasScope(IRequest, component, scope)` — checks JWT consumer scopes
-- `publishNotification(zgwApi, resource, resourceUrl, actie)` — sends to NRC subscribers
-- `buildValidationError(ruleResult)` — formats validation error response
-- `unavailableResponse()` / `mappingNotFoundResponse(zgwApi, resource)` — standard error responses
+- `validateJwtAuth(IRequest)`: returns JSONResponse on failure, null on success
+- `loadMappingConfig(zgwApi, resource)`: loads Twig mapping from IAppConfig
+- `getRequestBody(IRequest)`: parses JSON body (with malformed JSON fallback)
+- `buildBaseUrl(IRequest, zgwApi, resource)`: constructs ZGW-style URL
+- `createOutboundMapping/createInboundMapping(mappingConfig)`: builds Mapping objects
+- `applyOutboundMapping/applyInboundMapping(...)`: executes Twig-based field translation
+- `translateQueryParams(params, mappingConfig)`: ZGW query params to OpenRegister filters
+- `consumerHasScope(IRequest, component, scope)`: checks JWT consumer scopes
+- `publishNotification(zgwApi, resource, resourceUrl, actie)`: sends to NRC subscribers
+- `buildValidationError(ruleResult)`: formats validation error response
+- `unavailableResponse()` / `mappingNotFoundResponse(zgwApi, resource)`: standard error responses
 
 **OpenRegister access:**
-- `getObjectService()` — OpenRegister ObjectService (find, saveObject, deleteObject, buildSearchQuery, searchObjectsPaginated)
-- `getConsumerMapper()` — OpenRegister ConsumerMapper (for AC)
-- `getZgwMappingService()` — Procest's ZgwMappingService (IAppConfig storage)
-- `getBusinessRulesService()` — ZgwBusinessRulesService
-- `getDocumentService()` — ZgwDocumentService (file storage)
-- `getLogger()` — PSR LoggerInterface
+- `getObjectService()`: OpenRegister ObjectService (find, saveObject, deleteObject, buildSearchQuery, searchObjectsPaginated)
+- `getConsumerMapper()`: OpenRegister ConsumerMapper (for AC)
+- `getZgwMappingService()`: Procest's ZgwMappingService (IAppConfig storage)
+- `getBusinessRulesService()`: ZgwBusinessRulesService
+- `getDocumentService()`: ZgwDocumentService (file storage)
+- `getLogger()`: PSR LoggerInterface
 
 **Cross-register resolvers:**
-- `resolveZaakClosed(resource, existingData)` — checks if zaak has einddatum (for zrc-007)
-- `resolveZaakClosedFromBody(resource, body)` — same but from request body (sub-resource creation)
-- `resolveParentZaaktypeDraft(resource, existingData)` — checks if parent zaaktype is concept (for ztc-010)
+- `resolveZaakClosed(resource, existingData)`: checks if zaak has einddatum (for zrc-007)
+- `resolveZaakClosedFromBody(resource, body)`: same but from request body (sub-resource creation)
+- `resolveParentZaaktypeDraft(resource, existingData)`: checks if parent zaaktype is concept (for ztc-010)
 
 ### Other Services
 
-- `ZgwBusinessRulesService` — validates VNG business rules before save. Call via `zgwService->getBusinessRulesService()->validate(...)`
-- `ZgwMappingService` — stores/retrieves Twig mapping configs from IAppConfig
-- `ZgwPaginationHelper` — wraps results in ZGW HAL-style `{count, next, previous, results}`
-- `ZgwDocumentService` — stores binary files in Nextcloud filesystem at `/admin/files/procest/documenten/{uuid}/{filename}`
-- `NotificatieService` — delivers notifications to NRC subscribers via HTTP POST
+- `ZgwBusinessRulesService`: validates VNG business rules before save. Call via `zgwService->getBusinessRulesService()->validate(...)`
+- `ZgwMappingService`: stores/retrieves Twig mapping configs from IAppConfig
+- `ZgwPaginationHelper`: wraps results in ZGW HAL-style `{count, next, previous, results}`
+- `ZgwDocumentService`: stores binary files in Nextcloud filesystem at `/admin/files/procest/documenten/{uuid}/{filename}`
+- `NotificatieService`: delivers notifications to NRC subscribers via HTTP POST
 
 ## Business Rules by Register
 
 ### ZRC (Zaken)
-- **zrc-007**: Closed zaak protection — zaak sub-resources cannot be modified when the parent zaak has an `einddatum`, unless the consumer has `zaken.geforceerd-bijwerken` scope
+- **zrc-007**: Closed zaak protection: zaak sub-resources cannot be modified when the parent zaak has an `einddatum`, unless the consumer has `zaken.geforceerd-bijwerken` scope
 - **zrc-007a**: When creating a status whose statustype has `isEindstatus=true`, automatically set the parent zaak's `einddatum` to the `datumStatusGezet` date
 - Zaakeigenschappen are nested sub-resources (`/zaken/{zaakUuid}/zaakeigenschappen`)
 - `_zoek` endpoint delegates to index and returns HTTP 201 (not 200)
@@ -79,28 +79,28 @@ All controllers depend on `ZgwService` (`lib/Service/ZgwService.php`). Key metho
 ### DRC (Documenten)
 - **drc-009**: Document must be locked before updates. Lock ID must be provided and must match.
 - Binary content (`inhoud`) is stored as base64 in the request, decoded and saved to filesystem
-- `inhoud` is NOT stored in OpenRegister — only as a Nextcloud file
+- `inhoud` is NOT stored in OpenRegister: only as a Nextcloud file
 - Lock/unlock uses `locked` (bool) and `lockId` (string) fields on the OpenRegister object
 - On destroy, stored files must be cleaned up via `documentService->deleteFiles(uuid)`
 
 ### BRC (Besluiten)
 - **brc-001**: Standard besluit CRUD (create, update, patch) with besluittype validation
 - **brc-002**: Identificatie uniqueness under verantwoordelijke_organisatie; immutable on update
-- **brc-003a**: BIO informatieobject URL validation — must resolve to a valid EIO
-- **brc-004a/b**: BesluitInformatieObject is immutable — PUT/PATCH returns 405
-- **brc-005a**: Cross-register OIO sync — creating a BIO also creates an OIO in DRC with objectType=besluit
+- **brc-003a**: BIO informatieobject URL validation: must resolve to a valid EIO
+- **brc-004a/b**: BesluitInformatieObject is immutable: PUT/PATCH returns 405
+- **brc-005a**: Cross-register OIO sync: creating a BIO also creates an OIO in DRC with objectType=besluit
 - **brc-005b**: Deleting a BIO also deletes the corresponding OIO in DRC
-- **brc-006a**: Zaak-besluit relation — checks both directions (BT.caseTypes -> ZT UUID, and ZT.decisionTypes -> BT omschrijving/UUID)
+- **brc-006a**: Zaak-besluit relation: checks both directions (BT.caseTypes -> ZT UUID, and ZT.decisionTypes -> BT omschrijving/UUID)
 - **brc-007**: BesluitInformatieObject validates that informatieobjecttype is in besluittype.informatieobjecttypen
 - **brc-008a**: BIO create validates IOT is in BT.informatieobjecttypen
-- **brc-009**: Cascade delete — deleting a besluit also deletes related BIOs and their OIOs in DRC; audit trail returns 404 for deleted besluiten
+- **brc-009**: Cascade delete: deleting a besluit also deletes related BIOs and their OIOs in DRC; audit trail returns 404 for deleted besluiten
 
 ### NRC (Notificaties)
 - `notificatieCreate` endpoint just echoes the body back with HTTP 201
 - Standard CRUD for kanaal and abonnement resources
 
 ### AC (Autorisaties)
-- Completely custom — maps OpenRegister Consumers to ZGW Applicatie format
+- Completely custom: maps OpenRegister Consumers to ZGW Applicatie format
 - Does NOT use the standard CRUD flow (no Twig mapping, no ObjectService)
 - `show('consumer')` with `?clientId=...` is a special lookup pattern
 
@@ -133,11 +133,11 @@ preg_match('/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', 
 ```
 
 ### OpenRegister ObjectService API
-- `find($uuid, register: $reg, schema: $schema)` — may return object or array
-- `saveObject(register: $reg, schema: $schema, object: $data, uuid: $uuid)` — uuid optional for create
-- `deleteObject(uuid: $uuid)` — delete by UUID
-- `buildSearchQuery(requestParams: [...], register: $reg, schema: $schema)` — build query
-- `searchObjectsPaginated(query: $query)` — returns `['results' => [...], 'total' => N]`
+- `find($uuid, register: $reg, schema: $schema)`: may return object or array
+- `saveObject(register: $reg, schema: $schema, object: $data, uuid: $uuid)`: uuid optional for create
+- `deleteObject(uuid: $uuid)`: delete by UUID
+- `buildSearchQuery(requestParams: [...], register: $reg, schema: $schema)`: build query
+- `searchObjectsPaginated(query: $query)`: returns `['results' => [...], 'total' => N]`
 - Always handle both array and object returns: `is_array($obj) ? $obj : $obj->jsonSerialize()`
 
 ## Testing
@@ -158,7 +158,7 @@ bash procest/tests/zgw/run-zgw-tests.sh --business-only --folder ztc  # Business
 ### After making changes
 1. Clear OPcache: `docker exec nextcloud apache2ctl graceful`
 2. Run the relevant register's tests
-3. Compare failures against baseline — new failures = regression
+3. Compare failures against baseline: new failures = regression
 
 ### Known pre-existing test failures (baseline 2026-03-08)
 These failures exist before the controller split and are NOT regressions:
@@ -175,7 +175,7 @@ These failures exist before the controller split and are NOT regressions:
 
 _Sub-agents: append new discoveries below this line. Include the date, register, and what you learned._
 
-### 2026-03-08 — DRC: drc-009 lock enforcement response format
+### 2026-03-08: DRC: drc-009 lock enforcement response format
 
 The VNG business rules tests for drc-009 expect error responses in a specific `invalidParams` format:
 ```json
@@ -195,7 +195,7 @@ Key distinctions:
 
 The PUT vs PATCH distinction matters: PUT treats `lock` as a required field, PATCH treats it as a missing lock enforcement error.
 
-### 2026-03-08 — DRC: Force unlock scope check
+### 2026-03-08: DRC: Force unlock scope check
 
 Force unlock (drc-009k) requires checking `documenten.geforceerd-bijwerken` scope via `consumerHasScope()`. When the lock ID doesn't match or is missing, the unlock endpoint checks if the consumer has this scope. If yes, force unlock succeeds (204). If no, returns 400.
 
@@ -205,17 +205,17 @@ The `consumerHasScope()` method returns `true` (bypass) when:
 - Consumer not found in database
 - Consumer has `superuser: true`
 
-### 2026-03-08 — DRC: OAS test lock status code
+### 2026-03-08: DRC: OAS test lock status code
 
 The OAS test collection expects lock to return HTTP 201, while the business rules test (drc-009c) expects HTTP 200. The ZGW standard specifies 200 for lock. The lock endpoint returns 200.
 
 The OAS unlock test expects 201, but the ZGW standard and business rules (drc-009k) expect 204. The unlock endpoint returns 204.
 
-### 2026-03-08 — DRC: Boolean normalization for locked field
+### 2026-03-08: DRC: Boolean normalization for locked field
 
 OpenRegister may store boolean fields as strings (`"true"`, `"1"`) or integers (`1`, `0`). The lock/unlock/checkDocumentLock methods must normalize the `locked` field value before comparison.
 
-### 2026-03-08 — ZRC business rules implementation
+### 2026-03-08: ZRC business rules implementation
 
 **zrc-002a**: Unique identificatie enforcement. Added `checkIdentificatieUnique()` in `ZgwBusinessRulesService` that searches OpenRegister for existing zaken with the same `identifier` (and `sourceOrganisation`). Returns 400 with `identificatie-niet-uniek` error code.
 
@@ -229,9 +229,9 @@ OpenRegister may store boolean fields as strings (`"true"`, `"1"`) or integers (
 
 **zrc-007**: Closed zaak protection. The validation error now includes a top-level `code: "permission_denied"` field in the response, matching the VNG test expectation (`pm.response.json().code`). This required changes to both `ZgwBusinessRulesService` (adding `'code' => 'permission_denied'` to the rule result) and `ZgwService::buildValidationError()` (propagating the `code` field to the response data).
 
-**Key finding**: The `VERTROUWELIJKHEID_LEVELS` ordering for authorization filtering is: openbaar(1) < beperkt_openbaar(2) < intern(3) < zaakvertrouwelijk(4) < vertrouwelijk(5) < confidentieel(6) < geheim(7) < zeer_geheim(8). Consumer's `maxVertrouwelijkheidaanduiding` sets the ceiling — zaken with a higher level are filtered out.
+**Key finding**: The `VERTROUWELIJKHEID_LEVELS` ordering for authorization filtering is: openbaar(1) < beperkt_openbaar(2) < intern(3) < zaakvertrouwelijk(4) < vertrouwelijk(5) < confidentieel(6) < geheim(7) < zeer_geheim(8). Consumer's `maxVertrouwelijkheidaanduiding` sets the ceiling: zaken with a higher level are filtered out.
 
-### 2026-03-08 — AC business rules implementation
+### 2026-03-08: AC business rules implementation
 
 **ac-001**: ClientId uniqueness. `validateClientIdUniqueness()` iterates all existing consumers and checks both the primary `name` field and any extra clientIds stored in `authorizationConfiguration.clientIds`. Returns 400 with `clientId-exists` error code.
 
@@ -277,7 +277,7 @@ ZTC types (zaaktypen, besluittypen) contain cross-reference arrays (informatieob
 
 VNG tests may send ZIOT `informatieobjecttype` as an omschrijving string that happens to be UUID-shaped. `rulesZaaktypeinformatieobjecttypenCreate` handles this by: (1) if it's a URL, keep as-is; (2) if it's a bare UUID, verify it exists in OR -- if not, fall back to name-based lookup; (3) if not a UUID, resolve by name. This prevents storing non-existent UUIDs when the value is actually an omschrijving that looks like a UUID.
 
-### 2026-03-08 — BRC business rules implementation
+### 2026-03-08: BRC business rules implementation
 
 **brc-003a fix**: The `validateInformatieobjectUrl()` in `ZgwRulesBase` had a bug where `extractUuid()` returning null caused the validation to silently pass (the `if ($ioUuid !== null && $this->objectService !== null)` condition was skipped). Fixed by adding an explicit null check that returns 400 when UUID extraction fails.
 
@@ -293,7 +293,7 @@ VNG tests may send ZIOT `informatieobjecttype` as an omschrijving string that ha
 
 **Audit trail for deleted resources**: `BrcController::audittrailIndex()` checks if the parent resource exists before returning audit trail data. If the resource was soft-deleted, `find()` throws `DoesNotExistException`, and the controller returns 404. This satisfies brc-009d.
 
-### 2026-03-08 — OpenRegister Magic Mapper soft delete gotcha
+### 2026-03-08: OpenRegister Magic Mapper soft delete gotcha
 
 **CRITICAL**: OpenRegister's `ObjectService::deleteObject()` performs soft delete by calling `ObjectEntityMapper::update()`. But `update()` checks `shouldUseMagicMapperForRegisterSchema()` which reads `Register::isMagicMappingEnabledForSchema()`. If the register's `configuration` column is NULL or doesn't have the schema listed with `magicMapping: true`, the update falls through to the blob table `parent::update()` call, which operates on `oc_openregister_objects` (the blob table). Since the object only exists in the magic table (`oc_openregister_table_{register}_{schema}`), the soft delete appears to succeed (returns true) but the magic table row is NOT updated.
 

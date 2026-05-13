@@ -1,6 +1,6 @@
-# Procest — Feature Overview
+# Procest: Feature Overview
 
-Procest is a Nextcloud case management app (zaaksysteem) for Dutch municipalities, covering general case handling (zaakgericht werken), VTH permits/supervision/enforcement, objection and appeal workflows, B&W decision-making, and workflow automation. All data is stored in OpenRegister — Procest owns no database tables.
+Procest is a Nextcloud case management app (zaaksysteem) for Dutch municipalities, covering general case handling (zaakgericht werken), VTH permits/supervision/enforcement, objection and appeal workflows, B&W decision-making, and workflow automation. All data is stored in OpenRegister: Procest owns no database tables.
 
 ## Standards Compliance
 
@@ -20,13 +20,13 @@ Procest is a Nextcloud case management app (zaaksysteem) for Dutch municipalitie
 | ZGW Besluiten API (BRC) | [zaakgerichtwerken.nl](https://zaakgerichtwerken.nl) | Implemented |
 | ZGW Autorisaties API (AC) | [zaakgerichtwerken.nl](https://zaakgerichtwerken.nl) | Implemented |
 | ZGW Notificaties API (NRC) | [zaakgerichtwerken.nl](https://zaakgerichtwerken.nl) | Implemented |
-| TEC BPM RFP Template — Process Modeling | Sections 1.1–1.11 | Partial |
-| TEC BPM RFP Template — Security Management | Sections 2.1–2.5 | Partial |
-| TEC BPM RFP Template — Workflow Portal | Sections 5.1–5.6 | Partial |
-| TEC BPM RFP Template — Monitoring & Management | Sections 6.1–6.6 | Partial |
+| TEC BPM RFP Template: Process Modeling | Sections 1.1–1.11 | Partial |
+| TEC BPM RFP Template: Security Management | Sections 2.1–2.5 | Partial |
+| TEC BPM RFP Template: Workflow Portal | Sections 5.1–5.6 | Partial |
+| TEC BPM RFP Template: Monitoring & Management | Sections 6.1–6.6 | Partial |
 | CMMN 1.1 (OMG) | Case Plan Model, HumanTask, Milestone | Partial |
-| Forum Standaardisatie — REST-API Design Rules | [forumstandaardisatie.nl](https://forumstandaardisatie.nl/open-standaarden/rest-api-design-rules) | Implemented |
-| Forum Standaardisatie — NL GOV CloudEvents | [forumstandaardisatie.nl](https://forumstandaardisatie.nl/open-standaarden/nl-gov-cloudevents) | Planned |
+| Forum Standaardisatie: REST-API Design Rules | [forumstandaardisatie.nl](https://forumstandaardisatie.nl/open-standaarden/rest-api-design-rules) | Implemented |
+| Forum Standaardisatie: NL GOV CloudEvents | [forumstandaardisatie.nl](https://forumstandaardisatie.nl/open-standaarden/nl-gov-cloudevents) | Planned |
 | Awb (Algemene wet bestuursrecht) | Processing deadlines, bezwaar/beroep | Implemented |
 | Woo (Wet open overheid) | 4-week response mandate, redaction | Planned |
 | DSO Omgevingsloket | VTH permit intake integration | Planned |
@@ -47,7 +47,7 @@ Procest is a Nextcloud case management app (zaaksysteem) for Dutch municipalitie
 | Werkvoorraad | Team-level queue of unassigned cases available for claiming | TEC BPM 5.1, GEMMA Zaakafhandel | Planned | [werkvoorraad.md](werkvoorraad.md) |
 | Administration | Nextcloud admin panel for schema configuration, ZGW mapping, and seed data import | Nextcloud OCP | Implemented | [administration.md](administration.md) |
 | Admin Settings | Configuration page for register/schema UUID mappings and version information | Nextcloud OCP | Implemented | [admin-settings.md](admin-settings.md) |
-| OpenRegister Integration | All data stored as OpenRegister objects — Procest owns no database tables | OpenRegister API | Implemented | [openregister-integration.md](openregister-integration.md) |
+| OpenRegister Integration | All data stored as OpenRegister objects: Procest owns no database tables | OpenRegister API | Implemented | [openregister-integration.md](openregister-integration.md) |
 | Base Register Seed Data | Pre-configured case types (Bezwaar, Vergunning, Melding, VTH) imported on install | GEMMA | Implemented | [base-register-seed-data.md](base-register-seed-data.md) |
 | Workflow Engine | Zero-code visual workflow builder with status nodes, guards, and automatic actions | TEC BPM 1.1–1.6, BPMN 2.0 | Implemented | [workflow-engine-enhancement.md](workflow-engine-enhancement.md) |
 | VTH Module | Permits, supervision, and enforcement case types and domain schemas | GEMMA VTH, DSO Omgevingsloket | Partial | [vth-module.md](vth-module.md) |
@@ -61,7 +61,7 @@ Procest is a Nextcloud case management app (zaaksysteem) for Dutch municipalitie
 | Case Dashboard View | Comprehensive case detail page with status timeline, panels, tasks, documents, and audit trail | CMMN, ZGW | Implemented | [case-dashboard-view.md](case-dashboard-view.md) |
 | GIS Integration | Map view for cases, location picker, PDOK/WMS/WFS overlay, and secure GIS proxy | BAG, BRK, PDOK | Implemented | [gis-integration.md](gis-integration.md) |
 | Milestone Tracking | Key progress checkpoints per case with target dates, overdue alerts, and visual timeline | CMMN Milestone, TEC BPM 6.3 | Planned | [milestone-tracking.md](milestone-tracking.md) |
-| ZGW APIs | Full ZGW API suite: ZRC, ZTC, DRC, BRC, AC, NRC — VNG Newman test suite compliance | ZGW 1.x, VNG | Implemented | [zgw-apis.md](zgw-apis.md) |
+| ZGW APIs | Full ZGW API suite: ZRC, ZTC, DRC, BRC, AC, NRC: VNG Newman test suite compliance | ZGW 1.x, VNG | Implemented | [zgw-apis.md](zgw-apis.md) |
 | Zaak Intake Flow | Structured intake form with case type selection, auto-numbering, and deadline calculation | ZGW ZRC, DSO | Planned | [zaak-intake-flow.md](zaak-intake-flow.md) |
 | Complaint Management | AWB-compliant klachtenprocedure with hearings, deadlines, and ombudsman escalation | Awb Hoofdstuk 9, GEMMA | Planned | [complaint-management.md](complaint-management.md) |
 | Consultation Management | Public participation (inspraak) with response collection and nota van beantwoording | Omgevingswet, Awb | Planned | [consultation-management.md](consultation-management.md) |

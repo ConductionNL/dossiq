@@ -6,7 +6,7 @@
 
 ## Overview
 
-Configures the Procest workflow engine for VTH (Vergunningen, Toezicht, Handhaving — Permits, Supervision, Enforcement), adding domain-specific schemas, seed data, LHS matrix support, and UI panels for Dutch environmental compliance workflows.
+Configures the Procest workflow engine for VTH (Vergunningen, Toezicht, Handhaving: Permits, Supervision, Enforcement), adding domain-specific schemas, seed data, LHS matrix support, and UI panels for Dutch environmental compliance workflows.
 
 ## Architecture
 
@@ -21,15 +21,15 @@ Configures the Procest workflow engine for VTH (Vergunningen, Toezicht, Handhavi
 | `adviesAanvraag` | Advice request to internal/external advisors |
 
 **New config keys** in `SettingsService`:
-- `inspectie_checklist_schema` — UUID of inspectieChecklist schema
-- `inspectie_rapport_schema` — UUID of inspectieRapport schema
-- `handhavingsactie_schema` — UUID of handhavingsactie schema
-- `advies_aanvraag_schema` — UUID of adviesAanvraag schema
-- `lhsMatrix` — JSON string of the 4×4 Landelijke Handhavingsstrategie matrix
+- `inspectie_checklist_schema`: UUID of inspectieChecklist schema
+- `inspectie_rapport_schema`: UUID of inspectieRapport schema
+- `handhavingsactie_schema`: UUID of handhavingsactie schema
+- `advies_aanvraag_schema`: UUID of adviesAanvraag schema
+- `lhsMatrix`: JSON string of the 4×4 Landelijke Handhavingsstrategie matrix
 
 **Seed data:**
-- `lib/Settings/vth_seed_data.json` — 6 VTH case types (Omgevingsvergunning Regulier/Uitgebreid, Sloopmelding, Toezichtzaak Bouw/Milieu, Handhavingszaak)
-- `lib/Settings/vth-templates/` — 6 JSON template files, one per case type
+- `lib/Settings/vth_seed_data.json`: 6 VTH case types (Omgevingsvergunning Regulier/Uitgebreid, Sloopmelding, Toezichtzaak Bouw/Milieu, Handhavingszaak)
+- `lib/Settings/vth-templates/`: 6 JSON template files, one per case type
 
 ### LHS Matrix
 
@@ -45,5 +45,5 @@ The Landelijke Handhavingsstrategie (LHS) provides a standard 4×4 enforcement r
 ## Testing
 
 Unit tests are in:
-- `tests/Unit/Service/VthSettingsServiceTest.php` — VTH config keys in getSettings(), updateSettings() persists VTH keys, lhsMatrix readable, core keys not overridden
-- `tests/Unit/Settings/VthSchemaTest.php` — all 4 VTH schemas registered, vth-templates dir exists, template files are valid JSON, expected files present, vth_seed_data.json valid
+- `tests/Unit/Service/VthSettingsServiceTest.php`: VTH config keys in getSettings(), updateSettings() persists VTH keys, lhsMatrix readable, core keys not overridden
+- `tests/Unit/Settings/VthSchemaTest.php`: all 4 VTH schemas registered, vth-templates dir exists, template files are valid JSON, expected files present, vth_seed_data.json valid

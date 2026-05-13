@@ -6,7 +6,7 @@ description: Open a case from the list, read its detail view, and walk the sideb
 
 # Open and read a case
 
-How to find a case, open it, and recognise the parts of the detail view — the header, the status timeline, and the sidebar tabs (Tasks, Documents, Participants, History, …).
+How to find a case, open it, and recognise the parts of the detail view: the header, the status timeline, and the sidebar tabs (Tasks, Documents, Participants, History, …).
 
 ## Goal
 
@@ -15,7 +15,7 @@ By the end you will have opened the Cases list, located a case by search or filt
 ## Prerequisites
 
 - Completed [Open Procest for the first time](./01-first-launch.md).
-- At least one case in the register — otherwise the list shows *No items found*.
+- At least one case in the register: otherwise the list shows *No items found*.
 
 ## Steps
 
@@ -23,11 +23,11 @@ By the end you will have opened the Cases list, located a case by search or filt
 
    ![Cases list view](/screenshots/tutorials/user/03-view-case-01.png)
 
-2. Switch between **Cards** and **Table** with the radio toggle. Cards show the rich preview (status pill, deadline, handler avatar). Table is denser — better for scanning a long list. Use the search row at the right to filter by title, identifier, or status.
+2. Switch between **Cards** and **Table** with the radio toggle. Cards show the rich preview (status pill, deadline, handler avatar). Table is denser: better for scanning a long list. Use the search row at the right to filter by title, identifier, or status.
 
    ![Cards vs Table toggle](/screenshots/tutorials/user/03-view-case-02.png)
 
-3. Click a row (or a card) to open the case. The detail view loads with a header band — case title, identifier, status pill, deadline countdown, confidentiality badge — and a sidebar on the right.
+3. Click a row (or a card) to open the case. The detail view loads with a header band: case title, identifier, status pill, deadline countdown, confidentiality badge: and a sidebar on the right.
 
    ![Case detail header](/screenshots/tutorials/user/03-view-case-03.png)
 
@@ -43,11 +43,11 @@ You are reading the case correctly when: the header shows a non-empty status pil
 
 | Symptom | Fix |
 |---|---|
-| Detail view opens but body is empty | The case schema fields are not mapped — see [Manage Procest settings](../admin/03-admin-settings.md) and re-import the configuration. |
+| Detail view opens but body is empty | The case schema fields are not mapped: see [Manage Procest settings](../admin/03-admin-settings.md) and re-import the configuration. |
 | Status pill is blank | The case has no current status; open the **History** tab to confirm a starting status was set, or transition it via [Move a case through its workflow](./04-advance-case.md). |
 | Search field returns nothing | Search is case-sensitive by default; clear filters with the *X* in the search row. |
 
 ## Reference
 
-- [Case dashboard view](../../features/case-dashboard-view.md) — the layout convention used by the case detail page.
-- [Case management](../../features/case-management.md) — the model behind cases and their statuses.
+- [Case dashboard view](../../Features/case-dashboard-view.md): the layout convention used by the case detail page.
+- [Case management](../../Features/case-management.md): the model behind cases and their statuses.

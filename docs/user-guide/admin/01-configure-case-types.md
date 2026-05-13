@@ -6,7 +6,7 @@ description: Create a case type, define allowed statuses and transitions, attach
 
 # Configure case types and workflows
 
-A case type is the template for every case of one kind — its statuses, allowed transitions, per-status deadlines, required documents, and default participants. This tutorial creates one from scratch.
+A case type is the template for every case of one kind: its statuses, allowed transitions, per-status deadlines, required documents, and default participants. This tutorial creates one from scratch.
 
 ## Goal
 
@@ -24,11 +24,11 @@ By the end you will have created a new case type, defined its status lifecycle, 
 
    ![Case Types list](/screenshots/tutorials/admin/01-configure-case-types-01.png)
 
-2. Click **Add Item**. The case-type dialog opens. Fill the basics — *Name* (e.g. *Vergunningaanvraag*), *Identification* (slug), *Description*, *Default confidentiality*, *Maximum lead time* (in days).
+2. Click **Add Item**. The case-type dialog opens. Fill the basics: *Name* (e.g. *Vergunningaanvraag*), *Identification* (slug), *Description*, *Default confidentiality*, *Maximum lead time* (in days).
 
    ![New case type dialog](/screenshots/tutorials/admin/01-configure-case-types-02.png)
 
-3. Open the **Statuses** tab on the dialog. Add the statuses your workflow needs (*Open*, *In behandeling*, *Wachten op aanvrager*, *Beslissen*, *Afgerond*). For each status set the *Allowed next statuses* — only those will appear in the transition dialog on a case.
+3. Open the **Statuses** tab on the dialog. Add the statuses your workflow needs (*Open*, *In behandeling*, *Wachten op aanvrager*, *Beslissen*, *Afgerond*). For each status set the *Allowed next statuses*: only those will appear in the transition dialog on a case.
 
    ![Statuses and transitions](/screenshots/tutorials/admin/01-configure-case-types-03.png)
 
@@ -36,7 +36,7 @@ By the end you will have created a new case type, defined its status lifecycle, 
 
    ![Per-status deadlines](/screenshots/tutorials/admin/01-configure-case-types-04.png)
 
-5. Open the **Documents** tab. Add the document types that must be present at each status — these power the document checklist on the case detail. Save the whole case type with **Save**.
+5. Open the **Documents** tab. Add the document types that must be present at each status: these power the document checklist on the case detail. Save the whole case type with **Save**.
 
    ![Document checklist](/screenshots/tutorials/admin/01-configure-case-types-05.png)
 
@@ -48,12 +48,12 @@ You have configured the case type correctly when: it appears in the **Case Types
 
 | Symptom | Fix |
 |---|---|
-| **Add Item** opens a dialog with no form fields | The Case-type schema is not mapped — re-import configuration via [Manage Procest settings](./03-admin-settings.md). |
+| **Add Item** opens a dialog with no form fields | The Case-type schema is not mapped: re-import configuration via [Manage Procest settings](./03-admin-settings.md). |
 | Status transitions on a new case do not match what you configured | The status mapping on the case-type may have been saved before the status schema was created; reopen and save again. |
 | Deadline never warns | The warning threshold is larger than the duration, or the case-type field is not mapped to the Case schema. |
 | Document checklist on the case is always empty | Document types live in a separate register; confirm the *informatieobjecttype* mapping under **ZGW API Mapping** is configured. |
 
 ## Reference
 
-- [Case management](../../features/case-management.md) — model that case types drive.
-- [Automatic actions](./02-automatic-actions.md) — task generation tied to case-type transitions.
+- [Case management](../../Features/case-management.md): model that case types drive.
+- [Automatic actions](./02-automatic-actions.md): task generation tied to case-type transitions.

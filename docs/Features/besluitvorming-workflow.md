@@ -6,22 +6,22 @@
 
 ## Overview
 
-Implements the B&W (Board & Aldermen — College van Burgemeester en Wethouders) decision-making workflow for Dutch municipal case management. Provides a structured parafering (initialling/sign-off) chain for proposals (`voorstellen`) that require formal decision-making.
+Implements the B&W (Board & Aldermen: College van Burgemeester en Wethouders) decision-making workflow for Dutch municipal case management. Provides a structured parafering (initialling/sign-off) chain for proposals (`voorstellen`) that require formal decision-making.
 
 ## Architecture
 
 ### Backend
 
 - **New schemas** in `lib/Settings/procest_register.json`:
-  - `voorstel` — the proposal document awaiting B&W decision
-  - `parafeerroute` — a named sign-off chain with ordered steps
-  - `parafeeractie` — an individual action taken by a paraferent
+  - `voorstel`: the proposal document awaiting B&W decision
+  - `parafeerroute`: a named sign-off chain with ordered steps
+  - `parafeeractie`: an individual action taken by a paraferent
 
 - **New service:** `lib/Service/ParaferingNotificationService.php`
   - Sends Nextcloud notifications for workflow events:
-    - `notifyStepActivated` — notify the actor when their step becomes active
-    - `notifyVoorstelReturned` — notify the steller when a proposal is returned
-    - `notifyParaferingReminder` — send overdue reminders
+    - `notifyStepActivated`: notify the actor when their step becomes active
+    - `notifyVoorstelReturned`: notify the steller when a proposal is returned
+    - `notifyParaferingReminder`: send overdue reminders
 
 - **Updated:** `lib/Service/SettingsService.php`
   - New config keys: `voorstel_schema`, `parafeerroute_schema`, `parafeeractie_schema`

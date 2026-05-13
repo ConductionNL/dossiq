@@ -24,7 +24,7 @@ Manages API client (applicatie) registration and authorization:
 ## Documenten API (DRC)
 
 Full document management with binary file I/O:
-- `enkelvoudiginformatieobject` — document metadata + file content
+- `enkelvoudiginformatieobject`: document metadata + file content
 - Binary upload via `inhoud` field (base64 or multipart)
 - File content stored in Nextcloud filesystem
 - Linked to cases via `zaakinformatieobject` resources
@@ -55,14 +55,14 @@ VNG ZGW business rules compliance (tracked against the 353-assertion Newman test
 ## Newman Test Suite
 
 Automated ZGW compliance testing via VNG Postman collections:
-- **ZGW OAS tests** — validates all 6 ZGW APIs against their OpenAPI specs
-- **ZGW business rules** — validates business logic, edge cases, and authorization
+- **ZGW OAS tests**: validates all 6 ZGW APIs against their OpenAPI specs
+- **ZGW business rules**: validates business logic, edge cases, and authorization
 - Newman runs locally and in CI via `make test:zgw`
 - Test environment configuration in `data/newman-environment.json`
 
 ## Standards References
 
-- [ZGW API standaard — zaakgrichtwerken.nl](https://zaakgerichtwerken.nl)
+- [ZGW API standaard: zaakgrichtwerken.nl](https://zaakgerichtwerken.nl)
 - [VNG Realisatie ZGW GitHub](https://github.com/VNG-Realisatie/gemma-zaken)
 - [ZRC 1.x OAS](https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/index)
 - [DRC 1.x OAS](https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/index)

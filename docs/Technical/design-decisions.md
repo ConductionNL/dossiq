@@ -1,4 +1,4 @@
-# Procest — Design References & Dashboard Wireframes
+# Procest: Design References & Dashboard Wireframes
 
 ## 1. Design Inspiration Sources
 
@@ -22,7 +22,7 @@
 ### Task Kanban / Board
 | Source | URL / Search | Key Patterns |
 |--------|-------------|--------------|
-| Nextcloud Deck | apps.nextcloud.com/apps/deck | Board/Stack/Card — native Nextcloud kanban UX |
+| Nextcloud Deck | apps.nextcloud.com/apps/deck | Board/Stack/Card: native Nextcloud kanban UX |
 | Trello | trello.com | Minimal cards, clear columns, smooth drag-and-drop |
 | Dribbble | Search "task board UI" | Task cards with assignee, due date, priority, case reference |
 | Asana | asana.com | Task boards with multiple views (list, board, timeline) |
@@ -44,7 +44,7 @@ Features not currently in FEATURES.md but commonly present in case management da
 | Feature | Source Pattern | Justification |
 |---------|--------------|---------------|
 | Status timeline visualization on case detail | MijnOverheid, ServiceNow | Visual progress indicator showing which statuses have been passed |
-| Case deadline countdown (days remaining) | All case management tools | At-a-glance urgency — "14 days remaining" or "3 days overdue" |
+| Case deadline countdown (days remaining) | All case management tools | At-a-glance urgency: "14 days remaining" or "3 days overdue" |
 | Quick status change from list view | ServiceNow, Jira | Change case status without opening the detail page |
 
 ### V1 Additions
@@ -116,7 +116,7 @@ Features not currently in FEATURES.md but commonly present in case management da
 │                                      │                          │   │
 │  ┌────────────────────────────────┐ │ • Decision recorded on   │   │
 │  │ My Work (Top 5)               │ │   Case #036 "Vergunning  │   │
-│  │                                │ │   verleend" — Maria      │   │
+│  │                                │ │   verleend": Maria      │   │
 │  │ 🔴 Case #042 · Overdue 5d    │ │   1 hour ago             │   │
 │  │    Omgevingsvergunning         │ │                          │   │
 │  │                                │ │ • Task "Review docs"     │   │
@@ -154,7 +154,7 @@ Features not currently in FEATURES.md but commonly present in case management da
 │ │   │          │ buurman     │            │         │1 day │      ││
 │ │  │ 2024-048 │ Subsidie    │ Subsidie-  │In behan.│Feb 28│ Jan  ││
 │ │   │          │ verduurz.   │ aanvraag   │         │3 days│      ││
-│ │  │ 2024-050 │ Bouwverg.   │ Omgevings- │Ontvangen│Mar 15│ —    ││
+│ │  │ 2024-050 │ Bouwverg.   │ Omgevings- │Ontvangen│Mar 15│:    ││
 │ │   │          │ Prinsengr.  │ vergunning │         │18 day│      ││
 │ │  │ 2024-051 │ Melding     │ Melding    │Ontvangen│Mar 20│ Maria││
 │ │   │          │ wegdek      │            │         │23 day│      ││
@@ -239,7 +239,7 @@ Features not currently in FEATURES.md but commonly present in case management da
 │  │                                                              │  │
 │  │ Feb 25 · Task "Review docs" assigned to Jan de Vries         │  │
 │  │                                                              │  │
-│  │ Feb 20 · ⚠ DEADLINE PASSED — case is now overdue            │  │
+│  │ Feb 20 · ⚠ DEADLINE PASSED: case is now overdue            │  │
 │  │                                                              │  │
 │  │ Feb 1  · Status changed to "In behandeling"                  │  │
 │  │           by Jan de Vries                                    │  │
@@ -308,7 +308,7 @@ Features not currently in FEATURES.md but commonly present in case management da
 │ ││Check regs  ││ ││Write report││ │              │ │            │ │
 │ ││Case #051   ││ ││Case #048   ││ │              │ │            │ │
 │ ││📅 Mar 10   ││ ││📅 Mar 1    ││ │              │ │            │ │
-│ ││👤 —        ││ ││👤 Jan      ││ │              │ │            │ │
+│ ││👤:        ││ ││👤 Jan      ││ │              │ │            │ │
 │ │└────────────┘│ │└────────────┘│ │              │ │            │ │
 │ │              │ │┌────────────┐│ │              │ │            │ │
 │ │              │ ││Schedule    ││ │              │ │            │ │
@@ -403,7 +403,7 @@ Features not currently in FEATURES.md but commonly present in case management da
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 3.6 Admin Settings — Case Type Management
+### 3.6 Admin Settings: Case Type Management
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -445,7 +445,7 @@ Features not currently in FEATURES.md but commonly present in case management da
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 3.7 Admin Settings — Case Type Detail (Edit Mode)
+### 3.7 Admin Settings: Case Type Detail (Edit Mode)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐

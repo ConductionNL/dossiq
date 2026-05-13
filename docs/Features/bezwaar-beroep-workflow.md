@@ -22,7 +22,7 @@ Implements AWB-compliant (Algemene wet bestuursrecht) bezwaar (objection) and be
 - `IRepairStep` executed during app installation or upgrade
 - Delegates to `SeedDataService::seedBezwaarBeroepData()`
 - Skips if OpenRegister is not available (`SettingsService::isOpenRegisterAvailable`)
-- Exceptions are caught and logged — never propagated
+- Exceptions are caught and logged: never propagated
 
 **`lib/Settings/bezwaar_seed_data.json`**
 - Pre-defined case types: `bezwaar` and `beroep`
@@ -47,5 +47,5 @@ Implements AWB-compliant (Algemene wet bestuursrecht) bezwaar (objection) and be
 ## Testing
 
 Unit tests are in:
-- `tests/Unit/Service/SeedDataServiceTest.php` — ObjectService unavailable → failure, missing config → failure, happy path summary structure, idempotency (existing → skipped), seed data file integrity
-- `tests/Unit/Repair/SeedBezwaarBeroepDataTest.php` — getName, skip when OpenRegister unavailable, call seed service, info output on success, exception handling
+- `tests/Unit/Service/SeedDataServiceTest.php`: ObjectService unavailable → failure, missing config → failure, happy path summary structure, idempotency (existing → skipped), seed data file integrity
+- `tests/Unit/Repair/SeedBezwaarBeroepDataTest.php`: getName, skip when OpenRegister unavailable, call seed service, info output on success, exception handling

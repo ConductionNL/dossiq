@@ -5,7 +5,7 @@
 
 ## Overview
 
-Adds hierarchical case support (deelzaken) enabling a parent case to spawn child cases for parallel departmental processing. For example, an Omgevingsvergunning parent case can spawn separate sub-cases for building assessment, environmental impact, and fire safety — each with their own lifecycle, assignees, and deadlines.
+Adds hierarchical case support (deelzaken) enabling a parent case to spawn child cases for parallel departmental processing. For example, an Omgevingsvergunning parent case can spawn separate sub-cases for building assessment, environmental impact, and fire safety: each with their own lifecycle, assignees, and deadlines.
 
 ## Capabilities
 
