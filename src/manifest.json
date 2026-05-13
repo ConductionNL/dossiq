@@ -576,7 +576,8 @@
 			"config": {
 				"register": "procest",
 				"schema": "caseShare",
-				"columns": ["sharedWith", "permission", "createdAt", "revokedAt"],
+				"filter": { "caseId": "@route.caseId" },
+				"columns": ["label", "shareType", "partnerId", "permissionLevel", "expiresAt", "revokedAt"],
 				"sidebar": { "enabled": true, "showMetadata": true }
 			}
 		},
