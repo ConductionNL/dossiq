@@ -5,8 +5,8 @@
  *
  * Built on @conduction/docusaurus-preset for brand defaults (tokens,
  * theme swizzles for Navbar / Footer, four-locale i18n scaffolding,
- * KvK / BTW copyright). Site-specific overrides — locales, sidebar
- * path, mermaid theme, custom prism themes, procest-only navbar items —
+ * KvK / BTW copyright). Site-specific overrides: locales, sidebar
+ * path, mermaid theme, custom prism themes, procest-only navbar items,
  * are passed through createConfig() opts.
  */
 
@@ -39,7 +39,7 @@ const config = createConfig({
   /* The procest docs source lives at the repo root of `docs/` rather
      than under a `docs/` subfolder, so we override the preset's default
      `presets:` block to point `docs.path` at './' and disable the blog
-     plugin. customCss carries procest-specific CSS only — brand tokens
+     plugin. customCss carries procest-specific CSS only; brand tokens
      and the theme swizzles are auto-loaded by the brand theme entry in
      `themes:` below. */
   presets: [
@@ -140,7 +140,7 @@ const config = createConfig({
    markdown directly so it makes it into the final Docusaurus config. */
 config.markdown = {
   mermaid: true,
-  /* Tutorial pages (docs/tutorials/) reference screenshots populated by
+  /* Tutorial pages (docs/user-guide/) reference screenshots populated by
      tests/e2e/docs-screenshots.spec.ts. The Playwright capture run is
      separate from the docs build, so the build must succeed even when a
      fresh checkout doesn't have every PNG yet. Warn instead of failing
