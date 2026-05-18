@@ -1,0 +1,27 @@
+# Procest
+
+> Procest is an open-source case-management app for the Nextcloud workspace, built for Dutch government organisations.
+
+Procest is an open-source case-management app for the Nextcloud workspace, built for Dutch government organisations. Case workers list and filter cases, drive them through ZGW-compliant case-type definitions, and pick up tasks from a personal work queue. The app maps ZGW API fields onto OpenRegister, so cases interoperate with national exchange standards without a second database. It targets zaakgericht werken scenarios such as complaints, consultations, and WOO disclosure requests. Released under EUPL-1.2 and maintained by Conduction since 2019.
+
+## Docs
+
+- [Tutorials](https://procest.conduction.nl/tutorials): step-by-step walkthroughs.
+- [Features](https://procest.conduction.nl/Features): what the app does, organised by capability.
+- [Use cases](https://procest.conduction.nl/UseCases): real customer scenarios.
+- [Integrations](https://procest.conduction.nl/Integrations): which external systems the app talks to.
+- [Technical](https://procest.conduction.nl/Technical): architecture, data model, security posture.
+- [User guide](https://procest.conduction.nl/user-guide): end-user documentation.
+- [API](https://procest.conduction.nl/api): OpenAPI reference.
+
+## Optional
+
+- [Install](https://procest.conduction.nl/installation): install from the Nextcloud app store.
+- [Source](https://procest.conduction.nl): repository and issue tracker.
+- [App page](https://www.conduction.nl/apps/procest): product positioning on conduction.nl.
+
+## Contact
+
+- Email: info@conduction.nl
+- GitHub: https://github.com/ConductionNL/procest
+- Conduction B.V. · KvK 76741850 · Lauriergracht 14h, Amsterdam, Netherlands
