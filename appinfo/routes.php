@@ -278,6 +278,25 @@ return [
         ['name' => 'lhs#recommend', 'url' => '/api/lhs/recommend', 'verb' => 'POST'],
         ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
+        // ── Consultation Management (adviesaanvraag structured) ──────────
+        // Specific paths precede the parameterised {id} routes.
+        ['name' => 'consultation#overdue',           'url' => '/api/consultations/overdue',                    'verb' => 'GET'],
+        ['name' => 'consultation#index',             'url' => '/api/consultations',                            'verb' => 'GET'],
+        ['name' => 'consultation#create',            'url' => '/api/consultations',                            'verb' => 'POST'],
+        ['name' => 'consultation#byDepartment',      'url' => '/api/consultations/department/{departmentId}',  'verb' => 'GET'],
+        ['name' => 'consultation#blockingForCase',   'url' => '/api/consultations/blocking/{caseId}',          'verb' => 'GET'],
+        ['name' => 'consultation#show',              'url' => '/api/consultations/{id}',                       'verb' => 'GET'],
+        ['name' => 'consultation#updateStatus',      'url' => '/api/consultations/{id}/status',                'verb' => 'PUT'],
+        ['name' => 'consultation#submitResponse',    'url' => '/api/consultations/{id}/response',              'verb' => 'POST'],
+        ['name' => 'consultation#claimConsultation', 'url' => '/api/consultations/{id}/claim',                 'verb' => 'POST'],
+        ['name' => 'consultation#requestExtension',  'url' => '/api/consultations/{id}/extension',             'verb' => 'POST'],
+        // Public endpoint — external bodies respond via secure token (no Nextcloud account).
+        ['name' => 'consultation#publicRespond',     'url' => '/api/public/consultations/{token}',             'verb' => 'POST'],
+
+        // ── Advisory Body Registry ───────────────────────────────────────
+        ['name' => 'advisory_body#search', 'url' => '/api/advisory-bodies/search/{query}', 'verb' => 'GET'],
+        ['name' => 'advisory_body#index',  'url' => '/api/advisory-bodies',                'verb' => 'GET'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],

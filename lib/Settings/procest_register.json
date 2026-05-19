@@ -2742,7 +2742,11 @@
               },
               "filingMethod": {
                 "type": "string",
-                "enum": ["digitaal", "schriftelijk", "beide"],
+                "enum": [
+                  "digitaal",
+                  "schriftelijk",
+                  "beide"
+                ],
                 "description": "How beroep may be filed; drives whether filingUrl and/or filingAddress are required"
               },
               "filingUrl": {
@@ -2829,12 +2833,17 @@
           },
           "notifiedRecipients": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Audit of UIDs/email addresses notified on publication; berichtenbox deliveries are prefixed 'berichtenbox:'"
           },
           "status": {
             "type": "string",
-            "enum": ["draft", "published"],
+            "enum": [
+              "draft",
+              "published"
+            ],
             "default": "draft",
             "description": "Draft until publish() validates required fields and sets publishedAt"
           }
@@ -3722,17 +3731,23 @@
           },
           "ernstAxis": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Ordered severity axis values, e.g. [gering, aanzienlijk, ernstig]"
           },
           "gedragAxis": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Ordered behaviour axis values, e.g. [goedwillend, onverschillig, calculerend, crimineel]"
           },
           "actorTypeAxis": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Ordered actor-type axis values, e.g. [burger, bedrijf, overheid, recidivist]"
           },
           "cells": {
@@ -3740,11 +3755,22 @@
             "description": "Dense matrix; one entry per (ernst, gedrag, actorType) triple",
             "items": {
               "type": "object",
-              "required": ["ernst", "gedrag", "actorType", "interventie"],
+              "required": [
+                "ernst",
+                "gedrag",
+                "actorType",
+                "interventie"
+              ],
               "properties": {
-                "ernst": { "type": "string" },
-                "gedrag": { "type": "string" },
-                "actorType": { "type": "string" },
+                "ernst": {
+                  "type": "string"
+                },
+                "gedrag": {
+                  "type": "string"
+                },
+                "actorType": {
+                  "type": "string"
+                },
                 "interventie": {
                   "type": "string",
                   "enum": [
@@ -3756,7 +3782,9 @@
                     "pv_plus_bestuursdwang"
                   ]
                 },
-                "note": { "type": "string" }
+                "note": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -3766,10 +3794,19 @@
             "items": {
               "type": "object",
               "properties": {
-                "version": { "type": "integer" },
-                "actor": { "type": "string" },
-                "at": { "type": "string", "format": "date-time" },
-                "note": { "type": "string" }
+                "version": {
+                  "type": "integer"
+                },
+                "actor": {
+                  "type": "string"
+                },
+                "at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "note": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -3810,17 +3847,31 @@
           },
           "ernst": {
             "type": "string",
-            "enum": ["gering", "aanzienlijk", "ernstig"],
+            "enum": [
+              "gering",
+              "aanzienlijk",
+              "ernstig"
+            ],
             "description": "Severity of the violation (LHS ernst axis)"
           },
           "gedrag": {
             "type": "string",
-            "enum": ["goedwillend", "onverschillig", "calculerend", "crimineel"],
+            "enum": [
+              "goedwillend",
+              "onverschillig",
+              "calculerend",
+              "crimineel"
+            ],
             "description": "Behaviour of the violator (LHS gedrag axis)"
           },
           "actorType": {
             "type": "string",
-            "enum": ["burger", "bedrijf", "overheid", "recidivist"],
+            "enum": [
+              "burger",
+              "bedrijf",
+              "overheid",
+              "recidivist"
+            ],
             "description": "Actor type of the violator (LHS actorType axis)"
           },
           "matrixVersion": {
@@ -3868,7 +3919,10 @@
           },
           "overrideAuthority": {
             "type": "string",
-            "enum": ["inspector", "manager"],
+            "enum": [
+              "inspector",
+              "manager"
+            ],
             "description": "Role authority under which the override was applied. override-up requires manager."
           },
           "recommendedBy": {
@@ -4124,7 +4178,9 @@
             "description": "Ordered sections each carrying their own items[]",
             "items": {
               "type": "object",
-              "required": ["name"],
+              "required": [
+                "name"
+              ],
               "properties": {
                 "order": {
                   "type": "integer",
@@ -4143,7 +4199,10 @@
                   "description": "Ordered checklist items in this section",
                   "items": {
                     "type": "object",
-                    "required": ["label", "responseType"],
+                    "required": [
+                      "label",
+                      "responseType"
+                    ],
                     "properties": {
                       "order": {
                         "type": "integer",
@@ -4319,7 +4378,9 @@
             "description": "Per-item responses (append-only post-submit)",
             "items": {
               "type": "object",
-              "required": ["itemId"],
+              "required": [
+                "itemId"
+              ],
               "properties": {
                 "itemId": {
                   "type": "string",
@@ -4362,7 +4423,11 @@
                 },
                 "syncState": {
                   "type": "string",
-                  "enum": ["local", "queued", "synced"],
+                  "enum": [
+                    "local",
+                    "queued",
+                    "synced"
+                  ],
                   "description": "Offline-sync state for this response"
                 }
               }
@@ -5029,6 +5094,276 @@
               }
             },
             "description": "Append-only audit trail for BAC-specific events (Archiefwet 1995). Complements the OpenRegister automatic per-save log."
+          }
+        }
+      },
+      "consultation": {
+        "slug": "consultation",
+        "icon": "CommentTextMultipleOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:AskAction",
+        "x-zgw-equivalent": "Adviesaanvraag",
+        "title": "Consultation",
+        "description": "Inter-departmental consultation (adviesaanvraag) — first-class entity linked to a parent case with its own lifecycle, document exchange, and structured response",
+        "type": "object",
+        "required": [
+          "parentZaak",
+          "adviesInstantie",
+          "vraagstelling",
+          "uiterlijkeReactiedatum"
+        ],
+        "properties": {
+          "consultationNumber": {
+            "type": "string",
+            "description": "Auto-generated number (ADV-{year}-{seq})",
+            "readOnly": true
+          },
+          "parentZaak": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "description": "The parent case this consultation belongs to"
+          },
+          "adviesInstantie": {
+            "type": "string",
+            "description": "Department or advisory body being consulted"
+          },
+          "advisoryBodyId": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "advisoryBody",
+            "description": "Reference to advisoryBody registry entry"
+          },
+          "onderwerp": {
+            "type": "string",
+            "description": "Subject of the consultation"
+          },
+          "vraagstelling": {
+            "type": "string",
+            "description": "Specific question(s) being asked (rich text)"
+          },
+          "uiterlijkeReactiedatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Deadline for response"
+          },
+          "prioriteit": {
+            "type": "string",
+            "enum": [
+              "normaal",
+              "spoed"
+            ],
+            "default": "normaal",
+            "description": "Priority level"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "ontvangen",
+              "in_behandeling",
+              "advies_uitgebracht",
+              "afgesloten",
+              "ingetrokken"
+            ],
+            "default": "open",
+            "description": "Current status"
+          },
+          "assignee": {
+            "type": "string",
+            "description": "User UID of the individual handler within the consulted department"
+          },
+          "mandatory": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this consultation is mandatory for case progression"
+          },
+          "dependsOn": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Consultation IDs that must complete first"
+          },
+          "secureToken": {
+            "type": "string",
+            "description": "256-bit token for external body secure response link"
+          },
+          "tokenExpiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the secure token expires"
+          },
+          "bijlagen": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Document IDs linked from parent case"
+          },
+          "aanvrager": {
+            "type": "string",
+            "description": "User UID of the case worker who created the consultation"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "acknowledgedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the consulted party acknowledged receipt"
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the consultation was closed"
+          },
+          "extensionRequestedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When a deadline extension was requested"
+          },
+          "extensionJustification": {
+            "type": "string",
+            "description": "Justification for the deadline extension request"
+          },
+          "extensionApproved": {
+            "type": "boolean",
+            "description": "Whether the extension request was approved"
+          }
+        }
+      },
+      "adviceResponse": {
+        "slug": "adviceResponse",
+        "icon": "FileDocumentCheckOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Answer",
+        "title": "Advice Response",
+        "description": "Structured response from an advisory body to a consultation request",
+        "type": "object",
+        "required": [
+          "consultation",
+          "advies",
+          "datum"
+        ],
+        "properties": {
+          "consultation": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "consultation",
+            "onDelete": "CASCADE",
+            "description": "The consultation this response belongs to"
+          },
+          "advies": {
+            "type": "string",
+            "enum": [
+              "positief",
+              "positief_met_voorwaarden",
+              "negatief",
+              "niet_van_toepassing"
+            ],
+            "description": "Formal advice outcome"
+          },
+          "toelichting": {
+            "type": "string",
+            "description": "Explanation of the advice (mandatory except for niet_van_toepassing)"
+          },
+          "voorwaarden": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "beschrijving": {
+                  "type": "string"
+                },
+                "prioriteit": {
+                  "type": "string",
+                  "enum": [
+                    "laag",
+                    "normaal",
+                    "hoog"
+                  ]
+                }
+              }
+            },
+            "description": "Conditions (only when positief_met_voorwaarden)"
+          },
+          "datum": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the advice was formally given"
+          },
+          "bijlagen": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Document IDs of uploaded advice documents"
+          },
+          "adviseur": {
+            "type": "string",
+            "description": "User UID or name of the person providing the advice"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Submission timestamp"
+          }
+        }
+      },
+      "advisoryBody": {
+        "slug": "advisoryBody",
+        "icon": "OfficeBuildingOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Organization",
+        "title": "Advisory Body",
+        "description": "Department or external organization that can receive consultation requests",
+        "type": "object",
+        "required": [
+          "name",
+          "type"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the advisory body"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "internal",
+              "external"
+            ],
+            "description": "Whether this is an internal department or external organization"
+          },
+          "defaultGroup": {
+            "type": "string",
+            "description": "Nextcloud group ID for internal bodies"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Contact email (required for external bodies)"
+          },
+          "specializations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Specialization tags for search weighting"
+          },
+          "defaultDeadlineDays": {
+            "type": "integer",
+            "default": 28,
+            "description": "Default response deadline in calendar days"
+          },
+          "active": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this body is still accepting consultations"
           }
         }
       }
@@ -5784,6 +6119,158 @@
         "status": "aangevraagd",
         "requestedAt": "2026-04-14T11:00:00+02:00",
         "questions": "Voldoet het vluchtrouteplan aan de eisen uit het Bouwbesluit 2012, art. 2.113 e.v.?"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "advisoryBody",
+          "slug": "advisory-body-brandweer-amsterdam"
+        },
+        "name": "Brandweer Amsterdam-Amstelland",
+        "type": "external",
+        "specializations": [
+          "brandveiligheid",
+          "bouwveiligheid"
+        ],
+        "defaultDeadlineDays": 28,
+        "active": true
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "advisoryBody",
+          "slug": "advisory-body-welstandscommissie"
+        },
+        "name": "Welstandscommissie Amsterdam",
+        "type": "internal",
+        "defaultGroup": "welstandscommissie",
+        "specializations": [
+          "welstand",
+          "architectuur",
+          "monumenten"
+        ],
+        "defaultDeadlineDays": 28,
+        "active": true
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "advisoryBody",
+          "slug": "advisory-body-milieudienst"
+        },
+        "name": "Milieudienst",
+        "type": "internal",
+        "defaultGroup": "milieudienst",
+        "specializations": [
+          "milieu",
+          "geluid",
+          "bodem"
+        ],
+        "defaultDeadlineDays": 28,
+        "active": true
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "consultation",
+          "slug": "consultation-adv-2026-0015"
+        },
+        "consultationNumber": "ADV-2026-0015",
+        "parentZaak": "zaak-bouwvergunning-0047",
+        "adviesInstantie": "Brandweer Amsterdam-Amstelland",
+        "advisoryBodyId": "advisory-body-brandweer-amsterdam",
+        "onderwerp": "Brandveiligheidsadvies transformatie kantoorpand naar woningen",
+        "vraagstelling": "Voldoet het vluchtrouteplan aan de eisen uit het Bouwbesluit 2012, art. 2.113 e.v.?",
+        "uiterlijkeReactiedatum": "2026-06-15",
+        "prioriteit": "normaal",
+        "status": "open",
+        "aanvrager": "behandelaar-vergunningen",
+        "mandatory": true,
+        "createdAt": "2026-05-18T09:00:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "consultation",
+          "slug": "consultation-adv-2026-0016"
+        },
+        "consultationNumber": "ADV-2026-0016",
+        "parentZaak": "zaak-bouwvergunning-0047",
+        "adviesInstantie": "Welstandscommissie Amsterdam",
+        "advisoryBodyId": "advisory-body-welstandscommissie",
+        "onderwerp": "Welstandstoets gevelwijzigingen bij transformatie",
+        "vraagstelling": "Voldoen de gevelwijzigingen aan de welstandscriteria uit de welstandsnota 2024?",
+        "uiterlijkeReactiedatum": "2026-06-08",
+        "prioriteit": "normaal",
+        "status": "in_behandeling",
+        "assignee": "welstand-adviseur-01",
+        "aanvrager": "behandelaar-vergunningen",
+        "mandatory": false,
+        "createdAt": "2026-05-18T09:15:00+02:00",
+        "acknowledgedAt": "2026-05-19T10:30:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "consultation",
+          "slug": "consultation-adv-2026-0017"
+        },
+        "consultationNumber": "ADV-2026-0017",
+        "parentZaak": "zaak-bouwvergunning-0047",
+        "adviesInstantie": "Milieudienst",
+        "advisoryBodyId": "advisory-body-milieudienst",
+        "onderwerp": "Milieueffecten sloop- en bouwwerkzaamheden",
+        "vraagstelling": "Zijn er bijzondere milieu-eisen van toepassing op de sloop- en bouwactiviteiten, m.n. t.a.v. geluid en bodemkwaliteit?",
+        "uiterlijkeReactiedatum": "2026-05-30",
+        "prioriteit": "normaal",
+        "status": "advies_uitgebracht",
+        "assignee": "milieu-adviseur-02",
+        "aanvrager": "behandelaar-vergunningen",
+        "mandatory": true,
+        "createdAt": "2026-05-05T08:00:00+02:00",
+        "acknowledgedAt": "2026-05-06T09:00:00+02:00",
+        "closedAt": "2026-05-15T14:00:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "adviceResponse",
+          "slug": "advice-response-adv-2026-0017-v1"
+        },
+        "consultation": "consultation-adv-2026-0017",
+        "advies": "positief_met_voorwaarden",
+        "toelichting": "De geplande werkzaamheden zijn milieuhygiënisch uitvoerbaar, mits de volgende voorwaarden in acht worden genomen.",
+        "voorwaarden": [
+          {
+            "beschrijving": "Sloopwerkzaamheden dienen te worden uitgevoerd conform het goedgekeurde sloopveiligheidsplan.",
+            "prioriteit": "hoog"
+          },
+          {
+            "beschrijving": "Bodemkwaliteitsonderzoek (NEN 5740) dient te worden uitgevoerd voor aanvang van bouwactiviteiten.",
+            "prioriteit": "normaal"
+          }
+        ],
+        "datum": "2026-05-15",
+        "adviseur": "milieu-adviseur-02",
+        "createdAt": "2026-05-15T13:45:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "adviceResponse",
+          "slug": "advice-response-adv-2026-0017-v2"
+        },
+        "consultation": "consultation-adv-2026-0017",
+        "advies": "positief",
+        "toelichting": "Na aanvullende beoordeling van het ingediende sloopveiligheidsplan en het bodemonderzoek is gebleken dat aan alle gestelde voorwaarden wordt voldaan. Het plan kan worden goedgekeurd.",
+        "voorwaarden": [],
+        "datum": "2026-05-15",
+        "bijlagen": [
+          "bodemonderzoek-rapport-2026.pdf",
+          "sloopveiligheidsplan-goedgekeurd.pdf"
+        ],
+        "adviseur": "milieu-adviseur-02",
+        "createdAt": "2026-05-15T14:00:00+02:00"
       }
     ]
   }

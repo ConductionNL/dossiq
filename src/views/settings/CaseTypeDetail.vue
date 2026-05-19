@@ -101,6 +101,10 @@
 				<WorkflowTab
 					v-else-if="activeTab === 'workflow'"
 					:case-type-id="caseTypeId" />
+				<ConsultationTypesTab
+					v-else-if="activeTab === 'consultations'"
+					:case-type-id="caseTypeId"
+					:is-create="isCreate" />
 			</div>
 		</template>
 	</div>
@@ -115,6 +119,7 @@ import WorkflowTab from './tabs/WorkflowTab.vue'
 import ResultsTab from './tabs/ResultsTab.vue'
 import RolesTab from './tabs/RolesTab.vue'
 import PropertiesTab from './tabs/PropertiesTab.vue'
+import ConsultationTypesTab from './tabs/ConsultationTypesTab.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { validateCaseType, validateForPublish } from '../../utils/caseTypeValidation.js'
 
@@ -156,6 +161,7 @@ export default {
 		ResultsTab,
 		RolesTab,
 		PropertiesTab,
+		ConsultationTypesTab,
 	},
 	props: {
 		caseTypeId: {
@@ -192,6 +198,7 @@ export default {
 				{ id: 'roles', label: t('procest', 'Roles') },
 				{ id: 'properties', label: t('procest', 'Properties') },
 				{ id: 'workflow', label: t('procest', 'Workflow') },
+				{ id: 'consultations', label: t('procest', 'Consultations') },
 			]
 		},
 	},
