@@ -32,4 +32,4 @@
 
 ## 8. Build verification
 
-- [ ] 8.1 `cd docs && npm install --legacy-peer-deps && npm run build` (10-min timeout) must exit 0; apply escape hatch from 5.1 if nl SSR fails, then re-run. Confirm output includes `Features/`, `user-guide/`, `Technical/`, `api/` routes.
+- [x] 8.1 `cd docs && npm install --legacy-peer-deps && npm run build` (10-min timeout) must exit 0; apply escape hatch from 5.1 if nl SSR fails, then re-run. Confirm output includes `Features/`, `user-guide/`, `Technical/`, `api/` routes.
