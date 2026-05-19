@@ -30,7 +30,9 @@ namespace OCA\Procest\Controller;
 use OCA\Procest\Service\WfsExportService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
+use OCP\IUserSession;
 
 /**
  * Controller exposing case locations as a WFS GeoJSON endpoint.
@@ -45,6 +47,7 @@ class WfsExportController extends Controller
      * @param string           $appName          The application name
      * @param IRequest         $request          The request object
      * @param WfsExportService $wfsExportService The WFS export service
+     * @param IUserSession     $userSession      The user session
      *
      * @return void
      */
@@ -52,6 +55,7 @@ class WfsExportController extends Controller
         string $appName,
         IRequest $request,
         private WfsExportService $wfsExportService,
+        private IUserSession $userSession,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -71,10 +75,16 @@ class WfsExportController extends Controller
      *
      * @return JSONResponse GeoJSON FeatureCollection
      *
+     * @throws OCSForbiddenException When user session is not authenticated
+     *
      * @spec openspec/changes/gis-integration/tasks.md#task-19
      */
     public function getFeatures(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            throw new OCSForbiddenException('Authentication required');
+        }
+
         $typeName     = (string) $this->request->getParam('typeName', WfsExportService::TYPE_NAME_CASES);
         $outputFormat = (string) $this->request->getParam('outputFormat', 'application/json');
         $maxFeatures  = (int) $this->request->getParam('maxFeatures', WfsExportService::DEFAULT_MAX_FEATURES);
@@ -135,10 +145,16 @@ class WfsExportController extends Controller
      *
      * @return JSONResponse WFS capabilities descriptor
      *
+     * @throws OCSForbiddenException When user session is not authenticated
+     *
      * @spec openspec/changes/gis-integration/tasks.md#task-19
      */
     public function getCapabilities(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            throw new OCSForbiddenException('Authentication required');
+        }
+
         $baseUrl      = $this->request->getServerProtocol().'://'.$this->request->getServerHost();
         $capabilities = $this->wfsExportService->buildCapabilities(
             baseUrl: $baseUrl.'/index.php/apps/procest/api/gis/wfs'

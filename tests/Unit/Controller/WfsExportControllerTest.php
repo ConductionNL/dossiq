@@ -25,7 +25,10 @@ namespace OCA\Procest\Tests\Unit\Controller;
 use OCA\Procest\Controller\WfsExportController;
 use OCA\Procest\Service\WfsExportService;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -51,6 +54,13 @@ class WfsExportControllerTest extends TestCase
     private WfsExportService $wfsExportService;
 
     /**
+     * The mocked user session.
+     *
+     * @var IUserSession|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private IUserSession $userSession;
+
+    /**
      * The controller under test.
      *
      * @var WfsExportController
@@ -67,11 +77,16 @@ class WfsExportControllerTest extends TestCase
     {
         $this->request          = $this->createMock(IRequest::class);
         $this->wfsExportService = $this->createMock(WfsExportService::class);
+        $this->userSession      = $this->createMock(IUserSession::class);
+
+        $mockUser = $this->createMock(IUser::class);
+        $this->userSession->method('getUser')->willReturn($mockUser);
 
         $this->controller = new WfsExportController(
             appName: 'procest',
             request: $this->request,
             wfsExportService: $this->wfsExportService,
+            userSession: $this->userSession,
         );
 
     }//end setUp()
@@ -115,6 +130,30 @@ class WfsExportControllerTest extends TestCase
         $this->assertSame('FeatureCollection', $data['type']);
 
     }//end testGetFeaturesReturnsFeatureCollection()
+
+
+    /**
+     * Test that getFeatures() throws OCSForbiddenException when user is null.
+     *
+     * @return void
+     */
+    public function testGetFeaturesThrowsWhenUserIsNull(): void
+    {
+        $this->userSession = $this->createMock(IUserSession::class);
+        $this->userSession->method('getUser')->willReturn(null);
+
+        $controller = new WfsExportController(
+            appName: 'procest',
+            request: $this->request,
+            wfsExportService: $this->wfsExportService,
+            userSession: $this->userSession,
+        );
+
+        $this->expectException(OCSForbiddenException::class);
+
+        $controller->getFeatures();
+
+    }//end testGetFeaturesThrowsWhenUserIsNull()
 
 
     /**
@@ -241,6 +280,30 @@ class WfsExportControllerTest extends TestCase
         $this->assertSame('2.0.0', $data['version']);
 
     }//end testGetCapabilitiesReturnsDescriptor()
+
+
+    /**
+     * Test that getCapabilities() throws OCSForbiddenException when user is null.
+     *
+     * @return void
+     */
+    public function testGetCapabilitiesThrowsWhenUserIsNull(): void
+    {
+        $this->userSession = $this->createMock(IUserSession::class);
+        $this->userSession->method('getUser')->willReturn(null);
+
+        $controller = new WfsExportController(
+            appName: 'procest',
+            request: $this->request,
+            wfsExportService: $this->wfsExportService,
+            userSession: $this->userSession,
+        );
+
+        $this->expectException(OCSForbiddenException::class);
+
+        $controller->getCapabilities();
+
+    }//end testGetCapabilitiesThrowsWhenUserIsNull()
 
 
 }//end class

@@ -160,8 +160,8 @@ return [
 
         // WFS export — exposes case locations as a GeoJSON WFS layer for external GIS applications.
         // gis-integration spec AC 6.
-        ['name' => 'wfs_export#getFeatures', 'url' => '/api/gis/wfs', 'verb' => 'GET'],
-        ['name' => 'wfs_export#getCapabilities', 'url' => '/api/gis/wfs/capabilities', 'verb' => 'GET'],
+        ['name' => 'wfsExport#getFeatures', 'url' => '/api/gis/wfs', 'verb' => 'GET'],
+        ['name' => 'wfsExport#getCapabilities', 'url' => '/api/gis/wfs/capabilities', 'verb' => 'GET'],
 
         // ── Parafeerroute (B&W parafering engine) ───────────────────────
         // CRUD on parafeerroute objects is served by OpenRegister's auto-exposed
