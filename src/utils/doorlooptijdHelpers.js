@@ -5,6 +5,8 @@
  * monthly trends, at-risk case identification, and performance table data.
  */
 
+import { translate as t } from '@nextcloud/l10n'
+
 /**
  * Parse an ISO 8601 duration string to calendar days.
  *
@@ -111,7 +113,7 @@ export function computeSlaCompliance(completedCases, caseTypes) {
 			const ct = caseTypeMap.get(ctId)
 			byType.set(ctId, {
 				id: ctId,
-				name: ct?.title || ct?.name || 'Unknown',
+				name: ct?.title || ct?.name || t('procest', 'Unknown'),
 				total: 0,
 				withinSla: 0,
 				totalDays: 0,
@@ -282,7 +284,7 @@ export function getAtRiskCases(openCases, caseTypes, thresholdPct) {
 				id: c.id,
 				title: c.title || '',
 				identifier: c.identifier || '',
-				caseTypeName: ct?.title || ct?.name || 'Unknown',
+				caseTypeName: ct?.title || ct?.name || t('procest', 'Unknown'),
 				targetDays,
 				elapsedDays,
 				remainingDays,
@@ -317,7 +319,7 @@ export function computePerformanceTable(completedCases, caseTypes) {
 		const targetDays = ct.processingDeadline ? parseDurationToDays(ct.processingDeadline) : null
 		byType.set(ct.id, {
 			id: ct.id,
-			name: ct.title || ct.name || 'Unknown',
+			name: ct.title || ct.name || t('procest', 'Unknown'),
 			targetDays,
 			totalDays: 0,
 			total: 0,

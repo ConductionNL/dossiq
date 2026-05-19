@@ -38,7 +38,14 @@ jobs:
       # `npm ls` under the hood; `--package-lock-only` doesn't sidestep it).
       # No other Conduction app enables SBOM today. Tracked in #434.
       enable-sbom: false
-      enable-playwright: true
-      enable-playwright-coverage: true
+      # Playwright disabled until upstream @conduction/nextcloud-vue
+      # CnObjectDataWidget bundling bug is fixed: the published bundle has a
+      # hard-coded `require('../../store/index.js')` inside a soft try/catch
+      # that webpack can't resolve in consumer apps, so the procest bundle
+      # fails to build and every E2E spec then 404s. Tracked in
+      # ConductionNL/nextcloud-vue#242 — re-enable once a beta past that fix
+      # is pinned in package.json.
+      enable-playwright: false
+      enable-playwright-coverage: false
       playwright-coverage-threshold: 75
       playwright-seed-command: 'php occ maintenance:repair'
