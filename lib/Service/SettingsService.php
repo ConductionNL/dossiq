@@ -142,6 +142,25 @@ class SettingsService
         // Outage banner copy (nl + en).
         'pdok_outage_banner_nl',
         'pdok_outage_banner_en',
+        // Email integration (case-email-integration spec).
+        'email_template_schema',
+        'email_message_schema',
+        'email_thread_schema',
+        'email_smtp_host',
+        'email_smtp_port',
+        'email_smtp_user',
+        'email_smtp_password',
+        'email_smtp_encryption',
+        'email_imap_host',
+        'email_imap_port',
+        'email_imap_user',
+        'email_imap_password',
+        'email_transport',
+        'email_from_address',
+        'email_from_name',
+        'email_poll_interval',
+        'email_poll_batch_size',
+        'email_max_attachment_size',
     ];
 
     /**
@@ -210,6 +229,9 @@ class SettingsService
         'bacAdviceRequest'             => 'bac_advice_request_schema',
         'beroep'                       => 'beroep_schema',
         'bezwaarDecision'              => 'bezwaar_decision_schema',
+        'emailTemplate'                => 'email_template_schema',
+        'emailMessage'                 => 'email_message_schema',
+        'emailThread'                  => 'email_thread_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

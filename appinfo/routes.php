@@ -278,6 +278,23 @@ return [
         ['name' => 'lhs#recommend', 'url' => '/api/lhs/recommend', 'verb' => 'POST'],
         ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
+        // ── Case Email Integration ──────────────────────────────────────
+        // Case-scoped email (send + list threads/messages).
+        ['name' => 'case_email#sendEmail',   'url' => '/api/cases/{caseId}/emails',          'verb' => 'POST'],
+        ['name' => 'case_email#listEmails',  'url' => '/api/cases/{caseId}/emails',          'verb' => 'GET'],
+        // Unlinked inbound email queue.
+        ['name' => 'case_email#listUnlinked',  'url' => '/api/emails/unlinked',              'verb' => 'GET'],
+        ['name' => 'case_email#linkEmail',     'url' => '/api/emails/unlinked/{id}/link',    'verb' => 'POST'],
+        ['name' => 'case_email#discardEmail',  'url' => '/api/emails/unlinked/{id}/discard', 'verb' => 'POST'],
+        // Email templates per case type.
+        ['name' => 'case_email#listTemplates',  'url' => '/api/casetypes/{caseTypeId}/email-templates', 'verb' => 'GET'],
+        ['name' => 'case_email#createTemplate', 'url' => '/api/casetypes/{caseTypeId}/email-templates', 'verb' => 'POST'],
+        ['name' => 'case_email#updateTemplate', 'url' => '/api/email-templates/{templateId}',            'verb' => 'PUT'],
+        // Email admin settings.
+        ['name' => 'case_email#getEmailSettings',  'url' => '/api/settings/email',         'verb' => 'GET'],
+        ['name' => 'case_email#saveEmailSettings', 'url' => '/api/settings/email',         'verb' => 'PUT'],
+        ['name' => 'case_email#testSmtp',          'url' => '/api/settings/email/test-smtp', 'verb' => 'POST'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],

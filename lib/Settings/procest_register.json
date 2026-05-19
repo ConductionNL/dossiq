@@ -5031,6 +5031,177 @@
             "description": "Append-only audit trail for BAC-specific events (Archiefwet 1995). Complements the OpenRegister automatic per-save log."
           }
         }
+      },
+      "emailTemplate": {
+        "slug": "emailTemplate",
+        "icon": "EmailOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:DigitalDocument",
+        "title": "Email Template",
+        "description": "Reusable email template for a case type with variable placeholders",
+        "type": "object",
+        "required": ["name", "subject", "body", "caseType"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Template name (e.g. Ontvangstbevestiging)"
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 998,
+            "description": "Subject pattern with {{variable}} placeholders"
+          },
+          "body": {
+            "type": "string",
+            "description": "Body content (HTML) with {{variable}} placeholders"
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case type this template belongs to"
+          },
+          "variables": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Available variable names for this template"
+          },
+          "version": {
+            "type": "integer",
+            "default": 1,
+            "description": "Version counter; bumped on each edit"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this template is selectable when composing email"
+          }
+        }
+      },
+      "emailMessage": {
+        "slug": "emailMessage",
+        "icon": "Email",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:EmailMessage",
+        "title": "Email Message",
+        "description": "A sent or received email message linked to a case",
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "description": "RFC 2822 Message-ID header value"
+          },
+          "inReplyTo": {
+            "type": "string",
+            "nullable": true,
+            "description": "RFC 2822 In-Reply-To header of the parent message"
+          },
+          "direction": {
+            "type": "string",
+            "enum": ["inbound", "outbound"],
+            "description": "Whether this message was sent or received"
+          },
+          "from": {
+            "type": "string",
+            "description": "Sender email address"
+          },
+          "to": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Primary recipient email addresses"
+          },
+          "cc": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "CC recipient email addresses"
+          },
+          "bcc": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "BCC recipient email addresses"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject line including case prefix"
+          },
+          "body": {
+            "type": "string",
+            "description": "Rendered HTML body"
+          },
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the linked case"
+          },
+          "thread": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Reference to the emailThread"
+          },
+          "pdfPath": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nextcloud file path of the generated PDF"
+          },
+          "pdfStatus": {
+            "type": "string",
+            "enum": ["pending", "completed", "failed"],
+            "default": "pending",
+            "description": "Docudesk PDF conversion status"
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Send or receive timestamp"
+          },
+          "templateId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Reference to the emailTemplate used"
+          },
+          "templateVersion": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Version of the template at send time"
+          }
+        }
+      },
+      "emailThread": {
+        "slug": "emailThread",
+        "icon": "EmailMultiple",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Conversation",
+        "title": "Email Thread",
+        "description": "Groups email messages for a case into a conversation thread",
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "Thread subject without RE: prefix"
+          },
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the linked case"
+          },
+          "messageCount": {
+            "type": "integer",
+            "default": 0,
+            "description": "Total number of messages in this thread"
+          },
+          "firstMessageAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the first message"
+          },
+          "lastMessageAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the most recent message"
+          }
+        }
       }
     },
     "registers": {

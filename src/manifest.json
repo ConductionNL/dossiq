@@ -128,6 +128,7 @@
 						],
 						"order": 45
 					},
+					{ "id": "email",     "label": "Email",       "icon": "icon-mail",      "component": "EmailTab",                                  "order": 45 },
 					{ "id": "advies",    "label": "Advies",      "icon": "icon-comment",   "component": "AdviesPanel",                               "order": 50 },
 					{ "id": "audit",     "label": "Audit trail", "icon": "icon-history",   "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
 				]

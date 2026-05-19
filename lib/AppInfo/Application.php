@@ -234,5 +234,9 @@ class Application extends App implements IBootstrap
      */
     public function boot(IBootContext $context): void
     {
+        $context->injectFn(function (\OCP\BackgroundJob\IJobList $jobList): void {
+            $jobList->add(\OCA\Procest\BackgroundJob\InboundEmailJob::class);
+            $jobList->add(\OCA\Procest\BackgroundJob\EmailPdfRetryJob::class);
+        });
     }//end boot()
 }//end class

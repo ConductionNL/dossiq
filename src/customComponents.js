@@ -35,6 +35,7 @@ import PublicStatusPage from './views/public/PublicStatusPage.vue'
 // --- Detail-tab custom components (one per cross-schema relation). ---
 // Stubs for v1 — full implementations follow in `procest-case-relation-tabs`.
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
+import EmailTab from './components/tabs/EmailTab.vue'
 import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 
@@ -119,6 +120,7 @@ export default {
 
 	// --- Detail-tab components (one per case-detail cross-schema relation). ---
 	CaseTasksTab, // tasks where task.case === parent.id
+	EmailTab, // email threads and messages for a case (case-email-integration)
 	CaseDecisionsTab, // decisions where decision.case === parent.id
 	CaseDocumentsTab, // documents where document.case === parent.id
 
