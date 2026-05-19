@@ -1,0 +1,28 @@
+{
+  "spec": "openspec/changes/consultation-management",
+  "verified": [
+    {"task": "CN-01", "file": "lib/Settings/procest_register.json", "ok": true},
+    {"task": "CN-01", "file": "lib/Service/SettingsService.php", "ok": true},
+    {"task": "CN-02", "file": "lib/Service/ConsultationService.php", "ok": true},
+    {"task": "CN-03", "file": "lib/Service/AdvisoryBodyService.php", "ok": true},
+    {"task": "CN-03", "file": "lib/Service/ConsultationNotificationService.php", "ok": true},
+    {"task": "CN-04", "file": "lib/Controller/ConsultationController.php", "ok": true},
+    {"task": "CN-04", "file": "lib/Controller/AdvisoryBodyController.php", "ok": true},
+    {"task": "CN-04", "file": "appinfo/routes.php", "ok": true},
+    {"task": "CN-05", "file": "src/views/cases/components/ConsultationCreateDialog.vue", "ok": true},
+    {"task": "CN-05", "file": "src/views/cases/components/ConsultationResponseForm.vue", "ok": true},
+    {"task": "CN-05", "file": "src/views/ConsultationDashboard.vue", "ok": true},
+    {"task": "CN-06", "file": "src/views/public/ExternalConsultationResponsePage.vue", "ok": true},
+    {"task": "CN-07", "file": "src/views/settings/tabs/ConsultationTypesTab.vue", "ok": true},
+    {"task": "CN-07", "file": "src/views/settings/CaseTypeDetail.vue", "ok": true},
+    {"task": "CN-08", "file": "src/views/cases/components/ActivityTimeline.vue", "ok": true},
+    {"task": "CN-09", "file": "docs/Integrations/n8n-consultation-workflows.md", "ok": true},
+    {"task": "CN-10", "file": "l10n/nl.json", "ok": true},
+    {"task": "CN-10", "file": "l10n/en.json", "ok": true},
+    {"task": "CN-02", "file": "tests/Unit/Service/ConsultationServiceTest.php", "ok": true},
+    {"task": "CN-03", "file": "tests/Unit/Service/AdvisoryBodyServiceTest.php", "ok": true},
+    {"task": "CN-04", "file": "tests/Unit/Controller/ConsultationControllerTest.php", "ok": true}
+  ],
+  "stubs": [],
+  "missing_routes": []
+}
