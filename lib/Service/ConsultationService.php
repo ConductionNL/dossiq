@@ -155,6 +155,18 @@ class ConsultationService
             year: $year
         );
 
+        if (empty($data['dependsOn']) === false) {
+            if (is_array($data['dependsOn']) === true) {
+                $deps = $data['dependsOn'];
+            } else {
+                $deps = [$data['dependsOn']];
+            }
+
+            if ($this->validateDependencyCycle(newDependsOn: $deps, consultationId: '') === false) {
+                throw new \RuntimeException('Dependency cycle detected in dependsOn');
+            }
+        }
+
         $data['nummer']      = $number;
         $data['status']      = 'open';
         $data['aanvrager']   = $requesterId;

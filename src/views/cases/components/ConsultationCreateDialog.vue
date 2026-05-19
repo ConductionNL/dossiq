@@ -15,7 +15,7 @@
 					{{ t('procest', 'Advisory body') }} *
 				</label>
 				<NcSelect
-					v-if="advisoryBodies.length > 0"
+					v-if="hasAdvisoryBodies"
 					:value="selectedBody"
 					:options="bodyOptions"
 					:input-label="t('procest', 'Select advisory body')"
@@ -146,6 +146,10 @@ export default {
 	},
 
 	computed: {
+		hasAdvisoryBodies() {
+			return this.advisoryBodies.length !== 0
+		},
+
 		today() {
 			return new Date().toISOString().split('T')[0]
 		},

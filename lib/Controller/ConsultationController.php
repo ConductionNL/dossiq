@@ -76,6 +76,10 @@ class ConsultationController extends Controller
     #[NoAdminRequired]
     public function index(string $caseId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Authentication required'], Http::STATUS_UNAUTHORIZED);
+        }
+
         if ($caseId === '') {
             return new JSONResponse(
                 ['error' => 'caseId is required'],
@@ -99,6 +103,10 @@ class ConsultationController extends Controller
     #[NoAdminRequired]
     public function show(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Authentication required'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $consultation = $this->consultationService->getConsultation(id: $id);
         if ($consultation === null) {
             return new JSONResponse(
@@ -224,6 +232,10 @@ class ConsultationController extends Controller
     #[NoAdminRequired]
     public function submitResponse(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Authentication required'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $consultation = $this->consultationService->getConsultation(id: $id);
         if ($consultation === null) {
             return new JSONResponse(
@@ -310,6 +322,10 @@ class ConsultationController extends Controller
     #[NoAdminRequired]
     public function requestExtension(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Authentication required'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $consultation = $this->consultationService->getConsultation(id: $id);
         if ($consultation === null) {
             return new JSONResponse(
@@ -344,6 +360,10 @@ class ConsultationController extends Controller
     #[NoAdminRequired]
     public function overdue(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Authentication required'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $overdue = $this->consultationService->getOverdueConsultations();
         return new JSONResponse(['results' => $overdue]);
     }//end overdue()
@@ -360,6 +380,10 @@ class ConsultationController extends Controller
     #[NoAdminRequired]
     public function byDepartment(string $departmentId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Authentication required'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $consultations = $this->consultationService->getConsultationsByDepartment(
             advisoryBodyId: $departmentId,
         );
@@ -378,6 +402,10 @@ class ConsultationController extends Controller
     #[NoAdminRequired]
     public function blockingForCase(string $caseId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Authentication required'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $blocking = $this->consultationService->getBlockingConsultations(zaakId: $caseId);
         return new JSONResponse(
                 [

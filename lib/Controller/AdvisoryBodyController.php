@@ -24,9 +24,11 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\AdvisoryBodyService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUserSession;
 
 /**
  * Controller for the advisory body registry.
@@ -41,11 +43,13 @@ class AdvisoryBodyController extends Controller
      * @param string              $appName             The app name
      * @param IRequest            $request             The request
      * @param AdvisoryBodyService $advisoryBodyService The advisory body service
+     * @param IUserSession        $userSession         The user session
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly AdvisoryBodyService $advisoryBodyService,
+        private readonly IUserSession $userSession,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -60,6 +64,10 @@ class AdvisoryBodyController extends Controller
     #[NoAdminRequired]
     public function index(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Authentication required'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $bodies = $this->advisoryBodyService->listAll();
         return new JSONResponse(['results' => $bodies]);
     }//end index()
@@ -78,6 +86,10 @@ class AdvisoryBodyController extends Controller
     #[NoAdminRequired]
     public function search(string $query): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Authentication required'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $results = $this->advisoryBodyService->searchBySpecialization(query: $query);
         return new JSONResponse(['results' => $results]);
     }//end search()

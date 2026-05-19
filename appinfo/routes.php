@@ -294,8 +294,8 @@ return [
         ['name' => 'consultation#publicRespond',     'url' => '/api/public/consultations/{token}',             'verb' => 'POST'],
 
         // ── Advisory Body Registry ───────────────────────────────────────
-        ['name' => 'advisory_body#search', 'url' => '/api/advisory-bodies/search/{query}', 'verb' => 'GET'],
-        ['name' => 'advisory_body#index',  'url' => '/api/advisory-bodies',                'verb' => 'GET'],
+        ['name' => 'advisoryBody#search', 'url' => '/api/advisory-bodies/search/{query}', 'verb' => 'GET'],
+        ['name' => 'advisoryBody#index',  'url' => '/api/advisory-bodies',                'verb' => 'GET'],
 
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],

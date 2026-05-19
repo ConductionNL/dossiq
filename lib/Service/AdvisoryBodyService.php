@@ -226,6 +226,14 @@ class AdvisoryBodyService
         array $advisoryBody,
         string $token,
     ): void {
+        if ($this->validateExternalBodyHasEmail(body: $advisoryBody) === false) {
+            $this->logger->warning(
+                'Procest: skipping external consultation email — advisory body missing email or not external',
+                ['app' => Application::APP_ID]
+            );
+            return;
+        }
+
         try {
             $toEmail   = (string) ($advisoryBody['email'] ?? '');
             $number    = (string) ($consultation['consultationNumber'] ?? '');
