@@ -266,7 +266,7 @@ const WIDGETS = [
 export default function Home() {
   return (
     <Layout
-      title="Procest"
+      title="Procest, case management and BPMN workflows for Nextcloud"
       description="Case management for VTH and citizen processes on Nextcloud. Workflow engine plus typed registers plus an audit trail."
     >
       <main className="marketing-page">
