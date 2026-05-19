@@ -158,6 +158,11 @@ return [
         // CRUD on wmsLayer objects is served by OpenRegister manifest pages.
         ['name' => 'wms_wfs#proxy', 'url' => '/api/wms-wfs/proxy', 'verb' => 'GET'],
 
+        // WFS export — exposes case locations as a GeoJSON WFS layer for external GIS applications.
+        // gis-integration spec AC 6.
+        ['name' => 'wfs_export#getFeatures', 'url' => '/api/gis/wfs', 'verb' => 'GET'],
+        ['name' => 'wfs_export#getCapabilities', 'url' => '/api/gis/wfs/capabilities', 'verb' => 'GET'],
+
         // ── Parafeerroute (B&W parafering engine) ───────────────────────
         // CRUD on parafeerroute objects is served by OpenRegister's auto-exposed
         // /api/objects/<register>/<schema> endpoints — only engine routes remain.
