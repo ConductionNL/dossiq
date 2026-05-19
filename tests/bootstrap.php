@@ -1,14 +1,12 @@
 <?php
 
 /**
- * PHPUnit Bootstrap
+ * Bootstrap file for PHPUnit unit tests.
  *
- * Bootstrap file for PHPUnit tests in the Procest app.
- *
- * @category Tests
+ * @category Test
  * @package  OCA\Procest\Tests
  *
- * @author    Conduction Development Team <info@conduction.nl>
+ * @author    Conduction Development Team <dev@conductio.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -19,54 +17,32 @@
 
 declare(strict_types=1);
 
+// Define that we're running PHPUnit.
 define('PHPUNIT_RUN', 1);
 
+// Include Composer's autoloader.
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// Register OCP and NCU namespaces from the nextcloud/ocp stub package so that
-// PHPUnit can mock OCP interfaces without a full Nextcloud installation.
-$loaders = spl_autoload_functions();
-foreach ($loaders as $loader) {
-    if (is_array($loader) && $loader[0] instanceof \Composer\Autoload\ClassLoader) {
-        $loader[0]->addPsr4('OCP\\', __DIR__ . '/../vendor/nextcloud/ocp/OCP/');
-        $loader[0]->addPsr4('NCU\\', __DIR__ . '/../vendor/nextcloud/ocp/NCU/');
+// Register OCP/NCU classes from nextcloud/ocp package.
+// nextcloud/ocp has no autoload section in its composer.json, so we register it manually.
+spl_autoload_register(function (string $class): void {
+    $prefixMap = [
+        'OCP\\' => __DIR__ . '/../vendor/nextcloud/ocp/OCP/',
+        'NCU\\' => __DIR__ . '/../vendor/nextcloud/ocp/NCU/',
+    ];
+
+    foreach ($prefixMap as $prefix => $dir) {
+        if (strncmp($class, $prefix, strlen($prefix)) !== 0) {
+            continue;
+        }
+
+        $relative = str_replace(search: '\\', replace: '/', subject: substr($class, strlen($prefix)));
+        $file     = $dir . $relative . '.php';
+        if (file_exists($file) === true) {
+            require_once $file;
+        }
+
         break;
-    }
-}
+    }//end foreach
 
-// Load a real Nextcloud server first when one is present (CI). This must happen
-// BEFORE the stub files below — base.php declares the real `OC`, the Doctrine
-// DBAL classes, etc., and the stubs self-skip via class_exists()/interface_exists()
-// guards when those already exist. Loading the stubs first would declare a stub
-// `OC` and then crash with "Cannot declare class OC" the moment base.php runs.
-if (defined('OC_CONSOLE') === false) {
-    if (file_exists(__DIR__ . '/../../../lib/base.php') === true) {
-        require_once __DIR__ . '/../../../lib/base.php';
-    }
-
-    if (file_exists(__DIR__ . '/../../../tests/autoload.php') === true) {
-        require_once __DIR__ . '/../../../tests/autoload.php';
-    }
-}
-
-// Load Doctrine DBAL and OC internal stubs so that PHPUnit can mock
-// OCP\IDBConnection and OCP\DB\QueryBuilder\IQueryBuilder, which reference
-// Doctrine types not present in this repository's vendor directory. Every
-// declaration here is guarded by class_exists()/interface_exists(), so this is
-// a no-op when a real Nextcloud (loaded above) already provides the classes.
-require_once __DIR__ . '/Unit/Stubs/DoctrineStubs.php';
-
-// IMcpToolProvider stub — loaded when the openregister runtime (PR #1466,
-// ai-chat-companion-orchestrator) is absent. ProcestToolProvider implements
-// OCA\OpenRegister\Mcp\IMcpToolProvider; the stub no-ops when the real
-// interface is present (e.g. when the openregister app is installed). Must be
-// in place before \OC_App::loadApp('procest') below tries to load that class.
-if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
-    require_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
-}
-
-if (defined('OC_CONSOLE') === false && class_exists('\OC_App') === true) {
-    \OC_App::loadApps();
-    \OC_App::loadApp('procest');
-    OC_Hook::clear();
-}
+});
