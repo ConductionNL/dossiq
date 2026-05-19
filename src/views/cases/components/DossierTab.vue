@@ -73,7 +73,7 @@ import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import DossierGroup from './DossierGroup.vue'
-import DocumentMetadataDialog from './DocumentMetadataDialog.vue'
+import DocumentMetadataDialog from '../../../modals/DocumentMetadataDialog.vue'
 import VersionHistoryPanel from './VersionHistoryPanel.vue'
 import BulkActionsBar from './BulkActionsBar.vue'
 
