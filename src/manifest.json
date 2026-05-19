@@ -1,38 +1,242 @@
 {
-	"$schema": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest.schema.json",
+	"$schema": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"version": "1.0.0",
-	"dependencies": ["openregister"],
+	"dependencies": [
+		"openregister"
+	],
 	"menu": [
-		{ "id": "Dashboard", "label": "Dashboard", "icon": "icon-category-dashboard", "route": "Dashboard", "order": 10 },
-		{ "id": "MyWork", "label": "My Work", "icon": "icon-checkmark", "route": "MyWork", "order": 20 },
-		{ "id": "Werkvoorraad", "label": "Work Queue", "icon": "icon-group", "route": "Werkvoorraad", "order": 30 },
-		{ "id": "Cases", "label": "Cases", "icon": "icon-folder", "route": "Cases", "order": 40 },
-		{ "id": "Bezwaren", "label": "Bezwaren", "icon": "icon-toggle-filelist", "route": "Bezwaren", "order": 45 },
-		{ "id": "BezwaarDecisions", "label": "Beslissingen op bezwaar", "icon": "icon-toggle", "route": "BezwaarDecisions", "order": 47 },
-		{ "id": "Beroepen", "label": "Beroepen", "icon": "icon-toggle-filelist", "route": "Beroepen", "order": 46 },
-		{ "id": "Tasks", "label": "Tasks", "icon": "icon-checkmark", "route": "Tasks", "order": 50 },
-		{ "id": "CaseMap", "label": "Map", "icon": "icon-address", "route": "CaseMap", "order": 60 },
-		{ "id": "Voorstellen", "label": "Voorstellen", "icon": "icon-comment", "route": "Voorstellen", "order": 70 },
-		{ "id": "Advice", "label": "Advice", "icon": "icon-comment", "route": "Advice", "order": 75 },
-		{ "id": "BezwaarAdviceRequests", "label": "BAC-adviezen", "icon": "icon-comment", "route": "BezwaarAdviceRequests", "order": 76 },
-		{ "id": "Transfers", "label": "Transfers", "icon": "icon-shared", "route": "Transfers", "order": 80 },
-		{ "id": "Documentation", "label": "Documentation", "icon": "icon-info", "href": "https://conduction.gitbook.io/procest-nextcloud", "section": "settings", "order": 90 },
-		{ "id": "CaseTypesMenu", "label": "Case Types", "icon": "icon-category-customization", "route": "CaseTypes", "section": "settings", "order": 95 },
-		{ "id": "LegesverordeningenMenu", "label": "Legesverordeningen", "icon": "icon-category-office", "route": "Legesverordeningen", "section": "settings", "order": 96 },
-		{ "id": "LegesberekeningenMenu", "label": "Legesberekeningen", "icon": "icon-category-monitoring", "route": "Legesberekeningen", "section": "settings", "order": 97 },
-		{ "id": "PartnersMenu", "label": "Partner organisations", "icon": "icon-group", "route": "Partners", "section": "settings", "order": 97 },
-		{ "id": "TenantsMenu", "label": "Tenants", "icon": "icon-group", "route": "Tenants", "section": "settings", "order": 98, "permission": "admin" },
-		{ "id": "ParafeerroutesMenu", "label": "Parafeerroutes", "icon": "icon-category-workflow", "route": "Parafeerroutes", "section": "settings", "order": 96 },
-		{ "id": "WmsLayersMenu", "label": "Kaartlagen", "icon": "icon-category-files", "route": "WmsLayers", "section": "settings", "order": 97, "permission": "admin" },
-		{ "id": "WorkflowDefinitionsMenu", "label": "Workflow definitions", "icon": "icon-category-workflow", "route": "WorkflowDefinitions", "section": "settings", "order": 97 },
-		{ "id": "AutomaticActionsMenu", "label": "Automatische acties", "icon": "icon-category-workflow", "route": "AutomaticActions", "section": "settings", "order": 96 },
-		{ "id": "StatusRecordsMenu", "label": "Status history", "icon": "icon-history", "route": "StatusRecords", "section": "settings", "order": 98, "permission": "admin" },
-		{ "id": "LhsMatricesMenu", "label": "Handhavingsstrategie", "icon": "icon-category-customization", "route": "LhsMatrices", "section": "settings", "order": 96, "permission": "admin" },
-		{ "id": "LhsRecommendationsMenu", "label": "LHS Recommendations", "icon": "icon-comment", "route": "LhsRecommendations", "section": "settings", "order": 97 },
-		{ "id": "LocationsMenu", "label": "Case locations", "icon": "icon-address", "route": "Locations", "section": "settings", "order": 98, "permission": "admin" },
-		{ "id": "BezwaarCommitteesMenu", "label": "Bezwaaradviescommissies", "icon": "icon-group", "route": "BezwaarCommittees", "section": "settings", "order": 99 },
-		{ "id": "SettingsMenu", "label": "Settings", "icon": "icon-settings", "route": "Settings", "section": "settings", "order": 99 },
-		{ "id": "FeaturesRoadmapMenu", "label": "Features & roadmap", "icon": "icon-toggle", "route": "FeaturesRoadmap", "section": "settings", "order": 100 }
+		{
+			"id": "Dashboard",
+			"label": "Dashboard",
+			"icon": "icon-category-dashboard",
+			"route": "Dashboard",
+			"order": 10
+		},
+		{
+			"id": "MyWork",
+			"label": "My Work",
+			"icon": "icon-checkmark",
+			"route": "MyWork",
+			"order": 20
+		},
+		{
+			"id": "Werkvoorraad",
+			"label": "Work Queue",
+			"icon": "icon-group",
+			"route": "Werkvoorraad",
+			"order": 30
+		},
+		{
+			"id": "Cases",
+			"label": "Cases",
+			"icon": "icon-folder",
+			"route": "Cases",
+			"order": 40
+		},
+		{
+			"id": "Bezwaren",
+			"label": "Bezwaren",
+			"icon": "icon-toggle-filelist",
+			"route": "Bezwaren",
+			"order": 45
+		},
+		{
+			"id": "BezwaarDecisions",
+			"label": "Beslissingen op bezwaar",
+			"icon": "icon-toggle",
+			"route": "BezwaarDecisions",
+			"order": 47
+		},
+		{
+			"id": "Beroepen",
+			"label": "Beroepen",
+			"icon": "icon-toggle-filelist",
+			"route": "Beroepen",
+			"order": 46
+		},
+		{
+			"id": "Tasks",
+			"label": "Tasks",
+			"icon": "icon-checkmark",
+			"route": "Tasks",
+			"order": 50
+		},
+		{
+			"id": "CaseMap",
+			"label": "Map",
+			"icon": "icon-address",
+			"route": "CaseMap",
+			"order": 60
+		},
+		{
+			"id": "Voorstellen",
+			"label": "Voorstellen",
+			"icon": "icon-comment",
+			"route": "Voorstellen",
+			"order": 70
+		},
+		{
+			"id": "Advice",
+			"label": "Advice",
+			"icon": "icon-comment",
+			"route": "Advice",
+			"order": 75
+		},
+		{
+			"id": "BezwaarAdviceRequests",
+			"label": "BAC-adviezen",
+			"icon": "icon-comment",
+			"route": "BezwaarAdviceRequests",
+			"order": 76
+		},
+		{
+			"id": "Transfers",
+			"label": "Transfers",
+			"icon": "icon-shared",
+			"route": "Transfers",
+			"order": 80
+		},
+		{
+			"id": "Documentation",
+			"label": "Documentation",
+			"icon": "icon-info",
+			"href": "https://conduction.gitbook.io/procest-nextcloud",
+			"section": "settings",
+			"order": 90
+		},
+		{
+			"id": "CaseTypesMenu",
+			"label": "Case Types",
+			"icon": "icon-category-customization",
+			"route": "CaseTypes",
+			"section": "settings",
+			"order": 95
+		},
+		{
+			"id": "LegesverordeningenMenu",
+			"label": "Legesverordeningen",
+			"icon": "icon-category-office",
+			"route": "Legesverordeningen",
+			"section": "settings",
+			"order": 96
+		},
+		{
+			"id": "LegesberekeningenMenu",
+			"label": "Legesberekeningen",
+			"icon": "icon-category-monitoring",
+			"route": "Legesberekeningen",
+			"section": "settings",
+			"order": 97
+		},
+		{
+			"id": "PartnersMenu",
+			"label": "Partner organisations",
+			"icon": "icon-group",
+			"route": "Partners",
+			"section": "settings",
+			"order": 97
+		},
+		{
+			"id": "TenantsMenu",
+			"label": "Tenants",
+			"icon": "icon-group",
+			"route": "Tenants",
+			"section": "settings",
+			"order": 98,
+			"permission": "admin"
+		},
+		{
+			"id": "ParafeerroutesMenu",
+			"label": "Parafeerroutes",
+			"icon": "icon-category-workflow",
+			"route": "Parafeerroutes",
+			"section": "settings",
+			"order": 96
+		},
+		{
+			"id": "WmsLayersMenu",
+			"label": "Kaartlagen",
+			"icon": "icon-category-files",
+			"route": "WmsLayers",
+			"section": "settings",
+			"order": 97,
+			"permission": "admin"
+		},
+		{
+			"id": "WorkflowDefinitionsMenu",
+			"label": "Workflow definitions",
+			"icon": "icon-category-workflow",
+			"route": "WorkflowDefinitions",
+			"section": "settings",
+			"order": 97
+		},
+		{
+			"id": "AutomaticActionsMenu",
+			"label": "Automatische acties",
+			"icon": "icon-category-workflow",
+			"route": "AutomaticActions",
+			"section": "settings",
+			"order": 96
+		},
+		{
+			"id": "StatusRecordsMenu",
+			"label": "Status history",
+			"icon": "icon-history",
+			"route": "StatusRecords",
+			"section": "settings",
+			"order": 98,
+			"permission": "admin"
+		},
+		{
+			"id": "LhsMatricesMenu",
+			"label": "Handhavingsstrategie",
+			"icon": "icon-category-customization",
+			"route": "LhsMatrices",
+			"section": "settings",
+			"order": 96,
+			"permission": "admin"
+		},
+		{
+			"id": "LhsRecommendationsMenu",
+			"label": "LHS Recommendations",
+			"icon": "icon-comment",
+			"route": "LhsRecommendations",
+			"section": "settings",
+			"order": 97
+		},
+		{
+			"id": "LocationsMenu",
+			"label": "Case locations",
+			"icon": "icon-address",
+			"route": "Locations",
+			"section": "settings",
+			"order": 98,
+			"permission": "admin"
+		},
+		{
+			"id": "BezwaarCommitteesMenu",
+			"label": "Bezwaaradviescommissies",
+			"icon": "icon-group",
+			"route": "BezwaarCommittees",
+			"section": "settings",
+			"order": 99
+		},
+		{
+			"id": "SettingsMenu",
+			"label": "Settings",
+			"icon": "icon-settings",
+			"route": "Settings",
+			"section": "settings",
+			"order": 99
+		},
+		{
+			"id": "FeaturesRoadmapMenu",
+			"label": "Features & roadmap",
+			"icon": "icon-toggle",
+			"route": "FeaturesRoadmap",
+			"section": "settings",
+			"order": 100
+		}
 	],
 	"pages": [
 		{
@@ -40,50 +244,169 @@
 			"route": "/",
 			"type": "dashboard",
 			"title": "Dashboard",
-			"config": {
-				"widgets": [
-					{ "id": "count-open-cases", "type": "custom", "title": "Open Cases" },
-					{ "id": "count-overdue", "type": "custom", "title": "Overdue" },
-					{ "id": "count-completed", "type": "custom", "title": "Completed This Month" },
-					{ "id": "count-my-tasks", "type": "custom", "title": "My Tasks" },
-					{ "id": "count-sla", "type": "custom", "title": "SLA Compliance" },
-					{ "id": "cases-by-status", "type": "custom", "title": "Cases by Status" },
-					{ "id": "cases-by-type", "type": "custom", "title": "Cases by Type" },
-					{ "id": "my-work", "type": "custom", "title": "My Work" },
-					{ "id": "case-map", "type": "custom", "title": "Case Map" },
-					{ "id": "deadline-alerts", "type": "custom", "title": "Deadline Alerts" },
-					{ "id": "task-due-reminders", "type": "custom", "title": "Task Due Reminders" },
-					{ "id": "stalled-cases", "type": "custom", "title": "Stalled Cases" }
-				],
-				"layout": [
-					{ "id": "count-open-cases",   "widgetId": "count-open-cases",   "gridX": 0,  "gridY": 0, "gridWidth": 2, "gridHeight": 2, "showTitle": false },
-					{ "id": "count-overdue",      "widgetId": "count-overdue",      "gridX": 2,  "gridY": 0, "gridWidth": 3, "gridHeight": 2, "showTitle": false },
-					{ "id": "count-completed",    "widgetId": "count-completed",    "gridX": 5,  "gridY": 0, "gridWidth": 3, "gridHeight": 2, "showTitle": false },
-					{ "id": "count-my-tasks",     "widgetId": "count-my-tasks",     "gridX": 8,  "gridY": 0, "gridWidth": 2, "gridHeight": 2, "showTitle": false },
-					{ "id": "count-sla",          "widgetId": "count-sla",          "gridX": 10, "gridY": 0, "gridWidth": 2, "gridHeight": 2, "showTitle": false },
-					{ "id": "cases-by-status",    "widgetId": "cases-by-status",    "gridX": 0,  "gridY": 2, "gridWidth": 4, "gridHeight": 4, "showTitle": true },
-					{ "id": "cases-by-type",      "widgetId": "cases-by-type",      "gridX": 4,  "gridY": 2, "gridWidth": 4, "gridHeight": 4, "showTitle": true },
-					{ "id": "my-work",            "widgetId": "my-work",            "gridX": 8,  "gridY": 2, "gridWidth": 4, "gridHeight": 4, "showTitle": true },
-					{ "id": "deadline-alerts",    "widgetId": "deadline-alerts",    "gridX": 0,  "gridY": 6, "gridWidth": 4, "gridHeight": 4, "showTitle": true },
-					{ "id": "task-due-reminders", "widgetId": "task-due-reminders", "gridX": 4,  "gridY": 6, "gridWidth": 4, "gridHeight": 4, "showTitle": true },
-					{ "id": "stalled-cases",      "widgetId": "stalled-cases",      "gridX": 8,  "gridY": 6, "gridWidth": 4, "gridHeight": 4, "showTitle": true },
-					{ "id": "case-map",           "widgetId": "case-map",           "gridX": 0,  "gridY": 10, "gridWidth": 12, "gridHeight": 6, "showTitle": true }
-				]
-			}
+			"config": {},
+			"widgets": [
+				{
+					"widgetKey": "custom",
+					"slot": "body",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 2,
+					"gridHeight": 2,
+					"props": {
+						"title": "Open Cases",
+						"showTitle": false
+					}
+				},
+				{
+					"widgetKey": "custom",
+					"slot": "body",
+					"gridX": 2,
+					"gridY": 0,
+					"gridWidth": 3,
+					"gridHeight": 2,
+					"props": {
+						"title": "Overdue",
+						"showTitle": false
+					}
+				},
+				{
+					"widgetKey": "custom",
+					"slot": "body",
+					"gridX": 5,
+					"gridY": 0,
+					"gridWidth": 3,
+					"gridHeight": 2,
+					"props": {
+						"title": "Completed This Month",
+						"showTitle": false
+					}
+				},
+				{
+					"widgetKey": "custom",
+					"slot": "body",
+					"gridX": 8,
+					"gridY": 0,
+					"gridWidth": 2,
+					"gridHeight": 2,
+					"props": {
+						"title": "My Tasks",
+						"showTitle": false
+					}
+				},
+				{
+					"widgetKey": "custom",
+					"slot": "body",
+					"gridX": 10,
+					"gridY": 0,
+					"gridWidth": 2,
+					"gridHeight": 2,
+					"props": {
+						"title": "SLA Compliance",
+						"showTitle": false
+					}
+				},
+				{
+					"widgetKey": "custom",
+					"slot": "body",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 4,
+					"gridHeight": 4,
+					"props": {
+						"title": "Cases by Status",
+						"showTitle": true
+					}
+				},
+				{
+					"widgetKey": "custom",
+					"slot": "body",
+					"gridX": 4,
+					"gridY": 2,
+					"gridWidth": 4,
+					"gridHeight": 4,
+					"props": {
+						"title": "Cases by Type",
+						"showTitle": true
+					}
+				},
+				{
+					"widgetKey": "custom",
+					"slot": "body",
+					"gridX": 8,
+					"gridY": 2,
+					"gridWidth": 4,
+					"gridHeight": 4,
+					"props": {
+						"title": "My Work",
+						"showTitle": true
+					}
+				},
+				{
+					"widgetKey": "custom",
+					"slot": "body",
+					"gridX": 0,
+					"gridY": 10,
+					"gridWidth": 12,
+					"gridHeight": 6,
+					"props": {
+						"title": "Case Map",
+						"showTitle": true
+					}
+				},
+				{
+					"widgetKey": "custom",
+					"slot": "body",
+					"gridX": 0,
+					"gridY": 6,
+					"gridWidth": 4,
+					"gridHeight": 4,
+					"props": {
+						"title": "Deadline Alerts",
+						"showTitle": true
+					}
+				},
+				{
+					"widgetKey": "custom",
+					"slot": "body",
+					"gridX": 4,
+					"gridY": 6,
+					"gridWidth": 4,
+					"gridHeight": 4,
+					"props": {
+						"title": "Task Due Reminders",
+						"showTitle": true
+					}
+				},
+				{
+					"widgetKey": "custom",
+					"slot": "body",
+					"gridX": 8,
+					"gridY": 6,
+					"gridWidth": 4,
+					"gridHeight": 4,
+					"props": {
+						"title": "Stalled Cases",
+						"showTitle": true
+					}
+				}
+			]
 		},
 		{
 			"id": "MyWork",
 			"route": "/my-work",
 			"type": "custom",
 			"title": "My Work",
-			"component": "MyWorkView"
+			"component": "MyWorkView",
+			"_note": "Bespoke 4-tab filter UI mixing case + task entities; resolved via registry entry MyWorkView."
 		},
 		{
 			"id": "Werkvoorraad",
 			"route": "/werkvoorraad",
 			"type": "custom",
 			"title": "Work Queue",
-			"component": "WerkvoorraadView"
+			"component": "WerkvoorraadView",
+			"_note": "KPI-strip-driven work queue; resolved via registry entry WerkvoorraadView."
 		},
 		{
 			"id": "Cases",
@@ -93,8 +416,18 @@
 			"config": {
 				"register": "procest",
 				"schema": "case",
-				"columns": ["identifier", "title", "caseType", "status", "assignee", "deadline"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"columns": [
+					"identifier",
+					"title",
+					"caseType",
+					"status",
+					"assignee",
+					"deadline"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -106,32 +439,95 @@
 				"register": "procest",
 				"schema": "case",
 				"sidebarTabs": [
-					{ "id": "overview",  "label": "Overview",    "icon": "icon-info",      "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "tasks",     "label": "Tasks",       "icon": "icon-checkmark", "component": "CaseTasksTab",                              "order": 20 },
-					{ "id": "decisions", "label": "Decisions",   "icon": "icon-toggle",    "component": "CaseDecisionsTab",                          "order": 30 },
-					{ "id": "documents", "label": "Documents",   "icon": "icon-files",     "component": "CaseDocumentsTab",                          "order": 40 },
 					{
-						"id": "locaties",
-						"label": "Locaties",
-						"icon": "icon-address",
-						"widgets": [
-							{
-								"type": "related-index",
-								"config": {
-									"register": "procest",
-									"schema": "location",
-									"filter": { "case": ":id" },
-									"columns": ["label", "formattedAddress", "nummeraanduidingId", "parcelId", "source"],
-									"actions": ["create", "edit", "delete"]
-								}
-							}
-						],
-						"order": 45
+						"id": "tasks",
+						"label": "Tasks",
+						"icon": "icon-checkmark",
+						"component": "CaseTasksTab",
+						"order": 20
 					},
-					{ "id": "advies",    "label": "Advies",      "icon": "icon-comment",   "component": "AdviesPanel",                               "order": 50 },
-					{ "id": "audit",     "label": "Audit trail", "icon": "icon-history",   "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+					{
+						"id": "decisions",
+						"label": "Decisions",
+						"icon": "icon-toggle",
+						"component": "CaseDecisionsTab",
+						"order": 30
+					},
+					{
+						"id": "documents",
+						"label": "Documents",
+						"icon": "icon-files",
+						"component": "CaseDocumentsTab",
+						"order": 40
+					},
+					{
+						"id": "advies",
+						"label": "Advies",
+						"icon": "icon-comment",
+						"component": "AdviesPanel",
+						"order": 50
+					}
 				]
-			}
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "related-index",
+					"slot": "sidebar",
+					"tabGroup": "locaties",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"register": "procest",
+							"schema": "location",
+							"filter": {
+								"case": ":id"
+							},
+							"columns": [
+								"label",
+								"formattedAddress",
+								"nummeraanduidingId",
+								"parcelId",
+								"source"
+							],
+							"actions": [
+								"create",
+								"edit",
+								"delete"
+							]
+						}
+					}
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 3,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "Bezwaren",
@@ -141,8 +537,18 @@
 			"config": {
 				"register": "procest",
 				"schema": "bezwaar",
-				"columns": ["case", "status", "ontvangstdatum", "decisionDeadline", "awbReference", "dwangsom"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"columns": [
+					"case",
+					"status",
+					"ontvangstdatum",
+					"decisionDeadline",
+					"awbReference",
+					"dwangsom"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -154,13 +560,58 @@
 				"register": "procest",
 				"schema": "bezwaar",
 				"sidebarTabs": [
-					{ "id": "overview", "label": "Overview", "icon": "icon-info",     "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "advice",   "label": "Advice",   "icon": "icon-comment",  "component": "AdviesPanel",                              "order": 20 },
-					{ "id": "hearing",  "label": "Hearing",  "icon": "icon-group",    "component": "CaseTasksTab",                             "order": 30 },
-					{ "id": "decision", "label": "Decision", "icon": "icon-toggle",   "component": "CaseDecisionsTab",                         "order": 40 },
-					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                "order": 90 }
+					{
+						"id": "advice",
+						"label": "Advice",
+						"icon": "icon-comment",
+						"component": "AdviesPanel",
+						"order": 20
+					},
+					{
+						"id": "hearing",
+						"label": "Hearing",
+						"icon": "icon-group",
+						"component": "CaseTasksTab",
+						"order": 30
+					},
+					{
+						"id": "decision",
+						"label": "Decision",
+						"icon": "icon-toggle",
+						"component": "CaseDecisionsTab",
+						"order": 40
+					}
 				]
-			}
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "BezwaarDecisions",
@@ -170,11 +621,28 @@
 			"config": {
 				"register": "procest",
 				"schema": "bezwaarDecision",
-				"columns": ["bezwaar", "dispositionType", "decisionDate", "effectiveDate", "status", "publishedAt"],
-				"actions": [
-					{ "id": "view", "label": "View", "icon": "icon-info", "handler": "navigate", "route": "BezwaarDecisionDetail" }
+				"columns": [
+					"bezwaar",
+					"dispositionType",
+					"decisionDate",
+					"effectiveDate",
+					"status",
+					"publishedAt"
 				],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "BezwaarDecisionDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -184,14 +652,87 @@
 			"title": "Beslissing op bezwaar",
 			"config": {
 				"register": "procest",
-				"schema": "bezwaarDecision",
-				"sidebarTabs": [
-					{ "id": "overview",      "label": "Overview",      "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }],                                                                                                                                "order": 10 },
-					{ "id": "appeal-notice", "label": "Appeal notice", "icon": "icon-toggle",  "widgets": [{ "type": "data", "config": { "fields": ["appealNotice"] } }],                                                                                                                "order": 20 },
-					{ "id": "documents",     "label": "Documents",     "icon": "icon-files",   "widgets": [{ "type": "data", "config": { "fields": ["decisionDocument", "replacementDecision"] } }],                                                                                    "order": 30 },
-					{ "id": "audit",         "label": "Audit",         "icon": "icon-history", "widgets": [{ "type": "audit-trail" }, { "type": "data", "config": { "fields": ["publishedAt", "notifiedRecipients"] } }],                                                               "order": 90 }
-				]
-			}
+				"schema": "bezwaarDecision"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "appeal-notice",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"fields": [
+								"appealNotice"
+							]
+						}
+					}
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "documents",
+					"gridX": 0,
+					"gridY": 3,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"fields": [
+								"decisionDocument",
+								"replacementDecision"
+							]
+						}
+					}
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 4,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 5,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"fields": [
+								"publishedAt",
+								"notifiedRecipients"
+							]
+						}
+					}
+				}
+			]
 		},
 		{
 			"id": "Tasks",
@@ -201,8 +742,17 @@
 			"config": {
 				"register": "procest",
 				"schema": "task",
-				"columns": ["title", "case", "assignee", "status", "dueDate"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"columns": [
+					"title",
+					"case",
+					"assignee",
+					"status",
+					"dueDate"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -212,12 +762,37 @@
 			"title": "New task",
 			"config": {
 				"register": "procest",
-				"schema": "task",
-				"sidebarTabs": [
-					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
-				]
-			}
+				"schema": "task"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "TaskDetail",
@@ -226,12 +801,37 @@
 			"title": "Task",
 			"config": {
 				"register": "procest",
-				"schema": "task",
-				"sidebarTabs": [
-					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
-				]
-			}
+				"schema": "task"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "CaseMap",
@@ -242,12 +842,33 @@
 				"register": "procest",
 				"schema": "case",
 				"geometryField": "geometry",
-				"filters": ["status", "caseType", "assignee", "deadlineRange"],
-				"marker": { "formatter": "caseMarkerFormatter" },
-				"clustering": { "enabled": true, "disableAtZoom": 14, "priority": ["blocked", "in_progress", "open", "closed"] },
-				"bboxQuery": { "threshold": 5000 },
+				"filters": [
+					"status",
+					"caseType",
+					"assignee",
+					"deadlineRange"
+				],
+				"marker": {
+					"formatter": "caseMarkerFormatter"
+				},
+				"clustering": {
+					"enabled": true,
+					"disableAtZoom": 14,
+					"priority": [
+						"blocked",
+						"in_progress",
+						"open",
+						"closed"
+					]
+				},
+				"bboxQuery": {
+					"threshold": 5000
+				},
 				"tileLayer": "pdok-brt",
-				"sidebar": { "enabled": true, "filtersOpen": true },
+				"sidebar": {
+					"enabled": true,
+					"filtersOpen": true
+				},
 				"emptyState": {
 					"icon": "icon-address",
 					"title": "Geen zaken op de kaart",
@@ -264,24 +885,91 @@
 				"register": "procest",
 				"schema": "voorstel",
 				"quickFilters": [
-					{ "label": "Alle", "filter": {}, "default": true },
-					{ "label": "Concept", "filter": { "status": "concept" } },
-					{ "label": "In behandeling", "filter": { "status": ["in_parafering", "ter_accordering", "geaccordeerd", "aangeboden", "teruggestuurd"] } },
-					{ "label": "Afgerond", "filter": { "status": ["besloten", "gearchiveerd"] } }
+					{
+						"label": "Alle",
+						"filter": {},
+						"default": true
+					},
+					{
+						"label": "Concept",
+						"filter": {
+							"status": "concept"
+						}
+					},
+					{
+						"label": "In behandeling",
+						"filter": {
+							"status": [
+								"in_parafering",
+								"ter_accordering",
+								"geaccordeerd",
+								"aangeboden",
+								"teruggestuurd"
+							]
+						}
+					},
+					{
+						"label": "Afgerond",
+						"filter": {
+							"status": [
+								"besloten",
+								"gearchiveerd"
+							]
+						}
+					}
 				],
 				"columns": [
-					{ "key": "onderwerp", "label": "Onderwerp" },
-					{ "key": "type", "label": "Type", "formatter": "voorstelType" },
-					{ "key": "status", "label": "Status", "formatter": "voorstelStatus", "widget": "badge" },
-					{ "key": "currentStep", "label": "Stap", "formatter": "voorstelStepProgress", "sortable": false },
-					{ "key": "routeSnapshot", "label": "Wacht op", "formatter": "voorstelWaitingActor", "sortable": false },
-					{ "key": "@self.updated", "label": "Dagen in stap", "formatter": "voorstelDaysInStep", "align": "right" },
-					{ "key": "steller", "label": "Steller" }
+					{
+						"key": "onderwerp",
+						"label": "Onderwerp"
+					},
+					{
+						"key": "type",
+						"label": "Type",
+						"formatter": "voorstelType"
+					},
+					{
+						"key": "status",
+						"label": "Status",
+						"formatter": "voorstelStatus",
+						"widget": "badge"
+					},
+					{
+						"key": "currentStep",
+						"label": "Stap",
+						"formatter": "voorstelStepProgress",
+						"sortable": false
+					},
+					{
+						"key": "routeSnapshot",
+						"label": "Wacht op",
+						"formatter": "voorstelWaitingActor",
+						"sortable": false
+					},
+					{
+						"key": "@self.updated",
+						"label": "Dagen in stap",
+						"formatter": "voorstelDaysInStep",
+						"align": "right"
+					},
+					{
+						"key": "steller",
+						"label": "Steller"
+					}
 				],
 				"actions": [
-					{ "id": "reminder", "label": "Herinnering sturen", "icon": "BellRing", "handler": "voorstelReminder" }
+					{
+						"id": "reminder",
+						"label": "Herinnering sturen",
+						"icon": "BellRing",
+						"handler": "voorstelReminder",
+						"type": "handler"
+					}
 				],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -289,7 +977,8 @@
 			"route": "/voorstellen/:id",
 			"type": "custom",
 			"title": "Voorstel",
-			"component": "VoorstelDetailView"
+			"component": "VoorstelDetailView",
+			"_note": "Parafeerroute multi-step approver flow; resolved via registry entry VoorstelDetailView. Migration to typed page deferred."
 		},
 		{
 			"id": "Advice",
@@ -299,8 +988,18 @@
 			"config": {
 				"register": "procest",
 				"schema": "adviesAanvraag",
-				"columns": ["onderwerp", "case", "adviseur", "type", "status", "deadline"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"columns": [
+					"onderwerp",
+					"case",
+					"adviseur",
+					"type",
+					"status",
+					"deadline"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -310,33 +1009,61 @@
 			"title": "Advice request",
 			"config": {
 				"register": "procest",
-				"schema": "adviesAanvraag",
-				"sidebarTabs": [
-					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
-				]
-			}
+				"schema": "adviesAanvraag"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "Doorlooptijd",
 			"route": "/doorlooptijd",
 			"type": "custom",
 			"title": "Doorlooptijd",
-			"component": "DoorlooptijdView"
+			"component": "DoorlooptijdView",
+			"_note": "KPI dashboard with apexcharts; resolved via registry entry DoorlooptijdView. Pending lib chart-widget support."
 		},
 		{
 			"id": "Settings",
 			"route": "/settings",
 			"type": "custom",
 			"title": "Settings",
-			"component": "AdminRootView"
+			"component": "AdminRootView",
+			"_note": "Multi-tab admin root; resolved via registry entry AdminRootView. Pending lib settings-custom-slot support."
 		},
 		{
 			"id": "CaseTypes",
 			"route": "/case-types",
 			"type": "custom",
 			"title": "Case types",
-			"component": "AdminRootView"
+			"component": "AdminRootView",
+			"_note": "Multi-tab admin root; resolved via registry entry AdminRootView. Pending lib settings-custom-slot support."
 		},
 		{
 			"id": "Legesverordeningen",
@@ -346,9 +1073,23 @@
 			"config": {
 				"register": "procest",
 				"schema": "legesverordening",
-				"columns": ["name", "year", "effectiveDate", "status", "isActive"],
-				"actions": ["create", "edit", "delete", "view"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"columns": [
+					"name",
+					"year",
+					"effectiveDate",
+					"status",
+					"isActive"
+				],
+				"actions": [
+					"create",
+					"edit",
+					"delete",
+					"view"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -359,12 +1100,37 @@
 			"config": {
 				"register": "procest",
 				"schema": "tenant",
-				"columns": ["name", "slug", "oin", "domain", "groupId", "isActive"],
-				"actions": [
-					{ "id": "provision", "label": "Provision", "icon": "icon-add", "permission": "admin", "handler": "emit" },
-					{ "id": "view",      "label": "View usage", "icon": "icon-info", "permission": "admin", "handler": "navigate", "route": "TenantDetail" }
+				"columns": [
+					"name",
+					"slug",
+					"oin",
+					"domain",
+					"groupId",
+					"isActive"
 				],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"actions": [
+					{
+						"id": "provision",
+						"label": "Provision",
+						"icon": "icon-add",
+						"permission": "admin",
+						"handler": "emit",
+						"type": "handler"
+					},
+					{
+						"id": "view",
+						"label": "View usage",
+						"icon": "icon-info",
+						"permission": "admin",
+						"handler": "navigate",
+						"route": "TenantDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -376,16 +1142,33 @@
 				"register": "procest",
 				"schema": "parafeerroute",
 				"columns": [
-					{ "key": "name" },
-					{ "key": "voorstelType" },
-					{ "key": "caseType" },
-					{ "key": "isDefault" }
+					{
+						"key": "name"
+					},
+					{
+						"key": "voorstelType"
+					},
+					{
+						"key": "caseType"
+					},
+					{
+						"key": "isDefault"
+					}
 				],
 				"actions": [
-					{ "key": "edit" },
-					{ "key": "delete" }
+					{
+						"key": "edit",
+						"type": "handler"
+					},
+					{
+						"key": "delete",
+						"type": "handler"
+					}
 				],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -398,19 +1181,43 @@
 				"register": "procest",
 				"schema": "wmsLayer",
 				"columns": [
-					{ "key": "title" },
-					{ "key": "type" },
-					{ "key": "url" },
-					{ "key": "layerName" },
-					{ "key": "queryable" },
-					{ "key": "active" }
+					{
+						"key": "title"
+					},
+					{
+						"key": "type"
+					},
+					{
+						"key": "url"
+					},
+					{
+						"key": "layerName"
+					},
+					{
+						"key": "queryable"
+					},
+					{
+						"key": "active"
+					}
 				],
 				"actions": [
-					{ "key": "create" },
-					{ "key": "edit" },
-					{ "key": "delete" }
+					{
+						"key": "create",
+						"type": "handler"
+					},
+					{
+						"key": "edit",
+						"type": "handler"
+					},
+					{
+						"key": "delete",
+						"type": "handler"
+					}
 				],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -421,36 +1228,47 @@
 			"permission": "admin",
 			"config": {
 				"register": "procest",
-				"schema": "wmsLayer",
-				"sidebarTabs": [
-					{
-						"id": "overview",
-						"label": "Overview",
-						"icon": "icon-info",
-						"widgets": [
-							{ "type": "data" },
-							{ "type": "metadata" }
-						],
-						"order": 10
-					},
-					{
-						"id": "test",
-						"label": "Verbinding testen",
-						"icon": "icon-checkmark",
-						"widgets": [
-							{
-								"type": "action",
-								"config": {
-									"endpoint": "/api/wms-wfs/proxy",
-									"params": { "layerId": ":id", "request": "GetCapabilities" },
-									"label": "Verbinding testen"
-								}
-							}
-						],
-						"order": 20
+				"schema": "wmsLayer"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "action",
+					"slot": "sidebar",
+					"tabGroup": "test",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"endpoint": "/api/wms-wfs/proxy",
+							"params": {
+								"layerId": ":id",
+								"request": "GetCapabilities"
+							},
+							"label": "Verbinding testen"
+						}
 					}
-				]
-			}
+				}
+			]
 		},
 		{
 			"id": "LegesverordeningDetail",
@@ -459,45 +1277,67 @@
 			"title": "Legesverordening",
 			"config": {
 				"register": "procest",
-				"schema": "legesverordening",
-				"sidebarTabs": [
-					{
-						"id": "overview",
-						"label": "Overview",
-						"icon": "icon-info",
-						"widgets": [
-							{ "type": "data" },
-							{ "type": "metadata" }
-						],
-						"order": 10
-					},
-					{
-						"id": "artikelen",
-						"label": "Artikelen",
-						"icon": "icon-file",
-						"widgets": [
-							{
-								"type": "related-index",
-								"config": {
-									"register": "procest",
-									"schema": "legesartikel",
-									"filter": { "verordening": ":id" },
-									"columns": ["nummer", "omschrijving", "type", "category", "order"],
-									"actions": ["create", "edit", "delete"]
-								}
-							}
-						],
-						"order": 20
-					},
-					{
-						"id": "audit",
-						"label": "Audit trail",
-						"icon": "icon-history",
-						"widgets": [{ "type": "audit-trail" }],
-						"order": 90
+				"schema": "legesverordening"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "related-index",
+					"slot": "sidebar",
+					"tabGroup": "artikelen",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"register": "procest",
+							"schema": "legesartikel",
+							"filter": {
+								"verordening": ":id"
+							},
+							"columns": [
+								"nummer",
+								"omschrijving",
+								"type",
+								"category",
+								"order"
+							],
+							"actions": [
+								"create",
+								"edit",
+								"delete"
+							]
+						}
 					}
-				]
-			}
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 3,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "Legesberekeningen",
@@ -507,9 +1347,23 @@
 			"config": {
 				"register": "procest",
 				"schema": "legesberekening",
-				"columns": ["case", "verordening", "total", "version", "status", "calculatedBy", "calculatedAt"],
-				"actions": ["view", "delete"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"columns": [
+					"case",
+					"verordening",
+					"total",
+					"version",
+					"status",
+					"calculatedBy",
+					"calculatedAt"
+				],
+				"actions": [
+					"view",
+					"delete"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -519,27 +1373,37 @@
 			"title": "Legesberekening",
 			"config": {
 				"register": "procest",
-				"schema": "legesberekening",
-				"sidebarTabs": [
-					{
-						"id": "overview",
-						"label": "Overview",
-						"icon": "icon-info",
-						"widgets": [
-							{ "type": "data" },
-							{ "type": "metadata" }
-						],
-						"order": 10
-					},
-					{
-						"id": "audit",
-						"label": "Audit trail",
-						"icon": "icon-history",
-						"widgets": [{ "type": "audit-trail" }],
-						"order": 90
-					}
-				]
-			}
+				"schema": "legesberekening"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "TenantDetail",
@@ -550,15 +1414,63 @@
 				"register": "procest",
 				"schema": "tenant",
 				"actions": [
-					{ "id": "provision",     "label": "Provision",      "icon": "icon-add",     "permission": "admin", "primary": true, "handler": "emit" },
-					{ "id": "refresh-usage", "label": "Refresh usage",  "icon": "icon-history", "permission": "admin",                  "handler": "emit" }
-				],
-				"sidebarTabs": [
-					{ "id": "overview",     "label": "Overview",             "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "usage",        "label": "Usage",                "icon": "icon-quota",   "widgets": [{ "type": "data" }],                          "order": 20 },
-					{ "id": "provisioning", "label": "Provisioning history", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 30 }
+					{
+						"id": "provision",
+						"label": "Provision",
+						"icon": "icon-add",
+						"permission": "admin",
+						"primary": true,
+						"handler": "emit",
+						"type": "handler"
+					},
+					{
+						"id": "refresh-usage",
+						"label": "Refresh usage",
+						"icon": "icon-history",
+						"permission": "admin",
+						"handler": "emit",
+						"type": "handler"
+					}
 				]
-			}
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "usage",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "provisioning",
+					"gridX": 0,
+					"gridY": 3,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "ParafeerrouteDetail",
@@ -567,12 +1479,37 @@
 			"title": "Parafeerroute",
 			"config": {
 				"register": "procest",
-				"schema": "parafeerroute",
-				"sidebarTabs": [
-					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
-				]
-			}
+				"schema": "parafeerroute"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "CaseShares",
@@ -582,9 +1519,21 @@
 			"config": {
 				"register": "procest",
 				"schema": "caseShare",
-				"filter": { "caseId": "@route.caseId" },
-				"columns": ["label", "shareType", "partnerId", "permissionLevel", "expiresAt", "revokedAt"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"filter": {
+					"caseId": "@route.caseId"
+				},
+				"columns": [
+					"label",
+					"shareType",
+					"partnerId",
+					"permissionLevel",
+					"expiresAt",
+					"revokedAt"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -595,9 +1544,22 @@
 			"config": {
 				"register": "procest",
 				"schema": "partnerOrganization",
-				"columns": ["name", "type", "contactEmail", "active"],
-				"actions": ["create", "edit", "delete", "view"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"columns": [
+					"name",
+					"type",
+					"contactEmail",
+					"active"
+				],
+				"actions": [
+					"create",
+					"edit",
+					"delete",
+					"view"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -607,12 +1569,37 @@
 			"title": "Partner organisation",
 			"config": {
 				"register": "procest",
-				"schema": "partnerOrganization",
-				"sidebarTabs": [
-					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
-				]
-			}
+				"schema": "partnerOrganization"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "Transfers",
@@ -622,8 +1609,17 @@
 			"config": {
 				"register": "procest",
 				"schema": "casetransfer",
-				"columns": ["case", "fromOrg", "toOrg", "status", "initiatedAt"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"columns": [
+					"case",
+					"fromOrg",
+					"toOrg",
+					"status",
+					"initiatedAt"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -633,19 +1629,45 @@
 			"title": "Transfer",
 			"config": {
 				"register": "procest",
-				"schema": "casetransfer",
-				"sidebarTabs": [
-					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
-				]
-			}
+				"schema": "casetransfer"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "WorkflowTemplateEditor",
 			"route": "/settings/workflow-templates/:id/edit",
 			"type": "custom",
 			"title": "Workflow editor",
-			"component": "VisualWorkflowEditor"
+			"component": "VisualWorkflowEditor",
+			"_note": "Intentionally unwired — @vue-flow is Vue-3-only and breaks the Vue 2 build. VisualWorkflowEditor is NOT in the registry. Re-wire after Vue 3 migration or switching to a Vue-2-compatible flow lib."
 		},
 		{
 			"id": "AutomaticActions",
@@ -655,9 +1677,23 @@
 			"config": {
 				"register": "procest",
 				"schema": "automaticAction",
-				"columns": ["slug", "type", "title", "isPublished", "active"],
-				"actions": ["create", "edit", "delete", "view"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"columns": [
+					"slug",
+					"type",
+					"title",
+					"isPublished",
+					"active"
+				],
+				"actions": [
+					"create",
+					"edit",
+					"delete",
+					"view"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -667,33 +1703,61 @@
 			"title": "Automatische actie",
 			"config": {
 				"register": "procest",
-				"schema": "automaticAction",
-				"sidebarTabs": [
-					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
-				]
-			}
+				"schema": "automaticAction"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "PublicCase",
 			"route": "/public/cases/:id",
 			"type": "custom",
 			"title": "Public case",
-			"component": "PublicCaseView"
+			"component": "PublicCaseView",
+			"_note": "Anonymous public route (no auth). Resolved via registry entry PublicCaseView."
 		},
 		{
 			"id": "PublicAppointment",
 			"route": "/public/appointments/:id",
 			"type": "custom",
 			"title": "Public appointment",
-			"component": "PublicAppointmentPage"
+			"component": "PublicAppointmentPage",
+			"_note": "Anonymous public route (no auth). Resolved via registry entry PublicAppointmentPage."
 		},
 		{
 			"id": "PublicStatus",
 			"route": "/public/status/:token",
 			"type": "custom",
 			"title": "Public status",
-			"component": "PublicStatusPage"
+			"component": "PublicStatusPage",
+			"_note": "Anonymous public route (no auth, token-based). Resolved via registry entry PublicStatusPage."
 		},
 		{
 			"id": "WorkflowDefinitions",
@@ -703,9 +1767,24 @@
 			"config": {
 				"register": "procest",
 				"schema": "workflowTemplate",
-				"columns": ["title", "caseType", "version", "lifecycleStatus", "isActive", "updatedAt"],
-				"actions": ["create", "edit", "delete", "view"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"columns": [
+					"title",
+					"caseType",
+					"version",
+					"lifecycleStatus",
+					"isActive",
+					"updatedAt"
+				],
+				"actions": [
+					"create",
+					"edit",
+					"delete",
+					"view"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -717,17 +1796,80 @@
 				"register": "procest",
 				"schema": "workflowTemplate",
 				"actions": [
-					{ "id": "publish",   "label": "Publish",   "icon": "icon-checkmark", "permission": "admin", "primary": true, "handler": "emit" },
-					{ "id": "deprecate", "label": "Deprecate", "icon": "icon-close",     "permission": "admin",                  "handler": "emit" },
-					{ "id": "clone",     "label": "Clone",     "icon": "icon-add",       "permission": "admin",                  "handler": "emit" }
-				],
-				"sidebarTabs": [
-					{ "id": "overview",    "label": "Overview",    "icon": "icon-info",     "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "steps",       "label": "Steps",       "icon": "icon-checkmark","widgets": [{ "type": "data" }],                          "order": 20 },
-					{ "id": "transitions", "label": "Transitions", "icon": "icon-comment",  "widgets": [{ "type": "data" }],                          "order": 30 },
-					{ "id": "audit",       "label": "Audit trail", "icon": "icon-history",  "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
+					{
+						"id": "publish",
+						"label": "Publish",
+						"icon": "icon-checkmark",
+						"permission": "admin",
+						"primary": true,
+						"handler": "emit",
+						"type": "handler"
+					},
+					{
+						"id": "deprecate",
+						"label": "Deprecate",
+						"icon": "icon-close",
+						"permission": "admin",
+						"handler": "emit",
+						"type": "handler"
+					},
+					{
+						"id": "clone",
+						"label": "Clone",
+						"icon": "icon-add",
+						"permission": "admin",
+						"handler": "emit",
+						"type": "handler"
+					}
 				]
-			}
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "steps",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "transitions",
+					"gridX": 0,
+					"gridY": 3,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 4,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "StatusRecords",
@@ -738,15 +1880,33 @@
 				"register": "procest",
 				"schema": "statusRecord",
 				"columns": [
-					{ "key": "case" },
-					{ "key": "fromStatus" },
-					{ "key": "statusType", "label": "toStatus" },
-					{ "key": "transitionLabel" },
-					{ "key": "noWorkflowTemplate" },
-					{ "key": "createdAt" }
+					{
+						"key": "case"
+					},
+					{
+						"key": "fromStatus"
+					},
+					{
+						"key": "statusType",
+						"label": "toStatus"
+					},
+					{
+						"key": "transitionLabel"
+					},
+					{
+						"key": "noWorkflowTemplate"
+					},
+					{
+						"key": "createdAt"
+					}
 				],
-				"actions": ["view"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"actions": [
+					"view"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -756,14 +1916,69 @@
 			"title": "Status record",
 			"config": {
 				"register": "procest",
-				"schema": "statusRecord",
-				"sidebarTabs": [
-					{ "id": "overview",     "label": "Overview",         "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "guards",       "label": "Evaluated guards", "icon": "icon-checkmark", "widgets": [{ "type": "data", "config": { "fields": ["evaluatedGuards"] } }], "order": 20 },
-					{ "id": "actions",      "label": "Dispatched actions", "icon": "icon-toggle", "widgets": [{ "type": "data", "config": { "fields": ["dispatchedActions"] } }], "order": 30 },
-					{ "id": "audit",        "label": "Audit trail",      "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
-				]
-			}
+				"schema": "statusRecord"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "guards",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"fields": [
+								"evaluatedGuards"
+							]
+						}
+					}
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "actions",
+					"gridX": 0,
+					"gridY": 3,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"fields": [
+								"dispatchedActions"
+							]
+						}
+					}
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 4,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "LhsMatrices",
@@ -774,9 +1989,20 @@
 			"config": {
 				"register": "procest",
 				"schema": "lhsMatrix",
-				"columns": ["name", "version", "active", "createdAt"],
-				"actions": ["create", "view"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"columns": [
+					"name",
+					"version",
+					"active",
+					"createdAt"
+				],
+				"actions": [
+					"create",
+					"view"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -788,16 +2014,37 @@
 				"register": "procest",
 				"schema": "location",
 				"columns": [
-					{ "key": "label" },
-					{ "key": "case" },
-					{ "key": "formattedAddress" },
-					{ "key": "nummeraanduidingId" },
-					{ "key": "parcelId" },
-					{ "key": "source" },
-					{ "key": "accuracyRadius" }
+					{
+						"key": "label"
+					},
+					{
+						"key": "case"
+					},
+					{
+						"key": "formattedAddress"
+					},
+					{
+						"key": "nummeraanduidingId"
+					},
+					{
+						"key": "parcelId"
+					},
+					{
+						"key": "source"
+					},
+					{
+						"key": "accuracyRadius"
+					}
 				],
-				"actions": ["view", "edit", "delete"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"actions": [
+					"view",
+					"edit",
+					"delete"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -808,14 +2055,69 @@
 			"permission": "admin",
 			"config": {
 				"register": "procest",
-				"schema": "lhsMatrix",
-				"sidebarTabs": [
-					{ "id": "overview",   "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "cells",      "label": "Cells",       "icon": "icon-category-customization", "widgets": [{ "type": "data", "config": { "fields": ["cells"] } }], "order": 20 },
-					{ "id": "auditTrail", "label": "Edit log",    "icon": "icon-history", "widgets": [{ "type": "data", "config": { "fields": ["auditTrail"] } }], "order": 30 },
-					{ "id": "audit",      "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
-				]
-			}
+				"schema": "lhsMatrix"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "cells",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"fields": [
+								"cells"
+							]
+						}
+					}
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "auditTrail",
+					"gridX": 0,
+					"gridY": 3,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"fields": [
+								"auditTrail"
+							]
+						}
+					}
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 4,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "LhsRecommendations",
@@ -825,9 +2127,23 @@
 			"config": {
 				"register": "procest",
 				"schema": "lhsRecommendation",
-				"columns": ["case", "ernst", "gedrag", "actorType", "recommendedInterventie", "finalIntervention", "override", "matrixVersion"],
-				"actions": ["view"],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"columns": [
+					"case",
+					"ernst",
+					"gedrag",
+					"actorType",
+					"recommendedInterventie",
+					"finalIntervention",
+					"override",
+					"matrixVersion"
+				],
+				"actions": [
+					"view"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -837,12 +2153,37 @@
 			"title": "LHS Recommendation",
 			"config": {
 				"register": "procest",
-				"schema": "lhsRecommendation",
-				"sidebarTabs": [
-					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
-				]
-			}
+				"schema": "lhsRecommendation"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "LocationDetail",
@@ -851,12 +2192,37 @@
 			"title": "Location",
 			"config": {
 				"register": "procest",
-				"schema": "location",
-				"sidebarTabs": [
-					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
-				]
-			}
+				"schema": "location"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "BezwaarCommittees",
@@ -866,11 +2232,28 @@
 			"config": {
 				"register": "procest",
 				"schema": "bezwaaradviescommissie",
-				"columns": ["name", "type", "domain", "quorum", "active", "termEndsOn"],
-				"actions": [
-					{ "id": "view", "label": "View", "icon": "icon-info", "handler": "navigate", "route": "BezwaarCommitteeDetail" }
+				"columns": [
+					"name",
+					"type",
+					"domain",
+					"quorum",
+					"active",
+					"termEndsOn"
 				],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "BezwaarCommitteeDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -880,12 +2263,37 @@
 			"title": "Bezwaaradviescommissie",
 			"config": {
 				"register": "procest",
-				"schema": "bezwaaradviescommissie",
-				"sidebarTabs": [
-					{ "id": "overview", "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
-					{ "id": "audit",    "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                   "order": 90 }
-				]
-			}
+				"schema": "bezwaaradviescommissie"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "BezwaarAdviceRequests",
@@ -895,11 +2303,28 @@
 			"config": {
 				"register": "procest",
 				"schema": "bacAdviceRequest",
-				"columns": ["bezwaar", "commissie", "status", "assignedAt", "deadline", "conclusion"],
-				"actions": [
-					{ "id": "view", "label": "View", "icon": "icon-info", "handler": "navigate", "route": "BezwaarAdviceRequestDetail" }
+				"columns": [
+					"bezwaar",
+					"commissie",
+					"status",
+					"assignedAt",
+					"deadline",
+					"conclusion"
 				],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "BezwaarAdviceRequestDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -909,13 +2334,53 @@
 			"title": "BAC-advies",
 			"config": {
 				"register": "procest",
-				"schema": "bacAdviceRequest",
-				"sidebarTabs": [
-					{ "id": "overview",  "label": "Overview",    "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }],                            "order": 10 },
-					{ "id": "documents", "label": "Documenten",  "icon": "icon-files",   "widgets": [{ "type": "data", "config": { "fields": ["adviceDocuments"] } }],        "order": 20 },
-					{ "id": "audit",     "label": "Audit trail", "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                                              "order": 90 }
-				]
-			}
+				"schema": "bacAdviceRequest"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "documents",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"fields": [
+								"adviceDocuments"
+							]
+						}
+					}
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 3,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "Beroepen",
@@ -925,11 +2390,30 @@
 			"config": {
 				"register": "procest",
 				"schema": "beroep",
-				"columns": ["case", "sourceBezwaar", "courtReference", "competentCourt", "appellantFilingDate", "filingDeadline", "judgmentOutcome", "cascadeAction"],
-				"actions": [
-					{ "id": "view", "label": "View", "icon": "icon-info", "handler": "navigate", "route": "BeroepDetail" }
+				"columns": [
+					"case",
+					"sourceBezwaar",
+					"courtReference",
+					"competentCourt",
+					"appellantFilingDate",
+					"filingDeadline",
+					"judgmentOutcome",
+					"cascadeAction"
 				],
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "BeroepDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			}
 		},
 		{
@@ -939,22 +2423,96 @@
 			"title": "Beroep",
 			"config": {
 				"register": "procest",
-				"schema": "beroep",
-				"sidebarTabs": [
-					{ "id": "overview",        "label": "Overview",                 "icon": "icon-info",    "widgets": [{ "type": "data" }, { "type": "metadata" }],                                                                  "order": 10 },
-					{ "id": "file-inspection", "label": "File-inspection requests", "icon": "icon-files",   "widgets": [{ "type": "data", "config": { "fields": ["fileInspectionRequests"] } }],                                      "order": 20 },
-					{ "id": "judgment",        "label": "Judgment",                 "icon": "icon-toggle",  "widgets": [{ "type": "data", "config": { "fields": ["judgmentOutcome", "judgmentDate", "judgmentDocument"] } }],          "order": 30 },
-					{ "id": "cascade",         "label": "Cascade",                  "icon": "icon-history", "widgets": [{ "type": "data", "config": { "fields": ["cascadeAction", "cascadeBezwaarCase"] } }],                          "order": 40 },
-					{ "id": "audit",           "label": "Audit trail",              "icon": "icon-history", "widgets": [{ "type": "audit-trail" }],                                                                                   "order": 90 }
-				]
-			}
+				"schema": "beroep"
+			},
+			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "file-inspection",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"fields": [
+								"fileInspectionRequests"
+							]
+						}
+					}
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "judgment",
+					"gridX": 0,
+					"gridY": 3,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"fields": [
+								"judgmentOutcome",
+								"judgmentDate",
+								"judgmentDocument"
+							]
+						}
+					}
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "cascade",
+					"gridX": 0,
+					"gridY": 4,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"fields": [
+								"cascadeAction",
+								"cascadeBezwaarCase"
+							]
+						}
+					}
+				},
+				{
+					"widgetKey": "audit-trail",
+					"slot": "sidebar",
+					"tabGroup": "audit",
+					"gridX": 0,
+					"gridY": 5,
+					"gridWidth": 1,
+					"gridHeight": 1
+				}
+			]
 		},
 		{
 			"id": "FeaturesRoadmap",
 			"route": "/features-roadmap",
 			"type": "custom",
 			"title": "Features & roadmap",
-			"component": "FeaturesRoadmap"
+			"component": "FeaturesRoadmap",
+			"_note": "In-product roadmap powered by OR github-issue-proxy. Resolved via registry entry FeaturesRoadmap."
 		}
 	]
 }

@@ -25,7 +25,7 @@
 		"extends @nextcloud/browserslist-config"
 	],
 	"dependencies": {
-		"@conduction/nextcloud-vue": "^1.0.0-beta.42",
+		"@conduction/nextcloud-vue": "1.0.0-beta.57",
 		"@nextcloud/auth": "^2.6.0",
 		"@nextcloud/axios": "~2.5.2",
 		"@nextcloud/dialogs": "^3.2.0",
@@ -65,6 +65,7 @@
 		"@nextcloud/webpack-vue-config": "^6.0.1",
 		"@playwright/test": "^1.49.0",
 		"@vue/eslint-config-typescript": "^13.0.0",
+		"commander": "^12.1.0",
 		"css-loader": "~7.1.1",
 		"eslint": "^8.56.0",
 		"eslint-config-standard": "^17.1.0",
