@@ -1,0 +1,31 @@
+{
+  "spec": "openspec/changes/gis-integration",
+  "verified": [
+    {"task": "1", "file": "lib/Settings/procest_register.json#location-schema", "ok": true},
+    {"task": "2", "file": "lib/Settings/procest_register.json#wmsLayer-schema", "ok": true},
+    {"task": "3", "file": "lib/Service/Pdok/PdokLocatieserverService.php", "ok": true},
+    {"task": "4", "file": "lib/Service/Pdok/PdokBagService.php", "ok": true},
+    {"task": "5", "file": "lib/Service/LocationService.php", "ok": true},
+    {"task": "6", "file": "lib/Controller/GisProxyController.php", "ok": true},
+    {"task": "7", "file": "lib/Controller/WmsWfsController.php", "ok": true},
+    {"task": "8", "file": "appinfo/routes.php", "ok": true},
+    {"task": "9", "file": "src/store/modules/gis.js", "ok": true},
+    {"task": "10", "file": "src/components/map/MapComponent.vue", "ok": true},
+    {"task": "11", "file": "src/components/map/LocationPicker.vue", "ok": true},
+    {"task": "12", "file": "src/components/map/MapLayerSwitcher.vue", "ok": true},
+    {"task": "13", "file": "src/views/cases/components/LocationTab.vue", "ok": true},
+    {"task": "14", "file": "src/views/settings/MapLayerSettings.vue", "ok": true},
+    {"task": "15", "file": "src/views/dashboard/CaseMapWidget.vue", "ok": true},
+    {"task": "16", "file": "src/manifest.json#CaseMap-page", "ok": true},
+    {"task": "17", "file": "tests/Unit/Controller/GisProxyControllerTest.php", "ok": true},
+    {"task": "18", "file": "lib/Service/WfsExportService.php", "ok": true},
+    {"task": "19", "file": "lib/Controller/WfsExportController.php", "ok": true},
+    {"task": "20", "file": "appinfo/routes.php#wfsExport-routes", "ok": true},
+    {"task": "21", "file": "tests/Unit/Controller/WfsExportControllerTest.php", "ok": true},
+    {"task": "22", "file": "tests/Unit/Service/WfsExportServiceTest.php", "ok": true},
+    {"task": "23", "file": "tests/Unit/Service/LocationServiceTest.php", "ok": true},
+    {"task": "24", "file": "tests/Unit/Controller/WmsWfsControllerTest.php", "ok": true}
+  ],
+  "stubs": [],
+  "missing_routes": []
+}
