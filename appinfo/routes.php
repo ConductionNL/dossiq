@@ -280,20 +280,20 @@ return [
 
         // ── Case Email Integration ──────────────────────────────────────
         // Case-scoped email (send + list threads/messages).
-        ['name' => 'case_email#sendEmail',   'url' => '/api/cases/{caseId}/emails',          'verb' => 'POST'],
-        ['name' => 'case_email#listEmails',  'url' => '/api/cases/{caseId}/emails',          'verb' => 'GET'],
+        ['name' => 'caseEmail#sendEmail',   'url' => '/api/cases/{caseId}/emails',          'verb' => 'POST'],
+        ['name' => 'caseEmail#listEmails',  'url' => '/api/cases/{caseId}/emails',          'verb' => 'GET'],
         // Unlinked inbound email queue.
-        ['name' => 'case_email#listUnlinked',  'url' => '/api/emails/unlinked',              'verb' => 'GET'],
-        ['name' => 'case_email#linkEmail',     'url' => '/api/emails/unlinked/{id}/link',    'verb' => 'POST'],
-        ['name' => 'case_email#discardEmail',  'url' => '/api/emails/unlinked/{id}/discard', 'verb' => 'POST'],
+        ['name' => 'caseEmail#listUnlinked',  'url' => '/api/emails/unlinked',              'verb' => 'GET'],
+        ['name' => 'caseEmail#linkEmail',     'url' => '/api/emails/unlinked/{id}/link',    'verb' => 'POST'],
+        ['name' => 'caseEmail#discardEmail',  'url' => '/api/emails/unlinked/{id}/discard', 'verb' => 'POST'],
         // Email templates per case type.
-        ['name' => 'case_email#listTemplates',  'url' => '/api/casetypes/{caseTypeId}/email-templates', 'verb' => 'GET'],
-        ['name' => 'case_email#createTemplate', 'url' => '/api/casetypes/{caseTypeId}/email-templates', 'verb' => 'POST'],
-        ['name' => 'case_email#updateTemplate', 'url' => '/api/email-templates/{templateId}',            'verb' => 'PUT'],
+        ['name' => 'caseEmail#listTemplates',  'url' => '/api/casetypes/{caseTypeId}/email-templates', 'verb' => 'GET'],
+        ['name' => 'caseEmail#createTemplate', 'url' => '/api/casetypes/{caseTypeId}/email-templates', 'verb' => 'POST'],
+        ['name' => 'caseEmail#updateTemplate', 'url' => '/api/email-templates/{templateId}',            'verb' => 'PUT'],
         // Email admin settings.
-        ['name' => 'case_email#getEmailSettings',  'url' => '/api/settings/email',         'verb' => 'GET'],
-        ['name' => 'case_email#saveEmailSettings', 'url' => '/api/settings/email',         'verb' => 'PUT'],
-        ['name' => 'case_email#testSmtp',          'url' => '/api/settings/email/test-smtp', 'verb' => 'POST'],
+        ['name' => 'caseEmail#getEmailSettings',  'url' => '/api/settings/email',         'verb' => 'GET'],
+        ['name' => 'caseEmail#saveEmailSettings', 'url' => '/api/settings/email',         'verb' => 'PUT'],
+        ['name' => 'caseEmail#testSmtp',          'url' => '/api/settings/email/test-smtp', 'verb' => 'POST'],
 
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],

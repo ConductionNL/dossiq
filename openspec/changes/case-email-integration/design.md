@@ -1,5 +1,7 @@
 # Design: case-email-integration
 
+status: pr-created
+
 ## Architecture Overview
 
 Email integration adds a correspondence layer on top of the existing case management infrastructure. Outbound mail flows through a `CaseEmailService` that resolves template variables, renders the email, sends via SMTP or Nextcloud Mail, and stores the message as an `emailMessage` object plus a PDF `caseDocument`. Inbound mail flows through an `InboundEmailJob` IMAP poller that auto-links by case number or thread headers, or queues unlinked messages for manual handling. Threading is maintained via RFC 2822 `Message-ID` / `In-Reply-To` headers stored on `emailMessage`, with thread aggregation in `emailThread` objects.

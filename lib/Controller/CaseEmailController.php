@@ -212,6 +212,11 @@ class CaseEmailController extends Controller
     #[NoAdminRequired]
     public function listTemplates(string $caseTypeId): JSONResponse
     {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            throw new \OCP\AppFramework\OCS\OCSForbiddenException('Authentication required');
+        }
+
         $templates = $this->templateService->listTemplates(caseTypeId: $caseTypeId);
         return new JSONResponse(['results' => $templates]);
     }//end listTemplates()

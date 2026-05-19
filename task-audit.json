@@ -1,0 +1,30 @@
+{
+  "spec": "openspec/changes/case-email-integration",
+  "verified": [
+    {"task": "T01", "file": "lib/Settings/procest_register.json", "ok": true},
+    {"task": "T02", "file": "lib/Settings/EmailSettings.php", "ok": true},
+    {"task": "T02", "file": "appinfo/info.xml", "ok": true},
+    {"task": "T03", "file": "lib/Service/CaseEmailService.php", "ok": true},
+    {"task": "T03", "file": "lib/Service/SettingsService.php", "ok": true},
+    {"task": "T04", "file": "lib/Service/EmailTemplateService.php", "ok": true},
+    {"task": "T05", "file": "lib/Controller/CaseEmailController.php", "ok": true},
+    {"task": "T05", "file": "appinfo/routes.php", "ok": true},
+    {"task": "T06", "file": "lib/BackgroundJob/InboundEmailJob.php", "ok": true},
+    {"task": "T06", "file": "lib/BackgroundJob/EmailPdfRetryJob.php", "ok": true},
+    {"task": "T06", "file": "lib/AppInfo/Application.php", "ok": true},
+    {"task": "T07", "file": "src/components/tabs/EmailTab.vue", "ok": true},
+    {"task": "T07", "file": "src/customComponents.js", "ok": true},
+    {"task": "T07", "file": "src/manifest.json", "ok": true},
+    {"task": "T08", "file": "src/views/emails/UnlinkedQueue.vue", "ok": true},
+    {"task": "T09", "file": "src/views/settings/EmailSettings.vue", "ok": true},
+    {"task": "T10", "file": "src/views/casetypes/components/EmailTemplateAdmin.vue", "ok": true},
+    {"task": "T03-test", "file": "tests/Unit/Service/CaseEmailServiceTest.php", "ok": true},
+    {"task": "T04-test", "file": "tests/Unit/Service/EmailTemplateServiceTest.php", "ok": true},
+    {"task": "T05-test", "file": "tests/Unit/Controller/CaseEmailControllerTest.php", "ok": true},
+    {"task": "T06-test", "file": "tests/Unit/BackgroundJob/InboundEmailJobTest.php", "ok": true},
+    {"task": "T06-test", "file": "tests/Unit/BackgroundJob/EmailPdfRetryJobTest.php", "ok": true},
+    {"task": "T02-test", "file": "tests/Unit/Settings/EmailSettingsTest.php", "ok": true}
+  ],
+  "stubs": [],
+  "missing_routes": []
+}
