@@ -36,3 +36,8 @@ Status machine: `open -> ontvangen -> in_behandeling -> advies_uitgebracht -> af
 
 ## Standards
 Awb 3:5-3:9, ZGW Zaken API, GEMMA adviesverzoek/adviesreactie, CMMN 1.1 CaseTask/Sentry, Common Ground "verwerken"/"notificeren", BIO access logging.
+
+## Status
+`status: pr-created`
+
+All 10 tasks implemented and committed on `feature/458/consultation-management`. See tasks.md for per-task checkboxes.
