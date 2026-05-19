@@ -2,6 +2,7 @@
 id: intro
 title: Introduction
 sidebar_position: 1
+description: Get started with Procest, case management and BPMN workflows on Nextcloud. VTH-grade compliance with typed registers and a full audit trail.
 ---
 
 # Procest Documentation
