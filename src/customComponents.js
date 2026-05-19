@@ -23,7 +23,8 @@ import WerkvoorraadView from './views/Werkvoorraad.vue'
 // CaseMapView removed — superseded by manifest `type: 'map'` CnMapPage
 // (see openspec/changes/case-map-overview/design.md).
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
-import VoorstellenView from './views/voorstellen/VoorstelList.vue'
+// VoorstellenView removed — VoorstelList.vue deleted in manifest migration;
+// Voorstellen list is now a declarative `type:"index"` on the voorstel schema.
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import AdminRootView from './views/settings/AdminRoot.vue'
 import PublicCaseView from './views/public/PublicCaseView.vue'
@@ -61,7 +62,7 @@ export default {
 	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
 
 	// --- Migration cost: deferred to a follow-up. ---
-	VoorstellenView, // status-tabs filter tied to parafeerroute lifecycle
+	// VoorstellenView removed — superseded by declarative manifest index page.
 	VoorstelDetailView, // parafeerroute multi-step approver flow
 
 	// --- Anonymous-public routes (no auth, no main menu). ---
