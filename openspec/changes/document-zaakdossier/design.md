@@ -1,5 +1,7 @@
 # Design: document-zaakdossier
 
+status: pr-created
+
 ## Architecture Overview
 
 The zaakdossier layer sits between Procest's case views and OpenRegister's file handlers. Every uploaded document becomes both a Nextcloud file (stored at `Open Registers/{Register Title} Register/{objectUuid}/`) and an `informatieobject` register object carrying ZGW DRC metadata. The link to the case is a separate `zaakinformatieobject` join object — this matches the ZGW DRC model and lets a single document be linked to multiple cases without duplication. Documents linked to besluiten use the analogous `besluitinformatieobject` join. A `ZaakdossierService` orchestrates the existing OpenRegister file handlers; access control is enforced by a service-layer guard that checks user clearance against `vertrouwelijkheidaanduiding`. The dossier UI is a tab in `CaseDetail.vue` rendering documents grouped by informatieobjecttype.

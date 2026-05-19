@@ -1,0 +1,23 @@
+{
+  "spec": "openspec/changes/document-zaakdossier",
+  "verified": [
+    {"task": "T01", "file": "lib/Settings/procest_register.json", "ok": true},
+    {"task": "T01", "file": "lib/Service/SettingsService.php", "ok": true},
+    {"task": "T02", "file": "lib/Service/ZaakdossierService.php", "ok": true},
+    {"task": "T03", "file": "lib/Service/InformatieobjectAccessGuard.php", "ok": true},
+    {"task": "T04", "file": "lib/Service/ZipManifestBuilder.php", "ok": true},
+    {"task": "T05", "file": "lib/Controller/ZaakdossierController.php", "ok": true},
+    {"task": "T05", "file": "appinfo/routes.php", "ok": true},
+    {"task": "T06", "file": "src/views/cases/components/DossierTab.vue", "ok": true},
+    {"task": "T06", "file": "src/views/cases/components/DossierGroup.vue", "ok": true},
+    {"task": "T06", "file": "src/views/cases/components/DocumentRow.vue", "ok": true},
+    {"task": "T07", "file": "src/views/cases/components/DocumentMetadataDialog.vue", "ok": true},
+    {"task": "T07", "file": "src/views/cases/components/VersionHistoryPanel.vue", "ok": true},
+    {"task": "T08", "file": "src/views/cases/components/BulkActionsBar.vue", "ok": true},
+    {"task": "T09", "file": "lib/Migration/BackfillInformatieobjectMetadata.php", "ok": true},
+    {"task": "T10", "file": "src/manifest.json", "ok": true},
+    {"task": "T10", "file": "src/customComponents.js", "ok": true}
+  ],
+  "stubs": [],
+  "missing_routes": []
+}
