@@ -84,7 +84,7 @@ class JwtValidationService
             $this->authorizationService->authorizeJwt(
                 authorization: $authHeader
             );
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             return new JSONResponse(
                 data: [
                     'type'   => 'NotAuthenticated',
@@ -233,11 +233,11 @@ class JwtValidationService
             }
 
             return $result;
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $this->logger->warning(
                 'Could not get consumer autorisaties: '.$e->getMessage()
             );
-            return null;
+            return [];
         }//end try
     }//end getConsumerAuthorisaties()
 }//end class
