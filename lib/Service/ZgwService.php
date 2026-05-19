@@ -135,6 +135,8 @@ class ZgwService
      * @param ZgwDocumentService      $documentService      The document storage service
      * @param NotificatieService      $notificatieService   The notification service
      * @param ZgwBusinessRulesService $businessRulesService The business rules service
+     * @param JwtValidationService    $jwtValidationService The JWT validation service
+     * @param ZgwSubResourceResolver  $subResourceResolver  The sub-resource resolver
      * @param LoggerInterface         $logger               The logger
      *
      * @return void
@@ -145,6 +147,8 @@ class ZgwService
         private readonly ZgwDocumentService $documentService,
         private readonly NotificatieService $notificatieService,
         private readonly ZgwBusinessRulesService $businessRulesService,
+        private readonly JwtValidationService $jwtValidationService,
+        private readonly ZgwSubResourceResolver $subResourceResolver,
         private readonly LoggerInterface $logger,
     ) {
         $container = \OC::$server;
@@ -577,39 +581,7 @@ class ZgwService
      */
     public function validateJwtAuth(IRequest $request): ?JSONResponse
     {
-        $authHeader = $request->getHeader('Authorization');
-
-        if ($authHeader === '') {
-            return new JSONResponse(
-                data: [
-                    'type'   => 'NotAuthenticated',
-                    'code'   => 'not_authenticated',
-                    'title'  => 'Authenticatiegegevens zijn niet opgegeven.',
-                    'status' => 401,
-                    'detail' => 'Authenticatiegegevens zijn niet opgegeven.',
-                ],
-                statusCode: Http::STATUS_UNAUTHORIZED
-            );
-        }
-
-        try {
-            $this->authorizationService->authorizeJwt(
-                authorization: $authHeader
-            );
-        } catch (\Throwable $e) {
-            return new JSONResponse(
-                data: [
-                    'type'   => 'NotAuthenticated',
-                    'code'   => 'not_authenticated',
-                    'title'  => 'Authenticatiegegevens zijn niet geldig.',
-                    'status' => 403,
-                    'detail' => $e->getMessage(),
-                ],
-                statusCode: Http::STATUS_FORBIDDEN
-            );
-        }
-
-        return null;
+        return $this->jwtValidationService->validateJwtAuth(request: $request);
     }//end validateJwtAuth()
 
     /**
@@ -620,65 +592,14 @@ class ZgwService
      * @param string   $scope     The required scope
      *
      * @return bool True if the consumer has the scope or heeftAlleAutorisaties
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — multiple JWT validation paths
-     * @SuppressWarnings(PHPMD.NPathComplexity)      — multiple JWT validation paths
      */
     public function consumerHasScope(IRequest $request, string $component, string $scope): bool
     {
-        if ($this->consumerMapper === null) {
-            return true;
-        }
-
-        try {
-            $authHeader = $request->getHeader('Authorization');
-            $token      = str_replace('Bearer ', '', $authHeader);
-            $parts      = explode('.', $token);
-            if (count($parts) !== 3) {
-                return true;
-            }
-
-            $payload  = json_decode(base64_decode($parts[1]), true);
-            $clientId = $payload['client_id'] ?? ($payload['iss'] ?? null);
-            if ($clientId === null) {
-                return true;
-            }
-
-            $consumers = $this->consumerMapper->findAll(
-                filters: ['name' => $clientId]
-            );
-            if (empty($consumers) === true) {
-                return true;
-            }
-
-            $consumer   = $consumers[0];
-            $authConfig = [];
-            if (method_exists($consumer, 'getAuthorizationConfiguration') === true) {
-                $authConfig = $consumer->getAuthorizationConfiguration() ?? [];
-            }
-
-            if (($authConfig['superuser'] ?? false) === true) {
-                return true;
-            }
-
-            $scopes = $authConfig['scopes'] ?? [];
-            foreach ($scopes as $auth) {
-                $authComponent = $auth['component'] ?? '';
-                $authScopes    = $auth['scopes'] ?? [];
-                if ($authComponent === $component
-                    && in_array($scope, $authScopes, true) === true
-                ) {
-                    return true;
-                }
-            }
-
-            return false;
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'Could not check consumer scope: '.$e->getMessage()
-            );
-            return true;
-        }//end try
+        return $this->jwtValidationService->consumerHasScope(
+            request: $request,
+            component: $component,
+            scope: $scope
+        );
     }//end consumerHasScope()
 
     /**
@@ -691,62 +612,13 @@ class ZgwService
      * @param string   $component The ZGW component (e.g. 'zrc')
      *
      * @return array|null Array of autorisatie entries, or null if unrestricted
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — multiple JWT validation paths
      */
     public function getConsumerAuthorisaties(IRequest $request, string $component): ?array
     {
-        if ($this->consumerMapper === null) {
-            return null;
-        }
-
-        try {
-            $authHeader = $request->getHeader('Authorization');
-            $token      = str_replace('Bearer ', '', $authHeader);
-            $parts      = explode('.', $token);
-            if (count($parts) !== 3) {
-                return null;
-            }
-
-            $payload  = json_decode(base64_decode($parts[1]), true);
-            $clientId = $payload['client_id'] ?? ($payload['iss'] ?? null);
-            if ($clientId === null) {
-                return null;
-            }
-
-            $consumers = $this->consumerMapper->findAll(
-                filters: ['name' => $clientId]
-            );
-            if (empty($consumers) === true) {
-                return null;
-            }
-
-            $consumer   = $consumers[0];
-            $authConfig = [];
-            if (method_exists($consumer, 'getAuthorizationConfiguration') === true) {
-                $authConfig = $consumer->getAuthorizationConfiguration() ?? [];
-            }
-
-            if (($authConfig['superuser'] ?? false) === true) {
-                return null;
-            }
-
-            $result = [];
-            $scopes = $authConfig['scopes'] ?? [];
-            foreach ($scopes as $auth) {
-                $authComponent = $auth['component'] ?? '';
-                if ($authComponent === $component) {
-                    $result[] = $auth;
-                }
-            }
-
-            return $result;
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'Could not get consumer autorisaties: '.$e->getMessage()
-            );
-            return null;
-        }//end try
+        return $this->jwtValidationService->getConsumerAuthorisaties(
+            request: $request,
+            component: $component
+        );
     }//end getConsumerAuthorisaties()
 
     /**
@@ -1614,74 +1486,13 @@ class ZgwService
      * @param array  $existingData The existing object data
      *
      * @return bool|null True if closed, false if open, null if N/A
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
-     * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
      */
     public function resolveZaakClosed(string $resource, array $existingData): ?bool
     {
-        if ($resource === 'zaken') {
-            $endDate = $existingData['endDate'] ?? ($existingData['einddatum'] ?? null);
-            return $endDate !== null && $endDate !== '';
-        }
-
-        $zaakSubResources = [
-            'statussen',
-            'resultaten',
-            'rollen',
-            'zaakeigenschappen',
-            'zaakinformatieobjecten',
-            'zaakobjecten',
-            'klantcontacten',
-        ];
-        if (in_array($resource, $zaakSubResources, true) === false) {
-            return null;
-        }
-
-        $zaakUuid = $existingData['case'] ?? ($existingData['zaak'] ?? null);
-        if ($zaakUuid === null || $zaakUuid === '') {
-            return null;
-        }
-
-        if (preg_match(
-                '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
-                (string) $zaakUuid,
-                $matches
-            ) === 1
-        ) {
-            $zaakUuid = $matches[1];
-        }
-
-        try {
-            $zaakConfig = $this->zgwMappingService->getMapping('zaak');
-            if ($zaakConfig === null) {
-                return null;
-            }
-
-            $zaak = $this->objectService->find(
-                $zaakUuid,
-                register: $zaakConfig['sourceRegister'],
-                schema: $zaakConfig['sourceSchema']
-            );
-            if ($zaak === null) {
-                return null;
-            }
-
-            if (is_array($zaak) === true) {
-                $zaakData = $zaak;
-            } else {
-                $zaakData = $zaak->jsonSerialize();
-            }
-
-            $endDate = $zaakData['endDate'] ?? ($zaakData['einddatum'] ?? null);
-
-            return $endDate !== null && $endDate !== '';
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'Could not resolve zaak closed status: '.$e->getMessage()
-            );
-            return null;
-        }//end try
+        return $this->subResourceResolver->resolveZaakClosed(
+            resource: $resource,
+            existingData: $existingData
+        );
     }//end resolveZaakClosed()
 
     /**
@@ -1691,72 +1502,13 @@ class ZgwService
      * @param array  $body     The request body
      *
      * @return bool|null True if closed, false if open, null if N/A
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
-     * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
      */
     public function resolveZaakClosedFromBody(string $resource, array $body): ?bool
     {
-        if ($resource === 'zaken') {
-            return null;
-        }
-
-        $zaakSubResources = [
-            'statussen',
-            'resultaten',
-            'rollen',
-            'zaakeigenschappen',
-            'zaakinformatieobjecten',
-            'zaakobjecten',
-            'klantcontacten',
-        ];
-        if (in_array($resource, $zaakSubResources, true) === false) {
-            return null;
-        }
-
-        $zaakUrl = $body['zaak'] ?? null;
-        if ($zaakUrl === null || $zaakUrl === '') {
-            return null;
-        }
-
-        if (preg_match(
-                '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
-                (string) $zaakUrl,
-                $matches
-            ) !== 1
-        ) {
-            return null;
-        }
-
-        $zaakUuid = $matches[1];
-
-        try {
-            $zaakConfig = $this->zgwMappingService->getMapping('zaak');
-            if ($zaakConfig === null) {
-                return null;
-            }
-
-            $zaak = $this->objectService->find(
-                $zaakUuid,
-                register: $zaakConfig['sourceRegister'],
-                schema: $zaakConfig['sourceSchema']
-            );
-            if ($zaak === null) {
-                return null;
-            }
-
-            if (is_array($zaak) === true) {
-                $zaakData = $zaak;
-            } else {
-                $zaakData = $zaak->jsonSerialize();
-            }
-
-            $endDate = $zaakData['endDate'] ?? ($zaakData['einddatum'] ?? null);
-
-            return $endDate !== null && $endDate !== '';
-        } catch (\Throwable $e) {
-            return null;
-        }//end try
+        return $this->subResourceResolver->resolveZaakClosedFromBody(
+            resource: $resource,
+            body: $body
+        );
     }//end resolveZaakClosedFromBody()
 
     /**
@@ -1766,72 +1518,13 @@ class ZgwService
      * @param array  $existingData The existing sub-resource object data
      *
      * @return bool|null True if draft, false if published, null if N/A
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
-     * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
      */
     public function resolveParentZaaktypeDraft(string $resource, array $existingData): ?bool
     {
-        $subResources = [
-            'statustypen',
-            'resultaattypen',
-            'roltypen',
-            'eigenschappen',
-            'zaaktype-informatieobjecttypen',
-        ];
-
-        if (in_array($resource, $subResources, true) === false) {
-            return null;
-        }
-
-        $zaaktypeUuid = $existingData['caseType'] ?? ($existingData['zaaktype'] ?? null);
-        if ($zaaktypeUuid === null || $zaaktypeUuid === '') {
-            return null;
-        }
-
-        if (preg_match(
-                '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
-                (string) $zaaktypeUuid,
-                $matches
-            ) === 1
-        ) {
-            $zaaktypeUuid = $matches[1];
-        }
-
-        try {
-            $zaaktypeConfig = $this->zgwMappingService->getMapping('zaaktype');
-            if ($zaaktypeConfig === null) {
-                return null;
-            }
-
-            $zaaktype = $this->objectService->find(
-                $zaaktypeUuid,
-                register: $zaaktypeConfig['sourceRegister'],
-                schema: $zaaktypeConfig['sourceSchema']
-            );
-            if ($zaaktype === null) {
-                return null;
-            }
-
-            if (is_array($zaaktype) === true) {
-                $ztData = $zaaktype;
-            } else {
-                $ztData = $zaaktype->jsonSerialize();
-            }
-
-            $isDraft = $ztData['isDraft'] ?? ($ztData['concept'] ?? true);
-
-            if ($isDraft === false || $isDraft === 'false' || $isDraft === '0' || $isDraft === 0) {
-                return false;
-            }
-
-            return true;
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'Could not resolve parent zaaktype draft status: '.$e->getMessage()
-            );
-            return null;
-        }//end try
+        return $this->subResourceResolver->resolveParentZaaktypeDraft(
+            resource: $resource,
+            existingData: $existingData
+        );
     }//end resolveParentZaaktypeDraft()
 
     /**
@@ -1844,74 +1537,12 @@ class ZgwService
      * @param array  $body     The request body (Dutch field names)
      *
      * @return bool|null True if draft, false if published, null if N/A
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
-     * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
      */
     public function resolveParentZaaktypeDraftFromBody(string $resource, array $body): ?bool
     {
-        $subResources = [
-            'statustypen',
-            'resultaattypen',
-            'roltypen',
-            'eigenschappen',
-            'zaaktype-informatieobjecttypen',
-        ];
-
-        if (in_array($resource, $subResources, true) === false) {
-            return null;
-        }
-
-        $zaaktypeRef = $body['zaaktype'] ?? null;
-        if ($zaaktypeRef === null || $zaaktypeRef === '') {
-            return null;
-        }
-
-        // Extract UUID from URL or plain UUID.
-        if (preg_match(
-                '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
-                (string) $zaaktypeRef,
-                $matches
-            ) !== 1
-        ) {
-            return null;
-        }
-
-        $zaaktypeUuid = $matches[1];
-
-        try {
-            $zaaktypeConfig = $this->zgwMappingService->getMapping('zaaktype');
-            if ($zaaktypeConfig === null) {
-                return null;
-            }
-
-            $zaaktype = $this->objectService->find(
-                $zaaktypeUuid,
-                register: $zaaktypeConfig['sourceRegister'],
-                schema: $zaaktypeConfig['sourceSchema']
-            );
-            if ($zaaktype === null) {
-                return null;
-            }
-
-            if (is_array($zaaktype) === true) {
-                $ztData = $zaaktype;
-            } else {
-                $ztData = $zaaktype->jsonSerialize();
-            }
-
-            $isDraft = $ztData['isDraft'] ?? ($ztData['concept'] ?? true);
-
-            if ($isDraft === false || $isDraft === 'false' || $isDraft === '0' || $isDraft === 0) {
-                return false;
-            }
-
-            return true;
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'Could not resolve parent zaaktype draft from body: '.$e->getMessage()
-            );
-            return null;
-        }//end try
+        return $this->subResourceResolver->resolveParentZaaktypeDraftFromBody(
+            resource: $resource,
+            body: $body
+        );
     }//end resolveParentZaaktypeDraftFromBody()
 }//end class

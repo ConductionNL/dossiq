@@ -701,10 +701,6 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * @SuppressWarnings(PHPMD.NPathComplexity)
-     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
-     *
      * @psalm-suppress UnusedParam — $isPatch reserved for partial-update field validation
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $isPatch reserved for partial-update validation
@@ -722,116 +718,28 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         // Zrc-010: Validate communicatiekanaal URL.
-        $commKanaal = $body['communicatiekanaal'] ?? null;
-        if ($commKanaal !== null && $commKanaal !== '') {
-            if (filter_var($commKanaal, FILTER_VALIDATE_URL) === false) {
-                return $this->error(
-                    status: 400,
-                    detail: 'De communicatiekanaal URL is ongeldig.',
-                    invalidParams: [
-                        $this->fieldError(
-                            fieldName: 'communicatiekanaal',
-                            code: 'bad-url',
-                            reason: 'De communicatiekanaal URL is ongeldig.'
-                        ),
-                    ]
-                );
-            }
-
-            if ($this->isValidUrl(url: $commKanaal) === false) {
-                // Zrc-010: URL is syntactically valid but does not point to a specific
-                // resource (no UUID path segment) → VNG requires 'invalid-resource'.
-                return $this->error(
-                    status: 400,
-                    detail: 'De communicatiekanaal URL is ongeldig.',
-                    invalidParams: [
-                        $this->fieldError(
-                            fieldName: 'communicatiekanaal',
-                            code: 'invalid-resource',
-                            reason: 'De communicatiekanaal URL wijst niet naar een geldig object.'
-                        ),
-                    ]
-                );
-            }//end if
-        }//end if
+        $commError = $this->validateCommunicatiekanaal(body: $body);
+        if ($commError !== null) {
+            return $commError;
+        }
 
         // Zrc-011: Validate relevanteAndereZaken URLs.
-        $relevanteZaken = $body['relevanteAndereZaken'] ?? null;
-        if (is_array($relevanteZaken) === true) {
-            foreach ($relevanteZaken as $idx => $relZaak) {
-                $relUrl = $relZaak['url'] ?? '';
-                if ($relUrl !== '' && $this->isValidUrl(url: $relUrl) === false) {
-                    return $this->error(
-                        status: 400,
-                        detail: 'relevanteAndereZaken bevat een ongeldige URL.',
-                        invalidParams: [$this->fieldError(
-                            fieldName: "relevanteAndereZaken.{$idx}.url",
-                            code: 'bad-url',
-                            reason: 'De URL is ongeldig.'
-                        )
-                        ]
-                    );
-                }
-            }
+        $relevanteError = $this->validateRelevanteAndereZaken(body: $body);
+        if ($relevanteError !== null) {
+            return $relevanteError;
         }
 
         // Zrc-012: Validate opschorting.
-        $opschorting = $body['opschorting'] ?? null;
-        if (is_array($opschorting) === true) {
-            $errors = [];
-            if (($opschorting['indicatie'] ?? null) === null) {
-                $errors[] = $this->fieldError(
-                    fieldName: 'opschorting.indicatie',
-                    code: 'required',
-                    reason: 'Indicatie is vereist bij opschorting.'
-                );
-            }
-
-            if (($opschorting['reden'] ?? '') === '') {
-                $errors[] = $this->fieldError(
-                    fieldName: 'opschorting.reden',
-                    code: 'required',
-                    reason: 'Reden is vereist bij opschorting.'
-                );
-            }
-
-            if (empty($errors) === false) {
-                return $this->error(
-                    status: 400,
-                    detail: 'Opschorting vereist indicatie en reden.',
-                    invalidParams: $errors
-                );
-            }
-        }//end if
+        $opschortingError = $this->validateOpschorting(body: $body);
+        if ($opschortingError !== null) {
+            return $opschortingError;
+        }
 
         // Zrc-012: Validate verlenging.
-        $verlenging = $body['verlenging'] ?? null;
-        if (is_array($verlenging) === true) {
-            $errors = [];
-            if (($verlenging['reden'] ?? '') === '') {
-                $errors[] = $this->fieldError(
-                    fieldName: 'verlenging.reden',
-                    code: 'required',
-                    reason: 'Reden is vereist bij verlenging.'
-                );
-            }
-
-            if (($verlenging['duur'] ?? '') === '') {
-                $errors[] = $this->fieldError(
-                    fieldName: 'verlenging.duur',
-                    code: 'required',
-                    reason: 'Duur is vereist bij verlenging.'
-                );
-            }
-
-            if (empty($errors) === false) {
-                return $this->error(
-                    status: 400,
-                    detail: 'Verlenging vereist reden en duur.',
-                    invalidParams: $errors
-                );
-            }
-        }//end if
+        $verlengingError = $this->validateVerlenging(body: $body);
+        if ($verlengingError !== null) {
+            return $verlengingError;
+        }
 
         // Zrc-013: Validate hoofdzaak URL.
         $hoofdzaak = $body['hoofdzaak'] ?? null;
@@ -872,6 +780,231 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }//end if
 
         // Zrc-014: Validate betalingsindicatie + laatsteBetaaldatum.
+        $body = $this->validateBetalingsindicatieWithExisting(body: $body, existingObject: $existingObject);
+        if (isset($body['valid']) === true && $body['valid'] === false) {
+            return $body;
+        }
+
+        // Zrc-015: Validate productenOfDiensten.
+        $producten = $body['productenOfDiensten'] ?? null;
+        if (is_array($producten) === true && empty($producten) === false) {
+            $error = $this->validateProductenOfDiensten(body: $body);
+            if ($error !== null) {
+                return $error;
+            }
+        }
+
+        // Zrc-022: Validate archiefstatus transition.
+        $archiefError = $this->validateArchiefstatus(body: $body);
+        if ($archiefError !== null) {
+            return $archiefError;
+        }
+
+        $result['enrichedBody'] = $body;
+
+        return $result;
+    }//end validateZaakFields()
+
+    /**
+     * Validate the communicatiekanaal field (zrc-010).
+     *
+     * Returns an error array when the value is present but syntactically invalid
+     * or does not point to a specific resource (no UUID path segment).
+     *
+     * @param array $body The request body
+     *
+     * @return array|null Validation error, or null when the field is absent or valid
+     *
+     * @spec openspec/changes/method-decomposition/tasks.md#task-8
+     */
+    private function validateCommunicatiekanaal(array $body): ?array
+    {
+        $commKanaal = $body['communicatiekanaal'] ?? null;
+        if ($commKanaal === null || $commKanaal === '') {
+            return null;
+        }
+
+        if (filter_var($commKanaal, FILTER_VALIDATE_URL) === false) {
+            return $this->error(
+                status: 400,
+                detail: 'De communicatiekanaal URL is ongeldig.',
+                invalidParams: [
+                    $this->fieldError(
+                        fieldName: 'communicatiekanaal',
+                        code: 'bad-url',
+                        reason: 'De communicatiekanaal URL is ongeldig.'
+                    ),
+                ]
+            );
+        }
+
+        if ($this->isValidUrl(url: $commKanaal) === false) {
+            // Zrc-010: URL is syntactically valid but does not point to a specific
+            // resource (no UUID path segment) — VNG requires 'invalid-resource'.
+            return $this->error(
+                status: 400,
+                detail: 'De communicatiekanaal URL is ongeldig.',
+                invalidParams: [
+                    $this->fieldError(
+                        fieldName: 'communicatiekanaal',
+                        code: 'invalid-resource',
+                        reason: 'De communicatiekanaal URL wijst niet naar een geldig object.'
+                    ),
+                ]
+            );
+        }//end if
+
+        return null;
+    }//end validateCommunicatiekanaal()
+
+    /**
+     * Validate relevanteAndereZaken URLs (zrc-011).
+     *
+     * Each entry in the array must carry a syntactically valid URL that ends
+     * with a UUID path segment.
+     *
+     * @param array $body The request body
+     *
+     * @return array|null Validation error, or null when the field is absent or all entries are valid
+     *
+     * @spec openspec/changes/method-decomposition/tasks.md#task-8
+     */
+    private function validateRelevanteAndereZaken(array $body): ?array
+    {
+        $relevanteZaken = $body['relevanteAndereZaken'] ?? null;
+        if (is_array($relevanteZaken) === false) {
+            return null;
+        }
+
+        foreach ($relevanteZaken as $idx => $relZaak) {
+            $relUrl = $relZaak['url'] ?? '';
+            if ($relUrl !== '' && $this->isValidUrl(url: $relUrl) === false) {
+                return $this->error(
+                    status: 400,
+                    detail: 'relevanteAndereZaken bevat een ongeldige URL.',
+                    invalidParams: [$this->fieldError(
+                        fieldName: "relevanteAndereZaken.{$idx}.url",
+                        code: 'bad-url',
+                        reason: 'De URL is ongeldig.'
+                    )
+                    ]
+                );
+            }
+        }
+
+        return null;
+    }//end validateRelevanteAndereZaken()
+
+    /**
+     * Validate the opschorting gegevensgroep (zrc-012).
+     *
+     * When opschorting is present, both indicatie and reden are required.
+     *
+     * @param array $body The request body
+     *
+     * @return array|null Validation error, or null when the field is absent or valid
+     *
+     * @spec openspec/changes/method-decomposition/tasks.md#task-8
+     */
+    private function validateOpschorting(array $body): ?array
+    {
+        $opschorting = $body['opschorting'] ?? null;
+        if (is_array($opschorting) === false) {
+            return null;
+        }
+
+        $errors = [];
+        if (($opschorting['indicatie'] ?? null) === null) {
+            $errors[] = $this->fieldError(
+                fieldName: 'opschorting.indicatie',
+                code: 'required',
+                reason: 'Indicatie is vereist bij opschorting.'
+            );
+        }
+
+        if (($opschorting['reden'] ?? '') === '') {
+            $errors[] = $this->fieldError(
+                fieldName: 'opschorting.reden',
+                code: 'required',
+                reason: 'Reden is vereist bij opschorting.'
+            );
+        }
+
+        if (empty($errors) === false) {
+            return $this->error(
+                status: 400,
+                detail: 'Opschorting vereist indicatie en reden.',
+                invalidParams: $errors
+            );
+        }
+
+        return null;
+    }//end validateOpschorting()
+
+    /**
+     * Validate the verlenging gegevensgroep (zrc-012).
+     *
+     * When verlenging is present, both reden and duur are required.
+     *
+     * @param array $body The request body
+     *
+     * @return array|null Validation error, or null when the field is absent or valid
+     *
+     * @spec openspec/changes/method-decomposition/tasks.md#task-8
+     */
+    private function validateVerlenging(array $body): ?array
+    {
+        $verlenging = $body['verlenging'] ?? null;
+        if (is_array($verlenging) === false) {
+            return null;
+        }
+
+        $errors = [];
+        if (($verlenging['reden'] ?? '') === '') {
+            $errors[] = $this->fieldError(
+                fieldName: 'verlenging.reden',
+                code: 'required',
+                reason: 'Reden is vereist bij verlenging.'
+            );
+        }
+
+        if (($verlenging['duur'] ?? '') === '') {
+            $errors[] = $this->fieldError(
+                fieldName: 'verlenging.duur',
+                code: 'required',
+                reason: 'Duur is vereist bij verlenging.'
+            );
+        }
+
+        if (empty($errors) === false) {
+            return $this->error(
+                status: 400,
+                detail: 'Verlenging vereist reden en duur.',
+                invalidParams: $errors
+            );
+        }
+
+        return null;
+    }//end validateVerlenging()
+
+    /**
+     * Validate betalingsindicatie + laatsteBetaaldatum consistency (zrc-014).
+     *
+     * On create: rejects when betalingsindicatie is "nvt" and a date is supplied.
+     * On update/patch: clears the date when the effective betalingsindicatie switches to "nvt".
+     *
+     * Returns the (possibly mutated) body on success, or an error array on failure.
+     * Callers distinguish the two by checking for 'valid' === false in the return value.
+     *
+     * @param array      $body           The request body (may have 'laatsteBetaaldatum' cleared)
+     * @param array|null $existingObject The existing object data, or null on create
+     *
+     * @return array The updated body, or an error result array
+     *
+     * @spec openspec/changes/method-decomposition/tasks.md#task-8
+     */
+    private function validateBetalingsindicatieWithExisting(array $body, ?array $existingObject): array
+    {
         $betalingsindicatie = $body['betalingsindicatie'] ?? null;
         $laatsteBetaald     = $body['laatsteBetaaldatum'] ?? null;
 
@@ -903,49 +1036,56 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $body['laatsteBetaaldatum'] = null;
         }
 
-        // Zrc-015: Validate productenOfDiensten.
-        $producten = $body['productenOfDiensten'] ?? null;
-        if (is_array($producten) === true && empty($producten) === false) {
-            $error = $this->validateProductenOfDiensten(body: $body);
-            if ($error !== null) {
-                return $error;
-            }
+        return $body;
+    }//end validateBetalingsindicatieWithExisting()
+
+    /**
+     * Validate archiefstatus transition requirements (zrc-022).
+     *
+     * When archiefstatus is set to any value other than "nog_te_archiveren",
+     * both archiefnominatie and archiefactiedatum must be present.
+     *
+     * @param array $body The request body
+     *
+     * @return array|null Validation error, or null when the field is absent, default, or accompanied by required fields
+     *
+     * @spec openspec/changes/method-decomposition/tasks.md#task-8
+     */
+    private function validateArchiefstatus(array $body): ?array
+    {
+        $archiefstatus = $body['archiefstatus'] ?? null;
+        if ($archiefstatus === null || $archiefstatus === 'nog_te_archiveren') {
+            return null;
         }
 
-        // Zrc-022: Validate archiefstatus transition.
-        $archiefstatus = $body['archiefstatus'] ?? null;
-        if ($archiefstatus !== null && $archiefstatus !== 'nog_te_archiveren') {
-            if (empty($body['archiefnominatie'] ?? null) === true) {
-                return $this->error(
-                    status: 400,
-                    detail: 'archiefnominatie is vereist als archiefstatus niet "nog_te_archiveren" is.',
-                    invalidParams: [$this->fieldError(
-                        fieldName: 'archiefnominatie',
-                        code: 'archiefnominatie-not-set',
-                        reason: 'Vereist.'
-                    )
-                    ]
-                );
-            }
+        if (empty($body['archiefnominatie'] ?? null) === true) {
+            return $this->error(
+                status: 400,
+                detail: 'archiefnominatie is vereist als archiefstatus niet "nog_te_archiveren" is.',
+                invalidParams: [$this->fieldError(
+                    fieldName: 'archiefnominatie',
+                    code: 'archiefnominatie-not-set',
+                    reason: 'Vereist.'
+                )
+                ]
+            );
+        }
 
-            if (empty($body['archiefactiedatum'] ?? null) === true) {
-                return $this->error(
-                    status: 400,
-                    detail: 'archiefactiedatum is vereist als archiefstatus niet "nog_te_archiveren" is.',
-                    invalidParams: [$this->fieldError(
-                        fieldName: 'archiefactiedatum',
-                        code: 'archiefactiedatum-not-set',
-                        reason: 'Vereist.'
-                    )
-                    ]
-                );
-            }
-        }//end if
+        if (empty($body['archiefactiedatum'] ?? null) === true) {
+            return $this->error(
+                status: 400,
+                detail: 'archiefactiedatum is vereist als archiefstatus niet "nog_te_archiveren" is.',
+                invalidParams: [$this->fieldError(
+                    fieldName: 'archiefactiedatum',
+                    code: 'archiefactiedatum-not-set',
+                    reason: 'Vereist.'
+                )
+                ]
+            );
+        }
 
-        $result['enrichedBody'] = $body;
-
-        return $result;
-    }//end validateZaakFields()
+        return null;
+    }//end validateArchiefstatus()
 
     /**
      * Validate hoofdzaak is not a deelzaak itself (zrc-013).

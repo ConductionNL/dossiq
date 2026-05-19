@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\Controller\DrcController\ChunkUploadHandler;
 use OCA\Procest\Service\ZgwService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -77,16 +78,18 @@ class DrcController extends Controller
     /**
      * Constructor.
      *
-     * @param string     $appName    The app name.
-     * @param IRequest   $request    The incoming request.
-     * @param ZgwService $zgwService The shared ZGW service.
-     * @param IL10N      $l10n       The localization service.
+     * @param string             $appName            The app name.
+     * @param IRequest           $request            The incoming request.
+     * @param ZgwService         $zgwService         The shared ZGW service.
+     * @param IL10N              $l10n               The localization service.
+     * @param ChunkUploadHandler $chunkUploadHandler The chunk upload handler.
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly ZgwService $zgwService,
         private readonly IL10N $l10n,
+        private readonly ChunkUploadHandler $chunkUploadHandler,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -1394,138 +1397,7 @@ class DrcController extends Controller
             return $authError;
         }
 
-        $objectService = $this->zgwService->getObjectService();
-        if ($objectService === null) {
-            return $this->zgwService->unavailableResponse();
-        }
-
-        $mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
-        if ($mappingConfig === null) {
-            return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, self::EIO_RESOURCE);
-        }
-
-        try {
-            // Find the EIO object.
-            $existing = $objectService->find(
-                $uuid,
-                register: $mappingConfig['sourceRegister'],
-                schema: $mappingConfig['sourceSchema']
-            );
-            if (is_array($existing) === true) {
-                $objectData = $existing;
-            } else {
-                $objectData = $existing->jsonSerialize();
-            }
-
-            // Verify this document has a pending chunked upload.
-            $chunkInfo = $this->parseFileParts(objectData: $objectData);
-            if ($chunkInfo === null || ($chunkInfo['pending'] ?? false) !== true) {
-                return new JSONResponse(
-                    data: ['detail' => $this->l10n->t('This document has no pending chunked upload.')],
-                    statusCode: Http::STATUS_BAD_REQUEST
-                );
-            }
-
-            $totalParts = (int) ($chunkInfo['totalParts'] ?? 0);
-            if ($totalParts <= 0) {
-                return new JSONResponse(
-                    data: ['detail' => $this->l10n->t('Invalid chunk configuration.')],
-                    statusCode: Http::STATUS_BAD_REQUEST
-                );
-            }
-
-            // Get volgnummer from query parameter or request body.
-            $volgnummer = (int) ($this->request->getParam('volgnummer') ?? 0);
-            if ($volgnummer <= 0 || $volgnummer > $totalParts) {
-                return new JSONResponse(
-                    data: ['detail' => $this->l10n->t('Invalid sequence number. Expected 1-%s.', [$totalParts])],
-                    statusCode: Http::STATUS_BAD_REQUEST
-                );
-            }
-
-            // Read raw body content.
-            $content = file_get_contents('php://input');
-            if ($content === false || $content === '') {
-                return new JSONResponse(
-                    data: ['detail' => $this->l10n->t('No file content received.')],
-                    statusCode: Http::STATUS_BAD_REQUEST
-                );
-            }
-
-            // Store the chunk.
-            $docService = $this->zgwService->getDocumentService();
-            $chunkSize  = $docService->storeChunk(
-                uuid: $uuid,
-                volgnummer: $volgnummer,
-                content: $content
-            );
-
-            // Check if all chunks have been uploaded.
-            $uploaded = $docService->getUploadedChunks(uuid: $uuid, totalParts: $totalParts);
-
-            if (count($uploaded) === $totalParts) {
-                // All chunks present — merge into final file.
-                $fileName = $objectData['fileName'] ?? 'document';
-                if ($fileName === '') {
-                    $fileName = 'document';
-                }
-
-                $mergedSize = $docService->mergeChunks(
-                    uuid: $uuid,
-                    fileName: $fileName,
-                    totalParts: $totalParts
-                );
-
-                // Update the object: clear chunk metadata, set file size.
-                unset(
-                    $objectData['@self'],
-                    $objectData['id'],
-                    $objectData['organisation']
-                );
-                $objectData['fileParts'] = '';
-                $objectData['fileSize']  = $mergedSize;
-
-                $objectService->saveObject(
-                    register: $mappingConfig['sourceRegister'],
-                    schema: $mappingConfig['sourceSchema'],
-                    object: $objectData,
-                    uuid: $uuid
-                );
-
-                return new JSONResponse(
-                    data: [
-                        'volgnummer'     => $volgnummer,
-                        'omvang'         => $chunkSize,
-                        'uploadComplete' => true,
-                        'bestandsomvang' => $mergedSize,
-                        'uploadedParts'  => count($uploaded),
-                        'totalParts'     => $totalParts,
-                    ],
-                    statusCode: Http::STATUS_OK
-                );
-            }//end if
-
-            return new JSONResponse(
-                data: [
-                    'volgnummer'     => $volgnummer,
-                    'omvang'         => $chunkSize,
-                    'uploadComplete' => false,
-                    'uploadedParts'  => count($uploaded),
-                    'totalParts'     => $totalParts,
-                ],
-                statusCode: Http::STATUS_OK
-            );
-        } catch (\Throwable $e) {
-            $this->zgwService->getLogger()->error(
-                'DRC chunk upload error: '.$e->getMessage(),
-                ['exception' => $e]
-            );
-
-            return new JSONResponse(
-                data: ['detail' => $e->getMessage()],
-                statusCode: Http::STATUS_BAD_REQUEST
-            );
-        }//end try
+        return $this->chunkUploadHandler->uploadChunk(uuid: $uuid, request: $this->request);
     }//end uploadChunk()
 
     /**
