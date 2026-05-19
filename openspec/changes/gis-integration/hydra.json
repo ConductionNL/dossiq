@@ -1,0 +1,54 @@
+{
+  "schema_version": 2,
+  "spec_slug": "gis-integration",
+  "repo": "https://github.com/ConductionNL/procest",
+  "issue": 462,
+  "cycles": [
+    {
+      "cycle": 1,
+      "trigger": "orchestrator",
+      "started_at": "2026-05-19T02:41:13Z",
+      "ended_at": null,
+      "outcome": "in-flight",
+      "outcome_reason": null,
+      "pattern_tags": [],
+      "stages": [
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "sonnet",
+          "container": "hydra-builder",
+          "started_at": "2026-05-19T01:58:24Z",
+          "ended_at": "2026-05-19T02:41:09Z",
+          "exit_code": 0,
+          "turns_used": 369,
+          "turns_budget": 200,
+          "checks_run": [
+            "composer check:strict (phpcs)",
+            "composer test:unit (phpunit)"
+          ],
+          "checks_skipped": [],
+          "findings": [],
+          "decisions": [],
+          "verdict": "pass",
+          "duration_seconds": 2565
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "runs": 1,
+    "turns_used": 369,
+    "cost_usd": 0.0,
+    "duration_seconds": 2565,
+    "cycles": 1,
+    "by_stage": {
+      "build": {
+        "runs": 1,
+        "turns_used": 369,
+        "cost_usd": 0.0,
+        "duration_seconds": 2565
+      }
+    }
+  }
+}
