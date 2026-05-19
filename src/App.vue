@@ -3,6 +3,7 @@
 	<CnAppRoot
 		:manifest="manifest"
 		:custom-components="customComponents"
+		:registry="registry"
 		:page-types="pageTypes"
 		:formatters="formatters"
 		app-id="procest"
@@ -41,6 +42,16 @@ export default {
 			required: true,
 		},
 		customComponents: {
+			type: Object,
+			default: () => ({}),
+		},
+		/**
+		 * V2 component registry — map of registry-key → `{ kind, component }`.
+		 * Forwarded verbatim to CnAppRoot, which validates kinds at mount time.
+		 * Replaces the string-keyed customComponents prop for v2 manifests.
+		 * Both props may coexist during transition (CnAppRoot warns once).
+		 */
+		registry: {
 			type: Object,
 			default: () => ({}),
 		},

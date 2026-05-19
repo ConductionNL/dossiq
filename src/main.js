@@ -16,6 +16,7 @@ import pinia from './pinia.js'
 import App from './App.vue'
 import bundledManifest from './manifest.json'
 import customComponents from './customComponents.js'
+import registry from './registry.js'
 import mapFormatters from './services/mapFormatters.js'
 import formatters from './services/formatters.js'
 
@@ -104,6 +105,7 @@ tryLoadTranslations()
 // the values the lib resolves at render time.
 const pageTypesProp = { ...defaultPageTypes }
 const customComponentsProp = { ...customComponents }
+const registryProp = { ...registry }
 const mapFormattersProp = { ...mapFormatters }
 const formattersProp = { ...formatters }
 
@@ -120,6 +122,7 @@ new Vue({
 		props: {
 			manifest: bundledManifest,
 			customComponents: customComponentsProp,
+			registry: registryProp,
 			pageTypes: pageTypesProp,
 			mapFormatters: mapFormattersProp,
 			formatters: formattersProp,
