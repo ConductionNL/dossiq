@@ -142,6 +142,13 @@ class SettingsService
         // Outage banner copy (nl + en).
         'pdok_outage_banner_nl',
         'pdok_outage_banner_en',
+        // Zaakdossier (document-zaakdossier spec) — ZGW DRC schemas + dossier config.
+        'dossier_informatieobject_schema',
+        'dossier_zaakinformatieobject_schema',
+        'dossier_besluitinformatieobject_schema',
+        'dossier_informatieobjecttype_schema',
+        'dossier_max_file_size',
+        'dossier_subfolder_per_type',
     ];
 
     /**
@@ -210,6 +217,10 @@ class SettingsService
         'bacAdviceRequest'             => 'bac_advice_request_schema',
         'beroep'                       => 'beroep_schema',
         'bezwaarDecision'              => 'bezwaar_decision_schema',
+        'informatieobject'           => 'dossier_informatieobject_schema',
+        'zaakinformatieobject'       => 'dossier_zaakinformatieobject_schema',
+        'besluitinformatieobject'    => 'dossier_besluitinformatieobject_schema',
+        'informatieobjecttype'       => 'dossier_informatieobjecttype_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

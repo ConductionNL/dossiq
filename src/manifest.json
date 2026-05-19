@@ -109,7 +109,7 @@
 					{ "id": "overview",  "label": "Overview",    "icon": "icon-info",      "widgets": [{ "type": "data" }, { "type": "metadata" }], "order": 10 },
 					{ "id": "tasks",     "label": "Tasks",       "icon": "icon-checkmark", "component": "CaseTasksTab",                              "order": 20 },
 					{ "id": "decisions", "label": "Decisions",   "icon": "icon-toggle",    "component": "CaseDecisionsTab",                          "order": 30 },
-					{ "id": "documents", "label": "Documents",   "icon": "icon-files",     "component": "CaseDocumentsTab",                          "order": 40 },
+					{ "id": "dossier",   "label": "Dossier",    "icon": "icon-files",     "component": "DossierTab",                                "order": 40 },
 					{
 						"id": "locaties",
 						"label": "Locaties",

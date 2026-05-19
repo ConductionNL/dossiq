@@ -37,6 +37,8 @@ import PublicStatusPage from './views/public/PublicStatusPage.vue'
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
+// Zaakdossier ZGW DRC-compliant dossier tab (document-zaakdossier spec).
+import DossierTab from './views/cases/components/DossierTab.vue'
 
 // --- Visual workflow editor — TEMPORARILY UNWIRED. ---
 // `@vue-flow/{core,controls,background}` v1.x are Vue-3-only (they import
@@ -121,6 +123,7 @@ export default {
 	CaseTasksTab, // tasks where task.case === parent.id
 	CaseDecisionsTab, // decisions where decision.case === parent.id
 	CaseDocumentsTab, // documents where document.case === parent.id
+	DossierTab, // ZGW DRC-compliant dossier (document-zaakdossier spec)
 
 	// --- Visual workflow editor — temporarily unwired (see import comment above). ---
 	// VisualWorkflowEditor,

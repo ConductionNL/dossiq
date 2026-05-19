@@ -278,6 +278,24 @@ return [
         ['name' => 'lhs#recommend', 'url' => '/api/lhs/recommend', 'verb' => 'POST'],
         ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
+        // ── Zaakdossier (document-zaakdossier spec) ─────────────────────
+        // Specific action endpoints precede wildcard routes.
+        // ZGW DRC-compatible download (must precede wildcard routes).
+        ['name' => 'zaakdossier#downloadZgwDocumenten', 'url' => '/api/zaakdossier/documenten/{uuid}/download', 'verb' => 'GET'],
+        // Bulk operations.
+        ['name' => 'zaakdossier#bulkTransitionStatus', 'url' => '/api/informatieobjecten/bulk/status',    'verb' => 'POST'],
+        ['name' => 'zaakdossier#bulkUpdateMetadata',   'url' => '/api/informatieobjecten/bulk/metadata',  'verb' => 'POST'],
+        // Single-object operations (must precede list/create routes).
+        ['name' => 'zaakdossier#transitionStatus',     'url' => '/api/informatieobjecten/{infoObjectId}/status', 'verb' => 'PATCH'],
+        ['name' => 'zaakdossier#updateMetadata',       'url' => '/api/informatieobjecten/{infoObjectId}',        'verb' => 'PATCH'],
+        ['name' => 'zaakdossier#downloadFile',         'url' => '/api/objects/{register}/{schema}/{objectId}/files/{fileId}/download', 'verb' => 'GET'],
+        // Case-scoped dossier endpoints.
+        ['name' => 'zaakdossier#downloadZip',          'url' => '/api/cases/{caseId}/dossier/zip',                           'verb' => 'POST'],
+        ['name' => 'zaakdossier#linkExisting',         'url' => '/api/cases/{caseId}/dossier/{infoObjectId}/link',            'verb' => 'POST'],
+        ['name' => 'zaakdossier#unlinkDocument',       'url' => '/api/cases/{caseId}/dossier/{infoObjectId}/link',            'verb' => 'DELETE'],
+        ['name' => 'zaakdossier#uploadDocument',       'url' => '/api/cases/{caseId}/dossier',                                'verb' => 'POST'],
+        ['name' => 'zaakdossier#listDossier',          'url' => '/api/cases/{caseId}/dossier',                                'verb' => 'GET'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],

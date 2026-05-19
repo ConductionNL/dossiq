@@ -5315,6 +5315,258 @@
             "description": "Append-only audit trail for BAC-specific events (Archiefwet 1995). Complements the OpenRegister automatic per-save log."
           }
         }
+      },
+      "informatieobject": {
+        "slug": "informatieobject",
+        "icon": "FileDocumentOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:DigitalDocument",
+        "x-zgw-equivalent": "EnkelvoudigInformatieObject",
+        "title": "Informatieobject",
+        "description": "A document stored in Nextcloud Files with ZGW DRC-compliant metadata. Links to cases via zaakinformatieobject join.",
+        "type": "object",
+        "required": [
+          "titel",
+          "bestandsnaam",
+          "vertrouwelijkheidaanduiding",
+          "informatieobjecttype"
+        ],
+        "properties": {
+          "titel": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Document title"
+          },
+          "bestandsnaam": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Filename including extension"
+          },
+          "bestandsomvang": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "File size in bytes"
+          },
+          "formaat": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "MIME type (e.g. application/pdf)"
+          },
+          "vertrouwelijkheidaanduiding": {
+            "type": "string",
+            "enum": [
+              "openbaar",
+              "beperkt_openbaar",
+              "intern",
+              "zaakvertrouwelijk",
+              "vertrouwelijk",
+              "confidentieel",
+              "geheim",
+              "zeer_geheim"
+            ],
+            "description": "Confidentiality level per ZGW DRC"
+          },
+          "auteur": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Display name of the document author"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "concept",
+              "definitief",
+              "gearchiveerd"
+            ],
+            "default": "concept",
+            "description": "Document lifecycle status"
+          },
+          "informatieobjecttype": {
+            "type": "string",
+            "description": "Reference to informatieobjecttype catalog entry"
+          },
+          "creatiedatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the document was created (ISO 8601)"
+          },
+          "bronorganisatie": {
+            "type": "string",
+            "maxLength": 9,
+            "description": "RSIN of the source organization"
+          },
+          "taal": {
+            "type": "string",
+            "maxLength": 3,
+            "default": "nld",
+            "description": "ISO 639-2/B language code"
+          },
+          "beschrijving": {
+            "type": "string",
+            "description": "Optional description of the document"
+          },
+          "link": {
+            "type": "string",
+            "format": "uri",
+            "description": "Optional external URI reference"
+          },
+          "integriteit": {
+            "type": "object",
+            "properties": {
+              "algoritme": {
+                "type": "string",
+                "enum": ["sha256"],
+                "default": "sha256",
+                "description": "Hash algorithm (always sha256)"
+              },
+              "waarde": {
+                "type": "string",
+                "maxLength": 64,
+                "description": "SHA-256 hex digest of the file"
+              }
+            },
+            "description": "Integrity hash of the stored file"
+          },
+          "vergrendeldOp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when document was locked (status -> definitief)"
+          },
+          "fileId": {
+            "type": "integer",
+            "description": "Nextcloud file node ID"
+          }
+        }
+      },
+      "zaakinformatieobject": {
+        "slug": "zaakinformatieobject",
+        "icon": "LinkVariant",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Relationship",
+        "x-zgw-equivalent": "ZaakInformatieObject",
+        "title": "Zaak-Informatieobject koppeling",
+        "description": "Join entity linking a case (zaak) to an informatieobject. Follows ZGW DRC model allowing one document to be linked to multiple cases without duplication.",
+        "type": "object",
+        "required": [
+          "zaak",
+          "informatieobject"
+        ],
+        "properties": {
+          "zaak": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "description": "Reference to the case"
+          },
+          "informatieobject": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "informatieobject",
+            "description": "Reference to the informatieobject"
+          },
+          "aardRelatieWeergave": {
+            "type": "string",
+            "enum": [
+              "Hoort bij, omgekeerd",
+              "Legt vast, omgekeerd"
+            ],
+            "description": "ZGW relation type display label"
+          },
+          "registratiedatum": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when this link was registered"
+          }
+        }
+      },
+      "besluitinformatieobject": {
+        "slug": "besluitinformatieobject",
+        "icon": "LinkVariant",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Relationship",
+        "x-zgw-equivalent": "BesluitInformatieObject",
+        "title": "Besluit-Informatieobject koppeling",
+        "description": "Join entity linking a besluit to an informatieobject. Analogous to zaakinformatieobject for decision documents.",
+        "type": "object",
+        "required": [
+          "besluit",
+          "informatieobject"
+        ],
+        "properties": {
+          "besluit": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "decision",
+            "onDelete": "CASCADE",
+            "description": "Reference to the besluit"
+          },
+          "informatieobject": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "informatieobject",
+            "description": "Reference to the informatieobject"
+          },
+          "registratiedatum": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when this link was registered"
+          }
+        }
+      },
+      "informatieobjecttype": {
+        "slug": "informatieobjecttype",
+        "icon": "TagOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:DefinedTerm",
+        "x-zgw-equivalent": "InformatieObjectType",
+        "title": "Informatieobjecttype",
+        "description": "Catalog entry defining a document type (e.g. Advies, Beschikking). Determines default vertrouwelijkheidaanduiding and applicable schemas.",
+        "type": "object",
+        "required": [
+          "omschrijving"
+        ],
+        "properties": {
+          "omschrijving": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Human-readable type name (e.g. Advies)"
+          },
+          "informatieobjectcategorie": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Grouping category for this type"
+          },
+          "vertrouwelijkheidaanduiding": {
+            "type": "string",
+            "enum": [
+              "openbaar",
+              "beperkt_openbaar",
+              "intern",
+              "zaakvertrouwelijk",
+              "vertrouwelijk",
+              "confidentieel",
+              "geheim",
+              "zeer_geheim"
+            ],
+            "default": "intern",
+            "description": "Default classification level for documents of this type"
+          },
+          "schema": {
+            "type": "string",
+            "description": "Schema slug this informatieobjecttype applies to (e.g. case)"
+          },
+          "beginGeldigheid": {
+            "type": "string",
+            "format": "date",
+            "description": "Start date of validity period"
+          },
+          "eindeGeldigheid": {
+            "type": "string",
+            "format": "date",
+            "description": "End date of validity period (null = indefinite)"
+          }
+        }
       }
     },
     "registers": {
@@ -5371,7 +5623,11 @@
           "adviesAanvraag",
           "legesverordening",
           "legesartikel",
-          "legesberekening"
+          "legesberekening",
+          "informatieobject",
+          "zaakinformatieobject",
+          "besluitinformatieobject",
+          "informatieobjecttype"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"
@@ -6068,6 +6324,54 @@
         "status": "aangevraagd",
         "requestedAt": "2026-04-14T11:00:00+02:00",
         "questions": "Voldoet het vluchtrouteplan aan de eisen uit het Bouwbesluit 2012, art. 2.113 e.v.?"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "informatieobjecttype",
+          "slug": "iot-aanvraag"
+        },
+        "omschrijving": "Aanvraagformulier",
+        "informatieobjectcategorie": "Intake",
+        "vertrouwelijkheidaanduiding": "intern",
+        "schema": "case",
+        "beginGeldigheid": "2020-01-01"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "informatieobjecttype",
+          "slug": "iot-besluit"
+        },
+        "omschrijving": "Besluit",
+        "informatieobjectcategorie": "Besluitvorming",
+        "vertrouwelijkheidaanduiding": "openbaar",
+        "schema": "case",
+        "beginGeldigheid": "2020-01-01"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "informatieobjecttype",
+          "slug": "iot-advies"
+        },
+        "omschrijving": "Advies",
+        "informatieobjectcategorie": "Advisering",
+        "vertrouwelijkheidaanduiding": "intern",
+        "schema": "case",
+        "beginGeldigheid": "2020-01-01"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "informatieobjecttype",
+          "slug": "iot-correspondentie"
+        },
+        "omschrijving": "Correspondentie",
+        "informatieobjectcategorie": "Communicatie",
+        "vertrouwelijkheidaanduiding": "intern",
+        "schema": "case",
+        "beginGeldigheid": "2020-01-01"
       }
     ]
   }
