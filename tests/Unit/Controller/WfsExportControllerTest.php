@@ -16,6 +16,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/gis-integration/tasks.md#task-21
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -67,7 +70,6 @@ class WfsExportControllerTest extends TestCase
      */
     private WfsExportController $controller;
 
-
     /**
      * Set up test fixtures.
      *
@@ -75,11 +77,11 @@ class WfsExportControllerTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->request          = $this->createMock(IRequest::class);
-        $this->wfsExportService = $this->createMock(WfsExportService::class);
-        $this->userSession      = $this->createMock(IUserSession::class);
+        $this->request          = $this->createMock(originalClassName: IRequest::class);
+        $this->wfsExportService = $this->createMock(originalClassName: WfsExportService::class);
+        $this->userSession      = $this->createMock(originalClassName: IUserSession::class);
 
-        $mockUser = $this->createMock(IUser::class);
+        $mockUser = $this->createMock(originalClassName: IUser::class);
         $this->userSession->method('getUser')->willReturn($mockUser);
 
         $this->controller = new WfsExportController(
@@ -91,7 +93,6 @@ class WfsExportControllerTest extends TestCase
 
     }//end setUp()
 
-
     /**
      * Test that getFeatures() returns 200 with a GeoJSON FeatureCollection.
      *
@@ -101,14 +102,16 @@ class WfsExportControllerTest extends TestCase
     {
         $this->request
             ->method('getParam')
-            ->willReturnMap([
-                ['typeName', WfsExportService::TYPE_NAME_CASES, WfsExportService::TYPE_NAME_CASES],
-                ['outputFormat', 'application/json', 'application/json'],
-                ['maxFeatures', WfsExportService::DEFAULT_MAX_FEATURES, 500],
-                ['bbox', null, null],
-                ['status', null, null],
-                ['caseType', null, null],
-            ]);
+            ->willReturnMap(
+                    [
+                        ['typeName', WfsExportService::TYPE_NAME_CASES, WfsExportService::TYPE_NAME_CASES],
+                        ['outputFormat', 'application/json', 'application/json'],
+                        ['maxFeatures', WfsExportService::DEFAULT_MAX_FEATURES, 500],
+                        ['bbox', null, null],
+                        ['status', null, null],
+                        ['caseType', null, null],
+                    ]
+                    );
 
         $featureCollection = [
             'type'     => 'FeatureCollection',
@@ -124,13 +127,12 @@ class WfsExportControllerTest extends TestCase
 
         $response = $this->controller->getFeatures();
 
-        $this->assertInstanceOf(JSONResponse::class, $response);
-        $this->assertSame(200, $response->getStatus());
+        $this->assertInstanceOf(expected: JSONResponse::class, actual: $response);
+        $this->assertSame(expected: 200, actual: $response->getStatus());
         $data = $response->getData();
-        $this->assertSame('FeatureCollection', $data['type']);
+        $this->assertSame(expected: 'FeatureCollection', actual: $data['type']);
 
     }//end testGetFeaturesReturnsFeatureCollection()
-
 
     /**
      * Test that getFeatures() throws OCSForbiddenException when user is null.
@@ -139,7 +141,7 @@ class WfsExportControllerTest extends TestCase
      */
     public function testGetFeaturesThrowsWhenUserIsNull(): void
     {
-        $this->userSession = $this->createMock(IUserSession::class);
+        $this->userSession = $this->createMock(originalClassName: IUserSession::class);
         $this->userSession->method('getUser')->willReturn(null);
 
         $controller = new WfsExportController(
@@ -149,12 +151,11 @@ class WfsExportControllerTest extends TestCase
             userSession: $this->userSession,
         );
 
-        $this->expectException(OCSForbiddenException::class);
+        $this->expectException(exception: OCSForbiddenException::class);
 
         $controller->getFeatures();
 
     }//end testGetFeaturesThrowsWhenUserIsNull()
-
 
     /**
      * Test that getFeatures() returns 400 for unsupported typeName.
@@ -165,14 +166,16 @@ class WfsExportControllerTest extends TestCase
     {
         $this->request
             ->method('getParam')
-            ->willReturnMap([
-                ['typeName', WfsExportService::TYPE_NAME_CASES, 'unknown:type'],
-                ['outputFormat', 'application/json', 'application/json'],
-                ['maxFeatures', WfsExportService::DEFAULT_MAX_FEATURES, 500],
-                ['bbox', null, null],
-                ['status', null, null],
-                ['caseType', null, null],
-            ]);
+            ->willReturnMap(
+                    [
+                        ['typeName', WfsExportService::TYPE_NAME_CASES, 'unknown:type'],
+                        ['outputFormat', 'application/json', 'application/json'],
+                        ['maxFeatures', WfsExportService::DEFAULT_MAX_FEATURES, 500],
+                        ['bbox', null, null],
+                        ['status', null, null],
+                        ['caseType', null, null],
+                    ]
+                    );
 
         $this->wfsExportService
             ->expects($this->never())
@@ -180,11 +183,10 @@ class WfsExportControllerTest extends TestCase
 
         $response = $this->controller->getFeatures();
 
-        $this->assertInstanceOf(JSONResponse::class, $response);
-        $this->assertSame(400, $response->getStatus());
+        $this->assertInstanceOf(expected: JSONResponse::class, actual: $response);
+        $this->assertSame(expected: 400, actual: $response->getStatus());
 
     }//end testGetFeaturesReturnsBadRequestForUnknownTypeName()
-
 
     /**
      * Test that getFeatures() returns 400 for unsupported outputFormat.
@@ -195,14 +197,16 @@ class WfsExportControllerTest extends TestCase
     {
         $this->request
             ->method('getParam')
-            ->willReturnMap([
-                ['typeName', WfsExportService::TYPE_NAME_CASES, WfsExportService::TYPE_NAME_CASES],
-                ['outputFormat', 'application/json', 'text/xml'],
-                ['maxFeatures', WfsExportService::DEFAULT_MAX_FEATURES, 500],
-                ['bbox', null, null],
-                ['status', null, null],
-                ['caseType', null, null],
-            ]);
+            ->willReturnMap(
+                    [
+                        ['typeName', WfsExportService::TYPE_NAME_CASES, WfsExportService::TYPE_NAME_CASES],
+                        ['outputFormat', 'application/json', 'text/xml'],
+                        ['maxFeatures', WfsExportService::DEFAULT_MAX_FEATURES, 500],
+                        ['bbox', null, null],
+                        ['status', null, null],
+                        ['caseType', null, null],
+                    ]
+                    );
 
         $this->wfsExportService
             ->expects($this->never())
@@ -210,11 +214,10 @@ class WfsExportControllerTest extends TestCase
 
         $response = $this->controller->getFeatures();
 
-        $this->assertInstanceOf(JSONResponse::class, $response);
-        $this->assertSame(400, $response->getStatus());
+        $this->assertInstanceOf(expected: JSONResponse::class, actual: $response);
+        $this->assertSame(expected: 400, actual: $response->getStatus());
 
     }//end testGetFeaturesReturnsBadRequestForUnsupportedFormat()
-
 
     /**
      * Test that getFeatures() parses bbox parameter and passes it as array.
@@ -225,14 +228,16 @@ class WfsExportControllerTest extends TestCase
     {
         $this->request
             ->method('getParam')
-            ->willReturnMap([
-                ['typeName', WfsExportService::TYPE_NAME_CASES, WfsExportService::TYPE_NAME_CASES],
-                ['outputFormat', 'application/json', 'application/json'],
-                ['maxFeatures', WfsExportService::DEFAULT_MAX_FEATURES, 100],
-                ['bbox', null, '4.5,52.0,5.5,53.0'],
-                ['status', null, 'open'],
-                ['caseType', null, null],
-            ]);
+            ->willReturnMap(
+                    [
+                        ['typeName', WfsExportService::TYPE_NAME_CASES, WfsExportService::TYPE_NAME_CASES],
+                        ['outputFormat', 'application/json', 'application/json'],
+                        ['maxFeatures', WfsExportService::DEFAULT_MAX_FEATURES, 100],
+                        ['bbox', null, '4.5,52.0,5.5,53.0'],
+                        ['status', null, 'open'],
+                        ['caseType', null, null],
+                    ]
+                    );
 
         $this->wfsExportService
             ->expects($this->once())
@@ -242,10 +247,9 @@ class WfsExportControllerTest extends TestCase
 
         $response = $this->controller->getFeatures();
 
-        $this->assertSame(200, $response->getStatus());
+        $this->assertSame(expected: 200, actual: $response->getStatus());
 
     }//end testGetFeaturesParsesBboxParameter()
-
 
     /**
      * Test that getCapabilities() returns 200 with WFS capabilities descriptor.
@@ -274,13 +278,12 @@ class WfsExportControllerTest extends TestCase
 
         $response = $this->controller->getCapabilities();
 
-        $this->assertInstanceOf(JSONResponse::class, $response);
-        $this->assertSame(200, $response->getStatus());
+        $this->assertInstanceOf(expected: JSONResponse::class, actual: $response);
+        $this->assertSame(expected: 200, actual: $response->getStatus());
         $data = $response->getData();
-        $this->assertSame('2.0.0', $data['version']);
+        $this->assertSame(expected: '2.0.0', actual: $data['version']);
 
     }//end testGetCapabilitiesReturnsDescriptor()
-
 
     /**
      * Test that getCapabilities() throws OCSForbiddenException when user is null.
@@ -289,7 +292,7 @@ class WfsExportControllerTest extends TestCase
      */
     public function testGetCapabilitiesThrowsWhenUserIsNull(): void
     {
-        $this->userSession = $this->createMock(IUserSession::class);
+        $this->userSession = $this->createMock(originalClassName: IUserSession::class);
         $this->userSession->method('getUser')->willReturn(null);
 
         $controller = new WfsExportController(
@@ -299,11 +302,9 @@ class WfsExportControllerTest extends TestCase
             userSession: $this->userSession,
         );
 
-        $this->expectException(OCSForbiddenException::class);
+        $this->expectException(exception: OCSForbiddenException::class);
 
         $controller->getCapabilities();
 
     }//end testGetCapabilitiesThrowsWhenUserIsNull()
-
-
 }//end class

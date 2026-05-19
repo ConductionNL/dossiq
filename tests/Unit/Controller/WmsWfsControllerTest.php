@@ -16,6 +16,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/gis-integration/tasks.md#task-24
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -57,7 +60,6 @@ class WmsWfsControllerTest extends TestCase
      */
     private WmsWfsController $controller;
 
-
     /**
      * Set up test fixtures.
      *
@@ -65,8 +67,8 @@ class WmsWfsControllerTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->request       = $this->createMock(IRequest::class);
-        $this->wmsWfsService = $this->createMock(WmsWfsService::class);
+        $this->request       = $this->createMock(originalClassName: IRequest::class);
+        $this->wmsWfsService = $this->createMock(originalClassName: WmsWfsService::class);
 
         $this->controller = new WmsWfsController(
             appName: 'procest',
@@ -75,7 +77,6 @@ class WmsWfsControllerTest extends TestCase
         );
 
     }//end setUp()
-
 
     /**
      * Test that proxy() returns 400 when layerId is missing.
@@ -90,11 +91,10 @@ class WmsWfsControllerTest extends TestCase
 
         $response = $this->controller->proxy();
 
-        $this->assertInstanceOf(JSONResponse::class, $response);
-        $this->assertSame(400, $response->getStatus());
+        $this->assertInstanceOf(expected: JSONResponse::class, actual: $response);
+        $this->assertSame(expected: 400, actual: $response->getStatus());
 
     }//end testProxyReturnsBadRequestWhenLayerIdMissing()
-
 
     /**
      * Test that proxy() returns 404 when the layer is not found.
@@ -115,11 +115,10 @@ class WmsWfsControllerTest extends TestCase
 
         $response = $this->controller->proxy();
 
-        $this->assertInstanceOf(JSONResponse::class, $response);
-        $this->assertSame(404, $response->getStatus());
+        $this->assertInstanceOf(expected: JSONResponse::class, actual: $response);
+        $this->assertSame(expected: 404, actual: $response->getStatus());
 
     }//end testProxyReturnsNotFoundWhenLayerDoesNotExist()
-
 
     /**
      * Test that proxy() returns 200 with proxied data on success.
@@ -153,11 +152,10 @@ class WmsWfsControllerTest extends TestCase
 
         $response = $this->controller->proxy();
 
-        $this->assertInstanceOf(JSONResponse::class, $response);
-        $this->assertSame(200, $response->getStatus());
+        $this->assertInstanceOf(expected: JSONResponse::class, actual: $response);
+        $this->assertSame(expected: 200, actual: $response->getStatus());
 
     }//end testProxyReturnsSuccessWithProxiedData()
-
 
     /**
      * Test that proxy() returns 502 when the WmsWfsService throws a RuntimeException.
@@ -187,11 +185,10 @@ class WmsWfsControllerTest extends TestCase
 
         $response = $this->controller->proxy();
 
-        $this->assertInstanceOf(JSONResponse::class, $response);
-        $this->assertSame(502, $response->getStatus());
+        $this->assertInstanceOf(expected: JSONResponse::class, actual: $response);
+        $this->assertSame(expected: 502, actual: $response->getStatus());
 
     }//end testProxyReturnsBadGatewayOnServiceException()
-
 
     /**
      * Test that proxy() excludes the layerId param when forwarding to WmsWfsService.
@@ -219,20 +216,20 @@ class WmsWfsControllerTest extends TestCase
             ->method('proxyRequest')
             ->with(
                 $layer,
-                $this->callback(function (array $params): bool {
-                    // layerId must NOT be in the forwarded params.
-                    return isset($params['request']) === true
-                        && isset($params['typeName']) === true
-                        && isset($params['layerId']) === false;
-                })
+                $this->callback(
+                        callback: function (array $params): bool {
+                            // LayerId must NOT be in the forwarded params.
+                            return isset($params['request']) === true
+                            && isset($params['typeName']) === true
+                            && isset($params['layerId']) === false;
+                        }
+                        )
             )
             ->willReturn(['features' => []]);
 
         $response = $this->controller->proxy();
 
-        $this->assertSame(200, $response->getStatus());
+        $this->assertSame(expected: 200, actual: $response->getStatus());
 
     }//end testProxyExcludesLayerIdFromForwardedParams()
-
-
 }//end class

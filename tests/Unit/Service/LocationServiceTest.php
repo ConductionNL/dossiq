@@ -16,6 +16,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/gis-integration/tasks.md#task-23
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -27,6 +30,30 @@ use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+
+/**
+ * Minimal ObjectService shape used by LocationService.
+ *
+ * Declares the positional signature used in production so that
+ * `createMock(LocationObjectServiceStub::class)` returns a configurable stub.
+ * A `getMockBuilder(\stdClass::class)->addMethods([...])` stub throws
+ * "Unknown named parameter" on named-arg calls in PHPUnit 10.
+ */
+interface LocationObjectServiceStub
+{
+    /**
+     * Find objects in the given register/schema.
+     *
+     * @param string $register The register name
+     * @param string $schema   The schema name
+     * @param array  $filters  Filter criteria
+     * @param array  $options  Additional options
+     * @param int    $limit    Maximum results
+     *
+     * @return array<mixed>
+     */
+    public function findObjects(string $register, string $schema, array $filters, array $options=[], int $limit=500): array;
+}//end interface
 
 /**
  * Unit tests for LocationService.
@@ -64,7 +91,6 @@ class LocationServiceTest extends TestCase
      */
     private LocationService $service;
 
-
     /**
      * Set up test fixtures.
      *
@@ -72,9 +98,9 @@ class LocationServiceTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->settingsService = $this->createMock(SettingsService::class);
-        $this->container       = $this->createMock(ContainerInterface::class);
-        $this->logger          = $this->createMock(LoggerInterface::class);
+        $this->settingsService = $this->createMock(originalClassName: SettingsService::class);
+        $this->container       = $this->createMock(originalClassName: ContainerInterface::class);
+        $this->logger          = $this->createMock(originalClassName: LoggerInterface::class);
 
         $this->service = new LocationService(
             settingsService: $this->settingsService,
@@ -84,7 +110,6 @@ class LocationServiceTest extends TestCase
 
     }//end setUp()
 
-
     /**
      * Test that validate() returns an error when source is missing.
      *
@@ -92,16 +117,17 @@ class LocationServiceTest extends TestCase
      */
     public function testValidateReturnsMissingSourceError(): void
     {
-        $errors = $this->service->validate([
-            'case'      => 'case-uuid',
-            'latitude'  => 52.3,
-            'longitude' => 4.9,
-        ]);
+        $errors = $this->service->validate(
+                [
+                    'case'      => 'case-uuid',
+                    'latitude'  => 52.3,
+                    'longitude' => 4.9,
+                ]
+                );
 
-        $this->assertContains('source.required', $errors);
+        $this->assertContains(needle: 'source.required', haystack: $errors);
 
     }//end testValidateReturnsMissingSourceError()
-
 
     /**
      * Test that validate() returns an error for an invalid source value.
@@ -110,17 +136,18 @@ class LocationServiceTest extends TestCase
      */
     public function testValidateReturnsInvalidSourceError(): void
     {
-        $errors = $this->service->validate([
-            'case'      => 'case-uuid',
-            'source'    => 'invalid-source',
-            'latitude'  => 52.3,
-            'longitude' => 4.9,
-        ]);
+        $errors = $this->service->validate(
+                [
+                    'case'      => 'case-uuid',
+                    'source'    => 'invalid-source',
+                    'latitude'  => 52.3,
+                    'longitude' => 4.9,
+                ]
+                );
 
-        $this->assertContains('source.invalid', $errors);
+        $this->assertContains(needle: 'source.invalid', haystack: $errors);
 
     }//end testValidateReturnsInvalidSourceError()
-
 
     /**
      * Test that validate() returns error when case UUID is missing.
@@ -129,17 +156,18 @@ class LocationServiceTest extends TestCase
      */
     public function testValidateReturnsMissingCaseError(): void
     {
-        $errors = $this->service->validate([
-            'source'    => 'gps',
-            'latitude'  => 52.3,
-            'longitude' => 4.9,
-            'accuracyRadius' => 5,
-        ]);
+        $errors = $this->service->validate(
+                [
+                    'source'         => 'gps',
+                    'latitude'       => 52.3,
+                    'longitude'      => 4.9,
+                    'accuracyRadius' => 5,
+                ]
+                );
 
-        $this->assertContains('case.required', $errors);
+        $this->assertContains(needle: 'case.required', haystack: $errors);
 
     }//end testValidateReturnsMissingCaseError()
-
 
     /**
      * Test that validate() requires nummeraanduidingId for source=bag.
@@ -148,17 +176,18 @@ class LocationServiceTest extends TestCase
      */
     public function testValidateRequiresNummeraanduidingIdForBagSource(): void
     {
-        $errors = $this->service->validate([
-            'case'      => 'case-uuid',
-            'source'    => 'bag',
-            'latitude'  => 52.3,
-            'longitude' => 4.9,
-        ]);
+        $errors = $this->service->validate(
+                [
+                    'case'      => 'case-uuid',
+                    'source'    => 'bag',
+                    'latitude'  => 52.3,
+                    'longitude' => 4.9,
+                ]
+                );
 
-        $this->assertContains('nummeraanduidingId.required', $errors);
+        $this->assertContains(needle: 'nummeraanduidingId.required', haystack: $errors);
 
     }//end testValidateRequiresNummeraanduidingIdForBagSource()
-
 
     /**
      * Test that validate() returns no errors for a valid BAG payload.
@@ -167,18 +196,19 @@ class LocationServiceTest extends TestCase
      */
     public function testValidatePassesForValidBagPayload(): void
     {
-        $errors = $this->service->validate([
-            'case'                => 'case-uuid',
-            'source'              => 'bag',
-            'nummeraanduidingId'  => '0363200003761521',
-            'latitude'            => 52.3,
-            'longitude'           => 4.9,
-        ]);
+        $errors = $this->service->validate(
+                [
+                    'case'               => 'case-uuid',
+                    'source'             => 'bag',
+                    'nummeraanduidingId' => '0363200003761521',
+                    'latitude'           => 52.3,
+                    'longitude'          => 4.9,
+                ]
+                );
 
-        $this->assertEmpty($errors);
+        $this->assertEmpty(actual: $errors);
 
     }//end testValidatePassesForValidBagPayload()
-
 
     /**
      * Test that validate() returns error for GPS source without accuracyRadius.
@@ -187,17 +217,18 @@ class LocationServiceTest extends TestCase
      */
     public function testValidateRequiresAccuracyRadiusForGpsSource(): void
     {
-        $errors = $this->service->validate([
-            'case'      => 'case-uuid',
-            'source'    => 'gps',
-            'latitude'  => 52.3,
-            'longitude' => 4.9,
-        ]);
+        $errors = $this->service->validate(
+                [
+                    'case'      => 'case-uuid',
+                    'source'    => 'gps',
+                    'latitude'  => 52.3,
+                    'longitude' => 4.9,
+                ]
+                );
 
-        $this->assertContains('accuracyRadius.required', $errors);
+        $this->assertContains(needle: 'accuracyRadius.required', haystack: $errors);
 
     }//end testValidateRequiresAccuracyRadiusForGpsSource()
-
 
     /**
      * Test that validate() returns no errors for a valid GPS payload.
@@ -206,18 +237,19 @@ class LocationServiceTest extends TestCase
      */
     public function testValidatePassesForValidGpsPayload(): void
     {
-        $errors = $this->service->validate([
-            'case'           => 'case-uuid',
-            'source'         => 'gps',
-            'latitude'       => 52.3,
-            'longitude'      => 4.9,
-            'accuracyRadius' => 5,
-        ]);
+        $errors = $this->service->validate(
+                [
+                    'case'           => 'case-uuid',
+                    'source'         => 'gps',
+                    'latitude'       => 52.3,
+                    'longitude'      => 4.9,
+                    'accuracyRadius' => 5,
+                ]
+                );
 
-        $this->assertEmpty($errors);
+        $this->assertEmpty(actual: $errors);
 
     }//end testValidatePassesForValidGpsPayload()
-
 
     /**
      * Test that validate() requires address OR coordinates for source=free.
@@ -226,16 +258,17 @@ class LocationServiceTest extends TestCase
      */
     public function testValidateRequiresAddressOrCoordsForFreeSource(): void
     {
-        $errors = $this->service->validate([
-            'case'   => 'case-uuid',
-            'source' => 'free',
-            'label'  => 'Some field',
-        ]);
+        $errors = $this->service->validate(
+                [
+                    'case'   => 'case-uuid',
+                    'source' => 'free',
+                    'label'  => 'Some field',
+                ]
+                );
 
-        $this->assertContains('formattedAddress-or-coordinates.required', $errors);
+        $this->assertContains(needle: 'formattedAddress-or-coordinates.required', haystack: $errors);
 
     }//end testValidateRequiresAddressOrCoordsForFreeSource()
-
 
     /**
      * Test that validate() passes for a free source with coordinates only.
@@ -244,17 +277,18 @@ class LocationServiceTest extends TestCase
      */
     public function testValidatePassesForFreeSourceWithCoordinatesOnly(): void
     {
-        $errors = $this->service->validate([
-            'case'      => 'case-uuid',
-            'source'    => 'free',
-            'latitude'  => 52.0,
-            'longitude' => 5.0,
-        ]);
+        $errors = $this->service->validate(
+                [
+                    'case'      => 'case-uuid',
+                    'source'    => 'free',
+                    'latitude'  => 52.0,
+                    'longitude' => 5.0,
+                ]
+                );
 
-        $this->assertEmpty($errors);
+        $this->assertEmpty(actual: $errors);
 
     }//end testValidatePassesForFreeSourceWithCoordinatesOnly()
-
 
     /**
      * Test that reverseGeocode() returns null for out-of-range latitude.
@@ -265,10 +299,9 @@ class LocationServiceTest extends TestCase
     {
         $result = $this->service->reverseGeocode(latitude: 200.0, longitude: 4.9);
 
-        $this->assertNull($result);
+        $this->assertNull(actual: $result);
 
     }//end testReverseGeocodeReturnsNullForInvalidLatitude()
-
 
     /**
      * Test that reverseGeocode() returns null when PDOK service is unavailable.
@@ -283,10 +316,9 @@ class LocationServiceTest extends TestCase
 
         $result = $this->service->reverseGeocode(latitude: 52.3, longitude: 4.9);
 
-        $this->assertNull($result);
+        $this->assertNull(actual: $result);
 
     }//end testReverseGeocodeReturnsNullWhenPdokUnavailable()
-
 
     /**
      * Test that attachToCase() throws RuntimeException when caseId is empty.
@@ -295,12 +327,11 @@ class LocationServiceTest extends TestCase
      */
     public function testAttachToCaseThrowsForEmptyCaseId(): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(exception: \RuntimeException::class);
 
         $this->service->attachToCase(caseId: '', location: []);
 
     }//end testAttachToCaseThrowsForEmptyCaseId()
-
 
     /**
      * Test that attachToCase() throws RuntimeException when validation fails.
@@ -309,14 +340,13 @@ class LocationServiceTest extends TestCase
      */
     public function testAttachToCaseThrowsWhenValidationFails(): void
     {
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessageMatches('/validation/');
+        $this->expectException(exception: \RuntimeException::class);
+        $this->expectExceptionMessageMatches(regularExpression: '/validation/');
 
         // Missing source and coordinates — validation should fail.
         $this->service->attachToCase(caseId: 'case-uuid', location: ['label' => 'no data']);
 
     }//end testAttachToCaseThrowsWhenValidationFails()
-
 
     /**
      * Test that attachToCase() throws RuntimeException when ObjectService is unavailable.
@@ -329,21 +359,20 @@ class LocationServiceTest extends TestCase
             ->method('getObjectService')
             ->willReturn(null);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessageMatches('/OpenRegister/');
+        $this->expectException(exception: \RuntimeException::class);
+        $this->expectExceptionMessageMatches(regularExpression: '/OpenRegister/');
 
         $this->service->attachToCase(
             caseId: 'case-uuid',
             location: [
-                'source'    => 'gps',
-                'latitude'  => 52.3,
-                'longitude' => 4.9,
+                'source'         => 'gps',
+                'latitude'       => 52.3,
+                'longitude'      => 4.9,
                 'accuracyRadius' => 5,
             ]
         );
 
     }//end testAttachToCaseThrowsWhenObjectServiceUnavailable()
-
 
     /**
      * Test that listForCase() returns an empty array when ObjectService is unavailable.
@@ -358,10 +387,9 @@ class LocationServiceTest extends TestCase
 
         $result = $this->service->listForCase(caseId: 'case-uuid');
 
-        $this->assertSame([], $result);
+        $this->assertSame(expected: [], actual: $result);
 
     }//end testListForCaseReturnsEmptyArrayWhenObjectServiceUnavailable()
-
 
     /**
      * Test that listForCase() returns location records from ObjectService.
@@ -370,7 +398,7 @@ class LocationServiceTest extends TestCase
      */
     public function testListForCaseReturnsLocationsFromObjectService(): void
     {
-        $mockObjectService = $this->createMock(\stdClass::class);
+        $mockObjectService = $this->createMock(originalClassName: LocationObjectServiceStub::class);
 
         $expectedLocations = [
             ['id' => 'loc-1', 'case' => 'case-uuid', 'latitude' => 52.3, 'longitude' => 4.9],
@@ -382,16 +410,16 @@ class LocationServiceTest extends TestCase
             ->willReturn($expectedLocations);
 
         $this->settingsService->method('getObjectService')->willReturn($mockObjectService);
-        $this->settingsService->method('getConfigValue')->willReturnMap([
-            ['register', 'procest'],
-            ['location_schema', 'location'],
-        ]);
+        $this->settingsService->method('getConfigValue')->willReturnMap(
+                [
+                    ['register', 'procest'],
+                    ['location_schema', 'location'],
+                ]
+                );
 
         $result = $this->service->listForCase(caseId: 'case-uuid');
 
-        $this->assertSame($expectedLocations, $result);
+        $this->assertSame(expected: $expectedLocations, actual: $result);
 
     }//end testListForCaseReturnsLocationsFromObjectService()
-
-
 }//end class

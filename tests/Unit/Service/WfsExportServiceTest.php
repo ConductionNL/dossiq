@@ -16,6 +16,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/gis-integration/tasks.md#task-22
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -26,6 +29,28 @@ use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\WfsExportService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+
+/**
+ * Minimal ObjectService shape used by WfsExportService.
+ *
+ * Declares the positional signature used in production so that
+ * `createMock(WfsObjectServiceStub::class)` returns a configurable stub.
+ * A `getMockBuilder(\stdClass::class)->addMethods([...])` stub throws
+ * "Unknown named parameter" on named-arg calls in PHPUnit 10.
+ */
+interface WfsObjectServiceStub
+{
+    /**
+     * Find objects in the given register/schema.
+     *
+     * @param string $register The register name
+     * @param string $schema   The schema name
+     * @param array  $params   Query parameters
+     *
+     * @return array<mixed>
+     */
+    public function findObjects(string $register, string $schema, array $params): array;
+}//end interface
 
 /**
  * Unit tests for WfsExportService.
@@ -56,7 +81,6 @@ class WfsExportServiceTest extends TestCase
      */
     private WfsExportService $service;
 
-
     /**
      * Set up test fixtures.
      *
@@ -64,8 +88,8 @@ class WfsExportServiceTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->settingsService = $this->createMock(SettingsService::class);
-        $this->logger          = $this->createMock(LoggerInterface::class);
+        $this->settingsService = $this->createMock(originalClassName: SettingsService::class);
+        $this->logger          = $this->createMock(originalClassName: LoggerInterface::class);
 
         $this->service = new WfsExportService(
             settingsService: $this->settingsService,
@@ -73,7 +97,6 @@ class WfsExportServiceTest extends TestCase
         );
 
     }//end setUp()
-
 
     /**
      * Test that buildFeatureCollection() returns empty features when ObjectService unavailable.
@@ -88,11 +111,10 @@ class WfsExportServiceTest extends TestCase
 
         $result = $this->service->buildFeatureCollection();
 
-        $this->assertSame('FeatureCollection', $result['type']);
-        $this->assertSame([], $result['features']);
+        $this->assertSame(expected: 'FeatureCollection', actual: $result['type']);
+        $this->assertSame(expected: [], actual: $result['features']);
 
     }//end testBuildFeatureCollectionReturnsEmptyWhenObjectServiceUnavailable()
-
 
     /**
      * Test that buildFeatureCollection() converts location records to GeoJSON features.
@@ -101,7 +123,7 @@ class WfsExportServiceTest extends TestCase
      */
     public function testBuildFeatureCollectionConvertsLocationsToFeatures(): void
     {
-        $mockObjectService = $this->createMock(\stdClass::class);
+        $mockObjectService = $this->createMock(originalClassName: WfsObjectServiceStub::class);
 
         $locations = [
             [
@@ -126,25 +148,26 @@ class WfsExportServiceTest extends TestCase
             ->willReturn($mockObjectService);
         $this->settingsService
             ->method('getConfigValue')
-            ->willReturnMap([
-                ['register', 'procest'],
-                ['location_schema', 'location'],
-            ]);
+            ->willReturnMap(
+                    [
+                        ['register', 'procest'],
+                        ['location_schema', 'location'],
+                    ]
+                    );
 
         $result = $this->service->buildFeatureCollection();
 
-        $this->assertSame('FeatureCollection', $result['type']);
-        $this->assertCount(1, $result['features']);
+        $this->assertSame(expected: 'FeatureCollection', actual: $result['type']);
+        $this->assertCount(expectedCount: 1, haystack: $result['features']);
 
         $feature = $result['features'][0];
-        $this->assertSame('Feature', $feature['type']);
-        $this->assertSame('Point', $feature['geometry']['type']);
-        $this->assertSame([4.9, 52.3], $feature['geometry']['coordinates']);
-        $this->assertSame('Test Case', $feature['properties']['caseTitle']);
-        $this->assertSame('open', $feature['properties']['caseStatus']);
+        $this->assertSame(expected: 'Feature', actual: $feature['type']);
+        $this->assertSame(expected: 'Point', actual: $feature['geometry']['type']);
+        $this->assertSame(expected: [4.9, 52.3], actual: $feature['geometry']['coordinates']);
+        $this->assertSame(expected: 'Test Case', actual: $feature['properties']['caseTitle']);
+        $this->assertSame(expected: 'open', actual: $feature['properties']['caseStatus']);
 
     }//end testBuildFeatureCollectionConvertsLocationsToFeatures()
-
 
     /**
      * Test that buildFeatureCollection() skips locations without coordinates.
@@ -153,20 +176,20 @@ class WfsExportServiceTest extends TestCase
      */
     public function testBuildFeatureCollectionSkipsLocationsWithoutCoordinates(): void
     {
-        $mockObjectService = $this->createMock(\stdClass::class);
+        $mockObjectService = $this->createMock(originalClassName: WfsObjectServiceStub::class);
 
         $locations = [
             [
-                '@id'   => 'loc-no-coords',
-                'case'  => 'case-uuid-2',
+                '@id'    => 'loc-no-coords',
+                'case'   => 'case-uuid-2',
                 'source' => 'free',
-                'label' => 'No coordinates',
+                'label'  => 'No coordinates',
                 // No latitude / longitude.
             ],
             [
-                '@id'      => 'loc-with-coords',
-                'case'     => 'case-uuid-3',
-                'source'   => 'gps',
+                '@id'       => 'loc-with-coords',
+                'case'      => 'case-uuid-3',
+                'source'    => 'gps',
                 'latitude'  => 51.9,
                 'longitude' => 4.47,
             ],
@@ -181,18 +204,19 @@ class WfsExportServiceTest extends TestCase
             ->willReturn($mockObjectService);
         $this->settingsService
             ->method('getConfigValue')
-            ->willReturnMap([
-                ['register', 'procest'],
-                ['location_schema', 'location'],
-            ]);
+            ->willReturnMap(
+                    [
+                        ['register', 'procest'],
+                        ['location_schema', 'location'],
+                    ]
+                    );
 
         $result = $this->service->buildFeatureCollection();
 
-        $this->assertCount(1, $result['features']);
-        $this->assertSame([4.47, 51.9], $result['features'][0]['geometry']['coordinates']);
+        $this->assertCount(expectedCount: 1, haystack: $result['features']);
+        $this->assertSame(expected: [4.47, 51.9], actual: $result['features'][0]['geometry']['coordinates']);
 
     }//end testBuildFeatureCollectionSkipsLocationsWithoutCoordinates()
-
 
     /**
      * Test that buildFeatureCollection() filters features by bounding box.
@@ -201,20 +225,20 @@ class WfsExportServiceTest extends TestCase
      */
     public function testBuildFeatureCollectionFiltersByBbox(): void
     {
-        $mockObjectService = $this->createMock(\stdClass::class);
+        $mockObjectService = $this->createMock(originalClassName: WfsObjectServiceStub::class);
 
         $locations = [
             [
-                '@id'      => 'inside',
-                'case'     => 'case-1',
-                'source'   => 'gps',
+                '@id'       => 'inside',
+                'case'      => 'case-1',
+                'source'    => 'gps',
                 'latitude'  => 52.3,
                 'longitude' => 4.9,
             ],
             [
-                '@id'      => 'outside',
-                'case'     => 'case-2',
-                'source'   => 'gps',
+                '@id'       => 'outside',
+                'case'      => 'case-2',
+                'source'    => 'gps',
                 'latitude'  => 51.0,
                 'longitude' => 3.0,
             ],
@@ -225,19 +249,20 @@ class WfsExportServiceTest extends TestCase
             ->willReturn($locations);
 
         $this->settingsService->method('getObjectService')->willReturn($mockObjectService);
-        $this->settingsService->method('getConfigValue')->willReturnMap([
-            ['register', 'procest'],
-            ['location_schema', 'location'],
-        ]);
+        $this->settingsService->method('getConfigValue')->willReturnMap(
+                [
+                    ['register', 'procest'],
+                    ['location_schema', 'location'],
+                ]
+                );
 
         // Bbox covering Amsterdam area only.
         $result = $this->service->buildFeatureCollection(bbox: [4.5, 52.0, 5.5, 53.0]);
 
-        $this->assertCount(1, $result['features']);
-        $this->assertSame('inside', $result['features'][0]['id']);
+        $this->assertCount(expectedCount: 1, haystack: $result['features']);
+        $this->assertSame(expected: 'inside', actual: $result['features'][0]['id']);
 
     }//end testBuildFeatureCollectionFiltersByBbox()
-
 
     /**
      * Test that maxFeatures is capped at the hard cap.
@@ -246,7 +271,7 @@ class WfsExportServiceTest extends TestCase
      */
     public function testBuildFeatureCollectionCapsMaxFeaturesAtHardCap(): void
     {
-        $mockObjectService = $this->createMock(\stdClass::class);
+        $mockObjectService = $this->createMock(originalClassName: WfsObjectServiceStub::class);
 
         $mockObjectService
             ->expects($this->once())
@@ -254,25 +279,28 @@ class WfsExportServiceTest extends TestCase
             ->with(
                 'procest',
                 'location',
-                $this->callback(function (array $params): bool {
-                    return $params['_limit'] === WfsExportService::MAX_FEATURES_HARD_CAP;
-                })
+                $this->callback(
+                        callback: function (array $params): bool {
+                            return $params['_limit'] === WfsExportService::MAX_FEATURES_HARD_CAP;
+                        }
+                        )
             )
             ->willReturn([]);
 
         $this->settingsService->method('getObjectService')->willReturn($mockObjectService);
-        $this->settingsService->method('getConfigValue')->willReturnMap([
-            ['register', 'procest'],
-            ['location_schema', 'location'],
-        ]);
+        $this->settingsService->method('getConfigValue')->willReturnMap(
+                [
+                    ['register', 'procest'],
+                    ['location_schema', 'location'],
+                ]
+                );
 
         // Request 99999 features — must be capped at hard cap.
         $result = $this->service->buildFeatureCollection(maxFeatures: 99999);
 
-        $this->assertSame('FeatureCollection', $result['type']);
+        $this->assertSame(expected: 'FeatureCollection', actual: $result['type']);
 
     }//end testBuildFeatureCollectionCapsMaxFeaturesAtHardCap()
-
 
     /**
      * Test that buildCapabilities() returns a valid WFS capabilities descriptor.
@@ -283,12 +311,10 @@ class WfsExportServiceTest extends TestCase
     {
         $result = $this->service->buildCapabilities('https://example.nl/api/gis/wfs');
 
-        $this->assertSame('2.0.0', $result['version']);
-        $this->assertNotEmpty($result['featureTypes']);
-        $this->assertSame(WfsExportService::TYPE_NAME_CASES, $result['featureTypes'][0]['name']);
-        $this->assertStringContainsString('https://example.nl/api/gis/wfs', $result['featureTypes'][0]['getFeatureUrl']);
+        $this->assertSame(expected: '2.0.0', actual: $result['version']);
+        $this->assertNotEmpty(actual: $result['featureTypes']);
+        $this->assertSame(expected: WfsExportService::TYPE_NAME_CASES, actual: $result['featureTypes'][0]['name']);
+        $this->assertStringContainsString(needle: 'https://example.nl/api/gis/wfs', haystack: $result['featureTypes'][0]['getFeatureUrl']);
 
     }//end testBuildCapabilitiesReturnsValidDescriptor()
-
-
 }//end class
