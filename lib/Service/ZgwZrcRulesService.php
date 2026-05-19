@@ -54,6 +54,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use Psr\Log\LoggerInterface;
+
 /**
  * ZRC (Zaken API) business rule validation and enrichment.
  *
@@ -64,6 +66,34 @@ namespace OCA\Procest\Service;
  */
 class ZgwZrcRulesService extends ZgwRulesBase
 {
+
+    /**
+     * Date and URL field validator utility.
+     *
+     * @var FieldValidator
+     */
+    private readonly FieldValidator $fieldValidator;
+
+    /**
+     * Constructor.
+     *
+     * @param LoggerInterface $logger          PSR-3 logger.
+     * @param SettingsService $settingsService Settings service.
+     * @param FieldValidator  $fieldValidator  Date/URL field validator.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/method-decomposition/tasks.md#task-8
+     */
+    public function __construct(
+        LoggerInterface $logger,
+        SettingsService $settingsService,
+        FieldValidator $fieldValidator,
+    ) {
+        parent::__construct(logger: $logger, settingsService: $settingsService);
+        $this->fieldValidator = $fieldValidator;
+    }//end __construct()
+
     /**
      * Rules for creating a zaak (POST /zaken/v1/zaken).
      *
@@ -878,7 +908,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
 
         foreach ($relevanteZaken as $idx => $relZaak) {
             $relUrl = $relZaak['url'] ?? '';
-            if ($relUrl !== '' && $this->isValidUrl(url: $relUrl) === false) {
+            if ($relUrl !== '' && $this->fieldValidator->validateUrlIsResourceEndpoint(url: $relUrl) === false) {
                 return $this->error(
                     status: 400,
                     detail: 'relevanteAndereZaken bevat een ongeldige URL.',
@@ -1071,7 +1101,8 @@ class ZgwZrcRulesService extends ZgwRulesBase
             );
         }
 
-        if (empty($body['archiefactiedatum'] ?? null) === true) {
+        $archiefactiedatum = $body['archiefactiedatum'] ?? null;
+        if (empty($archiefactiedatum) === true) {
             return $this->error(
                 status: 400,
                 detail: 'archiefactiedatum is vereist als archiefstatus niet "nog_te_archiveren" is.',
@@ -1079,6 +1110,33 @@ class ZgwZrcRulesService extends ZgwRulesBase
                     fieldName: 'archiefactiedatum',
                     code: 'archiefactiedatum-not-set',
                     reason: 'Vereist.'
+                )
+                ]
+            );
+        }
+
+        if ($this->fieldValidator->validateDateFormat(value: $archiefactiedatum) === false) {
+            return $this->error(
+                status: 400,
+                detail: 'archiefactiedatum heeft een ongeldig formaat (verwacht YYYY-MM-DD).',
+                invalidParams: [$this->fieldError(
+                    fieldName: 'archiefactiedatum',
+                    code: 'invalid-date-format',
+                    reason: 'Verwacht formaat: YYYY-MM-DD.'
+                )
+                ]
+            );
+        }
+
+        $today = date(format: 'Y-m-d');
+        if ($this->fieldValidator->validateDateRange(from: $today, to: $archiefactiedatum) === false) {
+            return $this->error(
+                status: 400,
+                detail: 'archiefactiedatum mag niet in het verleden liggen.',
+                invalidParams: [$this->fieldError(
+                    fieldName: 'archiefactiedatum',
+                    code: 'date-in-past',
+                    reason: 'archiefactiedatum moet vandaag of in de toekomst zijn.'
                 )
                 ]
             );
