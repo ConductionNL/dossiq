@@ -31,7 +31,6 @@ import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import PublicCaseView from './views/public/PublicCaseView.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
-import FeaturesRoadmapView from './views/FeaturesRoadmap.vue'
 
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
@@ -95,11 +94,6 @@ const registry = {
 		component: PublicStatusPage,
 	},
 
-	// --- Features & Roadmap page (lib's CnFeaturesAndRoadmapView wrapper). ---
-	FeaturesRoadmap: {
-		kind: 'page',
-		component: FeaturesRoadmapView,
-	},
 
 	// --- Detail-tab components (sidebar component: entries). ---
 	// These resolve when a sidebarTab uses `component: "<key>"` instead of
