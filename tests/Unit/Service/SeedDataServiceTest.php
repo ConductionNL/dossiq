@@ -40,6 +40,7 @@ interface SeedObjectServiceStub
 {
     public function getObjects(string $register, string $schema, array $filters, int $limit): array;
     public function saveObject(string $register, string $schema, array $object): ?object;
+    public function findAll(array $criteria): array;
 
 }//end interface
 
@@ -192,6 +193,10 @@ class SeedDataServiceTest extends TestCase
             ->willReturn([]);
 
         $objectServiceMock
+            ->method('findAll')
+            ->willReturn([]);
+
+        $objectServiceMock
             ->method('saveObject')
             ->willReturn($createdObject);
 
@@ -242,9 +247,13 @@ class SeedDataServiceTest extends TestCase
 
         $objectServiceMock = $this->createMock(SeedObjectServiceStub::class);
 
-        // Always return an existing object from getObjects.
+        // Always return an existing object from getObjects (legacy path) and findAll (current production path).
         $objectServiceMock
             ->method('getObjects')
+            ->willReturn([$existingObject]);
+
+        $objectServiceMock
+            ->method('findAll')
             ->willReturn([$existingObject]);
 
         // saveObject should NOT be called if all case types are skipped.
