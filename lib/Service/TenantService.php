@@ -71,7 +71,6 @@ class TenantService
     ) {
     }//end __construct()
 
-
     /**
      * Resolve the tenant for a given user via OR's `findByUserId` lookup.
      *
@@ -84,13 +83,14 @@ class TenantService
      */
     public function getTenantForUser(string $userId): ?array
     {
-        $orgs = $this->findOrganisationsByUserId($userId);
+        $orgs = $this->findOrganisationsByUserId(userId: $userId);
         if (empty($orgs) === true) {
             // Fall back to NC-group lookup so existing single-tenant deployments still work.
             $user = $this->userManager->get($userId);
             if ($user === null) {
                 return null;
             }
+
             $groups = $this->groupManager->getUserGroups($user);
             foreach ($groups as $group) {
                 $groupId = $group->getGID();
@@ -98,12 +98,12 @@ class TenantService
                     return $this->getTenantByGroupId(groupId: $groupId);
                 }
             }
+
             return null;
         }
 
         return $orgs[0]->jsonSerialize();
     }//end getTenantForUser()
-
 
     /**
      * Get a tenant by its Nextcloud group ID.
@@ -140,7 +140,6 @@ class TenantService
         return null;
     }//end getTenantByGroupId()
 
-
     /**
      * Provision a tenant via OR's TenantLifecycleService.
      *
@@ -160,9 +159,14 @@ class TenantService
         }
 
         try {
-            $org      = $mapper->findByUuid($tenantId);
-            $adminUid = ($this->groupManager->isAdmin($org->getOwner() ?? '') === true) ? $org->getOwner() : 'admin';
-            $org      = $lifecycleService->provision($org, (string) $adminUid);
+            $org = $mapper->findByUuid($tenantId);
+            if ($this->groupManager->isAdmin($org->getOwner() ?? '') === true) {
+                $adminUid = $org->getOwner();
+            } else {
+                $adminUid = 'admin';
+            }
+
+            $org = $lifecycleService->provision($org, (string) $adminUid);
         } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: provisionTenant failed via OR',
@@ -178,7 +182,6 @@ class TenantService
 
         return $org->jsonSerialize();
     }//end provisionTenant()
-
 
     /**
      * Get resource usage for a tenant from OR data.
@@ -212,14 +215,13 @@ class TenantService
         }
 
         return [
-            'users'           => $userCount,
-            'storageQuota'    => (int) ($org->getStorageQuota() ?? 0),
-            'bandwidthQuota'  => (int) ($org->getBandwidthQuota() ?? 0),
-            'requestQuota'    => (int) ($org->getRequestQuota() ?? 0),
-            'status'          => (string) ($org->getStatus() ?? ''),
+            'users'          => $userCount,
+            'storageQuota'   => (int) ($org->getStorageQuota() ?? 0),
+            'bandwidthQuota' => (int) ($org->getBandwidthQuota() ?? 0),
+            'requestQuota'   => (int) ($org->getRequestQuota() ?? 0),
+            'status'         => (string) ($org->getStatus() ?? ''),
         ];
     }//end getResourceUsage()
-
 
     /**
      * Check whether a user belongs to a specific tenant.
@@ -239,7 +241,6 @@ class TenantService
         return ($tenant['uuid'] ?? $tenant['id'] ?? '') === $tenantId;
     }//end isUserInTenant()
 
-
     /**
      * Check whether a user is a platform administrator.
      *
@@ -251,7 +252,6 @@ class TenantService
     {
         return $this->groupManager->isAdmin($userId);
     }//end isPlatformAdmin()
-
 
     /**
      * Check whether a tenant (OR Organisation) is in `active` state.
@@ -278,7 +278,6 @@ class TenantService
         }
     }//end getTenantStatus()
 
-
     /**
      * Find OR Organisations a user belongs to.
      *
@@ -299,7 +298,6 @@ class TenantService
             return [];
         }
     }//end findOrganisationsByUserId()
-
 
     /**
      * Resolve OR's OrganisationMapper if installed.
@@ -323,7 +321,6 @@ class TenantService
         }
     }//end getOrganisationMapper()
 
-
     /**
      * Resolve OR's TenantLifecycleService if installed.
      *
@@ -345,6 +342,4 @@ class TenantService
             return null;
         }
     }//end getTenantLifecycleService()
-
-
 }//end class
