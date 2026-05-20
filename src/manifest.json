@@ -1732,14 +1732,6 @@
 			]
 		},
 		{
-			"id": "WorkflowTemplateEditor",
-			"route": "/settings/workflow-templates/:id/edit",
-			"type": "custom",
-			"title": "Workflow editor",
-			"component": "VisualWorkflowEditor",
-			"_note": "Intentionally unwired \u2014 @vue-flow is Vue-3-only and breaks the Vue 2 build. VisualWorkflowEditor is NOT in the registry. Re-wire after Vue 3 migration or switching to a Vue-2-compatible flow lib."
-		},
-		{
 			"id": "AutomaticActions",
 			"route": "/settings/automatic-actions",
 			"type": "index",
@@ -1811,7 +1803,7 @@
 			"type": "custom",
 			"title": "Public case",
 			"component": "PublicCaseView",
-			"_note": "Anonymous public route (no auth). Resolved via registry entry PublicCaseView."
+			"_note": "Lib gap: anonymous/token-based public pages have no v2 typed primitive — they render outside the authenticated app shell (no sidebar, no auth headers). Collapse to type:\"detail\" with a public:true escape hatch when nc-vue adds public-page support."
 		},
 		{
 			"id": "PublicAppointment",
@@ -1819,7 +1811,7 @@
 			"type": "custom",
 			"title": "Public appointment",
 			"component": "PublicAppointmentPage",
-			"_note": "Anonymous public route (no auth). Resolved via registry entry PublicAppointmentPage."
+			"_note": "Lib gap: anonymous/token-based public pages have no v2 typed primitive — see PublicCase _note for the same architectural reason. Collapse when nc-vue adds public-page support."
 		},
 		{
 			"id": "PublicStatus",
@@ -1827,7 +1819,7 @@
 			"type": "custom",
 			"title": "Public status",
 			"component": "PublicStatusPage",
-			"_note": "Anonymous public route (no auth, token-based). Resolved via registry entry PublicStatusPage."
+			"_note": "Lib gap: anonymous token-based public pages have no v2 typed primitive — see PublicCase _note. Collapse when nc-vue adds public-page support."
 		},
 		{
 			"id": "WorkflowDefinitions",
