@@ -1,67 +1,138 @@
-## Context
+# Design: docs-product-pages-conformance
 
-Procest's documentation site (`docs/`) is built on `@conduction/docusaurus-preset`. The 2026-05-13 fleet audit identified structural non-conformance against the canonical product-pages spec: wrong-case folder names (`features/` vs `Features/`, `tutorials/` vs `user-guide/`), six legacy root-level MDs that belong in a `Technical/` subfolder, no `installation.md`, no Redocusaurus API mount, and em-dash violations across 12 files.
+## Domain framing
 
-The migration is entirely mechanical: git renames, file moves, new stub files, config edits, and find-and-replace em-dash fixes. There are no PHP, Vue, or backend code changes.
+Procest's documentation site (`docs/`) is built on
+`@conduction/docusaurus-preset`. The site serves two audiences:
 
-**Upstream already applied:**
-- Preset bump `^1.5.1` → `^2.6.1` (PR #433)
-- Tutorial content fills and screenshots (PR #437)
+| Audience | Primary need |
+|---|---|
+| Government procurement officers | Find feature pages, use cases, installation guide — they evaluate the product for compliance mandates |
+| Developers / integrators | Find Technical/ reference material (architecture, ZGW spec, development guide) and the API docs route |
+| Municipal administrators | Follow the installation guide and post-install configuration steps |
 
-## Goals / Non-Goals
+The 2026-05-13 fleet audit revealed that the site structure diverges from
+the canonical product-pages spec, which makes it impossible for Specter's
+fleet tooling to verify conformance and for procurement-audience users to
+find the canonical feature catalogue.
 
-**Goals:**
-- Rename `features/` → `Features/` and `tutorials/` → `user-guide/` using `git mv` (preserves history)
-- Move 6 legacy root MDs into `Technical/` using `git mv`
-- Rename `README.md` → `index.md` with Docusaurus frontmatter
-- Create `installation.md` with real install + config steps for procest
-- Scaffold `UseCases/` and `Integrations/` stub folders (draft: true)
-- Add `redocusaurus@^2.0.0` + configure `/api` route + `static/oas/procest.json` placeholder
-- Add "API Documentation" navbar item
-- Re-enable `nl` locale (with SSR-failure escape hatch per ADR-030)
-- Fix all em-dashes in the docs scope (gate: `git grep -E '—' docs/` = 0)
+This change is **purely mechanical**: git renames, file moves, new stub
+files, config edits, and em-dash replacements. There are no PHP, Vue, or
+backend code changes and no OpenRegister schema changes.
 
-**Non-Goals:**
-- Writing actual NL translated markdown (issue #441)
-- Writing real content for `UseCases/` or `Integrations/` (issue #440)
-- Writing the real OpenAPI spec (issue #442)
-- Any PHP, Vue, or backend code changes
-- Changing landing page (`src/pages/index.js`) — already brand-compliant
+## No entity seed data
+
+This change introduces no new OpenRegister entities. All modifications are
+confined to `docs/` and `docs/docusaurus.config.js`. The ADR-000 data
+model is unchanged. Seed data sections are therefore not applicable to
+this design.
+
+## Folder structure after migration
+
+```
+docs/
+├── index.md                    (renamed from README.md)
+├── installation.md             (new — sidebar_position: 2)
+├── Features/                   (renamed from features/)
+│   ├── _category_.json         (new — label: "Features", position: 3)
+│   ├── README.md
+│   └── ... (44 feature pages)
+├── user-guide/                 (renamed from tutorials/)
+│   ├── _category_.json         (new — label: "User Guide", position: 2)
+│   ├── admin/
+│   └── user/
+├── UseCases/                   (new stub)
+│   ├── _category_.json         (label: "Use Cases", position: 4)
+│   └── index.md                (draft: true)
+├── Integrations/               (new stub)
+│   ├── _category_.json         (label: "Integrations", position: 5)
+│   └── index.md                (draft: true)
+├── Technical/                  (new folder)
+│   ├── _category_.json         (label: "Technical", position: 6)
+│   ├── architecture.md         (from ARCHITECTURE.md)
+│   ├── design-decisions.md     (from DESIGN-REFERENCES.md)
+│   ├── development-guide.md    (from development.md)
+│   ├── zgw-spec.md             (from zgw-implementation.md)
+│   ├── government-compliance.md (from GOVERNMENT-FEATURES.md)
+│   └── market-analysis.md      (from FEATURES.md)
+└── static/
+    └── oas/
+        └── procest.json        (new OAS shim)
+```
+
+Sidebar positions are pinned via `_category_.json` files to prevent
+Docusaurus alphabetical re-ordering after the lower→upper-case renames.
 
 ## Decisions
 
 ### D1: Use `git mv` for all renames and moves
 
-`git mv` preserves file history, which matters for the 44 feature files and 11 tutorial files. The alternative (delete + add) would orphan history.
+`git mv` preserves file history, which matters for the 44 feature files
+and 11 tutorial files. The alternative (delete + add) would orphan history
+and break `git log --follow` for reviewers and auditors.
 
 ### D2: `FEATURES.md` → `Technical/market-analysis.md` (not `Features/`)
 
-`FEATURES.md` is 360-line strategic/competitive analyst content (market analysis, competitor tables, feature demand matrix). It is NOT a curated end-user feature page. Moving it to `Technical/` separates internal analyst material from the public-facing feature catalogue. The 44 curated feature pages in `features/` are the canonical product docs.
+`FEATURES.md` is 360-line strategic/competitive analyst content (market
+analysis, competitor tables, feature demand matrix). It is NOT a curated
+end-user feature page. Moving it to `Technical/` separates internal
+analyst material from the public-facing feature catalogue. The 44 curated
+feature pages in `features/` are the canonical product docs.
 
 ### D3: `README.md` → `index.md` with frontmatter, not deletion
 
-`README.md` has real content (feature table, architecture overview, screenshots). Renaming to `index.md` and adding `sidebar_position: 1` frontmatter makes it the site's landing document in the Docusaurus autogenerated sidebar. Deleting would remove useful navigation content.
+`README.md` has real content (feature table, architecture overview,
+screenshots). Renaming to `index.md` and adding `sidebar_position: 1`
+frontmatter makes it the site's landing document in the Docusaurus
+autogenerated sidebar. Deleting would remove useful navigation content.
 
 ### D4: OAS placeholder shim in `static/oas/procest.json`
 
-Redocusaurus requires the OAS file to exist at build time or the build 404s. Shipping a minimal valid OAS `{"openapi":"3.0.0","info":{"title":"Procest","version":"0.0.0"},"paths":{}}` lets Redocusaurus render without failing. The real spec is tracked in issue #442.
+Redocusaurus requires the OAS file to exist at build time or the build
+fails with a 404. Shipping a minimal valid OAS object:
+
+```json
+{"openapi":"3.0.0","info":{"title":"Procest","version":"0.0.0"},"paths":{}}
+```
+
+lets Redocusaurus render without failing. The real spec is tracked in
+issue #442. The shim is explicitly versioned `0.0.0` to signal it is
+a placeholder.
 
 ### D5: `nl` locale re-enable with escape hatch
 
-ADR-030 documents SSR failures when `i18n/nl/` contains stale metadata without translated markdown. The config will add `'nl'` to `locales` with a comment explaining the escape hatch: if the `npm run build` fails on nl, revert `locales` to `['en']` and cite issue #441. The build verification step in the apply task handles this automatically.
+ADR-030 documents SSR failures when `i18n/nl/` contains stale metadata
+without translated markdown. The config will add `'nl'` to `locales`
+with a comment explaining the escape hatch:
+
+If `npm run build` fails on nl, revert `locales` to `['en']` and add:
+```js
+/* nl reverted: SSR error with empty i18n/nl/ — re-enable once
+   translation backfill lands (issue #441) */
+```
+
+The build verification step in the apply task handles this automatically.
 
 ### D6: Em-dash replacement strategy
 
-Em-dashes in the Technical/ files (especially `market-analysis.md`) are prose em-dashes that separate clauses. Replacement: `' — '` (space-em-dash-space) → `', '` (comma-space) or `': '` (colon-space) depending on context. Em-dashes in feature files are mostly in technical bullet lists (e.g., `` `endpoint()` — description ``): replace with `: ` or ` - ` for code-reference bullets. Em-dashes in HTML comments (tutorials) are purely in the `{{TODO: ... — see /journeydoc-add-story}}` template: replace `—` with `-`.
+Three distinct patterns across the 12 affected files:
 
-Use Edit tool with targeted replacements per file. Never use sed/awk/python.
+| Location | Pattern | Replacement |
+|---|---|---|
+| `Technical/market-analysis.md` (prose) | ` — ` between clauses | `, ` or `: ` per context |
+| `Technical/market-analysis.md` (title) | `# Procest — Feature Analysis` | `# Procest: Feature Analysis` |
+| `Features/*.md` (code-ref bullets) | `` `endpoint()` — description `` | `` `endpoint()`: description `` |
+| `user-guide/*.md` (HTML comments) | `{{TODO: ... — see /journeydoc}}` | `{{TODO: ... - see /journeydoc}}` |
 
-## Risks / Trade-offs
+Use the Edit tool with targeted replacements per file. Never use
+sed/awk/python (context-brief instruction).
 
-- **Sidebar order disruption** → Docusaurus autogenerated sidebar uses alphabetical order by default; folder renames (lower→upper case) may shift the sidebar position of Features/ relative to other top-level items. Mitigation: add `_category_.json` with explicit `position` to each canonical folder to pin the order.
+## Risks and mitigations
 
-- **nl SSR failure** → Known ADR-030 issue. Mitigation: build verification step tries `npm run build`; if nl SSR breaks, the apply task reverts `locales` to `['en']` with a comment.
-
-- **Internal cross-link breakage** → Files moved to `Technical/` may have relative links pointing to other root-level MDs. Mitigation: scan moved files for relative MD links and update paths as part of the move task.
-
-- **Screenshots in tutorials/** → The PR #437 added screenshots to `tutorials/user/` and `tutorials/admin/`. The `git mv docs/tutorials docs/user-guide` will move the entire subtree including PNG files. Verify screenshot count before and after.
+| Risk | Mitigation |
+|---|---|
+| Sidebar order disruption — folder renames (lower→upper case) may shift sidebar position of Features/ relative to other top-level items | Add `_category_.json` with explicit `position` to each canonical folder to pin the order |
+| nl SSR failure — ADR-030 known issue with empty `i18n/nl/` | Build verification step tries `npm run build`; if nl SSR breaks, apply task reverts `locales` to `['en']` with the D5 comment |
+| Internal cross-link breakage — files moved to `Technical/` may have relative links pointing to other root-level MDs | Scan moved files for relative MD links and update paths as part of the move task |
+| Screenshot count — PR #437 added screenshots to `tutorials/user/` and `tutorials/admin/`; `git mv docs/tutorials docs/user-guide` moves the entire subtree | Verify PNG file count before and after mv; counts must match |
+| Em-dash in generated content — Docusaurus or remark plugins may inject em-dashes into build output | Gate runs against source files only (`git grep -E '—' docs/`), not against `build/` |
