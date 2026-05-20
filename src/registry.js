@@ -94,7 +94,6 @@ const registry = {
 		component: PublicStatusPage,
 	},
 
-
 	// --- Detail-tab components (sidebar component: entries). ---
 	// These resolve when a sidebarTab uses `component: "<key>"` instead of
 	// a `widgets[]` array. CnDetailPage injects the resolved component into
