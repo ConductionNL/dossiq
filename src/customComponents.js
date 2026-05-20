@@ -56,7 +56,6 @@ import MapComponent from './components/map/MapComponent.vue'
 // --- Features & Roadmap page — thin wrapper around the lib's
 //     CnFeaturesAndRoadmapView (the in-product roadmap surface powered by
 //     OpenRegister's github-issue-proxy). See ConductionNL/hydra#251. ---
-import FeaturesRoadmapView from './views/FeaturesRoadmap.vue'
 
 /**
  * Row-action handler for the Voorstellen index: POST a parafering-reminder
@@ -129,5 +128,4 @@ export default {
 	MapComponent,
 
 	// --- Features & Roadmap page (lib's CnFeaturesAndRoadmapView). ---
-	FeaturesRoadmap: FeaturesRoadmapView,
 }

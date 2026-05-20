@@ -399,10 +399,21 @@
 			"title": "My Work",
 			"config": {
 				"widgets": [
-					{ "id": "myWorkBoard", "title": "My Work", "type": "custom" }
+					{
+						"id": "myWorkBoard",
+						"title": "My Work",
+						"type": "custom"
+					}
 				],
 				"layout": [
-					{ "id": 1, "widgetId": "myWorkBoard", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 12 }
+					{
+						"id": 1,
+						"widgetId": "myWorkBoard",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 12
+					}
 				]
 			},
 			"slots": {
@@ -416,10 +427,21 @@
 			"title": "Work Queue",
 			"config": {
 				"widgets": [
-					{ "id": "werkvoorraad", "title": "Work Queue", "type": "custom" }
+					{
+						"id": "werkvoorraad",
+						"title": "Work Queue",
+						"type": "custom"
+					}
 				],
 				"layout": [
-					{ "id": 1, "widgetId": "werkvoorraad", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 12 }
+					{
+						"id": 1,
+						"widgetId": "werkvoorraad",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 12
+					}
 				]
 			},
 			"slots": {
@@ -998,7 +1020,10 @@
 			"config": {
 				"register": "procest",
 				"schema": "voorstel",
-				"sidebar": { "enabled": true, "showMetadata": true }
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
 			},
 			"slots": {
 				"default": "VoorstelDetailView"
@@ -1072,10 +1097,21 @@
 			"title": "Doorlooptijd",
 			"config": {
 				"widgets": [
-					{ "id": "doorlooptijd", "title": "Doorlooptijd", "type": "custom" }
+					{
+						"id": "doorlooptijd",
+						"title": "Doorlooptijd",
+						"type": "custom"
+					}
 				],
 				"layout": [
-					{ "id": 1, "widgetId": "doorlooptijd", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 12 }
+					{
+						"id": 1,
+						"widgetId": "doorlooptijd",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 12
+					}
 				]
 			},
 			"slots": {
@@ -1089,7 +1125,10 @@
 			"title": "Settings",
 			"config": {
 				"sections": [
-					{ "id": "admin", "title": "Settings" }
+					{
+						"id": "admin",
+						"title": "Settings"
+					}
 				]
 			},
 			"slots": {
@@ -1698,7 +1737,7 @@
 			"type": "custom",
 			"title": "Workflow editor",
 			"component": "VisualWorkflowEditor",
-			"_note": "Intentionally unwired — @vue-flow is Vue-3-only and breaks the Vue 2 build. VisualWorkflowEditor is NOT in the registry. Re-wire after Vue 3 migration or switching to a Vue-2-compatible flow lib."
+			"_note": "Intentionally unwired \u2014 @vue-flow is Vue-3-only and breaks the Vue 2 build. VisualWorkflowEditor is NOT in the registry. Re-wire after Vue 3 migration or switching to a Vue-2-compatible flow lib."
 		},
 		{
 			"id": "AutomaticActions",
@@ -2540,10 +2579,8 @@
 		{
 			"id": "FeaturesRoadmap",
 			"route": "/features-roadmap",
-			"type": "custom",
-			"title": "Features & roadmap",
-			"component": "FeaturesRoadmap",
-			"_note": "In-product roadmap powered by OR github-issue-proxy. Resolved via registry entry FeaturesRoadmap."
+			"type": "roadmap",
+			"title": "Features & roadmap"
 		}
 	]
 }
