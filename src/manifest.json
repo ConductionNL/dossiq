@@ -1,6 +1,6 @@
 {
 	"$schema": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"dependencies": [
 		"openregister"
 	],
@@ -108,7 +108,7 @@
 			"id": "CaseTypesMenu",
 			"label": "Case Types",
 			"icon": "icon-category-customization",
-			"route": "CaseTypes",
+			"route": "Settings",
 			"section": "settings",
 			"order": 95
 		},
@@ -395,18 +395,36 @@
 		{
 			"id": "MyWork",
 			"route": "/my-work",
-			"type": "custom",
+			"type": "dashboard",
 			"title": "My Work",
-			"component": "MyWorkView",
-			"_note": "Bespoke 4-tab filter UI mixing case + task entities; resolved via registry entry MyWorkView."
+			"config": {
+				"widgets": [
+					{ "id": "myWorkBoard", "title": "My Work", "type": "custom" }
+				],
+				"layout": [
+					{ "id": 1, "widgetId": "myWorkBoard", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 12 }
+				]
+			},
+			"slots": {
+				"widget-myWorkBoard": "MyWorkView"
+			}
 		},
 		{
 			"id": "Werkvoorraad",
 			"route": "/werkvoorraad",
-			"type": "custom",
+			"type": "dashboard",
 			"title": "Work Queue",
-			"component": "WerkvoorraadView",
-			"_note": "KPI-strip-driven work queue; resolved via registry entry WerkvoorraadView."
+			"config": {
+				"widgets": [
+					{ "id": "werkvoorraad", "title": "Work Queue", "type": "custom" }
+				],
+				"layout": [
+					{ "id": 1, "widgetId": "werkvoorraad", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 12 }
+				]
+			},
+			"slots": {
+				"widget-werkvoorraad": "WerkvoorraadView"
+			}
 		},
 		{
 			"id": "Cases",
@@ -975,10 +993,16 @@
 		{
 			"id": "VoorstelDetail",
 			"route": "/voorstellen/:id",
-			"type": "custom",
+			"type": "detail",
 			"title": "Voorstel",
-			"component": "VoorstelDetailView",
-			"_note": "Parafeerroute multi-step approver flow; resolved via registry entry VoorstelDetailView. Migration to typed page deferred."
+			"config": {
+				"register": "procest",
+				"schema": "voorstel",
+				"sidebar": { "enabled": true, "showMetadata": true }
+			},
+			"slots": {
+				"default": "VoorstelDetailView"
+			}
 		},
 		{
 			"id": "Advice",
@@ -1044,26 +1068,33 @@
 		{
 			"id": "Doorlooptijd",
 			"route": "/doorlooptijd",
-			"type": "custom",
+			"type": "dashboard",
 			"title": "Doorlooptijd",
-			"component": "DoorlooptijdView",
-			"_note": "KPI dashboard with apexcharts; resolved via registry entry DoorlooptijdView. Pending lib chart-widget support."
+			"config": {
+				"widgets": [
+					{ "id": "doorlooptijd", "title": "Doorlooptijd", "type": "custom" }
+				],
+				"layout": [
+					{ "id": 1, "widgetId": "doorlooptijd", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 12 }
+				]
+			},
+			"slots": {
+				"widget-doorlooptijd": "DoorlooptijdView"
+			}
 		},
 		{
 			"id": "Settings",
 			"route": "/settings",
-			"type": "custom",
+			"type": "settings",
 			"title": "Settings",
-			"component": "AdminRootView",
-			"_note": "Multi-tab admin root; resolved via registry entry AdminRootView. Pending lib settings-custom-slot support."
-		},
-		{
-			"id": "CaseTypes",
-			"route": "/case-types",
-			"type": "custom",
-			"title": "Case types",
-			"component": "AdminRootView",
-			"_note": "Multi-tab admin root; resolved via registry entry AdminRootView. Pending lib settings-custom-slot support."
+			"config": {
+				"sections": [
+					{ "id": "admin", "title": "Settings" }
+				]
+			},
+			"slots": {
+				"section-admin": "AdminRootView"
+			}
 		},
 		{
 			"id": "Legesverordeningen",
