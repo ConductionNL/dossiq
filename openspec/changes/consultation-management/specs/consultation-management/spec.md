@@ -1,5 +1,5 @@
 ---
-status: implemented
+status: draft
 ---
 # consultation-management Specification
 
