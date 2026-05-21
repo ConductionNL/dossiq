@@ -96,11 +96,11 @@ class SeedLhsMatrix implements IRepairStep
                 return;
             }
 
-            $existing = $objectService->getObjects(
-                register: $register,
-                schema: $schema,
-                filters: ['active' => true],
-                limit: 1,
+            $existing = $objectService->findAll(
+                [
+                    'filters' => ['register' => $register, 'schema' => $schema, 'active' => true],
+                    'limit'   => 1,
+                ],
             );
             if ($this->hasRow(results: $existing) === true) {
                 $output->info('Active LHS matrix already exists. Skipping seed.');

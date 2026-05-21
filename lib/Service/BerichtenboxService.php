@@ -148,13 +148,9 @@ class BerichtenboxService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('berichtenbox_message_schema');
 
-        $result = $objectService->getObjects(
-            (int) $register,
-            (int) $schema,
-            ['caseId' => $caseId],
+        return $objectService->findAll(
+            ['filters' => ['register' => (int) $register, 'schema' => (int) $schema, 'caseId' => $caseId]],
         );
-
-        return $result['objects'] ?? [];
     }//end getMessagesForCase()
 
     /**

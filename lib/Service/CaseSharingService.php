@@ -278,13 +278,9 @@ class CaseSharingService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('case_share_schema');
 
-        $result = $objectService->getObjects(
-            (int) $register,
-            (int) $schema,
-            ['token' => $token],
+        $shares = $objectService->findAll(
+            ['filters' => ['register' => (int) $register, 'schema' => (int) $schema, 'token' => $token]],
         );
-
-        $shares = ($result['objects'] ?? []);
         if (empty($shares) === true) {
             return ['valid' => false, 'error' => 'Token niet gevonden'];
         }
