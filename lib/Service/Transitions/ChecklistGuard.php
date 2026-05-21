@@ -101,14 +101,13 @@ class ChecklistGuard implements GuardEvaluatorInterface
             $label   = (string) ($item['label'] ?? ($item['name'] ?? ''));
             $checked = (bool) ($item['checked'] ?? false);
 
-            if (is_array($required) === true && $required !== []) {
-                if (in_array($label, $required, true) === true && $checked === false) {
-                    $missing[] = $label;
-                }
-            } else {
-                if ($checked === false && $label !== '') {
-                    $missing[] = $label;
-                }
+            $hasRequired = (is_array($required) === true && $required !== []);
+            if ($hasRequired === true && in_array($label, $required, true) === true && $checked === false) {
+                $missing[] = $label;
+            }
+
+            if ($hasRequired === false && $checked === false && $label !== '') {
+                $missing[] = $label;
             }
         }
 

@@ -330,16 +330,14 @@ class ChecklistService
             $range = $item['numericRange'] ?? null;
             if (is_array($range) === true && array_key_exists('numericValue', $payload) === true) {
                 $val = (float) $payload['numericValue'];
+                $min = null;
                 if (array_key_exists('min', $range) === true) {
                     $min = (float) $range['min'];
-                } else {
-                    $min = null;
                 }
 
+                $max = null;
                 if (array_key_exists('max', $range) === true) {
                     $max = (float) $range['max'];
-                } else {
-                    $max = null;
                 }
 
                 if (($min !== null && $val < $min) || ($max !== null && $val > $max)) {
@@ -475,7 +473,9 @@ class ChecklistService
                         'Procest: follow-up task save failed: '.$e->getMessage(),
                     );
                 }
-            } else {
+            }
+
+            if ($taskSchema === '') {
                 $created[] = $task;
             }
         }//end foreach
@@ -581,16 +581,14 @@ class ChecklistService
             }
 
             $val = (float) $response['numericValue'];
+            $min = null;
             if (array_key_exists('min', $range) === true) {
                 $min = (float) $range['min'];
-            } else {
-                $min = null;
             }
 
+            $max = null;
             if (array_key_exists('max', $range) === true) {
                 $max = (float) $range['max'];
-            } else {
-                $max = null;
             }
 
             if (($min !== null && $val < $min) || ($max !== null && $val > $max)) {

@@ -32,10 +32,13 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTime;
 use OCA\Procest\AppInfo\Application;
 use OCP\IUserSession;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use Throwable;
 
 /**
  * Service for advice request (adviesAanvraag) workflow.
@@ -87,24 +90,24 @@ class AdviceService
     public function transitionStatus(string $adviceId, string $to, array $payload=[]): array
     {
         if (in_array($to, self::VALID_STATUSES, true) === false) {
-            throw new \RuntimeException('Invalid advice status');
+            throw new RuntimeException('Invalid advice status');
         }
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
 
         if (empty($register) === true || empty($schema) === true) {
-            throw new \RuntimeException('Advice schema is not configured');
+            throw new RuntimeException('Advice schema is not configured');
         }
 
         $current = $this->loadAdvice(adviceId: $adviceId);
         if ($current === null) {
-            throw new \RuntimeException('Advice request not found');
+            throw new RuntimeException('Advice request not found');
         }
 
         $update = ['status' => $to];
@@ -119,12 +122,12 @@ class AdviceService
 
         try {
             $advice = $objectService->saveObject($register, $schema, $update, $adviceId);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: failed to transition advice status: '.$e->getMessage(),
                 ['app' => Application::APP_ID]
             );
-            throw new \RuntimeException('Could not update advice request');
+            throw new RuntimeException('Could not update advice request');
         }
 
         $advice = $this->normalizeResult(result: $advice);
@@ -214,7 +217,7 @@ class AdviceService
                 [],
                 200,
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: failed to fetch advice for case: '.$e->getMessage(),
                 ['app' => Application::APP_ID]
@@ -256,7 +259,7 @@ class AdviceService
                 [],
                 500,
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: failed to load open advice: '.$e->getMessage(),
                 ['app' => Application::APP_ID]
@@ -285,7 +288,7 @@ class AdviceService
     {
         try {
             return $this->transitionStatus(adviceId: $adviceId, to: 'verlopen');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: failed to expire advice: '.$e->getMessage(),
                 ['app' => Application::APP_ID]
@@ -317,7 +320,7 @@ class AdviceService
 
         try {
             $advice = $objectService->findObject($register, $schema, $adviceId);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: failed to load advice: '.$e->getMessage(),
                 ['app' => Application::APP_ID]
@@ -420,7 +423,7 @@ class AdviceService
             $notification
                 ->setApp(Application::APP_ID)
                 ->setUser($userId)
-                ->setDateTime(new \DateTime())
+                ->setDateTime(new DateTime())
                 ->setObject('advies', $objectId)
                 ->setSubject($subject, ['object' => $objectId]);
 
@@ -429,7 +432,7 @@ class AdviceService
             }
 
             $this->notificationManager->notify($notification);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: failed to send advice notification: '.$e->getMessage(),
                 ['app' => Application::APP_ID]

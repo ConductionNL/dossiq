@@ -126,6 +126,7 @@ class ParaferingAuditListener implements IEventListener
             if (is_array($voorstel) === true) {
                 $array = $voorstel;
             } else if (is_object($voorstel) === true) {
+                $array = (array) $voorstel;
                 if (method_exists($voorstel, 'jsonSerialize') === true) {
                     $serialized = $voorstel->jsonSerialize();
                     if (is_array($serialized) === true) {
@@ -136,8 +137,6 @@ class ParaferingAuditListener implements IEventListener
                     if (is_array($arr) === true) {
                         $array = $arr;
                     }
-                } else {
-                    $array = (array) $voorstel;
                 }
             }
 

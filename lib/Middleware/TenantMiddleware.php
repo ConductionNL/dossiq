@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Middleware;
 
+use Exception;
 use OCA\Procest\Service\TenantService;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
@@ -118,7 +119,7 @@ class TenantMiddleware extends Middleware
                 'Procest: Request blocked because tenant is not active',
                 ['userId' => $userId, 'tenantUuid' => $tenantUuid, 'status' => $status]
             );
-            throw new \Exception('Organisation is '.$status, 403);
+            throw new Exception('Organisation is '.$status, 403);
         }
 
         // Store tenant context for controllers to use.

@@ -499,16 +499,14 @@ class WorkflowDefinitionService
         $steps       = $payload['steps'] ?? [];
         $transitions = $payload['transitions'] ?? [];
 
+        $stepsValue = json_encode($steps);
         if (is_string($steps) === true) {
             $stepsValue = $steps;
-        } else {
-            $stepsValue = json_encode($steps);
         }
 
+        $transitionsValue = json_encode($transitions);
         if (is_string($transitions) === true) {
             $transitionsValue = $transitions;
-        } else {
-            $transitionsValue = json_encode($transitions);
         }
 
         $draft = [

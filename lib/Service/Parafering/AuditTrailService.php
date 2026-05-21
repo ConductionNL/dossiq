@@ -33,6 +33,7 @@ namespace OCA\Procest\Service\Parafering;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use DateTimeZone;
 use OCA\Procest\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
@@ -122,7 +123,7 @@ class AuditTrailService
                 throw new RuntimeException('paraferingAuditEntry configuration is missing');
             }
 
-            $timestamp = (new DateTimeImmutable('now'))->setTimezone(new \DateTimeZone('UTC'))
+            $timestamp = (new DateTimeImmutable('now'))->setTimezone(new DateTimeZone('UTC'))
                 ->format('Y-m-d\TH:i:s\Z');
 
             $entry = [
@@ -265,17 +266,16 @@ class AuditTrailService
 
         $retentionUntil = $this->computeRetentionUntil(completedEntry: $completed);
 
+        $selectielijstCategory = 'Algemene administratieve correspondentie — bewaartermijn 7 jaar';
         if ($completed !== null) {
             $selectielijstCategory = 'Bestuurlijke besluitvorming — bewaartermijn 20 jaar';
-        } else {
-            $selectielijstCategory = 'Algemene administratieve correspondentie — bewaartermijn 7 jaar';
         }
 
         return [
             'metadata' => [
                 'schema'                => 'MDTO 1.0',
                 'exportedAt'            => (new DateTimeImmutable('now'))
-                    ->setTimezone(new \DateTimeZone('UTC'))
+                    ->setTimezone(new DateTimeZone('UTC'))
                     ->format('Y-m-d\TH:i:s\Z'),
                 'voorstel'              => $voorstelId,
                 'voorstelOnderwerp'     => $voorstelOnderwerp,

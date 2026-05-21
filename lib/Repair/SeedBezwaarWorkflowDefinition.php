@@ -323,9 +323,8 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
         $transitions = [];
         foreach ($matrix as $row) {
             [$fromName, $toName, $label] = $row;
-            if ($fromName === '*') {
-                $fromId = '*';
-            } else {
+            $fromId = '*';
+            if ($fromName !== '*') {
                 $fromId = (string) ($statusByName[$fromName]['id'] ?? '');
             }
 

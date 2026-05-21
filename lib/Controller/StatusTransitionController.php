@@ -108,10 +108,9 @@ class StatusTransitionController extends Controller
     {
         $body         = $this->readJsonBody();
         $transitionId = (string) ($body['transitionId'] ?? '');
+        $comment      = null;
         if (isset($body['comment']) === true) {
             $comment = (string) $body['comment'];
-        } else {
-            $comment = null;
         }
 
         if ($transitionId === '') {
@@ -176,10 +175,9 @@ class StatusTransitionController extends Controller
 
         $body       = $this->readJsonBody();
         $toStatusId = (string) ($body['toStatusId'] ?? '');
+        $comment    = null;
         if (isset($body['comment']) === true) {
             $comment = (string) $body['comment'];
-        } else {
-            $comment = null;
         }
 
         if ($toStatusId === '') {

@@ -241,13 +241,12 @@ class ParafeerRouteService
 
         $objectService->saveObject($register, $actieSchema, $actieData);
 
-        $action = (string) ($actionData['action'] ?? 'parafered');
+        $action     = (string) ($actionData['action'] ?? 'parafered');
+        $transition = 'paraferd';
+        $actorRole  = 'parafeerder';
         if ($action === 'advised') {
             $transition = 'advised';
             $actorRole  = 'adviseur';
-        } else {
-            $transition = 'paraferd';
-            $actorRole  = 'parafeerder';
         }
 
         $this->dispatchTransition(

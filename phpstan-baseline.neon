@@ -1,0 +1,234 @@
+# Baselined errors from canonical-config sync (Phase 2 fleet rollout).
+# Tracked in: https://github.com/ConductionNL/procest/issues/543
+# DO NOT add new entries — fix the underlying issue or open a follow-up.
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Parameter \\$listener of method OCP\\\\AppFramework\\\\Bootstrap\\\\IRegistrationContext\\:\\:registerEventListener\\(\\) expects class\\-string\\<OCP\\\\EventDispatcher\\\\IEventListener\\<OCP\\\\EventDispatcher\\\\Event\\>\\>, 'OCA\\\\\\\\Procest\\\\\\\\Validator\\\\\\\\ParaferingAuditAppendOnlyValidator' given\\.$#"
+			count: 3
+			path: lib/AppInfo/Application.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\BackgroundJob\\\\BerichtenboxReadStatusJob\\:\\:\\$berichtenboxService is never read, only written\\.$#"
+			count: 1
+			path: lib/BackgroundJob/BerichtenboxReadStatusJob.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\Controller\\\\AiController\\:\\:\\$logger is never read, only written\\.$#"
+			count: 1
+			path: lib/Controller/AiController.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between true and false will always evaluate to false\\.$#"
+			count: 2
+			path: lib/Controller/CaseDefinitionController.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\Controller\\\\LhsController\\:\\:\\$settingsService is never read, only written\\.$#"
+			count: 1
+			path: lib/Controller/LhsController.php
+
+		-
+			message: "#^Call to function method_exists\\(\\) with '\\\\\\\\OC_Util' and 'getVersionString' will always evaluate to false\\.$#"
+			count: 1
+			path: lib/Controller/MetricsController.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\Controller\\\\TemplateController\\:\\:\\$logger is never read, only written\\.$#"
+			count: 1
+			path: lib/Controller/TemplateController.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\Listener\\\\BezwaarLifecycleListener\\:\\:\\$settingsService is never read, only written\\.$#"
+			count: 1
+			path: lib/Listener/BezwaarLifecycleListener.php
+
+		-
+			message: "#^Class OCA\\\\Procest\\\\Controller\\\\ZgwController not found\\.$#"
+			count: 1
+			path: lib/Middleware/ZgwAuthMiddleware.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between true and false will always evaluate to false\\.$#"
+			count: 2
+			path: lib/Repair/SeedVthWorkflowTemplates.php
+
+		-
+			message: "#^Variable \\$fromId might not be defined\\.$#"
+			count: 1
+			path: lib/Repair/SeedVthWorkflowTemplates.php
+
+		-
+			message: "#^Parameter \\#1 \\$job of method OCP\\\\BackgroundJob\\\\IJobList\\:\\:add\\(\\) expects class\\-string\\<OCP\\\\BackgroundJob\\\\IJob\\>\\|OCP\\\\BackgroundJob\\\\IJob, string given\\.$#"
+			count: 1
+			path: lib/Service/Actions/ScheduleReminderHandler.php
+
+		-
+			message: "#^Constant OCA\\\\Procest\\\\Service\\\\BerichtenboxService\\:\\:MAX_ATTACHMENT_SIZE is unused\\.$#"
+			count: 1
+			path: lib/Service/BerichtenboxService.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\Service\\\\Bezwaar\\\\AdvisoryCommitteeService\\:\\:\\$transitions is never read, only written\\.$#"
+			count: 1
+			path: lib/Service/Bezwaar/AdvisoryCommitteeService.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\Service\\\\Bezwaar\\\\BeroepService\\:\\:\\$userSession is never read, only written\\.$#"
+			count: 1
+			path: lib/Service/Bezwaar/BeroepService.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between true and false will always evaluate to false\\.$#"
+			count: 1
+			path: lib/Service/Bezwaar/HearingService.php
+
+		-
+			message: "#^Constant OCA\\\\Procest\\\\Service\\\\CaseDefinitionImportService\\:\\:VALID_COMPONENT_FILES is unused\\.$#"
+			count: 1
+			path: lib/Service/CaseDefinitionImportService.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\Service\\\\CaseDefinitionImportService\\:\\:\\$appConfig is never read, only written\\.$#"
+			count: 1
+			path: lib/Service/CaseDefinitionImportService.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between true and false will always evaluate to false\\.$#"
+			count: 2
+			path: lib/Service/Inspection/ChecklistService.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\Service\\\\InspectionService\\:\\:\\$settingsService is never read, only written\\.$#"
+			count: 1
+			path: lib/Service/InspectionService.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\Service\\\\Pdok\\\\PdokBagService\\:\\:\\$settingsService is never read, only written\\.$#"
+			count: 1
+			path: lib/Service/Pdok/PdokBagService.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\Service\\\\Pdok\\\\PdokLocatieserverService\\:\\:\\$settingsService is never read, only written\\.$#"
+			count: 1
+			path: lib/Service/Pdok/PdokLocatieserverService.php
+
+		-
+			message: "#^Comparison operation \"\\>\\=\" between 1 and 1 is always true\\.$#"
+			count: 1
+			path: lib/Service/RoleResolverService.php
+
+		-
+			message: "#^Comparison operation \"\\>\" between 0 and 0 is always false\\.$#"
+			count: 1
+			path: lib/Service/StatusTransitionService.php
+
+		-
+			message: "#^Offset 'passed' on array\\{type\\: string, passed\\: bool, failureMessage\\: string\\|null, details\\: array\\<string, mixed\\>\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 2
+			path: lib/Service/StatusTransitionService.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\Service\\\\StufMessageBuilder\\:\\:\\$logger is never read, only written\\.$#"
+			count: 1
+			path: lib/Service/StufMessageBuilder.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\Service\\\\TenantService\\:\\:\\$settingsService is never read, only written\\.$#"
+			count: 1
+			path: lib/Service/TenantService.php
+
+		-
+			message: "#^Offset 'passed' on array\\{passed\\: bool\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: lib/Service/Transitions/GuardRegistry.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between true and false will always evaluate to false\\.$#"
+			count: 1
+			path: lib/Service/Transitions/GuardRegistry.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\Service\\\\Transitions\\\\RoleGuard\\:\\:\\$settingsService is never read, only written\\.$#"
+			count: 1
+			path: lib/Service/Transitions/RoleGuard.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between true and false will always evaluate to false\\.$#"
+			count: 1
+			path: lib/Service/Transitions/SideEffectDispatcher.php
+
+		-
+			message: "#^Expression on left side of \\?\\? is not nullable\\.$#"
+			count: 5
+			path: lib/Service/WmsWfsService.php
+
+		-
+			message: "#^Constant OCA\\\\Procest\\\\Service\\\\WorkflowDefinitionService\\:\\:ERR_CLONE_FAILED is unused\\.$#"
+			count: 1
+			path: lib/Service/WorkflowDefinitionService.php
+
+		-
+			message: "#^Constant OCA\\\\Procest\\\\Service\\\\WorkflowDefinitionService\\:\\:ERR_DEPRECATE_FAILED is unused\\.$#"
+			count: 1
+			path: lib/Service/WorkflowDefinitionService.php
+
+		-
+			message: "#^Constant OCA\\\\Procest\\\\Service\\\\WorkflowDefinitionService\\:\\:ERR_INVALID_REFERENCES is unused\\.$#"
+			count: 1
+			path: lib/Service/WorkflowDefinitionService.php
+
+		-
+			message: "#^Constant OCA\\\\Procest\\\\Service\\\\WorkflowDefinitionService\\:\\:ERR_LAST_PUBLISHED is unused\\.$#"
+			count: 1
+			path: lib/Service/WorkflowDefinitionService.php
+
+		-
+			message: "#^Constant OCA\\\\Procest\\\\Service\\\\WorkflowDefinitionService\\:\\:ERR_NOT_DEPRECATABLE is unused\\.$#"
+			count: 1
+			path: lib/Service/WorkflowDefinitionService.php
+
+		-
+			message: "#^Constant OCA\\\\Procest\\\\Service\\\\WorkflowDefinitionService\\:\\:ERR_NOT_DRAFT is unused\\.$#"
+			count: 1
+			path: lib/Service/WorkflowDefinitionService.php
+
+		-
+			message: "#^Constant OCA\\\\Procest\\\\Service\\\\WorkflowDefinitionService\\:\\:ERR_NOT_FOUND is unused\\.$#"
+			count: 1
+			path: lib/Service/WorkflowDefinitionService.php
+
+		-
+			message: "#^Constant OCA\\\\Procest\\\\Service\\\\WorkflowDefinitionService\\:\\:ERR_NOT_PUBLISHABLE is unused\\.$#"
+			count: 1
+			path: lib/Service/WorkflowDefinitionService.php
+
+		-
+			message: "#^Constant OCA\\\\Procest\\\\Service\\\\WorkflowDefinitionService\\:\\:ERR_OR_UNAVAILABLE is unused\\.$#"
+			count: 1
+			path: lib/Service/WorkflowDefinitionService.php
+
+		-
+			message: "#^Constant OCA\\\\Procest\\\\Service\\\\WorkflowDefinitionService\\:\\:ERR_PUBLISH_FAILED is unused\\.$#"
+			count: 1
+			path: lib/Service/WorkflowDefinitionService.php
+
+		-
+			message: "#^Constant OCA\\\\Procest\\\\Service\\\\WorkflowDefinitionService\\:\\:ERR_SCHEMA_NOT_CONFIG is unused\\.$#"
+			count: 1
+			path: lib/Service/WorkflowDefinitionService.php
+
+		-
+			message: "#^Property OCA\\\\Procest\\\\Service\\\\WorkflowDefinitionService\\:\\:\\$userSession is never read, only written\\.$#"
+			count: 1
+			path: lib/Service/WorkflowDefinitionService.php
+
+		-
+			message: "#^Result of \\|\\| is always true\\.$#"
+			count: 1
+			path: lib/Validator/ParaferingAuditAppendOnlyValidator.php
+
+		-
+			message: "#^Type OCA\\\\OpenRegister\\\\Event\\\\ObjectCreatingEvent\\|OCA\\\\OpenRegister\\\\Event\\\\ObjectDeletingEvent\\|OCA\\\\OpenRegister\\\\Event\\\\ObjectUpdatingEvent in generic type OCP\\\\EventDispatcher\\\\IEventListener\\<OCA\\\\OpenRegister\\\\Event\\\\ObjectCreatingEvent\\|OCA\\\\OpenRegister\\\\Event\\\\ObjectDeletingEvent\\|OCA\\\\OpenRegister\\\\Event\\\\ObjectUpdatingEvent\\> in PHPDoc tag @implements is not subtype of template type T of OCP\\\\EventDispatcher\\\\Event of interface OCP\\\\EventDispatcher\\\\IEventListener\\.$#"
+			count: 1
+			path: lib/Validator/ParaferingAuditAppendOnlyValidator.php

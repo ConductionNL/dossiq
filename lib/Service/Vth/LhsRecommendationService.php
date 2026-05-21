@@ -199,10 +199,9 @@ class LhsRecommendationService
         }
 
         $overrideUp = ($newSeverity > $recSeverity);
+        $authority  = 'inspector';
         if ($userRole === 'manager') {
             $authority = 'manager';
-        } else {
-            $authority = 'inspector';
         }
 
         if ($overrideUp === true && $authority !== 'manager') {
@@ -255,9 +254,8 @@ class LhsRecommendationService
             throw new RuntimeException('LHS-matrix register/schema is niet geconfigureerd');
         }
 
-        if ($version === null) {
-            $filters = ['active' => true];
-        } else {
+        $filters = ['active' => true];
+        if ($version !== null) {
             $filters = ['version' => $version];
         }
 
@@ -340,10 +338,9 @@ class LhsRecommendationService
     {
         if (is_string($cells) === true) {
             $decoded = json_decode($cells, true);
+            $cells   = [];
             if (is_array($decoded) === true) {
                 $cells = $decoded;
-            } else {
-                $cells = [];
             }
         }
 

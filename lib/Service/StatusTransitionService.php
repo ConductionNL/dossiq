@@ -315,10 +315,9 @@ class StatusTransitionService
             return ['history' => [], 'replayable' => false];
         }
 
+        $recordList = [];
         if (is_array($records) === true) {
             $recordList = $records;
-        } else {
-            $recordList = [];
         }
 
         $list = [];
@@ -553,10 +552,9 @@ class StatusTransitionService
         }
 
         foreach ($statuses as $entry) {
+            $id = (string) $entry;
             if (is_array($entry) === true) {
                 $id = (string) ($entry['id'] ?? ($entry['uuid'] ?? ''));
-            } else {
-                $id = (string) $entry;
             }
 
             if ($id === $statusTypeId) {
