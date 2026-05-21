@@ -1,22 +1,34 @@
-# Proposal: woo-case-type
+# WOO Case Type Specification
 
-## Why
+## Problem
 
-WOO (Wet open overheid) requests are one of the most common, deadline-driven case types Dutch municipalities must handle, yet Procest currently ships no pre-configured WOO zaaktype. Case workers create WOO cases ad hoc, leading to inconsistent stage names, missed 4-week deadlines, undocumented weigeringsgronden, and unredacted personal data being disclosed. This change ships a ready-to-activate WOO zaaktype template plus the supporting UI and services needed to run the statutory 8-stage WOO lifecycle out of the box.
+WOO (Wet open overheid) requests are one of the most common, deadline-driven case types Dutch municipalities must handle, yet Procest currently ships no pre-configured WOO zaaktype. Case workers create WOO cases ad hoc, leading to inconsistent stage names, missed 4-week deadlines, undocumented weigeringsgronden, and unredacted personal data being disclosed. The statutory 8-stage WOO lifecycle (ontvangst → beoordeling ontvankelijkheid → zoeken documenten → beoordelen documenten → lakken/anonimiseren → besluit → publicatie → afgehandeld) is complex and requires enforcement at every stage to ensure compliance with Wet open overheid (2022) and Awb Art. 6:7 (bezwaar).
 
-## What Changes
+## Proposed Solution
 
-1. WOO zaaktype template JSON (`lib/Settings/templates/woo-verzoek.json`) with 8 ordered statuses, property definitions, document types, decision types, role types, and version metadata.
-2. `TemplateLibraryService` and `TemplateLibraryController` to load, preview, and activate zaaktype templates into the active register; same mechanism reusable by other domain templates.
-3. `WOODeadlineService` enforcing the 4-week response deadline with a single optional 2-week extension per WOO Art. 4.4.
-4. `WOODocumentAssessmentService` for per-document classification (openbaar/deels openbaar/niet openbaar) with weigeringsgrond selection from WOO Art. 5.1/5.2.
-5. Vue components: `WOOIntakeForm`, `DocumentAssessmentTable`, `TemplateLibrary` admin tab.
-6. Optional Docudesk integration hook for the redaction (lakken) stage.
+Ship a ready-to-activate WOO zaaktype template plus the supporting services and UI components needed to run the statutory WOO lifecycle out of the box. The implementation uses the existing case engine (case, statusType, documentType, decision objects from OpenRegister) with domain services for the parts that go beyond plain case management: deadline enforcement, per-document assessment, and optional Docudesk-driven redaction.
 
-## Impact
+## Scope
 
-- **Affected projects**: procest (primary), docudesk (optional integration), openregister (template storage).
-- **Code surface**: 1 service group, 1 controller, 3 Vue components, 1 JSON template, route additions, 1 repair-step registration.
-- **APIs**: `GET /api/templates`, `POST /api/templates/{id}/activate`, `POST /api/cases/{id}/woo/assessment`, `POST /api/cases/{id}/woo/extend-deadline`.
-- **Dependencies**: OpenRegister, Docudesk (optional), Mijn Overheid (notification — out of scope this change).
-- **Standards**: Wet open overheid (2022), Awb Art. 6:7 (bezwaar), PLOOI publication, AVG/GDPR.
+This change covers:
+1. WOO zaaktype template JSON with 8 ordered statuses and full property/document/decision definitions
+2. TemplateLibraryService and TemplateLibraryController for template activation
+3. WOODeadlineService enforcing the 4-week deadline with optional 2-week extension
+4. WOODocumentAssessmentService for per-document classification (openbaar/deels openbaar/niet openbaar)
+5. Vue components: WOOIntakeForm, DocumentAssessmentTable, TemplateLibrary admin tab
+6. Optional Docudesk integration hook for the redaction stage
+7. API endpoints for template listing, activation, assessment, and deadline extension
+
+Out of scope: automated PLOOI publication, bezwaar workflow (separate change), inventarislijst PDF generation, Mijn Overheid notification integration.
+
+## Success Criteria
+
+- Admin can activate the WOO zaaktype template via the template library UI
+- Case workers can create WOO cases and progress through the 8-stage lifecycle
+- 4-week processing deadline is enforced with warnings at T-7 days
+- Optional 2-week extension can be applied once per case
+- All collected documents must be assessed before advancing to redaction stage
+- Assessment includes classification (openbaar/deels openbaar/niet openbaar) and weigeringsgrond selection
+- Decision object references all assessments and weigeringsgronden
+- Optional Docudesk integration triggers on "Lakken" stage for deels-openbaar documents
+- Fallback manual redaction flow available when Docudesk is not installed

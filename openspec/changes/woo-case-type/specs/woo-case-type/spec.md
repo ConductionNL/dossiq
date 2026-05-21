@@ -1,5 +1,5 @@
 ---
-status: implemented
+status: draft
 ---
 # woo-case-type Specification
 
