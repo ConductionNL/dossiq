@@ -158,10 +158,9 @@ class RoleResolverService
 
         $caseId   = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
         $cacheKey = $this->cacheKey(rule: $rule, caseId: $caseId);
+        $cacheHit = null;
         if ($caseId !== '') {
             $cacheHit = $this->cache->get($cacheKey);
-        } else {
-            $cacheHit = null;
         }
 
         if (is_array($cacheHit) === true) {

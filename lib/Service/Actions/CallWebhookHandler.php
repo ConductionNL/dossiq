@@ -78,9 +78,8 @@ class CallWebhookHandler implements ActionHandlerInterface
         try {
             $url = $this->resolveUrl(config: $actionConfig, context: $transitionContext);
             $payloadTemplate = (string) ($actionConfig['payloadTemplate'] ?? '');
-            if ($payloadTemplate === '') {
-                $payload = json_encode(['case' => $case], JSON_THROW_ON_ERROR);
-            } else {
+            $payload         = json_encode(['case' => $case], JSON_THROW_ON_ERROR);
+            if ($payloadTemplate !== '') {
                 $payload = $this->renderTemplate(template: $payloadTemplate, case: $case);
             }
 

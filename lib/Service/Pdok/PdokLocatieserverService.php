@@ -43,6 +43,8 @@ use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use Throwable;
 
 /**
  * Single ingress for PDOK Locatieserver v3_1 calls.
@@ -270,10 +272,12 @@ class PdokLocatieserverService
         try {
             if (empty($source) === false) {
                 $body = $this->callViaOpenConnector(sourceSlug: $source, path: $method, params: $params);
-            } else {
+            }
+
+            if (empty($source) === true) {
                 $body = $this->callDirect(url: $url);
             }
-        } catch (\RuntimeException $e) {
+        } catch (RuntimeException $e) {
             $this->recordFailure(statusCode: $e->getCode());
             $this->logger->warning(
                 'Procest PDOK Locatieserver call failed',
@@ -332,7 +336,7 @@ class PdokLocatieserverService
 
         $body = @file_get_contents(filename: $url, use_include_path: false, context: $context);
         if ($body === false) {
-            throw new \RuntimeException('Network error contacting PDOK Locatieserver', 0);
+            throw new RuntimeException('Network error contacting PDOK Locatieserver', 0);
         }
 
         $statusCode = 0;
@@ -344,7 +348,7 @@ class PdokLocatieserverService
         }
 
         if ($statusCode < 200 || $statusCode >= 300) {
-            throw new \RuntimeException('PDOK Locatieserver HTTP '.$statusCode, $statusCode);
+            throw new RuntimeException('PDOK Locatieserver HTTP '.$statusCode, $statusCode);
         }
 
         $this->recordSuccess();
@@ -371,7 +375,7 @@ class PdokLocatieserverService
     {
         try {
             $callService = $this->container->get('OCA\OpenConnector\Service\CallService');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->warning(
                 'Procest PDOK Locatieserver: OpenConnector not available, falling back to direct HTTP',
                 ['sourceSlug' => $sourceSlug, 'error' => $e->getMessage()]
@@ -397,8 +401,8 @@ class PdokLocatieserverService
                 'GET',
                 ['query' => $params, 'headers' => ['Accept' => 'application/json']]
             );
-        } catch (\Throwable $e) {
-            throw new \RuntimeException(
+        } catch (Throwable $e) {
+            throw new RuntimeException(
                 'OpenConnector dispatch failed: '.$e->getMessage(),
                 500
             );
@@ -417,7 +421,7 @@ class PdokLocatieserverService
             }
         }
 
-        throw new \RuntimeException('OpenConnector returned an unrecognised response shape', 502);
+        throw new RuntimeException('OpenConnector returned an unrecognised response shape', 502);
     }//end callViaOpenConnector()
 
     /**

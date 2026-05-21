@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\BackgroundJob;
 
+use DateTimeImmutable;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\AdviceService;
 use OCA\Procest\Service\SettingsService;
@@ -66,6 +67,8 @@ class AdviceDeadlineJob extends TimedJob
      * @param mixed $argument The job argument
      *
      * @return void
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     protected function run($argument): void
     {
@@ -78,7 +81,7 @@ class AdviceDeadlineJob extends TimedJob
             $reminderDays = 3;
         }
 
-        $today      = new \DateTimeImmutable('today');
+        $today      = new DateTimeImmutable('today');
         $reminderOn = $today->modify('+'.$reminderDays.' days')->format('Y-m-d');
         $todayStr   = $today->format('Y-m-d');
 

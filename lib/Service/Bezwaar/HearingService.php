@@ -49,6 +49,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service\Bezwaar;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use OCA\Procest\Service\SettingsService;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -149,17 +151,16 @@ class HearingService
 
         $scheduled = $this->parseDateTime(value: $scheduledDate);
         $deadline  = $this->computeInspectionDeadline(scheduled: $scheduled);
-        $now       = new \DateTimeImmutable();
+        $now       = new DateTimeImmutable();
 
         $this->guardInspectionFloor(
             scheduled: $scheduled,
             today: $now,
         );
 
+        $available = $now->setTime(0, 0, 0);
         if (isset($payload['inspectionAvailableFrom']) === true) {
             $available = $this->parseDate(value: (string) $payload['inspectionAvailableFrom']);
-        } else {
-            $available = $now->setTime(0, 0, 0);
         }
 
         if ($available > $deadline) {
@@ -177,7 +178,7 @@ class HearingService
             [
                 'case'                    => $caseId,
                 'scheduledDate'           => $scheduled->format(
-                    \DateTimeInterface::ATOM
+                    DateTimeInterface::ATOM
                 ),
                 'chairperson'             => $chairpersonId,
                 'invitees'                => $this->stampInvitees(
@@ -253,13 +254,13 @@ class HearingService
             throw new RuntimeException('Hearing schema is not configured');
         }
 
-        $now = new \DateTimeImmutable();
+        $now = new DateTimeImmutable();
 
         $record = array_merge(
             $payload,
             [
                 'case'                    => $caseId,
-                'scheduledDate'           => $now->format(\DateTimeInterface::ATOM),
+                'scheduledDate'           => $now->format(DateTimeInterface::ATOM),
                 'chairperson'             => $payload['chairperson'] ?? ($payload['chairpersonId'] ?? 'system'),
                 'invitees'                => $payload['invitees'] ?? [],
                 'inspectionAvailableFrom' => $now->format('Y-m-d'),
@@ -330,12 +331,11 @@ class HearingService
             throw new RuntimeException('Hearing session not found');
         }
 
-        $now          = new \DateTimeImmutable();
+        $now          = new DateTimeImmutable();
         $scheduledRaw = (string) ($current['scheduledDate'] ?? '');
+        $scheduled    = $now;
         if ($scheduledRaw !== '') {
             $scheduled = $this->parseDateTime(value: $scheduledRaw);
-        } else {
-            $scheduled = $now;
         }
 
         $freezeAt = $scheduled->modify(
@@ -378,7 +378,7 @@ class HearingService
 
         $update = [
             'attendance'         => $merged,
-            'attendanceFrozenAt' => $freezeAt->format(\DateTimeInterface::ATOM),
+            'attendanceFrozenAt' => $freezeAt->format(DateTimeInterface::ATOM),
             'auditTrail'         => $audit,
         ];
 
@@ -482,16 +482,14 @@ class HearingService
             }//end if
         }//end if
 
+        $minutesSummary = null;
         if ($summary !== '') {
             $minutesSummary = $summary;
-        } else {
-            $minutesSummary = null;
         }
 
+        $minutesDocument = null;
         if ($document !== '') {
             $minutesDocument = $document;
-        } else {
-            $minutesDocument = null;
         }
 
         $update = [
@@ -584,14 +582,14 @@ class HearingService
             return null;
         }
 
-        $scheduled = (new \DateTimeImmutable())
+        $scheduled = (new DateTimeImmutable())
             ->modify('+14 days')
             ->setTime(10, 0, 0);
 
         try {
             return $this->schedule(
                 caseId: $caseId,
-                scheduledDate: $scheduled->format(\DateTimeInterface::ATOM),
+                scheduledDate: $scheduled->format(DateTimeInterface::ATOM),
                 chairpersonId: 'system',
                 invitees: [
                     [
@@ -631,8 +629,8 @@ class HearingService
             'event'   => $event,
             'tag'     => $tag,
             'actor'   => $this->resolveUserId(),
-            'at'      => (new \DateTimeImmutable())
-                ->format(\DateTimeInterface::ATOM),
+            'at'      => (new DateTimeImmutable())
+                ->format(DateTimeInterface::ATOM),
             'payload' => $payload,
         ];
 
@@ -667,7 +665,7 @@ class HearingService
     private function parseDateTime(string $value): \DateTimeImmutable
     {
         try {
-            return new \DateTimeImmutable($value);
+            return new DateTimeImmutable($value);
         } catch (\Throwable $e) {
             throw new RuntimeException(
                 'Invalid scheduledDate: '.$value
@@ -685,9 +683,9 @@ class HearingService
     private function parseDate(string $value): \DateTimeImmutable
     {
         try {
-            return new \DateTimeImmutable($value);
+            return new DateTimeImmutable($value);
         } catch (\Throwable $e) {
-            return new \DateTimeImmutable();
+            return new DateTimeImmutable();
         }
     }//end parseDate()
 
@@ -756,7 +754,7 @@ class HearingService
                 || (string) $invitee['invitedAt'] === ''
             ) {
                 $invitee['invitedAt'] = $when->format(
-                    \DateTimeInterface::ATOM
+                    DateTimeInterface::ATOM
                 );
             }
 

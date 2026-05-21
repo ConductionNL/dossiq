@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Repair;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use OCA\Procest\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -120,7 +122,7 @@ class SeedLhsMatrix implements IRepairStep
                 return;
             }
 
-            $payload['createdAt'] = (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM);
+            $payload['createdAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
 
             $objectService->saveObject(
                 register: $register,

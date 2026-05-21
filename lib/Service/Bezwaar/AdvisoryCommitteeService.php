@@ -40,6 +40,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service\Bezwaar;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\StatusTransitionService;
 use OCA\Procest\Service\Transitions\GuardFailedException;
@@ -164,8 +166,8 @@ class AdvisoryCommitteeService
             );
         }
 
-        $now      = (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM);
-        $deadline = (new \DateTimeImmutable())
+        $now      = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+        $deadline = (new DateTimeImmutable())
             ->modify('+'.self::DEFAULT_DEADLINE_DAYS.' days')
             ->format('Y-m-d');
 
@@ -326,8 +328,8 @@ class AdvisoryCommitteeService
         $update['status'] = $newStatus;
 
         if ($newStatus === 'advice-issued' || $newStatus === 'niet-ontvankelijk') {
-            $update['adviceIssuedAt'] = (new \DateTimeImmutable())
-                ->format(\DateTimeInterface::ATOM);
+            $update['adviceIssuedAt'] = (new DateTimeImmutable())
+                ->format(DateTimeInterface::ATOM);
             $auditEvent           = 'advice-signed-by-chair';
             $auditPayload         = [
                 'chair'             => $userId,
@@ -590,8 +592,8 @@ class AdvisoryCommitteeService
         $entry = [
             'event'   => $event,
             'actor'   => $this->resolveUserId(),
-            'at'      => (new \DateTimeImmutable())
-                ->format(\DateTimeInterface::ATOM),
+            'at'      => (new DateTimeImmutable())
+                ->format(DateTimeInterface::ATOM),
             'payload' => $payload,
         ];
 

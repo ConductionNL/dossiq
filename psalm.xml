@@ -23,8 +23,6 @@
             <errorLevel type="suppress">
                 <!-- Nextcloud OCP Classes -->
                 <referencedClass name="OCP\AppFramework\App"/>
-                <!-- Version-compat check: \OC_Util only on older NC cores -->
-                <referencedClass name="OC_Util"/>
                 <referencedClass name="OCP\AppFramework\Bootstrap\IBootstrap"/>
                 <referencedClass name="OCP\AppFramework\Controller"/>
                 <referencedClass name="OCP\AppFramework\IAppContainer"/>
@@ -62,27 +60,34 @@
                 <referencedClass name="OCP\Notification\IManager"/>
                 <referencedClass name="OCP\Share\IManager"/>
                 <!-- OpenRegister cross-app classes (loaded dynamically) -->
+                <referencedClass name="OCA\OpenRegister\Db\ObjectEntity"/>
+                <referencedClass name="OCA\OpenRegister\Db\RegisterMapper"/>
+                <referencedClass name="OCA\OpenRegister\Db\SchemaMapper"/>
                 <referencedClass name="OCA\OpenRegister\Event\DeepLinkRegistrationEvent"/>
-                <referencedClass name="OCA\OpenRegister\Event\ObjectCreatedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\ObjectCreatingEvent"/>
-                <referencedClass name="OCA\OpenRegister\Event\ObjectUpdatedEvent"/>
+                <referencedClass name="OCA\OpenRegister\Event\ObjectCreatedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\ObjectUpdatingEvent"/>
+                <referencedClass name="OCA\OpenRegister\Event\ObjectUpdatedEvent"/>
                 <referencedClass name="OCA\OpenRegister\Event\ObjectDeletedEvent"/>
-                <referencedClass name="OCA\OpenRegister\Event\ObjectDeletingEvent"/>
-                <referencedClass name="OCA\OpenRegister\Exception\LockedException"/>
                 <referencedClass name="OCA\OpenRegister\Service\ObjectService"/>
                 <referencedClass name="OCA\OpenRegister\Service\ConfigurationService"/>
-                <referencedClass name="OCA\OpenRegister\Db\Mapping"/>
-                <!-- IMcpToolProvider ships in openregister PR #1466 (ai-chat-companion-orchestrator);
-                     procest implements the stub at tests/Stubs/Mcp/IMcpToolProvider.php until it merges. -->
+                <referencedClass name="OCA\OpenRegister\Service\RegisterService"/>
+                <referencedClass name="OCA\OpenRegister\Service\FileService"/>
+                <referencedClass name="OCA\OpenRegister\Service\CalendarEventService"/>
                 <referencedClass name="OCA\OpenRegister\Mcp\IMcpToolProvider"/>
+                <!-- Additional OCP infrastructure types used across the fleet -->
+                <referencedClass name="OCP\AppFramework\Bootstrap\IBootContext"/>
+                <referencedClass name="OCP\AppFramework\Bootstrap\IRegistrationContext"/>
+                <referencedClass name="OCP\AppFramework\Db\DoesNotExistException"/>
+                <referencedClass name="OCP\DB\Exception"/>
+                <referencedClass name="OCP\IGroup"/>
+                <referencedClass name="OCP\IUser"/>
+                <referencedClass name="OCP\Migration\IRepairStep"/>
                 <!-- Nextcloud server internals -->
                 <referencedClass name="OC"/>
                 <!-- GuzzleHttp (loaded via composer at runtime) -->
                 <referencedClass name="GuzzleHttp\Client"/>
                 <referencedClass name="GuzzleHttp\Exception\GuzzleException"/>
-                <!-- Procest marker interface for ZGW controllers -->
-                <referencedClass name="OCA\Procest\Controller\ZgwController"/>
             </errorLevel>
         </UndefinedClass>
         <UndefinedMagicMethod errorLevel="suppress"/>
@@ -115,18 +120,6 @@
         <InvalidMethodCall errorLevel="suppress"/>
         <UndefinedInterfaceMethod errorLevel="suppress"/>
         <MissingTemplateParam errorLevel="suppress"/>
-        <UndefinedMethod>
-            <errorLevel type="suppress">
-                <!-- DOMNode narrows to DOMElement at runtime; psalm can't track the downcast -->
-                <referencedMethod name="DOMNode::getElementsByTagName"/>
-            </errorLevel>
-        </UndefinedMethod>
-        <UnusedParam>
-            <errorLevel type="suppress">
-                <!-- Interface-contract params / planned-feature hooks kept for API stability -->
-                <directory name="lib/Service"/>
-            </errorLevel>
-        </UnusedParam>
     </issueHandlers>
     <extraFiles>
         <directory name="vendor/nextcloud/ocp" />
