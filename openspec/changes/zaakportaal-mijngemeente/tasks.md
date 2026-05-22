@@ -1,0 +1,220 @@
+# Tasks
+
+## Backend & Infrastructure
+
+- [ ] TASK-ZMP-01: Set up new Nextcloud app `zaakportaal` with standard structure (appinfo/info.xml, Controller/, Service/, templates/).
+- [ ] TASK-ZMP-02: Configure OpenConnector integration for DigiD OIDC, eHerkenning SAML, DigiD Machtigen, and eHerkenning Ketenmachtiging; verify trust level mapping ("substantieel", "substantieel-plus").
+- [ ] TASK-ZMP-03: Implement `AuthService` with session creation, JWT token generation (with IP+user-agent binding), 15-minute TTL refresh logic, and logout endpoint.
+- [ ] TASK-ZMP-04: Implement `CaseService` to query Procest REST API for cases filtered by BSN (burgers) or KvK (businesses); handle delegation (machtiging) filtering by zaaktype if present.
+- [ ] TASK-ZMP-05: Implement `DocumentService` to retrieve documents from OpenRegister, enforce `downloadbaarVoor` ACL, and manage file downloads with audit logging.
+- [ ] TASK-ZMP-06: Implement `MessageService` to read/write PortaalBericht objects in Procest; trigger n8n notification workflow on new message.
+- [ ] TASK-ZMP-07: Implement `ObjectionService` to validate bezwaarschrift deadline (6 weeks from decision), create PortaalVerzoek in Procest, and trigger new bezwaarzaak workflow.
+- [ ] TASK-ZMP-08: Implement `ComplaintService` to create PortaalVerzoek (soort=klachtschrift), route to Procest complaint module, and trigger klachtencoördinator notification.
+- [ ] TASK-ZMP-09: Implement `NotificationPreferenceService` to read/write PortaalNotificatieVoorkeur, enforce Berichtenbox-always-on rule, and handle email verification flow.
+- [ ] TASK-ZMP-10: Implement `AuditLogger` to log all citizen actions (login, document access, message send, form submit) to OpenRegister audit trail with timestamp and result.
+- [ ] TASK-ZMP-11: Build REST API controller with endpoints:
+  - `POST /auth/login` — initiate OpenConnector redirect
+  - `GET /auth/callback` — handle OAuth/SAML callback, create session
+  - `POST /auth/logout` — invalidate session
+  - `GET /cases` — list citizen's cases (filtered by BSN/KvK)
+  - `GET /cases/{id}` — case detail with status, documents, messages, actions
+  - `GET /documents/{id}/download` — retrieve document with ACL enforcement
+  - `POST /messages` — send message to handler
+  - `GET /messages?caseId=...` — retrieve message thread
+  - `POST /objections/validate-deadline` — check bezwaar deadline validity
+  - `POST /objections` — submit bezwaarschrift
+  - `POST /complaints` — submit klacht
+  - `GET /notification-preferences` — retrieve citizen's preferences
+  - `PATCH /notification-preferences` — update preferences
+  - `POST /notification-preferences/verify-email` — email verification link handler
+- [ ] TASK-ZMP-12: Implement Awb deadline helper (working-day math, Dutch holidays) for bezwaarschrift and complaint deadlines; add comprehensive unit tests for edge cases (weekends, holidays, leap years).
+- [ ] TASK-ZMP-13: Wire up OpenConnector configuration in `Settings > Digital Services > Zaakportaal Auth` with fields for DigiD/eHerkenning endpoints, redirect URIs, and client credentials.
+- [ ] TASK-ZMP-14: Implement session security: IP + user-agent binding validation on each request; session termination on mismatch; logging of security events.
+
+## Frontend
+
+- [ ] TASK-ZMP-15: Create `AuthLayout.vue` wrapper component that manages JWT token refresh, session expiry detection, and redirect to login on 401/403.
+- [ ] TASK-ZMP-16: Create `LoginPage.vue` with DigiD/eHerkenning selection buttons; handle OpenConnector redirect flow; display error messages for failed auth or low trust levels.
+- [ ] TASK-ZMP-17: Create `CaseOverview.vue` (list view) with:
+  - Columns: Kenmerk, Zaaktype, Onderwerp, Status, Ingediend op, Termijn info
+  - Sorting by status, date, or termijn
+  - Filters (status, zaaktype, date range)
+  - Virtual scrolling for large lists
+  - Empty state message when no cases
+  - Accessibility: table headers are sortable, aria-sort indicators
+- [ ] TASK-ZMP-18: Create `CaseDetail.vue` with tabs:
+  - **Status:** StatusTimeline.vue (timeline visualization) + deadline info
+  - **Documenten:** DocumentList.vue (sortable table, download buttons)
+  - **Berichten:** MessagingWidget.vue (message thread + compose area)
+  - **Acties:** Buttons for bezwaar, klacht, subsidie (with deadline validation)
+- [ ] TASK-ZMP-19: Create `StatusTimeline.vue` component:
+  - SVG or CSS-based timeline visualization with status circles and dates
+  - Progress bar showing deadline with color coding (green/orange/red)
+  - Accessible fallback: HTML table representation of timeline for screen readers
+  - Show remaining days/weeks in human-readable format
+  - Warnings and escalation messages for overdue deadlines
+- [ ] TASK-ZMP-20: Create `DocumentList.vue` component:
+  - Sortable table (document name, type, date, size)
+  - Download button per document
+  - File type icons (PDF, Word, Excel, etc.)
+  - Audit logging on click
+  - Accessibility: table structure, focusable download buttons
+- [ ] TASK-ZMP-21: Create `MessagingWidget.vue` component:
+  - Display message thread (citizen + handler messages)
+  - Compose area with text input and file upload
+  - Show sender name, timestamp, read status
+  - Auto-refresh for new handler replies (long-poll or WebSocket)
+  - Accessibility: send button, form labels, upload progress feedback
+- [ ] TASK-ZMP-22: Create `BezwaarForm.vue` (intake form):
+  - Pre-filled: case reference, decision title, decision date
+  - Fields: motivering (required, text area), file uploads, consent checkbox
+  - Deadline validation (display remaining days or error if expired)
+  - Submit validation: required fields, file scan results
+  - Success message with reference number
+  - Accessibility: form labels, error messages, required field indicators
+- [ ] TASK-ZMP-23: Create `KlachtForm.vue` (intake form):
+  - Fields: categorie (dropdown), omschrijving (required), betrokkenMedewerker (optional), attachment upload
+  - Category options: Bejegening, Doorlooptijd, Communicatie, Medische/Zorgkwaliteit, Andere
+  - Submit validation and success message with klachtnummer
+  - Accessibility: labeled form fields, error messages, radio/checkbox grouping
+- [ ] TASK-ZMP-24: Create `SubsidieForm.vue` (listing + linking):
+  - Fetch available subsidies from opencatalogi API
+  - Display list with descriptions and "Aanvragen" buttons
+  - Link to external application system or (future) embedded form
+  - Accessibility: list structure, link targets announced
+- [ ] TASK-ZMP-25: Create `NotificationSettings.vue` (preference manager):
+  - Display kanalen (email, Berichtenbox, SMS) with toggles
+  - Display gebeurtenissen (statuswijziging, documentToegevoegd, etc.) with checkboxes
+  - Berichtenbox checkbox is always checked and disabled
+  - Email input with "Add" button and verification flow
+  - Save and success message
+  - Accessibility: toggle labels, explanatory text for each preference
+- [ ] TASK-ZMP-26: Create `MainLayout.vue` and `MainMenu.vue`:
+  - Navigation to Mijn zaken, Instellingen, Notificaties
+  - User greeting with session info (logged in as [name])
+  - Logout button
+  - Session expiry countdown timer (show warning at 2 minutes remaining)
+  - Accessibility: semantic nav, skip-to-main-content link
+- [ ] TASK-ZMP-27: Create utility components:
+  - `LoadingSpinner.vue` — standard loading indicator
+  - `ErrorBoundary.vue` — catch and display errors gracefully
+  - `SessionWarning.vue` — alert when session is about to expire
+  - `AccessibilitySkipLink.vue` — skip to main content link
+- [ ] TASK-ZMP-28: Set up Vue Router with routes:
+  - `/` → redirect to `/login` if not authenticated, else `/cases`
+  - `/login` → LoginPage.vue
+  - `/cases` → CaseOverview.vue
+  - `/cases/:id` → CaseDetail.vue
+  - `/settings/notifications` → NotificationSettings.vue
+  - `/bezwaar/new` — BezwaarForm.vue (from action button)
+  - `/klacht/new` → KlachtForm.vue (from action button)
+  - `/subsidie` → SubsidieForm.vue
+
+## Styling & Accessibility
+
+- [ ] TASK-ZMP-29: Integrate NL Design System components (Button, Link, TextInput, Select, Textarea) into the app; override where necessary to match government design guidelines.
+- [ ] TASK-ZMP-30: Ensure WCAG 2.2 AA compliance:
+  - Test keyboard navigation (Tab, Enter, Escape, Arrow keys) on all pages
+  - Test with screen reader (NVDA, JAWS, or VoiceOver) on all interactive elements
+  - Check color contrast (minimum 4.5:1 for text, 3:1 for large text/UI components)
+  - Verify form labels are associated with inputs (via `<label>` or `aria-labelledby`)
+  - Verify focus indicators are visible and have 3:1 contrast minimum
+  - Test with browser zoom at 200% and ensure layout doesn't break
+  - Test with reduced motion preference (prefers-reduced-motion media query)
+- [ ] TASK-ZMP-31: Create and include privacy notice and accessibility statement:
+  - Privacy policy explaining data minimization (no persistent storage)
+  - Accessibility statement linked from footer (explains WCAG 2.2 AA compliance, known issues, feedback form)
+
+## Integration & Testing
+
+- [ ] TASK-ZMP-32: Set up n8n workflows:
+  - **message-notification** — triggered when PortaalBericht is created; sends email/Berichtenbox to handler and notification to citizen when handler replies
+  - **complaint-intake** — triggered when klachtschrift is submitted; creates complaint case in Procest, notifies klachtencoördinator
+  - **objection-intake** — triggered when bezwaarschrift is submitted; creates bezwaarzaak in Procest, notifies bezwaarcommissie
+  - **notification-preferences-sync** — updates citizen preferences in notification system whenever saved
+  - **session-audit-log** — logs login/logout events and IP changes to OpenRegister
+- [ ] TASK-ZMP-33: Add i18n (Dutch + English) for all UI strings:
+  - UI labels (Mijn zaken, Status, Documenten, Berichten, Acties, etc.)
+  - Button labels (Bezwaar indienen, Bericht sturen, etc.)
+  - Error messages (missing fields, deadline expired, unauthorized access, etc.)
+  - Notification templates (message received, objection submitted, etc.)
+  - Accessibility text (aria-labels, alt text, screen reader descriptions)
+- [ ] TASK-ZMP-34: Unit tests for backend services:
+  - `AuthService`: test JWT creation, IP+user-agent binding, token refresh, session expiry, delegation handling
+  - `CaseService`: test filtering by BSN, KvK, machtiging restrictions, empty result handling
+  - `DocumentService`: test ACL enforcement, download logging, malware scan error handling
+  - `ObjectionService`: test deadline validation (6 weeks, edge cases), bezwaarzaak creation
+  - `ComplaintService`: test complaint creation, routing to klachtencoördinator
+  - Awb deadline helper: test working-day math, Dutch holidays, leap years, extension logic
+  - Target: >75% code coverage for critical paths
+- [ ] TASK-ZMP-35: Integration tests:
+  - Test full authentication flow (DigiD callback, session creation, redirect)
+  - Test case retrieval and filtering (BSN, KvK, delegation)
+  - Test document download (ACL check, audit log)
+  - Test message send and notification
+  - Test bezwaarschrift submission and new case creation
+  - Test notification preference update and email verification
+- [ ] TASK-ZMP-36: E2E tests (Selenium/Playwright):
+  - Test login flow with DigiD/eHerkenning mock
+  - Test case list loading and navigation to detail
+  - Test document download and blocking of unauthorized downloads
+  - Test message send and handler reply display
+  - Test bezwaar form validation and submission
+  - Test notification preference changes and email verification
+- [ ] TASK-ZMP-37: Accessibility audit:
+  - Automated testing (axe DevTools, WAVE) on all pages
+  - Manual screen reader testing (NVDA, JAWS, VoiceOver)
+  - Manual keyboard navigation testing
+  - Color contrast validation
+  - Create accessibility audit report and fix issues before release
+- [ ] TASK-ZMP-38: Security testing:
+  - Penetration testing for session hijacking (IP spoofing, user-agent spoofing)
+  - Test document ACL bypass attempts (direct URL access, authorization header manipulation)
+  - Test API rate limiting and brute-force protection
+  - Test CSRF protection on state-changing endpoints
+  - Test file upload validation (malware, file type, size)
+  - Test SQL injection and XSS on all input fields
+- [ ] TASK-ZMP-39: Performance testing:
+  - Load test case list (10k cases) — should load within 2 seconds
+  - Load test case detail with 100+ documents — should load within 3 seconds
+  - Monitor API response times and database query performance
+  - Optimize slow queries with indexing on BSN, KvK, zaakId
+- [ ] TASK-ZMP-40: Documentation:
+  - API documentation (OpenAPI/Swagger spec) for all endpoints
+  - Deployment guide for separate instance/subdomainmijn.gemeente.nl
+  - Architecture overview and data flow diagrams
+  - User manual for citizens (how to log in, download documents, send messages, file complaints)
+  - Admin guide for tenant configuration (notification preferences, subsidy list, complaint categories)
+  - Troubleshooting guide (session expiry, IP mismatch, browser compatibility)
+
+## Deployment & Release
+
+- [ ] TASK-ZMP-41: Set up CI/CD pipeline:
+  - Lint checks (ESLint for Vue, PHP CodeSniffer)
+  - Automated tests (unit, integration, E2E) on every commit
+  - Build and containerization (Docker image for separate instance)
+  - Staging environment deployment
+  - Production release checklist
+- [ ] TASK-ZMP-42: Configure production environment:
+  - Set up mijn.gemeente.nl subdomain with HTTPS, HSTS headers
+  - Configure reverse proxy and load balancing if needed
+  - Set up log aggregation and monitoring (centralized audit trail)
+  - Configure rate limiting, DDoS protection, Web Application Firewall (WAF)
+  - Set up backup and disaster recovery procedures
+- [ ] TASK-ZMP-43: Tenant configuration UI:
+  - Settings page for municipality admins to configure:
+    - DigiD/eHerkenning endpoints and credentials
+    - Notification templates and delivery preferences
+    - Available complaint categories and default handlers
+    - Available subsidies (linked to opencatalogi)
+    - Email notifications sender address and templates
+- [ ] TASK-ZMP-44: Soft launch and monitoring:
+  - Gradual rollout to percentage of users (canary release)
+  - Monitor error rates, API latencies, user feedback
+  - Gather metrics: login success rate, case retrieval performance, document downloads, message send rate
+  - Fix critical issues before full release
+- [ ] TASK-ZMP-45: Release announcement and training:
+  - Citizen communication: email/mail informing about new portal, benefits (self-service, real-time updates)
+  - Staff training: case handlers learn about incoming citizen messages, objections, complaints via portal
+  - Accessibility training: ensure staff understands portal accessibility features
+  - Cutover plan and rollback procedure if critical issues arise
