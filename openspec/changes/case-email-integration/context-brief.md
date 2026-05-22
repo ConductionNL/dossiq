@@ -1,5 +1,16 @@
 # Proposal: case-email-integration
 
+## Placement & Information Architecture
+
+**Placement type:** `DETAIL_TAB` — Tab on the detail view of an existing object. NOT a standalone page — appears inside the parent record's detail surface (e.g. an extra tab on the existing detail header).
+
+**Lives at:** Zaken › Berichten
+
+**Rationale:** E-mail-tab in zaakdossier.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Summary
 
 Integrate inbound and outbound email directly into the Procest case workflow. Email becomes a first-class case interaction: outbound mail is composed from case context with templates and case-data variable resolution, all sent and received messages are converted to PDF and stored as case documents (`caseDocument`), and threading via RFC 2822 headers keeps conversations grouped per case. The integration supports both Nextcloud Mail accounts and standalone SMTP/IMAP transports, plus a manual queue for unlinked inbound messages.
