@@ -1,5 +1,16 @@
 # Proposal: dso-omgevingsloket
 
+## Placement & Information Architecture
+
+**Placement type:** `SUB_PAGE` — Sub-page beneath a top-level menu entry. Renders as a page inside the parent surface (usually reachable via a router child route or a tab on the parent index page).
+
+**Lives at:** Portalen › DSO/Omgevingsloket
+
+**Rationale:** DSO-inbox.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Summary
 
 Integrate Procest with the DSO (Digitaal Stelsel Omgevingswet) Omgevingsloket so that municipalities can receive vergunningaanvragen from the national one-stop portal, manage the VTH (Vergunningen, Toezicht, Handhaving) case lifecycle, and push status updates and decisions back to DSO-LV. The change adds Procest-side case management on top of the DSO data layer (`vergunningaanvraag`, `activiteit`, `locatie`, `omgevingsdocument`) already specified in OpenRegister: zaak conversion of inbound verzoeken, deadline tracking against the 8-week reguliere procedure, beschikking generation, samenwerkverzoek and doorstuur handling, and status pushback through OpenConnector's DSO adapter.
