@@ -1,5 +1,16 @@
 # Proposal: document-zaakdossier
 
+## Placement & Information Architecture
+
+**Placement type:** `DETAIL_TAB` — Tab on the detail view of an existing object. NOT a standalone page — appears inside the parent record's detail surface (e.g. an extra tab on the existing detail header).
+
+**Lives at:** Zaken › Documenten
+
+**Rationale:** Documenten-tab.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Summary
 
 Implement the ZGW DRC-compliant case dossier (zaakdossier) inside Procest. Every zaak gets a structured document dossier backed by Nextcloud Files, where each linked file is represented as an `informatieobject` with full ZGW metadata (titel, vertrouwelijkheidaanduiding, auteur, status, informatieobjecttype, integriteit) and joined to the case via `zaakinformatieobject`. The dossier groups documents by informatieobjecttype, enforces a `concept -> definitief -> gearchiveerd` status lifecycle, supports drag-and-drop upload with metadata, full-text search, version history, bulk operations, and ZIP export with `manifest.csv`.
