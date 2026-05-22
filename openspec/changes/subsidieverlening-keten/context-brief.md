@@ -3,6 +3,17 @@ status: draft
 ---
 # Subsidieverlening-keten
 
+## Placement & Information Architecture
+
+**Placement type:** `ACTION` — Action button or menu item on an existing surface. Implemented as a single button / context-menu entry that opens a modal/wizard or runs a backend operation — NOT a page.
+
+**Lives at:** Configuratie › Zaaktypes
+
+**Rationale:** Subsidie-zaaktype-seed + keten-workflow.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Purpose
 
 The `subsidieverlening-keten` capability extends procest with end-to-end subsidy-grant lifecycle management for Dutch government grant-making bodies (gemeenten, provincies, ministeries, agentschappen, fondsen, en private vermogensfondsen die zich aan de governance-richtlijnen van het FIN willen conformeren). Subsidy issuance is a fundamentally different administrative process from permitting (VTH) — it commits public money over multi-year horizons (vaak 2-5 jaar, soms 7 jaar voor langlopende onderzoeks- of infrastructuurtrajecten), requires periodic substantiation of how the money was spent, supports advance disbursement (voorschotten conform AWB 4:95) followed by final-settlement (vaststelling conform AWB 4:46), and may end in clawback (terugvordering conform AWB 4:57) if the grantee failed to meet conditions. The Algemene wet bestuursrecht (AWB) titel 4.2 sets the legal framework; sector-specific regelingen (e.g. ASV gemeenten, Kaderwet subsidies OCW, Regeling Europese EZK- en LNV-subsidies, Subsidieregeling instituten OCW, Subsidieregeling sport, ZonMW-regelingen, NWO-regelingen) layer on top with their own termijnen, rapportage-cycli, en accountantsverklaring-drempels.
