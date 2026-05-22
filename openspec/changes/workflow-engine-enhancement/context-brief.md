@@ -1,5 +1,16 @@
 # Workflow Engine Enhancement
 
+## Placement & Information Architecture
+
+**Placement type:** `SETTING` — Setting under the app's Beheer/Admin/Configuration surface. Lives in the existing settings UI; no top-level menu entry.
+
+**Lives at:** Configuratie › Workflow-editor
+
+**Rationale:** Engine-uitbreiding.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Summary
 
 Enhance Procest's workflow engine to support fully configurable zaaktype workflows with zero-code configuration of process steps, status transitions, and task routing. This is the foundational change that enables VTH, Bezwaar/beroep, and Besluitvorming as follow-up workflow configurations rather than separate feature builds.
