@@ -1,5 +1,16 @@
 # Complaint Management Implementation
 
+## Placement & Information Architecture
+
+**Placement type:** `SUB_PAGE` — Sub-page beneath a top-level menu entry. Renders as a page inside the parent surface (usually reachable via a router child route or a tab on the parent index page).
+
+**Lives at:** Bezwaar & beroep › Klachten
+
+**Rationale:** Klachten-CRUD.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Why
 Dutch municipalities are legally required to handle citizen complaints under Awb chapter 9, with mandated acknowledgment (5 working days), resolution (6 weeks plus an optional 4-week verdaging), the right to be heard (hoorgesprek), and a formal written disposition (oordeel). Currently Procest has no dedicated complaint infrastructure — complaints get logged as generic cases, losing channel-specific intake, deadline math, frequency analysis, and disposition tracking. This makes Awb compliance verifiable only by manual sampling and prevents detection of systemic complaint patterns (e.g., recurring complaints about a single department or employee).
 
