@@ -3,6 +3,17 @@ status: draft
 ---
 # Archief-edepot-handover
 
+## Placement & Information Architecture
+
+**Placement type:** `ACTION` — Action button or menu item on an existing surface. Implemented as a single button / context-menu entry that opens a modal/wizard or runs a backend operation — NOT a page.
+
+**Lives at:** Besluitvorming › Beschikkingen + Configuratie › Integraties
+
+**Rationale:** Archief-handover-knop + integratie-config.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Purpose
 
 The `archief-edepot-handover` capability provides a verifiable, audit-grade overdracht van afgesloten procest-zaken naar een e-Depot conform de Archiefwet 1995 (en in de toekomst Archiefwet 2024) en de Nederlandse archief-metadatastandaarden TMLO (Toepassingsprofiel Metadatering Lokale Overheden, versie 1.2.1) en het opvolger MDTO (Metagegevens voor Duurzaam Toegankelijke Overheidsinformatie, versie 1.0/1.1). Bestuursorganen zijn wettelijk verplicht zaak-dossiers na hun bewaartermijn (typisch 5, 7, 10, 20 of permanent volgens Selectielijst gemeenten en intergemeentelijke organen 2020) over te dragen aan een gecertificeerde archiefbewaarplaats — een e-Depot beheerd door het Regionaal Historisch Centrum, het Gemeentearchief, of een commerciële dienst (De Ree, Digital Taties, Picturae, Devoteam, et cetera).
