@@ -1,5 +1,16 @@
 # Proposal: woo-case-type
 
+## Placement & Information Architecture
+
+**Placement type:** `ACTION` — Action button or menu item on an existing surface. Implemented as a single button / context-menu entry that opens a modal/wizard or runs a backend operation — NOT a page.
+
+**Lives at:** Configuratie › Zaaktypes
+
+**Rationale:** WOO-zaaktype-seed.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Why
 
 WOO (Wet open overheid) requests are one of the most common, deadline-driven case types Dutch municipalities must handle, yet Procest currently ships no pre-configured WOO zaaktype. Case workers create WOO cases ad hoc, leading to inconsistent stage names, missed 4-week deadlines, undocumented weigeringsgronden, and unredacted personal data being disclosed. This change ships a ready-to-activate WOO zaaktype template plus the supporting UI and services needed to run the statutory 8-stage WOO lifecycle out of the box.
