@@ -3,6 +3,17 @@ status: draft
 ---
 # Termijnbewaking-dwangsom-engine
 
+## Placement & Information Architecture
+
+**Placement type:** `SUB_PAGE` — Sub-page beneath a top-level menu entry. Renders as a page inside the parent surface (usually reachable via a router child route or a tab on the parent index page).
+
+**Lives at:** Zaken › Termijnbewaking
+
+**Rationale:** Termijn-engine + dwangsom-trigger.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Purpose
 
 The `termijnbewaking-dwangsom-engine` capability provides a single, auditable, stateful counter for wettelijke beslis-termijnen across every procest-driven decision and the automatic Wet dwangsom-bij-niet-tijdig-beslissen consequences that follow termijn-overschrijding. Dutch administrative law (AWB hoofdstuk 4, titel 4.1.3 en titel 4.1.3a) imposes strict deadlines on bestuursorganen for taking a beschikking on an aanvraag, and the Wet dwangsom en beroep bij niet tijdig beslissen (in werking 2009-10-01) gives the burger an automatic geldelijke vergoeding if the bestuursorgaan misses the deadline after a formal ingebrekestelling.
