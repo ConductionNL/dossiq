@@ -3,6 +3,17 @@ status: draft
 ---
 # Beschikking compose → ondertekenen → Berichtenbox → archief
 
+## Placement & Information Architecture
+
+**Placement type:** `SUB_PAGE` — Sub-page beneath a top-level menu entry. Renders as a page inside the parent surface (usually reachable via a router child route or a tab on the parent index page).
+
+**Lives at:** Besluitvorming › Beschikkingen
+
+**Rationale:** Compose→sign→Berichtenbox→archief flow.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Purpose
 
 Een beschikking is in het Nederlands bestuursrecht de schriftelijke uitwerking van een individueel besluit dat bestemd is voor één belanghebbende of een specifiek bepaalbare groep belanghebbenden. Een beschikking is het sluitstuk van vrijwel iedere gemeentelijke zaak: het officiële besluit waarmee de gemeente rechten of plichten van een burger of bedrijf vaststelt. Het opstellen, ondertekenen, verzenden en archiveren van een beschikking is in de huidige praktijk vaak een fragmentarisch proces waarbij vier of vijf verschillende systemen worden ingezet (zaaksysteem voor de data, Word/PDF voor de opmaak, een aparte ondertekenservice, een aparte Berichtenbox-koppeling, een aparte archiefkoppeling), met handmatige overdrachtsstappen die foutgevoelig zijn en moeilijk auditbaar.
