@@ -18,6 +18,17 @@ target_users:
 
 # Leges-heffingen voor zaaktype-gestuurde aanvragen
 
+## Placement & Information Architecture
+
+**Placement type:** `DETAIL_TAB` — Tab on the detail view of an existing object. NOT a standalone page — appears inside the parent record's detail surface (e.g. an extra tab on the existing detail header).
+
+**Lives at:** Zaken › Leges & heffingen
+
+**Rationale:** Leges-tab.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Purpose
 
 Nederlandse gemeenten heffen leges voor een breed scala aan publieke dienstverlening: paspoorten, rijbewijzen, uittreksels BRP, omgevingsvergunningen, APV-vergunningen, evenementenvergunningen, drank-en-horecavergunningen, ontheffingen, en duizenden andere gemeentelijke producten. De legestarieven worden jaarlijks (en soms vaker) vastgesteld in de gemeentelijke legesverordening, een raadsbesluit dat als bijlage een complete tarieventabel bevat met vaak honderden of duizenden regels. Deze tarieventabel is hiërarchisch opgebouwd (Titel I Algemene dienstverlening, Titel II Dienstverlening vallend onder fysieke leefomgeving / omgevingsvergunning, Titel III Dienstverlening vallend onder Europese dienstenrichtlijn) en kent vele uitzonderingen, vrijstellingen en kortingen.
