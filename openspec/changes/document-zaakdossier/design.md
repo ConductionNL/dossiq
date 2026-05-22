@@ -114,3 +114,43 @@ Backend
 - Public share rejected when `vertrouwelijkheidaanduiding >= vertrouwelijk`
 - ZGW download endpoint uses `StreamResponse` with HTTP Range support for resumable downloads
 - All operations (upload, status change, publish, delete) recorded in OpenRegister audit trail
+
+## Seed Data
+
+### informatieobjecttype (catalog — 5 voorbeelden)
+
+| uuid | omschrijving | informatieobjectcategorie | vertrouwelijkheidaanduiding | beginGeldigheid |
+|------|--------------|---------------------------|-----------------------------|-----------------|
+| `iot-aaaa-0001` | Aanvraagformulier | Aanvraag | openbaar | 2024-01-01 |
+| `iot-aaaa-0002` | Intern advies | Advies | intern | 2024-01-01 |
+| `iot-aaaa-0003` | Beschikking | Besluit | zaakvertrouwelijk | 2024-01-01 |
+| `iot-aaaa-0004` | Correspondentie burger | Correspondentie | openbaar | 2024-01-01 |
+| `iot-aaaa-0005` | Situatietekening | Tekening | openbaar | 2024-01-01 |
+
+### informatieobject (5 voorbeelden — zaak omgevingsvergunning Bakkerstraat 12)
+
+| uuid | titel | bestandsnaam | formaat | vertrouwelijkheidaanduiding | auteur | status | informatieobjecttype | creatiedatum | bronorganisatie | taal |
+|------|-------|-------------|---------|----------------------------|--------|--------|----------------------|--------------|-----------------|------|
+| `inf-bbbb-0001` | Aanvraagformulier omgevingsvergunning | aanvraag_bakkerstraat12.pdf | application/pdf | openbaar | Jan de Vries | definitief | `iot-aaaa-0001` | 2026-03-10 | 001234567 | nld |
+| `inf-bbbb-0002` | Intern advies brandweer | advies_brandweer_2026_0042.pdf | application/pdf | intern | Pieter Bakker | definitief | `iot-aaaa-0002` | 2026-04-02 | 001234567 | nld |
+| `inf-bbbb-0003` | Concept beschikking vergunning | beschikking_concept.docx | application/vnd.openxmlformats-officedocument.wordprocessingml.document | zaakvertrouwelijk | Marieke Smit | concept | `iot-aaaa-0003` | 2026-04-15 | 001234567 | nld |
+| `inf-bbbb-0004` | Ontvangstbevestiging aanvraag | ontvangstbevestiging.pdf | application/pdf | openbaar | Systeem | definitief | `iot-aaaa-0004` | 2026-03-10 | 001234567 | nld |
+| `inf-bbbb-0005` | Inrichtingstekening begane grond | tekening_bg.pdf | application/pdf | openbaar | Jan de Vries | concept | `iot-aaaa-0005` | 2026-03-10 | 001234567 | nld |
+
+### zaakinformatieobject (5 voorbeelden — koppeling aan zaak 2026-0042)
+
+| uuid | zaak | informatieobject | aardRelatieWeergave | registratiedatum |
+|------|------|-----------------|---------------------|------------------|
+| `zio-cccc-0001` | `case-2026-0042` | `inf-bbbb-0001` | Hoort bij, omgekeerd | 2026-03-10T09:14:00Z |
+| `zio-cccc-0002` | `case-2026-0042` | `inf-bbbb-0002` | Hoort bij, omgekeerd | 2026-04-02T14:30:00Z |
+| `zio-cccc-0003` | `case-2026-0042` | `inf-bbbb-0003` | Legt vast, omgekeerd | 2026-04-15T11:00:00Z |
+| `zio-cccc-0004` | `case-2026-0042` | `inf-bbbb-0004` | Hoort bij, omgekeerd | 2026-03-10T09:14:05Z |
+| `zio-cccc-0005` | `case-2026-0042` | `inf-bbbb-0005` | Hoort bij, omgekeerd | 2026-03-10T09:15:00Z |
+
+### besluitinformatieobject (3 voorbeelden — koppeling besluit aan document)
+
+| uuid | besluit | informatieobject | registratiedatum |
+|------|---------|-----------------|------------------|
+| `bio-dddd-0001` | `besluit-2026-0042-001` | `inf-bbbb-0003` | 2026-05-03T10:00:00Z |
+| `bio-dddd-0002` | `besluit-2026-0042-001` | `inf-bbbb-0004` | 2026-05-03T10:00:05Z |
+| `bio-dddd-0003` | `besluit-2026-0041-001` | `inf-bbbb-0001` | 2026-04-28T08:45:00Z |
