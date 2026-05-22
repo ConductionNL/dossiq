@@ -3,6 +3,17 @@ status: draft
 ---
 # Sociaal domein zaaktype-family (WMO + Jeugdwet + Participatiewet)
 
+## Placement & Information Architecture
+
+**Placement type:** `ACTION` — Action button or menu item on an existing surface. Implemented as a single button / context-menu entry that opens a modal/wizard or runs a backend operation — NOT a page.
+
+**Lives at:** Configuratie › Zaaktypes
+
+**Rationale:** Seed-import knop (WMO/Jw/Pw).  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Purpose
 
 Met de decentralisaties van 2015 zijn gemeenten in Nederland verantwoordelijk geworden voor het volledige sociaal domein, een takenpakket dat voorheen verdeeld was over Rijk, provincies en zorgkantoren. Het sociaal domein vormt een eigen zaakuniversum binnen de gemeentelijke uitvoering, met fundamenteel andere privacy-eisen, doorlooptijden en samenwerkingspatronen dan het VTH-domein dat al door procest wordt afgedekt. Waar VTH-zaken (Omgevingsvergunning, Toezicht, Handhaving) overwegend openbare belangen en publiekrechtelijke handhaving betreffen, draaien WMO- (Wet maatschappelijke ondersteuning), Jeugdwet- en Participatiewet-zaken om individuele burgers in kwetsbare situaties. De gegevens die hierbij worden verwerkt vallen onder de categorie "bijzondere persoonsgegevens" zoals gedefinieerd in artikel 9 AVG: medische gegevens, gezinssituatie, financiële omstandigheden, justitiële antecedenten, en in toenemende mate ook etniciteit en religieuze overtuiging waar dit relevant is voor passende ondersteuning.
