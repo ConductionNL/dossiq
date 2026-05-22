@@ -1,5 +1,16 @@
 # Proposal: vth-module
 
+## Placement & Information Architecture
+
+**Placement type:** `DETAIL_TAB` — Tab on the detail view of an existing object. NOT a standalone page — appears inside the parent record's detail surface (e.g. an extra tab on the existing detail header).
+
+**Lives at:** Zaken › Per zaaktype › VTH
+
+**Rationale:** VTH-tree onder zaaktype-groep.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Why
 
 VTH (Vergunningen, Toezicht, Handhaving) is the single highest-value functional domain for Dutch municipalities adopting Procest. 29% of analysed VTH tenders require an integrated permits/supervision/enforcement module, and stock case-management apps do not cover the cross-domain inspection and sanction workflows that a VTH-volwaardige module needs. This change introduces the V1 tier of the Procest VTH module: a DSO/Omgevingsloket intake service stub, configurable inspection checklists, advice management workflow, and the LHS (Landelijke Handhavingsstrategie) enforcement matrix as data, so downstream changes (mobiel-inspectie, legesberekening) can hook into a real VTH zaaktype stack.
