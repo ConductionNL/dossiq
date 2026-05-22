@@ -1,5 +1,16 @@
 # Consultation Management Implementation
 
+## Placement & Information Architecture
+
+**Placement type:** `SUB_PAGE` — Sub-page beneath a top-level menu entry. Renders as a page inside the parent surface (usually reachable via a router child route or a tab on the parent index page).
+
+**Lives at:** Besluitvorming › Adviezen
+
+**Rationale:** Consultatie-flow.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Why
 Inter-departmental and external advisory consultations (adviesaanvragen) are currently exchanged via email, which destroys auditability, version control, and deadline enforcement. Awb articles 3:5-3:9 give consultation a legal status: the decision-maker must verify advice was produced diligently and respect reasonable response deadlines. Without structured consultations, municipalities cannot prove diligence on omgevingsvergunning, monumentenadvies, milieuadvies, or welstandstoets paths, and case workers have no central view of what is outstanding or blocking case completion. ArkCase and Flowable both model this concept as a sub-case linked to a parent — Procest needs the same primitive built on top of OpenRegister.
 
