@@ -1,48 +1,70 @@
+---
+kind: code
+depends_on:
+  - case-management
+  - case-types
+  - admin-settings
+chain: []
+---
+
 # Proposal: case-email-integration
 
-## Summary
+**Status:** proposed
+**Scope:** procest
+**Owner:** Conduction BV — Procest team
 
-Integrate inbound and outbound email directly into the Procest case workflow. Email becomes a first-class case interaction: outbound mail is composed from case context with templates and case-data variable resolution, all sent and received messages are converted to PDF and stored as case documents (`caseDocument`), and threading via RFC 2822 headers keeps conversations grouped per case. The integration supports both Nextcloud Mail accounts and standalone SMTP/IMAP transports, plus a manual queue for unlinked inbound messages.
+## Why
 
-## Motivation
+Email remains the primary correspondence channel between municipalities and citizens, applicants, and partner organizations. Today, that correspondence sits in personal mailboxes outside the case system, breaking the audit trail and making it impossible to reconstruct a case after the fact. ZGW and Archiefwet require case correspondence to be archived as informatieobjecten.
 
-Email remains the primary correspondence channel between municipalities and citizens, applicants, and partner organizations. Today, that correspondence sits in personal mailboxes outside the case system, breaking the audit trail and making it impossible to reconstruct a case after the fact. ZGW and Archiefwet require case correspondence to be archived as informatieobjecten. This change closes the gap: every sent/received email is captured, classified, threaded, and surfaced in the case detail view and the activity timeline.
+This change closes the gap: every sent and received email is captured, classified, threaded, and surfaced in the case detail view and the activity timeline. Email becomes a first-class case interaction rather than a side channel invisible to the system.
 
-## Affected Projects
+## What changes
 
-- [ ] Project: `procest` — Backend services, controllers, background jobs, schemas, and Vue components for email integration
+1. **Three new OpenRegister schemas** added to `procest_register.json`:
+   - `emailTemplate` — reusable message templates per case type with `{{variable}}` placeholders and versioning
+   - `emailMessage` — individual sent/received messages with RFC 2822 threading metadata and Docudesk PDF status
+   - `emailThread` — conversation grouping object linking messages to a case
 
-## Scope
+2. **Backend services and background jobs**:
+   - `CaseEmailService` — outbound send, inbound processing, template variable resolution, RFC 2822 threading, Docudesk PDF orchestration
+   - `EmailTemplateService` — template CRUD with version-on-edit (no overwrite)
+   - `CaseEmailController` — authenticated REST API for compose, templates, and unlinked-queue endpoints
+   - `InboundEmailJob` — `TimedJob` IMAP poller with auto-linking by case-number regex and `In-Reply-To` header
+   - `EmailPdfRetryJob` — `TimedJob` retrying failed Docudesk conversions up to 3× with exponential backoff
 
-### In Scope
+3. **Frontend components** (new Vue 2 components):
+   - `EmailComposer.vue` — modal compose dialog with template selector, attachment picker, CC/BCC
+   - `EmailThread.vue` + `EmailTab.vue` — chronological thread view in case detail sidebar
+   - `EmailTemplateAdmin.vue` — template CRUD per case type with variable sidebar and live preview
+   - `UnlinkedQueue.vue` — manual linking of unmatched inbound emails
+   - `EmailSettings.vue` — admin SMTP/IMAP configuration with test-connection
 
-- **Outbound email** — Compose with templates, variable resolution, attachment picker from case documents, CC/BCC, send confirmation
-- **Inbound email** — IMAP polling background job, auto-linking by case-number regex and `In-Reply-To`, unlinked queue with manual link/discard
-- **Email templates per case type** — CRUD, versioning, variable sidebar, default Dutch templates (`Ontvangstbevestiging`, `Informatieverzoek`, `Besluit`)
-- **Threading** — `Message-ID` / `In-Reply-To`, `emailThread` objects, chronological view in case detail
-- **Email-to-PDF** — Docudesk integration, retry on failure, large-email background conversion, storage as `caseDocument`
-- **Activity timeline** — `email_sent` / `email_received` events with timestamps and recipients
-- **Admin settings** — SMTP and IMAP configuration with connection test, Nextcloud Mail transport option
+4. **Settings extension**: `email_*` config keys added to `SettingsService`; `EmailSettings.php` registers a new admin settings section.
 
-### Out of Scope
+5. **CaseDetail integration**: new "Email" sidebar tab and "Verstuur email" header action wired into existing `CaseDetail.vue`.
 
-- Real-time push notifications from IMAP IDLE (polling only)
+## Impact
+
+- **Entities added:** 3 new OpenRegister schemas (`emailTemplate`, `emailMessage`, `emailThread`)
+- **Entities modified:** none — `case` and `caseDocument` are consumed read-only
+- **API routes added:** 10 new endpoints under `/index.php/apps/procest/api/`
+- **Background jobs added:** 2 (`InboundEmailJob`, `EmailPdfRetryJob`)
+- **Admin settings section added:** Email (SMTP / IMAP / transport / polling)
+- **No breaking changes** to existing case-management, case-types, or admin-settings surfaces
+
+## Out of scope
+
+- Real-time push notifications from IMAP IDLE (polling only in this change)
 - Calendar/iCalendar handling of meeting invitations
-- Encrypted (S/MIME, PGP) email
+- Encrypted email (S/MIME, PGP)
 - DMARC/SPF/DKIM authentication of inbound mail (delegated to mail server)
-
-## Approach
-
-1. Add `emailTemplate`, `emailMessage`, `emailThread` schemas to `procest_register.json`
-2. Create `CaseEmailService` for send/receive, template variable resolution, threading, PDF conversion
-3. Create `CaseEmailController` (auth) and routes for compose, template, queue endpoints
-4. Add `InboundEmailJob` `TimedJob` for IMAP polling (configurable interval, batch size)
-5. Vue: `EmailComposer.vue`, `EmailTemplateAdmin.vue`, `EmailThread.vue`, email tab in `CaseDetail.vue`
-6. Extend `SettingsService` with `email_*` config keys (SMTP, IMAP, transport choice)
 
 ## Risks
 
-- IMAP credentials must be stored encrypted via Nextcloud credential store
-- Auto-linking regex must not match attacker-controlled subjects from other tenants
-- Docudesk failures must not block email reception — retry asynchronously
-- Large attachments and embedded images can exhaust memory if processed synchronously
+| Risk | Mitigation |
+|------|-----------|
+| IMAP credentials exposure | Stored via `IAppConfig` with `setSensitive(true)`; never logged |
+| Subject-regex abuse by attacker-controlled mail | Regex anchored; case lookup scoped to current organization (tenant isolation) |
+| Docudesk failures block email reception | Conversion runs async; failures set `pdfStatus: failed` and trigger retry job |
+| Memory exhaustion on large attachments | Messages > 5 MB deferred to background conversion; batch size configurable and capped at 50 |

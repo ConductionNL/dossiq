@@ -1,0 +1,8 @@
+{
+  "spec_slug": "case-email-integration",
+  "title": "Proposal: case-email-integration",
+  "app": "procest",
+  "repo": "https://github.com/ConductionNL/procest",
+  "depends_on": [],
+  "issue": null
+}
