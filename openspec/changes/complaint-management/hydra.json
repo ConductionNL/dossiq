@@ -1,0 +1,8 @@
+{
+  "spec_slug": "complaint-management",
+  "title": "Complaint Management Implementation",
+  "app": "procest",
+  "repo": "https://github.com/ConductionNL/procest",
+  "depends_on": [],
+  "issue": null
+}
