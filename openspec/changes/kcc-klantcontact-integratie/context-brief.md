@@ -2,6 +2,17 @@ status: proposed
 
 # KCC Klantcontact Integratie
 
+## Placement & Information Architecture
+
+**Placement type:** `SUB_PAGE` — Sub-page beneath a top-level menu entry. Renders as a page inside the parent surface (usually reachable via a router child route or a tab on the parent index page).
+
+**Lives at:** Portalen › KCC-werkplek
+
+**Rationale:** KCC-integratie.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Purpose
 
 Het KlantContactCentrum (KCC) van een gemeente is de eerste lijn voor alle inkomende vragen: telefoon, email, web-formulier, chat, social media. KCC-medewerkers moeten in seconden bepalen wat de vraag is, wie de beller is, welke lopende zaken hij/zij heeft, en hoe de vraag te routeren. Vandaag werken ze met een lappendeken van losse systemen: telefooncentrale (CTI), Outlook, Topdesk of een ticketsysteem, het zaaksysteem, het BRP-bevraging-portaal, en handgeschreven post-its. Het resultaat: gemiddeld 4,2 minuten per call (vs. industrie-benchmark 2,8 minuut), 23% van calls eindigt in "ik bel u terug", en de zaak-historie van klantcontactmomenten is fragmentarisch.
