@@ -1,0 +1,8 @@
+{
+  "spec_slug": "subsidieverlening-keten",
+  "title": "Subsidieverlening-keten",
+  "app": "procest",
+  "repo": "https://github.com/ConductionNL/procest",
+  "depends_on": [],
+  "issue": null
+}
