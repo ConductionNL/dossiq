@@ -2,6 +2,17 @@ status: proposed
 
 # Leverancier Zaakportaal
 
+## Placement & Information Architecture
+
+**Placement type:** `SUB_PAGE` — Sub-page beneath a top-level menu entry. Renders as a page inside the parent surface (usually reachable via a router child route or a tab on the parent index page).
+
+**Lives at:** Portalen › Leverancier
+
+**Rationale:** Leveranciers-portaal.  
+_Source: /tmp/ia-procest-hrmq.md_
+
+> **Implementation note for builders:** Respect the placement above. Do not promote this spec to a top-level menu item, sub-page, or new route unless the placement type explicitly says so. If the placement is `DETAIL_TAB`, `WIDGET`, `ACTION`, `SETTING`, or `INFRA`, the feature must NOT introduce a new entry in the app sidebar. When in doubt, ask before creating a new top-level surface.
+
 ## Purpose
 
 Gemeenten en andere overheden hebben honderden tot duizenden leveranciers waarmee zij dagelijks zaken doen: aannemers, ICT-leveranciers, schoonmaakbedrijven, advocaten, accountants, zorgaanbieders, jeugdhulpaanbieders. Elk van deze leveranciers heeft regelmatig vragen ("waar staat mijn factuur?", "wat is de status van mijn aanbestedingsinschrijving?", "heeft de gemeente mijn contractverlenging al getekend?"), maar moet voor elk antwoord bellen, mailen of een formulier invullen. De gemeente verwerkt deze vragen handmatig — duur, traag en frustrerend voor beide partijen.
