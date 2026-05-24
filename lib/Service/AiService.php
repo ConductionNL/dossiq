@@ -20,6 +20,11 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md#task-2
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md#task-3
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md#task-4
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md#task-5
  */
 
 declare(strict_types=1);
