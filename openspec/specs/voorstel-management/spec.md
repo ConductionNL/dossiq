@@ -1,3 +1,33 @@
+---
+status: retired
+retired_in: procest-adopt-or-abstractions
+canonical_home: case-management/spec.md
+---
+
+> **RETIRED — voorstel folded into the consolidated case lifecycle.**
+>
+> In the OR-abstractions consolidation the `voorstel` entity was
+> absorbed into the case schema: a case in `concept` → `in_parafering`
+> → `teruggestuurd` → `geparafeerd` → `aangeboden` → `besloten`
+> **is** the voorstel. The schema, status lifecycle, detail view,
+> create-from-case flow, and per-case multiplicity (deelzaak) all
+> live on the case entity now, with role-based transition
+> authorization expressed in the `x-openregister-lifecycle`
+> annotation. See ADR-022 and `case-management/spec.md`.
+>
+> This file is preserved as a historical appendix. Refer to
+> `case-management/spec.md` for canonical voorstel semantics.
+
+## REQ migration map
+
+| Retired REQ here | New home in `case-management/spec.md` |
+|------------------|----------------------------------------|
+| Voorstel Schema Registration | Case Entity data model + lifecycle states (`concept`..`besloten`) on the case schema. |
+| Create Voorstel from Case | REQ-CM-01 Case Creation (with case-type-driven defaults). |
+| Voorstel Status Lifecycle | REQ-CM-14 Status Change + consolidated `x-openregister-lifecycle` annotation; `terugsturen` / `paraferen` / `aanbieden` are guarded transitions. |
+| Multiple Voorstellen per Case | REQ-CM-18 Sub-Cases (deelzaak) — each B&W-voorstel that needs an independent route is modeled as a deelzaak under its parent case. |
+| Voorstel Detail View | REQ-CM-06 Case Detail View — including parafering progress timeline (REQ-CM-07) and audit trail (REQ-CM-22). |
+
 ## ADDED Requirements
 
 ### Requirement: Voorstel Schema Registration
