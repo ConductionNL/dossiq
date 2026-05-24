@@ -15,6 +15,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
  */
 
 declare(strict_types=1);
