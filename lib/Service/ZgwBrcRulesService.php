@@ -59,6 +59,8 @@
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
  * @SuppressWarnings(PHPMD.NPathComplexity)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-3
  */
 
 declare(strict_types=1);
