@@ -16,7 +16,8 @@ Case management is the core capability of Procest. A case represents a coherent 
 Procest case lifecycle is expressed as an OR `x-openregister-lifecycle`
 annotation on the case schema. **This spec is the canonical home;
 previously sibling specs (`parafering-actions`, `parafering-audit-trail`,
-`parafeerroute-engine`) are retired and their requirements live here.**
+`parafeerroute-engine`, `voorstel-management`) are retired and their
+requirements live here.**
 
 ### OR Capabilities Consumed
 
@@ -61,6 +62,7 @@ consumes:
 | `parafering-actions/spec.md` | Lifecycle transitions with `roles` array (advies, parafering, accordering). |
 | `parafering-audit-trail/spec.md` | OR `audit-trail-immutable` capability; delegation captured as audit context. |
 | `parafeerroute-engine/spec.md` | Lifecycle transitions with `requires` guards (skip-step / ad-hoc-step semantics). |
+| `voorstel-management/spec.md` | Voorstel entity is the case itself across the `concept`..`besloten` lifecycle; create-flow → REQ-CM-01, status lifecycle → REQ-CM-14, detail view → REQ-CM-06, multi-voorstel-per-case → REQ-CM-18 (deelzaak). |
 
 ### ZGW Notificaties API boundary preserved
 
