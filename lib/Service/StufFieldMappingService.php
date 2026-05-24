@@ -17,6 +17,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-stuf-integration/tasks.md#task-4
  */
 
 declare(strict_types=1);
