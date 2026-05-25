@@ -6,23 +6,46 @@ status: proposed
 
 **Status:** proposed
 **Scope:** procest
-**Depends on:** case-management, case-types, admin-settings, openregister (ObjectService + audit + RBAC per ADR-022), docudesk (PDF conversion)
+**Depends on:** case-management, case-types, admin-settings, openregister (`email` integration leaf + ObjectService + audit + RBAC per ADR-022 / ADR-019 / ADR-024), docudesk (PDF conversion)
 
 ## ADDED Requirements
 
+### Requirement: Email display and linking on the case consume the `email` integration leaf
+
+Email correspondence on a `case` MUST be displayed and linked through the OpenRegister `email` integration leaf (NC Mail; provider id `email`, group `comms`, storage `link-table`), per hydra ADR-022 (integrate, don't build), ADR-019 (integration registry), and ADR-024 (app manifest). Procest MUST NOT build a parallel email message store, compose dialog, thread view, or link table.
+
+- The `case` schema MUST be registered as a host surface so the leaf's email sidebar tab and `CnEmailCard` widget appear on the case detail page.
+- Linking an email to a case MUST use the leaf endpoint `POST /api/objects/{register}/{schema}/{id}/email` with `{mailAccountId, mailMessageId}`; unlink is the leaf's own action.
+- Composing/sending an email MUST happen in NC Mail (the leaf is link-only). Procest MAY prefill an NC Mail draft from a template, but MUST NOT send mail itself.
+- No `emailMessage` or `emailThread` schema, no `EmailComposer.vue`, `EmailThread.vue`, `EmailTab.vue`, or `UnlinkedQueue.vue` MAY be created.
+
+#### Scenario: Linked emails appear via the leaf tab on the case
+
+- **GIVEN** NC Mail is installed and the `email` leaf is registered on the `case` surface
+- **WHEN** a case worker opens the case detail page
+- **THEN** the leaf's email sidebar tab MUST list emails linked to that case (subject, sender, date) without any procest-authored email display component
+
+#### Scenario: Reviewer confirms no parallel email storage or UI
+
+- **GIVEN** the procest codebase after this change
+- **WHEN** scanned for `emailMessage`/`emailThread` schemas, `lib/Db/*email*`, `lib/Mapper/*Email*`, or `EmailComposer`/`EmailThread`/`EmailTab`/`UnlinkedQueue` Vue files
+- **THEN** no such files SHALL exist; email display, compose, and link flow through the `email` leaf and NC Mail
+
+#### Scenario: Linking uses the leaf link endpoint
+
+- **GIVEN** an email selected for linking to case `ZAAK-2026-000142`
+- **WHEN** the link is recorded
+- **THEN** it MUST be persisted via `POST /api/objects/{register}/{schema}/{id}/email`, NOT a procest-local table
+
 ---
 
-### REQ-CEI-001: The system SHALL store email entities as OpenRegister objects — no parallel storage
+### Requirement: The system SHALL provide per-zaaktype email templates as a leaf extension
 
-Three schemas MUST be declared in `lib/Settings/procest_register.json`:
+`emailTemplate` (`schema:DigitalDocument`) MUST be declared in `lib/Settings/procest_register.json` as the ONLY new email schema. It is a procest extension because NC Mail has no per-zaaktype templating bound to case data. Templates prefill an NC Mail draft; they do NOT introduce a send path.
 
-- `emailTemplate` (`schema:DigitalDocument`) — reusable templates per case type with `{{variable}}` placeholders and versioning
-- `emailMessage` (`schema:EmailMessage`) — individual sent/received messages with RFC 2822 threading metadata and Docudesk PDF status
-- `emailThread` (`schema:Conversation`) — conversation group linking messages to a case
+No custom PHP Entity, Mapper, or database table MAY be created for `emailTemplate`; storage flows through OpenRegister `ObjectService`.
 
-No custom PHP Entity, Mapper, or database table MAY be created for these entities. All storage flows through OpenRegister `ObjectService` (ADR-022 anti-pattern: no parallel storage).
-
-**emailTemplate fields** (all others from ADR-000 built-ins):
+**emailTemplate fields:**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -32,282 +55,169 @@ No custom PHP Entity, Mapper, or database table MAY be created for these entitie
 | `caseType` | string | Yes | OR reference to `caseType` |
 | `variables` | array | No | Variable names present in subject + body |
 | `version` | integer | No | Incremented on each edit (starts at 1) |
-| `isActive` | boolean | No | Whether selectable in composer (default: true) |
+| `isActive` | boolean | No | Whether selectable (default: true) |
 
-**emailMessage fields:**
+#### Scenario: Template schema loads without errors
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `messageId` | string | Yes | RFC 2822 globally unique identifier |
-| `inReplyTo` | string | No | Parent RFC 2822 Message-ID |
-| `direction` | enum | Yes | `inbound` or `outbound` |
-| `from` | string | Yes | Sender address |
-| `to` | array | Yes | Primary recipient addresses |
-| `cc` | array | No | CC addresses |
-| `bcc` | array | No | BCC addresses |
-| `subject` | string | Yes | Subject including case prefix |
-| `body` | string (HTML) | Yes | Rendered body |
-| `case` | string | Yes | OR reference to `case` (null for unlinked inbound) |
-| `thread` | string | No | OR reference to `emailThread` |
-| `pdfPath` | string | No | Path of generated PDF in Nextcloud Files |
-| `pdfStatus` | enum | No | `pending`, `completed`, or `failed` |
-| `sentAt` | datetime | Yes | Send/receive timestamp (ISO 8601) |
-| `templateId` | string | No | OR reference to `emailTemplate` used |
-| `templateVersion` | integer | No | Version of template at send time (snapshot) |
-
-**emailThread fields:**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `subject` | string | Yes | Canonical subject (RE: prefix stripped) |
-| `case` | string | Yes | OR reference to `case` |
-| `messageCount` | integer | No | Total messages in thread |
-| `firstMessageAt` | datetime | No | Timestamp of first message |
-| `lastMessageAt` | datetime | No | Timestamp of most recent message |
-
-#### Scenario: Schemas load without errors
-
-- **GIVEN** procest is installed and `procest_register.json` contains the three new schemas
+- **GIVEN** procest is installed and `procest_register.json` contains the `emailTemplate` schema
 - **WHEN** `openregister:load-register` is executed
-- **THEN** all three schemas MUST be created without validation errors and be accessible via the OR object API
+- **THEN** the schema MUST be created without validation errors and be accessible via the OR object API
 
-#### Scenario: Reviewer confirms no parallel storage
+#### Scenario: No emailMessage or emailThread schema is declared
 
-- **GIVEN** the procest codebase after this change
-- **WHEN** scanned for files matching `lib/Db/*email*`, `lib/Entity/*Email*`, or `lib/Mapper/*Email*`
-- **THEN** no such files SHALL exist; all email data flows through OpenRegister
+- **GIVEN** `procest_register.json` after this change
+- **WHEN** its schemas are enumerated
+- **THEN** `emailMessage` and `emailThread` MUST NOT be present; linked emails are held in the leaf link-table
 
 ---
 
-### REQ-CEI-002: The system SHALL send outbound email via `CaseEmailService` with template variable resolution
+### Requirement: The system SHALL prefill an NC Mail draft from a template — it SHALL NOT send mail itself
 
-`lib/Service/CaseEmailService.php` MUST implement `sendEmail(caseId, templateId, subject, body, recipients, cc, bcc, attachmentIds)`. The method MUST:
+`EmailTemplateService` MUST resolve `{{variable}}` placeholders from case, contact, and caseType data and hand the rendered subject + body to NC Mail as a **draft** (via the configured Mail account). Procest MUST NOT operate an SMTP transport.
 
-1. Resolve `{{variable}}` placeholders from case, contact, and caseType data
-2. Generate a unique RFC 2822 `Message-ID` header
-3. Dispatch via the configured transport (standalone SMTP or Nextcloud Mail account)
-4. Store the sent message as an `emailMessage` OR object with `direction: outbound`
-5. Find or create an `emailThread` object for the conversation
-6. Append an `email_sent` activity entry to the case's `activity` field
-7. Trigger Docudesk PDF conversion (async for messages > 5 MB, sync otherwise)
+The method MUST return the list of unresolved variable names so the frontend can highlight them in red; a draft MUST NOT be created containing raw `{{...}}` tokens.
 
-All controller methods MUST remain thin (<10 lines per ADR-003); business logic lives in the service.
-
-#### Scenario: Outbound email is sent and stored
-
-- **GIVEN** case `ZAAK-2026-000142` with contact `j.de.vries@example.nl`
-- **WHEN** a handler calls `sendEmail()` with template `Ontvangstbevestiging`
-- **THEN** an `emailMessage` MUST be stored with `direction: outbound` and `sentAt` set
-- **AND** an `email_sent` event MUST appear in the case `activity` array with recipient address and timestamp
-
-#### Scenario: Template variables resolve before sending
+#### Scenario: Template variables resolve before prefilling a draft
 
 - **GIVEN** template body `Geachte {{contact.salutation}}, zaaknummer {{case.identifier}}`
-- **WHEN** `resolveTemplateVariables()` is called for case `ZAAK-2026-000142`
+- **WHEN** the draft-prefill flow runs for case `ZAAK-2026-000142`
 - **THEN** the rendered body MUST contain the actual salutation and identifier — never raw `{{...}}` tokens
+- **AND** the email MUST be opened as an NC Mail draft, NOT dispatched by procest
 
 #### Scenario: Unresolved variables are returned, not sent blind
 
 - **GIVEN** a template containing `{{case.nonExistentField}}`
-- **WHEN** `resolveTemplateVariables()` processes it
-- **THEN** the method MUST return the list of unresolved names so the frontend highlights them in red; the email MUST NOT be dispatched with raw placeholder tokens to the recipient
+- **WHEN** the draft-prefill flow processes it
+- **THEN** the method MUST return the list of unresolved names so the frontend highlights them; no draft with raw placeholder tokens MUST be created
 
-#### Scenario: Composer is disabled for a final-status case
+#### Scenario: Final-status case blocks the compose action
 
 - **GIVEN** a case with `isFinal: true` on its current status
-- **WHEN** a handler views the email tab
-- **THEN** `EmailComposer.vue` MUST be fully disabled with an explanatory message; `sendEmail()` MUST reject the call server-side as well
+- **WHEN** a handler views the case detail page
+- **THEN** the "Verstuur email" action MUST be disabled with an explanatory message; the draft-prefill endpoint MUST reject the call server-side as well
 
 ---
 
-### REQ-CEI-003: The system SHALL poll inbound email and auto-link messages to cases via `InboundEmailJob`
+### Requirement: The system SHALL version email templates on edit — old versions are retained, not overwritten
 
-`lib/BackgroundJob/InboundEmailJob.php` MUST be a `TimedJob` (interval from `email_poll_interval`, default 300 s). Per run:
-
-1. Connect to configured IMAP server (or Nextcloud Mail account API)
-2. Fetch up to `email_poll_batch_size` (default 50) unread messages from the configured folder
-3. Skip messages whose `Message-ID` already exists as an `emailMessage` object (duplicate detection)
-4. Auto-link by matching `\[([A-Z]+-\d{4}-\d{6})\]` in the **subject header only** against cases scoped to the current organization
-5. Auto-link by matching `In-Reply-To` against existing `emailMessage.messageId` values
-6. Store each message as `emailMessage` with `direction: inbound`; update or create `emailThread`
-7. Move processed messages to the "Processed" IMAP folder
-8. Queue unlinked messages (no case match) with `case: null` for manual handling
-9. Catch all exceptions without rethrowing; log via `LoggerInterface` to prevent job deregistration
-
-#### Scenario: Subject-tagged inbound email auto-links
-
-- **GIVEN** an email with subject `[ZAAK-2026-000142] Vraag over mijn vergunning`
-- **WHEN** `InboundEmailJob` runs and the regex matches case `ZAAK-2026-000142`
-- **THEN** an `emailMessage` MUST be stored with `case` referencing that case and `direction: inbound`
-- **AND** an `email_received` event MUST appear in the case activity array
-
-#### Scenario: Reply email threads via `In-Reply-To`
-
-- **GIVEN** an inbound email with `In-Reply-To: <procest.2026.03.10.0915.a1b2c3@gemeente-westerhaven.nl>`
-- **WHEN** that Message-ID matches an existing `emailMessage.messageId`
-- **THEN** the new `emailMessage` MUST reference the same `thread` as the parent message
-
-#### Scenario: Unmatched email is queued for manual handling
-
-- **GIVEN** an inbound email with no recognizable case tag and no matching `In-Reply-To`
-- **WHEN** `InboundEmailJob` processes it
-- **THEN** an `emailMessage` MUST be stored with `case: null` and appear in `GET /api/emails/unlinked`
-
-#### Scenario: Duplicate message is skipped
-
-- **GIVEN** `emailMessage` with `messageId: <CAx7z9q8@mail.example.nl>` already exists in OpenRegister
-- **WHEN** `InboundEmailJob` encounters the same RFC 2822 Message-ID during polling
-- **THEN** the message MUST NOT be stored again; the job MUST continue processing remaining messages
-
----
-
-### REQ-CEI-004: The system SHALL maintain `emailThread` aggregation on every message store or update
-
-When any `emailMessage` is stored, `CaseEmailService` MUST find or create an `emailThread` linked to the same case. The thread MUST be updated:
-
-- `messageCount` incremented by 1
-- `lastMessageAt` set to the current message's `sentAt`
-- `firstMessageAt` set only on thread creation
-
-Thread `subject` is the canonical subject with `Re:`, `Fw:`, and case-tag prefixes stripped.
-
-#### Scenario: Thread created on first message
-
-- **GIVEN** no thread exists for case `ZAAK-2026-000142`
-- **WHEN** the first outbound email is sent
-- **THEN** an `emailThread` MUST be created with `messageCount: 1` and `firstMessageAt` equal to `sentAt`
-
-#### Scenario: Thread count updated on reply
-
-- **GIVEN** a thread with `messageCount: 2`
-- **WHEN** a new inbound reply is processed
-- **THEN** the thread MUST update to `messageCount: 3` and `lastMessageAt` set to the new `sentAt`
-
----
-
-### REQ-CEI-005: The system SHALL convert every email to PDF via Docudesk and store as `caseDocument`
-
-Every `emailMessage` (inbound and outbound) MUST be converted to PDF by the existing Docudesk integration. The PDF is stored at `pdfPath` and registered as a `caseDocument` linked to the case. `pdfStatus` tracks state: `pending` → `completed` or `failed`.
-
-Conversion is synchronous for messages ≤ 5 MB; asynchronous (set `pdfStatus: pending`) for larger messages. `EmailPdfRetryJob` (every 15 min) retries `pdfStatus: failed` objects up to 3× with exponential backoff (15 min, 1 h, 4 h).
-
-#### Scenario: Docudesk failure does not block email storage or delivery
-
-- **GIVEN** Docudesk is temporarily unavailable
-- **WHEN** `sendEmail()` dispatches an outbound message
-- **THEN** the `emailMessage` MUST be stored with `pdfStatus: failed`
-- **AND** the email MUST still be delivered to the recipient via SMTP
-
-#### Scenario: Retry job re-attempts failed conversions
-
-- **GIVEN** three `emailMessage` objects with `pdfStatus: failed`
-- **WHEN** `EmailPdfRetryJob` runs and Docudesk is available
-- **THEN** all three MUST be retried; successful conversions MUST set `pdfStatus: completed`
-
----
-
-### REQ-CEI-006: The system SHALL version email templates on edit — old versions are retained, not overwritten
-
-`EmailTemplateService::updateTemplate(templateId, data)` MUST create a **new** `emailTemplate` OR object with `version` incremented. The previous version MUST remain so that existing `emailMessage` objects can reference their original `templateVersion`. Overwriting the existing object is forbidden.
+`EmailTemplateService::updateTemplate(templateId, data)` MUST create a **new** `emailTemplate` OR object with `version` incremented. The previous version MUST remain. Overwriting the existing object is forbidden.
 
 #### Scenario: Template update creates new version, old version retained
 
-- **GIVEN** template `Ontvangstbevestiging` at `version: 1` used in 5 sent emails
+- **GIVEN** template `Ontvangstbevestiging` at `version: 1`
 - **WHEN** an admin updates the body via `updateTemplate()`
 - **THEN** a new `emailTemplate` with `version: 2` MUST be created
 - **AND** the `version: 1` object MUST still exist with unchanged content
 
-#### Scenario: Sent messages retain their template version snapshot
+#### Scenario: Default Dutch templates are seeded per case type
 
-- **GIVEN** an `emailMessage` sent with `templateVersion: 1`
-- **WHEN** the template is updated to `version: 2`
-- **THEN** the `emailMessage.templateVersion` MUST still read `1`
+- **GIVEN** a newly created case type with no custom templates
+- **WHEN** the admin views the templates tab
+- **THEN** `Ontvangstbevestiging`, `Informatieverzoek`, and `Besluit` MUST be offered
 
 ---
 
-### REQ-CEI-007: The system SHALL expose all email operations through `CaseEmailController` with routes before the SPA catch-all
+### Requirement: The system SHALL ingest a shared functional mailbox and auto-link to cases — a documented ADR-022 exception
 
-`lib/Controller/CaseEmailController.php` is an authenticated Nextcloud controller (`@NoAdminRequired` on all methods). Endpoints:
+`lib/BackgroundJob/InboundEmailJob.php` MUST be a `TimedJob` (interval from `email_poll_interval`, default 300 s) that ingests a **shared/functional mailbox** (e.g. `zaken@gemeente.nl`) with no per-user NC Mail account owner. This is an explicit ADR-022 § Exceptions case, justified in `openspec/architecture/adr-002-shared-mailbox-poller-exception.md`, because the link-only `email` leaf inherits per-user Mail access and cannot ingest an owner-less mailbox unattended.
+
+The job MUST be scoped strictly to ingest + auto-link, and MUST record every link **through the leaf link endpoint** — NOT a procest-local message store. Per run:
+
+1. Connect to the configured shared IMAP mailbox
+2. Fetch up to `email_poll_batch_size` (default 50) unread messages from the configured folder
+3. Skip messages already linked (check the leaf link-table for the `mailMessageId`)
+4. Auto-link by matching `\[([A-Z]+-\d{4}-\d{6})\]` in the **subject header only** against cases scoped to the current organization
+5. Record the link via `POST /api/objects/{register}/{schema}/{id}/email`
+6. Move processed messages to the "Processed" IMAP folder
+7. Leave unmatched messages in the mailbox (manual linking remains a leaf affordance — no procest queue)
+8. Catch all exceptions without rethrowing; log via `LoggerInterface`
+
+#### Scenario: Subject-tagged inbound email auto-links via the leaf
+
+- **GIVEN** a shared-mailbox email with subject `[ZAAK-2026-000142] Vraag over mijn vergunning`
+- **WHEN** `InboundEmailJob` runs and the regex matches case `ZAAK-2026-000142`
+- **THEN** the email MUST be linked to that case via the leaf link endpoint, NOT stored in a procest `emailMessage` object
+
+#### Scenario: Already-linked message is skipped
+
+- **GIVEN** a `mailMessageId` already linked to a case in the leaf link-table
+- **WHEN** `InboundEmailJob` encounters the same message during polling
+- **THEN** it MUST NOT create a duplicate link; the job MUST continue processing remaining messages
+
+#### Scenario: Unmatched email is left for the leaf's manual link affordance
+
+- **GIVEN** a shared-mailbox email with no recognizable case tag
+- **WHEN** `InboundEmailJob` processes it
+- **THEN** procest MUST NOT create an app-local unlinked queue; the message remains linkable via the leaf tab's "Link existing email"
+
+#### Scenario: Exception is documented per ADR-022
+
+- **GIVEN** this requirement ships a server-side poller
+- **WHEN** a reviewer checks the ADR-022 exception discipline
+- **THEN** `openspec/architecture/adr-002-shared-mailbox-poller-exception.md` MUST exist, reference ADR-022, and scope the exception to shared-mailbox ingest + auto-link only
+
+---
+
+### Requirement: The system SHALL archive linked emails as PDF `caseDocument` via Docudesk
+
+When an email is linked to a case (by the shared-mailbox poller or manually via the leaf), `EmailArchivalService` MUST convert it to PDF via the existing Docudesk integration and register the PDF as a `caseDocument` linked to the case, for Archiefwet / ZGW informatieobject compliance. The leaf does not archive; this is a procest extension that reads the linked message's metadata via NC Mail.
+
+`pdfStatus` tracks state: `pending` → `completed` or `failed`. Conversion is synchronous for messages ≤ 5 MB; asynchronous for larger. `EmailPdfRetryJob` (every 15 min) retries `pdfStatus: failed` up to 3× with exponential backoff (15 min, 1 h, 4 h).
+
+#### Scenario: Docudesk failure does not block linking
+
+- **GIVEN** Docudesk is temporarily unavailable
+- **WHEN** an email is linked to a case
+- **THEN** the leaf link MUST still be recorded
+- **AND** the archival MUST be marked `pdfStatus: failed` and queued for retry
+
+#### Scenario: Retry job re-attempts failed conversions
+
+- **GIVEN** three archival records with `pdfStatus: failed`
+- **WHEN** `EmailPdfRetryJob` runs and Docudesk is available
+- **THEN** all three MUST be retried; successful conversions MUST set `pdfStatus: completed` and register a `caseDocument`
+
+---
+
+### Requirement: The system SHALL expose template and shared-mailbox-settings operations through a controller, before the SPA catch-all
+
+`lib/Controller/EmailTemplateController.php` is an authenticated Nextcloud controller (`@NoAdminRequired` on all methods). It MUST expose ONLY template CRUD, draft-prefill, and shared-mailbox settings — and MUST NOT expose email send/list/link/unlink (those are the leaf's). Endpoints:
 
 | Method | Path | Handler |
 |--------|------|---------|
-| `POST` | `/api/cases/{caseId}/emails` | `sendEmail` |
-| `GET` | `/api/cases/{caseId}/emails` | `listEmails` |
-| `GET` | `/api/emails/unlinked` | `listUnlinked` |
-| `POST` | `/api/emails/unlinked/{id}/link` | `linkEmail` |
-| `POST` | `/api/emails/unlinked/{id}/discard` | `discardEmail` |
 | `GET` | `/api/casetypes/{caseTypeId}/email-templates` | `listTemplates` |
 | `POST` | `/api/casetypes/{caseTypeId}/email-templates` | `createTemplate` |
 | `PUT` | `/api/email-templates/{templateId}` | `updateTemplate` |
+| `POST` | `/api/cases/{caseId}/email-templates/{templateId}/draft` | `prefillDraft` |
 | `GET` | `/api/settings/email` | `getSettings` |
 | `PUT` | `/api/settings/email` | `saveSettings` |
-| `POST` | `/api/settings/email/test-smtp` | `testSmtp` |
+| `POST` | `/api/settings/email/test-imap` | `testImap` |
 
-All routes MUST be registered in `appinfo/routes.php` BEFORE the Vue SPA catch-all route per ADR-003.
+All routes MUST be registered in `appinfo/routes.php` BEFORE the Vue SPA catch-all per ADR-003.
 
 #### Scenario: API routes resolve before SPA catch-all
 
-- **GIVEN** `GET /index.php/apps/procest/api/cases/{caseId}/emails` is requested
+- **GIVEN** `GET /index.php/apps/procest/api/casetypes/{caseTypeId}/email-templates` is requested
 - **WHEN** Nextcloud dispatches the request
-- **THEN** it MUST be handled by `CaseEmailController::listEmails()`, not the Vue SPA fallback
+- **THEN** it MUST be handled by `EmailTemplateController::listTemplates()`, not the Vue SPA fallback
 
-#### Scenario: Unauthenticated request is rejected
+#### Scenario: No bespoke email send/link endpoints are registered
 
-- **GIVEN** an unauthenticated HTTP request
-- **WHEN** `POST /api/cases/{caseId}/emails` is called
-- **THEN** the response MUST be `401 Unauthorized`
-
----
-
-### REQ-CEI-008: The system SHALL provide `EmailComposer.vue`, `EmailThread.vue`, and `EmailTab.vue` in the case detail
-
-**`EmailComposer.vue`** — Modal compose dialog:
-- Recipient pre-filled from case contact; CC and BCC fields
-- Subject pre-filled with `[{case.identifier}]` prefix
-- Rich-text body editor
-- Template selector dropdown (from `listTemplates()`)
-- Case-document attachment picker with running size counter and validation against `email_max_attachment_size`
-- Send confirmation step before dispatch
-- Fully disabled (non-interactive) when case status `isFinal`
-
-**`EmailThread.vue`** — Thread renderer:
-- Messages in chronological ascending order
-- Inbound left-aligned, outbound right-aligned
-- Inline expand/collapse per message
-- PDF download link; per-message Reply button opens `EmailComposer` pre-populated with `In-Reply-To`
-
-**`EmailTab.vue`** — Sidebar tab in `CaseDetail.vue`:
-- Groups messages by thread, most recent thread first
-- Collapsible thread groups; message-count badge on the tab header
-
-All components MUST import from `@conduction/nextcloud-vue`, not `@nextcloud/vue` directly (ADR-004). All user-visible strings via `t(appName, 'text')`.
-
-#### Scenario: `EmailComposer` disabled for final-status case
-
-- **GIVEN** a case with `isFinal: true`
-- **WHEN** a handler opens the email tab
-- **THEN** `EmailComposer` MUST be visually disabled and show a message explaining why
-
-#### Scenario: Thread renders messages in chronological order with direction styling
-
-- **GIVEN** a thread: outbound at 09:00, inbound at 14:00, outbound at 16:00
-- **WHEN** the handler views `EmailThread.vue`
-- **THEN** messages MUST appear oldest-first; outbound right, inbound left
+- **GIVEN** `appinfo/routes.php` after this change
+- **WHEN** its routes are enumerated
+- **THEN** there MUST be no `POST /api/cases/{caseId}/emails`, `/api/emails/unlinked`, `.../link`, `.../discard`, or `.../test-smtp` routes; those are the leaf's responsibility
 
 ---
 
-### REQ-CEI-009: The system SHALL provide `EmailTemplateAdmin.vue` for per-case-type template CRUD and `UnlinkedQueue.vue` for manual linking
+### Requirement: The system SHALL provide `EmailTemplateAdmin.vue` for per-case-type template CRUD
 
-**`EmailTemplateAdmin.vue`** (in `CaseTypeDetail.vue`):
-- Lists templates for the current case type
-- Create and edit form with subject/body fields, variable sidebar grouped by source (case/contact/caseType)
-- Live preview panel with unresolved variables highlighted in red
+`EmailTemplateAdmin.vue` (in `CaseTypeDetail.vue`) MUST:
 
-**`UnlinkedQueue.vue`** (standalone view):
-- Lists `emailMessage` objects with `case: null`
-- Per-row: sender, subject, received timestamp, body preview (≤ 200 chars)
-- Search-and-link UI (search case by identifier or title), link on click
-- Discard action with confirmation dialog (uses `NcDialog`, not `window.confirm()`)
+- List templates for the current case type
+- Provide a create/edit form with subject/body fields and a variable sidebar grouped by source (case/contact/caseType) with click-to-insert
+- Show a live preview with unresolved variables highlighted in red
+
+It MUST import from `@conduction/nextcloud-vue` (ADR-004) and route all user-visible strings via `t(appName, 'text')`. No bespoke compose/thread/queue components are introduced.
 
 #### Scenario: Unresolved variable highlighted in live preview
 
@@ -315,51 +225,50 @@ All components MUST import from `@conduction/nextcloud-vue`, not `@nextcloud/vue
 - **WHEN** the admin views the live preview in `EmailTemplateAdmin.vue`
 - **THEN** the placeholder MUST be rendered with a red background highlight and a warning listing unresolved names
 
-#### Scenario: Manually linked email removed from queue
+#### Scenario: Composer is the leaf / NC Mail, not a procest component
 
-- **GIVEN** an unlinked email in `UnlinkedQueue.vue`
-- **WHEN** the handler links it to case `ZAAK-2026-000142`
-- **THEN** the email MUST be removed from the queue view and appear in that case's email tab
+- **GIVEN** a handler clicks "Verstuur email" on a case
+- **WHEN** the compose flow opens
+- **THEN** it MUST open an NC Mail draft (optionally prefilled from a template), NOT a procest-authored `EmailComposer.vue`
 
 ---
 
-### REQ-CEI-010: The system SHALL provide admin email settings with SMTP/IMAP configuration and a test-connection action
+### Requirement: The system SHALL provide admin settings for the shared mailbox only
 
-`lib/Settings/EmailSettings.php` registers a Nextcloud admin settings section. `src/views/settings/EmailSettings.vue` renders:
+`lib/Settings/EmailSettings.php` registers a Nextcloud admin settings section. `src/views/settings/EmailSettings.vue` MUST render ONLY:
 
-- **SMTP**: host, port, encryption (none/starttls/ssl), username, password (masked), from-address
-- **IMAP**: host, port, encryption, username, password (masked), folder (default: INBOX)
-- **Transport selector**: standalone SMTP or Nextcloud Mail account picker
-- **"Send test email" button** calling `POST /api/settings/email/test-smtp`; shows success or specific error
+- **Shared-mailbox IMAP**: host, port, encryption, username, password (masked), folder (default: INBOX)
+- **Transport / source selector**: which NC Mail account or functional mailbox is the case-correspondence source
+- **"Test connection" button** calling `POST /api/settings/email/test-imap`
 
-All password fields stored via `IAppConfig` with `setSensitive(true)`. Passwords MUST NOT appear in API responses in plaintext (return `***` placeholder after save). Layout follows ADR-004 admin pattern: `CnVersionInfoCard` first, then `CnSettingsSection` per feature group.
+Per-user SMTP/IMAP is NOT configured here — NC Mail owns user accounts. The shared-mailbox password is stored via `IAppConfig` with `setSensitive(true)` and MUST NOT appear in API responses in plaintext (return `***`). Layout follows ADR-004: `CnVersionInfoCard` first, then `CnSettingsSection`.
 
-#### Scenario: Saved SMTP password not returned in plaintext
+#### Scenario: Saved shared-mailbox password not returned in plaintext
 
-- **GIVEN** an admin saves SMTP credentials
+- **GIVEN** an admin saves shared-mailbox IMAP credentials
 - **WHEN** `GET /api/settings/email` is called
-- **THEN** the response MUST contain `"smtp_password": "***"`, not the actual password
+- **THEN** the response MUST contain `"imap_password": "***"`, not the actual password
 
-#### Scenario: Test-email button returns specific error on misconfiguration
+#### Scenario: No per-user SMTP send configuration is exposed
 
-- **GIVEN** an invalid SMTP host is configured
-- **WHEN** the admin clicks "Send test email"
-- **THEN** `POST /api/settings/email/test-smtp` MUST return a non-2xx response with an error describing the failure (hostname not found / connection refused / authentication failed)
+- **GIVEN** the admin email settings page
+- **WHEN** the admin views the form
+- **THEN** there MUST be no SMTP-send credential fields; outbound mail is sent via NC Mail
 
 ---
 
-### REQ-CEI-011: The system SHALL include seed data for all three new schemas in `procest_register.json`
+### Requirement: The system SHALL include seed data for the `emailTemplate` schema in `procest_register.json`
 
-Per ADR-001 seed data requirements, `procest_register.json` MUST include realistic seed objects using the `@self` envelope (3 `emailTemplate`, 3 `emailThread`, 4 `emailMessage` objects as defined in `design.md`). Dutch realistic values required. Seed loading MUST be idempotent — re-import with `force: false` MUST NOT create duplicates; objects matched by slug.
+Per ADR-001, `procest_register.json` MUST include realistic seed `emailTemplate` objects using the `@self` envelope (3 templates: `Ontvangstbevestiging`, `Informatieverzoek`, `Besluit` as defined in `design.md`). No `emailMessage`/`emailThread` seeds — linked emails live in the leaf link-table, populated at runtime. Seed loading MUST be idempotent — slug-matched objects are not duplicated.
 
-#### Scenario: Seed data loads idempotently
+#### Scenario: Seed templates load idempotently
 
 - **GIVEN** `openregister:load-register` has already run once
 - **WHEN** it runs again with `force: false`
-- **THEN** no duplicate `emailTemplate`, `emailMessage`, or `emailThread` objects MUST be created; slug-matched objects are skipped
+- **THEN** no duplicate `emailTemplate` objects MUST be created; slug-matched objects are skipped
 
-#### Scenario: Seed templates appear in composer dropdown
+#### Scenario: Seed templates appear in the draft-prefill selector
 
 - **GIVEN** the seed data is loaded and a case of the matching `caseType` is open
-- **WHEN** a handler opens `EmailComposer.vue` and clicks the template selector
-- **THEN** `Ontvangstbevestiging`, `Informatieverzoek`, and `Besluit` MUST appear in the dropdown
+- **WHEN** a handler opens the template selector to prefill a draft
+- **THEN** `Ontvangstbevestiging`, `Informatieverzoek`, and `Besluit` MUST appear
