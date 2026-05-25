@@ -101,7 +101,7 @@
 			"label": "Documentation",
 			"icon": "icon-info",
 			"href": "https://conduction.gitbook.io/procest-nextcloud",
-			"section": "settings",
+			"section": "footer",
 			"order": 90
 		},
 		{
@@ -234,7 +234,7 @@
 			"label": "Features & roadmap",
 			"icon": "icon-toggle",
 			"route": "FeaturesRoadmap",
-			"section": "settings",
+			"section": "footer",
 			"order": 100
 		}
 	],
