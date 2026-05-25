@@ -17,6 +17,10 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-template-library/tasks.md#task-2
+ * @spec openspec/changes/retrofit-2026-05-24-template-library/tasks.md#task-3
+ * @spec openspec/changes/retrofit-2026-05-24-template-library/tasks.md#task-4
  */
 
 declare(strict_types=1);
