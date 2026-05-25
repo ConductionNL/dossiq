@@ -71,6 +71,7 @@ class SeedBezwaarBeroepData implements IRepairStep
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function run(IOutput $output): void
     {
         $output->info('Seeding bezwaar and beroep case types...');

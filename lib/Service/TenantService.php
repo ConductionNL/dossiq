@@ -86,6 +86,7 @@ class TenantService
      *
      * @return array|null The tenant data or null when none found.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getTenantForUser(string $userId): ?array
     {
         $orgs = $this->findOrganisationsByUserId(userId: $userId);
@@ -119,6 +120,7 @@ class TenantService
      *
      * @return array|null The tenant data, or null when not resolvable.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getTenantByGroupId(string $groupId): ?array
     {
         $mapper = $this->getOrganisationMapper();
@@ -155,6 +157,7 @@ class TenantService
      *
      * @return array The provisioning result (the Organisation `jsonSerialize`d).
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function provisionTenant(string $tenantId): array
     {
         $mapper           = $this->getOrganisationMapper();
@@ -198,6 +201,7 @@ class TenantService
      *
      * @return array Usage data with user count + OR quota fields.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getResourceUsage(string $tenantId): array
     {
         $mapper = $this->getOrganisationMapper();
@@ -236,6 +240,7 @@ class TenantService
      *
      * @return bool True when the user is mapped to the tenant.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function isUserInTenant(string $userId, string $tenantId): bool
     {
         $tenant = $this->getTenantForUser(userId: $userId);
@@ -269,6 +274,7 @@ class TenantService
      * @return string|null Status string (`active`, `suspended`, etc.) or null
      *                     when OR cannot resolve the Organisation.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getTenantStatus(string $tenantId): ?string
     {
         $mapper = $this->getOrganisationMapper();

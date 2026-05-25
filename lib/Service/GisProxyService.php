@@ -83,6 +83,7 @@ class GisProxyService
      *
      * @throws \RuntimeException If URL is not allowed or rate limit exceeded
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function proxyRequest(string $url, array $query, string $type): array
     {
         // Validate URL against allowlist.
@@ -157,6 +158,7 @@ class GisProxyService
      *
      * @return array Parsed capabilities with layers list
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getCapabilities(string $url, string $type): array
     {
         $service = 'WMS';

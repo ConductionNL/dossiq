@@ -193,20 +193,24 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		hasDecision() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.hasAppealDecision
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		decision() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.currentAppealDecision
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		hasAdvisoryReport() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.hasAdvisoryReport
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		getDispositionLabel(type) {
 			const labels = {
 				gegrond: t('procest', 'Upheld'),
@@ -216,6 +220,7 @@ export default {
 			}
 			return labels[type] || type
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		validate() {
 			this.errors = {}
 
@@ -231,6 +236,7 @@ export default {
 
 			return Object.keys(this.errors).length === 0
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async save() {
 			if (!this.validate()) return
 

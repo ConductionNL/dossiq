@@ -74,6 +74,7 @@ class BezwaarHearingScheduledListener implements IEventListener
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handle(Event $event): void
     {
         if ($event instanceof ObjectUpdatedEvent === false) {

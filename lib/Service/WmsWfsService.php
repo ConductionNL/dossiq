@@ -95,6 +95,7 @@ class WmsWfsService
      *
      * @return array<int, array<string, mixed>> Plain array of layer dicts
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getLayersForCaseType(array|object $caseType): array
     {
         $caseTypeArr = $caseType;
@@ -161,6 +162,7 @@ class WmsWfsService
      *
      * @return array{ok: bool, errors: array<int, array{field: string, code: string, message: string}>}
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validateLayer(array $layer): array
     {
         $errors = [];
@@ -225,6 +227,7 @@ class WmsWfsService
      *
      * @throws \RuntimeException When the request violates a guard rail
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function proxyRequest(array $layer, array $params): array
     {
         $type    = strtoupper((string) ($layer['type'] ?? 'WMS'));
@@ -316,6 +319,7 @@ class WmsWfsService
      *
      * @return string Upstream URL (proxy POST path is /api/wms-wfs/proxy)
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildGetMapUrl(array $layer, string $bbox, int $width, int $height): string
     {
         if ($width > self::MAX_TILE_DIMENSION) {
@@ -361,6 +365,7 @@ class WmsWfsService
      *
      * @throws \RuntimeException When BBOX is missing
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildGetFeatureUrl(array $layer, string $bbox): string
     {
         if ($bbox === '') {
@@ -393,6 +398,7 @@ class WmsWfsService
      *
      * @return array<string, mixed>|null The layer dict, or null when not found
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getLayerById(string $layerId): ?array
     {
         if ($layerId === '') {

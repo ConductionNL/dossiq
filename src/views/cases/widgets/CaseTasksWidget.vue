@@ -63,9 +63,11 @@ export default {
 		},
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		sortedTasks() {
 			return sortTasks(this.tasks)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		completedCount() {
 			return this.tasks.filter(t => t.status === 'completed').length
 		},
@@ -75,6 +77,7 @@ export default {
 		isDueToday,
 		getOverdueText,
 		formatDueDate,
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		dueDateClass(task) {
 			if (isOverdue(task)) return 'task-due--overdue'
 			if (isDueToday(task)) return 'task-due--today'

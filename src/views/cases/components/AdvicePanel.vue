@@ -162,15 +162,19 @@ export default {
 	},
 
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		adviceStore() {
 			return useAdviceStore()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		requests() {
 			return this.adviceStore.requests
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		loading() {
 			return this.adviceStore.loading
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		canSubmit() {
 			return this.newRequest.adviseur && this.newRequest.deadline
 		},
@@ -179,6 +183,7 @@ export default {
 	watch: {
 		caseId: {
 			immediate: true,
+			/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 			handler(newId) {
 				if (newId) {
 					this.adviceStore.fetchRequests(newId)
@@ -190,12 +195,14 @@ export default {
 	methods: {
 		t,
 
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		defaultDeadline() {
 			const d = new Date()
 			d.setDate(d.getDate() + 14)
 			return d.toISOString().split('T')[0]
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		isOverdue(request) {
 			if (request.status !== 'aangevraagd' || !request.deadline) {
 				return false
@@ -207,6 +214,7 @@ export default {
 			return this.adviceStore.getDaysToDeadline(request)
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		formatDate(dateStr) {
 			if (!dateStr) {
 				return ''
@@ -214,6 +222,7 @@ export default {
 			return new Date(dateStr).toLocaleDateString()
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		statusLabel(status) {
 			const labels = {
 				aangevraagd: t('procest', 'Requested'),
@@ -223,6 +232,7 @@ export default {
 			return labels[status] || status
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		statusClass(status) {
 			return {
 				'advice-panel__status-badge--aangevraagd': status === 'aangevraagd',
@@ -231,6 +241,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		async submitRequest() {
 			this.submitting = true
 			try {
@@ -251,10 +262,12 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		async markReceived(request) {
 			await this.adviceStore.markReceived(request.id)
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		viewDocument(request) {
 			if (request.adviesDocument) {
 				window.open(`/apps/files/?fileid=${request.adviesDocument}`, '_blank')

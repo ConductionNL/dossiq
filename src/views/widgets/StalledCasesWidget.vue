@@ -45,9 +45,11 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		items() {
 			return this.stalledCases.slice(0, 5).map((item) => ({
 				id: item.id,
@@ -67,6 +69,7 @@ export default {
 		 * @param {object} item The case item to show
 		 * @return {void}
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		onShow(item) {
 			window.location.href = `/index.php/apps/procest/#/cases/${item.id}`
 		},
@@ -75,6 +78,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		async fetchData() {
 			this.loading = true
 			try {

@@ -45,6 +45,7 @@ export default {
 			enabledLayers: [],
 		}
 	},
+	/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 	created() {
 		// Enable default layers
 		this.enabledLayers = this.layers
@@ -52,6 +53,7 @@ export default {
 			.map(l => l.title)
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		toggleLayer(layer) {
 			const idx = this.enabledLayers.indexOf(layer.title)
 			if (idx >= 0) {
@@ -61,6 +63,7 @@ export default {
 			}
 			this.$emit('toggle', { layer, enabled: this.enabledLayers.includes(layer.title) })
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		onOpacityChange(layer, event) {
 			const opacity = parseInt(event.target.value, 10) / 100
 			this.$emit('opacity-change', { layer, opacity })

@@ -13,6 +13,7 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 		getMappings: (state) => state.mappings,
 	},
 	actions: {
+		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		async fetchMappings() {
 			this.loading = true
 			this.error = null
@@ -43,6 +44,7 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		async saveMapping(resourceKey, config) {
 			this.loading = true
 			this.error = null
@@ -74,6 +76,7 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		async resetMapping(resourceKey) {
 			this.loading = true
 			this.error = null

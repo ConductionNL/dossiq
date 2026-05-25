@@ -10,6 +10,7 @@ import { validateTransition } from './taskLifecycle.js'
  * @param {object} form The form data
  * @return {{ valid: boolean, errors: object }} Validation result
  */
+/** @spec openspec/changes/task-management/tasks.md */
 export function validateTaskCreate(form) {
 	const errors = {}
 
@@ -33,6 +34,7 @@ export function validateTaskCreate(form) {
  * @param {object} form The form data
  * @return {{ valid: boolean, errors: object }} Validation result
  */
+/** @spec openspec/changes/task-management/tasks.md */
 export function validateTaskUpdate(form) {
 	const errors = {}
 
@@ -53,6 +55,7 @@ export function validateTaskUpdate(form) {
  * @param {string} to Target status
  * @return {{ valid: boolean, error: string|null }} Validation result
  */
+/** @spec openspec/changes/task-management/tasks.md */
 export function validateTaskTransition(from, to) {
 	if (!from || !to) {
 		return { valid: false, error: t('procest', 'Invalid status transition') }

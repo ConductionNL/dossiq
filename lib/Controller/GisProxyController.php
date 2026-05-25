@@ -63,6 +63,7 @@ class GisProxyController extends Controller
      *
      * @return JSONResponse|Response The proxied response
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function proxy(): JSONResponse|Response
     {
         $url   = $this->request->getParam('url', '');
@@ -109,6 +110,7 @@ class GisProxyController extends Controller
      *
      * @return JSONResponse Parsed capabilities as JSON
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function capabilities(): JSONResponse
     {
         $url  = $this->request->getParam('url', '');

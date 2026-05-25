@@ -68,6 +68,7 @@ class DsoIntakeService
      *
      * @throws \RuntimeException If OpenRegister is unavailable or configuration missing
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function processAanvraag(array $dsoMessage): array
     {
         $objectService = $this->settingsService->getObjectService();

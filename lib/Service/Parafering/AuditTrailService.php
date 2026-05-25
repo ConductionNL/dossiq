@@ -98,6 +98,7 @@ class AuditTrailService
      *
      * @return array<string, mixed>|null The persisted audit entry, or null when audit write failed (swallowed)
      */
+    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function record(
         string $voorstelId,
         ?string $step,
@@ -183,6 +184,7 @@ class AuditTrailService
      *
      * @throws OCSForbiddenException When append-only is violated
      */
+    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function assertAppendOnly(array $entry, bool $isUpdate): void
     {
         if ($isUpdate === true) {
@@ -221,6 +223,7 @@ class AuditTrailService
      *
      * @throws RuntimeException When configuration is missing
      */
+    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function export(string $voorstelId, string $voorstelOnderwerp, string $exportedBy): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -295,6 +298,7 @@ class AuditTrailService
      *
      * @return array<string, mixed>
      */
+    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function buildContentSnapshot(array $voorstel): array
     {
         $snapshot = [];

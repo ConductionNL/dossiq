@@ -87,6 +87,7 @@ class LoadDefaultZgwMappings implements IRepairStep
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function run(IOutput $output): void
     {
         $output->info('Loading default ZGW API mappings...');
@@ -189,6 +190,7 @@ class LoadDefaultZgwMappings implements IRepairStep
      *
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getDefaultMappings(string $registerId): array
     {
         $settings = $this->settingsService->getSettings();

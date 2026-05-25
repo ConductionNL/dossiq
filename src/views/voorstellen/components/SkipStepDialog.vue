@@ -77,6 +77,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		canSubmit() {
 			return !this.submitting
 				&& this.step
@@ -85,6 +86,7 @@ export default {
 		},
 	},
 	watch: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		open(value) {
 			if (value) {
 				this.reason = ''
@@ -93,6 +95,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onSubmit() {
 			if (!this.canSubmit) return
 			this.submitting = true
@@ -111,6 +114,7 @@ export default {
 				this.submitting = false
 			}
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		onClose() {
 			if (this.submitting) return
 			this.$emit('close')

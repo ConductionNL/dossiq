@@ -24,6 +24,7 @@ const baseUrl = () => generateUrl('/apps/procest/api/parafeer-route')
  * @param {string} voorstelId Voorstel UUID
  * @return {Promise<object>}
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export async function startParafering(voorstelId) {
 	const response = await axios.post(`${baseUrl()}/voorstel/${encodeURIComponent(voorstelId)}/start`)
 	return response.data
@@ -36,6 +37,7 @@ export async function startParafering(voorstelId) {
  * @param {object} data       Parafeeractie payload
  * @return {Promise<object>}
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export async function completeStep(voorstelId, data) {
 	const response = await axios.post(`${baseUrl()}/voorstel/${encodeURIComponent(voorstelId)}/complete-step`, data)
 	return response.data
@@ -48,6 +50,7 @@ export async function completeStep(voorstelId, data) {
  * @param {object} data       { step: number, reason: string }
  * @return {Promise<object>}
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export async function skipStep(voorstelId, data) {
 	const response = await axios.post(`${baseUrl()}/voorstel/${encodeURIComponent(voorstelId)}/skip-step`, data)
 	return response.data
@@ -60,6 +63,7 @@ export async function skipStep(voorstelId, data) {
  * @param {object} data       { afterStep: number, stepData: object }
  * @return {Promise<object>}
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export async function addStep(voorstelId, data) {
 	const response = await axios.post(`${baseUrl()}/voorstel/${encodeURIComponent(voorstelId)}/add-step`, data)
 	return response.data

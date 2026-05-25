@@ -70,6 +70,7 @@ class BerichtenboxService
      *
      * @return array<string, mixed> The stored message record or an error payload.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function sendMessage(
         string $caseId,
         string $bsn,
@@ -141,6 +142,7 @@ class BerichtenboxService
      *
      * @return array<int, mixed> List of stored Berichtenbox messages for the case.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getMessagesForCase(string $caseId): array
     {
         $objectService = $this->getObjectService();
@@ -163,6 +165,7 @@ class BerichtenboxService
      *
      * @return array<string, mixed> The message record, possibly updated with read status.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function pollReadStatus(string $messageId): array
     {
         $objectService = $this->getObjectService();
@@ -213,6 +216,7 @@ class BerichtenboxService
      *
      * @return bool True when the BSN is a 9-digit number passing the 11-proef.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validateBsn(string $bsn): bool
     {
         if (preg_match('/^\d{9}$/', $bsn) !== 1) {

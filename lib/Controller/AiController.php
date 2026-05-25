@@ -81,6 +81,7 @@ class AiController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function classify(): JSONResponse
     {
         $caseId     = $this->request->getParam('caseId', '');
@@ -106,6 +107,7 @@ class AiController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function extract(): JSONResponse
     {
         $caseId     = $this->request->getParam('caseId', '');
@@ -131,6 +133,7 @@ class AiController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function ask(): JSONResponse
     {
         $caseId   = $this->request->getParam('caseId', '');
@@ -156,6 +159,7 @@ class AiController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function summarize(): JSONResponse
     {
         $caseId     = $this->request->getParam('caseId', '');
@@ -190,6 +194,7 @@ class AiController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function suggestRouting(): JSONResponse
     {
         $caseId = $this->request->getParam('caseId', '');
@@ -214,6 +219,7 @@ class AiController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function suggestNext(): JSONResponse
     {
         $caseId = $this->request->getParam('caseId', '');
@@ -238,6 +244,7 @@ class AiController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recordAction(): JSONResponse
     {
         $caseId     = $this->request->getParam('caseId', '');
@@ -275,6 +282,7 @@ class AiController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function auditIndex(): JSONResponse
     {
         $filters = [
@@ -298,6 +306,7 @@ class AiController extends Controller
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getSettings(): JSONResponse
     {
         $settings = $this->aiService->getAiSettings();
@@ -310,6 +319,7 @@ class AiController extends Controller
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function updateSettings(): JSONResponse
     {
         $data   = $this->request->getParams();
@@ -323,6 +333,7 @@ class AiController extends Controller
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function healthCheck(): JSONResponse
     {
         $result = $this->aiService->testHealth();

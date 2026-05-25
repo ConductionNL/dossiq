@@ -25,6 +25,7 @@ const ENDPOINT = generateUrl('/apps/procest/api/parafeer-actie')
  * @param {string} [data.mandate]   Mandate reference when acting as delegate.
  * @return {Promise<object>} The created parafeeractie and updated voorstel.
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export async function recordAction(data) {
 	const response = await axios.post(ENDPOINT, data)
 	return response.data
@@ -36,6 +37,7 @@ export async function recordAction(data) {
  * @param {string} voorstelId The voorstel UUID.
  * @return {Promise<Array<object>>} The parafeeractie array.
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export async function listActions(voorstelId) {
 	const response = await axios.get(ENDPOINT, { params: { voorstel: voorstelId } })
 	return Array.isArray(response.data) ? response.data : []

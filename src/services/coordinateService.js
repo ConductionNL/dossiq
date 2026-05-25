@@ -23,6 +23,7 @@ proj4.defs(
  * @param {number} y The y coordinate (or latitude)
  * @return {boolean} True if coordinates appear to be RD
  */
+/** @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md */
 export function isRDCoordinate(x, y) {
 	return x >= 0 && x <= 300000 && y >= 300000 && y <= 625000
 }
@@ -34,6 +35,7 @@ export function isRDCoordinate(x, y) {
  * @param {number} y RD y coordinate
  * @return {{ lat: number, lng: number }} WGS84 coordinates
  */
+/** @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md */
 export function rdToWgs84(x, y) {
 	const [lng, lat] = proj4('EPSG:28992', 'EPSG:4326', [x, y])
 	return { lat, lng }
@@ -46,6 +48,7 @@ export function rdToWgs84(x, y) {
  * @param {number} lng Longitude
  * @return {{ x: number, y: number }} RD coordinates
  */
+/** @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md */
 export function wgs84ToRd(lat, lng) {
 	const [x, y] = proj4('EPSG:4326', 'EPSG:28992', [lng, lat])
 	return { x, y }
@@ -59,6 +62,7 @@ export function wgs84ToRd(lat, lng) {
  * @param {string} crs     Optional CRS identifier (e.g., "EPSG:28992")
  * @return {object} GeoJSON geometry in WGS84
  */
+/** @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md */
 export function ensureWgs84(geojson, crs = null) {
 	if (!geojson || !geojson.type) {
 		return geojson

@@ -77,6 +77,7 @@ class ChecklistRunImmutabilityListener implements IEventListener
      *
      * @throws RuntimeException When a submitted run is being mutated.
      */
+    /** @spec openspec/specs/inspection-checklists/spec.md */
     public function handle(Event $event): void
     {
         if ($event instanceof ObjectUpdatedEvent === false) {

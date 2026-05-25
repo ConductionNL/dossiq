@@ -73,12 +73,14 @@ export default {
 		}
 	},
 	watch: {
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		show(val) {
 			if (val) this.classify()
 		},
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		async classify() {
 			this.loading = true
 			this.error = null
@@ -93,6 +95,7 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		apply() {
 			this.$emit('applied', {
 				documentType: this.modifiedType,
@@ -101,6 +104,7 @@ export default {
 			})
 			this.$emit('close')
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		reject() {
 			this.$emit('close')
 		},

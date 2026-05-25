@@ -27,9 +27,11 @@ export const useGisStore = defineStore('gis', {
 	}),
 
 	getters: {
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		overlayLayers(state) {
 			return state.layers.filter(l => !l.isBaseLayer)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		baseLayers(state) {
 			return state.layers.filter(l => l.isBaseLayer)
 		},
@@ -39,6 +41,7 @@ export const useGisStore = defineStore('gis', {
 		/**
 		 * Fetch all MapLayer objects from OpenRegister.
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		async fetchLayers() {
 			this.loading = true
 			try {
@@ -58,6 +61,7 @@ export const useGisStore = defineStore('gis', {
 		 * @param {object} layerData The layer configuration
 		 * @return {object} The created layer
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		async createLayer(layerData) {
 			const objectStore = useObjectStore()
 			const created = await objectStore.saveObject('mapLayer', layerData)
@@ -72,6 +76,7 @@ export const useGisStore = defineStore('gis', {
 		 * @param {object} layerData The updated configuration
 		 * @return {object} The updated layer
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		async updateLayer(id, layerData) {
 			const objectStore = useObjectStore()
 			const updated = await objectStore.saveObject('mapLayer', { id, ...layerData })
@@ -84,6 +89,7 @@ export const useGisStore = defineStore('gis', {
 		 *
 		 * @param {string} id The layer ID
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		async deleteLayer(id) {
 			const objectStore = useObjectStore()
 			await objectStore.deleteObject('mapLayer', id)
@@ -96,6 +102,7 @@ export const useGisStore = defineStore('gis', {
 		 * @param {object|null} geometry GeoJSON geometry or null to clear
 		 * @param {string}      mode     Filter mode identifier
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		setSpatialFilter(geometry, mode = null) {
 			this.selectedArea = geometry
 			this.filterMode = mode
@@ -104,6 +111,7 @@ export const useGisStore = defineStore('gis', {
 		/**
 		 * Clear the spatial filter.
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		clearSpatialFilter() {
 			this.selectedArea = null
 			this.selectedCases = []
@@ -117,6 +125,7 @@ export const useGisStore = defineStore('gis', {
 		 * @param {number} lng Longitude
 		 * @return {Promise<string>} The formatted address
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		async reverseGeocode(lat, lng) {
 			const key = `${lat.toFixed(5)},${lng.toFixed(5)}`
 

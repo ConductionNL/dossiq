@@ -194,14 +194,17 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		objectStore() { return useObjectStore() },
 	},
+	/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 	async mounted() {
 		if (!this.isCreate && this.caseTypeId) {
 			await this.fetchResultTypes()
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		formatPeriod(period) {
 			if (!period) return '—'
 			const match = period.match(/^P(\d+)([YDMW])$/)
@@ -209,6 +212,7 @@ export default {
 			const units = { Y: 'years', M: 'months', W: 'weeks', D: 'days' }
 			return `${match[1]} ${units[match[2]] || match[2]}`
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async fetchResultTypes() {
 			this.loading = true
 			try {
@@ -220,6 +224,7 @@ export default {
 			} catch (e) { this.error = e.message }
 			this.loading = false
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async addResultType() {
 			this.addError = ''
 			if (!this.newForm.name || !this.newForm.name.trim()) {
@@ -237,8 +242,11 @@ export default {
 				this.addError = this.objectStore.getError('resultType') || t('procest', 'Failed to add result type')
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		startEdit(rt) { this.editingId = rt.id; this.editForm = { ...rt }; this.editError = '' },
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		cancelEdit() { this.editingId = null; this.editForm = {}; this.editError = '' },
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async saveEdit() {
 			this.editError = ''
 			if (!this.editForm.name || !this.editForm.name.trim()) {
@@ -257,6 +265,7 @@ export default {
 				this.editError = this.objectStore.getError('resultType') || t('procest', 'Failed to save')
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async deleteResultType(rt) {
 			if (!confirm(t('procest', 'Delete result type "{name}"?', { name: rt.name }))) return
 			const ok = await this.objectStore.deleteObject('resultType', rt.id)

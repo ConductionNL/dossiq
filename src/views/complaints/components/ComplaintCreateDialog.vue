@@ -115,6 +115,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/complaint-management/tasks.md */
 		channelOptions() {
 			return [
 				{ id: 'balie', label: this.t('procest', 'Counter') },
@@ -125,6 +126,7 @@ export default {
 				{ id: 'socialmedia', label: this.t('procest', 'Social media') },
 			]
 		},
+		/** @spec openspec/changes/complaint-management/tasks.md */
 		priorityOptions() {
 			return [
 				{ id: 'laag', label: this.t('procest', 'Low') },
@@ -135,6 +137,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/complaint-management/tasks.md */
 		validate() {
 			this.errors = {}
 			if (!this.form.onderwerp.trim()) {
@@ -145,6 +148,7 @@ export default {
 			}
 			return Object.keys(this.errors).length === 0
 		},
+		/** @spec openspec/changes/complaint-management/tasks.md */
 		async create() {
 			if (!this.validate()) return
 			this.saving = true

@@ -55,6 +55,7 @@ class BerichtenboxController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function send(): JSONResponse
     {
         $caseId   = $this->request->getParam('caseId');
@@ -91,6 +92,7 @@ class BerichtenboxController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function messages(): JSONResponse
     {
         $caseId   = $this->request->getParam('caseId', '');
@@ -107,6 +109,7 @@ class BerichtenboxController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function poll(string $messageId): JSONResponse
     {
         $result = $this->berichtenboxService->pollReadStatus($messageId);

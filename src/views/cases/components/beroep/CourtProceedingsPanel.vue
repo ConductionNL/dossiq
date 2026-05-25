@@ -94,6 +94,7 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		getRulingLabel(outcome) {
 			const labels = {
 				beroep_gegrond: t('procest', 'Appeal upheld'),
@@ -103,6 +104,7 @@ export default {
 			}
 			return labels[outcome] || outcome
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		navigateToParent() {
 			if (this.parentCase) {
 				this.$router.push({
@@ -111,6 +113,7 @@ export default {
 				})
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async saveRuling() {
 			const objectStore = useObjectStore()
 			await objectStore.saveObject('case', {

@@ -106,6 +106,7 @@ class RoleResolverService
      *
      * @return array<string, mixed>|null
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function normaliseRule(array $entry): ?array
     {
         $rule = $entry['routingRule'] ?? null;
@@ -147,6 +148,7 @@ class RoleResolverService
      *
      * @throws RoutingStrategyMissingException When the rule's strategy is unknown
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function resolve(array $rule, array $case): array
     {
         $strategyName = (string) ($rule['strategy'] ?? '');
@@ -215,6 +217,7 @@ class RoleResolverService
      *
      * @return bool
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function canExecute(array $rule, array $case, string $userId): bool
     {
         if ($userId === '') {
@@ -242,6 +245,7 @@ class RoleResolverService
      *
      * @return void
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function invalidateCache(string $caseId): void
     {
         if ($caseId === '') {
@@ -433,6 +437,7 @@ class RoleResolverService
      *
      * @throws RuntimeException
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function fail(string $message): never
     {
         throw new RuntimeException($message);

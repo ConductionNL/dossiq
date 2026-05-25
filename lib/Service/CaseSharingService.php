@@ -85,6 +85,7 @@ class CaseSharingService
      *
      * @return string The generated token (32 hex characters)
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function generateToken(): string
     {
         return bin2hex(random_bytes(16));
@@ -105,6 +106,7 @@ class CaseSharingService
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) — all params needed for share creation
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createTokenShare(
         string $caseId,
         string $permissionLevel,
@@ -172,6 +174,7 @@ class CaseSharingService
      *
      * @return array The created share data
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createPartnerShare(
         string $caseId,
         string $partnerId,
@@ -223,6 +226,7 @@ class CaseSharingService
      *
      * @return array The updated share data
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function revokeShare(string $shareId, string $revokedBy): array
     {
         $objectService = $this->getObjectService();
@@ -270,6 +274,7 @@ class CaseSharingService
      *
      * @return array Validation result with 'valid' boolean and share data or error
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validateToken(string $token, ?string $password=null): array
     {
         $objectService = $this->getObjectService();
@@ -357,6 +362,7 @@ class CaseSharingService
      *
      * @return array The filtered case data safe for external viewing
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getFilteredCaseData(array $shareData, array $caseData): array
     {
         $fieldExclusions = json_decode(($shareData['fieldExclusions'] ?? '[]'), true);
@@ -384,6 +390,7 @@ class CaseSharingService
      *
      * @return string The masked BSN (e.g., "***99*653")
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function maskBsn(string $bsn): string
     {
         $length = strlen($bsn);
@@ -490,6 +497,7 @@ class CaseSharingService
      *
      * @return array Document descriptor
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function storeExternalDocument(string $caseId, string $shareId, array $uploadedFile): array
     {
         $this->logger->info(

@@ -154,6 +154,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/woo-case-type/tasks.md */
 		calculatedDeadline() {
 			if (!this.form.ontvangstdatum) {
 				return '---'
@@ -172,6 +173,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/woo-case-type/tasks.md */
 		update(field, value) {
 			this.$emit('update', { field, value })
 		},

@@ -61,12 +61,15 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		currentUserId() {
 			return getCurrentUser()?.uid || ''
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		pendingVoorstellen() {
 			return this.voorstellen.filter(v =>
 				['in_parafering', 'ter_accordering'].includes(v.status)
@@ -78,6 +81,7 @@ export default {
 		await this.loadVoorstellen()
 	},
 	methods: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async loadVoorstellen() {
 			this.loading = true
 			try {
@@ -92,9 +96,11 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		formatType(type) {
 			return TYPE_LABELS[type] || type || '-'
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		formatDate(voorstel) {
 			const date = voorstel._self?.updated || voorstel.updatedAt
 			if (!date) return '-'

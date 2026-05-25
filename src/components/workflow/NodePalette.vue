@@ -41,6 +41,7 @@
 export default {
 	name: 'NodePalette',
 	computed: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		templates() {
 			return [
 				{ type: 'status', label: t('procest', 'Status'), icon: '▭' },
@@ -51,6 +52,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onDragStart(event, type) {
 			event.dataTransfer.setData('application/vue-flow-type', type)
 			event.dataTransfer.effectAllowed = 'move'

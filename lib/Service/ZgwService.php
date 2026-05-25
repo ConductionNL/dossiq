@@ -267,6 +267,7 @@ class ZgwService
      *
      * @return array|null The mapping configuration or null if not found
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function loadMappingConfig(string $zgwApi, string $resource): ?array
     {
         $resourceKey = self::RESOURCE_MAP[$zgwApi][$resource] ?? null;
@@ -285,6 +286,7 @@ class ZgwService
      *
      * @return array Translated filter parameters
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function translateQueryParams(array $params, array $mappingConfig): array
     {
         $queryMapping = $mappingConfig['queryParameterMapping'] ?? [];
@@ -336,6 +338,7 @@ class ZgwService
      *
      * @return Mapping The outbound mapping entity
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createOutboundMapping(array $mappingConfig): object
     {
         $mapping     = new Mapping();
@@ -358,6 +361,7 @@ class ZgwService
      *
      * @return Mapping The inbound mapping entity
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createInboundMapping(array $mappingConfig): object
     {
         $mapping     = new Mapping();
@@ -383,6 +387,7 @@ class ZgwService
      *
      * @return array The mapped Dutch-language object
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function applyOutboundMapping(
         array $objectData,
         object $mapping,
@@ -427,6 +432,7 @@ class ZgwService
      *
      * @return array The mapped English-language data
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function applyInboundMapping(
         array $body,
         object $mapping,
@@ -470,6 +476,7 @@ class ZgwService
      *
      * @return array The parsed request body
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getRequestBody(IRequest $request): array
     {
         // Return cached result if already parsed for this request.
@@ -527,6 +534,7 @@ class ZgwService
      *
      * @return string The correct UUID from the URL path, or the fallback
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function resolvePathUuid(IRequest $request, string $uuid): string
     {
         $uri = $request->getRequestUri();
@@ -547,6 +555,7 @@ class ZgwService
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function updateCachedBodyField(string $key, mixed $value): void
     {
         if ($this->cachedRequestBody !== null) {
@@ -563,6 +572,7 @@ class ZgwService
      *
      * @return string The base URL
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildBaseUrl(IRequest $request, string $zgwApi, string $resource): string
     {
         $serverHost = $request->getServerHost();
@@ -578,6 +588,7 @@ class ZgwService
      *
      * @return JSONResponse|null 401 response on failure, null on success
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validateJwtAuth(IRequest $request): ?JSONResponse
     {
         $authHeader = $request->getHeader('Authorization');
@@ -627,6 +638,7 @@ class ZgwService
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — multiple JWT validation paths
      * @SuppressWarnings(PHPMD.NPathComplexity)      — multiple JWT validation paths
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function consumerHasScope(IRequest $request, string $component, string $scope): bool
     {
         if ($this->consumerMapper === null) {
@@ -697,6 +709,7 @@ class ZgwService
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — multiple JWT validation paths
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getConsumerAuthorisaties(IRequest $request, string $component): ?array
     {
         if ($this->consumerMapper === null) {
@@ -762,6 +775,7 @@ class ZgwService
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function publishNotification(
         string $zgwApi,
         string $resource,
@@ -786,6 +800,7 @@ class ZgwService
      *
      * @return array The error response data with detail and optional invalidParams
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildValidationError(array $ruleResult): array
     {
         $data = ['detail' => $ruleResult['detail']];
@@ -805,6 +820,7 @@ class ZgwService
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function unavailableResponse(): JSONResponse
     {
         return new JSONResponse(
@@ -821,6 +837,7 @@ class ZgwService
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function mappingNotFoundResponse(string $zgwApi, string $resource): JSONResponse
     {
         return new JSONResponse(
@@ -838,6 +855,7 @@ class ZgwService
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handleIndex(IRequest $request, string $zgwApi, string $resource): JSONResponse
     {
         if ($this->objectService === null) {
@@ -939,6 +957,7 @@ class ZgwService
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)   — ZGW scope flags from middleware
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength) — orchestration method with validation + mapping
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handleCreate(
         IRequest $request,
         string $zgwApi,
@@ -1059,6 +1078,7 @@ class ZgwService
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handleShow(
         IRequest $request,
         string $zgwApi,
@@ -1128,6 +1148,7 @@ class ZgwService
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)   — ZGW scope flags from middleware
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handleUpdate(
         IRequest $request,
         string $zgwApi,
@@ -1346,6 +1367,7 @@ class ZgwService
      *
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — ZGW scope flags from middleware
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handleDestroy(
         IRequest $request,
         string $zgwApi,
@@ -1428,6 +1450,7 @@ class ZgwService
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handleAudittrailIndex(
         IRequest $request,
         string $zgwApi,
@@ -1491,6 +1514,7 @@ class ZgwService
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handleAudittrailShow(
         IRequest $request,
         string $zgwApi,
@@ -1621,6 +1645,7 @@ class ZgwService
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
      * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function resolveZaakClosed(string $resource, array $existingData): ?bool
     {
         if ($resource === 'zaken') {
@@ -1698,6 +1723,7 @@ class ZgwService
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
      * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function resolveZaakClosedFromBody(string $resource, array $body): ?bool
     {
         if ($resource === 'zaken') {
@@ -1773,6 +1799,7 @@ class ZgwService
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
      * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function resolveParentZaaktypeDraft(string $resource, array $existingData): ?bool
     {
         $subResources = [
@@ -1851,6 +1878,7 @@ class ZgwService
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
      * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function resolveParentZaaktypeDraftFromBody(string $resource, array $body): ?bool
     {
         $subResources = [

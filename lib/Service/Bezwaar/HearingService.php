@@ -122,6 +122,7 @@ class HearingService
      *                          inspection-of-file floor is violated, or
      *                          schemas are unconfigured.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function schedule(
         string $caseId,
         string $scheduledDate,
@@ -228,6 +229,7 @@ class HearingService
      *
      * @throws RuntimeException When the reason is empty or persistence fails.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function waive(
         string $caseId,
         string $reason,
@@ -306,6 +308,7 @@ class HearingService
      *
      * @throws RuntimeException When the session is not found, persistence fails, or a late correction lacks a reason.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recordAttendance(
         string $sessionId,
         array $entries
@@ -411,6 +414,7 @@ class HearingService
      * @throws RuntimeException When verslag is missing, audio consent is
      *                          denied, or persistence fails.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function addMinutes(
         string $sessionId,
         array $payload
@@ -544,6 +548,7 @@ class HearingService
      *
      * @return array<string, mixed>|null Created hearing session, or null when one already exists / infra unavailable.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function seedDefaultHearing(string $bezwaarId): ?array
     {
         $objectService = $this->settingsService->getObjectService();

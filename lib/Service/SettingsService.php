@@ -260,6 +260,7 @@ class SettingsService
      * @psalm-suppress MixedReturnStatement
      * @psalm-suppress MixedInferredReturnType
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getObjectService(): ?object
     {
         if ($this->isOpenRegisterAvailable() === false) {
@@ -286,6 +287,7 @@ class SettingsService
      *
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $force is a simple re-import toggle
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function loadConfiguration(bool $force=false): array
     {
         if ($this->isOpenRegisterAvailable() === false) {
@@ -374,6 +376,7 @@ class SettingsService
      *
      * @return array
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getSettings(): array
     {
         $config = [];
@@ -391,6 +394,7 @@ class SettingsService
      *
      * @return array
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function updateSettings(array $data): array
     {
         foreach (self::CONFIG_KEYS as $key) {

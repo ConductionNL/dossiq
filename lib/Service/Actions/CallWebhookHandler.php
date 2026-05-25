@@ -61,6 +61,7 @@ class CallWebhookHandler implements ActionHandlerInterface
      *
      * @return string The action type slug handled by this handler.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function type(): string
     {
         return 'callWebhook';
@@ -75,6 +76,7 @@ class CallWebhookHandler implements ActionHandlerInterface
      *
      * @return ActionResult The outcome of the webhook dispatch.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {

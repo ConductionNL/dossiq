@@ -49,6 +49,7 @@ interface AppointmentBackendInterface
      *
      * @return array Booking result with externalId
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function bookAppointment(array $data): array;
 
     /**
@@ -58,6 +59,7 @@ interface AppointmentBackendInterface
      *
      * @return bool True if cancellation succeeded
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function cancelAppointment(string $externalId): bool;
 
     /**
@@ -68,5 +70,6 @@ interface AppointmentBackendInterface
      *
      * @return array Updated booking result
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rescheduleAppointment(string $externalId, string $newDateTime): array;
 }//end interface

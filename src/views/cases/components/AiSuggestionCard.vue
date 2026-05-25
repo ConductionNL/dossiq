@@ -64,10 +64,12 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		formatValue(value) {
 			if (typeof value === 'object') return JSON.stringify(value, null, 2)
 			return String(value)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		handleReject() {
 			this.$emit('reject', this.suggestion, this.rejectReason)
 			this.showRejectInput = false

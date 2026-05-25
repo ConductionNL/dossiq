@@ -47,6 +47,7 @@ export default {
 		},
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		daysInput() {
 			if (!this.value) return ''
 			const parsed = parseDuration(this.value)
@@ -58,6 +59,7 @@ export default {
 			if (parsed.days) totalDays += parsed.days
 			return String(totalDays)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		displayValue() {
 			if (!this.value || !isValidDuration(this.value)) return ''
 			const days = parseInt(this.daysInput, 10)
@@ -69,6 +71,7 @@ export default {
 			}
 			return `${this.value} (${days} ${t('procest', 'days')})`
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		presets() {
 			if (this.presetType === 'extension') {
 				return [
@@ -86,6 +89,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		onDaysChange(val) {
 			const days = parseInt(val, 10)
 			if (!days || days < 0) {
@@ -94,6 +98,7 @@ export default {
 			}
 			this.$emit('input', `P${days}D`)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		selectPreset(preset) {
 			this.$emit('input', preset.value)
 		},

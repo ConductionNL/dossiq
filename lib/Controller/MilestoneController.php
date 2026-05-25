@@ -64,6 +64,7 @@ class MilestoneController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function progress(string $caseId, string $caseTypeId): JSONResponse
     {
         try {
@@ -84,6 +85,7 @@ class MilestoneController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function mark(string $caseId, string $milestoneId): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -116,6 +118,7 @@ class MilestoneController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function reverse(string $caseId, string $milestoneId): JSONResponse
     {
         $reason = $this->request->getParam('reason', '');

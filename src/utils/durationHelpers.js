@@ -13,6 +13,7 @@ const DURATION_REGEX = /^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?$/
  * @param {string} value The string to validate
  * @return {boolean}
  */
+/** @spec openspec/changes/milestone-tracking/tasks.md */
 export function isValidDuration(value) {
 	if (!value || typeof value !== 'string') return false
 	return DURATION_REGEX.test(value) && value !== 'P'
@@ -24,6 +25,7 @@ export function isValidDuration(value) {
  * @param {string} iso ISO 8601 duration string (e.g., "P56D", "P2M", "P1Y6M")
  * @return {{ years: number, months: number, weeks: number, days: number } | null}
  */
+/** @spec openspec/changes/milestone-tracking/tasks.md */
 export function parseDuration(iso) {
 	if (!isValidDuration(iso)) return null
 	const match = iso.match(DURATION_REGEX)
@@ -41,6 +43,7 @@ export function parseDuration(iso) {
  * @param {string} iso ISO 8601 duration string
  * @return {string} Human-readable text (e.g., "56 days", "2 months", "1 year, 6 months")
  */
+/** @spec openspec/changes/milestone-tracking/tasks.md */
 export function formatDuration(iso) {
 	const parsed = parseDuration(iso)
 	if (!parsed) return iso || ''
@@ -80,6 +83,7 @@ export function formatDuration(iso) {
  * @param {string} value The value to validate
  * @return {string} Error message or empty string
  */
+/** @spec openspec/changes/milestone-tracking/tasks.md */
 export function getDurationError(value) {
 	if (!value) return ''
 	if (!isValidDuration(value)) {

@@ -111,6 +111,7 @@ export default {
 	watch: {
 		caseId: {
 			immediate: true,
+			/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 			handler(value) {
 				if (value) {
 					this.fetchAdvies()
@@ -119,6 +120,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		async fetchAdvies() {
 			this.loading = true
 			try {
@@ -130,13 +132,16 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		openCreateDialog() {
 			this.showDialog = true
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		onCreated() {
 			this.showDialog = false
 			this.fetchAdvies()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		async onRemind(item) {
 			try {
 				await dispatchReminder(item.id || item.uuid)
@@ -144,6 +149,7 @@ export default {
 				console.error('Procest: failed to send reminder', error)
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		async onMarkReceived(item) {
 			try {
 				await transitionStatus(item.id || item.uuid, {
@@ -155,19 +161,23 @@ export default {
 				console.error('Procest: failed to mark received', error)
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		onViewDocument(item) {
 			if (item.adviesDocument) {
 				window.open(`/index.php/f/${item.adviesDocument}`, '_blank')
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		typeLabel(type) {
 			return type === 'intern'
 				? this.t(this.appName, 'Intern')
 				: this.t(this.appName, 'Extern')
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		typeBadgeType(type) {
 			return type === 'intern' ? 'neutral' : 'info'
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		statusLabel(status) {
 			const labels = {
 				aangevraagd: this.t(this.appName, 'Aangevraagd'),
@@ -176,6 +186,7 @@ export default {
 			}
 			return labels[status] || status
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		statusBadgeType(status) {
 			const types = {
 				aangevraagd: 'info',
@@ -184,12 +195,14 @@ export default {
 			}
 			return types[status] || 'neutral'
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		isOverdue(item) {
 			if (item.status !== 'aangevraagd' || !item.deadline) {
 				return false
 			}
 			return new Date(item.deadline) < new Date()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		daysOverdue(item) {
 			if (!item.deadline) {
 				return 0
@@ -197,6 +210,7 @@ export default {
 			const diff = Date.now() - new Date(item.deadline).getTime()
 			return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)))
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		formatDate(value) {
 			if (!value) {
 				return ''

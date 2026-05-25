@@ -121,6 +121,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		counts() {
 			const result = { openbaar: 0, deels_openbaar: 0, niet_openbaar: 0, pending: 0 }
 			for (const doc of this.documents) {
@@ -141,6 +142,7 @@ export default {
 		getGrounds(docId) {
 			return this.assessments[docId]?.grounds || []
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		setAssessment(docId, value) {
 			this.$emit('update:assessment', {
 				documentId: docId,
@@ -148,6 +150,7 @@ export default {
 				grounds: value === 'niet_openbaar' ? (this.assessments[docId]?.grounds || []) : [],
 			})
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		setGrounds(docId, value) {
 			this.$emit('update:assessment', {
 				documentId: docId,

@@ -56,6 +56,7 @@ class ParaferingNotificationService
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function notifyStepActivated(
         string $actorUserId,
         string $onderwerp,
@@ -100,6 +101,7 @@ class ParaferingNotificationService
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function notifyVoorstelReturned(
         string $stellerUserId,
         string $onderwerp,
@@ -145,6 +147,7 @@ class ParaferingNotificationService
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function notifyParaferingReminder(
         string $actorUserId,
         string $onderwerp,

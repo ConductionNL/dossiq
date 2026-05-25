@@ -40,6 +40,7 @@ class OrSetStrategy implements RoutingStrategyInterface
      *
      * @return string The strategy name.
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function name(): string
     {
         return 'or-set';
@@ -55,6 +56,7 @@ class OrSetStrategy implements RoutingStrategyInterface
      *
      * @return array<int, string>
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function resolve(array $rule, array $case, array $roles): array
     {
         $rawTypes = $rule['roleTypes'] ?? [];

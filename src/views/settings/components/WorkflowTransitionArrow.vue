@@ -62,12 +62,15 @@ export default {
 	},
 	emits: ['click', 'dblclick'],
 	computed: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		midX() {
 			return (this.fromPos.x + this.toPos.x) / 2
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		midY() {
 			return (this.fromPos.y + this.toPos.y) / 2
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		arrowPath() {
 			const dx = this.toPos.x - this.fromPos.x
 			const dy = this.toPos.y - this.fromPos.y
@@ -80,6 +83,7 @@ export default {
 
 			return `M ${this.fromPos.x} ${this.fromPos.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${this.toPos.x} ${this.toPos.y}`
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		arrowheadPoints() {
 			// Calculate arrowhead at the end point
 			const dx = this.toPos.x - this.fromPos.x

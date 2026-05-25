@@ -75,6 +75,7 @@ class LegesController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function calculate(): JSONResponse
     {
         try {
@@ -117,6 +118,7 @@ class LegesController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recalculate(): JSONResponse
     {
         try {
@@ -164,6 +166,7 @@ class LegesController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function verrekening(): JSONResponse
     {
         try {
@@ -189,6 +192,7 @@ class LegesController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function teruggaaf(): JSONResponse
     {
         try {
@@ -219,6 +223,7 @@ class LegesController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function export(): DataDownloadResponse|JSONResponse
     {
         try {

@@ -58,6 +58,7 @@ class SideEffectDispatcher
      *
      * @return array<int, array{type: string, ok: bool, error?: string}>
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function dispatch(array $actions, array $case, array $transitionContext): array
     {
         $results = [];

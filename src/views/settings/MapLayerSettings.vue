@@ -186,12 +186,14 @@ export default {
 			form: this.emptyForm(),
 		}
 	},
+	/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 	async created() {
 		const gisStore = useGisStore()
 		await gisStore.fetchLayers()
 		this.layers = gisStore.layers
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		emptyForm() {
 			return {
 				title: '',
@@ -208,12 +210,14 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		editLayer(layer) {
 			this.editingLayer = layer
 			this.form = { ...layer }
 			this.showAddDialog = true
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		async saveLayer() {
 			const gisStore = useGisStore()
 			if (this.editingLayer) {
@@ -225,6 +229,7 @@ export default {
 			this.closeDialog()
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		async removeLayer(layer) {
 			if (!confirm(this.t('procest', 'Delete layer "{title}"?', { title: layer.title }))) {
 				return
@@ -234,12 +239,14 @@ export default {
 			this.layers = gisStore.layers
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		addPreset(preset) {
 			this.form = { ...this.emptyForm(), ...preset }
 			this.showAddDialog = true
 			this.showPresets = false
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		async testLayer(layer) {
 			this.testResult = null
 			try {
@@ -257,12 +264,14 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		closeDialog() {
 			this.showAddDialog = false
 			this.editingLayer = null
 			this.form = this.emptyForm()
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 		truncateUrl(url) {
 			if (!url) return ''
 			return url.length > 60 ? url.substring(0, 57) + '...' : url

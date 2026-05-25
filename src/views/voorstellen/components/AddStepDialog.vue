@@ -105,17 +105,20 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		insertionOptions() {
 			return this.routeSnapshot.map(s => ({
 				label: this.t('procest', 'Na stap {n} — {actor}', { n: s.order, actor: s.actor }),
 				value: s.order,
 			}))
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		canSubmit() {
 			return !this.submitting && this.afterStep !== null && this.actor.trim().length > 0
 		},
 	},
 	watch: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		open(value) {
 			if (value) {
 				this.afterStep = null
@@ -128,6 +131,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onSubmit() {
 			if (!this.canSubmit) return
 			this.submitting = true
@@ -150,6 +154,7 @@ export default {
 				this.submitting = false
 			}
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		onClose() {
 			if (this.submitting) return
 			this.$emit('close')

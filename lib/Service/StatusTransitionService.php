@@ -90,6 +90,7 @@ class StatusTransitionService
      *
      * @return array{transitions: array<int, array<string, mixed>>, current: array<string, mixed>}
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function getAvailableTransitions(string $caseId, ?string $userId=null): array
     {
         $userId = $this->resolveUserId(explicit: $userId);
@@ -160,6 +161,7 @@ class StatusTransitionService
      * @throws GuardFailedException When server-side re-evaluation fails any guard
      * @throws RuntimeException     When case/transition/template are not found
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function execute(string $caseId, string $transitionId, ?string $comment, ?string $userId=null): array
     {
         $userId = $this->resolveUserId(explicit: $userId);
@@ -253,6 +255,7 @@ class StatusTransitionService
      *
      * @throws RuntimeException When the caller is not in the admin group or the target is invalid
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function executeFreeForm(string $caseId, string $toStatusId, ?string $comment, ?string $userId=null): array
     {
         $userId = $this->resolveUserId(explicit: $userId);
@@ -292,6 +295,7 @@ class StatusTransitionService
      *
      * @return array{history: array<int, array<string, mixed>>, replayable: bool}
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function replay(string $caseId): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -344,6 +348,7 @@ class StatusTransitionService
      *
      * @return bool
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function isAdmin(string $userId): bool
     {
         if ($userId === '') {

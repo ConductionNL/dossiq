@@ -56,6 +56,7 @@ class MilestoneService
      *
      * @throws \RuntimeException If OpenRegister unavailable
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getMilestones(string $caseTypeId): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -93,6 +94,7 @@ class MilestoneService
      *
      * @return array<string, mixed> Progress data with milestones, reached count, total, percentage
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getCaseProgress(string $caseId, string $caseTypeId): array
     {
         $definitions = $this->getMilestones(caseTypeId: $caseTypeId);
@@ -165,6 +167,7 @@ class MilestoneService
      *
      * @throws \RuntimeException If OpenRegister unavailable
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function markMilestone(
         string $caseId,
         string $milestoneDefinitionId,
@@ -217,6 +220,7 @@ class MilestoneService
      *
      * @throws \RuntimeException If OpenRegister unavailable
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function reverseMilestone(
         string $caseId,
         string $milestoneDefinitionId,
@@ -268,6 +272,7 @@ class MilestoneService
      *
      * @return array<string, mixed> Duration analytics per milestone pair
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getDurationAnalytics(string $caseTypeId): array
     {
         // Placeholder: in production, this would aggregate milestone records

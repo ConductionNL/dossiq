@@ -71,6 +71,7 @@ class InspectionController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): JSONResponse
     {
         try {
@@ -99,6 +100,7 @@ class InspectionController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function captureLocation(string $id): JSONResponse
     {
         try {
@@ -142,6 +144,7 @@ class InspectionController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function completeChecklistItem(string $id, string $itemId): JSONResponse
     {
         try {
@@ -190,6 +193,7 @@ class InspectionController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function addPhoto(string $id): JSONResponse
     {
         try {
@@ -218,6 +222,7 @@ class InspectionController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function complete(string $id): JSONResponse
     {
         try {

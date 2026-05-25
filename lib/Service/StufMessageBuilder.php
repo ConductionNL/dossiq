@@ -92,6 +92,7 @@ class StufMessageBuilder
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildSoapEnvelope(string $bodyXml): string
     {
         $dom = new \DOMDocument('1.0', 'UTF-8');
@@ -136,6 +137,7 @@ class StufMessageBuilder
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildStuurgegevens(
         array $zender,
         array $ontvanger,
@@ -172,6 +174,7 @@ class StufMessageBuilder
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildBv01(
         array $zender,
         array $ontvanger,
@@ -212,6 +215,7 @@ class StufMessageBuilder
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildFo01(
         string $foutcode,
         string $foutbeschrijving,
@@ -254,6 +258,7 @@ class StufMessageBuilder
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildSoapFault(string $faultString): string
     {
         $dom = new \DOMDocument('1.0', 'UTF-8');

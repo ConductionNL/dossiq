@@ -111,13 +111,16 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		settingsStore() {
 			return useSettingsStore()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		loading() {
 			return this.settingsStore.isLoading
 		},
 	},
+	/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 	async mounted() {
 		const config = await this.settingsStore.fetchSettings()
 		if (config) {
@@ -125,6 +128,7 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async save() {
 			this.saved = false
 			const result = await this.settingsStore.saveSettings(this.form)

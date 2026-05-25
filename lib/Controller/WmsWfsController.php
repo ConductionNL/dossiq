@@ -77,6 +77,7 @@ class WmsWfsController extends Controller
      *
      * @return JSONResponse Proxied response or error envelope
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function proxy(): JSONResponse
     {
         $layerId = (string) $this->request->getParam('layerId', '');

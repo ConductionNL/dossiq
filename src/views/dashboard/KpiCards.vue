@@ -40,6 +40,7 @@ export default {
 	},
 	emits: ['click-card'],
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
 		cards() {
 			return [
 				{

@@ -82,6 +82,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function rulesZakenCreate(array $body): array
     {
         // Zrc-001: Validate zaaktype URL.
@@ -174,6 +175,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @return array The validation result
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function rulesZakenUpdate(array $body, ?array $existingObject=null): array
     {
         // Zrc-002: Preserve immutable identificatie on PUT if not provided.
@@ -215,6 +217,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @return array The validation result
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function rulesZakenPatch(array $body, ?array $existingObject=null): array
     {
         // Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype if not set.
@@ -299,6 +302,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function rulesResultatenCreate(array $body): array
     {
         // Zrc-020: Validate resultaattype belongs to zaak's zaaktype.
@@ -332,6 +336,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function rulesRollenCreate(array $body): array
     {
         // Zrc-019: Validate roltype belongs to zaak's zaaktype.
@@ -367,6 +372,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function rulesZaakinformatieobjectenCreate(array $body): array
     {
         // Zrc-003: Validate informatieobject URL exists.
@@ -407,6 +413,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function rulesZaakinformatieobjectenUpdate(array $body, ?array $existingObject=null): array
     {
         $result = $this->checkZioImmutability(result: $this->isValid(body: $body), existingObject: $existingObject);
@@ -430,6 +437,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @see rulesZaakinformatieobjectenUpdate() Same immutability rules apply.
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function rulesZaakinformatieobjectenPatch(array $body, ?array $existingObject=null): array
     {
         return $this->rulesZaakinformatieobjectenUpdate(body: $body, existingObject: $existingObject);
@@ -447,6 +455,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function rulesZaakeigenschappenCreate(array $body): array
     {
         // Zrc-018: Validate eigenschap belongs to zaak's zaaktype.
@@ -1102,6 +1111,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function detectEindstatus(string $statustypeUuid, string $zaaktypeUuid): bool
     {
         if ($this->objectService === null) {
@@ -1175,6 +1185,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function filterZakenForConsumer(array $zaken, array $authorizations): array
     {
         // No authorizations context → return all zaken unfiltered.

@@ -61,6 +61,7 @@ class TemplateController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): JSONResponse
     {
         $templates = $this->templateService->listTemplates();
@@ -76,6 +77,7 @@ class TemplateController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function show(string $id): JSONResponse
     {
         $template = $this->templateService->loadTemplate($id);
@@ -95,6 +97,7 @@ class TemplateController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function activate(string $id): JSONResponse
     {
         try {

@@ -139,6 +139,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		featureToggles() {
 			return [
 				{ key: 'ai_feature_classification', label: t('procest', 'Document classification') },
@@ -150,6 +151,7 @@ export default {
 			]
 		},
 	},
+	/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 	async mounted() {
 		try {
 			const response = await getAiSettings()
@@ -160,6 +162,7 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		async updateSetting(key, value) {
 			this.settings[key] = value
 			try {
@@ -168,6 +171,7 @@ export default {
 				// Revert on failure would go here
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		async testHealth() {
 			this.healthLoading = true
 			this.healthResult = null

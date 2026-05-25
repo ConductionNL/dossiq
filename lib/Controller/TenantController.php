@@ -70,6 +70,7 @@ class TenantController extends Controller
      *
      * @return JSONResponse The provisioning result
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function provision(string $tenantId): JSONResponse
     {
         if ($this->isPlatformAdmin() === false) {
@@ -92,6 +93,7 @@ class TenantController extends Controller
      *
      * @return JSONResponse The resource usage
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function usage(string $tenantId): JSONResponse
     {
         if ($this->isPlatformAdmin() === false) {
@@ -109,6 +111,7 @@ class TenantController extends Controller
      *
      * @return JSONResponse The current tenant
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function current(): JSONResponse
     {
         $user = $this->userSession->getUser();

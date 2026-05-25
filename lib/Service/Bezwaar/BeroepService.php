@@ -158,6 +158,7 @@ class BeroepService
      *                          are unconfigured, or the contested decision
      *                          cannot be loaded.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function register(
         string $caseId,
         string $sourceBezwaarId,
@@ -244,6 +245,7 @@ class BeroepService
      * @throws RuntimeException When OpenRegister is unavailable or the
      *                          beroep cannot be loaded.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function addFileInspectionRequest(
         string $beroepId,
         string $requestedAt,
@@ -320,6 +322,7 @@ class BeroepService
      *                          is unavailable, or the beroep cannot be
      *                          loaded.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recordJudgment(
         string $beroepId,
         string $outcome,
@@ -395,6 +398,7 @@ class BeroepService
      *                          is unavailable, or the beroep cannot be
      *                          loaded.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function executeCascade(string $beroepId, string $action): array
     {
         if (in_array($action, self::VALID_CASCADES, true) === false) {

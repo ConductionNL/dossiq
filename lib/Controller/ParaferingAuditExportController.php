@@ -81,6 +81,7 @@ class ParaferingAuditExportController extends Controller
      * @return JSONResponse
      */
     #[NoAdminRequired]
+    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function export(string $id, string $format='json'): JSONResponse
     {
         try {

@@ -71,11 +71,13 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		sortedActivity() {
 			return [...this.activity].sort((a, b) => new Date(b.date) - new Date(a.date))
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		getIcon(type) {
 			const icons = {
 				created: '+',
@@ -86,9 +88,11 @@ export default {
 			}
 			return icons[type] || '•'
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		formatEntryDate(dateString) {
 			return formatDate(dateString)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		addNote() {
 			if (!this.noteText.trim()) return
 			this.$emit('add-note', this.noteText.trim())

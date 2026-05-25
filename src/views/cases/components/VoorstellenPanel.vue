@@ -97,6 +97,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
@@ -105,6 +106,7 @@ export default {
 		await this.loadVoorstellen()
 	},
 	methods: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async loadVoorstellen() {
 			this.loading = true
 			try {
@@ -123,12 +125,15 @@ export default {
 		isActive(voorstel) {
 			return !['besloten', 'gearchiveerd'].includes(voorstel.status)
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		formatType(type) {
 			return TYPE_LABELS[type] || type || '-'
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		formatStatus(status) {
 			return STATUS_LABELS[status] || status || '-'
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		formatStepProgress(voorstel) {
 			let steps = []
 			if (voorstel.routeSnapshot) {
@@ -143,6 +148,7 @@ export default {
 			if (!steps.length) return `${voorstel.currentStep}`
 			return `${voorstel.currentStep}/${steps.length}`
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onCreated() {
 			this.showCreate = false
 			await this.loadVoorstellen()

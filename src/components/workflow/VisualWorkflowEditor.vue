@@ -171,12 +171,14 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		readOnly() {
 			return !!this.template && this.template.isDraft === false
 		},
 		hasErrors() {
 			return this.issues.some((i) => i.level === 'error')
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		nodes() {
 			const layout = this.workingCopy.layout || {}
 			const stepNodes = (this.workingCopy.steps || []).map((step, idx) => {
@@ -196,6 +198,7 @@ export default {
 			})
 			return stepNodes
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		edges() {
 			return (this.workingCopy.transitions || []).map((tr, idx) => {
 				const id = tr.id || `edge-${idx}`
@@ -215,6 +218,7 @@ export default {
 	},
 	watch: {
 		workingCopy: {
+			/** @spec openspec/specs/workflow-definition-model/spec.md */
 			handler() {
 				this.issues = validateGraph(this.workingCopy)
 				this.scheduleAutosave()
@@ -225,12 +229,14 @@ export default {
 	async mounted() {
 		await this.load()
 	},
+	/** @spec openspec/specs/workflow-definition-model/spec.md */
 	beforeDestroy() {
 		if (this.autosaveTimer) {
 			clearTimeout(this.autosaveTimer)
 		}
 	},
 	methods: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async load() {
 			this.loading = true
 			this.loadError = ''
@@ -250,6 +256,7 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		parseTemplate(template) {
 			const parseField = (raw, fallback) => {
 				if (Array.isArray(raw) || typeof raw === 'object') {
@@ -270,6 +277,7 @@ export default {
 				layout: parseField(template.layout, {}),
 			}
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		serializeWorkingCopy() {
 			return {
 				steps: this.workingCopy.steps,
@@ -277,6 +285,7 @@ export default {
 				layout: this.workingCopy.layout,
 			}
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onNodesUpdate(nodes) {
 			// Capture position changes back into the layout block.
 			const layout = { ...(this.workingCopy.layout || {}) }
@@ -294,6 +303,7 @@ export default {
 				this.isDirty = true
 			}
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onEdgesUpdate(edges) {
 			// Keep transitions in working copy aligned with rendered edges
 			// (e.g. when vue-flow signals deletes from the user).
@@ -307,14 +317,17 @@ export default {
 				this.isDirty = true
 			}
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onSelectNode(node) {
 			this.selectedNode = node
 			this.selectedEdge = null
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onSelectEdge(edge) {
 			this.selectedEdge = edge
 			this.selectedNode = null
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onDropNode({ type, position }) {
 			const id = `step-${Date.now()}`
 			const newStep = {
@@ -332,6 +345,7 @@ export default {
 			}
 			this.isDirty = true
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onConnect({ source, target }) {
 			if (!source || !target) return
 			const id = `tr-${Date.now()}`
@@ -346,6 +360,7 @@ export default {
 			this.workingCopy = { ...this.workingCopy, transitions: next }
 			this.isDirty = true
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onNodePropsUpdate({ nodeId, patch }) {
 			const steps = (this.workingCopy.steps || []).map((step, idx) => {
 				const id = step.id || step.status || `step-${idx}`
@@ -359,6 +374,7 @@ export default {
 			this.workingCopy = { ...this.workingCopy, steps }
 			this.isDirty = true
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onEdgePropsUpdate({ edgeId, patch }) {
 			const transitions = (this.workingCopy.transitions || []).map((tr, idx) => {
 				const id = tr.id || `edge-${idx}`
@@ -368,11 +384,13 @@ export default {
 			this.workingCopy = { ...this.workingCopy, transitions }
 			this.isDirty = true
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		scheduleAutosave() {
 			if (!this.isDirty || !this.template || this.readOnly) return
 			if (this.autosaveTimer) clearTimeout(this.autosaveTimer)
 			this.autosaveTimer = setTimeout(() => this.onSaveDraft(true), 2000)
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async onSaveDraft(silent = false) {
 			if (!this.template || this.readOnly) return
 			this.saving = true
@@ -395,6 +413,7 @@ export default {
 				this.saving = false
 			}
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async onPublish() {
 			if (!this.template || this.hasErrors || this.readOnly) return
 			if (this.isDirty) {
@@ -413,6 +432,7 @@ export default {
 				this.saving = false
 			}
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onExport() {
 			const data = JSON.stringify({
 				title: this.template && this.template.title,
@@ -427,9 +447,11 @@ export default {
 			a.click()
 			URL.revokeObjectURL(url)
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onImport() {
 			this.$refs.importInput.click()
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async onImportFile(event) {
 			const file = event.target.files && event.target.files[0]
 			if (!file) return

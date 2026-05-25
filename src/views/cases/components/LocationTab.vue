@@ -111,6 +111,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md */
 		parsedGeometry() {
 			if (!this.geometry) return null
 			if (typeof this.geometry === 'string') {
@@ -125,6 +126,7 @@ export default {
 		hasGeometry() {
 			return this.parsedGeometry && this.parsedGeometry.type
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md */
 		mapCenter() {
 			const geo = this.parsedGeometry
 			if (!geo) return [52.1326, 5.2913]
@@ -134,12 +136,14 @@ export default {
 			// For polygons, use centroid
 			return this.calculateCentroid(geo)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md */
 		mapGeometry() {
 			return {
 				geometry: this.parsedGeometry,
 				properties: {},
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md */
 		area() {
 			const geo = this.parsedGeometry
 			if (!geo || geo.type !== 'Polygon') return 0
@@ -149,12 +153,14 @@ export default {
 	watch: {
 		geometry: {
 			immediate: true,
+			/** @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md */
 			handler() {
 				this.loadAddress()
 			},
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md */
 		async loadAddress() {
 			const geo = this.parsedGeometry
 			if (!geo) {
@@ -166,11 +172,13 @@ export default {
 			this.address = await gisStore.reverseGeocode(center[0], center[1])
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md */
 		onLocationSave(newGeometry) {
 			this.showPicker = false
 			this.$emit('update-geometry', newGeometry)
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md */
 		calculateCentroid(geo) {
 			if (geo.type === 'Point') {
 				return [geo.coordinates[1], geo.coordinates[0]]
@@ -188,6 +196,7 @@ export default {
 			return [52.1326, 5.2913]
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md */
 		calculateArea(ring) {
 			// Shoelace formula for approximate area in m2
 			if (!ring || ring.length < 3) return 0
@@ -201,6 +210,7 @@ export default {
 			return Math.abs(area / 2) * 111320 * 111320 * Math.cos((ring[0][1] * Math.PI) / 180)
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md */
 		formatArea(sqm) {
 			if (sqm > 10000) {
 				return `${(sqm / 10000).toFixed(2)} ha`
