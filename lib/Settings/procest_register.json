@@ -525,6 +525,20 @@
       },
       "case": {
         "slug": "case",
+        "x-openregister-notifications": {
+          "caseAssigned": {
+            "trigger": { "type": "created" },
+            "enabled": true,
+            "channels": ["nc-notification"],
+            "recipients": [
+              { "kind": "field", "field": "assignee" }
+            ],
+            "subject": {
+              "nl": "Zaak \"{{title}}\" aan je toegewezen",
+              "en": "Case \"{{title}}\" assigned to you"
+            }
+          }
+        },
         "icon": "BriefcaseOutline",
         "version": "1.0.0",
         "x-schema-org-type": "schema:Project",
@@ -748,6 +762,20 @@
       },
       "task": {
         "slug": "task",
+        "x-openregister-notifications": {
+          "taskAssigned": {
+            "trigger": { "type": "created" },
+            "enabled": true,
+            "channels": ["nc-notification"],
+            "recipients": [
+              { "kind": "field", "field": "assignee" }
+            ],
+            "subject": {
+              "nl": "Taak \"{{title}}\" aan je toegewezen",
+              "en": "Task \"{{title}}\" assigned to you"
+            }
+          }
+        },
         "icon": "CheckboxMarkedOutline",
         "version": "1.1.0",
         "x-schema-org-type": "schema:Action",
