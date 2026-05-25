@@ -72,6 +72,7 @@ export default {
 		this.loadStatus()
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async loadStatus() {
 			this.loading = true
 			try {
@@ -89,6 +90,7 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		formatDate(dateString) {
 			if (!dateString) return ''
 			return new Date(dateString).toLocaleDateString('nl-NL', {

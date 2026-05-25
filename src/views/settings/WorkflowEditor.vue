@@ -150,21 +150,27 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		workflowStore() {
 			return useWorkflowStore()
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		steps() {
 			return this.workflowStore.parsedSteps
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		transitions() {
 			return this.workflowStore.parsedTransitions
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		nodePositions() {
 			return this.workflowStore.parsedNodePositions
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		selectedTransitionData() {
 			if (!this.selectedTransition) return null
 			return this.transitions.find((t) => t.id === this.selectedTransition) || null
@@ -179,18 +185,21 @@ export default {
 		 *
 		 * @return {boolean} Whether the current template is published.
 		 */
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		isPublished() {
 			const tpl = this.workflowStore.currentTemplate || null
 			if (!tpl) return false
 			// isDraft true ⇒ editable; isDraft false ⇒ published/deprecated
 			return tpl.isDraft === false
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		canvasStyle() {
 			return {
 				transform: `translate(${this.panOffset.x}px, ${this.panOffset.y}px) scale(${this.zoom})`,
 				transformOrigin: '0 0',
 			}
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		svgViewBox() {
 			return '0 0 2000 1500'
 		},
@@ -199,6 +208,7 @@ export default {
 		await this.loadData()
 	},
 	methods: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async loadData() {
 			// Load status types for this case type
 			this.statusNodes = await this.objectStore.fetchCollection('statusType', {
@@ -228,6 +238,7 @@ export default {
 			this.ensureNodePositions()
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		ensureNodePositions() {
 			const positions = { ...this.nodePositions }
 			let changed = false
@@ -245,12 +256,14 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		getStepsForStatus(statusId) {
 			return this.steps
 				.filter((s) => s.status === statusId)
 				.sort((a, b) => a.order - b.order)
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		getNodeCenter(statusId) {
 			const pos = this.nodePositions[statusId]
 			if (!pos) return { x: 0, y: 0 }
@@ -261,22 +274,26 @@ export default {
 		},
 
 		// --- Selection ---
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		selectNode(statusId) {
 			this.selectedNode = statusId
 			this.selectedTransition = null
 			this.selectedStep = null
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		selectTransition(transitionId) {
 			this.selectedTransition = transitionId
 			this.selectedNode = null
 			this.selectedStep = null
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		editTransition(transitionId) {
 			this.selectTransition(transitionId)
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onStepClick(step) {
 			this.selectedStep = { ...step }
 			this.selectedNode = null
@@ -284,6 +301,7 @@ export default {
 		},
 
 		// --- Node drag ---
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onNodeDragStart(statusId, event) {
 			this.draggingNode = {
 				statusId,
@@ -292,6 +310,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onCanvasMouseMove(event) {
 			if (this.draggingNode) {
 				const rect = this.$refs.canvas.getBoundingClientRect()
@@ -314,6 +333,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onCanvasMouseUp() {
 			if (this.draggingNode) {
 				this.draggingNode = null
@@ -325,6 +345,7 @@ export default {
 			this.panning = false
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onCanvasMouseDown(event) {
 			// Only pan if clicking empty canvas area
 			if (event.target === this.$refs.canvas || event.target.classList.contains('workflow-editor__svg')) {
@@ -339,6 +360,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onCanvasWheel(event) {
 			event.preventDefault()
 			const delta = event.deltaY > 0 ? -0.1 : 0.1
@@ -346,6 +368,7 @@ export default {
 		},
 
 		// --- Connection drawing ---
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onConnectionStart(statusId, event) {
 			const center = this.getNodeCenter(statusId)
 			this.drawingConnection = {
@@ -357,6 +380,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onConnectionEnd(statusId) {
 			if (this.drawingConnection && this.drawingConnection.fromStatus !== statusId) {
 				this.workflowStore.addTransition(
@@ -369,10 +393,12 @@ export default {
 		},
 
 		// --- Palette drag & drop ---
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onPaletteDragStart(type) {
 			this.paletteDragType = type
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async onCanvasDrop(event) {
 			if (this.paletteDragType === 'status') {
 				const rect = this.$refs.canvas.getBoundingClientRect()
@@ -397,12 +423,14 @@ export default {
 		},
 
 		// --- Step management ---
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onAddStep(statusId) {
 			const step = this.workflowStore.addStep(statusId)
 			this.selectedStep = { ...step }
 			this.$emit('dirty')
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onStepUpdate(updatedStep) {
 			this.workflowStore.updateStep(updatedStep.id, updatedStep)
 			this.selectedStep = { ...updatedStep }
@@ -410,11 +438,13 @@ export default {
 		},
 
 		// --- Transition management ---
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onTransitionUpdate(updatedTransition) {
 			this.workflowStore.updateTransition(updatedTransition.id, updatedTransition)
 			this.$emit('dirty')
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onTransitionDelete(transitionId) {
 			this.workflowStore.removeTransition(transitionId)
 			this.selectedTransition = null
@@ -422,6 +452,7 @@ export default {
 		},
 
 		// --- Public API ---
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		validate() {
 			this.validationErrors = this.workflowStore.validateWorkflow()
 			return this.validationErrors.length === 0

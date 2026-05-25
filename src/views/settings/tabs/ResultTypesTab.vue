@@ -118,6 +118,7 @@ export default {
 		if (!this.isCreate) await this.loadItems()
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async loadItems() {
 			this.loading = true
 			const objectStore = useObjectStore()
@@ -128,17 +129,20 @@ export default {
 			this.items = results || []
 			this.loading = false
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		startAdd() {
 			this.editingId = 'new'
 			this.editForm = { name: '', description: '', archivalAction: '', archivalPeriod: '' }
 			this.editError = ''
 			this.items.push({ id: 'new', name: '' })
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		startEdit(item) {
 			this.editingId = item.id
 			this.editForm = { name: item.name, description: item.description || '', archivalAction: item.archivalAction || '', archivalPeriod: item.archivalPeriod || '' }
 			this.editError = ''
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		cancelEdit() {
 			if (this.editingId === 'new') {
 				this.items = this.items.filter(i => i.id !== 'new')
@@ -146,6 +150,7 @@ export default {
 			this.editingId = null
 			this.editError = ''
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async saveEdit() {
 			if (!this.editForm.name.trim()) {
 				this.editError = t('procest', 'Name is required')
@@ -164,6 +169,7 @@ export default {
 			this.editingId = null
 			await this.loadItems()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async deleteItem(item) {
 			if (!confirm(t('procest', 'Delete result type "{name}"?', { name: item.name }))) return
 			const objectStore = useObjectStore()

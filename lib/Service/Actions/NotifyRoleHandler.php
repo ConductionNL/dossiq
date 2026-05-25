@@ -59,6 +59,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
      *
      * @return string The action type slug handled by this handler.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function type(): string
     {
         return 'notifyRole';
@@ -73,6 +74,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
      *
      * @return ActionResult The outcome of the role notification.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {

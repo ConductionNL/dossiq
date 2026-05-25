@@ -88,6 +88,7 @@ export default {
 		},
 	},
 	computed: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		heading() {
 			if (!this.node) {
 				return t('procest', 'Node properties')
@@ -100,6 +101,7 @@ export default {
 			}
 			return labelByType[this.node.type] || t('procest', 'Node')
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		nodeIssues() {
 			if (!this.node) {
 				return []
@@ -108,6 +110,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		updateField(key, value) {
 			this.$emit('update', { nodeId: this.node.id, patch: { [key]: value } })
 		},

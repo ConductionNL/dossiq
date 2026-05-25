@@ -110,22 +110,26 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
 		isAdvisoryStep() {
 			return this.currentStepInfo?.type === 'advies'
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		actionTitle() {
 			const label = this.currentStepInfo?.label || t('procest', 'Uw actie')
 			return `${label} — ${this.formatStepType(this.currentStepInfo?.type)}`
 		},
 	},
 	methods: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		formatStepType(type) {
 			const labels = { advies: 'Advies', parafering: 'Parafering', accordering: 'Accordering' }
 			return labels[type] || type || ''
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async doParaferen() {
 			this.acting = true
 			try {
@@ -161,6 +165,7 @@ export default {
 				this.acting = false
 			}
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async doAdviseren() {
 			this.acting = true
 			try {
@@ -190,6 +195,7 @@ export default {
 				this.acting = false
 			}
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async doTerugsturen() {
 			if (!this.returnComment.trim()) {
 				this.returnError = t('procest', 'Reden is verplicht bij terugsturen')

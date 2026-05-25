@@ -70,6 +70,7 @@ class CaseSharingController extends Controller
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createShare(): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -132,6 +133,7 @@ class CaseSharingController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function revokeShare(string $shareId): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -150,6 +152,7 @@ class CaseSharingController extends Controller
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function initiateTransfer(): JSONResponse
     {
         $caseId = $this->request->getParam('caseId');
@@ -185,6 +188,7 @@ class CaseSharingController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handleTransfer(string $transferId): JSONResponse
     {
         $action = $this->request->getParam('action');

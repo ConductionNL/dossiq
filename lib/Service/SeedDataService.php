@@ -60,6 +60,7 @@ class SeedDataService
      *
      * @return array Result summary with counts of created and skipped objects
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function seedBezwaarBeroepData(): array
     {
         $seedPath = __DIR__.'/../Settings/bezwaar_seed_data.json';

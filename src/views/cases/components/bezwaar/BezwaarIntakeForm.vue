@@ -187,6 +187,7 @@ export default {
 		this.loadExistingObjection()
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async loadExistingObjection() {
 			const bezwaarStore = useBezwaarStore()
 			if (bezwaarStore.currentObjection) {
@@ -206,6 +207,7 @@ export default {
 				}
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		checkTimeliness() {
 			if (!this.form.receivedDate || !this.besluitDate) {
 				this.timelinessResult = null
@@ -220,6 +222,7 @@ export default {
 			this.form.isTimely = this.timelinessResult.isTimely
 			this.calculateDeadlines()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		calculateDeadlines() {
 			if (!this.form.receivedDate) {
 				this.deadlines = null
@@ -230,6 +233,7 @@ export default {
 			this.deadlines = bezwaarStore.calculateDeadlines(this.form.receivedDate)
 			this.$emit('deadlines-calculated', this.deadlines)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		validate() {
 			this.errors = {}
 
@@ -245,6 +249,7 @@ export default {
 
 			return Object.keys(this.errors).length === 0
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async save() {
 			if (!this.validate()) return
 

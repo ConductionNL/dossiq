@@ -83,6 +83,7 @@ class CaseDefinitionImportService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validatePackage(string $zipPath): array
     {
         $result = [
@@ -227,6 +228,7 @@ class CaseDefinitionImportService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function importCaseDefinition(
         string $zipPath,
         string $strategy='skip',

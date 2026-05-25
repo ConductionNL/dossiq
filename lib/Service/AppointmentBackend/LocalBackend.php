@@ -69,6 +69,7 @@ class LocalBackend implements AppointmentBackendInterface
      *
      * @return array<int, array<string, mixed>> List of generated timeslots.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getTimeslots(string $productId, string $locationId, string $date): array
     {
         $slots = [];
@@ -93,6 +94,7 @@ class LocalBackend implements AppointmentBackendInterface
      *
      * @return array<string, string> Local booking result with generated externalId.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function bookAppointment(array $data): array
     {
         return ['externalId' => 'local-'.bin2hex(random_bytes(8))];
@@ -105,6 +107,7 @@ class LocalBackend implements AppointmentBackendInterface
      *
      * @return bool Always true.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function cancelAppointment(string $externalId): bool
     {
         $this->logger->info('Local backend: appointment cancelled', ['externalId' => $externalId]);
@@ -119,6 +122,7 @@ class LocalBackend implements AppointmentBackendInterface
      *
      * @return array<string, string> Updated booking result.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rescheduleAppointment(string $externalId, string $newDateTime): array
     {
         return ['externalId' => $externalId];

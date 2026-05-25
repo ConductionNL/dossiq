@@ -40,6 +40,7 @@ class SingleRoleStrategy implements RoutingStrategyInterface
      *
      * @return string The strategy name.
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function name(): string
     {
         return 'single-role';
@@ -58,6 +59,7 @@ class SingleRoleStrategy implements RoutingStrategyInterface
      *
      * @return array<int, string>
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function resolve(array $rule, array $case, array $roles): array
     {
         $target = (string) ($rule['roleType'] ?? '');

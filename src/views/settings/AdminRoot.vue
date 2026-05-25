@@ -103,11 +103,13 @@ export default {
 			messageType: 'success',
 		}
 	},
+	/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 	async created() {
 		await initializeStores()
 		this.storesReady = true
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async reimport() {
 			this.reimporting = true
 			this.message = ''

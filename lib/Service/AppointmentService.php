@@ -82,6 +82,7 @@ class AppointmentService
      *
      * @return array<string, mixed> The stored appointment record or an error payload.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function bookAppointment(string $caseId, array $data): array
     {
         $objectService = $this->getObjectService();
@@ -131,6 +132,7 @@ class AppointmentService
      *
      * @return array<string, mixed> The updated appointment record.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function cancelAppointment(string $appointmentId): array
     {
         $objectService = $this->getObjectService();
@@ -162,6 +164,7 @@ class AppointmentService
      *
      * @return array<string, mixed> The updated appointment record.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function markNoShow(string $appointmentId): array
     {
         $objectService = $this->getObjectService();
@@ -187,6 +190,7 @@ class AppointmentService
      *
      * @return array<int, mixed> List of appointments for the case.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getAppointmentsForCase(string $caseId): array
     {
         $objectService = $this->getObjectService();
@@ -209,6 +213,7 @@ class AppointmentService
      *
      * @return array<string, mixed>|null The appointment data, or null if not found.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getAppointmentByToken(string $token): ?array
     {
         $objectService = $this->getObjectService();

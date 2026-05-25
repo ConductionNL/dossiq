@@ -80,12 +80,15 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		workflowStore() {
 			return useWorkflowStore()
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		versionNotice() {
 			if (!this.workflowTemplate || !this.activeVersion) return null
 			if (this.caseData.workflowVersion
@@ -98,6 +101,7 @@ export default {
 			}
 			return null
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		requiredStepsInfo() {
 			if (!this.workflowTemplate) return []
 			const steps = typeof this.workflowTemplate.steps === 'string'
@@ -118,11 +122,13 @@ export default {
 	},
 	watch: {
 		'caseData.status': {
+			/** @spec openspec/specs/workflow-definition-model/spec.md */
 			handler() {
 				this.computeTransitions()
 			},
 		},
 		tasks: {
+			/** @spec openspec/specs/workflow-definition-model/spec.md */
 			handler() {
 				this.computeTransitions()
 			},
@@ -133,6 +139,7 @@ export default {
 		await this.loadWorkflow()
 	},
 	methods: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async loadWorkflow() {
 			if (!this.caseData.caseType) return
 
@@ -162,6 +169,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		computeTransitions() {
 			if (!this.workflowTemplate) {
 				this.availableTransitions = []
@@ -177,6 +185,7 @@ export default {
 			)
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async executeTransition(transition) {
 			if (!transition.available) return
 
@@ -216,6 +225,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async createStepTasks(statusId) {
 			if (!this.workflowTemplate) return
 
@@ -249,6 +259,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async terminateOptionalTasks(fromStatusId) {
 			if (!this.workflowTemplate) return
 

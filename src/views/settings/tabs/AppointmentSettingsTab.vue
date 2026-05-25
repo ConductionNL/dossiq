@@ -56,6 +56,7 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
 		saveBackend() {
 			// Save via settings API
 		},

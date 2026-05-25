@@ -98,23 +98,27 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		filledCount() {
 			return this.propertyDefinitions.filter(pd => this.getPropertyValue(pd.id)).length
 		},
 	},
 	watch: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		caseTypeId() {
 			if (this.caseTypeId) {
 				this.loadData()
 			}
 		},
 	},
+	/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 	async mounted() {
 		if (this.caseTypeId) {
 			await this.loadData()
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async loadData() {
 			this.loading = true
 			const objectStore = useObjectStore()
@@ -135,11 +139,13 @@ export default {
 			this.loading = false
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		getPropertyValue(propDefId) {
 			const prop = this.caseProperties.find(cp => cp.propertyDefinition === propDefId)
 			return prop?.value || ''
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		startEdit(propDef) {
 			if (this.isReadOnly) return
 			this.editing = true
@@ -147,18 +153,21 @@ export default {
 			this.editValue = this.getPropertyValue(propDef.id)
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		editAll() {
 			if (this.propertyDefinitions.length > 0) {
 				this.startEdit(this.propertyDefinitions[0])
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		cancelEdit() {
 			this.editing = false
 			this.editingPropId = null
 			this.editValue = ''
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async saveProperty(propDef) {
 			const objectStore = useObjectStore()
 			const existing = this.caseProperties.find(cp => cp.propertyDefinition === propDef.id)

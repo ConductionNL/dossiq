@@ -160,27 +160,34 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		workflowStore() {
 			return useWorkflowStore()
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		versions() {
 			return this.workflowStore.versions
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		currentTemplate() {
 			return this.workflowStore.currentTemplate
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		currentIsDraft() {
 			return this.currentTemplate?.isDraft === true
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		currentIsPublished() {
 			return this.currentTemplate && !this.currentTemplate.isDraft
 		},
 		hasDraft() {
 			return this.versions.some((v) => v.isDraft)
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		versionNotice() {
 			if (!this.currentTemplate) return null
 			const active = this.workflowStore.activeVersion
@@ -197,6 +204,7 @@ export default {
 		await this.loadVersions()
 	},
 	methods: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async loadVersions() {
 			this.loading = true
 			await this.workflowStore.listVersions(this.caseTypeId)
@@ -212,6 +220,7 @@ export default {
 			this.loading = false
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async onVersionChange() {
 			if (this.selectedVersionId) {
 				await this.workflowStore.getTemplate(this.selectedVersionId)
@@ -220,6 +229,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async createWorkflow() {
 			this.loading = true
 			const template = await this.workflowStore.createTemplate(
@@ -233,6 +243,7 @@ export default {
 			this.loading = false
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async save() {
 			this.saving = true
 			await this.workflowStore.saveTemplate(this.currentTemplate)
@@ -240,6 +251,7 @@ export default {
 			this.saving = false
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async publish() {
 			this.publishErrors = []
 			this.publishing = true
@@ -265,6 +277,7 @@ export default {
 			this.publishing = false
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async editPublished() {
 			this.loading = true
 			const draft = await this.workflowStore.createDraftFromVersion(this.selectedVersionId)
@@ -275,6 +288,7 @@ export default {
 			this.loading = false
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async exportWorkflow() {
 			if (!this.currentTemplate) return
 
@@ -308,10 +322,12 @@ export default {
 			URL.revokeObjectURL(url)
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		triggerImport() {
 			this.$refs.importInput.click()
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async handleImport(event) {
 			const file = event.target.files[0]
 			if (!file) return

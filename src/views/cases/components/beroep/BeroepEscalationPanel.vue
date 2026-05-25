@@ -80,6 +80,7 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async escalate() {
 			this.escalating = true
 			const bezwaarStore = useBezwaarStore()
@@ -94,6 +95,7 @@ export default {
 				this.$emit('escalated', beroepCase)
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		navigateToBeroep() {
 			if (this.linkedBeroepCase) {
 				this.$router.push({

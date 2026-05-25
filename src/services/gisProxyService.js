@@ -18,6 +18,7 @@ import { generateUrl } from '@nextcloud/router'
  * @param {string} params.responseType Expected response type: 'image', 'json', 'xml'
  * @return {Promise<*>} The proxied response data
  */
+/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 export async function proxyRequest({ url, query = {}, type = 'wms', responseType = 'json' }) {
 	const apiUrl = generateUrl('/apps/procest/api/gis/proxy')
 	const axiosConfig = {}
@@ -42,6 +43,7 @@ export async function proxyRequest({ url, query = {}, type = 'wms', responseType
  * @param {string} type   Service type: 'wms' or 'wfs'
  * @return {Promise<object>} Parsed capabilities with available layers
  */
+/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
 export async function getCapabilities(url, type = 'wms') {
 	const apiUrl = generateUrl('/apps/procest/api/gis/capabilities')
 	const response = await axios.get(apiUrl, {

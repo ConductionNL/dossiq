@@ -53,6 +53,7 @@ interface ActionHandlerInterface
      * @return string One of the six built-in handler types, or a custom slug
      *                for third-party extensions.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function type(): string;
 
     /**
@@ -73,5 +74,6 @@ interface ActionHandlerInterface
      *
      * @return ActionResult
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult;
 }//end interface

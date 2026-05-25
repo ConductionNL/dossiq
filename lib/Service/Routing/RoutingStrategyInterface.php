@@ -39,6 +39,7 @@ interface RoutingStrategyInterface
      *
      * @return string The strategy key (e.g. "single-role")
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function name(): string;
 
     /**
@@ -56,5 +57,6 @@ interface RoutingStrategyInterface
      *
      * @return array<int, string> Ordered participant references
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function resolve(array $rule, array $case, array $roles): array;
 }//end interface

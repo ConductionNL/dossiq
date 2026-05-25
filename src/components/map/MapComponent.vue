@@ -122,6 +122,7 @@ export default {
 		 * The resolved formatter function. `markerFormatter` is a
 		 * string so manifest entries can configure it declaratively.
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		formatterFn() {
 			return resolveFormatter(this.markerFormatter)
 		},
@@ -130,6 +131,7 @@ export default {
 		 * plain array of marker descriptors plus a reference back to
 		 * the original location for event payloads.
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		resolvedMarkers() {
 			const out = []
 			for (const location of this.locations) {
@@ -140,6 +142,7 @@ export default {
 			}
 			return out
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		ariaLabel() {
 			// Inline fallback strings — `t()` returns the English
 			// source when no l10n bundle is loaded, which is the
@@ -148,6 +151,7 @@ export default {
 				? this.t('procest', 'Map with case locations')
 				: this.t('procest', 'Map with case locations (read-only)')
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		containerStyle() {
 			return { height: this.height }
 		},
@@ -156,6 +160,7 @@ export default {
 		 * disables every interaction primitive; interactive mode lets
 		 * Leaflet's defaults apply.
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		leafletOptions() {
 			if (this.interactive) {
 				return {
@@ -177,6 +182,7 @@ export default {
 			}
 		},
 	},
+	/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 	beforeDestroy() {
 		if (this.viewportDebounceTimer) {
 			clearTimeout(this.viewportDebounceTimer)
@@ -192,6 +198,7 @@ export default {
 		 *
 		 * @param {object} marker The formatted marker descriptor.
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		onMarkerClick(marker) {
 			const location = marker && marker.__sourceLocation
 				? marker.__sourceLocation
@@ -206,6 +213,7 @@ export default {
 		 *
 		 * @param {object} payload `{ center, zoom, bbox }` from the lib.
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		onViewportChangeRaw(payload) {
 			if (this.viewportDebounceTimer) {
 				clearTimeout(this.viewportDebounceTimer)
@@ -221,6 +229,7 @@ export default {
 		 *
 		 * @param {object} payload `{ map }` from the lib.
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		onReady(payload) {
 			this.$emit('ready', payload)
 		},

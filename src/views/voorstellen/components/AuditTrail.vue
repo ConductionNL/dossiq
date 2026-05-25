@@ -82,9 +82,11 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		formatAction(action) {
 			return ACTION_LABELS[action] || action
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		formatTimestamp(actie) {
 			const ts = actie._self?.created || actie.timestamp
 			if (!ts) return '-'
@@ -96,6 +98,7 @@ export default {
 				minute: '2-digit',
 			})
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		exportAuditTrail() {
 			const data = this.acties.map(a => ({
 				step: a.step,

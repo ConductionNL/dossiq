@@ -93,6 +93,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		nodeStyle() {
 			return {
 				position: 'absolute',
@@ -102,6 +103,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onMouseDown(event) {
 			this.$emit('drag-start', {
 				offsetX: event.offsetX,
@@ -109,16 +111,19 @@ export default {
 			})
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onConnectionStartFromPort(event) {
 			this.$emit('connection-start', event)
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onStepDragStart(step, event) {
 			this.draggedStepId = step.id
 			event.dataTransfer.setData('text/plain', step.id)
 			event.dataTransfer.effectAllowed = 'move'
 		},
 
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onStepDrop(targetStep, event) {
 			const draggedId = event.dataTransfer.getData('text/plain')
 			if (draggedId && draggedId !== targetStep.id) {

@@ -163,9 +163,11 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/my-work/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		kpis() {
 			const openCount = this.cases.length
 			const overdueCount = this.cases.filter(c => isCaseOverdue(c, false)).length
@@ -173,6 +175,7 @@ export default {
 			const completedCount = this.completedCases.length
 			return { openCount, overdueCount, unassignedCount, completedCount }
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		tabs() {
 			return [
 				{ key: 'all', label: t('procest', 'All'), count: this.cases.length },
@@ -180,9 +183,11 @@ export default {
 				{ key: 'overdue', label: t('procest', 'Overdue'), count: this.cases.filter(c => isCaseOverdue(c, false)).length },
 			]
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		caseTypeOptions() {
 			return this.caseTypes
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		filteredCases() {
 			let result = [...this.cases]
 
@@ -224,6 +229,7 @@ export default {
 		await this.loadData()
 	},
 	methods: {
+		/** @spec openspec/changes/my-work/tasks.md */
 		async loadData() {
 			this.loading = true
 
@@ -264,11 +270,13 @@ export default {
 			this.activeFilter = filter
 		},
 
+		/** @spec openspec/changes/my-work/tasks.md */
 		getCaseTypeName(caseTypeId) {
 			const ct = this.caseTypes.find(t => t.id === caseTypeId)
 			return ct?.title || '—'
 		},
 
+		/** @spec openspec/changes/my-work/tasks.md */
 		getStatusName(statusId) {
 			const st = this.statusTypes.find(s => s.id === statusId)
 			return st?.name || '—'
@@ -278,6 +286,7 @@ export default {
 			return isCaseOverdue(caseItem, false)
 		},
 
+		/** @spec openspec/changes/my-work/tasks.md */
 		formatDeadline(caseItem) {
 			if (!caseItem.deadline) return '—'
 			const days = getDaysRemaining(caseItem.deadline)
@@ -289,6 +298,7 @@ export default {
 			return `${dateStr} (${days} ${t('procest', 'days')})`
 		},
 
+		/** @spec openspec/changes/my-work/tasks.md */
 		openCase(caseItem) {
 			this.$router.push({ name: 'CaseDetail', params: { id: caseItem.id } })
 		},

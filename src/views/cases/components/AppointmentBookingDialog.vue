@@ -80,12 +80,14 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
 		canBook() {
 			return this.form.productId && this.form.locationId && this.form.date && this.form.time
 		},
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
 		async loadSlots() {
 			if (!this.form.productId || !this.form.locationId || !this.form.date) return
 			try {
@@ -95,6 +97,7 @@ export default {
 				this.timeslots = []
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
 		async book() {
 			try {
 				await bookAppointment({

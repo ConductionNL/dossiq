@@ -58,6 +58,7 @@ class PublicAppointmentController extends Controller
      * @PublicPage
      * @NoCSRFRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function view(string $token): JSONResponse
     {
         $appointment = $this->appointmentService->getAppointmentByToken($token);
@@ -89,6 +90,7 @@ class PublicAppointmentController extends Controller
      * @PublicPage
      * @NoCSRFRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function cancel(string $token): JSONResponse
     {
         $appointment = $this->appointmentService->getAppointmentByToken($token);

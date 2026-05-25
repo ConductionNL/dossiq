@@ -97,6 +97,7 @@ abstract class ZgwRulesBase
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function setContext(?object $objectService, ?array $mappingConfig): void
     {
         $this->objectService = $objectService;
@@ -110,6 +111,7 @@ abstract class ZgwRulesBase
      *
      * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function isValid(array $body): array
     {
         return [
@@ -130,6 +132,7 @@ abstract class ZgwRulesBase
      *
      * @return array{valid: bool, status: int, detail: string, invalidParams: array, enrichedBody: array}
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function error(
         int $status,
         string $detail,
@@ -159,6 +162,7 @@ abstract class ZgwRulesBase
      *
      * @return array{name: string, code: string, reason: string}
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function fieldError(string $fieldName, string $code, string $reason): array
     {
         return [
@@ -175,6 +179,7 @@ abstract class ZgwRulesBase
      *
      * @return array The validation error result
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function fieldImmutableError(string $fieldName): array
     {
         $detail = "Het veld {$fieldName} mag niet gewijzigd worden.";
@@ -198,6 +203,7 @@ abstract class ZgwRulesBase
      *
      * @return string|null The extracted UUID, or null
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function extractUuid(string $url): ?string
     {
         if (preg_match(
@@ -227,6 +233,7 @@ abstract class ZgwRulesBase
      *
      * @return bool True if valid
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function isValidUrl(string $url): bool
     {
         if (filter_var($url, FILTER_VALIDATE_URL) === false) {
@@ -256,6 +263,7 @@ abstract class ZgwRulesBase
      *
      * @return array|null Validation error, or null if valid
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function validateTypeUrl(string $typeUrl, string $fieldName, string $schemaKey): ?array
     {
         $extractedUuid = $this->extractUuid(url: $typeUrl);
@@ -331,6 +339,7 @@ abstract class ZgwRulesBase
      *
      * @return array|null Validation error, or null if valid
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function validateInformatieobjectUrl(string $ioUrl): ?array
     {
         if ($this->isValidUrl(url: $ioUrl) === false) {
@@ -398,6 +407,7 @@ abstract class ZgwRulesBase
      *
      * @return array|null Validation error, or null if valid
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function validateExternalUrl(string $url, string $fieldName): ?array
     {
         if ($this->isValidUrl(url: $url) === false) {
@@ -447,6 +457,7 @@ abstract class ZgwRulesBase
      *
      * @return array|null The JSON response data, or null on failure
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function fetchExternalUrl(string $url): ?array
     {
         try {
@@ -474,6 +485,7 @@ abstract class ZgwRulesBase
      *
      * @return string A unique identifier
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function generateIdentificatie(string $prefix): string
     {
         $timestamp = strtoupper(base_convert((string) time(), 10, 36));
@@ -492,6 +504,7 @@ abstract class ZgwRulesBase
      *
      * @return string|null The object UUID, or null if not found
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function findObjectByField(
         string $register,
         string $schema,
@@ -538,6 +551,7 @@ abstract class ZgwRulesBase
      *
      * @return array<string> Array of matching object UUIDs
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function findAllObjectsByField(
         string $register,
         string $schema,
@@ -584,6 +598,7 @@ abstract class ZgwRulesBase
      *
      * @return array|null The object data, or null on failure
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function findBySchemaKey(string $uuid, string $schemaKey): ?array
     {
         if ($this->objectService === null) {
@@ -626,6 +641,7 @@ abstract class ZgwRulesBase
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function checkFieldUniqueness(
         string $field1Value,
         string $field1Search,

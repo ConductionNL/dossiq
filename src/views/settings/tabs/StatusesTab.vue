@@ -204,19 +204,23 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		sortedStatusTypes() {
 			return [...this.statusTypes].sort((a, b) => (a.order || 0) - (b.order || 0))
 		},
 	},
+	/** @spec openspec/specs/status-transition-engine/spec.md */
 	async mounted() {
 		if (!this.isCreate && this.caseTypeId) {
 			await this.fetchStatusTypes()
 		}
 	},
 	methods: {
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		getEmptyForm() {
 			return {
 				name: '',
@@ -227,6 +231,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		async fetchStatusTypes() {
 			this.loading = true
 			try {
@@ -241,6 +246,7 @@ export default {
 			this.loading = false
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		async addStatusType() {
 			this.addError = ''
 
@@ -283,18 +289,21 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		startEdit(st) {
 			this.editingId = st.id
 			this.editForm = { ...st }
 			this.editError = ''
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		cancelEdit() {
 			this.editingId = null
 			this.editForm = {}
 			this.editError = ''
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		async saveEdit() {
 			this.editError = ''
 
@@ -340,6 +349,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		async deleteStatusType(st) {
 			this.error = ''
 
@@ -365,20 +375,24 @@ export default {
 		},
 
 		// Drag and drop
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		onDragStart(index, event) {
 			this.dragIndex = index
 			event.dataTransfer.effectAllowed = 'move'
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		onDragOver(index) {
 			if (this.dragIndex === null || this.dragIndex === index) return
 			this.dragOverIndex = index
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		onDragLeave() {
 			this.dragOverIndex = null
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		async onDrop(targetIndex) {
 			if (this.dragIndex === null || this.dragIndex === targetIndex) {
 				this.dragOverIndex = null
@@ -409,6 +423,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		onDragEnd() {
 			this.dragIndex = null
 			this.dragOverIndex = null

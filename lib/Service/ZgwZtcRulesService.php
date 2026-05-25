@@ -139,6 +139,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function checkConceptProtection(
         string $resource,
         string $action,
@@ -192,6 +193,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
      *
      * @return array The body with concept defaulted
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function defaultConcept(array $body, string $resource): array
     {
         if (in_array($resource, self::CONCEPT_RESOURCES, true) === true
@@ -214,6 +216,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
      *
      * @return array The body with concept preserved
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function preserveConcept(array $body, string $resource, ?array $existingObject): array
     {
         if ($existingObject === null
@@ -252,6 +255,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
      * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rulesZaaktypenCreate(array $body): array
     {
         // Ztc-001: Validate selectielijstProcestype URL.
@@ -327,6 +331,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
      *
      * @return array The validation result
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rulesBesluittypenCreate(array $body): array
     {
         // Resolve reference arrays by omschrijving/identificatie to UUIDs.
@@ -372,6 +377,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW resolution of omschrijving/UUID/URL
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rulesZaaktypeinformatieobjecttypenCreate(array $body): array
     {
         // Resolve informatieobjecttype: omschrijving → UUID, or bare UUID → verify.
@@ -436,6 +442,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rulesResultaattypenCreate(array $body): array
     {
         $errors = [];

@@ -94,6 +94,7 @@ class NotificatieService
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function publish(
         string $kanaal,
         string $hoofdObject,

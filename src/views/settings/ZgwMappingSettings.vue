@@ -148,12 +148,15 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		store() {
 			return useZgwMappingStore()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		mappings() {
 			return this.store.mappings
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		resourceKeys() {
 			return [
 				'zaak', 'zaaktype', 'status', 'statustype',
@@ -166,6 +169,7 @@ export default {
 		await this.store.fetchMappings()
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		editMapping(key) {
 			const mapping = this.mappings[key] || {}
 			this.editingKey = key
@@ -181,6 +185,7 @@ export default {
 			this.jsonError = null
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		async saveMapping() {
 			this.jsonError = null
 
@@ -213,6 +218,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		async resetMapping(key) {
 			await this.store.resetMapping(key)
 			this.saved = true

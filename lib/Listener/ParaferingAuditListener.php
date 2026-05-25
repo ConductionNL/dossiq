@@ -64,6 +64,7 @@ class ParaferingAuditListener implements IEventListener
      *
      * @return void
      */
+    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function handle(Event $event): void
     {
         if ($event instanceof ParafeerTransitionEvent === false) {

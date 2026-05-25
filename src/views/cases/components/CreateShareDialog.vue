@@ -151,6 +151,7 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async createShare() {
 			this.saving = true
 			try {
@@ -177,6 +178,7 @@ export default {
 				this.saving = false
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async copyLink() {
 			if (this.generatedLink) {
 				await navigator.clipboard.writeText(this.generatedLink)

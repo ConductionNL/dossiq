@@ -110,11 +110,13 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		canSubmit() {
 			return this.form.adviseur.trim() !== '' && this.form.deadline !== ''
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		async submit() {
 			if (!this.canSubmit) {
 				return

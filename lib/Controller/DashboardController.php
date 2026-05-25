@@ -66,6 +66,7 @@ class DashboardController extends Controller
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function page(string $path=''): TemplateResponse
     {
         return new TemplateResponse(Application::APP_ID, 'index');

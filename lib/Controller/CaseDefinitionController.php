@@ -71,6 +71,7 @@ class CaseDefinitionController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function export(): DataDownloadResponse|JSONResponse
     {
         try {
@@ -126,6 +127,7 @@ class CaseDefinitionController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validate(): JSONResponse
     {
         try {
@@ -157,6 +159,7 @@ class CaseDefinitionController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function import(): JSONResponse
     {
         try {

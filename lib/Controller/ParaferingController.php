@@ -68,6 +68,7 @@ class ParaferingController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createVoorstel(): JSONResponse
     {
         try {
@@ -103,6 +104,7 @@ class ParaferingController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function startParafering(string $id): JSONResponse
     {
         try {
@@ -143,6 +145,7 @@ class ParaferingController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function paraferen(string $id): JSONResponse
     {
         return $this->handleAction(id: $id, action: ParaferingService::ACTION_PARAFEREN);
@@ -157,6 +160,7 @@ class ParaferingController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function terugsturen(string $id): JSONResponse
     {
         return $this->handleAction(id: $id, action: ParaferingService::ACTION_TERUGSTUREN);
@@ -171,6 +175,7 @@ class ParaferingController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function adviseren(string $id): JSONResponse
     {
         return $this->handleAction(id: $id, action: ParaferingService::ACTION_ADVISEREN);
@@ -185,6 +190,7 @@ class ParaferingController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function auditTrail(string $id): JSONResponse
     {
         try {

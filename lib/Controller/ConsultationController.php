@@ -60,6 +60,7 @@ class ConsultationController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(string $caseId): JSONResponse
     {
         $consultations = $this->consultationService->getConsultationsForCase($caseId);
@@ -73,6 +74,7 @@ class ConsultationController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function create(): JSONResponse
     {
         try {
@@ -104,6 +106,7 @@ class ConsultationController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function updateStatus(string $id): JSONResponse
     {
         try {
@@ -136,6 +139,7 @@ class ConsultationController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function submitResponse(string $id): JSONResponse
     {
         try {
@@ -165,6 +169,7 @@ class ConsultationController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function overdue(): JSONResponse
     {
         $overdue = $this->consultationService->getOverdueConsultations();

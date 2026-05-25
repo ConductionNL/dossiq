@@ -60,6 +60,7 @@ class EmailController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function send(string $caseId): JSONResponse
     {
         try {
@@ -97,6 +98,7 @@ class EmailController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function sendFromTemplate(string $caseId): JSONResponse
     {
         try {
@@ -132,6 +134,7 @@ class EmailController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function preview(string $caseId): JSONResponse
     {
         $content = $this->request->getContent();
@@ -169,6 +172,7 @@ class EmailController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function templates(string $caseTypeId): JSONResponse
     {
         $templates = $this->emailService->getTemplatesForCaseType($caseTypeId);

@@ -87,6 +87,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function run(IOutput $output): void
     {
         if ($this->settingsService->isOpenRegisterAvailable() === false) {

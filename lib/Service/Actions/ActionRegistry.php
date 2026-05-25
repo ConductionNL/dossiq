@@ -110,6 +110,7 @@ class ActionRegistry
      *                    `config`), or null on miss, unpublished, or
      *                    cross-tenant attempt.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function resolve(string $tenantId, string $slug): ?array
     {
         $cacheKey = $tenantId.'::'.$slug;
@@ -211,6 +212,7 @@ class ActionRegistry
      * @return array<int, array> Tenant-owned actions; published flag is left
      *                           on each entry so the UI can render badges.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function listForTenant(string $tenantId, ?string $typeFilter=null): array
     {
         try {
@@ -254,6 +256,7 @@ class ActionRegistry
      *
      * @return ActionHandlerInterface|null Null when no handler is registered.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getHandler(string $type): ?ActionHandlerInterface
     {
         if ($this->handlerIndex === null) {

@@ -74,6 +74,7 @@ class RoleMutationListener implements IEventListener
      *
      * @return void
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function handle(Event $event): void
     {
         if ($event instanceof ObjectCreatedEvent === false

@@ -78,6 +78,7 @@ class AdviceController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function transitionStatus(string $id): JSONResponse
     {
         $data = $this->readJsonBody();
@@ -116,6 +117,7 @@ class AdviceController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function dispatchReminder(string $id): JSONResponse
     {
         try {

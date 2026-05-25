@@ -191,12 +191,15 @@ export default {
 	},
 
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		inspectionStore() {
 			return useInspectionStore()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		checklists() {
 			return this.inspectionStore.checklists
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		loading() {
 			return this.inspectionStore.loading
 		},
@@ -205,6 +208,7 @@ export default {
 	watch: {
 		caseTypeId: {
 			immediate: true,
+			/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 			handler(newId) {
 				if (newId) {
 					this.inspectionStore.fetchChecklists(newId)
@@ -216,6 +220,7 @@ export default {
 	methods: {
 		t,
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		createChecklist() {
 			this.editingChecklist = {
 				name: '',
@@ -226,14 +231,17 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		editChecklist(checklist) {
 			this.editingChecklist = JSON.parse(JSON.stringify(checklist))
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		cancelEdit() {
 			this.editingChecklist = null
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		async saveChecklist() {
 			this.saving = true
 			try {
@@ -250,16 +258,19 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		async createVersion(checklist) {
 			await this.inspectionStore.createNewVersion(checklist)
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		async deleteChecklist(checklist) {
 			if (confirm(t('procest', 'Are you sure you want to delete this checklist?'))) {
 				await this.inspectionStore.deleteChecklist(checklist.id)
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		addItem() {
 			if (!this.editingChecklist.items) {
 				this.editingChecklist.items = []
@@ -275,19 +286,23 @@ export default {
 			})
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		removeItem(index) {
 			this.editingChecklist.items.splice(index, 1)
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		onDragStart(index, event) {
 			this.dragIndex = index
 			event.dataTransfer.effectAllowed = 'move'
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		onDragOver(index, event) {
 			event.dataTransfer.dropEffect = 'move'
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		onDrop(index) {
 			if (this.dragIndex === null || this.dragIndex === index) {
 				return

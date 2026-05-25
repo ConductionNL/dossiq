@@ -90,6 +90,7 @@ class ChecklistService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function completeItem(
         array $checklist,
         string $itemId,
@@ -148,6 +149,7 @@ class ChecklistService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getProgress(array $checklist): array
     {
         $items     = $checklist['items'] ?? [];
@@ -182,6 +184,7 @@ class ChecklistService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validateCompletion(array $checklist): array
     {
         $items        = $checklist['items'] ?? [];
@@ -208,6 +211,7 @@ class ChecklistService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getConformitySummary(array $checklist): array
     {
         $items   = $checklist['items'] ?? [];

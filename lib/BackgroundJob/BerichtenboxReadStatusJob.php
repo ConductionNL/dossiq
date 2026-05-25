@@ -58,6 +58,7 @@ class BerichtenboxReadStatusJob extends TimedJob
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function run($argument): void
     {
         $this->logger->info('Procest: Running Berichtenbox read status poll');

@@ -92,6 +92,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async submitTransfer() {
 			this.saving = true
 			try {

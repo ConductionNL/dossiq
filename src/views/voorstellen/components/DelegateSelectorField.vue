@@ -50,6 +50,7 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		formatOption(entry) {
 			const name = entry.principalDisplayName || entry.principalUid
 			return this.t('procest', 'On behalf of {name} (mandate {ref})', {
@@ -57,6 +58,7 @@ export default {
 				ref: entry.mandateReference,
 			})
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		onChange(event) {
 			const value = event.target.value
 			this.selected = value

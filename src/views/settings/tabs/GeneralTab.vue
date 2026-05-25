@@ -217,26 +217,33 @@ export default {
 		},
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		originOptions() {
 			return getOriginOptions()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		confidentialityOptions() {
 			return getConfidentialityOptions()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		selectedOrigin() {
 			if (!this.form.origin) return null
 			return this.originOptions.find(o => o.id === this.form.origin) || null
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		selectedConfidentiality() {
 			if (!this.form.confidentiality) return null
 			return this.confidentialityOptions.find(o => o.id === this.form.confidentiality) || null
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		deadlinePreview() {
 			return this.form.processingDeadline ? formatDuration(this.form.processingDeadline) : ''
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		serviceTargetPreview() {
 			return this.form.serviceTarget ? formatDuration(this.form.serviceTarget) : ''
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		extensionPreview() {
 			return this.form.extensionPeriod ? formatDuration(this.form.extensionPeriod) : ''
 		},

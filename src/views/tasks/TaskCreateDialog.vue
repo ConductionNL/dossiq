@@ -124,9 +124,11 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/task-management/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/changes/task-management/tasks.md */
 		caseOptions() {
 			return this.cases.map(c => ({
 				value: c.id,
@@ -134,11 +136,13 @@ export default {
 			}))
 		},
 	},
+	/** @spec openspec/changes/task-management/tasks.md */
 	async mounted() {
 		const results = await this.objectStore.fetchCollection('case', { _limit: 200 })
 		this.cases = results || []
 	},
 	methods: {
+		/** @spec openspec/changes/task-management/tasks.md */
 		async submit() {
 			this.errors = {}
 

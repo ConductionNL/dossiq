@@ -118,6 +118,7 @@ class ParaferingService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createVoorstel(array $voorstelData): array
     {
         $voorstel = [
@@ -155,6 +156,7 @@ class ParaferingService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function startParafering(array $voorstel, array $route): array
     {
         if ($voorstel['status'] !== self::STATUS_CONCEPT
@@ -205,6 +207,7 @@ class ParaferingService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function executeAction(
         array $voorstel,
         string $action,
@@ -290,6 +293,7 @@ class ParaferingService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getCurrentStep(array $voorstel): ?array
     {
         if ($voorstel['status'] !== self::STATUS_IN_PARAFERING) {
@@ -314,6 +318,7 @@ class ParaferingService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function overrideRoute(
         array $voorstel,
         array $newRoute,

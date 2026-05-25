@@ -154,18 +154,22 @@ export default {
 		isAdviesStep() {
 			return this.step?.type === 'advies'
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		stepLabel() {
 			return this.step?.label || this.formatStepType(this.step?.type)
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		dialogTitle() {
 			return this.t('procest', 'Take action')
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		primaryActionLabel() {
 			if (this.step?.type === 'advies') return this.t('procest', 'Advise')
 			if (this.step?.type === 'parafering') return this.t('procest', 'Approve (paraferen)')
 			if (this.step?.type === 'accordering') return this.t('procest', 'Accord')
 			return ''
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		canSubmit() {
 			if (this.isAdviesStep) {
 				return this.advice.trim() !== ''
@@ -174,6 +178,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		formatStepType(type) {
 			const labels = {
 				advies: this.t('procest', 'Advise'),
@@ -182,11 +187,13 @@ export default {
 			}
 			return labels[type] || type || ''
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		onClose() {
 			if (this.submitting) return
 			this.$emit('update:open', false)
 			this.resetForm()
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		resetForm() {
 			this.advice = ''
 			this.comment = ''
@@ -197,6 +204,7 @@ export default {
 			this.errorMessage = ''
 			this.validationError = ''
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		buildPayload(action) {
 			const payload = {
 				voorstel: this.voorstelId,
@@ -208,6 +216,7 @@ export default {
 			if (this.mandate) payload.mandate = this.mandate
 			return payload
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async submitPrimary() {
 			if (!this.canSubmit) return
 			const stepType = this.step?.type
@@ -221,6 +230,7 @@ export default {
 			}
 			await this.submit(this.buildPayload(action))
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async submitReturn() {
 			if (this.returnReason.trim() === '') {
 				this.validationError = this.t('procest', 'Return reason is required')
@@ -234,6 +244,7 @@ export default {
 			}
 			await this.submit(payload)
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async submit(payload) {
 			this.submitting = true
 			this.errorMessage = ''

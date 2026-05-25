@@ -99,6 +99,7 @@ class ZgwMappingService
      *
      * @return array|null The mapping configuration or null if not found
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getMapping(string $resourceKey): ?array
     {
         $json = $this->appConfig->getValueString(
@@ -127,6 +128,7 @@ class ZgwMappingService
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function saveMapping(string $resourceKey, array $config): void
     {
         $json = json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -151,6 +153,7 @@ class ZgwMappingService
      *
      * @return array<string, array|null>
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function listMappings(): array
     {
         $mappings = [];
@@ -169,6 +172,7 @@ class ZgwMappingService
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function deleteMapping(string $resourceKey): void
     {
         $configKey = self::CONFIG_PREFIX.$resourceKey;
@@ -212,6 +216,7 @@ class ZgwMappingService
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function resetToDefault(string $resourceKey, array $defaults): void
     {
         if (isset($defaults[$resourceKey]) === true) {

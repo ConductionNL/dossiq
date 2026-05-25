@@ -100,6 +100,7 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		onStatusSelected(status) {
 			if (!status || status.id === this.currentStatusId) {
 				this.selectedStatus = null
@@ -115,6 +116,7 @@ export default {
 				this.selectedStatus = null
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		confirmStatusChange() {
 			let resultName = ''
 			if (this.resultTypes.length > 0) {
@@ -140,6 +142,7 @@ export default {
 			this.resultText = ''
 			this.selectedResultType = null
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		cancelStatusChange() {
 			this.showResultPrompt = false
 			this.pendingStatusChange = null

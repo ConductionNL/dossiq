@@ -43,6 +43,7 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		async generate() {
 			this.loading = true
 			this.error = null
@@ -55,6 +56,7 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		saveAsNote() {
 			this.$emit('save-note', this.summary)
 		},

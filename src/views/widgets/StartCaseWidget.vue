@@ -52,6 +52,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
@@ -65,6 +66,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		async fetchCaseTypes() {
 			this.loading = true
 			try {
@@ -86,6 +88,7 @@ export default {
 		 * @param {object} caseType The case type to start
 		 * @return {Promise<void>}
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		async startCase(caseType) {
 			if (this.creating) {
 				return

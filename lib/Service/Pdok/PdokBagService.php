@@ -93,6 +93,7 @@ class PdokBagService
      *
      * @return array Normalised Procest-internal shape.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getNummeraanduiding(string $id): array
     {
         return $this->fetch(
@@ -109,6 +110,7 @@ class PdokBagService
      *
      * @return array Normalised Procest-internal shape.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getVerblijfsobject(string $id): array
     {
         return $this->fetch(
@@ -125,6 +127,7 @@ class PdokBagService
      *
      * @return array Normalised Procest-internal shape.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getPand(string $id): array
     {
         return $this->fetch(

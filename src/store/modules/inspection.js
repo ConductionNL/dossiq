@@ -28,6 +28,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {object} state Store state
 		 * @return {Array} Active checklists
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		activeChecklists(state) {
 			return state.checklists.filter((c) => c.status === 'active')
 		},
@@ -38,6 +39,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {object} state Store state
 		 * @return {number} Number of completed reports
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		completedReportsCount(state) {
 			return state.reports.length
 		},
@@ -48,6 +50,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {object} state Store state
 		 * @return {Array} Reports with failed items
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		nonConformReports(state) {
 			return state.reports.filter((r) => r.result === 'niet_conform' || r.result === 'deels_conform')
 		},
@@ -60,6 +63,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {string} caseTypeId UUID of the case type
 		 * @return {Promise<Array>} Checklists
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		async fetchChecklists(caseTypeId) {
 			this.loading = true
 			this.error = null
@@ -86,6 +90,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {object} checklistData The checklist data
 		 * @return {Promise<object|null>} Saved checklist
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		async saveChecklist(checklistData) {
 			this.loading = true
 			this.error = null
@@ -115,6 +120,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {object} checklist The checklist to version
 		 * @return {Promise<object|null>} New version
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		async createNewVersion(checklist) {
 			const newVersion = {
 				...checklist,
@@ -135,6 +141,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {string} checklistId UUID of the checklist
 		 * @return {Promise<boolean>} Success
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		async deleteChecklist(checklistId) {
 			this.loading = true
 			try {
@@ -156,6 +163,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {string} caseId UUID of the case
 		 * @return {Promise<Array>} Reports
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		async fetchReports(caseId) {
 			this.loading = true
 			this.error = null
@@ -182,6 +190,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {object} reportData Report data with items array
 		 * @return {Promise<object|null>} Created report
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		async createReport(reportData) {
 			this.loading = true
 			this.error = null
@@ -237,6 +246,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {File}   file    The photo file
 		 * @return {Promise<string|null>} Nextcloud file ID
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		async uploadPhoto(caseId, file) {
 			try {
 				const objectStore = useObjectStore()
@@ -259,6 +269,7 @@ export const useInspectionStore = defineStore('inspection', {
 		 * @param {string} reportId    UUID of the inspection report
 		 * @return {Promise<object|null>} Created task
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		async createFollowUpTask(caseId, failedCount, reportId) {
 			try {
 				const objectStore = useObjectStore()

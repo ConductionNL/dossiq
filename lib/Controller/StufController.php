@@ -87,6 +87,7 @@ class StufController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function zaken(): DataDisplayResponse
     {
         return $this->handleSoapMessage(service: 'zaken');
@@ -99,6 +100,7 @@ class StufController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function personen(): DataDisplayResponse
     {
         return $this->handleSoapMessage(service: 'personen');

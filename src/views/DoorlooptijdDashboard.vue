@@ -329,9 +329,11 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		datePresets() {
 			return [
 				{ key: '3m', label: t('procest', 'Last 3 months') },
@@ -341,6 +343,7 @@ export default {
 				{ key: 'all', label: t('procest', 'All time') },
 			]
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		dateRange() {
 			const now = new Date()
 			let from = null
@@ -365,6 +368,7 @@ export default {
 			}
 			return { from, to: now }
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		statusTypeMap() {
 			const map = new Map()
 			for (const st of this.statusTypes) {
@@ -372,18 +376,21 @@ export default {
 			}
 			return map
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		completedCases() {
 			return this.allCases.filter(c => {
 				const st = this.statusTypeMap.get(c.status)
 				return st?.isFinal && c.endDate
 			})
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		openCases() {
 			return this.allCases.filter(c => {
 				const st = this.statusTypeMap.get(c.status)
 				return !st?.isFinal
 			})
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		filteredCompletedCases() {
 			let cases = this.completedCases
 
@@ -400,21 +407,26 @@ export default {
 
 			return cases
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		filteredOpenCases() {
 			if (this.selectedCaseType) {
 				return this.openCases.filter(c => c.caseType === this.selectedCaseType)
 			}
 			return this.openCases
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		caseTypesWithSla() {
 			return this.caseTypes.filter(ct => ct.processingDeadline && parseDurationToDays(ct.processingDeadline))
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		showNoCasesState() {
 			return !this.loading && this.allCases.length === 0
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		showNoSlaState() {
 			return !this.loading && this.allCases.length > 0 && this.caseTypesWithSla.length === 0
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		showNoDataInRange() {
 			return !this.loading
 				&& this.allCases.length > 0
@@ -422,12 +434,15 @@ export default {
 				&& this.filteredCompletedCases.length === 0
 				&& this.atRiskCases.length === 0
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		slaData() {
 			return computeSlaCompliance(this.filteredCompletedCases, this.caseTypes)
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		distributionData() {
 			return computeProcessingTimeDistribution(this.filteredCompletedCases, this.caseTypes)
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		trendMonths() {
 			switch (this.selectedPreset) {
 			case '3m': return 3
@@ -440,18 +455,22 @@ export default {
 			default: return 12
 			}
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		trendData() {
 			const casesForTrend = this.selectedCaseType
 				? this.completedCases.filter(c => c.caseType === this.selectedCaseType)
 				: this.completedCases
 			return computeMonthlyTrend(casesForTrend, this.caseTypes, this.trendMonths)
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		atRiskCases() {
 			return getAtRiskCases(this.filteredOpenCases, this.caseTypes, 0.25)
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		performanceData() {
 			return computePerformanceTable(this.filteredCompletedCases, this.caseTypes)
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		sortedPerformanceData() {
 			const data = [...this.performanceData]
 			const col = this.sortColumn
@@ -470,10 +489,12 @@ export default {
 			return data
 		},
 		// Chart configurations
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		donutSeries() {
 			const types = this.slaData.byType.filter(t => t.total > 0)
 			return types.map(t => t.withinSla)
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		donutOptions() {
 			const types = this.slaData.byType.filter(t => t.total > 0)
 			return {
@@ -520,6 +541,7 @@ export default {
 				},
 			}
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		histogramSeries() {
 			const bins = this.distributionData.bins
 			if (bins.every(b => b.count === 0)) return []
@@ -528,6 +550,7 @@ export default {
 				data: bins.map(b => b.count),
 			}]
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		histogramOptions() {
 			const bins = this.distributionData.bins
 			const annotations = []
@@ -592,12 +615,14 @@ export default {
 				},
 			}
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		trendSeries() {
 			return [{
 				name: t('procest', 'SLA Compliance %'),
 				data: this.trendData.map(d => d.rate),
 			}]
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		trendOptions() {
 			return {
 				chart: {
@@ -658,6 +683,7 @@ export default {
 		await this.loadData()
 	},
 	methods: {
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		async loadData() {
 			this.loading = true
 			try {
@@ -676,9 +702,11 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		applyPreset(key) {
 			this.selectedPreset = key
 		},
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		sortTable(column) {
 			if (this.sortColumn === column) {
 				this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'

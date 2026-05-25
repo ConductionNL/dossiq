@@ -87,18 +87,22 @@ export default {
 	},
 	emits: ['retry', 'bar-click'],
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
 		maxCount() {
 			return Math.max(1, ...this.typeData.map(t => t.count))
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
 		barWidth(count) {
 			const pct = (count / this.maxCount) * 100
 			return `max(20px, ${pct}%)`
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
 		barColor(index) {
 			return BAR_COLORS[index % BAR_COLORS.length]
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
 		onBarClick(item) {
 			// Default behaviour: navigate to /cases filtered by caseType.
 			// Consumers can override by listening for `@bar-click` and

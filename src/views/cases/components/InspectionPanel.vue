@@ -215,25 +215,32 @@ export default {
 	},
 
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		inspectionStore() {
 			return useInspectionStore()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		reports() {
 			return this.inspectionStore.reports
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		activeChecklists() {
 			return this.inspectionStore.activeChecklists
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		loading() {
 			return this.inspectionStore.loading
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		totalPhases() {
 			return this.activeChecklists.length
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		completedPhases() {
 			const completedChecklistIds = new Set(this.reports.map((r) => r.checklist))
 			return this.activeChecklists.filter((c) => completedChecklistIds.has(c.id)).length
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		progressPercent() {
 			if (this.totalPhases === 0) {
 				return 0
@@ -245,6 +252,7 @@ export default {
 	watch: {
 		caseId: {
 			immediate: true,
+			/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 			handler(newId) {
 				if (newId) {
 					this.inspectionStore.fetchReports(newId)
@@ -253,12 +261,14 @@ export default {
 		},
 		caseTypeId: {
 			immediate: true,
+			/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 			handler(newId) {
 				if (newId) {
 					this.inspectionStore.fetchChecklists(newId)
 				}
 			},
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		selectedChecklist(checklist) {
 			if (checklist) {
 				this.formResults = (checklist.items || []).map((item) => ({
@@ -275,6 +285,7 @@ export default {
 	methods: {
 		t,
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		resultLabel(result) {
 			const labels = {
 				conform: t('procest', 'Conform'),
@@ -284,6 +295,7 @@ export default {
 			return labels[result] || result
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		formatDate(dateStr) {
 			if (!dateStr) {
 				return ''
@@ -291,16 +303,19 @@ export default {
 			return new Date(dateStr).toLocaleDateString()
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		toggleReport(reportId) {
 			this.expandedReport = this.expandedReport === reportId ? null : reportId
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		closeForm() {
 			this.showChecklistForm = false
 			this.selectedChecklist = null
 			this.formResults = []
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		async submitReport() {
 			this.submitting = true
 			try {

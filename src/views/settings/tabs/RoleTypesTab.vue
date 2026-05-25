@@ -101,6 +101,7 @@ export default {
 		if (!this.isCreate) await this.loadItems()
 	},
 	methods: {
+		/** @spec openspec/specs/role-based-step-routing/spec.md */
 		async loadItems() {
 			this.loading = true
 			const objectStore = useObjectStore()
@@ -111,22 +112,26 @@ export default {
 			this.items = results || []
 			this.loading = false
 		},
+		/** @spec openspec/specs/role-based-step-routing/spec.md */
 		startAdd() {
 			this.editingId = 'new'
 			this.editForm = { name: '', genericRole: '' }
 			this.editError = ''
 			this.items.push({ id: 'new', name: '' })
 		},
+		/** @spec openspec/specs/role-based-step-routing/spec.md */
 		startEdit(item) {
 			this.editingId = item.id
 			this.editForm = { name: item.name, genericRole: item.genericRole || '' }
 			this.editError = ''
 		},
+		/** @spec openspec/specs/role-based-step-routing/spec.md */
 		cancelEdit() {
 			if (this.editingId === 'new') this.items = this.items.filter(i => i.id !== 'new')
 			this.editingId = null
 			this.editError = ''
 		},
+		/** @spec openspec/specs/role-based-step-routing/spec.md */
 		async saveEdit() {
 			if (!this.editForm.name.trim()) {
 				this.editError = t('procest', 'Name is required')
@@ -143,6 +148,7 @@ export default {
 			this.editingId = null
 			await this.loadItems()
 		},
+		/** @spec openspec/specs/role-based-step-routing/spec.md */
 		async deleteItem(item) {
 			if (!confirm(t('procest', 'Delete role type "{name}"?', { name: item.name }))) return
 			const objectStore = useObjectStore()

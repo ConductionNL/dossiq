@@ -97,6 +97,7 @@ class LegesCalculationService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function calculate(
         array $caseData,
         array $verordening,
@@ -150,6 +151,7 @@ class LegesCalculationService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recalculate(
         array $caseData,
         array $verordening,
@@ -180,6 +182,7 @@ class LegesCalculationService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function calculateVerrekening(float $currentAmount, float $previousAmount): array
     {
         $netAmount = round($currentAmount - $previousAmount, self::PRECISION);
@@ -203,6 +206,7 @@ class LegesCalculationService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function calculateTeruggaaf(
         float $imposedAmount,
         float $refundFraction=1.0,

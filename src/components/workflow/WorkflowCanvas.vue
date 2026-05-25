@@ -117,12 +117,14 @@ export default {
 	},
 	watch: {
 		nodes: {
+			/** @spec openspec/specs/workflow-definition-model/spec.md */
 			handler(next) {
 				this.localNodes = [...next]
 			},
 			deep: true,
 		},
 		edges: {
+			/** @spec openspec/specs/workflow-definition-model/spec.md */
 			handler(next) {
 				this.localEdges = [...next]
 			},
@@ -133,6 +135,7 @@ export default {
 		hasIssue(id, level) {
 			return this.issues.some((issue) => (issue.nodeId === id || issue.edgeId === id) && issue.level === level)
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onDrop(event) {
 			if (this.readOnly) {
 				return
@@ -148,24 +151,30 @@ export default {
 			}
 			this.$emit('drop-node', { type, position })
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onNodesChange() {
 			this.$emit('update:nodes', this.localNodes)
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onEdgesChange() {
 			this.$emit('update:edges', this.localEdges)
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onConnect(params) {
 			if (this.readOnly) {
 				return
 			}
 			this.$emit('connect', params)
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onNodeClick({ node }) {
 			this.$emit('select-node', node)
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onEdgeClick({ edge }) {
 			this.$emit('select-edge', edge)
 		},
+		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		onPaneClick() {
 			this.$emit('select-node', null)
 		},

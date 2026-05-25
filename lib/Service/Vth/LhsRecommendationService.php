@@ -108,6 +108,7 @@ class LhsRecommendationService
      * @throws RuntimeException When OpenRegister is unavailable, no matching
      *                          matrix exists, or no cell matches the triple.
      */
+    /** @spec openspec/specs/enforcement-lhs/spec.md */
     public function recommend(
         string $caseId,
         string $ernst,
@@ -171,6 +172,7 @@ class LhsRecommendationService
      *
      * @throws RuntimeException When validation fails (HTTP-mapped by controller).
      */
+    /** @spec openspec/specs/enforcement-lhs/spec.md */
     public function override(
         array $recommendation,
         string $intervention,
