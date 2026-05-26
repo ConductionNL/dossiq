@@ -159,6 +159,36 @@ class BerichtenboxService
     }//end getMessagesForCase()
 
     /**
+     * Get all messages whose read-status still needs to be polled.
+     *
+     * Returns messages with status 'sent' or 'unread_flagged' that carry an
+     * externalMessageId (i.e. they were actually delivered to Berichtenbox).
+     *
+     * @return array<int, mixed> List of pending message records.
+     */
+    /** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md#task-5 */
+    public function getPendingMessages(): array
+    {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
+            return [];
+        }
+
+        $register = $this->settingsService->getConfigValue('register');
+        $schema   = $this->settingsService->getConfigValue('berichtenbox_message_schema');
+
+        $sent = $objectService->findAll(
+            ['filters' => ['register' => (int) $register, 'schema' => (int) $schema, 'status' => 'sent']],
+        );
+
+        $flagged = $objectService->findAll(
+            ['filters' => ['register' => (int) $register, 'schema' => (int) $schema, 'status' => 'unread_flagged']],
+        );
+
+        return array_merge($sent, $flagged);
+    }//end getPendingMessages()
+
+    /**
      * Poll read status for a message.
      *
      * @param string $messageId The OpenRegister message UUID.
