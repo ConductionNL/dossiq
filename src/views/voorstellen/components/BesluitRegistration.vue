@@ -29,6 +29,7 @@
 				<NcSelect
 					v-model="selectedDecisionType"
 					:options="decisionTypes"
+					:aria-label-combobox="t('procest', 'Besluittype')"
 					label="name"
 					track-by="id"
 					:placeholder="t('procest', 'Selecteer besluittype...')" />

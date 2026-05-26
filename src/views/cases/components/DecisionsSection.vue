@@ -95,6 +95,7 @@
 					<NcSelect
 						v-model="form.decisionType"
 						:options="decisionTypeOptions"
+						:aria-label-combobox="t('procest', 'Decision type')"
 						label="label"
 						:reduce="o => o.value"
 						:clearable="true"

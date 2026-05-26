@@ -44,6 +44,7 @@
 									<NcSelect
 										v-model="editForm.genericRole"
 										:options="genericRoleOptions"
+										:input-label="t('procest', 'Generic role')"
 										:placeholder="t('procest', 'Generic role')"
 										class="edit-field" />
 								</div>

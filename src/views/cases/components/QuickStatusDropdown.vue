@@ -3,6 +3,7 @@
 		<NcSelect
 			v-model="selectedStatus"
 			:options="statusOptions"
+			:input-label="t('procest', 'Change status')"
 			label="name"
 			track-by="id"
 			:placeholder="t('procest', 'Change status')"

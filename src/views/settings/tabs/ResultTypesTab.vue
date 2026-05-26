@@ -49,6 +49,7 @@
 									<NcSelect
 										v-model="editForm.archivalAction"
 										:options="archivalActionOptions"
+										:input-label="t('procest', 'Archive action')"
 										:placeholder="t('procest', 'Archive action')"
 										class="edit-field" />
 									<NcTextField

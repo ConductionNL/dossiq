@@ -50,7 +50,8 @@
 				<NcSelect
 					v-if="!isReadOnly"
 					v-model="form.priority"
-					:options="priorityOptions" />
+					:options="priorityOptions"
+					:aria-label-combobox="t('procest', 'Priority')" />
 				<span v-else class="property-value">{{ caseData.priority || '---' }}</span>
 			</div>
 			<div class="property-cell">

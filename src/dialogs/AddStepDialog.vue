@@ -13,6 +13,7 @@
 				</label>
 				<NcSelect v-model="afterStep"
 					:options="insertionOptions"
+					:aria-label-combobox="t('procest', 'Invoegen na stap')"
 					label="label"
 					:reduce="opt => opt.value"
 					:placeholder="t('procest', 'Selecteer invoegpositie')" />
@@ -23,6 +24,7 @@
 				</label>
 				<NcSelect v-model="stepType"
 					:options="stepTypeOptions"
+					:aria-label-combobox="t('procest', 'Stap type')"
 					:placeholder="t('procest', 'Selecteer type')" />
 			</div>
 			<div class="add-step-dialog__field">
@@ -31,6 +33,7 @@
 				</label>
 				<NcSelect v-model="actorType"
 					:options="actorTypeOptions"
+					:aria-label-combobox="t('procest', 'Actor type')"
 					:placeholder="t('procest', 'Selecteer actor type')" />
 			</div>
 			<div class="add-step-dialog__field">
@@ -65,7 +68,7 @@
 
 <script>
 import { NcButton, NcCheckboxRadioSwitch, NcDialog, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
-import parafeerRouteApi from '../../../services/parafeerRouteApi.js'
+import parafeerRouteApi from '../services/parafeerRouteApi.js'
 
 export default {
 	name: 'AddStepDialog',

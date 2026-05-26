@@ -10,6 +10,7 @@
 			<NcSelect
 				v-model="selectedTemplate"
 				:options="templates"
+				:aria-label-combobox="t('procest', 'Template')"
 				label="name"
 				track-by="id"
 				:placeholder="t('procest', 'Select template or compose ad-hoc...')"

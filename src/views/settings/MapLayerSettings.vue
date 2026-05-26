@@ -82,7 +82,8 @@
 					<label>{{ t('procest', 'Type') }} *</label>
 					<NcSelect
 						v-model="form.layerType"
-						:options="['tile', 'wms', 'wfs', 'geojson']" />
+						:options="['tile', 'wms', 'wfs', 'geojson']"
+							:aria-label-combobox="t('procest', 'Type')" />
 				</div>
 				<div class="form-group">
 					<label>{{ t('procest', 'URL') }} *</label>

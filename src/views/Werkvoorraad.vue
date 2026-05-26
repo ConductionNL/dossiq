@@ -59,6 +59,7 @@
 				<NcSelect
 					v-model="selectedCaseType"
 					:options="caseTypeOptions"
+					:input-label="t('procest', 'Filter by case type')"
 					label="title"
 					track-by="id"
 					:placeholder="t('procest', 'All case types')"

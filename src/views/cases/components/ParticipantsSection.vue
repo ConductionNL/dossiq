@@ -64,7 +64,7 @@
 				<label>{{ t('procest', 'Reassign handler to:') }}</label>
 				<NcSelect
 					v-model="reassignUser"
-					:options="userOptions"
+					:options="userOptions" :aria-label-combobox="t('procest', 'Reassign handler to')"
 					label="label"
 					track-by="id"
 					:placeholder="t('procest', 'Select user...')"

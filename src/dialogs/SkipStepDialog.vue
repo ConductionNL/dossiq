@@ -45,7 +45,7 @@
 
 <script>
 import { NcButton, NcDialog, NcNoteCard, NcTextArea } from '@nextcloud/vue'
-import parafeerRouteApi from '../../../services/parafeerRouteApi.js'
+import parafeerRouteApi from '../services/parafeerRouteApi.js'
 
 export default {
 	name: 'SkipStepDialog',

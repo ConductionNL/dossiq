@@ -60,6 +60,7 @@
 				<NcSelect
 					v-model="form.receivedChannel"
 					:options="channelOptions"
+					:aria-label-combobox="t('procest', 'Received Via')"
 					:disabled="isReadOnly" />
 			</div>
 		</div>

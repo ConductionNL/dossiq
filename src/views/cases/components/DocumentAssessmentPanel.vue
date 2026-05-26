@@ -28,6 +28,7 @@
 							<NcSelect
 								:value="getAssessment(doc.id)"
 								:options="assessmentOptions"
+								:input-label="t('procest', 'Assessment')"
 								:disabled="isReadOnly"
 								@input="val => setAssessment(doc.id, val)" />
 						</td>
@@ -36,6 +37,7 @@
 								v-if="getAssessment(doc.id) === 'niet_openbaar'"
 								:value="getGrounds(doc.id)"
 								:options="weigeringsgronden"
+								:input-label="t('procest', 'Grounds')"
 								:multiple="true"
 								label="label"
 								track-by="code"

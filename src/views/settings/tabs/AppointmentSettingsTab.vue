@@ -7,6 +7,7 @@
 			<NcSelect
 				v-model="backend"
 				:options="backendOptions"
+				:aria-label-combobox="t('procest', 'Backend')"
 				label="label"
 				track-by="value"
 				@input="saveBackend" />

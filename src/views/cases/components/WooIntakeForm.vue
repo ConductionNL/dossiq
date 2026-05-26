@@ -36,6 +36,7 @@
 				<NcSelect
 					:value="form.verzoekerType"
 					:options="requesterTypes"
+					:aria-label-combobox="t('procest', 'Requester type')"
 					:disabled="isReadOnly"
 					@input="v => update('verzoekerType', v)" />
 			</div>
@@ -44,6 +45,7 @@
 				<NcSelect
 					:value="form.gewensteVorm"
 					:options="formatOptions"
+					:aria-label-combobox="t('procest', 'Desired format')"
 					:disabled="isReadOnly"
 					@input="v => update('gewensteVorm', v)" />
 			</div>
