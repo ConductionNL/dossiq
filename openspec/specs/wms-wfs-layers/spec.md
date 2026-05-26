@@ -8,6 +8,8 @@ retrofit_extensions:
 
 ## Purpose
 
+@e2e exclude WMS/WFS layer configuration is V1; GIS proxy and map layer scenarios require external OGC services not available in CI.
+
 Enable administrators to configure external WMS (Web Map Service) and WFS (Web Feature Service) layers that overlay on the case map. This allows municipalities to display their own geodata (bestemmingsplannen, kadastrale grenzen, milieucontouren) alongside case locations. A backend GIS proxy handles CORS restrictions for external services.
 
 **Standards**: OGC WMS 1.3.0, OGC WFS 2.0.0, PDOK services, INSPIRE

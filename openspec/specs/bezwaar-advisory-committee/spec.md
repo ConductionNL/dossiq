@@ -1,3 +1,7 @@
+## Purpose
+
+@e2e exclude Advisory committee report schema is V1; generic index page, no specific Playwright-testable UI interactions yet.
+
 ## ADDED Requirements
 
 ### Requirement: Advisory Committee Report Schema

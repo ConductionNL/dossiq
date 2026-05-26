@@ -6,6 +6,8 @@ retrofit: true
 
 ## Purpose
 
+@e2e exclude Pure SOAP/backend integration spec covered by PHPUnit; no Playwright UI surface.
+
 Accept inbound StUF (Standaard Uitwisselings Formaat) 3.01 SOAP messages from legacy Dutch government back-office systems, dispatch them by message type to dedicated handlers, map ZKN/BG fields to OpenRegister object properties (and back), and respond with well-formed StUF SOAP envelopes — so that Procest can interoperate with legacy zaaksystemen, BRP-clients and document systems without the producing system having to migrate to REST.
 
 ## Requirements

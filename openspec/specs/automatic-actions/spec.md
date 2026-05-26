@@ -7,6 +7,10 @@ retrofit_extensions:
   - REQ-005
 ---
 
+## Purpose
+
+@e2e exclude Automatic actions is V1; action execution is backend logic (n8n webhooks, email triggers) not testable via Playwright.
+
 ## Requirements
 
 ### Requirement: Automatic Action Framework

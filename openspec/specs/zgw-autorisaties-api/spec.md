@@ -7,6 +7,9 @@ retrofit: true
 **Owned by**: Procest (ZGW API layer for case management)
 
 ## Purpose
+
+@e2e exclude Pure REST API spec covered by Newman/PHPUnit; no Playwright UI surface.
+
 Expose the VNG ZGW **Autorisaties (AC) API** — the sixth ZGW component standard, distinct from the five data APIs (ZRC/ZTC/DRC/BRC/NRC) covered by `zgw-api-mapping`. The AC API manages *applicaties*: the registered API consumers and the scopes (autorisaties) granted to each. Procest backs applicaties with OpenRegister's `ConsumerMapper` rather than OpenRegister object storage, translating between the ZGW `applicatie` representation and the underlying consumer entity's `authorizationConfiguration`. This capability defines the observed CRUD contract for `/api/zgw/autorisaties/v1/applicaties` and the three VNG AC business rules enforced on write (ac-001 clientId uniqueness, ac-002 heeftAlleAutorisaties consistency, ac-003 scope-based field requirements).
 
 ## Context

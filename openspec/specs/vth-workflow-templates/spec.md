@@ -3,6 +3,10 @@ retrofit_extensions:
   - REQ-001
 ---
 
+## Purpose
+
+@e2e exclude Workflow template is a JSON data file imported via backend; no dedicated Playwright UI test surface.
+
 ## ADDED Requirements
 
 ### Requirement: Omgevingsvergunning workflow template

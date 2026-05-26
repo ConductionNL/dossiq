@@ -6,6 +6,8 @@ retrofit: true
 
 ## Purpose
 
+@e2e exclude Pure health-check endpoint covered by integration tests; no Playwright UI surface.
+
 Expose a single health-check endpoint that container orchestrators (k8s, docker-compose `healthcheck`) and external monitoring (Prometheus blackbox-exporter, uptime checks) can probe to determine whether procest is serving correctly. The endpoint reports an aggregate `status`, the running `version`, and per-component sub-checks (database, OpenRegister hard-dep, filesystem) so that a failing probe gives operators enough context to triage without needing a separate logs query.
 
 ## Requirements

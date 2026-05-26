@@ -6,6 +6,8 @@ retrofit: true
 
 ## Purpose
 
+@e2e exclude Consultation management is V1; consultation lifecycle endpoints are backend-only in the current build.
+
 Provide first-class lifecycle management for inter-departmental consultations (adviesaanvragen) — separate entities linked to a parent zaak, with their own create/list/status-transition/advice-submission/overdue-detection surface — so that a casehandler can request structured advice from another department, the advising department can respond with one of four codified outcomes, and the system can highlight requests that have passed their deadline.
 
 ## Requirements

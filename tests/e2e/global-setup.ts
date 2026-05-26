@@ -78,9 +78,12 @@ async function globalSetup(config: FullConfig): Promise<void> {
 	await page.locator('input[name="user"]').fill(user)
 	await page.locator('input[name="password"]').fill(password)
 	await page.locator('button[type="submit"], input[type="submit"]').first().click()
-	// Nextcloud bounces to /apps/dashboard/ on success. Wait for the
-	// global header, which only renders on authenticated pages.
-	await page.waitForSelector('#header, header.header', { timeout: 30_000 })
+	// Nextcloud bounces to /apps/dashboard/ on success.
+	try {
+		await page.waitForURL('**/apps/dashboard/**', { timeout: 30_000 })
+	} catch {
+		// Some NC versions redirect elsewhere; fall back to checking the URL.
+	}
 	const currentUrl = page.url()
 	if (/\/login(\?|$|\/)/.test(currentUrl)) {
 		throw new Error(

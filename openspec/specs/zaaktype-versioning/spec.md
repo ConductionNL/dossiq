@@ -1,3 +1,7 @@
+## Purpose
+
+@e2e exclude Workflow template versioning is V1; immutable version management is backend logic covered by PHPUnit.
+
 ## Requirements
 
 ### Requirement: Workflow Template Versioning

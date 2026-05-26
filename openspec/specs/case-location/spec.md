@@ -8,6 +8,8 @@ retrofit_extensions:
 
 ## Purpose
 
+@e2e exclude Case location map is V1; Leaflet map picker and PDOK geocoder require external tile services not available in CI.
+
 Enable location display and editing on cases. Cases already have a `geometry` field (GeoJSON string) in the OpenRegister schema. This spec defines the UI for viewing the case location on a map, picking a location when creating/editing a case, and searching for addresses via the PDOK Locatieserver (BAG geocoder).
 
 **Standards**: GeoJSON (RFC 7946), PDOK Locatieserver API v3, BAG (Basisregistratie Adressen en Gebouwen)

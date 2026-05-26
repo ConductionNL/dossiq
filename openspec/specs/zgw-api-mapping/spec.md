@@ -13,6 +13,9 @@ retrofit_extensions:
 **Owned by**: Procest (ZGW API layer for case management)
 
 ## Purpose
+
+@e2e exclude Pure REST API spec covered by Newman/PHPUnit; no Playwright UI surface.
+
 Expose Procest's ZGW (Zaakgericht Werken) compliant API endpoints, translating case management data stored in English-language OpenRegister schemas through bidirectional property and value mapping powered by the Twig-based mapping engine. This is Procest's primary integration layer for Dutch government interoperability. The mapping engine -- implemented in OpenRegister as `MappingService`, `MappingExtension`, `MappingRuntime`, and the `Mapping` entity -- provides the core transformation layer; this spec defines how Procest wires that engine to ZGW-specific API routes, pagination, URL references, query parameter translation, error responses, and per-API compliance for all five VNG ZGW API standards (ZRC, ZTC, DRC, BRC, NRC). Procest owns the ZGW Mapping and Endpoint configurations, while OpenRegister owns the generic mapping infrastructure. See also Procest's existing ZGW controllers for reference.
 
 ## Context

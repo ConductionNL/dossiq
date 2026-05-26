@@ -5,6 +5,10 @@ retrofit_extensions:
   - REQ-003
 ---
 
+## Purpose
+
+@e2e exclude Advice management is V1; lifecycle endpoints are backend-only in the current build.
+
 ## ADDED Requirements
 
 ### Requirement: Advice request schema

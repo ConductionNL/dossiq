@@ -3,6 +3,10 @@ retrofit_extensions:
   - REQ-001
 ---
 
+## Purpose
+
+@e2e exclude Process step configuration is V1; drag-and-drop step reorder in the workflow editor is not testable in the current build.
+
 ## Requirements
 
 ### Requirement: Process Step CRUD within Workflow

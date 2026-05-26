@@ -6,6 +6,8 @@ retrofit: true
 
 ## Purpose
 
+@e2e exclude Pure backend REST API integration; no Playwright UI surface.
+
 Provide Procest with the ability to send citizen-facing messages to a citizen's Mijn Overheid Berichtenbox, list messages linked to a case, and poll for read status — abstracted behind a pluggable adapter so the production Berichtenbox API can be swapped in for the development mock.
 
 ## Requirements

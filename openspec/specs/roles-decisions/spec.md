@@ -112,6 +112,8 @@ Stored as an OpenRegister object in the `procest` register under the `decisionTy
 
 ### REQ-ROLE-001: Role Assignment on Cases
 
+@e2e exclude Role assignment requires existing cases with access; data-dependent participant assignment flows not testable without pre-seeded cases.
+
 **Tier**: MVP
 
 The system MUST support assigning roles to participants on cases. A role links a participant (Nextcloud user or contact reference) to a case with a specific role type.
@@ -185,6 +187,8 @@ The system MUST support assigning roles to participants on cases. A role links a
 
 ### REQ-ROLE-002: Role Type Enforcement from Case Type
 
+@e2e exclude Role type enforcement is V1; requires case types with configured role types, not present in the current test environment.
+
 **Tier**: V1
 
 The system SHOULD enforce that only role types linked to the case's case type can be assigned. This prevents assigning roles that are not applicable to the case type.
@@ -218,6 +222,8 @@ The system SHOULD enforce that only role types linked to the case's case type ca
 
 ### REQ-ROLE-003: Handler Assignment Shortcut
 
+@e2e exclude Handler assignment shortcut requires existing cases in the list/detail view; data-dependent user assignment not testable without pre-seeded cases.
+
 **Tier**: MVP
 
 The system MUST provide a convenient handler assignment mechanism that creates the handler role and updates the case's `assignee` field in a single action.
@@ -240,6 +246,8 @@ The system MUST provide a convenient handler assignment mechanism that creates t
 ---
 
 ### REQ-ROLE-004: Role-Based Case Access
+
+@e2e exclude Role-based case access is V1; requires multi-user setup with restricted case configurations not available in the current test environment.
 
 **Tier**: V1
 
@@ -270,6 +278,8 @@ The system SHOULD support controlling who can see and edit a case based on their
 ---
 
 ### REQ-RESULT-001: Case Result Recording
+
+@e2e exclude Case result recording requires closing a case with a specific result type; data-dependent result flows not testable without pre-seeded cases.
 
 **Tier**: MVP
 
@@ -339,6 +349,8 @@ The system MUST support recording a result when a case is being completed. Each 
 
 ### REQ-RESULT-002: Result Type Configuration
 
+@e2e exclude Result type configuration is V1; covered by REQ-ADMIN-009 admin settings tab; not testable separately without a published case type.
+
 **Tier**: V1
 
 Admin users MUST be able to configure result types per case type, including archival rules.
@@ -378,6 +390,8 @@ Admin users MUST be able to configure result types per case type, including arch
 ---
 
 ### REQ-DECISION-001: Decision CRUD
+
+@e2e exclude Decision CRUD is V1; decision panel on case detail is not yet built in the current Playwright-testable build.
 
 **Tier**: V1
 
@@ -446,6 +460,8 @@ The system SHOULD support creating, reading, updating, and deleting formal decis
 
 ### REQ-DECISION-002: Decision Validity Periods
 
+@e2e exclude Decision validity periods are V1; requires decision objects on cases, not testable in the current Playwright-testable build.
+
 **Tier**: V1
 
 The system SHOULD support tracking the validity period of decisions (effectiveDate to expiryDate) and provide indicators when decisions are nearing expiry or have expired.
@@ -495,6 +511,8 @@ The system SHOULD support tracking the validity period of decisions (effectiveDa
 
 ### REQ-DECISION-003: Decision Types from Case Type
 
+@e2e exclude Decision types from case type is V1; requires case types with decision types configured, not available in the current test environment.
+
 **Tier**: V1
 
 The system SHOULD support linking decision types to case types. When creating a decision on a case, only decision types allowed by the case's case type SHOULD be offered.
@@ -525,6 +543,8 @@ The system SHOULD support linking decision types to case types. When creating a 
 ---
 
 ### REQ-DECISION-004: Decision Validation
+
+@e2e exclude Decision validation is V1; decision form is not yet built in the current Playwright-testable build.
 
 **Tier**: V1
 
@@ -561,6 +581,8 @@ The system MUST validate decision data to ensure consistency and completeness.
 ---
 
 ### REQ-ROLE-005: Participant Display on Case Detail
+
+@e2e exclude Participant display on case detail requires an existing case with/without assigned participants; data-dependent case detail section not testable without pre-seeded cases.
 
 **Tier**: MVP
 
@@ -613,6 +635,8 @@ The case detail view MUST display all assigned participants grouped by role type
 
 ### REQ-ROLE-006: Role Validation
 
+@e2e exclude Role validation scenarios require submitting invalid role assignments against existing cases; data-dependent validation flows not testable without pre-seeded cases.
+
 **Tier**: MVP
 
 The system MUST validate role assignments to ensure data integrity.
@@ -647,6 +671,8 @@ The system MUST validate role assignments to ensure data integrity.
 ---
 
 ### REQ-DECISION-005: Decisions Section on Case Detail
+
+@e2e exclude Decisions section on case detail is V1; decision panel is not yet built in the current Playwright-testable build.
 
 **Tier**: V1
 

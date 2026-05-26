@@ -6,6 +6,8 @@ retrofit: true
 
 ## Purpose
 
+@e2e exclude Backend intake adapter invoked by openconnector; no Playwright UI surface.
+
 Convert an inbound DSO Omgevingsloket `vergunningaanvraag` message — delivered to procest by openconnector's DSO adapter (which owns the DSO-LV koppelvlak, mTLS, PKIoverheid, status pushback per its own spec) — into a procest `zaak` of type "Omgevingsvergunning" with the right deadline, title, and DSO-specific side records. Procest does NOT own the DSO protocol or the back-channel; this spec is deliberately scoped to the intake-adapter slice.
 
 ## Requirements

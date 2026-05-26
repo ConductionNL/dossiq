@@ -1,3 +1,7 @@
+## Purpose
+
+@e2e exclude Sub-case creation is V1; deelzaak UI panel in case detail is not yet built in the current Playwright-testable build.
+
 ## ADDED Requirements
 
 ### Requirement: Sub-case creation from parent case

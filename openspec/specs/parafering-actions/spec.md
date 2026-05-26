@@ -19,6 +19,10 @@ retrofit_extensions:
 > This file is preserved as a historical appendix. Refer to
 > `case-management/spec.md` for the canonical lifecycle annotation.
 
+## Purpose
+
+@e2e exclude RETIRED spec; requirements consolidated into case-management/spec.md.
+
 ## ADDED Requirements
 
 ### Requirement: Parafeeractie Schema Registration

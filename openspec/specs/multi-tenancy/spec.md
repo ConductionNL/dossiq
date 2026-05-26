@@ -6,6 +6,8 @@ retrofit: true
 
 ## Purpose
 
+@e2e exclude Tenant provisioning is a backend REST API; UI renders via manifest, not custom Playwright-testable views.
+
 Provide per-tenant isolation for procest by mapping each tenant 1:1 to an OpenRegister `Organisation` entity (per ADR-022) and delegating lifecycle state-machine to OR's `TenantLifecycleService`. Procest exposes a thin domain surface — provisioning, resource-usage aggregation, current-tenant resolution, and the membership/status helpers `TenantMiddleware` needs to short-circuit suspended tenants — while generic tenant CRUD is rendered by the manifest off the OR object endpoints.
 
 ## Requirements

@@ -970,6 +970,8 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 
 ### REQ-101: Procest SHALL expose case-sharing endpoints via CaseSharingController
 
+@e2e exclude Backend PHP controller spec; case sharing endpoints covered by PHPUnit.
+
 `OCA\Procest\Controller\CaseSharingController` SHALL provide REST endpoints to create, revoke, list and inspect case shares — both token-based (anonymous URL with secret) and partner-based (named Nextcloud user/group). Endpoints SHALL delegate state changes to `CaseSharingService` and SHALL enforce that the calling user has write authority on the case being shared.
 
 #### Scenario: Create token-based share
@@ -978,6 +980,8 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 - **AND** the response SHALL include the share URL with the token embedded
 
 ### REQ-102: CaseTransferService SHALL implement the case-transfer workflow
+
+@e2e exclude Backend PHP service spec; transfer workflow covered by PHPUnit.
 
 `OCA\Procest\Service\CaseTransferService` SHALL manage the explicit case-handover workflow: a behandelaar initiates a transfer to another user, the target user accepts or rejects, and on accept the case ownership is reassigned. Rejected transfers SHALL preserve the original owner and SHALL be recorded in the case audit trail with the rejection reason.
 
@@ -992,6 +996,8 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 
 ### REQ-103: Procest SHALL render and dispatch case emails via CaseEmailService
 
+@e2e exclude Backend email service spec; email rendering and dispatch covered by PHPUnit.
+
 `OCA\Procest\Service\CaseEmailService` SHALL be the single entry point for sending case-context emails. It SHALL accept either a raw subject+body pair or a template id (resolving via the templates register), substitute case-payload variables via `resolveVariables()`, render the result, and dispatch via the underlying mail subsystem. Sent emails SHALL be persisted as an email record attached to the case so they appear in the case timeline.
 
 The `OCA\Procest\Controller\EmailController` SHALL expose the HTTP surface: `POST /api/cases/{id}/email/send`, `POST /api/cases/{id}/email/sendFromTemplate`, and `GET /api/cases/{id}/email/preview` (which renders without sending so the user can review).
@@ -1001,6 +1007,8 @@ The `OCA\Procest\Controller\EmailController` SHALL expose the HTTP surface: `POS
 - **THEN** the response SHALL contain the fully-rendered subject + body without any side effects
 
 ### REQ-104: PublicShareController SHALL enforce token-scoped access to case data
+
+@e2e exclude Backend public share controller spec; token-scoped access covered by PHPUnit.
 
 `OCA\Procest\Controller\PublicShareController` SHALL serve unauthenticated callers identifying themselves by share-token only. Each endpoint SHALL: (a) resolve the token via `CaseSharingService`, (b) reject if the share is expired or revoked, (c) restrict the operation to the permissions encoded on the share record (`read`, `comment`, `viewStatus`), and (d) NOT expose any case data outside the configured permissions.
 
@@ -1015,6 +1023,8 @@ The `OCA\Procest\Controller\EmailController` SHALL expose the HTTP surface: `POS
 - **THEN** the controller SHALL respond `410 Gone` and the share SHALL NOT be auto-renewed
 
 ### REQ-105: ShareMaintenanceJob SHALL expire and prune stale shares
+
+@e2e exclude Background job spec; job execution covered by PHPUnit, not Playwright.
 
 `OCA\Procest\BackgroundJob\ShareMaintenanceJob` SHALL run on the Nextcloud BackgroundJob schedule and: (a) mark token shares whose `expiresAt` is past as expired, (b) hard-delete shares older than the configured retention window, (c) close transfer records that have been pending past the configured timeout, returning the case ownership to the original behandelaar. The job SHALL be idempotent — re-running over a clean dataset SHALL be a no-op.
 

@@ -5,6 +5,10 @@ retrofit_extensions:
   - REQ-003
 ---
 
+## Purpose
+
+@e2e exclude Workflow definition model is V1; data model and step validation are backend concerns covered by PHPUnit.
+
 ## Requirements
 
 ### Requirement: Workflow Template Data Model

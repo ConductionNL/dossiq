@@ -8,6 +8,8 @@ retrofit_extensions:
 
 ## Purpose
 
+@e2e exclude Pure metrics endpoint covered by health/integration tests; no Playwright UI surface.
+
 Expose application metrics in Prometheus text exposition format for monitoring, alerting, and operational dashboards. Case management systems require operational visibility into case volumes, SLA compliance, processing times, and system health for both IT operations and management reporting.
 
 **Tender demand**: 22% of tenders (15/69) require monitoring and observability capabilities. Prometheus/Grafana is the standard stack in Dutch government IT infrastructure. SLA compliance dashboards are a key requirement for contract monitoring.

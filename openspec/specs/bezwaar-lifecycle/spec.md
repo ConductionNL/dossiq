@@ -5,6 +5,10 @@ retrofit_extensions:
   - REQ-003
 ---
 
+## Purpose
+
+@e2e exclude Bezwaar lifecycle is V1 seed data + case type config; imported via repair step, covered by PHPUnit.
+
 ## ADDED Requirements
 
 ### Requirement: Bezwaar Case Type Pre-Seeded Configuration

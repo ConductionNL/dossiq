@@ -1,3 +1,7 @@
+## Purpose
+
+@e2e exclude Bezwaar hearing management is V1; hearing schema and scheduling are not yet built in the Playwright-testable UI.
+
 ## ADDED Requirements
 
 ### Requirement: Hearing Session Management

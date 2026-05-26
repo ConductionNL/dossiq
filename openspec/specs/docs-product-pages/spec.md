@@ -2,6 +2,10 @@
 **Status**: in-progress
 **OpenSpec changes**: docs-product-pages-conformance (2026-05-13)
 
+## Purpose
+
+@e2e exclude Documentation site folder structure; not a Nextcloud app feature, no Playwright UI surface.
+
 ## Summary
 
 Canonical product-pages documentation structure for the Procest documentation site, conforming to the `@conduction/docusaurus-preset` fleet standard.

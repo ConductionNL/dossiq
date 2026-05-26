@@ -8,6 +8,8 @@ retrofit_extensions:
 
 ## Purpose
 
+@e2e exclude Map component is V1; Leaflet rendering and GIS proxy scenarios require geospatial test data not available in CI.
+
 Provide a reusable Leaflet-based map component for Procest that renders GeoJSON geometries, supports multiple tile layers (PDOK), and can be embedded in case detail views, dashboards, and admin settings. The component handles coordinate system conversion (RD to WGS84), marker clustering for large datasets, and responsive sizing.
 
 **Standards**: GeoJSON (RFC 7946), WGS84 (EPSG:4326), PDOK tile services, WCAG AA (keyboard navigation, alt text)

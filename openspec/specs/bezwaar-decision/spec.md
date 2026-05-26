@@ -1,3 +1,7 @@
+## Purpose
+
+@e2e exclude Beslissing op bezwaar schema is V1; generic index page, no specific Playwright-testable UI interactions yet.
+
 ## ADDED Requirements
 
 ### Requirement: Decision on Objection Schema
