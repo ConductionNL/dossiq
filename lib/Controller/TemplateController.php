@@ -28,8 +28,10 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\TemplateLibraryService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -43,12 +45,14 @@ class TemplateController extends Controller
      * @param string                 $appName         The app name
      * @param IRequest               $request         The request
      * @param TemplateLibraryService $templateService The template service
+     * @param IUserSession           $userSession     The user session
      * @param LoggerInterface        $logger          The logger
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly TemplateLibraryService $templateService,
+        private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct(appName: $appName, request: $request);
@@ -64,6 +68,10 @@ class TemplateController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $templates = $this->templateService->listTemplates();
         return new JSONResponse(['results' => $templates]);
     }//end index()
@@ -80,6 +88,10 @@ class TemplateController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function show(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $template = $this->templateService->loadTemplate($id);
         if ($template === null) {
             return new JSONResponse(['error' => 'Template not found'], 404);
@@ -100,6 +112,10 @@ class TemplateController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function activate(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $result = $this->templateService->activateTemplate($id);
             return new JSONResponse($result);

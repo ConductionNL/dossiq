@@ -31,6 +31,7 @@ use OCA\Procest\Service\ParaferingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -66,14 +67,21 @@ class ParaferingController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createVoorstel(): JSONResponse
     {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $data   = $this->getRequestBody();
-            $userId = $this->userSession->getUser()?->getUID() ?? 'system';
+            $userId = $user->getUID();
 
             if (empty($data['caseId']) === true) {
                 return new JSONResponse(
@@ -102,11 +110,17 @@ class ParaferingController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function startParafering(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $data     = $this->getRequestBody();
             $voorstel = $data['voorstel'] ?? [];
@@ -143,11 +157,17 @@ class ParaferingController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function paraferen(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         return $this->handleAction(id: $id, action: ParaferingService::ACTION_PARAFEREN);
     }//end paraferen()
 
@@ -158,11 +178,17 @@ class ParaferingController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function terugsturen(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         return $this->handleAction(id: $id, action: ParaferingService::ACTION_TERUGSTUREN);
     }//end terugsturen()
 
@@ -173,11 +199,17 @@ class ParaferingController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function adviseren(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         return $this->handleAction(id: $id, action: ParaferingService::ACTION_ADVISEREN);
     }//end adviseren()
 
@@ -188,11 +220,17 @@ class ParaferingController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function auditTrail(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $data     = $this->getRequestBody();
             $voorstel = $data['voorstel'] ?? [];

@@ -28,6 +28,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\MilestoneService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -67,6 +68,10 @@ class MilestoneController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function progress(string $caseId, string $caseTypeId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $progress = $this->milestoneService->getCaseProgress($caseId, $caseTypeId);
             return new JSONResponse($progress);
@@ -89,11 +94,11 @@ class MilestoneController extends Controller
     public function mark(string $caseId, string $milestoneId): JSONResponse
     {
         $user = $this->userSession->getUser();
-        if ($user !== null) {
-            $userId = $user->getUID();
-        } else {
-            $userId = 'system';
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
+
+        $userId = $user->getUID();
 
         try {
             $result = $this->milestoneService->markMilestone(
@@ -121,20 +126,20 @@ class MilestoneController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function reverse(string $caseId, string $milestoneId): JSONResponse
     {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $reason = $this->request->getParam('reason', '');
         if (trim($reason) === '') {
             return new JSONResponse(
                 ['error' => 'Reason is required for milestone reversal'],
-                400,
+                Http::STATUS_BAD_REQUEST,
             );
         }
 
-        $user = $this->userSession->getUser();
-        if ($user !== null) {
-            $userId = $user->getUID();
-        } else {
-            $userId = 'system';
-        }
+        $userId = $user->getUID();
 
         try {
             $success = $this->milestoneService->reverseMilestone(

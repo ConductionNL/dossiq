@@ -34,6 +34,8 @@ use OCA\Procest\Service\StufFieldMappingService;
 use OCA\Procest\Service\StufMessageBuilder;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
@@ -88,6 +90,8 @@ class StufController extends Controller
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[PublicPage]
+    #[NoCSRFRequired]
     public function zaken(): DataDisplayResponse
     {
         return $this->handleSoapMessage(service: 'zaken');
@@ -101,6 +105,8 @@ class StufController extends Controller
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[PublicPage]
+    #[NoCSRFRequired]
     public function personen(): DataDisplayResponse
     {
         return $this->handleSoapMessage(service: 'personen');

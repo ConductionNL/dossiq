@@ -1,6 +1,3 @@
-# Baselined errors from canonical-config sync (Phase 2 fleet rollout).
-# Tracked in: https://github.com/ConductionNL/procest/issues/543
-# DO NOT add new entries — fix the underlying issue or open a follow-up.
 parameters:
 	ignoreErrors:
 		-
@@ -14,9 +11,19 @@ parameters:
 			path: lib/BackgroundJob/BerichtenboxReadStatusJob.php
 
 		-
+			message: "#^Parameter \\#1 \\$settings of attribute class OCP\\\\AppFramework\\\\Http\\\\Attribute\\\\AuthorizedAdminSetting constructor expects class\\-string\\<OCP\\\\Settings\\\\IDelegatedSettings\\>, string given\\.$#"
+			count: 3
+			path: lib/Controller/AiController.php
+
+		-
 			message: "#^Property OCA\\\\Procest\\\\Controller\\\\AiController\\:\\:\\$logger is never read, only written\\.$#"
 			count: 1
 			path: lib/Controller/AiController.php
+
+		-
+			message: "#^Parameter \\#1 \\$settings of attribute class OCP\\\\AppFramework\\\\Http\\\\Attribute\\\\AuthorizedAdminSetting constructor expects class\\-string\\<OCP\\\\Settings\\\\IDelegatedSettings\\>, string given\\.$#"
+			count: 3
+			path: lib/Controller/CaseDefinitionController.php
 
 		-
 			message: "#^Strict comparison using \\=\\=\\= between true and false will always evaluate to false\\.$#"
@@ -34,9 +41,29 @@ parameters:
 			path: lib/Controller/MetricsController.php
 
 		-
+			message: "#^Parameter \\#1 \\$settings of attribute class OCP\\\\AppFramework\\\\Http\\\\Attribute\\\\AuthorizedAdminSetting constructor expects class\\-string\\<OCP\\\\Settings\\\\IDelegatedSettings\\>, string given\\.$#"
+			count: 1
+			path: lib/Controller/ParafeerRouteController.php
+
+		-
+			message: "#^Parameter \\#1 \\$settings of attribute class OCP\\\\AppFramework\\\\Http\\\\Attribute\\\\AuthorizedAdminSetting constructor expects class\\-string\\<OCP\\\\Settings\\\\IDelegatedSettings\\>, string given\\.$#"
+			count: 2
+			path: lib/Controller/SettingsController.php
+
+		-
 			message: "#^Property OCA\\\\Procest\\\\Controller\\\\TemplateController\\:\\:\\$logger is never read, only written\\.$#"
 			count: 1
 			path: lib/Controller/TemplateController.php
+
+		-
+			message: "#^Parameter \\#1 \\$settings of attribute class OCP\\\\AppFramework\\\\Http\\\\Attribute\\\\AuthorizedAdminSetting constructor expects class\\-string\\<OCP\\\\Settings\\\\IDelegatedSettings\\>, string given\\.$#"
+			count: 2
+			path: lib/Controller/TenantController.php
+
+		-
+			message: "#^Parameter \\#1 \\$settings of attribute class OCP\\\\AppFramework\\\\Http\\\\Attribute\\\\AuthorizedAdminSetting constructor expects class\\-string\\<OCP\\\\Settings\\\\IDelegatedSettings\\>, string given\\.$#"
+			count: 5
+			path: lib/Controller/ZgwMappingController.php
 
 		-
 			message: "#^Property OCA\\\\Procest\\\\Listener\\\\BezwaarLifecycleListener\\:\\:\\$settingsService is never read, only written\\.$#"
@@ -79,11 +106,6 @@ parameters:
 			path: lib/Service/Bezwaar/BeroepService.php
 
 		-
-			message: "#^Strict comparison using \\=\\=\\= between true and false will always evaluate to false\\.$#"
-			count: 1
-			path: lib/Service/Bezwaar/HearingService.php
-
-		-
 			message: "#^Constant OCA\\\\Procest\\\\Service\\\\CaseDefinitionImportService\\:\\:VALID_COMPONENT_FILES is unused\\.$#"
 			count: 1
 			path: lib/Service/CaseDefinitionImportService.php
@@ -95,7 +117,7 @@ parameters:
 
 		-
 			message: "#^Strict comparison using \\=\\=\\= between true and false will always evaluate to false\\.$#"
-			count: 2
+			count: 1
 			path: lib/Service/Inspection/ChecklistService.php
 
 		-
@@ -119,16 +141,6 @@ parameters:
 			path: lib/Service/RoleResolverService.php
 
 		-
-			message: "#^Comparison operation \"\\>\" between 0 and 0 is always false\\.$#"
-			count: 1
-			path: lib/Service/StatusTransitionService.php
-
-		-
-			message: "#^Offset 'passed' on array\\{type\\: string, passed\\: bool, failureMessage\\: string\\|null, details\\: array\\<string, mixed\\>\\} on left side of \\?\\? always exists and is not nullable\\.$#"
-			count: 2
-			path: lib/Service/StatusTransitionService.php
-
-		-
 			message: "#^Property OCA\\\\Procest\\\\Service\\\\StufMessageBuilder\\:\\:\\$logger is never read, only written\\.$#"
 			count: 1
 			path: lib/Service/StufMessageBuilder.php
@@ -139,28 +151,13 @@ parameters:
 			path: lib/Service/TenantService.php
 
 		-
-			message: "#^Offset 'passed' on array\\{passed\\: bool\\} on left side of \\?\\? always exists and is not nullable\\.$#"
-			count: 1
-			path: lib/Service/Transitions/GuardRegistry.php
-
-		-
-			message: "#^Strict comparison using \\=\\=\\= between true and false will always evaluate to false\\.$#"
-			count: 1
-			path: lib/Service/Transitions/GuardRegistry.php
-
-		-
 			message: "#^Property OCA\\\\Procest\\\\Service\\\\Transitions\\\\RoleGuard\\:\\:\\$settingsService is never read, only written\\.$#"
 			count: 1
 			path: lib/Service/Transitions/RoleGuard.php
 
 		-
-			message: "#^Strict comparison using \\=\\=\\= between true and false will always evaluate to false\\.$#"
-			count: 1
-			path: lib/Service/Transitions/SideEffectDispatcher.php
-
-		-
 			message: "#^Expression on left side of \\?\\? is not nullable\\.$#"
-			count: 5
+			count: 2
 			path: lib/Service/WmsWfsService.php
 
 		-
@@ -222,11 +219,6 @@ parameters:
 			message: "#^Property OCA\\\\Procest\\\\Service\\\\WorkflowDefinitionService\\:\\:\\$userSession is never read, only written\\.$#"
 			count: 1
 			path: lib/Service/WorkflowDefinitionService.php
-
-		-
-			message: "#^Result of \\|\\| is always true\\.$#"
-			count: 1
-			path: lib/Validator/ParaferingAuditAppendOnlyValidator.php
 
 		-
 			message: "#^Type OCA\\\\OpenRegister\\\\Event\\\\ObjectCreatingEvent\\|OCA\\\\OpenRegister\\\\Event\\\\ObjectDeletingEvent\\|OCA\\\\OpenRegister\\\\Event\\\\ObjectUpdatingEvent in generic type OCP\\\\EventDispatcher\\\\IEventListener\\<OCA\\\\OpenRegister\\\\Event\\\\ObjectCreatingEvent\\|OCA\\\\OpenRegister\\\\Event\\\\ObjectDeletingEvent\\|OCA\\\\OpenRegister\\\\Event\\\\ObjectUpdatingEvent\\> in PHPDoc tag @implements is not subtype of template type T of OCP\\\\EventDispatcher\\\\Event of interface OCP\\\\EventDispatcher\\\\IEventListener\\.$#"

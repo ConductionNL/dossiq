@@ -35,6 +35,7 @@ use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\CaseSharingService;
 use OCA\Procest\Service\CaseTransferService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -75,7 +76,7 @@ class CaseSharingController extends Controller
     {
         $user = $this->userSession->getUser();
         if ($user === null) {
-            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], 401);
+            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
         $caseId          = $this->request->getParam('caseId');
@@ -138,7 +139,7 @@ class CaseSharingController extends Controller
     {
         $user = $this->userSession->getUser();
         if ($user === null) {
-            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], 401);
+            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
         $share = $this->caseSharingService->revokeShare($shareId, $user->getUID());
@@ -155,6 +156,10 @@ class CaseSharingController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function initiateTransfer(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $caseId = $this->request->getParam('caseId');
         $sourceOrganization = $this->request->getParam('sourceOrganization', '');
         $targetOrganization = $this->request->getParam('targetOrganization');
@@ -191,6 +196,10 @@ class CaseSharingController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handleTransfer(string $transferId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $action = $this->request->getParam('action');
 
         if ($action === 'accept') {

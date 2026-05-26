@@ -30,10 +30,12 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\AiService;
 use OCA\Procest\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -84,6 +86,11 @@ class AiController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function classify(): JSONResponse
     {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $caseId     = $this->request->getParam('caseId', '');
         $documentId = $this->request->getParam('documentId', '');
 
@@ -94,7 +101,7 @@ class AiController extends Controller
             );
         }
 
-        $userId = $this->getCurrentUserId();
+        $userId = $user->getUID();
         $result = $this->aiService->classifyDocument($caseId, $documentId, $userId);
 
         return new JSONResponse($result);
@@ -110,6 +117,11 @@ class AiController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function extract(): JSONResponse
     {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $caseId     = $this->request->getParam('caseId', '');
         $documentId = $this->request->getParam('documentId');
 
@@ -120,7 +132,7 @@ class AiController extends Controller
             );
         }
 
-        $userId = $this->getCurrentUserId();
+        $userId = $user->getUID();
         $result = $this->aiService->extractData($caseId, $documentId, $userId);
 
         return new JSONResponse($result);
@@ -136,6 +148,11 @@ class AiController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function ask(): JSONResponse
     {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $caseId   = $this->request->getParam('caseId', '');
         $question = $this->request->getParam('question', '');
 
@@ -146,7 +163,7 @@ class AiController extends Controller
             );
         }
 
-        $userId = $this->getCurrentUserId();
+        $userId = $user->getUID();
         $result = $this->aiService->askQuestion($caseId, $question, $userId);
 
         return new JSONResponse($result);
@@ -162,6 +179,11 @@ class AiController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function summarize(): JSONResponse
     {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $caseId     = $this->request->getParam('caseId', '');
         $type       = $this->request->getParam('type', 'case');
         $documentId = $this->request->getParam('documentId');
@@ -181,7 +203,7 @@ class AiController extends Controller
             );
         }
 
-        $userId = $this->getCurrentUserId();
+        $userId = $user->getUID();
         $result = $this->aiService->summarize($caseId, $type, $documentId, $userId);
 
         return new JSONResponse($result);
@@ -197,6 +219,11 @@ class AiController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function suggestRouting(): JSONResponse
     {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $caseId = $this->request->getParam('caseId', '');
 
         if (empty($caseId) === true) {
@@ -206,7 +233,7 @@ class AiController extends Controller
             );
         }
 
-        $userId = $this->getCurrentUserId();
+        $userId = $user->getUID();
         $result = $this->aiService->suggestRouting($caseId, $userId);
 
         return new JSONResponse($result);
@@ -222,6 +249,11 @@ class AiController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function suggestNext(): JSONResponse
     {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $caseId = $this->request->getParam('caseId', '');
 
         if (empty($caseId) === true) {
@@ -231,7 +263,7 @@ class AiController extends Controller
             );
         }
 
-        $userId = $this->getCurrentUserId();
+        $userId = $user->getUID();
         $result = $this->aiService->suggestNextStep($caseId, $userId);
 
         return new JSONResponse($result);
@@ -247,6 +279,11 @@ class AiController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recordAction(): JSONResponse
     {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $caseId     = $this->request->getParam('caseId', '');
         $type       = $this->request->getParam('type', '');
         $userAction = $this->request->getParam('userAction', '');
@@ -261,7 +298,7 @@ class AiController extends Controller
             );
         }
 
-        $userId = $this->getCurrentUserId();
+        $userId = $user->getUID();
         $result = $this->aiService->recordUserAction(
             $caseId,
             $type,
@@ -285,6 +322,10 @@ class AiController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function auditIndex(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $filters = [
             'caseId' => $this->request->getParam('caseId'),
             'type'   => $this->request->getParam('type'),
@@ -307,6 +348,7 @@ class AiController extends Controller
      * @return JSONResponse
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function getSettings(): JSONResponse
     {
         $settings = $this->aiService->getAiSettings();
@@ -320,6 +362,7 @@ class AiController extends Controller
      * @return JSONResponse
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function updateSettings(): JSONResponse
     {
         $data   = $this->request->getParams();
@@ -334,6 +377,7 @@ class AiController extends Controller
      * @return JSONResponse
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function healthCheck(): JSONResponse
     {
         $result = $this->aiService->testHealth();
@@ -341,19 +385,4 @@ class AiController extends Controller
         return new JSONResponse($result);
     }//end healthCheck()
 
-    /**
-     * Get the current user ID from the session.
-     *
-     * @return string
-     */
-    private function getCurrentUserId(): string
-    {
-        $user = $this->userSession->getUser();
-
-        if ($user !== null) {
-            return $user->getUID();
-        }
-
-        return 'anonymous';
-    }//end getCurrentUserId()
 }//end class

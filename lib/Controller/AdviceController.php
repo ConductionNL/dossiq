@@ -34,6 +34,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -47,12 +48,14 @@ class AdviceController extends Controller
      * @param string          $appName       The app name
      * @param IRequest        $request       The HTTP request
      * @param AdviceService   $adviceService The advice service
+     * @param IUserSession    $userSession   The user session
      * @param LoggerInterface $logger        The logger
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly AdviceService $adviceService,
+        private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct(appName: $appName, request: $request);
@@ -81,6 +84,10 @@ class AdviceController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function transitionStatus(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $data = $this->readJsonBody();
         $to   = (string) ($data['to'] ?? '');
 
@@ -120,6 +127,10 @@ class AdviceController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function dispatchReminder(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $this->adviceService->dispatchReminder($id);
             return new JSONResponse(['status' => 'reminded']);

@@ -233,25 +233,6 @@ class TenantService
     }//end getResourceUsage()
 
     /**
-     * Check whether a user belongs to a specific tenant.
-     *
-     * @param string $userId   The Nextcloud user ID.
-     * @param string $tenantId The Organisation UUID.
-     *
-     * @return bool True when the user is mapped to the tenant.
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
-    public function isUserInTenant(string $userId, string $tenantId): bool
-    {
-        $tenant = $this->getTenantForUser(userId: $userId);
-        if ($tenant === null) {
-            return false;
-        }
-
-        return ($tenant['uuid'] ?? $tenant['id'] ?? '') === $tenantId;
-    }//end isUserInTenant()
-
-    /**
      * Check whether a user is a platform administrator.
      *
      * @param string $userId The Nextcloud user ID.
