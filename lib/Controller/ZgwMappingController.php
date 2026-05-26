@@ -32,6 +32,7 @@ use OCA\Procest\Repair\LoadDefaultZgwMappings;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\ZgwMappingService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
@@ -69,6 +70,7 @@ class ZgwMappingController extends Controller
      * @return JSONResponse
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function index(): JSONResponse
     {
         return new JSONResponse(
@@ -87,6 +89,7 @@ class ZgwMappingController extends Controller
      * @return JSONResponse
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function show(string $resourceKey): JSONResponse
     {
         $mapping = $this->zgwMappingService->getMapping($resourceKey);
@@ -116,6 +119,7 @@ class ZgwMappingController extends Controller
      * @return JSONResponse
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function update(string $resourceKey): JSONResponse
     {
         $params = $this->request->getParams();
@@ -141,6 +145,7 @@ class ZgwMappingController extends Controller
      * @return JSONResponse
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function destroy(string $resourceKey): JSONResponse
     {
         $this->zgwMappingService->deleteMapping($resourceKey);
@@ -160,6 +165,7 @@ class ZgwMappingController extends Controller
      * @return JSONResponse
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function reset(string $resourceKey): JSONResponse
     {
         $registerId = $this->settingsService->getConfigValue(key: 'register', default: '');

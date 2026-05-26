@@ -81,6 +81,10 @@ class StatusTransitionController extends Controller
     /** @spec openspec/specs/status-transition-engine/spec.md */
     public function available(string $caseId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $result = $this->transitionEngine->getAvailableTransitions(caseId: $caseId);
             return new JSONResponse($result);
@@ -108,6 +112,10 @@ class StatusTransitionController extends Controller
     /** @spec openspec/specs/status-transition-engine/spec.md */
     public function execute(string $caseId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $body         = $this->readJsonBody();
         $transitionId = (string) ($body['transitionId'] ?? '');
         $comment      = null;
@@ -231,6 +239,10 @@ class StatusTransitionController extends Controller
     /** @spec openspec/specs/status-transition-engine/spec.md */
     public function history(string $caseId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $result = $this->transitionEngine->replay(caseId: $caseId);
             return new JSONResponse($result);

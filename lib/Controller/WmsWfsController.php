@@ -32,8 +32,10 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\WmsWfsService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUserSession;
 
 /**
  * Action endpoint that proxies WMS/WFS requests for a configured wmsLayer.
@@ -46,6 +48,7 @@ class WmsWfsController extends Controller
      * @param string        $appName       The application name
      * @param IRequest      $request       The request object
      * @param WmsWfsService $wmsWfsService The WMS/WFS service
+     * @param IUserSession  $userSession   The user session
      *
      * @return void
      */
@@ -53,6 +56,7 @@ class WmsWfsController extends Controller
         string $appName,
         IRequest $request,
         private WmsWfsService $wmsWfsService,
+        private IUserSession $userSession,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -80,6 +84,10 @@ class WmsWfsController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function proxy(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $layerId = (string) $this->request->getParam('layerId', '');
         if ($layerId === '') {
             return new JSONResponse(

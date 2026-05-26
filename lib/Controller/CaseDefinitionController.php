@@ -29,10 +29,12 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\CaseDefinitionExportService;
 use OCA\Procest\Service\CaseDefinitionImportService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -72,6 +74,7 @@ class CaseDefinitionController extends Controller
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function export(): DataDownloadResponse|JSONResponse
     {
         try {
@@ -128,6 +131,7 @@ class CaseDefinitionController extends Controller
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function validate(): JSONResponse
     {
         try {
@@ -160,6 +164,7 @@ class CaseDefinitionController extends Controller
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function import(): JSONResponse
     {
         try {

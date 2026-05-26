@@ -81,7 +81,6 @@ class AcController extends Controller
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -167,7 +166,6 @@ class AcController extends Controller
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -224,7 +222,6 @@ class AcController extends Controller
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -280,7 +277,6 @@ class AcController extends Controller
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -343,7 +339,6 @@ class AcController extends Controller
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -363,7 +358,6 @@ class AcController extends Controller
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS

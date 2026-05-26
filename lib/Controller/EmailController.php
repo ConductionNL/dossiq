@@ -28,8 +28,10 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\CaseEmailService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUserSession;
 
 /**
  * Controller for case email operations.
@@ -42,11 +44,13 @@ class EmailController extends Controller
      * @param string           $appName      The app name
      * @param IRequest         $request      The request
      * @param CaseEmailService $emailService The email service
+     * @param IUserSession     $userSession  The user session
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly CaseEmailService $emailService,
+        private readonly IUserSession $userSession,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -63,6 +67,10 @@ class EmailController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function send(string $caseId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $content = $this->request->getContent();
             if ($content === '' || $content === false) {
@@ -101,6 +109,10 @@ class EmailController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function sendFromTemplate(string $caseId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $content = $this->request->getContent();
             if ($content === '' || $content === false) {
@@ -137,6 +149,10 @@ class EmailController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function preview(string $caseId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $content = $this->request->getContent();
         if ($content === '' || $content === false) {
             $content = '{}';
@@ -175,6 +191,10 @@ class EmailController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function templates(string $caseTypeId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $templates = $this->emailService->getTemplatesForCaseType($caseTypeId);
         return new JSONResponse(['results' => $templates]);
     }//end templates()

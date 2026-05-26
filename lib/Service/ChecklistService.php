@@ -176,33 +176,6 @@ class ChecklistService
     }//end getProgress()
 
     /**
-     * Validate that all checklist items are completed.
-     *
-     * @param array<string, mixed> $checklist The checklist data.
-     *
-     * @return array{valid: bool, missingItems: string[]}
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
-    public function validateCompletion(array $checklist): array
-    {
-        $items        = $checklist['items'] ?? [];
-        $missingItems = [];
-
-        foreach ($items as $item) {
-            if (empty($item['status']) === true) {
-                $missingItems[] = $item['description'] ?? ($item['id'] ?? 'unknown');
-            }
-        }
-
-        return [
-            'valid'        => empty($missingItems),
-            'missingItems' => $missingItems,
-        ];
-    }//end validateCompletion()
-
-    /**
      * Get a summary of conformity results.
      *
      * @param array<string, mixed> $checklist The checklist data.

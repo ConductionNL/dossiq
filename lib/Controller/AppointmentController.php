@@ -27,8 +27,10 @@ namespace OCA\Procest\Controller;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\AppointmentService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUserSession;
 
 /**
  * Controller exposing citizen appointment endpoints.
@@ -40,10 +42,12 @@ class AppointmentController extends Controller
      *
      * @param IRequest           $request            The request object.
      * @param AppointmentService $appointmentService The appointment service.
+     * @param IUserSession       $userSession        The user session.
      */
     public function __construct(
         IRequest $request,
         private AppointmentService $appointmentService,
+        private IUserSession $userSession,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -58,6 +62,10 @@ class AppointmentController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $caseId       = $this->request->getParam('caseId');
         $appointments = $this->appointmentService->getAppointmentsForCase($caseId ?? '');
         return new JSONResponse(['success' => true, 'appointments' => $appointments]);
@@ -73,9 +81,13 @@ class AppointmentController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function create(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $caseId = $this->request->getParam('caseId');
         if (empty($caseId) === true) {
-            return new JSONResponse(['success' => false, 'error' => 'caseId required'], 400);
+            return new JSONResponse(['success' => false, 'error' => 'caseId required'], Http::STATUS_BAD_REQUEST);
         }
 
         $data = [
@@ -105,6 +117,10 @@ class AppointmentController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function cancel(string $appointmentId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $result = $this->appointmentService->cancelAppointment($appointmentId);
         return new JSONResponse(['success' => true, 'appointment' => $result]);
     }//end cancel()
@@ -121,6 +137,10 @@ class AppointmentController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function noShow(string $appointmentId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $result = $this->appointmentService->markNoShow($appointmentId);
         return new JSONResponse(['success' => true, 'appointment' => $result]);
     }//end noShow()
@@ -135,6 +155,10 @@ class AppointmentController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function timeslots(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $productId  = $this->request->getParam('productId', '');
         $locationId = $this->request->getParam('locationId', '');
         $date       = $this->request->getParam('date', date('Y-m-d'));

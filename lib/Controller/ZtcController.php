@@ -121,7 +121,6 @@ class ZtcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -173,7 +172,6 @@ class ZtcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -224,7 +222,6 @@ class ZtcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -297,7 +294,6 @@ class ZtcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -345,7 +341,6 @@ class ZtcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -393,7 +388,6 @@ class ZtcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -506,7 +500,6 @@ class ZtcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -524,7 +517,6 @@ class ZtcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -542,7 +534,6 @@ class ZtcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -1241,7 +1232,6 @@ class ZtcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -1266,7 +1256,6 @@ class ZtcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS

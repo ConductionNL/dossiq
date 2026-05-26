@@ -109,7 +109,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -138,7 +137,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -311,7 +309,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -345,7 +342,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -402,7 +398,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -460,7 +455,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -517,7 +511,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -537,7 +530,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -558,7 +550,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -579,7 +570,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -600,7 +590,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -621,7 +610,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -641,7 +629,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -712,7 +699,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -738,7 +724,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -758,7 +743,6 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS

@@ -47,20 +47,20 @@ return [
         ['name' => 'ai#healthCheck',     'url' => '/api/ai/health',          'verb' => 'POST'],
 
         // Parafering Actions (must precede any wildcard routes).
-        ['name' => 'parafeer_actie#create', 'url' => '/api/parafeer-actie', 'verb' => 'POST'],
-        ['name' => 'parafeer_actie#index',  'url' => '/api/parafeer-actie', 'verb' => 'GET'],
+        ['name' => 'parafeerActie#create', 'url' => '/api/parafeer-actie', 'verb' => 'POST'],
+        ['name' => 'parafeerActie#index',  'url' => '/api/parafeer-actie', 'verb' => 'GET'],
 
         // ZGW Mapping Management.
-        ['name' => 'zgw_mapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
-        ['name' => 'zgw_mapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],
-        ['name' => 'zgw_mapping#update', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'PUT'],
-        ['name' => 'zgw_mapping#destroy', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'DELETE'],
-        ['name' => 'zgw_mapping#reset', 'url' => '/api/zgw-mappings/{resourceKey}/reset', 'verb' => 'POST'],
+        ['name' => 'zgwMapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
+        ['name' => 'zgwMapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],
+        ['name' => 'zgwMapping#update', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'PUT'],
+        ['name' => 'zgwMapping#destroy', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'DELETE'],
+        ['name' => 'zgwMapping#reset', 'url' => '/api/zgw-mappings/{resourceKey}/reset', 'verb' => 'POST'],
 
         // Case Definition Portability (export/import zaaktype packages).
-        ['name' => 'case_definition#export', 'url' => '/api/case-definitions/export', 'verb' => 'POST'],
-        ['name' => 'case_definition#validate', 'url' => '/api/case-definitions/validate', 'verb' => 'POST'],
-        ['name' => 'case_definition#import', 'url' => '/api/case-definitions/import', 'verb' => 'POST'],
+        ['name' => 'caseDefinition#export', 'url' => '/api/case-definitions/export', 'verb' => 'POST'],
+        ['name' => 'caseDefinition#validate', 'url' => '/api/case-definitions/validate', 'verb' => 'POST'],
+        ['name' => 'caseDefinition#import', 'url' => '/api/case-definitions/import', 'verb' => 'POST'],
 
         // ── DRC (Documenten) ────────────────────────────────────────────
         // Special endpoints (must precede wildcard routes).
@@ -154,12 +154,12 @@ return [
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
         // GIS Proxy endpoints.
-        ['name' => 'gis_proxy#proxy', 'url' => '/api/gis/proxy', 'verb' => 'POST'],
-        ['name' => 'gis_proxy#capabilities', 'url' => '/api/gis/capabilities', 'verb' => 'GET'],
+        ['name' => 'gisProxy#proxy', 'url' => '/api/gis/proxy', 'verb' => 'POST'],
+        ['name' => 'gisProxy#capabilities', 'url' => '/api/gis/capabilities', 'verb' => 'GET'],
 
         // WMS/WFS per-layer proxy (wms-wfs-layers spec) — action endpoint only;
         // CRUD on wmsLayer objects is served by OpenRegister manifest pages.
-        ['name' => 'wms_wfs#proxy', 'url' => '/api/wms-wfs/proxy', 'verb' => 'GET'],
+        ['name' => 'wmsWfs#proxy', 'url' => '/api/wms-wfs/proxy', 'verb' => 'GET'],
 
         // WFS export — exposes case locations as a GeoJSON WFS layer for external GIS applications.
         // gis-integration spec AC 6.
@@ -169,10 +169,10 @@ return [
         // ── Parafeerroute (B&W parafering engine) ───────────────────────
         // CRUD on parafeerroute objects is served by OpenRegister's auto-exposed
         // /api/objects/<register>/<schema> endpoints — only engine routes remain.
-        ['name' => 'parafeer_route#start',        'url' => '/api/parafeer-route/voorstel/{voorstelId}/start',          'verb' => 'POST'],
-        ['name' => 'parafeer_route#completeStep', 'url' => '/api/parafeer-route/voorstel/{voorstelId}/complete-step',  'verb' => 'POST'],
-        ['name' => 'parafeer_route#skipStep',     'url' => '/api/parafeer-route/voorstel/{voorstelId}/skip-step',      'verb' => 'POST'],
-        ['name' => 'parafeer_route#addStep',      'url' => '/api/parafeer-route/voorstel/{voorstelId}/add-step',       'verb' => 'POST'],
+        ['name' => 'parafeerRoute#start',        'url' => '/api/parafeer-route/voorstel/{voorstelId}/start',          'verb' => 'POST'],
+        ['name' => 'parafeerRoute#completeStep', 'url' => '/api/parafeer-route/voorstel/{voorstelId}/complete-step',  'verb' => 'POST'],
+        ['name' => 'parafeerRoute#skipStep',     'url' => '/api/parafeer-route/voorstel/{voorstelId}/skip-step',      'verb' => 'POST'],
+        ['name' => 'parafeerRoute#addStep',      'url' => '/api/parafeer-route/voorstel/{voorstelId}/add-step',       'verb' => 'POST'],
 
         // ── B&W Parafering (voorstellen workflow) ───────────────────────
         ['name' => 'parafering#createVoorstel',   'url' => '/api/parafering/voorstellen',                              'verb' => 'POST'],
@@ -186,7 +186,7 @@ return [
         // CRUD on paraferingAuditEntry objects is served by OpenRegister's
         // auto-exposed /api/objects/<register>/<schema> endpoints — only the
         // export action lives here.
-        ['name' => 'parafering_audit_export#export', 'url' => '/api/voorstellen/{id}/audit-trail/export',              'verb' => 'GET'],
+        ['name' => 'paraferingAuditExport#export', 'url' => '/api/voorstellen/{id}/audit-trail/export',              'verb' => 'GET'],
 
         // ── StUF (Standaard Uitwisselings Formaat) ──────────────────────
         // Inbound SOAP endpoints accept raw XML POST.
@@ -236,10 +236,10 @@ return [
         // by the manifest (/settings/status-records). Action-style endpoints
         // live here because guard evaluation + side-effect dispatch are
         // non-CRUD engine logic.
-        ['name' => 'status_transition#available', 'url' => '/api/case/{caseId}/available-transitions', 'verb' => 'GET'],
-        ['name' => 'status_transition#execute',   'url' => '/api/case/{caseId}/transition',            'verb' => 'POST'],
-        ['name' => 'status_transition#freeform',  'url' => '/api/case/{caseId}/transition-freeform',   'verb' => 'POST'],
-        ['name' => 'status_transition#history',   'url' => '/api/case/{caseId}/transition-history',    'verb' => 'GET'],
+        ['name' => 'statusTransition#available', 'url' => '/api/case/{caseId}/available-transitions', 'verb' => 'GET'],
+        ['name' => 'statusTransition#execute',   'url' => '/api/case/{caseId}/transition',            'verb' => 'POST'],
+        ['name' => 'statusTransition#freeform',  'url' => '/api/case/{caseId}/transition-freeform',   'verb' => 'POST'],
+        ['name' => 'statusTransition#history',   'url' => '/api/case/{caseId}/transition-history',    'verb' => 'GET'],
 
         // Multi-Tenant SaaS — domain endpoints only. Generic tenant CRUD
         // (list/create/update/destroy) is rendered by the manifest pages
@@ -259,8 +259,8 @@ return [
         ['name' => 'appointment#create',    'url' => '/api/appointments',                          'verb' => 'POST'],
         ['name' => 'appointment#cancel',    'url' => '/api/appointments/{appointmentId}',          'verb' => 'DELETE'],
         // Public (citizen self-service via token).
-        ['name' => 'public_appointment#view',   'url' => '/api/public/appointment/{token}',         'verb' => 'GET'],
-        ['name' => 'public_appointment#cancel', 'url' => '/api/public/appointment/{token}/cancel',  'verb' => 'POST'],
+        ['name' => 'publicAppointment#view',   'url' => '/api/public/appointment/{token}',         'verb' => 'GET'],
+        ['name' => 'publicAppointment#cancel', 'url' => '/api/public/appointment/{token}/cancel',  'verb' => 'POST'],
 
         // Case sharing & collaboration — domain endpoints only.
         // CRUD over caseShare / partnerOrganization / casetransfer is
@@ -285,6 +285,34 @@ return [
         // CRUD of matrices and recommendations lives on lhsMatrix/lhsRecommendation (manifest).
         ['name' => 'lhs#recommend', 'url' => '/api/lhs/recommend', 'verb' => 'POST'],
         ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
+
+        // ── Berichtenbox (government inbox integration) ─────────────────
+        ['name' => 'berichtenbox#send',     'url' => '/api/berichtenbox/send',                 'verb' => 'POST'],
+        ['name' => 'berichtenbox#messages', 'url' => '/api/berichtenbox/messages',             'verb' => 'GET'],
+        ['name' => 'berichtenbox#poll',     'url' => '/api/berichtenbox/messages/{messageId}', 'verb' => 'GET'],
+
+        // ── Consultation (advice requests and responses) ─────────────────
+        ['name' => 'consultation#index',          'url' => '/api/consultations/{caseId}',              'verb' => 'GET'],
+        ['name' => 'consultation#create',         'url' => '/api/consultations',                       'verb' => 'POST'],
+        ['name' => 'consultation#updateStatus',   'url' => '/api/consultations/{id}/status',           'verb' => 'POST'],
+        ['name' => 'consultation#submitResponse', 'url' => '/api/consultations/{id}/response',         'verb' => 'POST'],
+        ['name' => 'consultation#overdue',        'url' => '/api/consultations/overdue',               'verb' => 'GET'],
+
+        // ── Email (outbound case communication) ─────────────────────────
+        ['name' => 'email#send',             'url' => '/api/email/{caseId}/send',            'verb' => 'POST'],
+        ['name' => 'email#sendFromTemplate', 'url' => '/api/email/{caseId}/send-template',   'verb' => 'POST'],
+        ['name' => 'email#preview',          'url' => '/api/email/{caseId}/preview',         'verb' => 'POST'],
+        ['name' => 'email#templates',        'url' => '/api/email/templates/{caseTypeId}',   'verb' => 'GET'],
+
+        // ── Template (workflow step templates) ──────────────────────────
+        ['name' => 'template#index',    'url' => '/api/templates',           'verb' => 'GET'],
+        ['name' => 'template#show',     'url' => '/api/templates/{id}',      'verb' => 'GET'],
+        ['name' => 'template#activate', 'url' => '/api/templates/{id}/activate', 'verb' => 'POST'],
+
+        // ── Milestone tracking ───────────────────────────────────────────
+        ['name' => 'milestone#progress', 'url' => '/api/cases/{caseId}/milestones/progress/{caseTypeId}', 'verb' => 'GET'],
+        ['name' => 'milestone#mark',     'url' => '/api/cases/{caseId}/milestones/{milestoneId}/mark',    'verb' => 'POST'],
+        ['name' => 'milestone#reverse',  'url' => '/api/cases/{caseId}/milestones/{milestoneId}/reverse', 'verb' => 'POST'],
 
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],

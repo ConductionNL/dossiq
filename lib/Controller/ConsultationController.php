@@ -28,8 +28,10 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\ConsultationService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUserSession;
 
 /**
  * Controller for consultation (adviesaanvraag) management.
@@ -42,11 +44,13 @@ class ConsultationController extends Controller
      * @param string              $appName             The app name
      * @param IRequest            $request             The request
      * @param ConsultationService $consultationService The consultation service
+     * @param IUserSession        $userSession         The user session
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly ConsultationService $consultationService,
+        private readonly IUserSession $userSession,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -63,6 +67,10 @@ class ConsultationController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(string $caseId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $consultations = $this->consultationService->getConsultationsForCase($caseId);
         return new JSONResponse(['results' => $consultations]);
     }//end index()
@@ -77,6 +85,10 @@ class ConsultationController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function create(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $content = $this->request->getContent();
             if ($content === '' || $content === false) {
@@ -109,6 +121,10 @@ class ConsultationController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function updateStatus(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $content = $this->request->getContent();
             if ($content === '' || $content === false) {
@@ -142,6 +158,10 @@ class ConsultationController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function submitResponse(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $content = $this->request->getContent();
             if ($content === '' || $content === false) {
@@ -172,6 +192,10 @@ class ConsultationController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function overdue(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $overdue = $this->consultationService->getOverdueConsultations();
         return new JSONResponse(['results' => $overdue]);
     }//end overdue()

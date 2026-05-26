@@ -135,6 +135,13 @@ class ParafeerActieController extends Controller
     #[NoAdminRequired]
     public function index(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(
+                ['message' => 'Not authenticated'],
+                Http::STATUS_UNAUTHORIZED
+            );
+        }
+
         try {
             $voorstelId = (string) ($this->request->getParam('voorstel') ?? '');
             if ($voorstelId === '') {

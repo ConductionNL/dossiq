@@ -27,8 +27,10 @@ namespace OCA\Procest\Controller;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\BerichtenboxService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUserSession;
 
 /**
  * Controller exposing Berichtenbox send/list/poll endpoints.
@@ -40,10 +42,12 @@ class BerichtenboxController extends Controller
      *
      * @param IRequest            $request             The request object.
      * @param BerichtenboxService $berichtenboxService The Berichtenbox service.
+     * @param IUserSession        $userSession         The user session.
      */
     public function __construct(
         IRequest $request,
         private BerichtenboxService $berichtenboxService,
+        private IUserSession $userSession,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -58,6 +62,10 @@ class BerichtenboxController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function send(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $caseId   = $this->request->getParam('caseId');
         $bsn      = $this->request->getParam('bsn', '');
         $subject  = $this->request->getParam('subject', '');
@@ -95,6 +103,10 @@ class BerichtenboxController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function messages(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $caseId   = $this->request->getParam('caseId', '');
         $messages = $this->berichtenboxService->getMessagesForCase($caseId);
         return new JSONResponse(['success' => true, 'messages' => $messages]);
@@ -112,6 +124,10 @@ class BerichtenboxController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function poll(string $messageId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $result = $this->berichtenboxService->pollReadStatus($messageId);
         return new JSONResponse(['success' => true, 'message' => $result]);
     }//end poll()

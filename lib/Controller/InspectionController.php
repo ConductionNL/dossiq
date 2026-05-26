@@ -69,13 +69,20 @@ class InspectionController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): JSONResponse
     {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
-            $userId = $this->userSession->getUser()?->getUID() ?? '';
+            $userId = $user->getUID();
             $date   = $this->request->getParam('date');
 
             // In full implementation, query OpenRegister for inspections.
@@ -98,11 +105,17 @@ class InspectionController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function captureLocation(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $body       = $this->getRequestBody();
             $latitude   = (float) ($body['latitude'] ?? 0);
@@ -142,11 +155,17 @@ class InspectionController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function completeChecklistItem(string $id, string $itemId): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $body        = $this->getRequestBody();
             $status      = $body['status'] ?? '';
@@ -191,11 +210,17 @@ class InspectionController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function addPhoto(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $body          = $this->getRequestBody();
             $inspection    = $body['inspection'] ?? [];
@@ -220,11 +245,17 @@ class InspectionController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function complete(string $id): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $body       = $this->getRequestBody();
             $inspection = $body['inspection'] ?? [];

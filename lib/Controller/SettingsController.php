@@ -30,6 +30,7 @@ use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -138,6 +139,7 @@ class SettingsController extends Controller
      * @return JSONResponse
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function create(): JSONResponse
     {
         $data   = $this->request->getParams();
@@ -160,6 +162,7 @@ class SettingsController extends Controller
      * @return JSONResponse
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function load(): JSONResponse
     {
         $result = $this->settingsService->loadConfiguration(force: true);

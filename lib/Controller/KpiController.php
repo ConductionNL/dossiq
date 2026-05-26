@@ -30,6 +30,7 @@ use DateTime;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\KpiAggregationService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -109,7 +110,7 @@ class KpiController extends Controller
     {
         $user = $this->userSession->getUser();
         if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
         $userId = $user->getUID();

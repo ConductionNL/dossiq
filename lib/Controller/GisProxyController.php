@@ -29,10 +29,12 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\GisProxyService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
+use OCP\IUserSession;
 
 /**
  * Controller for proxying WMS/WFS requests to external GIS services.
@@ -45,6 +47,7 @@ class GisProxyController extends Controller
      * @param string          $appName         The application name
      * @param IRequest        $request         The request object
      * @param GisProxyService $gisProxyService The GIS proxy service
+     * @param IUserSession    $userSession     The user session
      *
      * @return void
      */
@@ -52,6 +55,7 @@ class GisProxyController extends Controller
         string $appName,
         IRequest $request,
         private GisProxyService $gisProxyService,
+        private IUserSession $userSession,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -66,6 +70,10 @@ class GisProxyController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function proxy(): JSONResponse|Response
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $url   = $this->request->getParam('url', '');
         $query = $this->request->getParam('query', []);
         $type  = $this->request->getParam('type', 'wms');
@@ -113,6 +121,10 @@ class GisProxyController extends Controller
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function capabilities(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         $url  = $this->request->getParam('url', '');
         $type = $this->request->getParam('type', 'wms');
 

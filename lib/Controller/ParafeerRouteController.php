@@ -28,9 +28,12 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\ParafeerRouteService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -147,12 +150,11 @@ class ParafeerRouteController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
-     *
      * @psalm-suppress PossiblyUnusedMethod
      *
      * @spec openspec/changes/parafeerroute-engine/tasks.md#T05
      */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function skipStep(string $voorstelId): JSONResponse
     {
         if ($this->requireAdmin() === false) {

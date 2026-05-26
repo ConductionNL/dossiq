@@ -32,6 +32,8 @@ namespace OCA\Procest\Controller;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\TenantService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -71,6 +73,7 @@ class TenantController extends Controller
      * @return JSONResponse The provisioning result
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function provision(string $tenantId): JSONResponse
     {
         if ($this->isPlatformAdmin() === false) {
@@ -94,6 +97,7 @@ class TenantController extends Controller
      * @return JSONResponse The resource usage
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function usage(string $tenantId): JSONResponse
     {
         if ($this->isPlatformAdmin() === false) {
@@ -116,7 +120,7 @@ class TenantController extends Controller
     {
         $user = $this->userSession->getUser();
         if ($user === null) {
-            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], 401);
+            return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
         $tenant = $this->tenantService->getTenantForUser($user->getUID());

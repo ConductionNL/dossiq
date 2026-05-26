@@ -30,10 +30,12 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\LegesCalculationService;
 use OCA\Procest\Service\LegesExportService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -73,11 +75,17 @@ class LegesController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function calculate(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $caseData    = $this->request->getParam('caseData', []);
             $verordening = $this->request->getParam('verordening', []);
@@ -97,7 +105,7 @@ class LegesController extends Controller
                 $verordening = json_decode($verordening, true) ?? [];
             }
 
-            $userId = $this->userSession->getUser()?->getUID() ?? 'system';
+            $userId = $this->userSession->getUser()->getUID();
 
             $result = $this->calculationService->calculate($caseData, $verordening, $userId);
 
@@ -116,11 +124,17 @@ class LegesController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recalculate(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $caseData     = $this->request->getParam('caseData', []);
             $verordening  = $this->request->getParam('verordening', []);
@@ -139,7 +153,7 @@ class LegesController extends Controller
                 $previousCalc = json_decode($previousCalc, true) ?? [];
             }
 
-            $userId = $this->userSession->getUser()?->getUID() ?? 'system';
+            $userId = $this->userSession->getUser()->getUID();
 
             $result = $this->calculationService->recalculate(
                 $caseData,
@@ -164,11 +178,17 @@ class LegesController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function verrekening(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $currentAmount  = (float) $this->request->getParam('currentAmount', 0);
             $previousAmount = (float) $this->request->getParam('previousAmount', 0);
@@ -190,11 +210,17 @@ class LegesController extends Controller
      *
      * @return JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function teruggaaf(): JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $imposedAmount  = (float) $this->request->getParam('imposedAmount', 0);
             $refundFraction = (float) $this->request->getParam('refundFraction', 1.0);
@@ -221,11 +247,17 @@ class LegesController extends Controller
      *
      * @return DataDownloadResponse|JSONResponse
      *
+     * @NoAdminRequired
+     *
      * @psalm-suppress PossiblyUnusedMethod
      */
     /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function export(): DataDownloadResponse|JSONResponse
     {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
         try {
             $berekeningen = $this->request->getParam('berekeningen', []);
             $format       = $this->request->getParam('format', LegesExportService::FORMAT_CSV);

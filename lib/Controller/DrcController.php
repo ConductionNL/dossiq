@@ -101,7 +101,6 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -202,7 +201,6 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -383,7 +381,6 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -419,7 +416,6 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -449,7 +445,6 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -479,7 +474,6 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -580,7 +574,6 @@ class DrcController extends Controller
      *
      * @return DataDownloadResponse|JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -656,7 +649,6 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -788,7 +780,6 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -945,7 +936,6 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -989,7 +979,6 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -1393,7 +1382,6 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
