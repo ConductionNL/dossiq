@@ -29,7 +29,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
-use OCP\IConfig;
+use OCP\IAppConfig;
 use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
 
@@ -49,13 +49,13 @@ class CaseEmailService
      *
      * @param SettingsService $settingsService Settings service
      * @param IMailer         $mailer          Nextcloud mailer
-     * @param IConfig         $config          Nextcloud config
+     * @param IAppConfig      $appConfig       Nextcloud app config
      * @param LoggerInterface $logger          Logger
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly IMailer $mailer,
-        private readonly IConfig $config,
+        private readonly IAppConfig $appConfig,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -81,12 +81,12 @@ class CaseEmailService
         string $body,
         array $attachments=[],
     ): array {
-        $fromAddress = $this->config->getAppValue(
+        $fromAddress = $this->appConfig->getValueString(
             Application::APP_ID,
             'email_from_address',
             'noreply@example.nl',
         );
-        $fromName    = $this->config->getAppValue(
+        $fromName    = $this->appConfig->getValueString(
             Application::APP_ID,
             'email_from_name',
             'Procest',
@@ -422,7 +422,7 @@ class CaseEmailService
                     [
                         'case'      => $caseId,
                         'direction' => 'outbound',
-                        'from'      => $this->config->getAppValue(Application::APP_ID, 'email_from_address', ''),
+                        'from'      => $this->appConfig->getValueString(Application::APP_ID, 'email_from_address', ''),
                         'to'        => $to,
                         'subject'   => $subject,
                         'body'      => $body,
