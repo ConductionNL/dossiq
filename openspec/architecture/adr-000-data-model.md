@@ -1,5 +1,17 @@
 # Data Model — Procest
 
+> **Note:** despite the `adr-000-` filename, this is **not** an ADR — it's
+> the per-app entity catalogue. The OR-contract paragraphs below are a
+> reminder of the platform's authoritative ADRs (hydra
+> [ADR-001 Data layer](../../../hydra/openspec/architecture/adr-001-data-layer.md)
+> and
+> [ADR-022 Apps consume OR abstractions](../../../hydra/openspec/architecture/adr-022-apps-consume-or-abstractions.md)),
+> not duplicates or override decisions. Any architecture decision
+> specific to procest belongs in a properly-numbered file (`adr-001-…`,
+> `adr-002-…`, …) with a Status / Date / Context / Decision /
+> Consequences shape. Filename rename to `data-model.md` (no `adr-`
+> prefix) is queued — see procest's adoption change.
+
 **App:** Procest — Case management, VTH, forms
 **Platform:** OpenRegister (register/schema/object pattern)
 **Entities:** 39
