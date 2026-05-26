@@ -74,9 +74,11 @@ export default {
 	},
 	emits: ['view-all', 'retry'],
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
 		typeIcon(type) {
 			return TYPE_ICONS[type] || '&#8226;'
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
 		formatTime(date) {
 			return formatRelativeTime(date)
 		},

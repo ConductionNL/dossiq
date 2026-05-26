@@ -14,6 +14,7 @@
 				<NcSelect
 					v-model="form.targetOrganization"
 					:options="partners"
+					:aria-label-combobox="t('procest', 'Target organization')"
 					label="name"
 					track-by="id"
 					:placeholder="t('procest', 'Select organization...')" />
@@ -92,6 +93,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async submitTransfer() {
 			this.saving = true
 			try {

@@ -9,13 +9,18 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md#task-2
+ * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md#task-3
+ * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md#task-4
+ * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md#task-5
  */
 
 declare(strict_types=1);
@@ -51,6 +56,7 @@ class MilestoneService
      *
      * @throws \RuntimeException If OpenRegister unavailable
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getMilestones(string $caseTypeId): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -88,6 +94,7 @@ class MilestoneService
      *
      * @return array<string, mixed> Progress data with milestones, reached count, total, percentage
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getCaseProgress(string $caseId, string $caseTypeId): array
     {
         $definitions = $this->getMilestones(caseTypeId: $caseTypeId);
@@ -160,6 +167,7 @@ class MilestoneService
      *
      * @throws \RuntimeException If OpenRegister unavailable
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function markMilestone(
         string $caseId,
         string $milestoneDefinitionId,
@@ -212,6 +220,7 @@ class MilestoneService
      *
      * @throws \RuntimeException If OpenRegister unavailable
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function reverseMilestone(
         string $caseId,
         string $milestoneDefinitionId,
@@ -263,6 +272,7 @@ class MilestoneService
      *
      * @return array<string, mixed> Duration analytics per milestone pair
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getDurationAnalytics(string $caseTypeId): array
     {
         // Placeholder: in production, this would aggregate milestone records

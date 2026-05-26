@@ -40,6 +40,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service\Bezwaar;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\StatusTransitionService;
 use OCA\Procest\Service\Transitions\GuardFailedException;
@@ -123,6 +125,7 @@ class AdvisoryCommitteeService
      *
      * @throws RuntimeException When OpenRegister unavailable or refs invalid
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function assignToCommittee(
         string $bezwaarId,
         string $commissieId,
@@ -164,8 +167,8 @@ class AdvisoryCommitteeService
             );
         }
 
-        $now      = (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM);
-        $deadline = (new \DateTimeImmutable())
+        $now      = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+        $deadline = (new DateTimeImmutable())
             ->modify('+'.self::DEFAULT_DEADLINE_DAYS.' days')
             ->format('Y-m-d');
 
@@ -219,6 +222,7 @@ class AdvisoryCommitteeService
      * @throws RuntimeException     When the transition is forbidden
      * @throws GuardFailedException When the independence check fails
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function transitionAdviceStatus(
         string $requestId,
         string $newStatus,
@@ -326,8 +330,8 @@ class AdvisoryCommitteeService
         $update['status'] = $newStatus;
 
         if ($newStatus === 'advice-issued' || $newStatus === 'niet-ontvankelijk') {
-            $update['adviceIssuedAt'] = (new \DateTimeImmutable())
-                ->format(\DateTimeInterface::ATOM);
+            $update['adviceIssuedAt'] = (new DateTimeImmutable())
+                ->format(DateTimeInterface::ATOM);
             $auditEvent           = 'advice-signed-by-chair';
             $auditPayload         = [
                 'chair'             => $userId,
@@ -368,6 +372,7 @@ class AdvisoryCommitteeService
      *                                    null when no default committee
      *                                    is configured.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function autoAssignDefaultCommittee(string $bezwaarId): ?array
     {
         $defaultId = $this->settingsService->getConfigValue(
@@ -406,6 +411,7 @@ class AdvisoryCommitteeService
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recordCouncilDeviation(
         string $requestId,
         string $besluitId,
@@ -590,8 +596,8 @@ class AdvisoryCommitteeService
         $entry = [
             'event'   => $event,
             'actor'   => $this->resolveUserId(),
-            'at'      => (new \DateTimeImmutable())
-                ->format(\DateTimeInterface::ATOM),
+            'at'      => (new DateTimeImmutable())
+                ->format(DateTimeInterface::ATOM),
             'payload' => $payload,
         ];
 

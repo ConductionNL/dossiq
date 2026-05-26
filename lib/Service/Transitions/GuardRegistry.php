@@ -76,6 +76,7 @@ class GuardRegistry
      *
      * @return void
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function registerEvaluator(string $type, GuardEvaluatorInterface $evaluator): void
     {
         $this->evaluators[$type] = $evaluator;
@@ -90,6 +91,7 @@ class GuardRegistry
      *
      * @return array<int, array{type: string, passed: bool, failureMessage: ?string, details: array<string, mixed>}>
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function evaluateAll(array $guards, array $case, string $userId): array
     {
         $results = [];
@@ -133,6 +135,7 @@ class GuardRegistry
      *
      * @return bool
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function allPassed(array $results): bool
     {
         foreach ($results as $result) {

@@ -18,6 +18,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -65,6 +67,7 @@ class CaseTransferService
      *
      * @return array The created transfer request data
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function initiateTransfer(
         string $caseId,
         string $sourceOrganization,
@@ -114,6 +117,7 @@ class CaseTransferService
      *
      * @return array The updated transfer data
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function acceptTransfer(string $transferId): array
     {
         $objectService = $this->getObjectService();
@@ -163,6 +167,7 @@ class CaseTransferService
      *
      * @return array The updated transfer data
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rejectTransfer(string $transferId, string $rejectionReason): array
     {
         $objectService = $this->getObjectService();

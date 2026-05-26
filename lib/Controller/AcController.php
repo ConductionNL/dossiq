@@ -44,6 +44,8 @@ use OCP\IRequest;
  * - ac-002: heeftAlleAutorisaties consistency with autorisaties array
  * - ac-003: Scope-based field requirements per component
  *
+ * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+ *
  * @psalm-suppress UnusedClass
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
@@ -75,6 +77,9 @@ class AcController extends Controller
      * Supports both 'clientId' and 'clientIds' query parameters.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
      *
      * @NoAdminRequired
      * @NoCSRFRequired
@@ -159,6 +164,9 @@ class AcController extends Controller
      *
      * @return JSONResponse
      *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     *
      * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
@@ -213,6 +221,9 @@ class AcController extends Controller
      *
      * @return JSONResponse
      *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     *
      * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
@@ -265,6 +276,9 @@ class AcController extends Controller
      * @param string $uuid The applicatie UUID.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
      *
      * @NoAdminRequired
      * @NoCSRFRequired
@@ -326,6 +340,9 @@ class AcController extends Controller
      *
      * @return JSONResponse
      *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     *
      * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
@@ -342,6 +359,9 @@ class AcController extends Controller
      * @param string $uuid The applicatie UUID.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
      *
      * @NoAdminRequired
      * @NoCSRFRequired
@@ -390,6 +410,8 @@ class AcController extends Controller
      * @param string $uuid The consumer UUID.
      *
      * @return object|null The consumer entity, or null if not found.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
      */
     private function findConsumerByUuid(string $uuid): ?object
     {
@@ -411,6 +433,10 @@ class AcController extends Controller
      * @param string|null $excludeUuid UUID to exclude from uniqueness check (for updates).
      *
      * @return JSONResponse|null Validation error response or null if valid.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-2
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-3
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-4
      */
     private function validateApplicatieBody(array $body, ?string $excludeUuid=null): ?JSONResponse
     {
@@ -442,6 +468,8 @@ class AcController extends Controller
      * @param string|null $excludeUuid UUID to exclude from check (for updates).
      *
      * @return JSONResponse|null Error response or null if valid.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-2
      */
     private function validateClientIdUniqueness(array $body, ?string $excludeUuid=null): ?JSONResponse
     {
@@ -493,6 +521,8 @@ class AcController extends Controller
      * @param array $body The request body.
      *
      * @return JSONResponse|null Error response or null if valid.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-3
      */
     private function validateAutorisatieConsistency(array $body): ?JSONResponse
     {
@@ -556,6 +586,8 @@ class AcController extends Controller
      * @param array $body The request body.
      *
      * @return JSONResponse|null Error response or null if valid.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-4
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
@@ -653,6 +685,8 @@ class AcController extends Controller
      * @param string $keyword The keyword to search for (e.g. 'zaken', 'documenten').
      *
      * @return bool True if any scope contains the keyword.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-4
      */
     private function scopesContain(array $scopes, string $keyword): bool
     {
@@ -671,6 +705,8 @@ class AcController extends Controller
      * @param object $consumer The consumer entity.
      *
      * @return array List of all clientIds.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-2
      */
     private function getConsumerClientIds(object $consumer): array
     {
@@ -699,6 +735,8 @@ class AcController extends Controller
      * @param string $baseUrl  The base URL for building resource URLs.
      *
      * @return array The ZGW applicatie array.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
      */
     private function consumerToApplicatie(object $consumer, string $baseUrl): array
     {
@@ -744,6 +782,8 @@ class AcController extends Controller
      * @param array $body The request body.
      *
      * @return array The consumer data array.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
      */
     private function applicatieToConsumer(array $body): array
     {

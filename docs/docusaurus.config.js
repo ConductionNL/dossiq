@@ -27,18 +27,12 @@ const config = createConfig({
   organizationName: 'ConductionNL',
   projectName: 'procest',
 
-  /* English-only until the docs actually ship translated markdown.
-     Per ADR-030: a `locales` array carrying `nl` without a populated
-     `docs/i18n/nl/docusaurus-plugin-content-docs/current/` directory
-     of translated markdown triggers SSR rendering errors ("Cannot read
-     properties of undefined (reading 'id')") on tutorial pages when the
-     docs source moves faster than the locale's `current.json`. Trim to
-     `['en']`; re-add `nl` once the translation backfill lands. */
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['en', 'nl'],
     localeConfigs: {
       en: { label: 'English' },
+      nl: { label: 'Nederlands' },
     },
   },
 
@@ -71,6 +65,17 @@ const config = createConfig({
         },
       },
     ],
+    [
+      'redocusaurus',
+      {
+        specs: [
+          {
+            spec: 'static/oas/procest.json',
+            route: '/api/',
+          },
+        ],
+      },
+    ],
   ],
 
   themes: [BRAND_THEME, '@docusaurus/theme-mermaid'],
@@ -86,6 +91,11 @@ const config = createConfig({
         sidebarId: 'tutorialSidebar',
         position: 'left',
         label: 'Documentation',
+      },
+      {
+        to: '/api/',
+        label: 'API Documentation',
+        position: 'left',
       },
       {
         href: 'https://github.com/ConductionNL/procest',
@@ -115,6 +125,7 @@ const config = createConfig({
   /* themeConfig is shallow-merged into the preset's defaults
      (colorMode + navbar + footer). prism + mermaid land alongside. */
   themeConfig: {
+    image: 'img/og-procest.png',
     prism: {
       theme: require('prism-react-renderer/themes/github'),
       darkTheme: require('prism-react-renderer/themes/dracula'),

@@ -15,6 +15,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -54,6 +56,7 @@ class QmaticBackend implements AppointmentBackendInterface
      *
      * @return array<int, array<string, mixed>> List of available timeslots.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getTimeslots(string $productId, string $locationId, string $date): array
     {
         try {
@@ -87,6 +90,7 @@ class QmaticBackend implements AppointmentBackendInterface
      *
      * @return array<string, mixed> Booking result from Qmatic, or error payload.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function bookAppointment(array $data): array
     {
         try {
@@ -113,6 +117,7 @@ class QmaticBackend implements AppointmentBackendInterface
      *
      * @return bool True on success, false on API error.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function cancelAppointment(string $externalId): bool
     {
         try {
@@ -136,6 +141,7 @@ class QmaticBackend implements AppointmentBackendInterface
      *
      * @return array<string, mixed> The new booking result.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rescheduleAppointment(string $externalId, string $newDateTime): array
     {
         $this->cancelAppointment(externalId: $externalId);

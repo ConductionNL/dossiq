@@ -15,6 +15,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -47,6 +49,7 @@ interface AppointmentBackendInterface
      *
      * @return array Booking result with externalId
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function bookAppointment(array $data): array;
 
     /**
@@ -56,6 +59,7 @@ interface AppointmentBackendInterface
      *
      * @return bool True if cancellation succeeded
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function cancelAppointment(string $externalId): bool;
 
     /**
@@ -66,5 +70,6 @@ interface AppointmentBackendInterface
      *
      * @return array Updated booking result
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rescheduleAppointment(string $externalId, string $newDateTime): array;
 }//end interface

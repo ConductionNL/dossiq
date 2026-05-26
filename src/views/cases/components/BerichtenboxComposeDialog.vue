@@ -47,6 +47,7 @@
 				<NcSelect
 					v-model="form.berichtTypeCode"
 					:options="typeCodes"
+					:aria-label-combobox="t('procest', 'Bericht type')"
 					label="label"
 					track-by="code" />
 			</div>
@@ -96,6 +97,7 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
 		validate() {
 			this.errors = {}
 			if (!this.form.bsn) {
@@ -109,6 +111,7 @@ export default {
 			}
 			return Object.keys(this.errors).length === 0
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
 		async send() {
 			if (!this.validate()) return
 			this.sending = true

@@ -9,7 +9,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -19,6 +19,11 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-leges-fees/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-leges-fees/tasks.md#task-3
+ * @spec openspec/changes/retrofit-2026-05-24-leges-fees/tasks.md#task-4
+ * @spec openspec/changes/retrofit-2026-05-24-leges-fees/tasks.md#task-5
  */
 
 declare(strict_types=1);
@@ -70,6 +75,7 @@ class LegesController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function calculate(): JSONResponse
     {
         try {
@@ -112,6 +118,7 @@ class LegesController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recalculate(): JSONResponse
     {
         try {
@@ -159,6 +166,7 @@ class LegesController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function verrekening(): JSONResponse
     {
         try {
@@ -184,6 +192,7 @@ class LegesController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function teruggaaf(): JSONResponse
     {
         try {
@@ -214,6 +223,7 @@ class LegesController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function export(): DataDownloadResponse|JSONResponse
     {
         try {

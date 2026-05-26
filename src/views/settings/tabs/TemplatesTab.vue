@@ -84,6 +84,7 @@ export default {
 		await this.loadTemplates()
 	},
 	methods: {
+		/** @spec openspec/specs/template-library/spec.md */
 		async loadTemplates() {
 			this.loading = true
 			this.error = ''
@@ -98,6 +99,7 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/specs/template-library/spec.md */
 		async activate(templateId) {
 			this.activating = templateId
 			this.activationResult = null

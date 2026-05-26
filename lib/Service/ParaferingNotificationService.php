@@ -15,6 +15,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-parafering-actions-impl/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -54,6 +56,7 @@ class ParaferingNotificationService
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function notifyStepActivated(
         string $actorUserId,
         string $onderwerp,
@@ -98,6 +101,7 @@ class ParaferingNotificationService
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function notifyVoorstelReturned(
         string $stellerUserId,
         string $onderwerp,
@@ -143,6 +147,7 @@ class ParaferingNotificationService
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function notifyParaferingReminder(
         string $actorUserId,
         string $onderwerp,

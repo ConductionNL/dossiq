@@ -64,7 +64,7 @@
 				<label>{{ t('procest', 'Reassign handler to:') }}</label>
 				<NcSelect
 					v-model="reassignUser"
-					:options="userOptions"
+					:options="userOptions" :aria-label-combobox="t('procest', 'Reassign handler to')"
 					label="label"
 					track-by="id"
 					:placeholder="t('procest', 'Select user...')"
@@ -126,9 +126,11 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		roleTypeMap() {
 			const map = {}
 			for (const rt of this.roleTypes) {
@@ -136,6 +138,7 @@ export default {
 			}
 			return map
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		groupedRoles() {
 			const groups = {}
 			for (const role of this.roles) {
@@ -153,6 +156,7 @@ export default {
 		await this.fetchData()
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async fetchData() {
 			this.loading = true
 			try {
@@ -175,6 +179,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async fetchUsers() {
 			try {
 				const response = await fetch('/ocs/v2.php/cloud/users/details?format=json&limit=100', {
@@ -196,6 +201,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async resolveDisplayNames() {
 			for (const role of this.roles) {
 				const uid = role.participant
@@ -219,6 +225,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		getInitials(name) {
 			if (!name) return '?'
 			const parts = name.split(/[\s.]+/)
@@ -228,21 +235,25 @@ export default {
 			return name.slice(0, 2).toUpperCase()
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		isHandlerRole(role) {
 			const rt = this.roleTypeMap[role.roleType]
 			return rt?.genericRole === 'handler'
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		onAssignHandler() {
 			this.preSelectHandler = true
 			this.showAddDialog = true
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		closeAddDialog() {
 			this.showAddDialog = false
 			this.preSelectHandler = false
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async onRoleCreated(newRole) {
 			this.closeAddDialog()
 			await this.fetchData()
@@ -251,24 +262,28 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async removeRole(role) {
 			if (!confirm(t('procest', 'Remove this participant?'))) return
 			await this.objectStore.deleteObject('role', role.id)
 			await this.fetchData()
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		startReassign(role) {
 			this.reassigningHandler = true
 			this.reassignRole = role
 			this.reassignUser = null
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		cancelReassign() {
 			this.reassigningHandler = false
 			this.reassignRole = null
 			this.reassignUser = null
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async onReassignSelected(user) {
 			if (!user || !this.reassignRole) return
 

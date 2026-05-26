@@ -10,7 +10,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -20,6 +20,11 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md#task-2
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md#task-3
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md#task-4
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md#task-5
  */
 
 declare(strict_types=1);
@@ -76,6 +81,7 @@ class AiService
      *
      * @return bool
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function isEnabled(): bool
     {
         return $this->appConfig->getValueString(
@@ -92,6 +98,7 @@ class AiService
      *
      * @return bool
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function isFeatureEnabled(string $feature): bool
     {
         if ($this->isEnabled() === false) {
@@ -117,6 +124,7 @@ class AiService
      *
      * @return array Classification result with suggestion and confidence
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function classifyDocument(string $caseId, string $documentId, string $userId): array
     {
         if ($this->isFeatureEnabled(feature: 'classification') === false) {
@@ -177,6 +185,7 @@ class AiService
      *
      * @return array Extraction result with field suggestions and confidence
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function extractData(string $caseId, ?string $documentId, string $userId): array
     {
         if ($this->isFeatureEnabled(feature: 'extraction') === false) {
@@ -237,6 +246,7 @@ class AiService
      *
      * @return array Answer with source citations
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function askQuestion(string $caseId, string $question, string $userId): array
     {
         if ($this->isFeatureEnabled(feature: 'qa') === false) {
@@ -297,6 +307,7 @@ class AiService
      *
      * @return array Summary text
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function summarize(string $caseId, string $type, ?string $documentId, string $userId): array
     {
         if ($this->isFeatureEnabled(feature: 'summary') === false) {
@@ -355,6 +366,7 @@ class AiService
      *
      * @return array Routing suggestion with recommended case worker
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function suggestRouting(string $caseId, string $userId): array
     {
         if ($this->isFeatureEnabled(feature: 'routing') === false) {
@@ -412,6 +424,7 @@ class AiService
      *
      * @return array Next-step suggestions
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function suggestNextStep(string $caseId, string $userId): array
     {
         if ($this->isFeatureEnabled(feature: 'decision_support') === false) {
@@ -475,6 +488,7 @@ class AiService
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) — audit entries need full context
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recordUserAction(
         string $caseId,
         string $type,
@@ -507,6 +521,7 @@ class AiService
      *
      * @return array Health check result
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function testHealth(): array
     {
         $startTime = microtime(true);
@@ -538,6 +553,7 @@ class AiService
      *
      * @return array AI settings (without sensitive data like API keys)
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getAiSettings(): array
     {
         return [

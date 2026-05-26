@@ -16,6 +16,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -52,6 +54,7 @@ class MockAdapter implements BerichtenboxAdapterInterface
      *
      * @return array<string, string> Mock send result with a generated messageId.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function sendMessage(
         string $bsn,
         string $subject,
@@ -86,6 +89,7 @@ class MockAdapter implements BerichtenboxAdapterInterface
      *
      * @return array<string, mixed> Mock read status (always read 1h ago).
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getReadStatus(string $messageId): array
     {
         // Simulate: messages are "read" after they've existed for a while.

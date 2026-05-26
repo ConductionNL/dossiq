@@ -24,6 +24,8 @@
  * @link https://procest.nl
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -78,6 +80,7 @@ class ZgwBusinessRulesService
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)    — ZGW scope flag from middleware
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validate(
         string $zgwApi,
         string $resource,

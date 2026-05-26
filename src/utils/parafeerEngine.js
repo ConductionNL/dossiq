@@ -11,6 +11,7 @@
  * @param {object} voorstel The voorstel object
  * @return {Array} Ordered array of step objects
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export function getRouteSteps(voorstel) {
 	if (!voorstel?.routeSnapshot) return []
 	try {
@@ -28,6 +29,7 @@ export function getRouteSteps(voorstel) {
  * @param {object} voorstel The voorstel object
  * @return {object|null} Current step or null
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export function getCurrentStep(voorstel) {
 	const steps = getRouteSteps(voorstel)
 	if (!steps.length || !voorstel.currentStep) return null
@@ -41,6 +43,7 @@ export function getCurrentStep(voorstel) {
  * @param {string} userId   The Nextcloud user UID
  * @return {boolean}
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export function isActiveActor(voorstel, userId) {
 	const step = getCurrentStep(voorstel)
 	if (!step) return false
@@ -53,6 +56,7 @@ export function isActiveActor(voorstel, userId) {
  * @param {object} voorstel The voorstel object
  * @return {number|null} Next step number, or null if this was the last step
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export function getNextStep(voorstel) {
 	const steps = getRouteSteps(voorstel)
 	const current = voorstel.currentStep || 0
@@ -66,6 +70,7 @@ export function getNextStep(voorstel) {
  * @param {object} voorstel The voorstel object
  * @return {string} New status ('in_parafering', 'ter_accordering', or 'geaccordeerd')
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export function getStatusAfterAdvance(voorstel) {
 	const steps = getRouteSteps(voorstel)
 	const nextStepNum = getNextStep(voorstel)
@@ -89,6 +94,7 @@ export function getStatusAfterAdvance(voorstel) {
  * @param {object} route The parafeerroute object
  * @return {Array} Snapshot of steps
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export function createRouteSnapshot(route) {
 	if (!route?.steps) return []
 	const steps = typeof route.steps === 'string' ? JSON.parse(route.steps) : route.steps
@@ -110,6 +116,7 @@ export function createRouteSnapshot(route) {
  * @param {object} newStep   The new step to insert (without order)
  * @return {Array} Updated steps with renumbered orders
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export function insertAdHocStep(steps, afterOrder, newStep) {
 	const result = []
 	let orderCounter = 1
@@ -137,6 +144,7 @@ export function insertAdHocStep(steps, afterOrder, newStep) {
  * @param {number} stepOrder The step order to skip
  * @return {Array} Updated steps with the step marked as skipped
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export function markStepSkipped(steps, stepOrder) {
 	return steps.map(step => {
 		if (step.order === stepOrder) {
@@ -154,6 +162,7 @@ export function markStepSkipped(steps, stepOrder) {
  * @param {string} voorstelType The voorstel type (dt_advies, collegeadvies, raadsvoorstel)
  * @return {object|null} The matching default route, or null
  */
+/** @spec openspec/specs/parafering-actions/spec.md */
 export function findDefaultRoute(routes, caseTypeId, voorstelType) {
 	return routes.find(r =>
 		r.isDefault === true

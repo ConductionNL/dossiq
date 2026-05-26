@@ -34,10 +34,12 @@ export default {
 		},
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		status() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.getDeadlineStatus(this.deadline, this.isSuspended)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		indicatorClass() {
 			if (this.status.isSuspended) return 'deadline-indicator--suspended'
 			if (this.status.isOverdue) return 'deadline-indicator--overdue'

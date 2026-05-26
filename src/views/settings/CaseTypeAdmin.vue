@@ -29,18 +29,22 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		openDetail(id) {
 			this.currentId = id
 			this.currentView = 'detail'
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		openCreate() {
 			this.currentId = null
 			this.currentView = 'detail'
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		showList() {
 			this.currentView = 'list'
 			this.currentId = null
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		onSaved(id) {
 			this.currentId = id
 		},

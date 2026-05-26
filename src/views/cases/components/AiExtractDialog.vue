@@ -94,17 +94,20 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		allSelected() {
 			return this.fields.length > 0 && this.selectedFields.length === this.fields.length
 		},
 	},
 	watch: {
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		show(val) {
 			if (val) this.extract()
 		},
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		async extract() {
 			this.loading = true
 			this.error = null
@@ -121,9 +124,11 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		toggleAll(checked) {
 			this.selectedFields = checked ? this.fields.map((f) => f.name) : []
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		toggleField(name) {
 			const idx = this.selectedFields.indexOf(name)
 			if (idx >= 0) {
@@ -132,6 +137,7 @@ export default {
 				this.selectedFields.push(name)
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		applySelected() {
 			const applied = {}
 			for (const name of this.selectedFields) {

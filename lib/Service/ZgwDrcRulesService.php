@@ -56,6 +56,8 @@
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.TooManyMethods)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-4
  */
 
 declare(strict_types=1);
@@ -85,6 +87,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
      * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rulesEnkelvoudiginformatieobjectenCreate(array $body): array
     {
         // Drc-001: Validate informatieobjecttype is published (not concept).
@@ -154,6 +157,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rulesEnkelvoudiginformatieobjectenUpdate(
         array $body,
         ?array $existingObject=null
@@ -179,6 +183,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rulesEnkelvoudiginformatieobjectenPatch(
         array $body,
         ?array $existingObject=null
@@ -204,6 +209,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rulesEnkelvoudiginformatieobjectenDestroy(
         array $body,
         ?array $existingObject=null
@@ -261,6 +267,7 @@ class ZgwDrcRulesService extends ZgwRulesBase
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
      * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rulesObjectinformatieobjectenCreate(array $body): array
     {
         // Drc-002: Validate informatieobject URL.

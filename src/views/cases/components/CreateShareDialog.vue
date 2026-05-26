@@ -34,6 +34,7 @@
 					<NcSelect
 						v-model="form.permissionLevel"
 						:options="permissionOptions"
+						:aria-label-combobox="t('procest', 'Permission level')"
 						label="label"
 						track-by="value" />
 				</div>
@@ -63,6 +64,7 @@
 					<NcSelect
 						v-model="form.partnerId"
 						:options="partners"
+						:aria-label-combobox="t('procest', 'Partner organization')"
 						label="name"
 						track-by="id"
 						:placeholder="t('procest', 'Select partner...')" />
@@ -73,6 +75,7 @@
 					<NcSelect
 						v-model="form.permissionLevel"
 						:options="permissionOptions"
+						:aria-label-combobox="t('procest', 'Permission level')"
 						label="label"
 						track-by="value" />
 				</div>
@@ -151,6 +154,7 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async createShare() {
 			this.saving = true
 			try {
@@ -177,6 +181,7 @@ export default {
 				this.saving = false
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async copyLink() {
 			if (this.generatedLink) {
 				await navigator.clipboard.writeText(this.generatedLink)

@@ -9,7 +9,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -19,6 +19,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-parafering-actions-impl/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -66,6 +68,7 @@ class ParaferingController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createVoorstel(): JSONResponse
     {
         try {
@@ -101,6 +104,7 @@ class ParaferingController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function startParafering(string $id): JSONResponse
     {
         try {
@@ -141,6 +145,7 @@ class ParaferingController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function paraferen(string $id): JSONResponse
     {
         return $this->handleAction(id: $id, action: ParaferingService::ACTION_PARAFEREN);
@@ -155,6 +160,7 @@ class ParaferingController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function terugsturen(string $id): JSONResponse
     {
         return $this->handleAction(id: $id, action: ParaferingService::ACTION_TERUGSTUREN);
@@ -169,6 +175,7 @@ class ParaferingController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function adviseren(string $id): JSONResponse
     {
         return $this->handleAction(id: $id, action: ParaferingService::ACTION_ADVISEREN);
@@ -183,6 +190,7 @@ class ParaferingController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function auditTrail(string $id): JSONResponse
     {
         try {

@@ -12,7 +12,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -113,17 +113,15 @@ class LhsController extends Controller
         }
 
         $versionParam = $this->request->getParam('lhsVersion');
-        if ($versionParam === null) {
-            $version = null;
-        } else {
+        $version      = null;
+        if ($versionParam !== null) {
             $version = (int) $versionParam;
         }
 
-        $inspection = $this->request->getParam('inspection');
+        $inspection   = $this->request->getParam('inspection');
+        $inspectionId = null;
         if (is_string($inspection) === true && $inspection !== '') {
             $inspectionId = $inspection;
-        } else {
-            $inspectionId = null;
         }
 
         try {
@@ -192,10 +190,9 @@ class LhsController extends Controller
 
         $declaredRole = (string) $this->request->getParam('userRole', '');
         $isManager    = $this->groupManager->isAdmin($user->getUID());
+        $userRole     = 'inspector';
         if ($declaredRole === 'manager' && $isManager === true) {
             $userRole = 'manager';
-        } else {
-            $userRole = 'inspector';
         }
 
         try {

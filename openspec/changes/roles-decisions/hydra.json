@@ -1,0 +1,8 @@
+{
+  "spec_slug": "roles-decisions",
+  "title": "Roles Decisions",
+  "app": "procest",
+  "repo": "https://github.com/ConductionNL/procest",
+  "depends_on": [],
+  "issue": null
+}

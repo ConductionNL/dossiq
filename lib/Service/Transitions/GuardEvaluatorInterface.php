@@ -42,5 +42,6 @@ interface GuardEvaluatorInterface
      *
      * @return GuardResult
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function evaluate(array $guardConfig, array $case, string $userId): GuardResult;
 }//end interface

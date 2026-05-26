@@ -10,7 +10,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -20,6 +20,11 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md#task-2
+ * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md#task-3
+ * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md#task-4
+ * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md#task-5
  */
 
 declare(strict_types=1);
@@ -76,6 +81,7 @@ class ConsultationService
      *
      * @throws \RuntimeException If OpenRegister unavailable
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createConsultation(array $data): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -124,6 +130,7 @@ class ConsultationService
      *
      * @return array<int, array<string, mixed>> List of consultations
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getConsultationsForCase(string $caseId): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -163,6 +170,7 @@ class ConsultationService
      *
      * @throws \RuntimeException If invalid status or OpenRegister unavailable
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function updateStatus(string $consultationId, string $newStatus): array
     {
         if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
@@ -205,6 +213,7 @@ class ConsultationService
      *
      * @throws \RuntimeException If invalid response or OpenRegister unavailable
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function submitResponse(string $consultationId, array $response): array
     {
         $advies = $response['advies'] ?? '';
@@ -253,6 +262,7 @@ class ConsultationService
      *
      * @return array<int, array<string, mixed>> List of overdue consultations
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getOverdueConsultations(): array
     {
         $objectService = $this->settingsService->getObjectService();

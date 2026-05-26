@@ -11,7 +11,7 @@
  * @category Service
  * @package  OCA\Procest\Service\Routing
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -82,6 +82,7 @@ class StrategyRegistry
      *
      * @return void
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function register(RoutingStrategyInterface $strategy): void
     {
         $this->strategies[$strategy->name()] = $strategy;
@@ -92,6 +93,7 @@ class StrategyRegistry
      *
      * @return array<int, string>
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function list(): array
     {
         return array_keys($this->strategies);
@@ -104,6 +106,7 @@ class StrategyRegistry
      *
      * @return bool
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function has(string $name): bool
     {
         return isset($this->strategies[$name]);
@@ -118,6 +121,7 @@ class StrategyRegistry
      *
      * @throws RoutingStrategyMissingException When the strategy is not registered
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function get(string $name): RoutingStrategyInterface
     {
         if (isset($this->strategies[$name]) === false) {

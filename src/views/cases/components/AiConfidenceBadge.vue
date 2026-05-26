@@ -25,14 +25,17 @@ export default {
 		},
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		level() {
 			if (this.confidence > 0.85) return 'high'
 			if (this.confidence >= 0.60) return 'medium'
 			return 'low'
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		label() {
 			return `${Math.round(this.confidence * 100)}%`
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		ariaLabel() {
 			const levelLabel = this.level === 'high'
 				? t('procest', 'high')

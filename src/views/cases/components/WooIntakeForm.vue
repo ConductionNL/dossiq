@@ -36,6 +36,7 @@
 				<NcSelect
 					:value="form.verzoekerType"
 					:options="requesterTypes"
+					:aria-label-combobox="t('procest', 'Requester type')"
 					:disabled="isReadOnly"
 					@input="v => update('verzoekerType', v)" />
 			</div>
@@ -44,6 +45,7 @@
 				<NcSelect
 					:value="form.gewensteVorm"
 					:options="formatOptions"
+					:aria-label-combobox="t('procest', 'Desired format')"
 					:disabled="isReadOnly"
 					@input="v => update('gewensteVorm', v)" />
 			</div>
@@ -154,6 +156,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/woo-case-type/tasks.md */
 		calculatedDeadline() {
 			if (!this.form.ontvangstdatum) {
 				return '---'
@@ -172,6 +175,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/woo-case-type/tasks.md */
 		update(field, value) {
 			this.$emit('update', { field, value })
 		},

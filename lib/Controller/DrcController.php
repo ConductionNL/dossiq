@@ -20,6 +20,9 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -103,6 +106,7 @@ class DrcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(string $resource): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -203,6 +207,7 @@ class DrcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function create(string $resource): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -383,6 +388,7 @@ class DrcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function show(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -418,6 +424,7 @@ class DrcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function update(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -447,6 +454,7 @@ class DrcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function patch(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -476,6 +484,7 @@ class DrcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function destroy(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -576,6 +585,7 @@ class DrcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function download(string $uuid): DataDownloadResponse|JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -651,6 +661,7 @@ class DrcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function lock(string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -782,6 +793,7 @@ class DrcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function unlock(string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -938,6 +950,7 @@ class DrcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function audittrailIndex(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -981,6 +994,7 @@ class DrcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -1387,6 +1401,7 @@ class DrcController extends Controller
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function uploadChunk(string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);

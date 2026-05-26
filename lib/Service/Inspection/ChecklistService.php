@@ -20,7 +20,7 @@
  * @category Service
  * @package  OCA\Procest\Service\Inspection
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -125,6 +125,7 @@ class ChecklistService
      * @throws RuntimeException When configuration is missing, the template
      *                          cannot be loaded, or persistence fails.
      */
+    /** @spec openspec/specs/inspection-checklists/spec.md */
     public function createRun(string $templateId, string $caseId, ?string $inspectionId=null): array
     {
         [$objectService, $register] = $this->bootstrap();
@@ -188,6 +189,7 @@ class ChecklistService
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — branches cover validation + follow-up dispatch
      */
+    /** @spec openspec/specs/inspection-checklists/spec.md */
     public function submitRun(string $runId, array $payload): array
     {
         [$objectService, $register] = $this->bootstrap();
@@ -270,6 +272,7 @@ class ChecklistService
      *
      * @return string conform | niet_conform | deels_conform
      */
+    /** @spec openspec/specs/inspection-checklists/spec.md */
     public function aggregateResult(array $responses, array $snapshot): string
     {
         $itemsByOrder = $this->indexItemsBySnapshot(snapshot: $snapshot);
@@ -315,6 +318,7 @@ class ChecklistService
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — branches cover all response types
      */
+    /** @spec openspec/specs/inspection-checklists/spec.md */
     public function validateResponse(array $item, array $payload): void
     {
         $type = (string) ($item['responseType'] ?? '');
@@ -330,16 +334,14 @@ class ChecklistService
             $range = $item['numericRange'] ?? null;
             if (is_array($range) === true && array_key_exists('numericValue', $payload) === true) {
                 $val = (float) $payload['numericValue'];
+                $min = null;
                 if (array_key_exists('min', $range) === true) {
                     $min = (float) $range['min'];
-                } else {
-                    $min = null;
                 }
 
+                $max = null;
                 if (array_key_exists('max', $range) === true) {
                     $max = (float) $range['max'];
-                } else {
-                    $max = null;
                 }
 
                 if (($min !== null && $val < $min) || ($max !== null && $val > $max)) {
@@ -396,6 +398,7 @@ class ChecklistService
      *
      * @return array<int, array<string, mixed>> Tasks created
      */
+    /** @spec openspec/specs/inspection-checklists/spec.md */
     public function dispatchFollowUps(array $run): array
     {
         $responses = $run['responses'] ?? [];
@@ -475,7 +478,9 @@ class ChecklistService
                         'Procest: follow-up task save failed: '.$e->getMessage(),
                     );
                 }
-            } else {
+            }
+
+            if ($taskSchema === '') {
                 $created[] = $task;
             }
         }//end foreach
@@ -537,6 +542,7 @@ class ChecklistService
      *
      * @throws RuntimeException With message "Checklist run is append-only".
      */
+    /** @spec openspec/specs/inspection-checklists/spec.md */
     public function assertRunMutable(array $run): void
     {
         $status = (string) ($run['status'] ?? '');
@@ -581,16 +587,14 @@ class ChecklistService
             }
 
             $val = (float) $response['numericValue'];
+            $min = null;
             if (array_key_exists('min', $range) === true) {
                 $min = (float) $range['min'];
-            } else {
-                $min = null;
             }
 
+            $max = null;
             if (array_key_exists('max', $range) === true) {
                 $max = (float) $range['max'];
-            } else {
-                $max = null;
             }
 
             if (($min !== null && $val < $min) || ($max !== null && $val > $max)) {

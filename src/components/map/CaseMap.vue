@@ -116,12 +116,14 @@ export default {
 	},
 	watch: {
 		geometries: {
+			/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 			handler() {
 				this.renderGeometries()
 			},
 			deep: true,
 		},
 		overlayLayers: {
+			/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 			handler() {
 				this.updateOverlayLayers()
 			},
@@ -131,6 +133,7 @@ export default {
 	mounted() {
 		this.initMap()
 	},
+	/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 	beforeDestroy() {
 		if (this.map) {
 			this.map.remove()
@@ -138,6 +141,7 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		initMap() {
 			this.map = L.map(this.$refs.mapElement, {
 				center: this.center,
@@ -203,6 +207,7 @@ export default {
 			})
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		renderGeometries() {
 			if (!this.map) return
 
@@ -277,6 +282,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		createClusterIcon(cluster) {
 			const count = cluster.getChildCount()
 			let className = 'case-map-cluster case-map-cluster--green'
@@ -294,6 +300,7 @@ export default {
 			})
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		updateOverlayLayers() {
 			if (!this.map) return
 
@@ -339,12 +346,14 @@ export default {
 		},
 
 		/** Force a map size recalculation. */
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		invalidateSize() {
 			if (this.map) {
 				this.map.invalidateSize()
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		onKeydown(event) {
 			if (!this.map) return
 			const panStep = 100

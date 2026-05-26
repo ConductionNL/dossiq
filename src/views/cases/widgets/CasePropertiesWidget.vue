@@ -50,7 +50,8 @@
 				<NcSelect
 					v-if="!isReadOnly"
 					v-model="form.priority"
-					:options="priorityOptions" />
+					:options="priorityOptions"
+					:aria-label-combobox="t('procest', 'Priority')" />
 				<span v-else class="property-value">{{ caseData.priority || '---' }}</span>
 			</div>
 			<div class="property-cell">
@@ -160,6 +161,7 @@ export default {
 	watch: {
 		caseData: {
 			immediate: true,
+			/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 			handler(data) {
 				if (data && data.title !== undefined) {
 					this.form = {
@@ -174,6 +176,7 @@ export default {
 	},
 	methods: {
 		formatDate,
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		async save() {
 			const validation = validateCaseUpdate(this.form)
 			if (!validation.valid) {

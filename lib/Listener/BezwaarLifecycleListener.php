@@ -28,6 +28,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -83,6 +85,7 @@ class BezwaarLifecycleListener implements IEventListener
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handle(Event $event): void
     {
         if (($event instanceof ObjectCreatedEvent) === false

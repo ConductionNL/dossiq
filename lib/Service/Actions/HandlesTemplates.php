@@ -22,6 +22,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-automatic-actions/tasks.md#task-4
  */
 
 declare(strict_types=1);
@@ -46,6 +48,7 @@ trait HandlesTemplates
      *
      * @return string
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function renderTemplate(string $template, array $case): string
     {
         if ($template === '' || str_contains($template, '{{') === false) {
@@ -94,6 +97,7 @@ trait HandlesTemplates
      *
      * @return string
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function resolveRecipient(string $recipientRef, array $case): string
     {
         if ($recipientRef === '') {

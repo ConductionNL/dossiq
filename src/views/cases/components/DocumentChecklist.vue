@@ -82,23 +82,27 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		presentCount() {
 			return this.documentTypes.filter(dt => this.isDocPresent(dt.id)).length
 		},
 	},
 	watch: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		caseTypeId() {
 			if (this.caseTypeId) {
 				this.loadData()
 			}
 		},
 	},
+	/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 	async mounted() {
 		if (this.caseTypeId) {
 			await this.loadData()
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async loadData() {
 			this.loading = true
 			const objectStore = useObjectStore()
@@ -123,6 +127,7 @@ export default {
 			return this.caseDocuments.some(cd => cd.documentType === docTypeId)
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		getUploadDate(docTypeId) {
 			const doc = this.caseDocuments.find(cd => cd.documentType === docTypeId)
 			if (!doc?.registrationDate) return null
@@ -132,6 +137,7 @@ export default {
 			})
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		getStatusName(statusTypeId) {
 			const st = this.statusTypes.find(s => s.id === statusTypeId)
 			return st?.name || statusTypeId

@@ -10,6 +10,7 @@
 			<NcSelect
 				v-model="selectedTemplate"
 				:options="templates"
+				:aria-label-combobox="t('procest', 'Template')"
 				label="name"
 				track-by="id"
 				:placeholder="t('procest', 'Select template or compose ad-hoc...')"
@@ -46,7 +47,7 @@
 			<div v-if="unresolvedVars.length > 0" class="email-composer__warning">
 				{{ t('procest', 'Unresolved variables:') }}
 				<span v-for="v in unresolvedVars" :key="v" class="email-composer__unresolved">
-					{{ '{' + '{' + v + '}' + '}' }}
+					{{ formatVariable(v) }}
 				</span>
 			</div>
 
@@ -56,7 +57,7 @@
 					<summary>{{ t('procest', 'Available variables') }}</summary>
 					<div class="email-composer__variable-list">
 						<code v-for="v in availableVariables" :key="v" @click="insertVariable(v)">
-							{{ '{' + '{' + v + '}' + '}' }}
+							{{ formatVariable(v) }}
 						</code>
 					</div>
 				</details>
@@ -144,11 +145,13 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		isValid() {
 			return this.form.to.trim() !== ''
 				&& this.form.subject.trim() !== ''
 				&& this.form.body.trim() !== ''
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		unresolvedVars() {
 			const pattern = /\{\{(\w+)\}\}/g
 			const vars = []
@@ -163,24 +166,33 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		formatVariable(varName) {
+			return '{{' + varName + '}}'
+		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		onTemplateSelected(template) {
 			if (!template) return
 			this.form.subject = template.subjectPattern || ''
 			this.form.body = template.body || ''
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		insertVariable(varName) {
 			this.form.body += '{{' + varName + '}}'
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		previewEmail() {
 			this.previewSubject = this.resolveVars(this.form.subject)
 			this.previewBody = this.resolveVars(this.form.body)
 			this.showPreview = true
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		resolveVars(text) {
 			return text.replace(/\{\{(\w+)\}\}/g, (match, key) => {
 				return this.caseData[key] || match
 			})
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		sendEmail() {
 			this.sending = true
 			this.$emit('send', {

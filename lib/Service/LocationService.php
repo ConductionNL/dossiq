@@ -33,6 +33,9 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -42,6 +45,8 @@ namespace OCA\Procest\Service;
 use OCA\Procest\AppInfo\Application;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use Throwable;
 
 /**
  * Service for case-location domain operations.
@@ -101,14 +106,14 @@ class LocationService
      *
      * @return array<int, string> Error codes (empty = valid)
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validate(array $payload): array
     {
         $errors = [];
 
+        $source = '';
         if (isset($payload['source']) === true) {
             $source = (string) $payload['source'];
-        } else {
-            $source = '';
         }
 
         if ($source === '') {
@@ -117,10 +122,9 @@ class LocationService
             $errors[] = 'source.invalid';
         }
 
+        $caseId = '';
         if (isset($payload['case']) === true) {
             $caseId = (string) $payload['case'];
-        } else {
-            $caseId = '';
         }
 
         if ($caseId === '') {
@@ -204,6 +208,7 @@ class LocationService
      * @psalm-suppress MixedAssignment
      * @psalm-suppress MixedArrayAccess
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function reverseGeocode(float $latitude, float $longitude): ?array
     {
         // Sanity check on the coordinate envelope before we burn an HTTP call.
@@ -230,7 +235,7 @@ class LocationService
 
         try {
             $response = $pdok->reverse($latitude, $longitude);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->warning(
                 'Procest: reverseGeocode call failed: '.$e->getMessage(),
                 ['app' => Application::APP_ID]
@@ -247,11 +252,10 @@ class LocationService
             return null;
         }
 
-        $best = $docs[0];
+        $best     = $docs[0];
+        $distance = null;
         if (isset($best['afstand']) === true && is_numeric($best['afstand']) === true) {
             $distance = (float) $best['afstand'];
-        } else {
-            $distance = null;
         }
 
         if ($distance !== null && $distance > (float) self::REVERSE_MAX_DISTANCE_M) {
@@ -268,10 +272,9 @@ class LocationService
             $nummeraanduidingId = (string) $best['id'];
         }
 
+        $formattedAddress = '';
         if (isset($best['weergavenaam']) === true) {
             $formattedAddress = (string) $best['weergavenaam'];
-        } else {
-            $formattedAddress = '';
         }
 
         if ($nummeraanduidingId === '' && $formattedAddress === '') {
@@ -302,7 +305,7 @@ class LocationService
             return $this->container->get(
                 'OCA\Procest\Service\Pdok\PdokLocatieserverService'
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->debug(
                 'Procest: PdokLocatieserverService is not available: '.$e->getMessage(),
                 ['app' => Application::APP_ID]
@@ -355,10 +358,11 @@ class LocationService
      *
      * @throws \RuntimeException When validation fails or OpenRegister is missing
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function attachToCase(string $caseId, array $location): ?array
     {
         if ($caseId === '') {
-            throw new \RuntimeException('caseId is required');
+            throw new RuntimeException('caseId is required');
         }
 
         $payload         = $location;
@@ -366,26 +370,26 @@ class LocationService
 
         $errors = $this->validate(payload: $payload);
         if (count($errors) > 0) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'Location payload failed validation: '.implode(', ', $errors)
             );
         }
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('location_schema');
 
         if ($register === '' || $schema === '') {
-            throw new \RuntimeException('Location schema is not configured');
+            throw new RuntimeException('Location schema is not configured');
         }
 
         try {
             $saved = $objectService->saveObject($register, $schema, $payload);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: failed to attach location to case: '.$e->getMessage(),
                 ['app' => Application::APP_ID, 'caseId' => $caseId]
@@ -419,6 +423,7 @@ class LocationService
      *
      * @return array<int, array<string, mixed>> Location records (possibly empty)
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function listForCase(string $caseId): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -441,7 +446,7 @@ class LocationService
                 [],
                 500,
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: failed to list locations for case: '.$e->getMessage(),
                 ['app' => Application::APP_ID, 'caseId' => $caseId]

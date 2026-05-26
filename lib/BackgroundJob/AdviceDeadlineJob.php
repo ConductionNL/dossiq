@@ -20,12 +20,15 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md#task-3
  */
 
 declare(strict_types=1);
 
 namespace OCA\Procest\BackgroundJob;
 
+use DateTimeImmutable;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\AdviceService;
 use OCA\Procest\Service\SettingsService;
@@ -66,7 +69,10 @@ class AdviceDeadlineJob extends TimedJob
      * @param mixed $argument The job argument
      *
      * @return void
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function run($argument): void
     {
         if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
@@ -78,7 +84,7 @@ class AdviceDeadlineJob extends TimedJob
             $reminderDays = 3;
         }
 
-        $today      = new \DateTimeImmutable('today');
+        $today      = new DateTimeImmutable('today');
         $reminderOn = $today->modify('+'.$reminderDays.' days')->format('Y-m-d');
         $todayStr   = $today->format('Y-m-d');
 

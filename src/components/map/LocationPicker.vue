@@ -97,12 +97,14 @@ export default {
 	mounted() {
 		this.initMap()
 	},
+	/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 	beforeDestroy() {
 		if (this.map) {
 			this.map.remove()
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		initMap() {
 			let center = NL_CENTER
 			let zoom = 7
@@ -142,6 +144,7 @@ export default {
 			this.$nextTick(() => this.map.invalidateSize())
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		setMode(mode) {
 			this.mode = mode
 
@@ -188,6 +191,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		placeMarker(latlng) {
 			if (this.marker) {
 				this.marker.setLatLng(latlng)
@@ -200,6 +204,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		onAddressSelect({ coordinates }) {
 			if (!coordinates) return
 			const latlng = L.latLng(coordinates.lat, coordinates.lng)
@@ -209,6 +214,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		useCurrentLocation() {
 			if (!navigator.geolocation) return
 			navigator.geolocation.getCurrentPosition(
@@ -225,12 +231,14 @@ export default {
 			)
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		save() {
 			if (this.selectedGeometry) {
 				this.$emit('save', this.selectedGeometry)
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		formatArea(sqm) {
 			if (sqm > 10000) {
 				return `${(sqm / 10000).toFixed(2)} ha`

@@ -178,12 +178,14 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
 		isCreate() {
 			return !this.caseTypeId
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		tabs() {
 			return [
 				{ id: 'general', label: t('procest', 'General') },
@@ -195,6 +197,7 @@ export default {
 			]
 		},
 	},
+	/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 	async mounted() {
 		if (!this.isCreate) {
 			await this.loadCaseType()
@@ -203,6 +206,7 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async loadCaseType() {
 			this.loadingDetail = true
 			const data = await this.objectStore.fetchObject('caseType', this.caseTypeId)
@@ -222,6 +226,7 @@ export default {
 			this.loadingDetail = false
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		onFieldUpdate(field, value) {
 			this.form[field] = value
 			// Clear validation error for this field
@@ -232,6 +237,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async save() {
 			this.saveError = ''
 			this.saveSuccess = false
@@ -264,6 +270,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async publish() {
 			this.publishErrors = []
 			this.saveError = ''
@@ -285,6 +292,7 @@ export default {
 			await this.save()
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async unpublish() {
 			const confirmed = confirm(
 				t('procest', 'Unpublishing this case type will prevent new cases from being created. Existing cases will continue to function. Continue?'),

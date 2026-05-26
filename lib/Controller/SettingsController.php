@@ -18,6 +18,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -77,6 +79,7 @@ class SettingsController extends Controller
      * @return \OCA\OpenRegister\Service\ObjectService|null The OpenRegister service if available, null otherwise.
      * @throws \RuntimeException If the service is not available.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getObjectService(): ?\OCA\OpenRegister\Service\ObjectService
     {
         if (in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()) === true) {
@@ -94,6 +97,7 @@ class SettingsController extends Controller
      * @return \OCA\OpenRegister\Service\ConfigurationService|null The Configuration service if available, null otherwise.
      * @throws \RuntimeException If the service is not available.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getConfigurationService(): ?\OCA\OpenRegister\Service\ConfigurationService
     {
         if (in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()) === true) {
@@ -112,6 +116,7 @@ class SettingsController extends Controller
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): JSONResponse
     {
         $user    = $this->userSession->getUser();
@@ -132,6 +137,7 @@ class SettingsController extends Controller
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function create(): JSONResponse
     {
         $data   = $this->request->getParams();
@@ -153,6 +159,7 @@ class SettingsController extends Controller
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function load(): JSONResponse
     {
         $result = $this->settingsService->loadConfiguration(force: true);

@@ -30,6 +30,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -43,6 +45,8 @@ use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use Throwable;
 
 /**
  * Single ingress for PDOK Locatieserver v3_1 calls.
@@ -120,6 +124,7 @@ class PdokLocatieserverService
      *
      * @return array Decoded JSON response or `[]` while degraded.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function suggest(string $query, array $fq=[], int $rows=10): array
     {
         if ($this->isDegraded() === true) {
@@ -150,6 +155,7 @@ class PdokLocatieserverService
      *
      * @return array Decoded JSON response.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function free(string $query, array $fq=[]): array
     {
         $params = ['q' => $query];
@@ -175,6 +181,7 @@ class PdokLocatieserverService
      *
      * @return array Decoded JSON response.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function lookup(string $id): array
     {
         return $this->call(
@@ -196,6 +203,7 @@ class PdokLocatieserverService
      *
      * @return array Decoded JSON response.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function reverse(float $lat, float $lng): array
     {
         return $this->call(
@@ -214,6 +222,7 @@ class PdokLocatieserverService
      *
      * @return string `ok` when healthy, `degraded` during the cool-down.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function health(): string
     {
         if ($this->isDegraded() === true) {
@@ -270,10 +279,12 @@ class PdokLocatieserverService
         try {
             if (empty($source) === false) {
                 $body = $this->callViaOpenConnector(sourceSlug: $source, path: $method, params: $params);
-            } else {
+            }
+
+            if (empty($source) === true) {
                 $body = $this->callDirect(url: $url);
             }
-        } catch (\RuntimeException $e) {
+        } catch (RuntimeException $e) {
             $this->recordFailure(statusCode: $e->getCode());
             $this->logger->warning(
                 'Procest PDOK Locatieserver call failed',
@@ -332,7 +343,7 @@ class PdokLocatieserverService
 
         $body = @file_get_contents(filename: $url, use_include_path: false, context: $context);
         if ($body === false) {
-            throw new \RuntimeException('Network error contacting PDOK Locatieserver', 0);
+            throw new RuntimeException('Network error contacting PDOK Locatieserver', 0);
         }
 
         $statusCode = 0;
@@ -344,7 +355,7 @@ class PdokLocatieserverService
         }
 
         if ($statusCode < 200 || $statusCode >= 300) {
-            throw new \RuntimeException('PDOK Locatieserver HTTP '.$statusCode, $statusCode);
+            throw new RuntimeException('PDOK Locatieserver HTTP '.$statusCode, $statusCode);
         }
 
         $this->recordSuccess();
@@ -371,7 +382,7 @@ class PdokLocatieserverService
     {
         try {
             $callService = $this->container->get('OCA\OpenConnector\Service\CallService');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->warning(
                 'Procest PDOK Locatieserver: OpenConnector not available, falling back to direct HTTP',
                 ['sourceSlug' => $sourceSlug, 'error' => $e->getMessage()]
@@ -397,8 +408,8 @@ class PdokLocatieserverService
                 'GET',
                 ['query' => $params, 'headers' => ['Accept' => 'application/json']]
             );
-        } catch (\Throwable $e) {
-            throw new \RuntimeException(
+        } catch (Throwable $e) {
+            throw new RuntimeException(
                 'OpenConnector dispatch failed: '.$e->getMessage(),
                 500
             );
@@ -417,7 +428,7 @@ class PdokLocatieserverService
             }
         }
 
-        throw new \RuntimeException('OpenConnector returned an unrecognised response shape', 502);
+        throw new RuntimeException('OpenConnector returned an unrecognised response shape', 502);
     }//end callViaOpenConnector()
 
     /**

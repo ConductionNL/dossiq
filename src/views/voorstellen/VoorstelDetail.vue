@@ -166,8 +166,8 @@ import ParafeerActieDialog from './components/ParafeerActieDialog.vue'
 import ParafeerActieTimeline from './components/ParafeerActieTimeline.vue'
 import AuditTrail from './components/AuditTrail.vue'
 import BesluitRegistration from './components/BesluitRegistration.vue'
-import SkipStepDialog from './components/SkipStepDialog.vue'
-import AddStepDialog from './components/AddStepDialog.vue'
+import SkipStepDialog from '../../dialogs/SkipStepDialog.vue'
+import AddStepDialog from '../../dialogs/AddStepDialog.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 
 const STATUS_LABELS = {
@@ -221,9 +221,11 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		steps() {
 			if (this.voorstel.routeSnapshot) {
 				try {
@@ -236,13 +238,16 @@ export default {
 			}
 			return []
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		currentStepInfo() {
 			if (!this.voorstel.currentStep || !this.steps.length) return null
 			return this.steps.find(s => s.order === this.voorstel.currentStep) || null
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		currentUserId() {
 			return getCurrentUser()?.uid || ''
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		isActiveActor() {
 			if (!this.currentStepInfo) return false
 			return this.currentStepInfo.actor === this.currentUserId
@@ -253,9 +258,11 @@ export default {
 		isTerminalStatus() {
 			return ['besloten', 'gearchiveerd'].includes(this.voorstel.status)
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		canRegisterBesluit() {
 			return ['geaccordeerd', 'aangeboden'].includes(this.voorstel.status)
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		canOverrideRoute() {
 			if (this.voorstel.status !== 'in_parafering' && this.voorstel.status !== 'ter_accordering') {
 				return false
@@ -271,6 +278,7 @@ export default {
 				|| this.isSteller
 		},
 	},
+	/** @spec openspec/specs/parafering-actions/spec.md */
 	async created() {
 		await Promise.all([
 			this.loadVoorstel(),
@@ -278,6 +286,7 @@ export default {
 		])
 	},
 	methods: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async loadVoorstel() {
 			this.loading = true
 			try {
@@ -288,6 +297,7 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async loadActies() {
 			this.loadingActies = true
 			try {
@@ -305,12 +315,15 @@ export default {
 				this.loadingActies = false
 			}
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		formatType(type) {
 			return TYPE_LABELS[type] || type || '-'
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		formatStatus(status) {
 			return STATUS_LABELS[status] || status || '-'
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onActionCompleted() {
 			this.actieDialogOpen = false
 			await Promise.all([
@@ -322,12 +335,15 @@ export default {
 				await this.$refs.actieTimeline.load()
 			}
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		openSkipDialog() {
 			this.showSkipDialog = true
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		openAddStepDialog() {
 			this.showAddStepDialog = true
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onOverrideCompleted() {
 			this.showSkipDialog = false
 			this.showAddStepDialog = false
@@ -336,6 +352,7 @@ export default {
 				this.loadActies(),
 			])
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async resubmit() {
 			try {
 				const resumeStep = this.voorstel.returnedFromStep || 1
@@ -349,6 +366,7 @@ export default {
 				console.error('Failed to resubmit voorstel:', error)
 			}
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onBesluitRegistered() {
 			this.showBesluitDialog = false
 			await this.loadVoorstel()

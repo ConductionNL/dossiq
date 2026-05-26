@@ -64,9 +64,10 @@ class ParaferingAuditListener implements IEventListener
      *
      * @return void
      */
+    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function handle(Event $event): void
     {
-        if ($event instanceof ParafeerTransitionEvent === false) {
+        if (!($event instanceof ParafeerTransitionEvent)) {
             return;
         }
 
@@ -126,6 +127,7 @@ class ParaferingAuditListener implements IEventListener
             if (is_array($voorstel) === true) {
                 $array = $voorstel;
             } else if (is_object($voorstel) === true) {
+                $array = (array) $voorstel;
                 if (method_exists($voorstel, 'jsonSerialize') === true) {
                     $serialized = $voorstel->jsonSerialize();
                     if (is_array($serialized) === true) {
@@ -136,8 +138,6 @@ class ParaferingAuditListener implements IEventListener
                     if (is_array($arr) === true) {
                         $array = $arr;
                     }
-                } else {
-                    $array = (array) $voorstel;
                 }
             }
 

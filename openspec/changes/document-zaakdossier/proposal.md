@@ -1,51 +1,89 @@
+---
+kind: implementation
+depends_on: []
+chain: []
+---
+
 # Proposal: document-zaakdossier
 
-## Summary
+**Status:** proposed
+**Scope:** procest
+**Owner:** Conduction BV — Procest team
 
-Implement the ZGW DRC-compliant case dossier (zaakdossier) inside Procest. Every zaak gets a structured document dossier backed by Nextcloud Files, where each linked file is represented as an `informatieobject` with full ZGW metadata (titel, vertrouwelijkheidaanduiding, auteur, status, informatieobjecttype, integriteit) and joined to the case via `zaakinformatieobject`. The dossier groups documents by informatieobjecttype, enforces a `concept -> definitief -> gearchiveerd` status lifecycle, supports drag-and-drop upload with metadata, full-text search, version history, bulk operations, and ZIP export with `manifest.csv`.
+## Why
 
-## Motivation
+80% of analysed Dutch government tenders require structured case dossier management and 65%
+explicitly demand ZGW DRC compliance (informatieobjecten, vertrouwelijkheidaanduiding, document
+status lifecycle). Procest's current file handling is generic and lacks the ZGW metadata layer,
+status enforcement, and confidentiality-based access controls that municipalities need.
 
-80% of analyzed Dutch government tenders require structured case dossier management and 65% explicitly demand ZGW DRC compliance (informatieobjecten, vertrouwelijkheidaanduiding, document status lifecycle). Procest's current file handling is generic and lacks the ZGW metadata layer, status enforcement, and confidentiality-based access controls that municipalities need. This change builds the dossier layer on top of OpenRegister's existing file handlers without duplicating Nextcloud Files functionality.
+Without this change every Procest deployment either (a) fails compliance checks on tender
+scoring, or (b) requires manual workarounds that diverge across municipalities. This change
+builds the dossier layer on top of OpenRegister's existing file handlers
+(`CreateFileHandler`, `FileSharingHandler`, `FilePublishingHandler`, `TextExtractionService`)
+without duplicating Nextcloud Files functionality.
 
-## Affected Projects
+## What changes
 
-- [ ] Project: `procest` — Backend dossier services, controllers, schemas, and Vue components for case dossier UI
+1. **Four ZGW DRC schemas** added to `lib/Settings/procest_register.json`:
+   `informatieobject` (document with full ZGW metadata), `zaakinformatieobject` (case↔document
+   join), `besluitinformatieobject` (decision↔document join), `informatieobjecttype` (document
+   type catalog).
 
-## Scope
+2. **`ZaakdossierService`** — orchestrator: upload, link/unlink, status transition,
+   integrity hash (SHA-256), dossier listing grouped by type, bulk ops.
 
-### In Scope
+3. **`InformatieobjectAccessGuard`** — service-layer enforcement of `vertrouwelijkheidaanduiding`
+   hierarchy on every read, share, publish, and download operation.
 
-- **ZGW schemas** — `informatieobject`, `zaakinformatieobject`, `besluitinformatieobject`, `informatieobjecttype`
-- **Status lifecycle** — `concept -> definitief -> gearchiveerd` with immutability enforcement at `definitief`
-- **Vertrouwelijkheidaanduiding** — Access control by ZGW confidentiality enum
-- **Dossier view** — Documents grouped by informatieobjecttype, count badge, filter/sort, thumbnails
-- **Drag-and-drop upload** — Metadata dialog (informatieobjecttype, vertrouwelijkheidaanduiding, titel, beschrijving)
-- **Version history** — Surface Nextcloud Files versions in dossier UI; block versions on definitief
-- **Full-text search** — Dossier-scoped search via `TextExtractionService`
-- **Bulk operations** — ZIP export with `manifest.csv`, bulk status transition, bulk metadata update
-- **Sharing / publishing** — Public share links honoring vertrouwelijkheidaanduiding rules
-- **ZGW DRC download endpoints** — Single, batch, and Range-supported streaming
+4. **`ZipManifestBuilder`** — streaming ZIP export with `manifest.csv` and
+   informatieobjecttype sub-folders via `ZipStream`; documents above caller's clearance
+   are excluded automatically.
 
-### Out of Scope
+5. **`ZaakdossierController`** — authenticated REST endpoints for upload, link, status
+   transition, bulk operations, and ZGW DRC-compatible streaming download (Range-supported).
+
+6. **Six Vue components** — `DossierTab.vue`, `DossierGroup.vue`, `DocumentRow.vue`,
+   `DocumentMetadataDialog.vue`, `VersionHistoryPanel.vue`, `BulkActionsBar.vue`.
+
+7. **`BackfillInformatieobjectMetadata` repair step** — idempotent migration converting
+   existing linked files to ZGW informatieobject metadata.
+
+8. **Settings** — `dossier_*` config keys (`dossier_max_file_size`, `dossier_subfolder_per_type`,
+   schema refs) added to `SettingsService`.
+
+## Impact
+
+| File | Change |
+|------|--------|
+| `lib/Settings/procest_register.json` | Add 4 ZGW DRC schemas |
+| `lib/Service/ZaakdossierService.php` | New — dossier orchestrator |
+| `lib/Service/InformatieobjectAccessGuard.php` | New — vertrouwelijkheid enforcement |
+| `lib/Service/ZipManifestBuilder.php` | New — streaming ZIP builder |
+| `lib/Controller/ZaakdossierController.php` | New — dossier REST endpoints |
+| `lib/Migration/BackfillInformatieobjectMetadata.php` | New — repair step |
+| `lib/Service/SettingsService.php` | Add `dossier_*` config keys |
+| `appinfo/routes.php` | Add dossier + ZGW DRC download routes |
+| `src/views/cases/CaseDetail.vue` | Replace generic Files tab with DossierTab |
+| `src/views/cases/components/DossierTab.vue` | New |
+| `src/views/cases/components/DossierGroup.vue` | New |
+| `src/views/cases/components/DocumentRow.vue` | New |
+| `src/views/cases/components/DocumentMetadataDialog.vue` | New |
+| `src/views/cases/components/VersionHistoryPanel.vue` | New |
+| `src/views/cases/components/BulkActionsBar.vue` | New |
+
+## Out of scope
 
 - CMIS integration with external DMS systems
-- MDTO archival (covered by `archivering-vernietiging` spec)
+- MDTO archival (covered by the `archivering-vernietiging` change)
 - BIM / 3D model viewing
 - OCR for scanned image documents (deferred)
 
-## Approach
-
-1. Add ZGW DRC schemas to `procest_register.json` (`informatieobject`, `zaakinformatieobject`, `besluitinformatieobject`, `informatieobjecttype`)
-2. Create `ZaakdossierService` that orchestrates OpenRegister's existing handlers (`CreateFileHandler`, `FileSharingHandler`, `FilePublishingHandler`, `TextExtractionService`)
-3. Add `ZaakdossierController` with REST endpoints for upload, status, bulk ops, and ZGW DRC-compatible download
-4. Vue: `DossierTab.vue`, `DocumentMetadataDialog.vue`, `DossierGroup.vue`, `VersionHistoryPanel.vue`
-5. Extend `SettingsService` with `dossier_*` config keys (per-register file size limit, sub-folder organization toggle)
-6. Add status-transition middleware to enforce immutability and integriteit hash on save
-
 ## Risks
 
-- Vertrouwelijkheidaanduiding-based access must be enforced at API layer, not just UI
-- Status immutability must reject both `CreateFileHandler.saveFile()` upsert and direct Nextcloud writes for `definitief` files
-- ZIP export of large dossiers needs streaming to avoid memory exhaustion
-- Existing files already linked to objects must be back-filled with ZGW metadata via repair step
+| Risk | Mitigation |
+|------|-----------|
+| Vertrouwelijkheidaanduiding enforcement bypass via direct OR API | `InformatieobjectAccessGuard` hooked at controller AND `FilePublishingHandler` level — UI alone is insufficient |
+| Status immutability bypass via `CreateFileHandler.saveFile()` upsert | Status middleware rejects upsert when status = `definitief`; `DeleteFileHandler` returns HTTP 409 |
+| ZIP export memory exhaustion on large dossiers | ZipStream streaming — never loads full dossier into memory |
+| Existing linked files lack ZGW metadata | `BackfillInformatieobjectMetadata` repair step; idempotent and registered via `info.xml` repair-steps |

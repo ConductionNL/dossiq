@@ -12,6 +12,7 @@ export const REQUIRED_FIELDS = [
 	'responsibleUnit',
 ]
 
+/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 export function getOriginOptions() {
 	return [
 		{ id: 'internal', label: t('procest', 'Internal') },
@@ -19,6 +20,7 @@ export function getOriginOptions() {
 	]
 }
 
+/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 export function getConfidentialityOptions() {
 	return [
 		{ id: 'public', label: t('procest', 'Public') },
@@ -38,6 +40,7 @@ export function getConfidentialityOptions() {
  * @param {object} data Case type data
  * @return {{ valid: boolean, errors: object }}
  */
+/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 export function validateCaseType(data) {
 	const errors = {}
 
@@ -80,6 +83,7 @@ export function validateCaseType(data) {
  * @param {Array} statusTypes Array of status type objects linked to this case type
  * @return {{ valid: boolean, errors: string[] }}
  */
+/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 export function validateForPublish(caseType, statusTypes) {
 	const errors = []
 

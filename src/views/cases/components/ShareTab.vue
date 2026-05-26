@@ -70,6 +70,7 @@ export default {
 	},
 	emits: ['revoke', 'create-token-share', 'create-partner-share'],
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		permissionLabel(level) {
 			const labels = {
 				bekijken: t('procest', 'View only'),
@@ -78,6 +79,7 @@ export default {
 			}
 			return labels[level] || level
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		formatDate(dateString) {
 			if (!dateString) return ''
 			return new Date(dateString).toLocaleDateString('nl-NL', {

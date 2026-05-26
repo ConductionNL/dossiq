@@ -16,6 +16,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -58,6 +60,7 @@ class SeedDataService
      *
      * @return array Result summary with counts of created and skipped objects
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function seedBezwaarBeroepData(): array
     {
         $seedPath = __DIR__.'/../Settings/bezwaar_seed_data.json';
@@ -408,11 +411,11 @@ class SeedDataService
         array $filters,
     ): ?object {
         try {
-            $results = $objectService->getObjects(
-                register: $registerId,
-                schema: $schemaId,
-                filters: $filters,
-                limit: 1,
+            $results = $objectService->findAll(
+                [
+                    'filters' => (['register' => $registerId, 'schema' => $schemaId] + $filters),
+                    'limit'   => 1,
+                ],
             );
 
             if (is_array($results) === true && count($results) > 0) {

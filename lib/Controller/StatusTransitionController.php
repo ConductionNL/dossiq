@@ -78,6 +78,7 @@ class StatusTransitionController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function available(string $caseId): JSONResponse
     {
         try {
@@ -104,14 +105,14 @@ class StatusTransitionController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function execute(string $caseId): JSONResponse
     {
         $body         = $this->readJsonBody();
         $transitionId = (string) ($body['transitionId'] ?? '');
+        $comment      = null;
         if (isset($body['comment']) === true) {
             $comment = (string) $body['comment'];
-        } else {
-            $comment = null;
         }
 
         if ($transitionId === '') {
@@ -164,6 +165,7 @@ class StatusTransitionController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function freeform(string $caseId): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -176,10 +178,9 @@ class StatusTransitionController extends Controller
 
         $body       = $this->readJsonBody();
         $toStatusId = (string) ($body['toStatusId'] ?? '');
+        $comment    = null;
         if (isset($body['comment']) === true) {
             $comment = (string) $body['comment'];
-        } else {
-            $comment = null;
         }
 
         if ($toStatusId === '') {
@@ -227,6 +228,7 @@ class StatusTransitionController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function history(string $caseId): JSONResponse
     {
         try {

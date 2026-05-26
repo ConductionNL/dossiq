@@ -11,7 +11,7 @@
  * @category Service
  * @package  OCA\Procest\Service\Routing
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -39,6 +39,7 @@ interface RoutingStrategyInterface
      *
      * @return string The strategy key (e.g. "single-role")
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function name(): string;
 
     /**
@@ -56,5 +57,6 @@ interface RoutingStrategyInterface
      *
      * @return array<int, string> Ordered participant references
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function resolve(array $rule, array $case, array $roles): array;
 }//end interface

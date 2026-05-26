@@ -24,6 +24,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -85,6 +87,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function run(IOutput $output): void
     {
         if ($this->settingsService->isOpenRegisterAvailable() === false) {
@@ -323,9 +326,8 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
         $transitions = [];
         foreach ($matrix as $row) {
             [$fromName, $toName, $label] = $row;
-            if ($fromName === '*') {
-                $fromId = '*';
-            } else {
+            $fromId = '*';
+            if ($fromName !== '*') {
                 $fromId = (string) ($statusByName[$fromName]['id'] ?? '');
             }
 

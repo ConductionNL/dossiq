@@ -201,14 +201,17 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		activeHearing() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.activeHearing
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		isHearingWaived() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.isHearingWaived
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		waiverReason() {
 			const bezwaarStore = useBezwaarStore()
 			const waived = bezwaarStore.hearingSessions.find((h) => h.hearingWaived === true)
@@ -216,6 +219,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		getHearingStatusLabel(status) {
 			const labels = {
 				gepland: t('procest', 'Scheduled'),
@@ -226,6 +230,7 @@ export default {
 			}
 			return labels[status] || status
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		formatDateTime(dateStr) {
 			if (!dateStr) return '—'
 			try {
@@ -240,6 +245,7 @@ export default {
 				return dateStr
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async scheduleHearing() {
 			const bezwaarStore = useBezwaarStore()
 			await bezwaarStore.createHearingSession({
@@ -256,6 +262,7 @@ export default {
 			this.showScheduleDialog = false
 			this.$emit('hearing-scheduled')
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async sendInvitations() {
 			if (!this.activeHearing) return
 			const bezwaarStore = useBezwaarStore()
@@ -264,6 +271,7 @@ export default {
 				status: 'uitgenodigd',
 			})
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async recordMinutes() {
 			if (!this.activeHearing || !this.minutesForm.summary) return
 			const bezwaarStore = useBezwaarStore()
@@ -276,6 +284,7 @@ export default {
 			this.showMinutesDialog = false
 			this.$emit('hearing-completed')
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async recordWaiver() {
 			const bezwaarStore = useBezwaarStore()
 			await bezwaarStore.createHearingSession({
@@ -291,6 +300,7 @@ export default {
 			this.showWaiverDialog = false
 			this.$emit('hearing-waived')
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async cancelHearing() {
 			if (!this.activeHearing) return
 			const bezwaarStore = useBezwaarStore()

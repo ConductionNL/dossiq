@@ -15,6 +15,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -46,6 +48,7 @@ class ZgwPaginationHelper
      *
      * @return array ZGW-formatted paginated response
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function wrapResults(
         array $mappedObjects,
         int $totalCount,

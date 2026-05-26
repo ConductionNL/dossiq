@@ -10,13 +10,17 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-leges-fees/tasks.md#task-2
+ * @spec openspec/changes/retrofit-2026-05-24-leges-fees/tasks.md#task-3
+ * @spec openspec/changes/retrofit-2026-05-24-leges-fees/tasks.md#task-4
  */
 
 declare(strict_types=1);
@@ -93,6 +97,7 @@ class LegesCalculationService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function calculate(
         array $caseData,
         array $verordening,
@@ -146,6 +151,7 @@ class LegesCalculationService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recalculate(
         array $caseData,
         array $verordening,
@@ -176,6 +182,7 @@ class LegesCalculationService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function calculateVerrekening(float $currentAmount, float $previousAmount): array
     {
         $netAmount = round($currentAmount - $previousAmount, self::PRECISION);
@@ -199,6 +206,7 @@ class LegesCalculationService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function calculateTeruggaaf(
         float $imposedAmount,
         float $refundFraction=1.0,

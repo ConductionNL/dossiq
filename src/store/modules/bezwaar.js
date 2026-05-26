@@ -127,6 +127,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {string} caseId The case UUID
 		 * @return {Promise<void>}
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async loadBezwaarData(caseId) {
 			this.loading = true
 			this.error = null
@@ -176,6 +177,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {object} data The objection data
 		 * @return {Promise<object|null>} The created objection
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async createObjection(data) {
 			this.loading = true
 			this.error = null
@@ -200,6 +202,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {object} data The updated objection data
 		 * @return {Promise<object|null>} The updated objection
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async updateObjection(data) {
 			this.loading = true
 			this.error = null
@@ -224,6 +227,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {string} objectionId The objection UUID
 		 * @return {Promise<boolean>} Whether the deletion succeeded
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async deleteObjection(objectionId) {
 			this.loading = true
 			this.error = null
@@ -250,6 +254,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {object} data The hearing session data
 		 * @return {Promise<object|null>} The created hearing
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async createHearingSession(data) {
 			this.loading = true
 			this.error = null
@@ -274,6 +279,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {object} data The updated hearing data
 		 * @return {Promise<object|null>} The updated hearing
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async updateHearingSession(data) {
 			this.loading = true
 			this.error = null
@@ -303,6 +309,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {object} data The advisory report data
 		 * @return {Promise<object|null>} The created report
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async createAdvisoryReport(data) {
 			this.loading = true
 			this.error = null
@@ -327,6 +334,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {object} data The updated report data
 		 * @return {Promise<object|null>} The updated report
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async updateAdvisoryReport(data) {
 			this.loading = true
 			this.error = null
@@ -353,6 +361,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {object} data The appeal decision data
 		 * @return {Promise<object|null>} The created decision
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async createAppealDecision(data) {
 			this.loading = true
 			this.error = null
@@ -377,6 +386,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {object} data The updated decision data
 		 * @return {Promise<object|null>} The updated decision
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async updateAppealDecision(data) {
 			this.loading = true
 			this.error = null
@@ -403,6 +413,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {string} ontvangstDatum The date the bezwaarschrift was received (ISO string)
 		 * @return {object} Calculated deadlines
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		calculateDeadlines(ontvangstDatum) {
 			const received = new Date(ontvangstDatum)
 
@@ -429,6 +440,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {string} currentDeadline The current deadline (ISO string)
 		 * @return {string} The new extended deadline (ISO date string)
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		calculateExtendedDeadline(currentDeadline) {
 			const current = new Date(currentDeadline)
 			const extended = addWeeks(current, 6)
@@ -442,6 +454,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {boolean} isSuspended Whether the deadline is currently suspended
 		 * @return {object} Deadline status with daysRemaining, isAtRisk, isOverdue
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		getDeadlineStatus(deadline, isSuspended = false) {
 			if (isSuspended) {
 				return {
@@ -489,6 +502,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {object} options Additional options (voorzieningRequested)
 		 * @return {Promise<object|null>} The created beroep case
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async escalateToBeroep(bezwaarCase, options = {}) {
 			this.loading = true
 			this.error = null
@@ -536,6 +550,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 * @param {string} bezwaarReceivedDate The date the bezwaar was received
 		 * @return {object} Timeliness assessment
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		checkTimeliness(besluitDate, bezwaarReceivedDate) {
 			const besluit = new Date(besluitDate)
 			const received = new Date(bezwaarReceivedDate)
@@ -559,6 +574,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		 *
 		 * @return {void}
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		clearBezwaarData() {
 			this.currentObjection = null
 			this.hearingSessions = []

@@ -85,21 +85,26 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		completedCount() {
 			return this.subCases.filter(sc => sc.endDate).length
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		totalCount() {
 			return this.subCases.length
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		rollUpText() {
 			return t('procest', 'Sub-cases ({completed}/{total} completed)', {
 				completed: this.completedCount,
 				total: this.totalCount,
 			})
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		canCreateSubCase() {
 			// Hide when: parent case is closed, current case is itself a sub-case,
 			// or case type has empty subCaseTypes
@@ -113,6 +118,7 @@ export default {
 		await this.fetchSubCases()
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async fetchSubCases() {
 			this.loading = true
 			try {
@@ -139,11 +145,13 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		getStatusName(subCase) {
 			if (!subCase.status) return '\u2014'
 			return this.statusTypeCache[subCase.status]?.name || '\u2014'
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		getStatusClass(subCase) {
 			if (!subCase.status) return ''
 			const st = this.statusTypeCache[subCase.status]
@@ -151,11 +159,13 @@ export default {
 			return 'status-badge--active'
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		formatDeadline(deadline) {
 			if (!deadline) return '\u2014'
 			return formatDate(deadline)
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		openSubCase(subCase) {
 			this.$router.push({ name: 'CaseDetail', params: { id: subCase.id } })
 		},

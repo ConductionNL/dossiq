@@ -156,11 +156,13 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
 		openCount() {
 			return this.consultations.filter(
 				c => c.status === 'open' || c.status === 'in_behandeling',
 			).length
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
 		isFormValid() {
 			return this.newForm.adviesInstantie.trim() !== ''
 				&& this.newForm.onderwerp.trim() !== ''
@@ -168,6 +170,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
 		getStatusLabel(status) {
 			const labels = {
 				open: this.t('procest', 'Open'),
@@ -177,6 +180,7 @@ export default {
 			}
 			return labels[status] || status
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
 		getAdviceLabel(advies) {
 			const labels = {
 				positief: this.t('procest', 'Positive'),
@@ -186,17 +190,20 @@ export default {
 			}
 			return labels[advies] || advies
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
 		formatDate(dateStr) {
 			if (!dateStr) return '---'
 			const d = new Date(dateStr)
 			if (isNaN(d.getTime())) return dateStr
 			return d.toLocaleDateString('nl-NL')
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
 		isOverdue(cons) {
 			if (!cons.uiterlijkeReactiedatum) return false
 			if (cons.status === 'afgesloten' || cons.status === 'advies_uitgebracht') return false
 			return new Date(cons.uiterlijkeReactiedatum) < new Date()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
 		conditions(cons) {
 			if (!cons.voorwaarden) return []
 			try {
@@ -208,6 +215,7 @@ export default {
 				return []
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
 		submitCreate() {
 			this.$emit('create', {
 				parentZaak: this.caseId,

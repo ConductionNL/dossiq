@@ -18,6 +18,9 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-5
+ * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -63,6 +66,7 @@ class DashboardController extends Controller
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function page(string $path=''): TemplateResponse
     {
         return new TemplateResponse(Application::APP_ID, 'index');

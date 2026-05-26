@@ -54,6 +54,7 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
 		async testConnection() {
 			this.testLoading = true
 			this.testResult = null

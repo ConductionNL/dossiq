@@ -16,6 +16,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md#task-5
  */
 
 declare(strict_types=1);
@@ -62,6 +64,7 @@ class AppointmentReminderJob extends TimedJob
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function run($argument): void
     {
         if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
@@ -81,13 +84,11 @@ class AppointmentReminderJob extends TimedJob
 
             $tomorrow = (new \DateTime('+1 day'))->format('Y-m-d');
 
-            $result = $objectService->getObjects(
-                (int) $register,
-                (int) $schema,
-                ['status' => 'scheduled'],
+            $appointments = $objectService->findAll(
+                ['filters' => ['register' => (int) $register, 'schema' => (int) $schema, 'status' => 'scheduled']],
             );
 
-            foreach (($result['objects'] ?? []) as $apt) {
+            foreach ($appointments as $apt) {
                 if (is_object($apt) === true) {
                     $data = $apt->jsonSerialize();
                 } else {

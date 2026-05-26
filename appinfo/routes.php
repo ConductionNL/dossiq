@@ -8,7 +8,7 @@
  * @category Routes
  * @package  OCA\Procest
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -29,6 +29,9 @@ return [
         ['name' => 'settings#index', 'url' => '/api/settings', 'verb' => 'GET'],
         ['name' => 'settings#create', 'url' => '/api/settings', 'verb' => 'POST'],
         ['name' => 'settings#load',  'url' => '/api/settings/load', 'verb' => 'POST'],
+        // Generic per-user preferences (used by shared nextcloud-vue widgets, e.g. CnSupportDialog).
+        ['name' => 'preferences#getPreference', 'url' => '/api/preferences/{key}', 'verb' => 'GET'],
+        ['name' => 'preferences#setPreference', 'url' => '/api/preferences/{key}', 'verb' => 'PUT'],
 
         // AI-Assisted Processing (specific endpoints precede wildcard routes).
         ['name' => 'ai#classify',        'url' => '/api/ai/classify',        'verb' => 'POST'],
@@ -157,6 +160,11 @@ return [
         // WMS/WFS per-layer proxy (wms-wfs-layers spec) — action endpoint only;
         // CRUD on wmsLayer objects is served by OpenRegister manifest pages.
         ['name' => 'wms_wfs#proxy', 'url' => '/api/wms-wfs/proxy', 'verb' => 'GET'],
+
+        // WFS export — exposes case locations as a GeoJSON WFS layer for external GIS applications.
+        // gis-integration spec AC 6.
+        ['name' => 'wfsExport#getFeatures', 'url' => '/api/gis/wfs', 'verb' => 'GET'],
+        ['name' => 'wfsExport#getCapabilities', 'url' => '/api/gis/wfs/capabilities', 'verb' => 'GET'],
 
         // ── Parafeerroute (B&W parafering engine) ───────────────────────
         // CRUD on parafeerroute objects is served by OpenRegister's auto-exposed

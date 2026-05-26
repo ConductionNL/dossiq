@@ -28,6 +28,7 @@
 							<NcSelect
 								:value="getAssessment(doc.id)"
 								:options="assessmentOptions"
+								:input-label="t('procest', 'Assessment')"
 								:disabled="isReadOnly"
 								@input="val => setAssessment(doc.id, val)" />
 						</td>
@@ -36,6 +37,7 @@
 								v-if="getAssessment(doc.id) === 'niet_openbaar'"
 								:value="getGrounds(doc.id)"
 								:options="weigeringsgronden"
+								:input-label="t('procest', 'Grounds')"
 								:multiple="true"
 								label="label"
 								track-by="code"
@@ -121,6 +123,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		counts() {
 			const result = { openbaar: 0, deels_openbaar: 0, niet_openbaar: 0, pending: 0 }
 			for (const doc of this.documents) {
@@ -141,6 +144,7 @@ export default {
 		getGrounds(docId) {
 			return this.assessments[docId]?.grounds || []
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		setAssessment(docId, value) {
 			this.$emit('update:assessment', {
 				documentId: docId,
@@ -148,6 +152,7 @@ export default {
 				grounds: value === 'niet_openbaar' ? (this.assessments[docId]?.grounds || []) : [],
 			})
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		setGrounds(docId, value) {
 			this.$emit('update:assessment', {
 				documentId: docId,

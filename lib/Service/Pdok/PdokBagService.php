@@ -25,6 +25,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -38,6 +40,8 @@ use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use Throwable;
 
 /**
  * Single ingress for PDOK BAG WFS v2_0 lookups.
@@ -89,6 +93,7 @@ class PdokBagService
      *
      * @return array Normalised Procest-internal shape.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getNummeraanduiding(string $id): array
     {
         return $this->fetch(
@@ -105,6 +110,7 @@ class PdokBagService
      *
      * @return array Normalised Procest-internal shape.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getVerblijfsobject(string $id): array
     {
         return $this->fetch(
@@ -121,6 +127,7 @@ class PdokBagService
      *
      * @return array Normalised Procest-internal shape.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getPand(string $id): array
     {
         return $this->fetch(
@@ -178,12 +185,14 @@ class PdokBagService
         try {
             if (empty($source) === false) {
                 $body = $this->callViaOpenConnector(sourceSlug: $source, params: $params);
-            } else {
+            }
+
+            if (empty($source) === true) {
                 $body = $this->callDirect(
                     url: $endpoint.'?'.http_build_query(data: $params),
                 );
             }
-        } catch (\RuntimeException $e) {
+        } catch (RuntimeException $e) {
             $this->logger->warning(
                 'Procest PDOK BAG call failed',
                 [
@@ -193,7 +202,7 @@ class PdokBagService
                 ]
             );
             return [];
-        }
+        }//end try
 
         $decoded = json_decode(json: $body, associative: true);
         if (is_array(value: $decoded) === false) {
@@ -281,7 +290,7 @@ class PdokBagService
 
         $body = @file_get_contents(filename: $url, use_include_path: false, context: $context);
         if ($body === false) {
-            throw new \RuntimeException('Network error contacting PDOK BAG WFS', 0);
+            throw new RuntimeException('Network error contacting PDOK BAG WFS', 0);
         }
 
         $statusCode = 0;
@@ -293,7 +302,7 @@ class PdokBagService
         }
 
         if ($statusCode < 200 || $statusCode >= 300) {
-            throw new \RuntimeException('PDOK BAG WFS HTTP '.$statusCode, $statusCode);
+            throw new RuntimeException('PDOK BAG WFS HTTP '.$statusCode, $statusCode);
         }
 
         return $body;
@@ -313,7 +322,7 @@ class PdokBagService
     {
         try {
             $callService = $this->container->get('OCA\OpenConnector\Service\CallService');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->warning(
                 'Procest PDOK BAG: OpenConnector not available, falling back to direct HTTP',
                 ['sourceSlug' => $sourceSlug, 'error' => $e->getMessage()]
@@ -335,8 +344,8 @@ class PdokBagService
                 'GET',
                 ['query' => $params, 'headers' => ['Accept' => 'application/json']]
             );
-        } catch (\Throwable $e) {
-            throw new \RuntimeException(
+        } catch (Throwable $e) {
+            throw new RuntimeException(
                 'OpenConnector dispatch failed: '.$e->getMessage(),
                 500
             );
@@ -353,7 +362,7 @@ class PdokBagService
             }
         }
 
-        throw new \RuntimeException('OpenConnector returned an unrecognised response shape', 502);
+        throw new RuntimeException('OpenConnector returned an unrecognised response shape', 502);
     }//end callViaOpenConnector()
 
     /**

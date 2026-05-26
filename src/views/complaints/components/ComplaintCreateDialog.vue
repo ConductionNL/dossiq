@@ -45,13 +45,15 @@
 					<label>{{ t('procest', 'Intake channel') }}</label>
 					<NcSelect
 						v-model="form.ontvangstkanaal"
-						:options="channelOptions" />
+						:options="channelOptions"
+							:aria-label-combobox="t('procest', 'Intake channel')" />
 				</div>
 				<div class="form-group">
 					<label>{{ t('procest', 'Priority') }}</label>
 					<NcSelect
 						v-model="form.prioriteit"
-						:options="priorityOptions" />
+						:options="priorityOptions"
+							:aria-label-combobox="t('procest', 'Priority')" />
 				</div>
 			</div>
 
@@ -60,6 +62,7 @@
 				<NcSelect
 					v-model="form.categorie"
 					:options="categories"
+					:aria-label-combobox="t('procest', 'Category')"
 					label="name"
 					track-by="id"
 					:placeholder="t('procest', 'Select category...')" />
@@ -115,6 +118,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/complaint-management/tasks.md */
 		channelOptions() {
 			return [
 				{ id: 'balie', label: this.t('procest', 'Counter') },
@@ -125,6 +129,7 @@ export default {
 				{ id: 'socialmedia', label: this.t('procest', 'Social media') },
 			]
 		},
+		/** @spec openspec/changes/complaint-management/tasks.md */
 		priorityOptions() {
 			return [
 				{ id: 'laag', label: this.t('procest', 'Low') },
@@ -135,6 +140,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/complaint-management/tasks.md */
 		validate() {
 			this.errors = {}
 			if (!this.form.onderwerp.trim()) {
@@ -145,6 +151,7 @@ export default {
 			}
 			return Object.keys(this.errors).length === 0
 		},
+		/** @spec openspec/changes/complaint-management/tasks.md */
 		async create() {
 			if (!this.validate()) return
 			this.saving = true

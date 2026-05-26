@@ -1,0 +1,8 @@
+{
+  "spec_slug": "procest-legacy-quality-cleanup",
+  "title": "Procest Legacy Quality Cleanup",
+  "app": "procest",
+  "repo": "https://github.com/ConductionNL/procest",
+  "depends_on": [],
+  "issue": null
+}

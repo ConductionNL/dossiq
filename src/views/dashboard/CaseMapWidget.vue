@@ -26,6 +26,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/case-map-overview/spec.md */
 		geometries() {
 			return this.cases
 				.filter(c => c.geometry)
@@ -47,6 +48,7 @@ export default {
 				.filter(Boolean)
 		},
 	},
+	/** @spec openspec/specs/case-map-overview/spec.md */
 	async created() {
 		const objectStore = useObjectStore()
 		const currentUser = OC?.currentUser || ''
@@ -60,6 +62,7 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/specs/case-map-overview/spec.md */
 		getColor(caseObj) {
 			if (caseObj.endDate) return '#4CAF50'
 			if (caseObj.deadline) {
@@ -68,6 +71,7 @@ export default {
 			}
 			return '#2196F3'
 		},
+		/** @spec openspec/specs/case-map-overview/spec.md */
 		onMarkerClick(properties) {
 			if (properties?.id) {
 				this.$router?.push({ name: 'CaseDetail', params: { id: properties.id } })

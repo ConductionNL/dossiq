@@ -10,13 +10,15 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-parafering-actions-impl/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -116,6 +118,7 @@ class ParaferingService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createVoorstel(array $voorstelData): array
     {
         $voorstel = [
@@ -153,6 +156,7 @@ class ParaferingService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function startParafering(array $voorstel, array $route): array
     {
         if ($voorstel['status'] !== self::STATUS_CONCEPT
@@ -203,6 +207,7 @@ class ParaferingService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function executeAction(
         array $voorstel,
         string $action,
@@ -288,6 +293,7 @@ class ParaferingService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getCurrentStep(array $voorstel): ?array
     {
         if ($voorstel['status'] !== self::STATUS_IN_PARAFERING) {
@@ -312,6 +318,7 @@ class ParaferingService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function overrideRoute(
         array $voorstel,
         array $newRoute,

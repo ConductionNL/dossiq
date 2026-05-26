@@ -16,7 +16,7 @@
  * @category Listener
  * @package  OCA\Procest\Listener
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -77,6 +77,7 @@ class ChecklistRunImmutabilityListener implements IEventListener
      *
      * @throws RuntimeException When a submitted run is being mutated.
      */
+    /** @spec openspec/specs/inspection-checklists/spec.md */
     public function handle(Event $event): void
     {
         if ($event instanceof ObjectUpdatedEvent === false) {

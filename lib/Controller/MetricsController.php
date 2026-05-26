@@ -8,7 +8,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -18,6 +18,9 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-2
+ * @spec openspec/changes/retrofit-2026-05-25-prometheus-metrics/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -74,6 +77,7 @@ class MetricsController extends Controller
      *
      * @return TextPlainResponse Prometheus-formatted metrics
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): TextPlainResponse
     {
         $metrics  = $this->collectMetrics();

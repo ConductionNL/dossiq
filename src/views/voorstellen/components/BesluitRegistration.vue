@@ -29,6 +29,7 @@
 				<NcSelect
 					v-model="selectedDecisionType"
 					:options="decisionTypes"
+					:aria-label-combobox="t('procest', 'Besluittype')"
 					label="name"
 					track-by="id"
 					:placeholder="t('procest', 'Selecteer besluittype...')" />
@@ -100,10 +101,12 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
 	},
+	/** @spec openspec/specs/parafering-actions/spec.md */
 	async created() {
 		try {
 			const results = await this.objectStore.fetchCollection('decisionType', { _limit: 50 })
@@ -113,6 +116,7 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async register() {
 			this.errors = {}
 			if (!this.form.title.trim()) {

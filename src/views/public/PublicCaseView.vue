@@ -124,6 +124,7 @@ export default {
 		this.loadShareData()
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async loadShareData() {
 			this.loading = true
 			this.error = ''
@@ -149,6 +150,7 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async submitPassword() {
 			this.passwordError = ''
 			await this.loadShareData()
@@ -156,6 +158,7 @@ export default {
 				this.passwordError = t('procest', 'Incorrect password')
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async submitComment() {
 			try {
 				const response = await fetch(`/apps/procest/api/public/share/${this.token}/comment`, {
@@ -174,6 +177,7 @@ export default {
 				// Comment submission failed silently
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		formatDate(dateString) {
 			if (!dateString) return ''
 			return new Date(dateString).toLocaleDateString('nl-NL', {

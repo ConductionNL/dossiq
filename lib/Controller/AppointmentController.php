@@ -16,6 +16,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -53,6 +55,7 @@ class AppointmentController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): JSONResponse
     {
         $caseId       = $this->request->getParam('caseId');
@@ -67,6 +70,7 @@ class AppointmentController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function create(): JSONResponse
     {
         $caseId = $this->request->getParam('caseId');
@@ -98,6 +102,7 @@ class AppointmentController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function cancel(string $appointmentId): JSONResponse
     {
         $result = $this->appointmentService->cancelAppointment($appointmentId);
@@ -113,6 +118,7 @@ class AppointmentController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function noShow(string $appointmentId): JSONResponse
     {
         $result = $this->appointmentService->markNoShow($appointmentId);
@@ -126,6 +132,7 @@ class AppointmentController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function timeslots(): JSONResponse
     {
         $productId  = $this->request->getParam('productId', '');

@@ -7,7 +7,7 @@
 				<label>{{ t('procest', 'Role type') }} *</label>
 				<NcSelect
 					v-model="selectedRoleType"
-					:options="roleTypes"
+					:options="roleTypes" :aria-label-combobox="t('procest', 'Role type')"
 					label="name"
 					track-by="id"
 					:placeholder="t('procest', 'Select role type...')" />
@@ -17,7 +17,7 @@
 				<label>{{ t('procest', 'Participant') }} *</label>
 				<NcSelect
 					v-model="selectedUser"
-					:options="userOptions"
+					:options="userOptions" :aria-label-combobox="t('procest', 'Participant')"
 					label="label"
 					track-by="id"
 					:placeholder="t('procest', 'Select user...')" />
@@ -84,13 +84,16 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		canSubmit() {
 			return !!this.selectedRoleType && !!this.selectedUser
 		},
 	},
+	/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 	mounted() {
 		if (this.preSelectHandler) {
 			const handlerType = this.roleTypes.find(rt => rt.genericRole === 'handler')
@@ -100,6 +103,7 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async submit() {
 			if (!this.canSubmit) return
 

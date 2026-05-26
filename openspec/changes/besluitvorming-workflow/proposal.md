@@ -1,81 +1,25 @@
-# Besluitvorming Workflow
+# Proposal: besluitvorming-workflow
 
-## Summary
+## Why
 
-Configure the Procest workflow engine (from `workflow-engine-enhancement`) with workflows for the municipal decision-making process (bestuurlijke besluitvorming). This covers the lifecycle of formal decisions by college van B&W, gemeenteraad, and other governing bodies -- from proposal drafting through approval, signing, publication, and archival.
+Bestuurlijke besluitvorming is the second-highest demand cluster in Procest's municipal market: 264 analysed requirements and 126 tenders explicitly request support for the formal decision-making lifecycle (College van B&W, Gemeenteraad, commissies). Representative tender requirements call for "het bestuurlijke besluitvormingsproces onderbrengen en ondersteunen" with support for multiple vergadergremia, structured metadata (portefeuillehouder, stemuitslag, zaaktype), and official publication via DROP/LVBB. Currently Procest has generic case infrastructure and the `voorstel`/`parafering` primitives, but no pre-configured templates that wire them into a complete besluitvormingsketen — municipalities must build the entire zaaktype stack from scratch.
 
-This is primarily a workflow configuration change that defines decision-specific zaaktypen and process steps, with targeted extensions for parafering (approval chains), agenda management, and publication to official registers (DROP/LVBB).
+This change configures the Procest workflow engine (from `workflow-engine-enhancement`) with ready-to-use decision-making workflows and adds three targeted service extensions: a parafering chain engine, an agenda compiler, and a DROP/LVBB publication hook.
 
-## Demand Evidence
+## What Changes
 
-### Cluster Data (from market intelligence DB)
+1. **Besluitvorming zaaktype templates**: Pre-configured `caseType` + `workflowTemplate` bundles for College-besluit, Raadsbesluit, and Mandaatbesluit — including `statusType`, `propertyDefinition`, `roleType`, `documentType`, and `resultType` records.
+2. **Process steps and transitions**: Full eight-phase lifecycle (Voorstel opstellen → Ambtelijk advies → Parafering → Gereed voor agendering → Geagendeerd → Vergadering → Besluit genomen → Bekendmaking → Gearchiveerd) with guard conditions and automatic actions per transition.
+3. **Vergadergremia configuration**: Tenant-configurable decision bodies (College B&W, Gemeenteraad, Commissies) each with their own agenda and decision workflow, stored as `caseType` variants.
+4. **Parafering chain service**: `BesluitvormingParafeerService` that activates the configured `parafeerroute` when a `voorstel` is submitted, assigns sequential `task` objects to each parafeerder, and auto-transitions the case when all required parafen are collected.
+5. **Agenda management service**: `AgendaService` that compiles ready-for-agendering cases into a `vergadering` agenda, supports classification as hamerstuk or bespreekstuk, and produces an ordered agenda document.
+6. **Decision metadata capture**: Structured `decision` objects with `stemuitslag`, `governingBody`, attending members (via `role`), and `besluit` text captured at the vergadering step.
+7. **DROP/LVBB publication hook**: `PublicationService` integration point invoked on bekendmaking transition, assembling the required metadata payload (STOP/TPOD compatible fields) and dispatching to the configured DROP or LVBB endpoint via OpenConnector.
+8. **Mandaatregister validation**: Guard on the Mandaatbesluit workflow transition that queries the configured mandaatregister to verify the signing official has sufficient authority for the decision scope before allowing the besluit step.
 
-| Cluster | Requirements | Tenders |
-|---------|-------------|---------|
-| Besluitvorming (decision process) | 264 | 126 |
-| **Total** | **264** | **126** |
+## Impact
 
-### Top Tenders
-
-| Tender | Organisation | URL |
-|--------|-------------|-----|
-| Zaaksysteem | Werkorganisatie HLT Samen | https://www.tenderned.nl/aankondigingen/overzicht/399455 |
-| Geintegreerd Zaaksysteem met KCS-functionaliteit | Gemeente Beverwijk | https://www.tenderned.nl/aankondigingen/overzicht/411386 |
-| Zaaksysteem gemeente Winterswijk | Gemeente Winterswijk | https://www.tenderned.nl/aankondigingen/overzicht/198896 |
-| Zaaksysteem (met geintegreerd DMS en RMA) | Gemeente Nissewaard | https://www.tenderned.nl/aankondigingen/overzicht/257916 |
-| Vergunning-, Toezicht- en Handhaving software Omgevingswet | Gemeente Zeist | https://www.tenderned.nl/aankondigingen/overzicht/362898 |
-| De levering, onderhoud en implementatie van een SaaS-oplossing voor een Zaaksysteem | Gemeente Horst aan de Maas | https://www.tenderned.nl/aankondigingen/overzicht/345060 |
-
-### Representative Requirements from Tenders
-
-1. "De gemeente Coevorden wil het bestuurlijke besluitvormingsproces onderbrengen en ondersteunen binnen de Oplossing. Hierbij is de wens om de processen voor verschillende vergadergremia (bijv. college en gemeenteraad) in te richten."
-2. "Besluitvormingsstukken zijn voorzien van metadata (zaaktype, onderwerp, portefeuillehouder, status)."
-3. "Het kunnen publiceren van een aanvraag of besluit via het officiele publicatiemechanisme (nu DROP, wordt later LVBB) via de Oplossing."
-4. "VTH070 Kunnen vastleggen van samenhang met andere procedures/besluitvorming."
-5. "SGC 1 Ondersteuning bestuurlijke besluitvormingsketen"
-6. "De Gemeente Zeist wil het bestuurlijke besluitvormingsproces onderbrengen en ondersteunen binnen de Oplossing."
-7. "Er dienen meerjarige mutaties op basis van besluitvorming geraamd te kunnen worden per reserve en voorziening."
-8. "De Gemeente Meppel kan zonder tussenkomst van de leverancier zelf, op basis van Zero-coding, rapportages binnen het zaaksysteem creeren en opslaan. Bestuurlijke besluitvorming."
-
-## Scope
-
-### In Scope -- Configuration (using workflow engine)
-
-- **Besluitvorming zaaktypen**: Pre-configured zaaktypen for College-besluit, Raadsbesluit, Mandaatbesluit
-- **Besluitvorming process steps**: Voorstel opstellen, Ambtelijk advies, Parafering, Agendering, Vergadering, Besluit, Bekendmaking, Archivering
-- **Status transitions**: Met pre-conditions per stap (e.g., all parafen required before agendering)
-- **Vergadergremia configuration**: Configure multiple decision bodies (College B&W, Gemeenteraad, Commissies) with their own agenda and decision workflows
-
-### In Scope -- Extra functionality beyond generic workflows
-
-- **Parafering chain**: Sequential approval workflow where designated officials sign off (paraaf) on a decision document before it reaches the decision body; configurable chain per zaaktype/mandaat level
-- **Agenda management**: Compile decisions into meeting agendas per vergadergremia, with support for hamerstukken (consent agenda) vs. bespreekstukken (discussion items)
-- **Decision metadata**: Structured capture of decision metadata (portefeuillehouder, onderwerp, zaaktype, stemuitslag) as OpenRegister data
-- **Publication hooks**: Integration point for publishing decisions to DROP (Decentrale Regelgeving en Officiële Publicaties) or LVBB (Landelijke Voorziening Bekendmaken en Beschikbaarstellen)
-- **Mandaatregister linking**: Link decisions to the mandaatregister to validate decision authority
-
-### Out of Scope
-
-- Generic workflow engine (covered by `workflow-engine-enhancement`)
-- Raadsinformatie system (see existing spec `openspec/specs/open-raadsinformatie/`)
-- Document generation/templates (generic Procest/Docudesk functionality)
-- Financial impact tracking of decisions (ERP domain)
-
-## Dependencies
-
-- **workflow-engine-enhancement** (REQUIRED): This change configures the workflow engine
-- **Procest roles-decisions spec**: Existing spec at `openspec/specs/roles-decisions/`
-- **Procest bw-parafering spec**: Existing spec at `openspec/specs/bw-parafering/`
-- **Docudesk**: Document generation for besluitvorming documents
-- **Nextcloud Calendar**: Vergadering scheduling
-
-## Acceptance Criteria
-
-1. GIVEN the workflow engine with besluitvorming templates installed, WHEN an administrator configures a College-besluit zaaktype, THEN the standard process steps (voorstel, advies, parafering, agendering, besluit, bekendmaking) are pre-configured
-2. GIVEN a besluitvorming case, WHEN the voorstel is submitted for parafering, THEN the configured approval chain is activated and each designated official receives a task to paraaf the document
-3. GIVEN a parafering chain, WHEN all required parafen are collected, THEN the case automatically transitions to "Gereed voor agendering" and becomes available for agenda compilation
-4. GIVEN multiple besluitvorming cases ready for agendering, WHEN the agenda manager compiles a meeting agenda, THEN cases can be assigned as hamerstuk or bespreekstuk with configurable ordering
-5. GIVEN a vergadering zaak, WHEN the decision is taken, THEN the stemuitslag, besluit text, and attending members are recorded as structured metadata
-6. GIVEN a besluit that must be published, WHEN the handler triggers publication, THEN the system provides an integration point for DROP/LVBB publication with the required metadata
-7. GIVEN a mandaatbesluit, WHEN the decision is registered, THEN the system validates that the signing official has the authority per the configured mandaatregister
-8. GIVEN a completed besluitvorming case, WHEN the case is archived, THEN all related documents (voorstel, adviezen, parafen, besluit, bekendmaking) are linked in the case dossier
+- **Affected projects**: procest (primary — services, templates, Vue components), openconnector (DROP/LVBB dispatch), openregister (configuration data).
+- **Code surface**: new service classes (`BesluitvormingParafeerService`, `AgendaService`, `PublicationService`, `MandaatValidationService`), new workflow template JSON files, new Vue components (`AgendaCompilerView.vue`, `VergaderingDetailView.vue`, `BesluitPublicatiePanel.vue`), new routes, and a repair/seed step for templates.
+- **Dependencies**: `workflow-engine-enhancement` (REQUIRED — workflow engine must be present), `bw-parafering` spec (parafering primitives), `roles-decisions` spec (roleType/decisionType patterns), Docudesk (besluit and agenda document generation), Nextcloud Calendar (vergadering scheduling), OpenConnector (DROP/LVBB dispatch).
+- **Standards**: GEMMA Bestuurlijke Besluitvorming (SGC 1), Wet elektronische bekendmaking (Wab), DROP API v2, LVBB STOP-TPOD, VNG Raadsinformatie, Awb art. 3:42–3:44 (publicatieplicht).

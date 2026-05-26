@@ -18,6 +18,9 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -65,6 +68,7 @@ class ZgwMappingController extends Controller
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): JSONResponse
     {
         return new JSONResponse(
@@ -82,6 +86,7 @@ class ZgwMappingController extends Controller
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function show(string $resourceKey): JSONResponse
     {
         $mapping = $this->zgwMappingService->getMapping($resourceKey);
@@ -110,6 +115,7 @@ class ZgwMappingController extends Controller
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function update(string $resourceKey): JSONResponse
     {
         $params = $this->request->getParams();
@@ -134,6 +140,7 @@ class ZgwMappingController extends Controller
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function destroy(string $resourceKey): JSONResponse
     {
         $this->zgwMappingService->deleteMapping($resourceKey);
@@ -152,6 +159,7 @@ class ZgwMappingController extends Controller
      *
      * @return JSONResponse
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function reset(string $resourceKey): JSONResponse
     {
         $registerId = $this->settingsService->getConfigValue(key: 'register', default: '');

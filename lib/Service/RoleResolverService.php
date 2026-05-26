@@ -17,7 +17,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -106,6 +106,7 @@ class RoleResolverService
      *
      * @return array<string, mixed>|null
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function normaliseRule(array $entry): ?array
     {
         $rule = $entry['routingRule'] ?? null;
@@ -147,6 +148,7 @@ class RoleResolverService
      *
      * @throws RoutingStrategyMissingException When the rule's strategy is unknown
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function resolve(array $rule, array $case): array
     {
         $strategyName = (string) ($rule['strategy'] ?? '');
@@ -158,10 +160,9 @@ class RoleResolverService
 
         $caseId   = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
         $cacheKey = $this->cacheKey(rule: $rule, caseId: $caseId);
+        $cacheHit = null;
         if ($caseId !== '') {
             $cacheHit = $this->cache->get($cacheKey);
-        } else {
-            $cacheHit = null;
         }
 
         if (is_array($cacheHit) === true) {
@@ -216,6 +217,7 @@ class RoleResolverService
      *
      * @return bool
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function canExecute(array $rule, array $case, string $userId): bool
     {
         if ($userId === '') {
@@ -243,6 +245,7 @@ class RoleResolverService
      *
      * @return void
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function invalidateCache(string $caseId): void
     {
         if ($caseId === '') {
@@ -434,6 +437,7 @@ class RoleResolverService
      *
      * @throws RuntimeException
      */
+    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function fail(string $message): never
     {
         throw new RuntimeException($message);

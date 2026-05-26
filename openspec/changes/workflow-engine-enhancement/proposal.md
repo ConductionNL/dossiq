@@ -1,82 +1,89 @@
-# Workflow Engine Enhancement
+# Proposal: workflow-engine-enhancement
 
-## Summary
+## Why
 
-Enhance Procest's workflow engine to support fully configurable zaaktype workflows with zero-code configuration of process steps, status transitions, and task routing. This is the foundational change that enables VTH, Bezwaar/beroep, and Besluitvorming as follow-up workflow configurations rather than separate feature builds.
+Dutch municipalities require fully configurable, zero-code workflow definitions for case types (zaaktypen). Market intelligence shows:
+- **1,022** requirements for zaaktype configuration
+- **603** requirements for no-code/zero-coding configuration  
+- **965** requirements for drag-and-drop interface
+- **~534 unique tenders** across all clusters
 
-The engine must allow functional administrators to define zaaktype-specific workflows (process steps, status transitions, checklists, automatic actions) without developer involvement, using a visual drag-and-drop interface.
+Current Procest implementation forces developers to hard-code process steps, status transitions, and task routing. Functional administrators cannot modify workflows independently. Tenders explicitly mandate: "Zaaktypen kunnen zelfstandig en zonder tussenkomst van de Opdrachtnemer op basis van zero coding volledig worden ingericht" (case types can be configured independently and without developer involvement using zero coding).
 
-## Demand Evidence
+This is the foundational change that enables VTH (Vergunningen, Toezicht, Handhaving), Bezwaar/beroep, and Besluitvorming as follow-up workflow configurations rather than separate feature builds.
 
-### Cluster Data (from market intelligence DB)
+## What
 
-| Cluster | Requirements | Tenders |
-|---------|-------------|---------|
-| Zaaktype configuration | 1,022 | 147 |
-| No-code / zero coding configuration | 603 | 221 |
-| Drag-and-drop interface | 965 | 289 |
-| Status transitions | 190 | 101 |
-| Process steps | 90 | 47 |
-| Process automation / workflow | 72 | 35 |
-| **Total** | **2,942** | **~534 unique** |
+Enhance Procest's workflow engine to support fully configurable zaaktype workflows through a visual drag-and-drop interface. Functional administrators can:
 
-### Top Tenders
+1. **Define process steps** — ordered workflow stages with assigned tasks and automatic actions
+2. **Configure status transitions** — define permitted state changes with pre-conditions (checklists, required fields, role guards)
+3. **Set automatic actions** — trigger emails, task creation, sub-case creation on status transitions
+4. **Route by role** — configure which roles can execute which steps and transitions
+5. **Version workflows** — running cases keep their workflow version; new cases use the latest
+6. **Import/export workflows** — move definitions between environments without developer help
 
-| Tender | Organisation | URL |
-|--------|-------------|-----|
-| Levering en ondersteuning nieuw VTH systeem op basis van SaaS | Omgevingsdienst Noordzeekanaalgebied | https://www.tenderned.nl/aankondigingen/overzicht/308208 |
-| Zaaksysteem | Veiligheidsregio Brabant-Noord | https://www.tenderned.nl/aankondigingen/overzicht/319120 |
-| Zaaksysteem | Gemeente Overbetuwe | https://www.tenderned.nl/aankondigingen/overzicht/331221 |
-| Zaaksysteem | Gemeente Overbetuwe | https://www.tenderned.nl/aankondigingen/overzicht/316500 |
-| Document Management Systeem | Tilburg University | https://www.tenderned.nl/aankondigingen/overzicht/402469 |
+All configuration occurs in a visual editor with no code required.
 
-### Representative Requirements from Tenders
+## Capabilities
 
-1. "Zaaktypen kunnen, zelfstandig en zonder tussenkomst van de Opdrachtnemer, op basis van zero coding volledig worden ingericht."
-2. "Zaaktypen en webformulieren kunnen, zelfstandig en zonder tussenkomst van de Opdrachtnemer, op basis van zero coding volledig worden ingericht."
-3. "Zaaktypen worden zelfstandig en zonder tussenkomst van de leverancier volledig ingericht op basis van zero coding, passend bij de primaire processen van NIWO."
-4. "Er wordt minimaal een test-, acceptatie- en productieomgeving beschikbaar gesteld zonder beperkingen op het aantal gebruikers. De zaaktypeconfiguratie kan zonder tussenkomst van de leverancier van de ene naar de andere omgeving gebracht worden."
-5. "Indien een zaaktype door bijvoorbeeld een wetswijziging verandert, moeten lopende zaken nog met het voorgaande zaaktype, dat gebaseerd is op de oude wetgeving, worden afgehandeld."
-6. "In de ZTC2 van de oplossing is het bij zaaktypen mogelijk om bij elk statustype, voordat de statusovergang kan plaatsvinden, het volgende te definiëren..."
-7. "Op basis van zaaktypen en door verschillende beheerders (delegatie) is het mogelijk om configuraties, rollen en rechten te stapelen, overerven, kopiëren..."
-8. "Het is mogelijk in de workflow bij een processtap in te stellen dat een geautomatiseerde statusmail wordt verzonden naar de zaakklant."
+### New Capabilities
+
+- `workflow-definition-engine`: Define configurable workflow templates per zaaktype with process steps, status transitions, guards, and automatic actions
+- `workflow-visual-editor`: Drag-and-drop interface for building workflows (status nodes, transition arrows, conditions, actions)
+- `workflow-versioning`: Running cases preserve their workflow version; new cases use the latest version
+- `workflow-import-export`: Export workflow definitions to JSON; import to same or different environments
+
+### Related Capabilities
+
+- `role-based-step-routing` (existing spec) — step routing decisions enforced per defined workflows
+- `task-management` (existing spec) — tasks created by workflow automatic actions
+- `case-status-transitions` (existing spec) — status transitions gated by workflow pre-conditions
+
+## Affected Projects
+
+- [x] Project: `procest` — all implementation work in this repo
+- [x] Project: `openregister` — workflow definitions stored as OR objects with schema validation
+- Reference: `procest/openspec/specs/case-types/` — existing zaaktype/status model
+- Reference: `procest/openspec/specs/task-management/` — task creation within workflows
+- Reference: `CMMN 1.1` — workflow model aligns with CMMN concepts (CasePlanModel, stages, tasks, milestones)
 
 ## Scope
 
 ### In Scope
 
-- **Workflow definition model**: Define workflow templates per zaaktype (process steps, transitions, guards, actions)
-- **Visual workflow editor**: Drag-and-drop interface for building workflows (status nodes, transition arrows, conditions)
-- **Status transition engine**: Configurable pre-conditions (checklists, required fields, role guards) before status changes
-- **Process step configuration**: Ordered steps within a status, with assignable tasks and automatic actions
-- **Zaaktype versioning**: Running cases keep their workflow version; new cases use the latest version
-- **Workflow import/export**: Move workflow definitions between OTAP environments without developer help
-- **Automatic actions**: Trigger emails, task creation, deelzaak creation on status transitions
-- **Role-based step routing**: Configure which roles can execute which steps/transitions
+- Workflow definition model (process steps, transitions, guards, actions) stored as OR objects
+- Visual workflow editor (drag-and-drop UI for building workflows)
+- Status transition engine with configurable pre-conditions (checklists, required fields, role guards)
+- Process step configuration (ordered steps, assignable tasks, automatic actions)
+- Zaaktype versioning (running cases preserve workflow version; new cases use latest)
+- Workflow import/export (move definitions between OTAP environments)
+- Automatic actions (send emails, create tasks, create sub-cases, set fields, notify)
+- Role-based step routing (configure which roles can execute which steps/transitions)
 
 ### Out of Scope (follow-up changes)
 
-- VTH-specific workflow templates and domain logic (see `vth-workflow-configuration`)
-- Bezwaar/beroep workflow templates (see `bezwaar-beroep-workflow`)
-- Besluitvorming workflow templates (see `besluitvorming-workflow`)
-- Signalering/notification widgets (see `signalering-widgets`)
-- GIS integration (see `gis-integration`)
+- VTH-specific workflow templates and domain logic (`vth-workflow-configuration`)
+- Bezwaar/beroep workflow templates (`bezwaar-beroep-workflow`)
+- Besluitvorming workflow templates (`besluitvorming-workflow`)
+- Signalering/notification widgets (`signalering-widgets`)
+- GIS integration (`gis-integration`)
 
 ### NOTE
 
-VTH, Bezwaar/beroep, and Besluitvorming are follow-up changes that **configure** this engine with domain-specific workflows. They should not require new engine functionality -- only workflow template definitions and potentially small domain-specific extensions (e.g., leges calculation hooks for VTH).
+VTH, Bezwaar/beroep, and Besluitvorming are follow-up changes that **configure** this engine with domain-specific workflows. They should not require new engine functionality — only workflow template definitions and potentially small domain-specific extensions (e.g., leges calculation hooks for VTH).
 
 ## Dependencies
 
-- **OpenRegister**: Workflow definitions stored as OpenRegister objects with schema validation
+- **OpenRegister**: Workflow definitions stored as OR objects with schema validation
 - **Procest case-types spec**: Existing zaaktype/status model in `openspec/specs/case-types/`
 - **Procest task-management spec**: Task creation/assignment within workflows
-- **CMMN 1.1**: Workflow model should align with CMMN concepts (CasePlanModel, stages, tasks, milestones)
+- **CMMN 1.1**: Workflow model should align with CMMN concepts
 
-## Acceptance Criteria
+## Success Criteria
 
 1. GIVEN a functional administrator, WHEN they open the workflow editor for a zaaktype, THEN they can visually define process steps and status transitions without writing code
-2. GIVEN a workflow definition with pre-conditions on a status transition, WHEN a case handler attempts the transition without meeting all conditions, THEN the transition is blocked and the unmet conditions are displayed
+2. GIVEN a workflow definition with pre-conditions on a status transition, WHEN a case handler attempts the transition without meeting all conditions, THEN the transition is blocked and unmet conditions are displayed
 3. GIVEN a zaaktype with a configured workflow, WHEN a new case of that type is created, THEN the case follows the defined workflow with the correct initial status and available transitions
 4. GIVEN a zaaktype whose workflow is updated, WHEN there are running cases of that type, THEN running cases continue with the previous workflow version while new cases use the updated version
 5. GIVEN a workflow definition in a test environment, WHEN an administrator exports and imports it to production, THEN the workflow is transferred without requiring developer intervention

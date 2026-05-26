@@ -33,6 +33,7 @@ namespace OCA\Procest\Service\Parafering;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use DateTimeZone;
 use OCA\Procest\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
@@ -97,6 +98,7 @@ class AuditTrailService
      *
      * @return array<string, mixed>|null The persisted audit entry, or null when audit write failed (swallowed)
      */
+    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function record(
         string $voorstelId,
         ?string $step,
@@ -122,7 +124,7 @@ class AuditTrailService
                 throw new RuntimeException('paraferingAuditEntry configuration is missing');
             }
 
-            $timestamp = (new DateTimeImmutable('now'))->setTimezone(new \DateTimeZone('UTC'))
+            $timestamp = (new DateTimeImmutable('now'))->setTimezone(new DateTimeZone('UTC'))
                 ->format('Y-m-d\TH:i:s\Z');
 
             $entry = [
@@ -182,6 +184,7 @@ class AuditTrailService
      *
      * @throws OCSForbiddenException When append-only is violated
      */
+    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function assertAppendOnly(array $entry, bool $isUpdate): void
     {
         if ($isUpdate === true) {
@@ -220,6 +223,7 @@ class AuditTrailService
      *
      * @throws RuntimeException When configuration is missing
      */
+    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function export(string $voorstelId, string $voorstelOnderwerp, string $exportedBy): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -265,17 +269,16 @@ class AuditTrailService
 
         $retentionUntil = $this->computeRetentionUntil(completedEntry: $completed);
 
+        $selectielijstCategory = 'Algemene administratieve correspondentie — bewaartermijn 7 jaar';
         if ($completed !== null) {
             $selectielijstCategory = 'Bestuurlijke besluitvorming — bewaartermijn 20 jaar';
-        } else {
-            $selectielijstCategory = 'Algemene administratieve correspondentie — bewaartermijn 7 jaar';
         }
 
         return [
             'metadata' => [
                 'schema'                => 'MDTO 1.0',
                 'exportedAt'            => (new DateTimeImmutable('now'))
-                    ->setTimezone(new \DateTimeZone('UTC'))
+                    ->setTimezone(new DateTimeZone('UTC'))
                     ->format('Y-m-d\TH:i:s\Z'),
                 'voorstel'              => $voorstelId,
                 'voorstelOnderwerp'     => $voorstelOnderwerp,
@@ -295,6 +298,7 @@ class AuditTrailService
      *
      * @return array<string, mixed>
      */
+    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function buildContentSnapshot(array $voorstel): array
     {
         $snapshot = [];

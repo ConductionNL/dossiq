@@ -39,6 +39,7 @@
 							v-model="form.priority"
 							:options="priorityOptions"
 							:clearable="false"
+							:aria-label-combobox="t('procest', 'Priority')"
 							:placeholder="t('procest', 'Select priority')" />
 					</div>
 					<div class="form-group">
@@ -66,6 +67,7 @@
 					<NcSelect
 						v-model="form.case"
 						:options="caseOptions"
+						:aria-label-combobox="t('procest', 'Case')"
 						:clearable="true"
 						label="label"
 						:reduce="o => o.value"
@@ -124,9 +126,11 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/task-management/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/changes/task-management/tasks.md */
 		caseOptions() {
 			return this.cases.map(c => ({
 				value: c.id,
@@ -134,11 +138,13 @@ export default {
 			}))
 		},
 	},
+	/** @spec openspec/changes/task-management/tasks.md */
 	async mounted() {
 		const results = await this.objectStore.fetchCollection('case', { _limit: 200 })
 		this.cases = results || []
 	},
 	methods: {
+		/** @spec openspec/changes/task-management/tasks.md */
 		async submit() {
 			this.errors = {}
 

@@ -17,6 +17,10 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-template-library/tasks.md#task-2
+ * @spec openspec/changes/retrofit-2026-05-24-template-library/tasks.md#task-3
+ * @spec openspec/changes/retrofit-2026-05-24-template-library/tasks.md#task-4
  */
 
 declare(strict_types=1);
@@ -56,6 +60,7 @@ class TemplateLibraryService
      *
      * @return array<int, array<string, mixed>> List of template metadata
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function listTemplates(): array
     {
         $templates = [];
@@ -105,6 +110,7 @@ class TemplateLibraryService
      *
      * @return array<string, mixed>|null The full template data or null if not found
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function loadTemplate(string $templateId): ?array
     {
         $dir = self::TEMPLATES_DIR;
@@ -155,6 +161,7 @@ class TemplateLibraryService
      *
      * @throws \RuntimeException If template not found or OpenRegister unavailable
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function activateTemplate(string $templateId): array
     {
         $template = $this->loadTemplate(templateId: $templateId);

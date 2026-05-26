@@ -82,10 +82,12 @@ export default {
 	},
 
 	computed: {
+		/** @spec openspec/changes/vth-module/tasks.md */
 		enforcementStore() {
 			return useEnforcementStore()
 		},
 
+		/** @spec openspec/changes/vth-module/tasks.md */
 		ernstLabels() {
 			return [
 				{ key: 'gering', label: t('procest', 'Minor (gering)') },
@@ -94,6 +96,7 @@ export default {
 			]
 		},
 
+		/** @spec openspec/changes/vth-module/tasks.md */
 		gedragLabels() {
 			return [
 				{ key: 'goedwillend', label: t('procest', 'Cooperative') },
@@ -103,6 +106,7 @@ export default {
 			]
 		},
 
+		/** @spec openspec/changes/vth-module/tasks.md */
 		interventionOptions() {
 			return [
 				'Waarschuwing',
@@ -117,6 +121,7 @@ export default {
 		},
 	},
 
+	/** @spec openspec/changes/vth-module/tasks.md */
 	async mounted() {
 		await this.enforcementStore.loadLhsMatrix()
 		this.matrix = JSON.parse(JSON.stringify(this.enforcementStore.lhsMatrix))
@@ -126,6 +131,7 @@ export default {
 	methods: {
 		t,
 
+		/** @spec openspec/changes/vth-module/tasks.md */
 		updateCell(ernst, gedrag, value) {
 			if (!this.matrix[ernst]) {
 				this.matrix[ernst] = {}
@@ -135,6 +141,7 @@ export default {
 			this.saved = false
 		},
 
+		/** @spec openspec/changes/vth-module/tasks.md */
 		async saveMatrix() {
 			this.saving = true
 			try {
@@ -146,6 +153,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/vth-module/tasks.md */
 		resetMatrix() {
 			this.matrix = {
 				gering: {

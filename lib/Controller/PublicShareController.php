@@ -18,6 +18,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md#task-4
  */
 
 declare(strict_types=1);
@@ -77,6 +79,7 @@ class PublicShareController extends Controller
      * @PublicPage
      * @NoCSRFRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function accessShare(string $token): JSONResponse
     {
         $password   = $this->request->getParam('password');
@@ -145,6 +148,7 @@ class PublicShareController extends Controller
      * @PublicPage
      * @NoCSRFRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function addComment(string $token): JSONResponse
     {
         $password   = $this->request->getParam('password');
@@ -210,6 +214,7 @@ class PublicShareController extends Controller
      * @PublicPage
      * @NoCSRFRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function viewStatus(string $token): JSONResponse
     {
         $validation = $this->caseSharingService->validateToken($token);
@@ -255,6 +260,7 @@ class PublicShareController extends Controller
      * @PublicPage
      * @NoCSRFRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function uploadDocument(string $token): JSONResponse
     {
         $password   = $this->request->getParam('password');

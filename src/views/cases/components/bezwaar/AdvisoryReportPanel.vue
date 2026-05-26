@@ -39,7 +39,8 @@
 				<label>{{ t('procest', 'Advice Type') }} *</label>
 				<NcSelect
 					v-model="form.adviceType"
-					:options="adviceTypeOptions" />
+					:options="adviceTypeOptions"
+					:aria-label-combobox="t('procest', 'Advice Type')" />
 			</div>
 
 			<div class="form-group">
@@ -159,23 +160,28 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		hasReport() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.hasAdvisoryReport
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		report() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.currentAdvisoryReport
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		showCompositionWarning() {
 			return this.committeeMembers.length < 3
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		hasConflictOfInterest() {
 			if (!this.primaryDecisionMaker) return false
 			return this.committeeMembers.some((m) => m.id === this.primaryDecisionMaker)
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		getAdviceTypeLabel(type) {
 			const labels = {
 				gegrond: t('procest', 'Upheld'),
@@ -185,6 +191,7 @@ export default {
 			}
 			return labels[type] || type
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async save() {
 			this.saving = true
 			const bezwaarStore = useBezwaarStore()

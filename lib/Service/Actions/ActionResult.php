@@ -21,6 +21,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-automatic-actions/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -61,6 +63,7 @@ final class ActionResult
      *
      * @return self
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public static function success(array $data=[]): self
     {
         return new self(ok: true, error: null, data: $data);
@@ -74,6 +77,7 @@ final class ActionResult
      *
      * @return self
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public static function failure(string $error, array $data=[]): self
     {
         return new self(ok: false, error: $error, data: $data);
@@ -85,6 +89,7 @@ final class ActionResult
      *
      * @return array
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function toArray(): array
     {
         $out = ['ok' => $this->ok];

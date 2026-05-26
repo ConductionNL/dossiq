@@ -60,6 +60,7 @@ class SetFieldHandler implements ActionHandlerInterface
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {

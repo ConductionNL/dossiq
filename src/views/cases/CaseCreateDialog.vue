@@ -21,6 +21,7 @@
 					<NcSelect
 						v-model="selectedCaseType"
 						:options="availableCaseTypes"
+						:aria-label-combobox="t('procest', 'Case type')"
 						label="title"
 						track-by="id"
 						:placeholder="t('procest', 'Select a case type...')"
@@ -78,6 +79,7 @@
 					<NcSelect
 						v-model="selectedIntakeChannel"
 						:options="intakeChannelOptions"
+						:aria-label-combobox="t('procest', 'Intake channel')"
 						label="label"
 						track-by="value"
 						:placeholder="t('procest', 'Select intake channel...')"
@@ -150,12 +152,14 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
 		isSubCaseMode() {
 			return !!this.parentCase
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		intakeChannelOptions() {
 			// REQ-INTAKE-11a: channel options (Balie, Telefoon, E-mail, Post, Website, Overig)
 			// Default is "manual" per REQ-INTAKE-11b.
@@ -169,16 +173,19 @@ export default {
 				{ value: 'overig', label: t('procest', 'Other') },
 			]
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		dialogTitle() {
 			return this.isSubCaseMode
 				? t('procest', 'Create Sub-case')
 				: t('procest', 'New Case')
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		submitLabel() {
 			return this.isSubCaseMode
 				? t('procest', 'Create sub-case')
 				: t('procest', 'Create case')
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		availableCaseTypes() {
 			const usable = this.caseTypes.filter(ct => isCaseTypeUsable(ct))
 
@@ -194,20 +201,24 @@ export default {
 
 			return usable
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		formattedDeadline() {
 			if (!this.selectedCaseType?.processingDeadline) return '\u2014'
 			return formatDuration(this.selectedCaseType.processingDeadline)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		initialStatusName() {
 			if (this.statusTypes.length === 0) return '\u2014'
 			const sorted = [...this.statusTypes].sort((a, b) => (a.order || 0) - (b.order || 0))
 			return sorted[0]?.name || '\u2014'
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		initialStatusType() {
 			if (this.statusTypes.length === 0) return null
 			const sorted = [...this.statusTypes].sort((a, b) => (a.order || 0) - (b.order || 0))
 			return sorted[0]
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		calculatedDeadlineText() {
 			if (!this.selectedCaseType?.processingDeadline) return '\u2014'
 			const deadline = calculateDeadline(new Date(), this.selectedCaseType.processingDeadline)
@@ -218,6 +229,7 @@ export default {
 		await this.loadCaseTypes()
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async loadCaseTypes() {
 			this.loadingTypes = true
 			const results = await this.objectStore.fetchCollection('caseType', { _limit: 100 })
@@ -225,6 +237,7 @@ export default {
 			this.loadingTypes = false
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async onCaseTypeSelected(caseType) {
 			this.form.caseType = caseType?.id || null
 			this.errors.caseType = ''
@@ -240,6 +253,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async submit() {
 			const validation = validateCaseCreate(this.form, this.caseTypes)
 			if (!validation.valid) {
@@ -326,6 +340,7 @@ export default {
 					<NcSelect
 						v-model="selectedCaseType"
 						:options="usableCaseTypes"
+						:aria-label-combobox="t('procest', 'Case type')"
 						label="title"
 						track-by="id"
 						:placeholder="t('procest', 'Select a case type...')"
@@ -462,31 +477,38 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		usableCaseTypes() {
 			return this.caseTypes.filter(ct => isCaseTypeUsable(ct))
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		formattedDeadline() {
 			if (!this.selectedCaseType?.processingDeadline) return '—'
 			return formatDuration(this.selectedCaseType.processingDeadline)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		initialStatusName() {
 			if (this.statusTypes.length === 0) return '—'
 			const sorted = [...this.statusTypes].sort((a, b) => (a.order || 0) - (b.order || 0))
 			return sorted[0]?.name || '—'
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		initialStatusType() {
 			if (this.statusTypes.length === 0) return null
 			const sorted = [...this.statusTypes].sort((a, b) => (a.order || 0) - (b.order || 0))
 			return sorted[0]
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		calculatedDeadlineText() {
 			if (!this.selectedCaseType?.processingDeadline) return '—'
 			const deadline = calculateDeadline(new Date(), this.selectedCaseType.processingDeadline)
 			return deadline ? formatDate(deadline.toISOString()) : '—'
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		locationRequired() {
 			return this.selectedCaseType?.requiresLocation === true
 				|| this.selectedCaseType?.requiresLocation === 'true'
@@ -496,6 +518,7 @@ export default {
 		await this.loadCaseTypes()
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async loadCaseTypes() {
 			this.loadingTypes = true
 			const results = await this.objectStore.fetchCollection('caseType', { _limit: 100 })
@@ -503,6 +526,7 @@ export default {
 			this.loadingTypes = false
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async onCaseTypeSelected(caseType) {
 			// Look up active workflow version for this case type
 			this.activeWorkflowId = null
@@ -531,12 +555,14 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		onLocationSave(geometry) {
 			this.form.geometry = geometry
 			this.showLocationPicker = false
 			this.errors.geometry = ''
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async submit() {
 			const validation = validateCaseCreate(this.form, this.caseTypes)
 			if (!validation.valid) {

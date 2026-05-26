@@ -16,6 +16,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -82,6 +84,7 @@ class InspectionService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getInspections(
         string $inspectorId,
         ?string $date,
@@ -132,6 +135,7 @@ class InspectionService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function captureLocation(
         array $inspection,
         float $latitude,
@@ -191,6 +195,7 @@ class InspectionService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function addPhoto(array $inspection, array $photoMetadata): array
     {
         $photo = [
@@ -220,6 +225,7 @@ class InspectionService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function completeInspection(array $inspection, string $conclusion=''): array
     {
         $checklist = $inspection['checklist'] ?? [];

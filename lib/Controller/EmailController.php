@@ -8,7 +8,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -18,6 +18,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -58,6 +60,7 @@ class EmailController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function send(string $caseId): JSONResponse
     {
         try {
@@ -95,6 +98,7 @@ class EmailController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function sendFromTemplate(string $caseId): JSONResponse
     {
         try {
@@ -130,6 +134,7 @@ class EmailController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function preview(string $caseId): JSONResponse
     {
         $content = $this->request->getContent();
@@ -167,6 +172,7 @@ class EmailController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function templates(string $caseTypeId): JSONResponse
     {
         $templates = $this->emailService->getTemplatesForCaseType($caseTypeId);

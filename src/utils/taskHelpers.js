@@ -18,6 +18,7 @@ const PRIORITY_WEIGHTS = {
  *
  * @return {object} Priority levels keyed by priority name
  */
+/** @spec openspec/changes/task-management/tasks.md */
 export function getPriorityLevels() {
 	return {
 		urgent: { label: t('procest', 'Urgent'), weight: 1, cssVar: '--color-error' },
@@ -34,6 +35,7 @@ export function getPriorityLevels() {
  * @param {object} task Task object with dueDate and status
  * @return {boolean}
  */
+/** @spec openspec/changes/task-management/tasks.md */
 export function isOverdue(task) {
 	if (!task.dueDate) return false
 	if (isTerminalStatus(task.status)) return false
@@ -50,6 +52,7 @@ export function isOverdue(task) {
  * @param {object} task Task object with dueDate and status
  * @return {boolean}
  */
+/** @spec openspec/changes/task-management/tasks.md */
 export function isDueToday(task) {
 	if (!task.dueDate) return false
 	if (isTerminalStatus(task.status)) return false
@@ -66,6 +69,7 @@ export function isDueToday(task) {
  * @param {object} task Task object with dueDate
  * @return {string|null} Overdue text or null if not overdue
  */
+/** @spec openspec/changes/task-management/tasks.md */
 export function getOverdueText(task) {
 	if (!isOverdue(task)) return null
 	const due = new Date(task.dueDate)
@@ -86,6 +90,7 @@ export function getOverdueText(task) {
  * @param {string} dateString ISO 8601 date string
  * @return {string} Formatted date
  */
+/** @spec openspec/changes/task-management/tasks.md */
 export function formatDueDate(dateString) {
 	if (!dateString) return '—'
 	const date = new Date(dateString)
@@ -98,6 +103,7 @@ export function formatDueDate(dateString) {
  * @param {string} priority One of urgent, high, normal, low
  * @return {number}
  */
+/** @spec openspec/changes/task-management/tasks.md */
 export function prioritySortWeight(priority) {
 	return PRIORITY_WEIGHTS[priority] ?? 3
 }
@@ -126,6 +132,7 @@ function statusGroupWeight(status) {
  * @param {object[]} tasks Array of task objects
  * @return {object[]} Sorted copy of the array
  */
+/** @spec openspec/changes/task-management/tasks.md */
 export function sortTasks(tasks) {
 	return [...tasks].sort((a, b) => {
 		const statusDiff = statusGroupWeight(a.status) - statusGroupWeight(b.status)

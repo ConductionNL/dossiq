@@ -90,6 +90,7 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		async askQuestion() {
 			if (!this.question) return
 			const q = this.question
@@ -112,6 +113,7 @@ export default {
 				this.askLoading = false
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		async loadSuggestions() {
 			this.suggestionsLoading = true
 			try {
@@ -123,6 +125,7 @@ export default {
 				this.suggestionsLoading = false
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		async loadSummary() {
 			this.summaryLoading = true
 			try {
@@ -134,9 +137,11 @@ export default {
 				this.summaryLoading = false
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		handleAccept(suggestion) {
 			this.$emit('suggestion-accepted', suggestion)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		handleReject(suggestion, reason) {
 			this.$emit('suggestion-rejected', suggestion, reason)
 		},

@@ -8,7 +8,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -18,6 +18,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -62,6 +64,7 @@ class MilestoneController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function progress(string $caseId, string $caseTypeId): JSONResponse
     {
         try {
@@ -82,6 +85,7 @@ class MilestoneController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function mark(string $caseId, string $milestoneId): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -114,6 +118,7 @@ class MilestoneController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function reverse(string $caseId, string $milestoneId): JSONResponse
     {
         $reason = $this->request->getParam('reason', '');

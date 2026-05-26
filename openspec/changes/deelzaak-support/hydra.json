@@ -1,0 +1,8 @@
+{
+  "spec_slug": "deelzaak-support",
+  "title": "Deelzaak Support",
+  "app": "procest",
+  "repo": "https://github.com/ConductionNL/procest",
+  "depends_on": [],
+  "issue": null
+}

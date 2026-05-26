@@ -95,6 +95,7 @@
 					<NcSelect
 						v-model="form.decisionType"
 						:options="decisionTypeOptions"
+						:aria-label-combobox="t('procest', 'Decision type')"
 						label="label"
 						:reduce="o => o.value"
 						:clearable="true"
@@ -163,6 +164,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/roles-decisions/tasks.md */
 		sortedDecisions() {
 			return [...this.decisions].sort((a, b) => {
 				const dateA = a.decisionDate || a.created || ''
@@ -170,6 +172,7 @@ export default {
 				return dateB.localeCompare(dateA) // newest first
 			})
 		},
+		/** @spec openspec/changes/roles-decisions/tasks.md */
 		decisionTypeOptions() {
 			return this.decisionTypes.map(dt => ({
 				value: dt.id,
@@ -181,6 +184,7 @@ export default {
 		await this.loadData()
 	},
 	methods: {
+		/** @spec openspec/changes/roles-decisions/tasks.md */
 		async loadData() {
 			this.loading = true
 			const objectStore = useObjectStore()
@@ -211,15 +215,18 @@ export default {
 			return getDecisionValidity(decision)
 		},
 
+		/** @spec openspec/changes/roles-decisions/tasks.md */
 		formatDate(dateStr) {
 			return formatDecisionDate(dateStr)
 		},
 
+		/** @spec openspec/changes/roles-decisions/tasks.md */
 		getDecisionTypeName(typeId) {
 			const dt = this.decisionTypes.find(t => t.id === typeId)
 			return dt?.name || ''
 		},
 
+		/** @spec openspec/changes/roles-decisions/tasks.md */
 		editDecision(decision) {
 			if (this.isReadOnly) return
 			this.editingDecision = decision
@@ -234,6 +241,7 @@ export default {
 			this.showCreateForm = true
 		},
 
+		/** @spec openspec/changes/roles-decisions/tasks.md */
 		closeForm() {
 			this.showCreateForm = false
 			this.editingDecision = null
@@ -241,6 +249,7 @@ export default {
 			this.formErrors = {}
 		},
 
+		/** @spec openspec/changes/roles-decisions/tasks.md */
 		async saveDecision() {
 			const validation = validateDecision(this.form)
 			if (!validation.valid) {
@@ -276,6 +285,7 @@ export default {
 			await this.loadData()
 		},
 
+		/** @spec openspec/changes/roles-decisions/tasks.md */
 		async deleteDecision() {
 			if (!this.editingDecision) return
 			if (!confirm(t('procest', 'Are you sure you want to delete this decision?'))) return

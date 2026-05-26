@@ -57,6 +57,7 @@ class WebhookHandler implements ActionHandlerInterface
      *
      * @return ActionResult
      */
+    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {

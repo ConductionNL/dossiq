@@ -22,6 +22,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -30,6 +32,7 @@ namespace OCA\Procest\Service;
 
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for resolving WMS/WFS overlay layers per case type and routing all
@@ -92,6 +95,7 @@ class WmsWfsService
      *
      * @return array<int, array<string, mixed>> Plain array of layer dicts
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getLayersForCaseType(array|object $caseType): array
     {
         $caseTypeArr = $caseType;
@@ -158,6 +162,7 @@ class WmsWfsService
      *
      * @return array{ok: bool, errors: array<int, array{field: string, code: string, message: string}>}
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validateLayer(array $layer): array
     {
         $errors = [];
@@ -222,6 +227,7 @@ class WmsWfsService
      *
      * @throws \RuntimeException When the request violates a guard rail
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function proxyRequest(array $layer, array $params): array
     {
         $type    = strtoupper((string) ($layer['type'] ?? 'WMS'));
@@ -229,13 +235,13 @@ class WmsWfsService
         $url     = (string) ($layer['url'] ?? '');
 
         if ($url === '') {
-            throw new \RuntimeException('Layer has no URL', 400);
+            throw new RuntimeException('Layer has no URL', 400);
         }
 
         // REQ-WMS-7: non-queryable layers must not issue GetFeatureInfo.
         $queryable = (bool) ($layer['queryable'] ?? false);
         if ($queryable === false && $request === 'GETFEATUREINFO') {
-            throw new \RuntimeException('Layer is not queryable', 403);
+            throw new RuntimeException('Layer is not queryable', 403);
         }
 
         // REQ-WMS-5: cap tile dimensions.
@@ -253,23 +259,23 @@ class WmsWfsService
         if ($type === 'WFS') {
             $bbox = (string) ($params['bbox'] ?? $params['BBOX'] ?? '');
             if ($bbox === '' && $request === 'GETFEATURE') {
-                throw new \RuntimeException('WFS GetFeature requires BBOX', 400);
+                throw new RuntimeException('WFS GetFeature requires BBOX', 400);
             }
 
             $cutoffKm = (float) ($layer['extentCutoffKm'] ?? self::DEFAULT_EXTENT_CUTOFF_KM);
             if ($bbox !== '' && $this->bboxExceedsCutoff(bbox: $bbox, cutoffKm: $cutoffKm) === true) {
-                throw new \RuntimeException('Visible extent exceeds layer cutoff; zoom in for details', 413);
+                throw new RuntimeException('Visible extent exceeds layer cutoff; zoom in for details', 413);
             }
         }
 
         // Build the upstream query.
         $version = (string) ($layer['version'] ?? '');
-        if ($version === '') {
-            if ($type === 'WFS') {
-                $version = self::DEFAULT_WFS_VERSION;
-            } else {
-                $version = self::DEFAULT_WMS_VERSION;
-            }
+        if ($version === '' && $type === 'WFS') {
+            $version = self::DEFAULT_WFS_VERSION;
+        }
+
+        if ($version === '' && $type !== 'WFS') {
+            $version = self::DEFAULT_WMS_VERSION;
         }
 
         $query            = array_change_key_case($params, CASE_UPPER);
@@ -289,10 +295,12 @@ class WmsWfsService
             if ($height > 0) {
                 $query['HEIGHT'] = (string) $height;
             }
-        } else {
+        }
+
+        if ($type !== 'WMS') {
             $query['TYPENAMES'] = (string) ($layer['layerName'] ?? '');
             $query['SRSNAME']   = (string) ($layer['srs'] ?? 'EPSG:28992');
-        }//end if
+        }
 
         // Delegate ALL outbound HTTP to GisProxyService — enforces allowlist + rate limit.
         return $this->gisProxyService->proxyRequest($url, $query, strtolower($type));
@@ -311,6 +319,7 @@ class WmsWfsService
      *
      * @return string Upstream URL (proxy POST path is /api/wms-wfs/proxy)
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildGetMapUrl(array $layer, string $bbox, int $width, int $height): string
     {
         if ($width > self::MAX_TILE_DIMENSION) {
@@ -356,10 +365,11 @@ class WmsWfsService
      *
      * @throws \RuntimeException When BBOX is missing
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildGetFeatureUrl(array $layer, string $bbox): string
     {
         if ($bbox === '') {
-            throw new \RuntimeException('WFS GetFeature requires BBOX', 400);
+            throw new RuntimeException('WFS GetFeature requires BBOX', 400);
         }
 
         $version = (string) ($layer['version'] ?? self::DEFAULT_WFS_VERSION);
@@ -388,6 +398,7 @@ class WmsWfsService
      *
      * @return array<string, mixed>|null The layer dict, or null when not found
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getLayerById(string $layerId): ?array
     {
         if ($layerId === '') {

@@ -221,14 +221,17 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		objectStore() { return useObjectStore() },
 	},
+	/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 	async mounted() {
 		if (!this.isCreate && this.caseTypeId) {
 			await Promise.all([this.fetchPropertyDefs(), this.fetchStatusTypes()])
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async fetchPropertyDefs() {
 			this.loading = true
 			try {
@@ -239,6 +242,7 @@ export default {
 			} catch (e) { this.error = e.message }
 			this.loading = false
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async fetchStatusTypes() {
 			try {
 				const result = await this.objectStore.fetchCollection('statusType', {
@@ -247,6 +251,7 @@ export default {
 				this.statusTypes = result || []
 			} catch (e) { /* ignore — status types are optional for property definitions */ }
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async addProperty() {
 			this.addError = ''
 			if (!this.newForm.name?.trim()) { this.addError = t('procest', 'Name is required'); return }
@@ -260,8 +265,11 @@ export default {
 				this.addError = this.objectStore.getError('propertyDefinition') || t('procest', 'Failed to add property')
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		startEdit(pd) { this.editingId = pd.id; this.editForm = { ...pd }; this.editError = '' },
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		cancelEdit() { this.editingId = null; this.editForm = {}; this.editError = '' },
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async saveEdit() {
 			this.editError = ''
 			if (!this.editForm.name?.trim()) { this.editError = t('procest', 'Name is required'); return }
@@ -276,6 +284,7 @@ export default {
 				this.editError = this.objectStore.getError('propertyDefinition') || t('procest', 'Failed to save')
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async deleteProperty(pd) {
 			if (!confirm(t('procest', 'Delete property "{name}"?', { name: pd.name }))) return
 			const ok = await this.objectStore.deleteObject('propertyDefinition', pd.id)

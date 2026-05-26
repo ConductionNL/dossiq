@@ -1,80 +1,132 @@
-# Bezwaar en Beroep Workflow
+---
+kind: config
+depends_on:
+  - workflow-engine-enhancement
+chain: []
+---
 
-## Summary
+# Proposal: bezwaar-beroep-workflow
 
-Configure the Procest workflow engine (from `workflow-engine-enhancement`) with workflows for the objection and appeal process (bezwaar en beroep). This covers the full lifecycle from receiving an objection against a government decision, through hearing (hoorzitting), advisory committee (bezwaarschriftencommissie), to the final decision on the objection -- all in compliance with the Algemene wet bestuursrecht (AWB).
+**Status:** proposed
+**Scope:** procest
+**Owner:** Conduction BV — Procest team
 
-This is primarily a workflow configuration change with targeted extensions for AWB-specific requirements like statutory deadlines, hearing scheduling, and dossier sharing with legal departments.
+## Why
 
-## Demand Evidence
+Dutch public administration handles roughly 1,070 documented requirements
+and ~280 unique tender signals around bezwaar en beroep (Specter cluster
+data: 801 requirements + 269 AWB-specific requirements). Representative
+tenders from Werkorganisatie HLT Samen, Gemeente Beverwijk, Gemeente
+Nissewaard and others all cite bezwaar/beroep dossier handling,
+hearing scheduling, and automatic deadline tracking as core expectations
+of a modern zaaksysteem.
 
-### Cluster Data (from market intelligence DB)
+Procest's workflow engine (`workflow-engine-enhancement`) ships a generic
+process graph — but bezwaar en beroep is not generic. The Algemene wet
+bestuursrecht (AWB) imposes:
 
-| Cluster | Requirements | Tenders |
-|---------|-------------|---------|
-| Bezwaar en beroep (objection/appeal) | 801 | 209 |
-| AWB (Algemene wet bestuursrecht) | 269 | 127 |
-| **Total** | **1,070** | **~280 unique** |
+- a non-negotiable 6-week (or 12-week with verdaging) beslissingstermijn;
+- mandatory ontvankelijkheidstoets before any hearing is held;
+- a right-to-be-heard (hoorplicht, AWB art. 7:2) that must be schedulable
+  against Nextcloud Calendar with formal invitations;
+- a bezwaarschriftencommissie advisory track (AWB art. 7:13) with a
+  separate opinion document and deviation-from-advice reasoning;
+- a rechtsmiddelenclausule in the beslissing op bezwaar informing the
+  citizen of their beroep options.
 
-### Top Tenders
+Without pre-configured bezwaar/beroep workflows, every Procest customer
+must hand-wire these legally mandated steps from scratch — creating
+compliance risk and implementation effort that kills deal velocity.
 
-| Tender | Organisation | URL |
-|--------|-------------|-----|
-| Zaaksysteem | Werkorganisatie HLT Samen | https://www.tenderned.nl/aankondigingen/overzicht/399455 |
-| Geintegreerd Zaaksysteem met KCS-functionaliteit | Gemeente Beverwijk | https://www.tenderned.nl/aankondigingen/overzicht/411386 |
-| Zaaksysteem gemeente Winterswijk | Gemeente Winterswijk | https://www.tenderned.nl/aankondigingen/overzicht/198896 |
-| Zaaksysteem (met geintegreerd DMS en RMA) | Gemeente Nissewaard | https://www.tenderned.nl/aankondigingen/overzicht/257916 |
-| Het leveren van een zaaksysteem | Gemeente Den Helder | https://www.tenderned.nl/aankondigingen/overzicht/267874 |
-| De levering, onderhoud en implementatie van een SaaS-oplossing voor een Zaaksysteem | Gemeente Horst aan de Maas | https://www.tenderned.nl/aankondigingen/overzicht/345060 |
+This change installs:
 
-### Representative Requirements from Tenders
+1. **Seed configuration** — two caseType seeds (bezwaar, beroep) with
+   their status lifecycles, role types, document types, decision types,
+   result types, and custom property definitions.
+2. **workflowTemplate** — a pre-wired AWB-compliant workflow for both
+   zaaktypen, installed as active templates.
+3. **Targeted code extensions** beyond the generic workflow engine:
+   - Primair besluit linking (cross-case reference on creation)
+   - Nextcloud Calendar integration for hoorzitting scheduling
+   - Automated dossier compilation from original + bezwaar documents
+   - Beroep dossier export (bundled PDF for court submission)
 
-1. "Dossier digitaal kunnen delen met o.a. de afdeling Juridische Zaken voor behandeling in bezwaar- en beroep."
-2. "Toestemming vragen voor het inschakelen van subverwerkers is een wens. Leverancier informeert opdrachtgever schriftelijk; opdrachtgever kan bezwaar aantekenen."
-3. "Hoorzittingen en rechtszaken -- Met enige regelmaat komt het voor dat een aanvrager in beroep gaat tegen een door de Opdrachtgever genomen besluit."
-4. "De gevolgen van een bezwaar- en beroepsafhandeling op objectgegevens moet automatisch verwerkt worden in het WOZ-object voor het komende jaar en - indien van toepassing - automatisch worden verwerkt naar Heffen en Innen (automatisch verminderen)."
-5. "IPO kan verwerker schriftelijk opdracht geven om zelf aan het verzoek of bezwaar gevolg te geven. Verwerker zal IPO op haar eerste verzoek door middel van passende technische en organisatorische maatregelen bijstand verlenen."
+## What changes
 
-## Scope
+### Seed configuration (kind: config)
 
-### In Scope -- Configuration (using workflow engine)
+| Seed object | Type | Description |
+|---|---|---|
+| `Bezwaarschrift behandeling` | caseType | AWB-compliant bezwaar case type with 6-week deadline |
+| `Beroepschrift behandeling` | caseType | Administrative court appeal case type |
+| 7 status types (bezwaar) | statusType | Ontvangen → Ontvankelijkheidstoets → Hoorzitting plannen → Hoorzitting → Advies commissie → Beslissing op bezwaar → Bekendmaking |
+| 2 terminal statuses | statusType | Niet-ontvankelijk verklaard, Ingetrokken |
+| 5 role types (bezwaar) | roleType | Bezwaarmaker, Vertegenwoordiger, Behandelaar, Commissievoorzitter, Commissielid |
+| 3 role types (beroep) | roleType | Appellant, Verweerder, Procesgemachtigde |
+| Document types | documentType | Bezwaarschrift, Primair besluit kopie, Verweerschrift, Hoorzittingverslag, Advies commissie, Beslissing op bezwaar, Beroepschrift, Dossier export |
+| Decision types | decisionType | Gegrond, Ongegrond, Niet-ontvankelijk, Gedeeltelijk gegrond |
+| Result types | resultType | Bezwaar gegrond (herroeping), Bezwaar ongegrond, Bezwaar niet-ontvankelijk, Beroep ingesteld |
+| Property definitions | propertyDefinition | AWB-specifieke velden: verdagingReden, opschortingReden, opschortingStartDatum, opschortingEindDatum, proVoorzieningGevraagd |
+| Bezwaar workflowTemplate | workflowTemplate | Active AWB workflow with 7 steps, guards, and automatic actions |
+| Beroep workflowTemplate | workflowTemplate | Active beroep workflow with 4 steps |
 
-- **Bezwaar zaaktype template**: Pre-configured zaaktype for bezwaarbehandeling with AWB-compliant process steps
-- **Bezwaar process steps**: Ontvangst, Ontvankelijkheidstoets, Hoorzitting plannen, Hoorzitting, Advies commissie, Beslissing op bezwaar, Bekendmaking
-- **Bezwaar status transitions**: With AWB-mandated pre-conditions (e.g., ontvankelijkheid must be determined before hearing)
-- **Beroep zaaktype template**: Configuration for cases escalated to administrative court (bestuursrechter)
-- **AWB deadline configuration**: Statutory 6-week decision deadline with configurable extension (verdaging) and suspension (opschorting)
+### Code extensions (kind: code — follow-up chains)
 
-### In Scope -- Extra functionality beyond generic workflows
+The following extend beyond declarative seed data and land as targeted
+code additions against the workflow engine's hook points:
 
-- **Primair besluit linking**: Link bezwaar zaak to the original decision (primair besluit) that is being contested, with automatic cross-referencing
-- **Hoorzitting scheduling**: Integration with Nextcloud Calendar for hearing scheduling with participant invitations
-- **Dossier compilation**: Automated compilation of the bezwaar dossier from the original case documents plus bezwaar-specific documents
-- **Bezwaarschriftencommissie support**: Advisory track with external committee members, opinion document workflow
-- **AWB deadline engine**: Specific AWB deadlines (6 weeks for beslissing, extension rules, opschorting triggers) pre-configured in the workflow with automatic termijnbewaking
-- **Beroep dossier export**: Export complete dossier for submission to administrative court
+- **Primair besluit linker**: on bezwaar case creation, cross-reference
+  the contestedDecision field and link via `relatedCases` / `caseObject`.
+- **Calendar integration**: `hearingSession` POST triggers a Nextcloud
+  Calendar event with ICS invitations to all `invitees`.
+- **Dossier compiler**: assembles `caseDocument` references from the
+  original case and the bezwaar case into a single ordered dossier view.
+- **Beroep dossier export**: bundles the compiled dossier as a
+  downloadable ZIP (or merged PDF via docudesk) for court submission.
 
-### Out of Scope
+These four extensions are declared in this change's specs but implemented
+in the code chain (`bezwaar-beroep-workflow-code`).
+
+## Impact
+
+- **Seeds installed:** 2 caseTypes, 9 statusTypes (bezwaar), 4 statusTypes
+  (beroep), 8 roleTypes, 8 documentTypes, 4 decisionTypes, 4 resultTypes,
+  5 propertyDefinitions, 2 workflowTemplates.
+- **Code changed:** targeted extensions to the hoorzitting scheduling
+  hook, dossier compilation service, and beroep export endpoint. No
+  parallel workflow engine; no custom state machine service.
+- **AWB compliance surface:** the 6-week deadline, verdaging, opschorting,
+  hoorplicht, commissieadvies, and rechtsmiddelenclausule are all traceable
+  to explicit workflowTemplate steps and guards.
+- **No breaking changes** — existing case management, workflow engine,
+  roles, and decisions continue unchanged. Bezwaar/beroep seeds sit beside
+  them as additional caseType seeds.
+
+## Out of scope
 
 - Generic workflow engine (covered by `workflow-engine-enhancement`)
-- Signalering/alerts for deadlines (covered by `signalering-widgets` -- but AWB deadlines must be trackable)
+- Signalering/deadline alerts (covered by `signalering-widgets` — AWB
+  deadlines are trackable via the deadline field; alerting is external)
 - WOZ/tax-specific bezwaar processing (domain-specific to tax systems)
+- Automatic propagation of bezwaar outcome to WOZ objects (domain-specific)
+- Generic calendar integration beyond hoorzitting (separate calendar
+  integration change if needed)
+- Legal cost calculation (procordia)
 
-## Dependencies
+## Reviewer gates this change should pass
 
-- **workflow-engine-enhancement** (REQUIRED): This change configures the workflow engine
-- **Procest case management**: Bezwaar creates a new case linked to the original case
-- **deelzaak-support** (RECOMMENDED): Bezwaar is often modeled as a related case to the primair besluit
-- **Nextcloud Calendar**: Hoorzitting scheduling
-- **Nextcloud Files**: Dossier document management
-
-## Acceptance Criteria
-
-1. GIVEN the workflow engine with bezwaar templates installed, WHEN a citizen files an objection against a decision, THEN a bezwaar case is created linked to the original decision case with the AWB-compliant workflow activated
-2. GIVEN a bezwaar case, WHEN the ontvankelijkheidstoets step is completed as "ontvankelijk", THEN the workflow progresses to hearing scheduling and the 6-week AWB deadline starts
-3. GIVEN a bezwaar case with a 6-week deadline, WHEN the deadline approaches (configurable threshold), THEN the system provides deadline tracking data that the signalering system can use for alerts
-4. GIVEN a bezwaar case, WHEN the handler needs to extend the deadline (verdaging), THEN they can register the extension with reason and the deadline is automatically recalculated per AWB rules
-5. GIVEN a bezwaar case requiring a hearing, WHEN the handler schedules a hoorzitting, THEN a calendar event is created with invitations to all parties (bezwaarmaker, vertegenwoordiger, commissieleden)
-6. GIVEN a completed bezwaar procedure, WHEN the handler needs to share the dossier with Juridische Zaken or court, THEN the system compiles all relevant documents (original decision, bezwaarschrift, hearing report, advice, beslissing) into an exportable dossier
-7. GIVEN a beslissing op bezwaar that overturns the original decision, WHEN the handler registers the outcome, THEN the original case is updated to reflect the bezwaar outcome
-8. GIVEN a bezwaar case that escalates to beroep, WHEN the handler creates a beroep case, THEN the beroep case inherits the dossier and links to both the bezwaar and the original decision
+- ADR-022: no parallel workflow engine — workflowTemplate is the
+  single mechanism; no `BezwaarService::transition()` in procest `lib/`.
+- ADR-031: all status lifecycles declared as `x-openregister-lifecycle`
+  on the caseType seed; no `BezwaarTermijnService` class.
+- ADR-024: each bezwaar/beroep entry in `src/manifest.json` per the
+  manifest navigation requirement (REQ-BBW-011).
+- AWB art. 7:2 hoorrecht: `hearingSession` required before
+  Beslissing op bezwaar unless waived — enforced as workflow guard.
+- AWB art. 7:10 termijn: `processingDeadline: "P6W"` on bezwaar
+  caseType; `extensionPeriod: "P6W"` for verdaging; `suspensionAllowed`
+  for opschorting.
+- AWB art. 7:12 motiveringsplicht: `appealDecision.dispositionDetails`
+  is a required field.
+- AWB art. 7:13 commissieadvies: `advisoryReport` entity is the
+  single record for committee advice; no separate advisory database.

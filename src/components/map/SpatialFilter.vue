@@ -54,12 +54,14 @@ export default {
 		}
 	},
 	watch: {
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		map(newMap) {
 			if (newMap && !this.drawnItems) {
 				this.initDrawLayer()
 			}
 		},
 	},
+	/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 	mounted() {
 		if (this.map) {
 			this.initDrawLayer()
@@ -69,6 +71,7 @@ export default {
 		this.cleanup()
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		initDrawLayer() {
 			this.drawnItems = new L.FeatureGroup()
 			this.map.addLayer(this.drawnItems)
@@ -82,6 +85,7 @@ export default {
 			})
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		startRectangle() {
 			this.activeMode = 'rectangle'
 			this.cleanup()
@@ -90,6 +94,7 @@ export default {
 			handler.enable()
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		startPolygon() {
 			this.activeMode = 'polygon'
 			this.cleanup()
@@ -98,6 +103,7 @@ export default {
 			handler.enable()
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		clearSelection() {
 			this.activeMode = null
 			this.selectedArea = null
@@ -107,6 +113,7 @@ export default {
 			this.$emit('clear')
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		cleanup() {
 			if (this.drawControl && this.map) {
 				this.map.removeControl(this.drawControl)

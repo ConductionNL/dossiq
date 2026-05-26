@@ -8,7 +8,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -18,6 +18,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -58,6 +60,7 @@ class ConsultationController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(string $caseId): JSONResponse
     {
         $consultations = $this->consultationService->getConsultationsForCase($caseId);
@@ -71,6 +74,7 @@ class ConsultationController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function create(): JSONResponse
     {
         try {
@@ -102,6 +106,7 @@ class ConsultationController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function updateStatus(string $id): JSONResponse
     {
         try {
@@ -134,6 +139,7 @@ class ConsultationController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function submitResponse(string $id): JSONResponse
     {
         try {
@@ -163,6 +169,7 @@ class ConsultationController extends Controller
      *
      * @NoAdminRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function overdue(): JSONResponse
     {
         $overdue = $this->consultationService->getOverdueConsultations();

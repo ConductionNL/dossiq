@@ -44,9 +44,11 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		items() {
 			return this.tasks.map((task) => ({
 				id: task.id,
@@ -68,6 +70,7 @@ export default {
 		 * @param {object} item The task item to show
 		 * @return {void}
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		onShow(item) {
 			window.location.href = `/index.php/apps/procest/#/tasks/${item.id}`
 		},
@@ -76,6 +79,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 */
+		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		async fetchData() {
 			this.loading = true
 			try {

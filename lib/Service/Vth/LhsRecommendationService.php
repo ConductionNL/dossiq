@@ -17,7 +17,7 @@
  * @category Service
  * @package  OCA\Procest\Service\Vth
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -108,6 +108,7 @@ class LhsRecommendationService
      * @throws RuntimeException When OpenRegister is unavailable, no matching
      *                          matrix exists, or no cell matches the triple.
      */
+    /** @spec openspec/specs/enforcement-lhs/spec.md */
     public function recommend(
         string $caseId,
         string $ernst,
@@ -171,6 +172,7 @@ class LhsRecommendationService
      *
      * @throws RuntimeException When validation fails (HTTP-mapped by controller).
      */
+    /** @spec openspec/specs/enforcement-lhs/spec.md */
     public function override(
         array $recommendation,
         string $intervention,
@@ -199,10 +201,9 @@ class LhsRecommendationService
         }
 
         $overrideUp = ($newSeverity > $recSeverity);
+        $authority  = 'inspector';
         if ($userRole === 'manager') {
             $authority = 'manager';
-        } else {
-            $authority = 'inspector';
         }
 
         if ($overrideUp === true && $authority !== 'manager') {
@@ -255,18 +256,17 @@ class LhsRecommendationService
             throw new RuntimeException('LHS-matrix register/schema is niet geconfigureerd');
         }
 
-        if ($version === null) {
-            $filters = ['active' => true];
-        } else {
+        $filters = ['active' => true];
+        if ($version !== null) {
             $filters = ['version' => $version];
         }
 
         try {
-            $results = $objectService->getObjects(
-                register: $register,
-                schema: $schema,
-                filters: $filters,
-                limit: 1,
+            $results = $objectService->findAll(
+                [
+                    'filters' => (['register' => $register, 'schema' => $schema] + $filters),
+                    'limit'   => 1,
+                ],
             );
         } catch (Throwable $e) {
             $this->logger->error(
@@ -340,10 +340,9 @@ class LhsRecommendationService
     {
         if (is_string($cells) === true) {
             $decoded = json_decode($cells, true);
+            $cells   = [];
             if (is_array($decoded) === true) {
                 $cells = $decoded;
-            } else {
-                $cells = [];
             }
         }
 

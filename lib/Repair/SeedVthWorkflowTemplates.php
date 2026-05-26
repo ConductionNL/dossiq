@@ -30,6 +30,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-vth-workflow-templates/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -94,6 +96,7 @@ class SeedVthWorkflowTemplates implements IRepairStep
      *
      * @return void
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function run(IOutput $output): void
     {
         $output->info('Seeding VTH workflow templates...');
@@ -570,7 +573,9 @@ class SeedVthWorkflowTemplates implements IRepairStep
                 $fromId = '*';
             } else if ($fromName === '' || isset($statusMap[$fromName]) === false) {
                 return null;
-            } else {
+            }
+
+            if ($fromName !== '*' && $fromName !== '' && isset($statusMap[$fromName]) === true) {
                 $fromId = $statusMap[$fromName];
             }
 

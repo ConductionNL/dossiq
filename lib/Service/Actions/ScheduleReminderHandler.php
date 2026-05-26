@@ -20,15 +20,21 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-automatic-actions/tasks.md#task-5
  */
 
 declare(strict_types=1);
 
 namespace OCA\Procest\Service\Actions;
 
+use DateInterval;
+use DateTimeImmutable;
+use DateTimeInterface;
 use OCA\Procest\AppInfo\Application;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Handler for `scheduleReminder` automatic actions.
@@ -66,6 +72,7 @@ class ScheduleReminderHandler implements ActionHandlerInterface
      *
      * @return string The action type slug handled by this handler.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function type(): string
     {
         return 'scheduleReminder';
@@ -80,6 +87,7 @@ class ScheduleReminderHandler implements ActionHandlerInterface
      *
      * @return ActionResult The outcome of scheduling the reminder.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {
@@ -93,11 +101,10 @@ class ScheduleReminderHandler implements ActionHandlerInterface
                 case: $case
             );
 
-            $fireAt = $this->computeFireTime(offsetIso: $offsetIso);
-            if ($fireAt === null) {
-                $fireAtIso = null;
-            } else {
-                $fireAtIso = $fireAt->format(\DateTimeInterface::ATOM);
+            $fireAt    = $this->computeFireTime(offsetIso: $offsetIso);
+            $fireAtIso = null;
+            if ($fireAt !== null) {
+                $fireAtIso = $fireAt->format(DateTimeInterface::ATOM);
             }
 
             $preview = [
@@ -119,13 +126,13 @@ class ScheduleReminderHandler implements ActionHandlerInterface
                 'caseId'    => (string) ($case['id'] ?? ''),
                 'recipient' => $recipient,
                 'message'   => $message,
-                'fireAtIso' => $fireAt->format(\DateTimeInterface::ATOM),
+                'fireAtIso' => $fireAt->format(DateTimeInterface::ATOM),
             ];
 
             $this->jobList->add(self::REMINDER_JOB_CLASS, $arguments);
 
             return ActionResult::success($preview);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error(
                 'ScheduleReminderHandler: failed to schedule reminder',
                 [
@@ -143,20 +150,20 @@ class ScheduleReminderHandler implements ActionHandlerInterface
      *
      * @param string $offsetIso e.g. `P3D` (3 days), `PT2H` (2 hours).
      *
-     * @return \DateTimeImmutable|null
+     * @return DateTimeImmutable|null
      */
-    private function computeFireTime(string $offsetIso): ?\DateTimeImmutable
+    private function computeFireTime(string $offsetIso): ?DateTimeImmutable
     {
         if ($offsetIso === '') {
             return null;
         }
 
         try {
-            $interval = new \DateInterval($offsetIso);
-        } catch (\Throwable $e) {
+            $interval = new DateInterval($offsetIso);
+        } catch (Throwable $e) {
             return null;
         }
 
-        return (new \DateTimeImmutable('now'))->add($interval);
+        return (new DateTimeImmutable('now'))->add($interval);
     }//end computeFireTime()
 }//end class

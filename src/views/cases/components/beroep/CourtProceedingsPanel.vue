@@ -41,7 +41,8 @@
 				<label>{{ t('procest', 'Court Ruling Outcome') }}</label>
 				<NcSelect
 					v-model="rulingForm.outcome"
-					:options="rulingOptions" />
+					:options="rulingOptions"
+					:aria-label-combobox="t('procest', 'Court Ruling Outcome')" />
 				<NcButton type="primary" class="court-proceedings-panel__save-btn" @click="saveRuling">
 					{{ t('procest', 'Record Ruling') }}
 				</NcButton>
@@ -94,6 +95,7 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		getRulingLabel(outcome) {
 			const labels = {
 				beroep_gegrond: t('procest', 'Appeal upheld'),
@@ -103,6 +105,7 @@ export default {
 			}
 			return labels[outcome] || outcome
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		navigateToParent() {
 			if (this.parentCase) {
 				this.$router.push({
@@ -111,6 +114,7 @@ export default {
 				})
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async saveRuling() {
 			const objectStore = useObjectStore()
 			await objectStore.saveObject('case', {

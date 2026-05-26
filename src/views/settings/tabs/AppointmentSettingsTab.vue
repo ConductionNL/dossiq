@@ -7,6 +7,7 @@
 			<NcSelect
 				v-model="backend"
 				:options="backendOptions"
+				:aria-label-combobox="t('procest', 'Backend')"
 				label="label"
 				track-by="value"
 				@input="saveBackend" />
@@ -56,6 +57,7 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
 		saveBackend() {
 			// Save via settings API
 		},

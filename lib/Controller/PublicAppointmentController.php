@@ -16,6 +16,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md#task-4
  */
 
 declare(strict_types=1);
@@ -56,6 +58,7 @@ class PublicAppointmentController extends Controller
      * @PublicPage
      * @NoCSRFRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function view(string $token): JSONResponse
     {
         $appointment = $this->appointmentService->getAppointmentByToken($token);
@@ -87,6 +90,7 @@ class PublicAppointmentController extends Controller
      * @PublicPage
      * @NoCSRFRequired
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function cancel(string $token): JSONResponse
     {
         $appointment = $this->appointmentService->getAppointmentByToken($token);

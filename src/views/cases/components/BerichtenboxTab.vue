@@ -55,6 +55,7 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
 		async loadMessages() {
 			try {
 				const response = await listMessages(this.caseId)
@@ -63,10 +64,12 @@ export default {
 				this.messages = []
 			}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
 		formatDate(dt) {
 			if (!dt) return '-'
 			return new Date(dt).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
 		statusLabel(status) {
 			const labels = {
 				draft: t('procest', 'Draft'),
@@ -78,6 +81,7 @@ export default {
 			}
 			return labels[status] || status
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
 		async onSent() {
 			this.showCompose = false
 			await this.loadMessages()

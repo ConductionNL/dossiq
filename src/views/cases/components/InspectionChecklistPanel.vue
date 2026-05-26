@@ -9,6 +9,7 @@
 			<NcSelect
 				v-model="selectedChecklist"
 				:options="checklists"
+				:input-label="t('procest', 'Select checklist')"
 				label="title"
 				track-by="id"
 				:placeholder="t('procest', 'Select checklist...')" />
@@ -131,36 +132,43 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		allItemsAnswered() {
 			if (!this.activeChecklist) return false
 			return this.activeChecklist.items.every(
 				(item, idx) => this.itemResults[idx] && this.itemResults[idx].result,
 			)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		failedCount() {
 			return Object.values(this.itemResults).filter(r => r.result === 'nee').length
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		overallResult() {
 			return this.failedCount > 0 ? 'niet_conform' : 'conform'
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		startInspection() {
 			this.activeChecklist = { ...this.selectedChecklist }
 			this.itemResults = {}
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		setResult(index, value) {
 			this.$set(this.itemResults, index, {
 				...(this.itemResults[index] || {}),
 				result: value,
 			})
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		setComment(index, value) {
 			this.$set(this.itemResults, index, {
 				...(this.itemResults[index] || {}),
 				comment: value,
 			})
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		async submitInspection() {
 			this.saving = true
 			try {

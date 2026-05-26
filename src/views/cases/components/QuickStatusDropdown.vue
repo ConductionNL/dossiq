@@ -3,6 +3,7 @@
 		<NcSelect
 			v-model="selectedStatus"
 			:options="statusOptions"
+			:input-label="t('procest', 'Change status')"
 			label="name"
 			track-by="id"
 			:placeholder="t('procest', 'Change status')"
@@ -39,9 +40,11 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		statusOptions() {
 			return [...this.statusTypes].sort((a, b) => (a.order || 0) - (b.order || 0))
 		},
@@ -50,6 +53,7 @@ export default {
 		this.selectedStatus = this.statusTypes.find(st => st.id === this.caseObj.status) || null
 	},
 	methods: {
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		async onStatusChange(newStatus) {
 			if (!newStatus || newStatus.id === this.caseObj.status) return
 

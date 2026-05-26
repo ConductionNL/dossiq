@@ -43,13 +43,16 @@ export default {
 		},
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		resultType() {
 			if (!this.result?.resultType) return null
 			return this.resultTypes.find(t => t.id === this.result.resultType) || null
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		resultTypeName() {
 			return this.resultType?.name || ''
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		archivalInfo() {
 			if (!this.resultType) return ''
 			const rt = this.resultType
@@ -74,6 +77,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		formatPeriod(isoDuration) {
 			if (!isoDuration) return ''
 			const match = isoDuration.match(/P(\d+)Y/)

@@ -66,15 +66,18 @@ export default {
 	},
 	emits: ['retry'],
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
 		maxCount() {
 			return Math.max(1, ...this.statusData.map(s => s.count))
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
 		barWidth(count) {
 			const pct = (count / this.maxCount) * 100
 			return `max(20px, ${pct}%)`
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
 		barColor(index) {
 			return BAR_COLORS[index % BAR_COLORS.length]
 		},

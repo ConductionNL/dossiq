@@ -20,6 +20,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-automatic-actions/tasks.md#task-4
  */
 
 declare(strict_types=1);
@@ -57,6 +59,7 @@ class CreateDocumentHandler implements ActionHandlerInterface
      *
      * @return string The action type slug handled by this handler.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function type(): string
     {
         return 'createDocument';
@@ -71,6 +74,7 @@ class CreateDocumentHandler implements ActionHandlerInterface
      *
      * @return ActionResult The outcome of the document creation.
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {

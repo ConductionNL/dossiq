@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Repair;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use OCA\Procest\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -71,6 +73,7 @@ class SeedLhsMatrix implements IRepairStep
      *
      * @return void
      */
+    /** @spec openspec/specs/enforcement-lhs/spec.md */
     public function run(IOutput $output): void
     {
         $output->info('Seeding default LHS matrix...');
@@ -96,11 +99,11 @@ class SeedLhsMatrix implements IRepairStep
                 return;
             }
 
-            $existing = $objectService->getObjects(
-                register: $register,
-                schema: $schema,
-                filters: ['active' => true],
-                limit: 1,
+            $existing = $objectService->findAll(
+                [
+                    'filters' => ['register' => $register, 'schema' => $schema, 'active' => true],
+                    'limit'   => 1,
+                ],
             );
             if ($this->hasRow(results: $existing) === true) {
                 $output->info('Active LHS matrix already exists. Skipping seed.');
@@ -120,7 +123,7 @@ class SeedLhsMatrix implements IRepairStep
                 return;
             }
 
-            $payload['createdAt'] = (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM);
+            $payload['createdAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
 
             $objectService->saveObject(
                 register: $register,

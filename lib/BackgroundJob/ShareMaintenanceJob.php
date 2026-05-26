@@ -18,6 +18,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md#task-5
  */
 
 declare(strict_types=1);
@@ -76,6 +78,7 @@ class ShareMaintenanceJob extends TimedJob
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter) — required by parent
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function run($argument): void
     {
         if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
@@ -100,13 +103,10 @@ class ShareMaintenanceJob extends TimedJob
         }
 
         try {
-            $result = $objectService->getObjects(
-                (int) $register,
-                (int) $schema,
-                [],
+            $shares = $objectService->findAll(
+                ['filters' => ['register' => (int) $register, 'schema' => (int) $schema]],
             );
 
-            $shares       = ($result['objects'] ?? []);
             $reminderDate = new \DateTime('+'.self::REMINDER_DAYS.' days');
 
             foreach ($shares as $share) {

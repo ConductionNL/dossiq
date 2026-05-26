@@ -8,6 +8,7 @@
  * @param {object} decision Decision object with effectiveDate and expiryDate
  * @return {{ status: string, label: string, style: string, remaining: string|null }}
  */
+/** @spec openspec/changes/roles-decisions/tasks.md */
 export function getDecisionValidity(decision) {
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
@@ -82,6 +83,7 @@ export function getDecisionValidity(decision) {
  * @param {string} dateString ISO date string
  * @return {string}
  */
+/** @spec openspec/changes/roles-decisions/tasks.md */
 export function formatDecisionDate(dateString) {
 	if (!dateString) return '—'
 	const date = new Date(dateString)
@@ -94,6 +96,7 @@ export function formatDecisionDate(dateString) {
  * @param {object} form Decision form data
  * @return {{ valid: boolean, errors: object }}
  */
+/** @spec openspec/changes/roles-decisions/tasks.md */
 export function validateDecision(form) {
 	const errors = {}
 

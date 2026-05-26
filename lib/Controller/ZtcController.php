@@ -21,6 +21,9 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -123,6 +126,7 @@ class ZtcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(string $resource): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -174,6 +178,7 @@ class ZtcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function create(string $resource): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -224,6 +229,7 @@ class ZtcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function show(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -296,6 +302,7 @@ class ZtcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function update(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -343,6 +350,7 @@ class ZtcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function patch(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -390,6 +398,7 @@ class ZtcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function destroy(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -502,6 +511,7 @@ class ZtcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function publishZaaktype(string $uuid): JSONResponse
     {
         return $this->handlePublish(resource: 'zaaktypen', uuid: $uuid);
@@ -519,6 +529,7 @@ class ZtcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function publishBesluittype(string $uuid): JSONResponse
     {
         return $this->handlePublish(resource: 'besluittypen', uuid: $uuid);
@@ -536,6 +547,7 @@ class ZtcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function publishInformatieobjecttype(string $uuid): JSONResponse
     {
         return $this->handlePublish(resource: 'informatieobjecttypen', uuid: $uuid);
@@ -1234,6 +1246,7 @@ class ZtcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function audittrailIndex(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
@@ -1258,6 +1271,7 @@ class ZtcController extends Controller
      * @PublicPage
      * @CORS
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);

@@ -114,18 +114,23 @@ export default {
 	},
 
 	computed: {
+		/** @spec openspec/changes/vth-module/tasks.md */
 		enforcementStore() {
 			return useEnforcementStore()
 		},
+		/** @spec openspec/changes/vth-module/tasks.md */
 		actions() {
 			return this.enforcementStore.actions
 		},
+		/** @spec openspec/changes/vth-module/tasks.md */
 		activeAction() {
 			return this.enforcementStore.activeAction
 		},
+		/** @spec openspec/changes/vth-module/tasks.md */
 		totalVerbeurd() {
 			return this.enforcementStore.totalVerbeurd
 		},
+		/** @spec openspec/changes/vth-module/tasks.md */
 		loading() {
 			return this.enforcementStore.loading
 		},
@@ -134,6 +139,7 @@ export default {
 	watch: {
 		caseId: {
 			immediate: true,
+			/** @spec openspec/changes/vth-module/tasks.md */
 			handler(newId) {
 				if (newId) {
 					this.enforcementStore.fetchActions(newId)
@@ -145,6 +151,7 @@ export default {
 	methods: {
 		t,
 
+		/** @spec openspec/changes/vth-module/tasks.md */
 		statusLabel(status) {
 			const labels = {
 				opgelegd: t('procest', 'Imposed'),
@@ -155,6 +162,7 @@ export default {
 			return labels[status] || status
 		},
 
+		/** @spec openspec/changes/vth-module/tasks.md */
 		onActionCreated() {
 			this.enforcementStore.fetchActions(this.caseId)
 		},

@@ -249,15 +249,19 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/my-work/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		grouped() {
 			return getGroupedMyWorkItems(this.cases, this.normalizedTasks)
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		totalCount() {
 			return this.grouped.totalCount
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		caseCount() {
 			const all = [
 				...this.grouped.overdue,
@@ -267,6 +271,7 @@ export default {
 			]
 			return all.filter(i => i.type === 'case').length
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		taskCount() {
 			const all = [
 				...this.grouped.overdue,
@@ -276,6 +281,7 @@ export default {
 			]
 			return all.filter(i => i.type === 'task').length
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		tabs() {
 			return [
 				{ key: 'all', label: t('procest', 'All'), count: this.totalCount },
@@ -283,6 +289,7 @@ export default {
 				{ key: 'tasks', label: t('procest', 'Tasks'), count: this.taskCount },
 			]
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		filteredGroups() {
 			if (this.activeTab === 'all') return this.grouped
 			const filterType = this.activeTab === 'cases' ? 'case' : 'task'
@@ -293,6 +300,7 @@ export default {
 				noDeadline: this.grouped.noDeadline.filter(i => i.type === filterType),
 			}
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		completedItems() {
 			const items = []
 			for (const c of this.completedCases) {
@@ -313,6 +321,7 @@ export default {
 			}
 			return items
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		filteredCompletedItems() {
 			if (this.activeTab === 'all') return this.completedItems
 			const filterType = this.activeTab === 'cases' ? 'case' : 'task'
@@ -326,6 +335,7 @@ export default {
 		getCaseTypeName(caseTypeId) {
 			return this.caseTypeMap[caseTypeId] || ''
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		async fetchData() {
 			this.loading = true
 			try {
@@ -359,6 +369,7 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		async onToggleCompleted() {
 			if (!this.showCompleted) {
 				this.completedCases = []
@@ -412,6 +423,7 @@ export default {
 				console.warn('Failed to fetch completed items:', err)
 			}
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		onItemClick(item) {
 			if (item.type === 'case') {
 				this.$router.push({ name: 'CaseDetail', params: { id: item.id } })

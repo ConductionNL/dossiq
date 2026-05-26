@@ -27,6 +27,7 @@
  * @param {string} status The case status.
  * @return {string} CSS variable reference.
  */
+/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 export function statusColor(status) {
 	switch (status) {
 	case 'blocked':
@@ -48,6 +49,7 @@ export function statusColor(status) {
  * @param {string} status The case status.
  * @return {string} Icon glyph name.
  */
+/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 export function statusIcon(status) {
 	switch (status) {
 	case 'blocked':
@@ -113,6 +115,7 @@ function extractCoords(geometry) {
  * @param {object} caseObj Case object from OpenRegister.
  * @return {object|null}   Marker descriptor or `null` if no geometry.
  */
+/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 export function caseMarkerFormatter(caseObj) {
 	if (!caseObj || typeof caseObj !== 'object') {
 		return null

@@ -21,6 +21,7 @@
 				<NcSelect
 					v-model="form.type"
 					:options="typeOptions"
+					:aria-label-combobox="t('procest', 'Type')"
 					:placeholder="t('procest', 'Selecteer type...')" />
 			</div>
 
@@ -29,6 +30,7 @@
 				<NcSelect
 					v-model="selectedCase"
 					:options="cases"
+					:aria-label-combobox="t('procest', 'Zaak')"
 					label="title"
 					track-by="id"
 					:placeholder="t('procest', 'Selecteer zaak...')"
@@ -110,10 +112,12 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
 	},
+	/** @spec openspec/specs/parafering-actions/spec.md */
 	async created() {
 		if (!this.caseId) {
 			try {
@@ -125,11 +129,13 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		onCaseSelected(caseObj) {
 			if (caseObj && !this.form.onderwerp) {
 				this.form.onderwerp = caseObj.title || ''
 			}
 		},
+		/** @spec openspec/specs/parafering-actions/spec.md */
 		async create() {
 			this.errors = {}
 			if (!this.form.onderwerp.trim()) {

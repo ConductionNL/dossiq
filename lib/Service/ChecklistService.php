@@ -9,7 +9,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -19,6 +19,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -88,6 +90,7 @@ class ChecklistService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function completeItem(
         array $checklist,
         string $itemId,
@@ -146,6 +149,7 @@ class ChecklistService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getProgress(array $checklist): array
     {
         $items     = $checklist['items'] ?? [];
@@ -180,6 +184,7 @@ class ChecklistService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validateCompletion(array $checklist): array
     {
         $items        = $checklist['items'] ?? [];
@@ -206,6 +211,7 @@ class ChecklistService
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getConformitySummary(array $checklist): array
     {
         $items   = $checklist['items'] ?? [];

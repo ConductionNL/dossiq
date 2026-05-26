@@ -10,7 +10,7 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -20,6 +20,10 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-stuf-integration/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-stuf-integration/tasks.md#task-2
+ * @spec openspec/changes/retrofit-2026-05-24-stuf-integration/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -83,6 +87,7 @@ class StufController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function zaken(): DataDisplayResponse
     {
         return $this->handleSoapMessage(service: 'zaken');
@@ -95,6 +100,7 @@ class StufController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function personen(): DataDisplayResponse
     {
         return $this->handleSoapMessage(service: 'personen');

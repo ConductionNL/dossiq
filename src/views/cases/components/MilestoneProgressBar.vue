@@ -30,6 +30,7 @@ export default {
 		},
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		fillClass() {
 			if (this.percentage === 100) return 'milestone-bar__fill--complete'
 			if (this.percentage >= 50) return 'milestone-bar__fill--progress'

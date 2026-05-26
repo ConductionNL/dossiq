@@ -19,6 +19,11 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-4
+ * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md#task-2
+ * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md#task-3
  */
 
 declare(strict_types=1);

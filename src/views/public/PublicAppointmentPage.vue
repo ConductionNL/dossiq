@@ -47,6 +47,7 @@ export default {
 	data() {
 		return { loading: true, error: null, appointment: null, cancelled: false }
 	},
+	/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
 	async mounted() {
 		try {
 			const url = generateUrl(`/apps/procest/api/public/appointment/${this.token}`)
@@ -60,10 +61,12 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
 		formatDateTime(dt) {
 			if (!dt) return '-'
 			return new Date(dt).toLocaleString('nl-NL', { dateStyle: 'long', timeStyle: 'short' })
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
 		statusLabel(status) {
 			const labels = {
 				scheduled: t('procest', 'Scheduled'),
@@ -73,6 +76,7 @@ export default {
 			}
 			return labels[status] || status
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
 		async cancelAppointment() {
 			try {
 				const url = generateUrl(`/apps/procest/api/public/appointment/${this.token}/cancel`)

@@ -287,6 +287,7 @@ export default {
 	},
 	watch: {
 		transition: {
+			/** @spec openspec/specs/status-transition-engine/spec.md */
 			handler(newVal) {
 				this.localTransition = { ...newVal }
 				this.localAllowedRoles = [...(newVal.allowedRoles || [])]
@@ -297,6 +298,7 @@ export default {
 		},
 	},
 	methods: {
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		parseGuards(guards) {
 			if (!guards) return []
 			if (typeof guards === 'string') {
@@ -305,6 +307,7 @@ export default {
 			return [...guards]
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		parseActions(actions) {
 			if (!actions) return []
 			if (typeof actions === 'string') {
@@ -313,6 +316,7 @@ export default {
 			return [...actions]
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		emitUpdate() {
 			this.$emit('update', {
 				...this.localTransition,
@@ -322,6 +326,7 @@ export default {
 			})
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		toggleRole(roleId) {
 			const index = this.localAllowedRoles.indexOf(roleId)
 			if (index >= 0) {
@@ -332,26 +337,31 @@ export default {
 			this.emitUpdate()
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		addGuard() {
 			this.localGuards.push({ type: 'checklist' })
 			this.emitUpdate()
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		removeGuard(index) {
 			this.localGuards.splice(index, 1)
 			this.emitUpdate()
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		addAction() {
 			this.localActions.push({ type: 'notify', message: '' })
 			this.emitUpdate()
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		removeAction(index) {
 			this.localActions.splice(index, 1)
 			this.emitUpdate()
 		},
 
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		onDelete() {
 			if (confirm(t('procest', 'Are you sure you want to delete this transition?'))) {
 				this.$emit('delete', this.transition.id)

@@ -35,6 +35,7 @@ export default {
 		},
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		statusClass() {
 			const cat = this.caseData.statusCategory || ''
 			return `case-popup__status--${cat}`
