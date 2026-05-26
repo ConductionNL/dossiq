@@ -1,5 +1,9 @@
 # procest-store-migration
 
+## Purpose
+
+@e2e exclude Pinia store migration spec; store API compliance is covered by unit tests, not browser E2E.
+
 ## ADDED Requirements
 
 ### Requirement: Procest MUST use `@conduction/nextcloud-vue` `useObjectStore` for all OpenRegister object CRUD

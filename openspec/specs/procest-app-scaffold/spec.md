@@ -8,6 +8,9 @@ retrofit_extensions:
 # procest-app-scaffold Specification
 
 ## Purpose
+
+@e2e exclude App scaffold plumbing (PHP classes, build system, repair step); covered by PHPUnit and smoke tests.
+
 Define the Nextcloud app scaffolding, build system, translation setup, and admin settings for the Procest case management app. This capability establishes the foundational structure that all other capabilities build upon, including the Application class, DashboardController, Vue SPA entry, routing, navigation, repair steps, and settings infrastructure.
 
 ## Context

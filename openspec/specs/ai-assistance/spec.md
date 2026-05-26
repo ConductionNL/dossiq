@@ -6,6 +6,8 @@ retrofit: true
 
 ## Purpose
 
+@e2e exclude AI assistance is a V1 backend feature; no dedicated Playwright-testable UI surface in the current build.
+
 Provide a human-in-the-loop AI surface for casehandlers: classify documents, extract structured data, answer knowledge-base questions in case context, summarize cases / documents / timelines, suggest routing and next steps, record every user response to every AI suggestion in an Algoritmeregister-compliant audit trail, and operate behind global + per-feature enablement flags so deployments can roll out one capability at a time. PII is stripped before content leaves the procest process. (The procest-side MCP tool provider for the AI orchestrator is specified separately under `mcp-integration`.)
 
 ## Requirements

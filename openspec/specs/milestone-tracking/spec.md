@@ -6,6 +6,8 @@ retrofit: true
 
 ## Purpose
 
+@e2e exclude Milestone tracking is V1; milestone API endpoints are covered by PHPUnit, not Playwright.
+
 Translate technical workflow state into business-friendly milestone markers per case: configurable milestone definitions per case type, per-case progress aggregation (reached/total/percentage), explicit marking (with origin), reversal (with audit reason), and a placeholder hook for cross-case duration analytics.
 
 ## Requirements

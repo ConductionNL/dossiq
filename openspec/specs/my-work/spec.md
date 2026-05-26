@@ -26,6 +26,8 @@ For V1 cross-app workload:
 
 ### REQ-MYWORK-001: Personal Workload View [MVP]
 
+@e2e exclude Requires cases and tasks pre-assigned to the current user; data-dependent display scenarios not testable without pre-seeded data.
+
 The system MUST provide a "My Work" view showing all cases and tasks assigned to the current user in a unified list, as implemented in `src/views/MyWork.vue`.
 
 #### Scenario: View assigned cases and tasks
@@ -79,23 +81,34 @@ The system MUST provide filter tabs to narrow the My Work list by entity type.
 - AND the "All" tab MUST be selected by default
 
 #### Scenario: Filter by Cases only
+
+@e2e exclude Requires 3 cases and 4 tasks assigned to the current user; data-dependent filtering not testable without pre-seeded data.
+
 - GIVEN the user has 3 cases and 4 tasks
 - WHEN they click the "Cases" tab
 - THEN only the 3 case items MUST be shown
 - AND the grouped sections MUST update to reflect only case items
 
 #### Scenario: Filter by Tasks only
+
+@e2e exclude Requires 3 cases and 4 tasks assigned to the current user; data-dependent filtering not testable without pre-seeded data.
+
 - GIVEN the user has 3 cases and 4 tasks
 - WHEN they click the "Tasks" tab
 - THEN only the 4 task items MUST be shown
 
 #### Scenario: Filter tab with zero items
+
+@e2e exclude Requires 3 cases and 0 tasks assigned to the user; covered by the empty-state test which shows all tabs at 0.
+
 - GIVEN the user has 3 cases but 0 tasks
 - WHEN they view My Work
 - THEN the "Tasks" tab MUST show "Tasks (0)"
 - AND clicking the "Tasks" tab MUST show an empty state message
 
 ### REQ-MYWORK-003: Sorting [MVP]
+
+@e2e exclude Sort order requires multiple items with different priorities and deadlines; data-dependent ordering not testable without pre-seeded data.
 
 The system MUST sort My Work items by priority first, then by deadline/dueDate, as implemented in `src/utils/dashboardHelpers.js::getGroupedMyWorkItems()`.
 
@@ -127,6 +140,8 @@ The system MUST sort My Work items by priority first, then by deadline/dueDate, 
 - THEN the urgent task MUST appear before the high case (priority trumps deadline)
 
 ### REQ-MYWORK-004: Grouped Sections [MVP]
+
+@e2e exclude Grouped sections require items with varying deadlines (overdue, due this week, upcoming); data-dependent grouping not testable without pre-seeded data.
 
 The system MUST group My Work items into urgency-based sections to provide visual structure.
 
@@ -164,6 +179,8 @@ The system MUST group My Work items into urgency-based sections to provide visua
 
 ### REQ-MYWORK-005: Overdue Highlighting [MVP]
 
+@e2e exclude Overdue highlighting requires cases/tasks with past deadlines assigned to the current user; data-dependent visual indicators not testable without pre-seeded data.
+
 The system MUST visually distinguish overdue items from on-time items, using both color and text indicators for WCAG compliance.
 
 #### Scenario: Overdue case highlighting
@@ -187,6 +204,8 @@ The system MUST visually distinguish overdue items from on-time items, using bot
 
 ### REQ-MYWORK-006: Default Filter -- Non-Final Items Only [MVP]
 
+@e2e exclude Default filter requires cases with final/non-final statuses and the toggle test; only the toggle-visible structural assertion is tested; data-dependent filter behavior not testable without pre-seeded data.
+
 By default, My Work MUST only show open (non-completed) items.
 
 #### Scenario: Only non-final cases shown by default
@@ -208,6 +227,8 @@ By default, My Work MUST only show open (non-completed) items.
 
 ### REQ-MYWORK-007: Item Navigation [MVP]
 
+@e2e exclude Item navigation requires assigned cases/tasks to click; data-dependent click-and-navigate not testable without pre-seeded data.
+
 Clicking an item in My Work MUST navigate to the appropriate detail view.
 
 #### Scenario: Click case item to navigate
@@ -226,6 +247,8 @@ Clicking an item in My Work MUST navigate to the appropriate detail view.
 - THEN the system MUST navigate to the case detail view for the parent case
 
 ### REQ-MYWORK-008: Cross-App Workload [V1]
+
+@e2e exclude Cross-app workload requires Pipelinq app to be installed and pre-seeded with leads/requests assigned to the current user; V1 cross-app integration is not available in the CI test environment.
 
 The My Work view SHALL include items from Pipelinq (leads and requests) assigned to the current user.
 
@@ -267,6 +290,9 @@ The system MUST display a helpful message when the user has no assigned items, u
 - AND the filter tabs MUST all show "(0)"
 
 #### Scenario: All items completed (show-completed toggle off)
+
+@e2e exclude Requires 5 items all in final status; data-dependent "All caught up!" state not testable without pre-seeded data.
+
 - GIVEN the user has 5 items but all have reached final/completed status
 - AND the "Show completed" toggle is off
 - WHEN they view My Work
@@ -282,6 +308,8 @@ The system MUST display a helpful message when the user has no assigned items, u
 - THEN the system MUST display an appropriate empty state for the filtered view
 
 ### REQ-MYWORK-010: Concurrent State Changes [MVP]
+
+@e2e exclude Concurrent state change scenarios require multi-user race conditions; not reproducible in a single-user Playwright test.
 
 The system MUST handle cases where items change status while the user is viewing My Work.
 
@@ -306,6 +334,8 @@ The system MUST handle cases where items change status while the user is viewing
 - THEN the task MUST no longer appear in the list
 
 ### REQ-MYWORK-011: Dashboard Widgets [MVP]
+
+@e2e exclude NC dashboard widget IWidget PHP classes and Vue bundle loading; covered by PHPUnit + smoke tests, not Playwright browser assertions.
 
 The system MUST provide Nextcloud dashboard widgets that give a quick overview of the user's workload without navigating to the full My Work view.
 

@@ -6,6 +6,8 @@ status: implemented
 
 ## Purpose
 
+@e2e exclude Pure data-layer plumbing spec; store/register/schema setup is covered by PHPUnit repair-step tests.
+
 Procest owns **no database tables**. All data is stored as OpenRegister objects in a dedicated `procest` register containing schemas for all entity types. This spec defines how the register and schemas are configured, how the repair step initializes the data model, how the frontend interacts with the OpenRegister API, the Pinia store patterns, cross-entity reference semantics, error handling, pagination, RBAC, cascade behaviors, and performance considerations.
 
 OpenRegister integration is the foundational layer upon which all other Procest features are built.

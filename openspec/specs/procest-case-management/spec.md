@@ -5,6 +5,9 @@ status: implemented
 # procest-case-management Specification
 
 ## Purpose
+
+@e2e exclude Superseded by canonical case-management and task-management specs; data model tests covered by PHPUnit.
+
 Define the core case management domain for Procest: cases, tasks, statuses, roles, results, and decisions. All entities are stored in OpenRegister under the Procest register. The frontend provides list and detail views for cases and tasks, with case type configuration, status lifecycle management, deadline tracking, participant management, and activity timelines.
 
 ## Context

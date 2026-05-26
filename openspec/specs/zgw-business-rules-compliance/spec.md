@@ -12,6 +12,9 @@ retrofit_extensions:
 # ZGW Business Rules Compliance -- Delta Spec
 
 ## Purpose
+
+@e2e exclude Pure API delta spec covered by Newman test suite; no Playwright UI surface.
+
 Fix ~56 failing VNG Newman test suite assertions across ZRC, ZTC, DRC, and BRC business rules. Optimize ZGW endpoint performance from 2-5s to under 200ms per request.
 
 ## Changed Requirements

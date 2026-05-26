@@ -5,6 +5,9 @@ status: implemented
 # procest-object-store Specification
 
 ## Purpose
+
+@e2e exclude Pinia store factory plumbing; store API compliance is covered by unit tests, not browser E2E.
+
 Define the Pinia-based object store that provides the data layer for Procest. The store uses `createObjectStore` from `@conduction/nextcloud-vue` to query OpenRegister directly from the frontend for all CRUD, search, pagination, file management, audit trails, and relation resolution operations -- following the thin-client pattern where Procest owns no database tables.
 
 ## Context

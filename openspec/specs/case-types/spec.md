@@ -926,6 +926,8 @@ This is a comprehensive, highly detailed spec that is implementation-ready for b
 
 ### Requirement: Case Type Pre-Seeded Data
 
+@e2e exclude Bezwaar/Beroep case types are V1 seed data imported via repair step; covered by PHPUnit.
+
 The system SHALL provide pre-seeded case types that are imported via the repair step. In addition to any existing pre-seeded case types, the system SHALL now include Bezwaar and Beroep case types with their associated status types, role types, and workflow templates.
 
 **Feature tier**: V1
@@ -972,6 +974,8 @@ Each case type SHALL include its associated:
 
 ### REQ-CT-17: Procest SHALL expose case-definition export endpoints + ZIP package format
 
+@e2e exclude Backend PHP export controller spec; ZIP download and import covered by PHPUnit.
+
 `OCA\Procest\Controller\CaseDefinitionController` SHALL provide `GET /api/case-definitions/{id}/export` that returns a ZIP package (via `DataDownloadResponse`) containing the case type and all linked dependencies (workflow templates, role/group mappings, document templates) needed for round-trip portability to another procest instance. The ZIP SHALL be produced by `CaseDefinitionExportService::exportCaseDefinition()` and SHALL embed a `manifest.json` describing the package schema version, source instance, and contained object refs.
 
 #### Scenario: Export a published case type
@@ -980,6 +984,8 @@ Each case type SHALL include its associated:
 - **THEN** the response SHALL be a ZIP download containing `case-type.json`, all linked `workflow-template-*.json` files, role/group mapping definitions, and a top-level `manifest.json`
 
 ### REQ-CT-18: Procest SHALL validate + import case-definition packages with explicit conflict reporting
+
+@e2e exclude Backend PHP import service spec; package validation and import covered by PHPUnit.
 
 `CaseDefinitionImportService::validatePackage()` SHALL inspect a ZIP package, parse `manifest.json`, and return a structured report of: (a) missing required files, (b) schema-version compatibility, (c) name/slug collisions against existing case types and templates, and (d) cross-reference integrity. Validation SHALL be a pure read — no side effects on the procest instance.
 

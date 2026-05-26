@@ -6,6 +6,8 @@ retrofit: true
 
 ## Purpose
 
+@e2e exclude Backend MCP tool provider; invoked by AI orchestrator, not via browser UI.
+
 Provide the procest-side `IMcpToolProvider` implementation that the openregister AI orchestrator (per ADR-034 / ADR-035) discovers and invokes during an AI Chat Companion turn. The MVP exposes two read-only tools (`procest.listProcesses`, `procest.getProcessDetails`) with bounded result sets, per-object authorisation enforced inside `invokeTool`, and structured error envelopes — so that an LLM can ask "what cases am I working on?" and "what's the current step on case X?" without being able to mutate anything or read cases the caller isn't entitled to see.
 
 The full per-app MCP tool set (startProcess, advanceStep, listMyTasks, getTaskDetails — tracked in procest#416) is intentionally out of scope here.

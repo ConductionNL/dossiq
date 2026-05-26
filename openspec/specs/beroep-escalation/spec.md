@@ -1,3 +1,7 @@
+## Purpose
+
+@e2e exclude Beroep case type is V1 seed data imported via repair step; covered by PHPUnit, not Playwright.
+
 ## ADDED Requirements
 
 ### Requirement: Beroep Case Type Pre-Seeded Configuration

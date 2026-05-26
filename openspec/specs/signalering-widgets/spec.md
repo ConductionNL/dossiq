@@ -24,6 +24,8 @@ All signalering widget data is computed client-side from the same OpenRegister c
 
 ### Requirement: Deadline Alerts Widget [V1]
 
+@e2e exclude Deadline alerts widget requires cases with deadlines within 3 days or past; V1 data-dependent widget scenarios not testable without pre-seeded cases with specific dates.
+
 The dashboard SHALL display a Deadline Alerts widget that lists cases approaching their processing deadline and cases already overdue, enabling proactive case management. The widget uses a configurable warning threshold (default: 3 days) to identify "at risk" cases before they become overdue.
 
 #### Scenario: Cases approaching deadline within warning threshold
@@ -55,6 +57,8 @@ The dashboard SHALL display a Deadline Alerts widget that lists cases approachin
 
 ### Requirement: Task Due Reminders Widget [V1]
 
+@e2e exclude Task due reminders widget requires tasks assigned to current user with due dates within threshold; V1 data-dependent widget scenarios not testable without pre-seeded tasks.
+
 The dashboard SHALL display a Task Due Reminders widget showing the current user's tasks that are approaching or past their due date, sorted by urgency.
 
 #### Scenario: Tasks approaching due date
@@ -82,6 +86,8 @@ The dashboard SHALL display a Task Due Reminders widget showing the current user
 - **THEN** the task MUST NOT appear in the Task Due Reminders widget
 
 ### Requirement: Stalled Cases Widget [V1]
+
+@e2e exclude Stalled cases widget requires cases with dateModified older than 7 days; V1 data-dependent widget scenarios not testable without time-controlled case data.
 
 The dashboard SHALL display a Stalled Cases widget identifying cases that have had no status change or activity for a configurable period (default: 7 days), indicating they may need attention.
 
@@ -111,6 +117,8 @@ The dashboard SHALL display a Stalled Cases widget identifying cases that have h
 
 ### Requirement: Nextcloud Dashboard Signalering Widgets [V1]
 
+@e2e exclude NC dashboard widget picker requires opening the Nextcloud system dashboard widget picker; NC IWidget registration is covered by PHPUnit, not Playwright.
+
 The system SHALL register Nextcloud-native dashboard widgets (IWidget) for the signalering components so they appear on the main Nextcloud dashboard.
 
 #### Scenario: Deadline Alerts Nextcloud widget available
@@ -132,6 +140,8 @@ The system SHALL register Nextcloud-native dashboard widgets (IWidget) for the s
 
 ### Requirement: Signalering Helper Functions [V1]
 
+@e2e exclude Dashboard helper functions (getDeadlineAlerts, getTaskDueReminders, getStalledCases) are pure JS utility functions; covered by dashboardHelpers.js unit tests, not browser Playwright.
+
 The system SHALL provide dashboard helper functions for computing deadline proximity, stalled case detection, and alert urgency sorting.
 
 #### Scenario: getDeadlineAlerts returns at-risk and overdue cases
@@ -152,6 +162,8 @@ The system SHALL provide dashboard helper functions for computing deadline proxi
 
 ### Requirement: Dashboard Layout Extension for Signalering [V1]
 
+@e2e exclude Dashboard layout requires the Procest in-app dashboard to render its widget grid, which is not accessible in the current Playwright-testable build due to the fixme annotation in pages.spec.ts.
+
 The existing dashboard layout SHALL be extended to include the signalering widgets in a third row below the existing KPI cards, status chart, and My Work preview.
 
 #### Scenario: Default layout includes signalering row
@@ -171,6 +183,8 @@ The existing dashboard layout SHALL be extended to include the signalering widge
 
 ### REQ-001: Each signalering widget SHALL implement Nextcloud IWidget with id/title/order/icon/url metadata
 
+@e2e exclude PHP IWidget getId() method return value; widget metadata is covered by PHPUnit, not Playwright.
+
 Each of `DeadlineAlertsWidget`, `OverdueCasesWidget`, `StalledCasesWidget`, and `TaskRemindersWidget` SHALL implement `OCP\Dashboard\IWidget` and expose the canonical metadata via `getId()`, `getTitle()`, `getOrder()`, `getIconClass()`, and `getUrl()`. The widget id SHALL be a stable kebab-case identifier (`procest-deadline-alerts`, `procest-overdue-cases`, `procest-stalled-cases`, `procest-task-reminders`) used by both the Nextcloud dashboard registry and the in-app `widgetDefs` map. The title SHALL be returned through `IL10N::t()` so it follows the user locale.
 
 #### Scenario: Widget id is stable for layout persistence
@@ -180,6 +194,8 @@ Each of `DeadlineAlertsWidget`, `OverdueCasesWidget`, `StalledCasesWidget`, and 
 
 ### REQ-002: Each signalering widget SHALL register its frontend bundle via load()
 
+@e2e exclude PHP IWidget::load() bundle registration; covered by PHPUnit and smoke test verifying script tags, not Playwright.
+
 `IWidget::load()` SHALL call `Util::addScript('procest', '<widget>-main')` and `Util::addStyle('procest', '<widget>-main')` for the widget's compiled Vue bundle. The widget SHALL NOT compute its data payload server-side in PHP — the Vue component fetches data via the Procest API after mounting. The PHP class exists solely to register the widget with Nextcloud's dashboard system and load the frontend bundle.
 
 #### Scenario: Widget bundle is loaded when dashboard is opened
@@ -187,6 +203,8 @@ Each of `DeadlineAlertsWidget`, `OverdueCasesWidget`, `StalledCasesWidget`, and 
 - **THEN** `DeadlineAlertsWidget::load()` SHALL run and the `deadlineAlertsWidget-main.js` + `.css` bundles SHALL be added to the page
 
 ### REQ-003: All four signalering widgets SHALL be registered at app boot via Application
+
+@e2e exclude NC Application::register() PHP bootstrap; widget picker registration covered by PHPUnit.
 
 `OCA\Procest\AppInfo\Application::register()` SHALL register all four signalering widgets with the Nextcloud dashboard container so they appear in the dashboard widget picker. Registration order in `Application` SHALL match the canonical `getOrder()` return values to avoid layout drift between dashboard picker and saved user layouts.
 

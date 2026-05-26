@@ -6,6 +6,8 @@ retrofit: true
 
 ## Purpose
 
+@e2e exclude Template library scenarios cover backend REST endpoints and file loading; activation is a backend service test, not Playwright.
+
 Ship a library of zaaktype templates (JSON files bundled with the app) and provide a REST surface to discover, inspect, and activate them. Activation expands a template into a fully-linked set of OpenRegister objects (caseType + statusTypes + propertyDefinitions + documentTypes + decisionTypes + roleTypes) so an administrator can stand up a working case type from a single click.
 
 ## Requirements

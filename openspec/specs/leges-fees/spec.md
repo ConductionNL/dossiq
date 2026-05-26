@@ -6,6 +6,8 @@ retrofit: true
 
 ## Purpose
 
+@e2e exclude Leges fee calculation is V1; calculation engine and export are backend services not testable via Playwright.
+
 Calculate municipal fees (leges) on permit cases by applying the gemeentelijke legesverordening to case attributes, support recalculation with audit-traceable correction reasons, derive verrekening (offset) and teruggaaf (refund) figures, and export the resulting berekeningen to legacy financial systems in CSV / ASCII / StUF-FIN XML.
 
 ## Requirements

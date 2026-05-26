@@ -14,6 +14,10 @@ canonical_home: case-management/spec.md
 > This file is preserved as a historical appendix. Refer to
 > `case-management/spec.md` for canonical audit semantics.
 
+## Purpose
+
+@e2e exclude RETIRED spec; requirements consolidated into case-management/spec.md.
+
 ## ADDED Requirements
 
 ### Requirement: Immutable Parafering Audit Trail

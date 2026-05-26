@@ -79,6 +79,8 @@ Stored as an OpenRegister object in the `procest` register under the `task` sche
 
 ### REQ-TASK-001: Task CRUD
 
+@e2e exclude Task CRUD requires existing cases to link tasks to; data-dependent create/read/update/delete flows not testable without pre-seeded cases.
+
 The system MUST support creating, reading, updating, and deleting tasks linked to cases. All task objects are stored in OpenRegister under the `procest` register, `task` schema.
 
 **Tier**: MVP
@@ -135,6 +137,8 @@ The system MUST support creating, reading, updating, and deleting tasks linked t
 
 ### REQ-TASK-002: Task Status Lifecycle
 
+@e2e exclude Task lifecycle transitions require existing tasks with specific statuses; data-dependent state machine tests covered by taskLifecycle.js unit tests.
+
 The system MUST enforce the CMMN PlanItem lifecycle for task status transitions, as implemented in `src/utils/taskLifecycle.js`. Invalid transitions MUST be rejected.
 
 **Tier**: MVP
@@ -183,6 +187,8 @@ The system MUST enforce the CMMN PlanItem lifecycle for task status transitions,
 ---
 
 ### REQ-TASK-003: Task Assignment
+
+@e2e exclude Task assignment requires existing tasks; data-dependent assignment flows not testable without pre-seeded tasks.
 
 The system MUST support assigning tasks to Nextcloud users by their user UID. Unassigned tasks are allowed.
 
@@ -245,6 +251,8 @@ The system MUST provide a list view for tasks with search, sorting, and filterin
 
 #### Scenario: View tasks for a specific case
 
+@e2e exclude Requires case #2024-042 with 5 tasks; data-dependent task section on case detail not testable without pre-seeded data.
+
 - GIVEN case #2024-042 "Bouwvergunning Keizersgracht" has 5 tasks
 - WHEN the user views the case detail page
 - THEN all 5 tasks MUST be displayed in the Tasks section
@@ -253,12 +261,16 @@ The system MUST provide a list view for tasks with search, sorting, and filterin
 
 #### Scenario: Filter tasks by status
 
+@e2e exclude Requires 23 tasks with specific statuses; data-dependent status filter not testable without pre-seeded data.
+
 - GIVEN 23 tasks exist with statuses: 4 available, 6 active, 12 completed, 1 terminated
 - WHEN the user filters by status "active"
 - THEN only the 6 active tasks MUST be shown
 - AND the filter MUST be clearly indicated in the UI
 
 #### Scenario: Sort tasks by due date
+
+@e2e exclude Requires multiple tasks with varying due dates; data-dependent sorting not testable without pre-seeded data.
 
 - GIVEN tasks with various due dates
 - WHEN the user sorts by due date ascending
@@ -267,6 +279,8 @@ The system MUST provide a list view for tasks with search, sorting, and filterin
 
 #### Scenario: Search tasks by title
 
+@e2e exclude Requires tasks with specific titles to search; data-dependent search not testable without pre-seeded data.
+
 - GIVEN tasks with titles including "bouwtekeningen", "constructie", "situatie"
 - WHEN the user searches for "bouwtekeningen"
 - THEN only tasks whose title contains "bouwtekeningen" MUST be shown
@@ -274,6 +288,8 @@ The system MUST provide a list view for tasks with search, sorting, and filterin
 ---
 
 ### REQ-TASK-005: Task Due Dates and Priorities
+
+@e2e exclude Due date/priority display and overdue highlighting require existing tasks with specific dates; data-dependent visual tests covered by taskHelpers.js unit tests.
 
 The system MUST support due dates and priority levels on tasks. Overdue tasks MUST be visually highlighted, as implemented in `src/utils/taskHelpers.js`.
 
@@ -319,6 +335,8 @@ The system MUST support due dates and priority levels on tasks. Overdue tasks MU
 
 ### REQ-TASK-006: Task Card Display
 
+@e2e exclude Task card anatomy requires existing tasks to render; data-dependent card display not testable without pre-seeded tasks.
+
 Task cards MUST display key information following a consistent card anatomy across all views.
 
 **Tier**: MVP (list), V1 (kanban cards)
@@ -359,6 +377,8 @@ Task cards MUST display key information following a consistent card anatomy acro
 ---
 
 ### REQ-TASK-007: Kanban Board View
+
+@e2e exclude Kanban board is V1; drag-and-drop canvas interactions are not testable in the current Playwright-testable build.
 
 The system MUST provide a kanban board view for tasks, with columns corresponding to CMMN task statuses. The board MUST support drag-and-drop to change task status.
 
@@ -407,6 +427,8 @@ The system MUST provide a kanban board view for tasks, with columns correspondin
 
 ### REQ-TASK-008: Task Completion
 
+@e2e exclude Task completion requires an active task to complete; data-dependent lifecycle flow not testable without pre-seeded tasks.
+
 When a task is completed, the system MUST automatically set the `completedDate` and enforce lifecycle rules.
 
 **Tier**: MVP
@@ -436,6 +458,8 @@ When a task is completed, the system MUST automatically set the `completedDate` 
 ---
 
 ### REQ-TASK-009: Task Checklist (Sub-Items)
+
+@e2e exclude Task checklists are V1; sub-item UI is not yet built in the current Playwright-testable build.
 
 The system SHALL support checklists within tasks for detailed work breakdown. Checklist items are lightweight items stored as part of the task object (not separate OpenRegister objects).
 
@@ -469,6 +493,8 @@ The system SHALL support checklists within tasks for detailed work breakdown. Ch
 
 ### REQ-TASK-010: Task Dependencies
 
+@e2e exclude Task dependencies are V1; dependency UI is not yet built in the current Playwright-testable build.
+
 The system SHALL support declaring dependencies between tasks ("blocked by" relationships). Dependencies are advisory: they provide visual indicators but do not strictly prevent work.
 
 **Tier**: V1
@@ -498,6 +524,8 @@ The system SHALL support declaring dependencies between tasks ("blocked by" rela
 ---
 
 ### REQ-TASK-011: Task Templates per Case Type
+
+@e2e exclude Task templates are V1; template definition UI on case types is not yet built in the current Playwright-testable build.
 
 The system SHALL support defining task templates on case types. When a case of that type is created, the user can choose to instantiate the template tasks.
 
@@ -535,6 +563,8 @@ The system SHALL support defining task templates on case types. When a case of t
 
 ### REQ-TASK-012: Automated Task Creation on Case Status Change
 
+@e2e exclude Automated task creation is Enterprise tier; n8n webhook automation is a backend integration not testable via Playwright.
+
 The system SHALL support automatically creating tasks when a case transitions to a specific status. This can be implemented via n8n workflows that listen for case status change events.
 
 **Tier**: Enterprise
@@ -565,6 +595,8 @@ The system SHALL support automatically creating tasks when a case transitions to
 ---
 
 ### REQ-TASK-013: Overdue Task Management
+
+@e2e exclude Overdue task indicators require tasks with past due dates; data-dependent visual tests covered by taskHelpers.js unit tests.
 
 The system MUST provide clear visual indicators for overdue tasks and support filtering/sorting by overdue status, as implemented in the My Work view.
 

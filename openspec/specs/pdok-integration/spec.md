@@ -8,6 +8,8 @@ retrofit_extensions:
 
 ## Purpose
 
+@e2e exclude Backend geodata service integration; tile/geocoder calls are covered by service-level tests, not browser E2E.
+
 Integrate with PDOK (Publieke Dienstverlening Op de Kaart), the Dutch government's geodata platform, for base maps, address search (Locatieserver), and standard reference layers. PDOK services are free, require no API key, and are the standard geodata source for Dutch government applications.
 
 **Standards**: PDOK API guidelines, BAG (Basisregistratie Adressen en Gebouwen), BRT (Basisregistratie Topografie)

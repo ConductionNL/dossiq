@@ -6,6 +6,8 @@ retrofit: true
 
 ## Purpose
 
+@e2e exclude Appointment booking is V1; public token pages + backend integrations are not Playwright-testable in the current build.
+
 Enable Procest cases to schedule, manage, and cancel citizen appointments through pluggable backend integrations with external municipal appointment systems (JCC Afspraken, Qmatic Orchestra) or a local-storage fallback. Citizens receive a token-protected URL for viewing and cancelling their appointment without authentication; case handlers manage appointments through authenticated endpoints; a background job dispatches reminders before each appointment.
 
 **Standards**: JCC Afspraken API, Qmatic Orchestra REST API

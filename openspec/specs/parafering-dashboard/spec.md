@@ -12,6 +12,8 @@ ADR-022, procest-adopt-or-abstractions):
 
 ### Requirement: Secretariaat Parafering Overview
 
+@e2e exclude Parafering dashboard at /voorstellen is V1; the feature tier requires active voorstel case data and the secretariaat role which cannot be pre-seeded in automated e2e tests without a full parafering workflow.
+
 The system SHALL provide a parafering dashboard at `/voorstellen` showing all active voorstellen with their current parafering status, intended for the secretariaat role.
 
 **Feature tier**: V1
@@ -29,6 +31,8 @@ The system SHALL provide a parafering dashboard at `/voorstellen` showing all ac
 - **THEN** the dashboard SHALL display: "Geen actieve voorstellen"
 
 ### Requirement: Personal Parafering Inbox
+
+@e2e exclude Personal parafering inbox is V1 and requires voorstellen assigned to the current user; data-dependent section not testable without pre-seeded parafering workflow data.
 
 The system SHALL provide a personal parafering inbox showing voorstellen awaiting the current user's action. This SHALL be integrated into the MyWork view.
 
@@ -49,6 +53,8 @@ The system SHALL provide a personal parafering inbox showing voorstellen awaitin
 
 ### Requirement: Send Parafering Reminder
 
+@e2e exclude Sending parafering reminders is V1 and requires an overdue parafering step with a configured threshold and active voorstel; not testable without pre-seeded workflow data.
+
 The system SHALL allow the secretariaat to send reminders to actors who have not yet acted on their parafering step.
 
 **Feature tier**: V1
@@ -61,6 +67,8 @@ The system SHALL allow the secretariaat to send reminders to actors who have not
 - **AND** the reminder SHALL be logged in the parafering audit trail
 
 ### Requirement: Voorstel List Navigation
+
+@e2e exclude Voorstel list navigation is V1; the sidebar navigation item for Voorstellen is not yet implemented in the current build and navigating to /voorstellen shows an empty or unbuilt page.
 
 The system SHALL add a "Voorstellen" navigation item to the Procest sidebar, linking to the parafering dashboard at `/voorstellen`.
 

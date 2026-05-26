@@ -539,6 +539,8 @@ The system MUST register three Nextcloud-native dashboard widgets for display on
 
 ### REQ-DASH-016: The Nextcloud dashboard SHALL provide CasesOverview, MyTasks and StartCase widgets
 
+@e2e exclude NC dashboard widget registration (IWidget PHP classes); widget deep-link is app-boot plumbing covered by PHPUnit.
+
 `CasesOverviewWidget`, `MyTasksWidget` and `StartCaseWidget` SHALL each implement `OCP\Dashboard\IWidget` with stable kebab-case ids (`procest-cases-overview`, `procest-my-tasks`, `procest-start-case`), localised titles via `IL10N::t()`, deterministic `getOrder()` return values, MDI-style `getIconClass()`, and an in-app `getUrl()` deep link. Each widget's `load()` SHALL register the corresponding webpack-built Vue bundle via `Util::addScript()` + `Util::addStyle()` — no server-side data computation in PHP.
 
 #### Scenario: StartCase widget exposes deep-link to the case-creation flow
@@ -547,6 +549,8 @@ The system MUST register three Nextcloud-native dashboard widgets for display on
 
 ### REQ-DASH-017: DashboardController SHALL expose the in-app dashboard data endpoints
 
+@e2e exclude Backend PHP DashboardController spec; endpoint payload structure covered by PHPUnit controller tests.
+
 `OCA\Procest\Controller\DashboardController` SHALL serve the in-app dashboard surface (not the Nextcloud dashboard system, which is widget-driven and loads client-side). The controller SHALL provide endpoints for the dashboard landing-page Vue to fetch its initial state (KPIs, layout, widget data) so the SPA can render without spinning up multiple per-widget HTTP requests.
 
 #### Scenario: Initial dashboard payload
@@ -554,6 +558,8 @@ The system MUST register three Nextcloud-native dashboard widgets for display on
 - **THEN** `DashboardController` SHALL respond with a single payload containing the user's saved layout plus the data each widget needs to render its first frame
 
 ### REQ-DASH-018: All three workflow widgets SHALL be registered at app boot via Application
+
+@e2e exclude NC Application::register() PHP bootstrap spec; widget picker registration covered by PHPUnit.
 
 `OCA\Procest\AppInfo\Application::register()` SHALL register `CasesOverviewWidget`, `MyTasksWidget`, and `StartCaseWidget` with the Nextcloud dashboard container so they appear in the dashboard widget picker. Registration order SHALL match the canonical `getOrder()` return values.
 

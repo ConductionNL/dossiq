@@ -1,3 +1,7 @@
+## Purpose
+
+@e2e exclude LHS matrix configuration is V1; matrix admin UI is a generic index page not yet exercised in Playwright tests.
+
 ## ADDED Requirements
 
 ### Requirement: LHS matrix configuration

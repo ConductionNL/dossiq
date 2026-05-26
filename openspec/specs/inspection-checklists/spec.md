@@ -5,6 +5,10 @@ retrofit_extensions:
   - REQ-003
 ---
 
+## Purpose
+
+@e2e exclude Inspection checklists is V1; checklist schema and admin tab are not yet built in the Playwright-testable UI.
+
 ## ADDED Requirements
 
 ### Requirement: Inspection checklist schema
