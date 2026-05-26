@@ -39,7 +39,8 @@
 				<label>{{ t('procest', 'Advice Type') }} *</label>
 				<NcSelect
 					v-model="form.adviceType"
-					:options="adviceTypeOptions" />
+					:options="adviceTypeOptions"
+					:aria-label-combobox="t('procest', 'Advice Type')" />
 			</div>
 
 			<div class="form-group">

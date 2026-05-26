@@ -36,82 +36,12 @@
 			</table>
 		</div>
 
-		<NcDialog v-if="editingKey"
-			:name="t('procest', 'Edit ZGW Mapping: {key}', { key: editingKey })"
-			size="large"
-			@closing="editingKey = null">
-			<div class="mapping-editor">
-				<div class="form-group">
-					<label>{{ t('procest', 'Enabled') }}</label>
-					<NcCheckboxRadioSwitch
-						:checked="editForm.enabled"
-						@update:checked="v => editForm.enabled = v">
-						{{ t('procest', 'Enable this mapping') }}
-					</NcCheckboxRadioSwitch>
-				</div>
-
-				<div class="form-group">
-					<label>{{ t('procest', 'Source Register') }}</label>
-					<NcTextField
-						:value="editForm.sourceRegister"
-						:label="t('procest', 'Register ID')"
-						@update:value="v => editForm.sourceRegister = v" />
-				</div>
-
-				<div class="form-group">
-					<label>{{ t('procest', 'Source Schema') }}</label>
-					<NcTextField
-						:value="editForm.sourceSchema"
-						:label="t('procest', 'Schema ID')"
-						@update:value="v => editForm.sourceSchema = v" />
-				</div>
-
-				<div class="form-group">
-					<label>{{ t('procest', 'Property Mapping (outbound: English → Dutch)') }}</label>
-					<textarea
-						v-model="propertyMappingJson"
-						class="mapping-textarea"
-						rows="10" />
-				</div>
-
-				<div class="form-group">
-					<label>{{ t('procest', 'Reverse Mapping (inbound: Dutch → English)') }}</label>
-					<textarea
-						v-model="reverseMappingJson"
-						class="mapping-textarea"
-						rows="10" />
-				</div>
-
-				<div class="form-group">
-					<label>{{ t('procest', 'Value Mappings (enum translations)') }}</label>
-					<textarea
-						v-model="valueMappingJson"
-						class="mapping-textarea"
-						rows="6" />
-				</div>
-
-				<div class="form-group">
-					<label>{{ t('procest', 'Query Parameter Mapping') }}</label>
-					<textarea
-						v-model="queryParamMappingJson"
-						class="mapping-textarea"
-						rows="6" />
-				</div>
-
-				<p v-if="jsonError" class="error-message">
-					{{ jsonError }}
-				</p>
-			</div>
-
-			<template #actions>
-				<NcButton type="tertiary" @click="editingKey = null">
-					{{ t('procest', 'Cancel') }}
-				</NcButton>
-				<NcButton type="primary" @click="saveMapping">
-					{{ t('procest', 'Save') }}
-				</NcButton>
-			</template>
-		</NcDialog>
+		<ZgwMappingDialog
+			:open="editingKey !== null"
+			:resource-key="editingKey || ''"
+			:mapping="editingKey ? (mappings[editingKey] || {}) : {}"
+			@save="saveMapping"
+			@close="editingKey = null" />
 
 		<p v-if="saved" class="success-message">
 			{{ t('procest', 'Mapping saved successfully') }}
@@ -120,30 +50,19 @@
 </template>
 
 <script>
-import { NcButton, NcCheckboxRadioSwitch, NcDialog, NcTextField } from '@nextcloud/vue'
+import { NcButton } from '@nextcloud/vue'
 import { useZgwMappingStore } from '../../store/modules/zgwMapping.js'
+import ZgwMappingDialog from '../../dialogs/ZgwMappingDialog.vue'
 
 export default {
 	name: 'ZgwMappingSettings',
 	components: {
 		NcButton,
-		NcCheckboxRadioSwitch,
-		NcDialog,
-		NcTextField,
+		ZgwMappingDialog,
 	},
 	data() {
 		return {
 			editingKey: null,
-			editForm: {
-				enabled: true,
-				sourceRegister: '',
-				sourceSchema: '',
-			},
-			propertyMappingJson: '{}',
-			reverseMappingJson: '{}',
-			valueMappingJson: '{}',
-			queryParamMappingJson: '{}',
-			jsonError: null,
 			saved: false,
 		}
 	},
@@ -171,45 +90,11 @@ export default {
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		editMapping(key) {
-			const mapping = this.mappings[key] || {}
 			this.editingKey = key
-			this.editForm = {
-				enabled: mapping.enabled ?? true,
-				sourceRegister: mapping.sourceRegister || '',
-				sourceSchema: mapping.sourceSchema || '',
-			}
-			this.propertyMappingJson = JSON.stringify(mapping.propertyMapping || {}, null, 2)
-			this.reverseMappingJson = JSON.stringify(mapping.reverseMapping || {}, null, 2)
-			this.valueMappingJson = JSON.stringify(mapping.valueMapping || {}, null, 2)
-			this.queryParamMappingJson = JSON.stringify(mapping.queryParameterMapping || {}, null, 2)
-			this.jsonError = null
 		},
 
 		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
-		async saveMapping() {
-			this.jsonError = null
-
-			let propertyMapping, reverseMapping, valueMapping, queryParameterMapping
-			try {
-				propertyMapping = JSON.parse(this.propertyMappingJson)
-				reverseMapping = JSON.parse(this.reverseMappingJson)
-				valueMapping = JSON.parse(this.valueMappingJson)
-				queryParameterMapping = JSON.parse(this.queryParamMappingJson)
-			} catch (e) {
-				this.jsonError = t('procest', 'Invalid JSON in one of the mapping fields: {error}', { error: e.message })
-				return
-			}
-
-			const config = {
-				...this.editForm,
-				zgwResource: this.editingKey,
-				zgwApiVersion: '1',
-				propertyMapping,
-				reverseMapping,
-				valueMapping,
-				queryParameterMapping,
-			}
-
+		async saveMapping(config) {
 			const result = await this.store.saveMapping(this.editingKey, config)
 			if (result) {
 				this.editingKey = null
@@ -255,31 +140,6 @@ export default {
 
 .status-unconfigured {
 	color: var(--color-text-maxcontrast);
-}
-
-.mapping-editor .form-group {
-	margin-bottom: 16px;
-}
-
-.mapping-editor label {
-	display: block;
-	margin-bottom: 4px;
-	font-weight: bold;
-}
-
-.mapping-textarea {
-	width: 100%;
-	font-family: monospace;
-	font-size: 13px;
-	padding: 8px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius);
-	background: var(--color-background-dark);
-}
-
-.error-message {
-	color: var(--color-error);
-	margin-top: 8px;
 }
 
 .success-message {

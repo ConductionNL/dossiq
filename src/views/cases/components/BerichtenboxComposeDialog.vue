@@ -47,6 +47,7 @@
 				<NcSelect
 					v-model="form.berichtTypeCode"
 					:options="typeCodes"
+					:aria-label-combobox="t('procest', 'Bericht type')"
 					label="label"
 					track-by="code" />
 			</div>

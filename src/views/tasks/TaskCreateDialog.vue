@@ -39,6 +39,7 @@
 							v-model="form.priority"
 							:options="priorityOptions"
 							:clearable="false"
+							:aria-label-combobox="t('procest', 'Priority')"
 							:placeholder="t('procest', 'Select priority')" />
 					</div>
 					<div class="form-group">
@@ -66,6 +67,7 @@
 					<NcSelect
 						v-model="form.case"
 						:options="caseOptions"
+						:aria-label-combobox="t('procest', 'Case')"
 						:clearable="true"
 						label="label"
 						:reduce="o => o.value"

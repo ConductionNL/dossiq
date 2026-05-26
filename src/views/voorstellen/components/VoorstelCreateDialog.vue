@@ -21,6 +21,7 @@
 				<NcSelect
 					v-model="form.type"
 					:options="typeOptions"
+					:aria-label-combobox="t('procest', 'Type')"
 					:placeholder="t('procest', 'Selecteer type...')" />
 			</div>
 
@@ -29,6 +30,7 @@
 				<NcSelect
 					v-model="selectedCase"
 					:options="cases"
+					:aria-label-combobox="t('procest', 'Zaak')"
 					label="title"
 					track-by="id"
 					:placeholder="t('procest', 'Selecteer zaak...')"

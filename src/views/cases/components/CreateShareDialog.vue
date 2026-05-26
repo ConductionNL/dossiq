@@ -34,6 +34,7 @@
 					<NcSelect
 						v-model="form.permissionLevel"
 						:options="permissionOptions"
+						:aria-label-combobox="t('procest', 'Permission level')"
 						label="label"
 						track-by="value" />
 				</div>
@@ -63,6 +64,7 @@
 					<NcSelect
 						v-model="form.partnerId"
 						:options="partners"
+						:aria-label-combobox="t('procest', 'Partner organization')"
 						label="name"
 						track-by="id"
 						:placeholder="t('procest', 'Select partner...')" />
@@ -73,6 +75,7 @@
 					<NcSelect
 						v-model="form.permissionLevel"
 						:options="permissionOptions"
+						:aria-label-combobox="t('procest', 'Permission level')"
 						label="label"
 						track-by="value" />
 				</div>

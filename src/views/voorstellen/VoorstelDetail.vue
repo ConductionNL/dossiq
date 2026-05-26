@@ -166,8 +166,8 @@ import ParafeerActieDialog from './components/ParafeerActieDialog.vue'
 import ParafeerActieTimeline from './components/ParafeerActieTimeline.vue'
 import AuditTrail from './components/AuditTrail.vue'
 import BesluitRegistration from './components/BesluitRegistration.vue'
-import SkipStepDialog from './components/SkipStepDialog.vue'
-import AddStepDialog from './components/AddStepDialog.vue'
+import SkipStepDialog from '../../dialogs/SkipStepDialog.vue'
+import AddStepDialog from '../../dialogs/AddStepDialog.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 
 const STATUS_LABELS = {

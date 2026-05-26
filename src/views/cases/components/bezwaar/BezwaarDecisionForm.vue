@@ -46,7 +46,8 @@
 				<label>{{ t('procest', 'Disposition Type') }} *</label>
 				<NcSelect
 					v-model="form.dispositionType"
-					:options="dispositionOptions" />
+					:options="dispositionOptions"
+					:aria-label-combobox="t('procest', 'Disposition Type')" />
 			</div>
 
 			<div class="form-group">

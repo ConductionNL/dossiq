@@ -77,6 +77,7 @@ import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import MapLayerSettings from './MapLayerSettings.vue'
 import AiSettingsTab from './tabs/AiSettingsTab.vue'
 import { generateUrl } from '@nextcloud/router'
+import { loadState } from '@nextcloud/initial-state'
 import { initializeStores } from '../../store/store.js'
 
 export default {
@@ -97,7 +98,7 @@ export default {
 	data() {
 		return {
 			storesReady: false,
-			appVersion: document.getElementById('procest-settings')?.dataset?.version || 'Unknown',
+			appVersion: loadState('procest', 'version', 'Unknown'),
 			reimporting: false,
 			message: '',
 			messageType: 'success',

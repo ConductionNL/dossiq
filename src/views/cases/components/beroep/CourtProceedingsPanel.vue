@@ -41,7 +41,8 @@
 				<label>{{ t('procest', 'Court Ruling Outcome') }}</label>
 				<NcSelect
 					v-model="rulingForm.outcome"
-					:options="rulingOptions" />
+					:options="rulingOptions"
+					:aria-label-combobox="t('procest', 'Court Ruling Outcome')" />
 				<NcButton type="primary" class="court-proceedings-panel__save-btn" @click="saveRuling">
 					{{ t('procest', 'Record Ruling') }}
 				</NcButton>

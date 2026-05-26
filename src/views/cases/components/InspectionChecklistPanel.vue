@@ -9,6 +9,7 @@
 			<NcSelect
 				v-model="selectedChecklist"
 				:options="checklists"
+				:input-label="t('procest', 'Select checklist')"
 				label="title"
 				track-by="id"
 				:placeholder="t('procest', 'Select checklist...')" />

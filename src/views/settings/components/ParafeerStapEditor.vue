@@ -12,12 +12,14 @@
 			<NcSelect
 				:value="step.type"
 				:options="stepTypeOptions"
+				:input-label="t('procest', 'Type')"
 				:placeholder="t('procest', 'Type')"
 				class="parafeer-stap-editor__type"
 				@input="v => updateStep(idx, 'type', v)" />
 			<NcSelect
 				:value="step.actorType"
 				:options="actorTypeOptions"
+				:input-label="t('procest', 'Actor type')"
 				:placeholder="t('procest', 'Actor type')"
 				class="parafeer-stap-editor__actor-type"
 				@input="v => updateStep(idx, 'actorType', v)" />

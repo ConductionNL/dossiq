@@ -21,6 +21,7 @@
 					<NcSelect
 						v-model="selectedCaseType"
 						:options="availableCaseTypes"
+						:aria-label-combobox="t('procest', 'Case type')"
 						label="title"
 						track-by="id"
 						:placeholder="t('procest', 'Select a case type...')"
@@ -78,6 +79,7 @@
 					<NcSelect
 						v-model="selectedIntakeChannel"
 						:options="intakeChannelOptions"
+						:aria-label-combobox="t('procest', 'Intake channel')"
 						label="label"
 						track-by="value"
 						:placeholder="t('procest', 'Select intake channel...')"
@@ -338,6 +340,7 @@ export default {
 					<NcSelect
 						v-model="selectedCaseType"
 						:options="usableCaseTypes"
+						:aria-label-combobox="t('procest', 'Case type')"
 						label="title"
 						track-by="id"
 						:placeholder="t('procest', 'Select a case type...')"
