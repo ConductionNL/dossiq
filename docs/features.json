@@ -1,0 +1,86 @@
+[
+  {
+    "slug": "admin-settings",
+    "title": "Admin Settings",
+    "summary": "The admin settings page provides a Nextcloud admin panel for configuring Procest. Administrators manage case types and all their related type definitions: statuses, results, roles, properties, documents, and decisions. The case type system is the behavioral engine of Procest -- every aspect of how a case behaves (allowed statuses, deadlines, required fields, archival rules) is defined here. The admin settings UI follows a list-detail pattern: a case type list on the main page, and a tabbed detail/edit view per case type.",
+    "docsUrl": "openspec/specs/admin-settings/spec.md"
+  },
+  {
+    "slug": "case-dashboard-view",
+    "title": "Case Dashboard View",
+    "summary": "The Case Dashboard View is the primary working screen for behandelaars. It combines all relevant information for a single case into one integrated view: timeline, documents, status, tasks, contactmomenten, besluiten, and linked objects. While the Case Management spec (`../case-management/spec.md`) defines the data model and individual panels (REQ-CM-06 through REQ-CM-13), this spec defines how those panels are composed into a cohesive working screen with interactions between them.",
+    "docsUrl": "openspec/specs/case-dashboard-view/spec.md"
+  },
+  {
+    "slug": "case-management",
+    "title": "Case Management",
+    "summary": "Case management is the core capability of Procest. A case represents a coherent body of work with a defined lifecycle, initiation, and result. Cases are governed by configurable **case types** that control behavior: allowed statuses, required fields, processing deadlines, retention rules, and more. Cases follow CMMN 1.1 concepts (CasePlanModel) and are semantically typed as `schema:Project`.",
+    "docsUrl": "openspec/specs/case-management/spec.md"
+  },
+  {
+    "slug": "case-types",
+    "title": "Case Type System",
+    "summary": "Case types are configurable definitions that control the behavior of cases. A case type determines which statuses are allowed, what roles can be assigned, which custom fields are required, processing deadlines, confidentiality defaults, and archival rules. This is the international equivalent of ZGW's `ZaakType`, modeled after CMMN 1.1 `CaseDefinition` concepts.",
+    "docsUrl": "openspec/specs/case-types/spec.md"
+  },
+  {
+    "slug": "dashboard",
+    "title": "Dashboard",
+    "summary": "The dashboard is the landing page of the Procest app. It provides an at-a-glance overview of case management activity: KPI cards with headline metrics, status and type distribution charts, an overdue cases panel, a personal workload preview, a recent activity feed, and quick actions. The dashboard aggregates data across all cases visible to the current user (respecting RBAC via OpenRegister).",
+    "docsUrl": "openspec/specs/dashboard/spec.md"
+  },
+  {
+    "slug": "my-work",
+    "title": "My Work (Werkvoorraad)",
+    "summary": "My Work is the personal productivity hub for case handlers. It aggregates all work items assigned to the current user -- cases where they are the handler and tasks assigned to them -- into a single prioritized view. Items are grouped by urgency (Overdue, Due This Week, Upcoming, No Deadline) and sorted by priority then deadline within each group. This view answers the daily question: \"What do I need to work on next?\"",
+    "docsUrl": "openspec/specs/my-work/spec.md"
+  },
+  {
+    "slug": "openregister-integration",
+    "title": "OpenRegister Integration",
+    "summary": "Procest owns **no database tables**. All data is stored as OpenRegister objects in a dedicated `procest` register containing schemas for all entity types. This spec defines how the register and schemas are configured, how the repair step initializes the data model, how the frontend interacts with the OpenRegister API, the Pinia store patterns, cross-entity reference semantics, error handling, pagination, RBAC, cascade behaviors, and performance considerations.",
+    "docsUrl": "openspec/specs/openregister-integration/spec.md"
+  },
+  {
+    "slug": "procest-app-scaffold",
+    "title": "procest-app-scaffold",
+    "summary": "Define the Nextcloud app scaffolding, build system, translation setup, and admin settings for the Procest case management app. This capability establishes the foundational structure that all other capabilities build upon, including the Application class, DashboardController, Vue SPA entry, routing, navigation, repair steps, and settings infrastructure.",
+    "docsUrl": "openspec/specs/procest-app-scaffold/spec.md"
+  },
+  {
+    "slug": "procest-case-management",
+    "title": "procest-case-management",
+    "summary": "Define the core case management domain for Procest: cases, tasks, statuses, roles, results, and decisions. All entities are stored in OpenRegister under the Procest register. The frontend provides list and detail views for cases and tasks, with case type configuration, status lifecycle management, deadline tracking, participant management, and activity timelines.",
+    "docsUrl": "openspec/specs/procest-case-management/spec.md"
+  },
+  {
+    "slug": "procest-object-store",
+    "title": "procest-object-store",
+    "summary": "Define the Pinia-based object store that provides the data layer for Procest. The store uses `createObjectStore` from `@conduction/nextcloud-vue` to query OpenRegister directly from the frontend for all CRUD, search, pagination, file management, audit trails, and relation resolution operations -- following the thin-client pattern where Procest owns no database tables.",
+    "docsUrl": "openspec/specs/procest-object-store/spec.md"
+  },
+  {
+    "slug": "prometheus-metrics",
+    "title": "Prometheus Metrics Endpoint",
+    "summary": "Expose application metrics in Prometheus text exposition format for monitoring, alerting, and operational dashboards. Case management systems require operational visibility into case volumes, SLA compliance, processing times, and system health for both IT operations and management reporting.",
+    "docsUrl": "openspec/specs/prometheus-metrics/spec.md"
+  },
+  {
+    "slug": "roles-decisions",
+    "title": "Roles & Decisions",
+    "summary": "Roles define the relationship between participants (Nextcloud users or external contacts) and cases -- who is involved and in what capacity. Results record the formal outcome of a completed case, linking to a predefined result type that controls archival rules. Decisions are formal administrative choices made on cases, with legal validity periods and publication requirements.",
+    "docsUrl": "openspec/specs/roles-decisions/spec.md"
+  },
+  {
+    "slug": "task-management",
+    "title": "Task Management",
+    "summary": "Tasks represent work items within a case. They follow CMMN 1.1 HumanTask concepts and are semantically typed as `schema:Action`. Tasks can be assigned to Nextcloud users, have due dates and priorities, and follow an independent lifecycle within the parent case. Tasks are the primary mechanism for distributing and tracking work across case handlers, advisors, and other participants.",
+    "docsUrl": "openspec/specs/task-management/spec.md"
+  },
+  {
+    "slug": "zgw-api-mapping",
+    "title": "ZGW API Mapping",
+    "summary": "Expose Procest's ZGW (Zaakgericht Werken) compliant API endpoints, translating case management data stored in English-language OpenRegister schemas through bidirectional property and value mapping powered by the Twig-based mapping engine. This is Procest's primary integration layer for Dutch government interoperability. The mapping engine -- implemented in OpenRegister as `MappingService`, `MappingExtension`, `MappingRuntime`, and the `Mapping` entity -- provides the core transformation layer; this spec defines how Procest wires that engine to ZGW-specific API routes, pagination, URL references, query parameter translation, error responses, and per-API compliance for all five VNG ZGW API standards (ZRC, ZTC, DRC, BRC, NRC). Procest owns the ZGW Mapping and Endpoint configurations, while OpenRegister owns the generic mapping infrastructure. See also Procest's existing ZGW controllers for reference.",
+    "docsUrl": "openspec/specs/zgw-api-mapping/spec.md"
+  }
+]
