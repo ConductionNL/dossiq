@@ -24,7 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Procest\BackgroundJob;
 
+use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\BerichtenboxService;
+use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use Psr\Log\LoggerInterface;
@@ -39,11 +41,13 @@ class BerichtenboxReadStatusJob extends TimedJob
      *
      * @param ITimeFactory        $time                The time factory.
      * @param BerichtenboxService $berichtenboxService The Berichtenbox service.
+     * @param IAppManager         $appManager          The Nextcloud app manager.
      * @param LoggerInterface     $logger              The logger.
      */
     public function __construct(
         ITimeFactory $time,
         private BerichtenboxService $berichtenboxService,
+        private IAppManager $appManager,
         private LoggerInterface $logger,
     ) {
         parent::__construct(time: $time);
@@ -54,15 +58,43 @@ class BerichtenboxReadStatusJob extends TimedJob
     /**
      * Run the scheduled read-status poll.
      *
+     * Retrieves all messages with status 'sent' or 'unread_flagged' that have
+     * been delivered to Berichtenbox and polls the external API for each to
+     * update the local status to 'read', 'unread_flagged', or leave as-is.
+     *
      * @param mixed $argument The job argument.
      *
      * @return void
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+    /** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md#task-5 */
     protected function run($argument): void
     {
-        $this->logger->info('Procest: Running Berichtenbox read status poll');
-        // The actual polling happens in BerichtenboxService::pollReadStatus
-        // This job would iterate unread messages and poll each one.
+        if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
+            return;
+        }
+
+        $messages = $this->berichtenboxService->getPendingMessages();
+        $count    = count($messages);
+
+        $this->logger->info(
+            'Procest: Starting Berichtenbox read-status poll',
+            ['app' => Application::APP_ID, 'pendingMessages' => $count],
+        );
+
+        foreach ($messages as $message) {
+            $messageId = (string) ($message['uuid'] ?? ($message['id'] ?? ''));
+            if ($messageId === '') {
+                continue;
+            }
+
+            $this->berichtenboxService->pollReadStatus($messageId);
+        }//end foreach
+
+        $this->logger->info(
+            'Procest: Berichtenbox read-status poll completed',
+            ['app' => Application::APP_ID, 'polled' => $count],
+        );
     }//end run()
 }//end class
