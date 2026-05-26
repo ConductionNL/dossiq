@@ -692,7 +692,8 @@ class ZgwService
             $this->logger->warning(
                 'Could not check consumer scope: '.$e->getMessage()
             );
-            return true;
+            // Fail closed (CWE-863): on error, deny the scope rather than grant it.
+            return false;
         }//end try
     }//end consumerHasScope()
 
@@ -761,7 +762,10 @@ class ZgwService
             $this->logger->warning(
                 'Could not get consumer autorisaties: '.$e->getMessage()
             );
-            return null;
+            // Fail closed (CWE-863): on error, return an empty authorisation set
+            // (caller treats [] as "no scopes granted" → deny) rather than null,
+            // which the caller treats as "unrestricted / allow all".
+            return [];
         }//end try
     }//end getConsumerAuthorisaties()
 
