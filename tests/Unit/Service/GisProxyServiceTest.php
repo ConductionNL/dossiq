@@ -291,4 +291,101 @@ class GisProxyServiceTest extends TestCase
     }//end testKadasterUrlIsAllowed()
 
 
+    /**
+     * C5 SSRF: getCapabilities must call isUrlAllowed before fetching.
+     *
+     * Previously getCapabilities called file_get_contents directly without the
+     * allowlist check — a file:// URL would have read local files.
+     *
+     * @return void
+     */
+    public function testGetCapabilitiesBlocksDisallowedUrl(): void
+    {
+        $this->container
+            ->method('get')
+            ->willThrowException(new \RuntimeException('Service not available'));
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionCode(403);
+
+        $this->service->getCapabilities(
+            url: 'https://evil.example.com/wms',
+            type: 'wms',
+        );
+
+    }//end testGetCapabilitiesBlocksDisallowedUrl()
+
+
+    /**
+     * C5 SSRF: non-https schemes are blocked.
+     *
+     * @return void
+     */
+    public function testNonHttpsSchemeIsBlocked(): void
+    {
+        $this->container
+            ->method('get')
+            ->willThrowException(new \RuntimeException('Service not available'));
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionCode(403);
+
+        // file:// scheme must be blocked.
+        $this->service->proxyRequest(
+            url: 'file:///etc/passwd',
+            query: [],
+            type: 'wms',
+        );
+
+    }//end testNonHttpsSchemeIsBlocked()
+
+
+    /**
+     * C5 SSRF: substring bypass — attacker URL containing pdok.nl as substring
+     * must NOT be allowed under the new exact-hostname check.
+     *
+     * @return void
+     */
+    public function testSubstringBypassUrlIsBlocked(): void
+    {
+        $this->container
+            ->method('get')
+            ->willThrowException(new \RuntimeException('Service not available'));
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionCode(403);
+
+        // Old code had: str_contains($url, 'pdok.nl') — this would pass.
+        // New code uses exact hostname comparison — this must be blocked.
+        $this->service->proxyRequest(
+            url: 'https://evil.com/steal?host=pdok.nl',
+            query: [],
+            type: 'wms',
+        );
+
+    }//end testSubstringBypassUrlIsBlocked()
+
+
+    /**
+     * C5 SSRF: php:// stream wrapper must be blocked.
+     *
+     * @return void
+     */
+    public function testPhpStreamWrapperIsBlocked(): void
+    {
+        $this->container
+            ->method('get')
+            ->willThrowException(new \RuntimeException('Service not available'));
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionCode(403);
+
+        $this->service->getCapabilities(
+            url: 'php://filter/convert.base64-encode/resource=/etc/passwd',
+            type: 'wms',
+        );
+
+    }//end testPhpStreamWrapperIsBlocked()
+
+
 }//end class
