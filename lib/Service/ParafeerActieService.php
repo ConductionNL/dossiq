@@ -669,7 +669,9 @@ class ParafeerActieService
      * @param string               $action  The action.
      * @param string               $comment The comment (may be empty).
      * @param string               $advice  The advice (may be empty).
-     * @param array<string, mixed> $step    The current step.
+     * @param array<string, mixed> $step    The current step (reserved for future validation rules).
+     *
+     * @psalm-suppress UnusedParam
      *
      * @return void
      *

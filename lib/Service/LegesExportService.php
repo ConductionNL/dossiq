@@ -100,8 +100,9 @@ class LegesExportService
      * @throws \InvalidArgumentException If format is not supported.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function export(array $berekeningen, string $format=self::FORMAT_CSV): array
     {
         if (in_array($format, self::SUPPORTED_FORMATS, true) === false) {

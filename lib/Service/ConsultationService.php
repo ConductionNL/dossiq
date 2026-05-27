@@ -80,8 +80,9 @@ class ConsultationService
      * @return array<string, mixed> Created consultation with ID
      *
      * @throws \RuntimeException If OpenRegister unavailable
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createConsultation(array $data): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -129,8 +130,9 @@ class ConsultationService
      * @param string $caseId The parent case UUID
      *
      * @return array<int, array<string, mixed>> List of consultations
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getConsultationsForCase(string $caseId): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -169,8 +171,9 @@ class ConsultationService
      * @return array<string, mixed> Updated consultation
      *
      * @throws \RuntimeException If invalid status or OpenRegister unavailable
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function updateStatus(string $consultationId, string $newStatus): array
     {
         if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
@@ -212,8 +215,9 @@ class ConsultationService
      * @return array<string, mixed> Updated consultation
      *
      * @throws \RuntimeException If invalid response or OpenRegister unavailable
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function submitResponse(string $consultationId, array $response): array
     {
         $advies = $response['advies'] ?? '';
@@ -261,8 +265,9 @@ class ConsultationService
      * Get overdue consultations.
      *
      * @return array<int, array<string, mixed>> List of overdue consultations
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getOverdueConsultations(): array
     {
         $objectService = $this->settingsService->getObjectService();

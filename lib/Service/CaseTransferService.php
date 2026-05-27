@@ -66,8 +66,9 @@ class CaseTransferService
      * @param string $requestedDate      The requested transfer date (ISO 8601)
      *
      * @return array The created transfer request data
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function initiateTransfer(
         string $caseId,
         string $sourceOrganization,
@@ -116,8 +117,9 @@ class CaseTransferService
      * @param string $transferId The UUID of the transfer request
      *
      * @return array The updated transfer data
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function acceptTransfer(string $transferId): array
     {
         $objectService = $this->getObjectService();
@@ -166,8 +168,9 @@ class CaseTransferService
      * @param string $rejectionReason The reason for rejection
      *
      * @return array The updated transfer data
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rejectTransfer(string $transferId, string $rejectionReason): array
     {
         $objectService = $this->getObjectService();

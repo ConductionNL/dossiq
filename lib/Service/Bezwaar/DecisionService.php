@@ -163,8 +163,9 @@ class DecisionService
      * @throws RuntimeException When OpenRegister is unavailable, schemas
      *                          are unconfigured, or the payload is
      *                          invalid at draft time.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function draft(string $bezwaarId, array $payload): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -246,8 +247,9 @@ class DecisionService
      *
      * @throws RuntimeException When validation fails or persistence
      *                          errors occur.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function publish(string $decisionId): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -329,8 +331,9 @@ class DecisionService
      *                           the transition.
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function applyToBezwaar(string $bezwaarId, string $decisionId): void
     {
         $objectService = $this->settingsService->getObjectService();

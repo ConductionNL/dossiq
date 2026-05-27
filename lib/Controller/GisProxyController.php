@@ -66,8 +66,9 @@ class GisProxyController extends Controller
      * @NoAdminRequired
      *
      * @return JSONResponse|Response The proxied response
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function proxy(): JSONResponse|Response
     {
         if ($this->userSession->getUser() === null) {
@@ -117,8 +118,9 @@ class GisProxyController extends Controller
      * @NoAdminRequired
      *
      * @return JSONResponse Parsed capabilities as JSON
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function capabilities(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {

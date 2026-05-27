@@ -47,8 +47,9 @@ trait HandlesTemplates
      *                         root scope.
      *
      * @return string
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function renderTemplate(string $template, array $case): string
     {
         if ($template === '' || str_contains($template, '{{') === false) {
@@ -96,8 +97,9 @@ trait HandlesTemplates
      * @param array  $case         Case object used for role-based lookup.
      *
      * @return string
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function resolveRecipient(string $recipientRef, array $case): string
     {
         if ($recipientRef === '') {

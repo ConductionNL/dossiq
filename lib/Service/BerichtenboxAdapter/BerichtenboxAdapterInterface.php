@@ -38,8 +38,9 @@ interface BerichtenboxAdapterInterface
      * @param string|null $attachment PDF attachment content (base64)
      *
      * @return array Result with messageId, status
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function sendMessage(
         string $bsn,
         string $subject,

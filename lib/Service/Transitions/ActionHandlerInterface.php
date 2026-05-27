@@ -42,7 +42,8 @@ interface ActionHandlerInterface
      * @param array<string, mixed> $transitionContext Snapshot of the transition: fromStatus, toStatus, transitionLabel, userId, statusRecordUuid
      *
      * @return ActionResult
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult;
 }//end interface

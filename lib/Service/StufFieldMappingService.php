@@ -119,8 +119,9 @@ class StufFieldMappingService
      * @return array<string, mixed> OpenRegister property values.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function mapZknToInternal(array $stufData): array
     {
         $mappings = array_merge(
@@ -139,8 +140,9 @@ class StufFieldMappingService
      * @return array<string, string> StUF field values.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function mapInternalToZkn(array $internalData): array
     {
         $mappings = array_merge(
@@ -159,8 +161,9 @@ class StufFieldMappingService
      * @return array<string, mixed> OpenRegister property values.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function mapBgToInternal(array $stufData): array
     {
         $mappings = array_merge(
@@ -179,8 +182,9 @@ class StufFieldMappingService
      * @return array<string, string> StUF field values.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function mapInternalToBg(array $internalData): array
     {
         $mappings = array_merge(
@@ -199,8 +203,9 @@ class StufFieldMappingService
      * @return string|null The ISO 8601 date, or null if invalid.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function stufDateToIso(string $stufDate): ?string
     {
         if (strlen($stufDate) === 8) {
@@ -229,8 +234,9 @@ class StufFieldMappingService
      * @return string The StUF date string.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function isoToStufDate(string $isoDate): string
     {
         $dt = new \DateTimeImmutable($isoDate);
@@ -245,8 +251,9 @@ class StufFieldMappingService
      * @return string The StUF datetime string.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function isoToStufDateTime(string $isoDateTime): string
     {
         $dt = new \DateTimeImmutable($isoDateTime);
@@ -261,8 +268,9 @@ class StufFieldMappingService
      * @return string The internal value.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function confidentialityToInternal(string $stufValue): string
     {
         return self::CONFIDENTIALITY_MAP[strtoupper($stufValue)] ?? $stufValue;
@@ -276,8 +284,9 @@ class StufFieldMappingService
      * @return string The StUF value.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function confidentialityToStuf(string $internalValue): string
     {
         $flipped = array_flip(self::CONFIDENTIALITY_MAP);
@@ -293,8 +302,9 @@ class StufFieldMappingService
      * @return void
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function addCustomMappings(string $type, array $mappings): void
     {
         $this->customMappings[$type] = array_merge(
@@ -311,8 +321,9 @@ class StufFieldMappingService
      * @return array<string, array{property: string, transform: string|null}>
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getDefaultMappings(string $type): array
     {
         return match ($type) {
@@ -327,7 +338,9 @@ class StufFieldMappingService
      *
      * @param array<string, string>                                          $data      The source data.
      * @param array<string, array{property: string, transform: string|null}> $mappings  The field mappings.
-     * @param string                                                         $direction The direction ('toInternal').
+     * @param string                                                         $direction The direction ('toInternal'; bi-directional reserved).
+     *
+     * @psalm-suppress UnusedParam
      *
      * @return array<string, mixed> The mapped data.
      */

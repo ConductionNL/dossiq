@@ -69,8 +69,9 @@ class BerichtenboxService
      * @param string|null $attachmentFileId Optional Nextcloud file ID of the attachment.
      *
      * @return array<string, mixed> The stored message record or an error payload.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function sendMessage(
         string $caseId,
         string $bsn,
@@ -141,8 +142,9 @@ class BerichtenboxService
      * @param string $caseId The case UUID.
      *
      * @return array<int, mixed> List of stored Berichtenbox messages for the case.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getMessagesForCase(string $caseId): array
     {
         $objectService = $this->getObjectService();
@@ -165,8 +167,9 @@ class BerichtenboxService
      * externalMessageId (i.e. they were actually delivered to Berichtenbox).
      *
      * @return array<int, mixed> List of pending message records.
+
+     * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md#task-5
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md#task-5 */
     public function getPendingMessages(): array
     {
         $objectService = $this->getObjectService();
@@ -194,8 +197,9 @@ class BerichtenboxService
      * @param string $messageId The OpenRegister message UUID.
      *
      * @return array<string, mixed> The message record, possibly updated with read status.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function pollReadStatus(string $messageId): array
     {
         $objectService = $this->getObjectService();
@@ -245,8 +249,9 @@ class BerichtenboxService
      * @param string $bsn The BSN to validate.
      *
      * @return bool True when the BSN is a 9-digit number passing the 11-proef.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validateBsn(string $bsn): bool
     {
         if (preg_match('/^\d{9}$/', $bsn) !== 1) {

@@ -84,8 +84,9 @@ class BezwaarLifecycleListener implements IEventListener
      * @param Event $event The dispatched event
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handle(Event $event): void
     {
         if (($event instanceof ObjectCreatedEvent) === false

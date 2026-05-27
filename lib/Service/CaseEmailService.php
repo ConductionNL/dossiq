@@ -72,8 +72,9 @@ class CaseEmailService
      * @return array<string, mixed> Send result with message ID
      *
      * @throws \RuntimeException If sending fails
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function sendEmail(
         string $caseId,
         string $to,
@@ -142,8 +143,9 @@ class CaseEmailService
      * @return array<string, mixed> Send result
      *
      * @throws \RuntimeException If template not found or sending fails
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function sendFromTemplate(
         string $caseId,
         string $templateId,
@@ -173,8 +175,9 @@ class CaseEmailService
      * @param array<string, mixed> $data     Available data for resolution
      *
      * @return string The resolved string
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function resolveVariables(string $template, array $data): string
     {
         return preg_replace_callback(
@@ -199,8 +202,9 @@ class CaseEmailService
      * @param array<string, mixed> $data     Available data
      *
      * @return array<string> List of unresolved variable names
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function findUnresolvedVariables(string $template, array $data): array
     {
         $unresolved = [];
@@ -221,8 +225,9 @@ class CaseEmailService
      * @param string $subject The email subject
      *
      * @return string|null The extracted case identifier or null
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function extractCaseNumber(string $subject): ?string
     {
         if (preg_match(self::CASE_NUMBER_PATTERN, $subject, $matches) === 1) {
@@ -242,8 +247,9 @@ class CaseEmailService
      * @param string $inReplyTo In-Reply-To header (for threading)
      *
      * @return array<string, mixed> Processing result
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function processInbound(
         string $from,
         string $to,
@@ -295,8 +301,9 @@ class CaseEmailService
      * @param string $caseTypeId The case type UUID
      *
      * @return array<int, array<string, mixed>> List of templates
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getTemplatesForCaseType(string $caseTypeId): array
     {
         $objectService = $this->settingsService->getObjectService();

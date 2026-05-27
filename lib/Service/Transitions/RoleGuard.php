@@ -67,8 +67,9 @@ class RoleGuard implements GuardEvaluatorInterface
      * @param string               $userId      Current user UID (from IUserSession by the caller)
      *
      * @return GuardResult
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function evaluate(array $guardConfig, array $case, string $userId): GuardResult
     {
         $allowed = $guardConfig['allowedRoles'] ?? [];

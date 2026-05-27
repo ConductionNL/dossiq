@@ -78,8 +78,9 @@ class LegesController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function calculate(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -127,8 +128,9 @@ class LegesController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recalculate(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -181,8 +183,9 @@ class LegesController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function verrekening(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -213,8 +216,9 @@ class LegesController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function teruggaaf(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -250,8 +254,9 @@ class LegesController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function export(): DataDownloadResponse|JSONResponse
     {
         if ($this->userSession->getUser() === null) {

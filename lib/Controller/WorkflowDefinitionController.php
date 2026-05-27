@@ -64,8 +64,9 @@ class WorkflowDefinitionController extends Controller
      * @param string $id The workflow definition UUID
      *
      * @return JSONResponse
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function publish(string $id): JSONResponse
     {
         $result = $this->service->publish($id);
@@ -88,8 +89,9 @@ class WorkflowDefinitionController extends Controller
      * @param string $id The workflow definition UUID
      *
      * @return JSONResponse
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function deprecate(string $id): JSONResponse
     {
         $result = $this->service->deprecate($id);
@@ -109,8 +111,9 @@ class WorkflowDefinitionController extends Controller
      * @param string $id The source definition UUID
      *
      * @return JSONResponse
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function cloneDefinition(string $id): JSONResponse
     {
         $result = $this->service->cloneDefinition($id);
@@ -132,8 +135,9 @@ class WorkflowDefinitionController extends Controller
      * @param string $caseTypeId The caseType UUID
      *
      * @return JSONResponse
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function active(string $caseTypeId): JSONResponse
     {
         $definition = $this->service->getActiveDefinitionFor($caseTypeId);
@@ -154,8 +158,9 @@ class WorkflowDefinitionController extends Controller
      * @param string $caseId The case UUID
      *
      * @return JSONResponse
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function forCase(string $caseId): JSONResponse
     {
         $definition = $this->service->getDefinitionForCase($caseId);

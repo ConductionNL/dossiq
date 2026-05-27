@@ -88,8 +88,9 @@ class StufController extends Controller
      * @return DataDisplayResponse SOAP XML response.
      *
      * @psalm-suppress PossiblyUnusedMethod
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[PublicPage]
     #[NoCSRFRequired]
     public function zaken(): DataDisplayResponse
@@ -103,8 +104,9 @@ class StufController extends Controller
      * @return DataDisplayResponse SOAP XML response.
      *
      * @psalm-suppress PossiblyUnusedMethod
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[PublicPage]
     #[NoCSRFRequired]
     public function personen(): DataDisplayResponse
@@ -244,9 +246,12 @@ class StufController extends Controller
         $stuurgegevens = $message->getElementsByTagName('stuurgegevens');
         $crossRef      = '';
         if ($stuurgegevens->length > 0) {
-            $refElements = $stuurgegevens->item(0)->getElementsByTagName('referentienummer');
-            if ($refElements->length > 0) {
-                $crossRef = $refElements->item(0)->textContent ?? '';
+            $stuurgegevensEl = $stuurgegevens->item(0);
+            if ($stuurgegevensEl instanceof \DOMElement) {
+                $refElements = $stuurgegevensEl->getElementsByTagName('referentienummer');
+                if ($refElements->length > 0) {
+                    $crossRef = $refElements->item(0)->textContent ?? '';
+                }
             }
         }
 
@@ -318,9 +323,12 @@ class StufController extends Controller
         $bsn            = '';
 
         if ($gelijkElements->length > 0) {
-            $bsnElements = $gelijkElements->item(0)->getElementsByTagName('bsn');
-            if ($bsnElements->length > 0) {
-                $bsn = $bsnElements->item(0)->textContent ?? '';
+            $gelijkEl = $gelijkElements->item(0);
+            if ($gelijkEl instanceof \DOMElement) {
+                $bsnElements = $gelijkEl->getElementsByTagName('bsn');
+                if ($bsnElements->length > 0) {
+                    $bsn = $bsnElements->item(0)->textContent ?? '';
+                }
             }
         }
 
@@ -357,9 +365,12 @@ class StufController extends Controller
         $stuurgegevens = $message->getElementsByTagName('stuurgegevens');
         $crossRef      = '';
         if ($stuurgegevens->length > 0) {
-            $refElements = $stuurgegevens->item(0)->getElementsByTagName('referentienummer');
-            if ($refElements->length > 0) {
-                $crossRef = $refElements->item(0)->textContent ?? '';
+            $stuurgegevensEl = $stuurgegevens->item(0);
+            if ($stuurgegevensEl instanceof \DOMElement) {
+                $refElements = $stuurgegevensEl->getElementsByTagName('referentienummer');
+                if ($refElements->length > 0) {
+                    $crossRef = $refElements->item(0)->textContent ?? '';
+                }
             }
         }
 

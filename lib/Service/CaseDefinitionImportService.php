@@ -82,8 +82,9 @@ class CaseDefinitionImportService
      * @return array{valid: bool, errors: string[], warnings: string[], manifest: ?array<string, mixed>, conflicts: array<string, mixed>}
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validatePackage(string $zipPath): array
     {
         $result = [
@@ -227,8 +228,9 @@ class CaseDefinitionImportService
      * @throws \RuntimeException If import fails.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function importCaseDefinition(
         string $zipPath,
         string $strategy='skip',
@@ -349,7 +351,9 @@ class CaseDefinitionImportService
      * Import workflow files from the ZIP archive.
      *
      * @param \ZipArchive $zip      The opened ZIP archive.
-     * @param string      $strategy The conflict resolution strategy.
+     * @param string      $strategy The conflict resolution strategy (reserved for future use).
+     *
+     * @psalm-suppress UnusedParam
      *
      * @return array{status: string, message: string}
      */

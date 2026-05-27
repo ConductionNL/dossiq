@@ -51,8 +51,9 @@ class RoundRobinStrategy implements RoutingStrategyInterface
      * {@inheritDoc}
      *
      * @return string The strategy name.
+
+     * @spec openspec/specs/role-based-step-routing/spec.md
      */
-    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function name(): string
     {
         return 'round-robin';
@@ -69,8 +70,9 @@ class RoundRobinStrategy implements RoutingStrategyInterface
      * @param array<int, array<string, mixed>> $roles Roles bound to the case
      *
      * @return array<int, string>
+
+     * @spec openspec/specs/role-based-step-routing/spec.md
      */
-    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function resolve(array $rule, array $case, array $roles): array
     {
         $target = (string) ($rule['roleType'] ?? '');

@@ -64,8 +64,9 @@ class TemplateController extends Controller
      * @return JSONResponse List of templates
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -84,8 +85,9 @@ class TemplateController extends Controller
      * @return JSONResponse The template data or 404
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function show(string $id): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -108,8 +110,9 @@ class TemplateController extends Controller
      * @return JSONResponse Result with created object IDs
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function activate(string $id): JSONResponse
     {
         if ($this->userSession->getUser() === null) {

@@ -62,8 +62,9 @@ class PreferencesController extends Controller
      *
      * @NoAdminRequired
      * @NoCSRFRequired
+
+     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
     public function getPreference(string $key): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -102,8 +103,9 @@ class PreferencesController extends Controller
      *
      * @NoAdminRequired
      * @NoCSRFRequired
+
+     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
     public function setPreference(string $key, string $value=''): JSONResponse
     {
         $user = $this->userSession->getUser();

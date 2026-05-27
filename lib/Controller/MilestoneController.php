@@ -64,8 +64,9 @@ class MilestoneController extends Controller
      * @return JSONResponse Milestone progress data
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function progress(string $caseId, string $caseTypeId): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -89,8 +90,9 @@ class MilestoneController extends Controller
      * @return JSONResponse The created milestone record
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function mark(string $caseId, string $milestoneId): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -122,8 +124,9 @@ class MilestoneController extends Controller
      * @return JSONResponse Success status
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function reverse(string $caseId, string $milestoneId): JSONResponse
     {
         $user = $this->userSession->getUser();

@@ -67,8 +67,9 @@ class HealthController extends Controller
      * @NoCSRFRequired
      *
      * @return JSONResponse Health status
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): JSONResponse
     {
         $checks = [];

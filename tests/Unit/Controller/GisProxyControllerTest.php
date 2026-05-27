@@ -26,6 +26,8 @@ use OCA\Procest\Controller\GisProxyController;
 use OCA\Procest\Service\GisProxyService;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -51,6 +53,13 @@ class GisProxyControllerTest extends TestCase
     private GisProxyService $gisProxyService;
 
     /**
+     * The mocked user session.
+     *
+     * @var IUserSession|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private IUserSession $userSession;
+
+    /**
      * The controller under test.
      *
      * @var GisProxyController
@@ -67,11 +76,16 @@ class GisProxyControllerTest extends TestCase
     {
         $this->request         = $this->createMock(IRequest::class);
         $this->gisProxyService = $this->createMock(GisProxyService::class);
+        $this->userSession     = $this->createMock(IUserSession::class);
+
+        $user = $this->createMock(IUser::class);
+        $this->userSession->method('getUser')->willReturn($user);
 
         $this->controller = new GisProxyController(
             appName: 'procest',
             request: $this->request,
             gisProxyService: $this->gisProxyService,
+            userSession: $this->userSession,
         );
 
     }//end setUp()

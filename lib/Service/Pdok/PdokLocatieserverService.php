@@ -123,8 +123,9 @@ class PdokLocatieserverService
      * @param int    $rows  Maximum number of suggestions to return.
      *
      * @return array Decoded JSON response or `[]` while degraded.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function suggest(string $query, array $fq=[], int $rows=10): array
     {
         if ($this->isDegraded() === true) {
@@ -154,8 +155,9 @@ class PdokLocatieserverService
      * @param array  $fq    Optional filter queries.
      *
      * @return array Decoded JSON response.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function free(string $query, array $fq=[]): array
     {
         $params = ['q' => $query];
@@ -180,8 +182,9 @@ class PdokLocatieserverService
      * @param string $id Locatieserver result id (returned by suggest/free).
      *
      * @return array Decoded JSON response.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function lookup(string $id): array
     {
         return $this->call(
@@ -202,8 +205,9 @@ class PdokLocatieserverService
      * @param float $lng WGS84 longitude.
      *
      * @return array Decoded JSON response.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function reverse(float $lat, float $lng): array
     {
         return $this->call(
@@ -221,8 +225,9 @@ class PdokLocatieserverService
      * Current service health.
      *
      * @return string `ok` when healthy, `degraded` during the cool-down.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function health(): string
     {
         if ($this->isDegraded() === true) {

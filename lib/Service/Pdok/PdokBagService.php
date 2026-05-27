@@ -92,8 +92,9 @@ class PdokBagService
      * @param string $id BAG nummeraanduiding identificatie (16 digits).
      *
      * @return array Normalised Procest-internal shape.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getNummeraanduiding(string $id): array
     {
         return $this->fetch(
@@ -109,8 +110,9 @@ class PdokBagService
      * @param string $id BAG verblijfsobject identificatie.
      *
      * @return array Normalised Procest-internal shape.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getVerblijfsobject(string $id): array
     {
         return $this->fetch(
@@ -126,8 +128,9 @@ class PdokBagService
      * @param string $id BAG pand identificatie.
      *
      * @return array Normalised Procest-internal shape.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getPand(string $id): array
     {
         return $this->fetch(

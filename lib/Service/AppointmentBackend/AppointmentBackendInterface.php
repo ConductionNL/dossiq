@@ -48,8 +48,9 @@ interface AppointmentBackendInterface
      * @param array $data Appointment data (product, location, dateTime, citizen info)
      *
      * @return array Booking result with externalId
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function bookAppointment(array $data): array;
 
     /**
@@ -58,8 +59,9 @@ interface AppointmentBackendInterface
      * @param string $externalId The external system appointment ID
      *
      * @return bool True if cancellation succeeded
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function cancelAppointment(string $externalId): bool;
 
     /**
@@ -69,7 +71,8 @@ interface AppointmentBackendInterface
      * @param string $newDateTime The new datetime (ISO 8601)
      *
      * @return array Updated booking result
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rescheduleAppointment(string $externalId, string $newDateTime): array;
 }//end interface

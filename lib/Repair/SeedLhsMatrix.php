@@ -72,8 +72,9 @@ class SeedLhsMatrix implements IRepairStep
      * @param IOutput $output Output interface for progress reporting
      *
      * @return void
+
+     * @spec openspec/specs/enforcement-lhs/spec.md
      */
-    /** @spec openspec/specs/enforcement-lhs/spec.md */
     public function run(IOutput $output): void
     {
         $output->info('Seeding default LHS matrix...');

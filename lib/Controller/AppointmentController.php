@@ -58,8 +58,9 @@ class AppointmentController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -77,8 +78,9 @@ class AppointmentController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function create(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -113,8 +115,9 @@ class AppointmentController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function cancel(string $appointmentId): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -133,8 +136,9 @@ class AppointmentController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function noShow(string $appointmentId): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -151,8 +155,9 @@ class AppointmentController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function timeslots(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {

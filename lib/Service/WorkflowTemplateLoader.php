@@ -63,8 +63,9 @@ class WorkflowTemplateLoader
      * @param string $caseTypeId The caseType UUID
      *
      * @return array<string, mixed>|null The template with `transitions` and `steps` decoded, or null when none active
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function getActiveTemplate(string $caseTypeId): ?array
     {
         if ($caseTypeId === '') {
@@ -129,8 +130,9 @@ class WorkflowTemplateLoader
      * @param string $transitionId Transition id (from the template's transitions[])
      *
      * @return array<string, mixed>|null
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function getTransitionById(string $caseTypeId, string $transitionId): ?array
     {
         $template = $this->getActiveTemplate(caseTypeId: $caseTypeId);
@@ -160,8 +162,9 @@ class WorkflowTemplateLoader
      * Clear the per-request cache (call when a template is updated mid-request).
      *
      * @return void
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function clearCache(): void
     {
         $this->cache = [];

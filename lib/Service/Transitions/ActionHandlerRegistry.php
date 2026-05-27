@@ -78,8 +78,9 @@ class ActionHandlerRegistry
      * @param ActionHandlerInterface $handler Handler implementation
      *
      * @return void
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function registerHandler(string $type, ActionHandlerInterface $handler): void
     {
         $this->handlers[$type] = $handler;
