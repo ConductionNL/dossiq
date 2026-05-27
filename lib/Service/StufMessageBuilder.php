@@ -91,8 +91,9 @@ class StufMessageBuilder
      * @return string The complete SOAP envelope XML.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildSoapEnvelope(string $bodyXml): string
     {
         $dom = new \DOMDocument('1.0', 'UTF-8');
@@ -136,8 +137,9 @@ class StufMessageBuilder
      * @return string The stuurgegevens XML fragment.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildStuurgegevens(
         array $zender,
         array $ontvanger,
@@ -173,8 +175,9 @@ class StufMessageBuilder
      * @return string The complete SOAP Bv01 response.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildBv01(
         array $zender,
         array $ontvanger,
@@ -214,8 +217,9 @@ class StufMessageBuilder
      * @return string The complete SOAP Fo01 response.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildFo01(
         string $foutcode,
         string $foutbeschrijving,
@@ -257,8 +261,9 @@ class StufMessageBuilder
      * @return string The SOAP Fault XML.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function buildSoapFault(string $faultString): string
     {
         $dom = new \DOMDocument('1.0', 'UTF-8');

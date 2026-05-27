@@ -53,8 +53,9 @@ final class GuardResult
      * @param array<string, mixed> $details Optional details
      *
      * @return self
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public static function pass(array $details=[]): self
     {
         return new self(passed: true, failureMessage: null, details: $details);
@@ -67,8 +68,9 @@ final class GuardResult
      * @param array<string, mixed> $details Optional structured details
      *
      * @return self
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public static function fail(string $message, array $details=[]): self
     {
         return new self(passed: false, failureMessage: $message, details: $details);

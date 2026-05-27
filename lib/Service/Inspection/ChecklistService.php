@@ -124,8 +124,9 @@ class ChecklistService
      *
      * @throws RuntimeException When configuration is missing, the template
      *                          cannot be loaded, or persistence fails.
+
+     * @spec openspec/specs/inspection-checklists/spec.md
      */
-    /** @spec openspec/specs/inspection-checklists/spec.md */
     public function createRun(string $templateId, string $caseId, ?string $inspectionId=null): array
     {
         [$objectService, $register] = $this->bootstrap();
@@ -188,8 +189,9 @@ class ChecklistService
      *                          or persistence fails.
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — branches cover validation + follow-up dispatch
+
+     * @spec openspec/specs/inspection-checklists/spec.md
      */
-    /** @spec openspec/specs/inspection-checklists/spec.md */
     public function submitRun(string $runId, array $payload): array
     {
         [$objectService, $register] = $this->bootstrap();
@@ -271,8 +273,9 @@ class ChecklistService
      * @param array<string, mixed>             $snapshot  Frozen template snapshot
      *
      * @return string conform | niet_conform | deels_conform
+
+     * @spec openspec/specs/inspection-checklists/spec.md
      */
-    /** @spec openspec/specs/inspection-checklists/spec.md */
     public function aggregateResult(array $responses, array $snapshot): string
     {
         $itemsByOrder = $this->indexItemsBySnapshot(snapshot: $snapshot);
@@ -317,8 +320,9 @@ class ChecklistService
      * @throws RuntimeException On validation failure with the spec error codes.
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — branches cover all response types
+
+     * @spec openspec/specs/inspection-checklists/spec.md
      */
-    /** @spec openspec/specs/inspection-checklists/spec.md */
     public function validateResponse(array $item, array $payload): void
     {
         $type = (string) ($item['responseType'] ?? '');
@@ -397,8 +401,9 @@ class ChecklistService
      * @param array<string, mixed> $run The submitted run
      *
      * @return array<int, array<string, mixed>> Tasks created
+
+     * @spec openspec/specs/inspection-checklists/spec.md
      */
-    /** @spec openspec/specs/inspection-checklists/spec.md */
     public function dispatchFollowUps(array $run): array
     {
         $responses = $run['responses'] ?? [];
@@ -541,8 +546,9 @@ class ChecklistService
      * @return void
      *
      * @throws RuntimeException With message "Checklist run is append-only".
+
+     * @spec openspec/specs/inspection-checklists/spec.md
      */
-    /** @spec openspec/specs/inspection-checklists/spec.md */
     public function assertRunMutable(array $run): void
     {
         $status = (string) ($run['status'] ?? '');

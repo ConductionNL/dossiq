@@ -80,8 +80,9 @@ class AiService
      * Check if AI features are globally enabled.
      *
      * @return bool
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function isEnabled(): bool
     {
         return $this->appConfig->getValueString(
@@ -97,8 +98,9 @@ class AiService
      * @param string $feature The feature name (classification, extraction, qa, summary, routing, decision_support)
      *
      * @return bool
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function isFeatureEnabled(string $feature): bool
     {
         if ($this->isEnabled() === false) {
@@ -123,8 +125,9 @@ class AiService
      * @param string $userId     The current user ID
      *
      * @return array Classification result with suggestion and confidence
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function classifyDocument(string $caseId, string $documentId, string $userId): array
     {
         if ($this->isFeatureEnabled(feature: 'classification') === false) {
@@ -184,8 +187,9 @@ class AiService
      * @param string      $userId     The current user ID
      *
      * @return array Extraction result with field suggestions and confidence
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function extractData(string $caseId, ?string $documentId, string $userId): array
     {
         if ($this->isFeatureEnabled(feature: 'extraction') === false) {
@@ -245,8 +249,9 @@ class AiService
      * @param string $userId   The current user ID
      *
      * @return array Answer with source citations
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function askQuestion(string $caseId, string $question, string $userId): array
     {
         if ($this->isFeatureEnabled(feature: 'qa') === false) {
@@ -306,8 +311,9 @@ class AiService
      * @param string      $userId     The current user ID
      *
      * @return array Summary text
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function summarize(string $caseId, string $type, ?string $documentId, string $userId): array
     {
         if ($this->isFeatureEnabled(feature: 'summary') === false) {
@@ -365,8 +371,9 @@ class AiService
      * @param string $userId The current user ID
      *
      * @return array Routing suggestion with recommended case worker
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function suggestRouting(string $caseId, string $userId): array
     {
         if ($this->isFeatureEnabled(feature: 'routing') === false) {
@@ -423,8 +430,9 @@ class AiService
      * @param string $userId The current user ID
      *
      * @return array Next-step suggestions
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function suggestNextStep(string $caseId, string $userId): array
     {
         if ($this->isFeatureEnabled(feature: 'decision_support') === false) {
@@ -487,8 +495,9 @@ class AiService
      * @return array
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) — audit entries need full context
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recordUserAction(
         string $caseId,
         string $type,
@@ -520,8 +529,9 @@ class AiService
      * Test AI model connectivity.
      *
      * @return array Health check result
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function testHealth(): array
     {
         $startTime = microtime(true);
@@ -552,8 +562,9 @@ class AiService
      * Get AI settings for the frontend.
      *
      * @return array AI settings (without sensitive data like API keys)
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getAiSettings(): array
     {
         return [

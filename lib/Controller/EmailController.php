@@ -63,8 +63,9 @@ class EmailController extends Controller
      * @return JSONResponse Send result
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function send(string $caseId): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -105,8 +106,9 @@ class EmailController extends Controller
      * @return JSONResponse Send result
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function sendFromTemplate(string $caseId): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -145,8 +147,9 @@ class EmailController extends Controller
      * @return JSONResponse Resolved template preview
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function preview(string $caseId): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -187,8 +190,9 @@ class EmailController extends Controller
      * @return JSONResponse List of templates
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function templates(string $caseTypeId): JSONResponse
     {
         if ($this->userSession->getUser() === null) {

@@ -105,8 +105,9 @@ class LocationService
      * @param array<string, mixed> $payload The location payload
      *
      * @return array<int, string> Error codes (empty = valid)
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validate(array $payload): array
     {
         $errors = [];
@@ -207,8 +208,9 @@ class LocationService
      *
      * @psalm-suppress MixedAssignment
      * @psalm-suppress MixedArrayAccess
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function reverseGeocode(float $latitude, float $longitude): ?array
     {
         // Sanity check on the coordinate envelope before we burn an HTTP call.
@@ -357,8 +359,9 @@ class LocationService
      * @return array<string, mixed>|null The persisted object, or null on failure
      *
      * @throws \RuntimeException When validation fails or OpenRegister is missing
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function attachToCase(string $caseId, array $location): ?array
     {
         if ($caseId === '') {
@@ -422,8 +425,9 @@ class LocationService
      * @param string $caseId The case UUID
      *
      * @return array<int, array<string, mixed>> Location records (possibly empty)
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function listForCase(string $caseId): array
     {
         $objectService = $this->settingsService->getObjectService();

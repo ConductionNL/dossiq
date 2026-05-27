@@ -67,8 +67,9 @@ class BerichtenboxReadStatusJob extends TimedJob
      * @return void
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+
+     * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md#task-5
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md#task-5 */
     protected function run($argument): void
     {
         if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {

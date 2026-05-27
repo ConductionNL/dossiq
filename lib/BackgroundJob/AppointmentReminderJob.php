@@ -63,8 +63,9 @@ class AppointmentReminderJob extends TimedJob
      * @param mixed $argument The job argument.
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     protected function run($argument): void
     {
         if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {

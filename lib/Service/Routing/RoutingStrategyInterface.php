@@ -38,8 +38,9 @@ interface RoutingStrategyInterface
      * The unique strategy name as referenced by `routingRule.strategy`.
      *
      * @return string The strategy key (e.g. "single-role")
+
+     * @spec openspec/specs/role-based-step-routing/spec.md
      */
-    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function name(): string;
 
     /**
@@ -56,7 +57,8 @@ interface RoutingStrategyInterface
      * @param array<int, array<string, mixed>> $roles Role objects bound to the case
      *
      * @return array<int, string> Ordered participant references
+
+     * @spec openspec/specs/role-based-step-routing/spec.md
      */
-    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function resolve(array $rule, array $case, array $roles): array;
 }//end interface

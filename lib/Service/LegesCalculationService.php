@@ -96,8 +96,9 @@ class LegesCalculationService
      * }
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function calculate(
         array $caseData,
         array $verordening,
@@ -150,8 +151,9 @@ class LegesCalculationService
      * @return array<string, mixed> The new calculation with version incremented.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recalculate(
         array $caseData,
         array $verordening,
@@ -181,8 +183,9 @@ class LegesCalculationService
      * @return array{netAmount: float, deduction: float, currentAmount: float, previousAmount: float}
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function calculateVerrekening(float $currentAmount, float $previousAmount): array
     {
         $netAmount = round($currentAmount - $previousAmount, self::PRECISION);
@@ -205,8 +208,9 @@ class LegesCalculationService
      * @return array{refundAmount: float, originalAmount: float, fraction: float, reason: string}
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function calculateTeruggaaf(
         float $imposedAmount,
         float $refundFraction=1.0,

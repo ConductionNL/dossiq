@@ -47,8 +47,9 @@ class ZgwPaginationHelper
      * @param array  $queryParams   The original query parameters
      *
      * @return array ZGW-formatted paginated response
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function wrapResults(
         array $mappedObjects,
         int $totalCount,

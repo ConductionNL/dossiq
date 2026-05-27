@@ -53,8 +53,9 @@ class MockAdapter implements BerichtenboxAdapterInterface
      * @param string|null $attachment Optional attachment content (base64).
      *
      * @return array<string, string> Mock send result with a generated messageId.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function sendMessage(
         string $bsn,
         string $subject,
@@ -88,8 +89,9 @@ class MockAdapter implements BerichtenboxAdapterInterface
      * @param string $messageId The external message id.
      *
      * @return array<string, mixed> Mock read status (always read 1h ago).
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getReadStatus(string $messageId): array
     {
         // Simulate: messages are "read" after they've existed for a while.

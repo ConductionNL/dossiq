@@ -216,7 +216,7 @@ class WfsExportService
             array_filter(
                 $locations,
                 function (mixed $location) use ($status, $caseType): bool {
-                    if (!is_array($location)) {
+                    if (is_array($location) === false) {
                         return false;
                     }
 

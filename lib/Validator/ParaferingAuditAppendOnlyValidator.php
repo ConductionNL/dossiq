@@ -43,6 +43,8 @@ use Throwable;
  * Validator listener that enforces append-only semantics on paraferingAuditEntry.
  *
  * @implements IEventListener<ObjectCreatingEvent|ObjectUpdatingEvent|ObjectDeletingEvent>
+ *
+ * @psalm-suppress InvalidTemplateParam -- ObjectDeletingEvent is an OR peer class not in stubs; param is correct at runtime
  */
 class ParaferingAuditAppendOnlyValidator implements IEventListener
 {

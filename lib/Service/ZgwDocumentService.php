@@ -68,8 +68,9 @@ class ZgwDocumentService
      * @param string $content  The base64-encoded file content
      *
      * @return int The file size in bytes
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function storeBase64(string $uuid, string $fileName, string $content): int
     {
         $decoded = base64_decode(string: $content, strict: true);
@@ -92,8 +93,9 @@ class ZgwDocumentService
      * @param string $content  The raw binary content
      *
      * @return int The file size in bytes
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function storeRaw(string $uuid, string $fileName, string $content): int
     {
         $folder = $this->getDocumentFolder(uuid: $uuid);
@@ -112,8 +114,9 @@ class ZgwDocumentService
      * @return string The file content
      *
      * @throws NotFoundException If the file does not exist.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getContent(string $uuid, string $fileName): string
     {
         $folder = $this->getDocumentFolder(uuid: $uuid);
@@ -132,8 +135,9 @@ class ZgwDocumentService
      * @param string $fileName The file name
      *
      * @return bool True if the file exists
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function fileExists(string $uuid, string $fileName): bool
     {
         try {
@@ -151,8 +155,9 @@ class ZgwDocumentService
      * @param string $uuid The document UUID
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function deleteFiles(string $uuid): void
     {
         try {
@@ -178,8 +183,9 @@ class ZgwDocumentService
      * @return string The MIME type
      *
      * @throws NotFoundException If the file does not exist.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getMimeType(string $uuid, string $fileName): string
     {
         $folder = $this->getDocumentFolder(uuid: $uuid);
@@ -199,8 +205,9 @@ class ZgwDocumentService
      * @param string $content    The raw binary chunk content
      *
      * @return int The chunk size in bytes
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function storeChunk(string $uuid, int $volgnummer, string $content): int
     {
         $folder   = $this->getDocumentFolder(uuid: $uuid);
@@ -218,8 +225,9 @@ class ZgwDocumentService
      * @param int    $totalParts The expected total number of parts
      *
      * @return array<int> List of volgnummers that have been uploaded
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getUploadedChunks(string $uuid, int $totalParts): array
     {
         $folder   = $this->getDocumentFolder(uuid: $uuid);
@@ -250,8 +258,9 @@ class ZgwDocumentService
      * @return int The merged file size in bytes
      *
      * @throws InvalidArgumentException If not all chunks are present.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function mergeChunks(string $uuid, string $fileName, int $totalParts): int
     {
         $folder  = $this->getDocumentFolder(uuid: $uuid);

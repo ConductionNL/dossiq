@@ -71,8 +71,9 @@ class TenantController extends Controller
      * @param string $tenantId The tenant UUID
      *
      * @return JSONResponse The provisioning result
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function provision(string $tenantId): JSONResponse
     {
@@ -95,8 +96,9 @@ class TenantController extends Controller
      * @param string $tenantId The tenant UUID
      *
      * @return JSONResponse The resource usage
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function usage(string $tenantId): JSONResponse
     {
@@ -114,8 +116,9 @@ class TenantController extends Controller
      * @NoAdminRequired
      *
      * @return JSONResponse The current tenant
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function current(): JSONResponse
     {
         $user = $this->userSession->getUser();

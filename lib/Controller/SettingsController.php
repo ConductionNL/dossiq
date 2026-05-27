@@ -79,8 +79,9 @@ class SettingsController extends Controller
      *
      * @return \OCA\OpenRegister\Service\ObjectService|null The OpenRegister service if available, null otherwise.
      * @throws \RuntimeException If the service is not available.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getObjectService(): ?\OCA\OpenRegister\Service\ObjectService
     {
         if (in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()) === true) {
@@ -97,8 +98,9 @@ class SettingsController extends Controller
      *
      * @return \OCA\OpenRegister\Service\ConfigurationService|null The Configuration service if available, null otherwise.
      * @throws \RuntimeException If the service is not available.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getConfigurationService(): ?\OCA\OpenRegister\Service\ConfigurationService
     {
         if (in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()) === true) {
@@ -116,8 +118,9 @@ class SettingsController extends Controller
      * @NoAdminRequired
      *
      * @return JSONResponse
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): JSONResponse
     {
         $user    = $this->userSession->getUser();
@@ -137,8 +140,9 @@ class SettingsController extends Controller
      * Update settings with provided data.
      *
      * @return JSONResponse
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function create(): JSONResponse
     {
@@ -160,8 +164,9 @@ class SettingsController extends Controller
      * all schema and register IDs from the import result.
      *
      * @return JSONResponse
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function load(): JSONResponse
     {

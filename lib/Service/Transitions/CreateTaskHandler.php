@@ -55,8 +55,9 @@ class CreateTaskHandler implements ActionHandlerInterface
      * @param array<string, mixed> $transitionContext Transition context
      *
      * @return ActionResult
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {

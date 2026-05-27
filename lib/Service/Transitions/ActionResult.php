@@ -53,8 +53,9 @@ final class ActionResult
      * @param array<string, mixed> $data Optional result data
      *
      * @return self
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public static function success(array $data=[]): self
     {
         return new self(ok: true, error: null, data: $data);
@@ -67,8 +68,9 @@ final class ActionResult
      * @param array<string, mixed> $data  Optional structured data
      *
      * @return self
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public static function failure(string $error, array $data=[]): self
     {
         return new self(ok: false, error: $error, data: $data);

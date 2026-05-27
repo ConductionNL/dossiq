@@ -68,8 +68,9 @@ class ZgwMappingController extends Controller
      * List all ZGW mapping configurations.
      *
      * @return JSONResponse
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function index(): JSONResponse
     {
@@ -87,8 +88,9 @@ class ZgwMappingController extends Controller
      * @param string $resourceKey The ZGW resource key
      *
      * @return JSONResponse
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function show(string $resourceKey): JSONResponse
     {
@@ -117,8 +119,9 @@ class ZgwMappingController extends Controller
      * @param string $resourceKey The ZGW resource key
      *
      * @return JSONResponse
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function update(string $resourceKey): JSONResponse
     {
@@ -143,8 +146,9 @@ class ZgwMappingController extends Controller
      * @param string $resourceKey The ZGW resource key
      *
      * @return JSONResponse
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function destroy(string $resourceKey): JSONResponse
     {
@@ -163,8 +167,9 @@ class ZgwMappingController extends Controller
      * @param string $resourceKey The ZGW resource key
      *
      * @return JSONResponse
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function reset(string $resourceKey): JSONResponse
     {

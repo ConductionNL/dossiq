@@ -80,8 +80,9 @@ class AdviceController extends Controller
      * @return JSONResponse Updated record
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function transitionStatus(string $id): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -123,8 +124,9 @@ class AdviceController extends Controller
      * @return JSONResponse Success response
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function dispatchReminder(string $id): JSONResponse
     {
         if ($this->userSession->getUser() === null) {

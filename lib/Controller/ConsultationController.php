@@ -63,8 +63,9 @@ class ConsultationController extends Controller
      * @return JSONResponse List of consultations
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(string $caseId): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -81,8 +82,9 @@ class ConsultationController extends Controller
      * @return JSONResponse Created consultation
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function create(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -117,8 +119,9 @@ class ConsultationController extends Controller
      * @return JSONResponse Updated consultation
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function updateStatus(string $id): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -154,8 +157,9 @@ class ConsultationController extends Controller
      * @return JSONResponse Updated consultation
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function submitResponse(string $id): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -188,8 +192,9 @@ class ConsultationController extends Controller
      * @return JSONResponse List of overdue consultations
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function overdue(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {

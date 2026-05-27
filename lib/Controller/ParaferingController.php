@@ -70,8 +70,9 @@ class ParaferingController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createVoorstel(): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -113,8 +114,9 @@ class ParaferingController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function startParafering(string $id): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -160,8 +162,9 @@ class ParaferingController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function paraferen(string $id): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -181,8 +184,9 @@ class ParaferingController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function terugsturen(string $id): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -202,8 +206,9 @@ class ParaferingController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function adviseren(string $id): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -223,8 +228,9 @@ class ParaferingController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function auditTrail(string $id): JSONResponse
     {
         if ($this->userSession->getUser() === null) {

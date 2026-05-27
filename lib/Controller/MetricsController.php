@@ -76,8 +76,9 @@ class MetricsController extends Controller
      * @NoCSRFRequired
      *
      * @return TextPlainResponse Prometheus-formatted metrics
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): TextPlainResponse
     {
         $metrics  = $this->collectMetrics();

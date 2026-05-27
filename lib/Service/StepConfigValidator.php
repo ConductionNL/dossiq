@@ -120,8 +120,9 @@ final class StepConfigValidator
      * @param int                  $stepIndex      The step's index in `steps[]` for path prefix.
      *
      * @return array<int, array{path: string, code: string, message: string}>
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public static function validate(
         array $step,
         array $caseTypeSchema=[],

@@ -88,8 +88,9 @@ class ZgwBrcRulesService extends ZgwRulesBase
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rulesBesluitenCreate(array $body): array
     {
         // Brc-001: Validate besluittype URL.
@@ -146,8 +147,9 @@ class ZgwBrcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rulesBesluitenUpdate(array $body, ?array $existingObject=null): array
     {
         $result = $this->isValid(body: $body);
@@ -186,8 +188,9 @@ class ZgwBrcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @see rulesBesluitenUpdate() Same immutability rules apply.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rulesBesluitenPatch(array $body, ?array $existingObject=null): array
     {
         $result = $this->isValid(body: $body);
@@ -216,8 +219,9 @@ class ZgwBrcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function rulesBesluitinformatieobjectenCreate(array $body): array
     {
         // Brc-003: Validate informatieobject URL.

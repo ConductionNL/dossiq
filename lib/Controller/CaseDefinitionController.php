@@ -72,8 +72,9 @@ class CaseDefinitionController extends Controller
      * @return DataDownloadResponse|JSONResponse
      *
      * @psalm-suppress PossiblyUnusedMethod
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function export(): DataDownloadResponse|JSONResponse
     {
@@ -129,8 +130,9 @@ class CaseDefinitionController extends Controller
      * @return JSONResponse
      *
      * @psalm-suppress PossiblyUnusedMethod
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function validate(): JSONResponse
     {
@@ -162,8 +164,9 @@ class CaseDefinitionController extends Controller
      * @return JSONResponse
      *
      * @psalm-suppress PossiblyUnusedMethod
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function import(): JSONResponse
     {

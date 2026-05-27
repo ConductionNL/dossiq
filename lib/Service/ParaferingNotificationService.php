@@ -55,8 +55,9 @@ class ParaferingNotificationService
      * @param string $stepLabel   The step label (e.g. 'Afdelingshoofd')
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function notifyStepActivated(
         string $actorUserId,
         string $onderwerp,
@@ -100,8 +101,9 @@ class ParaferingNotificationService
      * @param string $comment       The return comment
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function notifyVoorstelReturned(
         string $stellerUserId,
         string $onderwerp,
@@ -146,8 +148,9 @@ class ParaferingNotificationService
      * @param int    $daysWaiting Number of days the step has been waiting
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function notifyParaferingReminder(
         string $actorUserId,
         string $onderwerp,

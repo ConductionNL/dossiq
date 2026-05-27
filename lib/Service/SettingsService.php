@@ -259,8 +259,9 @@ class SettingsService
      *
      * @psalm-suppress MixedReturnStatement
      * @psalm-suppress MixedInferredReturnType
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getObjectService(): ?object
     {
         if ($this->isOpenRegisterAvailable() === false) {
@@ -286,8 +287,9 @@ class SettingsService
      * @return array Import result
      *
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $force is a simple re-import toggle
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function loadConfiguration(bool $force=false): array
     {
         if ($this->isOpenRegisterAvailable() === false) {
@@ -375,8 +377,9 @@ class SettingsService
      * Get all current settings as an associative array.
      *
      * @return array
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getSettings(): array
     {
         $config = [];
@@ -393,8 +396,9 @@ class SettingsService
      * @param array $data The settings data to update
      *
      * @return array
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function updateSettings(array $data): array
     {
         foreach (self::CONFIG_KEYS as $key) {

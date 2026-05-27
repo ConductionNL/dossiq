@@ -62,8 +62,9 @@ class MergeTemplateHandler implements ActionHandlerInterface
      * {@inheritDoc}
      *
      * @return string The action type slug handled by this handler.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function type(): string
     {
         return 'mergeTemplate';
@@ -77,8 +78,9 @@ class MergeTemplateHandler implements ActionHandlerInterface
      * @param array $transitionContext Transition context (carries dryRun).
      *
      * @return ActionResult The outcome of the template merge.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {
         try {

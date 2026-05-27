@@ -77,8 +77,9 @@ class StatusTransitionController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function available(string $caseId): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -108,8 +109,9 @@ class StatusTransitionController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function execute(string $caseId): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -172,8 +174,9 @@ class StatusTransitionController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function freeform(string $caseId): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -235,8 +238,9 @@ class StatusTransitionController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/specs/status-transition-engine/spec.md
      */
-    /** @spec openspec/specs/status-transition-engine/spec.md */
     public function history(string $caseId): JSONResponse
     {
         if ($this->userSession->getUser() === null) {

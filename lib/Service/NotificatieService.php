@@ -93,8 +93,9 @@ class NotificatieService
      * @param array  $kenmerken   Optional filter attributes for matching
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function publish(
         string $kanaal,
         string $hoofdObject,

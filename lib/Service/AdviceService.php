@@ -88,8 +88,9 @@ class AdviceService
      * @return array<string, mixed> Updated advice record
      *
      * @throws \RuntimeException When OpenRegister unavailable / invalid status
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function transitionStatus(string $adviceId, string $to, array $payload=[]): array
     {
         if (in_array($to, self::VALID_STATUSES, true) === false) {
@@ -148,8 +149,9 @@ class AdviceService
      * @param string $adviceId The advice UUID
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function dispatchReminder(string $adviceId): void
     {
         $advice = $this->loadAdvice(adviceId: $adviceId);
@@ -174,8 +176,9 @@ class AdviceService
      * @param string $caseId The case UUID
      *
      * @return array<int, array<string, mixed>> Pending advice records
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function applyWorkflowGuard(string $caseId): array
     {
         $all     = $this->getAdviceForCase(caseId: $caseId);
@@ -199,8 +202,9 @@ class AdviceService
      * @param string $caseId The case UUID
      *
      * @return array<int, array<string, mixed>> Advice records for the case
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getAdviceForCase(string $caseId): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -242,8 +246,9 @@ class AdviceService
      * Load all open advice requests across the system (for the deadline job).
      *
      * @return array<int, array<string, mixed>> Open advice records
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getOpenAdvice(): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -290,8 +295,9 @@ class AdviceService
      * @param string $adviceId The advice UUID
      *
      * @return array<string, mixed> Updated advice record
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function expireAdvice(string $adviceId): array
     {
         try {

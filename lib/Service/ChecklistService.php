@@ -89,8 +89,9 @@ class ChecklistService
      * @throws \InvalidArgumentException If status is invalid or mandatory photo is missing.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function completeItem(
         array $checklist,
         string $itemId,
@@ -148,8 +149,9 @@ class ChecklistService
      * @return array{completed: int, total: int, percentage: float}
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getProgress(array $checklist): array
     {
         $items     = $checklist['items'] ?? [];
@@ -183,8 +185,9 @@ class ChecklistService
      * @return array{conform: int, nietConform: int, nvt: int, notCompleted: int}
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getConformitySummary(array $checklist): array
     {
         $items   = $checklist['items'] ?? [];

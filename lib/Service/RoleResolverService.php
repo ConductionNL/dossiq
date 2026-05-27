@@ -105,8 +105,9 @@ class RoleResolverService
      * @param array<string, mixed> $entry The step or transition payload
      *
      * @return array<string, mixed>|null
+
+     * @spec openspec/specs/role-based-step-routing/spec.md
      */
-    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function normaliseRule(array $entry): ?array
     {
         $rule = $entry['routingRule'] ?? null;
@@ -147,8 +148,9 @@ class RoleResolverService
      * @return array<int, string> Ordered participant refs (post-delegation)
      *
      * @throws RoutingStrategyMissingException When the rule's strategy is unknown
+
+     * @spec openspec/specs/role-based-step-routing/spec.md
      */
-    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function resolve(array $rule, array $case): array
     {
         $strategyName = (string) ($rule['strategy'] ?? '');
@@ -216,8 +218,9 @@ class RoleResolverService
      * @param string               $userId The candidate user id
      *
      * @return bool
+
+     * @spec openspec/specs/role-based-step-routing/spec.md
      */
-    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function canExecute(array $rule, array $case, string $userId): bool
     {
         if ($userId === '') {
@@ -244,8 +247,9 @@ class RoleResolverService
      * @param string $caseId The case UUID/id
      *
      * @return void
+
+     * @spec openspec/specs/role-based-step-routing/spec.md
      */
-    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function invalidateCache(string $caseId): void
     {
         if ($caseId === '') {
@@ -436,8 +440,9 @@ class RoleResolverService
      * @return never
      *
      * @throws RuntimeException
+
+     * @spec openspec/specs/role-based-step-routing/spec.md
      */
-    /** @spec openspec/specs/role-based-step-routing/spec.md */
     public function fail(string $message): never
     {
         throw new RuntimeException($message);

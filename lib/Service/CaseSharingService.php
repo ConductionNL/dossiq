@@ -84,8 +84,9 @@ class CaseSharingService
      * Generates a 128-bit (16 byte) random token encoded as 32 hex characters.
      *
      * @return string The generated token (32 hex characters)
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function generateToken(): string
     {
         return bin2hex(random_bytes(16));
@@ -105,8 +106,9 @@ class CaseSharingService
      * @return array The created share data
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) — all params needed for share creation
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createTokenShare(
         string $caseId,
         string $permissionLevel,
@@ -173,8 +175,9 @@ class CaseSharingService
      * @param string $createdBy       User ID of the creator
      *
      * @return array The created share data
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function createPartnerShare(
         string $caseId,
         string $partnerId,
@@ -225,8 +228,9 @@ class CaseSharingService
      * @param string $revokedBy The user ID of the revoker
      *
      * @return array The updated share data
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function revokeShare(string $shareId, string $revokedBy): array
     {
         $objectService = $this->getObjectService();
@@ -273,8 +277,9 @@ class CaseSharingService
      * @param string|null $password The password attempt (for protected shares)
      *
      * @return array Validation result with 'valid' boolean and share data or error
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function validateToken(string $token, ?string $password=null): array
     {
         $objectService = $this->getObjectService();
@@ -361,8 +366,9 @@ class CaseSharingService
      * @param array $caseData  The full case data
      *
      * @return array The filtered case data safe for external viewing
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getFilteredCaseData(array $shareData, array $caseData): array
     {
         $fieldExclusions = json_decode(($shareData['fieldExclusions'] ?? '[]'), true);
@@ -389,8 +395,9 @@ class CaseSharingService
      * @param string $bsn The full BSN number
      *
      * @return string The masked BSN (e.g., "***99*653")
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function maskBsn(string $bsn): string
     {
         $length = strlen($bsn);
@@ -496,8 +503,9 @@ class CaseSharingService
      * @param array  $uploadedFile The $_FILES entry for the upload
      *
      * @return array Document descriptor
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function storeExternalDocument(string $caseId, string $shareId, array $uploadedFile): array
     {
         $this->logger->info(

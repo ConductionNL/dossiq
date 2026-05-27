@@ -124,8 +124,9 @@ class AdvisoryCommitteeService
      * @return array<string, mixed> The created bacAdviceRequest record
      *
      * @throws RuntimeException When OpenRegister unavailable or refs invalid
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function assignToCommittee(
         string $bezwaarId,
         string $commissieId,
@@ -221,8 +222,9 @@ class AdvisoryCommitteeService
      *
      * @throws RuntimeException     When the transition is forbidden
      * @throws GuardFailedException When the independence check fails
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function transitionAdviceStatus(
         string $requestId,
         string $newStatus,
@@ -371,8 +373,9 @@ class AdvisoryCommitteeService
      * @return array<string, mixed>|null The created advice request, or
      *                                    null when no default committee
      *                                    is configured.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function autoAssignDefaultCommittee(string $bezwaarId): ?array
     {
         $defaultId = $this->settingsService->getConfigValue(
@@ -410,8 +413,9 @@ class AdvisoryCommitteeService
      * @param string $motivatieRef Reference / hash of the motivation
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recordCouncilDeviation(
         string $requestId,
         string $besluitId,

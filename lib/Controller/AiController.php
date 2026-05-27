@@ -82,8 +82,9 @@ class AiController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function classify(): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -113,8 +114,9 @@ class AiController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function extract(): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -144,8 +146,9 @@ class AiController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function ask(): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -175,8 +178,9 @@ class AiController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function summarize(): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -215,8 +219,9 @@ class AiController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function suggestRouting(): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -245,8 +250,9 @@ class AiController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function suggestNext(): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -275,8 +281,9 @@ class AiController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function recordAction(): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -318,8 +325,9 @@ class AiController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function auditIndex(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -346,8 +354,9 @@ class AiController extends Controller
      * Get AI settings.
      *
      * @return JSONResponse
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function getSettings(): JSONResponse
     {
@@ -360,8 +369,9 @@ class AiController extends Controller
      * Update AI settings.
      *
      * @return JSONResponse
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function updateSettings(): JSONResponse
     {
@@ -375,8 +385,9 @@ class AiController extends Controller
      * Test AI model health/connectivity.
      *
      * @return JSONResponse
-     */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function healthCheck(): JSONResponse
     {
@@ -384,5 +395,4 @@ class AiController extends Controller
 
         return new JSONResponse($result);
     }//end healthCheck()
-
 }//end class

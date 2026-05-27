@@ -47,8 +47,9 @@ class DeepLinkRegistrationListener implements IEventListener
      * @param Event $event The event to handle
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
     public function handle(Event $event): void
     {
         if ($event instanceof DeepLinkRegistrationEvent === false) {

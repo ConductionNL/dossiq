@@ -58,8 +58,9 @@ class BerichtenboxController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function send(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -99,8 +100,9 @@ class BerichtenboxController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function messages(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -120,8 +122,9 @@ class BerichtenboxController extends Controller
      * @return JSONResponse
      *
      * @NoAdminRequired
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function poll(string $messageId): JSONResponse
     {
         if ($this->userSession->getUser() === null) {

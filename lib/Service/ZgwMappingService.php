@@ -98,8 +98,9 @@ class ZgwMappingService
      * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'zaaktype')
      *
      * @return array|null The mapping configuration or null if not found
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getMapping(string $resourceKey): ?array
     {
         $json = $this->appConfig->getValueString(
@@ -127,8 +128,9 @@ class ZgwMappingService
      * @param array  $config      The mapping configuration
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function saveMapping(string $resourceKey, array $config): void
     {
         $json = json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -152,8 +154,9 @@ class ZgwMappingService
      * a saved configuration will have null values.
      *
      * @return array<string, array|null>
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function listMappings(): array
     {
         $mappings = [];
@@ -171,8 +174,9 @@ class ZgwMappingService
      * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'zaaktype')
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function deleteMapping(string $resourceKey): void
     {
         $configKey = self::CONFIG_PREFIX.$resourceKey;
@@ -215,8 +219,9 @@ class ZgwMappingService
      * @param array  $defaults    The default mapping configurations
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function resetToDefault(string $resourceKey, array $defaults): void
     {
         if (isset($defaults[$resourceKey]) === true) {

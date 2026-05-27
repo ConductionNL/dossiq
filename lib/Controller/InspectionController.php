@@ -72,8 +72,9 @@ class InspectionController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function index(): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -108,8 +109,9 @@ class InspectionController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function captureLocation(string $id): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -158,8 +160,9 @@ class InspectionController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function completeChecklistItem(string $id, string $itemId): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -213,8 +216,9 @@ class InspectionController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function addPhoto(string $id): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -248,8 +252,9 @@ class InspectionController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function complete(string $id): JSONResponse
     {
         if ($this->userSession->getUser() === null) {

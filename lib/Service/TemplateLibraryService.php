@@ -59,8 +59,9 @@ class TemplateLibraryService
      * Scans the templates directory for JSON files and returns their metadata.
      *
      * @return array<int, array<string, mixed>> List of template metadata
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function listTemplates(): array
     {
         $templates = [];
@@ -109,8 +110,9 @@ class TemplateLibraryService
      * @param string $templateId The template identifier
      *
      * @return array<string, mixed>|null The full template data or null if not found
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function loadTemplate(string $templateId): ?array
     {
         $dir = self::TEMPLATES_DIR;
@@ -160,8 +162,9 @@ class TemplateLibraryService
      * @return array<string, mixed> Result with created object IDs
      *
      * @throws \RuntimeException If template not found or OpenRegister unavailable
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function activateTemplate(string $templateId): array
     {
         $template = $this->loadTemplate(templateId: $templateId);

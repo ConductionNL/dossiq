@@ -97,8 +97,9 @@ class AuditTrailService
      * @param array<string, mixed> $contentSnapshot Snapshot of voorstel content fields
      *
      * @return array<string, mixed>|null The persisted audit entry, or null when audit write failed (swallowed)
+
+     * @spec openspec/specs/parafering-audit-trail/spec.md
      */
-    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function record(
         string $voorstelId,
         ?string $step,
@@ -183,8 +184,9 @@ class AuditTrailService
      * @return void
      *
      * @throws OCSForbiddenException When append-only is violated
+
+     * @spec openspec/specs/parafering-audit-trail/spec.md
      */
-    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function assertAppendOnly(array $entry, bool $isUpdate): void
     {
         if ($isUpdate === true) {
@@ -222,8 +224,9 @@ class AuditTrailService
      * @return array<string, mixed>
      *
      * @throws RuntimeException When configuration is missing
+
+     * @spec openspec/specs/parafering-audit-trail/spec.md
      */
-    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function export(string $voorstelId, string $voorstelOnderwerp, string $exportedBy): array
     {
         $objectService = $this->settingsService->getObjectService();
@@ -297,8 +300,9 @@ class AuditTrailService
      * @param array<string, mixed> $voorstel The voorstel data
      *
      * @return array<string, mixed>
+
+     * @spec openspec/specs/parafering-audit-trail/spec.md
      */
-    /** @spec openspec/specs/parafering-audit-trail/spec.md */
     public function buildContentSnapshot(array $voorstel): array
     {
         $snapshot = [];

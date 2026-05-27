@@ -83,8 +83,9 @@ class InspectionService
      * @return array<int, array<string, mixed>> Filtered and sorted inspections.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function getInspections(
         string $inspectorId,
         ?string $date,
@@ -134,8 +135,9 @@ class InspectionService
      * }
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function captureLocation(
         array $inspection,
         float $latitude,
@@ -194,8 +196,9 @@ class InspectionService
      * @return array<string, mixed> The updated inspection with photo added.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function addPhoto(array $inspection, array $photoMetadata): array
     {
         $photo = [
@@ -224,8 +227,9 @@ class InspectionService
      * @throws \InvalidArgumentException If not all checklist items are completed.
      *
      * @psalm-suppress PossiblyUnusedMethod
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    /** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
     public function completeInspection(array $inspection, string $conclusion=''): array
     {
         $checklist = $inspection['checklist'] ?? [];
