@@ -241,11 +241,7 @@ class CaseSharingService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('case_share_schema');
 
-        $share = $objectService->getObject(
-            (int) $register,
-            (int) $schema,
-            $shareId,
-        );
+        $share = $objectService->find($shareId, register: (int) $register, schema: (int) $schema);
 
         $shareData = $share->jsonSerialize();
         $shareData['revokedAt'] = (new \DateTime())->format('c');
@@ -429,12 +425,14 @@ class CaseSharingService
         if ($shareData['failedAttempts'] >= self::MAX_FAILED_ATTEMPTS) {
             $lockUntil = new \DateTime();
             $lockUntil->modify('+'.self::LOCKOUT_MINUTES.' minutes');
-            $shareData['lockedUntil']    = $lockUntil->format('c');
-            $shareData['failedAttempts'] = 0;
+            // Intentionally do NOT reset failedAttempts here so the lockout
+            // cannot be bypassed by exhausting one window, waiting it out,
+            // and starting fresh — the counter resets only on successful auth.
+            $shareData['lockedUntil'] = $lockUntil->format('c');
 
             $this->logger->warning(
                 'Procest: Share token locked after failed attempts',
-                ['token' => substr($shareData['token'], 0, 8).'...']
+                ['token' => substr($shareData['token'] ?? '', 0, 8).'...']
             );
         }
 

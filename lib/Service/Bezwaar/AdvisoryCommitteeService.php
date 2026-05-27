@@ -152,11 +152,7 @@ class AdvisoryCommitteeService
         }
 
         // Validate committee exists and is active.
-        $committee = $objectService->findObject(
-            $register,
-            $committeeSchema,
-            $commissieId
-        );
+        $committee = $objectService->find($commissieId, register: $register, schema: $committeeSchema);
         if (is_array($committee) === false) {
             throw new RuntimeException('Committee not found');
         }
@@ -244,11 +240,7 @@ class AdvisoryCommitteeService
             key: 'bac_advice_request_schema'
         );
 
-        $current = $objectService->findObject(
-            $register,
-            $requestSchema,
-            $requestId
-        );
+        $current = $objectService->find($requestId, register: $register, schema: $requestSchema);
         if (is_array($current) === false) {
             throw new RuntimeException('Advice request not found');
         }
@@ -432,11 +424,7 @@ class AdvisoryCommitteeService
         );
 
         try {
-            $current = $objectService->findObject(
-                $register,
-                $requestSchema,
-                $requestId
-            );
+            $current = $objectService->find($requestId, register: $register, schema: $requestSchema);
             if (is_array($current) === false) {
                 return;
             }
@@ -518,11 +506,7 @@ class AdvisoryCommitteeService
             // to treating the input as the case id.
             $caseId = $bezwaarId;
             if ($bezwaarSchema !== '') {
-                $bezwaar = $objectService->findObject(
-                    $register,
-                    $bezwaarSchema,
-                    $bezwaarId
-                );
+                $bezwaar = $objectService->find($bezwaarId, register: $register, schema: $bezwaarSchema);
                 if (is_array($bezwaar) === true) {
                     $caseId = (string) ($bezwaar['case'] ?? $bezwaarId);
                 }
@@ -547,11 +531,7 @@ class AdvisoryCommitteeService
                 return ['ok' => true, 'member' => null, 'reason' => null];
             }
 
-            $decision = $objectService->findObject(
-                $register,
-                $decisionSchema,
-                $contestedId
-            );
+            $decision = $objectService->find($contestedId, register: $register, schema: $decisionSchema);
             if (is_array($decision) === false) {
                 return ['ok' => true, 'member' => null, 'reason' => null];
             }

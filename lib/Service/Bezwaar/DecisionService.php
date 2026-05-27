@@ -267,11 +267,7 @@ class DecisionService
             );
         }
 
-        $current = $objectService->findObject(
-            $register,
-            $decisionSchema,
-            $decisionId
-        );
+        $current = $objectService->find($decisionId, register: $register, schema: $decisionSchema);
         if (is_array($current) === false) {
             throw new RuntimeException('BezwaarDecision not found');
         }
@@ -351,11 +347,7 @@ class DecisionService
             return;
         }
 
-        $bezwaar = $objectService->findObject(
-            $register,
-            $bezwaarSchema,
-            $bezwaarId
-        );
+        $bezwaar = $objectService->find($bezwaarId, register: $register, schema: $bezwaarSchema);
         if (is_array($bezwaar) === false) {
             return;
         }

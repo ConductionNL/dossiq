@@ -446,7 +446,7 @@ class ProcestToolProvider implements IMcpToolProvider
     private function findCase(array $store, string $caseId): ?array
     {
         try {
-            return $this->toArray(value: $store['objectService']->findObject($store['register'], $store['caseSchema'], $caseId));
+            return $this->toArray(value: $store['objectService']->find($caseId, register: $store['register'], schema: $store['caseSchema']));
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest MCP: getProcessDetails findObject failed',

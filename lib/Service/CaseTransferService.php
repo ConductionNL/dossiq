@@ -130,12 +130,8 @@ class CaseTransferService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('case_transfer_schema');
 
-        $transfer     = $objectService->getObject(
-            (int) $register,
-            (int) $schema,
-            $transferId,
-        );
-        $transferData = $transfer->jsonSerialize();
+        $transfer     = $objectService->find($transferId, register: (int) $register, schema: (int) $schema);
+        $transferData = is_object($transfer) ? $transfer->jsonSerialize() : (array) $transfer;
 
         if ($transferData['status'] !== 'pending') {
             return ['error' => 'Transfer is not in pending state'];
@@ -181,12 +177,8 @@ class CaseTransferService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('case_transfer_schema');
 
-        $transfer     = $objectService->getObject(
-            (int) $register,
-            (int) $schema,
-            $transferId,
-        );
-        $transferData = $transfer->jsonSerialize();
+        $transfer     = $objectService->find($transferId, register: (int) $register, schema: (int) $schema);
+        $transferData = is_object($transfer) ? $transfer->jsonSerialize() : (array) $transfer;
 
         if ($transferData['status'] !== 'pending') {
             return ['error' => 'Transfer is not in pending state'];

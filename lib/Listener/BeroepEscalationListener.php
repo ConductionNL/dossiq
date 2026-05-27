@@ -141,11 +141,7 @@ class BeroepEscalationListener implements IEventListener
                 return;
             }
 
-            $bezwaar = $objectService->findObject(
-                $register,
-                $bezwaarSchema,
-                $sourceBezwaarId
-            );
+            $bezwaar = $objectService->find($sourceBezwaarId, register: $register, schema: $bezwaarSchema);
             if (is_array($bezwaar) === false) {
                 return;
             }

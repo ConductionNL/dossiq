@@ -396,7 +396,7 @@ class CaseEmailService
             return null;
         }
 
-        $result = $objectService->getObject($register, $schema, $templateId);
+        $result = $objectService->find($templateId, register: $register, schema: $schema);
         if (is_array($result) === true) {
             return $result;
         }
@@ -421,7 +421,15 @@ class CaseEmailService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('case_schema');
 
-        $caseObj = $objectService->getObject($register, $schema, $caseId);
+        $caseObj = $objectService->find($caseId, register: $register, schema: $schema);
+        if ($caseObj === null) {
+            return [];
+        }
+
+        if (is_object($caseObj) === true && method_exists($caseObj, 'jsonSerialize') === true) {
+            $caseObj = $caseObj->jsonSerialize();
+        }
+
         if (is_array($caseObj) === false) {
             return [];
         }

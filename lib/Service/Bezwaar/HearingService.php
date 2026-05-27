@@ -332,7 +332,7 @@ class HearingService
             key: 'hearing_session_schema'
         );
 
-        $current = $objectService->findObject($register, $schema, $sessionId);
+        $current = $objectService->find($sessionId, register: $register, schema: $schema);
         if (is_array($current) === false) {
             throw new RuntimeException('Hearing session not found');
         }
@@ -433,7 +433,7 @@ class HearingService
             key: 'hearing_session_schema'
         );
 
-        $current = $objectService->findObject($register, $schema, $sessionId);
+        $current = $objectService->find($sessionId, register: $register, schema: $schema);
         if (is_array($current) === false) {
             throw new RuntimeException('Hearing session not found');
         }
@@ -801,11 +801,7 @@ class HearingService
         }
 
         try {
-            $bezwaar = $objectService->findObject(
-                $register,
-                $bezwaarSchema,
-                $bezwaarId
-            );
+            $bezwaar = $objectService->find($bezwaarId, register: $register, schema: $bezwaarSchema);
             if (is_array($bezwaar) === true) {
                 $candidate = (string) ($bezwaar['case'] ?? '');
                 if ($candidate !== '') {

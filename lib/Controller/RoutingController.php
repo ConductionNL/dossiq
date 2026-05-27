@@ -120,12 +120,12 @@ class RoutingController extends Controller
             $caseSchema   = $this->settingsService->getConfigValue('case_schema');
             $workflowSlug = $this->settingsService->getConfigValue('workflow_template_schema');
 
-            $case = $this->toArray(value: $objectService->findObject($register, $caseSchema, $id));
+            $case = $this->toArray(value: $objectService->find($id, register: $register, schema: $caseSchema));
 
             $workflowId = (string) ($case['workflowTemplate'] ?? '');
             $steps      = [];
             if ($workflowId !== '' && $workflowSlug !== '') {
-                $workflow = $this->toArray(value: $objectService->findObject($register, $workflowSlug, $workflowId));
+                $workflow = $this->toArray(value: $objectService->find($workflowId, register: $register, schema: $workflowSlug));
                 $steps    = $this->decodeSteps(value: $workflow['steps'] ?? '[]');
             }
 

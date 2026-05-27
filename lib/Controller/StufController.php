@@ -130,15 +130,24 @@ class StufController extends Controller
             return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
         }
 
-        // Parse the XML.
+        // Enforce size limit to mitigate XML bomb / DoS.
+        if (strlen($rawBody) > 2097152) {
+            $response = $this->messageBuilder->buildSoapFault('Bericht te groot');
+            return $this->soapResponse(xml: $response, statusCode: Http::STATUS_REQUEST_ENTITY_TOO_LARGE);
+        }
+
+        // Parse the XML with XXE/DTD protections.
         $dom = new \DOMDocument();
         libxml_use_internal_errors(true);
-        $parseResult = $dom->loadXML($rawBody);
+        // LIBXML_NONET: prohibits network access from within XML (XXE via HTTP/FTP).
+        // LIBXML_DTDLOAD: disabled intentionally (we do NOT load external DTDs).
+        // Passing LIBXML_NOENT would *expand* entities — intentionally omitted.
+        $parseResult = $dom->loadXML($rawBody, LIBXML_NONET);
         $errors      = libxml_get_errors();
         libxml_clear_errors();
 
         if ($parseResult === false || empty($errors) === false) {
-            $this->logger->warning('Invalid XML received at StUF endpoint: '.$service);
+            $this->logger->warning('Invalid XML received at StUF endpoint: {service}', ['service' => $service]);
             $response = $this->messageBuilder->buildSoapFault('Ongeldig XML bericht');
             return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
         }
@@ -392,11 +401,11 @@ class StufController extends Controller
      */
     private function handleUnknownMessage(string $messageType): DataDisplayResponse
     {
-        $this->logger->warning('Unknown StUF message type: '.$messageType);
+        $this->logger->warning('Unknown StUF message type: {type}', ['type' => $messageType]);
 
         $response = $this->messageBuilder->buildFo01(
             'StUF001',
-            'Onbekend berichttype: '.$messageType,
+            'Onbekend berichttype',
             'server',
             self::DEFAULT_ZENDER,
             []

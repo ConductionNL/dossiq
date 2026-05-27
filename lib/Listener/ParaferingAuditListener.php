@@ -123,7 +123,7 @@ class ParaferingAuditListener implements IEventListener
                 return [];
             }
 
-            $voorstel = $objectService->findObject($register, $schema, $voorstelId);
+            $voorstel = $objectService->find($voorstelId, register: $register, schema: $schema);
             $array    = [];
             if (is_array($voorstel) === true) {
                 $array = $voorstel;

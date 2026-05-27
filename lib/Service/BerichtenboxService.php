@@ -210,7 +210,7 @@ class BerichtenboxService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('berichtenbox_message_schema');
 
-        $message = $objectService->getObject((int) $register, (int) $schema, $messageId);
+        $message = $objectService->find($messageId, register: (int) $register, schema: (int) $schema);
         $data    = $message->jsonSerialize();
 
         if (empty($data['externalMessageId']) === true) {

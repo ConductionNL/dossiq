@@ -498,15 +498,8 @@ class ZgwService
         $rawBody = file_get_contents('php://input');
         if ($rawBody !== false && $rawBody !== '') {
             $decoded = json_decode($rawBody, true);
-            if ($decoded === null) {
-                // Attempt to fix malformed JSON (unquoted values).
-                $fixed   = preg_replace(
-                    '/("[\w]+")\s*:\s*(?![\s"{\[\dtfn-])([^\n,}]+)/m',
-                    '$1: "$2"',
-                    $rawBody
-                );
-                $decoded = json_decode($fixed, true);
-            }
+            // Do not attempt to repair malformed JSON — it risks data corruption
+            // and may be used to smuggle crafted values through the regex transform.
 
             if ($decoded !== null) {
                 // Merge route params so they remain available downstream.
@@ -933,8 +926,7 @@ class ZgwService
                 schema: $mappingConfig['sourceSchema']
             );
             $result = $this->objectService->searchObjectsPaginated(
-                query: $query,
-                _multitenancy: false
+                query: $query
             );
 
             $objects    = $result['results'] ?? [];

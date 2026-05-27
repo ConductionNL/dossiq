@@ -702,9 +702,13 @@ class ZgwDrcRulesService extends ZgwRulesBase
                 }
             }//end if
         } catch (\Throwable $e) {
+            // Fail-closed: treat an indeterminate check as a duplicate to prevent
+            // inadvertent duplicates when the storage backend is unavailable.
             $this->logger->warning(
-                'Drc-003: Uniqueness check failed for schema '.$schema.': '.$e->getMessage()
+                'Drc-003: Uniqueness check failed for schema {schema}: {message}',
+                ['schema' => $schema, 'message' => $e->getMessage()]
             );
+            return true;
         }//end try
 
         return false;

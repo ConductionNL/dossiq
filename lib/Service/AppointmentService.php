@@ -145,7 +145,7 @@ class AppointmentService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('appointment_schema');
 
-        $appointment = $objectService->getObject((int) $register, (int) $schema, $appointmentId);
+        $appointment = $objectService->find($appointmentId, register: (int) $register, schema: (int) $schema);
         $data        = $appointment->jsonSerialize();
 
         // Cancel in backend.
@@ -178,7 +178,7 @@ class AppointmentService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('appointment_schema');
 
-        $appointment    = $objectService->getObject((int) $register, (int) $schema, $appointmentId);
+        $appointment    = $objectService->find($appointmentId, register: (int) $register, schema: (int) $schema);
         $data           = $appointment->jsonSerialize();
         $data['status'] = 'no_show';
 

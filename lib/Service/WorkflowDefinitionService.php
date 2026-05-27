@@ -173,7 +173,7 @@ class WorkflowDefinitionService
         }
 
         try {
-            $case = $objectService->findObject($register, $caseSchema, $caseId);
+            $case = $objectService->find($caseId, register: $register, schema: $caseSchema);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest: failed to load case for definition lookup',
@@ -641,7 +641,7 @@ class WorkflowDefinitionService
         }
 
         try {
-            $obj = $objectService->findObject($register, $schema, $id);
+            $obj = $objectService->find($id, register: $register, schema: $schema);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest: failed to load workflow definition',

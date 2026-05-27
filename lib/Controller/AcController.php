@@ -529,6 +529,22 @@ class AcController extends ZgwController
             return null;
         }
 
+        // Enforce a reasonable maximum to prevent DoS via large arrays.
+        if (count($clientIds) > 100) {
+            return new JSONResponse(
+                data: [
+                    'invalidParams' => [
+                        [
+                            'name'   => 'clientIds',
+                            'code'   => 'max-items',
+                            'reason' => 'A maximum of 100 clientIds per applicatie is allowed.',
+                        ],
+                    ],
+                ],
+                statusCode: Http::STATUS_BAD_REQUEST
+            );
+        }
+
         $allConsumers = $this->zgwService->getConsumerMapper()->findAll();
 
         foreach ($allConsumers as $consumer) {
