@@ -176,7 +176,7 @@ class ParaferingAuditExportController extends Controller
                 return null;
             }
 
-            $voorstel = $objectService->findObject($register, $schema, $voorstelId);
+            $voorstel = $objectService->find($voorstelId, register: $register, schema: $schema);
             if ($voorstel === null) {
                 return null;
             }

@@ -555,7 +555,7 @@ class ParafeerActieService
     private function findVoorstel(object $objectService, string $register, string $schema, string $voorstelId): array
     {
         try {
-            $voorstel = $objectService->findObject($register, $schema, $voorstelId);
+            $voorstel = $objectService->find($voorstelId, register: $register, schema: $schema);
         } catch (\Throwable $e) {
             throw new OCSBadRequestException('Voorstel not found');
         }

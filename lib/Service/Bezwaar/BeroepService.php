@@ -188,11 +188,7 @@ class BeroepService
             );
         }
 
-        $contested = $objectService->findObject(
-            $register,
-            $appealDecisionSchema,
-            $contestedDecisionId
-        );
+        $contested = $objectService->find($contestedDecisionId, register: $register, schema: $appealDecisionSchema);
         if (is_array($contested) === false) {
             throw new RuntimeException('Contested beslissing not found');
         }
@@ -263,11 +259,7 @@ class BeroepService
             key: 'beroep_schema'
         );
 
-        $current = $objectService->findObject(
-            $register,
-            $beroepSchema,
-            $beroepId
-        );
+        $current = $objectService->find($beroepId, register: $register, schema: $beroepSchema);
         if (is_array($current) === false) {
             throw new RuntimeException('Beroep not found');
         }
@@ -346,11 +338,7 @@ class BeroepService
             key: 'beroep_schema'
         );
 
-        $current = $objectService->findObject(
-            $register,
-            $beroepSchema,
-            $beroepId
-        );
+        $current = $objectService->find($beroepId, register: $register, schema: $beroepSchema);
         if (is_array($current) === false) {
             throw new RuntimeException('Beroep not found');
         }
@@ -422,11 +410,7 @@ class BeroepService
             key: 'bezwaar_schema'
         );
 
-        $current = $objectService->findObject(
-            $register,
-            $beroepSchema,
-            $beroepId
-        );
+        $current = $objectService->find($beroepId, register: $register, schema: $beroepSchema);
         if (is_array($current) === false) {
             throw new RuntimeException('Beroep not found');
         }
@@ -440,11 +424,7 @@ class BeroepService
             // to the beroep.
             $sourceBezwaarId = (string) ($current['sourceBezwaar'] ?? '');
             if ($sourceBezwaarId !== '' && $bezwaarSchema !== '') {
-                $sourceBezwaar = $objectService->findObject(
-                    $register,
-                    $bezwaarSchema,
-                    $sourceBezwaarId
-                );
+                $sourceBezwaar = $objectService->find($sourceBezwaarId, register: $register, schema: $bezwaarSchema);
                 if (is_array($sourceBezwaar) === true) {
                     $sourceCaseId = (string) ($sourceBezwaar['case'] ?? '');
                     if ($sourceCaseId !== '') {

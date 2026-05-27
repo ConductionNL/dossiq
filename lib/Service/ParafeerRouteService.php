@@ -161,14 +161,14 @@ class ParafeerRouteService
         [$objectService, $register, $voorstelSchema] = $this->bootstrapVoorstel();
         $routeSchema = $this->requireConfig(key: 'parafeerroute_schema');
 
-        $voorstel = $this->toArray(value: $objectService->findObject($register, $voorstelSchema, $voorstelId));
+        $voorstel = $this->toArray(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
 
         $routeRef = (string) ($voorstel['parafeerroute'] ?? '');
         if ($routeRef === '') {
             throw new RuntimeException('Voorstel has no linked parafeerroute');
         }
 
-        $route = $this->toArray(value: $objectService->findObject($register, $routeSchema, $routeRef));
+        $route = $this->toArray(value: $objectService->find($routeRef, register: $register, schema: $routeSchema));
         $steps = $this->normalizeSteps(value: $route['steps'] ?? []);
         if (count($steps) === 0) {
             throw new RuntimeException('Linked parafeerroute has no steps');
@@ -213,7 +213,7 @@ class ParafeerRouteService
         [$objectService, $register, $voorstelSchema] = $this->bootstrapVoorstel();
         $actieSchema = $this->requireConfig(key: 'parafeeractie_schema');
 
-        $voorstel = $this->toArray(value: $objectService->findObject($register, $voorstelSchema, $voorstelId));
+        $voorstel = $this->toArray(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
         $steps    = $this->normalizeSteps(value: $voorstel['routeSnapshot'] ?? '[]');
 
         if (($voorstel['status'] ?? '') !== self::STATUS_IN_PARAFERING) {
@@ -295,7 +295,7 @@ class ParafeerRouteService
         [$objectService, $register, $voorstelSchema] = $this->bootstrapVoorstel();
         $actieSchema = $this->requireConfig(key: 'parafeeractie_schema');
 
-        $voorstel = $this->toArray(value: $objectService->findObject($register, $voorstelSchema, $voorstelId));
+        $voorstel = $this->toArray(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
         $steps    = $this->normalizeSteps(value: $voorstel['routeSnapshot'] ?? '[]');
 
         $target = null;
@@ -403,7 +403,7 @@ class ParafeerRouteService
     {
         [$objectService, $register, $voorstelSchema] = $this->bootstrapVoorstel();
 
-        $voorstel = $this->toArray(value: $objectService->findObject($register, $voorstelSchema, $voorstelId));
+        $voorstel = $this->toArray(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
         $steps    = $this->normalizeSteps(value: $voorstel['routeSnapshot'] ?? '[]');
 
         $currentStep = (int) ($voorstel['currentStep'] ?? 0);

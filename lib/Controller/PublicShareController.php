@@ -326,11 +326,7 @@ class PublicShareController extends Controller
             $register      = $this->settingsService->getConfigValue('register');
             $schema        = $this->settingsService->getConfigValue('case_schema');
 
-            $caseObject = $objectService->getObject(
-                (int) $register,
-                (int) $schema,
-                $caseId,
-            );
+            $caseObject = $objectService->find($caseId, register: (int) $register, schema: (int) $schema);
 
             return $caseObject->jsonSerialize();
         } catch (\Exception $e) {

@@ -133,7 +133,7 @@ class ChecklistService
         $templateSchema = $this->requireConfig(key: 'inspection_checklist_template_schema');
         $runSchema      = $this->requireConfig(key: 'inspection_checklist_run_schema');
 
-        $template = $this->toArray(value: $objectService->findObject($register, $templateSchema, $templateId));
+        $template = $this->toArray(value: $objectService->find($templateId, register: $register, schema: $templateSchema));
         if ($template === []) {
             throw new RuntimeException('Inspection checklist template not found');
         }
@@ -197,7 +197,7 @@ class ChecklistService
         [$objectService, $register] = $this->bootstrap();
         $runSchema = $this->requireConfig(key: 'inspection_checklist_run_schema');
 
-        $run = $this->toArray(value: $objectService->findObject($register, $runSchema, $runId));
+        $run = $this->toArray(value: $objectService->find($runId, register: $register, schema: $runSchema));
         if ($run === []) {
             throw new RuntimeException('Inspection checklist run not found');
         }

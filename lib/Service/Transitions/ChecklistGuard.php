@@ -81,7 +81,7 @@ class ChecklistGuard implements GuardEvaluatorInterface
         }
 
         try {
-            $task = $objectService->findObject($register, $taskSchema, $taskId);
+            $task = $objectService->find($taskId, register: $register, schema: $taskSchema);
             $task = $this->toArray(value: $task);
         } catch (\Throwable $e) {
             $this->logger->error('ChecklistGuard: task load failed', ['exception' => $e->getMessage()]);

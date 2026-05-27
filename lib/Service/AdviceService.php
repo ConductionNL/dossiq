@@ -333,7 +333,7 @@ class AdviceService
         }
 
         try {
-            $advice = $objectService->findObject($register, $schema, $adviceId);
+            $advice = $objectService->find($adviceId, register: $register, schema: $schema);
         } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: failed to load advice: '.$e->getMessage(),

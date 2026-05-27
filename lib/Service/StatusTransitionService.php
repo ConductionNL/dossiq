@@ -419,7 +419,7 @@ class StatusTransitionService
         }
 
         try {
-            return $this->toArray(value: $objectService->findObject($register, $caseSchema, $caseId));
+            return $this->toArray(value: $objectService->find($caseId, register: $register, schema: $caseSchema));
         } catch (\Throwable $e) {
             $this->logger->error(
                 'StatusTransitionService: loadCase failed',
@@ -551,7 +551,7 @@ class StatusTransitionService
         }
 
         try {
-            $caseType = $this->toArray(value: $objectService->findObject($register, $caseTypeSchema, $caseTypeId));
+            $caseType = $this->toArray(value: $objectService->find($caseTypeId, register: $register, schema: $caseTypeSchema));
         } catch (\Throwable $e) {
             throw new RuntimeException('case_type_not_found');
         }
@@ -600,7 +600,7 @@ class StatusTransitionService
         }
 
         try {
-            $statusType = $this->toArray(value: $objectService->findObject($register, $statusTypeSchema, $statusTypeId));
+            $statusType = $this->toArray(value: $objectService->find($statusTypeId, register: $register, schema: $statusTypeSchema));
         } catch (\Throwable $e) {
             return '';
         }
