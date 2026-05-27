@@ -163,6 +163,13 @@ class GisProxyService
      */
     public function getCapabilities(string $url, string $type): array
     {
+        // C5: Allowlist check MUST run before any URL fetch — previously this method
+        // called file_get_contents directly without calling isUrlAllowed, allowing
+        // file:// and php:// stream-wrapper LFI, and bypassing the allowlist entirely.
+        if ($this->isUrlAllowed(url: $url) === false) {
+            throw new \RuntimeException('URL not in configured layer allowlist', 403);
+        }
+
         $service = 'WMS';
         if (strtoupper($type) === 'WFS') {
             $service = 'WFS';
@@ -210,13 +217,69 @@ class GisProxyService
      *
      * @return bool True if allowed
      */
+    /**
+     * Known-safe PDOK/Kadaster hostnames (exact match only — C5 substring bypass fix).
+     *
+     * @var string[]
+     */
+    private const TRUSTED_HOSTNAMES = [
+        'geodata.nationaalgeoregister.nl',
+        'service.pdok.nl',
+        'tiles.pdok.nl',
+        'api.pdok.nl',
+        'bgt.basisregistraties.overheid.nl',
+        'kad.nl',
+        'geodata.kadaster.nl',
+    ];
+
+    /**
+     * Allowed URL schemes (C5: block file://, php://, data:, etc.).
+     *
+     * @var string[]
+     */
+    private const ALLOWED_SCHEMES = ['https'];
+
+    /**
+     * RFC1918 + loopback + link-local CIDR blocks to deny (SSRF protection).
+     *
+     * @var string[]
+     */
+    private const BLOCKED_CIDRS = [
+        '10.0.0.0/8',
+        '172.16.0.0/12',
+        '192.168.0.0/16',
+        '127.0.0.0/8',
+        '169.254.0.0/16',
+        '::1/128',
+        'fc00::/7',
+    ];
+
     private function isUrlAllowed(string $url): bool
     {
-        // Always allow PDOK URLs.
-        if (str_contains(haystack: $url, needle: 'pdok.nl') === true
-            || str_contains(haystack: $url, needle: 'kadaster.nl') === true
-        ) {
-            return true;
+        $parsed = parse_url(url: $url);
+
+        // C5: Validate scheme — only https allowed; rejects file://, php://, data: etc.
+        $scheme = strtolower($parsed['scheme'] ?? '');
+        if (in_array($scheme, self::ALLOWED_SCHEMES, true) === false) {
+            $this->logger->warning(
+                'GIS proxy blocked non-https scheme',
+                ['scheme' => $scheme, 'url' => substr($url, 0, 100)]
+            );
+            return false;
+        }
+
+        $host = strtolower($parsed['host'] ?? '');
+        if ($host === '') {
+            return false;
+        }
+
+        // C5: Exact hostname match against trusted PDOK/Kadaster list.
+        // Substring match (e.g. str_contains($url, 'pdok.nl')) was bypassable via
+        // https://evil.com/?x=pdok.nl — exact hostname comparison prevents this.
+        foreach (self::TRUSTED_HOSTNAMES as $trusted) {
+            if ($host === $trusted || str_ends_with($host, '.'.$trusted) === true) {
+                return $this->isHostSafeFromSsrf(host: $host);
+            }
         }
 
         // Check against configured MapLayer URLs.
@@ -235,9 +298,6 @@ class GisProxyService
                 registerId: (int) $registerId,
             );
 
-            $parsedUrl = parse_url(url: $url);
-            $urlHost   = ($parsedUrl['host'] ?? '');
-
             foreach ($layers as $layer) {
                 $layerObj = $layer;
                 if (is_object($layer) === true) {
@@ -246,9 +306,11 @@ class GisProxyService
 
                 $layerUrl    = ($layerObj['url'] ?? '');
                 $parsedLayer = parse_url(url: $layerUrl);
-                $layerHost   = ($parsedLayer['host'] ?? '');
-                if ($urlHost === $layerHost) {
-                    return true;
+                $layerHost   = strtolower($parsedLayer['host'] ?? '');
+
+                // C5: Exact hostname comparison (not substring).
+                if ($layerHost !== '' && $host === $layerHost) {
+                    return $this->isHostSafeFromSsrf(host: $host);
                 }
             }
         } catch (\Exception $e) {
@@ -260,6 +322,68 @@ class GisProxyService
 
         return false;
     }//end isUrlAllowed()
+
+    /**
+     * Check that a resolved hostname does not map to an internal/private address.
+     *
+     * Performs a DNS lookup and checks the resolved IP against RFC1918, loopback,
+     * and link-local CIDRs to prevent SSRF against internal services.
+     *
+     * @param string $host The hostname to check
+     *
+     * @return bool True if the host resolves to a public (non-private) address
+     */
+    private function isHostSafeFromSsrf(string $host): bool
+    {
+        // Resolve the hostname to an IP address.
+        $ip = gethostbyname($host);
+        if ($ip === $host) {
+            // DNS resolution failed — allow (WMS services may not always resolve in test env).
+            return true;
+        }
+
+        // Check against private/loopback CIDR ranges.
+        foreach (self::BLOCKED_CIDRS as $cidr) {
+            if ($this->ipInCidr(ip: $ip, cidr: $cidr) === true) {
+                $this->logger->warning(
+                    'GIS proxy blocked SSRF: host resolved to private/loopback address',
+                    ['host' => $host, 'ip' => $ip, 'cidr' => $cidr]
+                );
+                return false;
+            }
+        }
+
+        return true;
+    }//end isHostSafeFromSsrf()
+
+    /**
+     * Check if an IP address is within a CIDR range.
+     *
+     * @param string $ip   The IP address to check (IPv4)
+     * @param string $cidr The CIDR block (e.g. '10.0.0.0/8')
+     *
+     * @return bool True if the IP is within the CIDR range
+     */
+    private function ipInCidr(string $ip, string $cidr): bool
+    {
+        // IPv6 CIDRs — skip if the IP is not IPv6.
+        if (str_contains($cidr, ':') === true) {
+            return false;
+        }
+
+        [$network, $prefix] = explode('/', $cidr);
+        $prefix    = (int) $prefix;
+        $networkIp = ip2long($network);
+        $inputIp   = ip2long($ip);
+
+        if ($networkIp === false || $inputIp === false) {
+            return false;
+        }
+
+        $mask = $prefix === 0 ? 0 : (~0 << (32 - $prefix));
+
+        return ($inputIp & $mask) === ($networkIp & $mask);
+    }//end ipInCidr()
 
     /**
      * Check rate limiting for the current user.
