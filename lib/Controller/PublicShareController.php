@@ -295,13 +295,17 @@ class PublicShareController extends Controller
             );
         }
 
-        $result = $this->caseSharingService->storeExternalDocument(
-            $share['caseId'],
-            $share['id'] ?? '',
-            $uploadedFile,
+        // C8: storeExternalDocument is a stub — uploaded files are silently discarded.
+        // Return 501 Not Implemented so clients show an accurate error instead of
+        // a false-success "document received" message that leads to legal data loss.
+        // TODO: Implement via IUserFolder + OR file attachment before enabling.
+        return new JSONResponse(
+            [
+                'success' => false,
+                'error'   => 'Documentupload is nog niet beschikbaar. Neem contact op met de behandelaar.',
+            ],
+            \OCP\AppFramework\Http::STATUS_NOT_IMPLEMENTED
         );
-
-        return new JSONResponse(['success' => true, 'document' => $result]);
     }//end uploadDocument()
 
     /**

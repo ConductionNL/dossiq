@@ -508,22 +508,36 @@ class CaseSharingService
      */
     public function storeExternalDocument(string $caseId, string $shareId, array $uploadedFile): array
     {
+        // L1: Sanitize filename for logging to prevent log injection via crafted filenames.
+        // Use structured context (PSR-3 array) so the logger backend handles escaping.
+        $rawName  = ($uploadedFile['name'] ?? 'unknown');
+        $safeName = preg_replace('/[\r\n\t\x00-\x1F\x7F]/', '_', $rawName) ?? '_unknown_';
+
         $this->logger->info(
             'Procest: External document upload via share',
             [
-                'caseId'  => $caseId,
-                'shareId' => $shareId,
-                'name'    => ($uploadedFile['name'] ?? 'unknown'),
-                'size'    => ($uploadedFile['size'] ?? 0),
+                'caseId'   => $caseId,
+                'shareId'  => $shareId,
+                'filename' => $safeName,
+                'size'     => ($uploadedFile['size'] ?? 0),
             ]
+        );
+
+        // C8: This method is a stub — the uploaded file is NOT persisted.
+        // Return 501 context so callers know persistence is not implemented yet.
+        // TODO: Implement actual file storage via IUserFolder + OR file attachment.
+        $this->logger->warning(
+            'storeExternalDocument: persistence not implemented — uploaded file will be lost',
+            ['caseId' => $caseId, 'shareId' => $shareId]
         );
 
         return [
             'caseId'     => $caseId,
             'shareId'    => $shareId,
-            'name'       => ($uploadedFile['name'] ?? 'unknown'),
+            'name'       => $safeName,
             'size'       => ($uploadedFile['size'] ?? 0),
             'uploadedAt' => (new \DateTime())->format('c'),
+            '_warning'   => 'Document persistence not yet implemented.',
         ];
     }//end storeExternalDocument()
 }//end class
