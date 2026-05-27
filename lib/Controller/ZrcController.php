@@ -117,6 +117,11 @@ class ZrcController extends Controller
      */
     public function index(string $resource): JSONResponse
     {
+        $authError = $this->zgwService->validateJwtAuth($this->request);
+        if ($authError !== null) {
+            return $authError;
+        }
+
         $response = $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
 
         // Zrc-006a: Filter zaken results based on consumer's vertrouwelijkheidaanduiding.
@@ -319,13 +324,13 @@ class ZrcController extends Controller
      */
     public function show(string $resource, string $uuid): JSONResponse
     {
+        $authError = $this->zgwService->validateJwtAuth($this->request);
+        if ($authError !== null) {
+            return $authError;
+        }
+
         // Zrc-006b: Check zaken.lezen scope and vertrouwelijkheidaanduiding.
         if ($resource === 'zaken') {
-            $authError = $this->zgwService->validateJwtAuth($this->request);
-            if ($authError !== null) {
-                return $authError;
-            }
-
             $scopeError = $this->checkZaakReadAccess(uuid: $uuid);
             if ($scopeError !== null) {
                 return $scopeError;
@@ -746,6 +751,11 @@ class ZrcController extends Controller
      */
     public function audittrailIndex(string $resource, string $uuid): JSONResponse
     {
+        $authError = $this->zgwService->validateJwtAuth($this->request);
+        if ($authError !== null) {
+            return $authError;
+        }
+
         return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
     }//end audittrailIndex()
 
@@ -766,6 +776,11 @@ class ZrcController extends Controller
      */
     public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse
     {
+        $authError = $this->zgwService->validateJwtAuth($this->request);
+        if ($authError !== null) {
+            return $authError;
+        }
+
         return $this->zgwService->handleAudittrailShow($this->request, self::ZGW_API, $resource, $uuid, $auditUuid);
     }//end audittrailShow()
 
