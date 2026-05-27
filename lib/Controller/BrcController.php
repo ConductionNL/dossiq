@@ -31,7 +31,6 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\ZgwService;
-use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -56,7 +55,7 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
  * @SuppressWarnings(PHPMD.NPathComplexity)
  */
-class BrcController extends Controller
+class BrcController extends ZgwController
 {
     /**
      * The ZGW API identifier for the Besluiten register.

@@ -622,13 +622,20 @@ class ZgwService
                 authorization: $authHeader
             );
         } catch (\Throwable $e) {
+            // M3: Log detail server-side but never surface internal JWT validation
+            // messages in the HTTP response — they aid algorithm/issuer enumeration.
+            $this->logger->warning(
+                'ZGW JWT validation failed: '.$e->getMessage(),
+                ['app' => 'procest']
+            );
+
             return new JSONResponse(
                 data: [
                     'type'   => 'NotAuthenticated',
                     'code'   => 'not_authenticated',
                     'title'  => 'Authenticatiegegevens zijn niet geldig.',
                     'status' => 403,
-                    'detail' => $e->getMessage(),
+                    'detail' => 'Authenticatiegegevens zijn niet geldig.',
                 ],
                 statusCode: Http::STATUS_FORBIDDEN
             );
@@ -653,29 +660,34 @@ class ZgwService
      */
     public function consumerHasScope(IRequest $request, string $component, string $scope): bool
     {
+        // H2: Fail closed — if ConsumerMapper is not available we cannot verify scope,
+        // so we must deny rather than grant.
         if ($this->consumerMapper === null) {
-            return true;
+            return false;
         }
 
         try {
             $authHeader = $request->getHeader('Authorization');
             $token      = str_replace('Bearer ', '', $authHeader);
             $parts      = explode('.', $token);
+            // H2: Malformed JWT → deny, not grant.
             if (count($parts) !== 3) {
-                return true;
+                return false;
             }
 
             $payload  = json_decode(base64_decode($parts[1]), true);
             $clientId = $payload['client_id'] ?? ($payload['iss'] ?? null);
+            // H2: Missing client_id/iss → deny, not grant.
             if ($clientId === null) {
-                return true;
+                return false;
             }
 
             $consumers = $this->consumerMapper->findAll(
                 filters: ['name' => $clientId]
             );
+            // H2: No matching consumer → deny, not grant.
             if (empty($consumers) === true) {
-                return true;
+                return false;
             }
 
             $consumer   = $consumers[0];
@@ -726,29 +738,33 @@ class ZgwService
      */
     public function getConsumerAuthorisaties(IRequest $request, string $component): ?array
     {
+        // H2: Fail closed — if ConsumerMapper unavailable, return empty set (not null/unrestricted).
         if ($this->consumerMapper === null) {
-            return null;
+            return [];
         }
 
         try {
             $authHeader = $request->getHeader('Authorization');
             $token      = str_replace('Bearer ', '', $authHeader);
             $parts      = explode('.', $token);
+            // H2: Malformed JWT → return empty (restricted), not null (unrestricted).
             if (count($parts) !== 3) {
-                return null;
+                return [];
             }
 
             $payload  = json_decode(base64_decode($parts[1]), true);
             $clientId = $payload['client_id'] ?? ($payload['iss'] ?? null);
+            // H2: Missing client_id/iss → return empty (restricted).
             if ($clientId === null) {
-                return null;
+                return [];
             }
 
             $consumers = $this->consumerMapper->findAll(
                 filters: ['name' => $clientId]
             );
+            // H2: No matching consumer → return empty (restricted).
             if (empty($consumers) === true) {
-                return null;
+                return [];
             }
 
             $consumer   = $consumers[0];
