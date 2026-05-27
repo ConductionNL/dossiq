@@ -30,7 +30,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\ZgwService;
-use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -45,7 +44,7 @@ use OCP\IRequest;
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
-class NrcController extends Controller
+class NrcController extends ZgwController
 {
     /**
      * The ZGW API identifier for the Notificaties register.

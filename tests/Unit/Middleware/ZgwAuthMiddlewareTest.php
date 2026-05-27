@@ -148,6 +148,54 @@ class ZgwAuthMiddlewareTest extends TestCase
 
 
     /**
+     * Test that ZgwController is abstract and cannot be instantiated directly.
+     *
+     * C3: verifies the marker class exists and is abstract so concrete ZGW
+     * controllers can extend it and the instanceof check in the middleware fires.
+     *
+     * @return void
+     */
+    public function testZgwControllerIsAbstract(): void
+    {
+        $reflection = new \ReflectionClass(\OCA\Procest\Controller\ZgwController::class);
+        $this->assertTrue(
+            $reflection->isAbstract(),
+            'ZgwController must be abstract — it is an instanceof marker only'
+        );
+
+    }//end testZgwControllerIsAbstract()
+
+
+    /**
+     * Test that concrete ZGW controllers extend ZgwController.
+     *
+     * C3: The middleware fires only for instanceof ZgwController. Verifying
+     * the inheritance chain ensures no ZGW endpoint can accidentally bypass it.
+     *
+     * @return void
+     */
+    public function testZgwControllersExtendBase(): void
+    {
+        $zgwControllers = [
+            \OCA\Procest\Controller\AcController::class,
+            \OCA\Procest\Controller\ZrcController::class,
+            \OCA\Procest\Controller\ZtcController::class,
+            \OCA\Procest\Controller\DrcController::class,
+            \OCA\Procest\Controller\BrcController::class,
+            \OCA\Procest\Controller\NrcController::class,
+        ];
+
+        foreach ($zgwControllers as $class) {
+            $this->assertTrue(
+                is_subclass_of($class, \OCA\Procest\Controller\ZgwController::class),
+                "$class must extend ZgwController so middleware applies"
+            );
+        }
+
+    }//end testZgwControllersExtendBase()
+
+
+    /**
      * Test that afterException returns null for non-ZgwAuthException.
      *
      * @return void

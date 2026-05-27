@@ -35,7 +35,6 @@ namespace OCA\Procest\Controller;
 use DateInterval;
 use DateTime;
 use OCA\Procest\Service\ZgwService;
-use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -58,7 +57,7 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
-class ZrcController extends Controller
+class ZrcController extends ZgwController
 {
     /**
      * The ZGW API group for this controller.

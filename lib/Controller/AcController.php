@@ -27,7 +27,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\ZgwService;
-use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -52,7 +51,7 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
  * @SuppressWarnings(PHPMD.NPathComplexity)
  */
-class AcController extends Controller
+class AcController extends ZgwController
 {
     /**
      * Constructor.
@@ -177,6 +176,20 @@ class AcController extends Controller
             return $authError;
         }
 
+        // C2: Gate writes on ac.aanmaken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'ac', 'ac.aanmaken') === false) {
+            return new JSONResponse(
+                data: [
+                    'type'   => 'PermissionDenied',
+                    'code'   => 'permission_denied',
+                    'title'  => 'U heeft geen toestemming om autorisaties aan te maken.',
+                    'status' => Http::STATUS_FORBIDDEN,
+                    'detail' => 'Scope ac.aanmaken is vereist.',
+                ],
+                statusCode: Http::STATUS_FORBIDDEN
+            );
+        }
+
         if ($this->zgwService->getConsumerMapper() === null) {
             return new JSONResponse(
                 data: ['detail' => 'Consumer service not available'],
@@ -186,6 +199,22 @@ class AcController extends Controller
 
         try {
             $body = $this->zgwService->getRequestBody($this->request);
+
+            // C2: Block setting superuser=true unless the requesting consumer is itself a superuser.
+            if (($body['heeftAlleAutorisaties'] ?? false) === true
+                && $this->zgwService->consumerHasScope($this->request, 'ac', 'ac.superuser') === false
+            ) {
+                return new JSONResponse(
+                    data: [
+                        'invalidParams' => [[
+                            'name'   => 'heeftAlleAutorisaties',
+                            'code'   => 'permission_denied',
+                            'reason' => 'Alleen superuser-consumers mogen heeftAlleAutorisaties op true zetten.',
+                        ]],
+                    ],
+                    statusCode: Http::STATUS_FORBIDDEN
+                );
+            }
 
             // Run AC business rules validation.
             $validationError = $this->validateApplicatieBody(body: $body);
@@ -288,6 +317,20 @@ class AcController extends Controller
             return $authError;
         }
 
+        // C2: Gate writes on ac.bijwerken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'ac', 'ac.bijwerken') === false) {
+            return new JSONResponse(
+                data: [
+                    'type'   => 'PermissionDenied',
+                    'code'   => 'permission_denied',
+                    'title'  => 'U heeft geen toestemming om autorisaties bij te werken.',
+                    'status' => Http::STATUS_FORBIDDEN,
+                    'detail' => 'Scope ac.bijwerken is vereist.',
+                ],
+                statusCode: Http::STATUS_FORBIDDEN
+            );
+        }
+
         if ($this->zgwService->getConsumerMapper() === null) {
             return new JSONResponse(
                 data: ['detail' => 'Consumer service not available'],
@@ -367,6 +410,20 @@ class AcController extends Controller
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C2: Gate writes on ac.verwijderen scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'ac', 'ac.verwijderen') === false) {
+            return new JSONResponse(
+                data: [
+                    'type'   => 'PermissionDenied',
+                    'code'   => 'permission_denied',
+                    'title'  => 'U heeft geen toestemming om autorisaties te verwijderen.',
+                    'status' => Http::STATUS_FORBIDDEN,
+                    'detail' => 'Scope ac.verwijderen is vereist.',
+                ],
+                statusCode: Http::STATUS_FORBIDDEN
+            );
         }
 
         if ($this->zgwService->getConsumerMapper() === null) {
