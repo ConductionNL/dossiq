@@ -206,11 +206,13 @@ class AcController extends ZgwController
             ) {
                 return new JSONResponse(
                     data: [
-                        'invalidParams' => [[
-                            'name'   => 'heeftAlleAutorisaties',
-                            'code'   => 'permission_denied',
-                            'reason' => 'Alleen superuser-consumers mogen heeftAlleAutorisaties op true zetten.',
-                        ]],
+                        'invalidParams' => [
+                            [
+                                'name'   => 'heeftAlleAutorisaties',
+                                'code'   => 'permission_denied',
+                                'reason' => 'Alleen superuser-consumers mogen heeftAlleAutorisaties op true zetten.',
+                            ],
+                        ],
                     ],
                     statusCode: Http::STATUS_FORBIDDEN
                 );
@@ -347,10 +349,42 @@ class AcController extends ZgwController
                 );
             }
 
-            $body         = $this->zgwService->getRequestBody($this->request);
+            $body = $this->zgwService->getRequestBody($this->request);
+
+            // C1: Block setting heeftAlleAutorisaties=true unless caller has ac.superuser scope.
+            if (($body['heeftAlleAutorisaties'] ?? false) === true
+                && $this->zgwService->consumerHasScope($this->request, 'ac', 'ac.superuser') === false
+            ) {
+                return new JSONResponse(
+                    data: [
+                        'invalidParams' => [
+                            [
+                                'name'   => 'heeftAlleAutorisaties',
+                                'code'   => 'permission_denied',
+                                'reason' => 'Alleen superuser-consumers mogen heeftAlleAutorisaties op true zetten.',
+                            ],
+                        ],
+                    ],
+                    statusCode: Http::STATUS_FORBIDDEN
+                );
+            }
+
             $consumerData = $this->applicatieToConsumer(body: $body);
 
+            // L2: Only apply setters for known consumer fields to prevent reflection-based
+            // mass-assignment from arbitrary body keys.
+            $allowedSetterKeys = [
+                'name',
+                'description',
+                'authorizationType',
+                'authorizationConfiguration',
+            ];
+
             foreach ($consumerData as $key => $value) {
+                if (in_array($key, $allowedSetterKeys, true) === false) {
+                    continue;
+                }
+
                 $setter = 'set'.ucfirst($key);
                 if (method_exists($consumer, $setter) === true) {
                     $consumer->$setter($value);

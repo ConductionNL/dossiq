@@ -214,6 +214,11 @@ class DrcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate creates on documenten.aanmaken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'drc', 'documenten.aanmaken') === false) {
+            return $this->scopeDeniedResponse(scope: 'documenten.aanmaken');
+        }
+
         // Drc-006 (VNG): Gebruiksrechten create — set indicatieGebruiksrecht to true on EIO.
         if ($resource === 'gebruiksrechten') {
             $response = $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
@@ -431,6 +436,11 @@ class DrcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate updates on documenten.bijwerken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'drc', 'documenten.bijwerken') === false) {
+            return $this->scopeDeniedResponse(scope: 'documenten.bijwerken');
+        }
+
         if ($resource === self::EIO_RESOURCE) {
             return $this->handleEioUpdate(resource: $resource, uuid: $uuid, partial: false);
         }
@@ -461,6 +471,11 @@ class DrcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate patches on documenten.bijwerken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'drc', 'documenten.bijwerken') === false) {
+            return $this->scopeDeniedResponse(scope: 'documenten.bijwerken');
+        }
+
         if ($resource === self::EIO_RESOURCE) {
             return $this->handleEioUpdate(resource: $resource, uuid: $uuid, partial: true);
         }
@@ -489,6 +504,11 @@ class DrcController extends ZgwController
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C3: Gate destroys on documenten.verwijderen scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'drc', 'documenten.verwijderen') === false) {
+            return $this->scopeDeniedResponse(scope: 'documenten.verwijderen');
         }
 
         // Drc-006 (VNG): Gebruiksrechten delete — update indicatieGebruiksrecht on EIO.

@@ -132,6 +132,11 @@ class BrcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate creates on brc.aanmaken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'brc.aanmaken') === false) {
+            return $this->scopeDeniedResponse(scope: 'brc.aanmaken');
+        }
+
         // For besluitinformatieobjecten: use custom create with OIO sync.
         if ($resource === 'besluitinformatieobjecten') {
             return $this->createBesluitInformatieObject();
@@ -192,6 +197,11 @@ class BrcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate updates on brc.bijwerken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'brc.bijwerken') === false) {
+            return $this->scopeDeniedResponse(scope: 'brc.bijwerken');
+        }
+
         // Brc-004a: BesluitInformatieObject is immutable — PUT returns 405.
         if ($resource === 'besluitinformatieobjecten') {
             return new JSONResponse(
@@ -230,6 +240,11 @@ class BrcController extends ZgwController
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C3: Gate patches on brc.bijwerken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'brc.bijwerken') === false) {
+            return $this->scopeDeniedResponse(scope: 'brc.bijwerken');
         }
 
         // Brc-004b: BesluitInformatieObject is immutable — PATCH returns 405.
@@ -272,6 +287,11 @@ class BrcController extends ZgwController
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C3: Gate destroys on brc.verwijderen scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'brc.verwijderen') === false) {
+            return $this->scopeDeniedResponse(scope: 'brc.verwijderen');
         }
 
         // Brc-009: Cascade delete for besluiten.

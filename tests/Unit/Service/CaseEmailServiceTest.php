@@ -27,7 +27,9 @@ namespace OCA\Procest\Tests\Unit\Service;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\CaseEmailService;
 use OCA\Procest\Service\SettingsService;
+use OCP\Files\IRootFolder;
 use OCP\IAppConfig;
+use OCP\IUserSession;
 use OCP\Mail\IMailer;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -71,12 +73,25 @@ class CaseEmailServiceTest extends TestCase
     private LoggerInterface $logger;
 
     /**
+     * The mocked root folder.
+     *
+     * @var IRootFolder|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private IRootFolder $rootFolder;
+
+    /**
+     * The mocked user session.
+     *
+     * @var IUserSession|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private IUserSession $userSession;
+
+    /**
      * The service under test.
      *
      * @var CaseEmailService
      */
     private CaseEmailService $service;
-
 
     /**
      * Set up test fixtures.
@@ -89,16 +104,19 @@ class CaseEmailServiceTest extends TestCase
         $this->mailer          = $this->createMock(IMailer::class);
         $this->appConfig       = $this->createMock(IAppConfig::class);
         $this->logger          = $this->createMock(LoggerInterface::class);
+        $this->rootFolder      = $this->createMock(IRootFolder::class);
+        $this->userSession     = $this->createMock(IUserSession::class);
 
         $this->service = new CaseEmailService(
             $this->settingsService,
             $this->mailer,
             $this->appConfig,
             $this->logger,
+            $this->rootFolder,
+            $this->userSession,
         );
 
     }//end setUp()
-
 
     /**
      * H6: sendEmail throws when from-address is empty.
@@ -126,7 +144,6 @@ class CaseEmailServiceTest extends TestCase
 
     }//end testSendEmailThrowsWhenFromAddressEmpty()
 
-
     /**
      * H6: sendEmail throws when from-address is the reserved example.nl domain.
      *
@@ -152,7 +169,6 @@ class CaseEmailServiceTest extends TestCase
         $this->service->sendEmail('case-uuid', 'to@example.com', 'Subject', 'Body');
 
     }//end testSendEmailThrowsWhenFromAddressIsReservedDomain()
-
 
     /**
      * C4 IDOR: sendEmail throws when case is not found (access denied).
@@ -183,7 +199,6 @@ class CaseEmailServiceTest extends TestCase
 
     }//end testSendEmailThrowsWhenCaseNotFound()
 
-
     /**
      * H6 XSS: resolveVariables escapes HTML characters by default.
      *
@@ -206,7 +221,6 @@ class CaseEmailServiceTest extends TestCase
 
     }//end testResolveVariablesEscapesHtml()
 
-
     /**
      * H6 XSS: resolveVariables with htmlEscape=false passes through raw values.
      *
@@ -222,7 +236,6 @@ class CaseEmailServiceTest extends TestCase
         $this->assertSame('Beste Jan & Piet', $result);
 
     }//end testResolveVariablesPlaintextContextSkipsEscape()
-
 
     /**
      * H6 XSS: resolveVariables leaves unresolved variables unchanged.
@@ -240,6 +253,4 @@ class CaseEmailServiceTest extends TestCase
         $this->assertStringContainsString('Henk', $result);
 
     }//end testResolveVariablesLeavesUnresolvedUnchanged()
-
-
 }//end class

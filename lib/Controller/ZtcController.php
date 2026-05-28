@@ -185,6 +185,11 @@ class ZtcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate creates on ztc.schrijven scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'ztc.schrijven') === false) {
+            return $this->scopeDeniedResponse(scope: 'ztc.schrijven');
+        }
+
         // Ztc-010: Resolve parent zaaktype draft status for sub-resource creation.
         $body = $this->zgwService->getRequestBody($this->request);
         $parentZaaktypeDraft = $this->zgwService->resolveParentZaaktypeDraftFromBody($resource, $body);
@@ -309,6 +314,11 @@ class ZtcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate updates on ztc.schrijven scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'ztc.schrijven') === false) {
+            return $this->scopeDeniedResponse(scope: 'ztc.schrijven');
+        }
+
         $parentZtDraft = $this->resolveParentDraft(resource: $resource, uuid: $uuid);
 
         $response = $this->zgwService->handleUpdate(
@@ -357,6 +367,11 @@ class ZtcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate patches on ztc.schrijven scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'ztc.schrijven') === false) {
+            return $this->scopeDeniedResponse(scope: 'ztc.schrijven');
+        }
+
         $parentZtDraft = $this->resolveParentDraft(resource: $resource, uuid: $uuid);
 
         $response = $this->zgwService->handleUpdate(
@@ -403,6 +418,11 @@ class ZtcController extends ZgwController
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C3: Gate destroys on ztc.schrijven scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'ztc.schrijven') === false) {
+            return $this->scopeDeniedResponse(scope: 'ztc.schrijven');
         }
 
         $parentZtDraft = $this->resolveParentDraft(resource: $resource, uuid: $uuid);

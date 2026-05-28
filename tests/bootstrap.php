@@ -56,6 +56,13 @@ if (defined('OC_CONSOLE') === false) {
 // a no-op when a real Nextcloud (loaded above) already provides the classes.
 require_once __DIR__ . '/Unit/Stubs/DoctrineStubs.php';
 
+// OC\Hooks\Emitter + OC\User\NoUserException stubs — OCP\Files\IRootFolder
+// extends these OC-internal types, but they are not shipped in nextcloud/ocp.
+// Without these stubs PHPUnit cannot mock IRootFolder in tests.
+// Must be loaded BEFORE the real Nextcloud base.php (which self-skips via
+// interface_exists guards when a real Nextcloud runtime is present).
+require_once __DIR__ . '/Unit/Stubs/OcInternalStubs.php';
+
 // IMcpToolProvider stub — loaded when the openregister runtime (PR #1466,
 // ai-chat-companion-orchestrator) is absent. ProcestToolProvider implements
 // OCA\OpenRegister\Mcp\IMcpToolProvider; the stub no-ops when the real

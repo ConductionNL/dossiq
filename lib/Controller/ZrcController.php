@@ -155,14 +155,14 @@ class ZrcController extends ZgwController
             return $authError;
         }
 
-        // Zrc-006c: Check zaken.aanmaken scope for zaak creation.
+        // Zrc-006c / M3: Check write scope for all create operations.
+        // Zaken require zaken.aanmaken; all other sub-resources require zaken.bijwerken.
         if ($resource === 'zaken') {
-            $hasScope = $this->zgwService->consumerHasScope(
-                $this->request,
-                'zrc',
-                'zaken.aanmaken'
-            );
-            if ($hasScope === false) {
+            if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.aanmaken') === false) {
+                return $this->permissionDeniedResponse();
+            }
+        } else {
+            if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.bijwerken') === false) {
                 return $this->permissionDeniedResponse();
             }
         }
@@ -365,6 +365,11 @@ class ZrcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate updates on zrc.bijwerken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.bijwerken') === false) {
+            return $this->permissionDeniedResponse();
+        }
+
         // Zrc-010/zrc-015: Pre-validate body fields that don't require
         // the existing object, so validation errors are returned even
         // when the OpenRegister find() call fails transiently.
@@ -422,6 +427,11 @@ class ZrcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate patches on zrc.bijwerken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.bijwerken') === false) {
+            return $this->permissionDeniedResponse();
+        }
+
         // Zrc-010/zrc-015: Pre-validate body fields that don't require
         // the existing object, so validation errors are returned even
         // when the OpenRegister find() call fails transiently.
@@ -477,9 +487,14 @@ class ZrcController extends ZgwController
             return $authError;
         }
 
-        // Zrc-023: Cascade delete for zaken.
+        // Zrc-023: Cascade delete for zaken — scope check is inside destroyZaak (C4).
         if ($resource === 'zaken') {
             return $this->destroyZaak(uuid: $uuid);
+        }
+
+        // C3: Gate sub-resource destroys on zaken.verwijderen scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.verwijderen') === false) {
+            return $this->permissionDeniedResponse();
         }
 
         // Zrc-005b: Before deleting, capture ZIO data for OIO cleanup.
@@ -1131,6 +1146,11 @@ class ZrcController extends ZgwController
      */
     private function destroyZaak(string $uuid): JSONResponse
     {
+        // C4: Require zaken.verwijderen scope for all zaak deletions.
+        if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.verwijderen') === false) {
+            return $this->permissionDeniedResponse();
+        }
+
         $objectService = $this->zgwService->getObjectService();
         if ($objectService === null) {
             return $this->zgwService->unavailableResponse();
@@ -1141,9 +1161,9 @@ class ZrcController extends ZgwController
             return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, 'zaken');
         }
 
+        // C4: Load the zaak to verify it exists and inspect its archive status.
         try {
-            // Verify the zaak exists.
-            $objectService->find(
+            $zaakObj = $objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
@@ -1155,39 +1175,75 @@ class ZrcController extends ZgwController
             );
         }
 
+        // C4: Treat a null return from find() as not-found.
+        if ($zaakObj === null) {
+            return new JSONResponse(
+                data: ['detail' => 'Not found'],
+                statusCode: Http::STATUS_NOT_FOUND
+            );
+        }
+
+        if (is_array($zaakObj) === true) {
+            $zaakData = $zaakObj;
+        } else {
+            $zaakData = $zaakObj->jsonSerialize();
+        }
+
+        // C4: Refuse to delete archived zaken without the geforceerd-verwijderen scope.
+        $isArchived = ($zaakData['archiefstatus'] ?? '') !== '' && ($zaakData['archiefstatus'] ?? '') !== 'nog_te_archiveren';
+        if ($isArchived === true
+            && $this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.geforceerd-verwijderen') === false
+        ) {
+            return new JSONResponse(
+                data: [
+                    'detail' => $this->l10n->t('Archived zaken cannot be deleted without the zaken.geforceerd-verwijderen scope.'),
+                    'code'   => 'permission_denied',
+                ],
+                statusCode: Http::STATUS_FORBIDDEN
+            );
+        }
+
         // Zrc-005b: Before deleting the zaak, sync-delete OIOs in DRC
         // for any linked ZaakInformatieObjecten. This cross-component
         // side-effect cannot be handled by OpenRegister's cascade delete.
+        // L1: Paginate through all ZIOs to avoid orphan OIOs on large zaken.
         $zioConfig = $this->zgwService->getZgwMappingService()->getMapping('zaakinformatieobject');
         if ($zioConfig !== null) {
             try {
-                $query  = $objectService->buildSearchQuery(
-                    requestParams: ['case' => $uuid, '_limit' => 100],
-                    register: $zioConfig['sourceRegister'],
-                    schema: $zioConfig['sourceSchema']
-                );
-                $result = $objectService->searchObjectsPaginated(query: $query);
+                $page = 1;
+                do {
+                    $query   = $objectService->buildSearchQuery(
+                        requestParams: ['case' => $uuid, '_limit' => 100, '_page' => $page],
+                        register: $zioConfig['sourceRegister'],
+                        schema: $zioConfig['sourceSchema']
+                    );
+                    $result  = $objectService->searchObjectsPaginated(query: $query);
+                    $objects = $result['results'] ?? [];
 
-                foreach (($result['results'] ?? []) as $obj) {
-                    if (is_array($obj) === true) {
-                        $data = $obj;
-                    } else {
-                        $data = $obj->jsonSerialize();
+                    foreach ($objects as $obj) {
+                        if (is_array($obj) === true) {
+                            $data = $obj;
+                        } else {
+                            $data = $obj->jsonSerialize();
+                        }
+
+                        $subUuid = $data['id'] ?? ($data['@self']['id'] ?? '');
+                        if ($subUuid === '') {
+                            continue;
+                        }
+
+                        $zioData = $this->getZioDataForOioSync(uuid: $subUuid);
+                        if ($zioData !== null) {
+                            $this->syncDeleteObjectInformatieObject(
+                                zaakUrl: $zioData['zaakUrl'],
+                                ioUrl: $zioData['ioUrl']
+                            );
+                        }
                     }
 
-                    $subUuid = $data['id'] ?? ($data['@self']['id'] ?? '');
-                    if ($subUuid === '') {
-                        continue;
-                    }
-
-                    $zioData = $this->getZioDataForOioSync(uuid: $subUuid);
-                    if ($zioData !== null) {
-                        $this->syncDeleteObjectInformatieObject(
-                            zaakUrl: $zioData['zaakUrl'],
-                            ioUrl: $zioData['ioUrl']
-                        );
-                    }
-                }
+                    $page++;
+                    $hasMore = count($objects) === 100;
+                } while ($hasMore === true);
             } catch (\Throwable $e) {
                 $this->zgwService->getLogger()->warning(
                     'zrc-023: Failed to sync-delete OIOs for zaak '.$uuid.': '.$e->getMessage()
