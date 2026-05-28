@@ -44,6 +44,8 @@ class SettingsService
     private const SECRET_KEYS = [
         'ai_api_key',
         'appointment_backend_api_key',
+        // AI model URL reveals internal infrastructure topology; redact for non-admins.
+        'ai_model_url',
     ];
 
     private const CONFIG_KEYS = [
