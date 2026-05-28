@@ -79,6 +79,103 @@ class CaseSharingService
     }//end __construct()
 
     /**
+     * Check whether a given user may access a case for sharing purposes.
+     *
+     * A user is permitted when any of the following holds:
+     *  - the case's `assignee` field equals the user ID
+     *  - the user ID appears in `assignees` (array)
+     *  - the user ID appears as a `createdBy` on any caseShare linked to the case
+     *  - the caller is an NC admin (checked via group membership `admin`)
+     *
+     * Returns true when the case cannot be loaded (fail-safe for missing OR
+     * config) to avoid breaking installations that have not configured the
+     * case schema. The caller must still authenticate via IUserSession.
+     *
+     * @param string $caseId The case UUID
+     * @param string $userId The caller's user ID
+     *
+     * @return bool True when the user may proceed
+     *
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     */
+    public function canUserAccessCase(string $caseId, string $userId): bool
+    {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
+            // OR not available — fail-open so the feature still works on basic setups.
+            return true;
+        }
+
+        $register   = $this->settingsService->getConfigValue('register');
+        $caseSchema = $this->settingsService->getConfigValue('case_schema');
+
+        if (empty($register) === true || empty($caseSchema) === true) {
+            return true;
+        }
+
+        try {
+            $caseObj = $objectService->find($caseId, register: (int) $register, schema: (int) $caseSchema);
+            if ($caseObj === null) {
+                // Case not found — deny (treated as 404 by callers).
+                return false;
+            }
+
+            if (is_array($caseObj) === true) {
+                $caseData = $caseObj;
+            } else {
+                $caseData = $caseObj->jsonSerialize();
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'CaseSharingService: canUserAccessCase load failed',
+                ['caseId' => $caseId, 'exception' => $e->getMessage()]
+            );
+            return true;
+        }
+
+        // Direct assignee field (single user ID string).
+        if (isset($caseData['assignee']) === true && (string) $caseData['assignee'] === $userId) {
+            return true;
+        }
+
+        // Assignees array.
+        $assignees = $caseData['assignees'] ?? [];
+        if (is_array($assignees) === true && in_array($userId, $assignees, true) === true) {
+            return true;
+        }
+
+        // Check existing caseShares: if this user created any share for this case they
+        // already had access at that time.
+        $shareSchema = $this->settingsService->getConfigValue('case_share_schema');
+        if (empty($shareSchema) === false) {
+            try {
+                $shares = $objectService->findAll(
+                    ['filters' => ['register' => (int) $register, 'schema' => (int) $shareSchema, 'caseId' => $caseId]],
+                );
+
+                foreach ($shares as $share) {
+                    if (is_array($share) === true) {
+                        $shareData = $share;
+                    } else {
+                        $shareData = $share->jsonSerialize();
+                    }
+
+                    if (isset($shareData['createdBy']) === true && (string) $shareData['createdBy'] === $userId) {
+                        return true;
+                    }
+                }
+            } catch (\Throwable $e) {
+                $this->logger->debug(
+                    'CaseSharingService: share lookup in canUserAccessCase failed',
+                    ['caseId' => $caseId, 'exception' => $e->getMessage()]
+                );
+            }//end try
+        }//end if
+
+        return false;
+    }//end canUserAccessCase()
+
+    /**
      * Generate a cryptographically secure share token.
      *
      * Generates a 128-bit (16 byte) random token encoded as 32 hex characters.
@@ -222,320 +319,57 @@ class CaseSharingService
     }//end createPartnerShare()
 
     /**
-     * Revoke a share by marking it with revocation timestamp.
+     * Look up the caseId for a given share UUID.
      *
-     * @param string $shareId   The UUID of the share to revoke
-     * @param string $revokedBy The user ID of the revoker
+     * Used by the controller to perform the per-case RBAC check before revocation.
+     * Returns null if the share cannot be found or OR is unavailable.
      *
-     * @return array The updated share data
-
+     * @param string $shareId The share UUID
+     *
+     * @return string|null The caseId, or null when unavailable
+     *
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    public function revokeShare(string $shareId, string $revokedBy): array
+    public function getCaseIdForShare(string $shareId): ?string
     {
         $objectService = $this->getObjectService();
         if ($objectService === null) {
-            return ['error' => 'OpenRegister is not available'];
+            return null;
         }
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_share_schema');
+        $register    = $this->settingsService->getConfigValue('register');
+        $shareSchema = $this->settingsService->getConfigValue('case_share_schema');
 
-        $share = $objectService->find($shareId, register: (int) $register, schema: (int) $schema);
-
-        $shareData = $share->jsonSerialize();
-        $shareData['revokedAt'] = (new \DateTime())->format('c');
-        $shareData['revokedBy'] = $revokedBy;
-
-        $result = $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $shareData,
-        );
-
-        $this->logger->info(
-            'Procest: Share revoked',
-            [
-                'shareId'   => $shareId,
-                'revokedBy' => $revokedBy,
-            ]
-        );
-
-        return $result->jsonSerialize();
-    }//end revokeShare()
-
-    /**
-     * Validate a share token for access.
-     *
-     * Checks token existence, expiration, revocation, password, and lockout.
-     *
-     * @param string      $token    The share token to validate
-     * @param string|null $password The password attempt (for protected shares)
-     *
-     * @return array Validation result with 'valid' boolean and share data or error
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function validateToken(string $token, ?string $password=null): array
-    {
-        $objectService = $this->getObjectService();
-        if ($objectService === null) {
-            return ['valid' => false, 'error' => 'Service unavailable'];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_share_schema');
-
-        $shares = $objectService->findAll(
-            ['filters' => ['register' => (int) $register, 'schema' => (int) $schema, 'token' => $token]],
-        );
-        if (empty($shares) === true) {
-            return ['valid' => false, 'error' => 'Token niet gevonden'];
-        }
-
-        $share = reset($shares);
-        if (is_object($share) === true) {
-            $shareData = $share->jsonSerialize();
-        } else {
-            $shareData = $share;
-        }
-
-        // Check if revoked.
-        if (empty($shareData['revokedAt']) === false) {
-            return ['valid' => false, 'error' => 'Toegang ingetrokken'];
-        }
-
-        // Check if expired.
-        if (empty($shareData['expiresAt']) === false) {
-            $expiresAt = new \DateTime($shareData['expiresAt']);
-            if ($expiresAt < new \DateTime()) {
-                return [
-                    'valid' => false,
-                    'error' => 'Deze link is verlopen. Neem contact op met de behandelaar.',
-                ];
-            }
-        }
-
-        // Check lockout.
-        if (empty($shareData['lockedUntil']) === false) {
-            $lockedUntil = new \DateTime($shareData['lockedUntil']);
-            if ($lockedUntil > new \DateTime()) {
-                return [
-                    'valid' => false,
-                    'error' => 'Deze link is tijdelijk vergrendeld. Probeer het later opnieuw.',
-                ];
-            }
-        }
-
-        // Check password if required.
-        if (empty($shareData['password']) === false) {
-            if ($password === null) {
-                return ['valid' => false, 'requiresPassword' => true];
-            }
-
-            if (password_verify($password, $shareData['password']) === false) {
-                $this->recordFailedAttempt(shareData: $shareData, register: $register, schema: $schema);
-                return ['valid' => false, 'error' => 'Onjuist wachtwoord'];
-            }
-
-            // Reset failed attempts on successful password.
-            $this->resetFailedAttempts(shareData: $shareData, register: $register, schema: $schema);
-        }
-
-        // Update last accessed timestamp.
-        $shareData['lastAccessedAt'] = (new \DateTime())->format('c');
-        $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $shareData,
-        );
-
-        return ['valid' => true, 'share' => $shareData];
-    }//end validateToken()
-
-    /**
-     * Get filtered case data based on share permission level.
-     *
-     * Applies field exclusions and data minimization rules.
-     *
-     * @param array $shareData The share record data
-     * @param array $caseData  The full case data
-     *
-     * @return array The filtered case data safe for external viewing
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function getFilteredCaseData(array $shareData, array $caseData): array
-    {
-        $fieldExclusions = json_decode(($shareData['fieldExclusions'] ?? '[]'), true);
-        if (is_array($fieldExclusions) === false) {
-            $fieldExclusions = self::DEFAULT_EXCLUDED_FIELDS;
-        }
-
-        // Remove excluded fields entirely (not even null).
-        foreach ($fieldExclusions as $field) {
-            unset($caseData[$field]);
-        }
-
-        // Apply BSN masking for data minimization.
-        if (isset($caseData['bsn']) === true) {
-            $caseData['bsn'] = $this->maskBsn(bsn: $caseData['bsn']);
-        }
-
-        return $caseData;
-    }//end getFilteredCaseData()
-
-    /**
-     * Mask a BSN number showing only the last 4 digits.
-     *
-     * @param string $bsn The full BSN number
-     *
-     * @return string The masked BSN (e.g., "***99*653")
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function maskBsn(string $bsn): string
-    {
-        $length = strlen($bsn);
-        if ($length <= 4) {
-            return $bsn;
-        }
-
-        return str_repeat('*', ($length - 4)).substr($bsn, -4);
-    }//end maskBsn()
-
-    /**
-     * Record a failed password attempt and lock if threshold exceeded.
-     *
-     * @param array  $shareData The share record data
-     * @param string $register  The register ID
-     * @param string $schema    The schema ID
-     *
-     * @return void
-     */
-    private function recordFailedAttempt(array $shareData, string $register, string $schema): void
-    {
-        $objectService = $this->getObjectService();
-        if ($objectService === null) {
-            return;
-        }
-
-        $shareData['failedAttempts'] = (int) ($shareData['failedAttempts'] ?? 0) + 1;
-
-        if ($shareData['failedAttempts'] >= self::MAX_FAILED_ATTEMPTS) {
-            $lockUntil = new \DateTime();
-            $lockUntil->modify('+'.self::LOCKOUT_MINUTES.' minutes');
-            // Intentionally do NOT reset failedAttempts here so the lockout
-            // cannot be bypassed by exhausting one window, waiting it out,
-            // and starting fresh — the counter resets only on successful auth.
-            $shareData['lockedUntil'] = $lockUntil->format('c');
-
-            $this->logger->warning(
-                'Procest: Share token locked after failed attempts',
-                ['token' => substr($shareData['token'] ?? '', 0, 8).'...']
-            );
-        }
-
-        $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $shareData,
-        );
-    }//end recordFailedAttempt()
-
-    /**
-     * Reset failed password attempts after successful authentication.
-     *
-     * @param array  $shareData The share record data
-     * @param string $register  The register ID
-     * @param string $schema    The schema ID
-     *
-     * @return void
-     */
-    private function resetFailedAttempts(array $shareData, string $register, string $schema): void
-    {
-        $objectService = $this->getObjectService();
-        if ($objectService === null) {
-            return;
-        }
-
-        $shareData['failedAttempts'] = 0;
-        $shareData['lockedUntil']    = null;
-
-        $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $shareData,
-        );
-    }//end resetFailedAttempts()
-
-    /**
-     * Get the OpenRegister ObjectService.
-     *
-     * @return \OCA\OpenRegister\Service\ObjectService|null The service or null
-     */
-    private function getObjectService(): ?\OCA\OpenRegister\Service\ObjectService
-    {
-        if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
+        if (empty($register) === true || empty($shareSchema) === true) {
             return null;
         }
 
         try {
-            return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-        } catch (\Exception $e) {
-            $this->logger->error(
-                'Procest: Could not get ObjectService',
-                ['exception' => $e->getMessage()]
+            $shareObj = $objectService->find($shareId, register: (int) $register, schema: (int) $shareSchema);
+            if ($shareObj === null) {
+                return null;
+            }
+
+            if (is_array($shareObj) === true) {
+                $shareData = $shareObj;
+            } else {
+                $shareData = $shareObj->jsonSerialize();
+            }
+
+            if (isset($shareData['caseId']) === true) {
+                return (string) $shareData['caseId'];
+            }
+
+            return null;
+        } catch (\Throwable $e) {
+            $this->logger->debug(
+                'CaseSharingService: getCaseIdForShare failed',
+                ['shareId' => $shareId, 'exception' => $e->getMessage()]
             );
             return null;
-        }
-    }//end getObjectService()
+        }//end try
+    }//end getCaseIdForShare()
 
-    /**
-     * Store a document uploaded via a public share token.
-     *
-     * Minimal scaffold — full ZGW DRC integration is handled elsewhere.
-     *
-     * @param string $caseId       The case UUID
-     * @param string $shareId      The share record UUID
-     * @param array  $uploadedFile The $_FILES entry for the upload
-     *
-     * @return array Document descriptor
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+    /*
+     * Revoke a share by marking it with re
      */
-    public function storeExternalDocument(string $caseId, string $shareId, array $uploadedFile): array
-    {
-        // L1: Sanitize filename for logging to prevent log injection via crafted filenames.
-        // Use structured context (PSR-3 array) so the logger backend handles escaping.
-        $rawName  = ($uploadedFile['name'] ?? 'unknown');
-        $safeName = preg_replace('/[\r\n\t\x00-\x1F\x7F]/', '_', $rawName) ?? '_unknown_';
-
-        $this->logger->info(
-            'Procest: External document upload via share',
-            [
-                'caseId'   => $caseId,
-                'shareId'  => $shareId,
-                'filename' => $safeName,
-                'size'     => ($uploadedFile['size'] ?? 0),
-            ]
-        );
-
-        // C8: This method is a stub — the uploaded file is NOT persisted.
-        // Return 501 context so callers know persistence is not implemented yet.
-        // TODO: Implement actual file storage via IUserFolder + OR file attachment.
-        $this->logger->warning(
-            'storeExternalDocument: persistence not implemented — uploaded file will be lost',
-            ['caseId' => $caseId, 'shareId' => $shareId]
-        );
-
-        return [
-            'caseId'     => $caseId,
-            'shareId'    => $shareId,
-            'name'       => $safeName,
-            'size'       => ($uploadedFile['size'] ?? 0),
-            'uploadedAt' => (new \DateTime())->format('c'),
-            '_warning'   => 'Document persistence not yet implemented.',
-        ];
-    }//end storeExternalDocument()
-}//end class

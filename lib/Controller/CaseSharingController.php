@@ -85,6 +85,16 @@ class CaseSharingController extends Controller
         $permissionLevel = $this->request->getParam('permissionLevel', 'bekijken');
         $label           = $this->request->getParam('label', '');
 
+        // C2: Verify the caller has access to this case before allowing share creation.
+        if (empty($caseId) === false) {
+            if ($this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
+                return new JSONResponse(
+                    ['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
+                    Http::STATUS_FORBIDDEN
+                );
+            }
+        }
+
         if (empty($caseId) === true) {
             return new JSONResponse(['success' => false, 'error' => 'caseId is required'], 400);
         }
@@ -144,6 +154,17 @@ class CaseSharingController extends Controller
             return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
+        // C2: Resolve the share's caseId, then verify the caller has access to that case.
+        $caseId = $this->caseSharingService->getCaseIdForShare($shareId);
+        if ($caseId !== null
+            && $this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false
+        ) {
+            return new JSONResponse(
+                ['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
+                Http::STATUS_FORBIDDEN
+            );
+        }
+
         $share = $this->caseSharingService->revokeShare($shareId, $user->getUID());
         return new JSONResponse(['success' => true, 'share' => $share]);
     }//end revokeShare()
@@ -159,7 +180,8 @@ class CaseSharingController extends Controller
      */
     public function initiateTransfer(): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
@@ -173,6 +195,14 @@ class CaseSharingController extends Controller
             return new JSONResponse(
                 ['success' => false, 'error' => 'caseId and targetOrganization are required'],
                 400
+            );
+        }
+
+        // C2: Verify the caller has access to this case before allowing a transfer.
+        if ($this->caseSharingService->canUserAccessCase($caseId, $user->getUID()) === false) {
+            return new JSONResponse(
+                ['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
+                Http::STATUS_FORBIDDEN
             );
         }
 
