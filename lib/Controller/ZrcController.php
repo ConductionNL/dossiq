@@ -155,14 +155,14 @@ class ZrcController extends ZgwController
             return $authError;
         }
 
-        // Zrc-006c: Check zaken.aanmaken scope for zaak creation.
+        // Zrc-006c / M3: Check write scope for all create operations.
+        // Zaken require zaken.aanmaken; all other sub-resources require zaken.bijwerken.
         if ($resource === 'zaken') {
-            $hasScope = $this->zgwService->consumerHasScope(
-                $this->request,
-                'zrc',
-                'zaken.aanmaken'
-            );
-            if ($hasScope === false) {
+            if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.aanmaken') === false) {
+                return $this->permissionDeniedResponse();
+            }
+        } else {
+            if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.bijwerken') === false) {
                 return $this->permissionDeniedResponse();
             }
         }
@@ -365,6 +365,11 @@ class ZrcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate updates on zrc.bijwerken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.bijwerken') === false) {
+            return $this->permissionDeniedResponse();
+        }
+
         // Zrc-010/zrc-015: Pre-validate body fields that don't require
         // the existing object, so validation errors are returned even
         // when the OpenRegister find() call fails transiently.
@@ -422,6 +427,11 @@ class ZrcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate patches on zrc.bijwerken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.bijwerken') === false) {
+            return $this->permissionDeniedResponse();
+        }
+
         // Zrc-010/zrc-015: Pre-validate body fields that don't require
         // the existing object, so validation errors are returned even
         // when the OpenRegister find() call fails transiently.
@@ -477,9 +487,14 @@ class ZrcController extends ZgwController
             return $authError;
         }
 
-        // Zrc-023: Cascade delete for zaken.
+        // Zrc-023: Cascade delete for zaken — scope check is inside destroyZaak (C4).
         if ($resource === 'zaken') {
             return $this->destroyZaak(uuid: $uuid);
+        }
+
+        // C3: Gate sub-resource destroys on zaken.verwijderen scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.verwijderen') === false) {
+            return $this->permissionDeniedResponse();
         }
 
         // Zrc-005b: Before deleting, capture ZIO data for OIO cleanup.

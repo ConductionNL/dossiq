@@ -111,6 +111,11 @@ class NrcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate creates on nrc.publiceren scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'nrc.publiceren') === false) {
+            return $this->scopeDeniedResponse(scope: 'nrc.publiceren');
+        }
+
         return $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
     }//end create()
 
@@ -159,6 +164,11 @@ class NrcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate updates on nrc.publiceren scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'nrc.publiceren') === false) {
+            return $this->scopeDeniedResponse(scope: 'nrc.publiceren');
+        }
+
         return $this->zgwService->handleUpdate(
             $this->request,
             self::ZGW_API,
@@ -189,6 +199,11 @@ class NrcController extends ZgwController
             return $authError;
         }
 
+        // C3: Gate patches on nrc.publiceren scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'nrc.publiceren') === false) {
+            return $this->scopeDeniedResponse(scope: 'nrc.publiceren');
+        }
+
         return $this->zgwService->handleUpdate(
             $this->request,
             self::ZGW_API,
@@ -217,6 +232,11 @@ class NrcController extends ZgwController
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C3: Gate destroys on nrc.publiceren scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'nrc.publiceren') === false) {
+            return $this->scopeDeniedResponse(scope: 'nrc.publiceren');
         }
 
         return $this->zgwService->handleDestroy(
