@@ -234,7 +234,10 @@ export default {
 	},
 
 	watch: {
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/**
+		 * @param val
+		 * @spec openspec/changes/vth-module/tasks.md
+		 */
 		suggestedIntervention(val) {
 			if (val && !this.interventie) {
 				this.interventie = val
@@ -272,7 +275,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/**
+		 * @param intervention
+		 * @spec openspec/changes/vth-module/tasks.md
+		 */
 		mapInterventionToType(intervention) {
 			const lower = (intervention || '').toLowerCase()
 			if (lower.includes('bestuursdwang')) {

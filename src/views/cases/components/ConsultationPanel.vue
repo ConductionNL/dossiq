@@ -170,7 +170,10 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
+		/**
+		 * @param status
+		 * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md
+		 */
 		getStatusLabel(status) {
 			const labels = {
 				open: this.t('procest', 'Open'),
@@ -180,7 +183,10 @@ export default {
 			}
 			return labels[status] || status
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
+		/**
+		 * @param advies
+		 * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md
+		 */
 		getAdviceLabel(advies) {
 			const labels = {
 				positief: this.t('procest', 'Positive'),
@@ -190,20 +196,29 @@ export default {
 			}
 			return labels[advies] || advies
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
+		/**
+		 * @param dateStr
+		 * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md
+		 */
 		formatDate(dateStr) {
 			if (!dateStr) return '---'
 			const d = new Date(dateStr)
 			if (isNaN(d.getTime())) return dateStr
 			return d.toLocaleDateString('nl-NL')
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
+		/**
+		 * @param cons
+		 * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md
+		 */
 		isOverdue(cons) {
 			if (!cons.uiterlijkeReactiedatum) return false
 			if (cons.status === 'afgesloten' || cons.status === 'advies_uitgebracht') return false
 			return new Date(cons.uiterlijkeReactiedatum) < new Date()
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
+		/**
+		 * @param cons
+		 * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md
+		 */
 		conditions(cons) {
 			if (!cons.voorwaarden) return []
 			try {

@@ -73,7 +73,10 @@ export default {
 		}
 	},
 	watch: {
-		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
+		/**
+		 * @param val
+		 * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+		 */
 		show(val) {
 			if (val) this.classify()
 		},

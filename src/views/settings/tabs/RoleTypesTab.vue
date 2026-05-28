@@ -120,7 +120,10 @@ export default {
 			this.editError = ''
 			this.items.push({ id: 'new', name: '' })
 		},
-		/** @spec openspec/specs/role-based-step-routing/spec.md */
+		/**
+		 * @param item
+		 * @spec openspec/specs/role-based-step-routing/spec.md
+		 */
 		startEdit(item) {
 			this.editingId = item.id
 			this.editForm = { name: item.name, genericRole: item.genericRole || '' }
@@ -149,7 +152,10 @@ export default {
 			this.editingId = null
 			await this.loadItems()
 		},
-		/** @spec openspec/specs/role-based-step-routing/spec.md */
+		/**
+		 * @param item
+		 * @spec openspec/specs/role-based-step-routing/spec.md
+		 */
 		async deleteItem(item) {
 			if (!confirm(t('procest', 'Delete role type "{name}"?', { name: item.name }))) return
 			const objectStore = useObjectStore()

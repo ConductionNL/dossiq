@@ -68,17 +68,26 @@ export default {
 		isCurrent(step) {
 			return step.order === this.currentStep
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param step
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		stepClass(step) {
 			if (this.isCompleted(step)) return 'progress-timeline__step--completed'
 			if (this.isCurrent(step)) return 'progress-timeline__step--current'
 			return 'progress-timeline__step--pending'
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param type
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatStepType(type) {
 			return STEP_TYPE_LABELS[type] || type || ''
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param step
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		getCompletionInfo(step) {
 			const actie = this.acties.find(a => a.step === step.order)
 			if (!actie) return ''

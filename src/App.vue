@@ -122,7 +122,10 @@ export default {
 		 * @param {string} key Translation key.
 		 * @return {string} Translated string (or the key on miss).
 		 */
-		/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
+		/**
+		 * @param key
+		 * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
+		 */
 		translateForApp(key) {
 			return ncT('procest', key)
 		},

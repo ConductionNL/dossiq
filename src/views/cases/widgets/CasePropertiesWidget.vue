@@ -161,7 +161,10 @@ export default {
 	watch: {
 		caseData: {
 			immediate: true,
-			/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+			/**
+			 * @param data
+			 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
+			 */
 			handler(data) {
 				if (data && data.title !== undefined) {
 					this.form = {

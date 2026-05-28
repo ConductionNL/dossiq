@@ -129,7 +129,10 @@ export default {
 		}
 	},
 	methods: {
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param caseObj
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		onCaseSelected(caseObj) {
 			if (caseObj && !this.form.onderwerp) {
 				this.form.onderwerp = caseObj.title || ''

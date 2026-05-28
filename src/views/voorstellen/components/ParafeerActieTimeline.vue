@@ -87,7 +87,10 @@ export default {
 				this.loading = false
 			}
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param actie
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatStageLabel(actie) {
 			const englishKey = ACTION_LABELS[actie.action] || actie.action || ''
 			const localized = this.t('procest', englishKey)
@@ -96,7 +99,10 @@ export default {
 				action: localized,
 			})
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param actie
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatActor(actie) {
 			if (actie.actorType === 'delegate' && actie.onBehalfOf) {
 				return this.t('procest', 'On behalf of {name} (mandate {ref})', {
@@ -106,7 +112,10 @@ export default {
 			}
 			return actie.actor || '—'
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param actie
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatTimestamp(actie) {
 			const raw = actie.createdAt || actie.created || actie['@self']?.created
 			if (!raw) return ''

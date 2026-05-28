@@ -287,7 +287,10 @@ export default {
 	},
 	watch: {
 		transition: {
-			/** @spec openspec/specs/status-transition-engine/spec.md */
+			/**
+			 * @param newVal
+			 * @spec openspec/specs/status-transition-engine/spec.md
+			 */
 			handler(newVal) {
 				this.localTransition = { ...newVal }
 				this.localAllowedRoles = [...(newVal.allowedRoles || [])]
@@ -298,7 +301,10 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/specs/status-transition-engine/spec.md */
+		/**
+		 * @param guards
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		parseGuards(guards) {
 			if (!guards) return []
 			if (typeof guards === 'string') {
@@ -307,7 +313,10 @@ export default {
 			return [...guards]
 		},
 
-		/** @spec openspec/specs/status-transition-engine/spec.md */
+		/**
+		 * @param actions
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		parseActions(actions) {
 			if (!actions) return []
 			if (typeof actions === 'string') {
@@ -326,7 +335,10 @@ export default {
 			})
 		},
 
-		/** @spec openspec/specs/status-transition-engine/spec.md */
+		/**
+		 * @param roleId
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		toggleRole(roleId) {
 			const index = this.localAllowedRoles.indexOf(roleId)
 			if (index >= 0) {
@@ -343,7 +355,10 @@ export default {
 			this.emitUpdate()
 		},
 
-		/** @spec openspec/specs/status-transition-engine/spec.md */
+		/**
+		 * @param index
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		removeGuard(index) {
 			this.localGuards.splice(index, 1)
 			this.emitUpdate()
@@ -355,7 +370,10 @@ export default {
 			this.emitUpdate()
 		},
 
-		/** @spec openspec/specs/status-transition-engine/spec.md */
+		/**
+		 * @param index
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		removeAction(index) {
 			this.localActions.splice(index, 1)
 			this.emitUpdate()

@@ -97,7 +97,10 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param dateStr
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		formatDateTime(dateStr) {
 			if (!dateStr) return '---'
 			const d = new Date(dateStr)
@@ -110,7 +113,10 @@ export default {
 				minute: '2-digit',
 			})
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param body
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		truncateBody(body) {
 			if (!body) return ''
 			const id = 'temp'
@@ -122,7 +128,10 @@ export default {
 		isExpanded(id) {
 			return this.expandedMessages[id] === true
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param id
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		toggleExpand(id) {
 			this.$set(this.expandedMessages, id, !this.expandedMessages[id])
 		},

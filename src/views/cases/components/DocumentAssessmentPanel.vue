@@ -144,7 +144,11 @@ export default {
 		getGrounds(docId) {
 			return this.assessments[docId]?.grounds || []
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param docId
+		 * @param value
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		setAssessment(docId, value) {
 			this.$emit('update:assessment', {
 				documentId: docId,
@@ -152,7 +156,11 @@ export default {
 				grounds: value === 'niet_openbaar' ? (this.assessments[docId]?.grounds || []) : [],
 			})
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param docId
+		 * @param value
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		setGrounds(docId, value) {
 			this.$emit('update:assessment', {
 				documentId: docId,

@@ -178,7 +178,10 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param type
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatStepType(type) {
 			const labels = {
 				advies: this.t('procest', 'Advise'),
@@ -204,7 +207,10 @@ export default {
 			this.errorMessage = ''
 			this.validationError = ''
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param action
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		buildPayload(action) {
 			const payload = {
 				voorstel: this.voorstelId,
@@ -244,7 +250,10 @@ export default {
 			}
 			await this.submit(payload)
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param payload
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		async submit(payload) {
 			this.submitting = true
 			this.errorMessage = ''

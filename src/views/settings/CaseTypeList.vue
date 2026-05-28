@@ -122,7 +122,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
+		/**
+		 * @param caseTypeId
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		async loadStatusTypeCount(caseTypeId) {
 			const statusTypes = await this.objectStore.fetchCollection('statusType', {
 				'_filters[caseType]': caseTypeId,
@@ -136,12 +139,18 @@ export default {
 			return this.defaultCaseTypeId === id
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
+		/**
+		 * @param duration
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		formatDeadline(duration) {
 			return formatDuration(duration)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
+		/**
+		 * @param ct
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		formatValidity(ct) {
 			if (!ct.validFrom) return '\u2014'
 			const from = new Date(ct.validFrom).toLocaleDateString('nl-NL', { month: 'short', year: 'numeric' })
@@ -152,7 +161,10 @@ export default {
 			return t('procest', '{from} \u2014 (no end)', { from })
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
+		/**
+		 * @param ct
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		validityClass(ct) {
 			if (!ct.validUntil) return ''
 			const now = new Date()
@@ -161,12 +173,18 @@ export default {
 			return ''
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
+		/**
+		 * @param row
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		selectCaseType(row) {
 			this.$emit('select', row.id)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
+		/**
+		 * @param ct
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		async setDefault(ct) {
 			this.error = ''
 			if (ct.isDraft) {
@@ -177,7 +195,10 @@ export default {
 			await this.settingsStore.saveSettings(config)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
+		/**
+		 * @param ct
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		async confirmDelete(ct) {
 			this.error = ''
 

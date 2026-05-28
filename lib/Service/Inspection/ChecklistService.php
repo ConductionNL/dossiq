@@ -283,10 +283,6 @@ class ChecklistService
         $skipped      = 0;
 
         foreach ($responses as $response) {
-            if (is_array($response) === false) {
-                continue;
-            }
-
             $itemId  = (string) ($response['itemId'] ?? '');
             $item    = $itemsByOrder[$itemId] ?? null;
             $verdict = $this->classifyResponse(response: $response, item: $item);
@@ -654,10 +650,6 @@ class ChecklistService
         $best   = -1;
 
         foreach ($responses as $response) {
-            if (is_array($response) === false) {
-                continue;
-            }
-
             $itemId = (string) ($response['itemId'] ?? '');
             $item   = $items[$itemId] ?? null;
             if ($item === null) {

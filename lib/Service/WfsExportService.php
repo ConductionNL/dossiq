@@ -215,11 +215,7 @@ class WfsExportService
         return array_values(
             array_filter(
                 $locations,
-                function (mixed $location) use ($status, $caseType): bool {
-                    if (is_array($location) === false) {
-                        return false;
-                    }
-
+                function (array $location) use ($status, $caseType): bool {
                     if ($status !== null) {
                         $locStatus = (string) ($location['caseStatus'] ?? '');
                         if ($locStatus !== $status) {

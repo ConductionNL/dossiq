@@ -139,7 +139,10 @@ export default {
 	watch: {
 		caseId: {
 			immediate: true,
-			/** @spec openspec/changes/vth-module/tasks.md */
+			/**
+			 * @param newId
+			 * @spec openspec/changes/vth-module/tasks.md
+			 */
 			handler(newId) {
 				if (newId) {
 					this.enforcementStore.fetchActions(newId)
@@ -151,7 +154,10 @@ export default {
 	methods: {
 		t,
 
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/**
+		 * @param status
+		 * @spec openspec/changes/vth-module/tasks.md
+		 */
 		statusLabel(status) {
 			const labels = {
 				opgelegd: t('procest', 'Imposed'),

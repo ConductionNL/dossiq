@@ -282,7 +282,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
+		/**
+		 * @param cluster
+		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+		 */
 		createClusterIcon(cluster) {
 			const count = cluster.getChildCount()
 			let className = 'case-map-cluster case-map-cluster--green'
@@ -353,7 +356,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
+		/**
+		 * @param event
+		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+		 */
 		onKeydown(event) {
 			if (!this.map) return
 			const panStep = 100

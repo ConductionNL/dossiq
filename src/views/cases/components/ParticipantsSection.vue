@@ -64,7 +64,8 @@
 				<label>{{ t('procest', 'Reassign handler to:') }}</label>
 				<NcSelect
 					v-model="reassignUser"
-					:options="userOptions" :aria-label-combobox="t('procest', 'Reassign handler to')"
+					:options="userOptions"
+					:aria-label-combobox="t('procest', 'Reassign handler to')"
 					label="label"
 					track-by="id"
 					:placeholder="t('procest', 'Select user...')"
@@ -225,7 +226,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param name
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		getInitials(name) {
 			if (!name) return '?'
 			const parts = name.split(/[\s.]+/)
@@ -235,7 +239,10 @@ export default {
 			return name.slice(0, 2).toUpperCase()
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param role
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		isHandlerRole(role) {
 			const rt = this.roleTypeMap[role.roleType]
 			return rt?.genericRole === 'handler'
@@ -253,7 +260,10 @@ export default {
 			this.preSelectHandler = false
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param newRole
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		async onRoleCreated(newRole) {
 			this.closeAddDialog()
 			await this.fetchData()
@@ -262,14 +272,20 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param role
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		async removeRole(role) {
 			if (!confirm(t('procest', 'Remove this participant?'))) return
 			await this.objectStore.deleteObject('role', role.id)
 			await this.fetchData()
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param role
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		startReassign(role) {
 			this.reassigningHandler = true
 			this.reassignRole = role
@@ -283,7 +299,10 @@ export default {
 			this.reassignUser = null
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param user
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		async onReassignSelected(user) {
 			if (!user || !this.reassignRole) return
 

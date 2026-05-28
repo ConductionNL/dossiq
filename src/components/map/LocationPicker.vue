@@ -144,7 +144,10 @@ export default {
 			this.$nextTick(() => this.map.invalidateSize())
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
+		/**
+		 * @param mode
+		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+		 */
 		setMode(mode) {
 			this.mode = mode
 
@@ -191,7 +194,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
+		/**
+		 * @param latlng
+		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+		 */
 		placeMarker(latlng) {
 			if (this.marker) {
 				this.marker.setLatLng(latlng)
@@ -204,7 +210,11 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
+		/**
+		 * @param root0
+		 * @param root0.coordinates
+		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+		 */
 		onAddressSelect({ coordinates }) {
 			if (!coordinates) return
 			const latlng = L.latLng(coordinates.lat, coordinates.lng)
@@ -238,7 +248,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
+		/**
+		 * @param sqm
+		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+		 */
 		formatArea(sqm) {
 			if (sqm > 10000) {
 				return `${(sqm / 10000).toFixed(2)} ha`

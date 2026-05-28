@@ -354,10 +354,6 @@ class HearingService
         $audit    = (array) ($current['auditTrail'] ?? []);
 
         foreach ($entries as $entry) {
-            if (is_array($entry) === false) {
-                continue;
-            }
-
             if ($isFrozen === true) {
                 $hasReason = isset($entry['correctionReason'])
                     && trim((string) $entry['correctionReason']) !== '';

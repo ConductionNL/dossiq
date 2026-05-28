@@ -70,7 +70,8 @@
 			<label class="required">{{ t('procest', 'Origin') }}</label>
 			<NcSelect
 				:value="selectedOrigin"
-				:options="originOptions" :aria-label-combobox="t('procest', 'Origin')"
+				:options="originOptions"
+				:aria-label-combobox="t('procest', 'Origin')"
 				@input="v => $emit('update', 'origin', v ? v.id : '')" />
 			<span v-if="errors.origin" class="field-error">{{ errors.origin }}</span>
 		</div>
@@ -119,7 +120,8 @@
 			<label class="required">{{ t('procest', 'Confidentiality') }}</label>
 			<NcSelect
 				:value="selectedConfidentiality"
-				:options="confidentialityOptions" :aria-label-combobox="t('procest', 'Confidentiality')"
+				:options="confidentialityOptions"
+				:aria-label-combobox="t('procest', 'Confidentiality')"
 				@input="v => $emit('update', 'confidentiality', v ? v.id : '')" />
 			<span v-if="errors.confidentiality" class="field-error">{{ errors.confidentiality }}</span>
 		</div>

@@ -315,11 +315,17 @@ export default {
 				this.loadingActies = false
 			}
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param type
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatType(type) {
 			return TYPE_LABELS[type] || type || '-'
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param status
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatStatus(status) {
 			return STATUS_LABELS[status] || status || '-'
 		},

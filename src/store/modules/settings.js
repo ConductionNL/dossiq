@@ -54,7 +54,10 @@ export const useSettingsStore = defineStore('settings', {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
+		/**
+		 * @param settingsData
+		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 */
 		async saveSettings(settingsData) {
 			this.loading = true
 			this.error = null

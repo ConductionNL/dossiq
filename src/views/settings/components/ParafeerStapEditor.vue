@@ -103,12 +103,20 @@ export default {
 		}
 	},
 	methods: {
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param steps
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		emitUpdate(steps) {
 			const renumbered = steps.map((s, i) => ({ ...s, order: i + 1 }))
 			this.$emit('update:steps', renumbered)
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param idx
+		 * @param key
+		 * @param value
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		updateStep(idx, key, value) {
 			const next = this.steps.map((s, i) => i === idx ? { ...s, [key]: value } : s)
 			this.emitUpdate(next)
@@ -126,12 +134,19 @@ export default {
 				},
 			])
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param idx
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		removeStep(idx) {
 			const next = this.steps.filter((_, i) => i !== idx)
 			this.emitUpdate(next)
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param idx
+		 * @param delta
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		moveStep(idx, delta) {
 			const target = idx + delta
 			if (target < 0 || target >= this.steps.length) return

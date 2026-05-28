@@ -265,7 +265,10 @@ export default {
 				this.addError = this.objectStore.getError('propertyDefinition') || t('procest', 'Failed to add property')
 			}
 		},
-		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
+		/**
+		 * @param pd
+		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 */
 		startEdit(pd) { this.editingId = pd.id; this.editForm = { ...pd }; this.editError = '' },
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		cancelEdit() { this.editingId = null; this.editForm = {}; this.editError = '' },
@@ -284,7 +287,10 @@ export default {
 				this.editError = this.objectStore.getError('propertyDefinition') || t('procest', 'Failed to save')
 			}
 		},
-		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
+		/**
+		 * @param pd
+		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 */
 		async deleteProperty(pd) {
 			if (!confirm(t('procest', 'Delete property "{name}"?', { name: pd.name }))) return
 			const ok = await this.objectStore.deleteObject('propertyDefinition', pd.id)

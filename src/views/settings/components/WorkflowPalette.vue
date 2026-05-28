@@ -35,7 +35,11 @@ export default {
 	name: 'WorkflowPalette',
 	emits: ['drag-start'],
 	methods: {
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param type
+		 * @param event
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onDragStart(type, event) {
 			event.dataTransfer.setData('text/plain', type)
 			event.dataTransfer.effectAllowed = 'copy'

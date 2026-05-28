@@ -25,7 +25,12 @@ function todayString() {
  * @param {object[]} myTasks Tasks assigned to current user (available/active)
  * @return {object} KPI values
  */
-/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
+/**
+ * @param openCases
+ * @param completedCases
+ * @param myTasks
+ * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ */
 export function computeKpis(openCases, completedCases, myTasks) {
 	const today = todayString()
 
@@ -64,7 +69,11 @@ export function computeKpis(openCases, completedCases, myTasks) {
  * @param {object[]} statusTypes All status types
  * @return {Array<{ name: string, count: number }>} Sorted by status type order
  */
-/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
+/**
+ * @param openCases
+ * @param statusTypes
+ * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ */
 export function aggregateByStatus(openCases, statusTypes) {
 	const statusMap = new Map()
 	const orderMap = new Map()
@@ -97,7 +106,11 @@ export function aggregateByStatus(openCases, statusTypes) {
  * @param {object[]} caseTypes All case types (for name resolution)
  * @return {Array<{ id, identifier, title, caseTypeName, daysOverdue, handler }>}
  */
-/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
+/**
+ * @param openCases
+ * @param caseTypes
+ * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ */
 export function getOverdueCases(openCases, caseTypes) {
 	const typeMap = new Map()
 	for (const ct of caseTypes) {
@@ -124,7 +137,11 @@ export function getOverdueCases(openCases, caseTypes) {
  * @param {number} limit Max entries to return
  * @return {Array<{ date, type, description, user, caseIdentifier }>}
  */
-/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
+/**
+ * @param cases
+ * @param limit
+ * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ */
 export function getRecentActivity(cases, limit = 10) {
 	const entries = []
 
@@ -153,7 +170,12 @@ export function getRecentActivity(cases, limit = 10) {
  * @param {number} limit Max items to return
  * @return {Array<{ type, id, title, reference, deadline, daysText, isOverdue, priority }>}
  */
-/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
+/**
+ * @param cases
+ * @param tasks
+ * @param limit
+ * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ */
 export function getMyWorkItems(cases, tasks, limit = 5) {
 	const items = []
 
@@ -238,7 +260,11 @@ function endOfWeek() {
  * @param {object[]} normalizedTasks Already-normalized CalDAV task work items
  * @return {{ overdue: object[], dueThisWeek: object[], upcoming: object[], noDeadline: object[], totalCount: number }}
  */
-/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
+/**
+ * @param cases
+ * @param normalizedTasks
+ * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ */
 export function getGroupedMyWorkItems(cases, normalizedTasks) {
 	const items = []
 	const today = new Date()
@@ -338,7 +364,12 @@ export const STALLED_THRESHOLD_DAYS = 7
  * @param {number} warningDays Number of days before deadline to flag as at-risk
  * @return {{ overdue: object[], atRisk: object[] }}
  */
-/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
+/**
+ * @param openCases
+ * @param caseTypes
+ * @param warningDays
+ * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ */
 export function getDeadlineAlerts(openCases, caseTypes, warningDays = DEADLINE_WARNING_DAYS) {
 	const typeMap = new Map()
 	for (const ct of caseTypes) {
@@ -387,7 +418,11 @@ export function getDeadlineAlerts(openCases, caseTypes, warningDays = DEADLINE_W
  * @param {number} warningDays Number of days before due date to flag as due-soon
  * @return {{ overdue: object[], dueSoon: object[] }}
  */
-/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
+/**
+ * @param tasks
+ * @param warningDays
+ * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ */
 export function getTaskDueReminders(tasks, warningDays = DEADLINE_WARNING_DAYS) {
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
@@ -434,7 +469,12 @@ export function getTaskDueReminders(tasks, warningDays = DEADLINE_WARNING_DAYS) 
  * @param {number} stalledDays Number of days without activity to consider stalled
  * @return {Array<{ id, title, identifier, caseTypeName, daysSinceActivity, handler }>}
  */
-/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
+/**
+ * @param openCases
+ * @param caseTypes
+ * @param stalledDays
+ * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ */
 export function getStalledCases(openCases, caseTypes, stalledDays = STALLED_THRESHOLD_DAYS) {
 	const typeMap = new Map()
 	for (const ct of caseTypes) {
@@ -478,7 +518,10 @@ export function getStalledCases(openCases, caseTypes, stalledDays = STALLED_THRE
  * @param {string} dateString ISO date string
  * @return {string}
  */
-/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
+/**
+ * @param dateString
+ * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+ */
 export function formatRelativeTime(dateString) {
 	if (!dateString) return '—'
 	const date = new Date(dateString)

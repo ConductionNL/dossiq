@@ -90,7 +90,10 @@ export default {
 				this.loading = false
 			}
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param dateString
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		formatDate(dateString) {
 			if (!dateString) return ''
 			return new Date(dateString).toLocaleDateString('nl-NL', {

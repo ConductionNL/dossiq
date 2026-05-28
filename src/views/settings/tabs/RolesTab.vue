@@ -172,7 +172,10 @@ export default {
 		if (!this.isCreate && this.caseTypeId) await this.fetchRoleTypes()
 	},
 	methods: {
-		/** @spec openspec/specs/role-based-step-routing/spec.md */
+		/**
+		 * @param value
+		 * @spec openspec/specs/role-based-step-routing/spec.md
+		 */
 		genericRoleLabel(value) {
 			const opt = GENERIC_ROLES.find(r => r.value === value)
 			return opt ? opt.label : value || '—'
@@ -202,7 +205,10 @@ export default {
 				this.addError = this.objectStore.getError('roleType') || t('procest', 'Failed to add role type')
 			}
 		},
-		/** @spec openspec/specs/role-based-step-routing/spec.md */
+		/**
+		 * @param rt
+		 * @spec openspec/specs/role-based-step-routing/spec.md
+		 */
 		startEdit(rt) { this.editingId = rt.id; this.editForm = { ...rt }; this.editError = '' },
 		/** @spec openspec/specs/role-based-step-routing/spec.md */
 		cancelEdit() { this.editingId = null; this.editForm = {}; this.editError = '' },
@@ -221,7 +227,10 @@ export default {
 				this.editError = this.objectStore.getError('roleType') || t('procest', 'Failed to save')
 			}
 		},
-		/** @spec openspec/specs/role-based-step-routing/spec.md */
+		/**
+		 * @param rt
+		 * @spec openspec/specs/role-based-step-routing/spec.md
+		 */
 		async deleteRoleType(rt) {
 			if (!confirm(t('procest', 'Delete role type "{name}"?', { name: rt.name }))) return
 			const ok = await this.objectStore.deleteObject('roleType', rt.id)

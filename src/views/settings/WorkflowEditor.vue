@@ -256,14 +256,20 @@ export default {
 			}
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param statusId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		getStepsForStatus(statusId) {
 			return this.steps
 				.filter((s) => s.status === statusId)
 				.sort((a, b) => a.order - b.order)
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param statusId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		getNodeCenter(statusId) {
 			const pos = this.nodePositions[statusId]
 			if (!pos) return { x: 0, y: 0 }
@@ -274,26 +280,38 @@ export default {
 		},
 
 		// --- Selection ---
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param statusId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		selectNode(statusId) {
 			this.selectedNode = statusId
 			this.selectedTransition = null
 			this.selectedStep = null
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param transitionId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		selectTransition(transitionId) {
 			this.selectedTransition = transitionId
 			this.selectedNode = null
 			this.selectedStep = null
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param transitionId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		editTransition(transitionId) {
 			this.selectTransition(transitionId)
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param step
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onStepClick(step) {
 			this.selectedStep = { ...step }
 			this.selectedNode = null
@@ -301,7 +319,11 @@ export default {
 		},
 
 		// --- Node drag ---
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param statusId
+		 * @param event
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onNodeDragStart(statusId, event) {
 			this.draggingNode = {
 				statusId,
@@ -310,7 +332,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param event
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onCanvasMouseMove(event) {
 			if (this.draggingNode) {
 				const rect = this.$refs.canvas.getBoundingClientRect()
@@ -345,7 +370,10 @@ export default {
 			this.panning = false
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param event
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onCanvasMouseDown(event) {
 			// Only pan if clicking empty canvas area
 			if (event.target === this.$refs.canvas || event.target.classList.contains('workflow-editor__svg')) {
@@ -360,7 +388,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param event
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onCanvasWheel(event) {
 			event.preventDefault()
 			const delta = event.deltaY > 0 ? -0.1 : 0.1
@@ -368,7 +399,11 @@ export default {
 		},
 
 		// --- Connection drawing ---
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param statusId
+		 * @param event
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onConnectionStart(statusId, event) {
 			const center = this.getNodeCenter(statusId)
 			this.drawingConnection = {
@@ -380,7 +415,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param statusId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onConnectionEnd(statusId) {
 			if (this.drawingConnection && this.drawingConnection.fromStatus !== statusId) {
 				this.workflowStore.addTransition(
@@ -393,12 +431,18 @@ export default {
 		},
 
 		// --- Palette drag & drop ---
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param type
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onPaletteDragStart(type) {
 			this.paletteDragType = type
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param event
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async onCanvasDrop(event) {
 			if (this.paletteDragType === 'status') {
 				const rect = this.$refs.canvas.getBoundingClientRect()
@@ -423,14 +467,20 @@ export default {
 		},
 
 		// --- Step management ---
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param statusId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onAddStep(statusId) {
 			const step = this.workflowStore.addStep(statusId)
 			this.selectedStep = { ...step }
 			this.$emit('dirty')
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param updatedStep
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onStepUpdate(updatedStep) {
 			this.workflowStore.updateStep(updatedStep.id, updatedStep)
 			this.selectedStep = { ...updatedStep }
@@ -438,13 +488,19 @@ export default {
 		},
 
 		// --- Transition management ---
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param updatedTransition
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onTransitionUpdate(updatedTransition) {
 			this.workflowStore.updateTransition(updatedTransition.id, updatedTransition)
 			this.$emit('dirty')
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param transitionId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onTransitionDelete(transitionId) {
 			this.workflowStore.removeTransition(transitionId)
 			this.selectedTransition = null

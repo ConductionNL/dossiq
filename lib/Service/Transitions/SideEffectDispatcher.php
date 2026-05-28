@@ -64,10 +64,6 @@ class SideEffectDispatcher
     {
         $results = [];
         foreach ($actions as $action) {
-            if (is_array($action) === false) {
-                continue;
-            }
-
             $type = (string) ($action['type'] ?? '');
             if ($type === '') {
                 continue;

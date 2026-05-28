@@ -237,7 +237,10 @@ export default {
 			this.loadingTypes = false
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param caseType
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		async onCaseTypeSelected(caseType) {
 			this.form.caseType = caseType?.id || null
 			this.errors.caseType = ''

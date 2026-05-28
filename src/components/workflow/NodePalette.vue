@@ -52,7 +52,11 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param event
+		 * @param type
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onDragStart(event, type) {
 			event.dataTransfer.setData('application/vue-flow-type', type)
 			event.dataTransfer.effectAllowed = 'move'

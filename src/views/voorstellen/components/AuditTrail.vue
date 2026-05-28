@@ -82,11 +82,17 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param action
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatAction(action) {
 			return ACTION_LABELS[action] || action
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param actie
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatTimestamp(actie) {
 			const ts = actie._self?.created || actie.timestamp
 			if (!ts) return '-'

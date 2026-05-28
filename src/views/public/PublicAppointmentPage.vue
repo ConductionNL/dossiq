@@ -61,12 +61,18 @@ export default {
 	},
 	methods: {
 		t,
-		/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
+		/**
+		 * @param dt
+		 * @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md
+		 */
 		formatDateTime(dt) {
 			if (!dt) return '-'
 			return new Date(dt).toLocaleString('nl-NL', { dateStyle: 'long', timeStyle: 'short' })
 		},
-		/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
+		/**
+		 * @param status
+		 * @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md
+		 */
 		statusLabel(status) {
 			const labels = {
 				scheduled: t('procest', 'Scheduled'),

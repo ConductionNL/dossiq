@@ -91,7 +91,10 @@ function handleNetworkError(error, fallback) {
  * @param {string} query Search query (min 3 characters).
  * @return {Promise<Array|null>} Suggestions array, empty array, or null.
  */
-/** @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md */
+/**
+ * @param query
+ * @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md
+ */
 export async function suggest(query) {
 	if (!query || query.length < 3) {
 		return []
@@ -120,7 +123,10 @@ export async function suggest(query) {
  * @param {string} id The PDOK object id.
  * @return {Promise<object|null>} The full result object, or null when degraded.
  */
-/** @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md */
+/**
+ * @param id
+ * @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md
+ */
 export async function lookup(id) {
 	if (!id) {
 		return null
@@ -141,7 +147,11 @@ export async function lookup(id) {
  * @param {number} rows  Max results (default 10).
  * @return {Promise<Array|null>} Results array, empty array, or null.
  */
-/** @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md */
+/**
+ * @param query
+ * @param rows
+ * @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md
+ */
 export async function free(query, rows = 10) {
 	if (!query) {
 		return []
@@ -162,7 +172,11 @@ export async function free(query, rows = 10) {
  * @param {number} lng Longitude (WGS84).
  * @return {Promise<object|null>} Nearest address, or null when degraded.
  */
-/** @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md */
+/**
+ * @param lat
+ * @param lng
+ * @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md
+ */
 export async function reverse(lat, lng) {
 	clearWarning()
 	try {
@@ -185,7 +199,10 @@ export async function reverse(lat, lng) {
  * @param {object|string} resultOrWkt A PDOK result object or a raw WKT string.
  * @return {{ lat: number, lng: number }|null} Coordinates or null.
  */
-/** @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md */
+/**
+ * @param resultOrWkt
+ * @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md
+ */
 export function extractCoordinates(resultOrWkt) {
 	if (!resultOrWkt) {
 		return null
@@ -229,7 +246,10 @@ function parseWkt(wkt) {
  * @param {object} result A result object.
  * @return {string} Formatted address.
  */
-/** @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md */
+/**
+ * @param result
+ * @spec openspec/changes/retrofit-2026-05-25-pdok-integration/tasks.md
+ */
 export function formatAddress(result) {
 	if (!result) {
 		return ''

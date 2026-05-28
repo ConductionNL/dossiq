@@ -83,7 +83,7 @@
 					<NcSelect
 						v-model="form.layerType"
 						:options="['tile', 'wms', 'wfs', 'geojson']"
-							:aria-label-combobox="t('procest', 'Type')" />
+						:aria-label-combobox="t('procest', 'Type')" />
 				</div>
 				<div class="form-group">
 					<label>{{ t('procest', 'URL') }} *</label>
@@ -211,7 +211,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
+		/**
+		 * @param layer
+		 * @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md
+		 */
 		editLayer(layer) {
 			this.editingLayer = layer
 			this.form = { ...layer }
@@ -230,7 +233,10 @@ export default {
 			this.closeDialog()
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
+		/**
+		 * @param layer
+		 * @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md
+		 */
 		async removeLayer(layer) {
 			if (!confirm(this.t('procest', 'Delete layer "{title}"?', { title: layer.title }))) {
 				return
@@ -240,14 +246,20 @@ export default {
 			this.layers = gisStore.layers
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
+		/**
+		 * @param preset
+		 * @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md
+		 */
 		addPreset(preset) {
 			this.form = { ...this.emptyForm(), ...preset }
 			this.showAddDialog = true
 			this.showPresets = false
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
+		/**
+		 * @param layer
+		 * @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md
+		 */
 		async testLayer(layer) {
 			this.testResult = null
 			try {
@@ -272,7 +284,10 @@ export default {
 			this.form = this.emptyForm()
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md */
+		/**
+		 * @param url
+		 * @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md
+		 */
 		truncateUrl(url) {
 			if (!url) return ''
 			return url.length > 60 ? url.substring(0, 57) + '...' : url

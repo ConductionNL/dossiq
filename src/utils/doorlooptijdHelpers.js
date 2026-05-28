@@ -16,7 +16,10 @@ import { translate as t } from '@nextcloud/l10n'
  * @param {string} duration ISO 8601 duration (e.g., "P30D")
  * @return {number|null} Number of days, or null if unparseable
  */
-/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
+/**
+ * @param duration
+ * @spec openspec/changes/doorlooptijd-dashboard/tasks.md
+ */
 export function parseDurationToDays(duration) {
 	if (!duration || typeof duration !== 'string') return null
 
@@ -38,7 +41,10 @@ export function parseDurationToDays(duration) {
  * @param {object} caseObj Case object with startDate and endDate
  * @return {number|null} Processing days, or null if dates are missing
  */
-/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
+/**
+ * @param caseObj
+ * @spec openspec/changes/doorlooptijd-dashboard/tasks.md
+ */
 export function getProcessingDays(caseObj) {
 	if (!caseObj.startDate || !caseObj.endDate) return null
 
@@ -58,7 +64,11 @@ export function getProcessingDays(caseObj) {
  * @param {Map<string, object>} caseTypeMap Map of caseType id to caseType object
  * @return {number|null} Target days from processingDeadline, or null
  */
-/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
+/**
+ * @param caseObj
+ * @param caseTypeMap
+ * @spec openspec/changes/doorlooptijd-dashboard/tasks.md
+ */
 export function getSlaTargetDays(caseObj, caseTypeMap) {
 	const ct = caseTypeMap.get(caseObj.caseType)
 	if (!ct || !ct.processingDeadline) return null
@@ -71,7 +81,10 @@ export function getSlaTargetDays(caseObj, caseTypeMap) {
  * @param {object[]} caseTypes Array of case type objects
  * @return {Map<string, object>}
  */
-/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
+/**
+ * @param caseTypes
+ * @spec openspec/changes/doorlooptijd-dashboard/tasks.md
+ */
 export function buildCaseTypeMap(caseTypes) {
 	const map = new Map()
 	for (const ct of caseTypes) {
@@ -87,7 +100,11 @@ export function buildCaseTypeMap(caseTypes) {
  * @param {object[]} caseTypes All case types
  * @return {{ overallRate: number|null, withinSla: number, total: number, excluded: number, byType: Array<{ id, name, total, withinSla, rate, avgActual, targetDays }> }}
  */
-/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
+/**
+ * @param completedCases
+ * @param caseTypes
+ * @spec openspec/changes/doorlooptijd-dashboard/tasks.md
+ */
 export function computeSlaCompliance(completedCases, caseTypes) {
 	const caseTypeMap = buildCaseTypeMap(caseTypes)
 	const byType = new Map()
@@ -172,7 +189,12 @@ const DEFAULT_BINS = [
  * @param {Array<{ label, min, max }>} [bins] Custom bin definitions
  * @return {{ bins: Array<{ label, count }>, slaTargetDays: number|null }}
  */
-/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
+/**
+ * @param completedCases
+ * @param caseTypes
+ * @param bins
+ * @spec openspec/changes/doorlooptijd-dashboard/tasks.md
+ */
 export function computeProcessingTimeDistribution(completedCases, caseTypes, bins) {
 	const useBins = bins || DEFAULT_BINS
 	const caseTypeMap = buildCaseTypeMap(caseTypes)
@@ -216,7 +238,12 @@ export function computeProcessingTimeDistribution(completedCases, caseTypes, bin
  * @param {number} [months] Number of months to look back (defaults to 12)
  * @return {Array<{ month: string, rate: number|null, withinSla: number, total: number }>}
  */
-/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
+/**
+ * @param completedCases
+ * @param caseTypes
+ * @param months
+ * @spec openspec/changes/doorlooptijd-dashboard/tasks.md
+ */
 export function computeMonthlyTrend(completedCases, caseTypes, months) {
 	const lookback = months || 12
 	const caseTypeMap = buildCaseTypeMap(caseTypes)
@@ -265,7 +292,12 @@ export function computeMonthlyTrend(completedCases, caseTypes, months) {
  * @param {number} [thresholdPct] Threshold as fraction (defaults to 0.25 = 25%)
  * @return {Array<{ id, title, identifier, caseTypeName, targetDays, elapsedDays, remainingDays, percentUsed, isOverdue }>}
  */
-/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
+/**
+ * @param openCases
+ * @param caseTypes
+ * @param thresholdPct
+ * @spec openspec/changes/doorlooptijd-dashboard/tasks.md
+ */
 export function getAtRiskCases(openCases, caseTypes, thresholdPct) {
 	const threshold = thresholdPct ?? 0.25
 	const caseTypeMap = buildCaseTypeMap(caseTypes)
@@ -319,7 +351,11 @@ export function getAtRiskCases(openCases, caseTypes, thresholdPct) {
  * @param {object[]} caseTypes All case types
  * @return {Array<{ id, name, targetDays, avgActualDays, complianceRate, total, withinSla, status: 'good'|'warning'|'critical'|'no-target' }>}
  */
-/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
+/**
+ * @param completedCases
+ * @param caseTypes
+ * @spec openspec/changes/doorlooptijd-dashboard/tasks.md
+ */
 export function computePerformanceTable(completedCases, caseTypes) {
 	const byType = new Map()
 

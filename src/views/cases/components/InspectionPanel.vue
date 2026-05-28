@@ -252,7 +252,10 @@ export default {
 	watch: {
 		caseId: {
 			immediate: true,
-			/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+			/**
+			 * @param newId
+			 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+			 */
 			handler(newId) {
 				if (newId) {
 					this.inspectionStore.fetchReports(newId)
@@ -261,14 +264,20 @@ export default {
 		},
 		caseTypeId: {
 			immediate: true,
-			/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+			/**
+			 * @param newId
+			 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+			 */
 			handler(newId) {
 				if (newId) {
 					this.inspectionStore.fetchChecklists(newId)
 				}
 			},
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+		/**
+		 * @param checklist
+		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 */
 		selectedChecklist(checklist) {
 			if (checklist) {
 				this.formResults = (checklist.items || []).map((item) => ({
@@ -285,7 +294,10 @@ export default {
 	methods: {
 		t,
 
-		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+		/**
+		 * @param result
+		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 */
 		resultLabel(result) {
 			const labels = {
 				conform: t('procest', 'Conform'),
@@ -295,7 +307,10 @@ export default {
 			return labels[result] || result
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+		/**
+		 * @param dateStr
+		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 */
 		formatDate(dateStr) {
 			if (!dateStr) {
 				return ''
@@ -303,7 +318,10 @@ export default {
 			return new Date(dateStr).toLocaleDateString()
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+		/**
+		 * @param reportId
+		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 */
 		toggleReport(reportId) {
 			this.expandedReport = this.expandedReport === reportId ? null : reportId
 		},

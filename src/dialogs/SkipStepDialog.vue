@@ -86,7 +86,10 @@ export default {
 		},
 	},
 	watch: {
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param value
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		open(value) {
 			if (value) {
 				this.reason = ''

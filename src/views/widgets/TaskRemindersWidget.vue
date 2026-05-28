@@ -78,7 +78,10 @@ export default {
 		 * @param {object} item The task item to show
 		 * @return {void}
 		 */
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/**
+		 * @param item
+		 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
+		 */
 		onShow(item) {
 			window.location.href = `/index.php/apps/procest/#/tasks/${item.id}`
 		},

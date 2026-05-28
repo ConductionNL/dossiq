@@ -89,7 +89,10 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
+		/**
+		 * @param val
+		 * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md
+		 */
 		onDaysChange(val) {
 			const days = parseInt(val, 10)
 			if (!days || days < 0) {
@@ -98,7 +101,10 @@ export default {
 			}
 			this.$emit('input', `P${days}D`)
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
+		/**
+		 * @param preset
+		 * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md
+		 */
 		selectPreset(preset) {
 			this.$emit('input', preset.value)
 		},

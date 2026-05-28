@@ -124,7 +124,10 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param type
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatStepType(type) {
 			const labels = { advies: 'Advies', parafering: 'Parafering', accordering: 'Accordering' }
 			return labels[type] || type || ''

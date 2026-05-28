@@ -52,7 +52,10 @@ function actionUrl(path) {
  * @param {string} caseId Case UUID
  * @return {Promise<Array>} List of advice records
  */
-/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
+/**
+ * @param caseId
+ * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
+ */
 export async function getAdviceForCase(caseId) {
 	const response = await axios.get(orUrl(), {
 		params: { _filters: JSON.stringify({ case: caseId }), _limit: 200 },
@@ -72,7 +75,11 @@ export async function getAdviceForCase(caseId) {
  * @param {object} body Transition payload (to, adviesDocument, ...)
  * @return {Promise<object>} Updated record
  */
-/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
+/**
+ * @param id
+ * @param body
+ * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
+ */
 export async function transitionStatus(id, body) {
 	const response = await axios.post(actionUrl(`${id}/transition`), body)
 	return response.data
@@ -84,7 +91,10 @@ export async function transitionStatus(id, body) {
  * @param {string} id Advice UUID
  * @return {Promise<object>} Server confirmation
  */
-/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
+/**
+ * @param id
+ * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
+ */
 export async function dispatchReminder(id) {
 	const response = await axios.post(actionUrl(`${id}/remind`))
 	return response.data
@@ -100,7 +110,10 @@ export async function dispatchReminder(id) {
  * @param {object} data Advice payload (case, adviseur, type, deadline, ...)
  * @return {Promise<object>} Created record
  */
-/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
+/**
+ * @param data
+ * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
+ */
 export async function createAdviceWithNotification(data) {
 	const payload = {
 		...data,

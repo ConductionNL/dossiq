@@ -77,7 +77,10 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param type
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		getIcon(type) {
 			const icons = {
 				created: '+',
@@ -88,7 +91,10 @@ export default {
 			}
 			return icons[type] || '•'
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param dateString
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		formatEntryDate(dateString) {
 			return formatDate(dateString)
 		},

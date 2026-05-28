@@ -500,7 +500,6 @@ class ZgwService
             $decoded = json_decode($rawBody, true);
             // Do not attempt to repair malformed JSON — it risks data corruption
             // and may be used to smuggle crafted values through the regex transform.
-
             if ($decoded !== null) {
                 // Merge route params so they remain available downstream.
                 $routeParams = $request->getParams();
@@ -632,7 +631,7 @@ class ZgwService
                 ],
                 statusCode: Http::STATUS_FORBIDDEN
             );
-        }
+        }//end try
 
         return null;
     }//end validateJwtAuth()

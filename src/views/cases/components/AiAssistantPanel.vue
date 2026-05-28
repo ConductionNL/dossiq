@@ -137,11 +137,18 @@ export default {
 				this.summaryLoading = false
 			}
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
+		/**
+		 * @param suggestion
+		 * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+		 */
 		handleAccept(suggestion) {
 			this.$emit('suggestion-accepted', suggestion)
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
+		/**
+		 * @param suggestion
+		 * @param reason
+		 * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+		 */
 		handleReject(suggestion, reason) {
 			this.$emit('suggestion-rejected', suggestion, reason)
 		},

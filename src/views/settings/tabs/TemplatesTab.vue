@@ -99,7 +99,10 @@ export default {
 				this.loading = false
 			}
 		},
-		/** @spec openspec/specs/template-library/spec.md */
+		/**
+		 * @param templateId
+		 * @spec openspec/specs/template-library/spec.md
+		 */
 		async activate(templateId) {
 			this.activating = templateId
 			this.activationResult = null
