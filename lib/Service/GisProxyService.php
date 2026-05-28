@@ -108,38 +108,20 @@ class GisProxyService
             return $cached;
         }
 
-        // Forward the request.
-        $streamOptions = [
-            'http' => [
-                'method'  => 'GET',
-                'timeout' => 30,
-                'header'  => "Accept: application/json, application/xml, image/png\r\n",
-            ],
-        ];
-        $context       = stream_context_create(options: $streamOptions);
-
-        $response = @file_get_contents(filename: $fullUrl, use_include_path: false, context: $context);
-        if ($response === false) {
+        // H1: Fetch using curl with pinned IP to prevent TOCTOU DNS rebinding.
+        // The IP was validated inside isUrlAllowed; we pin it here so the actual
+        // HTTP connection cannot re-resolve to a different (private) address.
+        [$responseBody, $contentType] = $this->fetchWithPinnedDns(url: $fullUrl);
+        if ($responseBody === null) {
             throw new \RuntimeException('Failed to fetch from external service');
         }
 
-        // Parse XML responses to JSON for WFS/capabilities.
-        $contentType = '';
-        // $http_response_header is populated by file_get_contents() via PHP.
-        // It is always set after a successful HTTP wrapper call.
-        foreach ($http_response_header as $header) {
-            if (stripos(haystack: $header, needle: 'Content-Type:') === 0) {
-                $contentType = trim(string: substr(string: $header, offset: 13));
-                break;
-            }
-        }
-
-        $result = ['data' => $response, 'contentType' => $contentType];
+        $result = ['data' => $responseBody, 'contentType' => $contentType];
 
         if (str_contains(haystack: $contentType, needle: 'xml') === true) {
-            $result['data'] = $this->xmlToArray(xml: $response);
+            $result['data'] = $this->xmlToArray(xml: $responseBody);
         } else if (str_contains(haystack: $contentType, needle: 'json') === true) {
-            $decoded = json_decode(json: $response, associative: true);
+            $decoded = json_decode(json: $responseBody, associative: true);
             if ($decoded !== null) {
                 $result['data'] = $decoded;
             }
@@ -194,29 +176,15 @@ class GisProxyService
         );
         $capUrl      = $url.$separator.$queryParams;
 
-        $streamOptions = [
-            'http' => [
-                'method'  => 'GET',
-                'timeout' => 30,
-            ],
-        ];
-        $context       = stream_context_create(options: $streamOptions);
-
-        $response = @file_get_contents(filename: $capUrl, use_include_path: false, context: $context);
-        if ($response === false) {
+        // H1: Fetch with pinned DNS to prevent TOCTOU rebinding.
+        [$response] = $this->fetchWithPinnedDns(url: $capUrl);
+        if ($response === null) {
             throw new \RuntimeException('Failed to fetch GetCapabilities');
         }
 
         return $this->parseCapabilities(xml: $response, service: $service);
     }//end getCapabilities()
 
-    /**
-     * Check if a URL is in the allowlist (matches a configured MapLayer URL).
-     *
-     * @param string $url The URL to check
-     *
-     * @return bool True if allowed
-     */
     /**
      * Known-safe PDOK/Kadaster hostnames (exact match only — C5 substring bypass fix).
      *
@@ -254,6 +222,13 @@ class GisProxyService
         'fc00::/7',
     ];
 
+    /**
+     * Check if a URL is in the allowlist (matches a configured MapLayer URL).
+     *
+     * @param string $url The URL to check
+     *
+     * @return bool True if allowed
+     */
     private function isUrlAllowed(string $url): bool
     {
         $parsed = parse_url(url: $url);
@@ -335,21 +310,36 @@ class GisProxyService
      */
     private function isHostSafeFromSsrf(string $host): bool
     {
-        // Resolve the hostname to an IP address.
-        $ip = gethostbyname($host);
-        if ($ip === $host) {
-            // DNS resolution failed — allow (WMS services may not always resolve in test env).
-            return true;
+        // H1: Use dns_get_record to fetch ALL A and AAAA records and check every address.
+        // gethostbyname only returns the first IPv4 address and silently ignores IPv6;
+        // a DNS rebind or round-robin could return a private address on later lookups.
+        $records = @dns_get_record($host, DNS_A | DNS_AAAA);
+
+        // H1: Treat DNS failure as DENY rather than allow — an attacker can craft a
+        // domain that times out selectively to bypass the check.
+        if ($records === false || count($records) === 0) {
+            $this->logger->warning(
+                'GIS proxy blocked: DNS resolution returned no records',
+                ['host' => $host]
+            );
+            return false;
         }
 
-        // Check against private/loopback CIDR ranges.
-        foreach (self::BLOCKED_CIDRS as $cidr) {
-            if ($this->ipInCidr(ip: $ip, cidr: $cidr) === true) {
-                $this->logger->warning(
-                    'GIS proxy blocked SSRF: host resolved to private/loopback address',
-                    ['host' => $host, 'ip' => $ip, 'cidr' => $cidr]
-                );
-                return false;
+        foreach ($records as $record) {
+            // A records use 'ip', AAAA records use 'ipv6'.
+            $ip = $record['ip'] ?? ($record['ipv6'] ?? null);
+            if ($ip === null) {
+                continue;
+            }
+
+            foreach (self::BLOCKED_CIDRS as $cidr) {
+                if ($this->ipInCidr(ip: $ip, cidr: $cidr) === true) {
+                    $this->logger->warning(
+                        'GIS proxy blocked SSRF: host resolved to private/loopback address',
+                        ['host' => $host, 'ip' => $ip, 'cidr' => $cidr]
+                    );
+                    return false;
+                }
             }
         }
 
@@ -366,8 +356,43 @@ class GisProxyService
      */
     private function ipInCidr(string $ip, string $cidr): bool
     {
-        // IPv6 CIDRs — skip if the IP is not IPv6.
-        if (str_contains($cidr, ':') === true) {
+        $isIpv6Cidr = str_contains($cidr, ':');
+        $isIpv6Ip   = str_contains($ip, ':');
+
+        // H1: Handle IPv6 CIDR ranges against IPv6 addresses.
+        if ($isIpv6Cidr === true && $isIpv6Ip === true) {
+            [$network, $prefix] = explode('/', $cidr);
+            $prefixLen          = (int) $prefix;
+
+            $networkBin = inet_pton($network);
+            $inputBin   = inet_pton($ip);
+
+            if ($networkBin === false || $inputBin === false) {
+                return false;
+            }
+
+            // Build a bit-mask and compare the network parts byte by byte.
+            $fullBytes  = intdiv($prefixLen, 8);
+            $remainBits = $prefixLen % 8;
+
+            for ($i = 0; $i < $fullBytes; $i++) {
+                if ($networkBin[$i] !== $inputBin[$i]) {
+                    return false;
+                }
+            }
+
+            if ($remainBits > 0 && $fullBytes < 16) {
+                $mask = (0xFF << (8 - $remainBits)) & 0xFF;
+                if ((ord($networkBin[$fullBytes]) & $mask) !== (ord($inputBin[$fullBytes]) & $mask)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }//end if
+
+        // Skip mismatched families (IPv4 CIDR vs IPv6 address, or vice-versa).
+        if ($isIpv6Cidr !== $isIpv6Ip) {
             return false;
         }
 
@@ -380,7 +405,10 @@ class GisProxyService
             return false;
         }
 
-        $mask = $prefix === 0 ? 0 : (~0 << (32 - $prefix));
+        $mask = 0;
+        if ($prefix !== 0) {
+            $mask = ~0 << (32 - $prefix);
+        }
 
         return ($inputIp & $mask) === ($networkIp & $mask);
     }//end ipInCidr()
@@ -471,6 +499,119 @@ class GisProxyService
             'layers'  => $layers,
         ];
     }//end parseCapabilities()
+
+    /**
+     * Fetch a URL via cURL with a DNS-pinned connection to prevent TOCTOU rebinding.
+     *
+     * This method performs a fresh DNS lookup (checking all returned addresses against
+     * SSRF CIDRs), then pins the resolved IP in the cURL request via CURLOPT_RESOLVE so
+     * the HTTP connection cannot re-resolve to a different address mid-flight.
+     *
+     * @param string $url The URL to fetch
+     *
+     * @return array{0: string|null, 1: string} [$body, $contentType]; $body is null on error
+     */
+    private function fetchWithPinnedDns(string $url): array
+    {
+        $parsed      = parse_url(url: $url);
+        $host        = strtolower($parsed['host'] ?? '');
+        $defaultPort = 80;
+        if (($parsed['scheme'] ?? '') === 'https') {
+            $defaultPort = 443;
+        }
+
+        $port = (int) ($parsed['port'] ?? $defaultPort);
+
+        if ($host === '') {
+            return [null, ''];
+        }
+
+        // Resolve all A/AAAA records and pick the first public IP.
+        $records = @dns_get_record($host, DNS_A | DNS_AAAA);
+        if ($records === false || count($records) === 0) {
+            $this->logger->warning(
+                'GIS proxy fetchWithPinnedDns: DNS resolution returned no records',
+                ['host' => $host]
+            );
+            return [null, ''];
+        }
+
+        $pinnedIp = null;
+        foreach ($records as $record) {
+            $candidate = $record['ip'] ?? ($record['ipv6'] ?? null);
+            if ($candidate === null) {
+                continue;
+            }
+
+            $isPrivate = false;
+            foreach (self::BLOCKED_CIDRS as $cidr) {
+                if ($this->ipInCidr(ip: $candidate, cidr: $cidr) === true) {
+                    $isPrivate = true;
+                    break;
+                }
+            }
+
+            if ($isPrivate === false) {
+                $pinnedIp = $candidate;
+                break;
+            }
+        }
+
+        if ($pinnedIp === null) {
+            $this->logger->warning(
+                'GIS proxy fetchWithPinnedDns: all resolved IPs are private/blocked',
+                ['host' => $host]
+            );
+            return [null, ''];
+        }
+
+        // Build the CURLOPT_RESOLVE entry: "host:port:ip" pins name resolution.
+        $resolveEntry = $host.':'.$port.':'.$pinnedIp;
+
+        $curl = curl_init();
+        curl_setopt_array(
+            handle: $curl,
+            options: [
+                CURLOPT_URL            => $url,
+                CURLOPT_RESOLVE        => [$resolveEntry],
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => false,
+                CURLOPT_TIMEOUT        => 15,
+                CURLOPT_CONNECTTIMEOUT => 5,
+                CURLOPT_HEADER         => false,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2,
+                CURLOPT_USERAGENT      => 'Procest-GisProxy/1.0',
+            ]
+        );
+
+        $body        = curl_exec(handle: $curl);
+        $contentType = curl_getinfo(handle: $curl, option: CURLINFO_CONTENT_TYPE) ?? '';
+        $httpCode    = (int) curl_getinfo(handle: $curl, option: CURLINFO_HTTP_CODE);
+        $curlError   = curl_error(handle: $curl);
+        curl_close(handle: $curl);
+
+        if ($body === false || $curlError !== '') {
+            $this->logger->warning(
+                'GIS proxy fetchWithPinnedDns: curl error',
+                ['host' => $host, 'error' => $curlError]
+            );
+            return [null, ''];
+        }
+
+        if ($httpCode < 200 || $httpCode >= 300) {
+            $this->logger->warning(
+                'GIS proxy fetchWithPinnedDns: non-2xx response',
+                ['host' => $host, 'http_code' => $httpCode]
+            );
+            return [null, ''];
+        }
+
+        // Strip charset / parameters from content-type header value.
+        $bareContentType = strtolower(trim(explode(';', $contentType)[0]));
+
+        return [$body, $bareContentType];
+    }//end fetchWithPinnedDns()
 
     /**
      * Convert an XML string to an associative array.

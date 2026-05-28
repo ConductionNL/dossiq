@@ -157,7 +157,7 @@ class StatusTransitionService
      * @param string|null $comment      Optional free-form comment
      * @param string|null $userId       Optional explicit user UID; defaults to IUserSession
      *
-     * @return array{status: string, statusRecord: array<string, mixed>, dispatchedActions: array<int, array<string, mixed>>}
+     * @return array{status: string, statusRecord: array<string, mixed>, dispatchedActions: array<int, array<string, mixed>>, version: int}
      *
      * @throws GuardFailedException When server-side re-evaluation fails any guard
      * @throws RuntimeException     When case/transition/template are not found
@@ -171,6 +171,9 @@ class StatusTransitionService
         if ($case === null) {
             throw new RuntimeException('case_not_found');
         }
+
+        // H2: Capture the @self.version at read time for the optimistic lock check below.
+        $readVersion = (int) (($case['@self']['version'] ?? ($case['version'] ?? 0)));
 
         $caseTypeId = (string) ($case['caseType'] ?? '');
         $transition = $this->templateLoader->getTransitionById(caseTypeId: $caseTypeId, transitionId: $transitionId);
@@ -198,9 +201,37 @@ class StatusTransitionService
             throw new RuntimeException('transition_missing_to_status');
         }
 
+        // H2: Optimistic concurrency guard — re-load the case immediately before writing
+        // and abort if its status changed since we read it (concurrent transition executed
+        // between our guard evaluation and our save).
+        $caseAtSave = $this->loadCase(caseId: $caseId);
+        if ($caseAtSave === null) {
+            throw new RuntimeException('case_not_found');
+        }
+
+        $versionAtSave = (int) (($caseAtSave['@self']['version'] ?? ($caseAtSave['version'] ?? 0)));
+        if ($versionAtSave !== $readVersion) {
+            throw new RuntimeException('transition_conflict');
+        }
+
+        $statusAtSave = (string) ($caseAtSave['status'] ?? '');
+        if ($statusAtSave !== $currentId) {
+            throw new RuntimeException('transition_conflict');
+        }
+
         // Status mutation BEFORE side-effects per REQ-STE-5-002.
-        $case['status'] = $toStatus;
-        $case           = $this->saveCase(case: $case);
+        // Include @self.version so the store can detect a concurrent modification.
+        $caseAtSave['status'] = $toStatus;
+        if (isset($caseAtSave['@self']) === false || is_array($caseAtSave['@self']) === false) {
+            $caseAtSave['@self'] = [];
+        }
+
+        $caseAtSave['@self']['version'] = $readVersion;
+        $savedCase    = $this->saveCase(case: $caseAtSave);
+        $savedVersion = (int) (($savedCase['@self']['version'] ?? ($savedCase['version'] ?? 0)));
+
+        // Alias for the remainder of the method.
+        $case = $savedCase;
 
         $label  = (string) ($transition['label'] ?? '');
         $record = $this->writeStatusRecord(
@@ -242,6 +273,7 @@ class StatusTransitionService
             'status'            => 'ok',
             'statusRecord'      => $record,
             'dispatchedActions' => $dispatched,
+            'version'           => $savedVersion,
         ];
     }//end execute()
 

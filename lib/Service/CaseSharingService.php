@@ -27,6 +27,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCP\App\IAppManager;
+use OCP\ICache;
+use OCP\ICacheFactory;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -61,12 +63,20 @@ class CaseSharingService
     ];
 
     /**
+     * APCu-backed distributed cache for atomic brute-force counters.
+     *
+     * @var ICache
+     */
+    private ICache $cache;
+
+    /**
      * Constructor for the CaseSharingService.
      *
      * @param SettingsService    $settingsService The settings service
      * @param IAppManager        $appManager      The app manager
      * @param ContainerInterface $container       The DI container
      * @param LoggerInterface    $logger          The logger
+     * @param ICacheFactory      $cacheFactory    The cache factory
      *
      * @return void
      */
@@ -75,7 +85,9 @@ class CaseSharingService
         private IAppManager $appManager,
         private ContainerInterface $container,
         private LoggerInterface $logger,
+        ICacheFactory $cacheFactory,
     ) {
+        $this->cache = $cacheFactory->createDistributed('procest_share_brute');
     }//end __construct()
 
     /**
@@ -220,12 +232,16 @@ class CaseSharingService
             return ['error' => 'OpenRegister is not available'];
         }
 
-        $token    = $this->generateToken();
+        // M2: Generate plaintext token but store only its SHA-256 hash in the DB.
+        // The plaintext is returned once to the caller and NEVER stored.
+        $plainToken = $this->generateToken();
+        $tokenHash  = hash('sha256', $plainToken);
+
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('case_share_schema');
 
         $shareData = [
-            'token'           => $token,
+            'token'           => $tokenHash,
             'caseId'          => $caseId,
             'shareType'       => 'token',
             'permissionLevel' => $permissionLevel,
@@ -260,7 +276,10 @@ class CaseSharingService
             ]
         );
 
-        return $result->jsonSerialize();
+        // M2: Return the plaintext token in the response — the only time it is available.
+        $resultData          = $result->jsonSerialize();
+        $resultData['token'] = $plainToken;
+        return $resultData;
     }//end createTokenShare()
 
     /**
@@ -370,6 +389,139 @@ class CaseSharingService
         }//end try
     }//end getCaseIdForShare()
 
-    /*
-     * Revoke a share by marking it with re
+    /**
+     * Validate a token submission against the stored hash with brute-force protection.
+     *
+     * Looks up the share by SHA-256 hash of the supplied token, then:
+     *  - checks expiry
+     *  - enforces lockout if failedAttempts >= MAX_FAILED_ATTEMPTS
+     *  - verifies the password when the share is password-protected
+     *  - uses APCu atomic increment to record failed attempts without a read-modify-write race
+     *
+     * @param string      $token    The plaintext token supplied by the user
+     * @param string|null $password Optional plaintext password
+     *
+     * @return array{valid: bool, share?: array, error?: string}
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
+    public function validateToken(string $token, ?string $password=null): array
+    {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
+            return ['valid' => false, 'error' => 'Service unavailable'];
+        }
+
+        $register    = $this->settingsService->getConfigValue('register');
+        $shareSchema = $this->settingsService->getConfigValue('case_share_schema');
+
+        if (empty($register) === true || empty($shareSchema) === true) {
+            return ['valid' => false, 'error' => 'Service unavailable'];
+        }
+
+        // M2: Look up share by hash of the submitted token, never by plaintext.
+        $tokenHash = hash('sha256', $token);
+
+        try {
+            $results = $objectService->findAll(
+                [
+                    'filters' => [
+                        'register' => (int) $register,
+                        'schema'   => (int) $shareSchema,
+                        'token'    => $tokenHash,
+                    ],
+                ]
+            );
+        } catch (\Throwable $e) {
+            $this->logger->error('CaseSharingService: validateToken findAll failed', ['error' => $e->getMessage()]);
+            return ['valid' => false, 'error' => 'Service unavailable'];
+        }
+
+        if (is_array($results) === false || count($results) === 0) {
+            return ['valid' => false, 'error' => 'Token not found'];
+        }
+
+        $shareObj = reset($results);
+        if (is_array($shareObj) === true) {
+            $share = $shareObj;
+        } else {
+            $share = $shareObj->jsonSerialize();
+        }
+
+        $shareId = (string) ($share['id'] ?? ($share['uuid'] ?? ''));
+
+        // Expiry check.
+        $expiresAt = $share['expiresAt'] ?? null;
+        if ($expiresAt !== null && strtotime((string) $expiresAt) < time()) {
+            return ['valid' => false, 'error' => 'Token verlopen'];
+        }
+
+        // H3: Read the APCu counter (authoritative for lockout) then fall back to the
+        // DB field for requests that survive an APCu flush or failover.
+        $apcuKey   = 'share_failed_'.$shareId;
+        $apcuCount = (int) $this->cache->get($apcuKey);
+        $dbCount   = (int) ($share['failedAttempts'] ?? 0);
+        $maxCount  = max($apcuCount, $dbCount);
+
+        if ($maxCount >= self::MAX_FAILED_ATTEMPTS) {
+            // Check lockout expiry stored in APCu.
+            $lockoutKey  = 'share_lockout_'.$shareId;
+            $lockedUntil = (int) $this->cache->get($lockoutKey);
+            if ($lockedUntil > time()) {
+                return ['valid' => false, 'error' => 'Account tijdelijk geblokkeerd na te veel pogingen'];
+            }
+
+            // Lockout TTL expired — reset the counter.
+            $this->cache->remove($apcuKey);
+            $this->cache->remove($lockoutKey);
+        }
+
+        // Password verification when the share requires it.
+        $storedPassword = $share['password'] ?? null;
+        if ($storedPassword !== null) {
+            if ($password === null || password_verify($password, (string) $storedPassword) === false) {
+                // H3: Atomic increment via APCu — no read-modify-write race.
+                $newCount = (int) $this->cache->get($apcuKey) + 1;
+                $this->cache->set($apcuKey, $newCount, self::LOCKOUT_MINUTES * 60 * 2);
+
+                if ($newCount >= self::MAX_FAILED_ATTEMPTS) {
+                    $this->cache->set('share_lockout_'.$shareId, time() + (self::LOCKOUT_MINUTES * 60), self::LOCKOUT_MINUTES * 60);
+                    $this->logger->warning(
+                        'CaseSharingService: share locked out after too many failed attempts',
+                        ['shareId' => $shareId]
+                    );
+                }
+
+                return ['valid' => false, 'error' => 'Onjuist wachtwoord'];
+            }
+        }
+
+        // Successful validation — reset the APCu counter.
+        $this->cache->remove($apcuKey);
+        $this->cache->remove('share_lockout_'.$shareId);
+
+        return ['valid' => true, 'share' => $share];
+    }//end validateToken()
+
+    /**
+     * Resolve the ObjectService from the DI container.
+     *
+     * @return object|null The ObjectService, or null when OpenRegister is unavailable
+     */
+    private function getObjectService(): ?object
+    {
+        if ($this->appManager->isInstalled('openregister') === false) {
+            return null;
+        }
+
+        try {
+            return $this->container->get('OCA\OpenRegister\Service\ObjectService');
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'CaseSharingService: ObjectService unavailable',
+                ['exception' => $e->getMessage()]
+            );
+            return null;
+        }
+    }//end getObjectService()
+}//end class
