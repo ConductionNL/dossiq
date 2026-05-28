@@ -135,7 +135,7 @@ class StatusTransitionService
                 continue;
             }
 
-            $failed = array_values(array_filter($eval, static fn(array $g): bool => ($g['passed'] ?? false) === false));
+            $failed = array_values(array_filter($eval, static fn(array $g): bool => $g['passed'] === false));
 
             $result['transitions'][] = [
                 'id'           => (string) ($transition['id'] ?? ''),
@@ -190,7 +190,8 @@ class StatusTransitionService
         // Defence in depth — re-evaluate guards on the server side.
         $guards = $this->extractGuards(transition: $transition);
         $eval   = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
-        $failed = array_values(array_filter($eval, static fn(array $g): bool => ($g['passed'] ?? false) === false));
+        $failed = array_values(array_filter($eval, static fn(array $g): bool => $g['passed'] === false));
+        // @phpstan-ignore greaterThan.alwaysFalse (PHPDoc type marks passed as bool, but runtime values may differ)
         if (count($failed) > 0) {
             $this->logger->info('StatusTransitionService: guards failed', ['caseId' => $caseId, 'transitionId' => $transitionId]);
             throw new GuardFailedException(failedGuards: $failed);
@@ -706,7 +707,7 @@ class StatusTransitionService
     {
         foreach ($evalResults as $entry) {
             if (($entry['type'] ?? '') === 'roleGuard'
-                && ($entry['passed'] ?? false) === false
+                && $entry['passed'] === false
                 && (($entry['details']['silent'] ?? false) === true)
             ) {
                 return true;

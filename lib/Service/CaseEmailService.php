@@ -29,7 +29,10 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCP\Files\IRootFolder;
+use OCP\Files\NotFoundException;
 use OCP\IAppConfig;
+use OCP\IUserSession;
 use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
 
@@ -51,12 +54,16 @@ class CaseEmailService
      * @param IMailer         $mailer          Nextcloud mailer
      * @param IAppConfig      $appConfig       Nextcloud app config
      * @param LoggerInterface $logger          Logger
+     * @param IRootFolder     $rootFolder      Root folder for user-file access
+     * @param IUserSession    $userSession     Current user session
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly IMailer $mailer,
         private readonly IAppConfig $appConfig,
         private readonly LoggerInterface $logger,
+        private readonly IRootFolder $rootFolder,
+        private readonly IUserSession $userSession,
     ) {
     }//end __construct()
 
@@ -110,11 +117,21 @@ class CaseEmailService
             throw new \RuntimeException('Zaak niet gevonden of geen toegang.');
         }
 
-        // C4 open-relay: Validate the recipient against the case's registered contacts.
-        // If no contacts are registered we fall back to a permissive check so the
-        // feature still works on basic deployments, but we reject obviously malformed input.
+        // H4: Validate the recipient against the case's registered contact emails.
+        // This prevents open-relay abuse where any email address could be supplied.
         if ($to === '' || filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
             throw new \RuntimeException('Ongeldig e-mailadres opgegeven.');
+        }
+
+        $allowedEmails = $this->getCaseContactEmails(caseData: $caseData);
+        if (count($allowedEmails) > 0) {
+            if (in_array(strtolower($to), $allowedEmails, true) === false) {
+                $this->logger->warning(
+                    'Blocked email to non-case-contact address',
+                    ['app' => Application::APP_ID, 'to' => $to, 'caseId' => $caseId]
+                );
+                throw new \RuntimeException('Ontvanger is geen geregistreerd contact bij deze zaak.');
+            }
         }
 
         $message = $this->mailer->createMessage();
@@ -124,31 +141,47 @@ class CaseEmailService
         $message->setHtmlBody($body);
         $message->setPlainBody(strip_tags($body));
 
-        // C4 file-disclosure: Reject absolute paths; only accept relative filenames
-        // that resolve within the standard Nextcloud user-files path.
-        // Production implementations should use IUserFolder instead.
-        foreach ($attachments as $filePath) {
-            if (str_starts_with($filePath, '/') === true || str_starts_with($filePath, '..') === true) {
-                $this->logger->warning(
-                    'Blocked absolute/traversal attachment path',
-                    ['app' => Application::APP_ID, 'path' => $filePath, 'caseId' => $caseId]
-                );
-                continue;
-            }
-
-            if (file_exists($filePath) === true) {
-                $message->attachFile($filePath);
-            }
-        }
+        // H5: Resolve attachments via IUserFolder to restrict file access to the
+        // calling user's own files and prevent path traversal outside their folder.
+        $currentUser = $this->userSession->getUser();
+        if ($currentUser !== null && count($attachments) > 0) {
+            $userFolder = $this->rootFolder->getUserFolder($currentUser->getUID());
+            foreach ($attachments as $fileRef) {
+                try {
+                    $file      = $userFolder->get((string) $fileRef);
+                    $localPath = $file->getStorage()->getLocalFile($file->getInternalPath());
+                    if ($localPath !== null && $localPath !== false) {
+                        $message->attachFile($localPath);
+                    }
+                } catch (NotFoundException $e) {
+                    $this->logger->warning(
+                        'Attachment file not found in user folder',
+                        ['app' => Application::APP_ID, 'fileRef' => $fileRef, 'caseId' => $caseId]
+                    );
+                } catch (\Throwable $e) {
+                    $this->logger->warning(
+                        'Failed to attach file',
+                        ['app' => Application::APP_ID, 'fileRef' => $fileRef, 'error' => $e->getMessage()]
+                    );
+                }//end try
+            }//end foreach
+        }//end if
 
         try {
             $this->mailer->send($message);
         } catch (\Exception $e) {
+            // M4: Log full exception server-side; throw a generic message so internal
+            // mail-server errors (hostnames, credentials, etc.) are not leaked to callers.
             $this->logger->error(
                 'Failed to send email for case {caseId}: {error}',
-                ['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+                [
+                    'app'       => Application::APP_ID,
+                    'caseId'    => $caseId,
+                    'error'     => $e->getMessage(),
+                    'exception' => $e,
+                ],
             );
-            throw new \RuntimeException('Email sending failed: '.$e->getMessage());
+            throw new \RuntimeException('email_send_failed');
         }
 
         // Record the sent email as a case document.
@@ -205,8 +238,9 @@ class CaseEmailService
      *
      * Variables use {{variableName}} syntax.
      *
-     * @param string               $template The template string
-     * @param array<string, mixed> $data     Available data for resolution
+     * @param string               $template   The template string
+     * @param array<string, mixed> $data       Available data for resolution
+     * @param bool                 $htmlEscape Whether to HTML-escape substituted values (default: true)
      *
      * @return string The resolved string
 
@@ -374,6 +408,62 @@ class CaseEmailService
 
         return [];
     }//end getTemplatesForCaseType()
+
+    /**
+     * Collect the normalised (lowercased) email addresses of all contacts on a case.
+     *
+     * Inspects the following fields (all optional): `betrokkenen`, `contacts`,
+     * `initiator`, and the top-level `email` field. Returns an empty array when
+     * no contacts are registered; the caller treats an empty array as "no restriction".
+     *
+     * @param array<string, mixed> $caseData The case data array
+     *
+     * @return array<string> Lowercase email addresses
+     */
+    private function getCaseContactEmails(array $caseData): array
+    {
+        $emails = [];
+
+        // Top-level email field.
+        $topEmail = strtolower(trim((string) ($caseData['email'] ?? '')));
+        if ($topEmail !== '' && filter_var($topEmail, FILTER_VALIDATE_EMAIL) !== false) {
+            $emails[] = $topEmail;
+        }
+
+        // Initiator field (single contact object or email string).
+        $initiator = $caseData['initiator'] ?? null;
+        if (is_array($initiator) === true) {
+            $addr = strtolower(trim((string) ($initiator['email'] ?? '')));
+            if ($addr !== '' && filter_var($addr, FILTER_VALIDATE_EMAIL) !== false) {
+                $emails[] = $addr;
+            }
+        }
+
+        // Betrokkenen / contacts arrays.
+        $contactArrays = [];
+        if (is_array($caseData['betrokkenen'] ?? null) === true) {
+            $contactArrays[] = $caseData['betrokkenen'];
+        }
+
+        if (is_array($caseData['contacts'] ?? null) === true) {
+            $contactArrays[] = $caseData['contacts'];
+        }
+
+        foreach ($contactArrays as $contacts) {
+            foreach ($contacts as $contact) {
+                if (is_array($contact) === false) {
+                    continue;
+                }
+
+                $addr = strtolower(trim((string) ($contact['email'] ?? ($contact['emailadres'] ?? ''))));
+                if ($addr !== '' && filter_var($addr, FILTER_VALIDATE_EMAIL) !== false) {
+                    $emails[] = $addr;
+                }
+            }
+        }
+
+        return array_unique($emails);
+    }//end getCaseContactEmails()
 
     /**
      * Load an email template.

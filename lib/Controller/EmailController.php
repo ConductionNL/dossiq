@@ -94,7 +94,14 @@ class EmailController extends Controller
             );
             return new JSONResponse($result);
         } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], 400);
+            // M4: Never expose internal error details (SMTP host/credentials) to callers.
+            // 'email_send_failed' is the sentinel thrown by CaseEmailService when the
+            // transport layer itself fails; surface a safe generic message for that case.
+            if ($e->getMessage() === 'email_send_failed') {
+                return new JSONResponse(['error' => 'email_send_failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
+            }
+
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
         }//end try
     }//end send()
 
@@ -135,7 +142,12 @@ class EmailController extends Controller
             );
             return new JSONResponse($result);
         } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], 400);
+            // M4: Surface generic error for transport failures.
+            if ($e->getMessage() === 'email_send_failed') {
+                return new JSONResponse(['error' => 'email_send_failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
+            }
+
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
         }//end try
     }//end sendFromTemplate()
 

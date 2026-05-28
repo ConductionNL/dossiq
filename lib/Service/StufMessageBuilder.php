@@ -112,12 +112,17 @@ class StufMessageBuilder
         $body = $dom->createElementNS(self::NS_SOAP, 'soap:Body');
         $envelope->appendChild($body);
 
-        // Import the body XML.
+        // M1: Load the caller-supplied body XML with LIBXML_NONET to prevent
+        // XXE / SSRF attacks via external entity references in the XML payload.
         $bodyDoc = new \DOMDocument();
-        if ($bodyDoc->loadXML($bodyXml) === true) {
+        // phpcs:ignore -- libxml_use_internal_errors suppresses parse errors intentionally.
+        libxml_use_internal_errors(true);
+        if ($bodyDoc->loadXML($bodyXml, LIBXML_NONET) === true) {
             $imported = $dom->importNode($bodyDoc->documentElement, true);
             $body->appendChild($imported);
         }
+
+        libxml_clear_errors();
 
         $saved = $dom->saveXML();
         if ($saved === false) {

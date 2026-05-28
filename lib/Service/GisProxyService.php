@@ -585,10 +585,15 @@ class GisProxyService
             ]
         );
 
-        $body        = curl_exec(handle: $curl);
-        $contentType = curl_getinfo(handle: $curl, option: CURLINFO_CONTENT_TYPE) ?? '';
-        $httpCode    = (int) curl_getinfo(handle: $curl, option: CURLINFO_HTTP_CODE);
-        $curlError   = curl_error(handle: $curl);
+        $body           = curl_exec(handle: $curl);
+        $rawContentType = curl_getinfo(handle: $curl, option: CURLINFO_CONTENT_TYPE);
+        $contentType    = '';
+        if (is_string($rawContentType) === true) {
+            $contentType = $rawContentType;
+        }
+
+        $httpCode  = (int) curl_getinfo(handle: $curl, option: CURLINFO_HTTP_CODE);
+        $curlError = curl_error(handle: $curl);
         curl_close(handle: $curl);
 
         if ($body === false || $curlError !== '') {
