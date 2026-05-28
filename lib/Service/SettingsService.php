@@ -34,6 +34,18 @@ use Psr\Log\LoggerInterface;
  */
 class SettingsService
 {
+    /**
+     * Configuration keys that contain secrets and must be redacted for non-admin callers.
+     *
+     * Any key matching one of these suffixes is masked with '***' in public responses.
+     *
+     * @var string[]
+     */
+    private const SECRET_KEYS = [
+        'ai_api_key',
+        'appointment_backend_api_key',
+    ];
+
     private const CONFIG_KEYS = [
         'register',
         'catalogus_schema',
@@ -377,6 +389,9 @@ class SettingsService
     /**
      * Get all current settings as an associative array.
      *
+     * Returns full (unredacted) settings including secrets. Callers MUST
+     * ensure only admin users receive this response.
+     *
      * @return array
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
@@ -390,6 +405,27 @@ class SettingsService
 
         return $config;
     }//end getSettings()
+
+    /**
+     * Get settings safe for non-admin callers.
+     *
+     * Identical to getSettings() but replaces every SECRET_KEYS entry
+     * with '***' so that bearer tokens and API keys are never exposed
+     * to ordinary authenticated users.
+     *
+     * @return array
+     */
+    public function getPublicSettings(): array
+    {
+        $config = $this->getSettings();
+        foreach (self::SECRET_KEYS as $secretKey) {
+            if (isset($config[$secretKey]) === true && $config[$secretKey] !== '') {
+                $config[$secretKey] = '***';
+            }
+        }
+
+        return $config;
+    }//end getPublicSettings()
 
     /**
      * Update settings with the provided data.

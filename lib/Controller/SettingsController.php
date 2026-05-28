@@ -126,12 +126,18 @@ class SettingsController extends Controller
         $user    = $this->userSession->getUser();
         $isAdmin = $user !== null && $this->groupManager->isAdmin($user->getUID());
 
+        if ($isAdmin === true) {
+            $config = $this->settingsService->getSettings();
+        } else {
+            $config = $this->settingsService->getPublicSettings();
+        }//end if
+
         return new JSONResponse(
             [
                 'success'       => true,
                 'openRegisters' => in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()),
                 'isAdmin'       => $isAdmin,
-                'config'        => $this->settingsService->getSettings(),
+                'config'        => $config,
             ]
         );
     }//end index()

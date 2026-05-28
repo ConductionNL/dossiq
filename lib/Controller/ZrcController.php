@@ -869,11 +869,19 @@ class ZrcController extends ZgwController
 
             // No matching autorisatie allows this vertrouwelijkheidaanduiding.
             return $this->permissionDeniedResponse();
-        } catch (\Throwable $e) {
-            $this->zgwService->getLogger()->debug(
-                'zrc-006b: Could not check zaak read access: '.$e->getMessage()
+        } catch (\InvalidArgumentException $e) {
+            // Expected: zaak or mapping config not found — deny to be safe.
+            $this->zgwService->getLogger()->warning(
+                'zrc-006b: Zaak read access check failed (expected), denying: '.$e->getMessage()
             );
-            return null;
+            return $this->permissionDeniedResponse();
+        } catch (\Throwable $e) {
+            // Unexpected failure (OR down, schema rename, etc.) — deny rather than
+            // silently allow access to potentially confidential data (fail-closed).
+            $this->zgwService->getLogger()->error(
+                'zrc-006b: Zaak read access check threw unexpected exception, denying: '.$e->getMessage()
+            );
+            return $this->permissionDeniedResponse();
         }//end try
     }//end checkZaakReadAccess()
 

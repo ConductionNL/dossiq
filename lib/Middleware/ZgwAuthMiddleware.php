@@ -59,6 +59,24 @@ class ZgwAuthMiddleware extends Middleware
     ];
 
     /**
+     * Canonical scope-name prefix for each ZGW component.
+     *
+     * A scope grant like "besluiten.aanmaken" is only valid for the BRC component;
+     * it must NOT satisfy a ZRC "zaken.aanmaken" request even though both share
+     * the ".aanmaken" suffix.  This map enforces the full scope-name match.
+     *
+     * @var array<string, string>
+     */
+    private const COMPONENT_SCOPE_PREFIX = [
+        'zrc' => 'zaken',
+        'ztc' => 'catalogi',
+        'brc' => 'besluiten',
+        'drc' => 'documenten',
+        'nrc' => 'notificaties',
+        'ac'  => 'autorisaties',
+    ];
+
+    /**
      * Map of HTTP methods to ZGW scope suffixes.
      *
      * @var array<string, string>
@@ -307,12 +325,18 @@ class ZgwAuthMiddleware extends Middleware
             return false;
         }
 
-        // Check scope includes the required action.
-        $grantedScopes = $scopeGrant['scopes'] ?? [];
+        // Check scope includes the required action with the correct resource prefix.
+        // A grant "besluiten.aanmaken" must NOT satisfy a ZRC "zaken.aanmaken" request;
+        // verify that both the suffix (action) AND the prefix (resource) match.
+        $expectedPrefix = self::COMPONENT_SCOPE_PREFIX[$component] ?? $component;
+        $grantedScopes  = $scopeGrant['scopes'] ?? [];
 
         foreach ($grantedScopes as $scope) {
             $parts = explode(separator: '.', string: $scope);
-            if (count(value: $parts) === 2 && $parts[1] === $requiredSuffix) {
+            if (count(value: $parts) === 2
+                && $parts[0] === $expectedPrefix
+                && $parts[1] === $requiredSuffix
+            ) {
                 return true;
             }
         }

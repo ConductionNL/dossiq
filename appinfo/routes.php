@@ -174,13 +174,10 @@ return [
         ['name' => 'parafeerRoute#skipStep',     'url' => '/api/parafeer-route/voorstel/{voorstelId}/skip-step',      'verb' => 'POST'],
         ['name' => 'parafeerRoute#addStep',      'url' => '/api/parafeer-route/voorstel/{voorstelId}/add-step',       'verb' => 'POST'],
 
-        // ── B&W Parafering (voorstellen workflow) ───────────────────────
-        ['name' => 'parafering#createVoorstel',   'url' => '/api/parafering/voorstellen',                              'verb' => 'POST'],
-        ['name' => 'parafering#startParafering',  'url' => '/api/parafering/voorstellen/{id}/start',                   'verb' => 'POST'],
-        ['name' => 'parafering#paraferen',        'url' => '/api/parafering/voorstellen/{id}/paraferen',               'verb' => 'POST'],
-        ['name' => 'parafering#terugsturen',     'url' => '/api/parafering/voorstellen/{id}/terugsturen',             'verb' => 'POST'],
-        ['name' => 'parafering#adviseren',        'url' => '/api/parafering/voorstellen/{id}/adviseren',               'verb' => 'POST'],
-        ['name' => 'parafering#auditTrail',       'url' => '/api/parafering/voorstellen/{id}/audit-trail',             'verb' => 'GET'],
+        // NOTE: ParaferingController + ParaferingService were superseded scaffolding
+        // that operated entirely in-memory (no persistence, client-supplied state).
+        // Deleted in wave-3 security fix.  The live engine is ParafeerActieService /
+        // ParafeerRouteController.  Audit-trail export route retained below.
 
         // Parafering audit trail Archiefwet-aligned export (action, not CRUD).
         // CRUD on paraferingAuditEntry objects is served by OpenRegister's
