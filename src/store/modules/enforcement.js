@@ -53,7 +53,10 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 * @param {object} state Store state
 		 * @return {object|null} Active action
 		 */
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/**
+		 * @param state
+		 * @spec openspec/changes/vth-module/tasks.md
+		 */
 		activeAction(state) {
 			return state.actions.find((a) => a.status === 'opgelegd') || null
 		},
@@ -64,7 +67,10 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 * @param {object} state Store state
 		 * @return {number} Total verbeurd amount
 		 */
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/**
+		 * @param state
+		 * @spec openspec/changes/vth-module/tasks.md
+		 */
 		totalVerbeurd(state) {
 			return state.actions
 				.filter((a) => a.status === 'verbeurd')
@@ -77,7 +83,10 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 * @param {object} state Store state
 		 * @return {Array} Ernst levels
 		 */
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/**
+		 * @param state
+		 * @spec openspec/changes/vth-module/tasks.md
+		 */
 		ernstLevels(state) {
 			return Object.keys(state.lhsMatrix)
 		},
@@ -88,7 +97,10 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 * @param {object} state Store state
 		 * @return {Array} Gedrag levels
 		 */
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/**
+		 * @param state
+		 * @spec openspec/changes/vth-module/tasks.md
+		 */
 		gedragLevels(state) {
 			const first = Object.values(state.lhsMatrix)[0]
 			return first ? Object.keys(first) : []
@@ -102,7 +114,10 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 * @param {string} caseId UUID of the case
 		 * @return {Promise<Array>} Actions
 		 */
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/**
+		 * @param caseId
+		 * @spec openspec/changes/vth-module/tasks.md
+		 */
 		async fetchActions(caseId) {
 			this.loading = true
 			this.error = null
@@ -130,7 +145,11 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 * @param {string} gedrag Behavior type (goedwillend/onverschillig/calculerend/crimineel)
 		 * @return {string|null} Suggested intervention
 		 */
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/**
+		 * @param ernst
+		 * @param gedrag
+		 * @spec openspec/changes/vth-module/tasks.md
+		 */
 		lookupLhs(ernst, gedrag) {
 			if (!this.lhsMatrix[ernst]) {
 				return null
@@ -178,7 +197,10 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 * @param {object} matrix The matrix to save
 		 * @return {Promise<boolean>} Success
 		 */
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/**
+		 * @param matrix
+		 * @spec openspec/changes/vth-module/tasks.md
+		 */
 		async saveLhsMatrix(matrix) {
 			try {
 				const response = await fetch('/apps/procest/api/settings', {
@@ -207,7 +229,10 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 * @param {object} actionData The action data
 		 * @return {Promise<object|null>} Created action
 		 */
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/**
+		 * @param actionData
+		 * @spec openspec/changes/vth-module/tasks.md
+		 */
 		async createAction(actionData) {
 			this.loading = true
 			this.error = null
@@ -240,7 +265,11 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 * @param {string} newStatus New status (verbeurd/geeffectueerd/ingetrokken)
 		 * @return {Promise<object|null>} Updated action
 		 */
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/**
+		 * @param actionId
+		 * @param newStatus
+		 * @spec openspec/changes/vth-module/tasks.md
+		 */
 		async updateStatus(actionId, newStatus) {
 			this.loading = true
 			try {
@@ -275,7 +304,11 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 * @param {object} action    The enforcement action
 		 * @return {Promise<object|null>} Created task
 		 */
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/**
+		 * @param caseId
+		 * @param action
+		 * @spec openspec/changes/vth-module/tasks.md
+		 */
 		async createBegunstigingTask(caseId, action) {
 			try {
 				const objectStore = useObjectStore()

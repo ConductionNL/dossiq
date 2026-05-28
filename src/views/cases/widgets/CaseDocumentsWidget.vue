@@ -37,7 +37,10 @@ export default {
 	},
 	methods: {
 		formatDate,
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/**
+		 * @param mimeType
+		 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
+		 */
 		getFileIcon(mimeType) {
 			if (!mimeType) return '📄'
 			if (mimeType.includes('pdf')) return '📕'

@@ -124,13 +124,10 @@ class ParaferingAuditAppendOnlyValidator implements IEventListener
             }
         } catch (OCSForbiddenException $e) {
             // Block the operation by stopping propagation and recording the error.
-            if ($event instanceof ObjectCreatingEvent === true
-                || $event instanceof ObjectUpdatingEvent === true
-                || $event instanceof ObjectDeletingEvent === true
-            ) {
-                $event->setErrors([$e->getMessage()]);
-                $event->stopPropagation();
-            }
+            // At this point $event is always one of ObjectCreatingEvent|ObjectUpdatingEvent|ObjectDeletingEvent
+            // (the only non-early-return branches above), so setErrors/stopPropagation are always safe.
+            $event->setErrors([$e->getMessage()]);
+            $event->stopPropagation();
 
             $this->logger->warning(
                 'Procest: paraferingAuditEntry append-only violation',

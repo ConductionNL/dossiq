@@ -54,7 +54,10 @@ export default {
 		}
 	},
 	watch: {
-		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
+		/**
+		 * @param newMap
+		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+		 */
 		map(newMap) {
 			if (newMap && !this.drawnItems) {
 				this.initDrawLayer()

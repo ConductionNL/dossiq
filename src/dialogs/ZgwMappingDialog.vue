@@ -120,7 +120,10 @@ export default {
 	watch: {
 		open: {
 			immediate: true,
-			/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
+			/**
+			 * @param value
+			 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+			 */
 			handler(value) {
 				if (value) {
 					this.initFromMapping()

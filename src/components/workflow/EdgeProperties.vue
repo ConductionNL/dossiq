@@ -104,11 +104,18 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param key
+		 * @param value
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		updateField(key, value) {
 			this.$emit('update', { edgeId: this.edge.id, patch: { [key]: value } })
 		},
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param raw
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		updateGuards(raw) {
 			let parsed = []
 			try {
@@ -119,7 +126,10 @@ export default {
 			}
 			this.$emit('update', { edgeId: this.edge.id, patch: { guards: parsed } })
 		},
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param raw
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		updateRoles(raw) {
 			const roles = raw.split(',').map((r) => r.trim()).filter(Boolean)
 			this.$emit('update', { edgeId: this.edge.id, patch: { allowedRoles: roles } })

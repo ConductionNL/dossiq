@@ -88,12 +88,18 @@ export default {
 		await this.store.fetchMappings()
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
+		/**
+		 * @param key
+		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 */
 		editMapping(key) {
 			this.editingKey = key
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
+		/**
+		 * @param config
+		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 */
 		async saveMapping(config) {
 			const result = await this.store.saveMapping(this.editingKey, config)
 			if (result) {
@@ -103,7 +109,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
+		/**
+		 * @param key
+		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 */
 		async resetMapping(key) {
 			await this.store.resetMapping(key)
 			this.saved = true

@@ -88,7 +88,10 @@ export default {
 		 * @param {object} caseType The case type to start
 		 * @return {Promise<void>}
 		 */
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/**
+		 * @param caseType
+		 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
+		 */
 		async startCase(caseType) {
 			if (this.creating) {
 				return

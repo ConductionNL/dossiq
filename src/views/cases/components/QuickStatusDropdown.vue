@@ -53,7 +53,10 @@ export default {
 		this.selectedStatus = this.statusTypes.find(st => st.id === this.caseObj.status) || null
 	},
 	methods: {
-		/** @spec openspec/specs/status-transition-engine/spec.md */
+		/**
+		 * @param newStatus
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		async onStatusChange(newStatus) {
 			if (!newStatus || newStatus.id === this.caseObj.status) return
 

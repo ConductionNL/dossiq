@@ -46,14 +46,14 @@
 					<NcSelect
 						v-model="form.ontvangstkanaal"
 						:options="channelOptions"
-							:aria-label-combobox="t('procest', 'Intake channel')" />
+						:aria-label-combobox="t('procest', 'Intake channel')" />
 				</div>
 				<div class="form-group">
 					<label>{{ t('procest', 'Priority') }}</label>
 					<NcSelect
 						v-model="form.prioriteit"
 						:options="priorityOptions"
-							:aria-label-combobox="t('procest', 'Priority')" />
+						:aria-label-combobox="t('procest', 'Priority')" />
 				</div>
 			</div>
 

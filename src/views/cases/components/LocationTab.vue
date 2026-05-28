@@ -172,13 +172,19 @@ export default {
 			this.address = await gisStore.reverseGeocode(center[0], center[1])
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md */
+		/**
+		 * @param newGeometry
+		 * @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md
+		 */
 		onLocationSave(newGeometry) {
 			this.showPicker = false
 			this.$emit('update-geometry', newGeometry)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md */
+		/**
+		 * @param geo
+		 * @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md
+		 */
 		calculateCentroid(geo) {
 			if (geo.type === 'Point') {
 				return [geo.coordinates[1], geo.coordinates[0]]
@@ -196,7 +202,10 @@ export default {
 			return [52.1326, 5.2913]
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md */
+		/**
+		 * @param ring
+		 * @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md
+		 */
 		calculateArea(ring) {
 			// Shoelace formula for approximate area in m2
 			if (!ring || ring.length < 3) return 0
@@ -210,7 +219,10 @@ export default {
 			return Math.abs(area / 2) * 111320 * 111320 * Math.cos((ring[0][1] * Math.PI) / 180)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md */
+		/**
+		 * @param sqm
+		 * @spec openspec/changes/retrofit-2026-05-25-case-location/tasks.md
+		 */
 		formatArea(sqm) {
 			if (sqm > 10000) {
 				return `${(sqm / 10000).toFixed(2)} ha`

@@ -215,18 +215,27 @@ export default {
 			return getDecisionValidity(decision)
 		},
 
-		/** @spec openspec/changes/roles-decisions/tasks.md */
+		/**
+		 * @param dateStr
+		 * @spec openspec/changes/roles-decisions/tasks.md
+		 */
 		formatDate(dateStr) {
 			return formatDecisionDate(dateStr)
 		},
 
-		/** @spec openspec/changes/roles-decisions/tasks.md */
+		/**
+		 * @param typeId
+		 * @spec openspec/changes/roles-decisions/tasks.md
+		 */
 		getDecisionTypeName(typeId) {
 			const dt = this.decisionTypes.find(t => t.id === typeId)
 			return dt?.name || ''
 		},
 
-		/** @spec openspec/changes/roles-decisions/tasks.md */
+		/**
+		 * @param decision
+		 * @spec openspec/changes/roles-decisions/tasks.md
+		 */
 		editDecision(decision) {
 			if (this.isReadOnly) return
 			this.editingDecision = decision

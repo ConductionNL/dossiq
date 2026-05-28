@@ -130,12 +130,18 @@ class CaseTransferService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('case_transfer_schema');
 
-        $transfer     = $objectService->find($transferId, register: (int) $register, schema: (int) $schema);
-        $transferData = is_object($transfer) ? $transfer->jsonSerialize() : (array) $transfer;
+        $transfer = $objectService->find($transferId, register: (int) $register, schema: (int) $schema);
+        if (is_object($transfer) === true) {
+            $transferData = $transfer->jsonSerialize();
+        } else {
+            $transferData = (array) $transfer;
+        }
 
         if ($transferData['status'] !== 'pending') {
             return ['error' => 'Transfer is not in pending state'];
         }
+
+        $caseId = (string) ($transferData['caseId'] ?? '');
 
         $transferData['status']      = 'accepted';
         $transferData['completedAt'] = (new \DateTime())->format('c');
@@ -150,7 +156,7 @@ class CaseTransferService
             'Procest: Case transfer accepted',
             [
                 'transferId' => $transferId,
-                'caseId'     => $transferData['caseId'],
+                'caseId'     => $caseId,
             ]
         );
 
@@ -177,8 +183,12 @@ class CaseTransferService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('case_transfer_schema');
 
-        $transfer     = $objectService->find($transferId, register: (int) $register, schema: (int) $schema);
-        $transferData = is_object($transfer) ? $transfer->jsonSerialize() : (array) $transfer;
+        $transfer = $objectService->find($transferId, register: (int) $register, schema: (int) $schema);
+        if (is_object($transfer) === true) {
+            $transferData = $transfer->jsonSerialize();
+        } else {
+            $transferData = (array) $transfer;
+        }
 
         if ($transferData['status'] !== 'pending') {
             return ['error' => 'Transfer is not in pending state'];

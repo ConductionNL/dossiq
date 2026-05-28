@@ -137,7 +137,10 @@ export default {
 			this.editError = ''
 			this.items.push({ id: 'new', name: '' })
 		},
-		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
+		/**
+		 * @param item
+		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 */
 		startEdit(item) {
 			this.editingId = item.id
 			this.editForm = { name: item.name, description: item.description || '', archivalAction: item.archivalAction || '', archivalPeriod: item.archivalPeriod || '' }
@@ -170,7 +173,10 @@ export default {
 			this.editingId = null
 			await this.loadItems()
 		},
-		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
+		/**
+		 * @param item
+		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 */
 		async deleteItem(item) {
 			if (!confirm(t('procest', 'Delete result type "{name}"?', { name: item.name }))) return
 			const objectStore = useObjectStore()

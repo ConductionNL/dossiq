@@ -175,7 +175,11 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/woo-case-type/tasks.md */
+		/**
+		 * @param field
+		 * @param value
+		 * @spec openspec/changes/woo-case-type/tasks.md
+		 */
 		update(field, value) {
 			this.$emit('update', { field, value })
 		},

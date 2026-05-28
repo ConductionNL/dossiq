@@ -125,15 +125,24 @@ export default {
 		isActive(voorstel) {
 			return !['besloten', 'gearchiveerd'].includes(voorstel.status)
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param type
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatType(type) {
 			return TYPE_LABELS[type] || type || '-'
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param status
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatStatus(status) {
 			return STATUS_LABELS[status] || status || '-'
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param voorstel
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatStepProgress(voorstel) {
 			let steps = []
 			if (voorstel.routeSnapshot) {

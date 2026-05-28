@@ -117,7 +117,10 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} caseTypeId UUID of the case type
 		 * @return {Promise<Array>} Array of workflow templates
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param caseTypeId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async listVersions(caseTypeId) {
 			this.loading = true
 			this.error = null
@@ -144,7 +147,10 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} templateId UUID of the workflow template
 		 * @return {Promise<object|null>} The workflow template or null
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param templateId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async getTemplate(templateId) {
 			this.loading = true
 			this.error = null
@@ -167,7 +173,10 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} caseTypeId UUID of the case type
 		 * @return {Promise<object|null>} The active workflow template or null
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param caseTypeId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async getActiveVersion(caseTypeId) {
 			this.loading = true
 			this.error = null
@@ -196,7 +205,11 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} title      Name of the workflow
 		 * @return {Promise<object|null>} The created template or null
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param caseTypeId
+		 * @param title
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async createTemplate(caseTypeId, title) {
 			this.loading = true
 			this.error = null
@@ -228,7 +241,10 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} templateData The template data to save
 		 * @return {Promise<object|null>} The saved template or null
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param templateData
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async saveTemplate(templateData) {
 			this.loading = true
 			this.error = null
@@ -262,7 +278,10 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} templateId UUID of the template
 		 * @return {Promise<boolean>} Success
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param templateId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async deleteTemplate(templateId) {
 			this.loading = true
 			this.error = null
@@ -287,7 +306,10 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} templateId UUID of the template to publish
 		 * @return {Promise<object|null>} The published template or null
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param templateId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async publishVersion(templateId) {
 			this.error = null
 
@@ -347,7 +369,10 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} sourceTemplateId UUID of the source template
 		 * @return {Promise<object|null>} The new draft version or null
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param sourceTemplateId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async createDraftFromVersion(sourceTemplateId) {
 			this.loading = true
 			this.error = null
@@ -400,7 +425,14 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {Array}  caseDocuments Documents linked to this case
 		 * @return {Array} Available transitions with guard status
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param caseData
+		 * @param userRoles
+		 * @param workflow
+		 * @param caseTasks
+		 * @param caseDocuments
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		computeAvailableTransitions(caseData, userRoles, workflow, caseTasks, caseDocuments) {
 			if (!workflow?.transitions) return []
 
@@ -471,7 +503,15 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} currentStatus Current status UUID
 		 * @return {Array} Array of {met: boolean, message: string}
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param guards
+		 * @param caseData
+		 * @param caseTasks
+		 * @param caseDocuments
+		 * @param steps
+		 * @param currentStatus
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		evaluateGuards(guards, caseData, caseTasks, caseDocuments, steps, currentStatus) {
 			return guards.map((guard) => {
 				switch (guard.type) {
@@ -497,7 +537,11 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {Array}  caseTasks Tasks linked to the case
 		 * @return {object} {met: boolean, message: string}
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param guard
+		 * @param caseTasks
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		evaluateChecklistGuard(guard, caseTasks) {
 			// Find tasks with checklists and check completion
 			const tasksWithChecklists = caseTasks.filter((task) => {
@@ -534,7 +578,11 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} caseData The case object
 		 * @return {object} {met: boolean, message: string}
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param guard
+		 * @param caseData
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		evaluateRequiredFieldGuard(guard, caseData) {
 			const fieldName = guard.fieldName
 			const value = caseData[fieldName]
@@ -554,7 +602,11 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {Array}  caseDocuments Documents linked to the case
 		 * @return {object} {met: boolean, message: string}
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param guard
+		 * @param caseDocuments
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		evaluateRequiredDocumentGuard(guard, caseDocuments) {
 			const requiredType = guard.documentTypeName
 			const hasDocument = caseDocuments.some(
@@ -577,7 +629,12 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {Array}  caseTasks     Tasks linked to the case
 		 * @return {object} {met: boolean, messages: Array<string>}
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param steps
+		 * @param currentStatus
+		 * @param caseTasks
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		evaluateRequiredSteps(steps, currentStatus, caseTasks) {
 			const stepsInStatus = steps.filter(
 				(s) => s.status === currentStatus && s.isRequired,
@@ -611,7 +668,12 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} transition The transition that triggered the actions
 		 * @return {Promise<Array>} Array of {action, success, error} results
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param actions
+		 * @param caseData
+		 * @param transition
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async dispatchActions(actions, caseData, transition) {
 			const results = []
 			for (const action of actions) {
@@ -660,7 +722,12 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} transition The transition context
 		 * @return {Promise<void>}
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param action
+		 * @param caseData
+		 * @param transition
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async dispatchEmailAction(action, caseData, transition) {
 			// Delegate to n8n webhook for email sending
 			const webhookUrl = action.webhookUrl || '/apps/procest/api/workflow/actions/email'
@@ -694,7 +761,11 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} caseData The case object
 		 * @return {Promise<void>}
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param action
+		 * @param caseData
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async dispatchCreateTaskAction(action, caseData) {
 			const objectStore = useObjectStore()
 			await objectStore.saveObject('task', {
@@ -714,7 +785,11 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} caseData The parent case object
 		 * @return {Promise<void>}
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param action
+		 * @param caseData
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async dispatchCreateSubCaseAction(action, caseData) {
 			const objectStore = useObjectStore()
 			await objectStore.saveObject('case', {
@@ -733,7 +808,12 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} transition The transition context
 		 * @return {Promise<void>}
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param action
+		 * @param caseData
+		 * @param transition
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async dispatchWebhookAction(action, caseData, transition) {
 			const controller = new AbortController()
 			const timeoutId = setTimeout(() => controller.abort(), 10000)
@@ -771,7 +851,11 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} caseData The case object
 		 * @return {Promise<void>}
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param action
+		 * @param caseData
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async dispatchSetFieldAction(action, caseData) {
 			const objectStore = useObjectStore()
 			await objectStore.saveObject('case', {
@@ -787,7 +871,11 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} caseData The case object
 		 * @return {Promise<void>}
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param action
+		 * @param caseData
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async dispatchNotifyAction(action, caseData) {
 			// Use Nextcloud OCS notification API
 			await fetch('/ocs/v2.php/apps/admin_notifications/api/v1/notifications/admin', {
@@ -816,7 +904,12 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} transition The transition context (optional)
 		 * @return {string} Interpolated string
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param template
+		 * @param caseData
+		 * @param transition
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		interpolateTemplate(template, caseData, transition) {
 			return template.replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (match, path) => {
 				const parts = path.split('.')
@@ -903,7 +996,13 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {Array}    docTypes    Document types of the case type
 		 * @return {object} Portable workflow definition
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param template
+		 * @param statusTypes
+		 * @param roleTypes
+		 * @param docTypes
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		exportWorkflow(template, statusTypes, roleTypes, docTypes) {
 			const statusMap = {}
 			statusTypes.forEach((s) => { statusMap[s.id] = s.name })
@@ -959,7 +1058,14 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {Array}  docTypes     Document types of the target case type
 		 * @return {object} {success, template, missingTypes}
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param importData
+		 * @param caseTypeId
+		 * @param statusTypes
+		 * @param roleTypes
+		 * @param docTypes
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async importWorkflow(importData, caseTypeId, statusTypes, roleTypes, docTypes) {
 			// Build reverse maps (name -> UUID)
 			const statusNameMap = {}
@@ -1032,7 +1138,11 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} stepData Step properties (optional overrides)
 		 * @return {object} The new step
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param statusId
+		 * @param stepData
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		addStep(statusId, stepData = {}) {
 			const steps = [...this.parsedSteps]
 			const stepsInStatus = steps.filter((s) => s.status === statusId)
@@ -1059,7 +1169,10 @@ export const useWorkflowStore = defineStore('workflow', {
 		 *
 		 * @param {string} stepId UUID of the step to remove
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param stepId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		removeStep(stepId) {
 			let steps = [...this.parsedSteps]
 			const removed = steps.find((s) => s.id === stepId)
@@ -1084,7 +1197,11 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} stepId  UUID of the step to update
 		 * @param {object} updates Properties to update
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param stepId
+		 * @param updates
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		updateStep(stepId, updates) {
 			const steps = [...this.parsedSteps]
 			const index = steps.findIndex((s) => s.id === stepId)
@@ -1104,7 +1221,12 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {object} data       Optional transition properties
 		 * @return {object} The new transition
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param fromStatus
+		 * @param toStatus
+		 * @param data
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		addTransition(fromStatus, toStatus, data = {}) {
 			const transitions = [...this.parsedTransitions]
 			const newTransition = {
@@ -1128,7 +1250,10 @@ export const useWorkflowStore = defineStore('workflow', {
 		 *
 		 * @param {string} transitionId UUID of the transition to remove
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param transitionId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		removeTransition(transitionId) {
 			const transitions = this.parsedTransitions.filter(
 				(t) => t.id !== transitionId,
@@ -1144,7 +1269,11 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {string} transitionId UUID of the transition to update
 		 * @param {object} updates      Properties to update
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param transitionId
+		 * @param updates
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		updateTransition(transitionId, updates) {
 			const transitions = [...this.parsedTransitions]
 			const index = transitions.findIndex((t) => t.id === transitionId)
@@ -1163,7 +1292,12 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param {number} x        X coordinate
 		 * @param {number} y        Y coordinate
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param statusId
+		 * @param x
+		 * @param y
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		updateNodePosition(statusId, x, y) {
 			const positions = { ...this.parsedNodePositions }
 			positions[statusId] = { x, y }

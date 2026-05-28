@@ -16,7 +16,11 @@ const baseUrl = generateUrl('/apps/procest/api/ai')
  * @param {string} documentId The document UUID
  * @return {Promise<object>} Classification suggestion with confidence
  */
-/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
+/**
+ * @param caseId
+ * @param documentId
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+ */
 export async function classifyDocument(caseId, documentId) {
 	const response = await axios.post(`${baseUrl}/classify`, { caseId, documentId })
 	return response.data
@@ -29,7 +33,11 @@ export async function classifyDocument(caseId, documentId) {
  * @param {string|null} documentId Optional document UUID
  * @return {Promise<object>} Extracted fields with confidence scores
  */
-/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
+/**
+ * @param caseId
+ * @param documentId
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+ */
 export async function extractData(caseId, documentId = null) {
 	const response = await axios.post(`${baseUrl}/extract`, { caseId, documentId })
 	return response.data
@@ -42,7 +50,11 @@ export async function extractData(caseId, documentId = null) {
  * @param {string} question The question to ask
  * @return {Promise<object>} Answer with source citations
  */
-/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
+/**
+ * @param caseId
+ * @param question
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+ */
 export async function askQuestion(caseId, question) {
 	const response = await axios.post(`${baseUrl}/ask`, { caseId, question })
 	return response.data
@@ -56,7 +68,12 @@ export async function askQuestion(caseId, question) {
  * @param {string|null} documentId Optional document UUID
  * @return {Promise<object>} Generated summary
  */
-/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
+/**
+ * @param caseId
+ * @param type
+ * @param documentId
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+ */
 export async function summarize(caseId, type = 'case', documentId = null) {
 	const response = await axios.post(`${baseUrl}/summarize`, { caseId, type, documentId })
 	return response.data
@@ -68,7 +85,10 @@ export async function summarize(caseId, type = 'case', documentId = null) {
  * @param {string} caseId The case UUID
  * @return {Promise<object>} Routing suggestion
  */
-/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
+/**
+ * @param caseId
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+ */
 export async function suggestRouting(caseId) {
 	const response = await axios.post(`${baseUrl}/suggest-routing`, { caseId })
 	return response.data
@@ -80,7 +100,10 @@ export async function suggestRouting(caseId) {
  * @param {string} caseId The case UUID
  * @return {Promise<object>} Next-step suggestion
  */
-/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
+/**
+ * @param caseId
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+ */
 export async function suggestNext(caseId) {
 	const response = await axios.post(`${baseUrl}/suggest-next`, { caseId })
 	return response.data
@@ -92,7 +115,10 @@ export async function suggestNext(caseId) {
  * @param {object} filters Query filters (caseId, type, limit, offset)
  * @return {Promise<object>} Audit log entries
  */
-/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
+/**
+ * @param filters
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+ */
 export async function getAuditLog(filters = {}) {
 	const response = await axios.get(`${baseUrl}/audit`, { params: filters })
 	return response.data
@@ -115,7 +141,10 @@ export async function getAiSettings() {
  * @param {object} settings Settings to update
  * @return {Promise<object>} Updated settings
  */
-/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
+/**
+ * @param settings
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+ */
 export async function updateAiSettings(settings) {
 	const response = await axios.post(`${baseUrl}/settings`, settings)
 	return response.data

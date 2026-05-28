@@ -110,7 +110,11 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param key
+		 * @param value
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		updateField(key, value) {
 			this.$emit('update', { nodeId: this.node.id, patch: { [key]: value } })
 		},

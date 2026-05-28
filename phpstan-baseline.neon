@@ -116,11 +116,6 @@ parameters:
 			path: lib/Service/CaseDefinitionImportService.php
 
 		-
-			message: "#^Strict comparison using \\=\\=\\= between true and false will always evaluate to false\\.$#"
-			count: 1
-			path: lib/Service/Inspection/ChecklistService.php
-
-		-
 			message: "#^Property OCA\\\\Procest\\\\Service\\\\InspectionService\\:\\:\\$settingsService is never read, only written\\.$#"
 			count: 1
 			path: lib/Service/InspectionService.php

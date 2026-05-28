@@ -72,7 +72,11 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
+		/**
+		 * @param milestone
+		 * @param index
+		 * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md
+		 */
 		stepClass(milestone, index) {
 			return {
 				'milestone-progress__step--reached': milestone.reached,
@@ -83,7 +87,11 @@ export default {
 					&& (index === 0 || !this.milestones[index - 1]?.reached),
 			}
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
+		/**
+		 * @param milestone
+		 * @param index
+		 * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md
+		 */
 		dotClass(milestone, index) {
 			return {
 				'milestone-progress__dot--reached': milestone.reached,
@@ -94,14 +102,21 @@ export default {
 					&& (index === 0 || !this.milestones[index - 1]?.reached),
 			}
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
+		/**
+		 * @param dateStr
+		 * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md
+		 */
 		formatDate(dateStr) {
 			if (!dateStr) return ''
 			const date = new Date(dateStr)
 			if (isNaN(date.getTime())) return dateStr
 			return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
+		/**
+		 * @param milestone
+		 * @param index
+		 * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md
+		 */
 		onDotClick(milestone, index) {
 			if (milestone.reached) {
 				this.$emit('reverse', { milestone, index })

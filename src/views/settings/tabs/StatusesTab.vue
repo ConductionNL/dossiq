@@ -289,7 +289,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/specs/status-transition-engine/spec.md */
+		/**
+		 * @param st
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		startEdit(st) {
 			this.editingId = st.id
 			this.editForm = { ...st }
@@ -349,7 +352,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/specs/status-transition-engine/spec.md */
+		/**
+		 * @param st
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		async deleteStatusType(st) {
 			this.error = ''
 
@@ -375,13 +381,20 @@ export default {
 		},
 
 		// Drag and drop
-		/** @spec openspec/specs/status-transition-engine/spec.md */
+		/**
+		 * @param index
+		 * @param event
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		onDragStart(index, event) {
 			this.dragIndex = index
 			event.dataTransfer.effectAllowed = 'move'
 		},
 
-		/** @spec openspec/specs/status-transition-engine/spec.md */
+		/**
+		 * @param index
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		onDragOver(index) {
 			if (this.dragIndex === null || this.dragIndex === index) return
 			this.dragOverIndex = index
@@ -392,7 +405,10 @@ export default {
 			this.dragOverIndex = null
 		},
 
-		/** @spec openspec/specs/status-transition-engine/spec.md */
+		/**
+		 * @param targetIndex
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		async onDrop(targetIndex) {
 			if (this.dragIndex === null || this.dragIndex === targetIndex) {
 				this.dragOverIndex = null

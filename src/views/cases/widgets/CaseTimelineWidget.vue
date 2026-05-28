@@ -102,7 +102,10 @@ export default {
 		}
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/**
+		 * @param status
+		 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
+		 */
 		onStatusSelected(status) {
 			if (!status || status.id === this.currentStatusId) {
 				this.selectedStatus = null

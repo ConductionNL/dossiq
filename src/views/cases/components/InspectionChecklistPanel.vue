@@ -154,14 +154,22 @@ export default {
 			this.activeChecklist = { ...this.selectedChecklist }
 			this.itemResults = {}
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+		/**
+		 * @param index
+		 * @param value
+		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 */
 		setResult(index, value) {
 			this.$set(this.itemResults, index, {
 				...(this.itemResults[index] || {}),
 				result: value,
 			})
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+		/**
+		 * @param index
+		 * @param value
+		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 */
 		setComment(index, value) {
 			this.$set(this.itemResults, index, {
 				...(this.itemResults[index] || {}),

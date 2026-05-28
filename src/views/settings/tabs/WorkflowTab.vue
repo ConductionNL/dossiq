@@ -327,7 +327,10 @@ export default {
 			this.$refs.importInput.click()
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param event
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async handleImport(event) {
 			const file = event.target.files[0]
 			if (!file) return

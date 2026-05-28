@@ -98,10 +98,6 @@ class GuardRegistry
     {
         $results = [];
         foreach ($guards as $guard) {
-            if (is_array($guard) === false) {
-                continue;
-            }
-
             $type = (string) ($guard['type'] ?? '');
             if ($type === '') {
                 continue;
@@ -142,7 +138,7 @@ class GuardRegistry
     public function allPassed(array $results): bool
     {
         foreach ($results as $result) {
-            if (($result['passed'] ?? false) !== true) {
+            if ($result['passed'] !== true) {
                 return false;
             }
         }

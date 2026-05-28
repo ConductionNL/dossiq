@@ -345,7 +345,10 @@ export default {
 	},
 	watch: {
 		step: {
-			/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+			/**
+			 * @param newStep
+			 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+			 */
 			handler(newStep) {
 				this.localStep = { ...newStep }
 				this.localChecklist = this.parseChecklist(newStep.checklist)
@@ -357,7 +360,10 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/**
+		 * @param config
+		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 */
 		parseConfig(config) {
 			let raw = config
 			if (typeof raw === 'string') {
@@ -416,7 +422,10 @@ export default {
 			this.emitUpdate()
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/**
+		 * @param index
+		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 */
 		removeRequiredField(index) {
 			this.localConfig.requiredFields.splice(index, 1)
 			this.emitUpdate()
@@ -427,7 +436,10 @@ export default {
 			this.emitUpdate()
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/**
+		 * @param checklist
+		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 */
 		parseChecklist(checklist) {
 			if (!checklist) return []
 			if (typeof checklist === 'string') {
@@ -436,7 +448,10 @@ export default {
 			return [...checklist]
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/**
+		 * @param actions
+		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 */
 		parseActions(actions) {
 			if (!actions) return []
 			if (typeof actions === 'string') {
@@ -471,19 +486,30 @@ export default {
 			this.emitUpdate()
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/**
+		 * @param index
+		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 */
 		removeChecklistItem(index) {
 			this.localChecklist.splice(index, 1)
 			this.emitUpdate()
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/**
+		 * @param index
+		 * @param event
+		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 */
 		onCheckDragStart(index, event) {
 			this.dragCheckIndex = index
 			event.dataTransfer.effectAllowed = 'move'
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/**
+		 * @param targetIndex
+		 * @param event
+		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 */
 		onCheckDrop(targetIndex, event) {
 			if (this.dragCheckIndex !== null && this.dragCheckIndex !== targetIndex) {
 				const item = this.localChecklist.splice(this.dragCheckIndex, 1)[0]
@@ -499,7 +525,10 @@ export default {
 			this.emitUpdate()
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md */
+		/**
+		 * @param index
+		 * @spec openspec/changes/retrofit-2026-05-25-process-step-configuration/tasks.md
+		 */
 		removeAction(index) {
 			this.localActions.splice(index, 1)
 			this.emitUpdate()

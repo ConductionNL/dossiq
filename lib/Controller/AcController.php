@@ -166,7 +166,6 @@ class AcController extends ZgwController
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
      *
      * @NoCSRFRequired
-     * @PublicPage
      * @CORS
      */
     public function create(): JSONResponse
@@ -309,7 +308,6 @@ class AcController extends ZgwController
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
      *
      * @NoCSRFRequired
-     * @PublicPage
      * @CORS
      */
     public function update(string $uuid): JSONResponse
@@ -417,7 +415,6 @@ class AcController extends ZgwController
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
      *
      * @NoCSRFRequired
-     * @PublicPage
      * @CORS
      */
     public function patch(string $uuid): JSONResponse
@@ -436,7 +433,6 @@ class AcController extends ZgwController
      * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
      *
      * @NoCSRFRequired
-     * @PublicPage
      * @CORS
      */
     public function destroy(string $uuid): JSONResponse

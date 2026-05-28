@@ -256,7 +256,10 @@ export default {
 				this.loading = false
 			}
 		},
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param template
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		parseTemplate(template) {
 			const parseField = (raw, fallback) => {
 				if (Array.isArray(raw) || typeof raw === 'object') {
@@ -285,7 +288,10 @@ export default {
 				layout: this.workingCopy.layout,
 			}
 		},
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param nodes
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onNodesUpdate(nodes) {
 			// Capture position changes back into the layout block.
 			const layout = { ...(this.workingCopy.layout || {}) }
@@ -303,7 +309,10 @@ export default {
 				this.isDirty = true
 			}
 		},
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param edges
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onEdgesUpdate(edges) {
 			// Keep transitions in working copy aligned with rendered edges
 			// (e.g. when vue-flow signals deletes from the user).
@@ -317,17 +326,28 @@ export default {
 				this.isDirty = true
 			}
 		},
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param node
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onSelectNode(node) {
 			this.selectedNode = node
 			this.selectedEdge = null
 		},
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param edge
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onSelectEdge(edge) {
 			this.selectedEdge = edge
 			this.selectedNode = null
 		},
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param root0
+		 * @param root0.type
+		 * @param root0.position
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onDropNode({ type, position }) {
 			const id = `step-${Date.now()}`
 			const newStep = {
@@ -345,7 +365,12 @@ export default {
 			}
 			this.isDirty = true
 		},
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param root0
+		 * @param root0.source
+		 * @param root0.target
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onConnect({ source, target }) {
 			if (!source || !target) return
 			const id = `tr-${Date.now()}`
@@ -360,7 +385,12 @@ export default {
 			this.workingCopy = { ...this.workingCopy, transitions: next }
 			this.isDirty = true
 		},
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param root0
+		 * @param root0.nodeId
+		 * @param root0.patch
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onNodePropsUpdate({ nodeId, patch }) {
 			const steps = (this.workingCopy.steps || []).map((step, idx) => {
 				const id = step.id || step.status || `step-${idx}`
@@ -374,7 +404,12 @@ export default {
 			this.workingCopy = { ...this.workingCopy, steps }
 			this.isDirty = true
 		},
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param root0
+		 * @param root0.edgeId
+		 * @param root0.patch
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		onEdgePropsUpdate({ edgeId, patch }) {
 			const transitions = (this.workingCopy.transitions || []).map((tr, idx) => {
 				const id = tr.id || `edge-${idx}`
@@ -390,7 +425,10 @@ export default {
 			if (this.autosaveTimer) clearTimeout(this.autosaveTimer)
 			this.autosaveTimer = setTimeout(() => this.onSaveDraft(true), 2000)
 		},
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param silent
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async onSaveDraft(silent = false) {
 			if (!this.template || this.readOnly) return
 			this.saving = true
@@ -451,7 +489,10 @@ export default {
 		onImport() {
 			this.$refs.importInput.click()
 		},
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param event
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async onImportFile(event) {
 			const file = event.target.files && event.target.files[0]
 			if (!file) return

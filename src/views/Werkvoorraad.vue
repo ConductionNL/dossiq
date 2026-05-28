@@ -271,13 +271,19 @@ export default {
 			this.activeFilter = filter
 		},
 
-		/** @spec openspec/changes/my-work/tasks.md */
+		/**
+		 * @param caseTypeId
+		 * @spec openspec/changes/my-work/tasks.md
+		 */
 		getCaseTypeName(caseTypeId) {
 			const ct = this.caseTypes.find(t => t.id === caseTypeId)
 			return ct?.title || '—'
 		},
 
-		/** @spec openspec/changes/my-work/tasks.md */
+		/**
+		 * @param statusId
+		 * @spec openspec/changes/my-work/tasks.md
+		 */
 		getStatusName(statusId) {
 			const st = this.statusTypes.find(s => s.id === statusId)
 			return st?.name || '—'
@@ -287,7 +293,10 @@ export default {
 			return isCaseOverdue(caseItem, false)
 		},
 
-		/** @spec openspec/changes/my-work/tasks.md */
+		/**
+		 * @param caseItem
+		 * @spec openspec/changes/my-work/tasks.md
+		 */
 		formatDeadline(caseItem) {
 			if (!caseItem.deadline) return '—'
 			const days = getDaysRemaining(caseItem.deadline)
@@ -299,7 +308,10 @@ export default {
 			return `${dateStr} (${days} ${t('procest', 'days')})`
 		},
 
-		/** @spec openspec/changes/my-work/tasks.md */
+		/**
+		 * @param caseItem
+		 * @spec openspec/changes/my-work/tasks.md
+		 */
 		openCase(caseItem) {
 			this.$router.push({ name: 'CaseDetail', params: { id: caseItem.id } })
 		},

@@ -43,7 +43,10 @@ export async function checkOpenRegisterStatus() {
  * @param {{ available: boolean, configured: boolean, error: string|null }} status
  * @return {string}
  */
-/** @spec openspec/changes/openregister-integration/tasks.md */
+/**
+ * @param status
+ * @spec openspec/changes/openregister-integration/tasks.md
+ */
 export function getStatusMessage(status) {
 	if (status.error) {
 		return t('procest', 'Could not check OpenRegister status: {error}', { error: status.error })

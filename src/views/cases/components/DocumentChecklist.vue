@@ -127,7 +127,10 @@ export default {
 			return this.caseDocuments.some(cd => cd.documentType === docTypeId)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param docTypeId
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		getUploadDate(docTypeId) {
 			const doc = this.caseDocuments.find(cd => cd.documentType === docTypeId)
 			if (!doc?.registrationDate) return null
@@ -137,7 +140,10 @@ export default {
 			})
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param statusTypeId
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		getStatusName(statusTypeId) {
 			const st = this.statusTypes.find(s => s.id === statusTypeId)
 			return st?.name || statusTypeId

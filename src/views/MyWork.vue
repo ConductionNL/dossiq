@@ -423,7 +423,10 @@ export default {
 				console.warn('Failed to fetch completed items:', err)
 			}
 		},
-		/** @spec openspec/changes/my-work/tasks.md */
+		/**
+		 * @param item
+		 * @spec openspec/changes/my-work/tasks.md
+		 */
 		onItemClick(item) {
 			if (item.type === 'case') {
 				this.$router.push({ name: 'CaseDetail', params: { id: item.id } })

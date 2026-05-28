@@ -92,20 +92,24 @@ class InspectionController extends Controller
         }
 
         try {
-            $userId      = $user->getUID();
-            $date        = $this->request->getParam('date');
+            $userId        = $user->getUID();
+            $date          = $this->request->getParam('date');
             $objectService = $this->getObjectService();
 
             $allInspections = [];
             if ($objectService !== null) {
-                $register = $this->settingsService->getConfigValue('register');
-                $schema   = $this->settingsService->getConfigValue('inspection_schema');
+                $register       = $this->settingsService->getConfigValue('register');
+                $schema         = $this->settingsService->getConfigValue('inspection_schema');
                 $allInspections = $objectService->findAll(
                     ['filters' => ['register' => (int) $register, 'schema' => (int) $schema, 'inspectorId' => $userId]],
                 );
                 $allInspections = array_map(
                     static function ($item) {
-                        return is_object($item) ? $item->jsonSerialize() : (array) $item;
+                        if (is_object($item) === true) {
+                            return $item->jsonSerialize();
+                        }
+
+                        return (array) $item;
                     },
                     $allInspections
                 );
@@ -120,7 +124,7 @@ class InspectionController extends Controller
                 ['error' => 'Failed to list inspections'],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
+        }//end try
     }//end index()
 
     /**
@@ -160,12 +164,16 @@ class InspectionController extends Controller
                 );
             }
 
-            $register   = $this->settingsService->getConfigValue('register');
-            $schema     = $this->settingsService->getConfigValue('inspection_schema');
-            $object     = $objectService->find($id, register: (int) $register, schema: (int) $schema);
-            $inspection = is_object($object) ? $object->jsonSerialize() : (array) $object;
+            $register = $this->settingsService->getConfigValue('register');
+            $schema   = $this->settingsService->getConfigValue('inspection_schema');
+            $object   = $objectService->find($id, register: (int) $register, schema: (int) $schema);
+            if (is_object($object) === true) {
+                $inspection = $object->jsonSerialize();
+            } else {
+                $inspection = (array) $object;
+            }
 
-            $result     = $this->inspectionService->captureLocation(
+            $result = $this->inspectionService->captureLocation(
                 $inspection,
                 $latitude,
                 $longitude,
@@ -271,10 +279,14 @@ class InspectionController extends Controller
             $body          = $this->getRequestBody();
             $photoMetadata = $body['photoMetadata'] ?? [];
 
-            $register   = $this->settingsService->getConfigValue('register');
-            $schema     = $this->settingsService->getConfigValue('inspection_schema');
-            $object     = $objectService->find($id, register: (int) $register, schema: (int) $schema);
-            $inspection = is_object($object) ? $object->jsonSerialize() : (array) $object;
+            $register = $this->settingsService->getConfigValue('register');
+            $schema   = $this->settingsService->getConfigValue('inspection_schema');
+            $object   = $objectService->find($id, register: (int) $register, schema: (int) $schema);
+            if (is_object($object) === true) {
+                $inspection = $object->jsonSerialize();
+            } else {
+                $inspection = (array) $object;
+            }
 
             $updatedInspection = $this->inspectionService->addPhoto($inspection, $photoMetadata);
 
@@ -287,7 +299,7 @@ class InspectionController extends Controller
                 ['error' => 'Failed to add photo'],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
+        }//end try
     }//end addPhoto()
 
     /**
@@ -318,10 +330,14 @@ class InspectionController extends Controller
             $body       = $this->getRequestBody();
             $conclusion = $body['conclusion'] ?? '';
 
-            $register   = $this->settingsService->getConfigValue('register');
-            $schema     = $this->settingsService->getConfigValue('inspection_schema');
-            $object     = $objectService->find($id, register: (int) $register, schema: (int) $schema);
-            $inspection = is_object($object) ? $object->jsonSerialize() : (array) $object;
+            $register = $this->settingsService->getConfigValue('register');
+            $schema   = $this->settingsService->getConfigValue('inspection_schema');
+            $object   = $objectService->find($id, register: (int) $register, schema: (int) $schema);
+            if (is_object($object) === true) {
+                $inspection = $object->jsonSerialize();
+            } else {
+                $inspection = (array) $object;
+            }
 
             $result = $this->inspectionService->completeInspection($inspection, $conclusion);
 
@@ -339,7 +355,7 @@ class InspectionController extends Controller
                 ['error' => 'Failed to complete inspection'],
                 Http::STATUS_INTERNAL_SERVER_ERROR
             );
-        }
+        }//end try
     }//end complete()
 
     /**

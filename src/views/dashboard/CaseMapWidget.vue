@@ -62,7 +62,10 @@ export default {
 		}
 	},
 	methods: {
-		/** @spec openspec/specs/case-map-overview/spec.md */
+		/**
+		 * @param caseObj
+		 * @spec openspec/specs/case-map-overview/spec.md
+		 */
 		getColor(caseObj) {
 			if (caseObj.endDate) return '#4CAF50'
 			if (caseObj.deadline) {
@@ -71,7 +74,10 @@ export default {
 			}
 			return '#2196F3'
 		},
-		/** @spec openspec/specs/case-map-overview/spec.md */
+		/**
+		 * @param properties
+		 * @spec openspec/specs/case-map-overview/spec.md
+		 */
 		onMarkerClick(properties) {
 			if (properties?.id) {
 				this.$router?.push({ name: 'CaseDetail', params: { id: properties.id } })

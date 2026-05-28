@@ -185,7 +185,10 @@ export default {
 			)
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param transition
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async executeTransition(transition) {
 			if (!transition.available) return
 
@@ -225,7 +228,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param statusId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async createStepTasks(statusId) {
 			if (!this.workflowTemplate) return
 
@@ -259,7 +265,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
+		/**
+		 * @param fromStatusId
+		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 */
 		async terminateOptionalTasks(fromStatusId) {
 			if (!this.workflowTemplate) return
 

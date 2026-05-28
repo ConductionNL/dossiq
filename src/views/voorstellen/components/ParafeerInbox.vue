@@ -96,11 +96,17 @@ export default {
 				this.loading = false
 			}
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param type
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatType(type) {
 			return TYPE_LABELS[type] || type || '-'
 		},
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * @param voorstel
+		 * @spec openspec/specs/parafering-actions/spec.md
+		 */
 		formatDate(voorstel) {
 			const date = voorstel._self?.updated || voorstel.updatedAt
 			if (!date) return '-'

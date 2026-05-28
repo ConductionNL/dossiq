@@ -226,7 +226,11 @@ export default {
 			this.loadingDetail = false
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
+		/**
+		 * @param field
+		 * @param value
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		onFieldUpdate(field, value) {
 			this.form[field] = value
 			// Clear validation error for this field

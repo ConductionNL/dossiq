@@ -50,7 +50,10 @@ const TERMINAL_STATUSES = new Set(['completed', 'terminated', 'disabled'])
  * @param {string} currentStatus One of the TASK_STATUSES values
  * @return {string[]} Array of valid target statuses
  */
-/** @spec openspec/changes/task-management/tasks.md */
+/**
+ * @param currentStatus
+ * @spec openspec/changes/task-management/tasks.md
+ */
 export function getAllowedTransitions(currentStatus) {
 	return TRANSITION_MAP[currentStatus] || []
 }
@@ -62,7 +65,11 @@ export function getAllowedTransitions(currentStatus) {
  * @param {string} to   Target status
  * @return {boolean}
  */
-/** @spec openspec/changes/task-management/tasks.md */
+/**
+ * @param from
+ * @param to
+ * @spec openspec/changes/task-management/tasks.md
+ */
 export function validateTransition(from, to) {
 	const allowed = TRANSITION_MAP[from]
 	return Array.isArray(allowed) && allowed.includes(to)
@@ -74,7 +81,10 @@ export function validateTransition(from, to) {
  * @param {string} status One of the TASK_STATUSES values
  * @return {string}
  */
-/** @spec openspec/changes/task-management/tasks.md */
+/**
+ * @param status
+ * @spec openspec/changes/task-management/tasks.md
+ */
 export function getStatusLabel(status) {
 	return getStatusLabels()[status] || status
 }
@@ -85,7 +95,10 @@ export function getStatusLabel(status) {
  * @param {string} targetStatus The status being transitioned to
  * @return {string}
  */
-/** @spec openspec/changes/task-management/tasks.md */
+/**
+ * @param targetStatus
+ * @spec openspec/changes/task-management/tasks.md
+ */
 export function getTransitionLabel(targetStatus) {
 	return getTransitionLabels()[targetStatus] || targetStatus
 }
@@ -96,7 +109,10 @@ export function getTransitionLabel(targetStatus) {
  * @param {string} status One of the TASK_STATUSES values
  * @return {boolean}
  */
-/** @spec openspec/changes/task-management/tasks.md */
+/**
+ * @param status
+ * @spec openspec/changes/task-management/tasks.md
+ */
 export function isTerminalStatus(status) {
 	return TERMINAL_STATUSES.has(status)
 }

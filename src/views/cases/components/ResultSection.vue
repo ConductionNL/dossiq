@@ -77,7 +77,10 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param isoDuration
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		formatPeriod(isoDuration) {
 			if (!isoDuration) return ''
 			const match = isoDuration.match(/P(\d+)Y/)

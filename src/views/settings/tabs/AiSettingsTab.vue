@@ -162,7 +162,11 @@ export default {
 	},
 	methods: {
 		t,
-		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
+		/**
+		 * @param key
+		 * @param value
+		 * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+		 */
 		async updateSetting(key, value) {
 			this.settings[key] = value
 			try {

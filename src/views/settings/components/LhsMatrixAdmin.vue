@@ -131,7 +131,12 @@ export default {
 	methods: {
 		t,
 
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/**
+		 * @param ernst
+		 * @param gedrag
+		 * @param value
+		 * @spec openspec/changes/vth-module/tasks.md
+		 */
 		updateCell(ernst, gedrag, value) {
 			if (!this.matrix[ernst]) {
 				this.matrix[ernst] = {}

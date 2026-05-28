@@ -204,7 +204,10 @@ export default {
 		}
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
+		/**
+		 * @param period
+		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 */
 		formatPeriod(period) {
 			if (!period) return '—'
 			const match = period.match(/^P(\d+)([YDMW])$/)
@@ -242,7 +245,10 @@ export default {
 				this.addError = this.objectStore.getError('resultType') || t('procest', 'Failed to add result type')
 			}
 		},
-		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
+		/**
+		 * @param rt
+		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 */
 		startEdit(rt) { this.editingId = rt.id; this.editForm = { ...rt }; this.editError = '' },
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		cancelEdit() { this.editingId = null; this.editForm = {}; this.editError = '' },
@@ -265,7 +271,10 @@ export default {
 				this.editError = this.objectStore.getError('resultType') || t('procest', 'Failed to save')
 			}
 		},
-		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
+		/**
+		 * @param rt
+		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 */
 		async deleteResultType(rt) {
 			if (!confirm(t('procest', 'Delete result type "{name}"?', { name: rt.name }))) return
 			const ok = await this.objectStore.deleteObject('resultType', rt.id)

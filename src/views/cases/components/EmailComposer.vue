@@ -166,17 +166,26 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param varName
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		formatVariable(varName) {
 			return '{{' + varName + '}}'
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param template
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		onTemplateSelected(template) {
 			if (!template) return
 			this.form.subject = template.subjectPattern || ''
 			this.form.body = template.body || ''
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param varName
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		insertVariable(varName) {
 			this.form.body += '{{' + varName + '}}'
 		},
@@ -186,7 +195,10 @@ export default {
 			this.previewBody = this.resolveVars(this.form.body)
 			this.showPreview = true
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param text
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		resolveVars(text) {
 			return text.replace(/\{\{(\w+)\}\}/g, (match, key) => {
 				return this.caseData[key] || match

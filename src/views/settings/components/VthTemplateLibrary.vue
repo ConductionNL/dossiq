@@ -174,12 +174,18 @@ export default {
 	methods: {
 		t,
 
-		/** @spec openspec/changes/retrofit-2026-05-25-vth-workflow-templates/tasks.md */
+		/**
+		 * @param template
+		 * @spec openspec/changes/retrofit-2026-05-25-vth-workflow-templates/tasks.md
+		 */
 		selectTemplate(template) {
 			this.selectedTemplate = template
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-vth-workflow-templates/tasks.md */
+		/**
+		 * @param category
+		 * @spec openspec/changes/retrofit-2026-05-25-vth-workflow-templates/tasks.md
+		 */
 		getIcon(category) {
 			// Return simple SVG path based on category
 			const icons = {

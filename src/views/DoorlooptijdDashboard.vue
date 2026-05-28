@@ -702,11 +702,17 @@ export default {
 				this.loading = false
 			}
 		},
-		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
+		/**
+		 * @param key
+		 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md
+		 */
 		applyPreset(key) {
 			this.selectedPreset = key
 		},
-		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
+		/**
+		 * @param column
+		 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md
+		 */
 		sortTable(column) {
 			if (this.sortColumn === column) {
 				this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'

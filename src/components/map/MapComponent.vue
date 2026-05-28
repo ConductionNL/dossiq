@@ -198,7 +198,10 @@ export default {
 		 *
 		 * @param {object} marker The formatted marker descriptor.
 		 */
-		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
+		/**
+		 * @param marker
+		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+		 */
 		onMarkerClick(marker) {
 			const location = marker && marker.__sourceLocation
 				? marker.__sourceLocation
@@ -213,7 +216,10 @@ export default {
 		 *
 		 * @param {object} payload `{ center, zoom, bbox }` from the lib.
 		 */
-		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
+		/**
+		 * @param payload
+		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+		 */
 		onViewportChangeRaw(payload) {
 			if (this.viewportDebounceTimer) {
 				clearTimeout(this.viewportDebounceTimer)
@@ -229,7 +235,10 @@ export default {
 		 *
 		 * @param {object} payload `{ map }` from the lib.
 		 */
-		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
+		/**
+		 * @param payload
+		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+		 */
 		onReady(payload) {
 			this.$emit('ready', payload)
 		},

@@ -219,7 +219,10 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
+		/**
+		 * @param status
+		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
+		 */
 		getHearingStatusLabel(status) {
 			const labels = {
 				gepland: t('procest', 'Scheduled'),
@@ -230,7 +233,10 @@ export default {
 			}
 			return labels[status] || status
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
+		/**
+		 * @param dateStr
+		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
+		 */
 		formatDateTime(dateStr) {
 			if (!dateStr) return '—'
 			try {

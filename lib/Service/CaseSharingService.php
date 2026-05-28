@@ -401,7 +401,7 @@ class CaseSharingService
      * @param string      $token    The plaintext token supplied by the user
      * @param string|null $password Optional plaintext password
      *
-     * @return array{valid: bool, share?: array, error?: string}
+     * @return array{valid: bool, share?: array, error?: string, requiresPassword?: bool}
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
@@ -492,7 +492,7 @@ class CaseSharingService
                     );
                 }
 
-                return ['valid' => false, 'error' => 'Onjuist wachtwoord'];
+                return ['valid' => false, 'error' => 'Onjuist wachtwoord', 'requiresPassword' => true];
             }
         }
 
@@ -502,6 +502,98 @@ class CaseSharingService
 
         return ['valid' => true, 'share' => $share];
     }//end validateToken()
+
+    /**
+     * Revoke a case share by marking it as revoked in OpenRegister.
+     *
+     * @param string $shareId The UUID of the share to revoke
+     * @param string $userId  The user ID performing the revocation
+     *
+     * @return array The updated share data
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     */
+    public function revokeShare(string $shareId, string $userId): array
+    {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
+            return ['error' => 'OpenRegister is not available'];
+        }
+
+        $register    = $this->settingsService->getConfigValue('register');
+        $shareSchema = $this->settingsService->getConfigValue('case_share_schema');
+
+        if (empty($register) === true || empty($shareSchema) === true) {
+            return ['error' => 'Service unavailable'];
+        }
+
+        $shareObj = $objectService->find($shareId, register: (int) $register, schema: (int) $shareSchema);
+        if ($shareObj === null) {
+            return ['error' => 'Share not found'];
+        }
+
+        if (is_array($shareObj) === true) {
+            $shareData = $shareObj;
+        } else {
+            $shareData = $shareObj->jsonSerialize();
+        }
+
+        $shareData['status']    = 'revoked';
+        $shareData['revokedBy'] = $userId;
+        $shareData['revokedAt'] = (new \DateTime())->format('c');
+
+        $result = $objectService->saveObject((int) $register, (int) $shareSchema, $shareData);
+
+        $this->logger->info(
+            'Procest: Case share revoked',
+            ['shareId' => $shareId, 'revokedBy' => $userId]
+        );
+
+        if (is_array($result) === true) {
+            return $result;
+        }
+
+        return $result->jsonSerialize();
+    }//end revokeShare()
+
+    /**
+     * Filter case data according to the share's permission level and field exclusions.
+     *
+     * @param array<string, mixed> $shareData Share configuration (permissionLevel, fieldExclusions, shareType)
+     * @param array<string, mixed> $caseData  Full case data to be filtered
+     *
+     * @return array<string, mixed> Filtered case data safe to expose to the share recipient
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     */
+    public function getFilteredCaseData(array $shareData, array $caseData): array
+    {
+        // Decode field exclusions stored as JSON string or array.
+        $exclusions = $shareData['fieldExclusions'] ?? [];
+        if (is_string($exclusions) === true) {
+            $decoded = json_decode($exclusions, true);
+            if (is_array($decoded) === true) {
+                $exclusions = $decoded;
+            } else {
+                $exclusions = [];
+            }
+        }
+
+        if (is_array($exclusions) === false) {
+            $exclusions = [];
+        }
+
+        // Merge the configured exclusions with the default set.
+        $allExclusions = array_unique(array_merge(self::DEFAULT_EXCLUDED_FIELDS, (array) $exclusions));
+
+        // Remove excluded fields from the case data.
+        $filtered = $caseData;
+        foreach ($allExclusions as $field) {
+            unset($filtered[(string) $field]);
+        }
+
+        return $filtered;
+    }//end getFilteredCaseData()
 
     /**
      * Resolve the ObjectService from the DI container.

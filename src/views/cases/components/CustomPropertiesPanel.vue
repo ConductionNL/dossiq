@@ -139,13 +139,19 @@ export default {
 			this.loading = false
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param propDefId
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		getPropertyValue(propDefId) {
 			const prop = this.caseProperties.find(cp => cp.propertyDefinition === propDefId)
 			return prop?.value || ''
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param propDef
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		startEdit(propDef) {
 			if (this.isReadOnly) return
 			this.editing = true
@@ -167,7 +173,10 @@ export default {
 			this.editValue = ''
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @param propDef
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 */
 		async saveProperty(propDef) {
 			const objectStore = useObjectStore()
 			const existing = this.caseProperties.find(cp => cp.propertyDefinition === propDef.id)

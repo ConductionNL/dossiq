@@ -181,7 +181,10 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
+		/**
+		 * @param type
+		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
+		 */
 		getAdviceTypeLabel(type) {
 			const labels = {
 				gegrond: t('procest', 'Upheld'),

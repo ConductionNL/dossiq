@@ -208,7 +208,10 @@ export default {
 	watch: {
 		caseTypeId: {
 			immediate: true,
-			/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+			/**
+			 * @param newId
+			 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+			 */
 			handler(newId) {
 				if (newId) {
 					this.inspectionStore.fetchChecklists(newId)
@@ -231,7 +234,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+		/**
+		 * @param checklist
+		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 */
 		editChecklist(checklist) {
 			this.editingChecklist = JSON.parse(JSON.stringify(checklist))
 		},
@@ -258,12 +264,18 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+		/**
+		 * @param checklist
+		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 */
 		async createVersion(checklist) {
 			await this.inspectionStore.createNewVersion(checklist)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+		/**
+		 * @param checklist
+		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 */
 		async deleteChecklist(checklist) {
 			if (confirm(t('procest', 'Are you sure you want to delete this checklist?'))) {
 				await this.inspectionStore.deleteChecklist(checklist.id)
@@ -286,23 +298,37 @@ export default {
 			})
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+		/**
+		 * @param index
+		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 */
 		removeItem(index) {
 			this.editingChecklist.items.splice(index, 1)
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+		/**
+		 * @param index
+		 * @param event
+		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 */
 		onDragStart(index, event) {
 			this.dragIndex = index
 			event.dataTransfer.effectAllowed = 'move'
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+		/**
+		 * @param index
+		 * @param event
+		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 */
 		onDragOver(index, event) {
 			event.dataTransfer.dropEffect = 'move'
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
+		/**
+		 * @param index
+		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
+		 */
 		onDrop(index) {
 			if (this.dragIndex === null || this.dragIndex === index) {
 				return

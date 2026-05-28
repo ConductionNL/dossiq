@@ -50,7 +50,10 @@ export default {
 		}
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
+		/**
+		 * @param value
+		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+		 */
 		async onInput(value) {
 			this.query = value
 			if (value.length < 3) {
@@ -80,7 +83,10 @@ export default {
 			}
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
+		/**
+		 * @param result
+		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+		 */
 		async selectResult(result) {
 			// Look up full details if we have an ID
 			let fullResult = result
@@ -114,7 +120,10 @@ export default {
 			this.results = []
 		},
 
-		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
+		/**
+		 * @param type
+		 * @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md
+		 */
 		getTypeIcon(type) {
 			switch (type) {
 			case 'adres': return '\uD83C\uDFE0'
