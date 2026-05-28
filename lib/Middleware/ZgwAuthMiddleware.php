@@ -18,6 +18,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-4
  */
 
 declare(strict_types=1);
@@ -175,6 +177,7 @@ class ZgwAuthMiddleware extends Middleware
         }
 
         // Validate JWT signature via OpenRegister's AuthorizationService.
+        // M3: Log detailed message server-side; surface only a generic message to caller.
         try {
             $this->authorizationService->authorizeJwt(authorization: $authorization);
         } catch (\Exception $e) {
@@ -182,7 +185,7 @@ class ZgwAuthMiddleware extends Middleware
                 'ZGW auth failed: '.$e->getMessage()
             );
             throw new ZgwAuthException(
-                message: $e->getMessage(),
+                message: 'Authenticatiegegevens zijn niet geldig.',
                 statusCode: Http::STATUS_FORBIDDEN
             );
         }

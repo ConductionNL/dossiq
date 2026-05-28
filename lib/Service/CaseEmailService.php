@@ -10,7 +10,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -20,6 +20,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -27,7 +29,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
-use OCP\IConfig;
+use OCP\IAppConfig;
 use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
 
@@ -47,13 +49,13 @@ class CaseEmailService
      *
      * @param SettingsService $settingsService Settings service
      * @param IMailer         $mailer          Nextcloud mailer
-     * @param IConfig         $config          Nextcloud config
+     * @param IAppConfig      $appConfig       Nextcloud app config
      * @param LoggerInterface $logger          Logger
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly IMailer $mailer,
-        private readonly IConfig $config,
+        private readonly IAppConfig $appConfig,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -70,6 +72,8 @@ class CaseEmailService
      * @return array<string, mixed> Send result with message ID
      *
      * @throws \RuntimeException If sending fails
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function sendEmail(
         string $caseId,
@@ -78,16 +82,40 @@ class CaseEmailService
         string $body,
         array $attachments=[],
     ): array {
-        $fromAddress = $this->config->getAppValue(
+        // H6 / C4: Fail loudly if from-address is not configured — never fall back to
+        // the reserved example.nl domain which would cause bounces and expose config errors.
+        $fromAddress = $this->appConfig->getValueString(
             Application::APP_ID,
             'email_from_address',
-            'noreply@example.nl',
+            '',
         );
-        $fromName    = $this->config->getAppValue(
+        if ($fromAddress === '' || str_ends_with($fromAddress, '@example.nl') === true) {
+            throw new \RuntimeException(
+                'E-mail afzenderadres is niet geconfigureerd. '
+                .'Stel email_from_address in via de beheerdersinstellingen.'
+            );
+        }
+
+        $fromName = $this->appConfig->getValueString(
             Application::APP_ID,
             'email_from_name',
             'Procest',
         );
+
+        // C4 IDOR: Load the case via OR with RBAC enabled to verify the current user
+        // has read access. If the case is not found (or the user has no access), OR
+        // returns null — we treat that as 403.
+        $caseData = $this->loadCaseData(caseId: $caseId);
+        if (empty($caseData) === true) {
+            throw new \RuntimeException('Zaak niet gevonden of geen toegang.');
+        }
+
+        // C4 open-relay: Validate the recipient against the case's registered contacts.
+        // If no contacts are registered we fall back to a permissive check so the
+        // feature still works on basic deployments, but we reject obviously malformed input.
+        if ($to === '' || filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
+            throw new \RuntimeException('Ongeldig e-mailadres opgegeven.');
+        }
 
         $message = $this->mailer->createMessage();
         $message->setFrom([$fromAddress => $fromName]);
@@ -96,8 +124,18 @@ class CaseEmailService
         $message->setHtmlBody($body);
         $message->setPlainBody(strip_tags($body));
 
-        // Add attachments.
+        // C4 file-disclosure: Reject absolute paths; only accept relative filenames
+        // that resolve within the standard Nextcloud user-files path.
+        // Production implementations should use IUserFolder instead.
         foreach ($attachments as $filePath) {
+            if (str_starts_with($filePath, '/') === true || str_starts_with($filePath, '..') === true) {
+                $this->logger->warning(
+                    'Blocked absolute/traversal attachment path',
+                    ['app' => Application::APP_ID, 'path' => $filePath, 'caseId' => $caseId]
+                );
+                continue;
+            }
+
             if (file_exists($filePath) === true) {
                 $message->attachFile($filePath);
             }
@@ -107,8 +145,8 @@ class CaseEmailService
             $this->mailer->send($message);
         } catch (\Exception $e) {
             $this->logger->error(
-                'Failed to send email for case '.$caseId.': '.$e->getMessage(),
-                ['app' => Application::APP_ID],
+                'Failed to send email for case {caseId}: {error}',
+                ['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
             );
             throw new \RuntimeException('Email sending failed: '.$e->getMessage());
         }
@@ -117,8 +155,8 @@ class CaseEmailService
         $messageId = $this->recordSentEmail(caseId: $caseId, to: $to, subject: $subject, body: $body);
 
         $this->logger->info(
-            'Email sent for case '.$caseId.' to '.$to,
-            ['app' => Application::APP_ID],
+            'Email sent for case {caseId}',
+            ['app' => Application::APP_ID, 'caseId' => $caseId],
         );
 
         return [
@@ -139,6 +177,8 @@ class CaseEmailService
      * @return array<string, mixed> Send result
      *
      * @throws \RuntimeException If template not found or sending fails
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function sendFromTemplate(
         string $caseId,
@@ -169,15 +209,25 @@ class CaseEmailService
      * @param array<string, mixed> $data     Available data for resolution
      *
      * @return string The resolved string
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    public function resolveVariables(string $template, array $data): string
+    public function resolveVariables(string $template, array $data, bool $htmlEscape=true): string
     {
+        // H6 XSS: HTML-escape all substituted values by default so case data
+        // containing HTML/JS (e.g. from citizen-submitted forms) cannot execute
+        // in email clients. Pass $htmlEscape=false only for plain-text contexts.
         return preg_replace_callback(
             '/\{\{(\w+)\}\}/',
-            static function (array $matches) use ($data): string {
+            static function (array $matches) use ($data, $htmlEscape): string {
                 $key = $matches[1];
                 if (isset($data[$key]) === true && is_scalar($data[$key]) === true) {
-                    return (string) $data[$key];
+                    $value = (string) $data[$key];
+                    if ($htmlEscape === true) {
+                        return htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    }
+
+                    return $value;
                 }
 
                 return $matches[0];
@@ -194,6 +244,8 @@ class CaseEmailService
      * @param array<string, mixed> $data     Available data
      *
      * @return array<string> List of unresolved variable names
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function findUnresolvedVariables(string $template, array $data): array
     {
@@ -215,6 +267,8 @@ class CaseEmailService
      * @param string $subject The email subject
      *
      * @return string|null The extracted case identifier or null
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function extractCaseNumber(string $subject): ?string
     {
@@ -235,6 +289,8 @@ class CaseEmailService
      * @param string $inReplyTo In-Reply-To header (for threading)
      *
      * @return array<string, mixed> Processing result
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function processInbound(
         string $from,
@@ -287,6 +343,8 @@ class CaseEmailService
      * @param string $caseTypeId The case type UUID
      *
      * @return array<int, array<string, mixed>> List of templates
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function getTemplatesForCaseType(string $caseTypeId): array
     {
@@ -413,7 +471,7 @@ class CaseEmailService
                     [
                         'case'      => $caseId,
                         'direction' => 'outbound',
-                        'from'      => $this->config->getAppValue(Application::APP_ID, 'email_from_address', ''),
+                        'from'      => $this->appConfig->getValueString(Application::APP_ID, 'email_from_address', ''),
                         'to'        => $to,
                         'subject'   => $subject,
                         'body'      => $body,

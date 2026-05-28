@@ -23,6 +23,9 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -32,7 +35,6 @@ namespace OCA\Procest\Controller;
 use DateInterval;
 use DateTime;
 use OCA\Procest\Service\ZgwService;
-use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -55,7 +57,7 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
-class ZrcController extends Controller
+class ZrcController extends ZgwController
 {
     /**
      * The ZGW API group for this controller.
@@ -106,13 +108,19 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function index(string $resource): JSONResponse
     {
+        $authError = $this->zgwService->validateJwtAuth($this->request);
+        if ($authError !== null) {
+            return $authError;
+        }
+
         $response = $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
 
         // Zrc-006a: Filter zaken results based on consumer's vertrouwelijkheidaanduiding.
@@ -134,10 +142,11 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function create(string $resource): JSONResponse
     {
@@ -306,20 +315,21 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function show(string $resource, string $uuid): JSONResponse
     {
+        $authError = $this->zgwService->validateJwtAuth($this->request);
+        if ($authError !== null) {
+            return $authError;
+        }
+
         // Zrc-006b: Check zaken.lezen scope and vertrouwelijkheidaanduiding.
         if ($resource === 'zaken') {
-            $authError = $this->zgwService->validateJwtAuth($this->request);
-            if ($authError !== null) {
-                return $authError;
-            }
-
             $scopeError = $this->checkZaakReadAccess(uuid: $uuid);
             if ($scopeError !== null) {
                 return $scopeError;
@@ -339,10 +349,11 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function update(string $resource, string $uuid): JSONResponse
     {
@@ -395,10 +406,11 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function patch(string $resource, string $uuid): JSONResponse
     {
@@ -452,10 +464,11 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function destroy(string $resource, string $uuid): JSONResponse
     {
@@ -508,12 +521,13 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zaakeigenschappenIndex(string $zaakUuid): JSONResponse
     {
@@ -527,12 +541,13 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zaakeigenschappenCreate(string $zaakUuid): JSONResponse
     {
@@ -547,12 +562,13 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zaakeigenschappenShow(string $zaakUuid, string $uuid): JSONResponse
     {
@@ -567,12 +583,13 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zaakeigenschappenUpdate(string $zaakUuid, string $uuid): JSONResponse
     {
@@ -587,12 +604,13 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zaakeigenschappenPatch(string $zaakUuid, string $uuid): JSONResponse
     {
@@ -607,12 +625,13 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zaakeigenschappenDestroy(string $zaakUuid, string $uuid): JSONResponse
     {
@@ -626,10 +645,11 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zaakbesluitenIndex(string $zaakUuid): JSONResponse
     {
@@ -696,10 +716,11 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zoek(): JSONResponse
     {
@@ -721,13 +742,19 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function audittrailIndex(string $resource, string $uuid): JSONResponse
     {
+        $authError = $this->zgwService->validateJwtAuth($this->request);
+        if ($authError !== null) {
+            return $authError;
+        }
+
         return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
     }//end audittrailIndex()
 
@@ -740,13 +767,19 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse
     {
+        $authError = $this->zgwService->validateJwtAuth($this->request);
+        if ($authError !== null) {
+            return $authError;
+        }
+
         return $this->zgwService->handleAudittrailShow($this->request, self::ZGW_API, $resource, $uuid, $auditUuid);
     }//end audittrailShow()
 

@@ -18,6 +18,8 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -82,6 +84,8 @@ class CaseSharingService
      * Generates a 128-bit (16 byte) random token encoded as 32 hex characters.
      *
      * @return string The generated token (32 hex characters)
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function generateToken(): string
     {
@@ -102,6 +106,8 @@ class CaseSharingService
      * @return array The created share data
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) — all params needed for share creation
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function createTokenShare(
         string $caseId,
@@ -169,6 +175,8 @@ class CaseSharingService
      * @param string $createdBy       User ID of the creator
      *
      * @return array The created share data
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function createPartnerShare(
         string $caseId,
@@ -220,6 +228,8 @@ class CaseSharingService
      * @param string $revokedBy The user ID of the revoker
      *
      * @return array The updated share data
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function revokeShare(string $shareId, string $revokedBy): array
     {
@@ -267,6 +277,8 @@ class CaseSharingService
      * @param string|null $password The password attempt (for protected shares)
      *
      * @return array Validation result with 'valid' boolean and share data or error
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function validateToken(string $token, ?string $password=null): array
     {
@@ -278,13 +290,9 @@ class CaseSharingService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('case_share_schema');
 
-        $result = $objectService->getObjects(
-            (int) $register,
-            (int) $schema,
-            ['token' => $token],
+        $shares = $objectService->findAll(
+            ['filters' => ['register' => (int) $register, 'schema' => (int) $schema, 'token' => $token]],
         );
-
-        $shares = ($result['objects'] ?? []);
         if (empty($shares) === true) {
             return ['valid' => false, 'error' => 'Token niet gevonden'];
         }
@@ -358,6 +366,8 @@ class CaseSharingService
      * @param array $caseData  The full case data
      *
      * @return array The filtered case data safe for external viewing
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function getFilteredCaseData(array $shareData, array $caseData): array
     {
@@ -385,6 +395,8 @@ class CaseSharingService
      * @param string $bsn The full BSN number
      *
      * @return string The masked BSN (e.g., "***99*653")
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function maskBsn(string $bsn): string
     {
@@ -491,25 +503,41 @@ class CaseSharingService
      * @param array  $uploadedFile The $_FILES entry for the upload
      *
      * @return array Document descriptor
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function storeExternalDocument(string $caseId, string $shareId, array $uploadedFile): array
     {
+        // L1: Sanitize filename for logging to prevent log injection via crafted filenames.
+        // Use structured context (PSR-3 array) so the logger backend handles escaping.
+        $rawName  = ($uploadedFile['name'] ?? 'unknown');
+        $safeName = preg_replace('/[\r\n\t\x00-\x1F\x7F]/', '_', $rawName) ?? '_unknown_';
+
         $this->logger->info(
             'Procest: External document upload via share',
             [
-                'caseId'  => $caseId,
-                'shareId' => $shareId,
-                'name'    => ($uploadedFile['name'] ?? 'unknown'),
-                'size'    => ($uploadedFile['size'] ?? 0),
+                'caseId'   => $caseId,
+                'shareId'  => $shareId,
+                'filename' => $safeName,
+                'size'     => ($uploadedFile['size'] ?? 0),
             ]
+        );
+
+        // C8: This method is a stub — the uploaded file is NOT persisted.
+        // Return 501 context so callers know persistence is not implemented yet.
+        // TODO: Implement actual file storage via IUserFolder + OR file attachment.
+        $this->logger->warning(
+            'storeExternalDocument: persistence not implemented — uploaded file will be lost',
+            ['caseId' => $caseId, 'shareId' => $shareId]
         );
 
         return [
             'caseId'     => $caseId,
             'shareId'    => $shareId,
-            'name'       => ($uploadedFile['name'] ?? 'unknown'),
+            'name'       => $safeName,
             'size'       => ($uploadedFile['size'] ?? 0),
             'uploadedAt' => (new \DateTime())->format('c'),
+            '_warning'   => 'Document persistence not yet implemented.',
         ];
     }//end storeExternalDocument()
 }//end class

@@ -17,6 +17,9 @@
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -263,6 +266,8 @@ class ZgwService
      * @param string $resource The ZGW resource name
      *
      * @return array|null The mapping configuration or null if not found
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function loadMappingConfig(string $zgwApi, string $resource): ?array
     {
@@ -281,6 +286,8 @@ class ZgwService
      * @param array $mappingConfig The ZGW mapping configuration
      *
      * @return array Translated filter parameters
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function translateQueryParams(array $params, array $mappingConfig): array
     {
@@ -332,6 +339,8 @@ class ZgwService
      * @param array $mappingConfig The ZGW mapping configuration
      *
      * @return Mapping The outbound mapping entity
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function createOutboundMapping(array $mappingConfig): object
     {
@@ -354,6 +363,8 @@ class ZgwService
      * @param array $mappingConfig The ZGW mapping configuration
      *
      * @return Mapping The inbound mapping entity
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function createInboundMapping(array $mappingConfig): object
     {
@@ -379,6 +390,8 @@ class ZgwService
      * @param string $baseUrl       The base URL for ZGW URL references
      *
      * @return array The mapped Dutch-language object
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function applyOutboundMapping(
         array $objectData,
@@ -423,6 +436,8 @@ class ZgwService
      * @param array  $mappingConfig The ZGW mapping configuration
      *
      * @return array The mapped English-language data
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function applyInboundMapping(
         array $body,
@@ -466,6 +481,8 @@ class ZgwService
      * @param IRequest $request The request object
      *
      * @return array The parsed request body
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function getRequestBody(IRequest $request): array
     {
@@ -523,6 +540,8 @@ class ZgwService
      * @param string   $uuid    The controller-injected UUID (potentially wrong)
      *
      * @return string The correct UUID from the URL path, or the fallback
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function resolvePathUuid(IRequest $request, string $uuid): string
     {
@@ -543,6 +562,8 @@ class ZgwService
      * @param mixed  $value The new value
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function updateCachedBodyField(string $key, mixed $value): void
     {
@@ -559,6 +580,8 @@ class ZgwService
      * @param string   $resource The ZGW resource name
      *
      * @return string The base URL
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function buildBaseUrl(IRequest $request, string $zgwApi, string $resource): string
     {
@@ -574,6 +597,8 @@ class ZgwService
      * @param IRequest $request The request object
      *
      * @return JSONResponse|null 401 response on failure, null on success
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function validateJwtAuth(IRequest $request): ?JSONResponse
     {
@@ -597,13 +622,20 @@ class ZgwService
                 authorization: $authHeader
             );
         } catch (\Throwable $e) {
+            // M3: Log detail server-side but never surface internal JWT validation
+            // messages in the HTTP response — they aid algorithm/issuer enumeration.
+            $this->logger->warning(
+                'ZGW JWT validation failed: '.$e->getMessage(),
+                ['app' => 'procest']
+            );
+
             return new JSONResponse(
                 data: [
                     'type'   => 'NotAuthenticated',
                     'code'   => 'not_authenticated',
                     'title'  => 'Authenticatiegegevens zijn niet geldig.',
                     'status' => 403,
-                    'detail' => $e->getMessage(),
+                    'detail' => 'Authenticatiegegevens zijn niet geldig.',
                 ],
                 statusCode: Http::STATUS_FORBIDDEN
             );
@@ -623,32 +655,39 @@ class ZgwService
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — multiple JWT validation paths
      * @SuppressWarnings(PHPMD.NPathComplexity)      — multiple JWT validation paths
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function consumerHasScope(IRequest $request, string $component, string $scope): bool
     {
+        // H2: Fail closed — if ConsumerMapper is not available we cannot verify scope,
+        // so we must deny rather than grant.
         if ($this->consumerMapper === null) {
-            return true;
+            return false;
         }
 
         try {
             $authHeader = $request->getHeader('Authorization');
             $token      = str_replace('Bearer ', '', $authHeader);
             $parts      = explode('.', $token);
+            // H2: Malformed JWT → deny, not grant.
             if (count($parts) !== 3) {
-                return true;
+                return false;
             }
 
             $payload  = json_decode(base64_decode($parts[1]), true);
             $clientId = $payload['client_id'] ?? ($payload['iss'] ?? null);
+            // H2: Missing client_id/iss → deny, not grant.
             if ($clientId === null) {
-                return true;
+                return false;
             }
 
             $consumers = $this->consumerMapper->findAll(
                 filters: ['name' => $clientId]
             );
+            // H2: No matching consumer → deny, not grant.
             if (empty($consumers) === true) {
-                return true;
+                return false;
             }
 
             $consumer   = $consumers[0];
@@ -677,7 +716,8 @@ class ZgwService
             $this->logger->warning(
                 'Could not check consumer scope: '.$e->getMessage()
             );
-            return true;
+            // Fail closed (CWE-863): on error, deny the scope rather than grant it.
+            return false;
         }//end try
     }//end consumerHasScope()
 
@@ -693,32 +733,38 @@ class ZgwService
      * @return array|null Array of autorisatie entries, or null if unrestricted
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — multiple JWT validation paths
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function getConsumerAuthorisaties(IRequest $request, string $component): ?array
     {
+        // H2: Fail closed — if ConsumerMapper unavailable, return empty set (not null/unrestricted).
         if ($this->consumerMapper === null) {
-            return null;
+            return [];
         }
 
         try {
             $authHeader = $request->getHeader('Authorization');
             $token      = str_replace('Bearer ', '', $authHeader);
             $parts      = explode('.', $token);
+            // H2: Malformed JWT → return empty (restricted), not null (unrestricted).
             if (count($parts) !== 3) {
-                return null;
+                return [];
             }
 
             $payload  = json_decode(base64_decode($parts[1]), true);
             $clientId = $payload['client_id'] ?? ($payload['iss'] ?? null);
+            // H2: Missing client_id/iss → return empty (restricted).
             if ($clientId === null) {
-                return null;
+                return [];
             }
 
             $consumers = $this->consumerMapper->findAll(
                 filters: ['name' => $clientId]
             );
+            // H2: No matching consumer → return empty (restricted).
             if (empty($consumers) === true) {
-                return null;
+                return [];
             }
 
             $consumer   = $consumers[0];
@@ -745,7 +791,10 @@ class ZgwService
             $this->logger->warning(
                 'Could not get consumer autorisaties: '.$e->getMessage()
             );
-            return null;
+            // Fail closed (CWE-863): on error, return an empty authorisation set
+            // (caller treats [] as "no scopes granted" → deny) rather than null,
+            // which the caller treats as "unrestricted / allow all".
+            return [];
         }//end try
     }//end getConsumerAuthorisaties()
 
@@ -758,6 +807,8 @@ class ZgwService
      * @param string $actie       The action (create, update, destroy)
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function publishNotification(
         string $zgwApi,
@@ -782,6 +833,8 @@ class ZgwService
      * @param array $ruleResult The validation result from ZgwBusinessRulesService
      *
      * @return array The error response data with detail and optional invalidParams
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function buildValidationError(array $ruleResult): array
     {
@@ -801,6 +854,8 @@ class ZgwService
      * Return an "OpenRegister unavailable" error response.
      *
      * @return JSONResponse
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function unavailableResponse(): JSONResponse
     {
@@ -817,6 +872,8 @@ class ZgwService
      * @param string $resource The ZGW resource name
      *
      * @return JSONResponse
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function mappingNotFoundResponse(string $zgwApi, string $resource): JSONResponse
     {
@@ -834,6 +891,8 @@ class ZgwService
      * @param string   $resource The ZGW resource name
      *
      * @return JSONResponse
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function handleIndex(IRequest $request, string $zgwApi, string $resource): JSONResponse
     {
@@ -935,6 +994,8 @@ class ZgwService
      *
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)   — ZGW scope flags from middleware
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength) — orchestration method with validation + mapping
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function handleCreate(
         IRequest $request,
@@ -1055,6 +1116,8 @@ class ZgwService
      * @param string   $uuid     The resource UUID
      *
      * @return JSONResponse
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function handleShow(
         IRequest $request,
@@ -1124,6 +1187,8 @@ class ZgwService
      * @SuppressWarnings(PHPMD.NPathComplexity)
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)   — ZGW scope flags from middleware
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function handleUpdate(
         IRequest $request,
@@ -1342,6 +1407,8 @@ class ZgwService
      * @return JSONResponse
      *
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — ZGW scope flags from middleware
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function handleDestroy(
         IRequest $request,
@@ -1424,6 +1491,8 @@ class ZgwService
      * @param string   $uuid     The resource UUID
      *
      * @return JSONResponse
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function handleAudittrailIndex(
         IRequest $request,
@@ -1487,6 +1556,8 @@ class ZgwService
      * @param string   $auditUuid The audit trail entry UUID
      *
      * @return JSONResponse
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function handleAudittrailShow(
         IRequest $request,
@@ -1617,6 +1688,8 @@ class ZgwService
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
      * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function resolveZaakClosed(string $resource, array $existingData): ?bool
     {
@@ -1694,6 +1767,8 @@ class ZgwService
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
      * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function resolveZaakClosedFromBody(string $resource, array $body): ?bool
     {
@@ -1769,6 +1844,8 @@ class ZgwService
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
      * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function resolveParentZaaktypeDraft(string $resource, array $existingData): ?bool
     {
@@ -1847,6 +1924,8 @@ class ZgwService
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sub-resource lookup with multiple guard clauses
      * @SuppressWarnings(PHPMD.NPathComplexity)      — sub-resource lookup with multiple guard clauses
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function resolveParentZaaktypeDraftFromBody(string $resource, array $body): ?bool
     {
