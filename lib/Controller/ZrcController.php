@@ -1322,10 +1322,15 @@ class ZrcController extends ZgwController
                     );
                 }
             } catch (\Throwable $e) {
-                // Proceed without zaak closed info.
-                $this->zgwService->getLogger()->debug(
-                    'Could not resolve zaakClosed for '.$resource.'/'.$uuid.': '.$e->getMessage()
+                // WF3c fix: fail-CLOSED on any unexpected error. Returning
+                // [true, false] (zaak=closed, no geforceerd scope) causes the
+                // upstream caller to emit a 403 rather than silently allowing
+                // modification of a legally-finalised zaak (zrc-007, Awb 4:5).
+                $this->zgwService->getLogger()->error(
+                    'Could not resolve zaakClosed for '.$resource.'/'.$uuid.' — denying (fail-closed)',
+                    ['exception' => $e->getMessage()]
                 );
+                return [true, false];
             }//end try
         }//end if
 
@@ -1414,9 +1419,17 @@ class ZrcController extends ZgwController
                 return $this->permissionDeniedResponse();
             }
         } catch (\Throwable $e) {
-            $this->zgwService->getLogger()->debug(
-                'zrc-008c: Could not check reopen scope: '.$e->getMessage()
+            // WF2 fix: fail-CLOSED on any unexpected error. If we cannot
+            // determine whether the zaak is closed and a scope gate applies,
+            // we must deny rather than silently allow. Returning
+            // permissionDeniedResponse() here prevents a transient OR error
+            // (or a crafted UUID that causes an exception) from bypassing the
+            // heropenen gate and re-opening a legally-finalised zaak.
+            $this->zgwService->getLogger()->error(
+                'zrc-008c: Unexpected error in checkReopenScope — denying request (fail-closed)',
+                ['exception' => $e->getMessage()]
             );
+            return $this->permissionDeniedResponse();
         }//end try
 
         return null;

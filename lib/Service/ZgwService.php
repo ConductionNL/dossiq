@@ -1741,10 +1741,18 @@ class ZgwService
 
             return $endDate !== null && $endDate !== '';
         } catch (\Throwable $e) {
-            $this->logger->warning(
-                'Could not resolve zaak closed status: '.$e->getMessage()
+            // WF3a fix: fail-CLOSED on any unexpected error. Returning true
+            // (= zaak is closed) rather than null prevents a transient OR error
+            // or crafted UUID from bypassing closed-zaak protection (zrc-007).
+            // Callers check `$zaakClosed === true && $hasGeforceerd === false`
+            // so returning true with no geforceerd scope → 403. This is the
+            // safe default: a consumer who genuinely needs to write must have
+            // the zaken.geforceerd-bijwerken scope.
+            $this->logger->error(
+                'Could not resolve zaak closed status — returning true (fail-closed)',
+                ['exception' => $e->getMessage()]
             );
-            return null;
+            return true;
         }//end try
     }//end resolveZaakClosed()
 
@@ -1821,7 +1829,14 @@ class ZgwService
 
             return $endDate !== null && $endDate !== '';
         } catch (\Throwable $e) {
-            return null;
+            // WF3b fix: fail-CLOSED on any unexpected error. See resolveZaakClosed
+            // for rationale — returning true prevents closed-zaak bypass when the
+            // zaak lookup throws (e.g. transient OR error or crafted body URL).
+            $this->logger->error(
+                'Could not resolve zaak closed status from body — returning true (fail-closed)',
+                ['exception' => $e->getMessage()]
+            );
+            return true;
         }//end try
     }//end resolveZaakClosedFromBody()
 
