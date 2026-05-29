@@ -42,6 +42,24 @@ abstract class ZgwRulesBase
 {
 
     /**
+     * RFC1918 + loopback + link-local + cloud-metadata CIDR blocks to deny in
+     * outbound HTTP requests from fetchExternalUrl (SSRF protection — WF1).
+     *
+     * Must be kept in sync with NotificatieService::BLOCKED_CIDRS.
+     *
+     * @var string[]
+     */
+    private const BLOCKED_CIDRS = [
+        '10.0.0.0/8',
+        '172.16.0.0/12',
+        '192.168.0.0/16',
+        '127.0.0.0/8',
+        '169.254.0.0/16',
+        '::1/128',
+        'fc00::/7',
+    ];
+
+    /**
      * Ordered vertrouwelijkheidaanduiding severity levels (zrc-006).
      *
      * Used for consumer authorization filtering: a zaak's level must be
@@ -463,6 +481,10 @@ abstract class ZgwRulesBase
     /**
      * Fetch data from an external URL (selectielijst, resultaattypeomschrijving).
      *
+     * WF1 fix: added SSRF guard (rejects RFC1918/loopback/link-local/cloud-metadata
+     * addresses), TLS verification enabled (verify => true), and redirect following
+     * disabled (allow_redirects => false) to prevent redirect-based bypasses.
+     *
      * @param string $url The URL to fetch
      *
      * @return array|null The JSON response data, or null on failure
@@ -471,8 +493,22 @@ abstract class ZgwRulesBase
      */
     protected function fetchExternalUrl(string $url): ?array
     {
+        // WF1: SSRF guard — reject private/loopback/cloud-metadata URLs before
+        // establishing any outbound connection.
+        if ($this->isSafeExternalUrl(url: $url) === false) {
+            $this->logger->warning(
+                'fetchExternalUrl blocked: URL failed SSRF safety check',
+                ['url' => substr($url, 0, 200)]
+            );
+            return null;
+        }
+
         try {
-            $client   = new Client(['timeout' => 10, 'verify' => false]);
+            $client   = new Client([
+                'timeout'         => 10,
+                'verify'          => true,
+                'allow_redirects' => false,
+            ]);
             $response = $client->get($url);
             $data     = json_decode((string) $response->getBody(), true);
             if (is_array($data) === false) {
@@ -488,6 +524,114 @@ abstract class ZgwRulesBase
             return null;
         }
     }//end fetchExternalUrl()
+
+    /**
+     * Validate that a URL is safe for outbound fetching (SSRF guard).
+     *
+     * Requires http or https scheme and verifies that the hostname resolves
+     * only to public IP addresses — rejects RFC1918, loopback, link-local,
+     * and cloud-metadata addresses (169.254.169.254).
+     *
+     * Returns false (fail-closed) when the URL is unparseable, the hostname
+     * resolves to no records, or any resolved address falls in a blocked CIDR.
+     *
+     * @param string $url The URL to validate
+     *
+     * @return bool True if the URL is safe for outbound fetching
+     */
+    private function isSafeExternalUrl(string $url): bool
+    {
+        $parsed = parse_url($url);
+        $scheme = strtolower($parsed['scheme'] ?? '');
+
+        if (in_array($scheme, ['http', 'https'], true) === false) {
+            return false;
+        }
+
+        $host = $parsed['host'] ?? '';
+        if ($host === '') {
+            return false;
+        }
+
+        // Resolve all A/AAAA records and block private ranges.
+        $records = @dns_get_record($host, DNS_A | DNS_AAAA);
+        if ($records === false || count($records) === 0) {
+            $this->logger->warning(
+                'fetchExternalUrl SSRF: DNS resolution returned no records',
+                ['host' => $host]
+            );
+            return false;
+        }
+
+        foreach ($records as $record) {
+            $ip = $record['ip'] ?? ($record['ipv6'] ?? null);
+            if ($ip === null) {
+                continue;
+            }
+
+            foreach (self::BLOCKED_CIDRS as $cidr) {
+                if ($this->ipInCidr(ip: $ip, cidr: $cidr) === true) {
+                    $this->logger->warning(
+                        'fetchExternalUrl SSRF: host resolves to private/loopback address',
+                        ['host' => $host, 'ip' => $ip, 'cidr' => $cidr]
+                    );
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }//end isSafeExternalUrl()
+
+    /**
+     * Check if an IP address falls within a CIDR range (IPv4 and IPv6).
+     *
+     * @param string $ip   The IP address to test
+     * @param string $cidr The CIDR block (e.g. '10.0.0.0/8')
+     *
+     * @return bool True if the IP is within the range
+     */
+    private function ipInCidr(string $ip, string $cidr): bool
+    {
+        $isIpv6Cidr = str_contains($cidr, ':');
+        $isIpv6Ip   = str_contains($ip, ':');
+
+        if ($isIpv6Cidr === true && $isIpv6Ip === true) {
+            [$network, $prefix] = explode('/', $cidr);
+            $prefixLen          = (int) $prefix;
+            $networkBin         = inet_pton($network);
+            $ipBin              = inet_pton($ip);
+            if ($networkBin === false || $ipBin === false) {
+                return false;
+            }
+
+            $bytes  = (int) ceil($prefixLen / 8);
+            $mask   = str_repeat("\xff", intdiv($prefixLen, 8));
+            $remain = $prefixLen % 8;
+            if ($remain > 0) {
+                $mask .= chr(0xff & (0xff << (8 - $remain)));
+            }
+
+            $mask = str_pad($mask, 16, "\x00");
+            return (substr($ipBin, 0, $bytes) & $mask) === (substr($networkBin, 0, $bytes) & $mask);
+        }
+
+        if ($isIpv6Cidr === false && $isIpv6Ip === false) {
+            [$network, $prefix] = explode('/', $cidr);
+            $prefixLen          = (int) $prefix;
+            $mask               = $prefixLen === 0 ? 0 : (~0 << (32 - $prefixLen));
+            $networkLong        = ip2long($network);
+            $ipLong             = ip2long($ip);
+            if ($networkLong === false || $ipLong === false) {
+                return false;
+            }
+
+            return ($ipLong & $mask) === ($networkLong & $mask);
+        }
+
+        // Mixed IPv4/IPv6 — not in range.
+        return false;
+    }//end ipInCidr()
 
     /**
      * Generate a unique identificatie string.

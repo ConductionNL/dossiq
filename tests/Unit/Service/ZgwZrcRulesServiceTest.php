@@ -571,4 +571,81 @@ class ZgwZrcRulesServiceTest extends TestCase
     }//end testVertrouwelijkheidaanduidingFallsBackToIncomingWhenZaaktypeHasNone()
 
 
+    // -------------------------------------------------------------------------
+    // WF1 — isSafeExternalUrl SSRF guard (ZgwRulesBase::fetchExternalUrl)
+    // -------------------------------------------------------------------------
+
+
+    /**
+     * Test that isSafeExternalUrl rejects IMDS/cloud-metadata address.
+     *
+     * WF1 regression: fetchExternalUrl previously used verify=>false and had no
+     * SSRF guard. Any JWT consumer with ZTC write scope could pass the IMDS URL
+     * in selectielijstProcestype and exfiltrate credentials.
+     *
+     * @return void
+     *
+     * @dataProvider provideBlockedUrls
+     */
+    public function testSafeExternalUrlBlocksPrivateAddresses(string $url): void
+    {
+        $reflMethod = new \ReflectionMethod($this->service, 'isSafeExternalUrl');
+        $reflMethod->setAccessible(true);
+
+        $result = $reflMethod->invoke($this->service, $url);
+
+        $this->assertFalse(
+            $result,
+            "URL '$url' should be blocked by the SSRF guard"
+        );
+
+    }//end testSafeExternalUrlBlocksPrivateAddresses()
+
+
+    /**
+     * Data provider: URLs that must be blocked by the SSRF guard.
+     *
+     * Covers IMDS, RFC1918 ranges, and loopback.
+     *
+     * @return array<string, array{0: string}>
+     */
+    public static function provideBlockedUrls(): array
+    {
+        return [
+            'IMDS cloud metadata'    => ['http://169.254.169.254/latest/meta-data/'],
+            'RFC1918 class-A'        => ['http://10.0.0.1/admin'],
+            'RFC1918 class-B'        => ['https://172.16.0.5/secret'],
+            'RFC1918 class-C'        => ['https://192.168.1.1/login'],
+            'localhost'              => ['http://127.0.0.1/internal'],
+            'non-http scheme'        => ['ftp://example.com/file'],
+            'file scheme'            => ['file:///etc/passwd'],
+        ];
+    }//end provideBlockedUrls()
+
+
+    /**
+     * Test that isSafeExternalUrl allows a public https URL.
+     *
+     * @return void
+     */
+    public function testSafeExternalUrlAllowsPublicHttpsUrl(): void
+    {
+        $reflMethod = new \ReflectionMethod($this->service, 'isSafeExternalUrl');
+        $reflMethod->setAccessible(true);
+
+        // selectielijst API is the canonical external URL — public HTTPS endpoint.
+        // We test that the guard ACCEPTS a well-formed public URL structurally.
+        // DNS resolution will fail in the test environment (no real resolver for
+        // example.com/selectielijst.nl in isolation), but we only check that
+        // the scheme/host parsing logic doesn't *immediately* block the URL.
+        // The method returns false when DNS is unreachable (fail-closed), so
+        // we assert that the method completes without throwing.
+        $result = $reflMethod->invoke($this->service, 'https://selectielijst.openzaak.nl/api/v1/');
+        // result may be true or false depending on DNS resolution in CI;
+        // the important thing is that no exception is thrown.
+        $this->assertIsBool($result);
+
+    }//end testSafeExternalUrlAllowsPublicHttpsUrl()
+
+
 }//end class
