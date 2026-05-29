@@ -111,9 +111,9 @@ class NrcController extends ZgwController
             return $authError;
         }
 
-        // C3: Gate creates on nrc.publiceren scope.
-        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'nrc.publiceren') === false) {
-            return $this->scopeDeniedResponse(scope: 'nrc.publiceren');
+        // SB2: Gate creates on notificaties.publiceren scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
+            return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
         }
 
         return $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
@@ -164,9 +164,9 @@ class NrcController extends ZgwController
             return $authError;
         }
 
-        // C3: Gate updates on nrc.publiceren scope.
-        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'nrc.publiceren') === false) {
-            return $this->scopeDeniedResponse(scope: 'nrc.publiceren');
+        // SB2: Gate updates on notificaties.publiceren scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
+            return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
         }
 
         return $this->zgwService->handleUpdate(
@@ -199,9 +199,9 @@ class NrcController extends ZgwController
             return $authError;
         }
 
-        // C3: Gate patches on nrc.publiceren scope.
-        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'nrc.publiceren') === false) {
-            return $this->scopeDeniedResponse(scope: 'nrc.publiceren');
+        // SB2: Gate patches on notificaties.publiceren scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
+            return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
         }
 
         return $this->zgwService->handleUpdate(
@@ -234,9 +234,9 @@ class NrcController extends ZgwController
             return $authError;
         }
 
-        // C3: Gate destroys on nrc.publiceren scope.
-        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'nrc.publiceren') === false) {
-            return $this->scopeDeniedResponse(scope: 'nrc.publiceren');
+        // SB2: Gate destroys on notificaties.publiceren scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
+            return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
         }
 
         return $this->zgwService->handleDestroy(

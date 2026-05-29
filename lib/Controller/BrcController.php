@@ -132,9 +132,9 @@ class BrcController extends ZgwController
             return $authError;
         }
 
-        // C3: Gate creates on brc.aanmaken scope.
-        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'brc.aanmaken') === false) {
-            return $this->scopeDeniedResponse(scope: 'brc.aanmaken');
+        // SB2: Gate creates on besluiten.aanmaken scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.aanmaken') === false) {
+            return $this->scopeDeniedResponse(scope: 'besluiten.aanmaken');
         }
 
         // For besluitinformatieobjecten: use custom create with OIO sync.
@@ -197,9 +197,9 @@ class BrcController extends ZgwController
             return $authError;
         }
 
-        // C3: Gate updates on brc.bijwerken scope.
-        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'brc.bijwerken') === false) {
-            return $this->scopeDeniedResponse(scope: 'brc.bijwerken');
+        // SB2: Gate updates on besluiten.bijwerken scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.bijwerken') === false) {
+            return $this->scopeDeniedResponse(scope: 'besluiten.bijwerken');
         }
 
         // Brc-004a: BesluitInformatieObject is immutable — PUT returns 405.
@@ -242,9 +242,9 @@ class BrcController extends ZgwController
             return $authError;
         }
 
-        // C3: Gate patches on brc.bijwerken scope.
-        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'brc.bijwerken') === false) {
-            return $this->scopeDeniedResponse(scope: 'brc.bijwerken');
+        // SB2: Gate patches on besluiten.bijwerken scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.bijwerken') === false) {
+            return $this->scopeDeniedResponse(scope: 'besluiten.bijwerken');
         }
 
         // Brc-004b: BesluitInformatieObject is immutable — PATCH returns 405.
@@ -289,9 +289,9 @@ class BrcController extends ZgwController
             return $authError;
         }
 
-        // C3: Gate destroys on brc.verwijderen scope.
-        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'brc.verwijderen') === false) {
-            return $this->scopeDeniedResponse(scope: 'brc.verwijderen');
+        // SB2: Gate destroys on besluiten.verwijderen scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.verwijderen') === false) {
+            return $this->scopeDeniedResponse(scope: 'besluiten.verwijderen');
         }
 
         // Brc-009: Cascade delete for besluiten.

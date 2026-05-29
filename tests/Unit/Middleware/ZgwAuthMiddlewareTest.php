@@ -196,6 +196,53 @@ class ZgwAuthMiddlewareTest extends TestCase
 
 
     /**
+     * Test that deriveComponentFromUrl extracts the correct component from each
+     * ZGW API group URL (SB1 regression: getParam('zgwApi') was unreachable dead code).
+     *
+     * @return void
+     *
+     * @dataProvider provideZgwUriToComponent
+     */
+    public function testDeriveComponentFromUrlCoversAllApiGroups(
+        string $uri,
+        ?string $expectedComponent
+    ): void {
+        // Access the private method via reflection.
+        $reflMethod = new \ReflectionMethod(ZgwAuthMiddleware::class, 'deriveComponentFromUrl');
+        $reflMethod->setAccessible(true);
+
+        $this->request
+            ->method('getRequestUri')
+            ->willReturn($uri);
+
+        $component = $reflMethod->invoke($this->middleware);
+        $this->assertSame($expectedComponent, $component);
+
+    }//end testDeriveComponentFromUrlCoversAllApiGroups()
+
+
+    /**
+     * Data provider: URI path → expected component code (or null for unknown).
+     *
+     * @return array<string, array{0: string, 1: string|null}>
+     */
+    public static function provideZgwUriToComponent(): array
+    {
+        return [
+            'zrc (zaken)'       => ['/index.php/apps/procest/api/zgw/zaken/v1/zaken', 'zrc'],
+            'ztc (catalogi)'    => ['/apps/procest/api/zgw/catalogi/v1/zaaktypen', 'ztc'],
+            'brc (besluiten)'   => ['/index.php/apps/procest/api/zgw/besluiten/v1/besluiten', 'brc'],
+            'drc (documenten)'  => ['/apps/procest/api/zgw/documenten/v1/enkelvoudiginformatieobjecten', 'drc'],
+            'nrc (notificaties)' => ['/apps/procest/api/zgw/notificaties/v1/kanalen', 'nrc'],
+            'ac (autorisaties)' => ['/apps/procest/api/zgw/autorisaties/v1/applicaties', 'ac'],
+            'unknown api group' => ['/apps/procest/api/zgw/unknown/v1/resources', null],
+            'non-zgw path'      => ['/apps/procest/api/settings', null],
+            'empty path'        => ['', null],
+        ];
+    }//end provideZgwUriToComponent()
+
+
+    /**
      * Test that afterException returns null for non-ZgwAuthException.
      *
      * @return void

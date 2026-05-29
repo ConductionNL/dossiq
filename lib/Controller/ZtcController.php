@@ -185,9 +185,9 @@ class ZtcController extends ZgwController
             return $authError;
         }
 
-        // C3: Gate creates on ztc.schrijven scope.
-        if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'ztc.schrijven') === false) {
-            return $this->scopeDeniedResponse(scope: 'ztc.schrijven');
+        // SB2: Gate creates on catalogi.schrijven scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'catalogi.schrijven') === false) {
+            return $this->scopeDeniedResponse(scope: 'catalogi.schrijven');
         }
 
         // Ztc-010: Resolve parent zaaktype draft status for sub-resource creation.
@@ -314,9 +314,9 @@ class ZtcController extends ZgwController
             return $authError;
         }
 
-        // C3: Gate updates on ztc.schrijven scope.
-        if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'ztc.schrijven') === false) {
-            return $this->scopeDeniedResponse(scope: 'ztc.schrijven');
+        // SB2: Gate updates on catalogi.schrijven scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'catalogi.schrijven') === false) {
+            return $this->scopeDeniedResponse(scope: 'catalogi.schrijven');
         }
 
         $parentZtDraft = $this->resolveParentDraft(resource: $resource, uuid: $uuid);
@@ -367,9 +367,9 @@ class ZtcController extends ZgwController
             return $authError;
         }
 
-        // C3: Gate patches on ztc.schrijven scope.
-        if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'ztc.schrijven') === false) {
-            return $this->scopeDeniedResponse(scope: 'ztc.schrijven');
+        // SB2: Gate patches on catalogi.schrijven scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'catalogi.schrijven') === false) {
+            return $this->scopeDeniedResponse(scope: 'catalogi.schrijven');
         }
 
         $parentZtDraft = $this->resolveParentDraft(resource: $resource, uuid: $uuid);
@@ -420,9 +420,9 @@ class ZtcController extends ZgwController
             return $authError;
         }
 
-        // C3: Gate destroys on ztc.schrijven scope.
-        if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'ztc.schrijven') === false) {
-            return $this->scopeDeniedResponse(scope: 'ztc.schrijven');
+        // SB2: Gate destroys on catalogi.schrijven scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'catalogi.schrijven') === false) {
+            return $this->scopeDeniedResponse(scope: 'catalogi.schrijven');
         }
 
         $parentZtDraft = $this->resolveParentDraft(resource: $resource, uuid: $uuid);
