@@ -1058,8 +1058,7 @@ The `OCA\Procest\Controller\EmailController` SHALL expose the HTTP surface: `POS
 
 **Implemented:**
 - Case CRUD via OpenRegister object store (`src/store/modules/object.js` using `createObjectStore` with filesPlugin, auditTrailsPlugin, relationsPlugin).
-- Case list view (`src/views/cases/CaseList.vue`) using `CnIndexPage` with columns, sorting (default by deadline asc), pagination, row click navigation, selectable rows, and `QuickStatusDropdown` for inline status changes.
-- Case detail view (`src/views/cases/CaseDetail.vue`) using `CnDetailPage` with sidebar, save/delete actions, status change dropdown with result prompt for final status.
+- Case list and detail are rendered by the CnAppRoot manifest shell (no `src/views/cases/CaseList.vue` / `CaseDetail.vue` SPA view files exist). The case components below (StatusTimeline, QuickStatusDropdown, DeadlinePanel, ParticipantsSection, ResultSection, etc.) are real and mounted within that manifest-driven layout.
 - Case creation dialog (`src/views/cases/CaseCreateDialog.vue`) with case type selection.
 - Status timeline visualization (`src/views/cases/components/StatusTimeline.vue`) showing passed/current/future status dots with dates.
 - Quick status change from list (`src/views/cases/components/QuickStatusDropdown.vue`).
@@ -2124,8 +2123,7 @@ The system MUST provide full-text search across cases matching against title, de
 
 **Implemented:**
 - Case CRUD via OpenRegister object store (`src/store/modules/object.js` using `createObjectStore` with filesPlugin, auditTrailsPlugin, relationsPlugin).
-- Case list view (`src/views/cases/CaseList.vue`) using `CnIndexPage` with columns, sorting (default by deadline asc), pagination, row click navigation, selectable rows, and `QuickStatusDropdown` for inline status changes.
-- Case detail view (`src/views/cases/CaseDetail.vue`) using `CnDetailPage` with sidebar, save/delete actions, status change dropdown with result prompt for final status.
+- Case list and detail are rendered by the CnAppRoot manifest shell (no `src/views/cases/CaseList.vue` / `CaseDetail.vue` SPA view files exist). The case components below (StatusTimeline, QuickStatusDropdown, DeadlinePanel, ParticipantsSection, ResultSection, etc.) are real and mounted within that manifest-driven layout.
 - Case creation dialog (`src/views/cases/CaseCreateDialog.vue`) with case type selection.
 - Status timeline visualization (`src/views/cases/components/StatusTimeline.vue`) showing passed/current/future status dots with dates.
 - Quick status change from list (`src/views/cases/components/QuickStatusDropdown.vue`).

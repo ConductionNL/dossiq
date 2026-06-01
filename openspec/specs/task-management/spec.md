@@ -237,7 +237,7 @@ The system MUST support assigning tasks to Nextcloud users by their user UID. Un
 
 ### REQ-TASK-004: Task List View
 
-The system MUST provide a list view for tasks with search, sorting, and filtering capabilities via `TaskList.vue`. The list view MUST support both a global task list (all tasks) and a case-scoped task list (tasks for a specific case).
+The system MUST provide a list view for tasks with search, sorting, and filtering capabilities. The list view MUST support both a global task list (all tasks) and a case-scoped task list (tasks for a specific case). (Note 2026-06-01: rendered by the CnAppRoot manifest shell; no `src/views/tasks/TaskList.vue` SPA view file exists.)
 
 **Tier**: MVP
 
@@ -661,8 +661,7 @@ All task management interfaces MUST comply with WCAG AA:
   - `getAllowedTransitions(currentStatus)`, `validateTransition(from, to)`, `getStatusLabel(status)`, `getTransitionLabel(targetStatus)`, `isTerminalStatus(status)` functions
   - Localized status labels (English, Dutch pending)
 - **Task helpers**: `src/utils/taskHelpers.js` provides utility functions for task display and overdue calculations.
-- **Task list view**: `src/views/tasks/TaskList.vue` -- paginated list of tasks with status, assignee, due date, and priority display (REQ-TASK-004).
-- **Task detail view**: `src/views/tasks/TaskDetail.vue` -- full task detail with editable fields.
+- **Task list / detail views**: rendered by the CnAppRoot manifest shell (REQ-TASK-004). No `src/views/tasks/TaskList.vue` / `TaskDetail.vue` SPA view files exist (corrected 2026-06-01); list/detail are manifest-driven pages, with `TaskCreateDialog.vue` and `taskValidation.js` as the real supporting code.
 - **Task create dialog**: `src/views/tasks/TaskCreateDialog.vue` -- form for creating new tasks linked to a case.
 - **Task API service**: `src/services/taskApi.js` -- `fetchTasksForCases()` for CalDAV task integration.
 - **Task CRUD**: Via the shared object store (`src/store/modules/object.js`) for OpenRegister-based tasks.
