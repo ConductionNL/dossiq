@@ -23,7 +23,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-1. Inject AuditTrailMapper into ParaferingAuditListener (M)
 
-- [x] P-1.1 Update the constructor of `lib/Listener/ParaferingAuditListener.php` to inject
+- [ ] P-1.1 Update the constructor of `lib/Listener/ParaferingAuditListener.php` to inject
   `OCA\OpenRegister\Db\AuditTrailMapper` (replacing `ObjectService` and `IAppConfig` for
   audit writes). The public DI class is `OCA\OpenRegister\Db\AuditTrailMapper`; the method
   to call is `createAuditTrailEntry(ObjectEntity $object, string $action, array $context = [])`.
@@ -33,7 +33,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-2. Rewrite ParaferingAuditListener body to emit OR audit events (M)
 
-- [x] P-2.1 Implement the `handle()` method to:
+- [ ] P-2.1 Implement the `handle()` method to:
   (a) extract the transition name from `ParafeerTransitionEvent`,
   (b) build action type `procest.parafering.{transitionName}`,
   (c) build `$context` array (`parafeerrouteId`, `paraffeerstapId`, `fromState`, `toState`,
@@ -43,7 +43,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
   - **Acceptance:** All named transition types from the design.md table produce correctly
     namespaced action strings. PHPUnit unit test with mocked mapper confirms the call is made.
 
-- [x] P-2.2 Remove the old `ObjectService::saveObject()` call and any `paraferingAuditEntry`
+- [ ] P-2.2 Remove the old `ObjectService::saveObject()` call and any `paraferingAuditEntry`
   config reads (`paraferingAuditEntry_register`, `paraferingAuditEntry_schema`) from
   `ParaferingAuditListener`.
   - **Acceptance:** No reference to `paraferingAuditEntry_register` or
@@ -51,10 +51,10 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-3. Remove ParaferingAuditAppendOnlyValidator (S)
 
-- [x] P-3.1 Delete `lib/Validator/ParaferingAuditAppendOnlyValidator.php`.
+- [ ] P-3.1 Delete `lib/Validator/ParaferingAuditAppendOnlyValidator.php`.
   - **Acceptance:** File does not exist in the repo after this task.
 
-- [x] P-3.2 Remove the three event listener registrations for `ParaferingAuditAppendOnlyValidator`
+- [ ] P-3.2 Remove the three event listener registrations for `ParaferingAuditAppendOnlyValidator`
   (`ObjectCreatingEvent`, `ObjectUpdatingEvent`, `ObjectDeletingEvent`) from
   `lib/AppInfo/Application.php`.
   - **Acceptance:** No reference to `ParaferingAuditAppendOnlyValidator` remains in
@@ -62,7 +62,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-4. Update lib/Settings/procest_register.json (S)
 
-- [x] P-4.1 Add `"deprecated": true` and `"deprecationNote"` to the `paraferingAuditEntry`
+- [ ] P-4.1 Add `"deprecated": true` and `"deprecationNote"` to the `paraferingAuditEntry`
   schema entry in `procest_register.json`. Do NOT remove the schema object — existing rows
   must remain readable.
   - **Acceptance:** `paraferingAuditEntry` schema has `"deprecated": true`; existing
@@ -70,14 +70,14 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-5. Tests (M)
 
-- [x] P-5.1 Write a PHPUnit unit test for `ParaferingAuditListener::handle()`:
+- [ ] P-5.1 Write a PHPUnit unit test for `ParaferingAuditListener::handle()`:
   mock `AuditTrailMapper`, fire a `ParafeerTransitionEvent`, assert that
   `createAuditTrailEntry()` is called once with the correct `ObjectEntity`,
   `procest.parafering.*` action type, and expected `$context` keys in the `changed` column.
   - **Acceptance:** Test passes under `composer check:strict`; zero PHPCS/PHPStan errors in
     the test file.
 
-- [x] P-5.2 Write an integration test (Newman or PHPUnit integration) that:
+- [ ] P-5.2 Write an integration test (Newman or PHPUnit integration) that:
   (a) creates a `parafeerroute` object in OR,
   (b) triggers a transition (any valid transition),
   (c) calls `GET /api/audit-trails?objectUuid={parafeerrouteId}`,
@@ -87,7 +87,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-6. Update openspec/specs/parafering-audit-trail/spec.md (S)
 
-- [x] P-6.1 Update the existing `parafering-audit-trail` spec to reference the new consumer
+- [ ] P-6.1 Update the existing `parafering-audit-trail` spec to reference the new consumer
   contract: add a note that the audit trail is discoverable via OR's audit-trail-immutable API
   (`GET /api/audit-trails?objectUuid={parafeerrouteId}`). The existing requirements for
   immutability, delegation audit, and export remain — only the discovery mechanism reference
@@ -97,7 +97,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-7. Document deprecation and sunset in CHANGELOG (S)
 
-- [x] P-7.1 Add an entry to `CHANGELOG.md` (or equivalent) noting:
+- [ ] P-7.1 Add an entry to `CHANGELOG.md` (or equivalent) noting:
   - `paraferingAuditEntry` schema is deprecated as of this release.
   - New parafering transitions are audited via OR's audit-trail API.
   - Sunset: existing records remain readable for one major release;
