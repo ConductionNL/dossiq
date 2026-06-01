@@ -1,5 +1,7 @@
 # Proposal: migrate-parafering-to-or-audit
 
+> REVERTED 2026-06-01: archived prematurely; implementation not present on development — re-opened for real apply. (`ParaferingAuditListener` never injects `OCA\OpenRegister\Db\AuditTrailMapper`; `ParaferingAuditAppendOnlyValidator` still exists; no OR audit delegation in place.)
+
 ## Why
 
 ADR-022 (Apps Consume OpenRegister Abstractions) explicitly prohibits "home-grown audit

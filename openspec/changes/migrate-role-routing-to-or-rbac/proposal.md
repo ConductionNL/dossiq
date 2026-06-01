@@ -1,5 +1,7 @@
 # Proposal: migrate-role-routing-to-or-rbac
 
+> REVERTED 2026-06-01: archived prematurely; implementation not present on development — re-opened for real apply. (`ncGroupId` was never added to the `roleType` schema in `lib/Settings/procest_register.json`; no `authorization` block on `workflowStep`; no OR-RBAC enforcement wired.)
+
 ## Why
 
 ADR-022 (Apps Consume OpenRegister Abstractions) explicitly prohibits "app-local RBAC on OR

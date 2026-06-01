@@ -1,5 +1,7 @@
 # Proposal: migrate-parafering-to-or-approval-workflow
 
+> REVERTED 2026-06-01: archived prematurely; implementation not present on development — re-opened for real apply. (No `ParaferingService`/`ApprovalService`/`ApprovalChain` delegation exists in `lib/`; the bespoke step-routing state machine in `ParafeerRouteService`/`ParafeerActieService` is still in place.)
+
 ## Why
 
 Procest ships a full step-routing engine for parafering (signing routes): `ParaferingController`,

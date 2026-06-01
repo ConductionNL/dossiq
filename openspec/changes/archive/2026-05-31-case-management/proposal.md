@@ -1,5 +1,7 @@
 # Case Management Implementation
 
+> PARTIALLY REVERTED 2026-06-01: stays archived, but TASK-CM-01/02/05 were over-claimed — `CaseList.vue`/`CaseDetail.vue` do not exist (app is a CnAppRoot manifest, no SPA list/detail view files). Those tasks are un-checked; the real panels (CustomPropertiesPanel, DocumentChecklist) and caseValidation.js remain done. The case-management main spec's Implementation Status was corrected to drop the false CaseList/CaseDetail claims.
+
 ## Summary
 Implement the remaining gaps in the case-management spec, focusing on MVP features that are partially or not yet implemented: case list filters (priority, handler, overdue), case search, custom properties panel stub, required documents checklist stub, and improved case validation with better error messages.
 

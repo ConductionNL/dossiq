@@ -1,5 +1,7 @@
 # Task Management Implementation
 
+> PARTIALLY REVERTED 2026-06-01: stays archived, but TASK-TM-02/03 were over-claimed — `TaskList.vue`/`TaskDetail.vue` do not exist (app is a CnAppRoot manifest, no SPA list/detail view files). Those tasks are un-checked; `taskValidation.js` and `TaskCreateDialog.vue` remain done. The task-management main spec was corrected to drop the false TaskList/TaskDetail file claims.
+
 ## Summary
 Implement remaining MVP gaps in task-management spec: task list filters and search, task validation utility, lifecycle transition error messages, and case reference validation on task creation.
 

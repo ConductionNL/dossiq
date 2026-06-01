@@ -1,5 +1,7 @@
 # Proposal: migrate-status-engine-to-or-lifecycle
 
+> REVERTED 2026-06-01: archived prematurely; only the schema `x-openregister-lifecycle` blocks (Voorstel/Parafeerroute/Bezwaar) were actually added — re-opened for real apply. PENDING: PHP guard classes (`lib/Lifecycle/VoorstelSubmitGuard.php`, `HoorzittingAfzienGuard.php`, `BezwaarDeadlineGuard.php` — the `lib/Lifecycle/` directory does not exist), `STATUS_*` constant removal (still present in `ParafeerRouteService`), `x-openregister-hooks`, and the `tests/Unit/Lifecycle/` suite. Schema-block tasks (P-1.1/P-2.1/P-3.1) remain checked; all guard/cleanup/hook/test tasks un-checked.
+
 ## Why
 
 Procest ships three in-app state machine implementations for OR-owned objects that
