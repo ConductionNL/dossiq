@@ -9,7 +9,7 @@ on:
 
 jobs:
   quality:
-    uses: ConductionNL/.github/.github/workflows/quality.yml@main
+    uses: Conduction/.github/.github/workflows/quality.yml@main
     with:
       app-name: procest
       php-version: "8.3"
@@ -29,7 +29,7 @@ jobs:
       newman-collection-path: "data"
       newman-environment-path: "tests/zgw/zgw-environment.json"
       newman-seed-command: "bash apps/procest/tests/zgw/seed-consumers.sh"
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"feature/php-linting"}]'
+      additional-apps: '[{"repo":"Conduction/openregister","app":"openregister","ref":"feature/php-linting"}]'
       # SBOM disabled until @conduction/nextcloud-vue's dependency declarations
       # are cleaned up — its `npm ls` tree fails ELSPROBLEMS (bootstrap-vue is a
       # non-optional peer, apexcharts/pinia/vue version ranges don't match what
@@ -43,7 +43,7 @@ jobs:
       # hard-coded `require('../../store/index.js')` inside a soft try/catch
       # that webpack can't resolve in consumer apps, so the procest bundle
       # fails to build and every E2E spec then 404s. Tracked in
-      # ConductionNL/nextcloud-vue#242 — re-enable once a beta past that fix
+      # Conduction/nextcloud-vue#242 — re-enable once a beta past that fix
       # is pinned in package.json.
       enable-playwright: false
       enable-playwright-coverage: false
