@@ -1,3 +1,5 @@
+> SUPERSEDED 2026-06-02 (ADR-032): decomposed into tenant-zaaksysteem-saas-01..12
+
 # Proposal: tenant-zaaksysteem-saas
 
 ## Summary
