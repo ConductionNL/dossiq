@@ -1,3 +1,5 @@
+> SUPERSEDED 2026-06-02 (ADR-032): decomposed into the chain case-types-01..04 (see openspec/changes/).
+
 ## Why
 
 Zaaktype (Case Type) Management is the highest-demand capability across Dutch municipality tenders —
