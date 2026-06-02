@@ -58,8 +58,24 @@ const config = createConfig({
           exclude: ['**/node_modules/**', 'src/**'],
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: 'https://github.com/ConductionNL/procest/tree/main/docs/',
+          /* Compute a "Last updated on …" timestamp per doc from the
+             git commit history. This populates the docs plugin's
+             lastUpdatedAt metadata which the sitemap plugin reads
+             when emitting <lastmod>. Without this, only pages with
+             an explicit `last_update:` frontmatter field get a
+             timestamp. Required for the AI-baseline validator
+             threshold (>= 50% of URLs must carry <lastmod>). */
+          showLastUpdateTime: true,
         },
         blog: false,
+        sitemap: {
+          /* Docusaurus 3.5+ made sitemap <lastmod> opt-in. Setting
+             lastmod: 'date' tells the plugin to emit YYYY-MM-DD
+             lastmod for every URL whose docs metadata carries a
+             lastUpdatedAt (populated by showLastUpdateTime above
+             on every commit-tracked source file). */
+          lastmod: 'date',
+        },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
