@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "vth-workflow-configuration-01-config-foundation",
+  "app": "procest",
+  "kind": "config",
+  "depends_on": []
+}

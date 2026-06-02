@@ -1,3 +1,5 @@
+> SUPERSEDED 2026-06-02 (ADR-032): decomposed into vth-workflow-configuration-01..11
+
 # Proposal: vth-workflow-configuration
 
 ## Summary
