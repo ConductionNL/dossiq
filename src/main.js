@@ -59,6 +59,50 @@ function tryLoadTranslations() {
 	}
 }
 
+/**
+ * ADR-037: Merge modular manifest fragments onto the bundled manifest.
+ *
+ * Every `*.json` file under `src/manifest.d/` is merged (in sorted filename
+ * order) onto the bundled manifest. This lets concurrent same-app builds add
+ * pages/menu entries via isolated fragment files instead of all editing
+ * `src/manifest.json` and conflicting. `pages` and `menu` arrays are
+ * concatenated; any other key on a fragment overrides the base value.
+ *
+ * @param {object} base The bundled manifest.
+ * @return {object} The merged manifest.
+ */
+function mergeManifestFragments(base) {
+	// `require.context` is resolved at build time by webpack; the
+	// `manifest.d/_placeholder.json` keeps the context non-empty so this
+	// never throws when no real fragments exist yet.
+	const context = require.context('./manifest.d', false, /\.json$/)
+	const merged = { ...base }
+	// Defensive copies so fragments never mutate the imported manifest.
+	merged.pages = Array.isArray(base.pages) ? [...base.pages] : []
+	merged.menu = Array.isArray(base.menu) ? [...base.menu] : []
+
+	context.keys().sort().forEach((key) => {
+		const fragment = context(key)
+		if (!fragment || typeof fragment !== 'object') {
+			return
+		}
+		Object.keys(fragment).forEach((prop) => {
+			if (prop === 'pages' && Array.isArray(fragment.pages)) {
+				merged.pages = merged.pages.concat(fragment.pages)
+			} else if (prop === 'menu' && Array.isArray(fragment.menu)) {
+				merged.menu = merged.menu.concat(fragment.menu)
+			} else {
+				merged[prop] = fragment[prop]
+			}
+		})
+	})
+
+	return merged
+}
+
+// Apply ADR-037 manifest fragments before routes/app consume the manifest.
+const manifest = mergeManifestFragments(bundledManifest)
+
 // Shallow-clone CnPageRenderer because the lib's barrel exports are
 // non-extensible (webpack ESM module records). Vue 2's `Vue.extend()`
 // adds an internal `_Ctor` cache to the component definition; mutating
@@ -91,7 +135,7 @@ function routesFromManifest(manifest) {
 const router = new VueRouter({
 	mode: 'history',
 	base: generateUrl('/apps/procest'),
-	routes: routesFromManifest(bundledManifest),
+	routes: routesFromManifest(manifest),
 })
 
 tryLoadTranslations()
@@ -120,7 +164,7 @@ new Vue({
 	router,
 	render: (h) => h(App, {
 		props: {
-			manifest: bundledManifest,
+			manifest,
 			customComponents: customComponentsProp,
 			registry: registryProp,
 			pageTypes: pageTypesProp,
