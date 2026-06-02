@@ -1,3 +1,5 @@
+> SUPERSEDED 2026-06-02 (ADR-032): decomposed into the chain mandaat-matrix-01..09 (see openspec/changes/).
+
 # Proposal: Mandaat-matrix voor zaak-gestuurde besluitvorming
 
 ## Summary
