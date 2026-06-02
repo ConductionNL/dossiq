@@ -1,3 +1,5 @@
+> SUPERSEDED 2026-06-02 (ADR-032): decomposed into the chain termijnbewaking-dwangsom-engine-01..11 (see openspec/changes/).
+
 # Proposal: termijnbewaking-dwangsom-engine
 
 ## Summary
