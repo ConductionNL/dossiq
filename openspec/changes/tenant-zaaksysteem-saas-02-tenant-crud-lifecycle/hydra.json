@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "tenant-zaaksysteem-saas-02-tenant-crud-lifecycle",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["tenant-zaaksysteem-saas-01-schemas-and-seed"]
+}
