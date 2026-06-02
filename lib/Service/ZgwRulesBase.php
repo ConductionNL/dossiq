@@ -504,11 +504,13 @@ abstract class ZgwRulesBase
         }
 
         try {
-            $client   = new Client([
-                'timeout'         => 10,
-                'verify'          => true,
-                'allow_redirects' => false,
-            ]);
+            $client   = new Client(
+                    [
+                        'timeout'         => 10,
+                        'verify'          => true,
+                        'allow_redirects' => false,
+                    ]
+                    );
             $response = $client->get($url);
             $data     = json_decode((string) $response->getBody(), true);
             if (is_array($data) === false) {
@@ -522,7 +524,7 @@ abstract class ZgwRulesBase
                 ['url' => $url]
             );
             return null;
-        }
+        }//end try
     }//end fetchExternalUrl()
 
     /**
@@ -600,7 +602,7 @@ abstract class ZgwRulesBase
             [$network, $prefix] = explode('/', $cidr);
             $prefixLen          = (int) $prefix;
             $networkBin         = inet_pton($network);
-            $ipBin              = inet_pton($ip);
+            $ipBin = inet_pton($ip);
             if ($networkBin === false || $ipBin === false) {
                 return false;
             }
@@ -619,9 +621,14 @@ abstract class ZgwRulesBase
         if ($isIpv6Cidr === false && $isIpv6Ip === false) {
             [$network, $prefix] = explode('/', $cidr);
             $prefixLen          = (int) $prefix;
-            $mask               = $prefixLen === 0 ? 0 : (~0 << (32 - $prefixLen));
-            $networkLong        = ip2long($network);
-            $ipLong             = ip2long($ip);
+            if ($prefixLen === 0) {
+                $mask = 0;
+            } else {
+                $mask = (~0 << (32 - $prefixLen));
+            }
+
+            $networkLong = ip2long($network);
+            $ipLong      = ip2long($ip);
             if ($networkLong === false || $ipLong === false) {
                 return false;
             }

@@ -351,7 +351,24 @@ class SettingsService
             ];
         }
 
+        // ADR-037: deep-merge any modular register fragments from
+        // lib/Settings/register.d/*.json on top of the monolith. This lets
+        // concurrent same-app builds add registers/schemas via isolated
+        // fragment files instead of all editing procest_register.json and
+        // conflicting. Fragments are applied in sorted filename order.
+        [$configData, $fragmentHash] = self::mergeRegisterFragments(
+            base: $configData,
+            fragmentDir: __DIR__.'/../Settings/register.d'
+        );
+
         $configVersion = ($configData['info']['version'] ?? '0.0.0');
+
+        // Fold the fragment-set hash into the version so that adding,
+        // changing, or removing a fragment forces ConfigurationService to
+        // re-import (the version is its idempotency key).
+        if ($fragmentHash !== '') {
+            $configVersion = $configVersion.'+frag.'.$fragmentHash;
+        }
 
         try {
             $importResult = $configurationService->importFromApp(
@@ -563,4 +580,120 @@ class SettingsService
 
         return $configuredCount;
     }//end autoConfigureAfterImport()
+
+    /**
+     * Merge modular register fragments (ADR-037) onto a base configuration.
+     *
+     * Reads every `*.json` file in the given fragment directory in sorted
+     * filename order and deep-merges each onto the base configuration. The
+     * `README.md` (and any non-JSON files) are ignored. Returns the merged
+     * configuration plus a short stable hash that fingerprints the applied
+     * fragment set (filename + content), so callers can fold it into the
+     * import version to force re-import when fragments change.
+     *
+     * @param array  $base        The parsed monolith configuration.
+     * @param string $fragmentDir Absolute path to the register.d directory.
+     *
+     * @return array{0: array<string,mixed>, 1: string} The merged config and the fragment hash ('' when no fragments).
+     */
+    private static function mergeRegisterFragments(array $base, string $fragmentDir): array
+    {
+        if (is_dir($fragmentDir) === false) {
+            return [$base, ''];
+        }
+
+        $files = glob($fragmentDir.'/*.json');
+        if ($files === false || empty($files) === true) {
+            return [$base, ''];
+        }
+
+        sort($files);
+
+        $merged          = $base;
+        $hashAccumulator = '';
+
+        foreach ($files as $file) {
+            $content = file_get_contents($file);
+            if ($content === false) {
+                continue;
+            }
+
+            $fragment = json_decode($content, true);
+            if (json_last_error() !== JSON_ERROR_NONE || is_array($fragment) === false) {
+                continue;
+            }
+
+            $merged           = self::deepMergeConfig(base: $merged, override: $fragment);
+            $hashAccumulator .= basename($file).':'.$content."\n";
+        }//end foreach
+
+        if ($hashAccumulator === '') {
+            return [$merged, ''];
+        }
+
+        return [$merged, substr(hash('sha256', $hashAccumulator), 0, 12)];
+    }//end mergeRegisterFragments()
+
+    /**
+     * Recursively deep-merge an override array onto a base array (ADR-037).
+     *
+     * Associative arrays (OpenAPI objects like `components.schemas`, `paths`)
+     * are merged key-by-key, recursing on shared keys; list arrays (numeric,
+     * sequential keys) are concatenated; scalar values from the override
+     * overwrite the base. Disjoint fragments therefore union cleanly without
+     * collision.
+     *
+     * @param array<int|string,mixed> $base     The base array.
+     * @param array<int|string,mixed> $override The override array.
+     *
+     * @return array<int|string,mixed> The merged result.
+     */
+    private static function deepMergeConfig(array $base, array $override): array
+    {
+        foreach ($override as $key => $value) {
+            if (is_array($value) === true
+                && isset($base[$key]) === true
+                && is_array($base[$key]) === true
+            ) {
+                if (self::isList(array: $value) === true && self::isList(array: $base[$key]) === true) {
+                    $base[$key] = array_merge($base[$key], $value);
+                    continue;
+                }
+
+                $base[$key] = self::deepMergeConfig(base: $base[$key], override: $value);
+                continue;
+            }
+
+            $base[$key] = $value;
+        }//end foreach
+
+        return $base;
+    }//end deepMergeConfig()
+
+    /**
+     * Determine whether an array is a sequential list (vs. an associative map).
+     *
+     * Backport of `array_is_list()` for portability across PHP runtimes.
+     *
+     * @param array<int|string,mixed> $array The array to inspect.
+     *
+     * @return bool True when the array has sequential integer keys from zero.
+     */
+    private static function isList(array $array): bool
+    {
+        if (function_exists('array_is_list') === true) {
+            return array_is_list($array);
+        }
+
+        $expected = 0;
+        foreach ($array as $key => $unused) {
+            if ($key !== $expected) {
+                return false;
+            }
+
+            $expected++;
+        }
+
+        return true;
+    }//end isList()
 }//end class
