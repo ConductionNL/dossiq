@@ -1,3 +1,5 @@
+> SUPERSEDED 2026-06-02 (ADR-032): decomposed into leverancier-zaakportaal-01..16
+
 # Proposal: leverancier-zaakportaal
 
 ## Summary
