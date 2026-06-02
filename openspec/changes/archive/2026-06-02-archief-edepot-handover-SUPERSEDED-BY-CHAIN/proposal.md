@@ -1,3 +1,5 @@
+> SUPERSEDED 2026-06-02 (ADR-032): decomposed into archief-edepot-handover-01..08
+
 # Proposal: archief-edepot-handover
 
 ## Summary
