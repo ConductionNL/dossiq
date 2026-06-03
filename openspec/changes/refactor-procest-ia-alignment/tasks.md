@@ -70,3 +70,4 @@ self-contained and should take under 15 minutes.
       (npm deps unavailable in container; skipped.)
 - [x] 5.5 Open a PR titled `refactor(procest): align Tasks placement with IA
       (Mijn werk › Taken)` targeting `development`.
+      PR: https://codeberg.org/Conduction/procest/pulls/38
