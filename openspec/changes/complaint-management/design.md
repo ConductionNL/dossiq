@@ -1,5 +1,7 @@
 # Complaint Management Design
 
+status: pr-created
+
 ## Architecture
 Complaints are first-class entities stored in OpenRegister, distinct from `zaak`. The complaint lifecycle is enforced by a status machine layered on top of the existing status-record infrastructure; only the deadline math and a few specialized flows (hearing, disposition, escalation) require new code. n8n drives email intake, deadline monitoring, and notification fan-out.
 
