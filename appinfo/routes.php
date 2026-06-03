@@ -316,6 +316,9 @@ return [
         ['name' => 'milestone#mark',     'url' => '/api/cases/{caseId}/milestones/{milestoneId}/mark',    'verb' => 'POST'],
         ['name' => 'milestone#reverse',  'url' => '/api/cases/{caseId}/milestones/{milestoneId}/reverse', 'verb' => 'POST'],
 
+        // ── Bezwaar/beroep dossier export ───────────────────────────────
+        ['name' => 'dossierExport#export', 'url' => '/api/cases/{caseId}/dossier-export', 'verb' => 'GET'],
+
         // ── ORI Atom Feeds (public, no auth required) ───────────────────
         ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen.rss', 'verb' => 'GET'],
         ['name' => 'raadsinformatieFeed#agendapunten',  'url' => '/feed/ori/agendapunten.rss',  'verb' => 'GET'],
