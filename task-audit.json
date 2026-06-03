@@ -1,15 +1,56 @@
 {
-  "spec": "openspec/changes/open-raadsinformatie",
+  "spec": "openspec/changes/woo-case-type",
   "verified": [
-    {"task": "1", "file": "lib/Settings/ori_register.json", "ok": true},
-    {"task": "2", "file": "lib/Repair/RegisterOriRegister.php", "ok": true},
-    {"task": "3", "note": "OasService picks up register via authorization.read:public config", "ok": true},
-    {"task": "4", "note": "All 6 schemas have searchable:true in ori_register.json", "ok": true},
-    {"task": "5", "file": "lib/Service/VergaderingCaseService.php", "ok": true},
-    {"task": "5b", "file": "lib/BackgroundJob/VergaderingDeadlineJob.php", "ok": true},
-    {"task": "6", "note": "106 demo objects in ori_register.json components.objects", "ok": true},
-    {"task": "7", "file": "lib/Controller/RaadsinformatieFeedController.php", "ok": true},
-    {"task": "8", "file": "lib/Cron/OriDataQualityCheck.php", "ok": true}
+    {
+      "task": "1",
+      "file": "lib/Service/TemplateLibraryService.php",
+      "ok": true
+    },
+    {
+      "task": "1",
+      "file": "lib/Controller/TemplateController.php",
+      "ok": true
+    },
+    {
+      "task": "2",
+      "file": "lib/Settings/templates/woo-verzoek.json",
+      "ok": true
+    },
+    {
+      "task": "3",
+      "file": "src/views/cases/components/WooIntakeForm.vue",
+      "ok": true
+    },
+    {
+      "task": "4",
+      "file": "lib/Service/WOODeadlineService.php",
+      "ok": true
+    },
+    {
+      "task": "5",
+      "file": "lib/Service/WOODocumentAssessmentService.php",
+      "ok": true
+    },
+    {
+      "task": "5",
+      "file": "lib/Controller/WOOAssessmentController.php",
+      "ok": true
+    },
+    {
+      "task": "6",
+      "file": "src/views/cases/components/DocumentAssessmentTable.vue",
+      "ok": true
+    },
+    {
+      "task": "7",
+      "file": "lib/Service/WOODecisionService.php",
+      "ok": true
+    },
+    {
+      "task": "8",
+      "file": "lib/Service/WOORedactionService.php",
+      "ok": true
+    }
   ],
   "stubs": [],
   "missing_routes": []
