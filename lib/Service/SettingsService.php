@@ -236,6 +236,7 @@ class SettingsService
         'bacAdviceRequest'             => 'bac_advice_request_schema',
         'beroep'                       => 'beroep_schema',
         'bezwaarDecision'              => 'bezwaar_decision_schema',
+        'samenwerkverzoek'             => 'dso_samenwerkverzoek_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

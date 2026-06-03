@@ -48,6 +48,7 @@ use OCA\Procest\Listener\DeepLinkRegistrationListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
 use OCA\Procest\Listener\ParaferingAuditListener;
 use OCA\Procest\Listener\RoleMutationListener;
+use OCA\Procest\Listener\VergunningaanvraagCreatedListener;
 use OCA\Procest\Mcp\ProcestToolProvider;
 use OCA\Procest\Middleware\TenantMiddleware;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
