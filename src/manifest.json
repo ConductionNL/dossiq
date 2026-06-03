@@ -55,6 +55,20 @@
 			"order": 46
 		},
 		{
+			"id": "WorkflowBoard",
+			"label": "Workflow Board",
+			"icon": "icon-category-workflow",
+			"route": "WorkflowBoard",
+			"order": 35
+		},
+		{
+			"id": "Analytics",
+			"label": "Analytics",
+			"icon": "icon-category-monitoring",
+			"route": "Doorlooptijd",
+			"order": 55
+		},
+		{
 			"id": "CaseMap",
 			"label": "Map",
 			"icon": "icon-address",
@@ -1109,6 +1123,34 @@
 			},
 			"slots": {
 				"widget-doorlooptijd": "DoorlooptijdView"
+			}
+		},
+		{
+			"id": "WorkflowBoard",
+			"route": "/workflow-board",
+			"type": "dashboard",
+			"title": "Workflow Board",
+			"config": {
+				"widgets": [
+					{
+						"id": "workflowBoard",
+						"title": "Workflow Board",
+						"type": "custom"
+					}
+				],
+				"layout": [
+					{
+						"id": 1,
+						"widgetId": "workflowBoard",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 12
+					}
+				]
+			},
+			"slots": {
+				"widget-workflowBoard": "WorkflowBoardView"
 			}
 		},
 		{

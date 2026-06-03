@@ -175,6 +175,30 @@
 				</div>
 			</div>
 
+			<!-- Throughput chart — cases closed per week -->
+			<div class="chart-card chart-card--full">
+				<h3>{{ t('procest', 'Throughput (cases closed per week)') }}</h3>
+				<div v-if="throughputData.length > 0" class="chart-container">
+					<apexchart
+						type="line"
+						height="280"
+						:options="throughputOptions"
+						:series="throughputSeries" />
+				</div>
+				<div v-else class="chart-empty">
+					{{ t('procest', 'No completed cases in the selected range') }}
+				</div>
+			</div>
+
+			<!-- Woo statutory-deadline panel -->
+			<div class="chart-card chart-card--full">
+				<WooDeadlinePanel
+					:cases="wooCases"
+					:loading="loading"
+					@click-case="$router.push({ name: 'CaseDetail', params: { id: $event } })"
+					@view-all="$router.push({ name: 'Cases', query: { caseTypeContains: 'woo' } })" />
+			</div>
+
 			<!-- At-risk cases panel -->
 			<div v-if="atRiskCases.length > 0" class="at-risk-panel">
 				<h3>{{ t('procest', 'At-Risk Cases') }}</h3>
@@ -304,6 +328,8 @@ import {
 	computePerformanceTable,
 	parseDurationToDays,
 } from '../utils/doorlooptijdHelpers.js'
+import { computeWeeklyThroughput, getWooCases } from '../utils/dashboardHelpers.js'
+import WooDeadlinePanel from './dashboard/WooDeadlinePanel.vue'
 
 export default {
 	name: 'DoorlooptijdDashboard',
@@ -315,6 +341,7 @@ export default {
 		Calendar,
 		FilterVariant,
 		ArrowLeft,
+		WooDeadlinePanel,
 	},
 	data() {
 		return {
@@ -389,6 +416,14 @@ export default {
 				const st = this.statusTypeMap.get(c.status)
 				return !st?.isFinal
 			})
+		},
+		/**
+		 * Open Woo cases with statutory-deadline countdown and severity.
+		 *
+		 * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-004
+		 */
+		wooCases() {
+			return getWooCases(this.openCases, this.caseTypes)
 		},
 		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		filteredCompletedCases() {
@@ -621,6 +656,55 @@ export default {
 				name: t('procest', 'SLA Compliance %'),
 				data: this.trendData.map(d => d.rate),
 			}]
+		},
+		/**
+		 * Weekly throughput — completed cases closed per ISO week over the
+		 * trailing 12 weeks of the selected range.
+		 *
+		 * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-005
+		 */
+		throughputData() {
+			return computeWeeklyThroughput(this.filteredCompletedCases, 12)
+		},
+		/** @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-005 */
+		throughputSeries() {
+			return [{
+				name: t('procest', 'Cases closed'),
+				data: this.throughputData.map(w => w.count),
+			}]
+		},
+		/** @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-005 */
+		throughputOptions() {
+			return {
+				chart: {
+					type: 'line',
+					fontFamily: 'inherit',
+					toolbar: { show: false },
+				},
+				xaxis: {
+					categories: this.throughputData.map(w => w.weekLabel),
+					labels: {
+						style: { colors: 'var(--color-main-text)' },
+					},
+				},
+				yaxis: {
+					min: 0,
+					forceNiceScale: true,
+					title: { text: t('procest', 'Cases closed') },
+					labels: {
+						style: { colors: 'var(--color-main-text)' },
+						formatter: (val) => Math.round(val),
+					},
+				},
+				colors: ['var(--color-primary)'],
+				stroke: {
+					curve: 'smooth',
+					width: 3,
+				},
+				markers: {
+					size: 4,
+				},
+			}
 		},
 		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
 		trendOptions() {
