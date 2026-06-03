@@ -453,4 +453,73 @@ class AdviceService
             );
         }
     }//end sendUserNotification()
+
+    /**
+     * Create an advice request for a VTH case.
+     *
+     * Stores the adviceRequest in the `adviceRequest` schema and sends a
+     * notification to the adviseur. Corresponds to tasks.md#task-6.
+     *
+     * @param string               $caseId      UUID of the case
+     * @param array<string, mixed> $data        Advice request data (adviseur, deadline, vraag, etc.)
+     * @param string               $requestedBy User UID of the requester
+     *
+     * @return array<string, mixed> Saved adviceRequest object
+     *
+     * @throws RuntimeException If OpenRegister is unavailable
+     *
+     * @spec openspec/changes/vth-module/tasks.md#task-6
+     */
+    public function requestAdvice(string $caseId, array $data, string $requestedBy): array
+    {
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            throw new RuntimeException('OpenRegister is not available');
+        }
+
+        $register = $this->settingsService->getConfigValue('register');
+
+        $payload = [
+            'caseRef'     => $caseId,
+            'requestedBy' => $requestedBy,
+            'adviseur'    => $data['adviseur'] ?? '',
+            'deadline'    => $data['deadline'] ?? null,
+            'status'      => 'open',
+            'vraag'       => $data['vraag'] ?? '',
+            'adviesText'  => '',
+            'addedToFile' => false,
+        ];
+
+        $saved = $objectService->saveObject(
+            register: $register,
+            schema: 'adviceRequest',
+            object: $payload
+        );
+
+        $adviseur = $payload['adviseur'];
+        if ($adviseur !== '') {
+            $notificationObjectId = $caseId;
+            if (is_array($saved) === true) {
+                $notificationObjectId = $saved['id'] ?? $caseId;
+            }
+
+            $this->sendUserNotification(
+                userId: $adviseur,
+                objectId: $notificationObjectId,
+                subject: 'advice_requested',
+                message: 'Adviesaanvraag voor zaak '.$caseId
+            );
+        }
+
+        $this->logger->info(
+            'Advice request created for case '.$caseId.' by '.$requestedBy,
+            ['app' => Application::APP_ID]
+        );
+
+        if (is_array($saved) === true) {
+            return $saved;
+        }
+
+        return [];
+    }//end requestAdvice()
 }//end class

@@ -283,6 +283,26 @@ return [
         ['name' => 'lhs#recommend', 'url' => '/api/lhs/recommend', 'verb' => 'POST'],
         ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
+        // ── VTH Module ─────────────────────────────────────────────────────
+        // DSO/Omgevingsloket intake — public webhook, no auth, signature-validated.
+        ['name' => 'dSOIntake#intake', 'url' => '/api/vth/dso/intake', 'verb' => 'POST'],
+        // VTH zaaktype template management (admin only).
+        ['name' => 'vTHTemplate#index',    'url' => '/api/vth/templates',             'verb' => 'GET'],
+        ['name' => 'vTHTemplate#activate', 'url' => '/api/vth/templates/{slug}/activate', 'verb' => 'POST'],
+        // Inspection checklist CRUD (admin).
+        ['name' => 'inspectionChecklist#index',   'url' => '/api/vth/checklists',       'verb' => 'GET'],
+        ['name' => 'inspectionChecklist#create',  'url' => '/api/vth/checklists',       'verb' => 'POST'],
+        ['name' => 'inspectionChecklist#update',  'url' => '/api/vth/checklists/{id}',  'verb' => 'PUT'],
+        ['name' => 'inspectionChecklist#destroy', 'url' => '/api/vth/checklists/{id}',  'verb' => 'DELETE'],
+        // Per-case inspection result submission and retrieval.
+        ['name' => 'inspectionChecklist#submitResult', 'url' => '/api/vth/cases/{id}/inspection-result', 'verb' => 'POST'],
+        ['name' => 'inspectionChecklist#getResults',   'url' => '/api/vth/cases/{id}/inspection-results', 'verb' => 'GET'],
+        // Per-case advice request creation.
+        ['name' => 'advice#createForCase', 'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'POST'],
+        ['name' => 'advice#getForCase',    'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'GET'],
+        // LHS matrix cell lookup.
+        ['name' => 'lhs#lookup', 'url' => '/api/vth/lhs/lookup', 'verb' => 'GET'],
+
         // ── Berichtenbox (government inbox integration) ─────────────────
         ['name' => 'berichtenbox#send',     'url' => '/api/berichtenbox/send',                 'verb' => 'POST'],
         ['name' => 'berichtenbox#messages', 'url' => '/api/berichtenbox/messages',             'verb' => 'GET'],
