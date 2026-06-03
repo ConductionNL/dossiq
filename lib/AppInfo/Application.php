@@ -39,6 +39,7 @@ use OCA\Procest\Dashboard\StalledCasesWidget;
 use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Dashboard\StartCaseWidget;
 use OCA\Procest\Listener\BezwaarAdviceRequestedListener;
+use OCA\Procest\Listener\VergunningaanvraagCreatedListener;
 use OCA\Procest\Listener\BezwaarDecisionListener;
 use OCA\Procest\Listener\BezwaarHearingScheduledListener;
 use OCA\Procest\Listener\BezwaarLifecycleListener;
@@ -117,6 +118,12 @@ class Application extends App implements IBootstrap
         );
 
         $this->registerBezwaarListeners(context: $context);
+
+        // DSO Omgevingsloket: create Procest zaak when a vergunningaanvraag is written.
+        $context->registerEventListener(
+            event: ObjectCreatedEvent::class,
+            listener: VergunningaanvraagCreatedListener::class
+        );
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
         $context->registerMiddleware(class: TenantMiddleware::class);

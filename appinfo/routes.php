@@ -311,6 +311,15 @@ return [
         ['name' => 'milestone#mark',     'url' => '/api/cases/{caseId}/milestones/{milestoneId}/mark',    'verb' => 'POST'],
         ['name' => 'milestone#reverse',  'url' => '/api/cases/{caseId}/milestones/{milestoneId}/reverse', 'verb' => 'POST'],
 
+        // ── DSO Omgevingsloket (VTH) ────────────────────────────────────
+        // Specific sub-resource endpoints MUST precede the wildcard catch-all.
+        ['name' => 'dso#dashboard',              'url' => '/api/dso/dashboard',                                  'verb' => 'GET'],
+        ['name' => 'dso#transitionStatus',       'url' => '/api/dso/cases/{caseId}/transition',                  'verb' => 'POST'],
+        ['name' => 'dso#generateBeschikking',    'url' => '/api/dso/cases/{caseId}/beschikking',                 'verb' => 'POST'],
+        ['name' => 'dso#initiateSamenwerking',   'url' => '/api/dso/cases/{caseId}/samenwerking',                'verb' => 'POST'],
+        ['name' => 'dso#respondSamenwerking',    'url' => '/api/dso/samenwerking/{samenwerkId}',                  'verb' => 'PUT'],
+        ['name' => 'dso#doorsturen',             'url' => '/api/dso/cases/{caseId}/doorstuur',                   'verb' => 'POST'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],

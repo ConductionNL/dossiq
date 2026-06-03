@@ -158,6 +158,13 @@ class SettingsService
         // Outage banner copy (nl + en).
         'pdok_outage_banner_nl',
         'pdok_outage_banner_en',
+        // DSO Omgevingsloket integration settings (dso-omgevingsloket spec).
+        'dso_case_type',
+        'dso_deadline_warning_weeks_warning',
+        'dso_deadline_warning_weeks_critical',
+        'dso_beschikking_template_verleend',
+        'dso_beschikking_template_geweigerd',
+        'dso_samenwerkverzoek_schema',
     ];
 
     /**
@@ -222,6 +229,8 @@ class SettingsService
         'lhsMatrix'                    => 'lhs_matrix_schema',
         'lhsRecommendation'            => 'lhs_recommendation_schema',
         'location'                     => 'location_schema',
+        // DSO Omgevingsloket — samenwerkverzoek schema (dso-omgevingsloket spec).
+        'samenwerkverzoek'             => 'dso_samenwerkverzoek_schema',
         'bezwaar'                      => 'bezwaar_schema',
         'bezwaaradviescommissie'       => 'bezwaaradviescommissie_schema',
         'bacAdviceRequest'             => 'bac_advice_request_schema',
