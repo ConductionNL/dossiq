@@ -57,19 +57,46 @@
           "decisions": [],
           "verdict": "pass",
           "duration_seconds": 3593
+        },
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "sonnet",
+          "container": "hydra-builder",
+          "started_at": "2026-06-03T19:23:21Z",
+          "ended_at": "2026-06-03T19:23:21Z",
+          "exit_code": 1,
+          "turns_used": 0,
+          "turns_budget": 40,
+          "checks_run": [],
+          "checks_skipped": [],
+          "findings": [
+            {
+              "id": "build-failed",
+              "severity": "CRITICAL",
+              "gate": "builder",
+              "rule": "builder container exited non-zero",
+              "status": "open",
+              "note": "Builder container failed to complete. See logs/pipeline-*/builder-build.jsonl for detail.",
+              "autofixable": false
+            }
+          ],
+          "decisions": [],
+          "verdict": "fail",
+          "duration_seconds": 0
         }
       ]
     }
   ],
   "totals": {
-    "runs": 2,
+    "runs": 3,
     "turns_used": 864,
     "cost_usd": 0.0,
     "duration_seconds": 8650,
     "cycles": 1,
     "by_stage": {
       "build": {
-        "runs": 2,
+        "runs": 3,
         "turns_used": 864,
         "cost_usd": 0.0,
         "duration_seconds": 8650
