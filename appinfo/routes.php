@@ -81,6 +81,14 @@ return [
         ['name' => 'subsidie#transition', 'url' => '/api/subsidies/{id}/transition', 'verb' => 'POST'],
         ['name' => 'subsidie#createBeschikking', 'url' => '/api/subsidies/{id}/beschikking', 'verb' => 'POST'],
 
+        // Besluitvorming workflow (static/verb routes before {id} wildcards).
+        ['name' => 'besluitvorming#activateTemplate', 'url' => '/api/besluitvorming/templates/{slug}/activate', 'verb' => 'POST'],
+        ['name' => 'besluitvorming#generateAgenda',   'url' => '/api/besluitvorming/agenda/generate',           'verb' => 'POST'],
+        ['name' => 'besluitvorming#addToAgenda',      'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'POST'],
+        ['name' => 'besluitvorming#confirmAgenda',    'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'PUT'],
+        ['name' => 'besluitvorming#publish',          'url' => '/api/besluitvorming/cases/{id}/publish',        'verb' => 'POST'],
+        ['name' => 'besluitvorming#mandaatCheck',     'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
+
         // ZGW Mapping Management.
         ['name' => 'zgwMapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
         ['name' => 'zgwMapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],

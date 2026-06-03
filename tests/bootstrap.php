@@ -63,6 +63,12 @@ require_once __DIR__ . '/Unit/Stubs/DoctrineStubs.php';
 // interface_exists guards when a real Nextcloud runtime is present).
 require_once __DIR__ . '/Unit/Stubs/OcInternalStubs.php';
 
+// OCP\Http\Client interface stubs — the vendored nextcloud/ocp does not ship
+// the OCP\Http\Client namespace, so services depending on IClientService
+// (PublicationService, MandaatValidationService) cannot be mocked without these.
+// Guarded by interface_exists() so they no-op under a real Nextcloud runtime.
+require_once __DIR__ . '/Stubs/HttpClientStubs.php';
+
 // IMcpToolProvider stub — loaded when the openregister runtime (PR #1466,
 // ai-chat-companion-orchestrator) is absent. ProcestToolProvider implements
 // OCA\OpenRegister\Mcp\IMcpToolProvider; the stub no-ops when the real
