@@ -569,13 +569,33 @@ class ComplaintController extends Controller
         $dateFrom = $this->request->getParam('dateFrom') ?? date('Y-01-01');
         $dateTo   = $this->request->getParam('dateTo') ?? date('Y-m-d');
 
+        $byCategorie    = $this->complaintAnalyticsService->getFrequencyByDimension(
+            dimension: 'categorie',
+            dateFrom: $dateFrom,
+            dateTo: $dateTo,
+        );
+        $byAfdeling     = $this->complaintAnalyticsService->getFrequencyByDimension(
+            dimension: 'betrokkenAfdeling',
+            dateFrom: $dateFrom,
+            dateTo: $dateTo,
+        );
+        $byKanaal       = $this->complaintAnalyticsService->getFrequencyByDimension(
+            dimension: 'ontvangstkanaal',
+            dateFrom: $dateFrom,
+            dateTo: $dateTo,
+        );
+        $monthlyTrend   = $this->complaintAnalyticsService->getMonthlyTrend(dateFrom: $dateFrom, dateTo: $dateTo);
+        $avgResolution  = $this->complaintAnalyticsService->getAverageResolutionTime(dateFrom: $dateFrom, dateTo: $dateTo);
+        $employeeAlerts = $this->complaintAnalyticsService->checkEmployeeThresholdAlerts();
+
         return new JSONResponse(
                 [
-                    'byCategorie'   => $this->complaintAnalyticsService->getFrequencyByDimension('categorie', $dateFrom, $dateTo),
-                    'byAfdeling'    => $this->complaintAnalyticsService->getFrequencyByDimension('betrokkenAfdeling', $dateFrom, $dateTo),
-                    'byKanaal'      => $this->complaintAnalyticsService->getFrequencyByDimension('ontvangstkanaal', $dateFrom, $dateTo),
-                    'monthlyTrend'  => $this->complaintAnalyticsService->getMonthlyTrend($dateFrom, $dateTo),
-                    'avgResolution' => $this->complaintAnalyticsService->getAverageResolutionTime($dateFrom, $dateTo),
+                    'byCategorie'    => $byCategorie,
+                    'byAfdeling'     => $byAfdeling,
+                    'byKanaal'       => $byKanaal,
+                    'monthlyTrend'   => $monthlyTrend,
+                    'avgResolution'  => $avgResolution,
+                    'employeeAlerts' => $employeeAlerts,
                 ]
                 );
     }//end analytics()
