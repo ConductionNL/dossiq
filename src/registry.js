@@ -26,6 +26,7 @@
 import MyWorkView from './views/MyWork.vue'
 import WerkvoorraadView from './views/Werkvoorraad.vue'
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
+import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import AdminRootView from './views/settings/AdminRoot.vue'
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import PublicCaseView from './views/public/PublicCaseView.vue'
@@ -70,6 +71,14 @@ const registry = {
 		kind: 'page',
 		component: DoorlooptijdView,
 		_note: 'KPI dashboard with apexcharts; pending lib chart-widget support.',
+	},
+
+	// --- Workflow Board — Kanban with drag-to-advance status transitions. ---
+	// @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-006
+	WorkflowBoardView: {
+		kind: 'page',
+		component: WorkflowBoardView,
+		_note: 'Kanban board: column per non-final status, drag-to-advance via saveObject (RBAC-enforced). No declarative board page type in lib yet.',
 	},
 	AdminRootView: {
 		kind: 'page',
