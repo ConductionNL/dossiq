@@ -50,6 +50,24 @@ return [
         ['name' => 'parafeerActie#create', 'url' => '/api/parafeer-actie', 'verb' => 'POST'],
         ['name' => 'parafeerActie#index',  'url' => '/api/parafeer-actie', 'verb' => 'GET'],
 
+        // KCC Klantcontact (kcc-klantcontact-integratie).
+        // Static/verb routes precede the {id} wildcard routes.
+        ['name' => 'kccRouting#evaluate', 'url' => '/api/kcc/routing/evaluate', 'verb' => 'POST'],
+        ['name' => 'kccRouting#index',    'url' => '/api/kcc/routing-rules', 'verb' => 'GET'],
+        ['name' => 'kccRouting#create',   'url' => '/api/kcc/routing-rules', 'verb' => 'POST'],
+        ['name' => 'kccRouting#update',   'url' => '/api/kcc/routing-rules/{id}', 'verb' => 'PUT'],
+        ['name' => 'kccRouting#destroy',  'url' => '/api/kcc/routing-rules/{id}', 'verb' => 'DELETE'],
+
+        ['name' => 'kccContact#indexCallbacks',  'url' => '/api/kcc/callback-requests', 'verb' => 'GET'],
+        ['name' => 'kccContact#scheduleCallback', 'url' => '/api/kcc/callback-requests', 'verb' => 'POST'],
+        ['name' => 'kccContact#cancelCallback',  'url' => '/api/kcc/callback-requests/{id}/cancel', 'verb' => 'POST'],
+
+        ['name' => 'kccContact#index',   'url' => '/api/kcc/contact-moments', 'verb' => 'GET'],
+        ['name' => 'kccContact#create',  'url' => '/api/kcc/contact-moments', 'verb' => 'POST'],
+        ['name' => 'kccContact#related', 'url' => '/api/kcc/contact-moments/{id}/related', 'verb' => 'GET'],
+        ['name' => 'kccContact#show',    'url' => '/api/kcc/contact-moments/{id}', 'verb' => 'GET'],
+        ['name' => 'kccContact#update',  'url' => '/api/kcc/contact-moments/{id}', 'verb' => 'PUT'],
+
         // ZGW Mapping Management.
         ['name' => 'zgwMapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
         ['name' => 'zgwMapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],
