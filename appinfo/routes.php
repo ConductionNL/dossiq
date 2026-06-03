@@ -196,7 +196,6 @@ return [
         // that operated entirely in-memory (no persistence, client-supplied state).
         // Deleted in wave-3 security fix.  The live engine is ParafeerActieService /
         // ParafeerRouteController.  Audit-trail export route retained below.
-
         // Parafering audit trail Archiefwet-aligned export (action, not CRUD).
         // CRUD on paraferingAuditEntry objects is served by OpenRegister's
         // auto-exposed /api/objects/<register>/<schema> endpoints — only the
@@ -221,6 +220,13 @@ return [
         ['name' => 'inspection#completeChecklistItem','url' => '/api/inspections/{id}/checklist/{itemId}',           'verb' => 'POST'],
         ['name' => 'inspection#addPhoto',             'url' => '/api/inspections/{id}/photos',                       'verb' => 'POST'],
         ['name' => 'inspection#complete',             'url' => '/api/inspections/{id}/complete',                     'verb' => 'POST'],
+
+        // ── Mobiel Inspectie Offline (sync queue + conflict resolution) ─
+        // Static/verb routes precede the {id} wildcards.
+        ['name' => 'sync#daily',         'url' => '/api/sync/daily',                       'verb' => 'GET'],
+        ['name' => 'sync#queue',         'url' => '/api/sync/queue',                       'verb' => 'GET'],
+        ['name' => 'sync#recordOutcome', 'url' => '/api/sync/queue/{id}/outcome',          'verb' => 'POST'],
+        ['name' => 'sync#resolveConflict', 'url' => '/api/sync/conflicts/{id}/resolve',    'verb' => 'POST'],
 
         // ── Legesberekening (municipal fee calculation) ─────────────────
         ['name' => 'leges#calculate',   'url' => '/api/leges/calculate',    'verb' => 'POST'],
