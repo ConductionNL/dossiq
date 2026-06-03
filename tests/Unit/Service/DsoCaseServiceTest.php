@@ -14,6 +14,9 @@
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#V03
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#V04
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#V06
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);

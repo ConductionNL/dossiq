@@ -20,6 +20,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T06
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -376,7 +379,7 @@ class DsoController extends Controller
         $this->samenwerkService->authorizeSamenwerkResponse(
             samenwerk: $samenwerkObj ?? [],
             userId: $user->getUID(),
-            isAdmin: $this->groupManager->isAdmin(uid: $user->getUID()),
+            isAdmin: $this->groupManager->isAdmin($user->getUID()),
         );
 
         try {
@@ -583,7 +586,7 @@ class DsoController extends Controller
     {
         $uid = $user->getUID();
 
-        if ($this->groupManager->isAdmin(uid: $uid) === true) {
+        if ($this->groupManager->isAdmin($uid) === true) {
             return;
         }
 
@@ -601,20 +604,18 @@ class DsoController extends Controller
     }//end authorizeZaakMutation()
 
     /**
-     * Decode a JSON request body safely.
+     * Return the decoded request body as an array.
+     *
+     * NC AppFramework parses JSON bodies (Content-Type: application/json) and
+     * makes them available via getParams(), so no manual json_decode is needed.
      *
      * @return array<string, mixed>
      */
     private function readJsonBody(): array
     {
-        $content = $this->request->getContent();
-        if ($content === '' || $content === false) {
-            return [];
-        }
-
-        $decoded = json_decode($content, true);
-        if (is_array($decoded) === true) {
-            return $decoded;
+        $params = $this->request->getParams();
+        if (is_array($params) === true) {
+            return $params;
         }
 
         return [];

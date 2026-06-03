@@ -17,6 +17,9 @@
  * @link https://procest.nl
  *
  * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -236,7 +239,6 @@ class SettingsService
         'bacAdviceRequest'             => 'bac_advice_request_schema',
         'beroep'                       => 'beroep_schema',
         'bezwaarDecision'              => 'bezwaar_decision_schema',
-        'samenwerkverzoek'             => 'dso_samenwerkverzoek_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

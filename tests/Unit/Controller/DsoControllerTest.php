@@ -11,6 +11,9 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#V09
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -113,8 +116,8 @@ class DsoControllerTest extends TestCase
             ->willReturn($mockUser);
 
         $this->request
-            ->method('getContent')
-            ->willReturn('{}');
+            ->method('getParams')
+            ->willReturn([]);
 
         $response = $this->controller->transitionStatus(caseId: 'test-id');
 
@@ -134,8 +137,8 @@ class DsoControllerTest extends TestCase
             ->willReturn($mockUser);
 
         $this->request
-            ->method('getContent')
-            ->willReturn('{"newStatus":"invalid_value"}');
+            ->method('getParams')
+            ->willReturn(['newStatus' => 'invalid_value']);
 
         $response = $this->controller->transitionStatus(caseId: 'test-id');
 
@@ -155,8 +158,8 @@ class DsoControllerTest extends TestCase
             ->willReturn($mockUser);
 
         $this->request
-            ->method('getContent')
-            ->willReturn('{"outcome":"unknown"}');
+            ->method('getParams')
+            ->willReturn(['outcome' => 'unknown']);
 
         $response = $this->controller->generateBeschikking(caseId: 'test-id');
 
@@ -176,8 +179,8 @@ class DsoControllerTest extends TestCase
             ->willReturn($mockUser);
 
         $this->request
-            ->method('getContent')
-            ->willReturn('{}');
+            ->method('getParams')
+            ->willReturn([]);
 
         $response = $this->controller->initiateSamenwerking(caseId: 'test-id');
 
@@ -197,8 +200,8 @@ class DsoControllerTest extends TestCase
             ->willReturn($mockUser);
 
         $this->request
-            ->method('getContent')
-            ->willReturn('{}');
+            ->method('getParams')
+            ->willReturn([]);
 
         $response = $this->controller->doorsturen(caseId: 'test-id');
 

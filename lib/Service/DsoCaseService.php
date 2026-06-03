@@ -18,6 +18,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T02
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -117,7 +120,7 @@ class DsoCaseService
         }
 
         // Resolve the DSO register containing the vergunningaanvraag.
-        $dsoRegister = $this->resolveDsoRegister(objectService: $objectService);
+        $dsoRegister = $this->resolveDsoRegister();
 
         // Fetch the vergunningaanvraag from OpenRegister.
         $aanvraag = null;
@@ -477,7 +480,7 @@ class DsoCaseService
         ?string $besluitdatum,
         ?string $toelichting,
     ): void {
-        $dsoRegister = $this->resolveDsoRegister(objectService: $objectService);
+        $dsoRegister = $this->resolveDsoRegister();
         if ($dsoRegister === null) {
             return;
         }
@@ -520,11 +523,9 @@ class DsoCaseService
     /**
      * Resolve the DSO register slug or ID from app config or fallback.
      *
-     * @param object $objectService OpenRegister ObjectService
-     *
      * @return string|null The register slug/ID, or null when not resolvable
      */
-    private function resolveDsoRegister(object $objectService): ?string
+    private function resolveDsoRegister(): ?string
     {
         // Check if a DSO register is explicitly configured.
         $dsoRegister = $this->settingsService->getConfigValue('dso_register', '');
