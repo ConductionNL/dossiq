@@ -126,7 +126,7 @@ class ParaferingAuditAppendOnlyValidator implements IEventListener
             // Block the operation by stopping propagation and recording the error.
             // At this point $event is always one of ObjectCreatingEvent|ObjectUpdatingEvent|ObjectDeletingEvent
             // (the only non-early-return branches above), so setErrors/stopPropagation are always safe.
-            /** @psalm-suppress UndefinedMethod -- setErrors exists on all three OR event types; base Event does not declare it */
+            // @psalm-suppress UndefinedMethod -- setErrors exists on all three OR event types; base Event does not declare it.
             $event->setErrors([$e->getMessage()]);
             $event->stopPropagation();
 
