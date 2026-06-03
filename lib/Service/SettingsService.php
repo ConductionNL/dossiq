@@ -158,6 +158,10 @@ class SettingsService
         // Outage banner copy (nl + en).
         'pdok_outage_banner_nl',
         'pdok_outage_banner_en',
+        // Consultation management (consultation-management spec).
+        'consultation_schema',
+        'advice_response_schema',
+        'advisory_body_schema',
     ];
 
     /**
@@ -227,6 +231,10 @@ class SettingsService
         'bacAdviceRequest'             => 'bac_advice_request_schema',
         'beroep'                       => 'beroep_schema',
         'bezwaarDecision'              => 'bezwaar_decision_schema',
+        // Consultation management (consultation-management spec).
+        'consultation'                 => 'consultation_schema',
+        'adviceResponse'               => 'advice_response_schema',
+        'advisoryBody'                 => 'advisory_body_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

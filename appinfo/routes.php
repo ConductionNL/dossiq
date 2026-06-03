@@ -289,11 +289,19 @@ return [
         ['name' => 'berichtenbox#poll',     'url' => '/api/berichtenbox/messages/{messageId}', 'verb' => 'GET'],
 
         // ── Consultation (advice requests and responses) ─────────────────
-        ['name' => 'consultation#index',          'url' => '/api/consultations/{caseId}',              'verb' => 'GET'],
-        ['name' => 'consultation#create',         'url' => '/api/consultations',                       'verb' => 'POST'],
-        ['name' => 'consultation#updateStatus',   'url' => '/api/consultations/{id}/status',           'verb' => 'POST'],
-        ['name' => 'consultation#submitResponse', 'url' => '/api/consultations/{id}/response',         'verb' => 'POST'],
-        ['name' => 'consultation#overdue',        'url' => '/api/consultations/overdue',               'verb' => 'GET'],
+        ['name' => 'consultation#index',               'url' => '/api/consultations/case/{caseId}',                'verb' => 'GET'],
+        ['name' => 'consultation#create',              'url' => '/api/consultations',                              'verb' => 'POST'],
+        ['name' => 'consultation#show',                'url' => '/api/consultations/{id}',                         'verb' => 'GET'],
+        ['name' => 'consultation#delete',              'url' => '/api/consultations/{id}',                         'verb' => 'DELETE'],
+        ['name' => 'consultation#updateStatus',        'url' => '/api/consultations/{id}/status',                  'verb' => 'POST'],
+        ['name' => 'consultation#submitResponse',      'url' => '/api/consultations/{id}/response',                'verb' => 'POST'],
+        ['name' => 'consultation#requestExtension',    'url' => '/api/consultations/{id}/extension',               'verb' => 'POST'],
+        ['name' => 'consultation#approveExtension',    'url' => '/api/consultations/{id}/extension/approve',       'verb' => 'POST'],
+        ['name' => 'consultation#overdue',             'url' => '/api/consultations/overdue',                      'verb' => 'GET'],
+        ['name' => 'consultation#listAdvisoryBodies',  'url' => '/api/advisory-bodies',                            'verb' => 'GET'],
+        ['name' => 'consultation#searchAdvisoryBodies','url' => '/api/advisory-bodies/search',                     'verb' => 'GET'],
+        ['name' => 'consultation#publicResponseGet',   'url' => '/api/public/consultations/{token}',               'verb' => 'GET'],
+        ['name' => 'consultation#publicResponsePost',  'url' => '/api/public/consultations/{token}',               'verb' => 'POST'],
 
         // ── Email (outbound case communication) ─────────────────────────
         ['name' => 'email#send',             'url' => '/api/email/{caseId}/send',            'verb' => 'POST'],
