@@ -248,6 +248,19 @@ return [
         ['name' => 'leges#teruggaaf',   'url' => '/api/leges/teruggaaf',    'verb' => 'POST'],
         ['name' => 'leges#export',      'url' => '/api/leges/export',       'verb' => 'POST'],
 
+        // ── Leges-heffingen: verordening administration (admin-gated) ────
+        // Static routes precede the {id} wildcard routes (ADR-016).
+        ['name' => 'legesAdmin#importVerordening',  'url' => '/api/leges/import-verordening',           'verb' => 'POST'],
+        ['name' => 'legesAdmin#listVerordeningen',  'url' => '/api/admin/leges/verordeningen',          'verb' => 'GET'],
+        ['name' => 'legesAdmin#updateVerordening',  'url' => '/api/admin/leges/verordeningen/{id}',     'verb' => 'PATCH'],
+        ['name' => 'legesAdmin#approveVerordening', 'url' => '/api/admin/leges/verordeningen/{id}/approve', 'verb' => 'POST'],
+
+        // ── Leges-heffingen: per-case calculation/refund (normal users) ──
+        ['name' => 'legesCase#calculate',  'url' => '/api/cases/{caseId}/leges/calculate',    'verb' => 'POST'],
+        ['name' => 'legesCase#auditTrail', 'url' => '/api/cases/{caseId}/leges/audit-trail',  'verb' => 'GET'],
+        ['name' => 'legesCase#refund',     'url' => '/api/cases/{caseId}/leges/refund',       'verb' => 'POST'],
+        ['name' => 'legesCase#show',       'url' => '/api/cases/{caseId}/leges',              'verb' => 'GET'],
+
         // ── Advice Management (adviesAanvraag) ──────────────────────────
         // CRUD is handled by the manifest renderer via OpenRegister. Only
         // workflow operations live on this controller.

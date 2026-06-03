@@ -209,3 +209,8 @@ parameters:
 			message: "#^Type OCA\\\\OpenRegister\\\\Event\\\\ObjectCreatingEvent\\|OCA\\\\OpenRegister\\\\Event\\\\ObjectDeletingEvent\\|OCA\\\\OpenRegister\\\\Event\\\\ObjectUpdatingEvent in generic type OCP\\\\EventDispatcher\\\\IEventListener\\<OCA\\\\OpenRegister\\\\Event\\\\ObjectCreatingEvent\\|OCA\\\\OpenRegister\\\\Event\\\\ObjectDeletingEvent\\|OCA\\\\OpenRegister\\\\Event\\\\ObjectUpdatingEvent\\> in PHPDoc tag @implements is not subtype of template type T of OCP\\\\EventDispatcher\\\\Event of interface OCP\\\\EventDispatcher\\\\IEventListener\\.$#"
 			count: 1
 			path: lib/Validator/ParaferingAuditAppendOnlyValidator.php
+
+		-
+			message: "#^Parameter \\#1 \\$settings of attribute class OCP\\\\AppFramework\\\\Http\\\\Attribute\\\\AuthorizedAdminSetting constructor expects class\\-string\\<OCP\\\\Settings\\\\IDelegatedSettings\\>, string given\\.$#"
+			count: 4
+			path: lib/Controller/LegesAdminController.php
