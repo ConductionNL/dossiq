@@ -37,10 +37,10 @@ use Psr\Log\LoggerInterface;
 /**
  * Controller for consultation (adviesaanvraag) management.
  *
- * All @NoAdminRequired methods that mutate a specific consultation object
- * apply an authorizeConsultationAccess() guard (OWASP A01:2021, ADR-005 Rule 3).
- * The publicResponse endpoints are @PublicPage @NoCSRFRequired — access is logged
- * for BIO compliance via LoggerInterface.
+ * Mutation endpoints carry the NoAdminRequired annotation and apply an
+ * authorizeConsultationAccess() guard (OWASP A01:2021, ADR-005 Rule 3).
+ * The publicResponse endpoints carry PublicPage + NoCSRFRequired — access
+ * is logged for BIO compliance via LoggerInterface.
  */
 class ConsultationController extends Controller
 {
@@ -135,6 +135,19 @@ class ConsultationController extends Controller
         try {
             $data              = $this->getRequestBody();
             $data['aanvrager'] = $user->getUID();
+
+            $dependsOn = $data['dependsOn'] ?? [];
+            if (is_array($dependsOn) === true && empty($dependsOn) === false) {
+                if ($this->consultationService->validateDependencyCycle(
+                    consultationId: '',
+                    dependsOn: $dependsOn,
+                ) === true) {
+                    return new JSONResponse(
+                        ['error' => 'Dependency cycle detected in dependsOn list'],
+                        Http::STATUS_BAD_REQUEST,
+                    );
+                }
+            }
 
             $result = $this->consultationService->createConsultation(data: $data);
             return new JSONResponse($result, Http::STATUS_CREATED);
