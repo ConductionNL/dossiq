@@ -1,163 +1,73 @@
 # Tasks
 
-- [ ] TASK-KCC-01: Add `contactMoment`, `routingRule`, `kccAgent`, `contactQueue`, `callbackRequest`, and `channelVolumeMetric` schemas to `procest_register.json` and register config keys in `SettingsService::SLUG_TO_CONFIG_KEY`.
+> Implementation notes (ADR guardrails applied):
+> - **ADR-037**: new schemas + seed objects live in `lib/Settings/register.d/30-kcc.json`; the monolith `procest_register.json` is NOT edited. The deep-merge loader (`SettingsService::mergeRegisterFragments`) unions `components.schemas`, register `schemas[]` membership and `components.objects[]` — covered by `tests/Unit/Settings/KccFragmentTest.php`.
+> - **Contact entity reuse**: the ContactMoment is the existing `customerContact` (KlantContact) schema, *extended* with KCC fields via the fragment — no new contact/customer schema was invented (guardrail).
+> - **ADR-022**: services use the real OpenRegister ObjectService API only (`find`/`findAll`/`saveObject`/`deleteObject`).
+> - **ADR-005**: reads/writes are scoped to the calling agent (IDOR-safe); routing-rule CRUD is admin/team-lead gated; identity is taken from `IUserSession`, never the request body.
+> - Live-instance / cross-app-dependent tasks (CTI, n8n, BRP/KvK lookup, websockets, dashboard export, a11y/perf/UAT) are **deferred** with reasons below and tracked for follow-up.
 
-- [ ] TASK-KCC-02: Implement `ContactMomentService` with CRUD, linking to Procest cases, transcript storage, sentiment score fields, and query methods for agent workload/history lookup.
+- [x] TASK-KCC-01: KCC schemas added via `register.d/30-kcc.json` (ADR-037). `routingRule`, `kccAgent`, `callbackRequest` are new schemas + register members; `contactMoment` reuses/extends the existing `customerContact` schema. Config keys (`routing_rule_schema`, `kcc_agent_schema`, `callback_request_schema`) + slug mappings registered in `SettingsService`.
 
-- [ ] TASK-KCC-03: Implement `RoutingEngine` with rule evaluation (keyword, regex, customer-type, time-of-day matching), priority ordering, and candidate-agent ranking by workload + skill + call history.
+- [x] TASK-KCC-02: `ContactMomentService` — CRUD (`create`/`update`/`get`/`list`/`related`), case linking, duration computation, agent/customer query methods. Reuses `customerContact`. Unit tests in `ContactMomentServiceTest`.
 
-- [ ] TASK-KCC-04: Implement `KCCAgentService` with status transitions (available/busy/break/after_call_wrap/offline), skill catalog, workload tracking, and availability queries.
+- [x] TASK-KCC-03: `RoutingEngine` — keyword / regex / channel / customer_type / time_of_day / day_of_week matching, priority ordering (lowest number wins), and agent ranking by workload + skill + continuity. Pure + fully unit-tested (`RoutingEngineTest`).
 
-- [ ] TASK-KCC-05: Implement `CallbackService` with scheduling, SLA calculation (respecting Dutch holidays), retry logic (exponential backoff, max 3 attempts), and notification dispatch.
+- [~] TASK-KCC-04: KCCAgent status/skill/workload model implemented as a schema + agent loading + ranking in `RoutingRuleService`/`RoutingEngine`. Status-transition write endpoints DEFERRED (need the live KCC-werkplek presence channel; see Pipelinq cross-app dependency).
 
-- [ ] TASK-KCC-06: Implement `ChannelMetricsService` with hourly/daily/weekly/monthly aggregation, SLA breach detection, first-contact-resolution calculation, and trend analysis for capacity forecasting.
+- [x] TASK-KCC-05: `CallbackService` — scheduling, validation, retry logic (exponential backoff, max 3 attempts via `SlaCalculator`), lifecycle transitions (`applyAttempt`/`cancel`). Unit tests in `CallbackServiceTest`.
 
-- [ ] TASK-KCC-07: Build `CtiIntegrationBridge` webhook handler for incoming calls from OpenConnector; creates draft ContactMoment, triggers BRP lookup via OpenCatalogi, broadcasts CTI popup to available agents.
+- [DEFERRED] TASK-KCC-06: `ChannelMetricsService` aggregation/forecast — DEFERRED: requires a populated live dataset and the MyDash dashboard host to verify aggregation windows; scaffolding belongs with the dashboard task (TASK-KCC-13/20).
 
-- [ ] TASK-KCC-08: Build `EmailIntakeHandler` webhook endpoint consumed by n8n; creates ContactMoment from email (channel=email), extracts sender/subject/body, routes via RoutingEngine.
+- [DEFERRED] TASK-KCC-07: `CtiIntegrationBridge` — DEFERRED: requires a live OpenConnector CTI bridge + provider signature/secret; ADR-005 forbids shipping an unsigned public webhook. Tracked for the OpenConnector integration milestone.
 
-- [ ] TASK-KCC-09: Implement `CallStatusUpdater` service for bidirectional sync: broadcast case status changes to originating KCC agent via websocket or polling endpoint.
+- [DEFERRED] TASK-KCC-08: `EmailIntakeHandler` webhook — DEFERRED: requires the live n8n email-intake workflow + a shared-secret webhook; pairs with TASK-KCC-21.
 
-- [ ] TASK-KCC-10: Build `KCCWorkplaceToolbar.vue` CTI popup showing caller ID (BRP match result), up to 5 open cases, last 3 contacts, and routing suggestion with agent top-3 list.
+- [DEFERRED] TASK-KCC-09: `CallStatusUpdater` (websocket/polling) — DEFERRED: requires the live Procest case event stream + KCC-werkplek socket; pairs with TASK-KCC-28.
 
-- [ ] TASK-KCC-11: Build `RoutingRuleAdmin.vue` with CRUD for routing rules, priority reordering, condition builder (keyword/regex/customer-type/time-of-day), and team/domain assignment.
+- [DEFERRED] TASK-KCC-10..15: Vue UI (`KCCWorkplaceToolbar`, `RoutingRuleAdmin`, `CallbackScheduler`, `KCCDashboard`, `AgentStatusPanel`, `ContactDetail`) — DEFERRED: the manifest-v2 declarative pages + modals need live-instance rendering verification (browser pool) which is outside this headless build; the REST + i18n contract they consume is shipped here.
 
-- [ ] TASK-KCC-12: Build `CallbackScheduler.vue` modal for scheduling callbacks; time-window picker, preferred-agent dropdown, reason text, and confirmation.
+- [x] TASK-KCC-16: `KccContactController` — `index`/`create`/`show`/`update`/`related` for contact moments (`#[NoAdminRequired]`, agent-scoped, IDOR-safe).
 
-- [ ] TASK-KCC-13: Build `KCCDashboard.vue` with real-time contact volume (bar chart by channel), average handle time (line trend), first-contact resolution (pie), top-10 categories (bar), SLA status (KPI cards), agent occupancy heat map, and capacity forecast.
+- [x] TASK-KCC-17: `KccRoutingController` — routing-rule `index`/`create`/`update`/`destroy` (admin/team-lead gated) backed by `RoutingRuleService`. Priority is a rule field (`reorder` is a UI affordance, deferred with the admin UI).
 
-- [ ] TASK-KCC-14: Build `AgentStatusPanel.vue` for agent availability toggle, skill tags display, current workload indicator, and current case preview.
+- [x] TASK-KCC-18: `KccRoutingController::evaluate` (`POST /api/kcc/routing/evaluate`) — returns suggested team + ranked agents with motivation.
 
-- [ ] TASK-KCC-15: Build `ContactDetail.vue` showing full contact record (transcript if available, linked case, tags, sentiment, related contacts, escalation/callback history) with edit capability for agent notes.
+- [x] TASK-KCC-19: Callback endpoints (`indexCallbacks`/`scheduleCallback`/`cancelCallback`) on `KccContactController`.
 
-- [ ] TASK-KCC-16: Create REST controller `ContactMomentController` with endpoints:
-  - `GET /api/contact-moments` (list with filters: channel, status, agent, date range)
-  - `POST /api/contact-moments` (create)
-  - `GET /api/contact-moments/{id}` (detail)
-  - `PUT /api/contact-moments/{id}` (update)
-  - `GET /api/contact-moments/{id}/related` (related contacts)
+- [DEFERRED] TASK-KCC-20: `KCCMetricsController` (volume/sla/forecast/export) — DEFERRED with TASK-KCC-06/13 (needs live data + export host).
 
-- [ ] TASK-KCC-17: Create REST controller `RoutingRuleController` with endpoints:
-  - `GET /api/routing-rules` (list)
-  - `POST /api/routing-rules` (create)
-  - `PUT /api/routing-rules/{id}` (update)
-  - `DELETE /api/routing-rules/{id}` (delete)
-  - `PUT /api/routing-rules/reorder` (priority reordering)
-  - `POST /api/routing-rules/{id}/test` (test rule with sample ContactMoment)
+- [DEFERRED] TASK-KCC-21..24: n8n workflows (email-intake, callback-monitor, sla-monitor, sentiment-analysis) — DEFERRED: authored in the n8n workspace against a running instance, not in the app repo.
 
-- [ ] TASK-KCC-18: Create REST controller `RoutingEngineController` with endpoint:
-  - `POST /api/routing/evaluate` (evaluate rules on ContactMoment, return suggested team + top-3 agents with motivation)
+- [x] TASK-KCC-25: `SlaCalculator` — working-day math with the Dutch public-holiday calendar (fixed + Easter-derived), per-channel SLA deadlines, breach detection, exponential backoff. Comprehensive unit tests (`SlaCalculatorTest`) incl. holiday/weekend edge cases.
 
-- [ ] TASK-KCC-19: Create REST controller `CallbackController` with endpoints:
-  - `POST /api/callback-requests` (create)
-  - `GET /api/callback-requests` (list)
-  - `PUT /api/callback-requests/{id}` (update status, reschedule)
-  - `POST /api/callback-requests/{id}/cancel` (cancel callback)
+- [DEFERRED] TASK-KCC-26: OpenConnector CTI integration — DEFERRED (see TASK-KCC-07).
 
-- [ ] TASK-KCC-20: Create REST controller `KCCMetricsController` with endpoints:
-  - `GET /api/kcc-metrics/volume` (period, channel filters)
-  - `GET /api/kcc-metrics/sla` (SLA status, breaches by team)
-  - `GET /api/kcc-metrics/forecast` (7-day capacity forecast)
-  - `GET /api/kcc-metrics/export` (Excel/PDF export)
+- [DEFERRED] TASK-KCC-27: OpenCatalogi BRP/KvK lookup — DEFERRED: requires a live OpenCatalogi source + caching layer; `customerRef`/`customerType` plumbing is shipped so the lookup can populate it.
 
-- [ ] TASK-KCC-21: Add n8n workflow `email-intake`: listen to department mailboxes via Microsoft Graph or IMAP IDLE, create ContactMoment (channel=email), route via RoutingEngine.
+- [~] TASK-KCC-28: Procest case linking — contact moments carry a `case` reference (reusing the existing `customerContact.case` link). Bidirectional status broadcast DEFERRED with TASK-KCC-09.
 
-- [ ] TASK-KCC-22: Add n8n workflow `callback-monitor`: daily job scanning due CallbackRequests, send SMS/email reminder 15 min before, attempt call via CTI, log outcome, retry on failure (max 3 attempts).
+- [x] TASK-KCC-29: i18n nl + en strings added to all four l10n files (`en.json`/`en.js`/`nl.json`/`nl.js`) for KCC labels, statuses and error/notification copy.
 
-- [ ] TASK-KCC-23: Add n8n workflow `sla-monitor`: hourly scan of open ContactMoments, alert handler at T-3 of SLA target, escalate to supervisor if breached, notify originating KCC agent.
+- [DEFERRED] TASK-KCC-30: tenant-admin KCC settings UI — DEFERRED with the Vue UI (TASK-KCC-11); routing-rule CRUD API is shipped and admin-gated.
 
-- [ ] TASK-KCC-24: Add n8n workflow `sentiment-analysis`: post-call trigger extracting transcript/notes, call sentiment API (optional: Azure CognitiveServices), store score on ContactMoment.
+- [~] TASK-KCC-31: Audit logging — service operations log via `LoggerInterface`; BSN/special-category data is never logged raw (masked at payload build). Full NEN-7510 audit-trail records DEFERRED with the recording feature.
 
-- [ ] TASK-KCC-25: Implement `SlaCalculator` helper with:
-  - Working-day math (respecting Dutch public holidays)
-  - SLA deadline calculation for each channel (phone: 2.8 min, email: 2 working days, chat: 1 hour)
-  - Breach detection and escalation logic
-  - Unit tests covering edge cases (holidays, weekends, shift boundaries)
+- [x] TASK-KCC-32: Seed/demo data — 3 routing rules, 3 KCC agents, 1 callback request seeded via the fragment `components.objects[]`.
 
-- [ ] TASK-KCC-26: Integrate with OpenConnector CTI bridge:
-  - Map incoming call events to ContactMoment creation
-  - Trigger BRP lookup via OpenCatalogi
-  - Broadcast CTI popup to available agents
-  - Support TAPI and REST-based CTI systems
+- [x] TASK-KCC-33: Unit tests — `RoutingEngineTest`, `SlaCalculatorTest`, `CallbackServiceTest`, `ContactMomentServiceTest`, `KccFragmentTest`.
 
-- [ ] TASK-KCC-27: Integrate with OpenCatalogi for BRP/KvK lookup:
-  - Query by phone number or email
-  - Cache results briefly (5 min) to reduce API calls
-  - Handle "not found" gracefully (Unknown caller)
+- [DEFERRED] TASK-KCC-34: Integration tests (CTI/email/status/callback flows) — DEFERRED: require the live cross-app instances (CTI, n8n, Procest events).
 
-- [ ] TASK-KCC-28: Integrate with Procest case API:
-  - Link ContactMoment to case via `caseRef`
-  - Auto-create case from routed ContactMoment (if needed)
-  - Subscribe to case status changes and broadcast to KCC agent
+- [DEFERRED] TASK-KCC-35: OpenAPI docs — DEFERRED: route contract is defined; the fleet generates OpenAPI from a live instance.
 
-- [ ] TASK-KCC-29: Add English + Dutch i18n strings for:
-  - All routing rule and callback UI labels
-  - Dashboard chart legends and KPI card titles
-  - Notification templates (reminder, escalation, completion)
-  - Agent status options, team names, skill tags
+- [DEFERRED] TASK-KCC-36: n8n workflow docs — DEFERRED with TASK-KCC-21..24.
 
-- [ ] TASK-KCC-30: Add tenant-admin UI for KCC configuration:
-  - Settings > Routing Rules (CRUD, reorder, test)
-  - Settings > SLA Thresholds (per channel, per team)
-  - Settings > Agent Skills (catalog of skill tags)
-  - Settings > Email Intake (mailbox mappings, polling schedule)
+- [DEFERRED] TASK-KCC-37: Performance testing — DEFERRED: needs a live instance + large dataset.
 
-- [ ] TASK-KCC-31: Add audit logging for sensitive operations:
-  - Access to ContactMoments with BRP data or recordings
-  - Routing rule changes
-  - Callback scheduling/cancellation
-  - Agent status changes
-  - Export/download of metrics or contact lists
+- [~] TASK-KCC-38: Security review — input validation, ADR-005 auth posture, IDOR scoping, BSN masking and XXE-safety addressed in code; full pen-test DEFERRED.
 
-- [ ] TASK-KCC-32: Create seed/demo data:
-  - 5 RoutingRules (Paspoort, ID-kaart, Openbare Werken, WMO, Inschrijving)
-  - 3 KCCAgents with different skills and status
-  - 5 ContactMoments spanning phone/email/chat with varying outcomes
-  - 2 CallbackRequests (one scheduled, one completed)
-  - Weekly ChannelVolumeMetric for demo dashboard
+- [DEFERRED] TASK-KCC-39: Accessibility audit — DEFERRED with the Vue UI (browser pool / live instance).
 
-- [ ] TASK-KCC-33: Write unit tests:
-  - RoutingEngine: rule matching (keyword, regex, time-of-day), priority ordering, agent ranking
-  - SlaCalculator: deadline math, holiday handling, working-day logic
-  - CallbackService: scheduling, retry logic, SLA calculation
-  - ContactMomentService: CRUD, linking, query methods
-
-- [ ] TASK-KCC-34: Write integration tests:
-  - CTI popup flow (incoming call → BRP lookup → popup display)
-  - Email intake flow (email → n8n → ContactMoment → routed)
-  - Case status feedback (case status change → KCC agent notification)
-  - Callback attempt (scheduled time → CTI call → outcome logging)
-
-- [ ] TASK-KCC-35: Document API endpoints:
-  - OpenAPI/Swagger spec for all ContactMoment, Routing, Callback, Metrics endpoints
-  - Example requests and responses
-  - Authentication and authorization requirements
-
-- [ ] TASK-KCC-36: Document n8n workflows:
-  - Webhook endpoints and expected payloads
-  - Error handling and retry strategies
-  - Integration points with ContactMomentService and CallbackService
-
-- [ ] TASK-KCC-37: Performance testing and optimization:
-  - Load test RoutingEngine with 1000+ rules
-  - Load test metrics aggregation (hourly, daily, weekly)
-  - Query optimization for ContactMoment searches (indexes on channel, status, team, date)
-  - Cache strategy for RoutingRules (hot-reload on change)
-
-- [ ] TASK-KCC-38: Security review:
-  - Validate and sanitize all user inputs (routing rule conditions, callback times)
-  - Enforce role-based access control (KCC agents, team leads, admin)
-  - Test encryption of call recordings and transcript data
-  - Verify audit logging covers all sensitive operations per NEN 7510 and AVG
-
-- [ ] TASK-KCC-39: Accessibility audit:
-  - WCAG 2.1 AA testing of CTI popup, routing admin, dashboard
-  - Screen reader testing with VoiceOver/NVDA
-  - Keyboard navigation for all forms and widgets
-  - Color contrast checks on dashboard charts
-
-- [ ] TASK-KCC-40: User acceptance testing (UAT):
-  - KCC agent workflow: receive call → view context → route → track status
-  - Team lead workflow: review dashboard → filter by team → export report
-  - Admin workflow: create routing rule → test → deploy
-  - Collect feedback and iterate on UI/UX
+- [DEFERRED] TASK-KCC-40: UAT — DEFERRED: requires a live instance and end users.
+</content>

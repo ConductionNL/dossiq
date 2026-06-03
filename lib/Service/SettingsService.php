@@ -123,6 +123,12 @@ class SettingsService
         'beroep_schema',
         // Bezwaar decision (bezwaar-decision spec) — Awb art. 7:11/7:12.
         'bezwaar_decision_schema',
+        // KCC klantcontact-integratie (kcc-klantcontact-integratie spec).
+        // contactMoment reuses the existing customer_contact_schema; only the
+        // KCC-specific operational schemas get new config keys here.
+        'routing_rule_schema',
+        'kcc_agent_schema',
+        'callback_request_schema',
         'lhsMatrix',
         'lhs_matrix_schema',
         'lhs_recommendation_schema',
@@ -227,6 +233,9 @@ class SettingsService
         'bacAdviceRequest'             => 'bac_advice_request_schema',
         'beroep'                       => 'beroep_schema',
         'bezwaarDecision'              => 'bezwaar_decision_schema',
+        'routingRule'                  => 'routing_rule_schema',
+        'kccAgent'                     => 'kcc_agent_schema',
+        'callbackRequest'              => 'callback_request_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
