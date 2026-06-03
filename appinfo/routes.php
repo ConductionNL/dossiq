@@ -306,6 +306,11 @@ return [
         ['name' => 'template#show',     'url' => '/api/templates/{id}',      'verb' => 'GET'],
         ['name' => 'template#activate', 'url' => '/api/templates/{id}/activate', 'verb' => 'POST'],
 
+        // ── WOO (Wet open overheid) operations ──────────────────────────
+        ['name' => 'wOOAssessment#bulkAssess',      'url' => '/api/cases/{id}/woo/assessment',     'verb' => 'POST'],
+        ['name' => 'wOOAssessment#extendDeadline',  'url' => '/api/cases/{id}/woo/extend-deadline','verb' => 'POST'],
+        ['name' => 'wOOAssessment#createDecision',  'url' => '/api/cases/{id}/woo/decision',       'verb' => 'POST'],
+
         // ── Milestone tracking ───────────────────────────────────────────
         ['name' => 'milestone#progress', 'url' => '/api/cases/{caseId}/milestones/progress/{caseTypeId}', 'verb' => 'GET'],
         ['name' => 'milestone#mark',     'url' => '/api/cases/{caseId}/milestones/{milestoneId}/mark',    'verb' => 'POST'],
