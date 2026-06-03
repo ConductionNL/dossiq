@@ -311,6 +311,7 @@ return [
         ['name' => 'milestone#mark',     'url' => '/api/cases/{caseId}/milestones/{milestoneId}/mark',    'verb' => 'POST'],
         ['name' => 'milestone#reverse',  'url' => '/api/cases/{caseId}/milestones/{milestoneId}/reverse', 'verb' => 'POST'],
 
+<<<<<<< HEAD
         // ── DSO Omgevingsloket (VTH) ────────────────────────────────────
         // Specific sub-resource endpoints MUST precede the wildcard catch-all.
         ['name' => 'dso#dashboard',              'url' => '/api/dso/dashboard',                                  'verb' => 'GET'],
@@ -319,6 +320,12 @@ return [
         ['name' => 'dso#initiateSamenwerking',   'url' => '/api/dso/cases/{caseId}/samenwerking',                'verb' => 'POST'],
         ['name' => 'dso#respondSamenwerking',    'url' => '/api/dso/samenwerking/{samenwerkId}',                  'verb' => 'PUT'],
         ['name' => 'dso#doorsturen',             'url' => '/api/dso/cases/{caseId}/doorstuur',                   'verb' => 'POST'],
+=======
+        // ── ORI Atom Feeds (public, no auth required) ───────────────────
+        ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen.rss', 'verb' => 'GET'],
+        ['name' => 'raadsinformatieFeed#agendapunten',  'url' => '/feed/ori/agendapunten.rss',  'verb' => 'GET'],
+        ['name' => 'raadsinformatieFeed#documenten',    'url' => '/feed/ori/documenten.rss',    'verb' => 'GET'],
+>>>>>>> origin/development
 
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],

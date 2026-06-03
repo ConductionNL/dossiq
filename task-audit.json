@@ -1,18 +1,15 @@
 {
-  "spec": "openspec/changes/refactor-procest-ia-alignment",
+  "spec": "openspec/changes/open-raadsinformatie",
   "verified": [
-    {"task": "1.1", "file": "src/manifest.json", "ok": true},
-    {"task": "1.2", "file": "src/manifest.json", "ok": true, "note": "Tasks entry removed from menu[], pages[] entry preserved"},
-    {"task": "1.3", "file": "src/manifest.json", "ok": true, "note": "MyWork remains at order:20 with no section/permission"},
-    {"task": "1.4", "file": "src/manifest.json", "ok": true, "note": "Validated via python json.load — no parse errors"},
-    {"task": "2.1", "file": "src/views/MyWork.vue", "ok": true},
-    {"task": "2.2", "file": "src/views/MyWork.vue", "ok": true, "note": "router-link with t('procest','All tasks') added after filter-tabs"},
-    {"task": "2.4", "file": "src/manifest.json", "ok": true, "note": "Tasks entry absent from menu[] — verified programmatically"},
-    {"task": "3.1", "file": "l10n/en.json", "ok": true},
-    {"task": "3.2", "file": "l10n/nl.json", "ok": true},
-    {"task": "3.3", "file": "l10n/", "ok": true, "note": "No build:l10n script — JSON files are source of truth"},
-    {"task": "4.1", "file": "openspec/specs/task-management/spec.md", "ok": true},
-    {"task": "4.2", "file": "openspec/specs/task-management/spec.md", "ok": true, "note": "No top-level phrase existed; Navigation note updated"}
+    {"task": "1", "file": "lib/Settings/ori_register.json", "ok": true},
+    {"task": "2", "file": "lib/Repair/RegisterOriRegister.php", "ok": true},
+    {"task": "3", "note": "OasService picks up register via authorization.read:public config", "ok": true},
+    {"task": "4", "note": "All 6 schemas have searchable:true in ori_register.json", "ok": true},
+    {"task": "5", "file": "lib/Service/VergaderingCaseService.php", "ok": true},
+    {"task": "5b", "file": "lib/BackgroundJob/VergaderingDeadlineJob.php", "ok": true},
+    {"task": "6", "note": "106 demo objects in ori_register.json components.objects", "ok": true},
+    {"task": "7", "file": "lib/Controller/RaadsinformatieFeedController.php", "ok": true},
+    {"task": "8", "file": "lib/Cron/OriDataQualityCheck.php", "ok": true}
   ],
   "stubs": [],
   "missing_routes": []
