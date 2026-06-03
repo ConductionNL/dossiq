@@ -312,9 +312,9 @@ return [
         ['name' => 'milestone#reverse',  'url' => '/api/cases/{caseId}/milestones/{milestoneId}/reverse', 'verb' => 'POST'],
 
         // ── ORI Atom Feeds (public, no auth required) ───────────────────
-        ['name' => 'raadsinformatie_feed#vergaderingen', 'url' => '/feed/ori/vergaderingen.rss', 'verb' => 'GET'],
-        ['name' => 'raadsinformatie_feed#agendapunten',  'url' => '/feed/ori/agendapunten.rss',  'verb' => 'GET'],
-        ['name' => 'raadsinformatie_feed#documenten',    'url' => '/feed/ori/documenten.rss',    'verb' => 'GET'],
+        ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen.rss', 'verb' => 'GET'],
+        ['name' => 'raadsinformatieFeed#agendapunten',  'url' => '/feed/ori/agendapunten.rss',  'verb' => 'GET'],
+        ['name' => 'raadsinformatieFeed#documenten',    'url' => '/feed/ori/documenten.rss',    'verb' => 'GET'],
 
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],

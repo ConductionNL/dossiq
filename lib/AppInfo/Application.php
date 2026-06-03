@@ -31,6 +31,7 @@ use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
+use OCA\Procest\BackgroundJob\VergaderingDeadlineJob;
 use OCA\Procest\Cron\OriDataQualityCheck;
 use OCA\Procest\Dashboard\CasesOverviewWidget;
 use OCA\Procest\Dashboard\DeadlineAlertsWidget;
@@ -123,6 +124,7 @@ class Application extends App implements IBootstrap
         $context->registerMiddleware(class: TenantMiddleware::class);
 
         $context->registerJob(class: OriDataQualityCheck::class);
+        $context->registerJob(class: VergaderingDeadlineJob::class);
 
         $this->registerWidgetsAndProviders(context: $context);
     }//end register()
