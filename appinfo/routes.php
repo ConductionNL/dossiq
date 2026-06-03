@@ -376,6 +376,22 @@ return [
         // ── Bezwaar/beroep dossier export ───────────────────────────────
         ['name' => 'dossierExport#export', 'url' => '/api/cases/{caseId}/dossier-export', 'verb' => 'GET'],
 
+        // ── KCC-werkplek bridge (kcc-werkplek-zaaksysteem-bridge) ───────
+        ['name' => 'contactMoment#create',            'url' => '/api/contactmomenten',                     'verb' => 'POST'],
+        ['name' => 'contactMoment#index',             'url' => '/api/contactmomenten',                     'verb' => 'GET'],
+        ['name' => 'contactMoment#voorblad',          'url' => '/api/kcc/voorblad',                        'verb' => 'GET'],
+        ['name' => 'contactMoment#statusGeven',       'url' => '/api/kcc/quick-actions/status-geven',      'verb' => 'POST'],
+        ['name' => 'contactMoment#nieuweZaak',        'url' => '/api/kcc/quick-actions/nieuwe-zaak',       'verb' => 'POST'],
+        ['name' => 'contactMoment#klachtRegistreren', 'url' => '/api/kcc/quick-actions/klacht-registreren', 'verb' => 'POST'],
+        ['name' => 'contactMoment#doorverbinden',     'url' => '/api/kcc/quick-actions/doorverbinden',     'verb' => 'POST'],
+        ['name' => 'contactMoment#acceptDoorverbinding', 'url' => '/api/kcc/doorverbindingen/{id}/accept', 'verb' => 'POST'],
+        ['name' => 'contactMoment#rejectDoorverbinding', 'url' => '/api/kcc/doorverbindingen/{id}/reject', 'verb' => 'POST'],
+        ['name' => 'belplan#route',                   'url' => '/api/kcc/belplannen/route',                'verb' => 'POST'],
+        ['name' => 'belplan#index',                   'url' => '/api/kcc/belplannen',                      'verb' => 'GET'],
+        ['name' => 'belplan#create',                  'url' => '/api/kcc/belplannen',                      'verb' => 'POST'],
+        ['name' => 'belplan#update',                  'url' => '/api/kcc/belplannen/{id}',                 'verb' => 'PUT'],
+        ['name' => 'specialistBeschikbaarheid#index', 'url' => '/api/kcc/specialist-beschikbaarheid',      'verb' => 'GET'],
+
         // ── ORI Atom Feeds (public, no auth required) ───────────────────
         ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen.rss', 'verb' => 'GET'],
         ['name' => 'raadsinformatieFeed#agendapunten',  'url' => '/feed/ori/agendapunten.rss',  'verb' => 'GET'],

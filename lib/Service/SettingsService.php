@@ -174,6 +174,24 @@ class SettingsService
         // Outage banner copy (nl + en).
         'pdok_outage_banner_nl',
         'pdok_outage_banner_en',
+        // KCC-werkplek bridge schema config keys (kcc-werkplek-zaaksysteem-bridge).
+        'contactmoment_schema',
+        'kcc_quick_action_schema',
+        'belplan_schema',
+        'specialist_beschikbaarheid_schema',
+        'doorverbinding_schema',
+        'klant_sentiment_schema',
+        // KCC-werkplek bridge behaviour settings.
+        'identification_method',
+        'identification_score_threshold',
+        'sentiment_polling_interval',
+        'specialist_availability_polling_interval',
+        'max_zaken_voorblad',
+        'max_contactmomenten_history',
+        'quick_action_templates',
+        'belplan_overflow_threshold_wachttijd',
+        'belplan_overflow_threshold_wachtrij_lengte',
+        'sentiment_trigger_words',
     ];
 
     /**
@@ -255,6 +273,32 @@ class SettingsService
         'subsidieVaststelling'         => 'subsidie_vaststelling_schema',
         'terugvordering'               => 'terugvordering_schema',
         'bewijsstuk'                   => 'bewijsstuk_schema',
+        // KCC-werkplek bridge schemas (kcc-werkplek-zaaksysteem-bridge).
+        'contactmoment'                => 'contactmoment_schema',
+        'kccQuickAction'               => 'kcc_quick_action_schema',
+        'belplan'                      => 'belplan_schema',
+        'specialistBeschikbaarheid'    => 'specialist_beschikbaarheid_schema',
+        'doorverbinding'               => 'doorverbinding_schema',
+        'klantSentiment'               => 'klant_sentiment_schema',
+    ];
+
+    /**
+     * Default values for KCC-werkplek bridge behaviour settings.
+     *
+     * Used by getKccConfigValue() so that an unset app-config key resolves to
+     * the documented default rather than an empty string.
+     */
+    public const KCC_DEFAULTS = [
+        'identification_method'                      => 'both',
+        'identification_score_threshold'             => '0.8',
+        'sentiment_polling_interval'                 => '5',
+        'specialist_availability_polling_interval'   => '30',
+        'max_zaken_voorblad'                         => '10',
+        'max_contactmomenten_history'                => '5',
+        'belplan_overflow_threshold_wachttijd'       => '180',
+        'belplan_overflow_threshold_wachtrij_lengte' => '5',
+        'sentiment_trigger_words'                    => '["ongelooflijk","klacht","wethouder","advocaat","media","rechtszaak"]',
+        'quick_action_templates'                     => '{}',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
@@ -508,6 +552,28 @@ class SettingsService
     {
         return $this->appConfig->getValueString(Application::APP_ID, $key, $default);
     }//end getConfigValue()
+
+    /**
+     * Get a KCC-werkplek behaviour setting, falling back to its documented default.
+     *
+     * Unlike getConfigValue(), an unset key resolves to the value declared in
+     * self::KCC_DEFAULTS rather than an empty string. This keeps the KCC bridge
+     * functional out-of-the-box before an administrator visits the settings form.
+     *
+     * @param string $key The configuration key (must exist in self::KCC_DEFAULTS).
+     *
+     * @return string The configured value, or the documented default.
+     */
+    public function getKccConfigValue(string $key): string
+    {
+        $default = (self::KCC_DEFAULTS[$key] ?? '');
+        $value   = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+        if ($value === '') {
+            return $default;
+        }
+
+        return $value;
+    }//end getKccConfigValue()
 
     /**
      * Set a single configuration value.

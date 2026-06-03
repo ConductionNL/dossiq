@@ -1,12 +1,48 @@
 # Tasks: kcc-werkplek-zaaksysteem-bridge
 
+## Build Summary (hydra-build 2026-06-03)
+
+Backend-only bridge (pipelinq owns the KCC-werkplek UI). All implementation
+tasks T01–T20 are done except where noted. Gates: lint OK, phpcs 0 errors,
+phpmd 0 (new files), psalm 0 errors, phpstan 0 (new files), phpunit 314 pass
+(21 new tests). 23 pre-existing phpstan errors remain in untouched files
+(LhsLookupService, VTHTemplateService, WOO* — not in scope).
+
+### Guardrail deviations (intentional)
+
+- **No `burger` schema (ADR guardrail)**: a burger/person/customer is a Nextcloud
+  contact entity. `BurgerIdentificationService` resolves callers via
+  `OCP\Contacts\IManager` and a one-way pseudonymous BSN reference; the spec's
+  `burger` schema is intentionally NOT created. `contactmoment` stores an opaque
+  `geidentificeerdeBurgerId` reference instead.
+- **ADR-037**: all six new schemas + seed objects live in
+  `lib/Settings/register.d/40-kcc-werkplek.json`; `procest_register.json` (the
+  monolith) is untouched. The existing `deepMergeConfig` already unions register
+  `schemas[]` membership + `components.objects[]` (covered by the existing
+  RegisterFragmentMergeTest and the new KccWerkplekFragmentTest).
+- **ADR-022**: services call the app's real wrapped ObjectService API
+  (`find` / `findObjects` / `saveObject`) as used by neighbouring services
+  (e.g. AdviceService) via `SettingsService::getObjectService()`.
+- **T20 seed migration → fragment**: default quick-actions + belplannen are
+  seeded as `components.objects[]` in the fragment (the app's seed mechanism),
+  not a separate migration; no monolith edit needed.
+- **i18n N/A here**: this change ships no Procest-side Vue UI (pipelinq renders
+  it), so there are no new `t()` strings; injecting orphan l10n keys would be
+  incorrect. nl+en parity is preserved.
+- **DEFERRED (live cross-app deps)**: V01–V12 runtime/e2e verification,
+  T-Performance, T-Integration (pipelinq mock), and the openconnector DigiD /
+  leges-heffingen / docudesk / pipelinq SIP live wiring — these need a running
+  instance and not-yet-available cross-app endpoints. Unit coverage for the
+  pure logic (sentiment, identification scoring, belplan routing, fragment
+  merge) is in place.
+
 ## Implementation Tasks
 
 ### Phase 1: Schema & Configuration
 
-- [ ] **T01**: Add schemas to `lib/Settings/procest_register.json`: `contactmoment` (kanaal, richting, startTijd, eindTijd, bellerIdentificatie, geidentificeerdeBurgerId, identificatieMethode, identificatieScore, kccMedewerkerId, gerelateerdeZaken, nieuweZaakIds, aard, samenvatting, volgensIntent, firstTimeFix, transcriptie, transferNaar), `burger` (bsn encrypted, kvkNummer, naam, adres, telefoonnummers, emails, bekendeIdentificaties, voorkeursKanaal, voorkeursTaal, contact_count, last_contact_date, first_contact_date), `kccQuickAction` (naam, actieType, vereisteContext, targetZaaktype, template, permissies, volgorde, isActive), `belplan` (naam, triggerNummer, routeringStappen, openingstijden, terugvalActie, prioriteit, isActive), `specialistBeschikbaarheid` (medewerkerId, expertises, status, huidigeWachtrijLengte, gemiddeldeBehandelduur, gespreksInProgress, laatsteUpdate, poll_interval), `doorverbinding` (contactmomentId, vanMedewerkerId, naarMedewerkerId, naarWachtrij, doorverbindingsReden, contextOverdracht, contextSnapshot, geaccepteerd, acceptatieTijd, afgekeurdReden, warmTransferStarted), `klantSentiment` (contactmomentId, sentimentScore, sentimentLabel, triggerWoorden, transcriptieSnippet, escalatieAanbevolen, escalatieLevel). Register with `schema:BroadcastChannel`, `schema:Role`, `schema:Event` annotations as appropriate.
+- [x] **T01**: Add schemas to `lib/Settings/procest_register.json`: `contactmoment` (kanaal, richting, startTijd, eindTijd, bellerIdentificatie, geidentificeerdeBurgerId, identificatieMethode, identificatieScore, kccMedewerkerId, gerelateerdeZaken, nieuweZaakIds, aard, samenvatting, volgensIntent, firstTimeFix, transcriptie, transferNaar), `burger` (bsn encrypted, kvkNummer, naam, adres, telefoonnummers, emails, bekendeIdentificaties, voorkeursKanaal, voorkeursTaal, contact_count, last_contact_date, first_contact_date), `kccQuickAction` (naam, actieType, vereisteContext, targetZaaktype, template, permissies, volgorde, isActive), `belplan` (naam, triggerNummer, routeringStappen, openingstijden, terugvalActie, prioriteit, isActive), `specialistBeschikbaarheid` (medewerkerId, expertises, status, huidigeWachtrijLengte, gemiddeldeBehandelduur, gespreksInProgress, laatsteUpdate, poll_interval), `doorverbinding` (contactmomentId, vanMedewerkerId, naarMedewerkerId, naarWachtrij, doorverbindingsReden, contextOverdracht, contextSnapshot, geaccepteerd, acceptatieTijd, afgekeurdReden, warmTransferStarted), `klantSentiment` (contactmomentId, sentimentScore, sentimentLabel, triggerWoorden, transcriptieSnippet, escalatieAanbevolen, escalatieLevel). Register with `schema:BroadcastChannel`, `schema:Role`, `schema:Event` annotations as appropriate.
 
-- [ ] **T02**: Add config keys to `lib/Service/SettingsService.php`:
+- [x] **T02**: Add config keys to `lib/Service/SettingsService.php`:
   - `identification_method` (enum: digid, bsn_questions, both; default: both)
   - `identification_score_threshold` (0.6–1.0; default: 0.8)
   - `sentiment_polling_interval` (seconds; default: 5)
@@ -31,18 +67,18 @@
 
 ### Phase 2: Backend Services
 
-- [ ] **T04**: Create `lib/Service/ContactMomentService.php`:
+- [x] **T04**: Create `lib/Service/ContactMomentService.php`:
   - `createContactMoment(kanaal, richting, bellerIdentificatie, aard, kccMedewerkerId, gerelateerdeZaken, samenvatting)` → Creates contactmoment object, initializes sentiment to null, returns with ID
   - `fetchCaseVoorblad(burgerId)` → Queries case register for cases where burgerId is initiator/betrokken; returns max 10 active zaken with title + status + lastActionDate; calls `leges-heffingen` API for openstaande facturen; calculates suggested topic from recent contactmomenten + case properties
   - `recordActivity(caseId, contactmomentId, type, medewerkerName, summary)` → Appends to case.activity array (JSON); timestamps each entry; is immutable after creation (can read, not edit/delete)
   - `linkUnlinkedContactmoment(contactmomentId, burgerId, method, score)` → Sets geidentificeerdeBurgerId, identificatieMethode, identificatieScore; records audit trail
 
-- [ ] **T05**: Create `lib/Service/BurgerIdentificationService.php`:
+- [x] **T05**: Create `lib/Service/BurgerIdentificationService.php`:
   - `authenticateDigiD(authCode, state)` → Calls openconnector DigiD endpoint; validates state; extracts bsn, naam, adres; looks up Burger by bsn; if not found, creates Burger with data from assertion; returns burgerId
   - `startIdentificatievragen(burger_naam, geboortedatum, adres, bsn_last4, out_of_wallet_answer)` → Calls BRP lookup (if integrated) or in-memory Burger search; calculates match score (weighted: 0.3× naam, 0.3× geboortedatum, 0.2× adres, 0.15× bsn, 0.05× out_of_wallet); returns score + burgerId (if >= threshold)
   - `createUnverifiedBurger(identification_data)` → Creates Burger record with placeholder bsn (marked encrypted "[UNVERIFIED]"); flags for manual review; returns burgerId
 
-- [ ] **T06**: Create `lib/Service/BelplanRoutingService.php`:
+- [x] **T06**: Create `lib/Service/BelplanRoutingService.php`:
   - `getActiveBelplan(phoneNumber)` → Looks up Belplan by triggerNummer; returns belplan config with routeringStappen
   - `routeCall(phoneNumber, menuSelection, currentWachtrij)` → Executes belplan routing:
     1. Determine vaardigheid from menuSelection
@@ -52,32 +88,32 @@
     5. Return {destinationSpecialistId, escalatieFlag, estimatedWaitTime}
   - `getSpecialistBeschikbaarheid(vaardigheid)` → Polls pipelinq API or reads cache; returns array of specialists with status, wachtrij, avg_behandelduur
 
-- [ ] **T07**: Create `lib/Service/QuickActionService.php`:
+- [x] **T07**: Create `lib/Service/QuickActionService.php`:
   - `executeStatusTerugkoppelen(caseId, kccMedewerkerId)` → Retrieves case status; renders status text using emailTemplate; returns draft text for medewerker review + confirmation
   - `executeNieuweZaak(zaaktype, burgerId, contact_context_samenvatting)` → Creates new case with minimal intake form; prefills burger NAW; on submit, creates case with zaaktype, initiator=burgerId, sourceChannel="kcc_telefoon"; returns new caseId
   - `executeKlachtRegistreren(caseId, samenvatting, severity)` → Creates klacht case (zaaktype="klacht_ex_artikel_9_1_awb"), links to original case, assigns to klachtenfunctionaris, sets deadline P42D; triggers docudesk ontvangstbevestiging; returns klacht caseId
   - `executeDoorverbinden(specialist_id or wachtrij_name, contextOverdraft)` → Creates doorverbinding record with contextSnapshot; calls pipelinq to initiate transfer; returns doorverbinding ID; later polls for geaccepteerd flag
   - `executeBelTerug(burgerId, preferred_window)` → Creates task for KCC-medewerker to callback; sends SMS or email reminder to burger with callback time window
 
-- [ ] **T08**: Create `lib/Service/DoorverbindingService.php`:
+- [x] **T08**: Create `lib/Service/DoorverbindingService.php`:
   - `createContextSnapshot(contactmomentId, burgerId, zaakIds)` → Captures immutable snapshot: burger NAW, zaak states (status, deadline, lastAction), contact summary, sentiment, quick-action history; returns JSON blob
   - `initiateWarmTransfer(context_snapshot, specialist_id or wachtrij, source_medewerker)` → Creates doorverbinding record; calls pipelinq SIP transfer API with screen-pop config; returns doorverbinding ID + context for display
   - `acceptTransfer(doorverbinding_id)` → Sets geaccepteerd=true, acceptatieTijd=now(); logs to activity
   - `rejectTransfer(doorverbinding_id, reden)` → Sets geaccepteerd=false, afgekeurdReden=reden; routes call to voicemail/wachtrij + callback scheduling
   - `appendContextNotes(doorverbinding_id, specialist_notes)` → Appends (not overwrites) to contextOverdracht; audit-trails with timestamp + specialist UID
 
-- [ ] **T09**: Create `lib/Service/SentimentService.php`:
+- [x] **T09**: Create `lib/Service/SentimentService.php`:
   - `analyzeSentiment(text, trigger_words_list)` → Detects trigger words (substring match with word-boundary check); calculates sentiment score using simple word-weight algorithm (hardcoded Dutch dictionary); returns {score: -1..+1, label: "positief"|"neutraal"|"negatief"|"boos", triggers: [words], escalatieAanbevolen: boolean}
   - `shouldEscalate(score, triggers)` → Returns true if score <= -0.5 OR triggers includes ["klacht", "advocaat", "media", "rechtszaak"]
   - `getEscalationLevel(score, triggers)` → Returns escalatieLevel: "geen" (>0), "geel" (-0.3 to 0), "oranje" (-0.6 to -0.3), "rood" (<-0.6 or serious-trigger present)
   - `recordFalsePositiveFeedback(contactmomentId, medewerker_id, reason)` → Logs feedback for future model improvement (no immediate action)
 
-- [ ] **T10**: Create `lib/Service/CaseVoorbledService.php`:
+- [x] **T10**: Create `lib/Service/CaseVoorbledService.php`:
   - `getCaseVoorblad(burgerId, config: max_zaken, max_contactmomenten)` → Queries open cases for burgerId; queries contactmomenten history; calls leges-heffingen API for unpaid invoices; calculates suggested topic from recent contactmomenten patterns + unfinished tasks; returns aggregated JSON { burger, openZaken: [{...}], recenteContactmomenten: [{...}], openstaandeFracturen: [{...}], suggestedTopic: "..." }
 
 ### Phase 3: Controllers & Routes
 
-- [ ] **T11**: Create `lib/Controller/ContactMomentController.php`:
+- [x] **T11**: Create `lib/Controller/ContactMomentController.php`:
   - `@Route("/api/contactmomenten", methods={"POST"})` — createContactmoment(kanaal, bellerIdentificatie, aard, kccMedewerkerId) → auto-calls BurgerIdentificationService if needed; returns contactmoment + case-voorblad
   - `@Route("/api/contactmomenten", methods={"GET"})` with query param `?burgerId=X` — listContactmomente(burgerId, limit=50, offset) → paginated list, most recent first
   - `@Route("/api/cases/{caseId}/voorblad", methods={"GET"})` — getCaseVoorblad(caseId) → returns case-voorblad for case detail view
@@ -89,24 +125,24 @@
   - `@Route("/api/doorverbindingen/{id}/reject", methods={"POST"})` — rejectTransfer(id, reason)
   - All endpoints marked `@NoAdminRequired` (KCC-medewerker level auth); implement permission checks via mandaat-matrix for sensitive actions (klacht, restitutie)
 
-- [ ] **T12**: Create `lib/Controller/BelplanController.php`:
+- [x] **T12**: Create `lib/Controller/BelplanController.php`:
   - `@Route("/api/belplannen", methods={"GET"})` — listBelplannen() → returns all active belplannen
   - `@Route("/api/belplannen", methods={"POST"})` — createBelplan(naam, triggerNummer, routeringStappen) → admin-only
   - `@Route("/api/belplannen/{id}", methods={"PUT"})` — updateBelplan(id, ...) → admin-only
   - `@Route("/api/belplannen/route", methods={"POST"})` — routeCall(phoneNumber, menuSelection) → calls BelplanRoutingService; returns destination + escalatie flag (used by pipelinq or mock KCC for testing)
 
-- [ ] **T13**: Create `lib/Controller/SpecialistBeschikbaarheidController.php`:
+- [x] **T13**: Create `lib/Controller/SpecialistBeschikbaarheidController.php`:
   - `@Route("/api/specialist-beschikbaarheid", methods={"GET"})` with optional `?vaardigheid=X` — getSpecialistBeschikbaarheid(vaardigheid) → returns real-time availability list (polled from pipelinq or cache); used by KCC-werkplek UI
   - Endpoint is read-only; updates come from pipelinq push or background job
 
-- [ ] **T14**: Update `appinfo/routes.php`:
+- [x] **T14**: Update `appinfo/routes.php`:
   - Add all controller routes BEFORE the SPA catch-all `/_` route
   - Ensure routes are under `/api/` namespace to avoid conflicts with Nextcloud core
   - All routes must be defined before catch-all or they'll be swallowed by SPA router
 
 ### Phase 4: Background Jobs
 
-- [ ] **T15**: Create `lib/BackgroundJob/SentimentAnalysisJob.php` (TimedJob):
+- [x] **T15**: Create `lib/BackgroundJob/SentimentAnalysisJob.php` (TimedJob):
   - Scheduled every 10 minutes (configurable)
   - Queries `contactmomente` with `transcriptie` != null and `sentiment` == null
   - For each: calls `SentimentService.analyzeSentiment(transcriptie)`
@@ -114,7 +150,7 @@
   - If escalatieAanbevolen=true: appends activity to linked case(s)
   - Logs exceptions but doesn't deregister job (continues on next interval)
 
-- [ ] **T16**: Create `lib/BackgroundJob/SpecialistBeschikbaarheidRefreshJob.php` (TimedJob):
+- [x] **T16**: Create `lib/BackgroundJob/SpecialistBeschikbaarheidRefreshJob.php` (TimedJob):
   - Scheduled every 30 seconds (configurable, matches `specialist_availability_polling_interval`)
   - Calls pipelinq API (or HR system API if configured) to fetch latest specialist status
   - Updates all `specialistBeschikbaarheid` records with fresh data: status, wachtrij_lengte, gemiddelde_behandelduur
@@ -142,7 +178,7 @@
 
 ### Phase 6: Seed Data & Defaults
 
-- [ ] **T20**: Create seed data script `lib/Migrations/Version20XX_seedKccDefaults.php`:
+- [x] **T20**: Create seed data script `lib/Migrations/Version20XX_seedKccDefaults.php`:
   - Seed default `kccQuickAction` records:
     - Status terugkoppelen (status_geven)
     - Nieuwe zaak (nieuwe_zaak)
@@ -253,7 +289,7 @@
 
 ## Documentation Tasks
 
-- [ ] **D01**: Update README.md or ARCHITECTURE.md:
+- [x] **D01**: Update README.md or ARCHITECTURE.md:
   - Add "KCC-werkplek Integration" section
   - List all new services, controllers, schemas
   - Include configuration options table

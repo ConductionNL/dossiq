@@ -32,6 +32,8 @@ use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Procest\BackgroundJob\AdviceDeadlineJob;
+use OCA\Procest\BackgroundJob\SentimentAnalysisJob;
+use OCA\Procest\BackgroundJob\SpecialistBeschikbaarheidRefreshJob;
 use OCA\Procest\BackgroundJob\VergaderingDeadlineJob;
 use OCA\Procest\BackgroundJob\WOODeadlineCheckJob;
 use OCA\Procest\Cron\OriDataQualityCheck;
@@ -129,6 +131,8 @@ class Application extends App implements IBootstrap
         $context->registerJob(class: OriDataQualityCheck::class);
         $context->registerJob(class: VergaderingDeadlineJob::class);
         $context->registerJob(class: WOODeadlineCheckJob::class);
+        $context->registerJob(class: SentimentAnalysisJob::class);
+        $context->registerJob(class: SpecialistBeschikbaarheidRefreshJob::class);
 
         $this->registerWidgetsAndProviders(context: $context);
     }//end register()
