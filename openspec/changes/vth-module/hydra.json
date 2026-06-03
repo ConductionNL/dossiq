@@ -37,22 +37,42 @@
           "decisions": [],
           "verdict": "pass",
           "duration_seconds": 5057
+        },
+        {
+          "stage": "build",
+          "persona": "Al Gorithm",
+          "model": "sonnet",
+          "container": "hydra-builder",
+          "started_at": "2026-06-03T18:14:35Z",
+          "ended_at": "2026-06-03T19:14:28Z",
+          "exit_code": 0,
+          "turns_used": 444,
+          "turns_budget": 200,
+          "checks_run": [
+            "composer check:strict (phpcs)",
+            "composer test:unit (phpunit)"
+          ],
+          "checks_skipped": [],
+          "findings": [],
+          "decisions": [],
+          "verdict": "pass",
+          "duration_seconds": 3593
         }
       ]
     }
   ],
   "totals": {
-    "runs": 1,
-    "turns_used": 420,
+    "runs": 2,
+    "turns_used": 864,
     "cost_usd": 0.0,
-    "duration_seconds": 5057,
+    "duration_seconds": 8650,
     "cycles": 1,
     "by_stage": {
       "build": {
-        "runs": 1,
-        "turns_used": 420,
+        "runs": 2,
+        "turns_used": 864,
         "cost_usd": 0.0,
-        "duration_seconds": 5057
+        "duration_seconds": 8650
       }
     }
   }
