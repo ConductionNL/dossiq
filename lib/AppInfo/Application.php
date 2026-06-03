@@ -32,8 +32,16 @@ use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Procest\BackgroundJob\AdviceDeadlineJob;
+use OCA\Procest\BackgroundJob\ArchivalJob;
+use OCA\Procest\BackgroundJob\BezwaarTermijnJob;
 use OCA\Procest\BackgroundJob\VergaderingDeadlineJob;
 use OCA\Procest\BackgroundJob\WOODeadlineCheckJob;
+use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
+use OCA\Procest\Service\Beschikking\MockArchivalAdapter;
+use OCA\Procest\Service\Beschikking\MockSigningAdapter;
+use OCA\Procest\Service\Beschikking\MockTemplateEngineAdapter;
+use OCA\Procest\Service\Beschikking\SigningAdapterInterface;
+use OCA\Procest\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Procest\Cron\OriDataQualityCheck;
 use OCA\Procest\Dashboard\CasesOverviewWidget;
 use OCA\Procest\Dashboard\DeadlineAlertsWidget;
@@ -129,6 +137,16 @@ class Application extends App implements IBootstrap
         $context->registerJob(class: OriDataQualityCheck::class);
         $context->registerJob(class: VergaderingDeadlineJob::class);
         $context->registerJob(class: WOODeadlineCheckJob::class);
+        $context->registerJob(class: BezwaarTermijnJob::class);
+        $context->registerJob(class: ArchivalJob::class);
+
+        // Beschikking cross-app integration adapters. These resolve to mock
+        // implementations until the real OpenConnector (TSP signing),
+        // Docudesk (template render), and OpenRegister (archief ingest)
+        // endpoints land in their own repos (tasks T23-T26).
+        $context->registerServiceAlias(TemplateEngineAdapterInterface::class, MockTemplateEngineAdapter::class);
+        $context->registerServiceAlias(SigningAdapterInterface::class, MockSigningAdapter::class);
+        $context->registerServiceAlias(ArchivalAdapterInterface::class, MockArchivalAdapter::class);
 
         $this->registerWidgetsAndProviders(context: $context);
     }//end register()

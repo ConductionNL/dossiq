@@ -345,6 +345,16 @@ return [
         ['name' => 'berichtenbox#messages', 'url' => '/api/berichtenbox/messages',             'verb' => 'GET'],
         ['name' => 'berichtenbox#poll',     'url' => '/api/berichtenbox/messages/{messageId}', 'verb' => 'GET'],
 
+        // ── Beschikking (compose -> onderteken -> Berichtenbox -> archief) ──
+        // Specific verb/suffix routes precede the generic PATCH /{id} wildcard.
+        ['name' => 'beschikking#create',      'url' => '/api/beschikkingen',                       'verb' => 'POST'],
+        ['name' => 'beschikking#show',        'url' => '/api/beschikkingen/{id}',                  'verb' => 'GET'],
+        ['name' => 'beschikking#auditPakket', 'url' => '/api/beschikkingen/{id}/audit-pakket',     'verb' => 'GET'],
+        ['name' => 'beschikking#akkoord',     'url' => '/api/beschikkingen/{id}/akkoord',          'verb' => 'PATCH'],
+        ['name' => 'beschikking#onderteken',  'url' => '/api/beschikkingen/{id}/onderteken',       'verb' => 'PATCH'],
+        ['name' => 'beschikking#verzend',     'url' => '/api/beschikkingen/{id}/verzend',          'verb' => 'PATCH'],
+        ['name' => 'beschikking#update',      'url' => '/api/beschikkingen/{id}',                  'verb' => 'PATCH'],
+
         // ── Consultation (advice requests and responses) ─────────────────
         ['name' => 'consultation#index',          'url' => '/api/consultations/{caseId}',              'verb' => 'GET'],
         ['name' => 'consultation#create',         'url' => '/api/consultations',                       'verb' => 'POST'],

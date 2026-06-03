@@ -174,6 +174,11 @@ class SettingsService
         // Outage banner copy (nl + en).
         'pdok_outage_banner_nl',
         'pdok_outage_banner_en',
+        // Beschikking-generatie (beschikking-generatie spec).
+        'beschikking_schema',
+        'state_machine_log_schema',
+        'bezwaar_trigger_schema',
+        'mandaat_regeling_schema',
     ];
 
     /**
@@ -255,6 +260,10 @@ class SettingsService
         'subsidieVaststelling'         => 'subsidie_vaststelling_schema',
         'terugvordering'               => 'terugvordering_schema',
         'bewijsstuk'                   => 'bewijsstuk_schema',
+        'beschikking'                  => 'beschikking_schema',
+        'stateMachineLog'              => 'state_machine_log_schema',
+        'bezwaarTrigger'               => 'bezwaar_trigger_schema',
+        'mandaatRegeling'              => 'mandaat_regeling_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
