@@ -21,6 +21,9 @@
 							<span v-if="item.isRequired" class="sub-entity-row__badge">
 								{{ t('procest', 'Required') }}
 							</span>
+							<span v-if="item.confidentiality" class="sub-entity-row__meta">
+								{{ item.confidentiality }}
+							</span>
 							<div class="sub-entity-row__actions">
 								<NcButton type="tertiary" @click="startEdit(item)">
 									<template #icon>
@@ -56,6 +59,13 @@
 										:label="t('procest', 'Description')"
 										class="edit-field edit-field--full"
 										@update:value="v => editForm.description = v" />
+								</div>
+								<div class="edit-row">
+									<NcTextField
+										:value="editForm.confidentiality"
+										:label="t('procest', 'Confidentiality')"
+										class="edit-field"
+										@update:value="v => editForm.confidentiality = v" />
 								</div>
 								<div class="edit-row">
 									<NcCheckboxRadioSwitch
@@ -109,7 +119,7 @@ export default {
 			loading: false,
 			items: [],
 			editingId: null,
-			editForm: { name: '', category: '', description: '', isRequired: false },
+			editForm: { name: '', category: '', description: '', confidentiality: '', isRequired: false },
 			editError: '',
 		}
 	},
@@ -131,7 +141,7 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		startAdd() {
 			this.editingId = 'new'
-			this.editForm = { name: '', category: '', description: '', isRequired: false }
+			this.editForm = { name: '', category: '', description: '', confidentiality: '', isRequired: false }
 			this.editError = ''
 			this.items.push({ id: 'new', name: '' })
 		},
@@ -145,6 +155,7 @@ export default {
 				name: item.name,
 				category: item.category || '',
 				description: item.description || '',
+				confidentiality: item.confidentiality || '',
 				isRequired: item.isRequired === true || item.isRequired === 'true',
 			}
 			this.editError = ''
@@ -166,6 +177,7 @@ export default {
 				name: this.editForm.name.trim(),
 				category: this.editForm.category.trim(),
 				description: this.editForm.description.trim(),
+				confidentiality: this.editForm.confidentiality.trim(),
 				caseType: this.caseTypeId,
 				isRequired: this.editForm.isRequired,
 			}
@@ -179,7 +191,7 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
 		 */
 		async deleteItem(item) {
-			if (!confirm(t('procest', 'Delete document type "{name}"?', { name: item.name }))) return
+			if (!confirm(t('procest', 'Delete document type "{name}"? Existing uploaded files will not be deleted.', { name: item.name }))) return
 			const objectStore = useObjectStore()
 			await objectStore.deleteObject('documentType', item.id)
 			await this.loadItems()
