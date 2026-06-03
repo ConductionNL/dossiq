@@ -285,10 +285,10 @@ return [
 
         // ── VTH Module ─────────────────────────────────────────────────────
         // DSO/Omgevingsloket intake — public webhook, no auth, signature-validated.
-        ['name' => 'd_s_o_intake#intake', 'url' => '/api/vth/dso/intake', 'verb' => 'POST'],
+        ['name' => 'dSOIntake#intake', 'url' => '/api/vth/dso/intake', 'verb' => 'POST'],
         // VTH zaaktype template management (admin only).
-        ['name' => 'v_t_h_template#index',    'url' => '/api/vth/templates',             'verb' => 'GET'],
-        ['name' => 'v_t_h_template#activate', 'url' => '/api/vth/templates/{slug}/activate', 'verb' => 'POST'],
+        ['name' => 'vTHTemplate#index',    'url' => '/api/vth/templates',             'verb' => 'GET'],
+        ['name' => 'vTHTemplate#activate', 'url' => '/api/vth/templates/{slug}/activate', 'verb' => 'POST'],
         // Inspection checklist CRUD (admin).
         ['name' => 'inspectionChecklist#index',   'url' => '/api/vth/checklists',       'verb' => 'GET'],
         ['name' => 'inspectionChecklist#create',  'url' => '/api/vth/checklists',       'verb' => 'POST'],

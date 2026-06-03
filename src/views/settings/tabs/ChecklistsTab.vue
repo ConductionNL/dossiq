@@ -65,25 +65,18 @@
 			@save="onSave"
 			@cancel="showEditor = false" />
 
-		<!-- Delete confirmation -->
-		<NcDialog v-if="deletingChecklist"
-			:name="t('procest', 'Delete checklist')"
-			:message="t('procest', 'Are you sure you want to delete \'{name}\'?', { name: deletingChecklist.name })"
-			@close="deletingChecklist = null">
-			<template #actions>
-				<NcButton type="error" @click="doDelete">
-					{{ t('procest', 'Delete') }}
-				</NcButton>
-				<NcButton @click="deletingChecklist = null">
-					{{ t('procest', 'Cancel') }}
-				</NcButton>
-			</template>
-		</NcDialog>
+		<!-- Delete confirmation dialog (extracted to src/dialogs/ per ADR-004) -->
+		<DeleteChecklistDialog
+			v-if="deletingChecklist"
+			:checklist="deletingChecklist"
+			@confirm="doDelete"
+			@cancel="deletingChecklist = null" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcDialog, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import DeleteChecklistDialog from '../../../dialogs/DeleteChecklistDialog.vue'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import axios from '@nextcloud/axios'
@@ -96,13 +89,13 @@ export default {
 
 	components: {
 		NcButton,
-		NcDialog,
 		NcEmptyContent,
 		NcLoadingIcon,
 		NcNoteCard,
 		ClipboardListOutline,
 		Plus,
 		InspectionChecklistEditor,
+		DeleteChecklistDialog,
 	},
 
 	data() {
