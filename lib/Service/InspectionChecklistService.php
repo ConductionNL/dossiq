@@ -240,7 +240,7 @@ class InspectionChecklistService
 
         // Validate required-photo items.
         $answers = $resultData['answers'] ?? [];
-        $this->validatePhotoRequirements(answers: $answers, register: $register, objectService: $objectService, checklistId: $checklistId);
+        $this->validatePhotoRequirements(answers: $answers, register: $register, objectService: $objectService);
 
         // Calculate overall result.
         $overallResult = $this->calculateOverallResult(answers: $answers);
@@ -316,7 +316,6 @@ class InspectionChecklistService
      * @param array<int, mixed> $answers       Array of answer objects
      * @param string            $register      Register slug
      * @param object            $objectService OpenRegister object service
-     * @param string            $checklistId   UUID of the checklist
      *
      * @return void
      *
@@ -325,8 +324,7 @@ class InspectionChecklistService
     private function validatePhotoRequirements(
         array $answers,
         string $register,
-        object $objectService,
-        string $checklistId
+        object $objectService
     ): void {
         foreach ($answers as $answer) {
             if (is_array($answer) === false) {
@@ -347,11 +345,18 @@ class InspectionChecklistService
             }
 
             try {
-                $item = $objectService->findObject(
+                $item = $objectService->find(
+                    $itemRef,
                     register: $register,
-                    schema: 'checklistItem',
-                    id: $itemRef
+                    schema: 'checklistItem'
                 );
+
+                // The find() call may return an OpenRegister entity or an
+                // array; normalise to an array so fotoRequired is readable.
+                if (is_object($item) === true) {
+                    $item = get_object_vars(object: $item);
+                }
+
                 if (is_array($item) === true && ($item['fotoRequired'] ?? false) === true) {
                     throw new RuntimeException(
                         'Photo required for non-conformant checklist item '.$itemRef
@@ -361,7 +366,7 @@ class InspectionChecklistService
                 throw $e;
             } catch (Throwable) {
                 // Item lookup failed — allow submission rather than blocking.
-            }
+            }//end try
         }//end foreach
     }//end validatePhotoRequirements()
 

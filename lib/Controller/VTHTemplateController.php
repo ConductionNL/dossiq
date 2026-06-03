@@ -23,6 +23,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\VTHTemplateService;
+use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -69,7 +70,7 @@ class VTHTemplateController extends Controller
      *
      * @spec openspec/changes/vth-module/tasks.md#task-2
      */
-    #[AuthorizedAdminSetting(settings: Application::class)]
+    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function index(): JSONResponse
     {
         $templates = $this->vthTemplateService->listTemplates();
@@ -90,7 +91,7 @@ class VTHTemplateController extends Controller
      *
      * @spec openspec/changes/vth-module/tasks.md#task-2
      */
-    #[AuthorizedAdminSetting(settings: Application::class)]
+    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function activate(string $slug): JSONResponse
     {
         try {

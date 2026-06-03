@@ -24,7 +24,6 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\WOODeadlineService;
-use OCP\IUserSession;
 use OCP\Notification\IManager as INotificationManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -48,11 +47,6 @@ class WOODeadlineServiceTest extends TestCase
     private INotificationManager $notificationManager;
 
     /**
-     * @var IUserSession|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private IUserSession $userSession;
-
-    /**
      * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
      */
     private LoggerInterface $logger;
@@ -71,13 +65,11 @@ class WOODeadlineServiceTest extends TestCase
     {
         $this->settingsService     = $this->createMock(SettingsService::class);
         $this->notificationManager = $this->createMock(INotificationManager::class);
-        $this->userSession         = $this->createMock(IUserSession::class);
         $this->logger              = $this->createMock(LoggerInterface::class);
 
         $this->service = new WOODeadlineService(
             $this->settingsService,
             $this->notificationManager,
-            $this->userSession,
             $this->logger,
         );
     }//end setUp()

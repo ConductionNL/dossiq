@@ -120,9 +120,11 @@ class LhsLookupService
             return $cell;
         }
 
-        // Fallback to embedded table.
+        // Fallback to embedded table. The validated $gedrag/$gevolg pair is
+        // guaranteed to be a key in FALLBACK_MATRIX (4x4 = 16 cells), so no
+        // null-coalescing default is required.
         $key         = $gedrag.':'.$gevolg;
-        $interventie = self::FALLBACK_MATRIX[$key] ?? 'Onbekend';
+        $interventie = self::FALLBACK_MATRIX[$key];
 
         return [
             'gedragRow'       => $gedrag,

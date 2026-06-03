@@ -22,7 +22,6 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\WOORedactionService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -35,11 +34,6 @@ use Psr\Log\LoggerInterface;
  */
 class WOORedactionServiceTest extends TestCase
 {
-
-    /**
-     * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private SettingsService $settingsService;
 
     /**
      * @var IAppManager|\PHPUnit\Framework\MockObject\MockObject
@@ -63,12 +57,10 @@ class WOORedactionServiceTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->settingsService = $this->createMock(SettingsService::class);
-        $this->appManager      = $this->createMock(IAppManager::class);
-        $this->logger          = $this->createMock(LoggerInterface::class);
+        $this->appManager = $this->createMock(IAppManager::class);
+        $this->logger     = $this->createMock(LoggerInterface::class);
 
         $this->service = new WOORedactionService(
-            $this->settingsService,
             $this->appManager,
             $this->logger,
         );

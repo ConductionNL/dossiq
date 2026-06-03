@@ -59,17 +59,6 @@ class RaadsinformatieFeedController extends Controller
     private const FEED_LIMIT = 50;
 
     /**
-     * Mapping from the feed {type} slug to the ORI schema name.
-     *
-     * @var array<string,string>
-     */
-    private const FEED_SCHEMA_MAP = [
-        'vergaderingen' => 'vergadering',
-        'agendapunten'  => 'agendapunt',
-        'documenten'    => 'raadsdocument',
-    ];
-
-    /**
      * Constructor for RaadsinformatieFeedController.
      *
      * @param IRequest        $request         The HTTP request

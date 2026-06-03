@@ -6,11 +6,6 @@ parameters:
 			path: lib/AppInfo/Application.php
 
 		-
-			message: "#^Property OCA\\\\Procest\\\\BackgroundJob\\\\BerichtenboxReadStatusJob\\:\\:\\$berichtenboxService is never read, only written\\.$#"
-			count: 1
-			path: lib/BackgroundJob/BerichtenboxReadStatusJob.php
-
-		-
 			message: "#^Parameter \\#1 \\$settings of attribute class OCP\\\\AppFramework\\\\Http\\\\Attribute\\\\AuthorizedAdminSetting constructor expects class\\-string\\<OCP\\\\Settings\\\\IDelegatedSettings\\>, string given\\.$#"
 			count: 3
 			path: lib/Controller/AiController.php
@@ -69,11 +64,6 @@ parameters:
 			message: "#^Property OCA\\\\Procest\\\\Listener\\\\BezwaarLifecycleListener\\:\\:\\$settingsService is never read, only written\\.$#"
 			count: 1
 			path: lib/Listener/BezwaarLifecycleListener.php
-
-		-
-			message: "#^Class OCA\\\\Procest\\\\Controller\\\\ZgwController not found\\.$#"
-			count: 1
-			path: lib/Middleware/ZgwAuthMiddleware.php
 
 		-
 			message: "#^Strict comparison using \\=\\=\\= between true and false will always evaluate to false\\.$#"

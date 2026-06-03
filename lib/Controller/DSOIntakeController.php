@@ -29,6 +29,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IAppConfig;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -60,6 +61,7 @@ class DSOIntakeController extends Controller
      * @param string           $appName          The app name
      * @param IRequest         $request          The request
      * @param DsoIntakeService $dsoIntakeService DSO intake service
+     * @param IAppConfig       $appConfig        App config (DSO webhook secret)
      * @param LoggerInterface  $logger           Logger
      *
      * @spec openspec/changes/vth-module/tasks.md#task-3
@@ -68,6 +70,7 @@ class DSOIntakeController extends Controller
         string $appName,
         IRequest $request,
         private readonly DsoIntakeService $dsoIntakeService,
+        private readonly IAppConfig $appConfig,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct(appName: $appName, request: $request);
@@ -126,7 +129,7 @@ class DSOIntakeController extends Controller
             $result = $this->dsoIntakeService->processAanvraag(dsoMessage: $payload);
 
             $this->logger->info(
-                'DSO intake: case created '.$result['caseId'],
+                'DSO intake: case created '.($result['caseId'] ?? 'unknown'),
                 ['app' => Application::APP_ID]
             );
 
@@ -156,13 +159,14 @@ class DSOIntakeController extends Controller
      */
     private function validateSignature(string $body): bool
     {
-        $secret = $this->request->getHeader(self::SIGNATURE_HEADER) !== ''
-            ? '' : '';
-
-        // Read the configured secret (injected via SettingsService is not
-        // available here without adding a dep; use getenv as a lightweight
-        // fallback consistent with OpenConnector's webhook pattern).
-        $configuredSecret = getenv('DSO_WEBHOOK_SECRET') ?: '';
+        // Read the configured secret from app config (canonical Nextcloud
+        // pattern); fall back to the DSO_WEBHOOK_SECRET environment variable
+        // for parity with OpenConnector-fronted deployments.
+        $configuredSecret = $this->appConfig->getValueString(
+            Application::APP_ID,
+            self::DSO_SECRET_KEY,
+            (string) (getenv('DSO_WEBHOOK_SECRET') ?: '')
+        );
 
         if ($configuredSecret === '') {
             return true;
