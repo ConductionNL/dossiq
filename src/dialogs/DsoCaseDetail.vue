@@ -105,6 +105,7 @@
 			<h3>{{ t('procest', 'Transition status') }}</h3>
 			<NcSelect v-model="transitionStatus"
 				:options="transitionOptions"
+				:input-label="t('procest', 'New status')"
 				input-id="transition-status" />
 			<NcTextField v-model="transitionToelichting"
 				:label="t('procest', 'Toelichting')" />

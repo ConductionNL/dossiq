@@ -22,16 +22,19 @@
 			<NcSelect v-model="filters.dsoStatus"
 				:options="statusOptions"
 				:placeholder="t('procest', 'All statuses')"
+				:input-label="t('procest', 'Status filter')"
 				input-id="status-filter"
 				@update:model-value="loadDashboard" />
 			<NcSelect v-model="filters.procedureType"
 				:options="procedureOptions"
 				:placeholder="t('procest', 'All procedure types')"
+				:input-label="t('procest', 'Procedure type filter')"
 				input-id="procedure-filter"
 				@update:model-value="loadDashboard" />
 			<NcSelect v-model="filters.deadlineRange"
 				:options="deadlineRangeOptions"
 				:placeholder="t('procest', 'Any deadline')"
+				:input-label="t('procest', 'Deadline filter')"
 				input-id="deadline-filter"
 				@update:model-value="loadDashboard" />
 			<NcTextField v-model="filters.gemeenteCode"
@@ -120,7 +123,7 @@ import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 import BriefcaseOutline from 'vue-material-design-icons/BriefcaseOutline.vue'
-import DsoCaseDetail from './DsoCaseDetail.vue'
+import DsoCaseDetail from '../../dialogs/DsoCaseDetail.vue'
 
 export default {
 	name: 'VthDashboard',

@@ -370,6 +370,15 @@ class DsoController extends Controller
             $advies = (string) $body['advies'];
         }
 
+        // Per-object auth: any authenticated user may respond (multi-org coordination).
+        // Throws OCSForbiddenException when the samenwerkverzoek does not exist.
+        $samenwerkObj = $this->fetchSamenwerking(samenwerkId: $samenwerkId);
+        $this->samenwerkService->authorizeSamenwerkResponse(
+            samenwerk: $samenwerkObj ?? [],
+            userId: $user->getUID(),
+            isAdmin: $this->groupManager->isAdmin(uid: $user->getUID()),
+        );
+
         try {
             $result = $this->samenwerkService->respondToSamenwerking(
                 samenwerkId: $samenwerkId,
@@ -503,6 +512,57 @@ class DsoController extends Controller
 
         return null;
     }//end fetchZaak()
+
+    /**
+     * Fetch a samenwerkverzoek object from OpenRegister.
+     *
+     * @param string $samenwerkId UUID of the samenwerkverzoek
+     *
+     * @return array<string, mixed>|null
+     *
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T06
+     */
+    private function fetchSamenwerking(string $samenwerkId): ?array
+    {
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            return null;
+        }
+
+        $register        = $this->settingsService->getConfigValue('register');
+        $samenwerkSchema = $this->settingsService->getConfigValue('dso_samenwerkverzoek_schema');
+
+        if (empty($register) === true || empty($samenwerkSchema) === true) {
+            return null;
+        }
+
+        try {
+            $samenwerk = $objectService->findObject(
+                register: $register,
+                schema: $samenwerkSchema,
+                id: $samenwerkId,
+            );
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        if ($samenwerk === null) {
+            return null;
+        }
+
+        if (is_array($samenwerk) === true) {
+            return $samenwerk;
+        }
+
+        if (is_object($samenwerk) === true && method_exists($samenwerk, 'jsonSerialize') === true) {
+            $serialized = $samenwerk->jsonSerialize();
+            if (is_array($serialized) === true) {
+                return $serialized;
+            }
+        }
+
+        return null;
+    }//end fetchSamenwerking()
 
     /**
      * Authorize that the current user may mutate a zaak.
