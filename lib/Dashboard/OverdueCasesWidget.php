@@ -8,13 +8,21 @@
  * @category Dashboard
  * @package  OCA\Procest\Dashboard
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-4
+ * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md#task-2
+ * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -100,7 +108,7 @@ class OverdueCasesWidget implements IWidget
      */
     public function getUrl(): ?string
     {
-        return $this->url->linkToRouteAbsolute(Application::APP_ID.'.dashboard.index');
+        return $this->url->linkToRouteAbsolute(Application::APP_ID.'.dashboard.page');
 
     }//end getUrl()
 
@@ -114,6 +122,9 @@ class OverdueCasesWidget implements IWidget
      */
     public function load(): void
     {
+        // Shared vendor chunks emitted by webpack splitChunks (see webpack.config.js).
+        Util::addScript(Application::APP_ID, Application::APP_ID.'-shared-vendor');
+        Util::addScript(Application::APP_ID, Application::APP_ID.'-shared-nc-vue');
         Util::addScript(Application::APP_ID, Application::APP_ID.'-overdueCasesWidget');
         Util::addStyle(Application::APP_ID, 'dashboardWidgets');
 

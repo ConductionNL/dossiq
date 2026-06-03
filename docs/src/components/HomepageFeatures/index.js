@@ -7,7 +7,7 @@ const FeatureList = [
     title: 'Case Management',
     description: (
       <>
-        Manage cases with configurable case types, status lifecycles, deadlines, and extensions — all built on Nextcloud.
+        Manage cases with configurable case types, status lifecycles, deadlines, and extensions, all built on Nextcloud.
       </>
     ),
   },
@@ -23,7 +23,7 @@ const FeatureList = [
     title: 'Built on OpenRegister',
     description: (
       <>
-        All data stored as flexible OpenRegister objects. No custom database tables — just schemas, registers, and standards.
+        All data stored as flexible OpenRegister objects. No custom database tables: just schemas, registers, and standards.
       </>
     ),
   },

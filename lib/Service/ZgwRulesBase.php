@@ -10,13 +10,15 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -38,6 +40,44 @@ use Psr\Log\LoggerInterface;
  */
 abstract class ZgwRulesBase
 {
+
+    /**
+     * RFC1918 + loopback + link-local + cloud-metadata CIDR blocks to deny in
+     * outbound HTTP requests from fetchExternalUrl (SSRF protection — WF1).
+     *
+     * Must be kept in sync with NotificatieService::BLOCKED_CIDRS.
+     *
+     * @var string[]
+     */
+    private const BLOCKED_CIDRS = [
+        '10.0.0.0/8',
+        '172.16.0.0/12',
+        '192.168.0.0/16',
+        '127.0.0.0/8',
+        '169.254.0.0/16',
+        '::1/128',
+        'fc00::/7',
+    ];
+
+    /**
+     * Ordered vertrouwelijkheidaanduiding severity levels (zrc-006).
+     *
+     * Used for consumer authorization filtering: a zaak's level must be
+     * less than or equal to the consumer's maxVertrouwelijkheidaanduiding.
+     * Lower integer = less sensitive.
+     *
+     * @var array<string, int>
+     */
+    protected const VERTROUWELIJKHEID_LEVELS = [
+        'openbaar'          => 1,
+        'beperkt_openbaar'  => 2,
+        'intern'            => 3,
+        'zaakvertrouwelijk' => 4,
+        'vertrouwelijk'     => 5,
+        'confidentieel'     => 6,
+        'geheim'            => 7,
+        'zeer_geheim'       => 8,
+    ];
 
     /**
      * The OpenRegister ObjectService (set per-request).
@@ -74,6 +114,8 @@ abstract class ZgwRulesBase
      * @param array|null  $mappingConfig The mapping config
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function setContext(?object $objectService, ?array $mappingConfig): void
     {
@@ -87,6 +129,8 @@ abstract class ZgwRulesBase
      * @param array $body The (possibly enriched) request body
      *
      * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function isValid(array $body): array
     {
@@ -107,6 +151,8 @@ abstract class ZgwRulesBase
      * @param string $code          Optional error code
      *
      * @return array{valid: bool, status: int, detail: string, invalidParams: array, enrichedBody: array}
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function error(
         int $status,
@@ -136,6 +182,8 @@ abstract class ZgwRulesBase
      * @param string $reason    The error reason
      *
      * @return array{name: string, code: string, reason: string}
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function fieldError(string $fieldName, string $code, string $reason): array
     {
@@ -152,6 +200,8 @@ abstract class ZgwRulesBase
      * @param string $fieldName The immutable field name
      *
      * @return array The validation error result
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function fieldImmutableError(string $fieldName): array
     {
@@ -175,6 +225,8 @@ abstract class ZgwRulesBase
      * @param string $url The URL or UUID
      *
      * @return string|null The extracted UUID, or null
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function extractUuid(string $url): ?string
     {
@@ -204,6 +256,8 @@ abstract class ZgwRulesBase
      * @param string $url The URL to check
      *
      * @return bool True if valid
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function isValidUrl(string $url): bool
     {
@@ -233,6 +287,8 @@ abstract class ZgwRulesBase
      * @param string $schemaKey The settings key for the type's schema
      *
      * @return array|null Validation error, or null if valid
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function validateTypeUrl(string $typeUrl, string $fieldName, string $schemaKey): ?array
     {
@@ -308,6 +364,8 @@ abstract class ZgwRulesBase
      * @param string $ioUrl The informatieobject URL
      *
      * @return array|null Validation error, or null if valid
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function validateInformatieobjectUrl(string $ioUrl): ?array
     {
@@ -375,6 +433,8 @@ abstract class ZgwRulesBase
      * @param string $fieldName The field name for error reporting
      *
      * @return array|null Validation error, or null if valid
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function validateExternalUrl(string $url, string $fieldName): ?array
     {
@@ -421,14 +481,36 @@ abstract class ZgwRulesBase
     /**
      * Fetch data from an external URL (selectielijst, resultaattypeomschrijving).
      *
+     * WF1 fix: added SSRF guard (rejects RFC1918/loopback/link-local/cloud-metadata
+     * addresses), TLS verification enabled (verify => true), and redirect following
+     * disabled (allow_redirects => false) to prevent redirect-based bypasses.
+     *
      * @param string $url The URL to fetch
      *
      * @return array|null The JSON response data, or null on failure
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function fetchExternalUrl(string $url): ?array
     {
+        // WF1: SSRF guard — reject private/loopback/cloud-metadata URLs before
+        // establishing any outbound connection.
+        if ($this->isSafeExternalUrl(url: $url) === false) {
+            $this->logger->warning(
+                'fetchExternalUrl blocked: URL failed SSRF safety check',
+                ['url' => substr($url, 0, 200)]
+            );
+            return null;
+        }
+
         try {
-            $client   = new Client(['timeout' => 10, 'verify' => false]);
+            $client   = new Client(
+                    [
+                        'timeout'         => 10,
+                        'verify'          => true,
+                        'allow_redirects' => false,
+                    ]
+                    );
             $response = $client->get($url);
             $data     = json_decode((string) $response->getBody(), true);
             if (is_array($data) === false) {
@@ -442,8 +524,121 @@ abstract class ZgwRulesBase
                 ['url' => $url]
             );
             return null;
-        }
+        }//end try
     }//end fetchExternalUrl()
+
+    /**
+     * Validate that a URL is safe for outbound fetching (SSRF guard).
+     *
+     * Requires http or https scheme and verifies that the hostname resolves
+     * only to public IP addresses — rejects RFC1918, loopback, link-local,
+     * and cloud-metadata addresses (169.254.169.254).
+     *
+     * Returns false (fail-closed) when the URL is unparseable, the hostname
+     * resolves to no records, or any resolved address falls in a blocked CIDR.
+     *
+     * @param string $url The URL to validate
+     *
+     * @return bool True if the URL is safe for outbound fetching
+     */
+    private function isSafeExternalUrl(string $url): bool
+    {
+        $parsed = parse_url($url);
+        $scheme = strtolower($parsed['scheme'] ?? '');
+
+        if (in_array($scheme, ['http', 'https'], true) === false) {
+            return false;
+        }
+
+        $host = $parsed['host'] ?? '';
+        if ($host === '') {
+            return false;
+        }
+
+        // Resolve all A/AAAA records and block private ranges.
+        $records = @dns_get_record($host, DNS_A | DNS_AAAA);
+        if ($records === false || count($records) === 0) {
+            $this->logger->warning(
+                'fetchExternalUrl SSRF: DNS resolution returned no records',
+                ['host' => $host]
+            );
+            return false;
+        }
+
+        foreach ($records as $record) {
+            $ip = $record['ip'] ?? ($record['ipv6'] ?? null);
+            if ($ip === null) {
+                continue;
+            }
+
+            foreach (self::BLOCKED_CIDRS as $cidr) {
+                if ($this->ipInCidr(ip: $ip, cidr: $cidr) === true) {
+                    $this->logger->warning(
+                        'fetchExternalUrl SSRF: host resolves to private/loopback address',
+                        ['host' => $host, 'ip' => $ip, 'cidr' => $cidr]
+                    );
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }//end isSafeExternalUrl()
+
+    /**
+     * Check if an IP address falls within a CIDR range (IPv4 and IPv6).
+     *
+     * @param string $ip   The IP address to test
+     * @param string $cidr The CIDR block (e.g. '10.0.0.0/8')
+     *
+     * @return bool True if the IP is within the range
+     */
+    private function ipInCidr(string $ip, string $cidr): bool
+    {
+        $isIpv6Cidr = str_contains($cidr, ':');
+        $isIpv6Ip   = str_contains($ip, ':');
+
+        if ($isIpv6Cidr === true && $isIpv6Ip === true) {
+            [$network, $prefix] = explode('/', $cidr);
+            $prefixLen          = (int) $prefix;
+            $networkBin         = inet_pton($network);
+            $ipBin = inet_pton($ip);
+            if ($networkBin === false || $ipBin === false) {
+                return false;
+            }
+
+            $bytes  = (int) ceil($prefixLen / 8);
+            $mask   = str_repeat("\xff", intdiv($prefixLen, 8));
+            $remain = $prefixLen % 8;
+            if ($remain > 0) {
+                $mask .= chr(0xff & (0xff << (8 - $remain)));
+            }
+
+            $mask = str_pad($mask, 16, "\x00");
+            return (substr($ipBin, 0, $bytes) & $mask) === (substr($networkBin, 0, $bytes) & $mask);
+        }
+
+        if ($isIpv6Cidr === false && $isIpv6Ip === false) {
+            [$network, $prefix] = explode('/', $cidr);
+            $prefixLen          = (int) $prefix;
+            if ($prefixLen === 0) {
+                $mask = 0;
+            } else {
+                $mask = (~0 << (32 - $prefixLen));
+            }
+
+            $networkLong = ip2long($network);
+            $ipLong      = ip2long($ip);
+            if ($networkLong === false || $ipLong === false) {
+                return false;
+            }
+
+            return ($ipLong & $mask) === ($networkLong & $mask);
+        }
+
+        // Mixed IPv4/IPv6 — not in range.
+        return false;
+    }//end ipInCidr()
 
     /**
      * Generate a unique identificatie string.
@@ -451,6 +646,8 @@ abstract class ZgwRulesBase
      * @param string $prefix A prefix for the identifier (e.g. 'ZAAK', 'BESLUIT')
      *
      * @return string A unique identifier
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function generateIdentificatie(string $prefix): string
     {
@@ -469,6 +666,8 @@ abstract class ZgwRulesBase
      * @param string $value    The value to search for
      *
      * @return string|null The object UUID, or null if not found
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function findObjectByField(
         string $register,
@@ -515,6 +714,8 @@ abstract class ZgwRulesBase
      * @param string $value    The field value to search for
      *
      * @return array<string> Array of matching object UUIDs
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function findAllObjectsByField(
         string $register,
@@ -561,6 +762,8 @@ abstract class ZgwRulesBase
      * @param string $schemaKey The settings config key for the schema
      *
      * @return array|null The object data, or null on failure
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function findBySchemaKey(string $uuid, string $schemaKey): ?array
     {
@@ -603,6 +806,8 @@ abstract class ZgwRulesBase
      * @return array|null Validation error if duplicate found, null if unique
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     protected function checkFieldUniqueness(
         string $field1Value,

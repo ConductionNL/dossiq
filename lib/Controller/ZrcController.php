@@ -13,13 +13,19 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -29,7 +35,6 @@ namespace OCA\Procest\Controller;
 use DateInterval;
 use DateTime;
 use OCA\Procest\Service\ZgwService;
-use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -51,9 +56,8 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.NPathComplexity)
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
- * @SuppressWarnings(PHPMD.UnusedFormalParameter)
  */
-class ZrcController extends Controller
+class ZrcController extends ZgwController
 {
     /**
      * The ZGW API group for this controller.
@@ -104,13 +108,19 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function index(string $resource): JSONResponse
     {
+        $authError = $this->zgwService->validateJwtAuth($this->request);
+        if ($authError !== null) {
+            return $authError;
+        }
+
         $response = $this->zgwService->handleIndex($this->request, self::ZGW_API, $resource);
 
         // Zrc-006a: Filter zaken results based on consumer's vertrouwelijkheidaanduiding.
@@ -132,10 +142,11 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function create(string $resource): JSONResponse
     {
@@ -144,14 +155,14 @@ class ZrcController extends Controller
             return $authError;
         }
 
-        // Zrc-006c: Check zaken.aanmaken scope for zaak creation.
+        // Zrc-006c / M3: Check write scope for all create operations.
+        // Zaken require zaken.aanmaken; all other sub-resources require zaken.bijwerken.
         if ($resource === 'zaken') {
-            $hasScope = $this->zgwService->consumerHasScope(
-                $this->request,
-                'zrc',
-                'zaken.aanmaken'
-            );
-            if ($hasScope === false) {
+            if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.aanmaken') === false) {
+                return $this->permissionDeniedResponse();
+            }
+        } else {
+            if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.bijwerken') === false) {
                 return $this->permissionDeniedResponse();
             }
         }
@@ -304,20 +315,21 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function show(string $resource, string $uuid): JSONResponse
     {
+        $authError = $this->zgwService->validateJwtAuth($this->request);
+        if ($authError !== null) {
+            return $authError;
+        }
+
         // Zrc-006b: Check zaken.lezen scope and vertrouwelijkheidaanduiding.
         if ($resource === 'zaken') {
-            $authError = $this->zgwService->validateJwtAuth($this->request);
-            if ($authError !== null) {
-                return $authError;
-            }
-
             $scopeError = $this->checkZaakReadAccess(uuid: $uuid);
             if ($scopeError !== null) {
                 return $scopeError;
@@ -337,10 +349,11 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function update(string $resource, string $uuid): JSONResponse
     {
@@ -350,6 +363,11 @@ class ZrcController extends Controller
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C3: Gate updates on zrc.bijwerken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.bijwerken') === false) {
+            return $this->permissionDeniedResponse();
         }
 
         // Zrc-010/zrc-015: Pre-validate body fields that don't require
@@ -393,10 +411,11 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function patch(string $resource, string $uuid): JSONResponse
     {
@@ -406,6 +425,11 @@ class ZrcController extends Controller
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C3: Gate patches on zrc.bijwerken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.bijwerken') === false) {
+            return $this->permissionDeniedResponse();
         }
 
         // Zrc-010/zrc-015: Pre-validate body fields that don't require
@@ -450,10 +474,11 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function destroy(string $resource, string $uuid): JSONResponse
     {
@@ -462,9 +487,14 @@ class ZrcController extends Controller
             return $authError;
         }
 
-        // Zrc-023: Cascade delete for zaken.
+        // Zrc-023: Cascade delete for zaken — scope check is inside destroyZaak (C4).
         if ($resource === 'zaken') {
             return $this->destroyZaak(uuid: $uuid);
+        }
+
+        // C3: Gate sub-resource destroys on zaken.verwijderen scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.verwijderen') === false) {
+            return $this->permissionDeniedResponse();
         }
 
         // Zrc-005b: Before deleting, capture ZIO data for OIO cleanup.
@@ -506,10 +536,13 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zaakeigenschappenIndex(string $zaakUuid): JSONResponse
     {
@@ -523,10 +556,13 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zaakeigenschappenCreate(string $zaakUuid): JSONResponse
     {
@@ -541,10 +577,13 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zaakeigenschappenShow(string $zaakUuid, string $uuid): JSONResponse
     {
@@ -559,10 +598,13 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zaakeigenschappenUpdate(string $zaakUuid, string $uuid): JSONResponse
     {
@@ -577,10 +619,13 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zaakeigenschappenPatch(string $zaakUuid, string $uuid): JSONResponse
     {
@@ -595,10 +640,13 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $zaakUuid required by route pattern
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zaakeigenschappenDestroy(string $zaakUuid, string $uuid): JSONResponse
     {
@@ -612,10 +660,11 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zaakbesluitenIndex(string $zaakUuid): JSONResponse
     {
@@ -682,18 +731,22 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function zoek(): JSONResponse
     {
-        $response = $this->index(resource: 'zaken');
-        $response->setStatus(Http::STATUS_CREATED);
+        $indexResponse = $this->index(resource: 'zaken');
+        // The zoek endpoint reuses the list handler but returns 201 Created.
+        $responseData = [];
+        if ($indexResponse instanceof JSONResponse) {
+            $responseData = $indexResponse->getData() ?? [];
+        }
 
-        // @var JSONResponse $response
-        return $response;
+        return new JSONResponse(data: $responseData, statusCode: Http::STATUS_CREATED);
     }//end zoek()
 
     /**
@@ -704,13 +757,19 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function audittrailIndex(string $resource, string $uuid): JSONResponse
     {
+        $authError = $this->zgwService->validateJwtAuth($this->request);
+        if ($authError !== null) {
+            return $authError;
+        }
+
         return $this->zgwService->handleAudittrailIndex($this->request, self::ZGW_API, $resource, $uuid);
     }//end audittrailIndex()
 
@@ -723,13 +782,19 @@ class ZrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse
     {
+        $authError = $this->zgwService->validateJwtAuth($this->request);
+        if ($authError !== null) {
+            return $authError;
+        }
+
         return $this->zgwService->handleAudittrailShow($this->request, self::ZGW_API, $resource, $uuid, $auditUuid);
     }//end audittrailShow()
 
@@ -804,11 +869,19 @@ class ZrcController extends Controller
 
             // No matching autorisatie allows this vertrouwelijkheidaanduiding.
             return $this->permissionDeniedResponse();
-        } catch (\Throwable $e) {
-            $this->zgwService->getLogger()->debug(
-                'zrc-006b: Could not check zaak read access: '.$e->getMessage()
+        } catch (\InvalidArgumentException $e) {
+            // Expected: zaak or mapping config not found — deny to be safe.
+            $this->zgwService->getLogger()->warning(
+                'zrc-006b: Zaak read access check failed (expected), denying: '.$e->getMessage()
             );
-            return null;
+            return $this->permissionDeniedResponse();
+        } catch (\Throwable $e) {
+            // Unexpected failure (OR down, schema rename, etc.) — deny rather than
+            // silently allow access to potentially confidential data (fail-closed).
+            $this->zgwService->getLogger()->error(
+                'zrc-006b: Zaak read access check threw unexpected exception, denying: '.$e->getMessage()
+            );
+            return $this->permissionDeniedResponse();
         }//end try
     }//end checkZaakReadAccess()
 
@@ -910,6 +983,7 @@ class ZrcController extends Controller
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $isPatch reserved for partial-update validation
      *
      * @psalm-suppress UnusedParam — $isPatch reserved for partial-update validation
      */
@@ -1080,6 +1154,11 @@ class ZrcController extends Controller
      */
     private function destroyZaak(string $uuid): JSONResponse
     {
+        // C4: Require zaken.verwijderen scope for all zaak deletions.
+        if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.verwijderen') === false) {
+            return $this->permissionDeniedResponse();
+        }
+
         $objectService = $this->zgwService->getObjectService();
         if ($objectService === null) {
             return $this->zgwService->unavailableResponse();
@@ -1090,9 +1169,9 @@ class ZrcController extends Controller
             return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, 'zaken');
         }
 
+        // C4: Load the zaak to verify it exists and inspect its archive status.
         try {
-            // Verify the zaak exists.
-            $objectService->find(
+            $zaakObj = $objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
@@ -1104,39 +1183,75 @@ class ZrcController extends Controller
             );
         }
 
+        // C4: Treat a null return from find() as not-found.
+        if ($zaakObj === null) {
+            return new JSONResponse(
+                data: ['detail' => 'Not found'],
+                statusCode: Http::STATUS_NOT_FOUND
+            );
+        }
+
+        if (is_array($zaakObj) === true) {
+            $zaakData = $zaakObj;
+        } else {
+            $zaakData = $zaakObj->jsonSerialize();
+        }
+
+        // C4: Refuse to delete archived zaken without the geforceerd-verwijderen scope.
+        $isArchived = ($zaakData['archiefstatus'] ?? '') !== '' && ($zaakData['archiefstatus'] ?? '') !== 'nog_te_archiveren';
+        if ($isArchived === true
+            && $this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.geforceerd-verwijderen') === false
+        ) {
+            return new JSONResponse(
+                data: [
+                    'detail' => $this->l10n->t('Archived zaken cannot be deleted without the zaken.geforceerd-verwijderen scope.'),
+                    'code'   => 'permission_denied',
+                ],
+                statusCode: Http::STATUS_FORBIDDEN
+            );
+        }
+
         // Zrc-005b: Before deleting the zaak, sync-delete OIOs in DRC
         // for any linked ZaakInformatieObjecten. This cross-component
         // side-effect cannot be handled by OpenRegister's cascade delete.
+        // L1: Paginate through all ZIOs to avoid orphan OIOs on large zaken.
         $zioConfig = $this->zgwService->getZgwMappingService()->getMapping('zaakinformatieobject');
         if ($zioConfig !== null) {
             try {
-                $query  = $objectService->buildSearchQuery(
-                    requestParams: ['case' => $uuid, '_limit' => 100],
-                    register: $zioConfig['sourceRegister'],
-                    schema: $zioConfig['sourceSchema']
-                );
-                $result = $objectService->searchObjectsPaginated(query: $query);
+                $page = 1;
+                do {
+                    $query   = $objectService->buildSearchQuery(
+                        requestParams: ['case' => $uuid, '_limit' => 100, '_page' => $page],
+                        register: $zioConfig['sourceRegister'],
+                        schema: $zioConfig['sourceSchema']
+                    );
+                    $result  = $objectService->searchObjectsPaginated(query: $query);
+                    $objects = $result['results'] ?? [];
 
-                foreach (($result['results'] ?? []) as $obj) {
-                    if (is_array($obj) === true) {
-                        $data = $obj;
-                    } else {
-                        $data = $obj->jsonSerialize();
+                    foreach ($objects as $obj) {
+                        if (is_array($obj) === true) {
+                            $data = $obj;
+                        } else {
+                            $data = $obj->jsonSerialize();
+                        }
+
+                        $subUuid = $data['id'] ?? ($data['@self']['id'] ?? '');
+                        if ($subUuid === '') {
+                            continue;
+                        }
+
+                        $zioData = $this->getZioDataForOioSync(uuid: $subUuid);
+                        if ($zioData !== null) {
+                            $this->syncDeleteObjectInformatieObject(
+                                zaakUrl: $zioData['zaakUrl'],
+                                ioUrl: $zioData['ioUrl']
+                            );
+                        }
                     }
 
-                    $subUuid = $data['id'] ?? ($data['@self']['id'] ?? '');
-                    if ($subUuid === '') {
-                        continue;
-                    }
-
-                    $zioData = $this->getZioDataForOioSync(uuid: $subUuid);
-                    if ($zioData !== null) {
-                        $this->syncDeleteObjectInformatieObject(
-                            zaakUrl: $zioData['zaakUrl'],
-                            ioUrl: $zioData['ioUrl']
-                        );
-                    }
-                }
+                    $page++;
+                    $hasMore = count($objects) === 100;
+                } while ($hasMore === true);
             } catch (\Throwable $e) {
                 $this->zgwService->getLogger()->warning(
                     'zrc-023: Failed to sync-delete OIOs for zaak '.$uuid.': '.$e->getMessage()
@@ -1207,10 +1322,15 @@ class ZrcController extends Controller
                     );
                 }
             } catch (\Throwable $e) {
-                // Proceed without zaak closed info.
-                $this->zgwService->getLogger()->debug(
-                    'Could not resolve zaakClosed for '.$resource.'/'.$uuid.': '.$e->getMessage()
+                // WF3c fix: fail-CLOSED on any unexpected error. Returning
+                // [true, false] (zaak=closed, no geforceerd scope) causes the
+                // upstream caller to emit a 403 rather than silently allowing
+                // modification of a legally-finalised zaak (zrc-007, Awb 4:5).
+                $this->zgwService->getLogger()->error(
+                    'Could not resolve zaakClosed for '.$resource.'/'.$uuid.' — denying (fail-closed)',
+                    ['exception' => $e->getMessage()]
                 );
+                return [true, false];
             }//end try
         }//end if
 
@@ -1299,9 +1419,17 @@ class ZrcController extends Controller
                 return $this->permissionDeniedResponse();
             }
         } catch (\Throwable $e) {
-            $this->zgwService->getLogger()->debug(
-                'zrc-008c: Could not check reopen scope: '.$e->getMessage()
+            // WF2 fix: fail-CLOSED on any unexpected error. If we cannot
+            // determine whether the zaak is closed and a scope gate applies,
+            // we must deny rather than silently allow. Returning
+            // permissionDeniedResponse() here prevents a transient OR error
+            // (or a crafted UUID that causes an exception) from bypassing the
+            // heropenen gate and re-opening a legally-finalised zaak.
+            $this->zgwService->getLogger()->error(
+                'zrc-008c: Unexpected error in checkReopenScope — denying request (fail-closed)',
+                ['exception' => $e->getMessage()]
             );
+            return $this->permissionDeniedResponse();
         }//end try
 
         return null;
@@ -1859,6 +1987,8 @@ class ZrcController extends Controller
      * @return void
      *
      * @psalm-suppress UnusedParam — $objectData reserved for future use in result processing
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $objectData reserved for future result processing
      */
     private function handleResultaatCreated(array $body, array $objectData): void
     {

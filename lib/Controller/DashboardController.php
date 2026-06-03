@@ -8,13 +8,19 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-5
+ * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -44,14 +50,25 @@ class DashboardController extends Controller
     }//end __construct()
 
     /**
-     * Render the main dashboard page.
+     * Render the manifest-driven SPA shell.
+     *
+     * Bound to both `/` and the catch-all `/{path}` route so deep links
+     * (e.g. `/apps/procest/cases`) serve the same shell; vue-router resolves
+     * the actual view client-side in history mode.
+     *
+     * @param string $path Sub-path segment from the catch-all route; ignored
+     *                     server-side, resolved by vue-router on the client.
      *
      * @NoAdminRequired
      * @NoCSRFRequired
      *
      * @return TemplateResponse
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    public function page(): TemplateResponse
+    public function page(string $path=''): TemplateResponse
     {
         return new TemplateResponse(Application::APP_ID, 'index');
     }//end page()

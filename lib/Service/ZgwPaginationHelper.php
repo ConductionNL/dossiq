@@ -8,13 +8,15 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -45,6 +47,8 @@ class ZgwPaginationHelper
      * @param array  $queryParams   The original query parameters
      *
      * @return array ZGW-formatted paginated response
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function wrapResults(
         array $mappedObjects,

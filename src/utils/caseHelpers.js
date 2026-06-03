@@ -12,6 +12,11 @@ import { parseDuration, formatDuration } from './durationHelpers.js'
  * @param {string} durationString ISO 8601 duration (e.g., "P56D")
  * @return {Date|null} The calculated deadline, or null if inputs are invalid
  */
+/**
+ * @param startDate
+ * @param durationString
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ */
 export function calculateDeadline(startDate, durationString) {
 	if (!startDate || !durationString) return null
 	const parsed = parseDuration(durationString)
@@ -33,6 +38,7 @@ export function calculateDeadline(startDate, durationString) {
  *
  * @return {string} Generated identifier (e.g., "2026-4281")
  */
+/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 export function generateIdentifier() {
 	const year = new Date().getFullYear()
 	const suffix = Date.now() % 10000
@@ -46,6 +52,11 @@ export function generateIdentifier() {
  * @param {object} caseObj Case object with deadline property
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {boolean}
+ */
+/**
+ * @param caseObj
+ * @param isFinal
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 export function isCaseOverdue(caseObj, isFinal = false) {
 	if (!caseObj.deadline) return false
@@ -64,6 +75,11 @@ export function isCaseOverdue(caseObj, isFinal = false) {
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {boolean}
  */
+/**
+ * @param caseObj
+ * @param isFinal
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ */
 export function isCaseDueToday(caseObj, isFinal = false) {
 	if (!caseObj.deadline) return false
 	if (isFinal) return false
@@ -80,6 +96,11 @@ export function isCaseDueToday(caseObj, isFinal = false) {
  * @param {object} caseObj Case object with deadline property
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {boolean}
+ */
+/**
+ * @param caseObj
+ * @param isFinal
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 export function isCaseDueTomorrow(caseObj, isFinal = false) {
 	if (!caseObj.deadline) return false
@@ -98,6 +119,11 @@ export function isCaseDueTomorrow(caseObj, isFinal = false) {
  * @param {object} caseObj Case object with deadline property
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {string|null} Overdue text or null if not overdue
+ */
+/**
+ * @param caseObj
+ * @param isFinal
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 export function getCaseOverdueText(caseObj, isFinal = false) {
 	if (!isCaseOverdue(caseObj, isFinal)) return null
@@ -119,6 +145,11 @@ export function getCaseOverdueText(caseObj, isFinal = false) {
  * @param {object} caseObj Case object with deadline property
  * @param {boolean} isFinal Whether the case is at a final status
  * @return {{ text: string, style: string }} Countdown text and style class
+ */
+/**
+ * @param caseObj
+ * @param isFinal
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 export function formatDeadlineCountdown(caseObj, isFinal = false) {
 	if (!caseObj.deadline) return { text: '—', style: '' }
@@ -147,6 +178,10 @@ export function formatDeadlineCountdown(caseObj, isFinal = false) {
  * @param {string} startDate ISO date string
  * @return {number} Days elapsed (0 if today or invalid)
  */
+/**
+ * @param startDate
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ */
 export function getDaysElapsed(startDate) {
 	if (!startDate) return 0
 	const start = new Date(startDate)
@@ -162,6 +197,10 @@ export function getDaysElapsed(startDate) {
  *
  * @param {string} deadline ISO date string
  * @return {number} Days remaining (negative if overdue)
+ */
+/**
+ * @param deadline
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 export function getDaysRemaining(deadline) {
 	if (!deadline) return 0
@@ -179,6 +218,10 @@ export function getDaysRemaining(deadline) {
  * @param {string} dateString ISO date string
  * @return {string} Formatted date
  */
+/**
+ * @param dateString
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ */
 export function formatDate(dateString) {
 	if (!dateString) return '—'
 	const date = new Date(dateString)
@@ -190,6 +233,10 @@ export function formatDate(dateString) {
  *
  * @param {string} dateString ISO date string
  * @return {string} Formatted date
+ */
+/**
+ * @param dateString
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 export function formatDateShort(dateString) {
 	if (!dateString) return '—'

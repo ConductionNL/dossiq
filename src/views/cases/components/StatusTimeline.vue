@@ -42,9 +42,11 @@ export default {
 		},
 	},
 	computed: {
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		currentIndex() {
 			return this.statusTypes.findIndex(st => st.id === this.currentStatusId)
 		},
+		/** @spec openspec/specs/status-transition-engine/spec.md */
 		historyMap() {
 			const map = {}
 			for (const entry of this.statusHistory) {
@@ -54,6 +56,10 @@ export default {
 		},
 	},
 	methods: {
+		/**
+		 * @param statusType
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		isPassed(statusType) {
 			const idx = this.statusTypes.findIndex(st => st.id === statusType.id)
 			return idx < this.currentIndex
@@ -61,10 +67,18 @@ export default {
 		isCurrent(statusType) {
 			return statusType.id === this.currentStatusId
 		},
+		/**
+		 * @param statusType
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		isFuture(statusType) {
 			const idx = this.statusTypes.findIndex(st => st.id === statusType.id)
 			return idx > this.currentIndex
 		},
+		/**
+		 * @param statusType
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		stepClass(statusType) {
 			return {
 				'status-timeline__step--passed': this.isPassed(statusType),
@@ -72,6 +86,10 @@ export default {
 				'status-timeline__step--future': this.isFuture(statusType),
 			}
 		},
+		/**
+		 * @param statusType
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		dotClass(statusType) {
 			return {
 				'status-timeline__dot--passed': this.isPassed(statusType),
@@ -79,11 +97,19 @@ export default {
 				'status-timeline__dot--future': this.isFuture(statusType),
 			}
 		},
+		/**
+		 * @param statusType
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		lineClass(statusType) {
 			return {
 				'status-timeline__line--passed': this.isPassed(statusType) || this.isCurrent(statusType),
 			}
 		},
+		/**
+		 * @param statusType
+		 * @spec openspec/specs/status-transition-engine/spec.md
+		 */
 		getStatusDate(statusType) {
 			const date = this.historyMap[statusType.id]
 			if (!date) return null

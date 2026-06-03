@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "termijnbewaking-dwangsom-engine-05-ingebrekestelling",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["termijnbewaking-dwangsom-engine-04-daily-scan-escalation"]
+}

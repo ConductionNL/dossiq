@@ -44,6 +44,10 @@ function mapCalDavPriority(icalPriority) {
  * @param {object} task CalDAV task object from API
  * @return {object} Normalized work item
  */
+/**
+ * @param task
+ * @spec openspec/changes/task-management/tasks.md
+ */
 export function normalizeCalDavTask(task) {
 	const due = task.due || null
 	const isCompleted = task.status === 'completed'
@@ -98,6 +102,12 @@ export function normalizeCalDavTask(task) {
  * @param {string} objectId The object UUID
  * @return {Promise<object[]>} Array of normalized task work items
  */
+/**
+ * @param registerId
+ * @param schemaId
+ * @param objectId
+ * @spec openspec/changes/task-management/tasks.md
+ */
 export async function fetchTasksForObject(registerId, schemaId, objectId) {
 	const url = `/apps/openregister/api/objects/${registerId}/${schemaId}/${objectId}/tasks`
 
@@ -127,6 +137,10 @@ export async function fetchTasksForObject(registerId, schemaId, objectId) {
  *
  * @param {object[]} cases Array of case objects (must have id property)
  * @return {Promise<object[]>} Array of normalized task work items
+ */
+/**
+ * @param cases
+ * @spec openspec/changes/task-management/tasks.md
  */
 export async function fetchTasksForCases(cases) {
 	const objectStore = useObjectStore()

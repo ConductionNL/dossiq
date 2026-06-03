@@ -8,13 +8,19 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-2
+ * @spec openspec/changes/retrofit-2026-05-25-prometheus-metrics/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -38,6 +44,16 @@ use Psr\Log\LoggerInterface;
 class MetricsController extends Controller
 {
     /**
+     * Default cache TTL for metric queries in seconds.
+     */
+    private const CACHE_TTL_DEFAULT = 30;
+
+    /**
+     * Cache TTL for overdue queries (change less frequently).
+     */
+    private const CACHE_TTL_OVERDUE = 60;
+
+    /**
      * Constructor.
      *
      * @param IRequest        $request    The HTTP request
@@ -60,6 +76,8 @@ class MetricsController extends Controller
      * @NoCSRFRequired
      *
      * @return TextPlainResponse Prometheus-formatted metrics
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function index(): TextPlainResponse
     {
@@ -80,24 +98,37 @@ class MetricsController extends Controller
         $lines = [];
 
         // App info gauge.
-        $version    = $this->getAppVersion();
-        $phpVersion = PHP_VERSION;
+        $version          = $this->getAppVersion();
+        $phpVersion       = PHP_VERSION;
+        $nextcloudVersion = $this->getNextcloudVersion();
 
         $lines[] = '# HELP procest_info Application information';
         $lines[] = '# TYPE procest_info gauge';
-        $lines[] = 'procest_info{version="'.$version.'",php_version="'.$phpVersion.'"} 1';
+        $lines[] = 'procest_info{version="'.$version.'",php_version="'.$phpVersion.'",nextcloud_version="'.$nextcloudVersion.'"} 1';
         $lines[] = '';
 
         // App up gauge.
+        if ($this->checkDatabaseHealth() === true) {
+            $isUp = 1;
+        } else {
+            $isUp = 0;
+        }
+
         $lines[] = '# HELP procest_up Whether the application is healthy';
         $lines[] = '# TYPE procest_up gauge';
-        $lines[] = 'procest_up 1';
+        $lines[] = 'procest_up '.$isUp;
         $lines[] = '';
 
         // Cases total by status and case_type.
         $lines[]    = '# HELP procest_cases_total Total cases by status and case_type';
         $lines[]    = '# TYPE procest_cases_total gauge';
-        $caseCounts = $this->getCaseCounts();
+        $caseCounts = $this->getCached(
+                key: 'procest_metrics_case_counts',
+                ttl: self::CACHE_TTL_DEFAULT,
+                compute: function () {
+                    return $this->getCaseCounts();
+                }
+                );
         foreach ($caseCounts as $row) {
             $status   = $this->sanitizeLabel(value: $row['status']);
             $caseType = $this->sanitizeLabel(value: $row['case_type']);
@@ -108,16 +139,41 @@ class MetricsController extends Controller
         $lines[] = '';
 
         // Cases overdue total.
-        $overdueCount = $this->getOverdueCasesCount();
+        $overdueCount = $this->getCached(
+                key: 'procest_metrics_overdue_cases',
+                ttl: self::CACHE_TTL_OVERDUE,
+                compute: function () {
+                    return $this->getOverdueCasesCount();
+                }
+                );
         $lines[]      = '# HELP procest_cases_overdue_total Cases past their deadline';
         $lines[]      = '# TYPE procest_cases_overdue_total gauge';
         $lines[]      = 'procest_cases_overdue_total '.$overdueCount;
         $lines[]      = '';
 
+        // Cases created today.
+        $createdToday = $this->getCached(
+                key: 'procest_metrics_created_today',
+                ttl: self::CACHE_TTL_DEFAULT,
+                compute: function () {
+                    return $this->getCasesCreatedTodayCount();
+                }
+                );
+        $lines[]      = '# HELP procest_cases_created_today Cases created today';
+        $lines[]      = '# TYPE procest_cases_created_today gauge';
+        $lines[]      = 'procest_cases_created_today '.$createdToday;
+        $lines[]      = '';
+
         // Tasks total by status.
         $lines[]    = '# HELP procest_tasks_total Total tasks by status';
         $lines[]    = '# TYPE procest_tasks_total gauge';
-        $taskCounts = $this->getTaskCounts();
+        $taskCounts = $this->getCached(
+                key: 'procest_metrics_task_counts',
+                ttl: self::CACHE_TTL_DEFAULT,
+                compute: function () {
+                    return $this->getTaskCounts();
+                }
+                );
         foreach ($taskCounts as $row) {
             $status  = $this->sanitizeLabel(value: $row['status']);
             $count   = (int) $row['cnt'];
@@ -127,7 +183,13 @@ class MetricsController extends Controller
         $lines[] = '';
 
         // Tasks overdue total.
-        $overdueTasksCount = $this->getOverdueTasksCount();
+        $overdueTasksCount = $this->getCached(
+                key: 'procest_metrics_overdue_tasks',
+                ttl: self::CACHE_TTL_OVERDUE,
+                compute: function () {
+                    return $this->getOverdueTasksCount();
+                }
+                );
         $lines[]           = '# HELP procest_tasks_overdue_total Tasks past their deadline';
         $lines[]           = '# TYPE procest_tasks_overdue_total gauge';
         $lines[]           = 'procest_tasks_overdue_total '.$overdueTasksCount;
@@ -135,6 +197,60 @@ class MetricsController extends Controller
 
         return implode("\n", $lines)."\n";
     }//end collectMetrics()
+
+    /**
+     * Get a cached value from APCu, computing it on cache miss.
+     *
+     * Falls back to direct computation if APCu is unavailable.
+     *
+     * @param string   $key     The cache key
+     * @param int      $ttl     Cache TTL in seconds
+     * @param callable $compute Callable that computes the value on cache miss
+     *
+     * @return mixed The cached or freshly computed value
+     */
+    private function getCached(string $key, int $ttl, callable $compute): mixed
+    {
+        if (function_exists('apcu_fetch') === true) {
+            $success = false;
+            $cached  = apcu_fetch($key, $success);
+            if ($success === true) {
+                return $cached;
+            }
+
+            $value = $compute();
+
+            try {
+                apcu_store($key, $value, $ttl);
+            } catch (\Exception $e) {
+                // Silently ignore APCu store failures.
+                $this->logger->debug('[MetricsController] APCu store failed', ['key' => $key, 'error' => $e->getMessage()]);
+            }
+
+            return $value;
+        }
+
+        return $compute();
+    }//end getCached()
+
+    /**
+     * Check basic database health.
+     *
+     * @return bool True if the database is reachable
+     */
+    private function checkDatabaseHealth(): bool
+    {
+        try {
+            $qb = $this->db->getQueryBuilder();
+            $qb->select($qb->createFunction('1'));
+            $result = $qb->executeQuery();
+            $result->closeCursor();
+
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }//end checkDatabaseHealth()
 
     /**
      * Get case counts grouped by status and case type from OpenRegister objects.
@@ -185,11 +301,11 @@ class MetricsController extends Controller
                 ->where($qb->expr()->like('s.title', $qb->createNamedParameter('%aak%')))
                 ->andWhere($qb->expr()->isNotNull($qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.uiterlijkeEinddatumAfdoening'))")))
                 ->andWhere(
-                        $qb->expr()->lt(
-                    $qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.uiterlijkeEinddatumAfdoening'))"),
-                    $qb->createNamedParameter($now)
-                )
-                        );
+                    $qb->expr()->lt(
+                        $qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.uiterlijkeEinddatumAfdoening'))"),
+                        $qb->createNamedParameter($now)
+                    )
+                );
 
             $result = $qb->executeQuery();
             $row    = $result->fetch();
@@ -201,6 +317,38 @@ class MetricsController extends Controller
             return 0;
         }//end try
     }//end getOverdueCasesCount()
+
+    /**
+     * Get count of cases created today.
+     *
+     * @return int Cases created today count
+     */
+    private function getCasesCreatedTodayCount(): int
+    {
+        try {
+            $today = (new DateTime())->format('Y-m-d');
+            $qb    = $this->db->getQueryBuilder();
+            $qb->select($qb->func()->count('o.id', 'cnt'))
+                ->from('openregister_objects', 'o')
+                ->innerJoin('o', 'openregister_schemas', 's', $qb->expr()->eq('o.schema', 's.id'))
+                ->where($qb->expr()->like('s.title', $qb->createNamedParameter('%aak%')))
+                ->andWhere(
+                    $qb->expr()->like(
+                        $qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.startDate'))"),
+                        $qb->createNamedParameter($today.'%')
+                    )
+                );
+
+            $result = $qb->executeQuery();
+            $row    = $result->fetch();
+            $result->closeCursor();
+
+            return (int) ($row['cnt'] ?? 0);
+        } catch (\Exception $e) {
+            $this->logger->warning('[MetricsController] Failed to get cases created today', ['error' => $e->getMessage()]);
+            return 0;
+        }//end try
+    }//end getCasesCreatedTodayCount()
 
     /**
      * Get task counts grouped by status.
@@ -247,11 +395,11 @@ class MetricsController extends Controller
                 ->where($qb->expr()->like('s.title', $qb->createNamedParameter('%taak%')))
                 ->andWhere($qb->expr()->isNotNull($qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.deadline'))")))
                 ->andWhere(
-                        $qb->expr()->lt(
-                    $qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.deadline'))"),
-                    $qb->createNamedParameter($now)
-                )
-                        );
+                    $qb->expr()->lt(
+                        $qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.deadline'))"),
+                        $qb->createNamedParameter($now)
+                    )
+                );
 
             $result = $qb->executeQuery();
             $row    = $result->fetch();
@@ -277,6 +425,24 @@ class MetricsController extends Controller
             return 'unknown';
         }
     }//end getAppVersion()
+
+    /**
+     * Get the Nextcloud version string.
+     *
+     * @return string The Nextcloud version
+     */
+    private function getNextcloudVersion(): string
+    {
+        try {
+            if (class_exists('\OC_Util') === true && method_exists('\OC_Util', 'getVersionString') === true) {
+                return \OC_Util::getVersionString();
+            }
+
+            return 'unknown';
+        } catch (\Exception $e) {
+            return 'unknown';
+        }
+    }//end getNextcloudVersion()
 
     /**
      * Sanitize a label value for Prometheus format.

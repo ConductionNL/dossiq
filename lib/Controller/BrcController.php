@@ -10,13 +10,19 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -25,7 +31,6 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\ZgwService;
-use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -50,7 +55,7 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
  * @SuppressWarnings(PHPMD.NPathComplexity)
  */
-class BrcController extends Controller
+class BrcController extends ZgwController
 {
     /**
      * The ZGW API identifier for the Besluiten register.
@@ -83,10 +88,11 @@ class BrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function index(string $resource): JSONResponse
     {
@@ -113,16 +119,22 @@ class BrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function create(string $resource): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // SB2: Gate creates on besluiten.aanmaken scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.aanmaken') === false) {
+            return $this->scopeDeniedResponse(scope: 'besluiten.aanmaken');
         }
 
         // For besluitinformatieobjecten: use custom create with OIO sync.
@@ -146,10 +158,11 @@ class BrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function show(string $resource, string $uuid): JSONResponse
     {
@@ -171,16 +184,22 @@ class BrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function update(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // SB2: Gate updates on besluiten.bijwerken scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.bijwerken') === false) {
+            return $this->scopeDeniedResponse(scope: 'besluiten.bijwerken');
         }
 
         // Brc-004a: BesluitInformatieObject is immutable — PUT returns 405.
@@ -210,16 +229,22 @@ class BrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function patch(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // SB2: Gate patches on besluiten.bijwerken scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.bijwerken') === false) {
+            return $this->scopeDeniedResponse(scope: 'besluiten.bijwerken');
         }
 
         // Brc-004b: BesluitInformatieObject is immutable — PATCH returns 405.
@@ -251,16 +276,22 @@ class BrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function destroy(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // SB2: Gate destroys on besluiten.verwijderen scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'brc', 'besluiten.verwijderen') === false) {
+            return $this->scopeDeniedResponse(scope: 'besluiten.verwijderen');
         }
 
         // Brc-009: Cascade delete for besluiten.
@@ -289,10 +320,11 @@ class BrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function audittrailIndex(string $resource, string $uuid): JSONResponse
     {
@@ -333,10 +365,11 @@ class BrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse
     {

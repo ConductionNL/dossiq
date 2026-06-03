@@ -37,6 +37,11 @@
 			</div>
 		</div>
 
+		<!-- Active case warning -->
+		<div v-if="activeCaseCount > 0 && !isCreate" class="case-type-detail__warning">
+			<p>{{ t('procest', 'There are {count} active cases of this type. Changes will only apply to new cases.', { count: activeCaseCount }) }}</p>
+		</div>
+
 		<!-- Publish errors -->
 		<div v-if="publishErrors.length > 0" class="case-type-detail__publish-errors">
 			<p><strong>{{ t('procest', 'Cannot publish:') }}</strong></p>
@@ -81,6 +86,21 @@
 					v-else-if="activeTab === 'statuses'"
 					:case-type-id="caseTypeId"
 					:is-create="isCreate" />
+				<ResultsTab
+					v-else-if="activeTab === 'results'"
+					:case-type-id="caseTypeId"
+					:is-create="isCreate" />
+				<RolesTab
+					v-else-if="activeTab === 'roles'"
+					:case-type-id="caseTypeId"
+					:is-create="isCreate" />
+				<PropertiesTab
+					v-else-if="activeTab === 'properties'"
+					:case-type-id="caseTypeId"
+					:is-create="isCreate" />
+				<WorkflowTab
+					v-else-if="activeTab === 'workflow'"
+					:case-type-id="caseTypeId" />
 			</div>
 		</template>
 	</div>
@@ -91,6 +111,10 @@ import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import ArrowLeftIcon from 'vue-material-design-icons/ArrowLeft.vue'
 import GeneralTab from './tabs/GeneralTab.vue'
 import StatusesTab from './tabs/StatusesTab.vue'
+import WorkflowTab from './tabs/WorkflowTab.vue'
+import ResultsTab from './tabs/ResultsTab.vue'
+import RolesTab from './tabs/RolesTab.vue'
+import PropertiesTab from './tabs/PropertiesTab.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { validateCaseType, validateForPublish } from '../../utils/caseTypeValidation.js'
 
@@ -128,6 +152,10 @@ export default {
 		ArrowLeftIcon,
 		GeneralTab,
 		StatusesTab,
+		WorkflowTab,
+		ResultsTab,
+		RolesTab,
+		PropertiesTab,
 	},
 	props: {
 		caseTypeId: {
@@ -146,22 +174,30 @@ export default {
 			validationErrors: {},
 			publishErrors: [],
 			statusTypes: [],
+			activeCaseCount: 0,
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
 		isCreate() {
 			return !this.caseTypeId
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		tabs() {
 			return [
 				{ id: 'general', label: t('procest', 'General') },
 				{ id: 'statuses', label: t('procest', 'Statuses') },
+				{ id: 'results', label: t('procest', 'Results') },
+				{ id: 'roles', label: t('procest', 'Roles') },
+				{ id: 'properties', label: t('procest', 'Properties') },
+				{ id: 'workflow', label: t('procest', 'Workflow') },
 			]
 		},
 	},
+	/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 	async mounted() {
 		if (!this.isCreate) {
 			await this.loadCaseType()
@@ -170,15 +206,31 @@ export default {
 		}
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async loadCaseType() {
 			this.loadingDetail = true
 			const data = await this.objectStore.fetchObject('caseType', this.caseTypeId)
 			if (data) {
 				this.form = { ...EMPTY_FORM, ...data }
 			}
+			// Count active cases of this type
+			try {
+				const cases = await this.objectStore.fetchCollection('case', {
+					'_filters[caseType]': this.caseTypeId,
+					_limit: 1,
+				})
+				this.activeCaseCount = cases?.length || 0
+			} catch (e) {
+				this.activeCaseCount = 0
+			}
 			this.loadingDetail = false
 		},
 
+		/**
+		 * @param field
+		 * @param value
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		onFieldUpdate(field, value) {
 			this.form[field] = value
 			// Clear validation error for this field
@@ -189,6 +241,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async save() {
 			this.saveError = ''
 			this.saveSuccess = false
@@ -221,6 +274,7 @@ export default {
 			}
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async publish() {
 			this.publishErrors = []
 			this.saveError = ''
@@ -242,6 +296,7 @@ export default {
 			await this.save()
 		},
 
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async unpublish() {
 			const confirmed = confirm(
 				t('procest', 'Unpublishing this case type will prevent new cases from being created. Existing cases will continue to function. Continue?'),
@@ -272,6 +327,15 @@ export default {
 .case-type-detail__actions {
 	display: flex;
 	gap: 8px;
+}
+
+.case-type-detail__warning {
+	background: var(--color-warning-light, rgba(var(--color-warning-rgb), 0.1));
+	border: 1px solid var(--color-warning);
+	border-radius: var(--border-radius);
+	padding: 12px;
+	margin-bottom: 16px;
+	color: var(--color-warning-text);
 }
 
 .case-type-detail__publish-errors {

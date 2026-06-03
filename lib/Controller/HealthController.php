@@ -8,13 +8,20 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-ops-observability/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-ops-observability/tasks.md#task-2
+ * @spec openspec/changes/retrofit-2026-05-24-ops-observability/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -60,6 +67,8 @@ class HealthController extends Controller
      * @NoCSRFRequired
      *
      * @return JSONResponse Health status
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function index(): JSONResponse
     {
@@ -69,6 +78,12 @@ class HealthController extends Controller
         // Check database connectivity.
         $checks['database'] = $this->checkDatabase();
         if ($checks['database'] !== 'ok') {
+            $status = 'error';
+        }
+
+        // Check OpenRegister dependency (hard dependency).
+        $checks['openregister'] = $this->checkOpenRegister();
+        if ($checks['openregister'] !== 'ok') {
             $status = 'error';
         }
 
@@ -113,6 +128,28 @@ class HealthController extends Controller
             return 'failed: '.$e->getMessage();
         }
     }//end checkDatabase()
+
+    /**
+     * Check OpenRegister app availability.
+     *
+     * OpenRegister is a hard dependency for Procest. If it is not enabled,
+     * the overall health status MUST be "error".
+     *
+     * @return string 'ok' or error message
+     */
+    private function checkOpenRegister(): string
+    {
+        try {
+            if ($this->appManager->isEnabledForUser('openregister') === true) {
+                return 'ok';
+            }
+
+            return 'failed: app not enabled';
+        } catch (\Exception $e) {
+            $this->logger->error('[HealthController] OpenRegister check failed', ['error' => $e->getMessage()]);
+            return 'failed: '.$e->getMessage();
+        }
+    }//end checkOpenRegister()
 
     /**
      * Check filesystem access.

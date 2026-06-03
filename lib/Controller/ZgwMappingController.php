@@ -8,13 +8,19 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -26,6 +32,7 @@ use OCA\Procest\Repair\LoadDefaultZgwMappings;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\ZgwMappingService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
@@ -61,7 +68,10 @@ class ZgwMappingController extends Controller
      * List all ZGW mapping configurations.
      *
      * @return JSONResponse
-     */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function index(): JSONResponse
     {
         return new JSONResponse(
@@ -78,7 +88,10 @@ class ZgwMappingController extends Controller
      * @param string $resourceKey The ZGW resource key
      *
      * @return JSONResponse
-     */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function show(string $resourceKey): JSONResponse
     {
         $mapping = $this->zgwMappingService->getMapping($resourceKey);
@@ -106,7 +119,10 @@ class ZgwMappingController extends Controller
      * @param string $resourceKey The ZGW resource key
      *
      * @return JSONResponse
-     */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function update(string $resourceKey): JSONResponse
     {
         $params = $this->request->getParams();
@@ -130,7 +146,10 @@ class ZgwMappingController extends Controller
      * @param string $resourceKey The ZGW resource key
      *
      * @return JSONResponse
-     */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function destroy(string $resourceKey): JSONResponse
     {
         $this->zgwMappingService->deleteMapping($resourceKey);
@@ -148,7 +167,10 @@ class ZgwMappingController extends Controller
      * @param string $resourceKey The ZGW resource key
      *
      * @return JSONResponse
-     */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function reset(string $resourceKey): JSONResponse
     {
         $registerId = $this->settingsService->getConfigValue(key: 'register', default: '');

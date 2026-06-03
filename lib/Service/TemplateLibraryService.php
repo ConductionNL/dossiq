@@ -1,0 +1,273 @@
+<?php
+
+/**
+ * Procest Template Library Service
+ *
+ * Service for loading and activating zaaktype templates.
+ * Templates are JSON files shipped with the app that define complete
+ * case type configurations (statuses, properties, document types, etc.).
+ *
+ * @category Service
+ * @package  OCA\Procest\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2024 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-template-library/tasks.md#task-2
+ * @spec openspec/changes/retrofit-2026-05-24-template-library/tasks.md#task-3
+ * @spec openspec/changes/retrofit-2026-05-24-template-library/tasks.md#task-4
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Procest\Service;
+
+use OCA\Procest\AppInfo\Application;
+use Psr\Log\LoggerInterface;
+
+/**
+ * Service for loading and activating zaaktype templates.
+ */
+class TemplateLibraryService
+{
+
+    /**
+     * Path to the templates directory.
+     */
+    private const TEMPLATES_DIR = __DIR__.'/../Settings/templates';
+
+    /**
+     * Constructor.
+     *
+     * @param SettingsService $settingsService Settings service for register/schema references
+     * @param LoggerInterface $logger          Logger
+     */
+    public function __construct(
+        private readonly SettingsService $settingsService,
+        private readonly LoggerInterface $logger,
+    ) {
+    }//end __construct()
+
+    /**
+     * List all available zaaktype templates.
+     *
+     * Scans the templates directory for JSON files and returns their metadata.
+     *
+     * @return array<int, array<string, mixed>> List of template metadata
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     */
+    public function listTemplates(): array
+    {
+        $templates = [];
+        $dir       = self::TEMPLATES_DIR;
+
+        if (is_dir($dir) === false) {
+            return $templates;
+        }
+
+        $files = glob($dir.'/*.json');
+        if ($files === false) {
+            return $templates;
+        }
+
+        foreach ($files as $file) {
+            $content = file_get_contents($file);
+            if ($content === false) {
+                continue;
+            }
+
+            $data = json_decode($content, true);
+            if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
+                $this->logger->warning(
+                    'Invalid template file: '.basename($file),
+                    ['app' => Application::APP_ID]
+                );
+                continue;
+            }
+
+            $templates[] = [
+                'id'          => $data['id'] ?? pathinfo($file, PATHINFO_FILENAME),
+                'title'       => $data['title'] ?? '',
+                'description' => $data['description'] ?? '',
+                'category'    => $data['category'] ?? 'general',
+                'version'     => $data['version'] ?? '1.0.0',
+                'file'        => basename($file),
+            ];
+        }//end foreach
+
+        return $templates;
+    }//end listTemplates()
+
+    /**
+     * Load a template by its ID.
+     *
+     * @param string $templateId The template identifier
+     *
+     * @return array<string, mixed>|null The full template data or null if not found
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     */
+    public function loadTemplate(string $templateId): ?array
+    {
+        $dir = self::TEMPLATES_DIR;
+
+        if (is_dir($dir) === false) {
+            return null;
+        }
+
+        $files = glob($dir.'/*.json');
+        if ($files === false) {
+            return null;
+        }
+
+        foreach ($files as $file) {
+            $content = file_get_contents($file);
+            if ($content === false) {
+                continue;
+            }
+
+            $data = json_decode($content, true);
+            if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
+                continue;
+            }
+
+            $fileId = $data['id'] ?? pathinfo($file, PATHINFO_FILENAME);
+            if ($fileId === $templateId) {
+                return $data;
+            }
+        }
+
+        return null;
+    }//end loadTemplate()
+
+    /**
+     * Activate a template by creating OpenRegister objects for the case type and related entities.
+     *
+     * This creates:
+     * - A caseType object
+     * - statusType objects linked to the caseType
+     * - propertyDefinition objects linked to the caseType
+     * - documentType objects linked to the caseType
+     * - decisionType objects linked to the caseType
+     * - roleType objects linked to the caseType
+     *
+     * @param string $templateId The template identifier
+     *
+     * @return array<string, mixed> Result with created object IDs
+     *
+     * @throws \RuntimeException If template not found or OpenRegister unavailable
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     */
+    public function activateTemplate(string $templateId): array
+    {
+        $template = $this->loadTemplate(templateId: $templateId);
+        if ($template === null) {
+            throw new \RuntimeException('Template not found: '.$templateId);
+        }
+
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            throw new \RuntimeException('OpenRegister is not available');
+        }
+
+        $register = $this->settingsService->getConfigValue('register');
+        if (empty($register) === true) {
+            throw new \RuntimeException('Procest register not configured');
+        }
+
+        $result = [
+            'templateId' => $templateId,
+            'caseType'   => null,
+            'statuses'   => [],
+            'properties' => [],
+            'documents'  => [],
+            'decisions'  => [],
+            'roles'      => [],
+        ];
+
+        // Create the case type.
+        $caseTypeSchema     = $this->settingsService->getConfigValue('case_type_schema');
+        $caseTypeData       = $template['caseType'] ?? [];
+        $caseType           = $objectService->saveObject(
+            $register,
+            $caseTypeSchema,
+            $caseTypeData,
+        );
+        $caseTypeId         = $caseType->getUuid();
+        $result['caseType'] = $caseTypeId;
+
+        // Create status types.
+        $statusTypeSchema = $this->settingsService->getConfigValue('status_type_schema');
+        foreach (($template['statusTypes'] ?? []) as $statusData) {
+            $statusData['caseType'] = $caseTypeId;
+            $status = $objectService->saveObject(
+                $register,
+                $statusTypeSchema,
+                $statusData,
+            );
+            $result['statuses'][] = $status->getUuid();
+        }
+
+        // Create property definitions.
+        $propertySchema = $this->settingsService->getConfigValue('property_definition_schema');
+        foreach (($template['propertyDefinitions'] ?? []) as $propData) {
+            $propData['caseType'] = $caseTypeId;
+            $prop = $objectService->saveObject(
+                $register,
+                $propertySchema,
+                $propData,
+            );
+            $result['properties'][] = $prop->getUuid();
+        }
+
+        // Create document types.
+        $docTypeSchema = $this->settingsService->getConfigValue('document_type_schema');
+        foreach (($template['documentTypes'] ?? []) as $docData) {
+            $docData['caseType'] = $caseTypeId;
+            $doc = $objectService->saveObject(
+                $register,
+                $docTypeSchema,
+                $docData,
+            );
+            $result['documents'][] = $doc->getUuid();
+        }
+
+        // Create decision types.
+        $decisionTypeSchema = $this->settingsService->getConfigValue('decision_type_schema');
+        foreach (($template['decisionTypes'] ?? []) as $decData) {
+            $decData['caseType'] = $caseTypeId;
+            $dec = $objectService->saveObject(
+                $register,
+                $decisionTypeSchema,
+                $decData,
+            );
+            $result['decisions'][] = $dec->getUuid();
+        }
+
+        // Create role types.
+        $roleTypeSchema = $this->settingsService->getConfigValue('role_type_schema');
+        foreach (($template['roleTypes'] ?? []) as $roleData) {
+            $roleData['caseType'] = $caseTypeId;
+            $role = $objectService->saveObject(
+                $register,
+                $roleTypeSchema,
+                $roleData,
+            );
+            $result['roles'][] = $role->getUuid();
+        }
+
+        $this->logger->info(
+            'Template activated: '.$templateId.' -> caseType '.$caseTypeId,
+            ['app' => Application::APP_ID]
+        );
+
+        return $result;
+    }//end activateTemplate()
+}//end class

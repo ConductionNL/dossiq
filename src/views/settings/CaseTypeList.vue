@@ -87,27 +87,34 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		settingsStore() {
 			return useSettingsStore()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		loading() {
 			return this.objectStore.loading.caseType || false
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		caseTypes() {
 			return this.objectStore.collections.caseType || []
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		defaultCaseTypeId() {
 			return this.settingsStore.config?.default_case_type || ''
 		},
 	},
+	/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 	async mounted() {
 		this.schema = await this.objectStore.fetchSchema('caseType')
 		await this.fetchCaseTypes()
 	},
 	methods: {
+		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async fetchCaseTypes() {
 			await this.objectStore.fetchCollection('caseType', { _limit: 100 })
 			for (const ct of this.caseTypes) {
@@ -115,6 +122,10 @@ export default {
 			}
 		},
 
+		/**
+		 * @param caseTypeId
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		async loadStatusTypeCount(caseTypeId) {
 			const statusTypes = await this.objectStore.fetchCollection('statusType', {
 				'_filters[caseType]': caseTypeId,
@@ -128,10 +139,18 @@ export default {
 			return this.defaultCaseTypeId === id
 		},
 
+		/**
+		 * @param duration
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		formatDeadline(duration) {
 			return formatDuration(duration)
 		},
 
+		/**
+		 * @param ct
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		formatValidity(ct) {
 			if (!ct.validFrom) return '\u2014'
 			const from = new Date(ct.validFrom).toLocaleDateString('nl-NL', { month: 'short', year: 'numeric' })
@@ -142,6 +161,10 @@ export default {
 			return t('procest', '{from} \u2014 (no end)', { from })
 		},
 
+		/**
+		 * @param ct
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		validityClass(ct) {
 			if (!ct.validUntil) return ''
 			const now = new Date()
@@ -150,10 +173,18 @@ export default {
 			return ''
 		},
 
+		/**
+		 * @param row
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		selectCaseType(row) {
 			this.$emit('select', row.id)
 		},
 
+		/**
+		 * @param ct
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		async setDefault(ct) {
 			this.error = ''
 			if (ct.isDraft) {
@@ -164,6 +195,10 @@ export default {
 			await this.settingsStore.saveSettings(config)
 		},
 
+		/**
+		 * @param ct
+		 * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md
+		 */
 		async confirmDelete(ct) {
 			this.error = ''
 

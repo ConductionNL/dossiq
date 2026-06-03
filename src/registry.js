@@ -1,0 +1,123 @@
+// SPDX-License-Identifier: EUPL-1.2
+// Copyright (C) 2026 Conduction B.V.
+//
+// V2 component registry for procest.
+//
+// Every entry here corresponds to a manifest `type: "custom"` page or a
+// sidebar tab that uses `component:` instead of `widgets[]`. The registry
+// maps the string key used in the manifest to a `{ kind, component }` entry
+// so CnAppRoot can resolve the component at render time.
+//
+// Recognised kinds: page, modal, widget, form-field, cell-renderer
+//
+// Migration notes:
+// - `voorstelReminder` is a function (row-action handler), not a component.
+//   It cannot be a registry entry and stays in customComponents.js.
+// - `VisualWorkflowEditor` is intentionally kept out of the registry because
+//   @vue-flow/{core,controls,background} are Vue-3-only and break the Vue 2
+//   build. The manifest page WorkflowTemplateEditor remains `type:"custom"` but
+//   unresolvable until procest migrates to Vue 3 or a Vue-2-compatible flow lib.
+//   See customComponents.js for context.
+// - `MapComponent` is kept in customComponents.js for backward compat with any
+//   manifest entries that reference it by string outside the registry. No
+//   current manifest pages reference MapComponent by key directly; retained as
+//   a pass-through.
+
+import MyWorkView from './views/MyWork.vue'
+import WerkvoorraadView from './views/Werkvoorraad.vue'
+import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
+import AdminRootView from './views/settings/AdminRoot.vue'
+import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
+import PublicCaseView from './views/public/PublicCaseView.vue'
+import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
+import PublicStatusPage from './views/public/PublicStatusPage.vue'
+
+// Detail-tab components (used as `component:` in sidebarTabs[])
+import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
+import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
+import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
+import AdviesPanel from './views/cases/components/AdviesPanel.vue'
+
+/**
+ * V2 component registry.
+ *
+ * Keys must match the `component` strings used in the manifest.
+ * All full-page custom routes and sidebar-tab components are kind: "page" —
+ * the v2 renderer resolves any `component` key from this registry regardless
+ * of whether it appears in a top-level page or in a sidebarTab entry.
+ *
+ * @type {Record<string, { kind: string, component: object }>}
+ */
+const registry = {
+	// --- Genuine exceptions: no abstract manifest analogue. ---
+	MyWorkView: {
+		kind: 'page',
+		component: MyWorkView,
+		_note: 'Bespoke 4-tab filter UI mixing case + task entities; no index-page analogue.',
+	},
+	WerkvoorraadView: {
+		kind: 'page',
+		component: WerkvoorraadView,
+		_note: 'KPI-strip-driven work queue.',
+	},
+
+	// --- Lib gaps: would migrate once lib gains the missing primitive. ---
+	DoorlooptijdView: {
+		kind: 'page',
+		component: DoorlooptijdView,
+		_note: 'KPI dashboard with apexcharts; pending lib chart-widget support.',
+	},
+	AdminRootView: {
+		kind: 'page',
+		component: AdminRootView,
+		_note: 'Multi-tab admin root; pending lib settings-custom-slot support.',
+	},
+
+	// --- Migration cost: deferred to a follow-up. ---
+	VoorstelDetailView: {
+		kind: 'page',
+		component: VoorstelDetailView,
+		_note: 'Parafeerroute multi-step approver flow; complex enough to defer.',
+	},
+
+	// --- Anonymous-public routes (no auth, no main menu). ---
+	PublicCaseView: {
+		kind: 'page',
+		component: PublicCaseView,
+	},
+	PublicAppointmentPage: {
+		kind: 'page',
+		component: PublicAppointmentPage,
+	},
+	PublicStatusPage: {
+		kind: 'page',
+		component: PublicStatusPage,
+	},
+
+	// --- Detail-tab components (sidebar component: entries). ---
+	// These resolve when a sidebarTab uses `component: "<key>"` instead of
+	// a `widgets[]` array. CnDetailPage injects the resolved component into
+	// the tab panel slot.
+	CaseTasksTab: {
+		kind: 'page',
+		component: CaseTasksTab,
+		_note: 'Tasks where task.case === parent.id',
+	},
+	CaseDecisionsTab: {
+		kind: 'page',
+		component: CaseDecisionsTab,
+		_note: 'Decisions where decision.case === parent.id',
+	},
+	CaseDocumentsTab: {
+		kind: 'page',
+		component: CaseDocumentsTab,
+		_note: 'Documents where document.case === parent.id',
+	},
+	AdviesPanel: {
+		kind: 'page',
+		component: AdviesPanel,
+		_note: 'Advice/advies panel used in CaseDetail and BezwaarDetail sidebar tabs',
+	},
+}
+
+export default registry

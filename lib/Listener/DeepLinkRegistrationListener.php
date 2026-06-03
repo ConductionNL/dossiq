@@ -8,9 +8,12 @@
  * @category Listener
  * @package  OCA\Procest\Listener
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
@@ -44,6 +47,8 @@ class DeepLinkRegistrationListener implements IEventListener
      * @param Event $event The event to handle
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md
      */
     public function handle(Event $event): void
     {
@@ -54,17 +59,17 @@ class DeepLinkRegistrationListener implements IEventListener
         // Register case detail deep links.
         $event->register(
             appId: 'procest',
-            registerSlug: 'case-management',
+            registerSlug: 'procest',
             schemaSlug: 'case',
-            urlTemplate: '/apps/procest/#/cases/{uuid}'
+            urlTemplate: '/apps/procest/cases/{uuid}'
         );
 
         // Register task detail deep links.
         $event->register(
             appId: 'procest',
-            registerSlug: 'case-management',
+            registerSlug: 'procest',
             schemaSlug: 'task',
-            urlTemplate: '/apps/procest/#/tasks/{uuid}'
+            urlTemplate: '/apps/procest/tasks/{uuid}'
         );
     }//end handle()
 }//end class

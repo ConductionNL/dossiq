@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { generateUrl } from '@nextcloud/router'
 
 export const useSettingsStore = defineStore('settings', {
 	state: () => ({
@@ -18,12 +19,13 @@ export const useSettingsStore = defineStore('settings', {
 		getIsAdmin: (state) => state.isAdmin,
 	},
 	actions: {
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async fetchSettings() {
 			this.loading = true
 			this.error = null
 
 			try {
-				const response = await fetch('/apps/procest/api/settings', {
+				const response = await fetch(generateUrl('/apps/procest/api/settings'), {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
@@ -52,12 +54,16 @@ export const useSettingsStore = defineStore('settings', {
 			}
 		},
 
+		/**
+		 * @param settingsData
+		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 */
 		async saveSettings(settingsData) {
 			this.loading = true
 			this.error = null
 
 			try {
-				const response = await fetch('/apps/procest/api/settings', {
+				const response = await fetch(generateUrl('/apps/procest/api/settings'), {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',

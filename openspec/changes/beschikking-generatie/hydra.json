@@ -1,0 +1,8 @@
+{
+  "spec_slug": "beschikking-generatie",
+  "title": "Beschikking compose \u2192 ondertekenen \u2192 Berichtenbox \u2192 archief",
+  "app": "procest",
+  "repo": "https://github.com/ConductionNL/procest",
+  "depends_on": [],
+  "issue": null
+}

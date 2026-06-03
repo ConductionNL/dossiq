@@ -39,6 +39,7 @@
 							v-model="form.priority"
 							:options="priorityOptions"
 							:clearable="false"
+							:aria-label-combobox="t('procest', 'Priority')"
 							:placeholder="t('procest', 'Select priority')" />
 					</div>
 					<div class="form-group">
@@ -62,14 +63,18 @@
 
 				<!-- Case -->
 				<div class="form-group">
-					<label>{{ t('procest', 'Case') }}</label>
+					<label>{{ t('procest', 'Case') }} *</label>
 					<NcSelect
 						v-model="form.case"
 						:options="caseOptions"
+						:aria-label-combobox="t('procest', 'Case')"
 						:clearable="true"
 						label="label"
 						:reduce="o => o.value"
-						:placeholder="t('procest', 'Link to a case (optional)')" />
+						:placeholder="t('procest', 'Link to a case')" />
+					<p v-if="errors.case" class="form-error">
+						{{ errors.case }}
+					</p>
 				</div>
 			</div>
 
@@ -121,9 +126,11 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/task-management/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/changes/task-management/tasks.md */
 		caseOptions() {
 			return this.cases.map(c => ({
 				value: c.id,
@@ -131,16 +138,25 @@ export default {
 			}))
 		},
 	},
+	/** @spec openspec/changes/task-management/tasks.md */
 	async mounted() {
 		const results = await this.objectStore.fetchCollection('case', { _limit: 200 })
 		this.cases = results || []
 	},
 	methods: {
+		/** @spec openspec/changes/task-management/tasks.md */
 		async submit() {
 			this.errors = {}
 
 			if (!this.form.title || !this.form.title.trim()) {
 				this.errors.title = t('procest', 'Title is required')
+			}
+
+			if (!this.form.case) {
+				this.errors.case = t('procest', 'Case is required')
+			}
+
+			if (Object.keys(this.errors).length > 0) {
 				return
 			}
 

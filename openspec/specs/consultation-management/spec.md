@@ -1,142 +1,103 @@
-# consultation-management Specification
+---
+retrofit: true
+---
+
+# Consultation Management Specification
 
 ## Purpose
-Implement structured inter-departmental consultation (adviesaanvraag) as a first-class entity in Procest. A consultation is a mini-case linked to a parent case, with its own lifecycle, assigned participants, documents, due dates, and formal response. This replaces informal email-based advice requests with tracked, auditable departmental coordination.
 
-Structured consultation management -- where consultations are linked objects with their own status workflow, participant tracking, document exchange, and due date enforcement -- is an established pattern in enterprise case management. In Dutch government practice, adviesaanvragen between departments (e.g., requesting fire safety advice from the brandweer for a building permit) are common and currently lack formal tracking in most case management systems.
+@e2e exclude Consultation management is V1; consultation lifecycle endpoints are backend-only in the current build.
+
+Provide first-class lifecycle management for inter-departmental consultations (adviesaanvragen) — separate entities linked to a parent zaak, with their own create/list/status-transition/advice-submission/overdue-detection surface — so that a casehandler can request structured advice from another department, the advising department can respond with one of four codified outcomes, and the system can highlight requests that have passed their deadline.
 
 ## Requirements
 
-### Requirement: Consultations MUST be first-class entities linked to parent cases
-A consultation (adviesaanvraag) is stored as an OpenRegister object with a dedicated schema.
+### REQ-001: Consultation REST endpoints (index, create, updateStatus, submitResponse, overdue)
 
-#### Scenario: Create a consultation for a case
-- GIVEN case `zaak-1` (type: `omgevingsvergunning`) requires fire safety advice
-- WHEN a case worker creates a consultation
-- THEN a consultation object MUST be created with:
-  - `parentZaak`: reference to `zaak-1`
-  - `adviesInstantie`: the department or organization being consulted (e.g., "Brandweer")
-  - `onderwerp`: subject of the consultation
-  - `vraagstelling`: the specific question(s) being asked
-  - `uiterlijkeReactiedatum`: the deadline for response
-  - `status`: initial status `open`
-  - `aanvrager`: the case worker who initiated the request
+The system SHALL expose five `@NoAdminRequired` JSON endpoints on `ConsultationController` — `index(caseId)`, `create()`, `updateStatus(id)`, `submitResponse(id)`, `overdue()` — that wrap `\RuntimeException` payloads as HTTP 400 `{error: <message>}` and delegate all business logic to `ConsultationService`.
 
-#### Scenario: Multiple consultations per case
-- GIVEN case `zaak-1` needs advice from both Brandweer and Welstandscommissie
-- WHEN two consultations are created
-- THEN both MUST be visible in the case's consultation list
-- AND each MUST have independent lifecycles
+#### Scenario: Read endpoints
 
-### Requirement: Consultations MUST have their own lifecycle
-A consultation progresses through statuses independently of the parent case.
+- WHEN `index(caseId)` or `overdue()` is called
+- THEN the controller SHALL return `{results: [...]}` with the service's response (empty array on OpenRegister unavailable, not an error)
 
-#### Scenario: Consultation lifecycle
-- GIVEN consultation `cons-1` is created with status `open`
-- WHEN the consulted department acknowledges receipt
-- THEN the status MUST change to `in_behandeling`
-- WHEN the department submits their advice
-- THEN the status MUST change to `advies_uitgebracht`
-- WHEN the case worker reviews and closes the consultation
-- THEN the status MUST change to `afgesloten`
+#### Scenario: Write-endpoint envelope
 
-#### Scenario: Overdue consultation
-- GIVEN consultation `cons-1` has `uiterlijkeReactiedatum` of 2026-03-20
-- AND the current date is 2026-03-21
-- AND the status is still `in_behandeling`
-- THEN the consultation MUST be flagged as overdue
-- AND a notification MUST be sent to both the requesting case worker and the consulted department
+- WHEN `create`, `updateStatus`, or `submitResponse` is called
+- THEN the controller SHALL read `getContent()`, JSON-decode it (falling back to `[]` on non-array), delegate, and catch `\RuntimeException` returning HTTP 400 `{error: <message>}`
+- AND `create` SHALL return HTTP 201 on success
 
-### Requirement: Consultations MUST support document exchange
-Both the requester and the consulted party can attach documents.
+### REQ-002: Consultation creation with required-field guards
 
-#### Scenario: Attach context documents to consultation
-- GIVEN case `zaak-1` has building plans as documents
-- WHEN creating consultation `cons-1` for fire safety advice
-- THEN the case worker MUST be able to link relevant case documents to the consultation
-- AND the consulted department MUST be able to view those documents
+The system SHALL require both `parentZaak` (the case the consultation belongs to) and `adviesInstantie` (the department or organisation being asked) on creation, default `status` to `open`, stamp `createdAt` with ISO 8601 timestamp, and persist via OpenRegister.
 
-#### Scenario: Consulted party uploads advice document
-- GIVEN consultation `cons-1` is `in_behandeling`
-- WHEN the Brandweer uploads their formal advice as a PDF
-- THEN the document MUST be linked to the consultation
-- AND it MUST also be accessible from the parent case's document list
+#### Scenario: Missing required field
 
-### Requirement: Consultation responses MUST be structured
-The advice response includes a formal conclusion and optional conditions.
+- WHEN `createConsultation` is called with empty `parentZaak` or empty `adviesInstantie`
+- THEN the service SHALL throw `\RuntimeException('parentZaak is required')` or `\RuntimeException('adviesInstantie is required')` before invoking OpenRegister
 
-#### Scenario: Submit positive advice
-- GIVEN consultation `cons-1` asks "Is the building fire-safe?"
-- WHEN the Brandweer submits their response
-- THEN the response MUST include:
-  - `advies`: enum value (`positief`, `positief_met_voorwaarden`, `negatief`, `niet_van_toepassing`)
-  - `toelichting`: explanation text
-  - `voorwaarden`: optional list of conditions (if `positief_met_voorwaarden`)
-  - `datum`: date the advice was given
+#### Scenario: OpenRegister unavailable
 
-#### Scenario: Advice with conditions flows back to parent case
-- GIVEN consultation `cons-1` has advice `positief_met_voorwaarden` with conditions
-- WHEN the case worker views the parent case
-- THEN the conditions MUST be visible as action items on the case
-- AND the case worker MUST be able to mark conditions as addressed
+- WHEN OpenRegister is unavailable, the consultation schema is unconfigured, or the register id is empty
+- THEN the service SHALL throw `\RuntimeException('OpenRegister is not available')` or `\RuntimeException('Consultation schema not configured')`
 
-### Requirement: Consultations MUST be visible in the parent case timeline
-All consultation events appear in the parent case's activity feed.
+#### Scenario: Success shape
 
-#### Scenario: Consultation events in case timeline
-- GIVEN case `zaak-1` has consultation `cons-1`
-- WHEN viewing the case timeline
-- THEN the following events MUST appear:
-  - "Adviesaanvraag created for Brandweer" (with date and requester)
-  - "Brandweer acknowledged consultation" (with date)
-  - "Brandweer submitted advice: positief met voorwaarden" (with date)
-  - "Consultation closed" (with date and closer)
+- WHEN creation succeeds
+- THEN the service SHALL return `{id: <new uuid>, status: 'open'}` and log `'Consultation created: <uuid> for case <parentZaak>'`
 
-### Requirement: Dashboard MUST show pending consultations
-Case workers and department heads need oversight of open consultations.
+### REQ-003: Consultation status lifecycle with afgesloten timestamp
 
-#### Scenario: My pending consultations view
-- GIVEN a Brandweer user has 3 open consultations assigned to their department
-- WHEN they view the consultations dashboard
-- THEN all 3 MUST be listed with parent case reference, subject, and deadline
-- AND overdue items MUST be highlighted
+The system SHALL accept status transitions only to one of `open`, `in_behandeling`, `advies_uitgebracht`, `afgesloten`. When the target status is `afgesloten`, the service SHALL stamp `closedAt` with the current timestamp before persisting.
 
-### Current Implementation Status
+#### Scenario: Reject invalid status
 
-**Not yet implemented.** No consultation-specific (adviesaanvraag) schemas, controllers, services, or Vue components exist in the Procest codebase.
+- WHEN `updateStatus` is called with a status outside the enum
+- THEN the service SHALL throw `\RuntimeException('Invalid status: <value>')` before contacting OpenRegister
 
-**Foundation available:**
-- Case detail view (`src/views/cases/CaseDetail.vue`) provides the integration point where a "Consultations" panel could be added.
-- Activity timeline component (`src/views/cases/components/ActivityTimeline.vue`) could display consultation events.
-- Task management infrastructure (`src/views/tasks/`) could model consultation steps as tasks assigned to the consulted department.
-- The `role` schema in OpenRegister could represent the consulted party.
-- The object store with `relationsPlugin` supports linking objects (consultations to parent cases).
-- Document management (filesPlugin) supports attaching documents to consultations.
+#### Scenario: Closure stamps closedAt
 
-**Partial implementations:** None.
+- WHEN `updateStatus` transitions to `afgesloten`
+- THEN the update payload SHALL include `closedAt = date('Y-m-d\TH:i:s')` and the persisted object SHALL carry both `status` and `closedAt`
 
-### Standards & References
+#### Scenario: Other transitions update only status
 
-- **Awb (Algemene wet bestuursrecht)**: Administrative law provisions for inter-departmental consultation (adviesrecht, 3:5-3:9 Awb).
-- **ZGW Zaken API (VNG)**: Consultations could be modeled as related zaken or as custom zaakobjecten.
-- **GEMMA**: Adviesaanvraag is a standard interaction pattern in GEMMA ketenprocessen.
-- **Common Ground**: Inter-organizational data exchange follows Common Ground API-first principles.
-- **BIO**: Security requirements for sharing case information between departments/organizations.
+- WHEN transitioning to `open`, `in_behandeling`, or `advies_uitgebracht`
+- THEN the update payload SHALL contain only `{status: <new>}` and the service SHALL return `{id, status}`
 
-### Specificity Assessment
+### REQ-004: Advice response submission with enum validation
 
-This spec provides a solid functional overview with clear lifecycle, document exchange, and structured response requirements.
+The system SHALL accept advice responses with `advies` constrained to `positief`, `positief_met_voorwaarden`, `negatief`, `niet_van_toepassing`, optional `toelichting` (free text), and optional `voorwaarden` (any structured payload, JSON-encoded for storage); on submission it SHALL stamp `adviesDatum` (today, date only) and transition `status` to `advies_uitgebracht`.
 
-**What's missing:**
-- No OpenRegister schema definition for the consultation entity (formal fields, types, validations).
-- No specification of how consulted parties receive and interact with consultations (separate view, shared case access, or email notification with link).
-- No API endpoints for consultation CRUD.
-- No specification of permission model (can the consulted party see the full case or only the consultation context?).
-- No specification of how conditions from advice flow back as actionable items on the parent case.
-- No UI wireframes for the consultation panel, creation dialog, or department inbox.
+#### Scenario: Reject invalid advies enum
 
-**Open questions:**
-1. Should consultations be modeled as sub-cases, as OpenRegister objects with a dedicated schema, or as tasks?
-2. How do external organizations (e.g., Brandweer) access the consultation -- via Nextcloud account, share link, or email?
-3. Should the system support parallel consultations with a "wait for all" or "wait for any" completion rule?
-4. How are departments defined in the system -- Nextcloud groups, OpenRegister objects, or configuration?
+- WHEN `submitResponse` is called with `advies` not in the four-value enum
+- THEN the service SHALL throw `\RuntimeException('Invalid advice type: <value>')` before contacting OpenRegister
+
+#### Scenario: Conditions get JSON-encoded
+
+- WHEN `voorwaarden` is supplied
+- THEN the service SHALL `json_encode` it into the persisted record; absent input SHALL persist as `null`
+
+#### Scenario: Success shape and side effect
+
+- WHEN submission succeeds
+- THEN the service SHALL set `adviesDatum = date('Y-m-d')`, set `status = 'advies_uitgebracht'`, log `'Consultation <id> advice submitted: <advies>'`, and return `{id, advies, status: 'advies_uitgebracht'}`
+
+### REQ-005: Overdue consultation detection via uiterlijkeReactiedatum
+
+The system SHALL surface consultations whose `uiterlijkeReactiedatum` is before today and whose status is still `open` or `in_behandeling`.
+
+#### Scenario: Filter scope
+
+- WHEN `getOverdueConsultations` runs
+- THEN it SHALL fetch up to 200 consultations with `status=open` AND 200 with `status=in_behandeling`, merge them, and filter to those with non-empty `uiterlijkeReactiedatum < today (Y-m-d)`
+
+#### Scenario: OpenRegister unavailable
+
+- WHEN OpenRegister is unavailable or the schema is unconfigured
+- THEN the service SHALL return an empty array (no error)
+
+#### Notes
+
+- The 200-item per-status cap is a hardcoded pagination limit; on instances with very large consultation backlogs this is observed-but-suspicious and may silently drop overdue items beyond that window — flagged for future tightening.

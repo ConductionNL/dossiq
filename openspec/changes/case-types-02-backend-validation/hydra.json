@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "case-types-02-backend-validation",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["case-types-01-seed-and-stores"]
+}

@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "vth-workflow-configuration-04-leges-config-ui",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["vth-workflow-configuration-03-leges-engine"]
+}

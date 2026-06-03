@@ -8,13 +8,18 @@
  * @category Middleware
  * @package  OCA\Procest\Middleware
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-4
  */
 
 declare(strict_types=1);
@@ -51,6 +56,24 @@ class ZgwAuthMiddleware extends Middleware
         'documenten'   => 'drc',
         'notificaties' => 'nrc',
         'autorisaties' => 'ac',
+    ];
+
+    /**
+     * Canonical scope-name prefix for each ZGW component.
+     *
+     * A scope grant like "besluiten.aanmaken" is only valid for the BRC component;
+     * it must NOT satisfy a ZRC "zaken.aanmaken" request even though both share
+     * the ".aanmaken" suffix.  This map enforces the full scope-name match.
+     *
+     * @var array<string, string>
+     */
+    private const COMPONENT_SCOPE_PREFIX = [
+        'zrc' => 'zaken',
+        'ztc' => 'catalogi',
+        'brc' => 'besluiten',
+        'drc' => 'documenten',
+        'nrc' => 'notificaties',
+        'ac'  => 'autorisaties',
     ];
 
     /**
@@ -172,6 +195,7 @@ class ZgwAuthMiddleware extends Middleware
         }
 
         // Validate JWT signature via OpenRegister's AuthorizationService.
+        // M3: Log detailed message server-side; surface only a generic message to caller.
         try {
             $this->authorizationService->authorizeJwt(authorization: $authorization);
         } catch (\Exception $e) {
@@ -179,7 +203,7 @@ class ZgwAuthMiddleware extends Middleware
                 'ZGW auth failed: '.$e->getMessage()
             );
             throw new ZgwAuthException(
-                message: $e->getMessage(),
+                message: 'Authenticatiegegevens zijn niet geldig.',
                 statusCode: Http::STATUS_FORBIDDEN
             );
         }
@@ -236,6 +260,16 @@ class ZgwAuthMiddleware extends Middleware
     /**
      * Enforce ZGW scope-based authorization.
      *
+     * The ZGW component is derived from the request URL path, which always
+     * contains the API group name as the third path segment after "/api/zgw/".
+     * For example: /index.php/apps/procest/api/zgw/zaken/v1/zaken → "zaken".
+     * This replaces the dead `getParam('zgwApi')` lookup: no route in
+     * appinfo/routes.php declares a {zgwApi} placeholder, so that call always
+     * returned '' and the middleware short-circuited to 403 for every non-
+     * superuser request (SB1 from wave-11 calibration review).
+     *
+     * Fail-closed: if the component cannot be derived from the URL, deny.
+     *
      * @param array $authConfig The consumer's authorization configuration
      *
      * @return void
@@ -245,9 +279,8 @@ class ZgwAuthMiddleware extends Middleware
     private function enforceScopes(array $authConfig): void
     {
         $scopes    = $authConfig['scopes'] ?? [];
-        $zgwApi    = $this->request->getParam(key: 'zgwApi', default: '');
         $method    = $this->request->getMethod();
-        $component = self::API_TO_COMPONENT[$zgwApi] ?? null;
+        $component = $this->deriveComponentFromUrl();
 
         if ($component === null) {
             throw new ZgwAuthException(
@@ -301,18 +334,56 @@ class ZgwAuthMiddleware extends Middleware
             return false;
         }
 
-        // Check scope includes the required action.
-        $grantedScopes = $scopeGrant['scopes'] ?? [];
+        // Check scope includes the required action with the correct resource prefix.
+        // A grant "besluiten.aanmaken" must NOT satisfy a ZRC "zaken.aanmaken" request;
+        // verify that both the suffix (action) AND the prefix (resource) match.
+        $expectedPrefix = self::COMPONENT_SCOPE_PREFIX[$component] ?? $component;
+        $grantedScopes  = $scopeGrant['scopes'] ?? [];
 
         foreach ($grantedScopes as $scope) {
             $parts = explode(separator: '.', string: $scope);
-            if (count(value: $parts) === 2 && $parts[1] === $requiredSuffix) {
+            if (count(value: $parts) === 2
+                && $parts[0] === $expectedPrefix
+                && $parts[1] === $requiredSuffix
+            ) {
                 return true;
             }
         }
 
         return false;
     }//end scopeGrantCovers()
+
+    /**
+     * Derive the ZGW component code from the request URL path.
+     *
+     * Procest ZGW routes all follow the pattern:
+     *   /apps/procest/api/zgw/{apiGroup}/v1/...
+     * (or with index.php prefix in some NC configurations)
+     *
+     * The API group name ("zaken", "catalogi", "besluiten", etc.) is extracted
+     * via regex and mapped to its component code via API_TO_COMPONENT.
+     *
+     * Returns null (fail-closed) if the URL does not match the expected pattern
+     * or if the extracted group is not a known ZGW API group.
+     *
+     * @return string|null The component code (e.g. 'zrc'), or null if unknown.
+     */
+    private function deriveComponentFromUrl(): ?string
+    {
+        $uri = $this->request->getRequestUri();
+
+        // Match /api/zgw/{apiGroup}/v1/... anywhere in the path.
+        if (preg_match('#/api/zgw/([^/]+)/v1#', $uri, $matches) !== 1) {
+            $this->logger->warning(
+                'ZgwAuthMiddleware: could not derive ZGW API group from URI',
+                ['uri' => $uri]
+            );
+            return null;
+        }
+
+        $apiGroup = $matches[1];
+        return self::API_TO_COMPONENT[$apiGroup] ?? null;
+    }//end deriveComponentFromUrl()
 
     /**
      * Decode the JWT payload without verification (already verified by authorizeJwt).

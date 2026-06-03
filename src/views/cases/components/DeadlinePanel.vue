@@ -94,24 +94,31 @@ export default {
 	},
 	emits: ['extend'],
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		formattedStartDate() {
 			return formatDate(this.startDate)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		formattedDeadline() {
 			return formatDate(this.deadline)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		formattedProcessingDeadline() {
 			return this.processingDeadline ? formatDuration(this.processingDeadline) : '—'
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		formattedExtensionPeriod() {
 			return this.extensionPeriod ? formatDuration(this.extensionPeriod) : '—'
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		daysElapsed() {
 			return getDaysElapsed(this.startDate)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		countdown() {
 			return formatDeadlineCountdown({ deadline: this.deadline }, this.isFinal)
 		},
+		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		canExtend() {
 			return this.extensionAllowed && this.extensionCount === 0 && !this.isFinal
 		},

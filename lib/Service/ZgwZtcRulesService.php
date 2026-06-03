@@ -8,7 +8,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -40,6 +40,8 @@
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
  * @SuppressWarnings(PHPMD.NPathComplexity)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-5
  */
 
 declare(strict_types=1);
@@ -136,6 +138,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function checkConceptProtection(
         string $resource,
@@ -189,6 +193,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @param string $resource The resource name
      *
      * @return array The body with concept defaulted
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function defaultConcept(array $body, string $resource): array
     {
@@ -211,6 +217,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @param array|null $existingObject The existing object data
      *
      * @return array The body with concept preserved
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function preserveConcept(array $body, string $resource, ?array $existingObject): array
     {
@@ -249,6 +257,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
      * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function rulesZaaktypenCreate(array $body): array
     {
@@ -324,6 +334,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @param array $body The ZGW request body
      *
      * @return array The validation result
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function rulesBesluittypenCreate(array $body): array
     {
@@ -369,6 +381,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW resolution of omschrijving/UUID/URL
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function rulesZaaktypeinformatieobjecttypenCreate(array $body): array
     {
@@ -433,6 +447,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function rulesResultaattypenCreate(array $body): array
     {

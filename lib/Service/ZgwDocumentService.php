@@ -9,7 +9,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -18,6 +18,8 @@
  * @link https://procest.nl
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -66,6 +68,8 @@ class ZgwDocumentService
      * @param string $content  The base64-encoded file content
      *
      * @return int The file size in bytes
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function storeBase64(string $uuid, string $fileName, string $content): int
     {
@@ -89,6 +93,8 @@ class ZgwDocumentService
      * @param string $content  The raw binary content
      *
      * @return int The file size in bytes
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function storeRaw(string $uuid, string $fileName, string $content): int
     {
@@ -108,6 +114,8 @@ class ZgwDocumentService
      * @return string The file content
      *
      * @throws NotFoundException If the file does not exist.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function getContent(string $uuid, string $fileName): string
     {
@@ -127,6 +135,8 @@ class ZgwDocumentService
      * @param string $fileName The file name
      *
      * @return bool True if the file exists
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function fileExists(string $uuid, string $fileName): bool
     {
@@ -145,6 +155,8 @@ class ZgwDocumentService
      * @param string $uuid The document UUID
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function deleteFiles(string $uuid): void
     {
@@ -171,6 +183,8 @@ class ZgwDocumentService
      * @return string The MIME type
      *
      * @throws NotFoundException If the file does not exist.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function getMimeType(string $uuid, string $fileName): string
     {
@@ -191,6 +205,8 @@ class ZgwDocumentService
      * @param string $content    The raw binary chunk content
      *
      * @return int The chunk size in bytes
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function storeChunk(string $uuid, int $volgnummer, string $content): int
     {
@@ -209,6 +225,8 @@ class ZgwDocumentService
      * @param int    $totalParts The expected total number of parts
      *
      * @return array<int> List of volgnummers that have been uploaded
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function getUploadedChunks(string $uuid, int $totalParts): array
     {
@@ -240,6 +258,8 @@ class ZgwDocumentService
      * @return int The merged file size in bytes
      *
      * @throws InvalidArgumentException If not all chunks are present.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function mergeChunks(string $uuid, string $fileName, int $totalParts): int
     {

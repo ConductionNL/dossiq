@@ -10,13 +10,18 @@
  * @category Repair
  * @package  OCA\Procest\Repair
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-5
  */
 
 declare(strict_types=1);
@@ -81,6 +86,8 @@ class LoadDefaultZgwMappings implements IRepairStep
      * @param IOutput $output The output interface for progress reporting
      *
      * @return void
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function run(IOutput $output): void
     {
@@ -183,6 +190,8 @@ class LoadDefaultZgwMappings implements IRepairStep
      * @return array<string, array> Mapping configurations keyed by resource key
      *
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function getDefaultMappings(string $registerId): array
     {

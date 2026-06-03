@@ -8,7 +8,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -59,6 +59,8 @@
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
  * @SuppressWarnings(PHPMD.NPathComplexity)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -86,6 +88,8 @@ class ZgwBrcRulesService extends ZgwRulesBase
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function rulesBesluitenCreate(array $body): array
     {
@@ -143,6 +147,8 @@ class ZgwBrcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function rulesBesluitenUpdate(array $body, ?array $existingObject=null): array
     {
@@ -182,6 +188,8 @@ class ZgwBrcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @see rulesBesluitenUpdate() Same immutability rules apply.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function rulesBesluitenPatch(array $body, ?array $existingObject=null): array
     {
@@ -211,6 +219,8 @@ class ZgwBrcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function rulesBesluitinformatieobjectenCreate(array $body): array
     {

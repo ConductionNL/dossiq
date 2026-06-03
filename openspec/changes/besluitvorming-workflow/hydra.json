@@ -1,0 +1,8 @@
+{
+  "spec_slug": "besluitvorming-workflow",
+  "title": "Besluitvorming Workflow",
+  "app": "procest",
+  "repo": "https://github.com/ConductionNL/procest",
+  "depends_on": [],
+  "issue": null
+}

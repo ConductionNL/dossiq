@@ -8,13 +8,17 @@
 		</div>
 
 		<!-- Filter tabs -->
-		<div class="my-work__tabs">
+		<div class="my-work__tabs" role="tablist" :aria-label="t('procest', 'Filter by type')">
 			<button
 				v-for="tab in tabs"
 				:key="tab.key"
+				role="tab"
+				:aria-selected="activeTab === tab.key"
 				class="my-work__tab"
 				:class="{ 'my-work__tab--active': activeTab === tab.key }"
-				@click="activeTab = tab.key">
+				@click="activeTab = tab.key"
+				@keydown.enter="activeTab = tab.key"
+				@keydown.space.prevent="activeTab = tab.key">
 				{{ tab.label }} ({{ tab.count }})
 			</button>
 
@@ -25,6 +29,10 @@
 					@change="onToggleCompleted">
 				{{ t('procest', 'Show completed') }}
 			</label>
+
+			<router-link :to="{ name: 'Tasks' }" class="my-work__all-tasks-link">
+				{{ t('procest', 'All tasks') }}
+			</router-link>
 		</div>
 
 		<!-- Loading state -->
@@ -50,8 +58,11 @@
 			</template>
 		</NcEmptyContent>
 
+		<!-- Parafering inbox -->
+		<ParafeerInbox v-if="!loading" />
+
 		<!-- Grouped sections -->
-		<template v-else>
+		<template v-if="!loading">
 			<!-- Overdue -->
 			<div v-if="filteredGroups.overdue.length > 0" class="my-work__section my-work__section--overdue">
 				<h3 class="my-work__section-header my-work__section-header--overdue">
@@ -62,12 +73,18 @@
 					v-for="item in filteredGroups.overdue"
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row my-work__row--overdue"
-					@click="onItemClick(item)">
+					tabindex="0"
+					role="listitem"
+					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}, ${item.daysText}`"
+					@click="onItemClick(item)"
+					@keydown.enter="onItemClick(item)"
+					@keydown.space.prevent="onItemClick(item)">
 					<span class="my-work__badge" :class="`my-work__badge--${item.type}`">
 						{{ item.type === 'case' ? t('procest', 'CASE') : t('procest', 'TASK') }}
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
 					<div class="my-work__deadline">
@@ -89,12 +106,18 @@
 					v-for="item in filteredGroups.dueThisWeek"
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row"
-					@click="onItemClick(item)">
+					tabindex="0"
+					role="listitem"
+					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}, ${item.daysText}`"
+					@click="onItemClick(item)"
+					@keydown.enter="onItemClick(item)"
+					@keydown.space.prevent="onItemClick(item)">
 					<span class="my-work__badge" :class="`my-work__badge--${item.type}`">
 						{{ item.type === 'case' ? t('procest', 'CASE') : t('procest', 'TASK') }}
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
 					<div class="my-work__deadline">
@@ -116,12 +139,18 @@
 					v-for="item in filteredGroups.upcoming"
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row"
-					@click="onItemClick(item)">
+					tabindex="0"
+					role="listitem"
+					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}, ${item.daysText}`"
+					@click="onItemClick(item)"
+					@keydown.enter="onItemClick(item)"
+					@keydown.space.prevent="onItemClick(item)">
 					<span class="my-work__badge" :class="`my-work__badge--${item.type}`">
 						{{ item.type === 'case' ? t('procest', 'CASE') : t('procest', 'TASK') }}
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
 					<div class="my-work__deadline">
@@ -143,12 +172,18 @@
 					v-for="item in filteredGroups.noDeadline"
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row"
-					@click="onItemClick(item)">
+					tabindex="0"
+					role="listitem"
+					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}`"
+					@click="onItemClick(item)"
+					@keydown.enter="onItemClick(item)"
+					@keydown.space.prevent="onItemClick(item)">
 					<span class="my-work__badge" :class="`my-work__badge--${item.type}`">
 						{{ item.type === 'case' ? t('procest', 'CASE') : t('procest', 'TASK') }}
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
 					<div class="my-work__deadline">
@@ -191,6 +226,7 @@
 import { NcLoadingIcon, NcEmptyContent } from '@nextcloud/vue'
 import AccountCheck from 'vue-material-design-icons/AccountCheck.vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
+import ParafeerInbox from './voorstellen/components/ParafeerInbox.vue'
 import { useObjectStore } from '../store/modules/object.js'
 import { getGroupedMyWorkItems } from '../utils/dashboardHelpers.js'
 import { fetchTasksForCases } from '../services/taskApi.js'
@@ -202,6 +238,7 @@ export default {
 		NcEmptyContent,
 		AccountCheck,
 		CheckCircle,
+		ParafeerInbox,
 	},
 	data() {
 		return {
@@ -212,18 +249,23 @@ export default {
 			normalizedTasks: [],
 			completedCases: [],
 			completedTasks: [],
+			caseTypeMap: {},
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/my-work/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		grouped() {
 			return getGroupedMyWorkItems(this.cases, this.normalizedTasks)
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		totalCount() {
 			return this.grouped.totalCount
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		caseCount() {
 			const all = [
 				...this.grouped.overdue,
@@ -233,6 +275,7 @@ export default {
 			]
 			return all.filter(i => i.type === 'case').length
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		taskCount() {
 			const all = [
 				...this.grouped.overdue,
@@ -242,6 +285,7 @@ export default {
 			]
 			return all.filter(i => i.type === 'task').length
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		tabs() {
 			return [
 				{ key: 'all', label: t('procest', 'All'), count: this.totalCount },
@@ -249,6 +293,7 @@ export default {
 				{ key: 'tasks', label: t('procest', 'Tasks'), count: this.taskCount },
 			]
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		filteredGroups() {
 			if (this.activeTab === 'all') return this.grouped
 			const filterType = this.activeTab === 'cases' ? 'case' : 'task'
@@ -259,6 +304,7 @@ export default {
 				noDeadline: this.grouped.noDeadline.filter(i => i.type === filterType),
 			}
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		completedItems() {
 			const items = []
 			for (const c of this.completedCases) {
@@ -279,6 +325,7 @@ export default {
 			}
 			return items
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		filteredCompletedItems() {
 			if (this.activeTab === 'all') return this.completedItems
 			const filterType = this.activeTab === 'cases' ? 'case' : 'task'
@@ -289,10 +336,22 @@ export default {
 		await this.fetchData()
 	},
 	methods: {
+		getCaseTypeName(caseTypeId) {
+			return this.caseTypeMap[caseTypeId] || ''
+		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		async fetchData() {
 			this.loading = true
 			try {
 				const currentUser = OC?.currentUser || ''
+
+				// Fetch case types for name resolution.
+				const caseTypes = await this.objectStore.fetchCollection('caseType', { _limit: 100 })
+				const map = {}
+				for (const ct of (caseTypes || [])) {
+					map[ct.id] = ct.title
+				}
+				this.caseTypeMap = map
 
 				// Fetch active cases assigned to current user.
 				const caseResults = await this.objectStore.fetchCollection('case', {
@@ -314,6 +373,7 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/changes/my-work/tasks.md */
 		async onToggleCompleted() {
 			if (!this.showCompleted) {
 				this.completedCases = []
@@ -367,6 +427,10 @@ export default {
 				console.warn('Failed to fetch completed items:', err)
 			}
 		},
+		/**
+		 * @param item
+		 * @spec openspec/changes/my-work/tasks.md
+		 */
 		onItemClick(item) {
 			if (item.type === 'case') {
 				this.$router.push({ name: 'CaseDetail', params: { id: item.id } })
@@ -437,6 +501,23 @@ export default {
 	cursor: pointer;
 	white-space: nowrap;
 	color: var(--color-text-maxcontrast);
+}
+
+.my-work__all-tasks-link {
+	margin-left: 8px;
+	padding: 6px 14px;
+	font-size: 14px;
+	border-radius: var(--border-radius-pill);
+	color: var(--color-primary-element);
+	text-decoration: none;
+	white-space: nowrap;
+	border: 1px solid var(--color-primary-element);
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.my-work__all-tasks-link:hover {
+	background: var(--color-primary-element-light);
+	color: var(--color-primary-element-light-text);
 }
 
 /* Sections */
@@ -552,5 +633,44 @@ export default {
 .my-work__priority {
 	color: var(--color-warning);
 	font-weight: bold;
+}
+
+.my-work__case-type {
+	font-size: 11px;
+	color: var(--color-text-maxcontrast);
+	font-style: italic;
+}
+
+/* Focus outline for keyboard navigation */
+.my-work__row:focus {
+	outline: 2px solid var(--color-primary-element);
+	outline-offset: -2px;
+	border-radius: var(--border-radius);
+}
+
+/* Responsive layout */
+@media (max-width: 768px) {
+	.my-work {
+		padding: 12px;
+	}
+
+	.my-work__tabs {
+		flex-wrap: wrap;
+	}
+
+	.my-work__row {
+		flex-wrap: wrap;
+		gap: 6px;
+		padding: 12px 10px;
+	}
+
+	.my-work__info {
+		width: calc(100% - 60px);
+	}
+
+	.my-work__deadline {
+		width: 100%;
+		padding-left: 56px;
+	}
 }
 </style>

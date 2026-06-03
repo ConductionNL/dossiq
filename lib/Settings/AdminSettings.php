@@ -8,9 +8,12 @@
  * @category Settings
  * @package  OCA\Procest\Settings
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
@@ -24,6 +27,7 @@ namespace OCA\Procest\Settings;
 use OCA\Procest\AppInfo\Application;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
+use OCP\AppFramework\Services\IInitialState;
 use OCP\Settings\ISettings;
 
 /**
@@ -34,10 +38,12 @@ class AdminSettings implements ISettings
     /**
      * Constructor.
      *
-     * @param IAppManager $appManager The app manager.
+     * @param IAppManager   $appManager   The app manager.
+     * @param IInitialState $initialState The initial state service.
      */
     public function __construct(
         private IAppManager $appManager,
+        private IInitialState $initialState,
     ) {
     }//end __construct()
 
@@ -50,10 +56,12 @@ class AdminSettings implements ISettings
     {
         $version = $this->appManager->getAppVersion(appId: Application::APP_ID);
 
+        $this->initialState->provideInitialState('version', $version);
+
         return new TemplateResponse(
             Application::APP_ID,
             'settings/admin',
-            ['version' => $version]
+            []
         );
     }//end getForm()
 

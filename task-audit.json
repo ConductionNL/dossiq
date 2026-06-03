@@ -1,0 +1,16 @@
+{
+  "spec": "openspec/changes/open-raadsinformatie",
+  "verified": [
+    {"task": "1", "file": "lib/Settings/ori_register.json", "ok": true},
+    {"task": "2", "file": "lib/Repair/RegisterOriRegister.php", "ok": true},
+    {"task": "3", "note": "OasService picks up register via authorization.read:public config", "ok": true},
+    {"task": "4", "note": "All 6 schemas have searchable:true in ori_register.json", "ok": true},
+    {"task": "5", "file": "lib/Service/VergaderingCaseService.php", "ok": true},
+    {"task": "5b", "file": "lib/BackgroundJob/VergaderingDeadlineJob.php", "ok": true},
+    {"task": "6", "note": "106 demo objects in ori_register.json components.objects", "ok": true},
+    {"task": "7", "file": "lib/Controller/RaadsinformatieFeedController.php", "ok": true},
+    {"task": "8", "file": "lib/Cron/OriDataQualityCheck.php", "ok": true}
+  ],
+  "stubs": [],
+  "missing_routes": []
+}

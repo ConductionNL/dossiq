@@ -8,7 +8,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -56,6 +56,8 @@
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.TooManyMethods)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-4
  */
 
 declare(strict_types=1);
@@ -84,6 +86,8 @@ class ZgwDrcRulesService extends ZgwRulesBase
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
      * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function rulesEnkelvoudiginformatieobjectenCreate(array $body): array
     {
@@ -153,6 +157,8 @@ class ZgwDrcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function rulesEnkelvoudiginformatieobjectenUpdate(
         array $body,
@@ -178,6 +184,8 @@ class ZgwDrcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function rulesEnkelvoudiginformatieobjectenPatch(
         array $body,
@@ -203,6 +211,8 @@ class ZgwDrcRulesService extends ZgwRulesBase
      * @return array The validation result
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function rulesEnkelvoudiginformatieobjectenDestroy(
         array $body,
@@ -260,6 +270,8 @@ class ZgwDrcRulesService extends ZgwRulesBase
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
      * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW business rules validation
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function rulesObjectinformatieobjectenCreate(array $body): array
     {
@@ -690,9 +702,13 @@ class ZgwDrcRulesService extends ZgwRulesBase
                 }
             }//end if
         } catch (\Throwable $e) {
+            // Fail-closed: treat an indeterminate check as a duplicate to prevent
+            // inadvertent duplicates when the storage backend is unavailable.
             $this->logger->warning(
-                'Drc-003: Uniqueness check failed for schema '.$schema.': '.$e->getMessage()
+                'Drc-003: Uniqueness check failed for schema {schema}: {message}',
+                ['schema' => $schema, 'message' => $e->getMessage()]
             );
+            return true;
         }//end try
 
         return false;

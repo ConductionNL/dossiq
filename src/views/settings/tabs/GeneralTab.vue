@@ -71,6 +71,7 @@
 			<NcSelect
 				:value="selectedOrigin"
 				:options="originOptions"
+				:aria-label-combobox="t('procest', 'Origin')"
 				@input="v => $emit('update', 'origin', v ? v.id : '')" />
 			<span v-if="errors.origin" class="field-error">{{ errors.origin }}</span>
 		</div>
@@ -78,23 +79,21 @@
 		<!-- Processing Deadline -->
 		<div class="form-group">
 			<label class="required">{{ t('procest', 'Processing deadline') }}</label>
-			<NcTextField
+			<DurationPicker
 				:value="form.processingDeadline"
-				:placeholder="t('procest', 'e.g., P56D (56 days)')"
-				:error="!!errors.processingDeadline"
-				:helper-text="errors.processingDeadline || deadlinePreview"
-				@update:value="v => $emit('update', 'processingDeadline', v)" />
+				preset-type="deadline"
+				@input="v => $emit('update', 'processingDeadline', v)" />
+			<span v-if="errors.processingDeadline" class="field-error">{{ errors.processingDeadline }}</span>
 		</div>
 
 		<!-- Service Target -->
 		<div class="form-group">
 			<label>{{ t('procest', 'Service target') }}</label>
-			<NcTextField
+			<DurationPicker
 				:value="form.serviceTarget"
-				:placeholder="t('procest', 'e.g., P42D (42 days)')"
-				:error="!!errors.serviceTarget"
-				:helper-text="errors.serviceTarget || serviceTargetPreview"
-				@update:value="v => $emit('update', 'serviceTarget', v)" />
+				preset-type="deadline"
+				@input="v => $emit('update', 'serviceTarget', v)" />
+			<span v-if="errors.serviceTarget" class="field-error">{{ errors.serviceTarget }}</span>
 		</div>
 
 		<!-- Extension Allowed -->
@@ -109,12 +108,11 @@
 		<!-- Extension Period (conditional) -->
 		<div v-if="form.extensionAllowed" class="form-group">
 			<label class="required">{{ t('procest', 'Extension period') }}</label>
-			<NcTextField
+			<DurationPicker
 				:value="form.extensionPeriod"
-				:placeholder="t('procest', 'e.g., P28D (28 days)')"
-				:error="!!errors.extensionPeriod"
-				:helper-text="errors.extensionPeriod || extensionPreview"
-				@update:value="v => $emit('update', 'extensionPeriod', v)" />
+				preset-type="extension"
+				@input="v => $emit('update', 'extensionPeriod', v)" />
+			<span v-if="errors.extensionPeriod" class="field-error">{{ errors.extensionPeriod }}</span>
 		</div>
 
 		<!-- Confidentiality -->
@@ -123,6 +121,7 @@
 			<NcSelect
 				:value="selectedConfidentiality"
 				:options="confidentialityOptions"
+				:aria-label-combobox="t('procest', 'Confidentiality')"
 				@input="v => $emit('update', 'confidentiality', v ? v.id : '')" />
 			<span v-if="errors.confidentiality" class="field-error">{{ errors.confidentiality }}</span>
 		</div>
@@ -199,6 +198,7 @@
 import { NcTextField, NcSelect, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 import { formatDuration } from '../../../utils/durationHelpers.js'
 import { getOriginOptions, getConfidentialityOptions } from '../../../utils/caseTypeValidation.js'
+import DurationPicker from '../components/DurationPicker.vue'
 
 export default {
 	name: 'GeneralTab',
@@ -206,6 +206,7 @@ export default {
 		NcTextField,
 		NcSelect,
 		NcCheckboxRadioSwitch,
+		DurationPicker,
 	},
 	props: {
 		form: {
@@ -218,26 +219,33 @@ export default {
 		},
 	},
 	computed: {
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		originOptions() {
 			return getOriginOptions()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		confidentialityOptions() {
 			return getConfidentialityOptions()
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		selectedOrigin() {
 			if (!this.form.origin) return null
 			return this.originOptions.find(o => o.id === this.form.origin) || null
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		selectedConfidentiality() {
 			if (!this.form.confidentiality) return null
 			return this.confidentialityOptions.find(o => o.id === this.form.confidentiality) || null
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		deadlinePreview() {
 			return this.form.processingDeadline ? formatDuration(this.form.processingDeadline) : ''
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		serviceTargetPreview() {
 			return this.form.serviceTarget ? formatDuration(this.form.serviceTarget) : ''
 		},
+		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		extensionPreview() {
 			return this.form.extensionPeriod ? formatDuration(this.form.extensionPeriod) : ''
 		},

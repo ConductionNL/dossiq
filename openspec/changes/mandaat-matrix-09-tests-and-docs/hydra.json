@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "mandaat-matrix-09-tests-and-docs",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["mandaat-matrix-08-user-ui"]
+}

@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "tenant-zaaksysteem-saas-04-tenant-context-isolation",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["tenant-zaaksysteem-saas-03-schema-provisioning"]
+}

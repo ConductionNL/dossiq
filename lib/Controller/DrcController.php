@@ -10,13 +10,19 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -24,7 +30,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\ZgwService;
-use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
@@ -48,7 +53,7 @@ use OCP\IRequest;
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
  * @SuppressWarnings(PHPMD.NPathComplexity)
  */
-class DrcController extends Controller
+class DrcController extends ZgwController
 {
     /**
      * The ZGW API identifier for the Documenten register.
@@ -95,10 +100,11 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function index(string $resource): JSONResponse
     {
@@ -195,16 +201,22 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function create(string $resource): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C3: Gate creates on documenten.aanmaken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'drc', 'documenten.aanmaken') === false) {
+            return $this->scopeDeniedResponse(scope: 'documenten.aanmaken');
         }
 
         // Drc-006 (VNG): Gebruiksrechten create — set indicatieGebruiksrecht to true on EIO.
@@ -375,10 +387,11 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function show(string $resource, string $uuid): JSONResponse
     {
@@ -410,16 +423,22 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function update(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C3: Gate updates on documenten.bijwerken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'drc', 'documenten.bijwerken') === false) {
+            return $this->scopeDeniedResponse(scope: 'documenten.bijwerken');
         }
 
         if ($resource === self::EIO_RESOURCE) {
@@ -439,16 +458,22 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function patch(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C3: Gate patches on documenten.bijwerken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'drc', 'documenten.bijwerken') === false) {
+            return $this->scopeDeniedResponse(scope: 'documenten.bijwerken');
         }
 
         if ($resource === self::EIO_RESOURCE) {
@@ -468,16 +493,22 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function destroy(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C3: Gate destroys on documenten.verwijderen scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'drc', 'documenten.verwijderen') === false) {
+            return $this->scopeDeniedResponse(scope: 'documenten.verwijderen');
         }
 
         // Drc-006 (VNG): Gebruiksrechten delete — update indicatieGebruiksrecht on EIO.
@@ -568,10 +599,11 @@ class DrcController extends Controller
      *
      * @return DataDownloadResponse|JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function download(string $uuid): DataDownloadResponse|JSONResponse
     {
@@ -643,10 +675,11 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function lock(string $uuid): JSONResponse
     {
@@ -774,10 +807,11 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function unlock(string $uuid): JSONResponse
     {
@@ -930,10 +964,11 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function audittrailIndex(string $resource, string $uuid): JSONResponse
     {
@@ -973,10 +1008,11 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse
     {
@@ -1376,13 +1412,14 @@ class DrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function uploadChunk(string $uuid): JSONResponse
     {

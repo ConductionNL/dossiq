@@ -15,7 +15,7 @@
  * @category Service
  * @package  OCA\Procest\Service
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
@@ -24,6 +24,8 @@
  * @link https://procest.nl
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -77,6 +79,8 @@ class ZgwBusinessRulesService
      * @SuppressWarnings(PHPMD.NPathComplexity)
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)    — ZGW scope flag from middleware
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function validate(
         string $zgwApi,

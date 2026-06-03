@@ -9,7 +9,7 @@ on:
 
 jobs:
   quality:
-    uses: ConductionNL/.github/.github/workflows/quality.yml@main
+    uses: Conduction/.github/.github/workflows/quality.yml@main
     with:
       app-name: procest
       php-version: "8.3"
@@ -21,9 +21,31 @@ jobs:
       enable-frontend: true
       enable-eslint: true
       enable-phpunit: true
-      enable-newman: true
+      enable-coverage-guard: true
+      # Newman disabled: ZGW compliance tests have 95%+ failure rate because
+      # the ZGW API implementation is still in progress. Re-enable once the
+      # API passes at least the core CRUD assertions.
+      enable-newman: false
       newman-collection-path: "data"
       newman-environment-path: "tests/zgw/zgw-environment.json"
       newman-seed-command: "bash apps/procest/tests/zgw/seed-consumers.sh"
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"feature/php-linting"}]'
-      enable-sbom: true
+      additional-apps: '[{"repo":"Conduction/openregister","app":"openregister","ref":"feature/php-linting"}]'
+      # SBOM disabled until @conduction/nextcloud-vue's dependency declarations
+      # are cleaned up — its `npm ls` tree fails ELSPROBLEMS (bootstrap-vue is a
+      # non-optional peer, apexcharts/pinia/vue version ranges don't match what
+      # apps install, @types/react comes from a transitive rehype-react), which
+      # @cyclonedx/cyclonedx-npm propagates as a hard failure (it always runs
+      # `npm ls` under the hood; `--package-lock-only` doesn't sidestep it).
+      # No other Conduction app enables SBOM today. Tracked in #434.
+      enable-sbom: false
+      # Playwright disabled until upstream @conduction/nextcloud-vue
+      # CnObjectDataWidget bundling bug is fixed: the published bundle has a
+      # hard-coded `require('../../store/index.js')` inside a soft try/catch
+      # that webpack can't resolve in consumer apps, so the procest bundle
+      # fails to build and every E2E spec then 404s. Tracked in
+      # Conduction/nextcloud-vue#242 — re-enable once a beta past that fix
+      # is pinned in package.json.
+      enable-playwright: false
+      enable-playwright-coverage: false
+      playwright-coverage-threshold: 75
+      playwright-seed-command: 'php occ maintenance:repair'

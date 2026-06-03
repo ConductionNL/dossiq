@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "tenant-zaaksysteem-saas-10-billing-shillinq",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["tenant-zaaksysteem-saas-09-quotas-enforcement"]
+}

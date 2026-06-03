@@ -8,13 +8,18 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-1
  */
 
 declare(strict_types=1);
@@ -25,6 +30,7 @@ use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -73,6 +79,8 @@ class SettingsController extends Controller
      *
      * @return \OCA\OpenRegister\Service\ObjectService|null The OpenRegister service if available, null otherwise.
      * @throws \RuntimeException If the service is not available.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function getObjectService(): ?\OCA\OpenRegister\Service\ObjectService
     {
@@ -90,6 +98,8 @@ class SettingsController extends Controller
      *
      * @return \OCA\OpenRegister\Service\ConfigurationService|null The Configuration service if available, null otherwise.
      * @throws \RuntimeException If the service is not available.
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function getConfigurationService(): ?\OCA\OpenRegister\Service\ConfigurationService
     {
@@ -108,18 +118,26 @@ class SettingsController extends Controller
      * @NoAdminRequired
      *
      * @return JSONResponse
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function index(): JSONResponse
     {
         $user    = $this->userSession->getUser();
         $isAdmin = $user !== null && $this->groupManager->isAdmin($user->getUID());
 
+        if ($isAdmin === true) {
+            $config = $this->settingsService->getSettings();
+        } else {
+            $config = $this->settingsService->getPublicSettings();
+        }//end if
+
         return new JSONResponse(
             [
                 'success'       => true,
                 'openRegisters' => in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()),
                 'isAdmin'       => $isAdmin,
-                'config'        => $this->settingsService->getSettings(),
+                'config'        => $config,
             ]
         );
     }//end index()
@@ -128,7 +146,10 @@ class SettingsController extends Controller
      * Update settings with provided data.
      *
      * @return JSONResponse
-     */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function create(): JSONResponse
     {
         $data   = $this->request->getParams();
@@ -149,7 +170,10 @@ class SettingsController extends Controller
      * all schema and register IDs from the import result.
      *
      * @return JSONResponse
-     */
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
+    #[AuthorizedAdminSetting(Application::APP_ID)]
     public function load(): JSONResponse
     {
         $result = $this->settingsService->loadConfiguration(force: true);

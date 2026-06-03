@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "vth-workflow-configuration-08-dso-integration",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["vth-workflow-configuration-02-workflow-templates"]
+}

@@ -10,13 +10,19 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-2
  */
 
 declare(strict_types=1);
@@ -24,7 +30,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\ZgwService;
-use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -39,7 +44,7 @@ use OCP\IRequest;
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
-class NrcController extends Controller
+class NrcController extends ZgwController
 {
     /**
      * The ZGW API identifier for the Notificaties register.
@@ -70,10 +75,11 @@ class NrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function index(string $resource): JSONResponse
     {
@@ -92,16 +98,22 @@ class NrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function create(string $resource): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // SB2: Gate creates on notificaties.publiceren scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
+            return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
         }
 
         return $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
@@ -115,10 +127,11 @@ class NrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function show(string $resource, string $uuid): JSONResponse
     {
@@ -138,16 +151,22 @@ class NrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function update(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // SB2: Gate updates on notificaties.publiceren scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
+            return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
         }
 
         return $this->zgwService->handleUpdate(
@@ -167,16 +186,22 @@ class NrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function patch(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // SB2: Gate patches on notificaties.publiceren scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
+            return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
         }
 
         return $this->zgwService->handleUpdate(
@@ -196,16 +221,22 @@ class NrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function destroy(string $resource, string $uuid): JSONResponse
     {
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // SB2: Gate destroys on notificaties.publiceren scope (canonical format).
+        if ($this->zgwService->consumerHasScope($this->request, 'nrc', 'notificaties.publiceren') === false) {
+            return $this->scopeDeniedResponse(scope: 'notificaties.publiceren');
         }
 
         return $this->zgwService->handleDestroy(
@@ -223,10 +254,11 @@ class NrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function notificatieCreate(): JSONResponse
     {
@@ -249,10 +281,11 @@ class NrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function audittrailIndex(string $resource, string $uuid): JSONResponse
     {
@@ -273,10 +306,11 @@ class NrcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse
     {

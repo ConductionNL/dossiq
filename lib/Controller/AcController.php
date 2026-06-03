@@ -10,9 +10,12 @@
  * @category Controller
  * @package  OCA\Procest\Controller
  *
- * @author    Conduction Development Team <dev@conductio.nl>
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2024 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
  *
  * @version GIT: <git-id>
  *
@@ -24,7 +27,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\ZgwService;
-use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -41,13 +43,15 @@ use OCP\IRequest;
  * - ac-002: heeftAlleAutorisaties consistency with autorisaties array
  * - ac-003: Scope-based field requirements per component
  *
+ * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+ *
  * @psalm-suppress UnusedClass
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
  * @SuppressWarnings(PHPMD.NPathComplexity)
  */
-class AcController extends Controller
+class AcController extends ZgwController
 {
     /**
      * Constructor.
@@ -73,7 +77,9 @@ class AcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     *
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -156,9 +162,10 @@ class AcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     *
      * @NoCSRFRequired
-     * @PublicPage
      * @CORS
      */
     public function create(): JSONResponse
@@ -166,6 +173,20 @@ class AcController extends Controller
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C2: Gate writes on ac.aanmaken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'ac', 'ac.aanmaken') === false) {
+            return new JSONResponse(
+                data: [
+                    'type'   => 'PermissionDenied',
+                    'code'   => 'permission_denied',
+                    'title'  => 'U heeft geen toestemming om autorisaties aan te maken.',
+                    'status' => Http::STATUS_FORBIDDEN,
+                    'detail' => 'Scope ac.aanmaken is vereist.',
+                ],
+                statusCode: Http::STATUS_FORBIDDEN
+            );
         }
 
         if ($this->zgwService->getConsumerMapper() === null) {
@@ -177,6 +198,24 @@ class AcController extends Controller
 
         try {
             $body = $this->zgwService->getRequestBody($this->request);
+
+            // C2: Block setting superuser=true unless the requesting consumer is itself a superuser.
+            if (($body['heeftAlleAutorisaties'] ?? false) === true
+                && $this->zgwService->consumerHasScope($this->request, 'ac', 'ac.superuser') === false
+            ) {
+                return new JSONResponse(
+                    data: [
+                        'invalidParams' => [
+                            [
+                                'name'   => 'heeftAlleAutorisaties',
+                                'code'   => 'permission_denied',
+                                'reason' => 'Alleen superuser-consumers mogen heeftAlleAutorisaties op true zetten.',
+                            ],
+                        ],
+                    ],
+                    statusCode: Http::STATUS_FORBIDDEN
+                );
+            }
 
             // Run AC business rules validation.
             $validationError = $this->validateApplicatieBody(body: $body);
@@ -210,7 +249,9 @@ class AcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     *
      * @NoCSRFRequired
      * @PublicPage
      * @CORS
@@ -263,9 +304,10 @@ class AcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     *
      * @NoCSRFRequired
-     * @PublicPage
      * @CORS
      */
     public function update(string $uuid): JSONResponse
@@ -273,6 +315,20 @@ class AcController extends Controller
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C2: Gate writes on ac.bijwerken scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'ac', 'ac.bijwerken') === false) {
+            return new JSONResponse(
+                data: [
+                    'type'   => 'PermissionDenied',
+                    'code'   => 'permission_denied',
+                    'title'  => 'U heeft geen toestemming om autorisaties bij te werken.',
+                    'status' => Http::STATUS_FORBIDDEN,
+                    'detail' => 'Scope ac.bijwerken is vereist.',
+                ],
+                statusCode: Http::STATUS_FORBIDDEN
+            );
         }
 
         if ($this->zgwService->getConsumerMapper() === null) {
@@ -291,10 +347,42 @@ class AcController extends Controller
                 );
             }
 
-            $body         = $this->zgwService->getRequestBody($this->request);
+            $body = $this->zgwService->getRequestBody($this->request);
+
+            // C1: Block setting heeftAlleAutorisaties=true unless caller has ac.superuser scope.
+            if (($body['heeftAlleAutorisaties'] ?? false) === true
+                && $this->zgwService->consumerHasScope($this->request, 'ac', 'ac.superuser') === false
+            ) {
+                return new JSONResponse(
+                    data: [
+                        'invalidParams' => [
+                            [
+                                'name'   => 'heeftAlleAutorisaties',
+                                'code'   => 'permission_denied',
+                                'reason' => 'Alleen superuser-consumers mogen heeftAlleAutorisaties op true zetten.',
+                            ],
+                        ],
+                    ],
+                    statusCode: Http::STATUS_FORBIDDEN
+                );
+            }
+
             $consumerData = $this->applicatieToConsumer(body: $body);
 
+            // L2: Only apply setters for known consumer fields to prevent reflection-based
+            // mass-assignment from arbitrary body keys.
+            $allowedSetterKeys = [
+                'name',
+                'description',
+                'authorizationType',
+                'authorizationConfiguration',
+            ];
+
             foreach ($consumerData as $key => $value) {
+                if (in_array($key, $allowedSetterKeys, true) === false) {
+                    continue;
+                }
+
                 $setter = 'set'.ucfirst($key);
                 if (method_exists($consumer, $setter) === true) {
                     $consumer->$setter($value);
@@ -323,9 +411,10 @@ class AcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     *
      * @NoCSRFRequired
-     * @PublicPage
      * @CORS
      */
     public function patch(string $uuid): JSONResponse
@@ -340,9 +429,10 @@ class AcController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     *
      * @NoCSRFRequired
-     * @PublicPage
      * @CORS
      */
     public function destroy(string $uuid): JSONResponse
@@ -350,6 +440,20 @@ class AcController extends Controller
         $authError = $this->zgwService->validateJwtAuth($this->request);
         if ($authError !== null) {
             return $authError;
+        }
+
+        // C2: Gate writes on ac.verwijderen scope.
+        if ($this->zgwService->consumerHasScope($this->request, 'ac', 'ac.verwijderen') === false) {
+            return new JSONResponse(
+                data: [
+                    'type'   => 'PermissionDenied',
+                    'code'   => 'permission_denied',
+                    'title'  => 'U heeft geen toestemming om autorisaties te verwijderen.',
+                    'status' => Http::STATUS_FORBIDDEN,
+                    'detail' => 'Scope ac.verwijderen is vereist.',
+                ],
+                statusCode: Http::STATUS_FORBIDDEN
+            );
         }
 
         if ($this->zgwService->getConsumerMapper() === null) {
@@ -387,6 +491,8 @@ class AcController extends Controller
      * @param string $uuid The consumer UUID.
      *
      * @return object|null The consumer entity, or null if not found.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
      */
     private function findConsumerByUuid(string $uuid): ?object
     {
@@ -408,6 +514,10 @@ class AcController extends Controller
      * @param string|null $excludeUuid UUID to exclude from uniqueness check (for updates).
      *
      * @return JSONResponse|null Validation error response or null if valid.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-2
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-3
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-4
      */
     private function validateApplicatieBody(array $body, ?string $excludeUuid=null): ?JSONResponse
     {
@@ -439,12 +549,30 @@ class AcController extends Controller
      * @param string|null $excludeUuid UUID to exclude from check (for updates).
      *
      * @return JSONResponse|null Error response or null if valid.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-2
      */
     private function validateClientIdUniqueness(array $body, ?string $excludeUuid=null): ?JSONResponse
     {
         $clientIds = $body['clientIds'] ?? [];
         if (is_array($clientIds) === false || count($clientIds) === 0) {
             return null;
+        }
+
+        // Enforce a reasonable maximum to prevent DoS via large arrays.
+        if (count($clientIds) > 100) {
+            return new JSONResponse(
+                data: [
+                    'invalidParams' => [
+                        [
+                            'name'   => 'clientIds',
+                            'code'   => 'max-items',
+                            'reason' => 'A maximum of 100 clientIds per applicatie is allowed.',
+                        ],
+                    ],
+                ],
+                statusCode: Http::STATUS_BAD_REQUEST
+            );
         }
 
         $allConsumers = $this->zgwService->getConsumerMapper()->findAll();
@@ -490,6 +618,8 @@ class AcController extends Controller
      * @param array $body The request body.
      *
      * @return JSONResponse|null Error response or null if valid.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-3
      */
     private function validateAutorisatieConsistency(array $body): ?JSONResponse
     {
@@ -553,6 +683,8 @@ class AcController extends Controller
      * @param array $body The request body.
      *
      * @return JSONResponse|null Error response or null if valid.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-4
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
@@ -650,6 +782,8 @@ class AcController extends Controller
      * @param string $keyword The keyword to search for (e.g. 'zaken', 'documenten').
      *
      * @return bool True if any scope contains the keyword.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-4
      */
     private function scopesContain(array $scopes, string $keyword): bool
     {
@@ -668,6 +802,8 @@ class AcController extends Controller
      * @param object $consumer The consumer entity.
      *
      * @return array List of all clientIds.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-2
      */
     private function getConsumerClientIds(object $consumer): array
     {
@@ -696,6 +832,8 @@ class AcController extends Controller
      * @param string $baseUrl  The base URL for building resource URLs.
      *
      * @return array The ZGW applicatie array.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
      */
     private function consumerToApplicatie(object $consumer, string $baseUrl): array
     {
@@ -741,6 +879,8 @@ class AcController extends Controller
      * @param array $body The request body.
      *
      * @return array The consumer data array.
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
      */
     private function applicatieToConsumer(array $body): array
     {

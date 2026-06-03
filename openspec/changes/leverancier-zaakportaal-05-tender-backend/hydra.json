@@ -1,0 +1,7 @@
+{
+  "schema_version": 2,
+  "spec_slug": "leverancier-zaakportaal-05-tender-backend",
+  "app": "procest",
+  "kind": "code",
+  "depends_on": ["leverancier-zaakportaal-04-supplier-scope-security"]
+}

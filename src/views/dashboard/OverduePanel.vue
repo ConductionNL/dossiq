@@ -75,6 +75,10 @@ export default {
 	},
 	emits: ['click-case', 'view-all', 'retry'],
 	methods: {
+		/**
+		 * @param daysOverdue
+		 * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md
+		 */
 		severityClass(daysOverdue) {
 			if (daysOverdue > 7) return 'overdue-panel__row--severe'
 			if (daysOverdue > 2) return 'overdue-panel__row--moderate'

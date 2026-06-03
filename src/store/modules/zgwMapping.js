@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { generateUrl } from '@nextcloud/router'
 
 export const useZgwMappingStore = defineStore('zgwMapping', {
 	state: () => ({
@@ -12,12 +13,13 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 		getMappings: (state) => state.mappings,
 	},
 	actions: {
+		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		async fetchMappings() {
 			this.loading = true
 			this.error = null
 
 			try {
-				const response = await fetch('/apps/procest/api/zgw-mappings', {
+				const response = await fetch(generateUrl('/apps/procest/api/zgw-mappings'), {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
@@ -42,12 +44,17 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 			}
 		},
 
+		/**
+		 * @param resourceKey
+		 * @param config
+		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 */
 		async saveMapping(resourceKey, config) {
 			this.loading = true
 			this.error = null
 
 			try {
-				const response = await fetch(`/apps/procest/api/zgw-mappings/${resourceKey}`, {
+				const response = await fetch(generateUrl(`/apps/procest/api/zgw-mappings/${resourceKey}`), {
 					method: 'PUT',
 					headers: {
 						'Content-Type': 'application/json',
@@ -73,12 +80,16 @@ export const useZgwMappingStore = defineStore('zgwMapping', {
 			}
 		},
 
+		/**
+		 * @param resourceKey
+		 * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md
+		 */
 		async resetMapping(resourceKey) {
 			this.loading = true
 			this.error = null
 
 			try {
-				const response = await fetch(`/apps/procest/api/zgw-mappings/${resourceKey}/reset`, {
+				const response = await fetch(generateUrl(`/apps/procest/api/zgw-mappings/${resourceKey}/reset`), {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
