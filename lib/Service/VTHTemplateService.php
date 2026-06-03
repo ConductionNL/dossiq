@@ -93,7 +93,7 @@ class VTHTemplateService
             }
 
             $templates[] = [
-                'id'          => $data['id'] ?? basename(filename: $file, suffix: '.json'),
+                'id'          => $data['id'] ?? basename(path: $file, suffix: '.json'),
                 'title'       => $data['title'] ?? '',
                 'description' => $data['description'] ?? '',
                 'category'    => $data['category'] ?? 'vth',

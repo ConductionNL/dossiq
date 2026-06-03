@@ -43,12 +43,10 @@ class WOORedactionService
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Settings service
-     * @param IAppManager     $appManager      Nextcloud app manager for feature detection
-     * @param LoggerInterface $logger          Logger
+     * @param IAppManager     $appManager Nextcloud app manager for feature detection
+     * @param LoggerInterface $logger     Logger
      */
     public function __construct(
-        private readonly SettingsService $settingsService,
         private readonly IAppManager $appManager,
         private readonly LoggerInterface $logger,
     ) {

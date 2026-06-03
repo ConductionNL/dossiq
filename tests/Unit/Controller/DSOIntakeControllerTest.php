@@ -24,6 +24,7 @@ namespace OCA\Procest\Tests\Unit\Controller;
 use OCA\Procest\Controller\DSOIntakeController;
 use OCA\Procest\Service\DsoIntakeService;
 use OCP\AppFramework\Http;
+use OCP\IAppConfig;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -48,6 +49,11 @@ class DSOIntakeControllerTest extends TestCase
     private IRequest $request;
 
     /**
+     * @var IAppConfig|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private IAppConfig $appConfig;
+
+    /**
      * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
      */
     private LoggerInterface $logger;
@@ -66,12 +72,19 @@ class DSOIntakeControllerTest extends TestCase
     {
         $this->dsoIntakeService = $this->createMock(DsoIntakeService::class);
         $this->request          = $this->createMock(IRequest::class);
+        $this->appConfig        = $this->createMock(IAppConfig::class);
         $this->logger           = $this->createMock(LoggerInterface::class);
+
+        // Default: no DSO webhook secret configured, so signature validation
+        // is skipped (returns the supplied default unchanged).
+        $this->appConfig->method('getValueString')
+            ->willReturnCallback(static fn (string $app, string $key, string $default = '', bool $lazy = false): string => $default);
 
         $this->controller = new DSOIntakeController(
             appName: 'procest',
             request: $this->request,
             dsoIntakeService: $this->dsoIntakeService,
+            appConfig: $this->appConfig,
             logger: $this->logger,
         );
     }//end setUp()

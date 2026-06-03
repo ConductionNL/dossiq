@@ -24,7 +24,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
-use OCP\IUserSession;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 
@@ -66,13 +65,11 @@ class WOODeadlineService
      *
      * @param SettingsService      $settingsService     Settings service
      * @param INotificationManager $notificationManager Nextcloud notification manager
-     * @param IUserSession         $userSession         Current user session
      * @param LoggerInterface      $logger              Logger
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly INotificationManager $notificationManager,
-        private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()

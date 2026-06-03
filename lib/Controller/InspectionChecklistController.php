@@ -24,6 +24,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\InspectionChecklistService;
+use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -76,7 +77,7 @@ class InspectionChecklistController extends Controller
      *
      * @spec openspec/changes/vth-module/tasks.md#task-4
      */
-    #[AuthorizedAdminSetting(settings: Application::class)]
+    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function index(): JSONResponse
     {
         $caseTypeRef = $this->request->getParam(key: 'caseTypeRef');
@@ -93,7 +94,7 @@ class InspectionChecklistController extends Controller
      *
      * @spec openspec/changes/vth-module/tasks.md#task-4
      */
-    #[AuthorizedAdminSetting(settings: Application::class)]
+    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function create(): JSONResponse
     {
         $data = $this->request->getParams();
@@ -125,7 +126,7 @@ class InspectionChecklistController extends Controller
      *
      * @spec openspec/changes/vth-module/tasks.md#task-4
      */
-    #[AuthorizedAdminSetting(settings: Application::class)]
+    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function update(string $id): JSONResponse
     {
         $data = $this->request->getParams();
@@ -157,7 +158,7 @@ class InspectionChecklistController extends Controller
      *
      * @spec openspec/changes/vth-module/tasks.md#task-4
      */
-    #[AuthorizedAdminSetting(settings: Application::class)]
+    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function destroy(string $id): JSONResponse
     {
         $success = $this->inspectionChecklistService->deleteChecklist(id: $id);
@@ -200,7 +201,7 @@ class InspectionChecklistController extends Controller
         }
 
         // Per-object authorization: only the assigned inspector or admin may submit.
-        if ($this->groupManager->isAdmin(uid: $user->getUID()) === false) {
+        if ($this->groupManager->isAdmin($user->getUID()) === false) {
             $assignedUid = $params['assignedInspector'] ?? '';
             if ($assignedUid !== '' && $assignedUid !== $user->getUID()) {
                 throw new OCSForbiddenException('Not authorized to submit this inspection result');
