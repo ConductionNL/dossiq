@@ -55,13 +55,6 @@
 			"order": 46
 		},
 		{
-			"id": "Tasks",
-			"label": "Tasks",
-			"icon": "icon-checkmark",
-			"route": "Tasks",
-			"order": 50
-		},
-		{
 			"id": "CaseMap",
 			"label": "Map",
 			"icon": "icon-address",
