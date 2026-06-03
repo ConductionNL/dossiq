@@ -8,8 +8,8 @@
 - **acceptance_criteria**:
   - GIVEN a fresh install WHEN repair step runs THEN schemas `inspectionChecklist`, `checklistItem`, `inspectionResult`, `adviceRequest`, `lhsMatrixCell` exist
   - All schemas validate as OpenAPI 3.0.0 + `x-openregister`
-- [ ] Add 5 new schemas to procest_register.json
-- [ ] Update repair step to register schemas
+- [x] Add 5 new schemas to procest_register.json
+- [x] Update repair step to register schemas (`lib/Repair/SeedVthMatrixCells.php`)
 
 ### Task 2: Ship VTH zaaktype templates
 - **spec_ref**: `openspec/specs/vth-module/spec.md#req-vth-08-vth-case-type-templates`
@@ -17,8 +17,8 @@
 - **acceptance_criteria**:
   - GIVEN admin activates "Omgevingsvergunning" WHEN template applied THEN status flow, property defs, document types, role types created
   - Each template has version metadata and is idempotent on re-activation
-- [ ] Author 3 template JSON files
-- [ ] Register templates in `VTHTemplateService`
+- [x] Author 3 template JSON files
+- [x] Register templates in `VTHTemplateService` (`lib/Service/VTHTemplateService.php`)
 
 ## 2. DSO Intake
 
@@ -28,9 +28,9 @@
 - **acceptance_criteria**:
   - GIVEN signed STAM 2.0 payload WHEN POST /api/vth/dso/intake THEN omgevingsvergunning case created with mapped fields and documents
   - GIVEN invalid signature WHEN POST THEN 401 returned and audit log entry written
-- [ ] Implement DSOIntakeService.map(), .createCase()
-- [ ] Implement DSOIntakeController.intake()
-- [ ] Register route
+- [x] Implement DSOIntakeService.map(), .createCase() (pre-existing service extended)
+- [x] Implement DSOIntakeController.intake()
+- [x] Register route (`POST /api/vth/dso/intake`)
 
 ## 3. Inspection Checklists
 
@@ -40,8 +40,8 @@
 - **acceptance_criteria**:
   - GIVEN 12-item checklist WHEN 11 items completed THEN progress is 11/12 and case cannot advance
   - GIVEN niet-conform answer requiring photo WHEN no photo uploaded THEN save blocked with validation error
-- [ ] Implement CRUD on checklists
-- [ ] Implement submitResult() with required-photo validation
+- [x] Implement CRUD on checklists
+- [x] Implement submitResult() with required-photo validation
 
 ### Task 5: Build checklist admin UI
 - **spec_ref**: `openspec/specs/vth-module/spec.md#req-vth-03-inspection-checklists`
@@ -49,8 +49,8 @@
 - **acceptance_criteria**:
   - Admin can create/edit/delete checklists with nested items
   - Each item supports type (boolean/enum/text/photo), required, weight
-- [ ] Add ChecklistsTab to settings
-- [ ] Build editor component
+- [x] Add ChecklistsTab to settings (wired into AdminRoot.vue)
+- [x] Build editor component (`InspectionChecklistEditor.vue`)
 
 ## 4. Advice Management
 
@@ -60,8 +60,8 @@
 - **acceptance_criteria**:
   - GIVEN behandelaar requests advice with deadline +14 days WHEN created THEN adviseur receives notification and timeline entry appears
   - GIVEN deadline passed WHEN nightly job runs THEN status becomes "overdue" and reminder sent
-- [ ] Implement requestAdvice, submitAdvice, cancelAdvice
-- [ ] Add overdue cronjob
+- [x] Implement requestAdvice, submitAdvice, cancelAdvice (AdviceService.requestAdvice() added; submitAdvice/cancelAdvice via transitionStatus())
+- [x] Add overdue cronjob (AdviceDeadlineJob registered in Application.php)
 
 ### Task 7: Build advice request UI
 - **spec_ref**: `openspec/specs/vth-module/spec.md#req-vth-06-advice-management-advies`
@@ -69,8 +69,8 @@
 - **acceptance_criteria**:
   - Panel renders on VTH case detail showing open/received/overdue advice
   - "Request advice" dialog with adviseur picker, deadline, vraag textarea
-- [ ] Build AdviceRequestPanel component
-- [ ] Wire into VTH case detail tab
+- [x] Build AdviceRequestPanel component (pre-existing component)
+- [x] Wire into VTH case detail tab (registered in registry.js as sidebar tab component)
 
 ## 5. LHS Enforcement Matrix
 
@@ -80,6 +80,6 @@
 - **acceptance_criteria**:
   - GIVEN gedrag=B and gevolg=2 WHEN GET /api/vth/lhs/lookup?gedrag=B&gevolg=2 THEN returns interventieStep "Bestuurlijke waarschuwing" with description
   - All 16 LHS cells seeded on install
-- [ ] Seed 16-cell matrix as repair step data
-- [ ] Implement LhsLookupService.lookup()
-- [ ] Register route and controller
+- [x] Seed 16-cell matrix as repair step data (`lib/Settings/lhs_matrix_seed.json` + `SeedVthMatrixCells.php`)
+- [x] Implement LhsLookupService.lookup()
+- [x] Register route (`GET /api/vth/lhs/lookup`) and add lookup() to LhsController

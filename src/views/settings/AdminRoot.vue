@@ -52,6 +52,13 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			:name="t('procest', 'VTH Inspection Checklists')"
+			:description="t('procest', 'Configure reusable inspection checklists for VTH cases (Toezicht). Checklists are versioned and linked to case types.')"
+			:loading="!storesReady">
+			<ChecklistsTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			:name="t('procest', 'AI-Assisted Processing')"
 			:description="t('procest', 'Configure AI features for document classification, data extraction, Q&A, summarization, routing and decision support')"
 			:loading="!storesReady">
@@ -76,6 +83,7 @@ import CaseTypeAdmin from './CaseTypeAdmin.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import MapLayerSettings from './MapLayerSettings.vue'
 import AiSettingsTab from './tabs/AiSettingsTab.vue'
+import ChecklistsTab from './tabs/ChecklistsTab.vue'
 import { generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
 import { initializeStores } from '../../store/store.js'
@@ -94,6 +102,7 @@ export default {
 		ZgwMappingSettings,
 		MapLayerSettings,
 		AiSettingsTab,
+		ChecklistsTab,
 	},
 	data() {
 		return {

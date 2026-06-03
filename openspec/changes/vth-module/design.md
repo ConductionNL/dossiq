@@ -1,5 +1,7 @@
 # Design: vth-module
 
+status: pr-created
+
 ## Architecture
 
 The VTH module sits as a vertical domain on top of the generic Procest case engine. It does NOT fork case-management; it composes existing primitives (case, statusType, propertyDefinition, role) into VTH-shaped templates and adds VTH-specific services for intake, checklists, advice, and enforcement.

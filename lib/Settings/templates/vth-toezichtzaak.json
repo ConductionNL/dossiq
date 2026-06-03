@@ -1,0 +1,55 @@
+{
+  "id": "vth-toezichtzaak",
+  "title": "Toezichtzaak",
+  "description": "VTH zaaktype template voor toezichtinspecties (bouw, milieu, brandveiligheid). Pre-geconfigureerd met inspectiefasen, checklists, status flow en rol types voor mobiele inspectie.",
+  "category": "vth",
+  "version": "1.0.0",
+  "caseType": {
+    "title": "Toezichtzaak",
+    "description": "Behandeling van toezichtzaken en veldisspecties",
+    "purpose": "Uitvoeren van toezichtinspecties op vergunningen en meldingen",
+    "trigger": "Gepland toezicht of constatering ter plaatse",
+    "subject": "Controle op naleving van vergunningsvoorwaarden en wettelijke eisen",
+    "processingDeadline": null,
+    "confidentiality": "intern",
+    "isDraft": false,
+    "extensionAllowed": false,
+    "publicationRequired": false,
+    "internalOrExternal": "intern",
+    "handlerAction": "Uitvoeren en rapporteren van inspectie",
+    "origin": "ambtshalve"
+  },
+  "statusTypes": [
+    {"name": "Gepland", "description": "Inspectie is gepland en ingeroosterd", "order": 1, "isFinal": false},
+    {"name": "In uitvoering", "description": "Inspector is ter plaatse of checklist wordt ingevuld", "order": 2, "isFinal": false},
+    {"name": "Rapport", "description": "Inspectierapport wordt opgesteld", "order": 3, "isFinal": false},
+    {"name": "Opvolging", "description": "Rapport is uitgebracht, opvolging lopende", "order": 4, "isFinal": false},
+    {"name": "Afgehandeld", "description": "Toezichtzaak volledig afgehandeld", "order": 5, "isFinal": true},
+    {"name": "Geannuleerd", "description": "Inspectie is geannuleerd", "order": 6, "isFinal": true}
+  ],
+  "roleTypes": [
+    {"name": "Inspecteur", "description": "Medewerker die de inspectie uitvoert"},
+    {"name": "Contactpersoon", "description": "Contactpersoon bij het te inspecteren object"},
+    {"name": "Opdrachtgever", "description": "Vergunninghouder of opdrachtgever van het werk"},
+    {"name": "Toezichthouder", "description": "Coördinerend toezichthouder"},
+    {"name": "Behandelaar", "description": "Behandelaar die de opvolging coördineert"}
+  ],
+  "documentTypes": [
+    {"name": "Inspectierapport", "description": "Volledig inspectierapport met checklist resultaten"},
+    {"name": "Inspectiefoto's", "description": "Foto's gemaakt tijdens de inspectie"},
+    {"name": "Afwijkingenlijst", "description": "Overzicht van geconstateerde afwijkingen"},
+    {"name": "Opvolgingsbericht", "description": "Brief of mail over benodigde opvolging naar de contactpersoon"},
+    {"name": "Hercontrolerapport", "description": "Rapport van hercontrole na geconstateerde afwijkingen"},
+    {"name": "Vergunning (referentie)", "description": "Kopie of referentie naar de gerelateerde vergunning"}
+  ],
+  "propertyDefinitions": [
+    {"name": "inspectiefase", "type": "string", "description": "Fase van de inspectie (bijv. fundering, ruwbouw, oplevering)"},
+    {"name": "bagObject", "type": "string", "description": "BAG object referentie van het te inspecteren object"},
+    {"name": "gpsCoordinaten", "type": "string", "description": "GPS-coördinaten van de inspectielocatie"},
+    {"name": "gerelateerdeVergunning", "type": "string", "description": "UUID van de gerelateerde omgevingsvergunning"},
+    {"name": "aantalAfwijkingen", "type": "integer", "description": "Aantal geconstateerde afwijkingen in het laatste rapport"},
+    {"name": "inspectieresultaat", "type": "string", "description": "Eindresultaat: conform, niet_conform, deels_conform"},
+    {"name": "hercontroleVereist", "type": "boolean", "description": "Of een hercontrole uitgevoerd moet worden"},
+    {"name": "checklistTemplate", "type": "string", "description": "UUID van de te gebruiken inspectionChecklist template"}
+  ]
+}

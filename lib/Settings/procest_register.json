@@ -5555,6 +5555,287 @@
             "assessedAt": "2026-05-14T11:00:00+02:00"
           }
         ]
+      },
+      "inspectionChecklist": {
+        "slug": "inspectionChecklist",
+        "icon": "ClipboardListOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:HowTo",
+        "title": "Inspection Checklist",
+        "description": "VTH inspection checklist template linked to a case type, with versioning and activation control",
+        "type": "object",
+        "required": [
+          "name",
+          "caseTypeRef"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of this checklist (e.g. 'Bouwtoezicht fase 1 - Fundering')"
+          },
+          "version": {
+            "type": "integer",
+            "default": 1,
+            "description": "Version number of this checklist"
+          },
+          "caseTypeRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case type this checklist belongs to"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Ordered list of checklistItem references"
+          },
+          "active": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this checklist is active"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "description": "Date from which this checklist version is valid"
+          }
+        }
+      },
+      "checklistItem": {
+        "slug": "checklistItem",
+        "icon": "CheckboxOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:HowToStep",
+        "title": "Checklist Item",
+        "description": "Individual item in an inspection checklist with type, requirements, and optional nesting",
+        "type": "object",
+        "required": [
+          "question",
+          "type"
+        ],
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "The inspection question or item description"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "boolean",
+              "enum",
+              "text",
+              "photo"
+            ],
+            "description": "Answer type: boolean (yes/no/na), enum (multiple choice), text, or photo"
+          },
+          "required": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this item must be answered"
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10,
+            "description": "Relative weight of this item for scoring"
+          },
+          "parent": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional parent checklistItem reference for nesting"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Options for enum type items"
+          },
+          "fotoRequired": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether a photo is required for non-conformity"
+          }
+        }
+      },
+      "inspectionResult": {
+        "slug": "inspectionResult",
+        "icon": "ClipboardCheckOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Report",
+        "title": "Inspection Result",
+        "description": "Completed inspection checklist result for a case, including per-item answers and overall outcome",
+        "type": "object",
+        "required": [
+          "caseRef",
+          "checklistRef",
+          "completedBy"
+        ],
+        "properties": {
+          "caseRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case this result belongs to"
+          },
+          "checklistRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the inspectionChecklist used"
+          },
+          "completedBy": {
+            "type": "string",
+            "description": "User UID of the inspector who completed the checklist"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time the inspection was completed"
+          },
+          "answers": {
+            "type": "array",
+            "description": "Per-item answers",
+            "items": {
+              "type": "object",
+              "properties": {
+                "itemRef": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "value": {
+                  "type": "string"
+                },
+                "photoRef": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Optional photo file reference"
+                }
+              }
+            }
+          },
+          "overallResult": {
+            "type": "string",
+            "enum": [
+              "conform",
+              "niet_conform",
+              "deels_conform"
+            ],
+            "description": "Overall inspection result"
+          },
+          "remarks": {
+            "type": "string",
+            "description": "General remarks by the inspector"
+          },
+          "location": {
+            "type": "string",
+            "description": "GPS coordinates or address of the inspection"
+          }
+        }
+      },
+      "adviceRequest": {
+        "slug": "adviceRequest",
+        "icon": "CommentQuestionOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:AskAction",
+        "title": "Advice Request (VTH)",
+        "description": "VTH-specific advice request linking a case to an internal or external adviser with deadline and status tracking",
+        "type": "object",
+        "required": [
+          "caseRef",
+          "adviseur"
+        ],
+        "properties": {
+          "caseRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the case this advice is requested for"
+          },
+          "requestedBy": {
+            "type": "string",
+            "description": "User UID of the person requesting the advice"
+          },
+          "adviseur": {
+            "type": "string",
+            "description": "User UID or name of the adviser (internal or external)"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Date by which the advice must be received"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "reminded",
+              "received",
+              "overdue",
+              "cancelled"
+            ],
+            "default": "open",
+            "description": "Current status of the advice request"
+          },
+          "vraag": {
+            "type": "string",
+            "description": "The specific question or topic for the adviser"
+          },
+          "adviesText": {
+            "type": "string",
+            "description": "The advice text submitted by the adviser"
+          },
+          "addedToFile": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the advice has been added to the case file"
+          }
+        }
+      },
+      "lhsMatrixCell": {
+        "slug": "lhsMatrixCell",
+        "icon": "TableLarge",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Table",
+        "title": "LHS Matrix Cell",
+        "description": "Individual cell in the Landelijke Handhavingsstrategie 4x4 matrix (gedrag x gevolg = interventie)",
+        "type": "object",
+        "required": [
+          "gedragRow",
+          "gevolgColumn",
+          "interventieStep"
+        ],
+        "properties": {
+          "gedragRow": {
+            "type": "string",
+            "enum": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "description": "Gedrag (behaviour) dimension: A=goedwillend, B=onverschillig, C=calculerend, D=crimineel"
+          },
+          "gevolgColumn": {
+            "type": "string",
+            "enum": [
+              "1",
+              "2",
+              "3",
+              "4"
+            ],
+            "description": "Mogelijke gevolgen (impact) dimension: 1=gering, 2=aanzienlijk, 3=ernstig, 4=zeer ernstig"
+          },
+          "interventieStep": {
+            "type": "string",
+            "description": "Recommended intervention from the LHS matrix"
+          },
+          "description": {
+            "type": "string",
+            "description": "Additional description or guidance for this cell"
+          }
+        }
       }
     },
     "registers": {

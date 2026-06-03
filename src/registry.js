@@ -37,6 +37,10 @@ import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 import AdviesPanel from './views/cases/components/AdviesPanel.vue'
+// VTH-specific case detail panels
+import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
+import InspectionChecklistPanel from './views/cases/components/InspectionChecklistPanel.vue'
+import InspectionPanel from './views/cases/components/InspectionPanel.vue'
 
 /**
  * V2 component registry.
@@ -117,6 +121,24 @@ const registry = {
 		kind: 'page',
 		component: AdviesPanel,
 		_note: 'Advice/advies panel used in CaseDetail and BezwaarDetail sidebar tabs',
+	},
+
+	// --- VTH module: case detail sidebar tabs. ---
+	// @spec openspec/changes/vth-module/tasks.md#task-7
+	AdviceRequestPanel: {
+		kind: 'page',
+		component: AdviceRequestPanel,
+		_note: 'VTH advice request panel — shows open/received/overdue adviesAanvragen on VTH case detail',
+	},
+	InspectionChecklistPanel: {
+		kind: 'page',
+		component: InspectionChecklistPanel,
+		_note: 'VTH checklist panel — shows inspection checklist completion status on Toezichtzaak',
+	},
+	InspectionPanel: {
+		kind: 'page',
+		component: InspectionPanel,
+		_note: 'VTH inspection panel — shows completed inspectionResult records for a case',
 	},
 }
 
