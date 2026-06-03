@@ -32,6 +32,7 @@ OC.L10N.register(
     "Add document" : "Add document",
     "Add note" : "Add note",
     "All" : "All",
+    "All tasks" : "All tasks",
     "All case types" : "All case types",
     "All caught up!" : "All caught up!",
     "All your items are completed" : "All your items are completed",

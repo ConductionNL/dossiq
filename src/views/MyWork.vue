@@ -35,6 +35,13 @@
 			</router-link>
 		</div>
 
+		<!-- All tasks link -->
+		<div class="my-work__all-tasks">
+			<NcButton type="tertiary" @click="$router.push({ name: 'Tasks' })">
+				{{ t('procest', 'All tasks') }}
+			</NcButton>
+		</div>
+
 		<!-- Loading state -->
 		<NcLoadingIcon v-if="loading" />
 
@@ -223,7 +230,7 @@
 </template>
 
 <script>
-import { NcLoadingIcon, NcEmptyContent } from '@nextcloud/vue'
+import { NcLoadingIcon, NcEmptyContent, NcButton } from '@conduction/nextcloud-vue'
 import AccountCheck from 'vue-material-design-icons/AccountCheck.vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
 import ParafeerInbox from './voorstellen/components/ParafeerInbox.vue'
@@ -236,6 +243,7 @@ export default {
 	components: {
 		NcLoadingIcon,
 		NcEmptyContent,
+		NcButton,
 		AccountCheck,
 		CheckCircle,
 		ParafeerInbox,
@@ -639,6 +647,11 @@ export default {
 	font-size: 11px;
 	color: var(--color-text-maxcontrast);
 	font-style: italic;
+}
+
+/* All tasks link */
+.my-work__all-tasks {
+	margin-bottom: 16px;
 }
 
 /* Focus outline for keyboard navigation */

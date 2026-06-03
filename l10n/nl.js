@@ -74,6 +74,7 @@ OC.L10N.register(
     "Add note" : "Notitie toevoegen",
     "Admin-rechten vereist" : "Admin-rechten vereist",
     "All" : "Alle",
+    "All tasks" : "Alle taken",
     "All case types" : "Alle zaaktypen",
     "All cases active" : "Alle zaken actief",
     "All caught up!" : "Alles bijgewerkt!",
