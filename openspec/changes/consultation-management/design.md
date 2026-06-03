@@ -1,5 +1,7 @@
 # Consultation Management Design
 
+status: pr-created
+
 ## Architecture
 A consultation is a first-class OpenRegister object linked to a parent zaak via a typed relation. It has an independent status lifecycle, its own deadline, and its own document attachments scoped to the consultation (not the entire parent case). Consultations can be parallel or sequential; mandatory consultations participate in milestone gates so that case progression is blocked until all required advice has been received. External advisory bodies that have no Nextcloud account interact via a per-consultation secure response link.
 
