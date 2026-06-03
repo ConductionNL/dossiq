@@ -42,6 +42,9 @@ import AdviesPanel from './views/cases/components/AdviesPanel.vue'
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
 import InspectionChecklistPanel from './views/cases/components/InspectionChecklistPanel.vue'
 import InspectionPanel from './views/cases/components/InspectionPanel.vue'
+// Leges-heffingen: case detail sidebar tab + admin verordeningen page.
+import LegesBerekeningPanel from './views/cases/components/LegesBerekeningPanel.vue'
+import LegesVerordeningenAdmin from './views/settings/LegesVerordeningenAdmin.vue'
 
 /**
  * V2 component registry.
@@ -148,6 +151,19 @@ const registry = {
 		kind: 'page',
 		component: InspectionPanel,
 		_note: 'VTH inspection panel — shows completed inspectionResult records for a case',
+	},
+
+	// --- Leges-heffingen: case detail tab + admin page. ---
+	// @spec openspec/changes/leges-heffingen/specs.md#req-leges-002
+	LegesBerekeningPanel: {
+		kind: 'page',
+		component: LegesBerekeningPanel,
+		_note: 'Leges panel — shows the calculation, audit trail and refund action on case detail',
+	},
+	LegesVerordeningenAdmin: {
+		kind: 'page',
+		component: LegesVerordeningenAdmin,
+		_note: 'Admin page listing leges tariff tables with import + approve workflow',
 	},
 }
 

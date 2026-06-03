@@ -80,6 +80,7 @@ Vrij en open source onder de AGPL-licentie.
             <step>OCA\Procest\Repair\MigrateWorkflowDefinitions</step>
             <step>OCA\Procest\Repair\SeedBezwaarWorkflowDefinition</step>
             <step>OCA\Procest\Repair\RegisterOriRegister</step>
+            <step>OCA\Procest\Repair\SeedLegesData</step>
         </post-migration>
     </repair-steps>
 
