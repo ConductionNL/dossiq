@@ -158,6 +158,13 @@ class SettingsService
         // Outage banner copy (nl + en).
         'pdok_outage_banner_nl',
         'pdok_outage_banner_en',
+        // DSO Omgevingsloket integration settings (dso-omgevingsloket spec).
+        'dso_case_type',
+        'dso_deadline_warning_weeks_warning',
+        'dso_deadline_warning_weeks_critical',
+        'dso_beschikking_template_verleend',
+        'dso_beschikking_template_geweigerd',
+        'dso_samenwerkverzoek_schema',
     ];
 
     /**
@@ -227,6 +234,7 @@ class SettingsService
         'bacAdviceRequest'             => 'bac_advice_request_schema',
         'beroep'                       => 'beroep_schema',
         'bezwaarDecision'              => 'bezwaar_decision_schema',
+        'samenwerkverzoek'             => 'dso_samenwerkverzoek_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

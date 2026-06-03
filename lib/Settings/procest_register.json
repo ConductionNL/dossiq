@@ -757,6 +757,40 @@
             "type": "integer",
             "description": "Version number of the bound workflow template",
             "visible": false
+          },
+          "vergunningaanvraagRef": {
+            "type": "string",
+            "description": "Reference to the DSO vergunningaanvraag object in OpenRegister",
+            "visible": false
+          },
+          "procedureType": {
+            "type": "string",
+            "enum": [
+              "reguliere",
+              "uitgebreide"
+            ],
+            "description": "DSO procedure type: reguliere (8 weeks) or uitgebreide (26 weeks)",
+            "facetable": true
+          },
+          "deadlineDatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Computed DSO deadline: indieningsdatum + procedure length in working days",
+            "visible": false
+          },
+          "bevoegdGezag": {
+            "type": "string",
+            "description": "OIN or organization name of the competent authority (bevoegd gezag)",
+            "facetable": true
+          },
+          "samenwerkverzoeken": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "References to samenwerkverzoek objects linked to this DSO case",
+            "visible": false
           }
         }
       },
@@ -5343,6 +5377,91 @@
             "description": "Append-only audit trail for BAC-specific events (Archiefwet 1995). Complements the OpenRegister automatic per-save log."
           }
         }
+      },
+      "samenwerkverzoek": {
+        "slug": "samenwerkverzoek",
+        "icon": "AccountMultiple",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:CollaborateAction",
+        "title": "Samenwerkverzoek",
+        "description": "Coordination request between bevoegde gezagen for a vergunningaanvraag. Tracks the samenwerking lifecycle: aangevraagd -> geaccepteerd -> afgerond (or geweigerd).",
+        "type": "object",
+        "required": [
+          "initiatorBevoegdGezag",
+          "aangezochtBevoegdGezag",
+          "vergunningaanvraagRef",
+          "status"
+        ],
+        "properties": {
+          "initiatorBevoegdGezag": {
+            "type": "string",
+            "description": "OIN or name of the initiating competent authority"
+          },
+          "aangezochtBevoegdGezag": {
+            "type": "string",
+            "description": "OIN or name of the receiving competent authority"
+          },
+          "vergunningaanvraagRef": {
+            "type": "string",
+            "description": "Reference to the linked vergunningaanvraag object"
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Reason for the samenwerking request"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "aangevraagd",
+              "geaccepteerd",
+              "geweigerd",
+              "afgerond"
+            ],
+            "default": "aangevraagd",
+            "description": "Current status of the samenwerkverzoek"
+          },
+          "advies": {
+            "type": "string",
+            "description": "Advice given by the aangezochte bevoegd gezag"
+          },
+          "aangevraagdOp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when samenwerking was requested"
+          },
+          "gereageerdOp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the receiving party responded"
+          }
+        },
+        "configuration": {
+          "x-openregister-lifecycle": {
+            "field": "status",
+            "initial": "aangevraagd",
+            "final": [
+              "geweigerd",
+              "afgerond"
+            ],
+            "transitions": {
+              "accepteer": {
+                "from": ["aangevraagd"],
+                "to": "geaccepteerd",
+                "description": "Accept the samenwerkverzoek."
+              },
+              "weiger": {
+                "from": ["aangevraagd"],
+                "to": "geweigerd",
+                "description": "Reject the samenwerkverzoek."
+              },
+              "rond-af": {
+                "from": ["geaccepteerd"],
+                "to": "afgerond",
+                "description": "Complete the samenwerking."
+              }
+            }
+          }
+        }
       }
     },
     "registers": {
@@ -5399,7 +5518,8 @@
           "adviesAanvraag",
           "legesverordening",
           "legesartikel",
-          "legesberekening"
+          "legesberekening",
+          "samenwerkverzoek"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"

@@ -47,6 +47,7 @@ use OCA\Procest\Listener\DeepLinkRegistrationListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
 use OCA\Procest\Listener\ParaferingAuditListener;
 use OCA\Procest\Listener\RoleMutationListener;
+use OCA\Procest\Listener\VergunningaanvraagCreatedListener;
 use OCA\Procest\Mcp\ProcestToolProvider;
 use OCA\Procest\Middleware\TenantMiddleware;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
@@ -117,6 +118,12 @@ class Application extends App implements IBootstrap
         );
 
         $this->registerBezwaarListeners(context: $context);
+
+        // DSO Omgevingsloket: create Procest zaak on new vergunningaanvraag.
+        $context->registerEventListener(
+            event: ObjectCreatedEvent::class,
+            listener: VergunningaanvraagCreatedListener::class
+        );
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
         $context->registerMiddleware(class: TenantMiddleware::class);
