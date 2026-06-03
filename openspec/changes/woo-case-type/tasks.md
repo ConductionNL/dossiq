@@ -9,9 +9,9 @@
   - GIVEN a `woo-verzoek.json` template WHEN admin POSTs `/api/templates/woo-verzoek/activate` THEN a zaaktype with 8 statuses is created in the active register
   - GIVEN re-activation of the same template WHEN POSTed THEN existing zaaktype is updated, not duplicated
   - GIVEN field overrides in the payload WHEN activated THEN overrides applied while base template stays untouched
-- [ ] Implement listTemplates(), previewTemplate(), activateTemplate()
-- [ ] Implement TemplateLibraryController
-- [ ] Register routes
+- [x] Implement listTemplates(), previewTemplate(), activateTemplate()
+- [x] Implement TemplateLibraryController
+- [x] Register routes
 
 ### Task 2: Ship WOO zaaktype template JSON
 - **spec_ref**: `openspec/specs/woo-case-type/spec.md#requirement-2-woo-lifecycle-stages`
@@ -19,8 +19,8 @@
 - **acceptance_criteria**:
   - Template contains 8 ordered status types matching the WOO lifecycle
   - Template includes WOO intake property definitions, document types, role types, decision types, and version metadata
-- [ ] Author template JSON with full 8-stage lifecycle
-- [ ] Validate template via `jq` and OpenRegister importer dry run
+- [x] Author template JSON with full 8-stage lifecycle
+- [x] Validate template via `jq` and OpenRegister importer dry run
 
 ## 2. Intake and Lifecycle
 
@@ -30,7 +30,7 @@
 - **acceptance_criteria**:
   - Form renders verzoeker_naam, contactgegevens, type, onderwerp, periode_van/tot, bestuurlijke_aangelegenheid, kanaal
   - Required-field validation blocks save until satisfied
-- [ ] Build Vue form bound to property definitions on the WOO zaaktype
+- [x] Build Vue form bound to property definitions on the WOO zaaktype
 
 ### Task 4: Implement WOODeadlineService
 - **spec_ref**: `openspec/specs/woo-case-type/spec.md#requirement-4-woo-deadline-tracking-and-extension`
@@ -39,8 +39,8 @@
   - GIVEN a WOO case created on 2026-05-01 WHEN deadline read THEN expectedResolution = 2026-05-29 (28 days)
   - GIVEN one extension applied with reason WHEN attempting a second extension THEN error returned
   - GIVEN deadline-7 reached WHEN nightly job runs THEN warning notification sent to behandelaar
-- [ ] Implement calculate(), extendDeadline(), checkAndWarn()
-- [ ] Wire into existing DeadlinePanel.vue
+- [x] Implement calculate(), extendDeadline(), checkAndWarn()
+- [x] Wire into existing DeadlinePanel.vue
 
 ## 3. Document Assessment and Decision
 
@@ -50,8 +50,8 @@
 - **acceptance_criteria**:
   - GIVEN 12 collected documents WHEN bulk-assess called with 11 classifications THEN advancing to "Lakken" is blocked with "Document 12 needs assessment"
   - GIVEN classification "deels openbaar" without weigeringsgrond WHEN saved THEN validation error returned
-- [ ] Implement bulkUpsert(), validate(), getOutstanding()
-- [ ] Implement controller endpoint
+- [x] Implement bulkUpsert(), validate(), getOutstanding()
+- [x] Implement controller endpoint
 
 ### Task 6: Build DocumentAssessmentTable
 - **spec_ref**: `openspec/specs/woo-case-type/spec.md#requirement-6-per-document-disclosure-assessment`
@@ -59,7 +59,7 @@
 - **acceptance_criteria**:
   - Table renders one row per collected document with classification select and weigeringsgrond multi-select
   - Saving the table calls the bulkUpsert endpoint
-- [ ] Build Vue table component
+- [x] Build Vue table component
 
 ### Task 7: Implement WOODecisionService and besluit flow
 - **spec_ref**: `openspec/specs/woo-case-type/spec.md#requirement-8-woo-decision-besluit`
@@ -67,8 +67,8 @@
 - **acceptance_criteria**:
   - GIVEN every document assessed WHEN decision created THEN a `decision` object is linked to the case referencing all assessments
   - GIVEN unassessed document WHEN decision attempted THEN blocked with explicit error
-- [ ] Implement assembleDecision()
-- [ ] Wire into controller and besluit panel
+- [x] Implement assembleDecision()
+- [x] Wire into controller and besluit panel
 
 ## 4. Optional Docudesk Integration
 
@@ -78,5 +78,5 @@
 - **acceptance_criteria**:
   - GIVEN Docudesk is installed AND case enters "Lakken / Anonimiseren" WHEN documents are flagged "deels openbaar" THEN they are queued in Docudesk for redaction
   - GIVEN Docudesk is not installed WHEN stage entered THEN UI falls back to manual upload-redacted-version flow
-- [ ] Implement WOORedactionService with feature detection
-- [ ] Add UI fallback for non-Docudesk installs
+- [x] Implement WOORedactionService with feature detection
+- [x] Add UI fallback for non-Docudesk installs
