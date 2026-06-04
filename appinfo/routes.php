@@ -68,6 +68,19 @@ return [
         ['name' => 'kccContact#show',    'url' => '/api/kcc/contact-moments/{id}', 'verb' => 'GET'],
         ['name' => 'kccContact#update',  'url' => '/api/kcc/contact-moments/{id}', 'verb' => 'PUT'],
 
+        // Subsidieverlening-keten (subsidieverlening-keten spec) — AWB titel 4.2.
+        // Static/verb routes precede the {id} wildcard routes; the public
+        // subsidieregister feed precedes the authenticated /api/subsidies list.
+        ['name' => 'subsidieRegister#export', 'url' => '/api/subsidies/register/export', 'verb' => 'GET'],
+        ['name' => 'subsidie#index',  'url' => '/api/subsidies', 'verb' => 'GET'],
+        ['name' => 'subsidie#create', 'url' => '/api/subsidies', 'verb' => 'POST'],
+        ['name' => 'subsidie#approveTussenrapportage', 'url' => '/api/subsidies/tussenrapportages/{reportId}/beoordelen', 'verb' => 'POST'],
+        ['name' => 'subsidie#finalizeVaststelling', 'url' => '/api/subsidies/vaststellingen/{vaststellingId}/vast', 'verb' => 'POST'],
+        ['name' => 'subsidie#signBeschikking', 'url' => '/api/subsidies/beschikkingen/{beschikkingId}/sign', 'verb' => 'POST'],
+        ['name' => 'subsidie#publishBeschikking', 'url' => '/api/subsidies/beschikkingen/{beschikkingId}/publish', 'verb' => 'POST'],
+        ['name' => 'subsidie#transition', 'url' => '/api/subsidies/{id}/transition', 'verb' => 'POST'],
+        ['name' => 'subsidie#createBeschikking', 'url' => '/api/subsidies/{id}/beschikking', 'verb' => 'POST'],
+
         // ZGW Mapping Management.
         ['name' => 'zgwMapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
         ['name' => 'zgwMapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],
