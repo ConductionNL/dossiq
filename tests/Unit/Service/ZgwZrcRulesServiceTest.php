@@ -85,9 +85,12 @@ class ZgwZrcRulesServiceTest extends TestCase
         $this->logger          = $this->createMock(LoggerInterface::class);
         $this->settingsService = $this->createMock(SettingsService::class);
 
+        // FieldValidator is a pure, stateless utility — use the real
+        // implementation so the service exercises genuine format validation.
         $this->service = new ZgwZrcRulesService(
             logger: $this->logger,
-            settingsService: $this->settingsService
+            settingsService: $this->settingsService,
+            fieldValidator: new \OCA\Procest\Service\FieldValidator()
         );
 
     }//end setUp()

@@ -36,7 +36,8 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.TooManyMethods)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-1
  */
 abstract class ZgwRulesBase
 {
@@ -98,12 +99,14 @@ abstract class ZgwRulesBase
      *
      * @param LoggerInterface $logger          The logger
      * @param SettingsService $settingsService The settings service
+     * @param FieldValidator  $fieldValidator  The stateless field-format validator
      *
      * @return void
      */
     public function __construct(
         protected readonly LoggerInterface $logger,
         protected readonly SettingsService $settingsService,
+        protected readonly FieldValidator $fieldValidator,
     ) {
     }//end __construct()
 
@@ -230,24 +233,7 @@ abstract class ZgwRulesBase
      */
     protected function extractUuid(string $url): ?string
     {
-        if (preg_match(
-                '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',
-                $url
-            ) === 1
-        ) {
-            return $url;
-        }
-
-        if (preg_match(
-                '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
-                $url,
-                $matches
-            ) === 1
-        ) {
-            return $matches[1];
-        }
-
-        return null;
+        return $this->fieldValidator->extractUuid($url);
     }//end extractUuid()
 
     /**
@@ -261,19 +247,7 @@ abstract class ZgwRulesBase
      */
     protected function isValidUrl(string $url): bool
     {
-        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
-            return false;
-        }
-
-        // ZGW resource URLs must end with a valid UUID as the last path segment.
-        // Reject URLs that don't point to a specific resource (collection endpoints)
-        // and URLs with trailing garbage after the UUID.
-        $path = (string) parse_url($url, PHP_URL_PATH);
-
-        return preg_match(
-            '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/?$/i',
-            $path
-        ) === 1;
+        return $this->fieldValidator->isValidUrl($url);
     }//end isValidUrl()
 
     /**
