@@ -129,6 +129,16 @@ class SettingsService
         'routing_rule_schema',
         'kcc_agent_schema',
         'callback_request_schema',
+        // Subsidieverlening-keten (subsidieverlening-keten spec) — AWB titel 4.2.
+        'subsidie_regeling_schema',
+        'subsidie_aanvraag_schema',
+        'subsidie_beoordeling_schema',
+        'subsidie_beschikking_schema',
+        'subsidie_uitvoering_schema',
+        'tussenrapportage_schema',
+        'subsidie_vaststelling_schema',
+        'terugvordering_schema',
+        'bewijsstuk_schema',
         'lhsMatrix',
         'lhs_matrix_schema',
         'lhs_recommendation_schema',
@@ -236,6 +246,15 @@ class SettingsService
         'routingRule'                  => 'routing_rule_schema',
         'kccAgent'                     => 'kcc_agent_schema',
         'callbackRequest'              => 'callback_request_schema',
+        'subsidieRegeling'             => 'subsidie_regeling_schema',
+        'subsidieAanvraag'             => 'subsidie_aanvraag_schema',
+        'subsidieBeoordeling'          => 'subsidie_beoordeling_schema',
+        'subsidieBeschikking'          => 'subsidie_beschikking_schema',
+        'subsidieUitvoering'           => 'subsidie_uitvoering_schema',
+        'tussenrapportage'             => 'tussenrapportage_schema',
+        'subsidieVaststelling'         => 'subsidie_vaststelling_schema',
+        'terugvordering'               => 'terugvordering_schema',
+        'bewijsstuk'                   => 'bewijsstuk_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
