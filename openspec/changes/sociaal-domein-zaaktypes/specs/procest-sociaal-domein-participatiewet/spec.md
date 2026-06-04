@@ -1,282 +1,172 @@
-# Spec: Participatiewet (Work & Income Support) zaaktype family
+# Spec delta: procest-sociaal-domein-participatiewet
 
-**Tier:** sociaal-domein  
-**Statutory basis:** Participatiewet 2015, artikel 18 (algemene bijstand), 31–34 (vermogens-/inkomenstoets), artikel 9 (re-integratie)  
-**Zaaktype identifier:** `bijstandsaanvraag`  
+**Tier:** sociaal-domein
+**Statutory basis:** Participatiewet 2015, artikel 18 (algemene bijstand), 31–34 (vermogens-/inkomenstoets), artikel 9 (re-integratie)
+**Zaaktype identifier:** `bijstandsaanvraag`
 **Processing deadline:** 2 weeks (toetsing + beschikking)
 
-## Scope
+Participatiewet is the statutory framework for algemene bijstand (general income support), re-integratie trajecten (job placement and upskilling), and related instruments (wage subsidies, training, job coaching, self-employment support). Unlike WMO (medical/aging) or Jeugdwet (family/youth crisis), it is **income-focused** and **work-focused**; the data is highly sensitive (financial circumstances, employment history, tax records, debt, sometimes criminal history as an employment barrier). This delta defines the zaaktype, the `ReIntegratieTraject` entity, the vermogens-/inkomenstoets workflow, the status flow, and integration with the cross-cutting AVG/retention framework.
 
-Participatiewet (Participation Act) is the statutory framework for:
+## ADDED Requirements
 
-1. **Algemene bijstand** (general welfare/income support) — temporary emergency income for unemployed adults without other means
-2. **Re-integratie trajecten** (job placement & upskilling) — active labor-market intervention to reduce welfare dependency
-3. **Related instruments** — wage subsidies (loonkostensubsidie), training, job coaching, support for self-employment
+### Requirement: Participatiewet zaaktype definition and income-focused status lifecycle
+The system MUST support a `bijstandsaanvraag` zaaktype backed entirely by OpenRegister, requiring financial testing before benefit approval. The `ParticipatiewetZaak` entity carries `zaaktype` (fixed `bijstandsaanvraag`), `bsn`, `aanvraagSoort` (`algemene-bijstand`/`inburgering-gerelateerde-bijstand`/`bijstand-werkloze-uitkeringontvangers`/`noodvoorziening`), `aanvraagDatum`, `ingangsdatumGewenst`, `leeftijdsgroep`, `huishoudensSituatie`, `vermogensToets` (object), `inkomensToets` (object), `reIntegratieTrajectId` (optional), `behandelaarId`, `status`, and `avgClassificatie` (required). The lifecycle (`aanvraag-ontvangen` → `toetsing-loopt` → `toetsing-afgerond` → `beschikking-voorbereiding` → `beschikking-gereed` → `bijstand-actief` → `re-integratie-loopt` → `afgesloten`) MUST be declared as `x-openregister-lifecycle`.
 
-A Participatiewet zaak differs fundamentally from WMO (medical/aging support) and Jeugdwet (family/youth crisis) by being **income-focused** and **work-focused**. The data is highly sensitive: financial circumstances, employment history, tax records, sometimes debt, criminal history (employment barriers). The client often faces economic hardship and vulnerability to predatory practices.
+#### Scenario: New Participatiewet case is initialized with test placeholders
+- **GIVEN** a klantmanager creates a new Participatiewet case
+- **WHEN** zaaktype is set to `bijstandsaanvraag`
+- **THEN** the status is initialized to `aanvraag-ontvangen`
+- **AND** placeholder `vermogensToets` and `inkomensToets` objects are created (both `uitgevoerd = false`)
+- **AND** `avgClassificatie` (typically `financieel`) is required before save
+- **AND** progression to beschikking is blocked until both toetsen are `uitgevoerd = true`
+- **AND** a case identifier is generated as `zaak-{year}-pw-{5-digit-sequence}`
 
-This spec covers zaaktype definition, mandatory entities (ReIntegratieTraject), the vermogens-/inkomenstoets workflow, status flow, and integration with AVG/retention infrastructure.
+### Requirement: Mandatory vermogens- and inkomenstoets with automatic disposition
+The two-test sequence MUST be completed before any benefit decision; vermogen above the threshold MUST auto-trigger a refusal recommendation.
 
-## Entities
+#### Scenario: Excess assets auto-trigger a refusal recommendation
+- **GIVEN** a klantmanager executes the vermogenstoets and records vermogen above `vermogensvrijstelling`
+- **WHEN** the test is saved
+- **THEN** `boven_vermogensvrijstelling` is set to `true`
+- **AND** the zaak status auto-transitions to `toetsing-afgerond` with an adverse result
+- **AND** the zaak is marked as an `afwijzingsvoorstel` with pre-filled motivation
+- **AND** the klantmanager is notified that the beschikking must document the refusal
 
-### ParticipatiewetZaak
+#### Scenario: Passing both tests grants benefit and creates a trajectory
+- **GIVEN** both toetsen are `uitgevoerd = true`, vermogen is under threshold, and inkomen is under the bijstandsnorm
+- **WHEN** the zaak is saved
+- **THEN** `rechtOpBijstand` is set to `true`
+- **AND** the status auto-transitions to `beschikking-voorbereiding`
+- **AND** a `ReIntegratieTraject` object is created and linked
 
-Main case entity. Inherits from procest `case` with work-and-income-specific fields.
+### Requirement: Automatic re-integratie-trajectory creation when income test passes
+If the applicant qualifies for bijstand they are by law required to participate in re-integration, so the system MUST auto-create a `ReIntegratieTraject`; the `ReIntegratieTraject` entity carries `zaakId`, `klantmanagerId`, `startDatum`, `trajectSoort`, `afstandTotArbeidsmarkt`, `instrumenten`, `samenwerkendePartijen`, `evaluatieMomenten` (optional), `tegenprestatieVerplicht`, and `vrijstellingArbeidsverplichting` (optional).
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| zaaktype | reference | Y | Fixed: `bijstandsaanvraag` |
-| bsn | string | Y | Applicant's Dutch BSN |
-| aanvraagSoort | enum | Y | Type of income support: `algemene-bijstand`, `inburgering-gerelateerde-bijstand`, `bijstand-werkloze-uitkeringontvangers`, `noodvoorziening` |
-| aanvraagDatum | date | Y | Date application received |
-| ingangsdatumGewenst | date | Y | Requested benefit start date (typically aanvraagDatum or immediately after) |
-| leeftijdsgroep | enum | Y | `18-21`, `21-plus-tot-aow`, `aow-leeftijd-plus` |
-| huishoudensSituatie | enum | Y | `alleenstaand`, `alleenstaand-met-kinderen`, `paar-zonder-kinderen`, `paar-met-kinderen` |
-| vermogensToets | object | Y | Asset test: `uitgevoerd` (boolean), `vermogen` (€ amount), `vermogensvrijstelling` (legal threshold), `boven_vermogensvrijstelling` (boolean) |
-| inkomensToets | object | Y | Income test: `uitgevoerd` (boolean), `inkomenPerMaand` (€), `bijstandsnormPerMaand` (statutory standard), `rechtOpBijstand` (boolean = income < norm?) |
-| reIntegratieTrajectId | reference | N | Link to ReIntegratieTraject (created only if income test passes) |
-| behandelaarId | string | Y | Klantmanager assigned to case |
-| status | enum | Y | Lifecycle: `aanvraag-ontvangen` → `toetsing-loopt` → `toetsing-afgerond` → `beschikking-voorbereiding` → `beschikking-gereed` → `bijstand-actief` → `re-integratie-loopt` → `afgesloten` |
-| avgClassificatie | object (AvgClassificatie) | Y | Mandatory classification (typically financieel + sometimes medisch/gezinssituatie) |
-| reIntegratieTrajectId | reference | N | Link to ReIntegratieTraject (once bijstand is approved + re-integratie deemed necessary) |
+#### Scenario: Qualifying case auto-creates a re-integration trajectory
+- **GIVEN** the inkomenstoets results in `rechtOpBijstand = true`
+- **WHEN** the zaak is saved
+- **THEN** a `ReIntegratieTraject` is created with a `zaakId` reference
+- **AND** `klantmanagerId` is set to the case behandelaar
+- **AND** `startDatum` is set to the ingangsdatum (or shortly after beschikking issuance)
+- **AND** the klantmanager must populate `trajectSoort` and `afstandTotArbeidsmarkt` within 2 weeks
 
-### ReIntegratieTraject
+### Requirement: Mandatory AVG classification with financiële category
+Every Participatiewet case contains sensitive financial data; the `avgClassificatie` MUST be present and declare the financial category, driving the tightest access controls.
 
-Re-integration pathway — the active labor-market intervention to help the client regain employment.
+#### Scenario: Save is rejected without classification
+- **GIVEN** a klantmanager saves a bijstandsaanvraag without `avgClassificatie`
+- **WHEN** the save is triggered
+- **THEN** the system rejects the save and requires the classification block
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| zaakId | reference | Y | Parent ParticipatiewetZaak |
-| klantmanagerId | string | Y | Klantmanager overseeing the trajectory |
-| startDatum | date | Y | Date re-integration support begins |
-| trajectSoort | enum | Y | Type: `werkfit-maken` (general job readiness), `scholing-specific` (training for named role), `plaatsing-ondersteund` (supported job matching), `zelfstandigheid-bevorderen` (self-employment support) |
-| afstandTotArbeidsmarkt | enum | Y | Labor-market distance: `klein` (minimal barriers, recent job loss), `groot` (significant barriers: age, health, skills gap), `zeer-groot` (combination of barriers) |
-| instrumenten | array | Y | Interventions deployed: `soort` (loonkostensubsidie, scholing, begeleiding-werkplek, etc.), budget/percentage/duration parameters per instrument |
-| samenwerkendePartijen | array | Y | Partner organizations: `partij` (UWV, jobtraining provider, etc.), `rol` (no-risk-polis provider, matching service, etc.) |
-| evaluatieMomenten | array | N | Scheduled milestones: quarterly reviews + end-of-trajectory evaluation |
-| tegenprestatieVerplicht | boolean | Y | Is the applicant required to perform counter-services (e.g., job-search, training participation)? |
-| vrijstellingArbeidsverplichting | string | N | If not tegenprestatieVerplicht: reason (medisch, ouderschap, etc.) |
+#### Scenario: Financial classification drives tight access and logging
+- **GIVEN** the zaak is saved with `avgClassificatie.categorieen = ["financieel"]`
+- **WHEN** the zaak is queried for access control
+- **THEN** only the assigned klantmanager and wijkteam peers may see content
+- **AND** all reads are logged
 
-## Requirements
+### Requirement: Access control limited to work-and-income team
+Only the assigned klantmanager and their werk-en-inkomentteam MAY read zaak content; others MUST be blocked, with an FG-audit metadata-only mode.
 
-### REQ-PW-001: Participatiewet zaaktype definition and income-focused status lifecycle
+#### Scenario: Out-of-team staff see metadata only
+- **GIVEN** a bijstandsaanvraag is assigned to klantmanager-477 (werk-en-inkomentteam)
+- **WHEN** a staff member from a different wijkteam queries the zaak
+- **THEN** only metadata (zaak number, status, dates) is returned
+- **AND** all financial and personal details are blocked
 
-The system MUST support a `bijstandsaanvraag` zaaktype with mandatory financial testing before benefit approval.
+#### Scenario: FG audit mode returns metadata and auditLog only
+- **GIVEN** a functionaris gegevensbescherming needs to audit the case
+- **WHEN** they access in FG-audit mode
+- **THEN** they receive metadata plus the auditLog without full financial data, flagged as "FG-audit"
 
-**GIVEN** a klantmanager creates a new Participatiewet case  
-**WHEN** zaaktype is set to `bijstandsaanvraag`  
-**THEN** the system MUST automatically:
-- Initialize status to `aanvraag-ontvangen`
-- Create placeholder objects for `vermogensToets` and `inkomensToets` (both `uitgevoerd=false`)
-- Require `avgClassificatie` (typically financieel category)
-- Block progression to beschikking until both toetsen are `uitgevoerd=true`
-- Generate a case identifier in format `zaak-{year}-pw-{5-digit-sequence}`
+### Requirement: Statutory retention (10 years post-closure) with deadline-driven destruction proposals
+All Participatiewet cases MUST be retained for 10 years after closure, then proposed for destruction.
 
-### REQ-PW-002: Mandatory vermogens- and inkomenstoets with automatic disposition
+#### Scenario: Vernietigingsdatum is 10 years after closure
+- **GIVEN** a `ParticipatiewetZaak` is closed on 2026-03-15
+- **WHEN** `vernietigingsDatum` is calculated
+- **THEN** it is set to 2036-03-15
 
-The two-test sequence MUST be completed before any benefit decision. Vermogen above threshold MUST auto-trigger refusal.
+#### Scenario: Destruction proposal generated near the deadline
+- **GIVEN** the current date is within 30 days of a zaak's `vernietigingsDatum`
+- **WHEN** the batch job runs
+- **THEN** a `vernietigingsvoorstel` is generated for archivaris approval
 
-**GIVEN** a klantmanager executes the vermogenstoets and records vermogen > vermogensvrijstelling  
-**WHEN** the test is saved  
-**THEN** the system MUST:
-- Set `boven_vermogensvrijstelling=true`
-- Auto-transition zaak status to `toetsing-afgerond` (tests complete, but with adverse result)
-- Mark zaak as "afwijzingsvoorstel" (refusal recommendation) with pre-filled motivation
-- Notify klantmanager that beschikking-drafting must document the refusal
+### Requirement: Re-integratie-trajectory milestones and evaluatie scheduling
+The system MUST manage re-integratie as an active, ongoing process with regular milestones and evaluaties.
 
-**GIVEN** both vermogens- and inkomenstoets are `uitgevoerd=true` AND vermogen is under threshold AND inkomen is under bijstandsnorm  
-**WHEN** zaak is saved  
-**THEN** the system MUST:
-- Set `rechtOpBijstand=true`
-- Auto-transition status to `beschikking-voorbereiding`
-- Create a ReIntegratieTraject object (linking the two)
+#### Scenario: Quarterly milestone review task is created
+- **GIVEN** a `ReIntegratieTraject` is active
+- **WHEN** a quarterly evaluatie date is within 14 days
+- **THEN** a task is created for the klantmanager to conduct a milestone review
 
-### REQ-PW-003: Automatic re-integratie-trajectory creation when income test passes
+#### Scenario: Ending wage subsidy notifies klantmanager and employer
+- **GIVEN** a `ReIntegratieTraject` has an instrument with a 12-month loonkostensubsidie
+- **WHEN** the end date approaches
+- **THEN** both the klantmanager and the employer are notified the subsidy period is ending
+- **AND** a next-step decision (extension, unsubsidized employment, or loop back to job-search) is required
 
-If the applicant qualifies for bijstand (income < norm, vermogen < threshold), they are by law required to participate in re-integration.
+### Requirement: Automatic anonymization of financial data on export
+Participatiewet cases contain detailed financial information; exports MUST be anonymized via `pii-detection-masking` unless explicit consent exists.
 
-**GIVEN** inkomenstoets results in `rechtOpBijstand=true`  
-**WHEN** the zaak is saved  
-**THEN** the system MUST automatically:
-- Create a ReIntegratieTraject object with `zaakId` reference
-- Set `klantmanagerId` to the case's behandelaar
-- Set `startDatum` to ingangsDatum (or shortly after beschikking issuance)
-- Require the klantmanager to populate `trajectSoort` and `afstandTotArbeidsmarkt` within 2 weeks
+#### Scenario: Export without consent is anonymized into bands
+- **GIVEN** financial data from a bijstandsaanvraag is being exported and no toestemming record is found
+- **WHEN** the export is triggered
+- **THEN** `pii-detection-masking` replaces BSN with a pseudonym, exact income amounts with income-band ranges, vermogen with asset-band ranges, and employer/creditor names with generic placeholders
 
-### REQ-PW-004: Mandatory AVG classification with financiële category
+#### Scenario: Export with consent sends identified data
+- **GIVEN** explicit toestemming exists (e.g., for tax-authority data-sharing in a re-integration case)
+- **WHEN** the export proceeds
+- **THEN** the system sends identified data and logs the consent basis
 
-Every Participatiewet case contains sensitive financial data; classification MUST explicitly declare this.
-
-**GIVEN** a klantmanager saves a bijstandsaanvraag without avgClassificatie  
-**WHEN** the save is triggered  
-**THEN** the system MUST reject and require the classification block.
-
-**GIVEN** the zaak has been saved with `avgClassificatie.categorieen = ["financieel"]`  
-**WHEN** the zaak is queried for access control  
-**THEN** the system MUST apply the tightest access restrictions: only the assigned klantmanager + wijkteam peers can see content, and all reads are logged.
-
-### REQ-PW-005: Access control limited to work-and-income team
-
-Only the assigned klantmanager and their team (werk-en-inkomentteam) MAY read zaak content; other staff are blocked.
-
-**GIVEN** a bijstandsaanvraag is assigned to klantmanager-477 (werk-en-inkomentteam)  
-**WHEN** a staff member from a different wijkteam queries the zaak  
-**THEN** the system MUST return only metadata (zaak number, status, dates) and block all financial/personal details.
-
-**GIVEN** a functionaris gegevensbescherming needs to audit the case  
-**WHEN** they access in FG-audit mode  
-**THEN** they MUST receive metadata + auditLog without reading full financial data, flagged as "FG-audit".
-
-### REQ-PW-006: Statutory retention (10 years post-closure) with deadline-driven destruction proposals
-
-All Participatiewet cases MUST be retained for 10 years after closure, then marked for destruction.
-
-**GIVEN** a ParticipatiewetZaak is closed on 2026-03-15  
-**WHEN** vernietigingsDatum is calculated  
-**THEN** it MUST be set to 2036-03-15 (exactly 10 years later).
-
-**GIVEN** the current date is within 30 days of a zaak's vernietigingsDatum  
-**WHEN** a batch job runs  
-**THEN** the system MUST generate a vernietigingsvoorstel for archivaris approval.
-
-### REQ-PW-007: Re-integratie-trajectory milestones and evaluatie scheduling
-
-Re-integratie is an active, ongoing process with regular milestones and evaluaties.
-
-**GIVEN** a ReIntegratieTraject is active  
-**WHEN** quarterly evaluatie dates approach (within 14 days)  
-**THEN** the system MUST create a task for the klantmanager to conduct a milestone review (job-search progress, training completion, etc.).
-
-**GIVEN** a ReIntegratieTraject has `instrumenten` that include a loonkostensubsidie with a 12-month duration  
-**WHEN** the end date approaches  
-**THEN** the system MUST notify both the klantmanager and the employer that the subsidy period is ending and decide on next steps (extension, transition to unsubsidized employment, or loop back to job-search).
-
-### REQ-PW-008: Automatic anonymization of financial data on export (unless explicit consent)
-
-Participatiewet cases contain detailed financial information; exports MUST be anonymized unless the client has given explicit permission.
-
-**GIVEN** financial data from a bijstandsaanvraag is being exported (e.g., for a statistical report or shared with an external agency without client consent)  
-**WHEN** the export is triggered  
-**WHEN** no toestemming record is found  
-**THEN** the system MUST invoke `pii-detection-masking` to replace:
-- BSN with pseudonym
-- Exact income amounts with income-band ranges (€0–500, €501–1000, etc.)
-- Vermogen with asset-band ranges
-- Employer/creditor names with generic placeholders
-
-**GIVEN** explicit toestemming exists (e.g., for tax authority data-sharing in re-integration case)  
-**WHEN** the export proceeds  
-**THEN** the system MUST send identified data + log the consent basis.
-
-### REQ-PW-009: Comprehensive audit logging for financial-data access
-
+### Requirement: Comprehensive audit logging for financial-data access
 Every read of sensitive financial data MUST be logged.
 
-**GIVEN** a klantmanager opens a bijstandsaanvraag and views the vermoge + inkomens-gegevens  
-**WHEN** the zaak is displayed  
-**THEN** the system MUST log: `zaakId`, `medewerkerId`, `tijdstip`, `ipAdres`, `geraadpleegdeVelden` (specifically: vermogensToets, inkomensToets, etc.).
+#### Scenario: Klantmanager read of financial fields is logged
+- **GIVEN** a klantmanager opens a bijstandsaanvraag and views the vermogens- and inkomens-gegevens
+- **WHEN** the zaak is displayed
+- **THEN** the system logs `zaakId`, `medewerkerId`, `tijdstip`, `ipAdres`, and `geraadpleegdeVelden` (e.g., `vermogensToets`, `inkomensToets`)
 
-**GIVEN** a third-party agency (UWV, gemeente-accountant, tax authority) is granted read-access for a specific purpose  
-**WHEN** they access the data  
-**THEN** the system MUST log: `zaakId`, `requestingOrganisatie`, `doelGroep` (audit, compliance, etc.), `geautoriseerdeGegevens`, `tijdstip`.
+#### Scenario: Third-party agency read is logged with purpose
+- **GIVEN** a third-party agency (UWV, gemeente-accountant, tax authority) is granted read-access for a specific purpose
+- **WHEN** they access the data
+- **THEN** the system logs `zaakId`, `requestingOrganisatie`, `doelGroep`, `geautoriseerdeGegevens`, and `tijdstip`
 
-### REQ-PW-010: Support for counter-services obligation (tegenprestatie) and exemptions
+### Requirement: Support for counter-services obligation (tegenprestatie) and exemptions
+Participatiewet bijstandontvangers are obligated to participate in re-integratie unless exempt; the decision MUST be explicit and exemptions periodically reassessed.
 
-Participatiewet bijstandontvangers are obligated to participate in re-integratie (tegenprestatie) unless exempt.
+#### Scenario: Tegenprestatie decision is explicit
+- **GIVEN** a `ReIntegratieTraject` is created
+- **WHEN** the klantmanager reviews the applicant's circumstances
+- **THEN** they must explicitly set `tegenprestatieVerplicht = true` or record an exemption reason (medisch, kinderopvang, ouderschap, etc.)
 
-**GIVEN** a ReIntegratieTraject is created  
-**WHEN** the klantmanager reviews the applicant's circumstances  
-**THEN** they MUST explicitly decide: is `tegenprestatieVerplicht=true` or is there an exemption reason (medisch, kinderopvang, ouderschap, etc.)?
+#### Scenario: Medical exemption schedules periodic reassessment
+- **GIVEN** `tegenprestatieVerplicht = false` with reason "medische arbeidsongeschiktheid"
+- **WHEN** the zaak is saved
+- **THEN** a recurring task reminder is created every 6 months to reassess whether the medical exemption still applies
 
-**GIVEN** `tegenprestatieVerplicht=false` with reason "medische arbeidsongeschiktheid" (medical incapacity)  
-**WHEN** the zaak is saved  
-**THEN** the system MUST create a recurring task reminder every 6 months to reassess whether the medical exemption still applies.
+### Requirement: Participatiewet seed data for exploration
+The implementation chain MUST load three realistic Participatiewet seed cases (OpenRegister-backed) so testers can explore the zaaktype.
 
-## Seed data
-
-Three realistic Participatiewet cases (Dutch context, typical economic hardship scenarios):
-
-### Case 1: Young single parent, basic bijstand + wage subsidy re-integration
-- **Case ID:** zaak-2026-pw-01278
-- **Applicant:** BSN 234567890 (single mother, age 27)
-- **Household:** Alleenstaand-met-kinderen (1 child, age 4)
-- **Application date:** 2026-03-01
-- **Requested start date:** 2026-03-15
-- **Vermogenstoets:** 
-  - Recorded: €2,400 assets
-  - Threshold: €6,505 (single parent)
-  - Result: Under threshold → OK
-- **Inkomenstoets:**
-  - Current income: €0 (unemployment, no other income)
-  - Bijstandsnorm: €1,234.45/maand
-  - Result: Well below norm → `rechtOpBijstand=true`
-- **Re-integratie trajectory:**
-  - Type: werkfit-maken
-  - Afstand tot arbeidsmarkt: groot (long-term unemployment, skill-building needed)
-  - Instrumenten:
-    - Wage subsidy (60% loonwaarde, 12 months with Werkstap B.V.)
-    - Training (Heftruckchauffeur, SVH-1 course, €1,850 budget)
-    - Job coaching (3 months intensive)
-  - Partners: UWV (no-risk-polis), Werkbedrijf Regio Zuid (matching)
-- **Status:** re-integratie-loopt (after 2026-04-01 start)
-- **Wijkteam:** werk-en-inkomentteam-oost
-- **AVG classification:** Financieel (bijstandsgegevens) + gezinssituatie (single parent care burden), bewaarTermijn 10 jaren
-
-### Case 2: Older worker transitioning from sickness benefit
-- **Case ID:** zaak-2026-pw-02641
-- **Applicant:** BSN 456789012 (male, age 58)
-- **Household:** Alleenstaand (separated, no dependents)
-- **Application date:** 2026-02-15
-- **Reason:** Transition from long-term sickness benefit (wajong/WIA) to bijstand while re-integration attempts continue
-- **Vermogenstoets:** €1,200 (under €6,505 threshold)
-- **Inkomenstoets:** €350/month (partial disability benefit) < €1,234.45 norm → `rechtOpBijstand=true` (top-up bijstand)
-- **Re-integratie trajectory:**
-  - Type: scholing-specific (retraining for roles with health accommodations)
-  - Afstand tot arbeidsmarkt: zeer-groot (age 58, health barriers, skill obsolescence)
-  - Instrumenten:
-    - Retraining (office administration, part-time 20 hr/wk)
-    - Job coaching with health accommodations
-    - Employer subsidy for hiring worker with health barriers
-  - Partners: UWV, Training provider
-- **Tegenprestatie:** Verplicht (job-search minimum 10 hr/week + training participation)
-- **Evaluaties:** Quarterly (each 3 months)
-- **Status:** re-integratie-loopt
-- **AVG classification:** Financieel + medisch (health data informing accommodations), bewaarTermijn 10 jaren
-
-### Case 3: Recent immigrant, inburgering-linked bijstand
-- **Case ID:** zaak-2026-pw-03502
-- **Applicant:** BSN 567890123 (female, age 31, recent immigrant)
-- **Household:** Alleenstaand
-- **Application date:** 2026-04-01
-- **Reason:** Recent settlement; language/credential barriers to immediate employment
-- **Aanvraagsoort:** inburgering-gerelateerde-bijstand (temporary income support while integrating + completing language + credential recognition)
-- **Vermogenstoets:** €500
-- **Inkomenstoets:** €0 → `rechtOpBijstand=true`
-- **Re-integratie trajectory:**
-  - Type: werkfit-maken
-  - Afstand tot arbeidsmarkt: groot (language barriers, credential recognition pending)
-  - Instrumenten:
-    - Dutch language course (intensive, 3 months)
-    - Credential recognition program (medical qualifications from origin country)
-    - Internship placement (6 months) in healthcare sector
-  - Partners: Training provider, Healthcare employer, Inburgering programme coordinator
-- **Tegenprestatie:** Verplicht (language course + job-search + internship participation)
-- **Expected trajectory duration:** 12–18 months
-- **Status:** toetsing-afgerond → beschikking-voorbereiding (awaiting language-course confirmation)
-- **AVG classification:** Financieel + gezinssituatie (integration support), bewaarTermijn 10 jaren
+#### Scenario: Three representative Participatiewet cases are seeded
+- **GIVEN** the Participatiewet register patch is applied with seed data
+- **WHEN** a tester lists Participatiewet cases
+- **THEN** a young-single-parent case with wage-subsidy re-integration (`zaak-2026-pw-01278`, alleenstaand-met-kinderen, vermogen under threshold, `rechtOpBijstand = true`, werkfit-maken, status `re-integratie-loopt`, werk-en-inkomentteam-oost, AVG financieel + gezinssituatie, 10-jaar bewaartermijn) is present
+- **AND** an older-worker-from-sickness case (`zaak-2026-pw-02641`, age 58, top-up bijstand, scholing-specific, afstand zeer-groot, tegenprestatie verplicht, status `re-integratie-loopt`, AVG financieel + medisch) is present
+- **AND** a recent-immigrant inburgering-linked case (`zaak-2026-pw-03502`, inburgering-gerelateerde-bijstand, werkfit-maken, language + credential recognition, status `beschikking-voorbereiding`, AVG financieel + gezinssituatie) is present
 
 ## Integration points
 
-- **docudesk:** Beschikking-template for bijstand (legal decision letter, including vermoge + inkomens test results + appeal information)
-- **openconnector:** UWV data-exchange (sickness benefit transition), employer wage-subsidy reporting, training-provider outcome tracking
+- **docudesk:** Beschikking template for bijstand (decision letter including vermogens/inkomens test results and appeal information)
+- **openconnector:** UWV data-exchange (sickness-benefit transition), employer wage-subsidy reporting, training-provider outcome tracking
 - **mydash:** Work-and-income team dashboard (caseload, re-integratie milestones, overschredenTermijnen)
 - **openregister:** Retention scheduling, RBAC (werk-en-inkomentteam only), audit-trail for financial-data access
 
 ## Design notes
 
-- **Income-focused, not family-focused:** Unlike WMO (individual medical need) or Jeugdwet (family system), Participatiewet is fundamentally about **employment and income**. The zaak lifecycle is driven by income tests, benefit amounts, re-integratie milestones, not medical or family assessments.
-- **Shorter retention (10 years vs. 15/20):** Reflects that bijstand is typically short-term support (avg 1–2 years); post-closure records are kept 10 years for dispute/reclaim scenarios but not indefinitely.
-- **Active labor-market intervention:** The ReIntegratieTraject is not optional; it is a legal obligation (`tegenprestatie`) backed by benefit sanctions if not complied.
-- **Lifecycle:** All transitions (toetsing → beschikking → re-integratie → afgesloten) declared as `x-openregister-lifecycle` per ADR-031.
-- **Sensitive financial data:** Financial details are treated as special-category data despite not being AVG article 9 categories; access controls and anonymization are equally stringent.
-
+- **No parallel storage (ADR-022):** `ParticipatiewetZaak` and `ReIntegratieTraject` are fully OpenRegister-backed; no custom mappers or persistence layer.
+- **No custom state machine (ADR-031):** all transitions (toetsing → beschikking → re-integratie → afgesloten) are declared as `x-openregister-lifecycle`.
+- **Manifest navigation (ADR-024):** `bijstandsaanvraag` is discoverable from procest's case-type selector via the register manifest.
+- **Income-focused:** the lifecycle is driven by income tests, benefit amounts and re-integratie milestones, not medical/family assessments.
+- **Shorter retention (10 years):** reflects that bijstand is typically short-term support kept 10 years for dispute/reclaim scenarios.
+- **Active labor-market intervention:** the `ReIntegratieTraject` is a legal obligation (`tegenprestatie`) backed by benefit sanctions.
+- **Sensitive financial data:** treated with the same stringency as AVG art. 9 categories for access control and anonymization.

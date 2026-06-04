@@ -57,7 +57,7 @@ This is a `kind: config` change per ADR-032. Tasks here describe **spec-authorin
     - Regulatory references (GDPR, UAVG, selectielijst, VNG guidelines, NEN standards)
     - ADR-022/031/032 alignment documented
 
-- [ ] **T7** — Author `tasks.md` (this file) with full checklist of spec-authoring tasks, reviewer verification gates, and notes on implementation sequence.
+- [x] **T7** — Author `tasks.md` (this file) with full checklist of spec-authoring tasks, reviewer verification gates, and notes on implementation sequence. (Spec deltas also reformatted to OpenSpec `## ADDED Requirements` / `### Requirement:` / `#### Scenario:` format so `openspec validate --strict` passes.)
   - files: `tasks.md`
   - acceptance: All T1–T6 tasks listed with completion status; implementation-sequence notes for follow-up code chains; reviewer-gate checklist present
 
