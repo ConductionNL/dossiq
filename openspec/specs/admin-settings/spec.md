@@ -64,6 +64,23 @@ The system MUST register a settings page in the Nextcloud admin panel under the 
 - AND the case type list MUST show an appropriate error state rather than an empty list
 - AND all form controls MUST be disabled until OpenRegister is available
 
+### REQ-ADMIN-UI-01: In-app Settings page render [MVP]
+
+The in-app Settings page (`Settings.vue`, route `/settings`) SHALL mount and
+render its configuration shell on navigation — the "Version Information" and
+"Configuration" section headings, the register/schema configuration fields, the
+"Case Type Management" section, and the Save / Re-import controls — so an admin
+can configure the app from within the SPA. This is a browser-verifiable UI surface
+distinct from the Nextcloud admin-settings panel (REQ-ADMIN-001).
+
+#### Scenario: In-app settings page renders configuration sections
+- **GIVEN** an authenticated admin user on the Procest app
+- **WHEN** they navigate to the in-app Settings page
+- **THEN** the page MUST render a "Version Information" section heading
+- **AND** a "Configuration" section heading
+- **AND** a "Case Type Management" section heading
+- **AND** a "Save" control MUST be present
+
 ### REQ-ADMIN-002: Case Type List View [MVP]
 
 The admin settings MUST display a list of all case types with key metadata, following the `CaseTypeList.vue` component's `CnIndexPage` pattern.
