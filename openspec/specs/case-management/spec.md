@@ -1035,6 +1035,42 @@ The `OCA\Procest\Controller\EmailController` SHALL expose the HTTP surface: `POS
 
 <!-- END retrofit-2026-05-24-case-management -->
 
+## Case List Page Render (UI surface)
+
+### REQ-CM-UI-01: The Cases index page SHALL render its list shell on navigation
+
+The Cases index page (`CnIndexPage`, route `/cases`) SHALL mount and render its
+stable list shell — the Cards/Table view toggle, the "Add Case" create button,
+the per-row "Actions" control, and an empty-state message when no cases are
+visible — independently of whether the OpenRegister `case` collection returns
+rows. Data-dependent list behaviours (filtering, sorting, pagination, row badges
+in REQ-CM-04) remain covered by their own scenarios; this scenario asserts only
+the browser-verifiable rendered shell.
+
+#### Scenario: Cases index page renders list shell
+- **GIVEN** an authenticated user on the Procest app
+- **WHEN** they navigate to the Cases page
+- **THEN** the Cards/Table view-mode toggle MUST be visible
+- **AND** an "Add" create button MUST be visible
+- **AND** an "Actions" control MUST be present
+- **AND** the page MUST NOT show an Internal Server Error
+
+### REQ-CM-UI-02: The Voorstellen page SHALL render its shell on navigation
+
+The Voorstellen page (route `/voorstellen`, the consolidated B&W-voorstel surface
+folded into the case lifecycle per ADR-022) SHALL mount and render its page shell —
+the page heading and a create entry point — independently of whether any voorstel
+cases exist. Voorstel lifecycle transitions and per-row data remain covered by the
+case lifecycle scenarios; this scenario asserts only the browser-verifiable
+rendered shell.
+
+#### Scenario: Voorstellen page renders heading and create control
+- **GIVEN** an authenticated user on the Procest app
+- **WHEN** they navigate to the Voorstellen page
+- **THEN** the main content MUST render a page heading
+- **AND** a create / "Nieuw voorstel" entry point MUST be present
+- **AND** the page MUST NOT show an Internal Server Error
+
 ---
 
 ## UI References

@@ -215,6 +215,25 @@ Each of `DeadlineAlertsWidget`, `OverdueCasesWidget`, `StalledCasesWidget`, and 
 
 <!-- END retrofit-2026-05-24-signalering-widgets -->
 
+## Work Queue Page Render (UI surface)
+
+### REQ-SIG-UI-01: The Work Queue page SHALL render its KPI shell and filters
+
+The Work Queue page (`Werkvoorraad.vue`, route `/werkvoorraad`) SHALL mount and
+render its stable shell — the "Work Queue" page heading, the KPI strip
+(Open Cases, Overdue, Completed This Week, Unassigned), and the queue filter
+buttons (All, Unassigned, Overdue) — independently of whether cases are present.
+KPI values and queue rows are data-dependent and covered by the widget data
+scenarios above; this scenario asserts only the browser-verifiable rendered shell
+and filter controls.
+
+#### Scenario: Work Queue page renders KPI strip and filters
+- **GIVEN** an authenticated user on the Procest app
+- **WHEN** they navigate to the Work Queue page
+- **THEN** the main content MUST show a level-2 "Work Queue" heading
+- **AND** the KPI strip MUST show "Open Cases", "Overdue", "Completed This Week" and "Unassigned" labels
+- **AND** the "All", "Unassigned" and "Overdue" queue filter buttons MUST be visible
+
 ## Non-Functional Requirements
 
 - **Performance**: Signalering computation adds O(n) iteration over already-loaded cases/tasks. No additional API calls required.

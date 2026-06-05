@@ -7,11 +7,28 @@ retrofit_extensions:
 
 ## Purpose
 
-@e2e exclude Advice management is V1; lifecycle endpoints are backend-only in the current build.
+## Advice Page Render (UI surface)
+
+### Requirement: Advice index page render
+
+The Advice (adviezen) index page (`CnIndexPage`, route `/advice`) SHALL mount and
+render its stable list shell on navigation — the Cards/Table view toggle, an "Add"
+create button, a per-row "Actions" control, and an empty-state message when no
+advice requests are visible — independently of whether the OpenRegister collection
+returns rows.
+
+#### Scenario: Advice index page renders list shell
+- **GIVEN** an authenticated user on the Procest app
+- **WHEN** they navigate to the Advice page
+- **THEN** the Cards/Table view-mode toggle MUST be visible
+- **AND** an "Add" create button MUST be visible
+- **AND** the page MUST NOT show an Internal Server Error
 
 ## ADDED Requirements
 
 ### Requirement: Advice request schema
+
+@e2e exclude Advice request schema is V1 backend; covered by PHPUnit + OpenRegister schema validation, not a UI surface.
 
 The system SHALL store advice requests as `adviesAanvraag` objects in OpenRegister supporting internal and external advice lifecycle with deadline tracking.
 
@@ -48,6 +65,8 @@ The system SHALL store advice requests as `adviesAanvraag` objects in OpenRegist
 
 ### Requirement: Advice panel on case dashboard
 
+@e2e exclude In-case-detail panel requires a seeded case with advice requests; data-dependent panel not testable without pre-seeded case context.
+
 The system SHALL display an advice panel on the case dashboard showing all advice requests with their status and deadlines.
 
 **Feature tier**: V1
@@ -64,6 +83,8 @@ The system SHALL display an advice panel on the case dashboard showing all advic
 - **THEN** each request SHALL have quick actions: "Herinnering sturen" (for pending), "Bekijk advies" (for received), "Markeer als ontvangen" (for pending with document uploaded)
 
 ### Requirement: Advice request form
+
+@e2e exclude In-case-detail create form requires a seeded case context to open; data-dependent form not testable without pre-seeded case.
 
 The system SHALL provide a form for creating advice requests from the case dashboard.
 
@@ -87,6 +108,8 @@ The system SHALL provide a form for creating advice requests from the case dashb
 
 ### REQ-001: AdviceController SHALL expose advice transition + reminder endpoints
 
+@e2e exclude Backend PHP controller endpoints; covered by Newman API tests + PHPUnit, not a UI surface.
+
 `OCA\Procest\Controller\AdviceController` SHALL provide `POST /api/advice/{id}/transition` (transition the advice between statuses with optional payload) and `POST /api/advice/{id}/reminder` (manually dispatch a reminder to the assigned adviseur). Each endpoint SHALL delegate to `AdviceService` and SHALL enforce that the calling user has authority on the parent case.
 
 #### Scenario: Manual reminder dispatch
@@ -94,6 +117,8 @@ The system SHALL provide a form for creating advice requests from the case dashb
 - **THEN** the controller SHALL call `AdviceService::dispatchReminder($id)` and respond with the dispatch outcome
 
 ### REQ-002: AdviceService SHALL implement the full advice lifecycle + workflow guard
+
+@e2e exclude Backend PHP service + workflow guard; lifecycle logic covered by PHPUnit, not a UI surface.
 
 `OCA\Procest\Service\AdviceService` SHALL provide `transitionStatus()`, `dispatchReminder()`, `getAdviceForCase()`, `getOpenAdvice()`, `expireAdvice()`, and `applyWorkflowGuard()`. The workflow guard SHALL block parent-case status transitions while open advice requests are still pending for that case — releasing only when all advice is `received`, `withdrawn`, or `expired`. Status transitions SHALL be append-only audit-trailed.
 
@@ -107,6 +132,8 @@ The system SHALL provide a form for creating advice requests from the case dashb
 - **THEN** the advice status SHALL transition to `expired` and the parent case workflow guard SHALL release this dependency
 
 ### REQ-003: AdviceDeadlineJob SHALL send reminders and auto-expire overdue advice
+
+@e2e exclude Backend BackgroundJob; reminder/expiry idempotency covered by PHPUnit, not a UI surface.
 
 `OCA\Procest\BackgroundJob\AdviceDeadlineJob` SHALL run on the Nextcloud BackgroundJob schedule and: (a) dispatch reminders to assigned adviseurs at the configured thresholds before the deadline, (b) call `AdviceService::expireAdvice()` on requests whose deadline has passed without response. The job SHALL be idempotent — duplicate runs SHALL NOT send duplicate reminders for the same threshold.
 

@@ -568,3 +568,21 @@ The system MUST register three Nextcloud-native dashboard widgets for display on
 - **THEN** all three workflow widgets SHALL be listed alongside the signalering widgets
 
 <!-- END retrofit-2026-05-24-dashboard -->
+
+## Dashboard Page Render (UI surface)
+
+### REQ-DASH-UI-01: The in-app dashboard page SHALL render its shell on navigation
+
+The Procest dashboard landing page (`CnDashboardPage`, route `/`) SHALL mount and
+render a stable shell — the "Dashboard" page heading, its action controls, and the
+widget grid container — regardless of whether the underlying OpenRegister
+aggregation endpoints return data. This is a real, browser-verifiable UI surface
+and is covered by a Playwright test that navigates to the dashboard via the
+sidebar and asserts the rendered shell (data rows themselves remain
+data-dependent and are excluded above).
+
+#### Scenario: Dashboard page renders heading and widget grid
+- **GIVEN** an authenticated user on the Procest app
+- **WHEN** they click the "Dashboard" entry in the app sidebar
+- **THEN** the main content MUST show a level-2 "Dashboard" heading
+- **AND** the widget grid container MUST render (showing the configured widget tiles or their unavailable-placeholder shells)
