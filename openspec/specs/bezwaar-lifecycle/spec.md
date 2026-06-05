@@ -7,11 +7,28 @@ retrofit_extensions:
 
 ## Purpose
 
-@e2e exclude Bezwaar lifecycle is V1 seed data + case type config; imported via repair step, covered by PHPUnit.
+## Bezwaren Page Render (UI surface)
+
+### Requirement: Bezwaren index page render
+
+The Bezwaren (objections) index page (`CnIndexPage`, route `/bezwaren`) SHALL mount
+and render its stable list shell on navigation — the Cards/Table view toggle, an
+"Add" create button, a per-row "Actions" control, and an empty-state message when
+no objection cases are visible — independently of whether the OpenRegister
+collection returns rows.
+
+#### Scenario: Bezwaren index page renders list shell
+- **GIVEN** an authenticated user on the Procest app
+- **WHEN** they navigate to the Bezwaren page
+- **THEN** the Cards/Table view-mode toggle MUST be visible
+- **AND** an "Add" create button MUST be visible
+- **AND** the page MUST NOT show an Internal Server Error
 
 ## ADDED Requirements
 
 ### Requirement: Bezwaar Case Type Pre-Seeded Configuration
+
+@e2e exclude Bezwaar lifecycle is V1 seed data + case type config; imported via repair step, covered by PHPUnit.
 
 The system SHALL provide a pre-seeded "Bezwaar" (objection) case type with AWB chapter 6/7 compliant configuration. The case type SHALL be imported via the repair step alongside existing case types.
 
@@ -40,6 +57,8 @@ The system SHALL provide a pre-seeded "Bezwaar" (objection) case type with AWB c
 - **AND** the case type SHALL have `suspensionAllowed` set to `true`
 
 ### Requirement: Bezwaar Status Types
+
+@e2e exclude V1 seed/config — bezwaar status types imported via repair step, covered by PHPUnit.
 
 The system SHALL provide pre-seeded status types for the Bezwaar case type that reflect the AWB-mandated process phases. Status types SHALL be ordered to enforce the legal process sequence.
 
@@ -73,6 +92,8 @@ The system SHALL provide pre-seeded status types for the Bezwaar case type that 
 
 ### Requirement: Bezwaar Role Types
 
+@e2e exclude V1 seed/config — bezwaar role types imported via repair step, covered by PHPUnit.
+
 The system SHALL provide pre-seeded role types for the Bezwaar case type covering all participants in the objection process.
 
 **Feature tier**: V1
@@ -95,6 +116,8 @@ The system SHALL provide pre-seeded role types for the Bezwaar case type coverin
 - **AND** each role type SHALL map to a standard generic role
 
 ### Requirement: Bezwaar Deadline Calculation
+
+@e2e exclude AWB deadline math is a backend service; covered by PHPUnit, not a UI surface.
 
 The system SHALL automatically calculate legal deadlines when a bezwaar case is created, based on AWB articles 6:7, 6:8, 7:10, and 7:24.
 
@@ -140,6 +163,8 @@ computed-fields capability (`RenderObject.php:1418`).
 
 ### Requirement: Bezwaar Objection Object Schema
 
+@e2e exclude Schema definition (V1 seed); covered by PHPUnit + OpenRegister schema validation, not a UI surface.
+
 The system SHALL store bezwaarschrift (objection letter) details as an OpenRegister object linked to the bezwaar case. This captures the formal objection content separately from the case metadata.
 
 **Feature tier**: V1
@@ -179,6 +204,8 @@ The system SHALL store bezwaarschrift (objection letter) details as an OpenRegis
 
 ### REQ-001: BezwaarLifecycleListener SHALL react to lifecycle events and update bezwaar state
 
+@e2e exclude Backend PHP event listener; idempotent state-machine logic covered by PHPUnit, not a UI surface.
+
 `OCA\Procest\Listener\BezwaarLifecycleListener` SHALL implement `OCP\EventDispatcher\IEventListener::handle($event)` and react to: bezwaar created (set initial status + assigned reviewer), bezwaar hearing scheduled (block status changes until hearing concludes), bezwaar decision made (compute decision deadline + propagate to case timeline), and bezwaar withdrawn (terminate the lifecycle). The listener SHALL be idempotent on repeated event delivery — handler effects SHALL be guarded by the bezwaar's current state so a re-played event is a no-op when the transition already occurred.
 
 #### Scenario: Replayed creation event is a no-op
@@ -188,6 +215,8 @@ The system SHALL store bezwaarschrift (objection letter) details as an OpenRegis
 
 ### REQ-002: SeedBezwaarBeroepData SHALL seed shared reference data for bezwaar + beroep
 
+@e2e exclude Backend repair-step seeder; idempotency covered by PHPUnit, not a UI surface.
+
 `OCA\Procest\Repair\SeedBezwaarBeroepData` SHALL run on app install/upgrade and create the shared reference data for bezwaar + beroep workflows: status types, role types, decision-type enumerations, and any standing notification templates. The seeder SHALL be idempotent — pre-existing records (matched by slug/code) SHALL be left untouched, and re-running the repair SHALL be safe.
 
 #### Scenario: Repair re-runs on upgrade
@@ -195,6 +224,8 @@ The system SHALL store bezwaarschrift (objection letter) details as an OpenRegis
 - **THEN** `SeedBezwaarBeroepData::run($output)` SHALL skip rows already in the database and only add net-new reference data introduced in this release
 
 ### REQ-003: SeedBezwaarWorkflowDefinition SHALL seed the canonical bezwaar workflow definition
+
+@e2e exclude Backend repair-step workflow seeder; idempotent no-op covered by PHPUnit, not a UI surface.
 
 `OCA\Procest\Repair\SeedBezwaarWorkflowDefinition` SHALL create the canonical bezwaar workflow definition (status nodes, transitions, role guards, deadline rules) as a published version 1 record. The seeder SHALL be idempotent — if a published bezwaar workflow already exists, the repair SHALL be a no-op rather than creating a competing version. If the existing record is on an older schema version, the seeder SHALL migrate it forward in-place rather than seeding a parallel record.
 
