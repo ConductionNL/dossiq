@@ -22,6 +22,7 @@ test.describe('Dashboard', () => {
 
 test.describe('Cases page', () => {
 
+	// @e2e openspec/specs/case-management/spec.md#cases-index-page-renders-list-shell
 	test('renders list view with correct controls', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/cases')
 		await expect(page.getByRole('radio', { name: 'Cards' })).toBeVisible({ timeout: 10000 })
@@ -65,6 +66,7 @@ test.describe('Cases page', () => {
 
 test.describe('Tasks page', () => {
 
+	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list
 	test('renders list view with search and filters', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/tasks')
 		await expect(page.getByRole('radio', { name: 'Table' })).toBeChecked({ timeout: 10000 })
@@ -77,6 +79,7 @@ test.describe('Tasks page', () => {
 
 test.describe('My Work page', () => {
 
+	// @e2e openspec/specs/my-work/spec.md#filter-tab-layout
 	test('renders with correct filter controls', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/my-work')
 		await expect(page.getByRole('heading', { name: 'My Work', level: 2 })).toBeVisible({ timeout: 10000 })
@@ -90,6 +93,7 @@ test.describe('My Work page', () => {
 
 test.describe('Work Queue page', () => {
 
+	// @e2e openspec/specs/signalering-widgets/spec.md#work-queue-page-renders-kpi-strip-and-filters
 	test('renders with heading and stat cards', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/werkvoorraad')
 		await expect(page.getByRole('heading', { name: 'Work Queue', level: 2 })).toBeVisible({ timeout: 10000 })
@@ -112,6 +116,7 @@ test.describe('Work Queue page', () => {
 
 test.describe('B&W Voorstellen page', () => {
 
+	// @e2e openspec/specs/case-management/spec.md#voorstellen-page-renders-heading-and-create-control
 	test('renders with heading and create button', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/voorstellen')
 		await expect(page.getByRole('heading', { name: 'B&W Voorstellen', level: 2 })).toBeVisible({ timeout: 10000 })
@@ -133,6 +138,7 @@ test.describe('B&W Voorstellen page', () => {
 
 test.describe('Doorlooptijd page', () => {
 
+	// @e2e openspec/specs/doorlooptijd-dashboard/spec.md#doorlooptijd-page-renders-heading
 	test('renders processing time analytics', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/doorlooptijd')
 		await expect(page.getByRole('heading', { name: 'Processing Time Analytics', level: 2 })).toBeVisible({ timeout: 10000 })
@@ -143,6 +149,7 @@ test.describe('Doorlooptijd page', () => {
 
 test.describe('Settings page', () => {
 
+	// @e2e openspec/specs/admin-settings/spec.md#in-app-settings-page-renders-configuration-sections
 	test('renders version and configuration sections', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/settings')
 		await expect(page.getByRole('heading', { name: 'Version Information' })).toBeVisible({ timeout: 10000 })
