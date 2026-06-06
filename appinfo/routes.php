@@ -207,8 +207,8 @@ return [
 
         // NOTE: ParaferingController + ParaferingService were superseded scaffolding
         // that operated entirely in-memory (no persistence, client-supplied state).
-        // Deleted in wave-3 security fix.  The live engine is ParafeerActieService /
-        // ParafeerRouteController.  Audit-trail export route retained below.
+        // Deleted in wave-3 security fix. The live engine is ParafeerActieService /
+        // ParafeerRouteController. Audit-trail export route retained below.
         // Parafering audit trail Archiefwet-aligned export (action, not CRUD).
         // CRUD on paraferingAuditEntry objects is served by OpenRegister's
         // auto-exposed /api/objects/<register>/<schema> endpoints — only the
@@ -389,6 +389,32 @@ return [
         ['name' => 'agenda#updateAgendaItem',         'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'PUT'],
         ['name' => 'publication#publish',             'url' => '/api/besluitvorming/cases/{id}/publish',        'verb' => 'POST'],
         ['name' => 'mandaat#mandaatCheck',             'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
+
+        // ── Complaints (klachtafhandeling) — Awb chapter 9 ─────────────────
+        ['name' => 'complaint#index',              'url' => '/api/complaints',                             'verb' => 'GET'],
+        ['name' => 'complaint#create',             'url' => '/api/complaints',                             'verb' => 'POST'],
+        ['name' => 'complaint#show',               'url' => '/api/complaints/{id}',                        'verb' => 'GET'],
+        ['name' => 'complaint#update',             'url' => '/api/complaints/{id}',                        'verb' => 'PUT'],
+        ['name' => 'complaint#transition',         'url' => '/api/complaints/{id}/transition',             'verb' => 'POST'],
+        ['name' => 'complaint#verdaging',          'url' => '/api/complaints/{id}/verdaging',              'verb' => 'POST'],
+        ['name' => 'complaint#escalate',           'url' => '/api/complaints/{id}/escalate',               'verb' => 'POST'],
+        ['name' => 'complaint#deadlineAlerts',     'url' => '/api/complaints/deadline-alerts',             'verb' => 'GET'],
+        // Hearings.
+        ['name' => 'complaint#hearings',           'url' => '/api/complaints/{id}/hearings',               'verb' => 'GET'],
+        ['name' => 'complaint#scheduleHearing',    'url' => '/api/complaints/{id}/hearings',               'verb' => 'POST'],
+        ['name' => 'complaint#recordHearingOutcome','url' => '/api/complaints/{id}/hearings/{hearingId}',  'verb' => 'PUT'],
+        // Dispositions.
+        ['name' => 'complaint#getDisposition',     'url' => '/api/complaints/{id}/disposition',            'verb' => 'GET'],
+        ['name' => 'complaint#submitDisposition',  'url' => '/api/complaints/{id}/disposition',            'verb' => 'POST'],
+        ['name' => 'complaint#approveDisposition', 'url' => '/api/complaints/{id}/disposition/approve',   'verb' => 'POST'],
+        ['name' => 'complaint#generateLetter',     'url' => '/api/complaints/{id}/disposition/letter',    'verb' => 'POST'],
+        // Analytics.
+        ['name' => 'complaint#analytics',          'url' => '/api/complaints/analytics',                  'verb' => 'GET'],
+        ['name' => 'complaint#kpi',                'url' => '/api/complaints/kpi',                        'verb' => 'GET'],
+        // Categories (admin).
+        ['name' => 'complaint#categories',         'url' => '/api/complaint-categories',                  'verb' => 'GET'],
+        ['name' => 'complaint#createCategory',     'url' => '/api/complaint-categories',                  'verb' => 'POST'],
+        ['name' => 'complaint#updateCategory',     'url' => '/api/complaint-categories/{id}',             'verb' => 'PUT'],
 
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],

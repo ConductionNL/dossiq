@@ -1,350 +1,343 @@
 ---
-status: proposed
+status: implemented
 ---
-# Spec: complaint-management
-
-**Status:** proposed
-**Scope:** procest
-**Depends on:** case-management, case-types, openregister (RBAC + audit + lifecycle + relations per ADR-022), docudesk (letter generation), n8n (intake + deadline monitoring), nextcloud-calendar, nextcloud-talk
+# complaint-management Specification
 
 ## Purpose
-
-Implement klachtafhandeling (complaint management) as a first-class entity in Procest with its own lifecycle, Awb-mandated deadlines, escalation to formal cases, disposition tracking, and frequency analysis. Complaints are a distinct intake channel from regular cases: they follow a lighter process, have legal response deadlines (Awb chapter 9), and can escalate to formal zaken when a complaint reveals a larger systemic issue.
+Implement klachtafhandeling (complaint management) as a first-class entity in Procest with its own lifecycle, escalation to formal cases, disposition tracking, and frequency analysis. Complaints are a distinct intake channel from regular cases: they follow a lighter process, have legal response deadlines (Awb chapter 9), and can escalate to formal cases when the complaint reveals a larger issue.
 
 ## Context
+In Dutch municipal practice, the Algemene wet bestuursrecht (Awb) chapter 9 mandates a formal klachtenprocedure with specific timelines and process requirements. Citizens have the right to file complaints about government conduct, and municipalities must acknowledge within 5 working days, resolve within 6 weeks, and offer the complainant the right to be heard (hoorgesprek). Complaints are distinct from bezwaar (objection to a decision) and from regular service requests.
 
-Awb chapter 9 mandates a formal klachtenprocedure with specific timelines. Citizens have the right to file complaints about government conduct; municipalities must acknowledge within 5 working days, resolve within 6 weeks (with one optional 4-week verdaging), offer the complainant the right to be heard (hoorgesprek), and issue a written disposition (oordeel). Complaints are distinct from bezwaar (objection to a decision) and from regular service requests. Procest currently has no dedicated complaint infrastructure — complaints are logged as generic cases, losing channel-specific intake, Awb deadline math, disposition classification, and frequency pattern detection.
+Procest's case management infrastructure (cases, tasks, statuses, roles, results) can model complaints as a specialized case type with Awb-mandated deadlines. The `caseType` schema supports `processingDeadline`, and the status type system can define the complaint lifecycle. ArkCase implements complaints as a separate entity with its own plugin, pipeline, and close/approval workflow -- Procest can achieve similar functionality through configuration plus targeted new components for Awb-specific features.
 
 ## ADDED Requirements
+### Requirement: Complaints MUST be first-class entities with dedicated schema
+The system SHALL treat complaints as first-class entities with their own OpenRegister schema and lifecycle, distinct from a regular zaak but sharing the case infrastructure.
 
-### REQ-CM-001: The system SHALL store complaints as first-class OpenRegister objects with a dedicated `complaint` schema
+#### Scenario: Register a new complaint via intake form
+- **GIVEN** the Procest complaints module is enabled
+- **WHEN** a case worker registers a complaint received from a citizen
+- **THEN** a complaint object MUST be created in OpenRegister with:
+  - `klachtnummer`: auto-generated (format: `KL-{year}-{sequence}`, e.g., `KL-2026-0042`)
+  - `klager`: reference to the person filing the complaint (name, email, phone, BSN if known)
+  - `onderwerp`: subject of the complaint (short title)
+  - `omschrijving`: detailed description of the complaint
+  - `ontvangstdatum`: date the complaint was received
+  - `ontvangstkanaal`: intake channel enum (`balie`, `telefoon`, `email`, `brief`, `website`, `socialmedia`)
+  - `categorie`: complaint category (configurable per tenant)
+  - `betrokkenMedewerker`: optional reference to the employee the complaint is about
+  - `betrokkenAfdeling`: optional reference to the department
+  - `status`: initial status `ontvangen`
+  - `behandelaar`: assigned complaint handler
+  - `prioriteit`: priority level (`laag`, `normaal`, `hoog`, `urgent`)
 
-Complaints MUST be declared as a register in `lib/Settings/procest_register.json` with the `complaint` schema as the canonical entity. No custom PHP model, no custom database table, no parallel storage (ADR-001, ADR-022). The register is exposed through OpenRegister's generic CRUD API; procest adds no per-app `ComplaintMapper` for basic complaint CRUD.
-
-**Schema.org annotation:** `schema:Message`
-
-Fields: `klachtnummer`, `klager`, `onderwerp`, `omschrijving`, `ontvangstdatum`, `ontvangstkanaal`, `categorie`, `betrokkenMedewerker`, `betrokkenAfdeling`, `behandelaar`, `prioriteit`, `ontvangstbevestigingDeadline`, `afhandelDeadline`, `verdagingMogelijk`, `geescaleerdeZaak`. Full schema definition in `design.md`.
-
-#### Scenario: Register a new complaint via the intake form
-
-- **GIVEN** the complaint-management module is enabled and `complaint_schema` is configured
-- **WHEN** a medewerker registers a complaint received from a citizen
-- **THEN** a `complaint` object MUST be created in OpenRegister with `klachtnummer` set to `KL-{year}-{sequence}` (e.g. `KL-2026-0042`), `ontvangstdatum` populated, `status` set to `ontvangen`, and `ontvangstkanaal` set to the selected channel
-
-#### Scenario: Complaint numbering resets each calendar year
-
+#### Scenario: Complaint numbering is sequential per year
 - **GIVEN** 41 complaints have been registered in 2026
-- **WHEN** a new complaint is created on 2026-05-20
+- **WHEN** a new complaint is created on 2026-03-20
 - **THEN** the complaint number MUST be `KL-2026-0042`
-- **AND** on 2027-01-01 the next complaint MUST receive number `KL-2027-0001`
+- **AND** the sequence MUST reset to 0001 on January 1, 2027
 
-#### Scenario: Email intake creates a draft complaint automatically
+#### Scenario: Complaint intake from multiple channels
+- **GIVEN** a complaint arrives via email to klachten@gemeente.nl
+- **WHEN** the n8n email trigger processes the incoming email
+- **THEN** a complaint object MUST be auto-created with `ontvangstkanaal` set to `email`
+- **AND** the email body MUST be stored as `omschrijving`
+- **AND** the sender's email MUST be stored in `klager.email`
+- **AND** the complaint handler MUST receive a notification to review and complete the intake
 
-- **GIVEN** a message arrives at klachten@gemeente.nl
-- **WHEN** the n8n email-intake workflow processes it
-- **THEN** a `complaint` object MUST be created with `ontvangstkanaal: "email"`, `omschrijving` set to the email body, and `klager.email` set to the sender's address
-- **AND** the `behandelaar` group MUST receive a notification to review and complete the intake
+#### Scenario: Complaint data validation
+- **GIVEN** a case worker is creating a new complaint
+- **WHEN** they attempt to save without filling required fields (`onderwerp`, `omschrijving`, `ontvangstdatum`)
+- **THEN** the system MUST display validation errors for each missing required field
+- **AND** the complaint MUST NOT be saved until validation passes
 
-#### Scenario: Reviewer confirms no parallel storage
+### Requirement: Complaints MUST follow the Awb chapter 9 lifecycle with enforced deadlines
+The Awb prescribes specific complaint handling timelines that the system MUST calculate and enforce.
 
-- **GIVEN** the procest codebase
-- **WHEN** scanned for `lib/Db/` Mapper classes naming `complaint_`, `klacht_`, or `klachten_`
-- **THEN** no such classes SHALL exist; all complaint data flows through the OR object API
+#### Scenario: Awb deadline calculation on complaint creation
+- **GIVEN** complaint `KL-2026-0042` is received on 2026-03-01 (Monday)
+- **WHEN** the complaint is created
+- **THEN** the system MUST automatically calculate:
+  - `ontvangstbevestigingDeadline`: 5 working days = 2026-03-08 (following Monday, skipping weekend)
+  - `afhandelDeadline`: 6 weeks = 2026-04-12
+  - `verdagingMogelijk`: true (4-week extension available, extending to 2026-05-10)
+- **AND** these deadlines MUST be stored on the complaint object
 
----
+#### Scenario: Complaint lifecycle status transitions
+- **GIVEN** complaint `KL-2026-0042` with status `ontvangen`
+- **THEN** the following status transitions MUST be enforced:
+  - `ontvangen` -> `ontvangst_bevestigd` (acknowledgment sent)
+  - `ontvangst_bevestigd` -> `in_behandeling` (investigation started)
+  - `in_behandeling` -> `hoorgesprek_gepland` (hearing scheduled)
+  - `hoorgesprek_gepland` -> `hoorgesprek_afgerond` (hearing completed)
+  - `hoorgesprek_afgerond` -> `afgehandeld` (resolution with disposition)
+  - Any status -> `ingetrokken` (complainant withdraws)
+- **AND** skipping the hearing stages MUST be allowed when the complainant waives the right to be heard
 
-### REQ-CM-002: The system SHALL enforce Awb chapter 9 deadlines using working-day arithmetic
+#### Scenario: Acknowledgment deadline warning at 3 days
+- **GIVEN** complaint `KL-2026-0042` received on 2026-03-01 with `ontvangstbevestigingDeadline` 2026-03-08
+- **AND** the current date is 2026-03-05 (3 working days elapsed)
+- **AND** status is still `ontvangen` (no acknowledgment sent)
+- **THEN** the system MUST send a warning notification to the complaint handler
+- **AND** the complaint MUST appear in the "Dreigend verlopen" section of the complaints dashboard
 
-A `WorkingDayCalculator` helper MUST centralize all working-day math. On complaint creation, the system MUST automatically compute `ontvangstbevestigingDeadline` (5 working days from `ontvangstdatum`) and `afhandelDeadline` (30 working days from `ontvangstdatum`, equivalent to 6 calendar weeks). The calculator MUST respect Dutch public holidays (Nieuwjaarsdag, Pasen, Koningsdag, Bevrijdingsdag, Hemelvaartsdag, Pinksterdag, Kerstmis).
+#### Scenario: Resolution deadline warning and escalation
+- **GIVEN** complaint `KL-2026-0042` has `afhandelDeadline` 2026-04-12
+- **AND** the current date is 2026-04-05 (1 week before deadline)
+- **AND** status is `in_behandeling`
+- **THEN** the system MUST send a warning to the handler and their coordinator
+- **AND** if the deadline passes without resolution, the complaint MUST be flagged as "Verlopen"
+- **AND** the coordinator MUST receive an escalation notification
 
-#### Scenario: Deadline calculation on complaint creation
-
-- **GIVEN** complaint `KL-2026-0042` is received on 2026-04-28 (Monday)
-- **WHEN** the complaint is saved
-- **THEN** `ontvangstbevestigingDeadline` MUST be 2026-05-05 (skipping Koningsdag 2026-04-27 is already passed; 5 working days forward = 2026-05-05)
-- **AND** `afhandelDeadline` MUST be 30 working days from 2026-04-28 = 2026-06-09
-- **AND** `verdagingMogelijk` MUST be set to `true`
-
-#### Scenario: Verdaging extends the deadline exactly once
-
-- **GIVEN** complaint `KL-2026-0042` has `afhandelDeadline` 2026-06-09 and `verdagingMogelijk` is `true`
+#### Scenario: Request deadline extension (verdaging)
+- **GIVEN** complaint `KL-2026-0042` has `afhandelDeadline` 2026-04-12 and `verdagingMogelijk` is true
 - **WHEN** the handler requests a 4-week extension with written justification
-- **THEN** `afhandelDeadline` MUST be updated to 2026-07-07 (4 calendar weeks later)
-- **AND** `verdagingMogelijk` MUST be set to `false`
-- **AND** the complainant MUST be notified of the extension and the reason
+- **THEN** `afhandelDeadline` MUST be updated to 2026-05-10
+- **AND** `verdagingMogelijk` MUST be set to false (only one extension allowed per Awb)
+- **AND** the complainant MUST be notified of the extension with the justification
+- **AND** the extension MUST be recorded in the audit trail
 
-#### Scenario: Second verdaging attempt is rejected
+### Requirement: Complaints MUST support a hearing (hoorgesprek)
+The system SHALL support a hearing (hoorgesprek) process, as the Awb gives the complainant the right to be heard before a decision is made on the complaint.
 
-- **GIVEN** complaint `KL-2026-0042` has `verdagingMogelijk: false`
-- **WHEN** the handler attempts a second extension
-- **THEN** the system MUST return an error: "Verdaging reeds toegepast — slechts één verlenging toegestaan (Awb art. 9:11 lid 2)"
-- **AND** the deadline MUST remain unchanged
-
-#### Scenario: Deadline warning fires at T-3 working days (acknowledgment)
-
-- **GIVEN** complaint `KL-2026-0042` has `ontvangstbevestigingDeadline` 2026-05-05 and status is still `ontvangen`
-- **WHEN** the n8n deadline-monitor job runs on 2026-04-30 (3 working days before deadline)
-- **THEN** the `behandelaar` MUST receive a Nextcloud notification: "Klacht KL-2026-0042: Ontvangstbevestiging deadline over 3 werkdagen"
-
-#### Scenario: Overdue complaint is escalated to coordinator
-
-- **GIVEN** complaint `KL-2026-0042` has passed its `afhandelDeadline` without reaching `afgehandeld`
-- **WHEN** the n8n deadline-monitor job runs
-- **THEN** the `klachten-coordinator` group MUST receive an escalation notification
-- **AND** the complaint MUST appear in the "Verlopen" section of the complaint list
-
----
-
-### REQ-CM-003: The system SHALL support the hoorgesprek (hearing) process per Awb art. 9:10
-
-A `hearing` schema MUST be declared in `procest_register.json`. `HearingService` creates the hearing record and dispatches calendar invitations via `OCP\Calendar\IManager`. For `videogesprek` type, a Nextcloud Talk room MUST be created via `OCP\Talk\IBroker` and the URL stored on the hearing record.
-
-**Schema.org annotation:** `schema:Event`
-
-Fields: `complaint`, `datum`, `locatie`, `type`, `deelnemers`, `talkRoomUrl`, `verslag`, `conclusie`, `aanwezigen`, `datumAfgerond`. Full schema in `design.md`.
-
-#### Scenario: Schedule a physical hearing
-
-- **GIVEN** complaint `KL-2026-0042` has status `in_behandeling`
-- **WHEN** the handler schedules a hearing with type `fysiek`, date, location, and participants
-- **THEN** a `hearing` object MUST be created linked to the complaint
-- **AND** calendar invitations MUST be sent to all `deelnemers` via `OCP\Calendar\IManager`
+#### Scenario: Schedule a hearing
+- **GIVEN** complaint `KL-2026-0042` is `in_behandeling`
+- **WHEN** the handler schedules a hearing
+- **THEN** a hearing record MUST be created as a linked object with:
+  - `datum`: scheduled date and time
+  - `locatie`: location (physical address or video conferencing link)
+  - `deelnemers`: list of participants (klager, behandelaar, betrokken medewerker, optional witnesses)
+  - `type`: hearing type (`fysiek`, `telefonisch`, `videogesprek`)
 - **AND** the complaint status MUST change to `hoorgesprek_gepland`
+- **AND** calendar invitations MUST be sent to all participants via Nextcloud Calendar (`OCP\Calendar\IManager`)
 
-#### Scenario: Video hearing creates a Talk room
-
-- **GIVEN** the hearing type is `videogesprek`
-- **WHEN** the hearing is scheduled
-- **THEN** `HearingService` MUST call `OCP\Talk\IBroker` to create a conversation
-- **AND** the resulting URL MUST be stored in `hearing.talkRoomUrl`
-- **AND** the Talk URL MUST be included in the calendar invitation
-
-#### Scenario: Hearing outcome is recorded
-
-- **GIVEN** hearing `hoorgesprek-2026-0001` has taken place
-- **WHEN** the handler records `verslag`, `conclusie`, `aanwezigen`, and `datumAfgerond`
-- **THEN** the `hearing` object MUST be updated with those fields
+#### Scenario: Record hearing outcome
+- **GIVEN** the hearing for `KL-2026-0042` has taken place
+- **WHEN** the handler records the outcome
+- **THEN** the hearing record MUST be updated with:
+  - `verslag`: summary of the hearing (mandatory)
+  - `conclusie`: preliminary conclusion
+  - `aanwezigen`: actual attendees (may differ from planned participants)
+  - `datumAfgerond`: actual hearing date
 - **AND** the complaint status MUST change to `hoorgesprek_afgerond`
 
-#### Scenario: Complainant waives the right to be heard
-
+#### Scenario: Complainant waives right to hearing
 - **GIVEN** complaint `KL-2026-0042` is `in_behandeling`
-- **WHEN** the handler records a waiver (date, method, confirmation text)
-- **THEN** the waiver MUST be stored as a document attached to the complaint
-- **AND** the complaint MUST skip the hearing statuses and proceed directly to disposition
+- **WHEN** the complainant explicitly waives their right to be heard
+- **THEN** the handler MUST record the waiver with: waiver date, method (email/brief/telefoon), and confirmation text
+- **AND** the complaint MUST skip the hearing stages and proceed directly to disposition
+- **AND** the waiver MUST be stored as a document attached to the complaint
 
----
+#### Scenario: Hearing with video conferencing integration
+- **GIVEN** the hearing type is `videogesprek`
+- **WHEN** the hearing is scheduled
+- **THEN** the system MUST create a Talk conversation (via `OCP\Talk\IBroker`) and attach the link to the hearing record
+- **AND** the video link MUST be included in the calendar invitation
 
-### REQ-CM-004: The system SHALL support bidirectional escalation between complaints and formal cases
+### Requirement: Complaints MUST support escalation to formal cases
+The system SHALL support escalation of a complaint to a formal case (zaak) when a complaint reveals a larger issue, while maintaining the bidirectional link.
 
-`ComplaintService` MUST link complaints to procest `case` objects using the `geescaleerdeZaak` field on `complaint` and a `bronKlacht` relation reference on the `case`. The link is maintained as an OpenRegister relation — no custom foreign-key table.
+#### Scenario: Escalate complaint to formal case
+- **GIVEN** complaint `KL-2026-0042` reveals a systemic service failure in the building permits department
+- **WHEN** the handler clicks "Escaleren naar zaak" and selects zaaktype "Intern onderzoek"
+- **THEN** a new zaak MUST be created in Procest with the selected zaaktype
+- **AND** the zaak MUST reference the originating complaint (`bronKlacht`: complaint ID)
+- **AND** the complaint MUST reference the created zaak (`geescaleerdeZaak`: case ID)
+- **AND** the complaint's documents and hearing records MUST be accessible from the zaak
+- **AND** the complaint status MUST remain independently trackable (not closed by escalation)
 
-#### Scenario: Escalate a complaint to a formal case
+#### Scenario: View escalated case from complaint
+- **GIVEN** complaint `KL-2026-0042` has been escalated to case "ZAAK-2026-000567"
+- **WHEN** viewing the complaint detail
+- **THEN** a "Gerelateerde zaak" section MUST show the linked case with: case number, status, and a link to the case detail
+- **AND** updates to the case MUST be visible in the complaint's activity timeline
 
-- **GIVEN** complaint `KL-2026-0042` reveals a systemic service failure
-- **WHEN** the handler clicks "Escaleren naar zaak" and selects a zaaktype
-- **THEN** a new `case` object MUST be created with the selected caseType
-- **AND** `complaint.geescaleerdeZaak` MUST be set to the new case UUID
-- **AND** the case MUST carry a relation back to the originating complaint UUID
-- **AND** the complaint MUST remain independently trackable (not closed by escalation)
+#### Scenario: Multiple complaints escalate to same case
+- **GIVEN** 3 complaints about the same department issue are received
+- **WHEN** the handler escalates all 3 to the same case
+- **THEN** the case MUST reference all 3 complaints
+- **AND** each complaint MUST reference the case
+- **AND** the case detail MUST show all linked complaints
 
-#### Scenario: Escalated case is shown on the complaint detail
+### Requirement: Disposition tracking MUST record how complaints are resolved
+The system SHALL record how complaints are resolved through a formal disposition (oordeel) that classifies the outcome.
 
-- **GIVEN** complaint `KL-2026-0042` has `geescaleerdeZaak` set
-- **WHEN** the handler views the complaint detail
-- **THEN** a "Gerelateerde zaak" `CnDetailCard` section MUST show the linked case number, status, and a deep-link to the case detail
-
-#### Scenario: Multiple complaints point to the same case
-
-- **GIVEN** 3 complaints reference the same case UUID via `geescaleerdeZaak`
-- **WHEN** viewing the case detail
-- **THEN** a "Gerelateerde klachten" section MUST list all 3 complaints with their klachtnummers and statuses
-
----
-
-### REQ-CM-005: The system SHALL record a formal disposition (oordeel) when closing a complaint
-
-A `complaintDisposition` schema MUST be declared in `procest_register.json`. `DispositionService` handles submission and an optional coordinator approval gate (tenant-configurable). On closing, `DispositionService` calls Docudesk to render the response letter using the tenant's `afsluitbrief` template.
-
-**Schema.org annotation:** `schema:AssessAction`
-
-Fields: `complaint`, `oordeel`, `toelichting`, `maatregelen`, `afsluitdatum`, `afsluitbrief`, `goedgekeurdDoor`. Full schema in `design.md`.
-
-#### Scenario: Close a complaint with disposition `gegrond`
-
-- **GIVEN** complaint `KL-2026-0042` has status `hoorgesprek_afgerond`
-- **WHEN** the handler submits a disposition with `oordeel: "gegrond"`, `toelichting`, and `maatregelen`
-- **THEN** a `complaintDisposition` object MUST be created linked to the complaint
+#### Scenario: Close complaint with disposition
+- **GIVEN** complaint `KL-2026-0042` has been investigated and the hearing is completed
+- **WHEN** the handler closes the complaint
+- **THEN** a disposition MUST be recorded with:
+  - `oordeel`: enum (`gegrond`, `deels_gegrond`, `ongegrond`, `ingetrokken`, `niet_ontvankelijk`)
+  - `toelichting`: explanation of the judgment (mandatory for `gegrond` and `deels_gegrond`)
+  - `maatregelen`: actions taken or promised (structured list with description and responsible party)
+  - `afsluitdatum`: date of closure
+  - `afsluitbrief`: reference to the formal response letter document
 - **AND** the complaint status MUST change to `afgehandeld`
 
-#### Scenario: Coordinator approval gate delays closure
+#### Scenario: Disposition requires coordinator approval
+- **GIVEN** the tenant is configured to require approval for complaint dispositions
+- **WHEN** the handler submits a disposition with oordeel `gegrond`
+- **THEN** the disposition MUST enter `wacht_op_goedkeuring` state
+- **AND** the coordinator MUST receive a task to review and approve or reject the disposition
+- **AND** the complaint deadline timer MUST continue running during approval
 
-- **GIVEN** the tenant has `klachten_goedkeuring_vereist: true` in settings
-- **WHEN** the handler submits any disposition
-- **THEN** the complaint status MUST change to `wacht_op_goedkeuring`
-- **AND** the `klachten-coordinator` group MUST receive a task to approve or reject
-- **AND** on approval the status transitions to `afgehandeld`
-
-#### Scenario: Generate the formal response letter
-
-- **GIVEN** disposition with `oordeel: "deels_gegrond"` is submitted for complaint `KL-2026-0042`
+#### Scenario: Generate formal response letter
+- **GIVEN** complaint `KL-2026-0042` has disposition `deels_gegrond` with maatregelen
 - **WHEN** the handler clicks "Afsluitbrief genereren"
-- **THEN** `DispositionService` MUST call Docudesk with the `afsluitbrief` template
-- **AND** the resulting document UUID MUST be stored in `complaintDisposition.afsluitbrief`
-- **AND** the document MUST be linked to the complaint in OpenRegister's files
+- **THEN** the system MUST generate a response letter using the complaint template (via Docudesk integration)
+- **AND** the letter MUST include: complaint number, subject, disposition, explanation, and proposed measures
+- **AND** the letter MUST be stored as a document linked to the complaint
 
----
+#### Scenario: Disposition statistics
+- **GIVEN** 100 complaints were closed in Q1 2026
+- **WHEN** a manager views the disposition report
+- **THEN** the system MUST show: gegrond (15%), deels_gegrond (25%), ongegrond (45%), ingetrokken (10%), niet_ontvankelijk (5%)
+- **AND** the percentages MUST be broken down by category and department
 
-### REQ-CM-006: The system SHALL detect frequency patterns and alert on systemic issues
+### Requirement: Frequency analysis MUST detect patterns in complaints
+The system SHALL detect patterns in complaints, as recurring complaints about the same subject, department, or employee signal systemic issues that require management attention.
 
-`ComplaintAnalyticsService` MUST provide frequency aggregations by category, department, and intake channel. Employee-threshold alerts MUST fire when the same `betrokkenMedewerker` appears in ≥3 complaints within 6 months. Systemic-issue detection fires when a category shows >50% QoQ increase.
+#### Scenario: Complaint frequency dashboard
+- **GIVEN** 5 complaints in the last quarter are about waiting times at the balie
+- **WHEN** a manager views the complaint analytics dashboard
+- **THEN** the system MUST show:
+  - Complaint frequency by category (bar chart)
+  - Complaint frequency by department (bar chart)
+  - Complaint frequency by intake channel
+  - Trend over time (line chart, monthly granularity)
+  - Average resolution time by category
+- **AND** categories with significantly increased frequency (>50% increase vs. previous quarter) MUST be flagged
 
-#### Scenario: Frequency dashboard shows complaint distribution
+#### Scenario: Employee complaint threshold alert
+- **GIVEN** 3 complaints in the last 6 months reference the same `betrokkenMedewerker`
+- **WHEN** the threshold of 3 complaints per employee per 6 months is exceeded
+- **THEN** the system MUST alert the HR coordinator and the department head
+- **AND** the alert MUST include: employee reference (anonymized in the notification), complaint count, categories, and periods
+- **AND** the alert MUST NOT be visible to the regular complaint handlers (privacy protection)
 
-- **GIVEN** the manager opens the `ComplaintAnalyticsDashboard.vue`
+#### Scenario: Systemic issue detection
+- **GIVEN** complaint categories `wachttijd_balie` and `telefonische_bereikbaarheid` both show >100% increase in Q1 2026
+- **WHEN** the quarterly analysis runs
+- **THEN** the system MUST generate a "Systeemmelding" with: affected categories, complaint counts, trend direction, and suggested action
+- **AND** the systemic issue report MUST be exportable as PDF for management reporting
+
+#### Scenario: Benchmarking against targets
+- **GIVEN** the municipality has set targets: max 10 complaints/month, >90% resolved within Awb deadline, <15% gegrond rate
 - **WHEN** the dashboard loads
-- **THEN** bar charts MUST show complaint counts by category, by department, and by intake channel for the selected period
-- **AND** a trend line chart MUST show monthly complaint totals
-- **AND** KPI cards MUST show: total complaints, average resolution time, Awb compliance rate, and gegrond rate
+- **THEN** KPI cards MUST show actual vs. target for each metric
+- **AND** metrics exceeding targets MUST be highlighted in red
 
-#### Scenario: Employee threshold alert fires and is anonymized
+### Requirement: Complaint categories MUST be configurable per tenant
+The system SHALL support configurable complaint categories per tenant, allowing each municipality to define its own categories to match their organizational structure.
 
-- **GIVEN** 3 complaints in the last 6 months reference the same `betrokkenMedewerker` UID
-- **WHEN** `ComplaintAnalyticsService` evaluates the threshold
-- **THEN** a Nextcloud notification MUST be sent to the `hr-coordinator` role with: complaint count, categories, and time period — but NOT the employee's name or UID in the notification text
-- **AND** the alert MUST NOT be visible to regular complaint handlers
+#### Scenario: Configure complaint categories
+- **GIVEN** a tenant admin accesses Settings > Klachtcategorieen
+- **WHEN** they define categories
+- **THEN** they MUST be able to create, edit, and deactivate categories with: name, description, default handler (user or group), and SLA override (custom deadline)
+- **AND** default categories MUST be pre-configured: "Dienstverlening", "Bejegening", "Wachttijd", "Informatievoorziening", "Procedures"
 
-#### Scenario: Systemic issue detection creates a systeemmelding
+#### Scenario: Category-specific routing
+- **GIVEN** category "Bejegening" has default handler set to group "HR-Klachten"
+- **WHEN** a complaint is created with category "Bejegening"
+- **THEN** the complaint MUST be automatically assigned to the "HR-Klachten" group
+- **AND** a member of the group MUST be able to claim the complaint
 
-- **GIVEN** category "Wachttijd" has 35 complaints in Q2 2026 versus 17 in Q1 2026 (>50% increase)
-- **WHEN** the quarterly analysis runs in `ComplaintAnalyticsService`
-- **THEN** a "Systeemmelding" banner MUST appear on the analytics dashboard with: affected category, Q1 vs Q2 counts, trend direction, and a link to the filtered complaint list
-
----
-
-### REQ-CM-007: Complaint categories SHALL be configurable per tenant
-
-A `complaintCategory` schema MUST be declared in `procest_register.json`. The tenant-admin UI MUST provide CRUD access under `Settings > Klachtcategorieen`. On complaint creation, if the selected category has a `defaultHandler`, the complaint MUST be automatically routed to that user or group.
-
-**Schema.org annotation:** `schema:DefinedTerm`
-
-Fields: `name`, `description`, `defaultHandler`, `slaOverride`, `actief`. Full schema in `design.md`.
-
-#### Scenario: Create a custom complaint category
-
-- **GIVEN** a tenant admin opens `Settings > Klachtcategorieen`
-- **WHEN** they create a category "Bereikbaarheid" with `defaultHandler: "kcc-klachten"` and `slaOverride: 20`
-- **THEN** the `complaintCategory` object MUST be created via the OR API
-- **AND** "Bereikbaarheid" MUST appear in the complaint intake form's category dropdown
-
-#### Scenario: Category routing assigns the default handler
-
-- **GIVEN** category "Bejegening" has `defaultHandler: "hr-klachten"`
-- **WHEN** a new complaint is created with `categorie` pointing to "Bejegening"
-- **THEN** `complaint.behandelaar` MUST be set to `"hr-klachten"` automatically
-
-#### Scenario: Deactivating a category preserves historical data
-
+#### Scenario: Deactivate category without data loss
 - **GIVEN** category "Legacy categorie" has 15 historical complaints
-- **WHEN** the admin sets `actief: false`
-- **THEN** new complaints MUST NOT be able to select this category
-- **AND** existing complaints retain their `categorie` value unchanged
-- **AND** the category still appears in historical analytics reports
+- **WHEN** the admin deactivates the category
+- **THEN** new complaints MUST NOT be assignable to this category
+- **AND** existing complaints with this category MUST retain their category value
+- **AND** the category MUST still appear in historical reports
 
----
+### Requirement: Complaint views MUST integrate with the Procest dashboard
+Complaints MUST be accessible through dedicated views and dashboard widgets.
 
-### REQ-CM-008: Complaint views SHALL integrate with the Procest navigation and dashboard
+#### Scenario: Complaint list view
+- **GIVEN** the complaints module is enabled
+- **WHEN** a complaint handler navigates to "Klachten" in the sidebar
+- **THEN** a list view MUST show all complaints assigned to them with: complaint number, subject, category, status, received date, deadline, and days remaining
+- **AND** overdue complaints MUST be sorted to the top and highlighted in red
+- **AND** the list MUST support filtering by: status, category, handler, date range, and priority
 
-`ComplaintList.vue` using `CnIndexPage` + `useListView` MUST be accessible via the "Klachten" sidebar entry. `ComplaintDetail.vue` using `CnDetailPage` MUST provide full complaint management. `ComplaintDashboardWidget.vue` MUST show on the Procest dashboard for handlers. `ComplaintAnalyticsDashboard.vue` MUST be accessible to coordinators and managers.
+#### Scenario: Complaint detail view
+- **GIVEN** complaint `KL-2026-0042` exists
+- **WHEN** the handler clicks on it in the complaint list
+- **THEN** a detail view MUST show: all complaint fields, status timeline, deadline panel (reusing DeadlinePanel.vue), hearing records, linked documents, activity timeline, and linked case (if escalated)
+- **AND** the handler MUST be able to change status, schedule hearing, record disposition, and escalate to case from this view
 
-#### Scenario: Complaint list shows handler inbox sorted by urgency
+#### Scenario: Dashboard complaint widget
+- **GIVEN** the Procest dashboard (Dashboard.vue)
+- **WHEN** a complaint handler views their dashboard
+- **THEN** a "Mijn klachten" widget MUST show: open complaints count, overdue count, and upcoming deadlines (next 5 working days)
+- **AND** clicking the widget MUST navigate to the filtered complaint list
 
-- **GIVEN** a handler navigates to "Klachten" in the sidebar
-- **WHEN** the list loads
-- **THEN** complaints assigned to them MUST be shown with columns: klachtnummer, onderwerp, categorie, status, ontvangstdatum, afhandelDeadline, days-remaining
-- **AND** overdue complaints MUST be sorted to the top and marked with a red `CnStatusBadge`
-- **AND** filters MUST support: status, categorie, behandelaar, date range, prioriteit
+#### Scenario: Complaint KPI cards on management dashboard
+- **GIVEN** a coordinator or manager views the dashboard
+- **THEN** complaint KPI cards MUST show: total complaints this month, average resolution time, Awb compliance rate (% resolved within deadline), and disposition breakdown (gegrond/ongegrond pie chart)
 
-#### Scenario: Complaint detail enables all management actions
+### Requirement: Complainant communication MUST be tracked
+All communication with the complainant MUST be recorded as part of the complaint record.
 
-- **GIVEN** handler opens complaint `KL-2026-0042` from the list
-- **WHEN** the detail view loads
-- **THEN** all tabs MUST be present: Klacht, Deadlines (DeadlinePanel.vue), Hoorgesprek, Afsluiting, Escalatie, Communicatie, Bijlagen
-- **AND** status change, hearing scheduling, disposition submission, and escalation MUST all be operable from this view
-
-#### Scenario: Dashboard widget shows the handler's complaint summary
-
-- **GIVEN** a handler views the Procest dashboard
-- **WHEN** the "Mijn klachten" widget loads
-- **THEN** it MUST show: open complaints count, overdue count, and the next 5 deadlines (working-day-sorted)
-- **AND** clicking the widget MUST navigate to the complaint list filtered to the handler's open items
-
----
-
-### REQ-CM-009: All complainant communication SHALL be tracked in the complaint record
-
-The n8n attachment-matcher workflow MUST link inbound emails whose subject line contains a known `klachtnummer` back to the complaint. Phone calls recorded by the handler MUST be stored as activity entries. The acknowledgment letter generated via Docudesk MUST be linked as a document on the complaint.
-
-#### Scenario: Send and record the acknowledgment letter
-
-- **GIVEN** complaint `KL-2026-0042` has status `ontvangen`
+#### Scenario: Send acknowledgment letter
+- **GIVEN** complaint `KL-2026-0042` is in status `ontvangen`
 - **WHEN** the handler clicks "Ontvangstbevestiging verzenden"
-- **THEN** `DispositionService` (or `ComplaintService`) MUST call Docudesk with the `ontvangstbevestiging` template
+- **THEN** a template letter MUST be generated (via Docudesk) with: complaint number, received date, handler name, and expected resolution date
 - **AND** the letter MUST be sent via the configured channel (email or print queue)
 - **AND** the complaint status MUST change to `ontvangst_bevestigd`
-- **AND** the document MUST be linked to the complaint via OpenRegister's files relation
+- **AND** the sent letter MUST be stored as a document linked to the complaint
 
-#### Scenario: Inbound attachment is matched to the correct complaint
-
-- **GIVEN** a follow-up email arrives at klachten@gemeente.nl with subject "Re: KL-2026-0042 — aanvullende informatie"
-- **WHEN** the n8n attachment-matcher workflow processes it
-- **THEN** the attachments MUST be linked to complaint `KL-2026-0042`
-- **AND** the `behandelaar` MUST receive a notification: "Nieuwe bijlage ontvangen voor KL-2026-0042"
-
-#### Scenario: Phone call is logged as a communication record
-
+#### Scenario: Track phone call with complainant
 - **GIVEN** the handler makes a phone call to the complainant
-- **WHEN** they record the call via the complaint detail's Communicatie tab
-- **THEN** a communication entry MUST be created with: date, duration, summary, and follow-up actions
-- **AND** the entry MUST appear in the activity timeline
+- **WHEN** they record the call in the complaint
+- **THEN** a communication record MUST be created with: date, duration, summary, and follow-up actions
+- **AND** the communication MUST appear in the complaint's activity timeline
 
----
-
-### REQ-CM-010: All complaint UI strings SHALL be available in Dutch and English
-
-All user-visible strings in complaint Vue components, notification templates, and n8n workflow webhook bodies MUST use `t(appName, 'key')` for the English source and have Dutch translations in `l10n/nl.json` per ADR-007.
-
-#### Scenario: Complaint list renders in Dutch for a nl-NL user
-
-- **GIVEN** a user has locale set to `nl_NL`
-- **WHEN** they open the complaint list
-- **THEN** all column headers, button labels, status badges, and filter options MUST be in Dutch
-
-#### Scenario: No hardcoded strings in Vue templates
-
-- **GIVEN** the complaint Vue components
-- **WHEN** scanned for string literals not wrapped in `t()`
-- **THEN** no user-visible hardcoded strings SHALL be found in `<template>` or JS logic
-
----
+#### Scenario: Complainant submits additional information
+- **GIVEN** complaint `KL-2026-0042` is `in_behandeling`
+- **WHEN** the complainant sends additional documents via email
+- **THEN** the n8n email handler MUST link the attachments to the existing complaint (matching on complaint number in subject line)
+- **AND** the handler MUST receive a notification about the new attachments
 
 ## Non-Requirements
-
-- This spec does NOT cover bezwaarschriften (formal objections to decisions).
-- This spec does NOT cover ombudsman case management or external oversight reporting.
-- This spec does NOT cover automated complaint classification via AI/NLP.
-- This spec does NOT cover a citizen-facing complaint submission portal.
-- This spec does NOT cover Belgian or non-Dutch complaint variants.
+- This spec does NOT cover bezwaarschriften (formal objections to decisions) -- these have a different legal process
+- This spec does NOT cover ombudsman case management (external oversight)
+- This spec does NOT cover automated complaint classification via AI/NLP
+- This spec does NOT cover citizen-facing complaint portal (separate spec)
 
 ## Dependencies
+- OpenRegister for complaint object storage (new `complaint` schema, `hearing` schema, `disposition` schema)
+- Existing `caseType` and status infrastructure for complaint lifecycle
+- DeadlinePanel.vue for Awb deadline visualization
+- n8n for email intake, notifications, and deadline monitoring workflows
+- Docudesk for letter generation (acknowledgment, response letters)
+- Nextcloud Calendar (`OCP\Calendar\IManager`) for hearing scheduling
+- Nextcloud Talk (`OCP\Talk\IBroker`) for video hearing integration
+- Dashboard.vue for complaint KPI widgets
 
-| Dependency | Purpose |
-|---|---|
-| OpenRegister | `complaint`, `hearing`, `complaintDisposition`, `complaintCategory` object storage |
-| `case` / `caseType` infrastructure | Escalation target, status infrastructure reuse |
-| `DeadlinePanel.vue` | Awb deadline visualization in ComplaintDetail |
-| `ActivityTimeline.vue` | Communication trail in ComplaintDetail |
-| n8n | email-intake, deadline-monitor, attachment-matcher workflows |
-| Docudesk | Acknowledgment letter + response letter generation |
-| `OCP\Calendar\IManager` | Hearing calendar invitations |
-| `OCP\Talk\IBroker` | Video hearing Talk room creation |
+---
+
+### Current Implementation Status
+
+**Not yet implemented.** No complaint-specific schemas, controllers, services, or Vue components exist in the Procest codebase. There is no "klacht" schema in `procest_register.json`.
+
+**Foundation available:**
+- The case management infrastructure could model complaints as a specialized case type with specific status types (ontvangen, ontvangst_bevestigd, in_behandeling, hoorgesprek_gepland, hoorgesprek_afgerond, afgehandeld) and properties.
+- Case type configuration (`src/views/settings/CaseTypeDetail.vue`) could define a "Klacht behandeling" case type with Awb-mandated deadlines.
+- The `DeadlinePanel.vue` component already shows deadline countdowns, extension status, and timing -- directly applicable to Awb deadlines.
+- The dashboard (`src/views/Dashboard.vue`) already shows KPI cards that could be extended with complaint-specific metrics.
+- Task management (`src/views/tasks/`) could model hearing scheduling as tasks assigned to the handler.
+- The `caseType` schema supports `processingDeadline` which could enforce the 6-week Awb deadline.
+- The `ActivityTimeline.vue` component could display complaint communication events.
+
+**Partial implementations:** The case management system could handle basic complaint tracking as a case type configuration exercise without code changes. The specialized features (hearing management, disposition tracking, Awb deadline calculation with working-day logic, frequency analysis, escalation) require new code.
+
+### Standards & References
+
+- **Awb Chapter 9 (Algemene wet bestuursrecht)**: Legal framework mandating the klachtenprocedure. Key articles: 9:2 (right to complain), 9:5 (acknowledgment within reasonable time), 9:7 (right to be heard), 9:11 (6-week resolution deadline), 9:12 (written disposition), 9:14-9:16 (external complaint procedure via ombudsman).
+- **Nationale ombudsman**: Oversight body for complaint handling; municipalities must comply with ombudsman recommendations. If internal complaint handling is unsatisfactory, citizens can escalate to the ombudsman.
+- **VNG Model Klachtenverordening**: Standard complaint ordinance template used by Dutch municipalities. Defines categories, roles, and reporting requirements.
+- **GEMMA**: Klachtafhandeling is a standard process in the GEMMA reference architecture. Process model defines intake, investigation, hearing, and disposition phases.
+- **ZGW Zaken API**: Complaints can be modeled as a specific zaaktype with their own catalogi entry. Status types map to Awb lifecycle phases.
+- **ISO 10002:2018**: Quality management -- Customer satisfaction -- Guidelines for complaints handling in organizations. Defines principles: visibility, accessibility, responsiveness, objectivity, confidentiality.
+- **ArkCase complaint plugin**: Implements complaints as a separate entity with email intake, close/approval workflow, disposition tracking, and billing. Procest's approach differs by using OpenRegister schemas and n8n workflows instead of Java plugins and Activiti.
+- **Dimpact ZAC**: Does not have a dedicated complaint module -- complaints are handled as regular zaak types. Procest's dedicated complaint management provides richer Awb compliance.

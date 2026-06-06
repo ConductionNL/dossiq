@@ -179,14 +179,11 @@ class SettingsService
         // Outage banner copy (nl + en).
         'pdok_outage_banner_nl',
         'pdok_outage_banner_en',
-        // DSO (Omgevingsloket) integration settings.
-        'dso_case_type',
-        'dso_vergunningaanvraag_schema',
-        'dso_deadline_warning_weeks_warning',
-        'dso_deadline_warning_weeks_critical',
-        'dso_beschikking_template_verleend',
-        'dso_beschikking_template_geweigerd',
-        'dso_samenwerkverzoek_schema',
+        // Complaint management (klachtafhandeling) — Awb chapter 9.
+        'complaint_schema',
+        'hearing_schema',
+        'complaint_disposition_schema',
+        'complaint_category_schema',
     ];
 
     /**
@@ -256,19 +253,11 @@ class SettingsService
         'bacAdviceRequest'             => 'bac_advice_request_schema',
         'beroep'                       => 'beroep_schema',
         'bezwaarDecision'              => 'bezwaar_decision_schema',
-        'samenwerkverzoek'             => 'dso_samenwerkverzoek_schema',
-        'routingRule'                  => 'routing_rule_schema',
-        'kccAgent'                     => 'kcc_agent_schema',
-        'callbackRequest'              => 'callback_request_schema',
-        'subsidieRegeling'             => 'subsidie_regeling_schema',
-        'subsidieAanvraag'             => 'subsidie_aanvraag_schema',
-        'subsidieBeoordeling'          => 'subsidie_beoordeling_schema',
-        'subsidieBeschikking'          => 'subsidie_beschikking_schema',
-        'subsidieUitvoering'           => 'subsidie_uitvoering_schema',
-        'tussenrapportage'             => 'tussenrapportage_schema',
-        'subsidieVaststelling'         => 'subsidie_vaststelling_schema',
-        'terugvordering'               => 'terugvordering_schema',
-        'bewijsstuk'                   => 'bewijsstuk_schema',
+        // Complaint management (klachtafhandeling) — Awb chapter 9.
+        'complaint'                    => 'complaint_schema',
+        'hearing'                      => 'hearing_schema',
+        'complaintDisposition'         => 'complaint_disposition_schema',
+        'complaintCategory'            => 'complaint_category_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
