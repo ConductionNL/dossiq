@@ -17,6 +17,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -429,7 +432,7 @@ class ConsultationService
      */
     public function getBlockingConsultations(string $zaakId): array
     {
-        $all     = $this->getConsultationsForCase(caseId: $zaakId);
+        $all      = $this->getConsultationsForCase(caseId: $zaakId);
         $blocking = [];
 
         foreach ($all as $consultation) {
@@ -476,7 +479,8 @@ class ConsultationService
                 startId: $consultationId,
                 currentId: $depId,
                 visited: $visited,
-            ) === true) {
+            ) === true
+            ) {
                 return true;
             }
         }
@@ -509,9 +513,9 @@ class ConsultationService
         $schema   = $this->settingsService->getConfigValue('consultation_schema');
 
         $updateData = [
-            'extensionRequestedAt'  => date('Y-m-d\TH:i:s'),
+            'extensionRequestedAt'   => date('Y-m-d\TH:i:s'),
             'extensionJustification' => $justification,
-            'extensionApproved'     => false,
+            'extensionApproved'      => false,
         ];
 
         $objectService->saveObject($register, $schema, $updateData, $consultationId);
@@ -522,8 +526,8 @@ class ConsultationService
         );
 
         return [
-            'id'                    => $consultationId,
-            'extensionRequestedAt'  => $updateData['extensionRequestedAt'],
+            'id'                     => $consultationId,
+            'extensionRequestedAt'   => $updateData['extensionRequestedAt'],
             'extensionJustification' => $justification,
         ];
     }//end requestExtension()
@@ -590,8 +594,8 @@ class ConsultationService
         string $register,
         string $schema,
     ): string {
-        $year    = (int) date('Y');
-        $prefix  = 'ADV-'.$year.'-';
+        $year   = (int) date('Y');
+        $prefix = 'ADV-'.$year.'-';
 
         $existing = $objectService->findObjects(
             $register,
@@ -716,5 +720,4 @@ class ConsultationService
 
         return $consultation;
     }//end findBySecureToken()
-
 }//end class

@@ -17,6 +17,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -44,7 +47,6 @@ use Psr\Log\LoggerInterface;
  */
 class ConsultationController extends Controller
 {
-
     /**
      * Constructor.
      *
@@ -133,7 +135,7 @@ class ConsultationController extends Controller
         }
 
         try {
-            $data              = $this->getRequestBody();
+            $data = $this->getRequestBody();
             $data['aanvrager'] = $user->getUID();
 
             $dependsOn = $data['dependsOn'] ?? [];
@@ -141,7 +143,8 @@ class ConsultationController extends Controller
                 if ($this->consultationService->validateDependencyCycle(
                     consultationId: '',
                     dependsOn: $dependsOn,
-                ) === true) {
+                ) === true
+                ) {
                     return new JSONResponse(
                         ['error' => 'Dependency cycle detected in dependsOn list'],
                         Http::STATUS_BAD_REQUEST,
@@ -153,7 +156,7 @@ class ConsultationController extends Controller
             return new JSONResponse($result, Http::STATUS_CREATED);
         } catch (\RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-        }
+        }//end try
     }//end create()
 
     /**
@@ -548,5 +551,4 @@ class ConsultationController extends Controller
         $decoded = json_decode((string) $content, true);
         return is_array($decoded) === true ? $decoded : [];
     }//end getRequestBody()
-
 }//end class
