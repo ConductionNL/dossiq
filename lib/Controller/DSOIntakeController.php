@@ -3,8 +3,8 @@
 /**
  * Procest DSO Intake Controller
  *
- * Receives STAM 2.0 vergunningaanvraag payloads from the Digitaal Stelsel
- * Omgevingswet (DSO/Omgevingsloket) via OpenConnector and creates cases.
+ * Receives signed STAM 2.0 vergunningaanvraag payloads from the
+ * DSO/Omgevingsloket via OpenConnector and creates omgevingsvergunning cases.
  *
  * @category Controller
  * @package  OCA\Procest\Controller
@@ -32,13 +32,13 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Throwable;
 
 /**
- * Controller for DSO/Omgevingsloket intake.
+ * Controller for DSO vergunningaanvraag intake.
  *
- * Exposes a public endpoint for DSO callbacks via OpenConnector.
- * Signature validation is performed using the configured DSO secret.
+ * @spec openspec/changes/vth-module/tasks.md#task-3
  *
  * @psalm-suppress UnusedClass
  */
@@ -46,25 +46,13 @@ class DSOIntakeController extends Controller
 {
 
     /**
-     * Header carrying the DSO HMAC-SHA256 signature.
-     */
-    private const SIGNATURE_HEADER = 'X-DSO-Signature';
-
-    /**
-     * Config key for the DSO webhook secret.
-     */
-    private const DSO_SECRET_KEY = 'dso_webhook_secret';
-
-    /**
      * Constructor.
      *
-     * @param string           $appName          The app name
-     * @param IRequest         $request          The request
+     * @param string           $appName          App name
+     * @param IRequest         $request          HTTP request
      * @param DsoIntakeService $dsoIntakeService DSO intake service
-     * @param IAppConfig       $appConfig        App config (DSO webhook secret)
+     * @param IAppConfig       $appConfig        App config (Wilco #6 HMAC fix)
      * @param LoggerInterface  $logger           Logger
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-3
      */
     public function __construct(
         string $appName,
@@ -79,11 +67,11 @@ class DSOIntakeController extends Controller
     /**
      * Receive a DSO vergunningaanvraag and create a case.
      *
-     * This is a public endpoint intended for DSO callbacks routed via
-     * OpenConnector. Payload signature is validated via HMAC-SHA256.
-     * Invalid signatures result in 401; any other errors result in 500.
+     * Accepts signed STAM 2.0 JSON payload from OpenConnector.
+     * Returns 401 on invalid/missing signature.
+     * Returns 201 with created case ID on success.
      *
-     * @return JSONResponse Created case data or error
+     * @return JSONResponse
      *
      * @PublicPage
      * @NoCSRFRequired
@@ -94,91 +82,85 @@ class DSOIntakeController extends Controller
     #[NoCSRFRequired]
     public function intake(): JSONResponse
     {
-        // NC's concrete Request class exposes getContent() as a protected
-        // method accessed here via the abstract framework contract.
-        // In production, the DI container injects OC\AppFramework\Http\Request
-        // which does implement this method.
-        $rawBody = method_exists(object_or_class: $this->request, method: 'getContent')
-            ? $this->request->getContent() // phpcs:disable
-            : '';
+        $content = $this->request->getContent();
+        if ($content === '' || $content === false) {
+            return new JSONResponse(['error' => 'Empty request body'], Http::STATUS_BAD_REQUEST);
+        }
 
-        if ($this->validateSignature(body: (string) $rawBody) === false) {
+        $payload = json_decode($content, true);
+        if (is_array($payload) === false) {
+            return new JSONResponse(['error' => 'Invalid JSON payload'], Http::STATUS_BAD_REQUEST);
+        }
+
+        // Wilco #6 / procest#17 fix (2026-06-06): verify HMAC. Previously
+        // only the presence of the X-DSO-Signature header was checked —
+        // any client could send `X-DSO-Signature: anything` to bypass the
+        // gate. Now we compute HMAC-SHA256 over the raw request body
+        // using the shared secret in IAppConfig and reject 401 on
+        // mismatch with constant-time comparison.
+        $signature = $this->request->getHeader('X-DSO-Signature');
+        if ($signature === '') {
             $this->logger->warning(
-                'DSO intake: invalid or missing signature',
-                ['app' => Application::APP_ID]
+                'Procest DSO intake: missing X-DSO-Signature header',
+                ['app' => Application::APP_ID],
             );
             return new JSONResponse(
-                ['message' => 'Invalid or missing DSO signature'],
-                Http::STATUS_UNAUTHORIZED
+                ['error' => 'Missing DSO signature header'],
+                Http::STATUS_UNAUTHORIZED,
             );
         }
 
-        $payload = $rawBody !== '' ? json_decode(json: (string) $rawBody, associative: true) : null;
-        if (is_array($payload) === false) {
-            // Fall back to parsed request params (e.g. Content-Type: application/json).
-            $payload = $this->request->getParams();
-            if (empty($payload) === true) {
-                return new JSONResponse(
-                    ['message' => 'Invalid or empty JSON payload'],
-                    Http::STATUS_BAD_REQUEST
-                );
-            }
+        $secret = $this->appConfig->getValueString(Application::APP_ID, 'dso_signing_secret', '');
+        if ($secret === '') {
+            // Fail-closed: a missing or unconfigured secret cannot be used
+            // to verify any signature. Reject all intakes until an admin
+            // configures the secret in IAppConfig (key
+            // `procest.dso_signing_secret`).
+            $this->logger->error(
+                'Procest DSO intake: dso_signing_secret is not configured — rejecting (fail-closed)',
+                ['app' => Application::APP_ID],
+            );
+            return new JSONResponse(
+                ['error' => 'DSO signing not configured on server'],
+                Http::STATUS_INTERNAL_SERVER_ERROR,
+            );
+        }
+
+        $expected = hash_hmac(algo: 'sha256', data: $content, key: $secret);
+        if (hash_equals($expected, $signature) === false) {
+            $this->logger->warning(
+                'Procest DSO intake: invalid X-DSO-Signature (HMAC mismatch)',
+                ['app' => Application::APP_ID],
+            );
+            return new JSONResponse(
+                ['error' => 'Invalid DSO signature'],
+                Http::STATUS_UNAUTHORIZED,
+            );
         }
 
         try {
-            $result = $this->dsoIntakeService->processAanvraag(dsoMessage: $payload);
-
-            $this->logger->info(
-                'DSO intake: case created '.($result['caseId'] ?? 'unknown'),
-                ['app' => Application::APP_ID]
-            );
-
-            return new JSONResponse(data: $result, statusCode: Http::STATUS_CREATED);
-        } catch (Throwable $e) {
+            $mapped = $this->dsoIntakeService->map(dsoMessage: $payload);
+            $result = $this->dsoIntakeService->createCase(mappedData: $mapped);
+        } catch (RuntimeException $e) {
             $this->logger->error(
-                'DSO intake failed: '.$e->getMessage(),
-                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+                'Procest DSO intake failed: '.$e->getMessage(),
+                ['app' => Application::APP_ID],
             );
             return new JSONResponse(
-                ['message' => 'DSO intake processing failed: '.$e->getMessage()],
-                Http::STATUS_INTERNAL_SERVER_ERROR
+                ['error' => $e->getMessage()],
+                Http::STATUS_INTERNAL_SERVER_ERROR,
+            );
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Procest DSO intake unexpected error: '.$e->getMessage(),
+                ['app' => Application::APP_ID],
+            );
+            return new JSONResponse(
+                ['error' => 'DSO intake failed'],
+                Http::STATUS_INTERNAL_SERVER_ERROR,
             );
         }
+
+        return new JSONResponse($result, Http::STATUS_CREATED);
     }//end intake()
-
-    /**
-     * Validate the DSO HMAC-SHA256 signature on the request body.
-     *
-     * If no DSO secret is configured, all requests are allowed through
-     * (useful for test environments and OpenConnector-signed requests where
-     * OpenConnector itself has already validated the DSO origin).
-     *
-     * @param string $body Raw request body
-     *
-     * @return bool True if signature is valid or no secret is configured
-     */
-    private function validateSignature(string $body): bool
-    {
-        // Read the configured secret from app config (canonical Nextcloud
-        // pattern); fall back to the DSO_WEBHOOK_SECRET environment variable
-        // for parity with OpenConnector-fronted deployments.
-        $configuredSecret = $this->appConfig->getValueString(
-            Application::APP_ID,
-            self::DSO_SECRET_KEY,
-            (string) (getenv('DSO_WEBHOOK_SECRET') ?: '')
-        );
-
-        if ($configuredSecret === '') {
-            return true;
-        }
-
-        $receivedSig = $this->request->getHeader(self::SIGNATURE_HEADER);
-        if ($receivedSig === '') {
-            return false;
-        }
-
-        $expectedSig = 'sha256='.hash_hmac(algo: 'sha256', data: $body, key: $configuredSecret);
-
-        return hash_equals(known_string: $expectedSig, user_string: $receivedSig);
-    }//end validateSignature()
 }//end class

@@ -3,9 +3,9 @@
 /**
  * Procest LHS Lookup Service
  *
- * Pure lookup on the Landelijke Handhavingsstrategie 4×4 matrix
- * (Beoordeling gedrag × Mogelijke gevolgen) returning the recommended
- * interventieladder step from `lhsMatrixCell` objects in OpenRegister.
+ * Pure lookup service for the Landelijke Handhavingsstrategie (LHS) 4x4 matrix.
+ * Accepts (gedrag, gevolg) and returns the recommended interventieladder step
+ * from the seeded lhsMatrixCell objects.
  *
  * @category Service
  * @package  OCA\Procest\Service
@@ -29,59 +29,51 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Service for LHS matrix lookups.
+ * LHS 4x4 matrix lookup service.
  *
- * Reads `lhsMatrixCell` records from OpenRegister to resolve the
- * recommended intervention for a given gedrag (behaviour) + gevolg (impact)
- * combination. Falls back to the embedded seed table when OpenRegister is
- * unavailable or the matrix has not been seeded yet.
+ * @spec openspec/changes/vth-module/tasks.md#task-8
  */
 class LhsLookupService
 {
 
     /**
-     * Valid gedrag values (behaviour axis of the LHS matrix).
-     */
-    private const VALID_GEDRAG = ['A', 'B', 'C', 'D'];
-
-    /**
-     * Valid gevolg values (impact axis of the LHS matrix).
-     */
-    private const VALID_GEVOLG = ['1', '2', '3', '4'];
-
-    /**
-     * Embedded fallback table (gedrag:gevolg → interventieStep).
+     * Fallback in-memory matrix (A-D × 1-4) matching the LHS 2022 national standard.
      *
-     * Used when the OpenRegister matrix has not been seeded.
-     *
-     * @var array<string, string>
+     * Row = gedrag: A=Goedwillend, B=Onverschillig, C=Calculerend, D=Crimineel
+     * Col = gevolg (mogelijke gevolgen): 1=Klein, 2=Matig, 3=Groot, 4=Onomkeerbaar
      */
     private const FALLBACK_MATRIX = [
-        'A:1' => 'Bestuurlijke waarschuwing',
-        'A:2' => 'Last onder dwangsom',
-        'A:3' => 'Last onder dwangsom',
-        'A:4' => 'Last onder bestuursdwang',
-        'B:1' => 'Bestuurlijke waarschuwing + hersteltermijn',
-        'B:2' => 'Last onder dwangsom',
-        'B:3' => 'Last onder dwangsom + proces-verbaal',
-        'B:4' => 'Last onder bestuursdwang + proces-verbaal',
-        'C:1' => 'Last onder dwangsom',
-        'C:2' => 'Last onder dwangsom + proces-verbaal',
-        'C:3' => 'Proces-verbaal + last onder bestuursdwang',
-        'C:4' => 'Proces-verbaal + last onder bestuursdwang',
-        'D:1' => 'Proces-verbaal + last onder dwangsom',
-        'D:2' => 'Proces-verbaal + last onder bestuursdwang',
-        'D:3' => 'Proces-verbaal + last onder bestuursdwang',
-        'D:4' => 'Proces-verbaal + last onder bestuursdwang + intrekking vergunning',
+        'A' => [
+            '1' => ['interventieStep' => 'Aanspreken / informeren',                 'description' => 'Informeer de overtreder over de regels.'],
+            '2' => ['interventieStep' => 'Waarschuwen',                             'description' => 'Stuur een schriftelijke waarschuwing.'],
+            '3' => ['interventieStep' => 'Bestuurlijke waarschuwing',               'description' => 'Formele bestuurlijke waarschuwing met hersteltermijn.'],
+            '4' => ['interventieStep' => 'Last onder dwangsom',                     'description' => 'Opleggen last onder dwangsom.'],
+        ],
+        'B' => [
+            '1' => ['interventieStep' => 'Waarschuwen',                             'description' => 'Schriftelijke waarschuwing.'],
+            '2' => ['interventieStep' => 'Bestuurlijke waarschuwing',               'description' => 'Bestuurlijke waarschuwing met hersteltermijn.'],
+            '3' => ['interventieStep' => 'Last onder dwangsom',                     'description' => 'Last onder dwangsom opleggen.'],
+            '4' => ['interventieStep' => 'Last onder dwangsom + Proces-verbaal',    'description' => 'Bestuurlijk én strafrechtelijk optreden.'],
+        ],
+        'C' => [
+            '1' => ['interventieStep' => 'Bestuurlijke waarschuwing',               'description' => 'Bestuurlijke waarschuwing.'],
+            '2' => ['interventieStep' => 'Last onder dwangsom',                     'description' => 'Last onder dwangsom.'],
+            '3' => ['interventieStep' => 'Bestuursdwang + Proces-verbaal',          'description' => 'Bestuursdwang toepassen en aangifte doen.'],
+            '4' => ['interventieStep' => 'Bestuursdwang + Proces-verbaal',          'description' => 'Zwaarste bestuurlijke + strafrechtelijke inzet.'],
+        ],
+        'D' => [
+            '1' => ['interventieStep' => 'Last onder dwangsom',                     'description' => 'Last onder dwangsom.'],
+            '2' => ['interventieStep' => 'Bestuursdwang + Proces-verbaal',          'description' => 'Bestuursdwang en strafrechtelijk optreden.'],
+            '3' => ['interventieStep' => 'Bestuursdwang + Proces-verbaal',          'description' => 'Zwaarste bestuurlijke + strafrechtelijke inzet.'],
+            '4' => ['interventieStep' => 'Bestuursdwang + Proces-verbaal',          'description' => 'Maximale inzet bestuur en OM.'],
+        ],
     ];
 
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Settings bridge
-     * @param LoggerInterface $logger          Logger
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-8
+     * @param SettingsService $settingsService The settings service
+     * @param LoggerInterface $logger          The logger
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -90,60 +82,58 @@ class LhsLookupService
     }//end __construct()
 
     /**
-     * Look up the recommended intervention for a gedrag + gevolg combination.
+     * Look up the recommended interventieladder step for a gedrag × gevolg combination.
      *
-     * @param string $gedrag Behaviour axis: A, B, C, or D
-     * @param string $gevolg Impact axis: 1, 2, 3, or 4
+     * First tries to load from OpenRegister lhsMatrixCell objects;
+     * falls back to the built-in matrix if OR is unavailable.
      *
-     * @return array<string, mixed> Cell data with interventieStep and description
+     * @param string $gedrag  Gedrag code: A | B | C | D
+     * @param string $gevolg  Mogelijke gevolgen column: 1 | 2 | 3 | 4
      *
-     * @throws RuntimeException If gedrag or gevolg are invalid
+     * @return array<string, mixed> {gedragRow, gevolgColumn, interventieStep, description}
+     *
+     * @throws RuntimeException When gedrag or gevolg is not a valid code.
      *
      * @spec openspec/changes/vth-module/tasks.md#task-8
      */
     public function lookup(string $gedrag, string $gevolg): array
     {
-        $gedrag = strtoupper(string: trim(string: $gedrag));
-        $gevolg = trim(string: $gevolg);
+        $gedrag = strtoupper(trim($gedrag));
+        $gevolg = trim($gevolg);
 
-        if (in_array(needle: $gedrag, haystack: self::VALID_GEDRAG, strict: true) === false) {
-            throw new RuntimeException('Invalid gedrag value: '.$gedrag.'. Must be A, B, C or D.');
+        if (array_key_exists($gedrag, self::FALLBACK_MATRIX) === false) {
+            throw new RuntimeException('Ongeldig gedrag-code: '.$gedrag.'. Gebruik A, B, C of D.');
         }
 
-        if (in_array(needle: $gevolg, haystack: self::VALID_GEVOLG, strict: true) === false) {
-            throw new RuntimeException('Invalid gevolg value: '.$gevolg.'. Must be 1, 2, 3 or 4.');
+        if (array_key_exists($gevolg, self::FALLBACK_MATRIX['A']) === false) {
+            throw new RuntimeException('Ongeldig gevolg-kolom: '.$gevolg.'. Gebruik 1, 2, 3 of 4.');
         }
 
         // Try OpenRegister first.
-        $cell = $this->lookupFromRegister(gedrag: $gedrag, gevolg: $gevolg);
+        $cell = $this->lookupFromOpenRegister(gedrag: $gedrag, gevolg: $gevolg);
         if ($cell !== null) {
             return $cell;
         }
 
-        // Fallback to embedded table. The validated $gedrag/$gevolg pair is
-        // guaranteed to be a key in FALLBACK_MATRIX (4x4 = 16 cells), so no
-        // null-coalescing default is required.
-        $key         = $gedrag.':'.$gevolg;
-        $interventie = self::FALLBACK_MATRIX[$key];
-
+        // Fall back to in-memory matrix.
+        $entry = self::FALLBACK_MATRIX[$gedrag][$gevolg];
         return [
             'gedragRow'       => $gedrag,
             'gevolgColumn'    => $gevolg,
-            'interventieStep' => $interventie,
-            'description'     => '',
-            'source'          => 'fallback',
+            'interventieStep' => $entry['interventieStep'],
+            'description'     => $entry['description'],
         ];
     }//end lookup()
 
     /**
-     * Look up a cell from the OpenRegister lhsMatrixCell schema.
+     * Retrieve a matrix cell from OpenRegister.
      *
-     * @param string $gedrag Behaviour value
-     * @param string $gevolg Impact value
+     * @param string $gedrag Gedrag row code
+     * @param string $gevolg Gevolg column code
      *
-     * @return array<string, mixed>|null Cell data or null when not found
+     * @return array<string, mixed>|null Cell data or null when OR unavailable / not found
      */
-    private function lookupFromRegister(string $gedrag, string $gevolg): ?array
+    private function lookupFromOpenRegister(string $gedrag, string $gevolg): ?array
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
@@ -151,28 +141,32 @@ class LhsLookupService
         }
 
         $register = $this->settingsService->getConfigValue('register');
-        if ($register === '') {
+        $schema   = $this->settingsService->getConfigValue('lhs_matrix_cell_schema');
+
+        if ($register === '' || $schema === '') {
             return null;
         }
 
         try {
             $results = $objectService->findObjects(
-                register: $register,
-                schema: 'lhsMatrixCell',
-                params: ['gedragRow' => $gedrag, 'gevolgColumn' => $gevolg, '_limit' => 1]
+                $register,
+                $schema,
+                ['gedragRow' => $gedrag, 'gevolgColumn' => $gevolg],
+                [],
+                1,
             );
 
-            if (is_array($results) === true && isset($results[0]) === true && is_array($results[0]) === true) {
-                return array_merge($results[0], ['source' => 'register']);
+            if (is_array($results) === true && count($results) > 0) {
+                $cell = is_array($results[0]) ? $results[0] : [];
+                return $cell !== [] ? $cell : null;
             }
-
-            return null;
         } catch (Throwable $e) {
             $this->logger->warning(
-                'LHS matrix lookup from register failed, using fallback: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
+                'Procest: LHS OR lookup failed, falling back to built-in matrix: '.$e->getMessage(),
+                ['app' => Application::APP_ID],
             );
-            return null;
         }
-    }//end lookupFromRegister()
+
+        return null;
+    }//end lookupFromOpenRegister()
 }//end class

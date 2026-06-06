@@ -3,14 +3,15 @@
 /**
  * LhsLookupService Unit Tests
  *
+ * Tests for the LHS 4x4 matrix lookup service that maps gedrag × gevolg
+ * combinations to interventieladder recommendations.
+ *
  * @category Tests
  * @package  OCA\Procest\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
- *
- * @version GIT: <git-id>
  *
  * @link https://conduction.nl
  *
@@ -23,12 +24,13 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\LhsLookupService;
 use OCA\Procest\Service\SettingsService;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * Unit tests for LhsLookupService.
+ * Unit tests for the LhsLookupService class.
  *
  * @covers \OCA\Procest\Service\LhsLookupService
  */
@@ -36,22 +38,31 @@ class LhsLookupServiceTest extends TestCase
 {
 
     /**
-     * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
+     * The mocked settings service.
+     *
+     * @var SettingsService|MockObject
      */
     private SettingsService $settingsService;
 
     /**
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+     * The mocked logger.
+     *
+     * @var LoggerInterface|MockObject
      */
     private LoggerInterface $logger;
 
     /**
+     * The service under test.
+     *
      * @var LhsLookupService
      */
     private LhsLookupService $service;
 
+
     /**
      * Set up test fixtures.
+     *
+     * OpenRegister is unavailable so all lookups use the built-in fallback matrix.
      *
      * @return void
      */
@@ -60,114 +71,169 @@ class LhsLookupServiceTest extends TestCase
         $this->settingsService = $this->createMock(SettingsService::class);
         $this->logger          = $this->createMock(LoggerInterface::class);
 
-        // No OpenRegister available — all lookups hit fallback.
+        // Simulate OpenRegister unavailable — service falls back to built-in matrix.
         $this->settingsService->method('getObjectService')->willReturn(null);
+        $this->settingsService->method('getConfigValue')->willReturn('');
 
         $this->service = new LhsLookupService(
             settingsService: $this->settingsService,
             logger: $this->logger,
         );
+
     }//end setUp()
 
+
     /**
-     * Test that lookup returns a cell for every valid gedrag/gevolg combination.
+     * Test that lookup() returns the correct cell from the fallback matrix.
+     *
+     * B × 2 = "Bestuurlijke waarschuwing" per the LHS 2022 standard.
      *
      * @return void
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-8
      */
-    public function testLookupReturnsCellForAllValidCombinations(): void
+    public function testLookupReturnsCorrectCellFromFallbackMatrix(): void
     {
-        $gedragValues = ['A', 'B', 'C', 'D'];
-        $gevolgValues = ['1', '2', '3', '4'];
+        $result = $this->service->lookup(gedrag: 'B', gevolg: '2');
 
-        foreach ($gedragValues as $gedrag) {
-            foreach ($gevolgValues as $gevolg) {
-                $cell = $this->service->lookup(gedrag: $gedrag, gevolg: $gevolg);
+        self::assertSame('B', $result['gedragRow']);
+        self::assertSame('2', $result['gevolgColumn']);
+        self::assertSame('Bestuurlijke waarschuwing', $result['interventieStep']);
+        self::assertNotEmpty($result['description']);
 
-                $this->assertIsArray($cell);
-                $this->assertArrayHasKey(key: 'interventieStep', array: $cell);
-                $this->assertNotEmpty(actual: $cell['interventieStep']);
-            }
-        }
-    }//end testLookupReturnsCellForAllValidCombinations()
+    }//end testLookupReturnsCorrectCellFromFallbackMatrix()
+
 
     /**
-     * Test that lookup for B+2 returns expected intervention.
+     * Test that lookup() normalises gedrag to uppercase.
      *
      * @return void
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-8
      */
-    public function testLookupB2ReturnsBestuurlijkeWaarschuwing(): void
+    public function testLookupIsCaseInsensitiveForGedrag(): void
     {
-        $cell = $this->service->lookup(gedrag: 'B', gevolg: '2');
+        $result = $this->service->lookup(gedrag: 'a', gevolg: '1');
 
-        $this->assertSame(expected: 'Last onder dwangsom', actual: $cell['interventieStep']);
-    }//end testLookupB2ReturnsBestuurlijkeWaarschuwing()
+        self::assertSame('A', $result['gedragRow']);
+        self::assertSame('1', $result['gevolgColumn']);
+
+    }//end testLookupIsCaseInsensitiveForGedrag()
+
 
     /**
-     * Test that lookup throws for invalid gedrag.
+     * Test that lookup() trims whitespace from inputs.
      *
      * @return void
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-8
      */
-    public function testLookupThrowsForInvalidGedrag(): void
+    public function testLookupTrimsWhitespace(): void
+    {
+        $result = $this->service->lookup(gedrag: ' C ', gevolg: ' 3 ');
+
+        self::assertSame('C', $result['gedragRow']);
+        self::assertSame('3', $result['gevolgColumn']);
+
+    }//end testLookupTrimsWhitespace()
+
+
+    /**
+     * Test that lookup() throws on an invalid gedrag code.
+     *
+     * @return void
+     */
+    public function testLookupThrowsOnInvalidGedrag(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Invalid gedrag value');
+        $this->expectExceptionMessage('Ongeldig gedrag-code');
 
         $this->service->lookup(gedrag: 'X', gevolg: '1');
-    }//end testLookupThrowsForInvalidGedrag()
+
+    }//end testLookupThrowsOnInvalidGedrag()
+
 
     /**
-     * Test that lookup throws for invalid gevolg.
+     * Test that lookup() throws on an invalid gevolg column.
      *
      * @return void
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-8
      */
-    public function testLookupThrowsForInvalidGevolg(): void
+    public function testLookupThrowsOnInvalidGevolg(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Invalid gevolg value');
+        $this->expectExceptionMessage('Ongeldig gevolg-kolom');
 
         $this->service->lookup(gedrag: 'A', gevolg: '5');
-    }//end testLookupThrowsForInvalidGevolg()
+
+    }//end testLookupThrowsOnInvalidGevolg()
+
 
     /**
-     * Test that lookup is case-insensitive for gedrag.
+     * Test that lookup() throws on numeric-zero gevolg (out of range).
      *
      * @return void
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-8
      */
-    public function testLookupNormalizeGedragToUppercase(): void
+    public function testLookupThrowsOnZeroGevolg(): void
     {
-        $cell = $this->service->lookup(gedrag: 'a', gevolg: '1');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Ongeldig gevolg-kolom');
 
-        $this->assertSame(expected: 'A', actual: $cell['gedragRow']);
-    }//end testLookupNormalizeGedragToUppercase()
+        $this->service->lookup(gedrag: 'A', gevolg: '0');
+
+    }//end testLookupThrowsOnZeroGevolg()
+
 
     /**
-     * Test that the fallback returns all 16 cells consistently.
+     * Test that all sixteen matrix cells are reachable and non-empty.
      *
      * @return void
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-8
      */
-    public function testFallbackCoversAll16Cells(): void
+    public function testLookupAllSixteenCells(): void
     {
-        $count = 0;
-        foreach (['A', 'B', 'C', 'D'] as $g) {
-            foreach (['1', '2', '3', '4'] as $v) {
-                $cell = $this->service->lookup(gedrag: $g, gevolg: $v);
-                $this->assertNotEmpty(actual: $cell['interventieStep'], message: "Empty interventieStep for {$g}:{$v}");
-                $count++;
+        $gedragRows = ['A', 'B', 'C', 'D'];
+        $gevolgCols = ['1', '2', '3', '4'];
+
+        foreach ($gedragRows as $gedrag) {
+            foreach ($gevolgCols as $gevolg) {
+                $result = $this->service->lookup(gedrag: $gedrag, gevolg: $gevolg);
+                self::assertSame($gedrag, $result['gedragRow'], "Row mismatch for $gedrag");
+                self::assertSame($gevolg, $result['gevolgColumn'], "Column mismatch for $gevolg");
+                self::assertNotEmpty(
+                    $result['interventieStep'],
+                    "interventieStep must not be empty for cell $gedrag x $gevolg"
+                );
+                self::assertNotEmpty(
+                    $result['description'],
+                    "description must not be empty for cell $gedrag x $gevolg"
+                );
             }
         }
 
-        $this->assertSame(expected: 16, actual: $count);
-    }//end testFallbackCoversAll16Cells()
+    }//end testLookupAllSixteenCells()
+
+
+    /**
+     * Test that D × 4 returns a description (most severe cell).
+     *
+     * @return void
+     */
+    public function testLookupMostSevereCell(): void
+    {
+        $result = $this->service->lookup(gedrag: 'D', gevolg: '4');
+
+        self::assertSame('D', $result['gedragRow']);
+        self::assertSame('4', $result['gevolgColumn']);
+        self::assertNotEmpty($result['interventieStep']);
+
+    }//end testLookupMostSevereCell()
+
+
+    /**
+     * Test that A × 1 returns the mildest intervention step.
+     *
+     * @return void
+     */
+    public function testLookupMildestCell(): void
+    {
+        $result = $this->service->lookup(gedrag: 'A', gevolg: '1');
+
+        self::assertSame('Aanspreken / informeren', $result['interventieStep']);
+
+    }//end testLookupMildestCell()
+
+
 }//end class

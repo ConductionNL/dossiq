@@ -315,6 +315,12 @@ return [
         // CRUD of routing rules themselves lives on workflowTemplate (manifest).
         ['name' => 'routing#reroute', 'url' => '/api/cases/{id}/reroute', 'verb' => 'POST'],
 
+        // ── VTH Module: DSO intake, checklist results, advice, LHS lookup ─
+        // @spec openspec/changes/vth-module/tasks.md#task-3
+        ['name' => 'dSOIntake#intake', 'url' => '/api/vth/dso/intake', 'verb' => 'POST'],
+        // @spec openspec/changes/vth-module/tasks.md#task-8
+        ['name' => 'lhs#lookup',          'url' => '/api/vth/lhs/lookup', 'verb' => 'GET'],
+
         // LHS engine actions — matrix lookup + inspector override.
         // CRUD of matrices and recommendations lives on lhsMatrix/lhsRecommendation (manifest).
         ['name' => 'lhs#recommend', 'url' => '/api/lhs/recommend', 'verb' => 'POST'],

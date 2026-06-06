@@ -37,6 +37,7 @@ namespace OCA\Procest\Service;
 use DateTime;
 use OCA\Procest\AppInfo\Application;
 use OCP\IUserSession;
+use OCP\IGroupManager;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -62,12 +63,14 @@ class AdviceService
      *
      * @param SettingsService      $settingsService     The settings service
      * @param IUserSession         $userSession         The current user session
+     * @param IGroupManager        $groupManager        Group manager (Wilco #6 IDOR fix)
      * @param INotificationManager $notificationManager The notification manager
      * @param LoggerInterface      $logger              The logger
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly IUserSession $userSession,
+        private readonly IGroupManager $groupManager,
         private readonly INotificationManager $notificationManager,
         private readonly LoggerInterface $logger,
     ) {
@@ -415,6 +418,185 @@ class AdviceService
 
         return $user->getUID();
     }//end getUserId()
+
+
+    /**
+     * Submit advice (mark as received with optional adviesText).
+     *
+     * @param string               $adviceId The advice request UUID
+     * @param array<string, mixed> $payload  {adviesText, adviesDocument}
+     *
+     * @return array<string, mixed> The updated advice request
+     *
+     * @throws \RuntimeException When OpenRegister unavailable or transition invalid.
+     *
+     * @spec openspec/changes/vth-module/tasks.md#task-6
+     */
+    public function submitAdvice(string $adviceId, array $payload): array
+    {
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            throw new RuntimeException('OpenRegister is not available');
+        }
+
+        $register = $this->settingsService->getConfigValue('register');
+        $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
+        if (empty($register) === true || empty($schema) === true) {
+            throw new RuntimeException('Advice schema is not configured');
+        }
+
+        // Wilco #6 / procest#17 IDOR fix (2026-06-06): the caller must be
+        // the assigned `adviseur` (or an admin) — previously any authed
+        // user could submit advice on any UUID, including ones the
+        // adviseur hadn't yet seen. Read the current record and gate
+        // before applying the update.
+        $this->assertAdviceCallerIsAuthorized(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            adviceId: $adviceId,
+            action: 'submit',
+        );
+
+        $update = [
+            'status'     => 'received',
+            'receivedAt' => date('c'),
+        ];
+
+        $adviesText = (string) ($payload['adviesText'] ?? '');
+        if ($adviesText !== '') {
+            $update['adviesText'] = $adviesText;
+        }
+
+        $adviesDocument = (string) ($payload['adviesDocument'] ?? '');
+        if ($adviesDocument !== '') {
+            $update['adviesDocument'] = $adviesDocument;
+        }
+
+        try {
+            $result = $objectService->saveObject($register, $schema, $update, $adviceId);
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Procest: failed to submit advice: '.$e->getMessage(),
+                ['app' => Application::APP_ID]
+            );
+            throw new RuntimeException('Could not submit advice');
+        }
+
+        return $this->normalizeResult(result: $result);
+    }//end submitAdvice()
+
+    /**
+     * Cancel an advice request.
+     *
+     * @param string $adviceId The advice request UUID
+     *
+     * @return array<string, mixed> The updated advice request
+     *
+     * @throws \RuntimeException When OpenRegister unavailable or advice not found.
+     *
+     * @spec openspec/changes/vth-module/tasks.md#task-6
+     */
+    public function cancelAdvice(string $adviceId): array
+    {
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            throw new RuntimeException('OpenRegister is not available');
+        }
+
+        $register = $this->settingsService->getConfigValue('register');
+        $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
+        if (empty($register) === true || empty($schema) === true) {
+            throw new RuntimeException('Advice schema is not configured');
+        }
+
+        // Wilco #6 / procest#17 IDOR fix (2026-06-06): only the requester
+        // (or an admin) may cancel — previously any authed user could
+        // cancel any advice by UUID.
+        $this->assertAdviceCallerIsAuthorized(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            adviceId: $adviceId,
+            action: 'cancel',
+        );
+
+        try {
+            $result = $objectService->saveObject(
+                $register,
+                $schema,
+                ['status' => 'cancelled'],
+                $adviceId
+            );
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Procest: failed to cancel advice: '.$e->getMessage(),
+                ['app' => Application::APP_ID]
+            );
+            throw new RuntimeException('Could not cancel advice request');
+        }
+
+        return $this->normalizeResult(result: $result);
+    }//end cancelAdvice()
+
+    /**
+     * Authorization gate for advice mutations (Wilco #6 / procest#17 IDOR fix).
+     *
+     * - submit: only the assigned `adviseur` (or an admin) may submit.
+     * - cancel: only the `requestedBy` (or an admin) may cancel.
+     *
+     * The current user is obtained from IUserSession + IGroupManager
+     * (already injected on this service). The advice record is fetched
+     * from OR via the same objectService used by the calling method.
+     *
+     * @param object $objectService The OR object service
+     * @param string $register      The register slug
+     * @param string $schema        The advies_aanvraag schema slug
+     * @param string $adviceId      The advice UUID
+     * @param string $action        Either 'submit' or 'cancel'
+     *
+     * @return void
+     *
+     * @throws RuntimeException When the caller is not authorised, the
+     *                          record is missing, or OR is unavailable.
+     */
+    private function assertAdviceCallerIsAuthorized(
+        object $objectService,
+        string $register,
+        string $schema,
+        string $adviceId,
+        string $action,
+    ): void {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            throw new RuntimeException('Not authenticated');
+        }
+
+        $uid = $user->getUID();
+        if ($this->groupManager->isAdmin($uid) === true) {
+            return;
+        }
+
+        try {
+            $record = $objectService->find($adviceId, $register, $schema);
+        } catch (Throwable $e) {
+            $this->logger->warning(
+                'Procest: advice lookup failed during IDOR gate: '.$e->getMessage(),
+                ['app' => Application::APP_ID]
+            );
+            // Collapse not-found and access-denied to the same "not
+            // accessible" error to avoid an existence-probing oracle
+            // (same pattern as docudesk#100 Wilco #6 fix).
+            throw new RuntimeException('Advice request not accessible');
+        }
+
+        $data = $this->normalizeResult(result: $record);
+        $field = ($action === 'submit') ? 'adviseur' : 'requestedBy';
+        if (($data[$field] ?? '') !== $uid) {
+            throw new RuntimeException('Advice request not accessible');
+        }
+
+    }//end assertAdviceCallerIsAuthorized()
 
     /**
      * Send a Nextcloud notification to a user.

@@ -3,9 +3,8 @@
 /**
  * Procest VTH Template Service
  *
- * Loads VTH zaaktype templates from lib/Settings/templates/vth-*.json and
- * activates them as case type configurations in OpenRegister. Parallels the
- * WOO template-library pattern from TemplateLibraryService.
+ * Loads VTH zaaktype template files from lib/Settings/templates/vth-*.json
+ * and activates them as zaaktypes in OpenRegister.
  *
  * @category Service
  * @package  OCA\Procest\Service
@@ -23,38 +22,45 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use OCA\Procest\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
 
 /**
  * Service for loading and activating VTH zaaktype templates.
- *
- * VTH templates live in lib/Settings/templates/vth-*.json. Each template
- * defines a complete case type configuration (status types, document types,
- * role types, property definitions). Activation is idempotent: re-running
- * on an existing case type updates it in-place rather than duplicating it.
  */
 class VTHTemplateService
 {
 
     /**
-     * Directory containing VTH template JSON files.
+     * Directory containing VTH template files.
      */
-    private const TEMPLATES_DIR = __DIR__.'/../Settings/templates';
+    private const TEMPLATE_DIR = __DIR__.'/../Settings/templates';
 
     /**
-     * Prefix for VTH template files.
+     * Allowed VTH template slugs.
+     *
+     * Wilco #6 / procest#17 path-traversal fix (2026-06-06): the previous
+     * `activateTemplate($slug)` interpolated `$slug` directly into the
+     * file path (`TEMPLATE_DIR/<slug>.json`), so a caller could send
+     * `slug=../../../../etc/passwd` and read arbitrary files. The
+     * whitelist below caps the legal values; anything else gets a 422
+     * via UnexpectedValueException. New templates are added by extending
+     * this list AND placing the matching .json file in TEMPLATE_DIR.
+     *
+     * @var array<int, string>
      */
-    private const VTH_PREFIX = 'vth-';
+    private const ALLOWED_TEMPLATE_SLUGS = [
+        'vth-omgevingsvergunning',
+        'vth-toezichtzaak',
+    ];
 
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Settings service for register/schema refs
-     * @param LoggerInterface $logger          Logger
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-2
+     * @param SettingsService $settingsService The settings service
+     * @param LoggerInterface $logger          The logger
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -63,10 +69,10 @@ class VTHTemplateService
     }//end __construct()
 
     /**
-     * List all available VTH templates.
+     * List available VTH templates.
      *
-     * Scans the templates directory for vth-*.json files and returns their
-     * metadata without loading the full template body.
+     * Scans the templates directory for vth-*.json files and returns
+     * metadata for each valid template found.
      *
      * @return array<int, array<string, mixed>> List of template metadata
      *
@@ -75,60 +81,59 @@ class VTHTemplateService
     public function listTemplates(): array
     {
         $templates = [];
-        $dir       = self::TEMPLATES_DIR;
-
-        if (is_dir($dir) === false) {
-            return $templates;
-        }
-
-        $files = glob($dir.'/'.self::VTH_PREFIX.'*.json');
+        $pattern   = self::TEMPLATE_DIR.'/vth-*.json';
+        $files     = glob($pattern);
         if ($files === false) {
-            return $templates;
+            return [];
         }
 
         foreach ($files as $file) {
-            $data = $this->loadFile(path: $file);
-            if ($data === null) {
-                continue;
+            $data = $this->loadTemplateFile(filePath: $file);
+            if ($data !== null) {
+                $templates[] = [
+                    'slug'        => $data['slug'] ?? basename($file, '.json'),
+                    'title'       => $data['title'] ?? '',
+                    'description' => $data['description'] ?? '',
+                    'version'     => $data['version'] ?? '1.0.0',
+                    'file'        => basename($file),
+                ];
             }
-
-            $templates[] = [
-                'id'          => $data['id'] ?? basename(path: $file, suffix: '.json'),
-                'title'       => $data['title'] ?? '',
-                'description' => $data['description'] ?? '',
-                'category'    => $data['category'] ?? 'vth',
-                'version'     => $data['version'] ?? '1.0.0',
-            ];
         }
 
         return $templates;
     }//end listTemplates()
 
     /**
-     * Activate a VTH template by its slug identifier.
+     * Activate a VTH template by slug.
      *
-     * Loads the template JSON, creates or updates the case type and all
-     * associated sub-objects (status types, role types, document types,
-     * property definitions) in OpenRegister. Activation is idempotent.
+     * Loads the template file and creates or updates the corresponding
+     * zaaktype in OpenRegister using the case_type_schema register.
      *
-     * @param string $slug Template slug (e.g. 'vth-omgevingsvergunning')
+     * @param string $slug The template slug (e.g. "vth-omgevingsvergunning")
      *
-     * @return array<string, mixed> Activation result with caseTypeId and counts
+     * @return array<string, mixed> The activated zaaktype record
      *
-     * @throws RuntimeException If template not found or OpenRegister unavailable
+     * @throws RuntimeException When template is not found or OpenRegister is unavailable.
      *
      * @spec openspec/changes/vth-module/tasks.md#task-2
      */
     public function activateTemplate(string $slug): array
     {
-        $file = self::TEMPLATES_DIR.'/'.ltrim(string: $slug, characters: '/').'.json';
-        if (file_exists($file) === false) {
+        // Whitelist check (Wilco #6 / procest#17 path-traversal fix). Reject
+        // anything not in ALLOWED_TEMPLATE_SLUGS BEFORE building the file
+        // path, so a malicious slug never reaches the filesystem.
+        if (in_array($slug, self::ALLOWED_TEMPLATE_SLUGS, true) === false) {
+            throw new RuntimeException('Unknown VTH template: '.$slug);
+        }
+
+        $filePath = self::TEMPLATE_DIR.'/'.$slug.'.json';
+        if (is_file($filePath) === false) {
             throw new RuntimeException('VTH template not found: '.$slug);
         }
 
-        $template = $this->loadFile(path: $file);
+        $template = $this->loadTemplateFile(filePath: $filePath);
         if ($template === null) {
-            throw new RuntimeException('Failed to parse VTH template: '.$slug);
+            throw new RuntimeException('Could not load VTH template: '.$slug);
         }
 
         $objectService = $this->settingsService->getObjectService();
@@ -136,186 +141,131 @@ class VTHTemplateService
             throw new RuntimeException('OpenRegister is not available');
         }
 
-        $register         = $this->settingsService->getConfigValue('register');
-        $caseTypeSchema   = $this->settingsService->getConfigValue('case_type_schema');
-        $statusTypeSchema = $this->settingsService->getConfigValue('status_type_schema');
-        $roleTypeSchema   = $this->settingsService->getConfigValue('role_type_schema');
-        $docTypeSchema    = $this->settingsService->getConfigValue('document_type_schema');
-        $propDefSchema    = $this->settingsService->getConfigValue('property_definition_schema');
-
+        $register       = $this->settingsService->getConfigValue('register');
+        $caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
         if ($register === '' || $caseTypeSchema === '') {
-            throw new RuntimeException('Procest register or case type schema not configured');
+            throw new RuntimeException('Procest register or caseType schema not configured');
         }
 
-        $caseTypeData = array_merge(
-            $template['caseType'] ?? [],
-            ['slug' => $template['id']]
-        );
+        // Build the zaaktype record from template metadata.
+        $zaaktype = [
+            'title'       => $template['title'] ?? $slug,
+            'description' => $template['description'] ?? '',
+            'identifier'  => $slug,
+            'version'     => $template['version'] ?? '1.0.0',
+            'isDraft'     => false,
+            'validFrom'   => date('Y-m-d'),
+        ];
 
-        // Create or update the case type (idempotent by slug).
-        $existing = $objectService->findObjects(
+        // Attempt to find an existing zaaktype with this identifier to avoid duplicates.
+        $existingId = $this->findExistingZaaktypeId(
+            objectService: $objectService,
             register: $register,
-            schema: $caseTypeSchema,
-            params: ['slug' => $template['id'], '_limit' => 1]
+            caseTypeSchema: $caseTypeSchema,
+            slug: $slug,
         );
 
-        $caseTypeObj = null;
-        if (empty($existing) === false) {
-            $firstItem = $existing[0] ?? null;
-            $row       = [];
-            if (is_array($firstItem) === true) {
-                $row = $firstItem;
-            }
-
-            if (isset($row['id']) === true) {
-                $caseTypeData['id'] = $row['id'];
-                $caseTypeObj        = $objectService->saveObject(
-                    register: $register,
-                    schema: $caseTypeSchema,
-                    object: $caseTypeData
-                );
-            }
+        if ($existingId !== null) {
+            $zaaktype['id'] = $existingId;
         }
 
-        if ($caseTypeObj === null) {
-            $caseTypeObj = $objectService->saveObject(
-                register: $register,
-                schema: $caseTypeSchema,
-                object: $caseTypeData
+        try {
+            $result = $objectService->saveObject($register, $caseTypeSchema, $zaaktype);
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Procest: failed to activate VTH template '.$slug.': '.$e->getMessage(),
+                ['app' => Application::APP_ID],
             );
-        }
-
-        if (is_object($caseTypeObj) === true) {
-            $caseTypeId = $caseTypeObj->getUuid();
-        } else if (is_array($caseTypeObj) === true) {
-            $caseTypeId = $caseTypeObj['id'] ?? '';
-        } else {
-            $caseTypeId = '';
-        }
-
-        $counts = ['statusTypes' => 0, 'roleTypes' => 0, 'documentTypes' => 0, 'propertyDefinitions' => 0];
-
-        // Seed sub-objects if schemas are configured.
-        if ($statusTypeSchema !== '' && isset($template['statusTypes']) === true) {
-            $counts['statusTypes'] = $this->seedSubObjects(
-                objectService: $objectService,
-                register: $register,
-                schema: $statusTypeSchema,
-                items: $template['statusTypes'],
-                caseTypeId: $caseTypeId,
-                caseTypeField: 'caseType'
-            );
-        }
-
-        if ($roleTypeSchema !== '' && isset($template['roleTypes']) === true) {
-            $counts['roleTypes'] = $this->seedSubObjects(
-                objectService: $objectService,
-                register: $register,
-                schema: $roleTypeSchema,
-                items: $template['roleTypes'],
-                caseTypeId: $caseTypeId,
-                caseTypeField: 'caseType'
-            );
-        }
-
-        if ($docTypeSchema !== '' && isset($template['documentTypes']) === true) {
-            $counts['documentTypes'] = $this->seedSubObjects(
-                objectService: $objectService,
-                register: $register,
-                schema: $docTypeSchema,
-                items: $template['documentTypes'],
-                caseTypeId: $caseTypeId,
-                caseTypeField: 'caseType'
-            );
-        }
-
-        if ($propDefSchema !== '' && isset($template['propertyDefinitions']) === true) {
-            $counts['propertyDefinitions'] = $this->seedSubObjects(
-                objectService: $objectService,
-                register: $register,
-                schema: $propDefSchema,
-                items: $template['propertyDefinitions'],
-                caseTypeId: $caseTypeId,
-                caseTypeField: 'caseType'
-            );
+            throw new RuntimeException('Failed to activate VTH template: '.$e->getMessage());
         }
 
         $this->logger->info(
-            'VTH template activated: '.$slug.' (caseType='.$caseTypeId.')',
-            ['app' => 'procest']
+            'Procest: activated VTH template '.$slug,
+            ['app' => Application::APP_ID],
         );
 
-        return ['caseTypeId' => $caseTypeId, 'template' => $slug, 'counts' => $counts];
+        return $this->toArray(value: $result) ?? $zaaktype;
     }//end activateTemplate()
 
     /**
-     * Seed sub-objects (statusTypes, roleTypes, etc.) for a case type.
+     * Find the ID of an existing zaaktype by its identifier/slug.
      *
-     * Existing items are matched by name; new ones are created.
+     * @param object $objectService  The OpenRegister object service
+     * @param string $register       The register slug
+     * @param string $caseTypeSchema The case type schema slug
+     * @param string $slug           The zaaktype identifier to look up
      *
-     * @param object            $objectService The OpenRegister object service
-     * @param string            $register      Register slug
-     * @param string            $schema        Schema slug
-     * @param array<int, mixed> $items         Array of item data from template
-     * @param string            $caseTypeId    UUID of the parent case type
-     * @param string            $caseTypeField Field name linking to caseType
-     *
-     * @return int Number of items created or updated
+     * @return string|null The existing record ID, or null when not found
      */
-    private function seedSubObjects(
+    private function findExistingZaaktypeId(
         object $objectService,
         string $register,
-        string $schema,
-        array $items,
-        string $caseTypeId,
-        string $caseTypeField
-    ): int {
-        $count = 0;
+        string $caseTypeSchema,
+        string $slug,
+    ): ?string {
+        try {
+            $existing = $objectService->findObjects($register, $caseTypeSchema, ['identifier' => $slug]);
+        } catch (Throwable) {
+            return null;
+        }
 
-        foreach ($items as $item) {
-            if (is_array($item) === false) {
-                continue;
-            }
+        if (is_array($existing) === false || $existing === []) {
+            return null;
+        }
 
-            $item[$caseTypeField] = $caseTypeId;
-
-            try {
-                $objectService->saveObject(
-                    register: $register,
-                    schema: $schema,
-                    object: $item
-                );
-                $count++;
-            } catch (Throwable $e) {
-                $this->logger->warning(
-                    'Failed to seed sub-object: '.$e->getMessage(),
-                    ['app' => 'procest', 'schema' => $schema]
-                );
-            }
-        }//end foreach
-
-        return $count;
-    }//end seedSubObjects()
+        $first = is_array($existing[0]) ? $existing[0] : [];
+        $id    = $first['id'] ?? ($first['uuid'] ?? null);
+        return is_string($id) ? $id : null;
+    }//end findExistingZaaktypeId()
 
     /**
      * Load and decode a template JSON file.
      *
-     * @param string $path Absolute path to the JSON file
+     * @param string $filePath Absolute path to the template file
      *
-     * @return array<string, mixed>|null Decoded array or null on failure
+     * @return array<string, mixed>|null Decoded template data or null on error
      */
-    private function loadFile(string $path): ?array
+    private function loadTemplateFile(string $filePath): ?array
     {
-        $raw = @file_get_contents($path);
-        if ($raw === false) {
+        if (is_file($filePath) === false) {
             return null;
         }
 
-        $decoded = json_decode($raw, true);
-        if (is_array($decoded) === false) {
+        $content = file_get_contents($filePath);
+        if ($content === false) {
             return null;
         }
 
-        return $decoded;
-    }//end loadFile()
+        $data = json_decode($content, true);
+        if (is_array($data) === false) {
+            $this->logger->error(
+                'Procest: invalid JSON in template file: '.$filePath,
+                ['app' => Application::APP_ID],
+            );
+            return null;
+        }
+
+        return $data;
+    }//end loadTemplateFile()
+
+    /**
+     * Convert an OpenRegister result to a plain array.
+     *
+     * @param mixed $value The object or array returned by saveObject
+     *
+     * @return array<string, mixed>|null Plain array representation or null
+     */
+    private function toArray(mixed $value): ?array
+    {
+        if (is_array($value) === true) {
+            return $value;
+        }
+
+        if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
+            $data = $value->jsonSerialize();
+            return is_array($data) ? $data : null;
+        }
+
+        return null;
+    }//end toArray()
 }//end class

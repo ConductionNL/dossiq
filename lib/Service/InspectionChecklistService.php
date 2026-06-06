@@ -3,9 +3,8 @@
 /**
  * Procest Inspection Checklist Service
  *
- * Admin CRUD on `inspectionChecklist` schemas and per-case completion via
- * `inspectionResult` records. Used by the checklist admin UI and the
- * mobiel-inspectie consumer.
+ * CRUD service for inspectionChecklist and checklistItem admin operations,
+ * and inspection result submission (inspectionResult) with photo-required validation.
  *
  * @category Service
  * @package  OCA\Procest\Service
@@ -24,389 +23,355 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
 
 /**
- * Service for managing inspection checklists (admin CRUD + case completion).
+ * Service for admin CRUD on inspection checklists and result submission.
  *
- * Distinct from the existing ChecklistService (which handles per-item
- * conformity completion during a mobile inspection run). This service
- * manages the template lifecycle: create/read/update/delete of
- * `inspectionChecklist` objects and submission of `inspectionResult` records.
+ * @spec openspec/changes/vth-module/tasks.md#task-4
  */
 class InspectionChecklistService
 {
+
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Settings bridge to OpenRegister
-     * @param LoggerInterface $logger          Logger
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-4
+     * @param SettingsService $settingsService The settings service
+     * @param IUserSession    $userSession     The current user session
+     * @param LoggerInterface $logger          The logger
      */
     public function __construct(
         private readonly SettingsService $settingsService,
+        private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
 
     /**
-     * List all inspection checklists, optionally filtered by case type ref.
+     * List all inspection checklists, optionally filtered by caseTypeRef.
      *
-     * @param string|null $caseTypeRef Optional UUID of the case type to filter by
+     * @param string|null $caseTypeRef Filter by case type UUID
      *
-     * @return array<int, array<string, mixed>> List of checklist objects
+     * @return array<int, array<string, mixed>> List of checklists
      *
      * @spec openspec/changes/vth-module/tasks.md#task-4
      */
     public function listChecklists(?string $caseTypeRef=null): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
+        [$objectService, $register] = $this->bootstrap();
+        $schema = $this->requireConfig(key: 'inspection_checklist_schema');
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = 'inspectionChecklist';
-        $params   = ['_limit' => 100, '_order' => 'name'];
-
+        $params = [];
         if ($caseTypeRef !== null && $caseTypeRef !== '') {
             $params['caseTypeRef'] = $caseTypeRef;
         }
 
         try {
-            $results = $objectService->findObjects(
-                register: $register,
-                schema: $schema,
-                params: $params
-            );
-            if (is_array($results) === true) {
-                return $results;
-            }
-
-            return [];
+            $results = $objectService->findObjects($register, $schema, $params, [], 200);
         } catch (Throwable $e) {
-            $this->logger->warning(
-                'Failed to list inspection checklists: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
+            $this->logger->error(
+                'Procest: failed to list checklists: '.$e->getMessage(),
+                ['app' => Application::APP_ID],
             );
             return [];
         }
+
+        return is_array($results) ? $results : [];
     }//end listChecklists()
+
+    /**
+     * Get a single inspection checklist by ID.
+     *
+     * @param string $id The checklist UUID
+     *
+     * @return array<string, mixed>|null The checklist or null if not found
+     *
+     * @spec openspec/changes/vth-module/tasks.md#task-4
+     */
+    public function getChecklist(string $id): ?array
+    {
+        [$objectService, $register] = $this->bootstrap();
+        $schema = $this->requireConfig(key: 'inspection_checklist_schema');
+
+        try {
+            $result = $objectService->find($id, register: $register, schema: $schema);
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Procest: failed to get checklist: '.$e->getMessage(),
+                ['app' => Application::APP_ID],
+            );
+            return null;
+        }
+
+        return $this->toArray(value: $result);
+    }//end getChecklist()
 
     /**
      * Create a new inspection checklist.
      *
-     * @param array<string, mixed> $data Checklist data (name, caseTypeRef, items, active, validFrom)
+     * @param array<string, mixed> $data Checklist data
      *
-     * @return array<string, mixed> Created checklist object
+     * @return array<string, mixed> The created checklist
      *
-     * @throws RuntimeException If OpenRegister is unavailable
+     * @throws RuntimeException On validation failure or persistence error.
      *
      * @spec openspec/changes/vth-module/tasks.md#task-4
      */
     public function createChecklist(array $data): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
+        if (empty($data['name']) === true) {
+            throw new RuntimeException('Checklist name is required');
         }
 
-        $register = $this->settingsService->getConfigValue('register');
+        [$objectService, $register] = $this->bootstrap();
+        $schema = $this->requireConfig(key: 'inspection_checklist_schema');
 
-        $data['version'] = $data['version'] ?? 1;
-        $data['active']  = $data['active'] ?? true;
+        $checklist = [
+            'name'        => (string) $data['name'],
+            'version'     => (int) ($data['version'] ?? 1),
+            'caseTypeRef' => (string) ($data['caseTypeRef'] ?? ''),
+            'items'       => $data['items'] ?? [],
+            'active'      => (bool) ($data['active'] ?? false),
+            'validFrom'   => $data['validFrom'] ?? date('Y-m-d'),
+        ];
 
-        $result = $objectService->saveObject(
-            register: $register,
-            schema: 'inspectionChecklist',
-            object: $data
-        );
-
-        if (is_array($result) === true) {
-            return $result;
+        try {
+            $result = $objectService->saveObject($register, $schema, $checklist);
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Procest: failed to create checklist: '.$e->getMessage(),
+                ['app' => Application::APP_ID],
+            );
+            throw new RuntimeException('Failed to create checklist: '.$e->getMessage());
         }
 
-        if (is_object($result) === true) {
-            return get_object_vars(object: $result);
-        }
-
-        return [];
+        return $this->toArray(value: $result);
     }//end createChecklist()
 
     /**
      * Update an existing inspection checklist.
      *
-     * Bumps the version number on every update to support versioned
-     * in-progress inspections.
-     *
-     * @param string               $id   UUID of the checklist to update
+     * @param string               $id   The checklist UUID
      * @param array<string, mixed> $data Updated fields
      *
-     * @return array<string, mixed> Updated checklist object
+     * @return array<string, mixed> The updated checklist
      *
-     * @throws RuntimeException If OpenRegister is unavailable
+     * @throws RuntimeException On persistence error.
      *
      * @spec openspec/changes/vth-module/tasks.md#task-4
      */
     public function updateChecklist(string $id, array $data): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
+        [$objectService, $register] = $this->bootstrap();
+        $schema = $this->requireConfig(key: 'inspection_checklist_schema');
+
+        try {
+            $result = $objectService->saveObject($register, $schema, $data, $id);
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Procest: failed to update checklist: '.$e->getMessage(),
+                ['app' => Application::APP_ID],
+            );
+            throw new RuntimeException('Failed to update checklist: '.$e->getMessage());
         }
 
-        $register = $this->settingsService->getConfigValue('register');
-
-        $data['id']      = $id;
-        $data['version'] = ($data['version'] ?? 1) + 1;
-
-        $result = $objectService->saveObject(
-            register: $register,
-            schema: 'inspectionChecklist',
-            object: $data
-        );
-
-        if (is_array($result) === true) {
-            return $result;
-        } return [];
+        return $this->toArray(value: $result);
     }//end updateChecklist()
 
     /**
      * Delete an inspection checklist.
      *
-     * @param string $id UUID of the checklist to delete
+     * @param string $id The checklist UUID
      *
      * @return bool True on success
+     *
+     * @throws RuntimeException On persistence error.
      *
      * @spec openspec/changes/vth-module/tasks.md#task-4
      */
     public function deleteChecklist(string $id): bool
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return false;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
+        [$objectService, $register] = $this->bootstrap();
+        $schema = $this->requireConfig(key: 'inspection_checklist_schema');
 
         try {
-            $objectService->deleteObject(
-                register: $register,
-                schema: 'inspectionChecklist',
-                id: $id
-            );
-            return true;
+            $objectService->deleteObject($register, $schema, $id);
         } catch (Throwable $e) {
-            $this->logger->warning(
-                'Failed to delete inspection checklist '.$id.': '.$e->getMessage(),
-                ['app' => Application::APP_ID]
+            $this->logger->error(
+                'Procest: failed to delete checklist: '.$e->getMessage(),
+                ['app' => Application::APP_ID],
             );
-            return false;
+            throw new RuntimeException('Failed to delete checklist: '.$e->getMessage());
         }
+
+        return true;
     }//end deleteChecklist()
 
     /**
-     * Submit an inspection result for a case.
+     * Submit an inspection result for a case + checklist.
      *
-     * Validates that required-photo items have a photo reference when answered
-     * non-conformant. Saves the result and calculates the overall result.
+     * Validates that photo-required answers include at least one photoRef.
      *
-     * @param string               $caseId      UUID of the case
-     * @param string               $checklistId UUID of the inspectionChecklist
-     * @param array<string, mixed> $resultData  Answers and metadata
-     * @param string               $completedBy User UID of the inspector
+     * @param string               $caseId      The case UUID
+     * @param string               $checklistId The checklist UUID
+     * @param array<string, mixed> $data        Result data including answers
      *
-     * @return array<string, mixed> Saved inspectionResult object
+     * @return array<string, mixed> The persisted inspectionResult
      *
-     * @throws RuntimeException If validation fails or OpenRegister unavailable
+     * @throws RuntimeException When photo validation fails or persistence fails.
      *
      * @spec openspec/changes/vth-module/tasks.md#task-4
      */
-    public function submitResult(
-        string $caseId,
-        string $checklistId,
-        array $resultData,
-        string $completedBy
-    ): array {
+    public function submitResult(string $caseId, string $checklistId, array $data): array
+    {
+        $answers = $data['answers'] ?? [];
+        if (is_array($answers) === false) {
+            $answers = [];
+        }
+
+        $checklist = $this->getChecklist(id: $checklistId);
+        if ($checklist !== null) {
+            $items = $checklist['items'] ?? [];
+            $this->validateAnswers(answers: $answers, items: $items);
+        }
+
+        [$objectService, $register] = $this->bootstrap();
+        $schema = $this->requireConfig(key: 'inspection_result_schema');
+
+        $user        = $this->userSession->getUser();
+        $completedBy = $user !== null ? $user->getUID() : '';
+
+        $result = [
+            'case'        => $caseId,
+            'checklist'   => $checklistId,
+            'completedBy' => $completedBy,
+            'completedAt' => date('c'),
+            'answers'     => $answers,
+        ];
+
+        try {
+            $persisted = $objectService->saveObject($register, $schema, $result);
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Procest: failed to submit inspection result: '.$e->getMessage(),
+                ['app' => Application::APP_ID],
+            );
+            throw new RuntimeException('Failed to submit inspection result: '.$e->getMessage());
+        }
+
+        $this->logger->info(
+            'Procest: inspection result submitted for case '.$caseId,
+            ['app' => Application::APP_ID],
+        );
+
+        return $this->toArray(value: $persisted);
+    }//end submitResult()
+
+    /**
+     * Validate answers against checklist items, enforcing photo requirements.
+     *
+     * @param array<int, array<string, mixed>> $answers Submitted answers
+     * @param array<int, mixed>                $items   Checklist item definitions
+     *
+     * @return void
+     *
+     * @throws RuntimeException When a required photo is missing.
+     */
+    public function validateAnswers(array $answers, array $items): void
+    {
+        $answersByRef = [];
+        foreach ($answers as $answer) {
+            if (is_array($answer) === false) {
+                continue;
+            }
+
+            $ref = (string) ($answer['itemRef'] ?? '');
+            if ($ref !== '') {
+                $answersByRef[$ref] = $answer;
+            }
+        }
+
+        foreach ($items as $item) {
+            if (is_array($item) === false) {
+                continue;
+            }
+
+            $type = (string) ($item['type'] ?? '');
+            $ref  = (string) ($item['id'] ?? ($item['ref'] ?? ''));
+            if ($ref === '') {
+                continue;
+            }
+
+            if ($type === 'photo') {
+                $answer   = $answersByRef[$ref] ?? [];
+                $photoRef = (string) ($answer['photoRef'] ?? '');
+                if ($photoRef === '') {
+                    throw new RuntimeException(
+                        'Photo is required for checklist item: '.$ref
+                    );
+                }
+            }
+        }
+    }//end validateAnswers()
+
+    /**
+     * Bootstrap ObjectService and the register slug.
+     *
+     * @return array{0: object, 1: string}
+     *
+     * @throws RuntimeException When OpenRegister unavailable.
+     */
+    private function bootstrap(): array
+    {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
             throw new RuntimeException('OpenRegister is not available');
         }
 
-        $register = $this->settingsService->getConfigValue('register');
-
-        // Validate required-photo items.
-        $answers = $resultData['answers'] ?? [];
-        $this->validatePhotoRequirements(answers: $answers, register: $register, objectService: $objectService);
-
-        // Calculate overall result.
-        $overallResult = $this->calculateOverallResult(answers: $answers);
-
-        $payload = [
-            'caseRef'       => $caseId,
-            'checklistRef'  => $checklistId,
-            'completedBy'   => $completedBy,
-            'completedAt'   => date(format: 'c'),
-            'answers'       => $answers,
-            'overallResult' => $overallResult,
-            'remarks'       => $resultData['remarks'] ?? '',
-            'location'      => $resultData['location'] ?? '',
-        ];
-
-        $saved = $objectService->saveObject(
-            register: $register,
-            schema: 'inspectionResult',
-            object: $payload
-        );
-
-        $this->logger->info(
-            'Inspection result submitted for case '.$caseId.' (result='.$overallResult.')',
-            ['app' => Application::APP_ID]
-        );
-
-        if (is_array($saved) === true) {
-            return $saved;
-        } return [];
-    }//end submitResult()
+        $register = $this->requireConfig(key: 'register');
+        return [$objectService, $register];
+    }//end bootstrap()
 
     /**
-     * Get all inspection results for a case.
+     * Resolve a required config value.
      *
-     * @param string $caseId UUID of the case
+     * @param string $key The config key
      *
-     * @return array<int, array<string, mixed>> List of inspectionResult objects
+     * @return string
      *
-     * @spec openspec/changes/vth-module/tasks.md#task-4
+     * @throws RuntimeException When value is empty.
      */
-    public function getResultsForCase(string $caseId): array
+    private function requireConfig(string $key): string
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
+        $value = $this->settingsService->getConfigValue($key);
+        if ($value === '') {
+            throw new RuntimeException('Procest config key '.$key.' is not set');
         }
 
-        $register = $this->settingsService->getConfigValue('register');
-
-        try {
-            $results = $objectService->findObjects(
-                register: $register,
-                schema: 'inspectionResult',
-                params: ['caseRef' => $caseId, '_limit' => 50, '_order' => 'completedAt']
-            );
-            if (is_array($results) === true) {
-                return $results;
-            }
-
-            return [];
-        } catch (Throwable $e) {
-            $this->logger->warning(
-                'Failed to get inspection results for case '.$caseId.': '.$e->getMessage(),
-                ['app' => Application::APP_ID]
-            );
-            return [];
-        }
-    }//end getResultsForCase()
+        return $value;
+    }//end requireConfig()
 
     /**
-     * Validate that non-conformant answers with fotoRequired have a photoRef.
+     * Coerce an ObjectService return value to a plain array.
      *
-     * @param array<int, mixed> $answers       Array of answer objects
-     * @param string            $register      Register slug
-     * @param object            $objectService OpenRegister object service
+     * @param mixed $value The raw return value
      *
-     * @return void
-     *
-     * @throws RuntimeException If a required photo is missing
+     * @return array<string, mixed>
      */
-    private function validatePhotoRequirements(
-        array $answers,
-        string $register,
-        object $objectService
-    ): void {
-        foreach ($answers as $answer) {
-            if (is_array($answer) === false) {
-                continue;
-            }
-
-            $value    = $answer['value'] ?? '';
-            $photoRef = $answer['photoRef'] ?? '';
-            $itemRef  = $answer['itemRef'] ?? '';
-
-            if ($value !== 'niet_conform' || $photoRef !== '') {
-                continue;
-            }
-
-            // Look up the checklistItem to see if fotoRequired=true.
-            if ($itemRef === '') {
-                continue;
-            }
-
-            try {
-                $item = $objectService->find(
-                    $itemRef,
-                    register: $register,
-                    schema: 'checklistItem'
-                );
-
-                // The find() call may return an OpenRegister entity or an
-                // array; normalise to an array so fotoRequired is readable.
-                if (is_object($item) === true) {
-                    $item = get_object_vars(object: $item);
-                }
-
-                if (is_array($item) === true && ($item['fotoRequired'] ?? false) === true) {
-                    throw new RuntimeException(
-                        'Photo required for non-conformant checklist item '.$itemRef
-                    );
-                }
-            } catch (RuntimeException $e) {
-                throw $e;
-            } catch (Throwable) {
-                // Item lookup failed — allow submission rather than blocking.
-            }//end try
-        }//end foreach
-    }//end validatePhotoRequirements()
-
-    /**
-     * Calculate the overall result based on answer values.
-     *
-     * - All answers conform → 'conform'
-     * - Any answer niet_conform → 'niet_conform'
-     * - Otherwise → 'deels_conform'
-     *
-     * @param array<int, mixed> $answers Array of answer objects
-     *
-     * @return string 'conform'|'deels_conform'|'niet_conform'
-     */
-    private function calculateOverallResult(array $answers): string
+    private function toArray(mixed $value): array
     {
-        $hasNietConform = false;
-        $hasConform     = false;
-
-        foreach ($answers as $answer) {
-            if (is_array($answer) === false) {
-                continue;
-            }
-
-            $value = $answer['value'] ?? '';
-            if ($value === 'niet_conform') {
-                $hasNietConform = true;
-            } else if ($value === 'conform') {
-                $hasConform = true;
-            }
+        if (is_array($value) === true) {
+            return $value;
         }
 
-        if ($hasNietConform === true && $hasConform === false) {
-            return 'niet_conform';
+        if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
+            $data = $value->jsonSerialize();
+            return is_array($data) ? $data : [];
         }
 
-        if ($hasNietConform === true) {
-            return 'deels_conform';
-        }
-
-        return 'conform';
-    }//end calculateOverallResult()
+        return [];
+    }//end toArray()
 }//end class

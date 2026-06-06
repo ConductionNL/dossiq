@@ -3,14 +3,14 @@
 /**
  * VTHTemplateService Unit Tests
  *
+ * Tests for the VTH zaaktype template loader and activator service.
+ *
  * @category Tests
  * @package  OCA\Procest\Tests\Unit\Service
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
- *
- * @version GIT: <git-id>
  *
  * @link https://conduction.nl
  *
@@ -23,12 +23,13 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\VTHTemplateService;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * Unit tests for VTHTemplateService.
+ * Unit tests for the VTHTemplateService class.
  *
  * @covers \OCA\Procest\Service\VTHTemplateService
  */
@@ -36,19 +37,26 @@ class VTHTemplateServiceTest extends TestCase
 {
 
     /**
-     * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
+     * The mocked settings service.
+     *
+     * @var SettingsService|MockObject
      */
     private SettingsService $settingsService;
 
     /**
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+     * The mocked logger.
+     *
+     * @var LoggerInterface|MockObject
      */
     private LoggerInterface $logger;
 
     /**
+     * The service under test.
+     *
      * @var VTHTemplateService
      */
     private VTHTemplateService $service;
+
 
     /**
      * Set up test fixtures.
@@ -64,90 +72,133 @@ class VTHTemplateServiceTest extends TestCase
             settingsService: $this->settingsService,
             logger: $this->logger,
         );
+
     }//end setUp()
 
+
     /**
-     * Test that listTemplates returns an array.
+     * Test that listTemplates() returns an array.
      *
      * @return void
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-2
      */
     public function testListTemplatesReturnsArray(): void
     {
         $templates = $this->service->listTemplates();
 
-        $this->assertIsArray($templates);
+        self::assertIsArray($templates);
+
     }//end testListTemplatesReturnsArray()
 
+
     /**
-     * Test that listTemplates includes shipped VTH templates.
+     * Test that listTemplates() includes the vth-omgevingsvergunning template.
      *
      * @return void
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-2
      */
-    public function testListTemplatesIncludesVthTemplates(): void
+    public function testListTemplatesIncludesVthOmgevingsvergunning(): void
     {
         $templates = $this->service->listTemplates();
+        $slugs     = array_column($templates, 'slug');
 
-        $ids = array_column($templates, 'id');
+        self::assertContains('vth-omgevingsvergunning', $slugs);
 
-        $this->assertContains(needle: 'vth-omgevingsvergunning', haystack: $ids);
-        $this->assertContains(needle: 'vth-toezichtzaak', haystack: $ids);
-        $this->assertContains(needle: 'vth-handhavingszaak', haystack: $ids);
-    }//end testListTemplatesIncludesVthTemplates()
+    }//end testListTemplatesIncludesVthOmgevingsvergunning()
+
 
     /**
-     * Test that activateTemplate throws on unknown slug.
+     * Test that listTemplates() includes the vth-toezichtzaak template.
      *
      * @return void
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-2
      */
-    public function testActivateThrowsOnUnknownSlug(): void
+    public function testListTemplatesIncludesVthToezichtzaak(): void
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('VTH template not found');
+        $templates = $this->service->listTemplates();
+        $slugs     = array_column($templates, 'slug');
 
-        $this->service->activateTemplate(slug: 'vth-does-not-exist');
-    }//end testActivateThrowsOnUnknownSlug()
+        self::assertContains('vth-toezichtzaak', $slugs);
+
+    }//end testListTemplatesIncludesVthToezichtzaak()
+
 
     /**
-     * Test that activateTemplate throws when OpenRegister unavailable.
+     * Test that listTemplates() includes the vth-handhavingszaak template.
      *
      * @return void
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-2
      */
-    public function testActivateThrowsWhenOpenRegisterUnavailable(): void
+    public function testListTemplatesIncludesVthHandhavingszaak(): void
     {
-        $this->settingsService
-            ->method('getObjectService')
-            ->willReturn(null);
+        $templates = $this->service->listTemplates();
+        $slugs     = array_column($templates, 'slug');
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('OpenRegister is not available');
+        self::assertContains('vth-handhavingszaak', $slugs);
 
-        $this->service->activateTemplate(slug: 'vth-omgevingsvergunning');
-    }//end testActivateThrowsWhenOpenRegisterUnavailable()
+    }//end testListTemplatesIncludesVthHandhavingszaak()
+
 
     /**
-     * Test that each template metadata has required fields.
+     * Test that each template entry contains the required metadata keys.
      *
      * @return void
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-2
      */
-    public function testTemplateMetadataHasRequiredFields(): void
+    public function testListTemplatesEachEntryHasRequiredKeys(): void
     {
         $templates = $this->service->listTemplates();
 
         foreach ($templates as $template) {
-            $this->assertArrayHasKey(key: 'id', array: $template, message: 'Template missing id');
-            $this->assertArrayHasKey(key: 'title', array: $template, message: 'Template missing title');
-            $this->assertArrayHasKey(key: 'category', array: $template, message: 'Template missing category');
-            $this->assertSame(expected: 'vth', actual: $template['category']);
+            self::assertArrayHasKey('slug', $template, 'Template must have slug');
+            self::assertArrayHasKey('title', $template, 'Template must have title');
+            self::assertArrayHasKey('description', $template, 'Template must have description');
+            self::assertArrayHasKey('version', $template, 'Template must have version');
+            self::assertArrayHasKey('file', $template, 'Template must have file');
         }
-    }//end testTemplateMetadataHasRequiredFields()
+
+    }//end testListTemplatesEachEntryHasRequiredKeys()
+
+
+    /**
+     * Test that activateTemplate() throws when the template slug does not exist.
+     *
+     * @return void
+     */
+    public function testActivateTemplateThrowsWhenTemplateNotFound(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('VTH template not found');
+
+        $this->service->activateTemplate(slug: 'non-existent-template');
+
+    }//end testActivateTemplateThrowsWhenTemplateNotFound()
+
+
+    /**
+     * Test that activateTemplate() throws when OpenRegister is unavailable.
+     *
+     * @return void
+     */
+    public function testActivateTemplateThrowsWhenOpenRegisterUnavailable(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('OpenRegister is not available');
+
+        $this->settingsService->method('getObjectService')->willReturn(null);
+
+        $this->service->activateTemplate(slug: 'vth-omgevingsvergunning');
+
+    }//end testActivateTemplateThrowsWhenOpenRegisterUnavailable()
+
+
+    /**
+     * Test that listTemplates() returns at least three templates (the three shipped VTH types).
+     *
+     * @return void
+     */
+    public function testListTemplatesContainsAtLeastThreeEntries(): void
+    {
+        $templates = $this->service->listTemplates();
+
+        self::assertGreaterThanOrEqual(3, count($templates));
+
+    }//end testListTemplatesContainsAtLeastThreeEntries()
+
+
 }//end class

@@ -5423,184 +5423,51 @@
           }
         }
       },
-      "wooAssessment": {
-        "slug": "wooAssessment",
-        "icon": "FileCheckOutline",
-        "version": "1.0.0",
-        "x-schema-org-type": "schema:ReviewAction",
-        "x-zgw-equivalent": "n/a",
-        "title": "WOO Assessment",
-        "description": "Per-document disclosure assessment for a WOO (Wet open overheid) request. Records the classification (openbaar/deels openbaar/niet openbaar) and applicable weigeringsgronden per WOO Art. 5.1/5.2.",
-        "type": "object",
-        "required": [
-          "caseRef",
-          "documentRef",
-          "classification"
-        ],
-        "properties": {
-          "caseRef": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Reference to the parent WOO case"
-          },
-          "documentRef": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Reference to the document being assessed"
-          },
-          "classification": {
-            "type": "string",
-            "enum": [
-              "openbaar",
-              "deels_openbaar",
-              "niet_openbaar"
-            ],
-            "description": "Disclosure classification: fully public, partially public (needs redaction), or withheld"
-          },
-          "weigeringsgronden": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": [
-                "5.1.1",
-                "5.1.2",
-                "5.1.3",
-                "5.1.4",
-                "5.1.5",
-                "5.2.1",
-                "5.2.2",
-                "5.2.3",
-                "5.2.4",
-                "5.2.5"
-              ]
-            },
-            "description": "Legal grounds for withholding per WOO Art. 5.1/5.2 (required when classification is niet_openbaar or deels_openbaar)"
-          },
-          "motivering": {
-            "type": "string",
-            "description": "Motivering (explanation) for the classification decision"
-          },
-          "assessedBy": {
-            "type": "string",
-            "description": "User ID of the case worker who assessed this document"
-          },
-          "assessedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "ISO 8601 timestamp of when the assessment was recorded"
-          }
-        },
-        "objects": [
-          {
-            "@self": {
-              "register": "procest",
-              "schema": "wooAssessment",
-              "slug": "woo-assessment-zaak-2026-0001-doc-01"
-            },
-            "caseRef": "zaak-woo-2026-0001",
-            "documentRef": "doc-woo-2026-0001-01",
-            "classification": "openbaar",
-            "weigeringsgronden": [],
-            "motivering": "Het document bevat geen privacygevoelige informatie en kan volledig openbaar worden gemaakt.",
-            "assessedBy": "j.dejong",
-            "assessedAt": "2026-05-10T14:30:00+02:00"
-          },
-          {
-            "@self": {
-              "register": "procest",
-              "schema": "wooAssessment",
-              "slug": "woo-assessment-zaak-2026-0001-doc-02"
-            },
-            "caseRef": "zaak-woo-2026-0001",
-            "documentRef": "doc-woo-2026-0001-02",
-            "classification": "deels_openbaar",
-            "weigeringsgronden": [
-              "5.1.5"
-            ],
-            "motivering": "Het document bevat persoonsgegevens van derden. De betreffende passages worden gelakt conform WOO Art. 5.1.5 (persoonlijke levenssfeer).",
-            "assessedBy": "j.dejong",
-            "assessedAt": "2026-05-10T15:00:00+02:00"
-          },
-          {
-            "@self": {
-              "register": "procest",
-              "schema": "wooAssessment",
-              "slug": "woo-assessment-zaak-2026-0001-doc-03"
-            },
-            "caseRef": "zaak-woo-2026-0001",
-            "documentRef": "doc-woo-2026-0001-03",
-            "classification": "niet_openbaar",
-            "weigeringsgronden": [
-              "5.2.1"
-            ],
-            "motivering": "Openbaarmaking van dit document zou de economische en financiele belangen van de gemeente schaden in lopende onderhandelingen (WOO Art. 5.2.1).",
-            "assessedBy": "a.vandenberg",
-            "assessedAt": "2026-05-11T09:15:00+02:00"
-          },
-          {
-            "@self": {
-              "register": "procest",
-              "schema": "wooAssessment",
-              "slug": "woo-assessment-zaak-2026-0002-doc-01"
-            },
-            "caseRef": "zaak-woo-2026-0002",
-            "documentRef": "doc-woo-2026-0002-01",
-            "classification": "deels_openbaar",
-            "weigeringsgronden": [
-              "5.1.4",
-              "5.1.5"
-            ],
-            "motivering": "Document bevat persoonlijke beleidsopvattingen van ambtenaren en BSN-nummers. Beide worden gelakt.",
-            "assessedBy": "m.pietersen",
-            "assessedAt": "2026-05-14T11:00:00+02:00"
-          }
-        ]
-      },
       "inspectionChecklist": {
         "slug": "inspectionChecklist",
-        "icon": "ClipboardListOutline",
+        "icon": "ClipboardCheckOutline",
         "version": "1.0.0",
-        "x-schema-org-type": "schema:HowTo",
         "title": "Inspection Checklist",
-        "description": "VTH inspection checklist template linked to a case type, with versioning and activation control",
+        "description": "Reusable checklist template defining the inspection items for a given case type. A versioned master form that inspection runs are based on.",
         "type": "object",
         "required": [
           "name",
-          "caseTypeRef"
+          "version",
+          "caseTypeRef",
+          "active"
         ],
         "properties": {
           "name": {
             "type": "string",
-            "maxLength": 255,
-            "description": "Name of this checklist (e.g. 'Bouwtoezicht fase 1 - Fundering')"
+            "description": "Human-readable name of the checklist template."
           },
           "version": {
             "type": "integer",
-            "default": 1,
-            "description": "Version number of this checklist"
+            "description": "Template version number; increment when items are added or removed.",
+            "minimum": 1
           },
           "caseTypeRef": {
             "type": "string",
             "format": "uuid",
-            "description": "Reference to the case type this checklist belongs to"
+            "$ref": "caseType",
+            "description": "The case type this checklist applies to."
           },
           "items": {
             "type": "array",
             "items": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "checklistItem"
             },
-            "description": "Ordered list of checklistItem references"
+            "description": "Ordered list of checklist items (questions) that make up this template."
           },
           "active": {
             "type": "boolean",
             "default": true,
-            "description": "Whether this checklist is active"
+            "description": "Whether this checklist template is currently active and available for new inspection runs."
           },
           "validFrom": {
             "type": "string",
             "format": "date",
-            "description": "Date from which this checklist version is valid"
+            "description": "Date from which this version of the checklist is valid."
           }
         }
       },
@@ -5608,19 +5475,18 @@
         "slug": "checklistItem",
         "icon": "CheckboxOutline",
         "version": "1.0.0",
-        "x-schema-org-type": "schema:HowToStep",
         "title": "Checklist Item",
-        "description": "Individual item in an inspection checklist with type, requirements, and optional nesting",
+        "description": "A single question or observation point within an inspection checklist. Supports boolean, enum, text, and photo answer types.",
         "type": "object",
         "required": [
           "question",
-          "type"
+          "type",
+          "required"
         ],
         "properties": {
           "question": {
             "type": "string",
-            "maxLength": 512,
-            "description": "The inspection question or item description"
+            "description": "The question or observation text shown to the inspector."
           },
           "type": {
             "type": "string",
@@ -5630,141 +5496,116 @@
               "text",
               "photo"
             ],
-            "description": "Answer type: boolean (yes/no/na), enum (multiple choice), text, or photo"
+            "description": "Answer type: boolean (yes/no), enum (predefined options), text (free-text), or photo (image attachment required)."
           },
           "required": {
             "type": "boolean",
-            "default": false,
-            "description": "Whether this item must be answered"
+            "default": true,
+            "description": "Whether an answer to this item is mandatory before the inspection run can be submitted."
           },
           "weight": {
             "type": "number",
             "minimum": 0,
-            "maximum": 10,
-            "description": "Relative weight of this item for scoring"
+            "description": "Relative weight of this item when computing an aggregate inspection score."
           },
           "parent": {
             "type": "string",
-            "format": "uuid",
-            "description": "Optional parent checklistItem reference for nesting"
-          },
-          "options": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Options for enum type items"
-          },
-          "fotoRequired": {
-            "type": "boolean",
-            "default": false,
-            "description": "Whether a photo is required for non-conformity"
+            "description": "Slug or ID of a parent checklist item, enabling nested / conditional item hierarchies."
           }
         }
       },
       "inspectionResult": {
         "slug": "inspectionResult",
-        "icon": "ClipboardCheckOutline",
+        "icon": "ClipboardTextOutline",
         "version": "1.0.0",
-        "x-schema-org-type": "schema:Report",
         "title": "Inspection Result",
-        "description": "Completed inspection checklist result for a case, including per-item answers and overall outcome",
+        "description": "The completed outcome of a single inspection run: which checklist was used, who completed it, and the recorded answers.",
         "type": "object",
         "required": [
-          "caseRef",
-          "checklistRef",
-          "completedBy"
+          "case",
+          "checklist",
+          "completedBy",
+          "completedAt"
         ],
         "properties": {
-          "caseRef": {
+          "case": {
             "type": "string",
             "format": "uuid",
-            "description": "Reference to the case this result belongs to"
+            "$ref": "case",
+            "description": "The case this inspection result belongs to."
           },
-          "checklistRef": {
+          "checklist": {
             "type": "string",
             "format": "uuid",
-            "description": "Reference to the inspectionChecklist used"
+            "$ref": "inspectionChecklist",
+            "description": "The checklist template that was used for this inspection run."
           },
           "completedBy": {
             "type": "string",
-            "description": "User UID of the inspector who completed the checklist"
+            "description": "UID of the inspector who completed the checklist."
           },
           "completedAt": {
             "type": "string",
             "format": "date-time",
-            "description": "Date and time the inspection was completed"
+            "description": "Timestamp when the inspection run was finalised."
           },
           "answers": {
             "type": "array",
-            "description": "Per-item answers",
             "items": {
               "type": "object",
               "properties": {
                 "itemRef": {
                   "type": "string",
-                  "format": "uuid"
+                  "description": "Reference to the checklist item (slug or ID) being answered."
                 },
                 "value": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "The recorded answer value (coerced to string; interpret according to item type)."
                 },
                 "photoRef": {
                   "type": "string",
-                  "format": "uuid",
-                  "description": "Optional photo file reference"
+                  "description": "Nextcloud file ID or OpenRegister document reference for a photo answer."
                 }
               }
-            }
-          },
-          "overallResult": {
-            "type": "string",
-            "enum": [
-              "conform",
-              "niet_conform",
-              "deels_conform"
-            ],
-            "description": "Overall inspection result"
-          },
-          "remarks": {
-            "type": "string",
-            "description": "General remarks by the inspector"
-          },
-          "location": {
-            "type": "string",
-            "description": "GPS coordinates or address of the inspection"
+            },
+            "description": "Recorded answers for each checklist item in this inspection run."
           }
         }
       },
       "adviceRequest": {
         "slug": "adviceRequest",
-        "icon": "CommentQuestionOutline",
+        "icon": "MessageTextOutline",
         "version": "1.0.0",
-        "x-schema-org-type": "schema:AskAction",
-        "title": "Advice Request (VTH)",
-        "description": "VTH-specific advice request linking a case to an internal or external adviser with deadline and status tracking",
+        "title": "Advice Request",
+        "description": "A request for advice from an internal or external adviser on a specific case. Tracks the full lifecycle from open to received or cancelled.",
         "type": "object",
         "required": [
-          "caseRef",
-          "adviseur"
+          "case",
+          "requestedBy",
+          "adviseur",
+          "deadline",
+          "status",
+          "vraag"
         ],
         "properties": {
-          "caseRef": {
+          "case": {
             "type": "string",
             "format": "uuid",
-            "description": "Reference to the case this advice is requested for"
+            "$ref": "case",
+            "description": "The case for which advice is requested."
           },
           "requestedBy": {
             "type": "string",
-            "description": "User UID of the person requesting the advice"
+            "description": "UID of the user who submitted the advice request."
           },
           "adviseur": {
             "type": "string",
-            "description": "User UID or name of the adviser (internal or external)"
+            "description": "Name or UID of the adviser (person, team, or external party) being consulted."
           },
           "deadline": {
             "type": "string",
             "format": "date",
-            "description": "Date by which the advice must be received"
+            "description": "Date by which the advice must be received."
           },
           "status": {
             "type": "string",
@@ -5776,20 +5617,20 @@
               "cancelled"
             ],
             "default": "open",
-            "description": "Current status of the advice request"
+            "description": "Lifecycle status of the advice request."
           },
           "vraag": {
             "type": "string",
-            "description": "The specific question or topic for the adviser"
+            "description": "The question(s) put to the adviser."
           },
           "adviesText": {
             "type": "string",
-            "description": "The advice text submitted by the adviser"
+            "description": "The advice text returned by the adviser once received."
           },
           "addedToFile": {
             "type": "boolean",
             "default": false,
-            "description": "Whether the advice has been added to the case file"
+            "description": "Whether the received advice has been added to the case dossier."
           }
         }
       },
@@ -5797,9 +5638,8 @@
         "slug": "lhsMatrixCell",
         "icon": "TableLarge",
         "version": "1.0.0",
-        "x-schema-org-type": "schema:Table",
         "title": "LHS Matrix Cell",
-        "description": "Individual cell in the Landelijke Handhavingsstrategie 4x4 matrix (gedrag x gevolg = interventie)",
+        "description": "A single cell in the Landelijk Handhavingsbeleid Stedenbouw (LHS) intervention matrix, mapping a behaviour row and consequence column to a recommended intervention step.",
         "type": "object",
         "required": [
           "gedragRow",
@@ -5809,31 +5649,19 @@
         "properties": {
           "gedragRow": {
             "type": "string",
-            "enum": [
-              "A",
-              "B",
-              "C",
-              "D"
-            ],
-            "description": "Gedrag (behaviour) dimension: A=goedwillend, B=onverschillig, C=calculerend, D=crimineel"
+            "description": "The behaviour (gedrag) row identifier in the LHS matrix."
           },
           "gevolgColumn": {
             "type": "string",
-            "enum": [
-              "1",
-              "2",
-              "3",
-              "4"
-            ],
-            "description": "Mogelijke gevolgen (impact) dimension: 1=gering, 2=aanzienlijk, 3=ernstig, 4=zeer ernstig"
+            "description": "The consequence (gevolg) column identifier in the LHS matrix."
           },
           "interventieStep": {
             "type": "string",
-            "description": "Recommended intervention from the LHS matrix"
+            "description": "The recommended intervention step for this gedrag/gevolg combination."
           },
           "description": {
             "type": "string",
-            "description": "Additional description or guidance for this cell"
+            "description": "Optional clarifying description or guidance note for this matrix cell."
           }
         }
       }

@@ -1,67 +1,17 @@
 {
-  "id": "vth-handhavingszaak",
-  "title": "Handhavingszaak",
-  "description": "VTH zaaktype template voor handhavingszaken (last onder dwangsom, bestuursdwang, vooraankondiging). Pre-geconfigureerd conform de Landelijke Handhavingsstrategie (LHS) en Awb.",
-  "category": "vth",
+  "slug": "vth-handhavingszaak",
+  "title": "VTH Handhavingszaak",
   "version": "1.0.0",
-  "caseType": {
-    "title": "Handhavingszaak",
-    "description": "Behandeling van handhavingszaken na geconstateerde overtredingen",
-    "purpose": "Beëindigen van overtredingen en herstellen van de legale situatie",
-    "trigger": "Constatering van een overtreding via inspectie of melding",
-    "subject": "Handhaving van vergunningsvoorwaarden en wettelijke eisen",
-    "processingDeadline": null,
-    "confidentiality": "intern",
-    "isDraft": false,
-    "extensionAllowed": false,
-    "publicationRequired": true,
-    "internalOrExternal": "intern",
-    "handlerAction": "Opstellen en uitvoeren van handhavingsbesluit",
-    "origin": "ambtshalve"
-  },
-  "statusTypes": [
-    {"name": "Constatering", "description": "Overtreding is geconstateerd en geregistreerd", "order": 1, "isFinal": false},
-    {"name": "Vooraankondiging", "description": "Vooraankondiging van handhaving verstuurd", "order": 2, "isFinal": false},
-    {"name": "Zienswijze", "description": "Zienswijzetermijn loopt of zienswijze wordt beoordeeld", "order": 3, "isFinal": false},
-    {"name": "Handhavingsbesluit", "description": "Handhavingsbesluit is opgesteld en genomen", "order": 4, "isFinal": false},
-    {"name": "Begunstigingstermijn", "description": "Overtreder heeft de termijn om de situatie te herstellen", "order": 5, "isFinal": false},
-    {"name": "Hercontrole", "description": "Controle of overtreding beëindigd is na begunstigingstermijn", "order": 6, "isFinal": false},
-    {"name": "Invordering", "description": "Dwangsom wordt ingevorderd vanwege niet-naleving", "order": 7, "isFinal": false},
-    {"name": "Afgehandeld", "description": "Overtreding beëindigd, zaak afgesloten", "order": 8, "isFinal": true},
-    {"name": "Ingetrokken", "description": "Handhavingsbesluit ingetrokken (bijv. na legalisering)", "order": 9, "isFinal": true}
-  ],
-  "roleTypes": [
-    {"name": "Behandelaar", "description": "Medewerker die de handhavingszaak behandelt"},
-    {"name": "Overtreder", "description": "Persoon of organisatie die de overtreding begaat"},
-    {"name": "Inspecteur", "description": "Toezichthouder die de overtreding constateert"},
-    {"name": "Teamleider", "description": "Leidinggevende die het besluit accordeert"},
-    {"name": "Juridisch adviseur", "description": "Juridische ondersteuning bij handhavingsbesluiten"},
-    {"name": "Melder", "description": "Degene die de overtreding heeft gemeld (bij klachten)"}
-  ],
-  "documentTypes": [
-    {"name": "Constateringsrapport", "description": "Rapport van de geconstateerde overtreding met bewijsmateriaal"},
-    {"name": "Vooraankondigingsbrief", "description": "Brief met vooraankondiging van handhavingsoptreden"},
-    {"name": "Zienswijze overtreder", "description": "Ingediende zienswijze van de overtreder"},
-    {"name": "Beoordeling zienswijze", "description": "Beoordeling van de ingediende zienswijze"},
-    {"name": "Handhavingsbesluit", "description": "Het formele handhavingsbesluit (last, dwangsom, bestuursdwang)"},
-    {"name": "Dwangsombeschikking", "description": "Beschikking bij last onder dwangsom"},
-    {"name": "Hercontrolerapport", "description": "Rapport van de hercontrole na de begunstigingstermijn"},
-    {"name": "Invorderingsbeschikking", "description": "Beschikking voor invordering van de verbeurd verklaarde dwangsom"},
-    {"name": "Bezwaarschrift", "description": "Ingediend bezwaarschrift tegen het handhavingsbesluit"}
-  ],
+  "description": "Template voor handhavingszaken (VTH module)",
+  "statusTypes": ["Constatering", "Vooraankondiging", "Zienswijze", "Handhavingsbesluit", "Begunstigingstermijn", "Hercontrole", "Afgehandeld"],
+  "documentTypes": ["Constateringsrapport", "Vooraankondigingsbrief", "Handhavingsbesluit", "Dwangsombeschikking"],
   "propertyDefinitions": [
-    {"name": "overtredingstype", "type": "string", "description": "Type overtreding (bijv. 'bouwen zonder vergunning', 'milieu-overtreding')"},
-    {"name": "ernst", "type": "string", "description": "Ernst van de overtreding: gering, aanzienlijk, ernstig, zeer ernstig"},
-    {"name": "gedrag", "type": "string", "description": "Gedrag van de overtreder: A (goedwillend), B (onverschillig), C (calculerend), D (crimineel)"},
-    {"name": "interventie", "type": "string", "description": "Aanbevolen interventie vanuit de LHS matrix"},
-    {"name": "begunstigingstermijn", "type": "integer", "description": "Begunstigingstermijn in dagen"},
-    {"name": "dwangsomBedrag", "type": "number", "description": "Dwangsom bedrag per overtreding in EUR"},
-    {"name": "dwangsomMaximaal", "type": "number", "description": "Maximaal te verbeuren dwangsom in EUR"},
-    {"name": "effectueringsDatum", "type": "string", "description": "Datum waarop effectuering kan plaatsvinden"},
-    {"name": "gerelateerdeVergunning", "type": "string", "description": "UUID van de gerelateerde vergunning of toezichtzaak"},
-    {"name": "bagObject", "type": "string", "description": "BAG object referentie van het handhavingsobject"},
-    {"name": "lhsRecommendation", "type": "string", "description": "UUID van de LHS aanbeveling (lhsMatrixCell)"},
-    {"name": "verbeurdeKeren", "type": "integer", "description": "Aantal keren dat de dwangsom is verbeurd"},
-    {"name": "totaalVerbeurdBedrag", "type": "number", "description": "Totaal verbeurd dwangsombedrag in EUR"}
-  ]
+    {"name": "overtredingstype", "type": "string"},
+    {"name": "ernst", "type": "string", "enum": ["gering", "aanzienlijk", "ernstig"]},
+    {"name": "gedrag", "type": "string", "enum": ["goedwillend", "onverschillig", "calculerend", "crimineel"]},
+    {"name": "interventie", "type": "string"},
+    {"name": "dwangsombedrag", "type": "number"},
+    {"name": "begunstigingstermijn", "type": "integer"}
+  ],
+  "roleTypes": ["behandelaar", "overtreder", "toezichthouder"]
 }
