@@ -17,6 +17,9 @@
  * @link https://procest.nl
  *
  * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -31,6 +34,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Service for managing Procest application configuration and settings.
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
  */
 class SettingsService
 {
@@ -174,6 +179,11 @@ class SettingsService
         // Outage banner copy (nl + en).
         'pdok_outage_banner_nl',
         'pdok_outage_banner_en',
+        // Beschikking-generatie (beschikking-generatie spec).
+        'beschikking_schema',
+        'state_machine_log_schema',
+        'bezwaar_trigger_schema',
+        'mandaat_regeling_schema',
     ];
 
     /**
@@ -255,6 +265,10 @@ class SettingsService
         'subsidieVaststelling'         => 'subsidie_vaststelling_schema',
         'terugvordering'               => 'terugvordering_schema',
         'bewijsstuk'                   => 'bewijsstuk_schema',
+        'beschikking'                  => 'beschikking_schema',
+        'stateMachineLog'              => 'state_machine_log_schema',
+        'bezwaarTrigger'               => 'bezwaar_trigger_schema',
+        'mandaatRegeling'              => 'mandaat_regeling_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
@@ -281,6 +295,8 @@ class SettingsService
      * Check if OpenRegister is installed and enabled.
      *
      * @return bool
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
      */
     public function isOpenRegisterAvailable(): bool
     {
@@ -461,6 +477,8 @@ class SettingsService
      * to ordinary authenticated users.
      *
      * @return array
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
      */
     public function getPublicSettings(): array
     {
@@ -503,6 +521,8 @@ class SettingsService
      * @param string $default The default value if key not found
      *
      * @return string
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
      */
     public function getConfigValue(string $key, string $default=''): string
     {
@@ -516,6 +536,8 @@ class SettingsService
      * @param string $value The value to set
      *
      * @return void
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
      */
     public function setConfigValue(string $key, string $value): void
     {
