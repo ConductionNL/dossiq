@@ -383,13 +383,12 @@ return [
         ['name' => 'milestone#mark',     'url' => '/api/cases/{caseId}/milestones/{milestoneId}/mark',    'verb' => 'POST'],
         ['name' => 'milestone#reverse',  'url' => '/api/cases/{caseId}/milestones/{milestoneId}/reverse', 'verb' => 'POST'],
 
-        // ── DSO (VTH Omgevingsloket) ─────────────────────────────────────
-        ['name' => 'dso#dashboard',            'url' => '/api/dso/dashboard',                           'verb' => 'GET'],
-        ['name' => 'dso#transitionStatus',     'url' => '/api/dso/cases/{caseId}/transition',           'verb' => 'POST'],
-        ['name' => 'dso#generateBeschikking',  'url' => '/api/dso/cases/{caseId}/beschikking',          'verb' => 'POST'],
-        ['name' => 'dso#initiateSamenwerking', 'url' => '/api/dso/cases/{caseId}/samenwerking',         'verb' => 'POST'],
-        ['name' => 'dso#respondSamenwerking',  'url' => '/api/dso/samenwerking/{samenwerkId}',          'verb' => 'PUT'],
-        ['name' => 'dso#doorsturen',           'url' => '/api/dso/cases/{caseId}/doorstuur',            'verb' => 'POST'],
+        // ── Besluitvorming workflow ──────────────────────────────────────
+        ['name' => 'besluitvorming#activateTemplate', 'url' => '/api/besluitvorming/templates/{slug}/activate', 'verb' => 'POST'],
+        ['name' => 'agenda#addToAgenda',              'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'POST'],
+        ['name' => 'agenda#updateAgendaItem',         'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'PUT'],
+        ['name' => 'publication#publish',             'url' => '/api/besluitvorming/cases/{id}/publish',        'verb' => 'POST'],
+        ['name' => 'mandaat#mandaatCheck',             'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
 
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
