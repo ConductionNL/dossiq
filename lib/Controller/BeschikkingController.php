@@ -200,8 +200,7 @@ class BeschikkingController extends Controller
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $body        = $this->readJsonBody();
-        $akkoordDoor = (string) ($body['akkoordDoor'] ?? $uid);
+        $akkoordDoor = $uid;
 
         try {
             $result = $this->beschikkingService->akkoord($id, $akkoordDoor);

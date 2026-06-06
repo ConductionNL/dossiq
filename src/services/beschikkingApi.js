@@ -37,12 +37,11 @@ export async function getBeschikking(id) {
  * Grant mandaat-approval.
  *
  * @param {string} id The beschikking UUID.
- * @param {string} [akkoordDoor] The approver UID (defaults to the current user server-side).
  * @return {Promise<object>} The updated beschikking.
  * @spec openspec/changes/beschikking-generatie/tasks.md#T22
  */
-export async function akkoord(id, akkoordDoor = undefined) {
-	const response = await axios.patch(`${baseUrl}/${id}/akkoord`, { akkoordDoor })
+export async function akkoord(id) {
+	const response = await axios.patch(`${baseUrl}/${id}/akkoord`, {})
 	return response.data
 }
 
