@@ -1,0 +1,26 @@
+{
+  "spec": "openspec/changes/vth-module",
+  "verified": [
+    {"task": "1.1", "file": "lib/Settings/procest_register.json", "ok": true},
+    {"task": "1.2", "file": "lib/Repair/SeedVthMatrixCells.php", "ok": true},
+    {"task": "2.1", "file": "lib/Settings/templates/vth-omgevingsvergunning.json", "ok": true},
+    {"task": "2.2", "file": "lib/Settings/templates/vth-toezichtzaak.json", "ok": true},
+    {"task": "2.3", "file": "lib/Settings/templates/vth-handhavingszaak.json", "ok": true},
+    {"task": "2.4", "file": "lib/Service/VTHTemplateService.php", "ok": true},
+    {"task": "3.1", "file": "lib/Service/DsoIntakeService.php", "ok": true},
+    {"task": "3.2", "file": "lib/Controller/DSOIntakeController.php", "ok": true},
+    {"task": "3.3", "file": "appinfo/routes.php", "ok": true},
+    {"task": "4.1", "file": "lib/Service/InspectionChecklistService.php", "ok": true},
+    {"task": "4.2", "file": "lib/Controller/InspectionChecklistController.php", "ok": true},
+    {"task": "5.1", "file": "src/views/settings/tabs/ChecklistsTab.vue", "ok": true},
+    {"task": "5.2", "file": "src/components/InspectionChecklistEditor.vue", "ok": true},
+    {"task": "6.1", "file": "lib/Service/AdviceService.php", "ok": true},
+    {"task": "6.2", "file": "lib/BackgroundJob/AdviceDeadlineJob.php", "ok": true},
+    {"task": "7.1", "file": "src/views/cases/components/AdviceRequestPanel.vue", "ok": true},
+    {"task": "8.1", "file": "lib/Settings/lhs_matrix_seed.json", "ok": true},
+    {"task": "8.2", "file": "lib/Service/LhsLookupService.php", "ok": true},
+    {"task": "8.3", "file": "lib/Controller/LhsController.php", "ok": true}
+  ],
+  "stubs": [],
+  "missing_routes": []
+}

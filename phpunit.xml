@@ -23,5 +23,6 @@
     </source>
     <php>
         <env name="PHPUNIT_RUN" value="1"/>
+        <const name="OC_CONSOLE" value="1"/>
     </php>
 </phpunit>

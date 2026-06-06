@@ -1,0 +1,234 @@
+<?php
+
+/**
+ * Procest KCC Routing Controller
+ *
+ * REST endpoints for KCC routing-rule management and routing evaluation.
+ * Rule CRUD is restricted to admins/team-leads (ADR-005); the evaluate
+ * endpoint is available to any authenticated agent.
+ *
+ * @category Controller
+ * @package  OCA\Procest\Controller
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ *
+ * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Procest\Controller;
+
+use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Kcc\RoutingRuleService;
+use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSBadRequestException;
+use OCP\IGroupManager;
+use OCP\IRequest;
+use OCP\IUserSession;
+
+/**
+ * Controller exposing KCC routing-rule and routing-evaluation endpoints.
+ *
+ * @psalm-suppress UnusedClass
+ */
+class KccRoutingController extends Controller
+{
+    /**
+     * Constructor.
+     *
+     * @param IRequest           $request            The request.
+     * @param RoutingRuleService $routingRuleService The routing-rule service.
+     * @param IUserSession       $userSession        The user session.
+     * @param IGroupManager      $groupManager       The group manager.
+     */
+    public function __construct(
+        IRequest $request,
+        private RoutingRuleService $routingRuleService,
+        private IUserSession $userSession,
+        private IGroupManager $groupManager,
+    ) {
+        parent::__construct(appName: Application::APP_ID, request: $request);
+    }//end __construct()
+
+    /**
+     * List routing rules.
+     *
+     * @return JSONResponse
+     *
+     * @NoAdminRequired
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function index(): JSONResponse
+    {
+        if ($this->userSession->getUser() === null) {
+            return $this->unauthorized();
+        }
+
+        try {
+            $rules = $this->routingRuleService->listRules();
+        } catch (OCSBadRequestException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+
+        return new JSONResponse(['results' => $rules]);
+    }//end index()
+
+    /**
+     * Create a routing rule (admin / team-lead only).
+     *
+     * @return JSONResponse
+     *
+     * @NoAdminRequired
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function create(): JSONResponse
+    {
+        $forbidden = $this->requireAdmin();
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
+        try {
+            $rule = $this->routingRuleService->createRule(data: $this->bodyParams());
+        } catch (OCSBadRequestException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+
+        return new JSONResponse($rule, Http::STATUS_CREATED);
+    }//end create()
+
+    /**
+     * Update a routing rule (admin / team-lead only).
+     *
+     * @param string $id The rule id.
+     *
+     * @return JSONResponse
+     *
+     * @NoAdminRequired
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function update(string $id): JSONResponse
+    {
+        $forbidden = $this->requireAdmin();
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
+        try {
+            $rule = $this->routingRuleService->updateRule(id: $id, data: $this->bodyParams());
+        } catch (OCSBadRequestException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+
+        return new JSONResponse($rule);
+    }//end update()
+
+    /**
+     * Delete a routing rule (admin / team-lead only).
+     *
+     * @param string $id The rule id.
+     *
+     * @return JSONResponse
+     *
+     * @NoAdminRequired
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function destroy(string $id): JSONResponse
+    {
+        $forbidden = $this->requireAdmin();
+        if ($forbidden !== null) {
+            return $forbidden;
+        }
+
+        try {
+            $this->routingRuleService->deleteRule(id: $id);
+        } catch (OCSBadRequestException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+
+        return new JSONResponse(['success' => true]);
+    }//end destroy()
+
+    /**
+     * Evaluate routing for a contact moment and return suggested agents.
+     *
+     * @return JSONResponse
+     *
+     * @NoAdminRequired
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function evaluate(): JSONResponse
+    {
+        if ($this->userSession->getUser() === null) {
+            return $this->unauthorized();
+        }
+
+        $contactMoment = $this->bodyParams();
+
+        try {
+            $result = $this->routingRuleService->route(contactMoment: $contactMoment);
+        } catch (OCSBadRequestException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+
+        return new JSONResponse($result);
+    }//end evaluate()
+
+    /**
+     * Require an authenticated admin / team-lead; return a response otherwise.
+     *
+     * @return JSONResponse|null Null when authorised, a response when blocked.
+     */
+    private function requireAdmin(): ?JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return $this->unauthorized();
+        }
+
+        if ($this->groupManager->isAdmin($user->getUID()) === false) {
+            return new JSONResponse(['error' => 'Admin-rechten vereist'], Http::STATUS_FORBIDDEN);
+        }
+
+        return null;
+    }//end requireAdmin()
+
+    /**
+     * Read the JSON / form body parameters, excluding routing params.
+     *
+     * @return array<string, mixed> The body parameters.
+     */
+    private function bodyParams(): array
+    {
+        $params = $this->request->getParams();
+        unset($params['id'], $params['_route']);
+        return $params;
+    }//end bodyParams()
+
+    /**
+     * Build a 401 Unauthorized response.
+     *
+     * @return JSONResponse
+     */
+    private function unauthorized(): JSONResponse
+    {
+        return new JSONResponse(['error' => 'Authenticatie vereist'], Http::STATUS_UNAUTHORIZED);
+    }//end unauthorized()
+}//end class

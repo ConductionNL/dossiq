@@ -50,6 +50,37 @@ return [
         ['name' => 'parafeerActie#create', 'url' => '/api/parafeer-actie', 'verb' => 'POST'],
         ['name' => 'parafeerActie#index',  'url' => '/api/parafeer-actie', 'verb' => 'GET'],
 
+        // KCC Klantcontact (kcc-klantcontact-integratie).
+        // Static/verb routes precede the {id} wildcard routes.
+        ['name' => 'kccRouting#evaluate', 'url' => '/api/kcc/routing/evaluate', 'verb' => 'POST'],
+        ['name' => 'kccRouting#index',    'url' => '/api/kcc/routing-rules', 'verb' => 'GET'],
+        ['name' => 'kccRouting#create',   'url' => '/api/kcc/routing-rules', 'verb' => 'POST'],
+        ['name' => 'kccRouting#update',   'url' => '/api/kcc/routing-rules/{id}', 'verb' => 'PUT'],
+        ['name' => 'kccRouting#destroy',  'url' => '/api/kcc/routing-rules/{id}', 'verb' => 'DELETE'],
+
+        ['name' => 'kccContact#indexCallbacks',  'url' => '/api/kcc/callback-requests', 'verb' => 'GET'],
+        ['name' => 'kccContact#scheduleCallback', 'url' => '/api/kcc/callback-requests', 'verb' => 'POST'],
+        ['name' => 'kccContact#cancelCallback',  'url' => '/api/kcc/callback-requests/{id}/cancel', 'verb' => 'POST'],
+
+        ['name' => 'kccContact#index',   'url' => '/api/kcc/contact-moments', 'verb' => 'GET'],
+        ['name' => 'kccContact#create',  'url' => '/api/kcc/contact-moments', 'verb' => 'POST'],
+        ['name' => 'kccContact#related', 'url' => '/api/kcc/contact-moments/{id}/related', 'verb' => 'GET'],
+        ['name' => 'kccContact#show',    'url' => '/api/kcc/contact-moments/{id}', 'verb' => 'GET'],
+        ['name' => 'kccContact#update',  'url' => '/api/kcc/contact-moments/{id}', 'verb' => 'PUT'],
+
+        // Subsidieverlening-keten (subsidieverlening-keten spec) — AWB titel 4.2.
+        // Static/verb routes precede the {id} wildcard routes; the public
+        // subsidieregister feed precedes the authenticated /api/subsidies list.
+        ['name' => 'subsidieRegister#export', 'url' => '/api/subsidies/register/export', 'verb' => 'GET'],
+        ['name' => 'subsidie#index',  'url' => '/api/subsidies', 'verb' => 'GET'],
+        ['name' => 'subsidie#create', 'url' => '/api/subsidies', 'verb' => 'POST'],
+        ['name' => 'subsidie#approveTussenrapportage', 'url' => '/api/subsidies/tussenrapportages/{reportId}/beoordelen', 'verb' => 'POST'],
+        ['name' => 'subsidie#finalizeVaststelling', 'url' => '/api/subsidies/vaststellingen/{vaststellingId}/vast', 'verb' => 'POST'],
+        ['name' => 'subsidie#signBeschikking', 'url' => '/api/subsidies/beschikkingen/{beschikkingId}/sign', 'verb' => 'POST'],
+        ['name' => 'subsidie#publishBeschikking', 'url' => '/api/subsidies/beschikkingen/{beschikkingId}/publish', 'verb' => 'POST'],
+        ['name' => 'subsidie#transition', 'url' => '/api/subsidies/{id}/transition', 'verb' => 'POST'],
+        ['name' => 'subsidie#createBeschikking', 'url' => '/api/subsidies/{id}/beschikking', 'verb' => 'POST'],
+
         // ZGW Mapping Management.
         ['name' => 'zgwMapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
         ['name' => 'zgwMapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],
@@ -178,7 +209,6 @@ return [
         // that operated entirely in-memory (no persistence, client-supplied state).
         // Deleted in wave-3 security fix.  The live engine is ParafeerActieService /
         // ParafeerRouteController.  Audit-trail export route retained below.
-
         // Parafering audit trail Archiefwet-aligned export (action, not CRUD).
         // CRUD on paraferingAuditEntry objects is served by OpenRegister's
         // auto-exposed /api/objects/<register>/<schema> endpoints — only the
@@ -203,6 +233,13 @@ return [
         ['name' => 'inspection#completeChecklistItem','url' => '/api/inspections/{id}/checklist/{itemId}',           'verb' => 'POST'],
         ['name' => 'inspection#addPhoto',             'url' => '/api/inspections/{id}/photos',                       'verb' => 'POST'],
         ['name' => 'inspection#complete',             'url' => '/api/inspections/{id}/complete',                     'verb' => 'POST'],
+
+        // ── Mobiel Inspectie Offline (sync queue + conflict resolution) ─
+        // Static/verb routes precede the {id} wildcards.
+        ['name' => 'sync#daily',         'url' => '/api/sync/daily',                       'verb' => 'GET'],
+        ['name' => 'sync#queue',         'url' => '/api/sync/queue',                       'verb' => 'GET'],
+        ['name' => 'sync#recordOutcome', 'url' => '/api/sync/queue/{id}/outcome',          'verb' => 'POST'],
+        ['name' => 'sync#resolveConflict', 'url' => '/api/sync/conflicts/{id}/resolve',    'verb' => 'POST'],
 
         // ── Legesberekening (municipal fee calculation) ─────────────────
         ['name' => 'leges#calculate',   'url' => '/api/leges/calculate',    'verb' => 'POST'],
@@ -283,6 +320,26 @@ return [
         ['name' => 'lhs#recommend', 'url' => '/api/lhs/recommend', 'verb' => 'POST'],
         ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
+        // ── VTH Module ─────────────────────────────────────────────────────
+        // DSO/Omgevingsloket intake — public webhook, no auth, signature-validated.
+        ['name' => 'dSOIntake#intake', 'url' => '/api/vth/dso/intake', 'verb' => 'POST'],
+        // VTH zaaktype template management (admin only).
+        ['name' => 'vTHTemplate#index',    'url' => '/api/vth/templates',             'verb' => 'GET'],
+        ['name' => 'vTHTemplate#activate', 'url' => '/api/vth/templates/{slug}/activate', 'verb' => 'POST'],
+        // Inspection checklist CRUD (admin).
+        ['name' => 'inspectionChecklist#index',   'url' => '/api/vth/checklists',       'verb' => 'GET'],
+        ['name' => 'inspectionChecklist#create',  'url' => '/api/vth/checklists',       'verb' => 'POST'],
+        ['name' => 'inspectionChecklist#update',  'url' => '/api/vth/checklists/{id}',  'verb' => 'PUT'],
+        ['name' => 'inspectionChecklist#destroy', 'url' => '/api/vth/checklists/{id}',  'verb' => 'DELETE'],
+        // Per-case inspection result submission and retrieval.
+        ['name' => 'inspectionChecklist#submitResult', 'url' => '/api/vth/cases/{id}/inspection-result', 'verb' => 'POST'],
+        ['name' => 'inspectionChecklist#getResults',   'url' => '/api/vth/cases/{id}/inspection-results', 'verb' => 'GET'],
+        // Per-case advice request creation.
+        ['name' => 'advice#createForCase', 'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'POST'],
+        ['name' => 'advice#getForCase',    'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'GET'],
+        // LHS matrix cell lookup.
+        ['name' => 'lhs#lookup', 'url' => '/api/vth/lhs/lookup', 'verb' => 'GET'],
+
         // ── Berichtenbox (government inbox integration) ─────────────────
         ['name' => 'berichtenbox#send',     'url' => '/api/berichtenbox/send',                 'verb' => 'POST'],
         ['name' => 'berichtenbox#messages', 'url' => '/api/berichtenbox/messages',             'verb' => 'GET'],
@@ -314,10 +371,23 @@ return [
         ['name' => 'template#show',     'url' => '/api/templates/{id}',      'verb' => 'GET'],
         ['name' => 'template#activate', 'url' => '/api/templates/{id}/activate', 'verb' => 'POST'],
 
+        // ── WOO (Wet open overheid) operations ──────────────────────────
+        ['name' => 'wOOAssessment#bulkAssess',      'url' => '/api/cases/{id}/woo/assessment',     'verb' => 'POST'],
+        ['name' => 'wOOAssessment#extendDeadline',  'url' => '/api/cases/{id}/woo/extend-deadline','verb' => 'POST'],
+        ['name' => 'wOOAssessment#createDecision',  'url' => '/api/cases/{id}/woo/decision',       'verb' => 'POST'],
+
         // ── Milestone tracking ───────────────────────────────────────────
         ['name' => 'milestone#progress', 'url' => '/api/cases/{caseId}/milestones/progress/{caseTypeId}', 'verb' => 'GET'],
         ['name' => 'milestone#mark',     'url' => '/api/cases/{caseId}/milestones/{milestoneId}/mark',    'verb' => 'POST'],
         ['name' => 'milestone#reverse',  'url' => '/api/cases/{caseId}/milestones/{milestoneId}/reverse', 'verb' => 'POST'],
+
+        // ── Bezwaar/beroep dossier export ───────────────────────────────
+        ['name' => 'dossierExport#export', 'url' => '/api/cases/{caseId}/dossier-export', 'verb' => 'GET'],
+
+        // ── ORI Atom Feeds (public, no auth required) ───────────────────
+        ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen.rss', 'verb' => 'GET'],
+        ['name' => 'raadsinformatieFeed#agendapunten',  'url' => '/feed/ori/agendapunten.rss',  'verb' => 'GET'],
+        ['name' => 'raadsinformatieFeed#documenten',    'url' => '/feed/ori/documenten.rss',    'verb' => 'GET'],
 
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],

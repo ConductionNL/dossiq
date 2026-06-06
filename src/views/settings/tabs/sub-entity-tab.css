@@ -89,3 +89,9 @@
 	gap: 8px;
 	margin-top: 8px;
 }
+
+.sub-entity-tab__error {
+	color: var(--color-error);
+	font-size: 13px;
+	margin-top: 12px;
+}

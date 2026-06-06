@@ -1,0 +1,1014 @@
+{
+    "components": {
+        "schemas": {
+            "wmoZaak": {
+                "slug": "wmoZaak",
+                "icon": "HumanWheelchair",
+                "version": "1.0.0",
+                "title": "WMO Zaak",
+                "description": "Sociaal-domein zaaktype wmo-melding (Wmo 2015, art. 2.3.2-2.3.6). Maatschappelijke ondersteuning voor volwassenen. Volledig OpenRegister-backed; status-lifecycle als configuratie, geen custom state machine.",
+                "type": "object",
+                "required": ["zaaktype", "bsn", "wijkteam", "avgClassificatie"],
+                "properties": {
+                    "zaaktype": {
+                        "type": "string",
+                        "enum": ["wmo-melding"],
+                        "default": "wmo-melding",
+                        "description": "Vaste zaaktype-identifier voor WMO-melding"
+                    },
+                    "zaakNumber": {
+                        "type": "string",
+                        "description": "Zaakidentifier in formaat zaak-{jaar}-wmo-{5-cijferig}"
+                    },
+                    "bsn": {
+                        "type": "string",
+                        "description": "BSN van de aanvrager (bijzonder persoonsgegeven; gemaskeerd bij export zonder toestemming)"
+                    },
+                    "naam": {
+                        "type": "string",
+                        "description": "Naam van de aanvrager"
+                    },
+                    "aanvraagSoort": {
+                        "type": "string",
+                        "enum": ["huishoudelijke-hulp", "dagbesteding", "begeleiding", "hulpmiddelen", "respijtzorg", "other"],
+                        "description": "Soort gevraagde ondersteuning"
+                    },
+                    "aanvraagDatum": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Datum van melding/aanvraag"
+                    },
+                    "meldingKanaal": {
+                        "type": "string",
+                        "description": "Kanaal waarlangs de melding binnenkwam (telefonisch, balie, online, ...)"
+                    },
+                    "ondersteuningsvraag": {
+                        "type": "string",
+                        "description": "Inhoudelijke ondersteuningsvraag (alleen-wijkteam zichtbaar)"
+                    },
+                    "huishoudensSamenstelling": {
+                        "type": "string",
+                        "description": "Optionele beschrijving van de huishoudenssamenstelling"
+                    },
+                    "wijkteam": {
+                        "type": "string",
+                        "description": "Toegewezen wijkteam; data-driven toegangsgrond"
+                    },
+                    "behandelaarId": {
+                        "type": "string",
+                        "description": "Nextcloud user id van de behandelend consulent"
+                    },
+                    "tweedeBehandelaarId": {
+                        "type": "string",
+                        "description": "Optionele tweede behandelaar; override op wijkteam-toegang"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["melding", "onderzoek-loopt", "beschikking-voorbereiding", "beschikking-verleend", "uitvoering", "evaluatie", "afgesloten"],
+                        "default": "melding",
+                        "description": "Status-lifecycle (ADR-031: declaratief, geen custom workflow engine)"
+                    },
+                    "doorlooptijdWettelijk": {
+                        "type": "object",
+                        "description": "Wettelijke doorlooptijden (onderzoek 6 weken + beschikking 2 weken = 8 weken)",
+                        "properties": {
+                            "onderzoekWeken": {"type": "integer", "default": 6},
+                            "beschikkingWeken": {"type": "integer", "default": 2},
+                            "totaalWeken": {"type": "integer", "default": 8}
+                        }
+                    },
+                    "onderzoekTermijnOverschredenSinds": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Gezet door de batch-job wanneer de onderzoekstermijn is overschreden"
+                    },
+                    "indicatiestellingId": {
+                        "type": "string",
+                        "description": "Referentie naar de bijbehorende Indicatiestelling"
+                    },
+                    "avgClassificatie": {
+                        "$ref": "#/components/schemas/avgClassificatie"
+                    }
+                }
+            },
+            "indicatiestelling": {
+                "slug": "indicatiestelling",
+                "icon": "ClipboardPulseOutline",
+                "version": "1.0.0",
+                "title": "Indicatiestelling",
+                "description": "WMO-assessment record met geadviseerde ondersteuningsvorm, omvang en duur. OpenRegister-backed.",
+                "type": "object",
+                "required": ["zaakId", "indicatieSteller"],
+                "properties": {
+                    "zaakId": {
+                        "type": "string",
+                        "description": "Referentie naar de WmoZaak"
+                    },
+                    "indicatieSteller": {
+                        "type": "string",
+                        "description": "Nextcloud user id van de consulent die de indicatie stelt"
+                    },
+                    "datumOnderzoek": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Datum van het onderzoek (moet binnen 6 weken na aanvraagDatum liggen)"
+                    },
+                    "vorm": {
+                        "type": "string",
+                        "enum": ["huisbezoek", "telefonisch", "dossieronderzoek"],
+                        "description": "Vorm van het onderzoek"
+                    },
+                    "onderzoekVerslag": {
+                        "type": "string",
+                        "description": "Optionele Nextcloud file-referentie naar het onderzoeksverslag"
+                    },
+                    "geadviseerdeOndersteuning": {
+                        "type": "object",
+                        "description": "Geadviseerde ondersteuning (soort, omvang, duur)",
+                        "properties": {
+                            "soort": {"type": "string"},
+                            "omvangPerWeek": {"type": "number"},
+                            "eenheid": {"type": "string"},
+                            "duurMaanden": {"type": "integer"},
+                            "leverancierKeuzeBurger": {"type": "boolean"}
+                        }
+                    },
+                    "beschikkingId": {
+                        "type": "string",
+                        "description": "Optionele referentie naar de gegenereerde beschikking"
+                    },
+                    "evaluatieDatum": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Geplande evaluatiedatum"
+                    }
+                }
+            },
+            "jeugdwetZaak": {
+                "slug": "jeugdwetZaak",
+                "icon": "HumanMaleChild",
+                "version": "1.0.0",
+                "title": "Jeugdwet Zaak",
+                "description": "Sociaal-domein zaaktype jeugdwet-melding (Jeugdwet 2015, art. 2.3, 6.1.2, 7.3). Gezinsgerichte, multi-agency jeugdhulp. OpenRegister-backed.",
+                "type": "object",
+                "required": ["zaaktype", "jeugdigeBsn", "wijkteam", "avgClassificatie"],
+                "properties": {
+                    "zaaktype": {
+                        "type": "string",
+                        "enum": ["jeugdwet-melding"],
+                        "default": "jeugdwet-melding",
+                        "description": "Vaste zaaktype-identifier voor Jeugdwet-melding"
+                    },
+                    "zaakNumber": {
+                        "type": "string",
+                        "description": "Zaakidentifier in formaat zaak-{jaar}-jeugd-{5-cijferig}"
+                    },
+                    "gezinId": {
+                        "type": "string",
+                        "description": "Identifier van het gezinssysteem (gezinsgerichte eenheid)"
+                    },
+                    "jeugdigeBsn": {
+                        "type": "string",
+                        "description": "BSN van de jeugdige (bijzonder persoonsgegeven)"
+                    },
+                    "jeugdigeLeeftijd": {
+                        "type": "integer",
+                        "description": "Leeftijd van de jeugdige; vanaf 16 is de jeugdige zelfstandig toestemmingspartij"
+                    },
+                    "verzoekKanaal": {
+                        "type": "string",
+                        "description": "Kanaal van het verzoek (huisarts, school, zelfmelding, ...)"
+                    },
+                    "verzoekDatum": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Datum van het verzoek"
+                    },
+                    "verwijzer": {
+                        "type": "string",
+                        "description": "Verwijzende partij (huisarts, jeugdarts, gecertificeerde instelling, ...)"
+                    },
+                    "ondersteuningsvraag": {
+                        "type": "string",
+                        "description": "Inhoudelijke ondersteuningsvraag (alleen-jeugdteam zichtbaar)"
+                    },
+                    "wijkteam": {
+                        "type": "string",
+                        "description": "Toegewezen jeugdteam; data-driven toegangsgrond"
+                    },
+                    "behandelaarId": {
+                        "type": "string",
+                        "description": "Nextcloud user id van de behandelend jeugdconsulent"
+                    },
+                    "tweedeBehandelaarId": {
+                        "type": "string",
+                        "description": "Optionele tweede behandelaar; override op wijkteam-toegang"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["melding", "gezinsplan-opstellen", "gezinsplan-gereed", "ondersteuning-gestart", "ondersteuning-loopt", "evaluatie", "verlenging-aangevraagd", "afgesloten"],
+                        "default": "melding",
+                        "description": "Gezinsgerichte status-lifecycle (ADR-031: declaratief)"
+                    },
+                    "gezinsplanId": {
+                        "type": "string",
+                        "description": "Referentie naar het actuele Gezinsplan"
+                    },
+                    "mdoOverlegIds": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Referenties naar MdoOverleg-records"
+                    },
+                    "ondertoezichtstellingActief": {
+                        "type": "boolean",
+                        "description": "Of een ondertoezichtstelling (OTS) actief is"
+                    },
+                    "verlengingHistorie": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Historie van eerdere gezinsplannen (verlengingen)"
+                    },
+                    "avgClassificatie": {
+                        "$ref": "#/components/schemas/avgClassificatie"
+                    }
+                }
+            },
+            "gezinsplan": {
+                "slug": "gezinsplan",
+                "icon": "FileTreeOutline",
+                "version": "1.0.0",
+                "title": "Gezinsplan",
+                "description": "Jeugdwet gezinsplan met doelen, trajecten, evaluaties en expliciete toestemming per gezinslid (16+ jeugdige tekent zelfstandig). OpenRegister-backed.",
+                "type": "object",
+                "required": ["zaakId", "opgesteldDoor"],
+                "properties": {
+                    "zaakId": {
+                        "type": "string",
+                        "description": "Referentie naar de JeugdwetZaak"
+                    },
+                    "opgesteldDoor": {
+                        "type": "string",
+                        "description": "Nextcloud user id van de opsteller"
+                    },
+                    "opgesteldDatum": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Datum van opstellen"
+                    },
+                    "gezinsleden": {
+                        "type": "array",
+                        "description": "Gezinsleden met akkoord-tracking",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "rol": {"type": "string"},
+                                "bsn": {"type": "string"},
+                                "akkoord": {"type": "boolean", "default": false},
+                                "akkoordDatum": {"type": "string", "format": "date"},
+                                "leeftijdToestemmingsvereiste": {"type": "boolean", "description": "True wanneer dit lid (16+) zelfstandig moet tekenen"}
+                            }
+                        }
+                    },
+                    "doelen": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Doelen van het gezinsplan"
+                    },
+                    "inzetTrajecten": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Ingezette hulptrajecten"
+                    },
+                    "evaluatieMomenten": {
+                        "type": "array",
+                        "items": {"type": "string", "format": "date"},
+                        "description": "Geplande evaluatiemomenten"
+                    },
+                    "verlengingMogelijk": {
+                        "type": "boolean",
+                        "description": "Of verlenging mogelijk is"
+                    },
+                    "verlengingVan": {
+                        "type": "string",
+                        "description": "Referentie naar het vorige gezinsplan bij verlenging"
+                    }
+                }
+            },
+            "mdoOverleg": {
+                "slug": "mdoOverleg",
+                "icon": "AccountGroupOutline",
+                "version": "1.0.0",
+                "title": "Multidisciplinair Overleg (MDO)",
+                "description": "Multidisciplinair overleg met expliciete toestemmingsregistratie per externe deelnemer; verslag wordt geanonimiseerd bij ontbrekende toestemming. OpenRegister-backed.",
+                "type": "object",
+                "required": ["zaakIds", "overlegDatum"],
+                "properties": {
+                    "zaakIds": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Betrokken zaak-referenties"
+                    },
+                    "overlegDatum": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Datum van het overleg"
+                    },
+                    "deelnemers": {
+                        "type": "array",
+                        "description": "Deelnemers met toestemmingsregistratie",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "naam": {"type": "string"},
+                                "organisatie": {"type": "string"},
+                                "extern": {"type": "boolean"},
+                                "toestemmingDeelnameDoorClient": {"type": "boolean"}
+                            }
+                        }
+                    },
+                    "agenda": {
+                        "type": "string",
+                        "description": "Agenda van het overleg"
+                    },
+                    "verslag": {
+                        "type": "string",
+                        "description": "Verslag (geanonimiseerd indien toestemming ontbreekt)"
+                    },
+                    "toestemmingenGeregistreerd": {
+                        "type": "boolean",
+                        "description": "Of alle vereiste toestemmingen geregistreerd zijn"
+                    },
+                    "gedeeldeGegevens": {
+                        "type": "string",
+                        "enum": ["alle-gegevens", "alleen-anonimiseerde-samenvatting"],
+                        "description": "Welke gegevens gedeeld zijn"
+                    }
+                }
+            },
+            "participatiewetZaak": {
+                "slug": "participatiewetZaak",
+                "icon": "BriefcaseAccountOutline",
+                "version": "1.0.0",
+                "title": "Participatiewet Zaak",
+                "description": "Sociaal-domein zaaktype bijstandsaanvraag (Participatiewet 2015, art. 18, 31-34, 9). Inkomens- en werkgerichte ondersteuning met vermogens-/inkomenstoets. OpenRegister-backed.",
+                "type": "object",
+                "required": ["zaaktype", "bsn", "avgClassificatie"],
+                "properties": {
+                    "zaaktype": {
+                        "type": "string",
+                        "enum": ["bijstandsaanvraag"],
+                        "default": "bijstandsaanvraag",
+                        "description": "Vaste zaaktype-identifier voor bijstandsaanvraag"
+                    },
+                    "zaakNumber": {
+                        "type": "string",
+                        "description": "Zaakidentifier in formaat zaak-{jaar}-pw-{5-cijferig}"
+                    },
+                    "bsn": {
+                        "type": "string",
+                        "description": "BSN van de aanvrager (bijzonder persoonsgegeven)"
+                    },
+                    "aanvraagSoort": {
+                        "type": "string",
+                        "enum": ["algemene-bijstand", "inburgering-gerelateerde-bijstand", "bijstand-werkloze-uitkeringontvangers", "noodvoorziening"],
+                        "description": "Soort bijstandsaanvraag"
+                    },
+                    "aanvraagDatum": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Datum van aanvraag"
+                    },
+                    "ingangsdatumGewenst": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Gewenste ingangsdatum van de bijstand"
+                    },
+                    "leeftijdsgroep": {
+                        "type": "string",
+                        "description": "Leeftijdsgroep van de aanvrager"
+                    },
+                    "huishoudensSituatie": {
+                        "type": "string",
+                        "description": "Huishoudenssituatie (alleenstaand, alleenstaand-met-kinderen, gehuwd, ...)"
+                    },
+                    "vermogensToets": {
+                        "type": "object",
+                        "description": "Vermogenstoets (art. 34)",
+                        "properties": {
+                            "uitgevoerd": {"type": "boolean", "default": false},
+                            "vermogen": {"type": "number"},
+                            "vermogensvrijstelling": {"type": "number"},
+                            "bovenVermogensvrijstelling": {"type": "boolean"}
+                        }
+                    },
+                    "inkomensToets": {
+                        "type": "object",
+                        "description": "Inkomenstoets (art. 31-33)",
+                        "properties": {
+                            "uitgevoerd": {"type": "boolean", "default": false},
+                            "inkomen": {"type": "number"},
+                            "bijstandsnorm": {"type": "number"},
+                            "rechtOpBijstand": {"type": "boolean"}
+                        }
+                    },
+                    "reIntegratieTrajectId": {
+                        "type": "string",
+                        "description": "Referentie naar het ReIntegratieTraject"
+                    },
+                    "behandelaarId": {
+                        "type": "string",
+                        "description": "Nextcloud user id van de klantmanager"
+                    },
+                    "wijkteam": {
+                        "type": "string",
+                        "description": "Werk-en-inkomenteam; data-driven toegangsgrond"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["aanvraag-ontvangen", "toetsing-loopt", "toetsing-afgerond", "beschikking-voorbereiding", "beschikking-gereed", "bijstand-actief", "re-integratie-loopt", "afgesloten"],
+                        "default": "aanvraag-ontvangen",
+                        "description": "Inkomensgerichte status-lifecycle (ADR-031: declaratief)"
+                    },
+                    "afwijzingsvoorstel": {
+                        "type": "boolean",
+                        "description": "True bij vermogen boven vrijstelling (auto-afwijzing)"
+                    },
+                    "avgClassificatie": {
+                        "$ref": "#/components/schemas/avgClassificatie"
+                    }
+                }
+            },
+            "reIntegratieTraject": {
+                "slug": "reIntegratieTraject",
+                "icon": "StairsUp",
+                "version": "1.0.0",
+                "title": "Re-integratietraject",
+                "description": "Participatiewet re-integratietraject met instrumenten (loonkostensubsidie, scholing, jobcoaching), tegenprestatie en vrijstellingen. OpenRegister-backed.",
+                "type": "object",
+                "required": ["zaakId", "klantmanagerId"],
+                "properties": {
+                    "zaakId": {
+                        "type": "string",
+                        "description": "Referentie naar de ParticipatiewetZaak"
+                    },
+                    "klantmanagerId": {
+                        "type": "string",
+                        "description": "Nextcloud user id van de klantmanager"
+                    },
+                    "startDatum": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Startdatum van het traject"
+                    },
+                    "trajectSoort": {
+                        "type": "string",
+                        "description": "Soort traject (werkfit-maken, naar-werk, scholing, ...)"
+                    },
+                    "afstandTotArbeidsmarkt": {
+                        "type": "string",
+                        "enum": ["klein", "gemiddeld", "groot", "zeer-groot"],
+                        "description": "Ingeschatte afstand tot de arbeidsmarkt"
+                    },
+                    "instrumenten": {
+                        "type": "array",
+                        "description": "Ingezette instrumenten",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "soort": {"type": "string"},
+                                "omschrijving": {"type": "string"},
+                                "startDatum": {"type": "string", "format": "date"},
+                                "eindDatum": {"type": "string", "format": "date"},
+                                "budget": {"type": "number"}
+                            }
+                        }
+                    },
+                    "samenwerkendePartijen": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Samenwerkende partijen (UWV, werkbedrijf, werkgever, opleider, ...)"
+                    },
+                    "evaluatieMomenten": {
+                        "type": "array",
+                        "items": {"type": "string", "format": "date"},
+                        "description": "Geplande evaluatiemomenten"
+                    },
+                    "tegenprestatieVerplicht": {
+                        "type": "boolean",
+                        "description": "Of een tegenprestatie verplicht is"
+                    },
+                    "vrijstellingArbeidsverplichting": {
+                        "type": "object",
+                        "description": "Optionele vrijstelling van de arbeidsverplichting",
+                        "properties": {
+                            "actief": {"type": "boolean"},
+                            "reden": {"type": "string"},
+                            "herbeoordelingDatum": {"type": "string", "format": "date"}
+                        }
+                    }
+                }
+            },
+            "toestemming": {
+                "slug": "toestemming",
+                "icon": "HandshakeOutline",
+                "version": "1.0.0",
+                "title": "Toestemming",
+                "description": "Expliciete, herroepbare toestemming voor gegevensdeling met externe partijen (AVG art. 6/9). OpenRegister-backed; gedeeld door alle sociaal-domein zaaktypes.",
+                "type": "object",
+                "required": ["zaakId", "verleendDoorBsn"],
+                "properties": {
+                    "zaakId": {
+                        "type": "string",
+                        "description": "Referentie naar de betrokken zaak"
+                    },
+                    "verleendDoorBsn": {
+                        "type": "string",
+                        "description": "BSN van de toestemming-verlenende burger/ouder"
+                    },
+                    "verleendDoorNaam": {
+                        "type": "string",
+                        "description": "Naam van de toestemming-verlener"
+                    },
+                    "verleendDatum": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Datum van verlening"
+                    },
+                    "geldigTot": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Optionele vervaldatum van de toestemming"
+                    },
+                    "intrekkingMogelijk": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Of de toestemming herroepbaar is"
+                    },
+                    "ingetrokken": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Of de toestemming is ingetrokken"
+                    },
+                    "scope": {
+                        "type": "string",
+                        "description": "Reikwijdte van de toestemming"
+                    },
+                    "tePartijen": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Ontvangende partijen"
+                    },
+                    "tegegevens": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Specifieke gegevens(velden) waarvoor toestemming geldt"
+                    },
+                    "tedoel": {
+                        "type": "string",
+                        "description": "Doel van de gegevensdeling"
+                    },
+                    "vastgelegdViaKanaal": {
+                        "type": "string",
+                        "description": "Kanaal waarlangs toestemming is vastgelegd (schriftelijk, mondeling-genotuleerd, digitaal, ...)"
+                    },
+                    "bewijsBestandId": {
+                        "type": "string",
+                        "description": "Optionele Nextcloud file-referentie naar het bewijs"
+                    }
+                }
+            },
+            "avgClassificatie": {
+                "slug": "avgClassificatie",
+                "icon": "ShieldLockOutline",
+                "version": "1.0.0",
+                "title": "AVG Classificatie",
+                "description": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorieën bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.",
+                "type": "object",
+                "required": ["categorieen", "rechtvaardiging", "bewaarTermijnJaren"],
+                "properties": {
+                    "categorieen": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": ["medisch", "gezinssituatie", "financieel", "justitieel", "etnisch", "religieus", "politieke-overtuiging"]
+                        },
+                        "description": "AVG art. 9 gegevenscategorieën die in deze zaak worden verwerkt"
+                    },
+                    "bijzonderePersoonsgegevens": {
+                        "type": "boolean",
+                        "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
+                    },
+                    "rechtvaardiging": {
+                        "type": "string",
+                        "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
+                    },
+                    "rechtvaardigingToelichting": {
+                        "type": "string",
+                        "description": "Plain-Dutch toelichting voor de FG-audit"
+                    },
+                    "bewaarTermijnJaren": {
+                        "type": "integer",
+                        "description": "Wettelijke bewaartermijn (WMO 15 / Jeugdwet 20 / Participatiewet 10 jaar, selectielijst gemeenten 2020)"
+                    },
+                    "vernietigingDatum": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Auto-berekend: sluitingsdatum + bewaarTermijnJaren"
+                    },
+                    "toegangsBeperking": {
+                        "type": "string",
+                        "description": "Toegangsbeperking, hardcoded in query-guards (bijv. alleen-behandelaar-en-wijkteam)"
+                    },
+                    "anonimiseringBijDelen": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Auto-anonimiseren bij export tenzij toestemming"
+                    },
+                    "exportBeperking": {
+                        "type": "string",
+                        "description": "Exportbeperking (bijv. geen-bulk-export)"
+                    }
+                }
+            },
+            "sociaalDomeinAuditLog": {
+                "slug": "sociaalDomeinAuditLog",
+                "icon": "FileEyeOutline",
+                "version": "1.0.0",
+                "title": "Sociaal Domein Audit Log",
+                "description": "Immutable audit-log van elke leesactie op bijzondere persoonsgegevens, ter ondersteuning van inzageverzoeken (AVG art. 15) en FG-audits. Append-only; wordt nooit gemuteerd.",
+                "type": "object",
+                "required": ["zaakId", "actie", "tijdstip"],
+                "properties": {
+                    "zaakId": {
+                        "type": "string",
+                        "description": "Referentie naar de geraadpleegde zaak"
+                    },
+                    "medewerkerId": {
+                        "type": "string",
+                        "description": "Nextcloud user id van de raadpleger (null bij externe partij)"
+                    },
+                    "organisatie": {
+                        "type": "string",
+                        "description": "Organisatie van de raadpleger (gemeente of externe partij)"
+                    },
+                    "actie": {
+                        "type": "string",
+                        "enum": ["read", "export", "share", "delete"],
+                        "description": "Soort actie"
+                    },
+                    "tijdstip": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Tijdstip van de actie"
+                    },
+                    "ipAdres": {
+                        "type": "string",
+                        "description": "IP-adres van de raadpleger"
+                    },
+                    "geraadpleegdeVelden": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Velden die zijn geraadpleegd"
+                    },
+                    "autorisatieGrond": {
+                        "type": "string",
+                        "description": "Grond voor toegang (roltoewijzing, toestemming, fg-audit-override, openconnector-sharing, ...)"
+                    },
+                    "resultaat": {
+                        "type": "string",
+                        "enum": ["succes", "geweigerd-geen-toegang", "fg-audit-mode-metadata-only", "geanonimiseerd"],
+                        "description": "Resultaat van de toegangspoging"
+                    }
+                }
+            },
+            "avgIncident": {
+                "slug": "avgIncident",
+                "icon": "AlertOutline",
+                "version": "1.0.0",
+                "title": "AVG Incident",
+                "description": "Datalek-incident registratie met AP-meldbeoordeling (AVG art. 33, 72-uurs meldplicht). OpenRegister-backed.",
+                "type": "object",
+                "required": ["incidentDatum", "oorzaak"],
+                "properties": {
+                    "incidentDatum": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Datum/tijd van het incident"
+                    },
+                    "oorzaak": {
+                        "type": "string",
+                        "description": "Oorzaak van het incident"
+                    },
+                    "gegevensImpact": {
+                        "type": "string",
+                        "description": "Impact op de gegevens (scope, aantal betrokkenen, encryptiestatus)"
+                    },
+                    "meldingAp": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Of melding aan de Autoriteit Persoonsgegevens vereist is"
+                    },
+                    "meldingDatum": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Datum/tijd van de AP-melding"
+                    },
+                    "meldingReferentie": {
+                        "type": "string",
+                        "description": "Referentienummer van de AP-melding"
+                    },
+                    "remediatingActions": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Genomen herstelmaatregelen"
+                    }
+                }
+            }
+        },
+        "registers": {
+            "procest": {
+                "schemas": [
+                    "wmoZaak",
+                    "indicatiestelling",
+                    "jeugdwetZaak",
+                    "gezinsplan",
+                    "mdoOverleg",
+                    "participatiewetZaak",
+                    "reIntegratieTraject",
+                    "toestemming",
+                    "avgClassificatie",
+                    "sociaalDomeinAuditLog",
+                    "avgIncident"
+                ]
+            }
+        },
+        "objects": [
+            {
+                "@self": {
+                    "register": "procest",
+                    "schema": "wmoZaak",
+                    "slug": "zaak-2026-wmo-04832"
+                },
+                "zaaktype": "wmo-melding",
+                "zaakNumber": "zaak-2026-wmo-04832",
+                "bsn": "***maskeren***",
+                "naam": "Mevr. Janssen-de Vries",
+                "aanvraagSoort": "huishoudelijke-hulp",
+                "aanvraagDatum": "2026-01-20",
+                "meldingKanaal": "telefonisch",
+                "ondersteuningsvraag": "Na heupoperatie tijdelijk niet in staat het huishouden te voeren; verzoek om huishoudelijke hulp.",
+                "wijkteam": "wijkteam-zuid",
+                "behandelaarId": "consulent-wmo-211",
+                "status": "beschikking-verleend",
+                "doorlooptijdWettelijk": {"onderzoekWeken": 6, "beschikkingWeken": 2, "totaalWeken": 8},
+                "avgClassificatie": {
+                    "categorieen": ["medisch"],
+                    "bijzonderePersoonsgegevens": true,
+                    "rechtvaardiging": "artikel-9-2-h-avg",
+                    "rechtvaardigingToelichting": "Medische beoordeling t.b.v. maatschappelijke ondersteuning (Wmo 2015).",
+                    "bewaarTermijnJaren": 15,
+                    "toegangsBeperking": "alleen-behandelaar-en-wijkteam",
+                    "anonimiseringBijDelen": true,
+                    "exportBeperking": "geen-bulk-export"
+                }
+            },
+            {
+                "@self": {
+                    "register": "procest",
+                    "schema": "wmoZaak",
+                    "slug": "zaak-2026-wmo-07415"
+                },
+                "zaaktype": "wmo-melding",
+                "zaakNumber": "zaak-2026-wmo-07415",
+                "bsn": "***maskeren***",
+                "naam": "Dhr. Piet Bakker",
+                "aanvraagSoort": "dagbesteding",
+                "aanvraagDatum": "2025-11-04",
+                "meldingKanaal": "balie",
+                "ondersteuningsvraag": "Beginnende dementie; familie verzoekt dagbesteding en begeleiding ter ontlasting van de mantelzorger.",
+                "huishoudensSamenstelling": "Woont samen met echtgenote (mantelzorger).",
+                "wijkteam": "wijkteam-zuid",
+                "behandelaarId": "consulent-wmo-211",
+                "status": "uitvoering",
+                "doorlooptijdWettelijk": {"onderzoekWeken": 6, "beschikkingWeken": 2, "totaalWeken": 8},
+                "avgClassificatie": {
+                    "categorieen": ["medisch", "gezinssituatie"],
+                    "bijzonderePersoonsgegevens": true,
+                    "rechtvaardiging": "artikel-9-2-h-avg",
+                    "rechtvaardigingToelichting": "Medische en gezinssituatie-gegevens t.b.v. langdurige ondersteuning.",
+                    "bewaarTermijnJaren": 15,
+                    "toegangsBeperking": "alleen-behandelaar-en-wijkteam",
+                    "anonimiseringBijDelen": true,
+                    "exportBeperking": "geen-bulk-export"
+                }
+            },
+            {
+                "@self": {
+                    "register": "procest",
+                    "schema": "wmoZaak",
+                    "slug": "zaak-2026-wmo-05921"
+                },
+                "zaaktype": "wmo-melding",
+                "zaakNumber": "zaak-2026-wmo-05921",
+                "bsn": "***maskeren***",
+                "naam": "Jonge ouder (post-partum)",
+                "aanvraagSoort": "hulpmiddelen",
+                "aanvraagDatum": "2026-02-12",
+                "meldingKanaal": "online",
+                "ondersteuningsvraag": "Post-partum depressie; verzoek om hulpverlening en hulpmiddelen ter ondersteuning van het jonge gezin.",
+                "huishoudensSamenstelling": "Alleenstaande ouder met pasgeborene.",
+                "wijkteam": "wijkteam-oost",
+                "behandelaarId": "consulent-wmo-188",
+                "status": "beschikking-voorbereiding",
+                "doorlooptijdWettelijk": {"onderzoekWeken": 6, "beschikkingWeken": 2, "totaalWeken": 8},
+                "avgClassificatie": {
+                    "categorieen": ["medisch", "gezinssituatie"],
+                    "bijzonderePersoonsgegevens": true,
+                    "rechtvaardiging": "artikel-9-2-h-avg",
+                    "rechtvaardigingToelichting": "Medische en gezinssituatie-gegevens t.b.v. ondersteuning jong gezin.",
+                    "bewaarTermijnJaren": 15,
+                    "toegangsBeperking": "alleen-behandelaar-en-wijkteam",
+                    "anonimiseringBijDelen": true,
+                    "exportBeperking": "geen-bulk-export"
+                }
+            },
+            {
+                "@self": {
+                    "register": "procest",
+                    "schema": "jeugdwetZaak",
+                    "slug": "zaak-2026-jeugd-00921"
+                },
+                "zaaktype": "jeugdwet-melding",
+                "zaakNumber": "zaak-2026-jeugd-00921",
+                "gezinId": "gezin-04472",
+                "jeugdigeBsn": "***maskeren***",
+                "jeugdigeLeeftijd": 9,
+                "verzoekKanaal": "huisarts",
+                "verzoekDatum": "2026-01-08",
+                "verwijzer": "Huisarts De Linde",
+                "ondersteuningsvraag": "Gedragsproblemen na echtscheiding; verzoek om ambulante jeugdhulp.",
+                "wijkteam": "jeugdteam-noord",
+                "behandelaarId": "jeugdconsulent-340",
+                "status": "ondersteuning-loopt",
+                "avgClassificatie": {
+                    "categorieen": ["gezinssituatie", "medisch"],
+                    "bijzonderePersoonsgegevens": true,
+                    "rechtvaardiging": "artikel-9-2-h-avg",
+                    "rechtvaardigingToelichting": "Gezinssituatie- en gedragsgegevens t.b.v. jeugdhulp.",
+                    "bewaarTermijnJaren": 20,
+                    "toegangsBeperking": "alleen-behandelaar-en-wijkteam",
+                    "anonimiseringBijDelen": true,
+                    "exportBeperking": "geen-bulk-export"
+                }
+            },
+            {
+                "@self": {
+                    "register": "procest",
+                    "schema": "jeugdwetZaak",
+                    "slug": "zaak-2026-jeugd-01847"
+                },
+                "zaaktype": "jeugdwet-melding",
+                "zaakNumber": "zaak-2026-jeugd-01847",
+                "gezinId": "gezin-05518",
+                "jeugdigeBsn": "***maskeren***",
+                "jeugdigeLeeftijd": 16,
+                "verzoekKanaal": "school",
+                "verzoekDatum": "2026-02-02",
+                "verwijzer": "Zorgcoördinator VO-school",
+                "ondersteuningsvraag": "Schoolverzuim en depressieve klachten; inzet outreachend jeugdwerk en jeugdpsychologie.",
+                "wijkteam": "jeugdteam-zuid",
+                "behandelaarId": "jeugdconsulent-355",
+                "status": "gezinsplan-gereed",
+                "avgClassificatie": {
+                    "categorieen": ["medisch", "gezinssituatie"],
+                    "bijzonderePersoonsgegevens": true,
+                    "rechtvaardiging": "artikel-9-2-h-avg",
+                    "rechtvaardigingToelichting": "Medische en gezinssituatie-gegevens; jeugdige 16+ tekent zelfstandig.",
+                    "bewaarTermijnJaren": 20,
+                    "toegangsBeperking": "alleen-behandelaar-en-wijkteam",
+                    "anonimiseringBijDelen": true,
+                    "exportBeperking": "geen-bulk-export"
+                }
+            },
+            {
+                "@self": {
+                    "register": "procest",
+                    "schema": "jeugdwetZaak",
+                    "slug": "zaak-2026-jeugd-02456"
+                },
+                "zaaktype": "jeugdwet-melding",
+                "zaakNumber": "zaak-2026-jeugd-02456",
+                "gezinId": "gezin-06120",
+                "jeugdigeBsn": "***maskeren***",
+                "jeugdigeLeeftijd": 2,
+                "verzoekKanaal": "consultatiebureau",
+                "verzoekDatum": "2026-02-25",
+                "verwijzer": "Jeugdarts consultatiebureau",
+                "ondersteuningsvraag": "Ontwikkelingsachterstand peuter; vroeg-interventietraject met koppeling naar voorschoolse educatie.",
+                "wijkteam": "jeugdteam-west",
+                "behandelaarId": "jeugdconsulent-362",
+                "status": "ondersteuning-gestart",
+                "avgClassificatie": {
+                    "categorieen": ["medisch", "gezinssituatie"],
+                    "bijzonderePersoonsgegevens": true,
+                    "rechtvaardiging": "artikel-9-2-h-avg",
+                    "rechtvaardigingToelichting": "Medische en gezinssituatie-gegevens t.b.v. vroeg-interventie.",
+                    "bewaarTermijnJaren": 20,
+                    "toegangsBeperking": "alleen-behandelaar-en-wijkteam",
+                    "anonimiseringBijDelen": true,
+                    "exportBeperking": "geen-bulk-export"
+                }
+            },
+            {
+                "@self": {
+                    "register": "procest",
+                    "schema": "participatiewetZaak",
+                    "slug": "zaak-2026-pw-01278"
+                },
+                "zaaktype": "bijstandsaanvraag",
+                "zaakNumber": "zaak-2026-pw-01278",
+                "bsn": "***maskeren***",
+                "aanvraagSoort": "algemene-bijstand",
+                "aanvraagDatum": "2026-01-15",
+                "ingangsdatumGewenst": "2026-02-01",
+                "leeftijdsgroep": "18-26",
+                "huishoudensSituatie": "alleenstaand-met-kinderen",
+                "vermogensToets": {"uitgevoerd": true, "vermogen": 2400, "vermogensvrijstelling": 6505, "bovenVermogensvrijstelling": false},
+                "inkomensToets": {"uitgevoerd": true, "inkomen": 0, "bijstandsnorm": 1234.45, "rechtOpBijstand": true},
+                "behandelaarId": "klantmanager-477",
+                "wijkteam": "werk-en-inkomenteam-oost",
+                "status": "re-integratie-loopt",
+                "avgClassificatie": {
+                    "categorieen": ["financieel", "gezinssituatie"],
+                    "bijzonderePersoonsgegevens": true,
+                    "rechtvaardiging": "artikel-9-2-b-avg",
+                    "rechtvaardigingToelichting": "Financiele en gezinssituatie-gegevens t.b.v. bijstand en re-integratie.",
+                    "bewaarTermijnJaren": 10,
+                    "toegangsBeperking": "alleen-behandelaar-en-wijkteam",
+                    "anonimiseringBijDelen": true,
+                    "exportBeperking": "geen-bulk-export"
+                }
+            },
+            {
+                "@self": {
+                    "register": "procest",
+                    "schema": "participatiewetZaak",
+                    "slug": "zaak-2026-pw-02641"
+                },
+                "zaaktype": "bijstandsaanvraag",
+                "zaakNumber": "zaak-2026-pw-02641",
+                "bsn": "***maskeren***",
+                "aanvraagSoort": "bijstand-werkloze-uitkeringontvangers",
+                "aanvraagDatum": "2026-01-22",
+                "ingangsdatumGewenst": "2026-02-15",
+                "leeftijdsgroep": "55-67",
+                "huishoudensSituatie": "alleenstaand",
+                "vermogensToets": {"uitgevoerd": true, "vermogen": 3100, "vermogensvrijstelling": 6505, "bovenVermogensvrijstelling": false},
+                "inkomensToets": {"uitgevoerd": true, "inkomen": 480, "bijstandsnorm": 1234.45, "rechtOpBijstand": true},
+                "behandelaarId": "klantmanager-501",
+                "wijkteam": "werk-en-inkomenteam-west",
+                "status": "re-integratie-loopt",
+                "avgClassificatie": {
+                    "categorieen": ["financieel", "medisch"],
+                    "bijzonderePersoonsgegevens": true,
+                    "rechtvaardiging": "artikel-9-2-b-avg",
+                    "rechtvaardigingToelichting": "Financiele en medische gegevens (overgang uit ziekteverzuim).",
+                    "bewaarTermijnJaren": 10,
+                    "toegangsBeperking": "alleen-behandelaar-en-wijkteam",
+                    "anonimiseringBijDelen": true,
+                    "exportBeperking": "geen-bulk-export"
+                }
+            },
+            {
+                "@self": {
+                    "register": "procest",
+                    "schema": "participatiewetZaak",
+                    "slug": "zaak-2026-pw-03502"
+                },
+                "zaaktype": "bijstandsaanvraag",
+                "zaakNumber": "zaak-2026-pw-03502",
+                "bsn": "***maskeren***",
+                "aanvraagSoort": "inburgering-gerelateerde-bijstand",
+                "aanvraagDatum": "2026-02-08",
+                "ingangsdatumGewenst": "2026-03-01",
+                "leeftijdsgroep": "27-44",
+                "huishoudensSituatie": "gehuwd-met-kinderen",
+                "vermogensToets": {"uitgevoerd": true, "vermogen": 800, "vermogensvrijstelling": 13010, "bovenVermogensvrijstelling": false},
+                "inkomensToets": {"uitgevoerd": true, "inkomen": 0, "bijstandsnorm": 1763.49, "rechtOpBijstand": true},
+                "behandelaarId": "klantmanager-512",
+                "wijkteam": "werk-en-inkomenteam-centrum",
+                "status": "beschikking-voorbereiding",
+                "avgClassificatie": {
+                    "categorieen": ["financieel", "gezinssituatie"],
+                    "bijzonderePersoonsgegevens": true,
+                    "rechtvaardiging": "artikel-9-2-b-avg",
+                    "rechtvaardigingToelichting": "Financiele en gezinssituatie-gegevens t.b.v. inburgering-gerelateerde bijstand.",
+                    "bewaarTermijnJaren": 10,
+                    "toegangsBeperking": "alleen-behandelaar-en-wijkteam",
+                    "anonimiseringBijDelen": true,
+                    "exportBeperking": "geen-bulk-export"
+                }
+            }
+        ]
+    }
+}

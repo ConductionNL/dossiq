@@ -123,6 +123,22 @@ class SettingsService
         'beroep_schema',
         // Bezwaar decision (bezwaar-decision spec) — Awb art. 7:11/7:12.
         'bezwaar_decision_schema',
+        // KCC klantcontact-integratie (kcc-klantcontact-integratie spec).
+        // contactMoment reuses the existing customer_contact_schema; only the
+        // KCC-specific operational schemas get new config keys here.
+        'routing_rule_schema',
+        'kcc_agent_schema',
+        'callback_request_schema',
+        // Subsidieverlening-keten (subsidieverlening-keten spec) — AWB titel 4.2.
+        'subsidie_regeling_schema',
+        'subsidie_aanvraag_schema',
+        'subsidie_beoordeling_schema',
+        'subsidie_beschikking_schema',
+        'subsidie_uitvoering_schema',
+        'tussenrapportage_schema',
+        'subsidie_vaststelling_schema',
+        'terugvordering_schema',
+        'bewijsstuk_schema',
         'lhsMatrix',
         'lhs_matrix_schema',
         'lhs_recommendation_schema',
@@ -231,10 +247,25 @@ class SettingsService
         'bacAdviceRequest'             => 'bac_advice_request_schema',
         'beroep'                       => 'beroep_schema',
         'bezwaarDecision'              => 'bezwaar_decision_schema',
+<<<<<<< HEAD
         // Consultation management (consultation-management spec).
         'consultation'                 => 'consultation_schema',
         'adviceResponse'               => 'advice_response_schema',
         'advisoryBody'                 => 'advisory_body_schema',
+=======
+        'routingRule'                  => 'routing_rule_schema',
+        'kccAgent'                     => 'kcc_agent_schema',
+        'callbackRequest'              => 'callback_request_schema',
+        'subsidieRegeling'             => 'subsidie_regeling_schema',
+        'subsidieAanvraag'             => 'subsidie_aanvraag_schema',
+        'subsidieBeoordeling'          => 'subsidie_beoordeling_schema',
+        'subsidieBeschikking'          => 'subsidie_beschikking_schema',
+        'subsidieUitvoering'           => 'subsidie_uitvoering_schema',
+        'tussenrapportage'             => 'tussenrapportage_schema',
+        'subsidieVaststelling'         => 'subsidie_vaststelling_schema',
+        'terugvordering'               => 'terugvordering_schema',
+        'bewijsstuk'                   => 'bewijsstuk_schema',
+>>>>>>> origin/development
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

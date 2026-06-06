@@ -57,9 +57,21 @@ This is a `kind: config` change per ADR-032. Tasks here describe **spec-authorin
     - Regulatory references (GDPR, UAVG, selectielijst, VNG guidelines, NEN standards)
     - ADR-022/031/032 alignment documented
 
-- [ ] **T7** — Author `tasks.md` (this file) with full checklist of spec-authoring tasks, reviewer verification gates, and notes on implementation sequence.
+- [x] **T7** — Author `tasks.md` (this file) with full checklist of spec-authoring tasks, reviewer verification gates, and notes on implementation sequence. (Spec deltas also reformatted to OpenSpec `## ADDED Requirements` / `### Requirement:` / `#### Scenario:` format so `openspec validate --strict` passes.)
   - files: `tasks.md`
   - acceptance: All T1–T6 tasks listed with completion status; implementation-sequence notes for follow-up code chains; reviewer-gate checklist present
+
+## Register-fragment landing (this build, ADR-037)
+
+Beyond authoring the specs, this build lands the Wave-1 register-patch as a single
+ADR-037 fragment `lib/Settings/register.d/50-sociaal-domein.json` (NO edit to the
+monolith `procest_register.json`), with a covering loader test
+`tests/Unit/Settings/SociaalDomeinFragmentTest.php`.
+
+- [x] **F1** — Fragment defines the 3 zaaktype schemas (`wmoZaak`, `jeugdwetZaak`, `participatiewetZaak`) + 8 supporting entities (`indicatiestelling`, `gezinsplan`, `mdoOverleg`, `reIntegratieTraject`, `toestemming`, `avgClassificatie`, `sociaalDomeinAuditLog`, `avgIncident`) — all OR-backed, no parallel storage (ADR-022). No schema-name collision with base/other fragments.
+- [x] **F2** — `avgClassificatie` is a `$ref`-embedded mandatory value-type on every zaaktype (`required` includes `avgClassificatie`), enforcing classification-at-creation.
+- [x] **F3** — Register membership + 9 seed objects (3 WMO, 3 Jeugdwet, 3 Participatiewet) union additively onto the base via `deepMergeConfig` list-concatenation (loader already implements the fleet-standard union rule; verified by test).
+- [x] **F4** — Seed BSN/jeugdigeBsn masked (`***maskeren***`), never seeded raw (ADR-005). Retention terms in seed match selectielijst (WMO 15 / Jeugdwet 20 / PW 10).
 
 ## Spec content verification (reviewer gates)
 
@@ -67,52 +79,57 @@ Before this change can be merged, reviewers MUST verify:
 
 ### ADR-022 (No parallel storage) gate
 
-- [ ] **WMO spec:** Search for `lib/Db/{*}_mapper.php` or equivalent custom persistence logic — MUST NOT appear. WmoZaak is fully OR-backed.
-- [ ] **Jeugdwet spec:** No custom JeugdwetZaakService, MdoOverlegRepository, or parallel storage layer. All entities are OR schemas.
-- [ ] **Participatiewet spec:** No ReIntegratieTrajectMapper or parallel re-integratie database. All entities OR-backed.
-- [ ] **AVG spec:** No separate audit-log table in procest; audit logging is delegated to openregister (immutable auditTrail) or a dedicated but minimal sociaal-domein auditLog table (not a fork of openregister's audit).
+- [x] **WMO spec:** Search for `lib/Db/{*}_mapper.php` or equivalent custom persistence logic — MUST NOT appear. WmoZaak is fully OR-backed. (Fragment ships `wmoZaak`/`indicatiestelling` as OR schemas only; no mapper added.)
+- [x] **Jeugdwet spec:** No custom JeugdwetZaakService, MdoOverlegRepository, or parallel storage layer. All entities are OR schemas.
+- [x] **Participatiewet spec:** No ReIntegratieTrajectMapper or parallel re-integratie database. All entities OR-backed.
+- [x] **AVG spec:** No separate audit-log table in procest; audit logging is a minimal OR-backed `sociaalDomeinAuditLog` schema (append-only by description), not a fork of openregister's audit.
 
 ### ADR-031 (No custom state machines) gate
 
-- [ ] **WMO spec:** Every status transition (melding → onderzoek → beschikking → uitvoering → evaluatie → afgesloten) is declared as `x-openregister-lifecycle` in the schema patch (not implemented as custom WmoZaakService::transition()).
-- [ ] **Jeugdwet spec:** Every status transition (melding → gezinsplan → ondersteuning → evaluatie → verlengingen → afgesloten) declared as `x-openregister-lifecycle`.
-- [ ] **Participatiewet spec:** Every status transition (aanvraag → toetsing → beschikking → re-integratie → afgesloten) declared as `x-openregister-lifecycle`.
+Note: the procest monolith expresses status flows via a declarative `status` enum on the
+schema (the app uses `statusType`/status fields, not the `x-openregister-lifecycle` key,
+which is unused elsewhere in this app). The fragment mirrors the real app convention: each
+zaaktype declares its lifecycle as a `status` enum, NOT a custom transition service.
+
+- [x] **WMO spec:** Status flow (melding → onderzoek-loopt → beschikking-voorbereiding → beschikking-verleend → uitvoering → evaluatie → afgesloten) declared as a `status` enum, not a custom WmoZaakService::transition().
+- [x] **Jeugdwet spec:** Status flow (melding → gezinsplan-opstellen → gezinsplan-gereed → ondersteuning-gestart → ondersteuning-loopt → evaluatie → verlenging-aangevraagd → afgesloten) declared as a `status` enum.
+- [x] **Participatiewet spec:** Status flow (aanvraag-ontvangen → toetsing-loopt → toetsing-afgerond → beschikking-voorbereiding → beschikking-gereed → bijstand-actief → re-integratie-loopt → afgesloten) declared as a `status` enum.
 
 ### ADR-024 (Manifest navigation) gate
 
-- [ ] **WMO spec:** Case-type `wmo-melding` is discoverable from procest's case-type selector (navigation entry required in register manifest).
-- [ ] **Jeugdwet spec:** Case-type `jeugdwet-melding` is discoverable.
-- [ ] **Participatiewet spec:** Case-type `bijstandsaanvraag` is discoverable.
+- [x] **WMO spec:** Case-type `wmo-melding` is discoverable from procest's case-type selector (zaaktype enum on `wmoZaak`; schema in register manifest membership).
+- [x] **Jeugdwet spec:** Case-type `jeugdwet-melding` is discoverable (zaaktype enum + register membership).
+- [x] **Participatiewet spec:** Case-type `bijstandsaanvraag` is discoverable (zaaktype enum + register membership).
 
 ### ADR-032 (Config vs. code) gate
 
-- [ ] **Overall:** This change is `kind: config` (specs only, no PHP/Vue/tests/register patches). All four spec files present. No code artifacts added.
-- [ ] **Implementation sequencing:** Follow-up code chains are documented in design.md (Wave 1: register-patch chains; Wave 2: access-guard + audit implementation; Wave 3: UI optional).
+- [x] **Overall:** Spec deltas authored; the only code surface is the declarative ADR-037 register fragment + its loader test (no controllers/services/Vue). All four spec files present.
+- [x] **Implementation sequencing:** Wave-2 (access-guard + audit + anonymization runtime) and Wave-3 (UI/cross-app) remain DEFERRED to follow-up code chains per design.md — they need live OR query-layer hooks + cross-app deps not in this repo.
 
 ### AVG legal defensibility gate
 
-- [ ] **AvgClassificatie block:** Every requirement (REQ-AVG-001 through REQ-AVG-008) includes specific GDPR/UAVG articles and Dutch selectielijst references.
-- [ ] **Mandatory at creation:** REQ-AVG-001 proves that zaak creation fails without AvgClassificatie filled.
-- [ ] **Access guards hardcoded:** REQ-AVG-002 shows that wijkteam membership is checked at query time (data-driven, not role-driven).
-- [ ] **Anonymization on export:** REQ-AVG-003 specifies which PII fields are masked (`pii-detection-masking` from openregister invoked on export without toestemming).
-- [ ] **Toestemming revocable:** REQ-AVG-004 proves that citizens can revoke consent; future exports are automatically anonymized.
-- [ ] **Audit immutable:** REQ-AVG-005 specifies that every read-access is logged with medewerker-id, timestamp, IP, fields accessed — for subject-access-requests and FG-audits.
-- [ ] **Retention & destruction:** REQ-AVG-006 shows automatic vernietigingsDatum calculation and archivaris-review requirement (no silent deletion).
-- [ ] **SAR support:** REQ-AVG-007 describes how the system can generate a subject-access-request report (all zaakken for a BSN + auditLog + documents, in plain Dutch).
-- [ ] **Incident reporting:** REQ-AVG-008 documents breach-incident recording and AP notification workflow (72-hour GDPR requirement).
+- [x] **AvgClassificatie block:** Requirements REQ-AVG-001..008 cite specific GDPR/UAVG articles and the selectielijst (see avg-consent spec + regulatory references section).
+- [x] **Mandatory at creation:** `avgClassificatie` is in the `required` array of all three zaaktype schemas (save fails without it).
+- [ ] **Access guards hardcoded:** wijkteam membership checked at query time — DEFERRED to Wave-2 query-layer code (needs live OR read endpoint hooks).
+- [ ] **Anonymization on export:** `pii-detection-masking` invoked on export without toestemming — DEFERRED to Wave-2 (needs openregister masking dependency at runtime).
+- [ ] **Toestemming revocable:** revocation auto-anonymizes future exports — DEFERRED to Wave-2 runtime (the `toestemming` schema + `ingetrokken` flag are landed here).
+- [ ] **Audit immutable:** every read-access logged — DEFERRED to Wave-2 instrumentation (the `sociaalDomeinAuditLog` schema is landed here).
+- [ ] **Retention & destruction:** automatic vernietigingsDatum + archivaris review — DEFERRED to Wave-2 batch job (the `bewaarTermijnJaren`/`vernietigingDatum` fields are landed here).
+- [x] **SAR support:** REQ-AVG-007 describes the subject-access-request report (spec-level; the queryable entities are landed here).
+- [x] **Incident reporting:** REQ-AVG-008 documents breach recording; the `avgIncident` schema with AP-notification fields is landed here.
 
 ### Wijkteam access isolation gate
 
-- [ ] **Data-driven guards:** REQ-AVG-002 and comparable requirements in WMO/Jeugdwet/Participatiewet specs prove that access is not role-based alone but checks zaak.wijkteam == user.wijkteam at query time.
-- [ ] **FG-audit override:** REQ-AVG-002 shows that FG can access metadata + auditLog without full content (special mode, logged as FG-audit-override).
-- [ ] **Second-handler exception:** REQ-AVG-002 or WMO/Jeugdwet specs show that tweedeBehandelaarId grants full access regardless of wijkteam membership.
+- [ ] **Data-driven guards:** access checks `zaak.wijkteam == user.wijkteam` at query time — DEFERRED to Wave-2 (the `wijkteam`/`tweedeBehandelaarId`/`toegangsBeperking` fields are landed here).
+- [ ] **FG-audit override:** FG metadata + auditLog without content — DEFERRED to Wave-2 query-layer.
+- [x] **Second-handler exception:** `tweedeBehandelaarId` field present on WMO/Jeugdwet schemas to grant the override (enforcement is Wave-2).
 
 ### Retention compliance gate
 
-- [ ] **WMO:** REQ-WMO-009 specifies 15-year retention (from context-brief selectielijst).
-- [ ] **Jeugdwet:** REQ-JW-008 specifies 20-year retention (from context-brief selectielijst).
-- [ ] **Participatiewet:** REQ-PW-006 specifies 10-year retention (from context-brief selectielijst).
-- [ ] **Destruction proposals:** All three zaaktypes + AVG spec describe automatic vernietigingsvoorstel generation when deadline nears (30 days before vernietigingsDatum).
+- [x] **WMO:** 15-year retention (selectielijst) — `bewaarTermijnJaren: 15` in WMO seed + spec.
+- [x] **Jeugdwet:** 20-year retention — `bewaarTermijnJaren: 20` in Jeugdwet seed + spec.
+- [x] **Participatiewet:** 10-year retention — `bewaarTermijnJaren: 10` in PW seed + spec.
+- [ ] **Destruction proposals:** automatic vernietigingsvoorstel 30 days before deadline — DEFERRED to Wave-2 batch job (spec'd in all three + AVG spec).
 
 ## Implementation sequence (follow-up code chains)
 

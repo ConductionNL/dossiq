@@ -45,6 +45,8 @@ use Throwable;
  * @implements IEventListener<ObjectCreatingEvent|ObjectUpdatingEvent|ObjectDeletingEvent>
  *
  * @psalm-suppress InvalidTemplateParam -- ObjectDeletingEvent is an OR peer class not in stubs; param is correct at runtime
+ *
+ * @spec openspec/changes/parafering-audit-trail/tasks.md#T05
  */
 class ParaferingAuditAppendOnlyValidator implements IEventListener
 {
@@ -68,6 +70,10 @@ class ParaferingAuditAppendOnlyValidator implements IEventListener
      * @param Event $event The dispatched event
      *
      * @return void
+     *
+     * @psalm-suppress UndefinedMethod -- setErrors exists on all three OR event types; base Event does not declare it
+     *
+     * @spec openspec/changes/parafering-audit-trail/tasks.md#T05
      */
     public function handle(Event $event): void
     {
@@ -126,6 +132,7 @@ class ParaferingAuditAppendOnlyValidator implements IEventListener
             // Block the operation by stopping propagation and recording the error.
             // At this point $event is always one of ObjectCreatingEvent|ObjectUpdatingEvent|ObjectDeletingEvent
             // (the only non-early-return branches above), so setErrors/stopPropagation are always safe.
+            // setErrors exists on all three OR event types; base Event does not declare it.
             $event->setErrors([$e->getMessage()]);
             $event->stopPropagation();
 

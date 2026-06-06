@@ -1,5 +1,7 @@
 # Design: open-raadsinformatie
 
+status: pr-created
+
 ## Architecture
 
 The ORI implementation has two layers:

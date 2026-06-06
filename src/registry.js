@@ -26,6 +26,7 @@
 import MyWorkView from './views/MyWork.vue'
 import WerkvoorraadView from './views/Werkvoorraad.vue'
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
+import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import AdminRootView from './views/settings/AdminRoot.vue'
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import PublicCaseView from './views/public/PublicCaseView.vue'
@@ -37,6 +38,10 @@ import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 import AdviesPanel from './views/cases/components/AdviesPanel.vue'
+// VTH-specific case detail panels
+import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
+import InspectionChecklistPanel from './views/cases/components/InspectionChecklistPanel.vue'
+import InspectionPanel from './views/cases/components/InspectionPanel.vue'
 
 /**
  * V2 component registry.
@@ -66,6 +71,14 @@ const registry = {
 		kind: 'page',
 		component: DoorlooptijdView,
 		_note: 'KPI dashboard with apexcharts; pending lib chart-widget support.',
+	},
+
+	// --- Workflow Board — Kanban with drag-to-advance status transitions. ---
+	// @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-006
+	WorkflowBoardView: {
+		kind: 'page',
+		component: WorkflowBoardView,
+		_note: 'Kanban board: column per non-final status, drag-to-advance via saveObject (RBAC-enforced). No declarative board page type in lib yet.',
 	},
 	AdminRootView: {
 		kind: 'page',
@@ -117,6 +130,24 @@ const registry = {
 		kind: 'page',
 		component: AdviesPanel,
 		_note: 'Advice/advies panel used in CaseDetail and BezwaarDetail sidebar tabs',
+	},
+
+	// --- VTH module: case detail sidebar tabs. ---
+	// @spec openspec/changes/vth-module/tasks.md#task-7
+	AdviceRequestPanel: {
+		kind: 'page',
+		component: AdviceRequestPanel,
+		_note: 'VTH advice request panel — shows open/received/overdue adviesAanvragen on VTH case detail',
+	},
+	InspectionChecklistPanel: {
+		kind: 'page',
+		component: InspectionChecklistPanel,
+		_note: 'VTH checklist panel — shows inspection checklist completion status on Toezichtzaak',
+	},
+	InspectionPanel: {
+		kind: 'page',
+		component: InspectionPanel,
+		_note: 'VTH inspection panel — shows completed inspectionResult records for a case',
 	},
 }
 

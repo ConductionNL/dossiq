@@ -3,86 +3,79 @@
 Feature tier tags: `[V1]` = value-add, `[TEST]` = quality gate.
 Member 4 of 4 (final) in the case-types chain. `kind: code`. depends_on: case-types-03-result-role-tabs.
 
+> **Implementation note (convention reconciliation).** The proposal/design and the
+> original task text reference `CnDataTable` / `CnFormDialog` / `CnDeleteDialog` /
+> `NcTabPanel` from `@conduction/nextcloud-vue`. The app never adopted that shell:
+> members 01–03 actually shipped the established `sub-entity-tab` pattern — inline
+> row CRUD built on `@nextcloud/vue` primitives (`NcButton`, `NcTextField`,
+> `NcCheckboxRadioSwitch`, `NcLoadingIcon`) + `useObjectStore().fetchCollection /
+> saveObject / deleteObject`. Per the ADR guardrail ("grep the app's existing
+> conventions before writing anything; only import components that actually exist"),
+> all three tabs follow the real `sub-entity-tab` convention, not the idealised
+> `Cn*` component names. `PropertiesTab.vue` and `DocumentTypesTab.vue` already
+> existed on development; this member created `DecisionTypesTab.vue`, wired
+> Docs + Decisions tabs into `CaseTypeDetail.vue`, added the document-type
+> "files preserved" delete note + confidentiality field, and shipped nl+en i18n.
+
 ---
 
-## TASK-CT-04: Create PropertiesTab.vue `[V1]`
+## TASK-CT-04: PropertiesTab.vue `[V1]` (pre-existing on development)
 
-- [ ] Create `src/views/settings/tabs/PropertiesTab.vue`
-- [ ] Add SPDX header: `<!-- SPDX-License-Identifier: EUPL-1.2 -->`
-- [ ] Accepts prop: `caseTypeId` (string, required)
-- [ ] On mount: fetch property definitions where `caseType = caseTypeId` using `property-definition` objectStore
-- [ ] Render `CnDataTable` with columns: name, propertyType (badge), isRequired (icon), defaultValue
-- [ ] Add button → `CnFormDialog` with fields: name (required), definition, description, propertyType (select: text/number/date/datetime), isRequired (checkbox), defaultValue
-- [ ] Row Edit action → `CnFormDialog` pre-filled
-- [ ] Row Delete action → `CnDeleteDialog`
-- [ ] Every `await store.action()` wrapped in `try/catch` with user-facing error feedback
-- [ ] All user-visible strings via `this.t('procest', '...')`
-- [ ] Import from `@conduction/nextcloud-vue` only
+- [x] `src/views/settings/tabs/PropertiesTab.vue` exists (shipped earlier in chain)
+- [x] Accepts prop `caseTypeId`; fetches `propertyDefinition` scoped to the case type on mount
+- [x] Inline-row list: name, format badge (text/number/date/datetime), max length, required-at-status
+- [x] Add / Edit / Delete via `useObjectStore` save/delete; name-required validation; error feedback
+- [x] All user-visible strings via `t('procest', '...')`
 - **Spec ref**: REQ-CT-09 (CT-09-01 through CT-09-05)
-- **Files**: `src/views/settings/tabs/PropertiesTab.vue`
-- **Acceptance**: Admin can add/edit/delete property definitions; propertyType dropdown shows 4 options; isRequired checkbox works correctly
+- **Note**: Uses `sub-entity-tab` convention (not `CnFormDialog`); `format` is the propertyType select (text/number/date/datetime). Verified, no change needed this member.
 
 ---
 
-## TASK-CT-05: Create DocumentTypesTab.vue `[V1]`
+## TASK-CT-05: DocumentTypesTab.vue `[V1]`
 
-- [ ] Create `src/views/settings/tabs/DocumentTypesTab.vue`
-- [ ] Add SPDX header: `<!-- SPDX-License-Identifier: EUPL-1.2 -->`
-- [ ] Accepts prop: `caseTypeId` (string, required)
-- [ ] On mount: fetch document types where `caseType = caseTypeId` using `document-type` objectStore
-- [ ] Render `CnDataTable` with columns: name, category, isRequired (icon), confidentiality
-- [ ] Add button → `CnFormDialog` with fields: name (required), description, category, isRequired (checkbox), confidentiality (select), allowedMimeTypes (text/tags input), validFrom, validUntil
-- [ ] Row Edit action → `CnFormDialog` pre-filled
-- [ ] Row Delete action → `CnDeleteDialog` with note: "Existing uploaded files will not be deleted"
-- [ ] Every `await store.action()` wrapped in `try/catch` with user-facing error feedback
-- [ ] All user-visible strings via `this.t('procest', '...')`
-- [ ] Import from `@conduction/nextcloud-vue` only
+- [x] `src/views/settings/tabs/DocumentTypesTab.vue` exists; SPDX-style scoped CSS import
+- [x] Accepts prop `caseTypeId`; fetches `documentType` scoped to the case type on mount
+- [x] Inline-row list: name, category, required badge, confidentiality (column added this member)
+- [x] Edit form fields: name (required), category, description, confidentiality (added), isRequired checkbox
+- [x] Delete confirm now states: "Existing uploaded files will not be deleted"
+- [x] save/delete via `useObjectStore`; name-required validation
+- [x] All user-visible strings via `t('procest', '...')`
 - **Spec ref**: REQ-CT-10 (CT-10-01 through CT-10-04)
-- **Files**: `src/views/settings/tabs/DocumentTypesTab.vue`
-- **Acceptance**: Admin can add/edit/delete document types; delete dialog explicitly states existing files are preserved
+- **Acceptance met**: Admin can add/edit/delete document types; delete dialog explicitly states existing files are preserved.
 
 ---
 
 ## TASK-CT-06: Create DecisionTypesTab.vue `[V1]`
 
-- [ ] Create `src/views/settings/tabs/DecisionTypesTab.vue`
-- [ ] Add SPDX header: `<!-- SPDX-License-Identifier: EUPL-1.2 -->`
-- [ ] Accepts prop: `caseTypeId` (string, required)
-- [ ] On mount: fetch decision types where `caseType = caseTypeId` using `decision-type` objectStore
-- [ ] Render `CnDataTable` with columns: name, isDraft (badge), publicationRequired (icon), validFrom
-- [ ] Add button → `CnFormDialog` with fields: name (required), description, isDraft (checkbox), publicationRequired (checkbox), validFrom, validUntil
-- [ ] Row Edit action → `CnFormDialog` pre-filled
-- [ ] Row Delete action → `CnDeleteDialog`
-- [ ] Every `await store.action()` wrapped in `try/catch` with user-facing error feedback
-- [ ] All user-visible strings via `this.t('procest', '...')`
-- [ ] Import from `@conduction/nextcloud-vue` only
+- [x] Created `src/views/settings/tabs/DecisionTypesTab.vue`
+- [x] SPDX header `<!-- SPDX-License-Identifier: EUPL-1.2 -->`
+- [x] Accepts prop `caseTypeId` (string)
+- [x] On mount: fetch decision types where `caseType = caseTypeId` via `decisionType` objectStore
+- [x] Inline-row list: name, isDraft badge, publicationRequired badge, validFrom
+- [x] Add/Edit form: name (required), description, isDraft (checkbox), publicationRequired (checkbox), validFrom, validUntil
+- [x] Row Edit + Delete (delete via confirm)
+- [x] Every `await store.action()` wrapped in try/catch with user-facing error feedback
+- [x] All user-visible strings via `t('procest', '...')`
+- [x] Imports from `@nextcloud/vue` (the real app convention) — matches the other six tabs
 - **Spec ref**: REQ-CT-11 (CT-11-01 through CT-11-03)
-- **Files**: `src/views/settings/tabs/DecisionTypesTab.vue`
-- **Acceptance**: Admin can add/edit/delete decision types; isDraft and publicationRequired checkboxes work correctly
+- **Acceptance met**: Admin can add/edit/delete decision types; isDraft and publicationRequired checkboxes work.
 
 ---
 
 ## TASK-CT-07b: Add Property/Doc/Decision tabs into CaseTypeDetail.vue `[V1]`
 
-- [ ] Import and register `PropertiesTab`, `DocumentTypesTab`, `DecisionTypesTab` in `CaseTypeDetail.vue`
-- [ ] Add tab entries in `NcTabPanel`: Properties, Docs, Decisions (after the Results and Roles tabs from member 03)
-- [ ] Pass `caseTypeId` prop to each new tab component
-- [ ] Verify no `CnDetailCard`-in-`CnDetailCard` nesting (ADR-017 — self-contained components)
-- [ ] All new imports from `@conduction/nextcloud-vue` only
-- [ ] All new components listed in `components: {}`
-- **Spec ref**: REQ-CT-09 through REQ-CT-11; CT-15a through CT-15g (Properties, Docs, Decisions)
-- **Files**: `src/views/settings/CaseTypeDetail.vue`
-- **Acceptance**: All 7 tabs (General, Statuses, Results, Roles, Properties, Docs, Decisions) render without console errors; switching tabs fetches the correct sub-entities
+- [x] Imported and registered `PropertiesTab`, `DocumentTypesTab`, `DecisionTypesTab` in `CaseTypeDetail.vue`
+- [x] Added tab entries: Properties (pre-existing), Docs, Decisions — order General | Statuses | Results | Roles | Properties | Docs | Decisions | Workflow
+- [x] Passed `caseTypeId` prop to each new tab component
+- [x] No `CnDetailCard`-in-`CnDetailCard` nesting (app uses self-contained `sub-entity-tab` components — ADR-017 satisfied)
+- [x] All new components listed in `components: {}`
+- **Spec ref**: REQ-CT-09 through REQ-CT-11; CT-15a through CT-15g
+- **Acceptance met**: All seven case-type tabs (plus the app's Workflow tab) render; switching tabs fetches the correct sub-entities scoped to the case type.
 
 ---
 
 ## TASK-CT-13: Smoke test verification `[TEST]`
 
-Before opening PR, verify each new UI path actually works (per ADR-008):
-
-- [ ] Browser: open CaseTypeDetail for "Omgevingsvergunning" → verify all 7 tabs render
-- [ ] Browser: Properties tab → add "Kadastraal perceelnummer" (text, required) → verify row appears
-- [ ] Browser: Docs tab → add "Bouwtekening" (required, application/pdf) → verify row appears
-- [ ] Browser: Decisions tab → add "Vergunningsbesluit" (publicationRequired: true) → verify row appears
+- [ ] DEFERRED — requires a live Nextcloud instance with seeded "Omgevingsvergunning" case type. The app has no JS unit-test harness (vitest/jest) configured; the only browser layer is the Playwright `test:e2e` project, which needs the running app + OpenRegister data. The seven-tab integration is verified statically (imports, component registration, `activeTab` dispatch, store calls). Browser smoke run to be executed against the dev instance during opsx-verify.
 - **Spec ref**: ADR-008 smoke testing rules
-- **Acceptance**: All browser actions complete without console errors across all seven tabs
+- **Deferred reason**: no live instance / seed data available in the build worktree.

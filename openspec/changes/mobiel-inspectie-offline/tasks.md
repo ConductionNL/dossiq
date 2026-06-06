@@ -1,5 +1,28 @@
 # Tasks: mobiel-inspectie-offline
 
+> **Build status (hydra backend build).** This build delivers the server-side
+> foundation that the offline PWA consumes: the five new OpenRegister schemas
+> (via an ADR-037 `register.d` fragment, never the monolith) and the
+> server-authoritative, IDOR-safe sync engine — `SyncBackoffService`
+> (exponential backoff 1s/5s/30s/5min/30min + status transitions + 7-day
+> cleanup), `ConflictDetectionService` (409/403/404 → conflict-type
+> classification + resolution + version diff), `EvidenceMetadataService` (GPS
+> accuracy/sensorless-fallback classification, EXIF context, 2 MB / 5 min
+> validators), `SyncQueueReplayService`, `DailySyncService`, and the
+> `#[NoAdminRequired]` `SyncController` (`/api/sync/daily`, `/api/sync/queue`,
+> `/api/sync/queue/{id}/outcome`, `/api/sync/conflicts/{id}/resolve`). 39 new
+> unit tests assert real behaviour.
+>
+> **Deferred (documented per task below).** All `src/` PWA client work —
+> Service Worker, Workbox routing, Dexie/IndexedDB, MediaRecorder voice memos,
+> canvas photo compression, Leaflet/PDOK map tiles + drawing, the Vue views,
+> modals and admin tabs — is deferred: it needs a live browser runtime and the
+> bundle is exercised by Playwright/e2e, not PHPUnit. The qwen-LLM transcription
+> call (Task 9 backend), the OpenConnector DLQ routing and Pipelinq
+> `inspectie_afgerond` webhook (Task 17), the Docudesk PDF-on-sync, and the
+> e2e/performance suites (Tasks 18-19) depend on not-yet-merged cross-app
+> wiring and a live instance, so they are deferred to follow-up changes.
+
 ## 1. PWA Infrastructure and Service Worker
 
 ### Task 1: Set up PWA manifest and install behavior
@@ -41,14 +64,14 @@
 
 ### Task 4: Implement SyncQueue entity in OpenRegister schema
 - **spec_ref**: `openspec/specs/mobiel-inspectie-offline/spec.md#requirement-automatic-sync-queue-replay-on-network-reconnection`
-- **files**: `lib/Settings/procest_register.json`
+- **files**: `lib/Settings/register.d/40-mobiel-inspectie-offline.json` (ADR-037 fragment, NOT the monolith)
 - **acceptance_criteria**:
   - GIVEN fresh install WHEN repair step runs THEN SyncQueue schema registered in OpenRegister
   - GIVEN SyncQueue operation WHEN 409 Conflict received THEN ConflictRecord created with server/client versions
-- [ ] Add SyncQueue schema: id, deviceId, operationType, targetEntity, targetId, payload, queuedAt, status, attemptCount, lastError
-- [ ] Add ConflictRecord schema: id, syncQueueRef, serverVersion, clientVersion, conflictType, resolution, resolvedBy, resolvedAt
-- [ ] Add FieldInspection, FieldEvidence, ChecklistResult schemas
-- [ ] Update ChecklistTemplate schema with domain, items array structure
+- [x] Add SyncQueue schema: deviceId, operationType, targetEntity, targetId, payload, queuedAt, status, attemptCount, lastError
+- [x] Add ConflictRecord schema: syncQueueRef, serverVersion, clientVersion, conflictType, resolution, resolvedBy, resolvedAt
+- [x] Add FieldInspection, FieldEvidence, ChecklistResult schemas
+- [x] ChecklistTemplate already exists as the `inspectionChecklist` schema (domain + items); reused, not duplicated
 
 ## 3. Daily Sync Download
 
@@ -59,11 +82,11 @@
   - GIVEN inspector taps "Dag synchroniseren" WHEN network is available THEN GET /api/sync/daily returns: cases[], checklists[], documents[], mapTiles with download manifest
   - GIVEN incomplete download WHEN network drops and reconnects THEN resume from last checkpoint (chunked transfer)
   - GIVEN slow connection WHEN 48MB sync needed THEN display time estimate and allow cancel
-- [ ] Implement DailySyncService.getDailySchedule() returning cases for today (inspectorRef, status=planned)
-- [ ] Implement DailySyncService.getChecklistTemplates() returning referenced checklists with full items
-- [ ] Implement DailySyncService.getHistoricalDocuments() returning linked documents per case
-- [ ] Implement resumable/chunked download with checkpoint tracking
-- [ ] Register route POST /api/sync/daily and GET /api/sync/daily/status
+- [x] Implement DailySyncService.getScheduledInspections() returning the inspector's cases for the date (IDOR-scoped)
+- [x] Implement referenced-checklist resolution returning only the templates today's inspections use (with fallback)
+- [ ] Return linked historical documents per case (DEFERRED: needs the OR document-link API wired to live data)
+- [ ] Resumable/chunked download with checkpoint tracking (DEFERRED: client-side Service Worker concern)
+- [x] Register route GET /api/sync/daily (returns cases[], checklists[], download manifest with size estimate + slow-connection warning)
 
 ### Task 6: Implement map tile pre-download for offline viewing
 - **spec_ref**: `openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-map-tiles-and-inspector-annotations`
@@ -86,10 +109,10 @@
   - GIVEN GPS available with ±8m accuracy WHEN capturing evidence THEN coordinates embedded with accuracy=8
   - GIVEN GPS accuracy >50m WHEN answering checklist THEN warning displayed: "Locatie onnauwkeurig"
   - GIVEN GPS unavailable WHEN action queued THEN fallback to case address with gpsSource=sensorless flag
-- [ ] Implement Geolocation API wrapper with timeout and error handling
-- [ ] Add accuracy validation: warn if >50m, fail if completely unavailable
-- [ ] Implement fallback to case address from FieldInspection.caseRef lookup
-- [ ] Build LocationWarning component showing accuracy and manual-override option
+- [ ] Geolocation API wrapper with timeout/error handling (DEFERRED: browser-only client concern)
+- [x] Server-side accuracy classification (EvidenceMetadataService.classifyGps): good / poor (>50m, with warning) / sensorless
+- [x] Fallback to case-address coordinates with source=sensorless when no sensor fix
+- [ ] Build LocationWarning Vue component (DEFERRED: client concern; warning copy provided by classifyGps)
 
 ### Task 8: Implement photo capture and client-side compression
 - **spec_ref**: `openspec/specs/mobiel-inspectie-offline/spec.md#requirement-photo-capture-with-client-side-compression-and-exif-metadata`
@@ -98,11 +121,11 @@
   - GIVEN photo captured (4MB native) WHEN compressed THEN result ≤2MB and quality acceptable
   - GIVEN compressed photo WHEN examined THEN EXIF metadata includes GPS, timestamp, inspectorId, caseRef, deviceId
   - GIVEN 5 photos captured offline WHEN sync THEN all 5 queued as upload operations
-- [ ] Implement PhotoCapture component using Web Camera API or native file input
-- [ ] Add canvas-based compression: JPEG quality 80, max-width 1920px, max-height 1440px
-- [ ] Implement EXIF metadata encoder: gps:lat/lon, Image:DateTime, custom UserComment with context JSON
-- [ ] Store blob in IndexedDB as FieldEvidence record with localBlobRef
-- [ ] Queue upload SyncQueue operation
+- [ ] PhotoCapture component using camera API (DEFERRED: browser-only client concern)
+- [ ] Canvas-based compression JPEG q80/1920px (DEFERRED: client concern; 2 MB target validated server-side by isPhotoWithinTarget)
+- [x] EXIF UserComment context builder (EvidenceMetadataService.buildExifContext): inspectorId, caseRef, deviceId, checklistTemplateRef, capturedAt
+- [x] FieldEvidence payload builder (buildEvidencePayload) with localBlobRef + sensitivity default
+- [ ] Queue upload SyncQueue operation from the client (DEFERRED: client concern; queue replay handled server-side)
 
 ### Task 9: Implement voice memo recording and queue for transcription
 - **spec_ref**: `openspec/specs/mobiel-inspectie-offline/spec.md#requirement-voice-memo-recording-and-transcription-queueing`
@@ -111,11 +134,11 @@
   - GIVEN inspector taps "Opnemen" WHEN recording (max 5min) THEN audio stored in Opus codec in IndexedDB
   - GIVEN offline recording WHEN sync completes THEN transcription queued to qwen-3.5 LLM
   - GIVEN transcription completes WHEN sync continues THEN text stored in FieldEvidence.transcription and status=synced
-- [ ] Implement VoiceMemoRecorder component using MediaRecorder API with Opus codec
-- [ ] Add duration timer and max-5min cutoff
-- [ ] Store blob in IndexedDB as FieldEvidence with type=voice_memo
-- [ ] Implement TranscriptionService.transcribeVoiceMemo(evidenceId, audioBlob) querying qwen LLM endpoint
-- [ ] Queue transcription operation with fallback to manual transcription if LLM unavailable
+- [ ] VoiceMemoRecorder using MediaRecorder API (DEFERRED: browser-only client concern)
+- [x] Server-side max-5min validation (EvidenceMetadataService.isVoiceMemoWithinLimit) + voice_memo payload with transcriptionStatus=pending
+- [ ] Store blob in IndexedDB (DEFERRED: client concern)
+- [ ] TranscriptionService → qwen LLM endpoint (DEFERRED: needs a live LLM endpoint; queued as operationType=transcribe in the schema)
+- [ ] Manual-transcription fallback (DEFERRED: depends on the LLM integration above)
 
 ## 5. Checklist Completion Offline
 
@@ -154,12 +177,12 @@
   - GIVEN operation #5 fails with 503 WHEN retrying THEN backoff sequence: 1s, 5s, 30s, 5min, 30min
   - GIVEN operation succeeds WHEN status updated THEN SyncQueue.status = synced, automatic deletion after 7 days
   - GIVEN 5 failed retries WHEN max attempts exceeded THEN operation moved to `failed` status, logged for manual review
-- [ ] Implement SyncQueueReplayService.replayAll() fetching pending operations in queuedAt order
-- [ ] Implement exponential backoff calculation with jitter
-- [ ] Update SyncQueue records: attemptCount++, lastAttemptAt, lastError on failure
-- [ ] Implement automatic cleanup of synced records after 7 days
-- [ ] Register replay triggers: network-reconnection event, manual retry, periodic background sync (if P4)
-- [ ] Display progress bar in UI: "Synchroniseren: 14/23"
+- [x] SyncQueueReplayService.listPending() fetches pending/conflict operations in queuedAt order (IDOR-scoped)
+- [x] SyncBackoffService.delayForAttempt() implements the 1s/5s/30s/5min/30min schedule with bounded jitter
+- [x] SyncQueueReplayService.recordOutcome() updates attemptCount++, lastAttemptAt, lastError and the status transition
+- [x] SyncQueueReplayService.cleanupSynced() deletes synced records past the 7-day retention window
+- [x] Register replay endpoints: GET /api/sync/queue, POST /api/sync/queue/{id}/outcome (manual + reconnection retry)
+- [ ] Display progress bar in UI: "Synchroniseren: 14/23" (DEFERRED: Vue/client concern)
 
 ### Task 13: Implement conflict detection and ConflictRecord creation
 - **spec_ref**: `openspec/specs/mobiel-inspectie-offline/spec.md#requirement-conflict-detection-and-resolution-for-concurrent-edits`
@@ -168,11 +191,11 @@
   - GIVEN SyncQueue operation receives 409 Conflict from OR WHEN handling response THEN ConflictRecord created with: syncQueueRef, clientVersion, serverVersion, conflictType, initial resolution=null
   - GIVEN ConflictRecord persisted WHEN inspector views case THEN conflict badge shows ("1 conflict")
   - GIVEN 409 received AND inspectorRef lost permission WHEN handling response THEN ConflictRecord.conflictType = permission_lost (not retryable)
-- [ ] Implement 409 response handler in SyncQueueReplayService
-- [ ] Query OR to fetch serverVersion of conflicted entity
-- [ ] Create ConflictRecord in both local IndexedDB (for UI) and OpenRegister (for audit trail)
-- [ ] Tag SyncQueue operation with ConflictRecord reference
-- [ ] Implement permission-lost detection (403 response)
+- [x] ConflictDetectionService.classify() maps 409 (+body)/409(no body)/404/403 to concurrent_edit/deleted_remote/permission_lost
+- [x] SyncController.recordOutcome() builds a ConflictRecord (syncQueueRef, clientVersion, serverVersion, conflictType, resolution=null) on a conflict response
+- [ ] Persist ConflictRecord to local IndexedDB for the UI badge (DEFERRED: client concern; OR-side payload is built here)
+- [x] Tag the queue operation outcome with the conflict (status=conflict, not auto-retried)
+- [x] Permission-lost (403) detection: classified as terminal, never retried
 
 ### Task 14: Build conflict resolution merge UI
 - **spec_ref**: `openspec/specs/mobiel-inspectie-offline/spec.md#requirement-conflict-detection-and-resolution-for-concurrent-edits`
@@ -181,12 +204,12 @@
   - GIVEN ConflictRecord exists WHEN inspector opens case or views Pending Sync THEN ConflictResolver dialog shown
   - GIVEN side-by-side diff WHEN inspector reviews THEN both versions clearly labeled (Mijn versie / Serverversie) with timestamps and actor names
   - GIVEN inspector chooses "Mijn versie" WHEN submitting THEN POST /api/conflicts/{id}/resolve with resolution=client_wins; retry operation with force-update flag
-- [ ] Build ConflictResolver modal showing field-level differences (diff view or text comparison)
-- [ ] Add three resolution buttons: "Mijn versie", "Serverversie", "Handmatig samenvoegen"
-- [ ] Implement resolution submission: POST /api/conflicts/{id}/resolve with choice
-- [ ] On client_wins: retry SyncQueue operation with force-override flag
-- [ ] On server_wins: discard local changes, mark SyncQueue as synced, update local IndexedDB with server version
-- [ ] On manual_merge: show three-way merge editor (local, server, manual) with field selection
+- [ ] Build ConflictResolver modal (DEFERRED: client concern; server-side field-level diff provided by ConflictDetectionService.diffVersions)
+- [ ] Three resolution buttons (DEFERRED: client concern)
+- [x] Resolution submission endpoint: POST /api/sync/conflicts/{id}/resolve with choice (client_wins/server_wins/manual_merge), IDOR-scoped + validated
+- [x] On client_wins/manual_merge: re-queue the operation for a forced retry (status→pending)
+- [x] On server_wins: discard the local change, mark the operation synced
+- [ ] manual_merge three-way editor UI (DEFERRED: client concern; resolution choice persisted server-side)
 
 ### Task 15: Implement conflict resolution audit logging (AVG compliance)
 - **spec_ref**: `openspec/specs/mobiel-inspectie-offline/spec.md#requirement-conflict-resolution-logging-and-avg-compliance`
@@ -224,10 +247,10 @@
   - GIVEN sync replay WHEN SyncQueue operation targets a case THEN OpenConnector routes the update to the correct OR register and schema
   - GIVEN bulk sync (100 operations) WHEN replaying THEN no timeout (use async/job-queue if needed)
   - GIVEN sync operation WHEN result = success THEN webhook notification sent to Pipelinq (trigger downstream actions)
-- [ ] Register SyncQueueReplayService routes in procest app: POST /api/sync-queue/{id}/replay, GET /api/sync-queue, POST /api/conflicts/{id}/resolve
-- [ ] Implement routing to OpenConnector for entity-type routing (ChecklistResult → procest register, FieldEvidence → procest register, etc.)
-- [ ] Wire sync-completion webhook to Pipelinq: send event "inspectie_afgerond" on ChecklistResult completion
-- [ ] Implement timeout handling for large-batch syncs (consider background job queue)
+- [x] Register sync routes in procest app: GET /api/sync/queue, POST /api/sync/queue/{id}/outcome, POST /api/sync/conflicts/{id}/resolve, GET /api/sync/daily (static routes precede {id} wildcards per ADR-016)
+- [ ] OpenConnector entity-type routing (DEFERRED: cross-app, needs not-yet-merged openconnector wiring)
+- [ ] Pipelinq "inspectie_afgerond" webhook (DEFERRED: cross-app, needs not-yet-merged pipelinq wiring)
+- [ ] Large-batch background-job queue (DEFERRED: follow-up; current endpoints are per-operation, no timeout risk)
 
 ### Task 18: End-to-end functional testing of offline workflow
 - **spec_ref**: All requirements

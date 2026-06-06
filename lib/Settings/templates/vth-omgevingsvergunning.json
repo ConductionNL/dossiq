@@ -1,0 +1,69 @@
+{
+  "id": "vth-omgevingsvergunning",
+  "title": "Omgevingsvergunning",
+  "description": "VTH zaaktype template voor omgevingsvergunningen (bouwactiviteit, milieuactiviteit, monumenten). Pre-geconfigureerd met status flow, document types, rol types en zaakeigenschappen conform de Omgevingswet (regulier: 8 weken beslistermijn).",
+  "category": "vth",
+  "version": "1.0.0",
+  "caseType": {
+    "title": "Omgevingsvergunning",
+    "description": "Behandeling van omgevingsvergunningaanvragen conform de Omgevingswet",
+    "purpose": "Beoordelen en beslissen op vergunningaanvragen",
+    "trigger": "Ontvangst van een omgevingsvergunningaanvraag via DSO/Omgevingsloket of loket",
+    "subject": "Verlening of weigering van een omgevingsvergunning",
+    "processingDeadline": "P56D",
+    "confidentiality": "openbaar",
+    "isDraft": false,
+    "extensionAllowed": true,
+    "extensionPeriod": "P42D",
+    "publicationRequired": true,
+    "internalOrExternal": "extern",
+    "handlerAction": "Beoordelen en beslissen op omgevingsvergunningaanvraag",
+    "origin": "aanvragen",
+    "suspensionAllowed": true
+  },
+  "statusTypes": [
+    {"name": "Ontvangen", "description": "Aanvraag is ontvangen en geregistreerd", "order": 1, "isFinal": false},
+    {"name": "Ontvankelijkheidstoets", "description": "Controle op volledigheid van de aanvraag en bijlagen", "order": 2, "isFinal": false},
+    {"name": "In behandeling", "description": "Aanvraag wordt inhoudelijk beoordeeld", "order": 3, "isFinal": false},
+    {"name": "Advies", "description": "Advies wordt ingewonnen bij interne of externe adviseurs", "order": 4, "isFinal": false},
+    {"name": "Besluitvorming", "description": "Besluit wordt opgesteld en genomen over de vergunning", "order": 5, "isFinal": false},
+    {"name": "Bekendmaking", "description": "Besluit wordt bekendgemaakt conform de Omgevingswet", "order": 6, "isFinal": false},
+    {"name": "Afgehandeld", "description": "Zaak is volledig afgehandeld", "order": 7, "isFinal": true},
+    {"name": "Ingetrokken", "description": "Aanvraag is ingetrokken door de aanvrager", "order": 8, "isFinal": true},
+    {"name": "Buiten behandeling", "description": "Aanvraag is buiten behandeling gesteld (aanvulverzoek verlopen)", "order": 9, "isFinal": true}
+  ],
+  "roleTypes": [
+    {"name": "Behandelaar", "description": "Medewerker die de aanvraag inhoudelijk behandelt"},
+    {"name": "Aanvrager", "description": "Persoon of organisatie die de vergunning aanvraagt"},
+    {"name": "Gemachtigde", "description": "Gemachtigd persoon die namens de aanvrager handelt"},
+    {"name": "Adviseur (intern)", "description": "Interne adviseur (welstandscommissie, bouwinspecteur)"},
+    {"name": "Adviseur (extern)", "description": "Externe adviseur (brandweer, Veiligheidsregio, omgevingsdienst)"},
+    {"name": "Teamleider", "description": "Leidinggevende van het behandelteam"},
+    {"name": "Beslisser", "description": "Gemandateerde medewerker die het besluit neemt"}
+  ],
+  "documentTypes": [
+    {"name": "Aanvraagformulier", "description": "Het aanvraagformulier inclusief DSO-aanvraagnummer"},
+    {"name": "Bouwtekening", "description": "Technische bouwtekeningen (plattegronden, gevels, doorsneden)"},
+    {"name": "Constructieberekening", "description": "Constructieve berekeningen conform NEN 8700"},
+    {"name": "Situatietekening", "description": "Situatietekening van het perceel met omgeving"},
+    {"name": "Welstandsadvies", "description": "Advies van de welstandscommissie"},
+    {"name": "Foto's bestaande situatie", "description": "Foto's van de huidige situatie voor de aanvraag"},
+    {"name": "Adviesbrief extern", "description": "Advies van externe ketenpartner (brandweer, Veiligheidsregio)"},
+    {"name": "Besluit", "description": "Het vergunningsbesluit (verlening of weigering)"},
+    {"name": "Bekendmakingstekst", "description": "Tekst voor publicatie van het besluit in het Gemeenteblad"},
+    {"name": "Ontvangstbevestiging", "description": "Bevestiging van ontvangst aan de aanvrager"},
+    {"name": "Aanvulverzoek", "description": "Verzoek om aanvulling van ontbrekende stukken"}
+  ],
+  "propertyDefinitions": [
+    {"name": "bouwkosten", "type": "number", "description": "Geschatte bouwkosten in EUR (voor legesberekening)"},
+    {"name": "oppervlakte", "type": "number", "description": "Bouwoppervlakte in m2"},
+    {"name": "aantalBouwlagen", "type": "integer", "description": "Aantal bouwlagen"},
+    {"name": "bagObject", "type": "string", "description": "BAG object referentie (identificatie nummeraanduiding)"},
+    {"name": "activiteiten", "type": "string", "description": "Activiteiten uit het DSO verzoek (kommagescheiden)"},
+    {"name": "procedureType", "type": "string", "description": "Procedure type: regulier (8 weken) of uitgebreid (26 weken)"},
+    {"name": "dsoVerzoekId", "type": "string", "description": "DSO verzoek identificatienummer"},
+    {"name": "kadastraalPerceel", "type": "string", "description": "Kadastraal perceel (sectie + nummer)"},
+    {"name": "locatieOmschrijving", "type": "string", "description": "Omschrijving van de bouwlocatie"},
+    {"name": "dsoRaw", "type": "string", "description": "Ruwe DSO payload voor niet-gemapte velden"}
+  ]
+}
