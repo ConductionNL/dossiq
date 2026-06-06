@@ -179,11 +179,14 @@ class SettingsService
         // Outage banner copy (nl + en).
         'pdok_outage_banner_nl',
         'pdok_outage_banner_en',
-        // Beschikking-generatie (beschikking-generatie spec).
-        'beschikking_schema',
-        'state_machine_log_schema',
-        'bezwaar_trigger_schema',
-        'mandaat_regeling_schema',
+        // DSO (Omgevingsloket) integration settings.
+        'dso_case_type',
+        'dso_vergunningaanvraag_schema',
+        'dso_deadline_warning_weeks_warning',
+        'dso_deadline_warning_weeks_critical',
+        'dso_beschikking_template_verleend',
+        'dso_beschikking_template_geweigerd',
+        'dso_samenwerkverzoek_schema',
     ];
 
     /**
@@ -253,6 +256,7 @@ class SettingsService
         'bacAdviceRequest'             => 'bac_advice_request_schema',
         'beroep'                       => 'beroep_schema',
         'bezwaarDecision'              => 'bezwaar_decision_schema',
+        'samenwerkverzoek'             => 'dso_samenwerkverzoek_schema',
         'routingRule'                  => 'routing_rule_schema',
         'kccAgent'                     => 'kcc_agent_schema',
         'callbackRequest'              => 'callback_request_schema',
@@ -265,10 +269,6 @@ class SettingsService
         'subsidieVaststelling'         => 'subsidie_vaststelling_schema',
         'terugvordering'               => 'terugvordering_schema',
         'bewijsstuk'                   => 'bewijsstuk_schema',
-        'beschikking'                  => 'beschikking_schema',
-        'stateMachineLog'              => 'state_machine_log_schema',
-        'bezwaarTrigger'               => 'bezwaar_trigger_schema',
-        'mandaatRegeling'              => 'mandaat_regeling_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

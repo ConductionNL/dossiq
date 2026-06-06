@@ -3,7 +3,7 @@
   "info": {
     "title": "Procest Case Management Register",
     "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, automaticAction, and their instance counterparts.",
-    "version": "0.8.0"
+    "version": "0.9.0"
   },
   "x-openregister": {
     "type": "application",
@@ -763,6 +763,36 @@
           "workflowVersion": {
             "type": "integer",
             "description": "Version number of the bound workflow template",
+            "visible": false
+          },
+          "vergunningaanvraagRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the DSO vergunningaanvraag object in OpenRegister",
+            "visible": false
+          },
+          "procedureType": {
+            "type": "string",
+            "enum": ["reguliere", "uitgebreide"],
+            "description": "DSO procedure type: reguliere (8 wk) or uitgebreide (26 wk)",
+            "title": "Procedure type",
+            "facetable": true
+          },
+          "deadlineDatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Computed legal deadline (indieningsdatum + procedure working days)",
+            "title": "Deadline datum"
+          },
+          "bevoegdGezag": {
+            "type": "string",
+            "description": "OIN or organization name of the competent authority",
+            "title": "Bevoegd gezag",
+            "facetable": true
+          },
+          "samenwerkverzoeken": {
+            "type": "string",
+            "description": "JSON-encoded array of samenwerkverzoek UUIDs linked to this zaak",
             "visible": false
           }
         }
@@ -5423,6 +5453,96 @@
           }
         }
       },
+      "samenwerkverzoek": {
+        "slug": "samenwerkverzoek",
+        "icon": "HandshakeOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:JoinAction",
+        "title": "Samenwerkverzoek",
+        "description": "DSO samenwerking request between two bevoegd gezag parties for an omgevingsvergunning case",
+        "type": "object",
+        "required": [
+          "initiatorBevoegdGezag",
+          "aangezochtBevoegdGezag",
+          "vergunningaanvraagRef",
+          "status"
+        ],
+        "properties": {
+          "initiatorBevoegdGezag": {
+            "type": "string",
+            "description": "OIN or name of the initiating bevoegd gezag",
+            "title": "Initiator"
+          },
+          "aangezochtBevoegdGezag": {
+            "type": "string",
+            "description": "OIN or name of the receiving bevoegd gezag",
+            "title": "Aangezochte partij",
+            "facetable": true
+          },
+          "vergunningaanvraagRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the linked vergunningaanvraag in OpenRegister",
+            "title": "Vergunningaanvraag"
+          },
+          "zaakRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the Procest zaak",
+            "title": "Zaak"
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Reason for requesting samenwerking"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["aangevraagd", "geaccepteerd", "geweigerd", "afgerond"],
+            "default": "aangevraagd",
+            "description": "Current status of the samenwerkverzoek",
+            "title": "Status",
+            "facetable": true
+          },
+          "advies": {
+            "type": "string",
+            "description": "Advice given by the aangezochtBevoegdGezag (set when accepted)"
+          },
+          "aangevraagdOp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the samenwerking was requested"
+          },
+          "gereageerdOp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the aangezochteBevoegdGezag responded"
+          }
+        },
+        "configuration": {
+          "x-openregister-lifecycle": {
+            "field": "status",
+            "initial": "aangevraagd",
+            "final": ["geaccepteerd", "geweigerd", "afgerond"],
+            "transitions": {
+              "accept": {
+                "from": ["aangevraagd"],
+                "to": "geaccepteerd",
+                "description": "Accept the samenwerking request."
+              },
+              "reject": {
+                "from": ["aangevraagd"],
+                "to": "geweigerd",
+                "description": "Reject the samenwerking request."
+              },
+              "complete": {
+                "from": ["geaccepteerd"],
+                "to": "afgerond",
+                "description": "Mark the samenwerking as completed."
+              }
+            }
+          }
+        }
+      },
       "wooAssessment": {
         "slug": "wooAssessment",
         "icon": "FileCheckOutline",
@@ -5892,7 +6012,8 @@
           "adviesAanvraag",
           "legesverordening",
           "legesartikel",
-          "legesberekening"
+          "legesberekening",
+          "samenwerkverzoek"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"
