@@ -115,6 +115,11 @@ class ConsultationController extends Controller
             return new JSONResponse(['error' => 'Consultation not found'], Http::STATUS_NOT_FOUND);
         }
 
+        $authError = $this->authorizeConsultationAccess(consultation: $consultation, uid: $user->getUID());
+        if ($authError !== null) {
+            return $authError;
+        }
+
         return new JSONResponse($consultation);
     }//end show()
 
@@ -454,6 +459,7 @@ class ConsultationController extends Controller
             ],
         );
 
+        unset($consultation['secureToken']);
         return new JSONResponse($consultation);
     }//end publicResponseGet()
 

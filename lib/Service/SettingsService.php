@@ -249,12 +249,7 @@ class SettingsService
         'bezwaaradviescommissie'       => 'bezwaaradviescommissie_schema',
         'bacAdviceRequest'             => 'bac_advice_request_schema',
         'beroep'                       => 'beroep_schema',
-        'bezwaarDecision'              => 'bezwaar_decision_schema', << << <<< HEAD
-        // Consultation management (consultation-management spec).
-        'consultation'                 => 'consultation_schema',
-        'adviceResponse'               => 'advice_response_schema',
-        'advisoryBody'                 => 'advisory_body_schema',
-    =======
+        'bezwaarDecision'              => 'bezwaar_decision_schema',
         'routingRule'                  => 'routing_rule_schema',
         'kccAgent'                     => 'kcc_agent_schema',
         'callbackRequest'              => 'callback_request_schema',
@@ -267,7 +262,10 @@ class SettingsService
         'subsidieVaststelling'         => 'subsidie_vaststelling_schema',
         'terugvordering'               => 'terugvordering_schema',
         'bewijsstuk'                   => 'bewijsstuk_schema',
-    >>>>>>> origin/development
+        // Consultation management (consultation-management spec).
+        'consultation'                 => 'consultation_schema',
+        'adviceResponse'               => 'advice_response_schema',
+        'advisoryBody'                 => 'advisory_body_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
