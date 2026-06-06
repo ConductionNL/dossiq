@@ -73,11 +73,13 @@ test.describe('Voorstellen page render', () => {
 	test('voorstellen page renders heading and create control', async ({ page }) => {
 		await navTo(page, 'Voorstellen')
 		// The page renders either the custom "B&W Voorstellen" view (heading +
-		// "Nieuw voorstel") or the generic index shell (Add button) depending on
-		// the deployed build — accept either rendered shell, never an error.
-		const customHeading = page.getByRole('heading', { name: /Voorstellen/ }).first()
-		const addBtn = page.getByRole('button', { name: /Nieuw voorstel|^Add / }).first()
-		await expect(customHeading.or(addBtn)).toBeVisible({ timeout: 15000 })
+		// "Nieuw voorstel") or the generic index shell (a "Voorstellen" sidebar
+		// header + an Add/CTA button) depending on the deployed build — accept
+		// either rendered shell, never an error. Wrap the union in .first() so a
+		// build that renders BOTH a heading and a button doesn't trip strict mode.
+		const customHeading = page.getByRole('heading', { name: /Voorstellen/ })
+		const addBtn = page.getByRole('button', { name: /Nieuw voorstel|^Add / })
+		await expect(customHeading.or(addBtn).first()).toBeVisible({ timeout: 15000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 })
