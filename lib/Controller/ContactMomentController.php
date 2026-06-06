@@ -321,12 +321,13 @@ class ContactMomentController extends Controller
      */
     public function acceptDoorverbinding(string $id): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
         try {
-            return new JSONResponse($this->transferService->acceptTransfer($id));
+            return new JSONResponse($this->transferService->acceptTransfer($id, $user->getUID()));
         } catch (RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
         }
@@ -345,14 +346,15 @@ class ContactMomentController extends Controller
      */
     public function rejectDoorverbinding(string $id): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
         $reason = (string) $this->request->getParam('reason', '');
 
         try {
-            return new JSONResponse($this->transferService->rejectTransfer($id, $reason));
+            return new JSONResponse($this->transferService->rejectTransfer($id, $reason, $user->getUID()));
         } catch (RuntimeException $e) {
             return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
         }

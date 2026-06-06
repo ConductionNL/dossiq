@@ -122,16 +122,22 @@ class DoorverbindingService
      * Mark a doorverbinding as accepted by the receiving specialist.
      *
      * @param string $doorverbindingId The doorverbinding UUID.
+     * @param string $callerUid        The UID of the medewerker answering this transfer.
      *
      * @return array<string, mixed> The updated record.
      *
-     * @throws RuntimeException When already answered or the update fails.
+     * @throws RuntimeException When already answered, caller is not the assigned recipient, or the update fails.
      */
-    public function acceptTransfer(string $doorverbindingId): array
+    public function acceptTransfer(string $doorverbindingId, string $callerUid = ''): array
     {
         $current = $this->load(doorverbindingId: $doorverbindingId);
         if (($current['geaccepteerd'] ?? null) !== null) {
             throw new RuntimeException('Doorverbinding already answered');
+        }
+
+        $assignedTo = ($current['naarMedewerkerId'] ?? null);
+        if ($assignedTo !== null && $callerUid !== '' && $assignedTo !== $callerUid) {
+            throw new RuntimeException('Not authorized to answer this doorverbinding');
         }
 
         return $this->update(
@@ -148,12 +154,13 @@ class DoorverbindingService
      *
      * @param string $doorverbindingId The doorverbinding UUID.
      * @param string $reden            The rejection reason.
+     * @param string $callerUid        The UID of the medewerker answering this transfer.
      *
      * @return array<string, mixed> The updated record.
      *
-     * @throws RuntimeException When already answered, reason missing, or update fails.
+     * @throws RuntimeException When already answered, caller is not the assigned recipient, reason missing, or update fails.
      */
-    public function rejectTransfer(string $doorverbindingId, string $reden): array
+    public function rejectTransfer(string $doorverbindingId, string $reden, string $callerUid = ''): array
     {
         $reden = trim($reden);
         if ($reden === '') {
@@ -163,6 +170,11 @@ class DoorverbindingService
         $current = $this->load(doorverbindingId: $doorverbindingId);
         if (($current['geaccepteerd'] ?? null) !== null) {
             throw new RuntimeException('Doorverbinding already answered');
+        }
+
+        $assignedTo = ($current['naarMedewerkerId'] ?? null);
+        if ($assignedTo !== null && $callerUid !== '' && $assignedTo !== $callerUid) {
+            throw new RuntimeException('Not authorized to answer this doorverbinding');
         }
 
         return $this->update(
