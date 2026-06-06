@@ -70,6 +70,8 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
  * Main application class for the Procest case management app.
+ *
+ * @spec openspec/changes/beschikking-generatie/tasks.md
  */
 class Application extends App implements IBootstrap
 {
@@ -91,6 +93,8 @@ class Application extends App implements IBootstrap
      * @param IRegistrationContext $context The registration context
      *
      * @return void
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md
      */
     public function register(IRegistrationContext $context): void
     {
@@ -258,6 +262,8 @@ class Application extends App implements IBootstrap
      * @return void
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md
      */
     public function boot(IBootContext $context): void
     {

@@ -29,8 +29,14 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service\Beschikking;
 
+use DateInterval;
+use DateTimeImmutable;
+use Exception;
+
 /**
  * Mock implementation of the archival adapter.
+ *
+ * @spec openspec/changes/beschikking-generatie/tasks.md#T25
  */
 class MockArchivalAdapter implements ArchivalAdapterInterface
 {
@@ -42,21 +48,23 @@ class MockArchivalAdapter implements ArchivalAdapterInterface
      * @param array<string, mixed> $tmloMetadata  The metadata block.
      *
      * @return array{archiefId: string, vernietigingsdatum: string}
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md#T25
      */
     public function ingest(string $beschikkingId, string $bestandId, array $tmloMetadata): array
     {
         $creatie = (string) ($tmloMetadata['creatieDatum'] ?? ($tmloMetadata['bekendmakingDatum'] ?? ''));
 
         try {
-            $base = new \DateTimeImmutable();
+            $base = new DateTimeImmutable();
             if ($creatie !== '') {
-                $base = new \DateTimeImmutable($creatie);
+                $base = new DateTimeImmutable($creatie);
             }
-        } catch (\Exception $e) {
-            $base = new \DateTimeImmutable();
+        } catch (Exception $e) {
+            $base = new DateTimeImmutable();
         }
 
-        $vernietiging = $base->add(new \DateInterval('P15Y'));
+        $vernietiging = $base->add(new DateInterval('P15Y'));
 
         return [
             'archiefId'          => 'openregister-'.substr(hash('sha256', $beschikkingId.$bestandId), 0, 12),

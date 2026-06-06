@@ -31,6 +31,8 @@ namespace OCA\Procest\Service\Beschikking;
 
 /**
  * Mock implementation of the template-engine adapter.
+ *
+ * @spec openspec/changes/beschikking-generatie/tasks.md#T26
  */
 class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface
 {
@@ -41,6 +43,8 @@ class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface
      * @param array<string, mixed> $context    The render context.
      *
      * @return array{format: string, bestandId: string, checksumSha256: string, paginas: int}
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md#T26
      */
     public function render(string $templateId, array $context): array
     {
@@ -64,6 +68,8 @@ class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface
      * @param string $effectiveDate The effective date.
      *
      * @return array{templateId: string, version: string, ingangsdatum: string}
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md#T26
      */
     public function resolveVersion(string $templateId, string $effectiveDate): array
     {

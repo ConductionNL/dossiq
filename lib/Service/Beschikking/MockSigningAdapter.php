@@ -29,8 +29,12 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service\Beschikking;
 
+use DateTimeImmutable;
+
 /**
  * Mock implementation of the signing adapter.
+ *
+ * @spec openspec/changes/beschikking-generatie/tasks.md#T23
  */
 class MockSigningAdapter implements SigningAdapterInterface
 {
@@ -42,6 +46,8 @@ class MockSigningAdapter implements SigningAdapterInterface
      * @param string $tspProvider   The TSP provider slug.
      *
      * @return array<string, string> Keys: signedBestandId, validatieRapportId, certificaatSerienummer, tspProviderEidasId, ondertekeningTijdstip.
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md#T23
      */
     public function sign(string $bestandId, string $ondertekenaar, string $tspProvider): array
     {
@@ -52,7 +58,7 @@ class MockSigningAdapter implements SigningAdapterInterface
             'validatieRapportId'     => 'val-'.substr(hash('sha256', 'rapport'.$seed), 0, 12),
             'certificaatSerienummer' => '0x'.substr(hash('sha256', 'cert'.$seed), 0, 16),
             'tspProviderEidasId'     => 'NL-TSP-0001',
-            'ondertekeningTijdstip'  => (new \DateTimeImmutable())->format('c'),
+            'ondertekeningTijdstip'  => (new DateTimeImmutable())->format('c'),
         ];
     }//end sign()
 
@@ -62,6 +68,8 @@ class MockSigningAdapter implements SigningAdapterInterface
      * @param string $validatieRapportId The validatierapport id.
      *
      * @return array<string, mixed>
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md#T23
      */
     public function fetchValidationReport(string $validatieRapportId): array
     {
@@ -70,7 +78,7 @@ class MockSigningAdapter implements SigningAdapterInterface
             'soort'              => 'tsp-handtekening-rapport',
             'norm'               => 'ETSI EN 319 102-1',
             'geldig'             => true,
-            'gegenereerdOp'      => (new \DateTimeImmutable())->format('c'),
+            'gegenereerdOp'      => (new DateTimeImmutable())->format('c'),
         ];
     }//end fetchValidationReport()
 }//end class

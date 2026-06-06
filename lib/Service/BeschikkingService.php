@@ -35,11 +35,14 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateInterval;
+use DateTimeImmutable;
 use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Procest\Service\Beschikking\SigningAdapterInterface;
 use OCA\Procest\Service\Beschikking\TemplateEngineAdapterInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use ZipArchive;
 
 /**
  * Beschikking lifecycle orchestrator.
@@ -102,7 +105,7 @@ class BeschikkingService
             throw new RuntimeException('zaakId_required');
         }
 
-        $effectiveDate    = (new \DateTimeImmutable())->format('Y-m-d');
+        $effectiveDate    = (new DateTimeImmutable())->format('Y-m-d');
         $resolvedTemplate = ($templateId ?? 'tpl-default');
         $version          = $this->templateAdapter->resolveVersion($resolvedTemplate, $effectiveDate);
 
@@ -191,7 +194,7 @@ class BeschikkingService
             'mandaatregelingId' => (string) ($regeling['id'] ?? ($regeling['@self']['slug'] ?? '')),
             'mandaatNiveau'     => $niveau,
             'akkoordDoor'       => $akkoordDoor,
-            'akkoordDatum'      => (new \DateTimeImmutable())->format('c'),
+            'akkoordDatum'      => (new DateTimeImmutable())->format('c'),
         ];
         $beschikking['huidigeStatus']  = 'akkoord-mandaat';
 
@@ -287,9 +290,9 @@ class BeschikkingService
 
         $verzending = $this->berichtenbox->routeToBerichtenbox($beschikking);
 
-        $bekendmaking = (new \DateTimeImmutable())->format('Y-m-d');
-        $eindDatum    = (new \DateTimeImmutable($bekendmaking))->add(new \DateInterval('P6W'));
-        $herinnering  = $eindDatum->sub(new \DateInterval('P1W'));
+        $bekendmaking = (new DateTimeImmutable())->format('Y-m-d');
+        $eindDatum    = (new DateTimeImmutable($bekendmaking))->add(new DateInterval('P6W'));
+        $herinnering  = $eindDatum->sub(new DateInterval('P1W'));
 
         $beschikking['verzending']        = $verzending;
         $beschikking['bekendmakingDatum'] = $bekendmaking;
@@ -423,7 +426,7 @@ class BeschikkingService
         $manifest = [
             'beschikkingId' => $beschikkingId,
             'kenmerk'       => (string) ($beschikking['kenmerk'] ?? ''),
-            'gegenereerdOp' => (new \DateTimeImmutable())->format('c'),
+            'gegenereerdOp' => (new DateTimeImmutable())->format('c'),
             'inhoud'        => ['beschikking.json', 'state-machine-log.json', 'validatierapport.json', 'manifest.json'],
         ];
 
@@ -484,7 +487,7 @@ class BeschikkingService
         $result    = $this->archivalAdapter->ingest($beschikkingId, $bestandId, $metadata);
 
         $beschikking['archief']       = [
-            'gearchiveerdOp'     => (new \DateTimeImmutable())->format('c'),
+            'gearchiveerdOp'     => (new DateTimeImmutable())->format('c'),
             'archiefId'          => (string) $result['archiefId'],
             'tmloMetadata'       => $metadata,
             'vernietigingsdatum' => (string) $result['vernietigingsdatum'],
@@ -581,7 +584,7 @@ class BeschikkingService
             return;
         }
 
-        $archiefDatum = (new \DateTimeImmutable($eindDatum))->add(new \DateInterval('P1D'))->format('Y-m-d');
+        $archiefDatum = (new DateTimeImmutable($eindDatum))->add(new DateInterval('P1D'))->format('Y-m-d');
 
         try {
             $objectService->saveObject(
@@ -775,7 +778,7 @@ class BeschikkingService
      */
     private function buildZip(array $entries): string
     {
-        if (class_exists(\ZipArchive::class) === false) {
+        if (class_exists(ZipArchive::class) === false) {
             throw new RuntimeException('zip_unavailable');
         }
 
@@ -784,8 +787,8 @@ class BeschikkingService
             throw new RuntimeException('zip_tempfile_failed');
         }
 
-        $zip = new \ZipArchive();
-        if ($zip->open($tmp, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+        $zip = new ZipArchive();
+        if ($zip->open($tmp, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             throw new RuntimeException('zip_open_failed');
         }
 

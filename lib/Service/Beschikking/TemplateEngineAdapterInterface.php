@@ -31,6 +31,8 @@ namespace OCA\Procest\Service\Beschikking;
 
 /**
  * Renders a beschikking template (Docudesk) to PDF/A-3.
+ *
+ * @spec openspec/changes/beschikking-generatie/tasks.md#T26
  */
 interface TemplateEngineAdapterInterface
 {
@@ -41,6 +43,8 @@ interface TemplateEngineAdapterInterface
      * @param array<string, mixed> $context    The zaakdata + beschikking context.
      *
      * @return array{format: string, bestandId: string, checksumSha256: string, paginas: int} Composition metadata.
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md#T26
      */
     public function render(string $templateId, array $context): array;
 
@@ -51,6 +55,8 @@ interface TemplateEngineAdapterInterface
      * @param string $effectiveDate The ISO date the beschikking is effective.
      *
      * @return array{templateId: string, version: string, ingangsdatum: string} The resolved version.
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md#T26
      */
     public function resolveVersion(string $templateId, string $effectiveDate): array;
 }//end interface

@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\BackgroundJob;
 
+use DateTimeImmutable;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\BeschikkingService;
 use OCA\Procest\Service\SettingsService;
@@ -103,7 +104,7 @@ class BezwaarTermijnJob extends TimedJob
             return;
         }
 
-        $today    = (new \DateTimeImmutable())->format('Y-m-d');
+        $today    = (new DateTimeImmutable())->format('Y-m-d');
         $archived = 0;
 
         foreach ((array) $triggers as $trigger) {

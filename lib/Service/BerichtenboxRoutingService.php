@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -81,7 +82,7 @@ class BerichtenboxRoutingService
 
         return [
             'kanaal'        => $kanaal,
-            'verzondenOp'   => (new \DateTimeImmutable())->format('c'),
+            'verzondenOp'   => (new DateTimeImmutable())->format('c'),
             'verzondenDoor' => 'systeem',
             'berichtId'     => $berichtId,
         ];

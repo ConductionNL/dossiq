@@ -31,6 +31,8 @@ namespace OCA\Procest\Service\Beschikking;
 
 /**
  * Signs a beschikking PDF via an eIDAS-qualified TSP (OpenConnector).
+ *
+ * @spec openspec/changes/beschikking-generatie/tasks.md#T23
  */
 interface SigningAdapterInterface
 {
@@ -42,6 +44,8 @@ interface SigningAdapterInterface
      * @param string $tspProvider   The TSP provider slug.
      *
      * @return array<string, string> Signature metadata keyed by signedBestandId, validatieRapportId, certificaatSerienummer, tspProviderEidasId.
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md#T23
      */
     public function sign(string $bestandId, string $ondertekenaar, string $tspProvider): array;
 
@@ -51,6 +55,8 @@ interface SigningAdapterInterface
      * @param string $validatieRapportId The validatierapport id.
      *
      * @return array<string, mixed> The validatierapport contents.
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md#T23
      */
     public function fetchValidationReport(string $validatieRapportId): array;
 }//end interface

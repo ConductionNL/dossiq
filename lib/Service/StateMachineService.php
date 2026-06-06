@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -147,7 +148,7 @@ class StateMachineService
             'overgang'      => [
                 'van'             => $van,
                 'naar'            => $naar,
-                'tijdstip'        => (new \DateTimeImmutable())->format('c'),
+                'tijdstip'        => (new DateTimeImmutable())->format('c'),
                 'actor'           => (string) ($metadata['actor'] ?? 'systeem'),
                 'actorType'       => (string) ($metadata['actorType'] ?? 'systeem'),
                 'trigger'         => (string) ($metadata['trigger'] ?? 'automatisch'),

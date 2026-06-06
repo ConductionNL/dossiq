@@ -31,6 +31,8 @@ namespace OCA\Procest\Service\Beschikking;
 
 /**
  * Ingests a beschikking into durable archival storage (OpenRegister).
+ *
+ * @spec openspec/changes/beschikking-generatie/tasks.md#T25
  */
 interface ArchivalAdapterInterface
 {
@@ -42,6 +44,8 @@ interface ArchivalAdapterInterface
      * @param array<string, mixed> $tmloMetadata  The TMLO-1.2 or MDTO metadata block.
      *
      * @return array{archiefId: string, vernietigingsdatum: string} The archival result.
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md#T25
      */
     public function ingest(string $beschikkingId, string $bestandId, array $tmloMetadata): array;
 }//end interface
