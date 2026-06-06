@@ -43,6 +43,7 @@ The dashboard SHALL display a Deadline Alerts widget that lists cases approachin
 - **THEN** overdue cases MUST be sorted by days overdue descending (most overdue first)
 
 #### Scenario: No deadline alerts
+@e2e exclude The "No deadline alerts" empty message lives inside DeadlineAlertsWidget.vue, which only mounts on the Nextcloud SYSTEM dashboard (OCA.Dashboard.register) after the user adds it via the widget picker; the in-app dashboard grid renders only the titled placeholder card (covered by default-layout-includes-signalering-row), so the widget-internal empty-state is not reachable as an in-app browser surface.
 - **WHEN** all open cases have deadlines more than 3 days away (or no deadline)
 - **THEN** the widget MUST display a positive message such as "No deadline alerts"
 - **THEN** the widget MUST NOT show an error or empty broken state
@@ -76,6 +77,7 @@ The dashboard SHALL display a Task Due Reminders widget showing the current user
 - **THEN** overdue tasks MUST be sorted by days overdue descending
 
 #### Scenario: No task reminders
+@e2e exclude The "No task reminders" empty message lives inside TaskRemindersWidget.vue, which only mounts on the Nextcloud SYSTEM dashboard (OCA.Dashboard.register) after the user adds it via the widget picker; the in-app dashboard grid renders only the titled placeholder card (covered by default-layout-includes-signalering-row), so the widget-internal empty-state is not reachable as an in-app browser surface.
 - **WHEN** the current user has no tasks approaching or past their due date within the warning threshold
 - **THEN** the widget MUST display a message such as "No task reminders"
 
@@ -108,6 +110,7 @@ The dashboard SHALL display a Stalled Cases widget identifying cases that have h
 - **THEN** the widget MUST show "10 days inactive" for that case
 
 #### Scenario: No stalled cases
+@e2e exclude The "All cases active" empty message lives inside StalledCasesWidget.vue, which only mounts on the Nextcloud SYSTEM dashboard (OCA.Dashboard.register) after the user adds it via the widget picker; the in-app dashboard grid renders only the titled placeholder card (covered by default-layout-includes-signalering-row), so the widget-internal empty-state is not reachable as an in-app browser surface.
 - **WHEN** all open cases have had activity within the last 7 days
 - **THEN** the widget MUST display a positive message such as "All cases active"
 

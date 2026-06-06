@@ -40,6 +40,25 @@ test.describe('Dashboard page render', () => {
 		).toBeVisible({ timeout: 10000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
+
+	// @e2e openspec/specs/signalering-widgets/spec.md#default-layout-includes-signalering-row
+	test('dashboard default layout renders the three signalering widget cards', async ({ page }) => {
+		await navTo(page, 'Dashboard')
+		await expect(page.getByRole('heading', { name: 'Dashboard', level: 2 }))
+			.toBeVisible({ timeout: 15000 })
+		// The default manifest dashboard layout (pages[0]) places the three
+		// signalering widgets as titled cards in the widget grid. Each renders its
+		// title frame (showTitle: true) independently of whether the underlying
+		// case/task data is present, so the third-row layout is browser-verifiable.
+		const main = page.locator('main')
+		await expect(main.getByText('Deadline Alerts', { exact: true }).first())
+			.toBeVisible({ timeout: 10000 })
+		await expect(main.getByText('Task Due Reminders', { exact: true }).first())
+			.toBeVisible()
+		await expect(main.getByText('Stalled Cases', { exact: true }).first())
+			.toBeVisible()
+		await expect(page.locator('body')).not.toContainText('Internal Server Error')
+	})
 })
 
 test.describe('Cases index page render', () => {
