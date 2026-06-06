@@ -16,15 +16,8 @@
  * nav link (client-side) after landing on a route that resolves.
  */
 
-import { test, expect, Page } from '@playwright/test'
-
-const sidebarNav = (page: Page) => page.locator('[id^="app-navigation"]').first()
-
-/** Land on the app, then click a sidebar nav entry by its visible label. */
-async function navTo(page: Page, label: string): Promise<void> {
-	await page.goto('/index.php/apps/procest/cases')
-	await sidebarNav(page).getByRole('link', { name: label, exact: true }).click()
-}
+import { test, expect } from '@playwright/test'
+import { navTo, dismissSupportDialog } from '../helpers/nav'
 
 test.describe('Dashboard page render', () => {
 
@@ -111,7 +104,11 @@ test.describe('Doorlooptijd page render', () => {
 
 	// @e2e openspec/specs/doorlooptijd-dashboard/spec.md#doorlooptijd-page-renders-heading
 	test('doorlooptijd renders processing-time analytics heading', async ({ page }) => {
+		// No sidebar nav entry targets this route in the deployed build, so deep-link
+		// directly — without the /index.php prefix, which the history-mode router
+		// resets to the Dashboard. Dismiss the support dialog before interacting.
 		await page.goto('/apps/procest/doorlooptijd')
+		await dismissSupportDialog(page)
 		await expect(page.getByRole('heading', { name: 'Processing Time Analytics', level: 2 }))
 			.toBeVisible({ timeout: 15000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
