@@ -32,6 +32,9 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
+use DateTimeInterface;
+
 /**
  * Stateless backoff and status-transition logic for the sync queue.
  *
@@ -92,6 +95,10 @@ class SyncBackoffService
      * @param bool $jitter       Whether to apply jitter.
      *
      * @return int Delay in seconds, or -1 when the schedule is exhausted.
+     *
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The jitter toggle selects
+     * between deterministic and jittered backoff; a single boolean is the
+     * idiomatic shape for this stateless schedule helper.
      *
      * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-12
      */
@@ -169,7 +176,7 @@ class SyncBackoffService
         ?string $error=null,
         ?string $now=null
     ): array {
-        $timestamp = ($now ?? (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM));
+        $timestamp = ($now ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM));
         $attempts  = ((int) ($operation['attemptCount'] ?? 0));
 
         $operation['lastAttemptAt'] = $timestamp;
@@ -233,8 +240,8 @@ class SyncBackoffService
         }
 
         try {
-            $syncedTime = new \DateTimeImmutable($syncedAt);
-            $reference  = new \DateTimeImmutable($now ?? 'now');
+            $syncedTime = new DateTimeImmutable($syncedAt);
+            $reference  = new DateTimeImmutable($now ?? 'now');
         } catch (\Exception $e) {
             return false;
         }

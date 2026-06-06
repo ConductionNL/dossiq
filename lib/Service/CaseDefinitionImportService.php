@@ -50,19 +50,6 @@ class CaseDefinitionImportService
     private const REQUIRED_FILES = ['manifest.json'];
 
     /**
-     * Valid component files.
-     *
-     * @var string[]
-     */
-    private const VALID_COMPONENT_FILES = [
-        'schema.json',
-        'statuses.json',
-        'permissions.json',
-        'documents.json',
-        'metadata.json',
-    ];
-
-    /**
      * Constructor.
      *
      * @param IAppConfig      $appConfig The Nextcloud app config service.

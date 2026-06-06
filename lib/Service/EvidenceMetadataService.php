@@ -33,6 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
+use DateTimeInterface;
+
 /**
  * Validates and enriches offline field-evidence metadata.
  *
@@ -154,7 +157,7 @@ class EvidenceMetadataService
             'caseRef'              => ((string) ($context['caseRef'] ?? '')),
             'deviceId'             => ((string) ($context['deviceId'] ?? '')),
             'checklistTemplateRef' => ((string) ($context['checklistTemplateRef'] ?? '')),
-            'capturedAt'           => ($capturedAt ?? (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM)),
+            'capturedAt'           => ($capturedAt ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM)),
         ];
     }//end buildExifContext()
 
@@ -226,9 +229,9 @@ class EvidenceMetadataService
                 'lat'       => $gps['location']['lat'],
                 'lon'       => $gps['location']['lon'],
                 'accuracy'  => $gps['location']['accuracy'],
-                'timestamp' => ($extra['capturedAt'] ?? (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM)),
+                'timestamp' => ($extra['capturedAt'] ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM)),
             ],
-            'capturedAt'          => ($extra['capturedAt'] ?? (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM)),
+            'capturedAt'          => ($extra['capturedAt'] ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM)),
             'transcription'       => null,
             'transcriptionStatus' => $transcriptionStatus,
             'tags'                => ($extra['tags'] ?? []),

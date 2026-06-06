@@ -570,13 +570,12 @@ class SeedVthWorkflowTemplates implements IRepairStep
                 return null;
             }
 
-            if ($fromName === '*') {
-                $fromId = '*';
-            } else if ($fromName === '' || isset($statusMap[$fromName]) === false) {
-                return null;
-            }
+            $fromId = '*';
+            if ($fromName !== '*') {
+                if ($fromName === '' || isset($statusMap[$fromName]) === false) {
+                    return null;
+                }
 
-            if ($fromName !== '*' && $fromName !== '' && isset($statusMap[$fromName]) === true) {
                 $fromId = $statusMap[$fromName];
             }
 

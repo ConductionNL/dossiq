@@ -58,13 +58,13 @@ class SyncController extends Controller
     /**
      * Constructor.
      *
-     * @param string                   $appName                  The app name.
-     * @param IRequest                 $request                  The request.
-     * @param DailySyncService         $dailySyncService         Daily-planning payload builder.
-     * @param SyncQueueReplayService   $syncQueueReplayService   Sync-queue orchestration.
-     * @param ConflictDetectionService $conflictDetectionService Conflict classification/resolution.
-     * @param IUserSession             $userSession              The user session.
-     * @param LoggerInterface          $logger                   Logger.
+     * @param string                   $appName          The app name.
+     * @param IRequest                 $request          The request.
+     * @param DailySyncService         $dailySyncService Daily-planning payload builder.
+     * @param SyncQueueReplayService   $replayService    Sync-queue orchestration.
+     * @param ConflictDetectionService $conflictService  Conflict classification/resolution.
+     * @param IUserSession             $userSession      The user session.
+     * @param LoggerInterface          $logger           Logger.
      *
      * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-17
      */
@@ -72,8 +72,8 @@ class SyncController extends Controller
         string $appName,
         IRequest $request,
         private readonly DailySyncService $dailySyncService,
-        private readonly SyncQueueReplayService $syncQueueReplayService,
-        private readonly ConflictDetectionService $conflictDetectionService,
+        private readonly SyncQueueReplayService $replayService,
+        private readonly ConflictDetectionService $conflictService,
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
@@ -145,7 +145,7 @@ class SyncController extends Controller
         $includeFailed = ($this->request->getParam(key: 'includeFailed') === 'true');
 
         try {
-            $operations = $this->syncQueueReplayService->listPending(
+            $operations = $this->replayService->listPending(
                 deviceId: $deviceId,
                 inspectorId: $user->getUID(),
                 includeFailed: $includeFailed
@@ -211,7 +211,7 @@ class SyncController extends Controller
             $serverObject = null;
         }
 
-        $conflictType = $this->conflictDetectionService->classify(
+        $conflictType = $this->conflictService->classify(
             statusCode: $statusCode,
             serverObject: $serverObject
         );
@@ -223,7 +223,7 @@ class SyncController extends Controller
         }
 
         try {
-            $updated = $this->syncQueueReplayService->recordOutcome(
+            $updated = $this->replayService->recordOutcome(
                 operation: $operation,
                 outcome: $outcome,
                 error: $error
@@ -231,7 +231,7 @@ class SyncController extends Controller
 
             $response = ['operation' => $updated];
             if ($conflictType !== null) {
-                $response['conflict'] = $this->conflictDetectionService->buildConflictRecord(
+                $response['conflict'] = $this->conflictService->buildConflictRecord(
                     syncQueueRef: $id,
                     conflictType: $conflictType,
                     clientVersion: (array) ($operation['payload'] ?? []),
@@ -289,7 +289,7 @@ class SyncController extends Controller
         $resolution = (string) ($this->request->getParam(key: 'resolution') ?? '');
 
         try {
-            $conflictRecord = $this->conflictDetectionService->applyResolution(
+            $conflictRecord = $this->conflictService->applyResolution(
                 conflictRecord: ['syncQueueRef' => $id],
                 resolution: $resolution,
                 resolvedBy: $user->getUID()
@@ -312,7 +312,7 @@ class SyncController extends Controller
         }
 
         try {
-            $updated = $this->syncQueueReplayService->recordOutcome(
+            $updated = $this->replayService->recordOutcome(
                 operation: $operation,
                 outcome: $outcome,
                 error: $error
@@ -372,6 +372,10 @@ class SyncController extends Controller
      * @param bool   $includeFailed Whether to consider failed operations too.
      *
      * @return array<string, mixed>|null The owned operation, or null.
+     *
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Toggles the ownership-lookup
+     * scope between active-only and active-plus-failed; both call sites are
+     * IDOR-guarded and the flag selects a single, well-defined query filter.
      */
     private function resolveOwnedOperation(
         string $id,
@@ -379,7 +383,7 @@ class SyncController extends Controller
         string $inspectorId,
         bool $includeFailed=false
     ): ?array {
-        $operations = $this->syncQueueReplayService->listPending(
+        $operations = $this->replayService->listPending(
             deviceId: $deviceId,
             inspectorId: $inspectorId,
             includeFailed: $includeFailed

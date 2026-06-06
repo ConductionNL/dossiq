@@ -285,7 +285,6 @@ class RoleResolverService
         foreach ($participants as $participant) {
             $resolved = $participant;
             $visited  = [$participant => true];
-            $hops     = 0;
             while (isset($byUser[$resolved]) === true) {
                 $role     = $byUser[$resolved];
                 $from     = (string) ($role['delegateFrom'] ?? '');
@@ -321,11 +320,9 @@ class RoleResolverService
 
                 $visited[$delegate] = true;
                 $resolved           = $delegate;
-                $hops++;
-                if ($hops >= 1) {
-                    // Per spec: break after exactly one hop.
-                    break;
-                }
+
+                // Per spec: break after exactly one hop.
+                break;
             }//end while
 
             $result[] = $resolved;

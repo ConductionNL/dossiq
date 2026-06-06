@@ -395,8 +395,8 @@ class WmsWfsService
     {
         try {
             $objectService = $this->container->get('OCA\OpenRegister\Service\ObjectService');
-            $schemaId      = (int) ($this->settingsService->getConfigValue('wms_layer_schema') ?? 0);
-            $registerId    = (int) ($this->settingsService->getConfigValue('register') ?? 0);
+            $schemaId      = (int) $this->settingsService->getConfigValue('wms_layer_schema');
+            $registerId    = (int) $this->settingsService->getConfigValue('register');
 
             if ($schemaId === 0 || $registerId === 0) {
                 return [];

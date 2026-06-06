@@ -54,18 +54,18 @@ class SubsidieController extends Controller
     /**
      * Constructor.
      *
-     * @param IRequest                $request                 The request.
-     * @param SubsidieService         $subsidieService         Core subsidy service.
-     * @param BeschikkingService      $beschikkingService      Grant-decision service.
-     * @param TussenrapportageService $tussenrapportageService Interim-report service.
-     * @param VaststellingService     $vaststellingService     Settlement service.
-     * @param IUserSession            $userSession             The user session.
+     * @param IRequest                $request             The request.
+     * @param SubsidieService         $subsidieService     Core subsidy service.
+     * @param BeschikkingService      $beschikkingService  Grant-decision service.
+     * @param TussenrapportageService $tussenrapportage    Interim-report service.
+     * @param VaststellingService     $vaststellingService Settlement service.
+     * @param IUserSession            $userSession         The user session.
      */
     public function __construct(
         IRequest $request,
         private readonly SubsidieService $subsidieService,
         private readonly BeschikkingService $beschikkingService,
-        private readonly TussenrapportageService $tussenrapportageService,
+        private readonly TussenrapportageService $tussenrapportage,
         private readonly VaststellingService $vaststellingService,
         private readonly IUserSession $userSession,
     ) {
@@ -277,7 +277,7 @@ class SubsidieController extends Controller
         }
 
         try {
-            $report = $this->tussenrapportageService->approveReport(
+            $report = $this->tussenrapportage->approveReport(
                 reportId: $reportId,
                 beoordelingsoordeel: $oordeelArg,
                 ingekeurdeBedrag: $bedragArg,

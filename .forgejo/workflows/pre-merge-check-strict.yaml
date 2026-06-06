@@ -1,0 +1,51 @@
+# Pre-merge quality gate — runs the unified composer check:strict
+# (lint + phpcs + phpmd + psalm + phpstan + tests) plus the Hydra mechanical
+# gates on every PR into development/main/beta.
+#
+# This is the unified quality gate established by the
+# procest-legacy-quality-cleanup change: the phpmd baseline has been deleted
+# and the phpstan baseline slimmed to documented tracked debt, so a green run
+# here means phpcs/phpmd/phpstan all pass against current code.
+#
+# Configured as a required status check in branch protection on `development`
+# to keep the merge button disabled until this workflow passes.
+#
+# Uses the served `codeberg-small` runner label (the `docker` label is not
+# scheduled on Codeberg's shared runners). Hydra gates are diff-scoped per
+# ADR-020 so legacy debt never blocks a PR — only new failures fail.
+
+name: pre-merge-check-strict
+
+on:
+  pull_request:
+    branches:
+      - development
+      - main
+      - beta
+
+jobs:
+  quality-gates:
+    runs-on: codeberg-small
+    container:
+      image: code.forgejo.org/oci/ci-php:8.3
+    steps:
+      - name: Checkout PR
+        uses: https://code.forgejo.org/actions/checkout@v4
+
+      - name: Install composer deps
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run composer check:strict (phpcs + phpmd + psalm + phpstan)
+        run: composer check:strict
+
+      - name: Clone Hydra (for gate runner)
+        uses: https://code.forgejo.org/actions/checkout@v4
+        with:
+          repository: Conduction/hydra
+          ref: development
+          path: .hydra
+
+      - name: Run all Hydra gates (diff-scoped per ADR-020)
+        run: |
+          git fetch origin ${{ github.base_ref }}:${{ github.base_ref }} || true
+          bash .hydra/scripts/run-hydra-gates.sh --scope-to-diff --base origin/${{ github.base_ref }} .

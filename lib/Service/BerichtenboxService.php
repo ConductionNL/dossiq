@@ -13,6 +13,9 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
@@ -36,12 +39,6 @@ use Psr\Log\LoggerInterface;
  */
 class BerichtenboxService
 {
-
-    /**
-     * Maximum allowed attachment size in bytes (10 MB).
-     */
-    private const MAX_ATTACHMENT_SIZE = 10485760;
-
     /**
      * Constructor.
      *
