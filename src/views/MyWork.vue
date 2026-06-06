@@ -29,10 +29,6 @@
 					@change="onToggleCompleted">
 				{{ t('procest', 'Show completed') }}
 			</label>
-
-			<router-link :to="{ name: 'Tasks' }" class="my-work__all-tasks-link">
-				{{ t('procest', 'All tasks') }}
-			</router-link>
 		</div>
 
 		<!-- All tasks link -->
@@ -509,23 +505,6 @@ export default {
 	cursor: pointer;
 	white-space: nowrap;
 	color: var(--color-text-maxcontrast);
-}
-
-.my-work__all-tasks-link {
-	margin-left: 8px;
-	padding: 6px 14px;
-	font-size: 14px;
-	border-radius: var(--border-radius-pill);
-	color: var(--color-primary-element);
-	text-decoration: none;
-	white-space: nowrap;
-	border: 1px solid var(--color-primary-element);
-	transition: background 0.15s ease, color 0.15s ease;
-}
-
-.my-work__all-tasks-link:hover {
-	background: var(--color-primary-element-light);
-	color: var(--color-primary-element-light-text);
 }
 
 /* Sections */
