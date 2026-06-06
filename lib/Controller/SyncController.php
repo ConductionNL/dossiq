@@ -345,7 +345,7 @@ class SyncController extends Controller
      */
     private function outcomeForStatus(int $statusCode, ?string $conflictType): string
     {
-        if ($conflictType === ConflictDetectionService::TYPE_PERMISSION_LOST) {
+        if ($conflictType !== null && $this->conflictService->isRetryable(conflictType: $conflictType) === false) {
             return 'permission_lost';
         }
 
