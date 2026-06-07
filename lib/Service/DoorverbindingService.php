@@ -36,6 +36,8 @@ use Throwable;
 
 /**
  * Orchestrates warm doorverbindingen with immutable context-overdracht.
+ *
+ * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
  */
 class DoorverbindingService
 {
@@ -59,6 +61,8 @@ class DoorverbindingService
      * @param array<string, mixed> $sentiment The sentiment data, if any.
      *
      * @return string A JSON-encoded immutable snapshot.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
      */
     public function createContextSnapshot(array $contact, array $zaken, array $sentiment): string
     {
@@ -82,6 +86,8 @@ class DoorverbindingService
      * @return array<string, mixed> The created doorverbinding record.
      *
      * @throws RuntimeException When the schema is unconfigured or the write fails.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
      */
     public function initiateWarmTransfer(array $data): array
     {
@@ -127,8 +133,10 @@ class DoorverbindingService
      * @return array<string, mixed> The updated record.
      *
      * @throws RuntimeException When already answered, caller is not the assigned recipient, or the update fails.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
      */
-    public function acceptTransfer(string $doorverbindingId, string $callerUid = ''): array
+    public function acceptTransfer(string $doorverbindingId, string $callerUid=''): array
     {
         $current = $this->load(doorverbindingId: $doorverbindingId);
         if (($current['geaccepteerd'] ?? null) !== null) {
@@ -159,8 +167,10 @@ class DoorverbindingService
      * @return array<string, mixed> The updated record.
      *
      * @throws RuntimeException When already answered, caller is not the assigned recipient, reason missing, or update fails.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
      */
-    public function rejectTransfer(string $doorverbindingId, string $reden, string $callerUid = ''): array
+    public function rejectTransfer(string $doorverbindingId, string $reden, string $callerUid=''): array
     {
         $reden = trim($reden);
         if ($reden === '') {
@@ -196,6 +206,8 @@ class DoorverbindingService
      * @return array<string, mixed> The updated record.
      *
      * @throws RuntimeException When the update fails.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
      */
     public function appendContextNotes(string $doorverbindingId, string $notes, string $specialistUid): array
     {

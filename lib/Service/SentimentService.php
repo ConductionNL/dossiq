@@ -31,6 +31,8 @@ namespace OCA\Procest\Service;
 
 /**
  * Trigger-word detection and sentiment scoring for KCC contactmomenten.
+ *
+ * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
  */
 class SentimentService
 {
@@ -71,6 +73,8 @@ class SentimentService
      * @param array<int, string> $triggerWords Configured trigger words to detect.
      *
      * @return array{score: float, label: string, triggers: array<int, string>, escalatieAanbevolen: bool, escalatieLevel: string, snippet: string}
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
      */
     public function analyzeSentiment(string $text, array $triggerWords): array
     {
@@ -123,6 +127,8 @@ class SentimentService
      * @param array<int, string> $triggers Detected trigger words.
      *
      * @return bool True when escalation is recommended.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
      */
     public function shouldEscalate(float $score, array $triggers): bool
     {
@@ -146,6 +152,8 @@ class SentimentService
      * @param array<int, string> $triggers Detected trigger words.
      *
      * @return string One of geen|geel|oranje|rood.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
      */
     public function getEscalationLevel(float $score, array $triggers): string
     {

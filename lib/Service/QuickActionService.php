@@ -38,6 +38,8 @@ use Throwable;
 
 /**
  * Executes configured KCC quick-actions against the case register.
+ *
+ * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
  */
 class QuickActionService
 {
@@ -71,6 +73,8 @@ class QuickActionService
      * @return array{caseId: string, draftText: string, status: string}
      *
      * @throws RuntimeException When the case cannot be loaded.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
      */
     public function executeStatusTerugkoppelen(string $caseId): array
     {
@@ -97,6 +101,8 @@ class QuickActionService
      * @return array{caseId: string}
      *
      * @throws RuntimeException When input is invalid or the write fails.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
      */
     public function executeNieuweZaak(string $zaaktype, string $burgerId, array $details): array
     {
@@ -140,6 +146,8 @@ class QuickActionService
      * @return array{klachtCaseId: string, deadline: string}
      *
      * @throws RuntimeException When the klacht text is empty or the write fails.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
      */
     public function executeKlachtRegistreren(string $caseId, string $samenvatting, string $burgerId): array
     {
@@ -197,6 +205,8 @@ class QuickActionService
      * @param string $window   The preferred callback window.
      *
      * @return array{burgerId: string, window: string, scheduledAt: string}
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
      */
     public function executeBelTerug(string $burgerId, string $window): array
     {

@@ -37,6 +37,8 @@ use Throwable;
 
 /**
  * Routes inbound calls onto available specialists per belplan.
+ *
+ * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
  */
 class BelplanRoutingService
 {
@@ -58,6 +60,8 @@ class BelplanRoutingService
      * @param string $phoneNumber The dialed number.
      *
      * @return array<string, mixed>|null The belplan record, or null when none matches.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
      */
     public function getActiveBelplan(string $phoneNumber): ?array
     {
@@ -89,6 +93,8 @@ class BelplanRoutingService
      * @return array{destinationSpecialistId: ?string, vaardigheid: string, escalatieFlag: bool, estimatedWaitTime: int, fallbackRol: ?string}
      *
      * @throws RuntimeException When no belplan matches the dialed number.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
      */
     public function routeCall(string $phoneNumber, string $menuSelection): array
     {
@@ -146,6 +152,8 @@ class BelplanRoutingService
      * @param string $vaardigheid The vaardigheid / expertise code, empty for all.
      *
      * @return array<int, array<string, mixed>> The availability records.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
      */
     public function getSpecialistBeschikbaarheid(string $vaardigheid=''): array
     {

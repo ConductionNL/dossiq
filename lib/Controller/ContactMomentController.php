@@ -43,6 +43,8 @@ use RuntimeException;
 
 /**
  * REST API for KCC contactmomenten and quick-actions.
+ *
+ * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
  */
 class ContactMomentController extends Controller
 {

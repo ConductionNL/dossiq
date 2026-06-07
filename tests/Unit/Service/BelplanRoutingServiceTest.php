@@ -35,12 +35,17 @@ use Psr\Log\LoggerInterface;
  */
 class FakeBelplanObjectService
 {
+
     /**
+     * The belplannen fixture records.
+     *
      * @var array<int, array<string, mixed>>
      */
     public array $belplannen = [];
 
     /**
+     * The specialist fixture records.
+     *
      * @var array<int, array<string, mixed>>
      */
     public array $specialisten = [];
@@ -77,12 +82,17 @@ class FakeBelplanObjectService
  */
 class BelplanRoutingServiceTest extends TestCase
 {
+
     /**
+     * The fake object service for test fixtures.
+     *
      * @var FakeBelplanObjectService
      */
     private FakeBelplanObjectService $objectService;
 
     /**
+     * The service under test.
+     *
      * @var BelplanRoutingService
      */
     private BelplanRoutingService $service;
@@ -108,7 +118,7 @@ class BelplanRoutingServiceTest extends TestCase
             ],
         ];
 
-        $settings = $this->createMock(SettingsService::class);
+        $settings = $this->createMock(originalClassName: SettingsService::class);
         $settings->method('getObjectService')->willReturn($this->objectService);
         $settings->method('getConfigValue')->willReturnCallback(
             static function (string $key): string {
@@ -132,7 +142,7 @@ class BelplanRoutingServiceTest extends TestCase
 
         $this->service = new BelplanRoutingService(
             settingsService: $settings,
-            logger: $this->createMock(LoggerInterface::class),
+            logger: $this->createMock(originalClassName: LoggerInterface::class),
         );
     }//end setUp()
 
@@ -144,15 +154,27 @@ class BelplanRoutingServiceTest extends TestCase
     public function testRoutesToShortestQueueSpecialist(): void
     {
         $this->objectService->specialisten = [
-            ['medewerkerId' => 'busy', 'status' => 'beschikbaar', 'expertises' => ['omgevingsvergunningen'], 'huidigeWachtrijLengte' => 3, 'gemiddeldeBehandelduur' => 100],
-            ['medewerkerId' => 'free', 'status' => 'beschikbaar', 'expertises' => ['omgevingsvergunningen'], 'huidigeWachtrijLengte' => 0, 'gemiddeldeBehandelduur' => 120],
+            [
+                'medewerkerId'           => 'busy',
+                'status'                 => 'beschikbaar',
+                'expertises'             => ['omgevingsvergunningen'],
+                'huidigeWachtrijLengte'  => 3,
+                'gemiddeldeBehandelduur' => 100,
+            ],
+            [
+                'medewerkerId'           => 'free',
+                'status'                 => 'beschikbaar',
+                'expertises'             => ['omgevingsvergunningen'],
+                'huidigeWachtrijLengte'  => 0,
+                'gemiddeldeBehandelduur' => 120,
+            ],
         ];
 
         $result = $this->service->routeCall('14000', 'omgevingsvergunning');
 
-        $this->assertSame('free', $result['destinationSpecialistId']);
-        $this->assertFalse($result['escalatieFlag']);
-        $this->assertSame('omgevingsvergunningen', $result['vaardigheid']);
+        $this->assertSame(expected: 'free', actual: $result['destinationSpecialistId']);
+        $this->assertFalse(condition: $result['escalatieFlag']);
+        $this->assertSame(expected: 'omgevingsvergunningen', actual: $result['vaardigheid']);
     }//end testRoutesToShortestQueueSpecialist()
 
     /**
@@ -169,9 +191,9 @@ class BelplanRoutingServiceTest extends TestCase
 
         $result = $this->service->routeCall('14000', 'omgevingsvergunning');
 
-        $this->assertNull($result['destinationSpecialistId']);
-        $this->assertTrue($result['escalatieFlag']);
-        $this->assertSame('generalist', $result['fallbackRol']);
+        $this->assertNull(actual: $result['destinationSpecialistId']);
+        $this->assertTrue(condition: $result['escalatieFlag']);
+        $this->assertSame(expected: 'generalist', actual: $result['fallbackRol']);
     }//end testOverflowToGeneralistWhenAllBusy()
 
     /**
@@ -181,7 +203,7 @@ class BelplanRoutingServiceTest extends TestCase
      */
     public function testUnknownNumberThrows(): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(exception: \RuntimeException::class);
         $this->service->routeCall('99999', 'omgevingsvergunning');
     }//end testUnknownNumberThrows()
 
@@ -199,7 +221,7 @@ class BelplanRoutingServiceTest extends TestCase
 
         $matched = $this->service->getSpecialistBeschikbaarheid('bouwtoezicht');
 
-        $this->assertCount(1, $matched);
-        $this->assertSame('b', $matched[0]['medewerkerId']);
+        $this->assertCount(expectedCount: 1, haystack: $matched);
+        $this->assertSame(expected: 'b', actual: $matched[0]['medewerkerId']);
     }//end testAvailabilityFiltersByVaardigheid()
 }//end class

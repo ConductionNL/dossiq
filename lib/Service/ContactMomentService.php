@@ -36,6 +36,8 @@ use Throwable;
 
 /**
  * Service for logging KCC contactmomenten and case activity.
+ *
+ * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
  */
 class ContactMomentService
 {
@@ -69,6 +71,8 @@ class ContactMomentService
      * @return array<string, mixed> The created contactmoment record.
      *
      * @throws RuntimeException When OpenRegister is unavailable, schema unconfigured, or input invalid.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
      */
     public function createContactMoment(array $data): array
     {
@@ -171,6 +175,8 @@ class ContactMomentService
      * @param int    $limit    Maximum number of records.
      *
      * @return array<int, array<string, mixed>> The contactmoment records.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
      */
     public function listForBurger(string $burgerId, int $limit=50): array
     {
@@ -229,6 +235,8 @@ class ContactMomentService
      * @param string $summary         A short summary of the activity.
      *
      * @return bool True on success.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
      */
     public function recordActivity(
         string $caseId,
@@ -286,6 +294,8 @@ class ContactMomentService
      * @return array<string, mixed> The updated contactmoment record.
      *
      * @throws RuntimeException When the schema is unconfigured or the update fails.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
      */
     public function linkUnlinkedContactmoment(
         string $contactmomentId,

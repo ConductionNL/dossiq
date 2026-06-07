@@ -37,6 +37,8 @@ use OCP\IUserSession;
 
 /**
  * Real-time read-only specialist availability API.
+ *
+ * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T13
  */
 class SpecialistBeschikbaarheidController extends Controller
 {

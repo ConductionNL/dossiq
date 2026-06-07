@@ -40,6 +40,7 @@ use ReflectionMethod;
  */
 class KccWerkplekFragmentTest extends TestCase
 {
+
     /**
      * The decoded KCC fragment.
      *
@@ -89,13 +90,13 @@ class KccWerkplekFragmentTest extends TestCase
      */
     public function testFragmentDeclaresAllSchemas(): void
     {
-        $this->assertIsArray($this->fragment);
+        $this->assertIsArray(actual: $this->fragment);
         $schemas = $this->fragment['components']['schemas'];
 
         foreach ($this->kccSchemas as $slug) {
-            $this->assertArrayHasKey($slug, $schemas, "Fragment must declare schema '{$slug}'");
-            $this->assertSame($slug, $schemas[$slug]['slug']);
-            $this->assertArrayHasKey('properties', $schemas[$slug]);
+            $this->assertArrayHasKey(key: $slug, array: $schemas, message: "Fragment must declare schema '{$slug}'");
+            $this->assertSame(expected: $slug, actual: $schemas[$slug]['slug']);
+            $this->assertArrayHasKey(key: 'properties', array: $schemas[$slug]);
         }
     }//end testFragmentDeclaresAllSchemas()
 
@@ -109,7 +110,7 @@ class KccWerkplekFragmentTest extends TestCase
         $baseSchemas = $this->base['components']['schemas'];
 
         foreach ($this->kccSchemas as $slug) {
-            $this->assertArrayNotHasKey($slug, $baseSchemas, "ADR-037: '{$slug}' must live only in the fragment");
+            $this->assertArrayNotHasKey(key: $slug, array: $baseSchemas, message: "ADR-037: '{$slug}' must live only in the fragment");
         }
     }//end testMonolithDoesNotCarryKccSchemas()
 
@@ -122,9 +123,9 @@ class KccWerkplekFragmentTest extends TestCase
     {
         $schemas = $this->fragment['components']['schemas'];
 
-        $this->assertArrayNotHasKey('burger', $schemas);
-        $this->assertArrayNotHasKey('person', $schemas);
-        $this->assertArrayNotHasKey('customer', $schemas);
+        $this->assertArrayNotHasKey(key: 'burger', array: $schemas);
+        $this->assertArrayNotHasKey(key: 'person', array: $schemas);
+        $this->assertArrayNotHasKey(key: 'customer', array: $schemas);
     }//end testNoBurgerPersonSchemaIntroduced()
 
     /**
@@ -141,16 +142,16 @@ class KccWerkplekFragmentTest extends TestCase
 
         $registerSchemas = $merged['components']['registers']['procest']['schemas'];
         foreach ($this->kccSchemas as $slug) {
-            $this->assertContains($slug, $registerSchemas, "Merged register must include '{$slug}'");
+            $this->assertContains(needle: $slug, haystack: $registerSchemas, message: "Merged register must include '{$slug}'");
         }
 
         // Base case/role types must survive the merge.
-        $this->assertContains('case', $registerSchemas);
+        $this->assertContains(needle: 'case', haystack: $registerSchemas);
 
         // Seed objects from base + fragment are concatenated.
         $this->assertGreaterThan(
-            count($this->base['components']['objects']),
-            count($merged['components']['objects']),
+            expected: count($this->base['components']['objects']),
+            actual: count($merged['components']['objects']),
         );
     }//end testMergeUnionsRegisterMembershipAndObjects()
 
@@ -169,14 +170,14 @@ class KccWerkplekFragmentTest extends TestCase
                 return (($o['@self']['schema'] ?? '') === 'kccQuickAction');
             }
         );
-        $belplannen = array_filter(
+        $belplannen   = array_filter(
             $objects,
             static function (array $o): bool {
                 return (($o['@self']['schema'] ?? '') === 'belplan');
             }
         );
 
-        $this->assertCount(5, $quickActions);
-        $this->assertCount(2, $belplannen);
+        $this->assertCount(expectedCount: 5, haystack: $quickActions);
+        $this->assertCount(expectedCount: 2, haystack: $belplannen);
     }//end testFragmentSeedsDefaults()
 }//end class

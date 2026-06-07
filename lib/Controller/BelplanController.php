@@ -41,6 +41,8 @@ use Throwable;
 
 /**
  * REST API for belplannen and datagedreven routing.
+ *
+ * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
  */
 class BelplanController extends Controller
 {

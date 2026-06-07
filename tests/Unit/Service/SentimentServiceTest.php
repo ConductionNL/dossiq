@@ -34,12 +34,17 @@ use PHPUnit\Framework\TestCase;
  */
 class SentimentServiceTest extends TestCase
 {
+
     /**
+     * The service under test.
+     *
      * @var SentimentService
      */
     private SentimentService $service;
 
     /**
+     * Default trigger words used across tests.
+     *
      * @var array<int, string>
      */
     private array $triggers = ['ongelooflijk', 'klacht', 'wethouder', 'advocaat', 'media', 'rechtszaak'];
@@ -66,12 +71,12 @@ class SentimentServiceTest extends TestCase
             $this->triggers,
         );
 
-        $this->assertContains('klacht', $result['triggers']);
-        $this->assertContains('advocaat', $result['triggers']);
-        $this->assertTrue($result['escalatieAanbevolen']);
-        $this->assertSame('rood', $result['escalatieLevel']);
-        $this->assertSame('boos', $result['label']);
-        $this->assertLessThanOrEqual(-0.5, $result['score']);
+        $this->assertContains(needle: 'klacht', haystack: $result['triggers']);
+        $this->assertContains(needle: 'advocaat', haystack: $result['triggers']);
+        $this->assertTrue(condition: $result['escalatieAanbevolen']);
+        $this->assertSame(expected: 'rood', actual: $result['escalatieLevel']);
+        $this->assertSame(expected: 'boos', actual: $result['label']);
+        $this->assertLessThanOrEqual(expected: -0.5, actual: $result['score']);
     }//end testSeriousTriggersEscalateToRood()
 
     /**
@@ -86,10 +91,10 @@ class SentimentServiceTest extends TestCase
             $this->triggers,
         );
 
-        $this->assertFalse($result['escalatieAanbevolen']);
-        $this->assertSame('geen', $result['escalatieLevel']);
-        $this->assertSame('positief', $result['label']);
-        $this->assertGreaterThan(0.0, $result['score']);
+        $this->assertFalse(condition: $result['escalatieAanbevolen']);
+        $this->assertSame(expected: 'geen', actual: $result['escalatieLevel']);
+        $this->assertSame(expected: 'positief', actual: $result['label']);
+        $this->assertGreaterThan(expected: 0.0, actual: $result['score']);
     }//end testPositiveTextDoesNotEscalate()
 
     /**
@@ -104,9 +109,9 @@ class SentimentServiceTest extends TestCase
             $this->triggers,
         );
 
-        $this->assertSame([], $result['triggers']);
-        $this->assertFalse($result['escalatieAanbevolen']);
-        $this->assertSame('neutraal', $result['label']);
+        $this->assertSame(expected: [], actual: $result['triggers']);
+        $this->assertFalse(condition: $result['escalatieAanbevolen']);
+        $this->assertSame(expected: 'neutraal', actual: $result['label']);
     }//end testNeutralText()
 
     /**
@@ -122,31 +127,31 @@ class SentimentServiceTest extends TestCase
             ['klacht'],
         );
 
-        $this->assertNotContains('klacht', $result['triggers']);
+        $this->assertNotContains(needle: 'klacht', haystack: $result['triggers']);
     }//end testWordBoundaryAvoidsSubstringFalsePositive()
 
     /**
-     * shouldEscalate returns true on a very low score even without triggers.
+     * ShouldEscalate returns true on a very low score even without triggers.
      *
      * @return void
      */
     public function testShouldEscalateOnLowScore(): void
     {
-        $this->assertTrue($this->service->shouldEscalate(-0.6, []));
-        $this->assertFalse($this->service->shouldEscalate(-0.2, []));
+        $this->assertTrue(condition: $this->service->shouldEscalate(-0.6, []));
+        $this->assertFalse(condition: $this->service->shouldEscalate(-0.2, []));
     }//end testShouldEscalateOnLowScore()
 
     /**
-     * getEscalationLevel maps score bands without triggers.
+     * GetEscalationLevel maps score bands without triggers.
      *
      * @return void
      */
     public function testEscalationLevelBands(): void
     {
-        $this->assertSame('geen', $this->service->getEscalationLevel(0.5, []));
-        $this->assertSame('geel', $this->service->getEscalationLevel(-0.2, []));
-        $this->assertSame('oranje', $this->service->getEscalationLevel(-0.4, []));
-        $this->assertSame('rood', $this->service->getEscalationLevel(-0.8, []));
+        $this->assertSame(expected: 'geen', actual: $this->service->getEscalationLevel(0.5, []));
+        $this->assertSame(expected: 'geel', actual: $this->service->getEscalationLevel(-0.2, []));
+        $this->assertSame(expected: 'oranje', actual: $this->service->getEscalationLevel(-0.4, []));
+        $this->assertSame(expected: 'rood', actual: $this->service->getEscalationLevel(-0.8, []));
     }//end testEscalationLevelBands()
 
     /**
@@ -161,6 +166,6 @@ class SentimentServiceTest extends TestCase
             ['rechtszaak'],
         );
 
-        $this->assertStringContainsString('rechtszaak', $result['snippet']);
+        $this->assertStringContainsString(needle: 'rechtszaak', haystack: $result['snippet']);
     }//end testSnippetCentredOnTrigger()
 }//end class

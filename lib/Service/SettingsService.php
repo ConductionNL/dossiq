@@ -584,6 +584,8 @@ class SettingsService
      * @param string $key The configuration key (must exist in self::KCC_DEFAULTS).
      *
      * @return string The configured value, or the documented default.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md
      */
     public function getKccConfigValue(string $key): string
     {
@@ -813,4 +815,4 @@ class SettingsService
 
         return true;
     }//end isList()
-    }//end class
+}//end class

@@ -42,6 +42,8 @@ use Throwable;
 
 /**
  * Timed job that ages out stale specialist availability records.
+ *
+ * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T16
  */
 class SpecialistBeschikbaarheidRefreshJob extends TimedJob
 {

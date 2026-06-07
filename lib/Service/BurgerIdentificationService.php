@@ -38,6 +38,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Resolve and score burger identification for KCC contacts.
+ *
+ * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
  */
 class BurgerIdentificationService
 {
@@ -78,6 +80,8 @@ class BurgerIdentificationService
      * @param array<string, bool> $matched Map of dimension => matched flag.
      *
      * @return float The identification score (0.0 - 1.0).
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
      */
     public function calculateScore(array $matched): float
     {
@@ -98,6 +102,8 @@ class BurgerIdentificationService
      * @param string              $burgerRef The candidate burger reference.
      *
      * @return array{score: float, identified: bool, burgerId: ?string, method: string}
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
      */
     public function startIdentificatievragen(array $matched, string $burgerRef): array
     {
@@ -128,6 +134,8 @@ class BurgerIdentificationService
      * @param string $bsn The BSN extracted from the validated DigiD assertion.
      *
      * @return array{burgerId: string, method: string}
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
      */
     public function resolveFromDigiD(string $bsn): array
     {
@@ -156,6 +164,8 @@ class BurgerIdentificationService
      * @param string $identifier A phone number or email address.
      *
      * @return string The burger reference, or empty string when not found.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T05
      */
     public function lookupByIdentifier(string $identifier): string
     {

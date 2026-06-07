@@ -37,12 +37,17 @@ use Psr\Log\LoggerInterface;
  */
 class BurgerIdentificationServiceTest extends TestCase
 {
+
     /**
+     * The SettingsService mock.
+     *
      * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
      */
     private SettingsService $settingsService;
 
     /**
+     * The service under test.
+     *
      * @var BurgerIdentificationService
      */
     private BurgerIdentificationService $service;
@@ -54,14 +59,18 @@ class BurgerIdentificationServiceTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->settingsService = $this->createMock(SettingsService::class);
-        $container             = $this->createMock(ContainerInterface::class);
-        $logger                = $this->createMock(LoggerInterface::class);
+        $this->settingsService = $this->createMock(originalClassName: SettingsService::class);
+        $container = $this->createMock(originalClassName: ContainerInterface::class);
+        $logger    = $this->createMock(originalClassName: LoggerInterface::class);
 
         $this->settingsService->method('getKccConfigValue')
             ->willReturnCallback(
                 static function (string $key): string {
-                    return ($key === 'identification_score_threshold' ? '0.8' : '');
+                    if ($key === 'identification_score_threshold') {
+                        return '0.8';
+                    }
+
+                    return '';
                 }
             );
 
@@ -89,7 +98,7 @@ class BurgerIdentificationServiceTest extends TestCase
             ]
         );
 
-        $this->assertSame(1.0, $score);
+        $this->assertSame(expected: 1.0, actual: $score);
     }//end testFullMatchScoresOne()
 
     /**
@@ -104,9 +113,9 @@ class BurgerIdentificationServiceTest extends TestCase
             'burger:abc',
         );
 
-        $this->assertSame(0.6, $result['score']);
-        $this->assertFalse($result['identified']);
-        $this->assertNull($result['burgerId']);
+        $this->assertSame(expected: 0.6, actual: $result['score']);
+        $this->assertFalse(condition: $result['identified']);
+        $this->assertNull(actual: $result['burgerId']);
     }//end testPartialMatchBelowThresholdNotIdentified()
 
     /**
@@ -121,9 +130,9 @@ class BurgerIdentificationServiceTest extends TestCase
             'burger:abc',
         );
 
-        $this->assertSame(0.8, $result['score']);
-        $this->assertTrue($result['identified']);
-        $this->assertSame('burger:abc', $result['burgerId']);
+        $this->assertSame(expected: 0.8, actual: $result['score']);
+        $this->assertTrue(condition: $result['identified']);
+        $this->assertSame(expected: 'burger:abc', actual: $result['burgerId']);
     }//end testMatchAtThresholdIdentified()
 
     /**
@@ -136,9 +145,9 @@ class BurgerIdentificationServiceTest extends TestCase
         $bsn    = '123456782';
         $result = $this->service->resolveFromDigiD($bsn);
 
-        $this->assertSame('digid', $result['method']);
-        $this->assertStringStartsWith('burger:', $result['burgerId']);
-        $this->assertStringNotContainsString($bsn, $result['burgerId']);
+        $this->assertSame(expected: 'digid', actual: $result['method']);
+        $this->assertStringStartsWith(prefix: 'burger:', string: $result['burgerId']);
+        $this->assertStringNotContainsString(needle: $bsn, haystack: $result['burgerId']);
     }//end testDigiDResolutionPseudonymises()
 
     /**
@@ -150,7 +159,7 @@ class BurgerIdentificationServiceTest extends TestCase
     {
         $result = $this->service->resolveFromDigiD('   ');
 
-        $this->assertSame('niet_geidentificeerd', $result['method']);
-        $this->assertSame('', $result['burgerId']);
+        $this->assertSame(expected: 'niet_geidentificeerd', actual: $result['method']);
+        $this->assertSame(expected: '', actual: $result['burgerId']);
     }//end testEmptyBsnNotIdentified()
 }//end class

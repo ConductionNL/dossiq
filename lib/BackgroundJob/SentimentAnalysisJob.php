@@ -41,6 +41,8 @@ use Throwable;
 
 /**
  * Timed job that scores contactmoment transcriptions for sentiment.
+ *
+ * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T15
  */
 class SentimentAnalysisJob extends TimedJob
 {

@@ -35,6 +35,8 @@ use Throwable;
 
 /**
  * Builds the KCC case-voorblad for an identified burger.
+ *
+ * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
  */
 class CaseVoorbladService
 {
@@ -58,6 +60,8 @@ class CaseVoorbladService
      * @param string $burgerId The identified burger reference.
      *
      * @return array{burgerId: string, openZaken: array<int, mixed>, recenteContactmomenten: array<int, mixed>, suggestedTopic: string}
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
      */
     public function getCaseVoorblad(string $burgerId): array
     {
