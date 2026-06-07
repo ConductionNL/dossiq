@@ -34,6 +34,8 @@ use Psr\Log\LoggerInterface;
  * Service for WOO-mandated deadline calculation and tracking.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/woo-case-type/tasks.md#task-4
  */
 class WOODeadlineService
 {

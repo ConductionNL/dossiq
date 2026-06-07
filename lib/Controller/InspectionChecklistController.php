@@ -45,6 +45,8 @@ use Throwable;
  * Controller for inspection checklist CRUD and inspection result submission.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/vth-module/tasks.md#task-4
  */
 class InspectionChecklistController extends Controller
 {

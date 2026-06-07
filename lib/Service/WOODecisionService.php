@@ -35,6 +35,8 @@ use Psr\Log\LoggerInterface;
  * Service for assembling the formal WOO besluit.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/woo-case-type/tasks.md#task-7
  */
 class WOODecisionService
 {

@@ -436,9 +436,7 @@ abstract class ZgwRulesBase
             $lastSegment = '';
         }
 
-        $uuidPattern = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i';
-
-        if (preg_match($uuidPattern, $lastSegment) !== 1) {
+        if ($this->fieldValidator->isUuid($lastSegment) === false) {
             return $this->error(
                 status: 400,
                 detail: "De {$fieldName} URL wijst niet naar een geldig object.",

@@ -38,6 +38,8 @@ use Throwable;
  * recommended intervention for a given gedrag (behaviour) + gevolg (impact)
  * combination. Falls back to the embedded seed table when OpenRegister is
  * unavailable or the matrix has not been seeded yet.
+ *
+ * @spec openspec/changes/vth-module/tasks.md#task-8
  */
 class LhsLookupService
 {

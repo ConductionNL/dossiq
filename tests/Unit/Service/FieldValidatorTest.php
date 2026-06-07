@@ -32,6 +32,7 @@ use PHPUnit\Framework\TestCase;
  */
 class FieldValidatorTest extends TestCase
 {
+
     /**
      * The validator under test.
      *

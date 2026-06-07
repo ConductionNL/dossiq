@@ -44,6 +44,8 @@ use Throwable;
  * Signature validation is performed using the configured DSO secret.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/vth-module/tasks.md#task-3
  */
 class DSOIntakeController extends Controller
 {

@@ -81,7 +81,7 @@ class DSOIntakeControllerTest extends TestCase
         // Default: no DSO webhook secret configured, so signature validation
         // is skipped (returns the supplied default unchanged).
         $this->appConfig->method('getValueString')
-            ->willReturnCallback(static fn (string $app, string $key, string $default = '', bool $lazy = false): string => $default);
+            ->willReturnCallback(static fn (string $app, string $key, string $default='', bool $lazy=false): string => $default);
 
         $this->controller = new DSOIntakeController(
             appName: 'procest',
