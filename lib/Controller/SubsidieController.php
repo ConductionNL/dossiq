@@ -48,6 +48,8 @@ use OCP\IUserSession;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — aggregates the four
  * subsidy lifecycle services it dispatches to.
+ *
+ * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
  */
 class SubsidieController extends Controller
 {
@@ -80,6 +82,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function index(): JSONResponse
     {
@@ -110,6 +114,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function create(): JSONResponse
     {
@@ -146,6 +152,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function transition(string $id): JSONResponse
     {
@@ -174,6 +182,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function createBeschikking(string $id): JSONResponse
     {
@@ -204,6 +214,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function publishBeschikking(string $beschikkingId): JSONResponse
     {
@@ -230,6 +242,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function signBeschikking(string $beschikkingId): JSONResponse
     {
@@ -256,6 +270,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function approveTussenrapportage(string $reportId): JSONResponse
     {
@@ -299,6 +315,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function finalizeVaststelling(string $vaststellingId): JSONResponse
     {

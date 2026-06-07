@@ -36,6 +36,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Service for sending messages to Mijn Overheid Berichtenbox.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md#task-2
  */
 class BerichtenboxService
 {

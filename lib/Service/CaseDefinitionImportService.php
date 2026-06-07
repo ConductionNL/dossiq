@@ -39,6 +39,8 @@ use Psr\Log\LoggerInterface;
  * and creates/updates case type configuration in OpenRegister.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md#task-2
  */
 class CaseDefinitionImportService
 {

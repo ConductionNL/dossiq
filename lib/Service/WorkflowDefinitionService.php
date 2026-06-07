@@ -59,6 +59,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Lifecycle + consumer service for workflowTemplate objects.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-workflow-definition-model/tasks.md#task-2
  */
 class WorkflowDefinitionService
 {
@@ -125,6 +127,8 @@ class WorkflowDefinitionService
      * @param string $id The definition UUID
      *
      * @return array<string, mixed>|null The definition or null
+     *
+     * @spec openspec/changes/retrofit-2026-05-24-workflow-definition-model/tasks.md#task-2
      */
     public function getDefinition(string $id): ?array
     {

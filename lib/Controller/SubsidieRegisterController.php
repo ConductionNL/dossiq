@@ -41,6 +41,8 @@ use Throwable;
  * Public subsidieregister feed controller.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-39
  */
 class SubsidieRegisterController extends Controller
 {
@@ -68,6 +70,8 @@ class SubsidieRegisterController extends Controller
      * @NoCSRFRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-39
      */
     public function export(): JSONResponse
     {

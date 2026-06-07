@@ -41,6 +41,8 @@ use RuntimeException;
  * This service NEVER issues direct outbound HTTP. Every external request is
  * delegated to {@see GisProxyService::proxyRequest()} which enforces the
  * GIS proxy allowlist (REQ-WMS-3) and rate limiting.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md#task-2
  */
 class WmsWfsService
 {
