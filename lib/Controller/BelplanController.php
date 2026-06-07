@@ -30,8 +30,11 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\BelplanRoutingService;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -87,10 +90,9 @@ class BelplanController extends Controller
      *
      * @return JSONResponse The belplannen.
      *
-     * @NoAdminRequired
-
      * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
      */
+    #[NoAdminRequired]
     public function index(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
@@ -106,10 +108,9 @@ class BelplanController extends Controller
      *
      * @return JSONResponse The created belplan.
      *
-     * @NoAdminRequired
-
      * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
      */
+    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function create(): JSONResponse
     {
         if ($this->isAdmin() === false) {
@@ -154,10 +155,9 @@ class BelplanController extends Controller
      *
      * @return JSONResponse The updated belplan.
      *
-     * @NoAdminRequired
-
      * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
      */
+    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function update(string $id): JSONResponse
     {
         if ($this->isAdmin() === false) {
@@ -193,10 +193,9 @@ class BelplanController extends Controller
      *
      * @return JSONResponse The routing decision.
      *
-     * @NoAdminRequired
-
      * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
      */
+    #[NoAdminRequired]
     public function route(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
