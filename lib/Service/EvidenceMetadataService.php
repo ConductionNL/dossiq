@@ -33,6 +33,10 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
+use DateTimeInterface;
+use InvalidArgumentException;
+
 /**
  * Validates and enriches offline field-evidence metadata.
  *
@@ -154,7 +158,7 @@ class EvidenceMetadataService
             'caseRef'              => ((string) ($context['caseRef'] ?? '')),
             'deviceId'             => ((string) ($context['deviceId'] ?? '')),
             'checklistTemplateRef' => ((string) ($context['checklistTemplateRef'] ?? '')),
-            'capturedAt'           => ($capturedAt ?? (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM)),
+            'capturedAt'           => ($capturedAt ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM)),
         ];
     }//end buildExifContext()
 
@@ -210,6 +214,18 @@ class EvidenceMetadataService
         ?array $caseAddress=null,
         ?array $gpsReading=null
     ): array {
+        if ($type === 'photo' && isset($extra['byteSize']) === true
+            && $this->isPhotoWithinTarget(byteSize: (int) $extra['byteSize']) === false
+        ) {
+            throw new InvalidArgumentException('Photo size exceeds 2 MB compression target');
+        }
+
+        if ($type === 'voice_memo' && isset($extra['durationSeconds']) === true
+            && $this->isVoiceMemoWithinLimit(durationSeconds: (int) $extra['durationSeconds']) === false
+        ) {
+            throw new InvalidArgumentException('Voice memo duration exceeds 5-minute limit');
+        }
+
         $gps = $this->classifyGps(reading: $gpsReading, caseAddress: $caseAddress);
 
         $transcriptionStatus = 'not_applicable';
@@ -226,9 +242,9 @@ class EvidenceMetadataService
                 'lat'       => $gps['location']['lat'],
                 'lon'       => $gps['location']['lon'],
                 'accuracy'  => $gps['location']['accuracy'],
-                'timestamp' => ($extra['capturedAt'] ?? (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM)),
+                'timestamp' => ($extra['capturedAt'] ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM)),
             ],
-            'capturedAt'          => ($extra['capturedAt'] ?? (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM)),
+            'capturedAt'          => ($extra['capturedAt'] ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM)),
             'transcription'       => null,
             'transcriptionStatus' => $transcriptionStatus,
             'tags'                => ($extra['tags'] ?? []),

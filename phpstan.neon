@@ -59,3 +59,27 @@ parameters:
         - '#Call to an undefined method OCP\\IRequest::setParameter\(\)#'
         - '#Call to an undefined method OCP\\Mail\\IMessage::attachFile\(\)#'
         - '#Call to an undefined method OCP\\AppFramework\\Db\\Entity::jsonSerialize#'
+        # AuthorizedAdminSetting accepts a settings-section id string at runtime
+        # (the canonical Nextcloud pattern, e.g. Application::APP_ID); the OCP
+        # attribute stub narrowly types it as class-string<IDelegatedSettings>.
+        - '#Parameter \#1 \$settings of attribute class OCP\\AppFramework\\Http\\Attribute\\AuthorizedAdminSetting constructor expects class-string<OCP\\Settings\\IDelegatedSettings>, string given#'
+        # registerEventListener accepts the listener FQCN string at runtime; the
+        # OCP generic signature is narrower than the server resolver.
+        - '#Parameter \$listener of method OCP\\AppFramework\\Bootstrap\\IRegistrationContext::registerEventListener\(\) expects class-string#'
+        # IJobList::add accepts a job class-string at runtime; OCP stub is narrow.
+        - '#Parameter \#1 \$job of method OCP\\BackgroundJob\\IJobList::add\(\) expects class-string#'
+        # OR event-listener generic: ParaferingAuditAppendOnlyValidator implements
+        # IEventListener over OR Object*Event types that are unavailable to static
+        # analysis, so the @implements generic cannot be proven a subtype.
+        - '#in PHPDoc tag @implements is not subtype of template type T of OCP\\EventDispatcher\\Event of interface OCP\\EventDispatcher\\IEventListener#'
+        # method_exists('\OC_Util', ...) guards a runtime-only server class that
+        # is not in the nextcloud/ocp stub, so phpstan deems it always-false.
+        - '#Call to function method_exists\(\) with .\\\\OC_Util. and .getVersionString. will always evaluate to false#'
+        # Defensive is_array()/null guards on IRequest::getUploadedFile() and on
+        # decoded-JSON array elements: phpstan narrows these to a concrete type
+        # from the OCP stub, but the runtime value can be null / malformed, so
+        # the guard is intentionally retained.
+        - message: '#Strict comparison using === between true and false will always evaluate to false#'
+          paths:
+              - lib/Controller/CaseDefinitionController.php
+              - lib/Repair/SeedVthWorkflowTemplates.php

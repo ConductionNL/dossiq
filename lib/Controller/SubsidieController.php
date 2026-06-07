@@ -48,24 +48,26 @@ use OCP\IUserSession;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — aggregates the four
  * subsidy lifecycle services it dispatches to.
+ *
+ * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
  */
 class SubsidieController extends Controller
 {
     /**
      * Constructor.
      *
-     * @param IRequest                $request                 The request.
-     * @param SubsidieService         $subsidieService         Core subsidy service.
-     * @param BeschikkingService      $beschikkingService      Grant-decision service.
-     * @param TussenrapportageService $tussenrapportageService Interim-report service.
-     * @param VaststellingService     $vaststellingService     Settlement service.
-     * @param IUserSession            $userSession             The user session.
+     * @param IRequest                $request             The request.
+     * @param SubsidieService         $subsidieService     Core subsidy service.
+     * @param BeschikkingService      $beschikkingService  Grant-decision service.
+     * @param TussenrapportageService $tussenrapportage    Interim-report service.
+     * @param VaststellingService     $vaststellingService Settlement service.
+     * @param IUserSession            $userSession         The user session.
      */
     public function __construct(
         IRequest $request,
         private readonly SubsidieService $subsidieService,
         private readonly BeschikkingService $beschikkingService,
-        private readonly TussenrapportageService $tussenrapportageService,
+        private readonly TussenrapportageService $tussenrapportage,
         private readonly VaststellingService $vaststellingService,
         private readonly IUserSession $userSession,
     ) {
@@ -80,6 +82,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function index(): JSONResponse
     {
@@ -110,6 +114,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function create(): JSONResponse
     {
@@ -146,6 +152,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function transition(string $id): JSONResponse
     {
@@ -174,6 +182,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function createBeschikking(string $id): JSONResponse
     {
@@ -204,6 +214,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function publishBeschikking(string $beschikkingId): JSONResponse
     {
@@ -230,6 +242,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function signBeschikking(string $beschikkingId): JSONResponse
     {
@@ -256,6 +270,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function approveTussenrapportage(string $reportId): JSONResponse
     {
@@ -277,7 +293,7 @@ class SubsidieController extends Controller
         }
 
         try {
-            $report = $this->tussenrapportageService->approveReport(
+            $report = $this->tussenrapportage->approveReport(
                 reportId: $reportId,
                 beoordelingsoordeel: $oordeelArg,
                 ingekeurdeBedrag: $bedragArg,
@@ -299,6 +315,8 @@ class SubsidieController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
      */
     public function finalizeVaststelling(string $vaststellingId): JSONResponse
     {

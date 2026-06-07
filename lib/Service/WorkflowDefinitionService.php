@@ -59,6 +59,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Lifecycle + consumer service for workflowTemplate objects.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-workflow-definition-model/tasks.md#task-2
  */
 class WorkflowDefinitionService
 {
@@ -69,22 +71,6 @@ class WorkflowDefinitionService
     public const STATUS_DRAFT      = 'draft';
     public const STATUS_PUBLISHED  = 'published';
     public const STATUS_DEPRECATED = 'deprecated';
-
-    /**
-     * Static error strings — never leak OpenRegister exception details to
-     * the HTTP layer.
-     */
-    private const ERR_OR_UNAVAILABLE     = 'Workflow definition store is not available';
-    private const ERR_SCHEMA_NOT_CONFIG  = 'Workflow definition schema is not configured';
-    private const ERR_NOT_FOUND          = 'Workflow definition not found';
-    private const ERR_PUBLISH_FAILED     = 'Could not publish workflow definition';
-    private const ERR_DEPRECATE_FAILED   = 'Could not deprecate workflow definition';
-    private const ERR_CLONE_FAILED       = 'Could not clone workflow definition';
-    private const ERR_NOT_DRAFT          = 'Only draft definitions can be edited';
-    private const ERR_NOT_PUBLISHABLE    = 'Only draft definitions can be published';
-    private const ERR_NOT_DEPRECATABLE   = 'Only published definitions can be deprecated';
-    private const ERR_INVALID_REFERENCES = 'Definition references statuses not belonging to its case type';
-    private const ERR_LAST_PUBLISHED     = 'Cannot deprecate the last published definition while open cases remain';
 
     /**
      * Constructor.
@@ -141,6 +127,8 @@ class WorkflowDefinitionService
      * @param string $id The definition UUID
      *
      * @return array<string, mixed>|null The definition or null
+     *
+     * @spec openspec/changes/retrofit-2026-05-24-workflow-definition-model/tasks.md#task-2
      */
     public function getDefinition(string $id): ?array
     {

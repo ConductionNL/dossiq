@@ -161,16 +161,28 @@ npm run build      # Production build
 ### Code quality
 
 ```bash
-# PHP
+# PHP — unified strict gate (runs in CI on every PR)
+composer check:strict   # lint + phpcs + phpmd + psalm + phpstan + tests
+
+# Individual tools
 composer phpcs          # Check coding standards
 composer cs:fix         # Auto-fix issues
-composer phpmd          # Mess detection
+composer phpmd          # Mess detection (no baseline — must pass clean)
+composer phpstan        # Static analysis (level 5)
+composer psalm          # Static analysis
 composer phpmetrics     # HTML metrics report
 
 # Frontend
 npm run lint            # ESLint
 npm run stylelint       # CSS linting
 ```
+
+`composer check:strict` is the unified quality gate, enforced on every PR by
+the `pre-merge-check-strict` workflow (`.forgejo/workflows/`). PHPMD runs with
+**no baseline** (all violations fixed). PHPStan ships a small, documented
+baseline (`phpstan-baseline.neon`) covering only injected-but-unused
+dependencies that the OR-abstraction adoption work will remove; every other
+legacy-debt cluster has been cleared.
 
 ## Tech Stack
 
