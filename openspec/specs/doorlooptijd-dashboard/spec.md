@@ -179,6 +179,18 @@ The main dashboard SHALL provide navigation to the doorlooptijd analytics view.
 - **WHEN** the user views the main Procest dashboard
 - **THEN** the system MUST display a navigation element (tab or link) to access the doorlooptijd dashboard
 
+### Requirement: Doorlooptijd page render [MVP]
+
+The doorlooptijd (processing-time analytics) page (`DoorlooptijdDashboard.vue`,
+route `/doorlooptijd`) SHALL mount and render its page shell on navigation,
+independently of whether case data is present.
+
+#### Scenario: Doorlooptijd page renders heading
+- **GIVEN** an authenticated user on the Procest app
+- **WHEN** they navigate to the doorlooptijd page
+- **THEN** the main content MUST render a "Processing Time Analytics" page heading
+- **AND** the page MUST NOT show an Internal Server Error
+
 ### Requirement: Empty state [V1]
 
 The doorlooptijd dashboard SHALL handle the case when no data is available gracefully.
