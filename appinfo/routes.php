@@ -207,8 +207,8 @@ return [
 
         // NOTE: ParaferingController + ParaferingService were superseded scaffolding
         // that operated entirely in-memory (no persistence, client-supplied state).
-        // Deleted in wave-3 security fix.  The live engine is ParafeerActieService /
-        // ParafeerRouteController.  Audit-trail export route retained below.
+        // Deleted in wave-3 security fix. The live engine is ParafeerActieService /
+        // ParafeerRouteController. Audit-trail export route retained below.
         // Parafering audit trail Archiefwet-aligned export (action, not CRUD).
         // CRUD on paraferingAuditEntry objects is served by OpenRegister's
         // auto-exposed /api/objects/<register>/<schema> endpoints — only the
@@ -345,6 +345,16 @@ return [
         ['name' => 'berichtenbox#messages', 'url' => '/api/berichtenbox/messages',             'verb' => 'GET'],
         ['name' => 'berichtenbox#poll',     'url' => '/api/berichtenbox/messages/{messageId}', 'verb' => 'GET'],
 
+        // ── Beschikking (compose -> onderteken -> Berichtenbox -> archief) ──
+        // Specific verb/suffix routes precede the generic PATCH /{id} wildcard.
+        ['name' => 'beschikking#create',      'url' => '/api/beschikkingen',                       'verb' => 'POST'],
+        ['name' => 'beschikking#show',        'url' => '/api/beschikkingen/{id}',                  'verb' => 'GET'],
+        ['name' => 'beschikking#auditPakket', 'url' => '/api/beschikkingen/{id}/audit-pakket',     'verb' => 'GET'],
+        ['name' => 'beschikking#akkoord',     'url' => '/api/beschikkingen/{id}/akkoord',          'verb' => 'PATCH'],
+        ['name' => 'beschikking#onderteken',  'url' => '/api/beschikkingen/{id}/onderteken',       'verb' => 'PATCH'],
+        ['name' => 'beschikking#verzend',     'url' => '/api/beschikkingen/{id}/verzend',          'verb' => 'PATCH'],
+        ['name' => 'beschikking#update',      'url' => '/api/beschikkingen/{id}',                  'verb' => 'PATCH'],
+
         // ── Consultation (advice requests and responses) ─────────────────
         ['name' => 'consultation#index',          'url' => '/api/consultations/{caseId}',              'verb' => 'GET'],
         ['name' => 'consultation#create',         'url' => '/api/consultations',                       'verb' => 'POST'],
@@ -373,8 +383,12 @@ return [
         ['name' => 'milestone#mark',     'url' => '/api/cases/{caseId}/milestones/{milestoneId}/mark',    'verb' => 'POST'],
         ['name' => 'milestone#reverse',  'url' => '/api/cases/{caseId}/milestones/{milestoneId}/reverse', 'verb' => 'POST'],
 
-        // ── Bezwaar/beroep dossier export ───────────────────────────────
-        ['name' => 'dossierExport#export', 'url' => '/api/cases/{caseId}/dossier-export', 'verb' => 'GET'],
+        // ── Besluitvorming workflow ──────────────────────────────────────
+        ['name' => 'besluitvorming#activateTemplate', 'url' => '/api/besluitvorming/templates/{slug}/activate', 'verb' => 'POST'],
+        ['name' => 'agenda#addToAgenda',              'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'POST'],
+        ['name' => 'agenda#updateAgendaItem',         'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'PUT'],
+        ['name' => 'publication#publish',             'url' => '/api/besluitvorming/cases/{id}/publish',        'verb' => 'POST'],
+        ['name' => 'mandaat#mandaatCheck',             'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
 
         // ── KCC-werkplek bridge (kcc-werkplek-zaaksysteem-bridge) ───────
         ['name' => 'contactMoment#create',            'url' => '/api/contactmomenten',                     'verb' => 'POST'],
@@ -391,6 +405,32 @@ return [
         ['name' => 'belplan#create',                  'url' => '/api/kcc/belplannen',                      'verb' => 'POST'],
         ['name' => 'belplan#update',                  'url' => '/api/kcc/belplannen/{id}',                 'verb' => 'PUT'],
         ['name' => 'specialistBeschikbaarheid#index', 'url' => '/api/kcc/specialist-beschikbaarheid',      'verb' => 'GET'],
+
+        // ── Complaints (klachtafhandeling) — Awb chapter 9 ─────────────────
+        ['name' => 'complaint#index',              'url' => '/api/complaints',                             'verb' => 'GET'],
+        ['name' => 'complaint#create',             'url' => '/api/complaints',                             'verb' => 'POST'],
+        ['name' => 'complaint#show',               'url' => '/api/complaints/{id}',                        'verb' => 'GET'],
+        ['name' => 'complaint#update',             'url' => '/api/complaints/{id}',                        'verb' => 'PUT'],
+        ['name' => 'complaint#transition',         'url' => '/api/complaints/{id}/transition',             'verb' => 'POST'],
+        ['name' => 'complaint#verdaging',          'url' => '/api/complaints/{id}/verdaging',              'verb' => 'POST'],
+        ['name' => 'complaint#escalate',           'url' => '/api/complaints/{id}/escalate',               'verb' => 'POST'],
+        ['name' => 'complaint#deadlineAlerts',     'url' => '/api/complaints/deadline-alerts',             'verb' => 'GET'],
+        // Hearings.
+        ['name' => 'complaint#hearings',           'url' => '/api/complaints/{id}/hearings',               'verb' => 'GET'],
+        ['name' => 'complaint#scheduleHearing',    'url' => '/api/complaints/{id}/hearings',               'verb' => 'POST'],
+        ['name' => 'complaint#recordHearingOutcome','url' => '/api/complaints/{id}/hearings/{hearingId}',  'verb' => 'PUT'],
+        // Dispositions.
+        ['name' => 'complaint#getDisposition',     'url' => '/api/complaints/{id}/disposition',            'verb' => 'GET'],
+        ['name' => 'complaint#submitDisposition',  'url' => '/api/complaints/{id}/disposition',            'verb' => 'POST'],
+        ['name' => 'complaint#approveDisposition', 'url' => '/api/complaints/{id}/disposition/approve',   'verb' => 'POST'],
+        ['name' => 'complaint#generateLetter',     'url' => '/api/complaints/{id}/disposition/letter',    'verb' => 'POST'],
+        // Analytics.
+        ['name' => 'complaint#analytics',          'url' => '/api/complaints/analytics',                  'verb' => 'GET'],
+        ['name' => 'complaint#kpi',                'url' => '/api/complaints/kpi',                        'verb' => 'GET'],
+        // Categories (admin).
+        ['name' => 'complaint#categories',         'url' => '/api/complaint-categories',                  'verb' => 'GET'],
+        ['name' => 'complaint#createCategory',     'url' => '/api/complaint-categories',                  'verb' => 'POST'],
+        ['name' => 'complaint#updateCategory',     'url' => '/api/complaint-categories/{id}',             'verb' => 'PUT'],
 
         // ── ORI Atom Feeds (public, no auth required) ───────────────────
         ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen.rss', 'verb' => 'GET'],

@@ -24,11 +24,10 @@ All signalering widget data is computed client-side from the same OpenRegister c
 
 ### Requirement: Deadline Alerts Widget [V1]
 
-@e2e exclude Deadline alerts widget requires cases with deadlines within 3 days or past; V1 data-dependent widget scenarios not testable without pre-seeded cases with specific dates.
-
-The dashboard SHALL display a Deadline Alerts widget that lists cases approaching their processing deadline and cases already overdue, enabling proactive case management. The widget uses a configurable warning threshold (default: 3 days) to identify "at risk" cases before they become overdue.
+The dashboard SHALL display a Deadline Alerts widget that lists cases approaching their processing deadline and cases already overdue, enabling proactive case management. The widget uses a configurable warning threshold (default: 3 days) to identify "at risk" cases before they become overdue. The widget RENDERS as a titled card ("Deadline Alerts") in the in-app dashboard grid with a data-independent empty-state — these UI surfaces are browser-verifiable; the data-row/sort/navigation behaviours require pre-seeded cases with specific dates and stay excluded per-scenario.
 
 #### Scenario: Cases approaching deadline within warning threshold
+@e2e exclude Requires 2+ cases with deadlines within 3 days plus sort assertions; data-dependent, not testable without pre-seeded cases with specific dates.
 - **WHEN** there are 2 open cases with deadlines within the next 3 days (warning threshold) and 1 case with deadline in 5 days
 - **THEN** the Deadline Alerts widget MUST display the 2 at-risk cases
 - **THEN** each case MUST show: title, identifier, case type name, days remaining, and assigned handler
@@ -36,6 +35,7 @@ The dashboard SHALL display a Deadline Alerts widget that lists cases approachin
 - **THEN** the case with 5 days remaining MUST NOT appear in the widget
 
 #### Scenario: Overdue cases shown above at-risk cases
+@e2e exclude Requires seeded overdue + at-risk cases and section-ordering/severity assertions; data-dependent, not testable without pre-seeded cases with specific dates.
 - **WHEN** there are 2 overdue cases (3 days overdue, 1 day overdue) and 1 at-risk case (due tomorrow)
 - **THEN** the widget MUST display overdue cases in a section above at-risk cases
 - **THEN** overdue cases MUST use a red/error severity indicator
@@ -43,55 +43,60 @@ The dashboard SHALL display a Deadline Alerts widget that lists cases approachin
 - **THEN** overdue cases MUST be sorted by days overdue descending (most overdue first)
 
 #### Scenario: No deadline alerts
+@e2e exclude The "No deadline alerts" empty message lives inside DeadlineAlertsWidget.vue, which only mounts on the Nextcloud SYSTEM dashboard (OCA.Dashboard.register) after the user adds it via the widget picker; the in-app dashboard grid renders only the titled placeholder card (covered by default-layout-includes-signalering-row), so the widget-internal empty-state is not reachable as an in-app browser surface.
 - **WHEN** all open cases have deadlines more than 3 days away (or no deadline)
 - **THEN** the widget MUST display a positive message such as "No deadline alerts"
 - **THEN** the widget MUST NOT show an error or empty broken state
 
 #### Scenario: Clicking a deadline alert row navigates to case detail
+@e2e exclude Requires a seeded at-risk/overdue case row to click; navigation-on-data-row is data-dependent, not testable without pre-seeded cases.
 - **WHEN** the user clicks on a case row in the Deadline Alerts widget
 - **THEN** the system MUST navigate to the case detail view for that case
 
 #### Scenario: View all link navigates to filtered case list
+@e2e exclude The "View all" link only renders when alerts are present (data-dependent) and asserts a filtered cross-view navigation; not testable without pre-seeded cases.
 - **WHEN** the user clicks "View all deadline alerts"
 - **THEN** the system MUST navigate to the Cases view filtered to show overdue and at-risk cases
 
 ### Requirement: Task Due Reminders Widget [V1]
 
-@e2e exclude Task due reminders widget requires tasks assigned to current user with due dates within threshold; V1 data-dependent widget scenarios not testable without pre-seeded tasks.
-
-The dashboard SHALL display a Task Due Reminders widget showing the current user's tasks that are approaching or past their due date, sorted by urgency.
+The dashboard SHALL display a Task Due Reminders widget showing the current user's tasks that are approaching or past their due date, sorted by urgency. The widget RENDERS as a titled card ("Task Due Reminders") in the in-app dashboard grid with a data-independent empty-state — these UI surfaces are browser-verifiable; the data-row/sort/navigation behaviours require pre-seeded tasks and stay excluded per-scenario.
 
 #### Scenario: Tasks approaching due date
+@e2e exclude Requires 3+ tasks with due dates within threshold plus sort assertions; data-dependent, not testable without pre-seeded tasks.
 - **WHEN** the current user has 3 tasks with due dates within the next 3 days and 2 tasks due in 7 days
 - **THEN** the widget MUST display the 3 urgent tasks
 - **THEN** each task MUST show: title, parent case reference, days remaining or "due today", and priority badge
 - **THEN** tasks MUST be sorted by due date ascending (most urgent first)
 
 #### Scenario: Overdue tasks shown with error indicator
+@e2e exclude Requires seeded overdue tasks and ordering/severity assertions; data-dependent, not testable without pre-seeded tasks.
 - **WHEN** the current user has 2 tasks past their due date (2 days overdue, 1 day overdue)
 - **THEN** the widget MUST display overdue tasks above upcoming tasks
 - **THEN** overdue tasks MUST show "N days overdue" with a red/error visual indicator
 - **THEN** overdue tasks MUST be sorted by days overdue descending
 
 #### Scenario: No task reminders
+@e2e exclude The "No task reminders" empty message lives inside TaskRemindersWidget.vue, which only mounts on the Nextcloud SYSTEM dashboard (OCA.Dashboard.register) after the user adds it via the widget picker; the in-app dashboard grid renders only the titled placeholder card (covered by default-layout-includes-signalering-row), so the widget-internal empty-state is not reachable as an in-app browser surface.
 - **WHEN** the current user has no tasks approaching or past their due date within the warning threshold
 - **THEN** the widget MUST display a message such as "No task reminders"
 
 #### Scenario: Clicking a task reminder navigates to task detail
+@e2e exclude Requires a seeded task row to click; navigation-on-data-row is data-dependent, not testable without pre-seeded tasks.
 - **WHEN** the user clicks on a task in the Task Due Reminders widget
 - **THEN** the system MUST navigate to the task detail view
 
 #### Scenario: Tasks without due dates excluded
+@e2e exclude Filtering logic on a seeded task without a due date; backend/helper filter behaviour, covered by dashboardHelpers unit tests, not browser-verifiable.
 - **WHEN** a task has no due date set
 - **THEN** the task MUST NOT appear in the Task Due Reminders widget
 
 ### Requirement: Stalled Cases Widget [V1]
 
-@e2e exclude Stalled cases widget requires cases with dateModified older than 7 days; V1 data-dependent widget scenarios not testable without time-controlled case data.
-
-The dashboard SHALL display a Stalled Cases widget identifying cases that have had no status change or activity for a configurable period (default: 7 days), indicating they may need attention.
+The dashboard SHALL display a Stalled Cases widget identifying cases that have had no status change or activity for a configurable period (default: 7 days), indicating they may need attention. The widget RENDERS as a titled card ("Stalled Cases") in the in-app dashboard grid with a data-independent empty-state ("All cases active") — these UI surfaces are browser-verifiable; the stall-detection/sort/navigation behaviours require time-controlled case data and stay excluded per-scenario.
 
 #### Scenario: Cases with no recent activity
+@e2e exclude Requires 3+ cases with dateModified older than 7 days plus sort assertions; data-dependent, not testable without time-controlled case data.
 - **WHEN** there are 3 open cases with no status change in the last 7 days and 2 open cases that had a status change 2 days ago
 - **THEN** the Stalled Cases widget MUST display the 3 stalled cases
 - **THEN** each case MUST show: title, identifier, case type name, days since last activity, and assigned handler
@@ -99,19 +104,23 @@ The dashboard SHALL display a Stalled Cases widget identifying cases that have h
 - **THEN** the 2 recently-active cases MUST NOT appear
 
 #### Scenario: Stalled case detection uses dateModified
+@e2e exclude dateModified-based stall detection threshold logic; backend/helper computation, covered by dashboardHelpers unit tests, not browser-verifiable.
 - **WHEN** a case object has a `dateModified` field with value 10 days ago
 - **THEN** the case MUST be identified as stalled (10 days > 7 day threshold)
 - **THEN** the widget MUST show "10 days inactive" for that case
 
 #### Scenario: No stalled cases
+@e2e exclude The "All cases active" empty message lives inside StalledCasesWidget.vue, which only mounts on the Nextcloud SYSTEM dashboard (OCA.Dashboard.register) after the user adds it via the widget picker; the in-app dashboard grid renders only the titled placeholder card (covered by default-layout-includes-signalering-row), so the widget-internal empty-state is not reachable as an in-app browser surface.
 - **WHEN** all open cases have had activity within the last 7 days
 - **THEN** the widget MUST display a positive message such as "All cases active"
 
 #### Scenario: Clicking a stalled case navigates to case detail
+@e2e exclude Requires a seeded stalled-case row to click; navigation-on-data-row is data-dependent, not testable without time-controlled case data.
 - **WHEN** the user clicks on a case in the Stalled Cases widget
 - **THEN** the system MUST navigate to the case detail view for that case
 
 #### Scenario: Final-status cases excluded from stalled detection
+@e2e exclude Final-status filtering of a seeded completed case; backend/helper filter behaviour, covered by dashboardHelpers unit tests, not browser-verifiable.
 - **WHEN** a case has a final status and no activity in 30 days
 - **THEN** the case MUST NOT appear in the Stalled Cases widget (completed cases are not stalled)
 
@@ -162,9 +171,7 @@ The system SHALL provide dashboard helper functions for computing deadline proxi
 
 ### Requirement: Dashboard Layout Extension for Signalering [V1]
 
-@e2e exclude Dashboard layout requires the Procest in-app dashboard to render its widget grid, which is not accessible in the current Playwright-testable build due to the fixme annotation in pages.spec.ts.
-
-The existing dashboard layout SHALL be extended to include the signalering widgets in a third row below the existing KPI cards, status chart, and My Work preview.
+The existing dashboard layout SHALL be extended to include the signalering widgets in a third row below the existing KPI cards, status chart, and My Work preview. The in-app Dashboard page (manifest `pages[0]`) renders the three signalering widgets as titled cards ("Deadline Alerts", "Task Due Reminders", "Stalled Cases") in its widget grid — this default-layout rendering is browser-verifiable.
 
 #### Scenario: Default layout includes signalering row
 - **WHEN** the user views the dashboard for the first time after this feature is added
@@ -175,6 +182,7 @@ The existing dashboard layout SHALL be extended to include the signalering widge
 - **THEN** the existing KPI cards row and status/my-work row MUST remain unchanged
 
 #### Scenario: Signalering widgets respect dashboard grid system
+@e2e exclude Grid-column sizing and drag-rearrange persistence are CSS-grid/layout-store internals, not browser-assertable rendering surfaces.
 - **WHEN** signalering widgets are displayed
 - **THEN** they MUST use the CnDashboardPage grid system with proper widgetId and slot names
 - **THEN** users MUST be able to rearrange them like other dashboard widgets
@@ -214,6 +222,25 @@ Each of `DeadlineAlertsWidget`, `OverdueCasesWidget`, `StalledCasesWidget`, and 
 - **AND** each widget's icon + title SHALL match its `getIconClass()` + `getTitle()` return values
 
 <!-- END retrofit-2026-05-24-signalering-widgets -->
+
+## Work Queue Page Render (UI surface)
+
+### REQ-SIG-UI-01: The Work Queue page SHALL render its KPI shell and filters
+
+The Work Queue page (`Werkvoorraad.vue`, route `/werkvoorraad`) SHALL mount and
+render its stable shell — the "Work Queue" page heading, the KPI strip
+(Open Cases, Overdue, Completed This Week, Unassigned), and the queue filter
+buttons (All, Unassigned, Overdue) — independently of whether cases are present.
+KPI values and queue rows are data-dependent and covered by the widget data
+scenarios above; this scenario asserts only the browser-verifiable rendered shell
+and filter controls.
+
+#### Scenario: Work Queue page renders KPI strip and filters
+- **GIVEN** an authenticated user on the Procest app
+- **WHEN** they navigate to the Work Queue page
+- **THEN** the main content MUST show a level-2 "Work Queue" heading
+- **AND** the KPI strip MUST show "Open Cases", "Overdue", "Completed This Week" and "Unassigned" labels
+- **AND** the "All", "Unassigned" and "Overdue" queue filter buttons MUST be visible
 
 ## Non-Functional Requirements
 

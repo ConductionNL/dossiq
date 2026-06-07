@@ -32,10 +32,18 @@ use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Procest\BackgroundJob\AdviceDeadlineJob;
+use OCA\Procest\BackgroundJob\ArchivalJob;
+use OCA\Procest\BackgroundJob\BezwaarTermijnJob;
 use OCA\Procest\BackgroundJob\SentimentAnalysisJob;
 use OCA\Procest\BackgroundJob\SpecialistBeschikbaarheidRefreshJob;
 use OCA\Procest\BackgroundJob\VergaderingDeadlineJob;
 use OCA\Procest\BackgroundJob\WOODeadlineCheckJob;
+use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
+use OCA\Procest\Service\Beschikking\MockArchivalAdapter;
+use OCA\Procest\Service\Beschikking\MockSigningAdapter;
+use OCA\Procest\Service\Beschikking\MockTemplateEngineAdapter;
+use OCA\Procest\Service\Beschikking\SigningAdapterInterface;
+use OCA\Procest\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Procest\Cron\OriDataQualityCheck;
 use OCA\Procest\Dashboard\CasesOverviewWidget;
 use OCA\Procest\Dashboard\DeadlineAlertsWidget;
@@ -45,6 +53,7 @@ use OCA\Procest\Dashboard\StalledCasesWidget;
 use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Dashboard\StartCaseWidget;
 use OCA\Procest\Listener\BezwaarAdviceRequestedListener;
+use OCA\Procest\Listener\VergunningaanvraagCreatedListener;
 use OCA\Procest\Listener\BezwaarDecisionListener;
 use OCA\Procest\Listener\BezwaarHearingScheduledListener;
 use OCA\Procest\Listener\BezwaarLifecycleListener;
@@ -64,6 +73,8 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
  * Main application class for the Procest case management app.
+ *
+ * @spec openspec/changes/beschikking-generatie/tasks.md
  */
 class Application extends App implements IBootstrap
 {
@@ -85,6 +96,8 @@ class Application extends App implements IBootstrap
      * @param IRegistrationContext $context The registration context
      *
      * @return void
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md
      */
     public function register(IRegistrationContext $context): void
     {
@@ -122,6 +135,12 @@ class Application extends App implements IBootstrap
             listener: RoleMutationListener::class
         );
 
+        // DSO: listen for new vergunningaanvraag objects from OpenRegister.
+        $context->registerEventListener(
+            event: ObjectCreatedEvent::class,
+            listener: VergunningaanvraagCreatedListener::class
+        );
+
         $this->registerBezwaarListeners(context: $context);
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
@@ -131,8 +150,18 @@ class Application extends App implements IBootstrap
         $context->registerJob(class: OriDataQualityCheck::class);
         $context->registerJob(class: VergaderingDeadlineJob::class);
         $context->registerJob(class: WOODeadlineCheckJob::class);
+        $context->registerJob(class: BezwaarTermijnJob::class);
+        $context->registerJob(class: ArchivalJob::class);
         $context->registerJob(class: SentimentAnalysisJob::class);
         $context->registerJob(class: SpecialistBeschikbaarheidRefreshJob::class);
+
+        // Beschikking cross-app integration adapters. These resolve to mock
+        // implementations until the real OpenConnector (TSP signing),
+        // Docudesk (template render), and OpenRegister (archief ingest)
+        // endpoints land in their own repos (tasks T23-T26).
+        $context->registerServiceAlias(TemplateEngineAdapterInterface::class, MockTemplateEngineAdapter::class);
+        $context->registerServiceAlias(SigningAdapterInterface::class, MockSigningAdapter::class);
+        $context->registerServiceAlias(ArchivalAdapterInterface::class, MockArchivalAdapter::class);
 
         $this->registerWidgetsAndProviders(context: $context);
     }//end register()
@@ -244,6 +273,8 @@ class Application extends App implements IBootstrap
      * @return void
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md
      */
     public function boot(IBootContext $context): void
     {

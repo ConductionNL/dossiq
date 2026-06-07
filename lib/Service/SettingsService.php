@@ -34,6 +34,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Service for managing Procest application configuration and settings.
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
  */
 class SettingsService
 {
@@ -195,6 +197,11 @@ class SettingsService
         'belplan_overflow_threshold_wachttijd',
         'belplan_overflow_threshold_wachtrij_lengte',
         'sentiment_trigger_words',
+        // Complaint management (klachtafhandeling) — Awb chapter 9.
+        'complaint_schema',
+        'hearing_schema',
+        'complaint_disposition_schema',
+        'complaint_category_schema',
     ];
 
     /**
@@ -283,6 +290,11 @@ class SettingsService
         'specialistBeschikbaarheid'    => 'specialist_beschikbaarheid_schema',
         'doorverbinding'               => 'doorverbinding_schema',
         'klantSentiment'               => 'klant_sentiment_schema',
+        // Complaint management (klachtafhandeling) — Awb chapter 9.
+        'complaint'                    => 'complaint_schema',
+        'hearing'                      => 'hearing_schema',
+        'complaintDisposition'         => 'complaint_disposition_schema',
+        'complaintCategory'            => 'complaint_category_schema',
     ];
 
     /**
@@ -328,6 +340,8 @@ class SettingsService
      * Check if OpenRegister is installed and enabled.
      *
      * @return bool
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
      */
     public function isOpenRegisterAvailable(): bool
     {
@@ -508,6 +522,8 @@ class SettingsService
      * to ordinary authenticated users.
      *
      * @return array
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
      */
     public function getPublicSettings(): array
     {
@@ -550,6 +566,8 @@ class SettingsService
      * @param string $default The default value if key not found
      *
      * @return string
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
      */
     public function getConfigValue(string $key, string $default=''): string
     {
@@ -585,6 +603,8 @@ class SettingsService
      * @param string $value The value to set
      *
      * @return void
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
      */
     public function setConfigValue(string $key, string $value): void
     {
@@ -793,4 +813,4 @@ class SettingsService
 
         return true;
     }//end isList()
-}//end class
+    }//end class

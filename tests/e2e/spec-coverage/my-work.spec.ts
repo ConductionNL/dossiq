@@ -10,6 +10,7 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { dismissSupportDialog } from '../helpers/nav'
 
 test.describe('My Work spec coverage', () => {
 
@@ -37,6 +38,9 @@ test.describe('My Work spec coverage', () => {
 	// @e2e openspec/specs/my-work/spec.md#empty-after-filtering
 	test('filter tabs remain clickable with zero items', async ({ page }) => {
 		await page.goto('/apps/procest/my-work')
+		// The "Support Procest" dialog auto-opens and its modal-mask intercepts
+		// pointer events, blocking the tab click. Dismiss it first.
+		await dismissSupportDialog(page)
 		await expect(page.getByRole('tab', { name: /Cases/ })).toBeVisible({ timeout: 10000 })
 		// Clicking a tab with 0 items should not error — the empty state should persist
 		await page.getByRole('tab', { name: /Cases/ }).click()
