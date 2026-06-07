@@ -35,6 +35,7 @@ namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use InvalidArgumentException;
 
 /**
  * Validates and enriches offline field-evidence metadata.
@@ -213,6 +214,18 @@ class EvidenceMetadataService
         ?array $caseAddress=null,
         ?array $gpsReading=null
     ): array {
+        if ($type === 'photo' && isset($extra['byteSize']) === true
+            && $this->isPhotoWithinTarget(byteSize: (int) $extra['byteSize']) === false
+        ) {
+            throw new InvalidArgumentException('Photo size exceeds 2 MB compression target');
+        }
+
+        if ($type === 'voice_memo' && isset($extra['durationSeconds']) === true
+            && $this->isVoiceMemoWithinLimit(durationSeconds: (int) $extra['durationSeconds']) === false
+        ) {
+            throw new InvalidArgumentException('Voice memo duration exceeds 5-minute limit');
+        }
+
         $gps = $this->classifyGps(reading: $gpsReading, caseAddress: $caseAddress);
 
         $transcriptionStatus = 'not_applicable';
