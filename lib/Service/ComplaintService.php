@@ -266,6 +266,10 @@ class ComplaintService
             throw new \RuntimeException('Complaint not found: '.$id);
         }
 
+        if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
+            throw new \RuntimeException('Unknown complaint status: '.$newStatus);
+        }
+
         $currentStatus = $complaint['status'] ?? 'ontvangen';
         $allowed       = self::TRANSITIONS[$currentStatus] ?? [];
 

@@ -23,7 +23,6 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\HearingService;
 use OCA\Procest\Service\SettingsService;
-use OCP\Calendar\IManager as ICalendarManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -39,11 +38,6 @@ class HearingServiceTest extends TestCase
      * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
      */
     private SettingsService $settingsService;
-
-    /**
-     * @var ICalendarManager|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private ICalendarManager $calendarManager;
 
     /**
      * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
@@ -63,12 +57,10 @@ class HearingServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->settingsService = $this->createMock(SettingsService::class);
-        $this->calendarManager = $this->createMock(ICalendarManager::class);
         $this->logger          = $this->createMock(LoggerInterface::class);
 
         $this->service = new HearingService(
             settingsService: $this->settingsService,
-            calendarManager: $this->calendarManager,
             logger: $this->logger,
         );
     }//end setUp()

@@ -32,6 +32,40 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
+ * Minimal ObjectService stub with named-parameter signatures.
+ *
+ * The OpenRegister ObjectService is resolved at runtime and called with named
+ * arguments; a \stdClass-based mock generates positional-only signatures and
+ * fails at call time with "Unknown named parameter". This typed interface lets
+ * PHPUnit generate a mock whose method signatures accept the named arguments.
+ */
+interface DsoCaseObjectServiceStub
+{
+    /**
+     * Find a single object by ID.
+     *
+     * @param string $register Register slug
+     * @param string $schema   Schema slug
+     * @param string $id       Object UUID
+     *
+     * @return array<string,mixed>|null
+     */
+    public function findObject(string $register, string $schema, string $id): ?array;
+
+    /**
+     * Save or update an object.
+     *
+     * @param string              $register Register slug
+     * @param string              $schema   Schema slug
+     * @param array<string,mixed> $object   Object data
+     * @param string|null         $id       Optional object UUID for updates
+     *
+     * @return array<string,mixed>
+     */
+    public function saveObject(string $register, string $schema, array $object, ?string $id=null): array;
+}//end interface
+
+/**
  * Unit tests for DsoCaseService.
  *
  * @covers \OCA\Procest\Service\DsoCaseService
@@ -254,9 +288,7 @@ class DsoCaseServiceTest extends TestCase
      */
     public function testCreateZaakFromVergunningaanvraagCallsObjectService(): void
     {
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['findObject', 'saveObject'])
-            ->getMock();
+        $objectServiceMock = $this->createMock(DsoCaseObjectServiceStub::class);
 
         $aanvraag = [
             'id'              => 'aanvraag-uuid-1',

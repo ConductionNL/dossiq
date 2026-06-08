@@ -26,15 +26,14 @@ use OCA\Procest\Controller\DsoController;
 use OCA\Procest\Service\BeschikkingGenerationService;
 use OCA\Procest\Service\DsoCaseService;
 use OCA\Procest\Service\SamenwerkverzoekService;
+use OCA\Procest\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\EventDispatcher\IEventDispatcher;
-use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -67,28 +66,38 @@ interface DsoControllerObjectServiceStub
 }//end interface
 
 /**
- * Concrete IRequest stub for the 403 test, exposing the server array so the
- * controller's resolveConfigValue() and getObjectServiceOrFail() can locate the
- * DI container. An anonymous class would violate PHPCS doc-comment rules.
+ * Concrete IRequest stub for the DsoController tests. The OCP IRequest mock
+ * cannot configure getContent() (it is a magic property on the real NC request),
+ * so a concrete stub is used to exercise the controller body. An anonymous class
+ * would violate PHPCS doc-comment rules.
  */
 class DsoControllerRequestStub implements IRequest
 {
 
     /**
-     * Server superglobals — must carry '_container' for container resolution.
+     * Optional override for getParam() return values, keyed by parameter name.
      *
      * @var array<string,mixed>
      */
-    public array $server;
+    private array $params;
+
+    /**
+     * Raw request body returned by getContent().
+     *
+     * @var string
+     */
+    private string $content;
 
     /**
      * Constructor.
      *
-     * @param ContainerInterface $container The DI container mock
+     * @param array<string,mixed> $params  Optional getParam overrides.
+     * @param string              $content Raw request body for getContent().
      */
-    public function __construct(ContainerInterface $container)
+    public function __construct(array $params=[], string $content='')
     {
-        $this->server = ['_container' => $container];
+        $this->params  = $params;
+        $this->content = $content;
     }//end __construct()
 
     /**
@@ -101,6 +110,10 @@ class DsoControllerRequestStub implements IRequest
      */
     public function getParam(string $key, mixed $default=null): mixed
     {
+        if (array_key_exists($key, $this->params) === true) {
+            return $this->params[$key];
+        }
+
         return match ($key) {
             'newStatus'    => 'in_behandeling',
             'besluitdatum' => null,
@@ -345,7 +358,7 @@ class DsoControllerRequestStub implements IRequest
      */
     public function getContent(): string
     {
-        return '';
+        return $this->content;
     }//end getContent()
 }//end class
 
@@ -393,11 +406,11 @@ class DsoControllerTest extends TestCase
     private IUserSession $userSession;
 
     /**
-     * The IL10N mock.
+     * The SettingsService mock.
      *
-     * @var IL10N|MockObject
+     * @var SettingsService|MockObject
      */
-    private IL10N $l10n;
+    private SettingsService $settingsService;
 
     /**
      * The IEventDispatcher mock.
@@ -429,12 +442,12 @@ class DsoControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->request            = $this->createMock(IRequest::class);
+        $this->request            = new DsoControllerRequestStub();
         $this->dsoCaseService     = $this->createMock(DsoCaseService::class);
         $this->beschikkingService = $this->createMock(BeschikkingGenerationService::class);
         $this->samenwerkService   = $this->createMock(SamenwerkverzoekService::class);
         $this->userSession        = $this->createMock(IUserSession::class);
-        $this->l10n            = $this->createMock(IL10N::class);
+        $this->settingsService = $this->createMock(SettingsService::class);
         $this->eventDispatcher = $this->createMock(IEventDispatcher::class);
         $this->logger          = $this->createMock(LoggerInterface::class);
 
@@ -444,8 +457,8 @@ class DsoControllerTest extends TestCase
             dsoCaseService: $this->dsoCaseService,
             beschikkingService: $this->beschikkingService,
             samenwerkService: $this->samenwerkService,
+            settingsService: $this->settingsService,
             userSession: $this->userSession,
-            l10n: $this->l10n,
             eventDispatcher: $this->eventDispatcher,
             logger: $this->logger,
         );
@@ -507,37 +520,22 @@ class DsoControllerTest extends TestCase
         $mockObjectService->method('findObject')
             ->willReturn(['id' => 'case-123', 'assigneeUserId' => 'other_user']);
 
-        $appConfigMock = $this->createMock(\OCP\IAppConfig::class);
+        $settingsServiceMock = $this->createMock(SettingsService::class);
+        $settingsServiceMock->method('getObjectService')->willReturn($mockObjectService);
         // phpcs:disable CustomSn.Functions.NamedParameters
-        $appConfigMock->method('getValueString')->willReturn('procest-register');
+        $settingsServiceMock->method('getConfigValue')->willReturn('procest-register');
         // phpcs:enable CustomSn.Functions.NamedParameters
 
-        $mockContainer = $this->createMock(ContainerInterface::class);
-        $mockContainer->method('get')
-            ->willReturnCallback(
-                function (string $id) use ($mockObjectService, $appConfigMock): ?object {
-                    if ($id === 'OCA\OpenRegister\Service\ObjectService') {
-                        return $mockObjectService;
-                    }
-
-                    if ($id === 'OCP\IAppConfig') {
-                        return $appConfigMock;
-                    }
-
-                    return null;
-                }
-            );
-
-        $concreteRequest = new DsoControllerRequestStub(container: $mockContainer);
+        $requestStub = new DsoControllerRequestStub(content: '{"newStatus":"in_behandeling"}');
 
         $controller = new DsoController(
             appName: 'procest',
-            request: $concreteRequest,
+            request: $requestStub,
             dsoCaseService: $this->dsoCaseService,
             beschikkingService: $this->beschikkingService,
             samenwerkService: $this->samenwerkService,
+            settingsService: $settingsServiceMock,
             userSession: $this->userSession,
-            l10n: $this->l10n,
             eventDispatcher: $this->eventDispatcher,
             logger: $this->logger,
         );
@@ -564,9 +562,21 @@ class DsoControllerTest extends TestCase
         $userMock->method('getUID')->willReturn('user1');
         $this->userSession->method('getUser')->willReturn($userMock);
 
-        $this->request->method('getContent')->willReturn('{"motivation":"test"}');
+        $requestStub = new DsoControllerRequestStub(content: '{"motivation":"test"}');
 
-        $response = $this->controller->generateBeschikking(caseId: 'case-123');
+        $controller = new DsoController(
+            appName: 'procest',
+            request: $requestStub,
+            dsoCaseService: $this->dsoCaseService,
+            beschikkingService: $this->beschikkingService,
+            samenwerkService: $this->samenwerkService,
+            settingsService: $this->settingsService,
+            userSession: $this->userSession,
+            eventDispatcher: $this->eventDispatcher,
+            logger: $this->logger,
+        );
+
+        $response = $controller->generateBeschikking(caseId: 'case-123');
 
         $this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
     }//end testGenerateBeschikkingReturns400WhenOutcomeMissing()

@@ -31,6 +31,7 @@ use OCA\Procest\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
+use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
@@ -73,6 +74,11 @@ class ComplaintControllerTest extends TestCase
     private IUserSession $userSession;
 
     /**
+     * @var IGroupManager|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private IGroupManager $groupManager;
+
+    /**
      * @var IRequest|\PHPUnit\Framework\MockObject\MockObject
      */
     private IRequest $request;
@@ -100,6 +106,7 @@ class ComplaintControllerTest extends TestCase
         $this->analyticsService   = $this->createMock(ComplaintAnalyticsService::class);
         $this->settingsService    = $this->createMock(SettingsService::class);
         $this->userSession        = $this->createMock(IUserSession::class);
+        $this->groupManager       = $this->createMock(IGroupManager::class);
         $this->request            = $this->createMock(IRequest::class);
         $this->user               = $this->createMock(IUser::class);
 
@@ -115,6 +122,7 @@ class ComplaintControllerTest extends TestCase
             complaintAnalyticsService: $this->analyticsService,
             settingsService: $this->settingsService,
             userSession: $this->userSession,
+            groupManager: $this->groupManager,
         );
     }//end setUp()
 
@@ -160,6 +168,7 @@ class ComplaintControllerTest extends TestCase
             complaintAnalyticsService: $this->analyticsService,
             settingsService: $this->settingsService,
             userSession: $unauthSession,
+            groupManager: $this->groupManager,
         );
 
         $this->request->method('getParam')->willReturn(null);

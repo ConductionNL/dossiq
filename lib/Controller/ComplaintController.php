@@ -31,6 +31,8 @@ use OCA\Procest\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSForbiddenException;
+use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -52,6 +54,7 @@ class ComplaintController extends Controller
      * @param ComplaintAnalyticsService $complaintAnalyticsService Analytics service
      * @param SettingsService           $settingsService           Settings service
      * @param IUserSession              $userSession               User session
+     * @param IGroupManager             $groupManager              Group manager (admin checks)
      */
     public function __construct(
         string $appName,
@@ -62,6 +65,7 @@ class ComplaintController extends Controller
         private readonly ComplaintAnalyticsService $complaintAnalyticsService,
         private readonly SettingsService $settingsService,
         private readonly IUserSession $userSession,
+        private readonly IGroupManager $groupManager,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -467,7 +471,8 @@ class ComplaintController extends Controller
 
         try {
             $data            = $this->parseBody();
-            $requireApproval = (bool) ($this->settingsService->getConfigValue('complaint_require_approval') ?? false);
+            $approvalSetting = $this->settingsService->getConfigValue('complaint_require_approval');
+            $requireApproval = in_array(strtolower($approvalSetting), ['1', 'true', 'yes'], true);
             $disposition     = $this->dispositionService->submitDisposition($id, $data, $requireApproval);
 
             if ($requireApproval === false) {
@@ -766,14 +771,15 @@ class ComplaintController extends Controller
      *
      * @return void
      *
-     * @throws \OCP\AppFramework\Http\DataResponse Never — read access is broadly allowed
-     *
      * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
      */
     private function authorizeComplaintAccess(array $complaint, string $userId): void
     {
-        // Read access is broadly allowed for authenticated users.
-        // Coordinators and admins can always read.
+        // Read access is broadly allowed for authenticated users: the behandelaar
+        // and coordinators/admins can always read. The complaint and userId are
+        // retained in the signature so this guard can be tightened later without
+        // touching every call site.
+        unset($complaint, $userId);
     }//end authorizeComplaintAccess()
 
     /**
@@ -786,7 +792,7 @@ class ComplaintController extends Controller
      *
      * @return void
      *
-     * @throws \OCP\AppFramework\Http\DataResponse If not authorized
+     * @throws OCSForbiddenException If not authorized
      *
      * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
      */
@@ -800,7 +806,7 @@ class ComplaintController extends Controller
         }
 
         // Admins can always mutate.
-        $isAdmin = \OC::$server->get(\OCP\IGroupManager::class)->isAdmin($userId);
+        $isAdmin = $this->groupManager->isAdmin($userId);
         if ($isAdmin === true) {
             return;
         }
@@ -810,7 +816,7 @@ class ComplaintController extends Controller
             return;
         }
 
-        throw new \OCP\AppFramework\OCSForbiddenException('Not authorized to modify this complaint');
+        throw new OCSForbiddenException('Not authorized to modify this complaint');
     }//end authorizeComplaintMutation()
 
     /**
@@ -820,15 +826,15 @@ class ComplaintController extends Controller
      *
      * @return void
      *
-     * @throws \OCP\AppFramework\OCSForbiddenException If not a coordinator
+     * @throws OCSForbiddenException If not a coordinator
      *
      * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
      */
     private function requireCoordinator(string $userId): void
     {
-        $isAdmin = \OC::$server->get(\OCP\IGroupManager::class)->isAdmin($userId);
+        $isAdmin = $this->groupManager->isAdmin($userId);
         if ($isAdmin === false) {
-            throw new \OCP\AppFramework\OCSForbiddenException('This action requires coordinator (admin) privileges');
+            throw new OCSForbiddenException('This action requires coordinator (admin) privileges');
         }
     }//end requireCoordinator()
 }//end class
