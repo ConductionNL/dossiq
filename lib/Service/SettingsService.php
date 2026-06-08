@@ -144,6 +144,17 @@ class SettingsService
         'subsidie_vaststelling_schema',
         'terugvordering_schema',
         'bewijsstuk_schema',
+        // Leges-heffingen (leges-heffingen spec) — Gemeentewet art. 229.
+        'leges_tarief_tabel_schema',
+        'leges_tarief_schema',
+        'leges_variant_schema',
+        'leges_korting_schema',
+        'leges_berekening_schema',
+        'leges_restitutie_schema',
+        // Shillinq accounts-receivable integration toggles.
+        'leges_shillinq_enabled',
+        'leges_shillinq_source',
+        'leges_betalingstermijn_dagen',
         'lhsMatrix',
         'lhs_matrix_schema',
         'lhs_recommendation_schema',
@@ -184,6 +195,10 @@ class SettingsService
         'hearing_schema',
         'complaint_disposition_schema',
         'complaint_category_schema',
+        // Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente).
+        'portaal_bericht_schema',
+        'portaal_verzoek_schema',
+        'portaal_notificatie_voorkeur_schema',
     ];
 
     /**
@@ -253,11 +268,34 @@ class SettingsService
         'bacAdviceRequest'             => 'bac_advice_request_schema',
         'beroep'                       => 'beroep_schema',
         'bezwaarDecision'              => 'bezwaar_decision_schema',
+        'routingRule'                  => 'routing_rule_schema',
+        'kccAgent'                     => 'kcc_agent_schema',
+        'callbackRequest'              => 'callback_request_schema',
+        'subsidieRegeling'             => 'subsidie_regeling_schema',
+        'subsidieAanvraag'             => 'subsidie_aanvraag_schema',
+        'subsidieBeoordeling'          => 'subsidie_beoordeling_schema',
+        'subsidieBeschikking'          => 'subsidie_beschikking_schema',
+        'subsidieUitvoering'           => 'subsidie_uitvoering_schema',
+        'tussenrapportage'             => 'tussenrapportage_schema',
+        'subsidieVaststelling'         => 'subsidie_vaststelling_schema',
+        'terugvordering'               => 'terugvordering_schema',
+        'bewijsstuk'                   => 'bewijsstuk_schema',
         // Complaint management (klachtafhandeling) — Awb chapter 9.
         'complaint'                    => 'complaint_schema',
         'hearing'                      => 'hearing_schema',
         'complaintDisposition'         => 'complaint_disposition_schema',
         'complaintCategory'            => 'complaint_category_schema',
+        // Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente).
+        'portaalBericht'               => 'portaal_bericht_schema',
+        'portaalVerzoek'               => 'portaal_verzoek_schema',
+        'portaalNotificatieVoorkeur'   => 'portaal_notificatie_voorkeur_schema',
+        // Leges (municipal fees) — leges-heffingen spec.
+        'legesTariefTabel'             => 'leges_tarief_tabel_schema',
+        'legesTarief'                  => 'leges_tarief_schema',
+        'legesVariant'                 => 'leges_variant_schema',
+        'legesKorting'                 => 'leges_korting_schema',
+        'legesBerekening'              => 'leges_berekening_schema',
+        'legesRestitutie'              => 'leges_restitutie_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

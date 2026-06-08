@@ -262,9 +262,9 @@ class CaseSharingService
         }
 
         $result = $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $shareData,
+            object: $shareData,
+            register: (int) $register,
+            schema: (int) $schema,
         );
 
         $this->logger->info(
@@ -320,9 +320,9 @@ class CaseSharingService
         ];
 
         $result = $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $shareData,
+            object: $shareData,
+            register: (int) $register,
+            schema: (int) $schema,
         );
 
         $this->logger->info(
@@ -542,7 +542,7 @@ class CaseSharingService
         $shareData['revokedBy'] = $userId;
         $shareData['revokedAt'] = (new \DateTime())->format('c');
 
-        $result = $objectService->saveObject((int) $register, (int) $shareSchema, $shareData);
+        $result = $objectService->saveObject(object: $shareData, register: (int) $register, schema: (int) $shareSchema);
 
         $this->logger->info(
             'Procest: Case share revoked',

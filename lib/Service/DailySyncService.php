@@ -33,6 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use OCA\Procest\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -100,12 +102,12 @@ class DailySyncService
      */
     public function getDailyPayload(string $inspectorId, ?string $date=null): array
     {
-        $targetDate = ($date ?? (new \DateTimeImmutable())->format('Y-m-d'));
+        $targetDate = ($date ?? (new DateTimeImmutable())->format('Y-m-d'));
         $cases      = $this->getScheduledInspections(inspectorId: $inspectorId, date: $targetDate);
         $checklists = $this->getReferencedChecklists(cases: $cases);
         $manifest   = $this->buildManifest(cases: $cases, checklists: $checklists);
 
-        $expiresAt = (new \DateTimeImmutable())->modify('+24 hours')->format(\DateTimeInterface::ATOM);
+        $expiresAt = (new DateTimeImmutable())->modify('+24 hours')->format(DateTimeInterface::ATOM);
 
         return [
             'date'         => $targetDate,
@@ -267,7 +269,7 @@ class DailySyncService
         $estimatedBytes += ((count($cases) + count($checklists)) * 4096);
 
         // Warn when the payload is large enough to be slow on a 3G link.
-        $slowConnectionWarning = ($estimatedBytes > (30 * 1024 * 1024));
+        $slowLinkWarning = ($estimatedBytes > (30 * 1024 * 1024));
 
         return [
             'caseCount'             => count($cases),
@@ -275,7 +277,7 @@ class DailySyncService
             'estimatedTiles'        => $estimatedTiles,
             'estimatedBytes'        => $estimatedBytes,
             'zoomLevels'            => self::TILE_ZOOM_LEVELS,
-            'slowConnectionWarning' => $slowConnectionWarning,
+            'slowConnectionWarning' => $slowLinkWarning,
         ];
     }//end buildManifest()
 

@@ -18,6 +18,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/woo-case-type/tasks.md#task-5
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -150,16 +153,16 @@ class WOODocumentAssessmentService
             if (is_array($existing) === true && count($existing) > 0) {
                 $existingId  = $existing[0]['id'] ?? $existing[0]['uuid'] ?? null;
                 $savedObject = $objectService->saveObject(
-                    $register,
-                    $assessmentSchema,
-                    $assessment,
-                    $existingId,
+                    object: $assessment,
+                    register: $register,
+                    schema: $assessmentSchema,
+                    uuid: (string) $existingId,
                 );
             } else {
                 $savedObject = $objectService->saveObject(
-                    $register,
-                    $assessmentSchema,
-                    $assessment,
+                    object: $assessment,
+                    register: $register,
+                    schema: $assessmentSchema,
                 );
             }
 

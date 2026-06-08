@@ -68,6 +68,11 @@ return [
         ['name' => 'kccContact#show',    'url' => '/api/kcc/contact-moments/{id}', 'verb' => 'GET'],
         ['name' => 'kccContact#update',  'url' => '/api/kcc/contact-moments/{id}', 'verb' => 'PUT'],
 
+        // Open Raadsinformatie (ORI) Atom feeds — public, no auth required.
+        ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen', 'verb' => 'GET'],
+        ['name' => 'raadsinformatieFeed#agendapunten',  'url' => '/feed/ori/agendapunten',  'verb' => 'GET'],
+        ['name' => 'raadsinformatieFeed#documenten',    'url' => '/feed/ori/documenten',    'verb' => 'GET'],
+
         // Subsidieverlening-keten (subsidieverlening-keten spec) — AWB titel 4.2.
         // Static/verb routes precede the {id} wildcard routes; the public
         // subsidieregister feed precedes the authenticated /api/subsidies list.
@@ -80,6 +85,19 @@ return [
         ['name' => 'subsidie#publishBeschikking', 'url' => '/api/subsidies/beschikkingen/{beschikkingId}/publish', 'verb' => 'POST'],
         ['name' => 'subsidie#transition', 'url' => '/api/subsidies/{id}/transition', 'verb' => 'POST'],
         ['name' => 'subsidie#createBeschikking', 'url' => '/api/subsidies/{id}/beschikking', 'verb' => 'POST'],
+
+        // Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente).
+        // Static/verb routes precede the {id} wildcard routes.
+        ['name' => 'zaakportaal#cases',                     'url' => '/api/portaal/cases', 'verb' => 'GET'],
+        ['name' => 'zaakportaal#messages',                  'url' => '/api/portaal/messages', 'verb' => 'GET'],
+        ['name' => 'zaakportaal#sendMessage',               'url' => '/api/portaal/messages', 'verb' => 'POST'],
+        ['name' => 'zaakportaal#validateObjectionDeadline', 'url' => '/api/portaal/objections/validate-deadline', 'verb' => 'POST'],
+        ['name' => 'zaakportaal#submitObjection',           'url' => '/api/portaal/objections', 'verb' => 'POST'],
+        ['name' => 'zaakportaal#submitComplaint',           'url' => '/api/portaal/complaints', 'verb' => 'POST'],
+        ['name' => 'zaakportaal#requests',                  'url' => '/api/portaal/requests', 'verb' => 'GET'],
+        ['name' => 'zaakportaal#getPreferences',            'url' => '/api/portaal/notification-preferences', 'verb' => 'GET'],
+        ['name' => 'zaakportaal#updatePreferences',         'url' => '/api/portaal/notification-preferences', 'verb' => 'PATCH'],
+        ['name' => 'zaakportaal#caseDetail',                'url' => '/api/portaal/cases/{id}', 'verb' => 'GET'],
 
         // ZGW Mapping Management.
         ['name' => 'zgwMapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
@@ -247,6 +265,19 @@ return [
         ['name' => 'leges#verrekening', 'url' => '/api/leges/verrekening',  'verb' => 'POST'],
         ['name' => 'leges#teruggaaf',   'url' => '/api/leges/teruggaaf',    'verb' => 'POST'],
         ['name' => 'leges#export',      'url' => '/api/leges/export',       'verb' => 'POST'],
+
+        // ── Leges-heffingen: verordening administration (admin-gated) ────
+        // Static routes precede the {id} wildcard routes (ADR-016).
+        ['name' => 'legesAdmin#importVerordening',  'url' => '/api/leges/import-verordening',           'verb' => 'POST'],
+        ['name' => 'legesAdmin#listVerordeningen',  'url' => '/api/admin/leges/verordeningen',          'verb' => 'GET'],
+        ['name' => 'legesAdmin#updateVerordening',  'url' => '/api/admin/leges/verordeningen/{id}',     'verb' => 'PATCH'],
+        ['name' => 'legesAdmin#approveVerordening', 'url' => '/api/admin/leges/verordeningen/{id}/approve', 'verb' => 'POST'],
+
+        // ── Leges-heffingen: per-case calculation/refund (normal users) ──
+        ['name' => 'legesCase#calculate',  'url' => '/api/cases/{caseId}/leges/calculate',    'verb' => 'POST'],
+        ['name' => 'legesCase#auditTrail', 'url' => '/api/cases/{caseId}/leges/audit-trail',  'verb' => 'GET'],
+        ['name' => 'legesCase#refund',     'url' => '/api/cases/{caseId}/leges/refund',       'verb' => 'POST'],
+        ['name' => 'legesCase#show',       'url' => '/api/cases/{caseId}/leges',              'verb' => 'GET'],
 
         // ── Advice Management (adviesAanvraag) ──────────────────────────
         // CRUD is handled by the manifest renderer via OpenRegister. Only

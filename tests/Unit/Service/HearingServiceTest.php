@@ -23,9 +23,53 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\HearingService;
 use OCA\Procest\Service\SettingsService;
-use OCP\Calendar\IManager as ICalendarManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+
+/**
+ * Typed stub for the OpenRegister ObjectService.
+ *
+ * HearingService calls ObjectService::saveObject() with named arguments
+ * (object:/register:/schema:/uuid:). A bare addMethods() magic mock rejects
+ * named arguments with "Unknown named parameter"; this typed interface lets
+ * PHPUnit generate a mock whose signature accepts them.
+ */
+interface HearingObjectServiceStub
+{
+    /**
+     * Find a single object by ID.
+     *
+     * @param string $register Register slug
+     * @param string $schema   Schema slug
+     * @param string $id       Object UUID
+     *
+     * @return array<string,mixed>|null
+     */
+    public function findObject(string $register, string $schema, string $id): ?array;
+
+    /**
+     * Find objects matching a filter.
+     *
+     * @param string              $register Register slug
+     * @param string              $schema   Schema slug
+     * @param array<string,mixed> $filters  Filter criteria
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function findObjects(string $register, string $schema, array $filters): array;
+
+    /**
+     * Save or update an object.
+     *
+     * @param array<string,mixed> $object   Object data
+     * @param string              $register Register slug
+     * @param string              $schema   Schema slug
+     * @param string|null         $uuid     Optional object UUID for updates
+     *
+     * @return array<string,mixed>
+     */
+    public function saveObject(array $object, string $register, string $schema, ?string $uuid=null): array;
+}//end interface
 
 /**
  * Unit tests for HearingService.
@@ -39,11 +83,6 @@ class HearingServiceTest extends TestCase
      * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
      */
     private SettingsService $settingsService;
-
-    /**
-     * @var ICalendarManager|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private ICalendarManager $calendarManager;
 
     /**
      * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
@@ -63,12 +102,10 @@ class HearingServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->settingsService = $this->createMock(SettingsService::class);
-        $this->calendarManager = $this->createMock(ICalendarManager::class);
         $this->logger          = $this->createMock(LoggerInterface::class);
 
         $this->service = new HearingService(
             settingsService: $this->settingsService,
-            calendarManager: $this->calendarManager,
             logger: $this->logger,
         );
     }//end setUp()
@@ -124,7 +161,7 @@ class HearingServiceTest extends TestCase
      */
     public function testScheduleHearingSucceedsForFysiekHearing(): void
     {
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->createMock(HearingObjectServiceStub::class);
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService
             ->method('getConfigValue')
@@ -172,7 +209,7 @@ class HearingServiceTest extends TestCase
      */
     public function testRecordOutcomeSucceedsWithVerslag(): void
     {
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->createMock(HearingObjectServiceStub::class);
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
 

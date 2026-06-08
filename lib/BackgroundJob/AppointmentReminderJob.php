@@ -100,7 +100,7 @@ class AppointmentReminderJob extends TimedJob
 
                 if ($aptDate === $tomorrow && empty($data['reminderSent']) === true) {
                     $data['reminderSent'] = true;
-                    $objectService->saveObject((int) $register, (int) $schema, $data);
+                    $objectService->saveObject(object: $data, register: (int) $register, schema: (int) $schema);
                     $this->logger->info(
                             'Procest: Reminder sent for appointment',
                             [

@@ -124,13 +124,6 @@ class ZgwService
     private $consumerMapper = null;
 
     /**
-     * The OpenRegister AuthorizationService (loaded dynamically).
-     *
-     * @var object|null
-     */
-    private $authorizationService = null;
-
-    /**
      * Constructor.
      *
      * @param ZgwMappingService       $zgwMappingService    The ZGW mapping service
@@ -138,6 +131,7 @@ class ZgwService
      * @param ZgwDocumentService      $documentService      The document storage service
      * @param NotificatieService      $notificatieService   The notification service
      * @param ZgwBusinessRulesService $businessRulesService The business rules service
+     * @param ZgwJwtValidator         $jwtValidator         The ZGW JWT validator
      * @param LoggerInterface         $logger               The logger
      *
      * @return void
@@ -148,6 +142,7 @@ class ZgwService
         private readonly ZgwDocumentService $documentService,
         private readonly NotificatieService $notificatieService,
         private readonly ZgwBusinessRulesService $businessRulesService,
+        private readonly ZgwJwtValidator $jwtValidator,
         private readonly LoggerInterface $logger,
     ) {
         $container = \OC::$server;
@@ -175,11 +170,8 @@ class ZgwService
         }
 
         try {
-            $this->consumerMapper       = $container->get(
+            $this->consumerMapper = $container->get(
                 'OCA\OpenRegister\Db\ConsumerMapper'
-            );
-            $this->authorizationService = $container->get(
-                'OCA\OpenRegister\Service\AuthorizationService'
             );
         } catch (\Throwable $e) {
             $this->logger->warning(
@@ -610,9 +602,7 @@ class ZgwService
         }
 
         try {
-            $this->authorizationService->authorizeJwt(
-                authorization: $authHeader
-            );
+            $this->jwtValidator->validate(authorization: $authHeader);
         } catch (\Throwable $e) {
             // M3: Log detail server-side but never surface internal JWT validation
             // messages in the HTTP response — they aid algorithm/issuer enumeration.

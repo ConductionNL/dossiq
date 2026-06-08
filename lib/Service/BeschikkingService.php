@@ -554,7 +554,7 @@ class BeschikkingService
             throw new RuntimeException('beschikking_schema_not_configured');
         }
 
-        return $this->toArray(value: $objectService->saveObject($register, $schema, $beschikking));
+        return $this->toArray(value: $objectService->saveObject(object: $beschikking, register: $register, schema: $schema));
     }//end save()
 
     /**
@@ -588,9 +588,9 @@ class BeschikkingService
 
         try {
             $objectService->saveObject(
-                $register,
-                $schema,
-                [
+                register: $register,
+                schema: $schema,
+                object: [
                     'beschikkingId'           => $beschikkingId,
                     'bekendmakingDatum'       => $bekendmaking,
                     'bezwaarTermijnEindDatum' => $eindDatum,

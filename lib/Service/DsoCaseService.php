@@ -230,6 +230,8 @@ class DsoCaseService
             throw new \RuntimeException('Zaak not found: '.$zaakId);
         }
 
+        $zaak = $this->normalizeToArray(value: $zaak);
+
         $oldStatus = (string) ($zaak['status'] ?? '');
         $vergunningaanvraagRef = (string) ($zaak['vergunningaanvraagRef'] ?? '');
 
@@ -381,6 +383,33 @@ class DsoCaseService
             );
         }
     }//end getObjectService()
+
+    /**
+     * Normalise an OpenRegister object (array or entity) to an associative array.
+     *
+     * ObjectService::findObject() returns either an array or an entity object
+     * (which exposes jsonSerialize()); this collapses both into a predictable
+     * array<string, mixed> so callers can use offset access safely.
+     *
+     * @param mixed $value The value returned by the ObjectService.
+     *
+     * @return array<string, mixed> The normalised array (empty when not coercible).
+     */
+    private function normalizeToArray(mixed $value): array
+    {
+        if (is_array($value) === true) {
+            return $value;
+        }
+
+        if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
+            $serialized = $value->jsonSerialize();
+            if (is_array($serialized) === true) {
+                return $serialized;
+            }
+        }
+
+        return [];
+    }//end normalizeToArray()
 
     /**
      * Determine the procedure type from the activiteiten list.

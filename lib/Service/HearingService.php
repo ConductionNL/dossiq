@@ -24,7 +24,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
-use OCP\Calendar\IManager as ICalendarManager;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -37,13 +36,11 @@ class HearingService
     /**
      * Constructor.
      *
-     * @param SettingsService  $settingsService Settings service
-     * @param ICalendarManager $calendarManager Nextcloud calendar manager
-     * @param LoggerInterface  $logger          Logger
+     * @param SettingsService $settingsService Settings service
+     * @param LoggerInterface $logger          Logger
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly ICalendarManager $calendarManager,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -93,7 +90,7 @@ class HearingService
             }
         }
 
-        $hearing = $objectService->saveObject($register, $schema, $data);
+        $hearing = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
         // Send calendar invitations to all participants.
         $this->sendCalendarInvitations(hearing: $hearing, data: $data);
@@ -205,7 +202,7 @@ class HearingService
             'datumAfgerond' => $outcome['datumAfgerond'] ?? date('Y-m-d'),
         ];
 
-        $result = $objectService->saveObject($register, $schema, $updateData, $id);
+        $result = $objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string) $id);
 
         $this->logger->info(
             'Hearing outcome recorded for hearing '.$id,
@@ -232,22 +229,32 @@ class HearingService
     {
         // Talk integration via OCP\Talk\IBroker — interface may not be available
         // on all NC installations; gracefully degrade to empty string.
+        $roomName = 'Hoorgesprek klacht '.$complaintId;
+
+        $this->logger->debug(
+            'Creating Talk room for complaint hearing',
+            ['complaintId' => $complaintId, 'roomName' => $roomName, 'app' => Application::APP_ID],
+        );
+
         try {
             $container = \OC::$server;
             if ($container->has(\OCP\Talk\IBroker::class) === false) {
                 return '';
             }
 
-            // @var \OCP\Talk\IBroker $broker — resolved from DI container.
             $broker = $container->get(\OCP\Talk\IBroker::class);
+            if (($broker instanceof \OCP\Talk\IBroker) === false) {
+                return '';
+            }
+
             $config = $broker->newConversationOptions();
             $room   = $broker->createConversation(
-                name: 'Hoorgesprek klacht '.$complaintId,
+                name: $roomName,
                 moderators: [],
                 options: $config,
             );
 
-            return $room->getUrl();
+            return $room->getAbsoluteUrl();
         } catch (\Throwable $e) {
             $this->logger->warning(
                 'Failed to create Talk room for complaint '.$complaintId.': '.$e->getMessage(),

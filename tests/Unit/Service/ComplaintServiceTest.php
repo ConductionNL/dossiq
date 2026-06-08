@@ -28,6 +28,40 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * Typed stub for the OpenRegister ObjectService.
+ *
+ * ComplaintService calls ObjectService::saveObject() with named arguments
+ * (object:/register:/schema:/uuid:). A bare addMethods() magic mock rejects
+ * named arguments with "Unknown named parameter"; this typed interface lets
+ * PHPUnit generate a mock whose signature accepts them.
+ */
+interface ComplaintObjectServiceStub
+{
+    /**
+     * Find a single object by ID.
+     *
+     * @param string $register Register slug
+     * @param string $schema   Schema slug
+     * @param string $id       Object UUID
+     *
+     * @return array<string,mixed>|null
+     */
+    public function findObject(string $register, string $schema, string $id): ?array;
+
+    /**
+     * Save or update an object.
+     *
+     * @param array<string,mixed> $object   Object data
+     * @param string              $register Register slug
+     * @param string              $schema   Schema slug
+     * @param string|null         $uuid     Optional object UUID for updates
+     *
+     * @return array<string,mixed>
+     */
+    public function saveObject(array $object, string $register, string $schema, ?string $uuid=null): array;
+}//end interface
+
+/**
  * Unit tests for ComplaintService.
  *
  * @covers \OCA\Procest\Service\ComplaintService
@@ -181,7 +215,7 @@ class ComplaintServiceTest extends TestCase
             'afhandelDeadline'  => '2026-04-12',
         ];
 
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 
         $this->settingsService
             ->method('getObjectService')
@@ -203,7 +237,7 @@ class ComplaintServiceTest extends TestCase
         $objectServiceMock
             ->method('saveObject')
             ->willReturnCallback(
-                function (string $reg, string $sch, array $data, string $id) {
+                function (array $data, string $reg, string $sch, ?string $id=null) {
                     $this->assertFalse($data['verdagingMogelijk']);
                     $this->assertSame('2026-05-10', $data['afhandelDeadline']);
                     return $data;
@@ -223,7 +257,7 @@ class ComplaintServiceTest extends TestCase
     {
         $complaint = ['verdagingMogelijk' => false, 'afhandelDeadline' => '2026-04-12'];
 
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
         $objectServiceMock->method('findObject')->willReturn($complaint);
@@ -243,7 +277,7 @@ class ComplaintServiceTest extends TestCase
     {
         $complaint = ['verdagingMogelijk' => true, 'afhandelDeadline' => '2026-04-12'];
 
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
         $objectServiceMock->method('findObject')->willReturn($complaint);
@@ -263,7 +297,7 @@ class ComplaintServiceTest extends TestCase
     {
         $complaint = ['status' => 'ontvangen'];
 
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
         $objectServiceMock->method('findObject')->willReturn($complaint);
@@ -282,7 +316,7 @@ class ComplaintServiceTest extends TestCase
     {
         $complaint = ['status' => 'ontvangen'];
 
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
         $objectServiceMock->method('findObject')->willReturn($complaint);

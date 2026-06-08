@@ -39,6 +39,8 @@ use Psr\Log\LoggerInterface;
  * and creates/updates case type configuration in OpenRegister.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md#task-2
  */
 class CaseDefinitionImportService
 {
@@ -48,19 +50,6 @@ class CaseDefinitionImportService
      * @var string[]
      */
     private const REQUIRED_FILES = ['manifest.json'];
-
-    /**
-     * Valid component files.
-     *
-     * @var string[]
-     */
-    private const VALID_COMPONENT_FILES = [
-        'schema.json',
-        'statuses.json',
-        'permissions.json',
-        'documents.json',
-        'metadata.json',
-    ];
 
     /**
      * Constructor.

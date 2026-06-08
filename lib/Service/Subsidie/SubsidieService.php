@@ -246,7 +246,7 @@ class SubsidieService
         }
 
         try {
-            return $objectService->saveObject($register, $schema, $record);
+            return $objectService->saveObject(object: $record, register: $register, schema: $schema);
         } catch (Throwable $e) {
             $this->logger->error('Procest subsidie: createAanvraag failed: '.$e->getMessage());
             throw new OCSBadRequestException('Kon subsidieaanvraag niet aanmaken');
@@ -282,7 +282,7 @@ class SubsidieService
         }
 
         try {
-            return $objectService->saveObject($register, $schema, ['status' => $toStatus], $id);
+            return $objectService->saveObject(object: ['status' => $toStatus], register: $register, schema: $schema, uuid: (string) $id);
         } catch (Throwable $e) {
             $this->logger->error('Procest subsidie: transitionAanvraag failed: '.$e->getMessage());
             throw new OCSBadRequestException('Kon status niet bijwerken');

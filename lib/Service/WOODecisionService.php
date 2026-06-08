@@ -18,6 +18,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/woo-case-type/tasks.md#task-7
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -153,7 +156,7 @@ class WOODecisionService
             $decisionData,
         );
 
-        $decision = $objectService->saveObject($register, $decisionSchema, $besluitData);
+        $decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);
 
         $this->logger->info(
             'WOO besluit assembled for case '.$caseId.': decision '.$decision->getUuid(),

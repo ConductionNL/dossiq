@@ -296,7 +296,7 @@ class ParafeerActieService
             }
 
             // Persist the parafeeractie.
-            $savedActie = $objectService->saveObject($register, $actieSchema, $actieData);
+            $savedActie = $objectService->saveObject(object: $actieData, register: $register, schema: $actieSchema);
 
             // Emit the parafering transition event for the audit listener.
             [$transitionType, $actorRoleForAudit] = $this->transitionForAction(action: $action);
@@ -717,7 +717,7 @@ class ParafeerActieService
             'returnedFromStep' => $currentStep,
         ];
 
-        $objectService->saveObject($register, $voorstelSchema, $updateData, $voorstelId);
+        $objectService->saveObject(object: $updateData, register: $register, schema: $voorstelSchema, uuid: (string) $voorstelId);
 
         $steller = (string) ($voorstel['steller'] ?? '');
         if ($steller !== '') {
@@ -796,7 +796,7 @@ class ParafeerActieService
             ];
         }
 
-        $updated = $objectService->saveObject($register, $voorstelSchema, $updateData, $voorstelId);
+        $updated = $objectService->saveObject(object: $updateData, register: $register, schema: $voorstelSchema, uuid: (string) $voorstelId);
 
         return $this->toArray(value: $updated);
     }//end advanceVoorstel()

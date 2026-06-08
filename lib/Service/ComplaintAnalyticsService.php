@@ -85,6 +85,16 @@ class ComplaintAnalyticsService
             $frequency[$value]++;
         }
 
+        // Privacy: when slicing by an employee-identifying dimension, suppress
+        // slices below the minimum threshold so individual employees cannot be
+        // re-identified from low-count buckets.
+        if (in_array($dimension, ['betrokkenMedewerker', 'behandelaar'], true) === true) {
+            $frequency = array_filter(
+                $frequency,
+                static fn (int $count): bool => $count >= self::MIN_THRESHOLD_FOR_EMPLOYEE_DATA
+            );
+        }
+
         arsort($frequency);
         return $frequency;
     }//end getFrequencyByDimension()

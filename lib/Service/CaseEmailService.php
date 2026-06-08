@@ -564,9 +564,7 @@ class CaseEmailService
 
         if (empty($register) === false && empty($schema) === false) {
             $objectService->saveObject(
-                    $register,
-                    $schema,
-                    [
+                    object: [
                         'case'      => $caseId,
                         'direction' => 'outbound',
                         'from'      => $this->appConfig->getValueString(Application::APP_ID, 'email_from_address', ''),
@@ -575,7 +573,9 @@ class CaseEmailService
                         'body'      => $body,
                         'messageId' => $messageId,
                         'sentAt'    => date('Y-m-d\TH:i:s'),
-                    ]
+                    ],
+                    register: $register,
+                    schema: $schema,
                     );
         }
 
@@ -612,9 +612,7 @@ class CaseEmailService
 
         if (empty($register) === false && empty($schema) === false) {
             $objectService->saveObject(
-                    $register,
-                    $schema,
-                    [
+                    object: [
                         'case'       => $caseId,
                         'direction'  => 'inbound',
                         'from'       => $from,
@@ -624,7 +622,9 @@ class CaseEmailService
                         'messageId'  => $messageId,
                         'inReplyTo'  => $inReplyTo,
                         'receivedAt' => date('Y-m-d\TH:i:s'),
-                    ]
+                    ],
+                    register: $register,
+                    schema: $schema,
                     );
         }
 

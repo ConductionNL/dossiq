@@ -87,7 +87,7 @@ class SetFieldHandler implements ActionHandlerInterface
             }
 
             $case[$field] = $value;
-            $objectService->saveObject($register, $caseSchema, $case);
+            $objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
 
             return ActionResult::success(data: ['field' => $field]);
         } catch (\Throwable $e) {

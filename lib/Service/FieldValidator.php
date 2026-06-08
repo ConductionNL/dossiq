@@ -20,6 +20,9 @@
  * @link https://procest.nl
  *
  * @spec openspec/changes/method-decomposition/tasks.md#task-decomp-036
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);

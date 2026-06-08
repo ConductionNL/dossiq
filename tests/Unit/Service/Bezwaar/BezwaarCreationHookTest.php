@@ -130,22 +130,28 @@ class BezwaarCreationHookTest extends TestCase
             }
 
             /**
-             * @param array<string, mixed> $record
+             * Persist an object (OpenRegister object-first signature).
+             *
+             * @param array<string, mixed> $object   Object payload.
+             * @param array<string, mixed> $extend   Extend parameters.
+             * @param string|null          $register Register id.
+             * @param string|null          $schema   Schema id.
+             * @param string|null          $uuid     Optional object uuid.
              *
              * @return array<string, mixed>
              */
-            public function saveObject(string $register, string $schema, array $record): array
+            public function saveObject(array $object, array $extend=[], ?string $register=null, ?string $schema=null, ?string $uuid=null): array
             {
                 if ($schema === '10') {
-                    $this->savedCase = $record;
+                    $this->savedCase = $object;
                 }
 
                 if ($schema === '30') {
-                    $this->savedObjection = $record;
+                    $this->savedObjection = $object;
                 }
 
-                return $record;
-            }
+                return $object;
+            }//end saveObject()
         };
 
         $this->settingsService->method('getObjectService')->willReturn($objectService);
@@ -188,18 +194,24 @@ class BezwaarCreationHookTest extends TestCase
             }
 
             /**
-             * @param array<string, mixed> $record
+             * Persist an object (OpenRegister object-first signature).
+             *
+             * @param array<string, mixed> $object   Object payload.
+             * @param array<string, mixed> $extend   Extend parameters.
+             * @param string|null          $register Register id.
+             * @param string|null          $schema   Schema id.
+             * @param string|null          $uuid     Optional object uuid.
              *
              * @return array<string, mixed>
              */
-            public function saveObject(string $register, string $schema, array $record): array
+            public function saveObject(array $object, array $extend=[], ?string $register=null, ?string $schema=null, ?string $uuid=null): array
             {
                 if ($schema === '10') {
                     $this->caseWrites++;
                 }
 
-                return $record;
-            }
+                return $object;
+            }//end saveObject()
         };
 
         $this->settingsService->method('getObjectService')->willReturn($objectService);
@@ -225,14 +237,20 @@ class BezwaarCreationHookTest extends TestCase
             }
 
             /**
-             * @param array<string, mixed> $record
+             * Persist an object (OpenRegister object-first signature).
+             *
+             * @param array<string, mixed> $object   Object payload.
+             * @param array<string, mixed> $extend   Extend parameters.
+             * @param string|null          $register Register id.
+             * @param string|null          $schema   Schema id.
+             * @param string|null          $uuid     Optional object uuid.
              *
              * @return array<string, mixed>
              */
-            public function saveObject(string $register, string $schema, array $record): array
+            public function saveObject(array $object, array $extend=[], ?string $register=null, ?string $schema=null, ?string $uuid=null): array
             {
-                return $record;
-            }
+                return $object;
+            }//end saveObject()
         };
 
         $this->settingsService->method('getObjectService')->willReturn($objectService);

@@ -130,7 +130,7 @@ class BezwaarCreationHook
             payload: $objectionPayload
         );
 
-        $created = $objectService->saveObject($schemas['register'], $schemas['objection'], $objection);
+        $created = $objectService->saveObject(object: $objection, register: $schemas['register'], schema: $schemas['objection']);
 
         return $this->toArray(value: $created) ?? $objection;
     }//end onBezwaarCreated()
@@ -250,7 +250,7 @@ class BezwaarCreationHook
         $related[$relatedCaseId] = $relatedCaseId;
         $case['relatedCases']    = array_values($related);
 
-        $objectService->saveObject($register, $caseSchema, $case);
+        $objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
     }//end linkRelatedCase()
 
     /**

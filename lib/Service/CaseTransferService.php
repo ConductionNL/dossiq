@@ -94,9 +94,9 @@ class CaseTransferService
         ];
 
         $result = $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $transferData,
+            object: $transferData,
+            register: (int) $register,
+            schema: (int) $schema,
         );
 
         $this->logger->info(
@@ -147,9 +147,9 @@ class CaseTransferService
         $transferData['completedAt'] = (new \DateTime())->format('c');
 
         $result = $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $transferData,
+            object: $transferData,
+            register: (int) $register,
+            schema: (int) $schema,
         );
 
         $this->logger->info(
@@ -199,9 +199,9 @@ class CaseTransferService
         $transferData['completedAt']     = (new \DateTime())->format('c');
 
         $result = $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $transferData,
+            object: $transferData,
+            register: (int) $register,
+            schema: (int) $schema,
         );
 
         $this->logger->info(

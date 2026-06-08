@@ -98,7 +98,7 @@ class DispositionService
             $data['goedkeuringStatus'] = 'wacht_op_goedkeuring';
         }
 
-        $disposition = $objectService->saveObject($register, $schema, $data);
+        $disposition = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
         $this->logger->info(
             'Disposition submitted for complaint '.$complaintId.' with oordeel: '.$data['oordeel'],
@@ -139,7 +139,7 @@ class DispositionService
             'goedkeurder'       => $approverId,
         ];
 
-        $result = $objectService->saveObject($register, $schema, $updateData, $dispositionId);
+        $result = $objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string) $dispositionId);
 
         $this->logger->info(
             'Disposition '.$dispositionId.' approved by '.$approverId,
@@ -180,7 +180,7 @@ class DispositionService
             'goedkeurder'       => $rejectorId,
         ];
 
-        $result = $objectService->saveObject($register, $schema, $updateData, $dispositionId);
+        $result = $objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string) $dispositionId);
 
         $this->logger->info(
             'Disposition '.$dispositionId.' rejected by '.$rejectorId,

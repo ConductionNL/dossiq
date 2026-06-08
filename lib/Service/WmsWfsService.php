@@ -41,6 +41,8 @@ use RuntimeException;
  * This service NEVER issues direct outbound HTTP. Every external request is
  * delegated to {@see GisProxyService::proxyRequest()} which enforces the
  * GIS proxy allowlist (REQ-WMS-3) and rate limiting.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-wms-wfs-layers/tasks.md#task-2
  */
 class WmsWfsService
 {
@@ -395,8 +397,8 @@ class WmsWfsService
     {
         try {
             $objectService = $this->container->get('OCA\OpenRegister\Service\ObjectService');
-            $schemaId      = (int) ($this->settingsService->getConfigValue('wms_layer_schema') ?? 0);
-            $registerId    = (int) ($this->settingsService->getConfigValue('register') ?? 0);
+            $schemaId      = (int) $this->settingsService->getConfigValue('wms_layer_schema');
+            $registerId    = (int) $this->settingsService->getConfigValue('register');
 
             if ($schemaId === 0 || $registerId === 0) {
                 return [];

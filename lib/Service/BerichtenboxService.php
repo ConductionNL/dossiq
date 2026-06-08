@@ -13,6 +13,9 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
@@ -33,15 +36,11 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Service for sending messages to Mijn Overheid Berichtenbox.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md#task-2
  */
 class BerichtenboxService
 {
-
-    /**
-     * Maximum allowed attachment size in bytes (10 MB).
-     */
-    private const MAX_ATTACHMENT_SIZE = 10485760;
-
     /**
      * Constructor.
      *
@@ -120,9 +119,9 @@ class BerichtenboxService
         ];
 
         $saved = $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $messageData,
+            object: $messageData,
+            register: (int) $register,
+            schema: (int) $schema,
         );
 
         $this->logger->info(
@@ -224,7 +223,7 @@ class BerichtenboxService
             $data['status']       = 'read';
             $data['readAt']       = $status['readAt'];
             $data['readPolledAt'] = (new \DateTime())->format('c');
-            $objectService->saveObject((int) $register, (int) $schema, $data);
+            $objectService->saveObject(object: $data, register: (int) $register, schema: (int) $schema);
         } else {
             $data['readPolledAt'] = (new \DateTime())->format('c');
 
@@ -237,7 +236,7 @@ class BerichtenboxService
                 }
             }
 
-            $objectService->saveObject((int) $register, (int) $schema, $data);
+            $objectService->saveObject(object: $data, register: (int) $register, schema: (int) $schema);
         }
 
         return $data;

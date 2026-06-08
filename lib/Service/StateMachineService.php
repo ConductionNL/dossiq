@@ -157,7 +157,7 @@ class StateMachineService
         ];
 
         try {
-            $saved = $objectService->saveObject($register, $logSchema, $record);
+            $saved = $objectService->saveObject(object: $record, register: $register, schema: $logSchema);
             return $this->toArray(value: $saved);
         } catch (\Throwable $e) {
             $this->logger->error(

@@ -19,6 +19,9 @@
  * @link https://procest.nl
  *
  * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-1
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -249,6 +252,34 @@ abstract class ZgwRulesBase
     {
         return $this->fieldValidator->isValidUrl($url);
     }//end isValidUrl()
+
+    /**
+     * Check if a value is a bare RFC-4122 UUID.
+     *
+     * @param string $value The candidate UUID
+     *
+     * @return bool True when the value is exactly a UUID
+     *
+     * @spec openspec/changes/method-decomposition/tasks.md#task-decomp-036
+     */
+    protected function isUuid(string $value): bool
+    {
+        return $this->fieldValidator->isUuid($value);
+    }//end isUuid()
+
+    /**
+     * Check if a value is a valid ISO-8601 calendar date (YYYY-MM-DD).
+     *
+     * @param string $value The candidate date string
+     *
+     * @return bool True when the value is a real YYYY-MM-DD date
+     *
+     * @spec openspec/changes/method-decomposition/tasks.md#task-decomp-036
+     */
+    protected function isValidDate(string $value): bool
+    {
+        return $this->fieldValidator->isValidDate($value);
+    }//end isValidDate()
 
     /**
      * Validate a type URL (zaaktype, besluittype, informatieobjecttype).

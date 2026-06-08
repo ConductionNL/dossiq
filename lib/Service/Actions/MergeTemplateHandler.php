@@ -123,10 +123,7 @@ class MergeTemplateHandler implements ActionHandlerInterface
 
             $updated = array_merge($case, [$targetField => $rendered]);
 
-            // ObjectService::saveObject 3-arg signature: ($object, $register, $schema).
-            // First arg is the entity/array per project convention.
-            // @phpstan-ignore-next-line — signature owned by OpenRegister.
-            $objectService->saveObject($updated, $register, $schema);
+            $objectService->saveObject(object: $updated, register: $register, schema: $schema);
 
             return ActionResult::success($preview);
         } catch (\Throwable $e) {

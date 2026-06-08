@@ -17,6 +17,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/woo-case-type/tasks.md#task-4
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -170,7 +173,7 @@ class WOODeadlineService
                 ]
                 );
 
-        $objectService->saveObject($register, $caseSchema, $updateData, $caseId);
+        $objectService->saveObject(object: $updateData, register: $register, schema: $caseSchema, uuid: (string) $caseId);
 
         $this->logger->info(
             'WOO deadline extended for case '.$caseId.' to '.$newDeadline->format('Y-m-d'),

@@ -163,7 +163,7 @@ class ChecklistService
             $run['inspection'] = $inspectionId;
         }
 
-        $persisted = $this->toArray(value: $objectService->saveObject($register, $runSchema, $run));
+        $persisted = $this->toArray(value: $objectService->saveObject(object: $run, register: $register, schema: $runSchema));
 
         $this->logger->info(
             'Procest: created checklist run {runId} for template {templateId} v{version}',
@@ -249,7 +249,7 @@ class ChecklistService
             $run['followUpType'] = $followUp;
         }
 
-        $persisted = $this->toArray(value: $objectService->saveObject($register, $runSchema, $run));
+        $persisted = $this->toArray(value: $objectService->saveObject(object: $run, register: $register, schema: $runSchema));
 
         try {
             $this->dispatchFollowUps(run: $persisted);
@@ -472,7 +472,7 @@ class ChecklistService
 
             if ($taskSchema !== '') {
                 try {
-                    $persisted = $this->toArray(value: $objectService->saveObject($register, $taskSchema, $task));
+                    $persisted = $this->toArray(value: $objectService->saveObject(object: $task, register: $register, schema: $taskSchema));
                     $created[] = $persisted;
                 } catch (Throwable $e) {
                     $this->logger->debug(
@@ -526,7 +526,7 @@ class ChecklistService
         ];
 
         try {
-            $objectService->saveObject($register, $schema, $payload);
+            $objectService->saveObject(object: $payload, register: $register, schema: $schema);
         } catch (Throwable $e) {
             $this->logger->debug(
                 'Procest: handhavingsactie save failed for run '.$runId.': '.$e->getMessage(),

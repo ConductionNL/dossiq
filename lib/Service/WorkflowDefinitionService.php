@@ -59,6 +59,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Lifecycle + consumer service for workflowTemplate objects.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-workflow-definition-model/tasks.md#task-2
  */
 class WorkflowDefinitionService
 {
@@ -69,22 +71,6 @@ class WorkflowDefinitionService
     public const STATUS_DRAFT      = 'draft';
     public const STATUS_PUBLISHED  = 'published';
     public const STATUS_DEPRECATED = 'deprecated';
-
-    /**
-     * Static error strings — never leak OpenRegister exception details to
-     * the HTTP layer.
-     */
-    private const ERR_OR_UNAVAILABLE     = 'Workflow definition store is not available';
-    private const ERR_SCHEMA_NOT_CONFIG  = 'Workflow definition schema is not configured';
-    private const ERR_NOT_FOUND          = 'Workflow definition not found';
-    private const ERR_PUBLISH_FAILED     = 'Could not publish workflow definition';
-    private const ERR_DEPRECATE_FAILED   = 'Could not deprecate workflow definition';
-    private const ERR_CLONE_FAILED       = 'Could not clone workflow definition';
-    private const ERR_NOT_DRAFT          = 'Only draft definitions can be edited';
-    private const ERR_NOT_PUBLISHABLE    = 'Only draft definitions can be published';
-    private const ERR_NOT_DEPRECATABLE   = 'Only published definitions can be deprecated';
-    private const ERR_INVALID_REFERENCES = 'Definition references statuses not belonging to its case type';
-    private const ERR_LAST_PUBLISHED     = 'Cannot deprecate the last published definition while open cases remain';
 
     /**
      * Constructor.
@@ -141,6 +127,8 @@ class WorkflowDefinitionService
      * @param string $id The definition UUID
      *
      * @return array<string, mixed>|null The definition or null
+     *
+     * @spec openspec/changes/retrofit-2026-05-24-workflow-definition-model/tasks.md#task-2
      */
     public function getDefinition(string $id): ?array
     {
@@ -276,13 +264,13 @@ class WorkflowDefinitionService
         if ($previousActive !== null && (string) ($previousActive['id'] ?? '') !== $id) {
             try {
                 $objectService->saveObject(
-                    $register,
-                    $schema,
-                    [
+                    object: [
                         'lifecycleStatus' => self::STATUS_DEPRECATED,
                         'isActive'        => false,
                     ],
-                    (string) $previousActive['id'],
+                    register: $register,
+                    schema: $schema,
+                    uuid: (string) $previousActive['id'],
                 );
             } catch (\Throwable $e) {
                 $this->logger->error(
@@ -296,14 +284,14 @@ class WorkflowDefinitionService
         // Flip target to published+active.
         try {
             $updated = $objectService->saveObject(
-                $register,
-                $schema,
-                [
+                object: [
                     'lifecycleStatus' => self::STATUS_PUBLISHED,
                     'isActive'        => true,
                     'isDraft'         => false,
                 ],
-                $id,
+                register: $register,
+                schema: $schema,
+                uuid: (string) $id,
             );
         } catch (\Throwable $e) {
             $this->logger->error(
@@ -316,10 +304,10 @@ class WorkflowDefinitionService
         // Pin caseType.workflowDefinition to the new active version.
         try {
             $objectService->saveObject(
-                $register,
-                $caseTypeSch,
-                ['workflowDefinition' => $id],
-                $caseTypeId,
+                object: ['workflowDefinition' => $id],
+                register: $register,
+                schema: $caseTypeSch,
+                uuid: (string) $caseTypeId,
             );
         } catch (\Throwable $e) {
             // Pinning failure is non-fatal — log and continue. The
@@ -385,13 +373,13 @@ class WorkflowDefinitionService
 
         try {
             $updated = $objectService->saveObject(
-                $register,
-                $schema,
-                [
+                object: [
                     'lifecycleStatus' => self::STATUS_DEPRECATED,
                     'isActive'        => false,
                 ],
-                $id,
+                register: $register,
+                schema: $schema,
+                uuid: (string) $id,
             );
         } catch (\Throwable $e) {
             $this->logger->error(
@@ -450,7 +438,7 @@ class WorkflowDefinitionService
         ];
 
         try {
-            $new = $objectService->saveObject($register, $schema, $draft);
+            $new = $objectService->saveObject(object: $draft, register: $register, schema: $schema);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest: failed to clone workflow definition',
@@ -539,7 +527,7 @@ class WorkflowDefinitionService
         ];
 
         try {
-            $new = $objectService->saveObject($register, $schema, $draft);
+            $new = $objectService->saveObject(object: $draft, register: $register, schema: $schema);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest: failed to create workflow draft',
