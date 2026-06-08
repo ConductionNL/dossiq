@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Middleware;
 
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
+use OCA\Procest\Service\ZgwJwtValidator;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -50,6 +51,13 @@ class ZgwAuthMiddlewareTest extends TestCase
     private LoggerInterface $logger;
 
     /**
+     * The mocked JWT validator.
+     *
+     * @var ZgwJwtValidator|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private ZgwJwtValidator $jwtValidator;
+
+    /**
      * The middleware under test.
      *
      * @var ZgwAuthMiddleware
@@ -64,11 +72,13 @@ class ZgwAuthMiddlewareTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->request = $this->createMock(IRequest::class);
-        $this->logger  = $this->createMock(LoggerInterface::class);
+        $this->request      = $this->createMock(IRequest::class);
+        $this->logger       = $this->createMock(LoggerInterface::class);
+        $this->jwtValidator = $this->createMock(ZgwJwtValidator::class);
 
         $this->middleware = new ZgwAuthMiddleware(
             $this->request,
+            $this->jwtValidator,
             $this->logger,
         );
 
