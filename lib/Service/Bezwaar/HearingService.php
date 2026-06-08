@@ -207,7 +207,7 @@ class HearingService
         );
 
         try {
-            return $objectService->saveObject($register, $schema, $record);
+            return $objectService->saveObject(object: $record, register: $register, schema: $schema);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest hearing: failed to schedule hearing: '.$e->getMessage()
@@ -286,7 +286,7 @@ class HearingService
         );
 
         try {
-            return $objectService->saveObject($register, $schema, $record);
+            return $objectService->saveObject(object: $record, register: $register, schema: $schema);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest hearing: failed to record waiver: '.$e->getMessage()
@@ -386,10 +386,10 @@ class HearingService
 
         try {
             return $objectService->saveObject(
-                $register,
-                $schema,
-                $update,
-                $sessionId
+                object: $update,
+                register: $register,
+                schema: $schema,
+                uuid: (string) $sessionId
             );
         } catch (\Throwable $e) {
             $this->logger->error(
@@ -468,10 +468,10 @@ class HearingService
 
                 try {
                     $objectService->saveObject(
-                        $register,
-                        $schema,
-                        ['auditTrail' => $audit],
-                        $sessionId
+                        object: ['auditTrail' => $audit],
+                        register: $register,
+                        schema: $schema,
+                        uuid: (string) $sessionId
                     );
                 } catch (\Throwable $auditError) {
                     $this->logger->error(
@@ -524,10 +524,10 @@ class HearingService
 
         try {
             return $objectService->saveObject(
-                $register,
-                $schema,
-                $update,
-                $sessionId
+                object: $update,
+                register: $register,
+                schema: $schema,
+                uuid: (string) $sessionId
             );
         } catch (\Throwable $e) {
             $this->logger->error(

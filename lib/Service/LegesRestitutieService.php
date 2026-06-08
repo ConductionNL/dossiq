@@ -144,7 +144,7 @@ class LegesRestitutieService
             }
         }
 
-        $saved   = $objectService->saveObject($register, $restitutieSchema, $payload);
+        $saved   = $objectService->saveObject(object: $payload, register: $register, schema: $restitutieSchema);
         $savedId = $this->extractId(result: $saved);
 
         // Reflect the refund on the calculation status.
@@ -244,7 +244,7 @@ class LegesRestitutieService
     ): void {
         try {
             $berekening['status'] = 'gerestitueerd';
-            $objectService->saveObject($register, $schema, $berekening, $berekeningId);
+            $objectService->saveObject(object: $berekening, register: $register, schema: $schema, uuid: (string) $berekeningId);
         } catch (\Throwable $e) {
             $this->logger->warning('Procest leges: could not update berekening status: '.$e->getMessage());
         }

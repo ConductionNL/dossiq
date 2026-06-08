@@ -132,7 +132,7 @@ class PortalMessageService
 
         [$objectService, $register, $schema] = $this->resolve();
 
-        $saved = $objectService->saveObject($register, $schema, $payload);
+        $saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
 
         $this->logger->info('Zaakportaal: message sent', ['caseId' => $payload['caseId']]);
 

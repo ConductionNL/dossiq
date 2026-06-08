@@ -217,7 +217,7 @@ class BeroepService
         );
 
         try {
-            return $objectService->saveObject($register, $beroepSchema, $record);
+            return $objectService->saveObject(object: $record, register: $register, schema: $beroepSchema);
         } catch (Throwable $e) {
             $this->logger->error(
                 'Procest beroep: failed to register: '.$e->getMessage()
@@ -282,10 +282,10 @@ class BeroepService
 
         try {
             return $objectService->saveObject(
-                $register,
-                $beroepSchema,
-                ['fileInspectionRequests' => $requests],
-                $beroepId
+                object: ['fileInspectionRequests' => $requests],
+                register: $register,
+                schema: $beroepSchema,
+                uuid: (string) $beroepId
             );
         } catch (Throwable $e) {
             $this->logger->error(
@@ -353,10 +353,10 @@ class BeroepService
 
         try {
             return $objectService->saveObject(
-                $register,
-                $beroepSchema,
-                $patch,
-                $beroepId
+                object: $patch,
+                register: $register,
+                schema: $beroepSchema,
+                uuid: (string) $beroepId
             );
         } catch (Throwable $e) {
             $this->logger->error(
@@ -463,10 +463,10 @@ class BeroepService
 
         try {
             return $objectService->saveObject(
-                $register,
-                $beroepSchema,
-                $patch,
-                $beroepId
+                object: $patch,
+                register: $register,
+                schema: $beroepSchema,
+                uuid: (string) $beroepId
             );
         } catch (Throwable $e) {
             $this->logger->error(

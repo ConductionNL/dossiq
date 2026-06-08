@@ -230,7 +230,7 @@ class PortalRequestService
     {
         [$objectService, $register, $schema] = $this->resolve();
 
-        $saved = $objectService->saveObject($register, $schema, $payload);
+        $saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
 
         $this->logger->info('Zaakportaal: request submitted', ['kind' => $kind, 'referentie' => $payload['referentie']]);
 

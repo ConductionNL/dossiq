@@ -34,16 +34,17 @@ use RuntimeException;
 interface RestitutieObjectServiceStub
 {
     /**
-     * Save an object.
+     * Save an object (OpenRegister object-first signature).
      *
-     * @param string $register Register id.
-     * @param string $schema   Schema id.
-     * @param array  $object   Object data.
-     * @param string $id       Optional id.
+     * @param array       $object   Object data.
+     * @param array       $extend   Extend parameters.
+     * @param string|null $register Register id.
+     * @param string|null $schema   Schema id.
+     * @param string|null $uuid     Optional object uuid.
      *
      * @return array
      */
-    public function saveObject(string $register, string $schema, array $object, string $id='');
+    public function saveObject(array $object, array $extend=[], ?string $register=null, ?string $schema=null, ?string $uuid=null);
 
     /**
      * Find a single object.
@@ -136,7 +137,7 @@ class LegesRestitutieServiceTest extends TestCase
         $stub = $this->createMock(RestitutieObjectServiceStub::class);
         $stub->method('find')->willReturn($berekening);
         $stub->method('saveObject')->willReturnCallback(
-            static fn (string $register, string $schema, array $object, string $id=''): array => array_merge(['id' => 'rest-1'], $object)
+            static fn (array $object, array $extend=[], ?string $register=null, ?string $schema=null, ?string $uuid=null): array => array_merge(['id' => 'rest-1'], $object)
         );
 
         $this->settingsService->method('getObjectService')->willReturn($stub);

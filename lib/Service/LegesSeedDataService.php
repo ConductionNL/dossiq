@@ -131,7 +131,7 @@ class LegesSeedDataService
             'status'          => (string) ($tabelSeed['status'] ?? 'concept'),
         ];
 
-        $tabelId = $this->extractId(result: $objectService->saveObject($register, $schemas['tabel'], $tabelPayload));
+        $tabelId = $this->extractId(result: $objectService->saveObject(object: $tabelPayload, register: $register, schema: $schemas['tabel']));
         $counts['tabellen']++;
 
         foreach (($tabelSeed['tarieven'] ?? []) as $tariefSeed) {
@@ -150,7 +150,7 @@ class LegesSeedDataService
                 'productCode'       => (string) ($tariefSeed['productCode'] ?? ''),
             ];
 
-            $tariefId = $this->extractId(result: $objectService->saveObject($register, $schemas['tarief'], $tariefPayload));
+            $tariefId = $this->extractId(result: $objectService->saveObject(object: $tariefPayload, register: $register, schema: $schemas['tarief']));
             $counts['tarieven']++;
 
             $this->seedChildren(
@@ -181,15 +181,15 @@ class LegesSeedDataService
         if ($schemas['variant'] !== '') {
             foreach (($tariefSeed['varianten'] ?? []) as $variantSeed) {
                 $objectService->saveObject(
-                    $register,
-                    $schemas['variant'],
-                    [
+                    object: [
                         'tariefId'       => $tariefId,
                         'variantNaam'    => (string) ($variantSeed['variantNaam'] ?? ''),
                         'condities'      => (array) ($variantSeed['condities'] ?? []),
                         'bedragOpslag'   => ($variantSeed['bedragOpslag'] ?? null),
                         'bedragOverride' => ($variantSeed['bedragOverride'] ?? null),
-                    ]
+                    ],
+                    register: $register,
+                    schema: $schemas['variant']
                 );
                 $counts['varianten']++;
             }
@@ -198,9 +198,7 @@ class LegesSeedDataService
         if ($schemas['korting'] !== '') {
             foreach (($tariefSeed['kortingen'] ?? []) as $kortingSeed) {
                 $objectService->saveObject(
-                    $register,
-                    $schemas['korting'],
-                    [
+                    object: [
                         'naam'                => (string) ($kortingSeed['naam'] ?? ''),
                         'tariefIds'           => [$tariefId],
                         'kortingsType'        => (string) ($kortingSeed['kortingsType'] ?? 'percentage'),
@@ -210,7 +208,9 @@ class LegesSeedDataService
                         'vereistMinimaCheck'  => (bool) ($kortingSeed['vereistMinimaCheck'] ?? false),
                         'geldigVanaf'         => (string) ($kortingSeed['geldigVanaf'] ?? ''),
                         'geldigTotEnMet'      => ($kortingSeed['geldigTotEnMet'] ?? null),
-                    ]
+                    ],
+                    register: $register,
+                    schema: $schemas['korting']
                 );
                 $counts['kortingen']++;
             }

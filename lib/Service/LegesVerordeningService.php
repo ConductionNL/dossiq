@@ -94,7 +94,7 @@ class LegesVerordeningService
             try {
                 $current           = $this->toArray(value: $objectService->find($id, register: $register, schema: $tariefSchema));
                 $current['bedrag'] = (int) round((float) $row['bedrag']);
-                $objectService->saveObject($register, $tariefSchema, $current, $id);
+                $objectService->saveObject(object: $current, register: $register, schema: $tariefSchema, uuid: (string) $id);
                 $updated++;
             } catch (\Throwable $e) {
                 $this->logger->warning('Procest leges: could not update tarief '.$id.': '.$e->getMessage());
@@ -131,7 +131,7 @@ class LegesVerordeningService
         );
 
         $tabel['status'] = 'vastgesteld';
-        $objectService->saveObject($register, $schema, $tabel, $tariefTabelId);
+        $objectService->saveObject(object: $tabel, register: $register, schema: $schema, uuid: (string) $tariefTabelId);
 
         $this->logger->info('Procest leges: verordening vastgesteld', ['tariefTabelId' => $tariefTabelId]);
 
@@ -187,7 +187,7 @@ class LegesVerordeningService
         try {
             $previous['geldigTotEnMet'] = (new DateTimeImmutable($geldigVanaf))->modify('-1 day')->format('Y-m-d');
             $previousId = (string) ($previous['id'] ?? '');
-            $objectService->saveObject($register, $schema, $previous, $previousId);
+            $objectService->saveObject(object: $previous, register: $register, schema: $schema, uuid: (string) $previousId);
             return $previousId;
         } catch (\Throwable $e) {
             $this->logger->warning('Procest leges: could not close previous table: '.$e->getMessage());

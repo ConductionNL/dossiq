@@ -87,6 +87,26 @@
 			]
 		},
 		{
+			"name": "Admin — import verordening with metaData persists concept (201 + tariefTabelId)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {"mode": "raw", "raw": "{\"metaData\":{\"naam\":\"Newman Verordening 2026\",\"geldigVanaf\":\"2026-01-01\",\"vastgesteldDoor\":\"Newman QA\"},\"tarieven\":[{\"tariefNummer\":\"1.1.1\",\"omschrijving\":\"Paspoort\",\"grondslag\":\"vast\",\"eenheid\":\"per_stuk\",\"bedrag\":7500,\"btwTarief\":0,\"grootboekrekening\":\"8000\"}]}"},
+				"url": {"raw": "{{base_url}}/api/leges/import-verordening", "host": ["{{base_url}}"], "path": ["api", "leges", "import-verordening"]}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('201 Created (write path persists, no TypeError)', function () { pm.response.to.have.status(201) })",
+					"var b = pm.response.json()",
+					"pm.test('returns a persisted tariefTabelId (real OR uuid)', function () { pm.expect(b).to.have.property('tariefTabelId'); pm.expect(b.tariefTabelId).to.be.a('string').and.to.have.length.above(0) })",
+					"pm.test('reports concept status and a written tarief', function () { pm.expect(b.status).to.eql('concept'); pm.expect(b.tarieven).to.be.at.least(1) })"
+				]}}
+			]
+		},
+		{
 			"name": "Admin — import verordening without metaData returns 400",
 			"request": {
 				"method": "POST",

@@ -195,7 +195,7 @@ class AdvisoryCommitteeService
         );
 
         try {
-            return $objectService->saveObject($register, $requestSchema, $record);
+            return $objectService->saveObject(object: $record, register: $register, schema: $requestSchema);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest BAC: failed to create advice request: '.$e->getMessage()
@@ -281,10 +281,10 @@ class AdvisoryCommitteeService
                 );
                 try {
                     $objectService->saveObject(
-                        $register,
-                        $requestSchema,
-                        ['auditTrail' => $audit],
-                        $requestId
+                        object: ['auditTrail' => $audit],
+                        register: $register,
+                        schema: $requestSchema,
+                        uuid: (string) $requestId
                     );
                 } catch (\Throwable $auditError) {
                     $this->logger->error(
@@ -341,10 +341,10 @@ class AdvisoryCommitteeService
 
         try {
             return $objectService->saveObject(
-                $register,
-                $requestSchema,
-                $update,
-                $requestId
+                object: $update,
+                register: $register,
+                schema: $requestSchema,
+                uuid: (string) $requestId
             );
         } catch (\Throwable $e) {
             $this->logger->error(
@@ -439,10 +439,10 @@ class AdvisoryCommitteeService
             );
 
             $objectService->saveObject(
-                $register,
-                $requestSchema,
-                ['auditTrail' => $audit],
-                $requestId
+                object: ['auditTrail' => $audit],
+                register: $register,
+                schema: $requestSchema,
+                uuid: (string) $requestId
             );
         } catch (\Throwable $e) {
             $this->logger->error(

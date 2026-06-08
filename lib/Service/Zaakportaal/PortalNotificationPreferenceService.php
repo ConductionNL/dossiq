@@ -287,10 +287,10 @@ class PortalNotificationPreferenceService
     private function persist(object $objectService, string $register, string $schema, array $record, string $id): mixed
     {
         if ($id !== '') {
-            return $objectService->saveObject($register, $schema, $record, $id);
+            return $objectService->saveObject(object: $record, register: $register, schema: $schema, uuid: (string) $id);
         }
 
-        return $objectService->saveObject($register, $schema, $record);
+        return $objectService->saveObject(object: $record, register: $register, schema: $schema);
     }//end persist()
 
     /**

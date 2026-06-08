@@ -204,10 +204,10 @@ class BezwaarDecisionListener implements IEventListener
 
         try {
             $objectService->saveObject(
-                $register,
-                $bezwaarSchema,
-                ['status' => $previous],
-                $bezwaarId
+                object: ['status' => $previous],
+                register: $register,
+                schema: $bezwaarSchema,
+                uuid: (string) $bezwaarId
             );
             $this->logger->warning(
                 'Procest bezwaar-decision: blocked transition into "'

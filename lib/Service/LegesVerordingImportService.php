@@ -209,13 +209,13 @@ class LegesVerordingImportService
             'status'          => 'concept',
         ];
 
-        $tabel   = $objectService->saveObject($register, $tabelSchema, $tabelPayload);
+        $tabel   = $objectService->saveObject(object: $tabelPayload, register: $register, schema: $tabelSchema);
         $tabelId = $this->extractId(result: $tabel);
 
         $created = 0;
         foreach ($validation['valid'] as $tariefRow) {
             $tariefRow['tariefTabelId'] = $tabelId;
-            $objectService->saveObject($register, $tariefSchema, $tariefRow);
+            $objectService->saveObject(object: $tariefRow, register: $register, schema: $tariefSchema);
             $created++;
         }
 

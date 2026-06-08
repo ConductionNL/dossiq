@@ -157,7 +157,7 @@ class BezwaarTermijnJob extends TimedJob
         $trigger['archiefTriggerActief'] = false;
 
         try {
-            $objectService->saveObject($register, $schema, $trigger);
+            $objectService->saveObject(object: $trigger, register: $register, schema: $schema);
         } catch (\Throwable $e) {
             $this->logger->error('BezwaarTermijnJob: deactivate failed', ['exception' => $e->getMessage()]);
         }

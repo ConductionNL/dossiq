@@ -177,9 +177,9 @@ class LegesCaseCalculationService
         ];
 
         $saved   = $objectService->saveObject(
-            $register,
-            $this->settingsService->getConfigValue('leges_berekening_schema'),
-            $payload
+            object: $payload,
+            register: $register,
+            schema: $this->settingsService->getConfigValue('leges_berekening_schema')
         );
         $savedId = $this->extractId(result: $saved);
 
