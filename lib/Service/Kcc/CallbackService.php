@@ -123,7 +123,7 @@ class CallbackService
         $payload = $this->buildPayload(data: $data, agentId: $agentId);
 
         [$objectService, $register, $schema] = $this->resolve();
-        $saved = $objectService->saveObject($register, $schema, $payload);
+        $saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
 
         $this->logger->info('Procest KCC: callback scheduled', ['agent' => $agentId]);
 
@@ -199,7 +199,7 @@ class CallbackService
         $existing['status']        = 'cancelled';
         $existing['nextAttemptAt'] = null;
 
-        $saved = $objectService->saveObject($register, $schema, $existing, $id);
+        $saved = $objectService->saveObject(object: $existing, register: $register, schema: $schema, uuid: (string) $id);
         return $this->toArray(value: $saved);
     }//end cancel()
 
@@ -240,7 +240,7 @@ class CallbackService
     public function persist(string $id, array $callback): array
     {
         [$objectService, $register, $schema] = $this->resolve();
-        $saved = $objectService->saveObject($register, $schema, $callback, $id);
+        $saved = $objectService->saveObject(object: $callback, register: $register, schema: $schema, uuid: (string) $id);
         return $this->toArray(value: $saved);
     }//end persist()
 

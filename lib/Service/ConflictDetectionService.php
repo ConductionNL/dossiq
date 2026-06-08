@@ -32,6 +32,10 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
+use DateTimeInterface;
+use InvalidArgumentException;
+
 /**
  * Classifies replay failures into conflict types and builds conflict records.
  *
@@ -127,7 +131,7 @@ class ConflictDetectionService
         ?array $serverVersion=null,
         ?string $now=null
     ): array {
-        $timestamp = ($now ?? (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM));
+        $timestamp = ($now ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM));
 
         return [
             'syncQueueRef'  => $syncQueueRef,
@@ -214,12 +218,12 @@ class ConflictDetectionService
     ): array {
         $allowed = ['client_wins', 'server_wins', 'manual_merge'];
         if (in_array($resolution, $allowed, true) === false) {
-            throw new \InvalidArgumentException('Invalid conflict resolution choice');
+            throw new InvalidArgumentException('Invalid conflict resolution choice');
         }
 
         $conflictRecord['resolution'] = $resolution;
         $conflictRecord['resolvedBy'] = $resolvedBy;
-        $conflictRecord['resolvedAt'] = ($now ?? (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM));
+        $conflictRecord['resolvedAt'] = ($now ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM));
 
         return $conflictRecord;
     }//end applyResolution()

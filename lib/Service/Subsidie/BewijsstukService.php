@@ -193,7 +193,7 @@ class BewijsstukService
         }
 
         try {
-            return $objectService->saveObject($register, $schema, $record);
+            return $objectService->saveObject(object: $record, register: $register, schema: $schema);
         } catch (Throwable $e) {
             $this->logger->error('Procest subsidie: bewijsstuk create failed: '.$e->getMessage());
             throw new OCSBadRequestException('Kon bewijsstuk niet opslaan');

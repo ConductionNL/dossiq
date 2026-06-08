@@ -79,6 +79,10 @@ class SyncQueueReplayService
      *
      * @return array<int, array<string, mixed>> Ordered pending operations.
      *
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The flag widens the
+     * IDOR-scoped pending-query to also include failed operations; both modes
+     * share the same ownership filter, so the boolean selects a query variant.
+     *
      * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-12
      */
     public function listPending(string $deviceId, string $inspectorId, bool $includeFailed=false): array

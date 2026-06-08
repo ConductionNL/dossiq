@@ -30,7 +30,7 @@ use Psr\Log\LoggerInterface;
  */
 interface BvwParafeerObjectServiceStub
 {
-    public function saveObject(string $register, string $schema, array $object): ?object;
+    public function saveObject(array $object, array $extend=[], ?string $register=null, ?string $schema=null, ?string $uuid=null): ?object;
     public function findObjects(string $register, string $schema, array $params): array;
 
 }//end interface

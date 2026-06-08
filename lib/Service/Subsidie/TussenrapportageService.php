@@ -145,7 +145,7 @@ class TussenrapportageService
         );
 
         try {
-            return $objectService->saveObject($register, $schema, $record);
+            return $objectService->saveObject(object: $record, register: $register, schema: $schema);
         } catch (Throwable $e) {
             $this->logger->error('Procest subsidie: createExpected tussenrapportage failed: '.$e->getMessage());
             throw new OCSBadRequestException('Kon tussenrapportage niet aanmaken');
@@ -189,7 +189,7 @@ class TussenrapportageService
         }
 
         try {
-            return $objectService->saveObject($register, $schema, $patch, $reportId);
+            return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string) $reportId);
         } catch (Throwable $e) {
             $this->logger->error('Procest subsidie: approveReport failed: '.$e->getMessage());
             throw new OCSBadRequestException('Kon tussenrapportage niet goedkeuren');
@@ -231,7 +231,7 @@ class TussenrapportageService
         ];
 
         try {
-            return $objectService->saveObject($register, $schema, $patch, $reportId);
+            return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string) $reportId);
         } catch (Throwable $e) {
             $this->logger->error('Procest subsidie: partialApprove failed: '.$e->getMessage());
             throw new OCSBadRequestException('Kon tussenrapportage niet gedeeltelijk goedkeuren');

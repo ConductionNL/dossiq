@@ -49,6 +49,8 @@ use Psr\Log\LoggerInterface;
  * Repair step that seeds six canonical VTH workflow templates.
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — needs OpenRegister + WorkflowDefinitionService.
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-vth-workflow-templates/tasks.md#task-1
  */
 class SeedVthWorkflowTemplates implements IRepairStep
 {
@@ -83,6 +85,8 @@ class SeedVthWorkflowTemplates implements IRepairStep
      * Get the name of this repair step.
      *
      * @return string
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-vth-workflow-templates/tasks.md#task-1
      */
     public function getName(): string
     {
@@ -570,13 +574,12 @@ class SeedVthWorkflowTemplates implements IRepairStep
                 return null;
             }
 
-            if ($fromName === '*') {
-                $fromId = '*';
-            } else if ($fromName === '' || isset($statusMap[$fromName]) === false) {
-                return null;
-            }
+            $fromId = '*';
+            if ($fromName !== '*') {
+                if ($fromName === '' || isset($statusMap[$fromName]) === false) {
+                    return null;
+                }
 
-            if ($fromName !== '*' && $fromName !== '' && isset($statusMap[$fromName]) === true) {
                 $fromId = $statusMap[$fromName];
             }
 

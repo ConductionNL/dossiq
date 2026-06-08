@@ -197,7 +197,7 @@ class MilestoneService
             'trigger'             => $trigger,
         ];
 
-        $record = $objectService->saveObject($register, $schema, $recordData);
+        $record = $objectService->saveObject(object: $recordData, register: $register, schema: $schema);
 
         $this->logger->info(
             'Milestone marked: '.$milestoneDefinitionId.' on case '.$caseId,

@@ -59,13 +59,13 @@ interface QualityObjectServiceStub
     /**
      * Save an object.
      *
+     * @param array  $object   The object data
      * @param string $register The register slug
      * @param string $schema   The schema slug
-     * @param array  $object   The object data
      *
      * @return array
      */
-    public function saveObject(string $register, string $schema, array $object): array;
+    public function saveObject(array $object, string $register, string $schema): array;
 }//end interface
 
 /**

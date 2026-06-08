@@ -391,7 +391,7 @@ class LocationService
         }
 
         try {
-            $saved = $objectService->saveObject($register, $schema, $payload);
+            $saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
         } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: failed to attach location to case: '.$e->getMessage(),

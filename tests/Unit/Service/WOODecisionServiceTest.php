@@ -30,6 +30,36 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * Object service stub for WOO decision tests (OpenRegister object-first signature).
+ */
+interface WOODecisionObjectServiceStub
+{
+    /**
+     * Save an object (OpenRegister object-first signature).
+     *
+     * @param array       $object   Object data.
+     * @param array       $extend   Extend parameters.
+     * @param string|null $register Register id.
+     * @param string|null $schema   Schema id.
+     * @param string|null $uuid     Optional object uuid.
+     *
+     * @return mixed
+     */
+    public function saveObject(array $object, array $extend=[], ?string $register=null, ?string $schema=null, ?string $uuid=null);
+
+    /**
+     * Find objects matching a filter.
+     *
+     * @param string $register Register id.
+     * @param string $schema   Schema id.
+     * @param array  $filters  Query filters.
+     *
+     * @return array
+     */
+    public function findObjects(string $register, string $schema, array $filters=[]);
+}//end interface
+
+/**
  * Unit tests for WOODecisionService.
  *
  * @covers \OCA\Procest\Service\WOODecisionService
@@ -143,9 +173,7 @@ class WOODecisionServiceTest extends TestCase
             }
         };
 
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['findObjects', 'saveObject'])
-            ->getMock();
+        $objectServiceMock = $this->createMock(WOODecisionObjectServiceStub::class);
         $objectServiceMock->method('findObjects')->willReturn([
             ['documentRef' => 'doc-001', 'classification' => 'openbaar', 'weigeringsgronden' => []],
             ['documentRef' => 'doc-002', 'classification' => 'niet_openbaar', 'weigeringsgronden' => ['5.1.5']],

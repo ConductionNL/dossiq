@@ -112,7 +112,7 @@ class BesluitvormingParafeerService
             'routeSnapshot' => $routeSnapshot,
         ];
 
-        $updated = $objectService->saveObject($register, $voorstelSchema, array_merge($voorstel, $updateData));
+        $updated = $objectService->saveObject(object: array_merge($voorstel, $updateData), register: $register, schema: $voorstelSchema);
 
         $this->logger->info(
             'Besluitvorming parafering activated for voorstel: '.$voorstelId,
@@ -185,9 +185,9 @@ class BesluitvormingParafeerService
         // Handle retour: set voorstel status to retour.
         if ($action === 'retour') {
             $updated = $objectService->saveObject(
-                $register,
-                $voorstelSchema,
-                array_merge($voorstel, ['status' => 'retour'])
+                object: array_merge($voorstel, ['status' => 'retour']),
+                register: $register,
+                schema: $voorstelSchema
             );
             return $this->toArray(value: $updated);
         }
@@ -215,9 +215,9 @@ class BesluitvormingParafeerService
             // All steps complete: transition case to gereed voor agendering.
             $updateData = ['status' => 'gereed_voor_agendering', 'currentStep' => 0];
             $updated    = $objectService->saveObject(
-                $register,
-                $voorstelSchema,
-                array_merge($voorstel, $updateData)
+                object: array_merge($voorstel, $updateData),
+                register: $register,
+                schema: $voorstelSchema
             );
 
             $this->logger->info(
@@ -231,9 +231,9 @@ class BesluitvormingParafeerService
         // Advance to next step.
         $updateData = ['currentStep' => $nextStep, 'status' => 'in_parafering'];
         $updated    = $objectService->saveObject(
-            $register,
-            $voorstelSchema,
-            array_merge($voorstel, $updateData)
+            object: array_merge($voorstel, $updateData),
+            register: $register,
+            schema: $voorstelSchema
         );
 
         return $this->toArray(value: $updated);

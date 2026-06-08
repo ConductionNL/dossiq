@@ -41,6 +41,8 @@ use Throwable;
  * Public subsidieregister feed controller.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-39
  */
 class SubsidieRegisterController extends Controller
 {
@@ -68,6 +70,8 @@ class SubsidieRegisterController extends Controller
      * @NoCSRFRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-39
      */
     public function export(): JSONResponse
     {
@@ -93,13 +97,15 @@ class SubsidieRegisterController extends Controller
             return [];
         }
 
-        $register          = $this->settingsService->getConfigValue('register');
-        $beschikkingSchema = $this->settingsService->getConfigValue('subsidie_beschikking_schema');
-        $aanvraagSchema    = $this->settingsService->getConfigValue('subsidie_aanvraag_schema');
-        $regelingSchema    = $this->settingsService->getConfigValue('subsidie_regeling_schema');
-        if ($register === '' || $beschikkingSchema === '' || $aanvraagSchema === '' || $regelingSchema === '') {
+        $config = $this->resolveRegisterConfig();
+        if ($config === null) {
             return [];
         }
+
+        $register          = $config['register'];
+        $beschikkingSchema = $config['beschikkingSchema'];
+        $aanvraagSchema    = $config['aanvraagSchema'];
+        $regelingSchema    = $config['regelingSchema'];
 
         try {
             $beschikkingen = $objectService->findAll(
@@ -129,6 +135,30 @@ class SubsidieRegisterController extends Controller
 
         return $entries;
     }//end collectEntries()
+
+    /**
+     * Resolve and validate the register/schema configuration for the feed.
+     *
+     * @return array{register: string, beschikkingSchema: string, aanvraagSchema: string, regelingSchema: string}|null
+     *         The validated config, or null when any required value is unset.
+     */
+    private function resolveRegisterConfig(): ?array
+    {
+        $register          = $this->settingsService->getConfigValue('register');
+        $beschikkingSchema = $this->settingsService->getConfigValue('subsidie_beschikking_schema');
+        $aanvraagSchema    = $this->settingsService->getConfigValue('subsidie_aanvraag_schema');
+        $regelingSchema    = $this->settingsService->getConfigValue('subsidie_regeling_schema');
+        if ($register === '' || $beschikkingSchema === '' || $aanvraagSchema === '' || $regelingSchema === '') {
+            return null;
+        }
+
+        return [
+            'register'          => $register,
+            'beschikkingSchema' => $beschikkingSchema,
+            'aanvraagSchema'    => $aanvraagSchema,
+            'regelingSchema'    => $regelingSchema,
+        ];
+    }//end resolveRegisterConfig()
 
     /**
      * Find an object defensively, returning an empty array on any failure.

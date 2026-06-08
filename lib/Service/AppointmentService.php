@@ -110,9 +110,9 @@ class AppointmentService
                 );
 
         $result = $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $appointmentData,
+            object: $appointmentData,
+            register: (int) $register,
+            schema: (int) $schema,
         );
 
         $this->logger->info(
@@ -154,7 +154,7 @@ class AppointmentService
         }
 
         $data['status'] = 'cancelled';
-        $result         = $objectService->saveObject((int) $register, (int) $schema, $data);
+        $result         = $objectService->saveObject(object: $data, register: (int) $register, schema: (int) $schema);
 
         return $result->jsonSerialize();
     }//end cancelAppointment()
@@ -182,7 +182,7 @@ class AppointmentService
         $data           = $appointment->jsonSerialize();
         $data['status'] = 'no_show';
 
-        $result = $objectService->saveObject((int) $register, (int) $schema, $data);
+        $result = $objectService->saveObject(object: $data, register: (int) $register, schema: (int) $schema);
         return $result->jsonSerialize();
     }//end markNoShow()
 

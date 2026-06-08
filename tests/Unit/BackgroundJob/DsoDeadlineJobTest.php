@@ -32,6 +32,40 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
+ * Minimal ObjectService stub with named-parameter signatures.
+ *
+ * The OpenRegister ObjectService is resolved at runtime and called with named
+ * arguments; a \stdClass-based mock generates positional-only signatures and
+ * fails at call time with "Unknown named parameter". This typed interface lets
+ * PHPUnit generate a mock whose method signatures accept the named arguments.
+ */
+interface DsoDeadlineObjectServiceStub
+{
+    /**
+     * Find objects matching the given parameters.
+     *
+     * @param string              $register Register slug
+     * @param string              $schema   Schema slug
+     * @param array<string,mixed> $params   Query parameters
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function findObjects(string $register, string $schema, array $params): array;
+
+    /**
+     * Save or update an object.
+     *
+     * @param array<string,mixed> $object   Object data
+     * @param string              $register Register slug
+     * @param string              $schema   Schema slug
+     * @param string|null         $uuid     Optional object UUID for updates
+     *
+     * @return array<string,mixed>
+     */
+    public function saveObject(array $object, string $register, string $schema, ?string $uuid=null): array;
+}//end interface
+
+/**
  * Unit tests for DsoDeadlineJob.
  *
  * @covers \OCA\Procest\BackgroundJob\DsoDeadlineJob
@@ -159,9 +193,7 @@ class DsoDeadlineJobTest extends TestCase
      */
     public function testRunCatchesExceptionsPerTask(): void
     {
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['findObjects', 'saveObject'])
-            ->getMock();
+        $objectServiceMock = $this->createMock(DsoDeadlineObjectServiceStub::class);
 
         // Return a zaak with a past deadline so the overdue branch runs,
         // and inject a sub-call that throws to verify per-zaak isolation.

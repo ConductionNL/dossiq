@@ -196,9 +196,9 @@ class TemplateLibraryService
         $caseTypeSchema     = $this->settingsService->getConfigValue('case_type_schema');
         $caseTypeData       = $template['caseType'] ?? [];
         $caseType           = $objectService->saveObject(
-            $register,
-            $caseTypeSchema,
-            $caseTypeData,
+            object: $caseTypeData,
+            register: $register,
+            schema: $caseTypeSchema,
         );
         $caseTypeId         = $caseType->getUuid();
         $result['caseType'] = $caseTypeId;
@@ -208,9 +208,9 @@ class TemplateLibraryService
         foreach (($template['statusTypes'] ?? []) as $statusData) {
             $statusData['caseType'] = $caseTypeId;
             $status = $objectService->saveObject(
-                $register,
-                $statusTypeSchema,
-                $statusData,
+                object: $statusData,
+                register: $register,
+                schema: $statusTypeSchema,
             );
             $result['statuses'][] = $status->getUuid();
         }
@@ -220,9 +220,9 @@ class TemplateLibraryService
         foreach (($template['propertyDefinitions'] ?? []) as $propData) {
             $propData['caseType'] = $caseTypeId;
             $prop = $objectService->saveObject(
-                $register,
-                $propertySchema,
-                $propData,
+                object: $propData,
+                register: $register,
+                schema: $propertySchema,
             );
             $result['properties'][] = $prop->getUuid();
         }
@@ -232,9 +232,9 @@ class TemplateLibraryService
         foreach (($template['documentTypes'] ?? []) as $docData) {
             $docData['caseType'] = $caseTypeId;
             $doc = $objectService->saveObject(
-                $register,
-                $docTypeSchema,
-                $docData,
+                object: $docData,
+                register: $register,
+                schema: $docTypeSchema,
             );
             $result['documents'][] = $doc->getUuid();
         }
@@ -244,9 +244,9 @@ class TemplateLibraryService
         foreach (($template['decisionTypes'] ?? []) as $decData) {
             $decData['caseType'] = $caseTypeId;
             $dec = $objectService->saveObject(
-                $register,
-                $decisionTypeSchema,
-                $decData,
+                object: $decData,
+                register: $register,
+                schema: $decisionTypeSchema,
             );
             $result['decisions'][] = $dec->getUuid();
         }
@@ -256,9 +256,9 @@ class TemplateLibraryService
         foreach (($template['roleTypes'] ?? []) as $roleData) {
             $roleData['caseType'] = $caseTypeId;
             $role = $objectService->saveObject(
-                $register,
-                $roleTypeSchema,
-                $roleData,
+                object: $roleData,
+                register: $register,
+                schema: $roleTypeSchema,
             );
             $result['roles'][] = $role->getUuid();
         }

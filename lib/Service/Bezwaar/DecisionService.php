@@ -221,9 +221,9 @@ class DecisionService
 
         try {
             return $objectService->saveObject(
-                $register,
-                $decisionSchema,
-                $record
+                object: $record,
+                register: $register,
+                schema: $decisionSchema
             );
         } catch (Throwable $e) {
             $this->logger->error(
@@ -293,10 +293,10 @@ class DecisionService
 
         try {
             $saved = $objectService->saveObject(
-                $register,
-                $decisionSchema,
-                $patch,
-                $decisionId
+                object: $patch,
+                register: $register,
+                schema: $decisionSchema,
+                uuid: (string) $decisionId
             );
         } catch (Throwable $e) {
             $this->logger->error(

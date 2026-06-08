@@ -1,0 +1,77 @@
+{
+    "tariefTabellen": [
+        {
+            "naam": "Legesverordening 2026 Gemeente Amsterdam",
+            "geldigVanaf": "2026-01-01",
+            "geldigTotEnMet": null,
+            "vastgesteldDoor": "Raadsbesluit 2025-RB-0481",
+            "vastgesteldOp": "2025-12-18",
+            "status": "vastgesteld",
+            "tarieven": [
+                {
+                    "tariefNummer": "1.1.1",
+                    "omschrijving": "Paspoort",
+                    "bedrag": 10000,
+                    "grondslag": "vast",
+                    "eenheid": "per_stuk",
+                    "btwTarief": 0,
+                    "grootboekrekening": "8004010",
+                    "kostendrager": "Burgerzaken",
+                    "productCode": "GEMMA-PASPOORT"
+                },
+                {
+                    "tariefNummer": "1.2.1",
+                    "omschrijving": "Rijbewijs verlenging",
+                    "bedrag": 4875,
+                    "grondslag": "vast",
+                    "eenheid": "per_stuk",
+                    "btwTarief": 0,
+                    "grootboekrekening": "8004020",
+                    "kostendrager": "Burgerzaken",
+                    "productCode": "GEMMA-RIJBEWIJS",
+                    "varianten": [
+                        {
+                            "variantNaam": "Variant B: Spoed",
+                            "condities": { "spoedAanvraag": true },
+                            "bedragOverride": 6750
+                        }
+                    ],
+                    "kortingen": [
+                        {
+                            "naam": "65-plus vrijstelling rijbewijs verlenging",
+                            "kortingsType": "volledige_vrijstelling",
+                            "kortingsWaarde": 100,
+                            "condities": { "leeftijd": { "min": 65 } },
+                            "wettelijkeGrondslag": "Gemeentewet art. 229 lid 3",
+                            "geldigVanaf": "2026-01-01"
+                        }
+                    ]
+                },
+                {
+                    "tariefNummer": "2.3.1.1",
+                    "omschrijving": "Omgevingsvergunning bouwactiviteit",
+                    "bedrag": 35000,
+                    "grondslag": "bouwsom",
+                    "eenheid": "percentage",
+                    "grondslagVeld": "bouwsom",
+                    "percentage": 3.0,
+                    "btwTarief": 0,
+                    "grootboekrekening": "8004050",
+                    "kostendrager": "Vergunningen",
+                    "productCode": "GEMMA-OMGEVINGSVERGUNNING"
+                },
+                {
+                    "tariefNummer": "3.2.1",
+                    "omschrijving": "APV-vergunning evenement",
+                    "bedrag": 25000,
+                    "grondslag": "vast",
+                    "eenheid": "per_stuk",
+                    "btwTarief": 9,
+                    "grootboekrekening": "8004060",
+                    "kostendrager": "Openbare Orde",
+                    "productCode": "GEMMA-APV-EVENEMENT"
+                }
+            ]
+        }
+    ]
+}

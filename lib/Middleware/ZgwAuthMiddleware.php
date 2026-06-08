@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Middleware;
 
 use OCA\Procest\Controller\ZgwController;
+use OCA\Procest\Service\ZgwJwtValidator;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
@@ -106,11 +107,11 @@ class ZgwAuthMiddleware extends Middleware
     ];
 
     /**
-     * The OpenRegister AuthorizationService (loaded dynamically).
+     * The ZGW JWT validator.
      *
-     * @var object|null
+     * @var ZgwJwtValidator
      */
-    private $authorizationService = null;
+    private ZgwJwtValidator $jwtValidator;
 
     /**
      * The OpenRegister ConsumerMapper (loaded dynamically).
@@ -122,15 +123,18 @@ class ZgwAuthMiddleware extends Middleware
     /**
      * Constructor.
      *
-     * @param IRequest        $request The incoming request
-     * @param LoggerInterface $logger  The logger
+     * @param IRequest        $request      The incoming request
+     * @param ZgwJwtValidator $jwtValidator The ZGW JWT validator
+     * @param LoggerInterface $logger       The logger
      *
      * @return void
      */
     public function __construct(
         private readonly IRequest $request,
+        ZgwJwtValidator $jwtValidator,
         private readonly LoggerInterface $logger,
     ) {
+        $this->jwtValidator = $jwtValidator;
         $this->loadOpenRegisterServices();
     }//end __construct()
 
@@ -142,11 +146,8 @@ class ZgwAuthMiddleware extends Middleware
     private function loadOpenRegisterServices(): void
     {
         try {
-            $container = \OC::$server;
-            $this->authorizationService = $container->get(
-                'OCA\OpenRegister\Service\AuthorizationService'
-            );
-            $this->consumerMapper       = $container->get(
+            $container            = \OC::$server;
+            $this->consumerMapper = $container->get(
                 'OCA\OpenRegister\Db\ConsumerMapper'
             );
         } catch (\Throwable $e) {
@@ -194,11 +195,13 @@ class ZgwAuthMiddleware extends Middleware
             );
         }
 
-        // Validate JWT signature via OpenRegister's AuthorizationService.
+        // Validate JWT signature via the procest-owned ZgwJwtValidator.
         // M3: Log detailed message server-side; surface only a generic message to caller.
+        // Catch \Throwable: a misconfigured dependency raises \Error (not \Exception),
+        // which previously escaped as a 500 instead of a clean 403.
         try {
-            $this->authorizationService->authorizeJwt(authorization: $authorization);
-        } catch (\Exception $e) {
+            $this->jwtValidator->validate(authorization: $authorization);
+        } catch (\Throwable $e) {
             $this->logger->warning(
                 'ZGW auth failed: '.$e->getMessage()
             );

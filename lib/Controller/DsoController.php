@@ -27,17 +27,16 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
-use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\BeschikkingGenerationService;
 use OCA\Procest\Service\DsoCaseService;
 use OCA\Procest\Service\SamenwerkverzoekService;
+use OCA\Procest\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\EventDispatcher\GenericEvent;
 use OCP\EventDispatcher\IEventDispatcher;
-use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -57,8 +56,8 @@ class DsoController extends Controller
      * @param DsoCaseService               $dsoCaseService     The DSO case service
      * @param BeschikkingGenerationService $beschikkingService The beschikking generation service
      * @param SamenwerkverzoekService      $samenwerkService   The samenwerkverzoek service
+     * @param SettingsService              $settingsService    The settings service (config + ObjectService bridge)
      * @param IUserSession                 $userSession        The user session
-     * @param IL10N                        $l10n               The localisation service
      * @param IEventDispatcher             $eventDispatcher    The event dispatcher
      * @param LoggerInterface              $logger             The logger
      */
@@ -68,8 +67,8 @@ class DsoController extends Controller
         private readonly DsoCaseService $dsoCaseService,
         private readonly BeschikkingGenerationService $beschikkingService,
         private readonly SamenwerkverzoekService $samenwerkService,
+        private readonly SettingsService $settingsService,
         private readonly IUserSession $userSession,
-        private readonly IL10N $l10n,
         private readonly IEventDispatcher $eventDispatcher,
         private readonly LoggerInterface $logger,
     ) {
@@ -579,55 +578,31 @@ class DsoController extends Controller
      * Get the ObjectService from the DI container; returns null when unavailable.
      *
      * @return object|null
-     *
-     * @psalm-suppress MixedReturnStatement
-     * @psalm-suppress MixedInferredReturnType
      */
     private function getObjectServiceOrFail(): ?object
     {
-        try {
-            return $this->request->server['_container']->get('OCA\OpenRegister\Service\ObjectService') ?? null;
-        } catch (\Throwable $e) {
-            // Ignore — ObjectService injected indirectly via services.
-        }
-
-        return null;
+        return $this->settingsService->getObjectService();
     }//end getObjectServiceOrFail()
 
     /**
      * Resolve an app config value from the Nextcloud app config.
      *
-     * Uses the raw server superglobal path to avoid direct IAppConfig dependency
-     * on the controller — the DI container is available through the services.
-     *
      * @param string $key Config key
      *
      * @return string Config value or empty string
-     *
-     * @psalm-suppress MixedReturnStatement
      */
     private function resolveConfigValue(string $key): string
     {
-        try {
-            $container = $this->request->server['_container'] ?? null;
-            if ($container === null) {
-                return '';
-            }
-
-            $appConfig = $container->get('OCP\IAppConfig');
-            return $appConfig->getValueString(app: Application::APP_ID, key: $key, default: '');
-        } catch (\Throwable $e) {
-            return '';
-        }
+        return $this->settingsService->getConfigValue(key: $key);
     }//end resolveConfigValue()
 
     /**
      * Apply in-memory filters that cannot be pushed to ObjectService params.
      *
-     * @param array<int,array<string,mixed>> $zaken             The zaken array
-     * @param string                         $activiteitgroep   Filter by activiteitgroep
-     * @param string                         $regelkwalificatie Filter by regelkwalificatie
-     * @param string                         $locatie           Filter by locatie substring
+     * @param array<int,mixed> $zaken             The zaken array (elements come from ObjectService and are not guaranteed to be arrays)
+     * @param string           $activiteitgroep   Filter by activiteitgroep
+     * @param string           $regelkwalificatie Filter by regelkwalificatie
+     * @param string           $locatie           Filter by locatie substring
      *
      * @return array<int,array<string,mixed>>
      */

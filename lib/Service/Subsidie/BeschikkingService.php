@@ -136,7 +136,7 @@ class BeschikkingService
         unset($record['ondertekendDoor'], $record['ondertekendOp'], $record['publicatiedatum']);
 
         try {
-            return $objectService->saveObject($register, $schema, $record);
+            return $objectService->saveObject(object: $record, register: $register, schema: $schema);
         } catch (Throwable $e) {
             $this->logger->error('Procest subsidie: createDraft beschikking failed: '.$e->getMessage());
             throw new OCSBadRequestException('Kon beschikking niet aanmaken');
@@ -169,7 +169,7 @@ class BeschikkingService
         ];
 
         try {
-            return $objectService->saveObject($register, $schema, $patch, $beschikkingId);
+            return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string) $beschikkingId);
         } catch (Throwable $e) {
             $this->logger->error('Procest subsidie: sign beschikking failed: '.$e->getMessage());
             throw new OCSBadRequestException('Kon beschikking niet ondertekenen');
@@ -206,7 +206,7 @@ class BeschikkingService
         ];
 
         try {
-            return $objectService->saveObject($register, $schema, $patch, $beschikkingId);
+            return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string) $beschikkingId);
         } catch (Throwable $e) {
             $this->logger->error('Procest subsidie: publish beschikking failed: '.$e->getMessage());
             throw new OCSBadRequestException('Kon beschikking niet publiceren');

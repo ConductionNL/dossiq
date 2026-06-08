@@ -138,7 +138,7 @@ class ComplaintService
         $data['ontvangstbevestigingDeadline'] = $this->addWorkingDays(startDate: $ontvangstdatum, days: self::AWB_ACK_WORKING_DAYS);
         $data['afhandelDeadline'] = $this->addCalendarWeeks(startDate: $ontvangstdatum, weeks: self::AWB_RESOLUTION_WEEKS);
 
-        $complaint = $objectService->saveObject($register, $schema, $data);
+        $complaint = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
         $this->logger->info(
             'Complaint created: '.$data['klachtnummer'],
@@ -238,7 +238,7 @@ class ComplaintService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('complaint_schema');
 
-        $result = $objectService->saveObject($register, $schema, $data, $id);
+        $result = $objectService->saveObject(object: $data, register: $register, schema: $schema, uuid: (string) $id);
 
         if (is_array($result) === true) {
             return $result;
@@ -264,6 +264,10 @@ class ComplaintService
         $complaint = $this->getComplaint(id: $id);
         if ($complaint === null) {
             throw new \RuntimeException('Complaint not found: '.$id);
+        }
+
+        if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
+            throw new \RuntimeException('Unknown complaint status: '.$newStatus);
         }
 
         $currentStatus = $complaint['status'] ?? 'ontvangen';

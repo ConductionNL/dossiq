@@ -482,7 +482,7 @@ class StatusTransitionService
             throw new RuntimeException('case_schema_not_configured');
         }
 
-        return $this->toArray(value: $objectService->saveObject($register, $caseSchema, $case));
+        return $this->toArray(value: $objectService->saveObject(object: $case, register: $register, schema: $caseSchema));
     }//end saveCase()
 
     /**
@@ -534,7 +534,7 @@ class StatusTransitionService
             $payload['description'] = $comment;
         }
 
-        return $this->toArray(value: $objectService->saveObject($register, $recordSchema, $payload));
+        return $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
     }//end writeStatusRecord()
 
     /**
@@ -557,7 +557,7 @@ class StatusTransitionService
             return $record;
         }
 
-        return $this->toArray(value: $objectService->saveObject($register, $recordSchema, $record));
+        return $this->toArray(value: $objectService->saveObject(object: $record, register: $register, schema: $recordSchema));
     }//end updateStatusRecord()
 
     /**
