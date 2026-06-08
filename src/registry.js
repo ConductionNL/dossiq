@@ -43,6 +43,10 @@ import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
 import InspectionChecklistPanel from './views/cases/components/InspectionChecklistPanel.vue'
 import InspectionPanel from './views/cases/components/InspectionPanel.vue'
 
+// Zaakportaal "Mijn gemeente" citizen-portal pages (zaakportaal-mijngemeente).
+import MijnZakenView from './views/portaal/MijnZaken.vue'
+import MijnNotificatiesView from './views/portaal/MijnNotificaties.vue'
+
 /**
  * V2 component registry.
  *
@@ -148,6 +152,19 @@ const registry = {
 		kind: 'page',
 		component: InspectionPanel,
 		_note: 'VTH inspection panel — shows completed inspectionResult records for a case',
+	},
+
+	// --- Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente). ---
+	// @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-17
+	MijnZakenView: {
+		kind: 'page',
+		component: MijnZakenView,
+		_note: 'Citizen-facing case overview + detail with accessible status timeline; reads IDOR-safe /api/portaal/cases. No declarative analogue (citizen surface, subject-scoped).',
+	},
+	MijnNotificatiesView: {
+		kind: 'page',
+		component: MijnNotificatiesView,
+		_note: 'Citizen notification-preference manager with statutory Berichtenbox-always-on control.',
 	},
 }
 

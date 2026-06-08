@@ -184,6 +184,10 @@ class SettingsService
         'hearing_schema',
         'complaint_disposition_schema',
         'complaint_category_schema',
+        // Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente).
+        'portaal_bericht_schema',
+        'portaal_verzoek_schema',
+        'portaal_notificatie_voorkeur_schema',
     ];
 
     /**
@@ -253,11 +257,27 @@ class SettingsService
         'bacAdviceRequest'             => 'bac_advice_request_schema',
         'beroep'                       => 'beroep_schema',
         'bezwaarDecision'              => 'bezwaar_decision_schema',
+        'routingRule'                  => 'routing_rule_schema',
+        'kccAgent'                     => 'kcc_agent_schema',
+        'callbackRequest'              => 'callback_request_schema',
+        'subsidieRegeling'             => 'subsidie_regeling_schema',
+        'subsidieAanvraag'             => 'subsidie_aanvraag_schema',
+        'subsidieBeoordeling'          => 'subsidie_beoordeling_schema',
+        'subsidieBeschikking'          => 'subsidie_beschikking_schema',
+        'subsidieUitvoering'           => 'subsidie_uitvoering_schema',
+        'tussenrapportage'             => 'tussenrapportage_schema',
+        'subsidieVaststelling'         => 'subsidie_vaststelling_schema',
+        'terugvordering'               => 'terugvordering_schema',
+        'bewijsstuk'                   => 'bewijsstuk_schema',
         // Complaint management (klachtafhandeling) — Awb chapter 9.
         'complaint'                    => 'complaint_schema',
         'hearing'                      => 'hearing_schema',
         'complaintDisposition'         => 'complaint_disposition_schema',
         'complaintCategory'            => 'complaint_category_schema',
+        // Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente).
+        'portaalBericht'               => 'portaal_bericht_schema',
+        'portaalVerzoek'               => 'portaal_verzoek_schema',
+        'portaalNotificatieVoorkeur'   => 'portaal_notificatie_voorkeur_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

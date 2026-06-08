@@ -86,6 +86,19 @@ return [
         ['name' => 'subsidie#transition', 'url' => '/api/subsidies/{id}/transition', 'verb' => 'POST'],
         ['name' => 'subsidie#createBeschikking', 'url' => '/api/subsidies/{id}/beschikking', 'verb' => 'POST'],
 
+        // Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente).
+        // Static/verb routes precede the {id} wildcard routes.
+        ['name' => 'zaakportaal#cases',                     'url' => '/api/portaal/cases', 'verb' => 'GET'],
+        ['name' => 'zaakportaal#messages',                  'url' => '/api/portaal/messages', 'verb' => 'GET'],
+        ['name' => 'zaakportaal#sendMessage',               'url' => '/api/portaal/messages', 'verb' => 'POST'],
+        ['name' => 'zaakportaal#validateObjectionDeadline', 'url' => '/api/portaal/objections/validate-deadline', 'verb' => 'POST'],
+        ['name' => 'zaakportaal#submitObjection',           'url' => '/api/portaal/objections', 'verb' => 'POST'],
+        ['name' => 'zaakportaal#submitComplaint',           'url' => '/api/portaal/complaints', 'verb' => 'POST'],
+        ['name' => 'zaakportaal#requests',                  'url' => '/api/portaal/requests', 'verb' => 'GET'],
+        ['name' => 'zaakportaal#getPreferences',            'url' => '/api/portaal/notification-preferences', 'verb' => 'GET'],
+        ['name' => 'zaakportaal#updatePreferences',         'url' => '/api/portaal/notification-preferences', 'verb' => 'PATCH'],
+        ['name' => 'zaakportaal#caseDetail',                'url' => '/api/portaal/cases/{id}', 'verb' => 'GET'],
+
         // ZGW Mapping Management.
         ['name' => 'zgwMapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
         ['name' => 'zgwMapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],
