@@ -33,6 +33,7 @@ namespace OCA\Procest\Controller;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\LegesVerordeningService;
 use OCA\Procest\Service\LegesVerordingImportService;
+use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -69,7 +70,7 @@ class LegesAdminController extends Controller
      *
      * @return JSONResponse
      */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function importVerordening(): JSONResponse
     {
         $metaData = $this->request->getParam('metaData', []);
@@ -104,7 +105,7 @@ class LegesAdminController extends Controller
      *
      * @return JSONResponse
      */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function listVerordeningen(): JSONResponse
     {
         try {
@@ -122,7 +123,7 @@ class LegesAdminController extends Controller
      *
      * @return JSONResponse
      */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function updateVerordening(string $id): JSONResponse
     {
         $tarieven = $this->request->getParam('tarieven', []);
@@ -146,7 +147,7 @@ class LegesAdminController extends Controller
      *
      * @return JSONResponse
      */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function approveVerordening(string $id): JSONResponse
     {
         try {

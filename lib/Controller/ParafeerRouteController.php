@@ -28,8 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
-use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\ParafeerRouteService;
+use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -154,7 +154,7 @@ class ParafeerRouteController extends Controller
      *
      * @spec openspec/changes/parafeerroute-engine/tasks.md#T05
      */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function skipStep(string $voorstelId): JSONResponse
     {
         if ($this->requireAdmin() === false) {
