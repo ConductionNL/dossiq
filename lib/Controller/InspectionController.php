@@ -180,7 +180,7 @@ class InspectionController extends Controller
                 $accuracy
             );
 
-            $saved = $objectService->saveObject((int) $register, (int) $schema, $result['inspection']);
+            $saved = $objectService->saveObject(object: $result['inspection'], register: (int) $register, schema: (int) $schema);
 
             return new JSONResponse(
                 array_merge($result, ['inspection' => $saved->jsonSerialize()])
@@ -290,7 +290,7 @@ class InspectionController extends Controller
 
             $updatedInspection = $this->inspectionService->addPhoto($inspection, $photoMetadata);
 
-            $saved = $objectService->saveObject((int) $register, (int) $schema, $updatedInspection);
+            $saved = $objectService->saveObject(object: $updatedInspection, register: (int) $register, schema: (int) $schema);
 
             return new JSONResponse($saved->jsonSerialize());
         } catch (\Throwable $e) {
@@ -341,7 +341,7 @@ class InspectionController extends Controller
 
             $result = $this->inspectionService->completeInspection($inspection, $conclusion);
 
-            $saved = $objectService->saveObject((int) $register, (int) $schema, $result);
+            $saved = $objectService->saveObject(object: $result, register: (int) $register, schema: (int) $schema);
 
             return new JSONResponse($saved->jsonSerialize());
         } catch (\InvalidArgumentException $e) {
