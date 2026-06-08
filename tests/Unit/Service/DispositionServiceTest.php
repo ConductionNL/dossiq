@@ -28,6 +28,36 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * Object service stub for disposition tests (OpenRegister object-first signature).
+ */
+interface DispositionObjectServiceStub
+{
+    /**
+     * Save an object (OpenRegister object-first signature).
+     *
+     * @param array       $object   Object data.
+     * @param array       $extend   Extend parameters.
+     * @param string|null $register Register id.
+     * @param string|null $schema   Schema id.
+     * @param string|null $uuid     Optional object uuid.
+     *
+     * @return array
+     */
+    public function saveObject(array $object, array $extend=[], ?string $register=null, ?string $schema=null, ?string $uuid=null);
+
+    /**
+     * Find objects matching a filter.
+     *
+     * @param string $register Register id.
+     * @param string $schema   Schema id.
+     * @param array  $filters  Query filters.
+     *
+     * @return array
+     */
+    public function findObjects(string $register, string $schema, array $filters=[]);
+}//end interface
+
+/**
  * Unit tests for DispositionService.
  *
  * @covers \OCA\Procest\Service\DispositionService
@@ -112,7 +142,7 @@ class DispositionServiceTest extends TestCase
      */
     public function testSubmitDispositionSucceedsForOngegrondenWithoutToelichting(): void
     {
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->createMock(DispositionObjectServiceStub::class);
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService
             ->method('getConfigValue')
@@ -135,16 +165,16 @@ class DispositionServiceTest extends TestCase
      */
     public function testSubmitDispositionSetsApprovalStatusWhenRequired(): void
     {
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->createMock(DispositionObjectServiceStub::class);
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
 
         $objectServiceMock
             ->method('saveObject')
             ->willReturnCallback(
-                function (string $reg, string $sch, array $data) {
-                    $this->assertSame('wacht_op_goedkeuring', $data['goedkeuringStatus']);
-                    return $data;
+                function (array $object, array $extend=[], ?string $register=null, ?string $schema=null, ?string $uuid=null) {
+                    $this->assertSame('wacht_op_goedkeuring', $object['goedkeuringStatus']);
+                    return $object;
                 }
             );
 
@@ -164,17 +194,17 @@ class DispositionServiceTest extends TestCase
      */
     public function testApproveDispositionSetsStatusToGoedgekeurd(): void
     {
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->createMock(DispositionObjectServiceStub::class);
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
 
         $objectServiceMock
             ->method('saveObject')
             ->willReturnCallback(
-                function (string $reg, string $sch, array $data, string $id) {
-                    $this->assertSame('goedgekeurd', $data['goedkeuringStatus']);
-                    $this->assertSame('coordinator-uid', $data['goedkeurder']);
-                    return $data;
+                function (array $object, array $extend=[], ?string $register=null, ?string $schema=null, ?string $uuid=null) {
+                    $this->assertSame('goedgekeurd', $object['goedkeuringStatus']);
+                    $this->assertSame('coordinator-uid', $object['goedkeurder']);
+                    return $object;
                 }
             );
 

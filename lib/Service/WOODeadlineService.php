@@ -173,7 +173,7 @@ class WOODeadlineService
                 ]
                 );
 
-        $objectService->saveObject($register, $caseSchema, $updateData, $caseId);
+        $objectService->saveObject(object: $updateData, register: $register, schema: $caseSchema, uuid: (string) $caseId);
 
         $this->logger->info(
             'WOO deadline extended for case '.$caseId.' to '.$newDeadline->format('Y-m-d'),

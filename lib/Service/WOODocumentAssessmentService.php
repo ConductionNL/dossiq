@@ -153,16 +153,16 @@ class WOODocumentAssessmentService
             if (is_array($existing) === true && count($existing) > 0) {
                 $existingId  = $existing[0]['id'] ?? $existing[0]['uuid'] ?? null;
                 $savedObject = $objectService->saveObject(
-                    $register,
-                    $assessmentSchema,
-                    $assessment,
-                    $existingId,
+                    object: $assessment,
+                    register: $register,
+                    schema: $assessmentSchema,
+                    uuid: (string) $existingId,
                 );
             } else {
                 $savedObject = $objectService->saveObject(
-                    $register,
-                    $assessmentSchema,
-                    $assessment,
+                    object: $assessment,
+                    register: $register,
+                    schema: $assessmentSchema,
                 );
             }
 

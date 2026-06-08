@@ -157,7 +157,7 @@ class VaststellingService
                 throw new OCSBadRequestException('Vaststelling niet gevonden');
             }
 
-            $saved = $objectService->saveObject($register, $schema, $patch, $vaststellingId);
+            $saved = $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string) $vaststellingId);
         } catch (OCSBadRequestException $e) {
             throw $e;
         } catch (Throwable $e) {

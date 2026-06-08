@@ -110,7 +110,7 @@ class ConsultationService
         $data['status']    = 'open';
         $data['createdAt'] = date('Y-m-d\TH:i:s');
 
-        $consultation = $objectService->saveObject($register, $schema, $data);
+        $consultation = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
         $this->logger->info(
             'Consultation created: '.$consultation->getUuid()
@@ -193,7 +193,7 @@ class ConsultationService
             $updateData['closedAt'] = date('Y-m-d\TH:i:s');
         }
 
-        $result = $objectService->saveObject($register, $schema, $updateData, $consultationId);
+        $result = $objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string) $consultationId);
 
         $this->logger->info(
             'Consultation '.$consultationId.' status updated to '.$newStatus,
@@ -247,7 +247,7 @@ class ConsultationService
             'status'      => 'advies_uitgebracht',
         ];
 
-        $result = $objectService->saveObject($register, $schema, $updateData, $consultationId);
+        $result = $objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string) $consultationId);
 
         $this->logger->info(
             'Consultation '.$consultationId.' advice submitted: '.$advies,

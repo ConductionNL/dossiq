@@ -125,7 +125,7 @@ class AdviceService
         }
 
         try {
-            $advice = $objectService->saveObject($register, $schema, $update, $adviceId);
+            $advice = $objectService->saveObject(object: $update, register: $register, schema: $schema, uuid: (string) $adviceId);
         } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: failed to transition advice status: '.$e->getMessage(),
