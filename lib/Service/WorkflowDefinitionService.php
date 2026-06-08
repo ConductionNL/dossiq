@@ -264,13 +264,13 @@ class WorkflowDefinitionService
         if ($previousActive !== null && (string) ($previousActive['id'] ?? '') !== $id) {
             try {
                 $objectService->saveObject(
-                    $register,
-                    $schema,
-                    [
+                    object: [
                         'lifecycleStatus' => self::STATUS_DEPRECATED,
                         'isActive'        => false,
                     ],
-                    (string) $previousActive['id'],
+                    register: $register,
+                    schema: $schema,
+                    uuid: (string) $previousActive['id'],
                 );
             } catch (\Throwable $e) {
                 $this->logger->error(
@@ -284,14 +284,14 @@ class WorkflowDefinitionService
         // Flip target to published+active.
         try {
             $updated = $objectService->saveObject(
-                $register,
-                $schema,
-                [
+                object: [
                     'lifecycleStatus' => self::STATUS_PUBLISHED,
                     'isActive'        => true,
                     'isDraft'         => false,
                 ],
-                $id,
+                register: $register,
+                schema: $schema,
+                uuid: (string) $id,
             );
         } catch (\Throwable $e) {
             $this->logger->error(
@@ -304,10 +304,10 @@ class WorkflowDefinitionService
         // Pin caseType.workflowDefinition to the new active version.
         try {
             $objectService->saveObject(
-                $register,
-                $caseTypeSch,
-                ['workflowDefinition' => $id],
-                $caseTypeId,
+                object: ['workflowDefinition' => $id],
+                register: $register,
+                schema: $caseTypeSch,
+                uuid: (string) $caseTypeId,
             );
         } catch (\Throwable $e) {
             // Pinning failure is non-fatal — log and continue. The
@@ -373,13 +373,13 @@ class WorkflowDefinitionService
 
         try {
             $updated = $objectService->saveObject(
-                $register,
-                $schema,
-                [
+                object: [
                     'lifecycleStatus' => self::STATUS_DEPRECATED,
                     'isActive'        => false,
                 ],
-                $id,
+                register: $register,
+                schema: $schema,
+                uuid: (string) $id,
             );
         } catch (\Throwable $e) {
             $this->logger->error(
@@ -438,7 +438,7 @@ class WorkflowDefinitionService
         ];
 
         try {
-            $new = $objectService->saveObject($register, $schema, $draft);
+            $new = $objectService->saveObject(object: $draft, register: $register, schema: $schema);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest: failed to clone workflow definition',
@@ -527,7 +527,7 @@ class WorkflowDefinitionService
         ];
 
         try {
-            $new = $objectService->saveObject($register, $schema, $draft);
+            $new = $objectService->saveObject(object: $draft, register: $register, schema: $schema);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest: failed to create workflow draft',

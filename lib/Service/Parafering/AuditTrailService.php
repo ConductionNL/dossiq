@@ -148,7 +148,7 @@ class AuditTrailService
 
             $entry['auditEntryHash'] = $this->computeHash(entry: $entry);
 
-            $saved = $objectService->saveObject($register, $schema, $entry);
+            $saved = $objectService->saveObject(object: $entry, register: $register, schema: $schema);
 
             return $this->toArray(value: $saved);
         } catch (Throwable $e) {

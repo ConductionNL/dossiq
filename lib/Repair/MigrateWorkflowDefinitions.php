@@ -157,9 +157,9 @@ class MigrateWorkflowDefinitions implements IRepairStep
 
             try {
                 $created = $objectService->saveObject(
-                    $register,
-                    $templateSchema,
-                    $template,
+                    object: $template,
+                    register: $register,
+                    schema: $templateSchema,
                 );
             } catch (\Throwable $e) {
                 $this->logger->error(
@@ -176,10 +176,10 @@ class MigrateWorkflowDefinitions implements IRepairStep
             if ($newId !== '') {
                 try {
                     $objectService->saveObject(
-                        $register,
-                        $caseTypeSchema,
-                        ['workflowDefinition' => $newId],
-                        $caseTypeId,
+                        object: ['workflowDefinition' => $newId],
+                        register: $register,
+                        schema: $caseTypeSchema,
+                        uuid: (string) $caseTypeId,
                     );
                 } catch (\Throwable $e) {
                     $this->logger->error(
@@ -378,13 +378,13 @@ class MigrateWorkflowDefinitions implements IRepairStep
 
             try {
                 $objectService->saveObject(
-                    $register,
-                    $caseSchema,
-                    [
+                    object: [
                         'workflowTemplate' => $templateId,
                         'workflowVersion'  => 1,
                     ],
-                    $caseId,
+                    register: $register,
+                    schema: $caseSchema,
+                    uuid: (string) $caseId,
                 );
             } catch (\Throwable $e) {
                 $this->logger->error(

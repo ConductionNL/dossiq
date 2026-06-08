@@ -178,7 +178,7 @@ class ParafeerRouteService
         $voorstel['currentStep']   = 1;
         $voorstel['status']        = self::STATUS_IN_PARAFERING;
 
-        $voorstel = $this->toArray(value: $objectService->saveObject($register, $voorstelSchema, $voorstel));
+        $voorstel = $this->toArray(value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema));
 
         $this->activateStep(voorstel: $voorstel, step: 1, steps: $steps);
 
@@ -239,7 +239,7 @@ class ParafeerRouteService
             }
         }
 
-        $objectService->saveObject($register, $actieSchema, $actieData);
+        $objectService->saveObject(object: $actieData, register: $register, schema: $actieSchema);
 
         $action     = (string) ($actionData['action'] ?? 'parafered');
         $transition = 'paraferd';
@@ -317,9 +317,7 @@ class ParafeerRouteService
         $userId = $this->requireUserId();
 
         $objectService->saveObject(
-            $register,
-            $actieSchema,
-            [
+            object: [
                 'voorstel'  => $voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId,
                 'step'      => $step,
                 'actor'     => $userId,
@@ -327,6 +325,8 @@ class ParafeerRouteService
                 'action'    => self::ACTION_SKIPPED,
                 'comment'   => $reason,
             ],
+            register: $register,
+            schema: $actieSchema,
         );
 
         $voorstel['routeSnapshot'] = json_encode(
@@ -378,7 +378,7 @@ class ParafeerRouteService
             );
         }
 
-        return $this->toArray(value: $objectService->saveObject($register, $voorstelSchema, $voorstel));
+        return $this->toArray(value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema));
     }//end skipStep()
 
     /**
@@ -460,7 +460,7 @@ class ParafeerRouteService
             ],
         );
 
-        $saved = $this->toArray(value: $objectService->saveObject($register, $voorstelSchema, $voorstel));
+        $saved = $this->toArray(value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema));
 
         $this->dispatchTransition(
             voorstelId: (string) ($saved['id'] ?? $saved['uuid'] ?? $voorstelId),
@@ -505,7 +505,7 @@ class ParafeerRouteService
 
         if ($nextStep === null) {
             $voorstel['status'] = self::STATUS_GEACCORDEERD;
-            $voorstel           = $this->toArray(value: $objectService->saveObject($register, $voorstelSchema, $voorstel));
+            $voorstel           = $this->toArray(value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema));
             $this->logger->info(
                 'Procest: voorstel {id} fully accorded',
                 [
@@ -526,7 +526,7 @@ class ParafeerRouteService
         }//end if
 
         $voorstel['currentStep'] = $nextStep;
-        $voorstel = $this->toArray(value: $objectService->saveObject($register, $voorstelSchema, $voorstel));
+        $voorstel = $this->toArray(value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema));
 
         $this->activateStep(voorstel: $voorstel, step: $nextStep, steps: $steps);
 
