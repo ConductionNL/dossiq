@@ -119,9 +119,9 @@ class BerichtenboxService
         ];
 
         $saved = $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $messageData,
+            object: $messageData,
+            register: (int) $register,
+            schema: (int) $schema,
         );
 
         $this->logger->info(
@@ -223,7 +223,7 @@ class BerichtenboxService
             $data['status']       = 'read';
             $data['readAt']       = $status['readAt'];
             $data['readPolledAt'] = (new \DateTime())->format('c');
-            $objectService->saveObject((int) $register, (int) $schema, $data);
+            $objectService->saveObject(object: $data, register: (int) $register, schema: (int) $schema);
         } else {
             $data['readPolledAt'] = (new \DateTime())->format('c');
 
@@ -236,7 +236,7 @@ class BerichtenboxService
                 }
             }
 
-            $objectService->saveObject((int) $register, (int) $schema, $data);
+            $objectService->saveObject(object: $data, register: (int) $register, schema: (int) $schema);
         }
 
         return $data;

@@ -75,7 +75,7 @@ class RoutingRuleService
     {
         $payload = $this->validateRule(data: $data);
         [$objectService, $register, $schema] = $this->resolve(schemaKey: 'routing_rule_schema');
-        return $this->toArray(value: $objectService->saveObject($register, $schema, $payload));
+        return $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $schema));
     }//end createRule()
 
     /**
@@ -92,7 +92,7 @@ class RoutingRuleService
     {
         $payload = $this->validateRule(data: $data);
         [$objectService, $register, $schema] = $this->resolve(schemaKey: 'routing_rule_schema');
-        return $this->toArray(value: $objectService->saveObject($register, $schema, $payload, $id));
+        return $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $schema, uuid: (string) $id));
     }//end updateRule()
 
     /**

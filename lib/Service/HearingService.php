@@ -90,7 +90,7 @@ class HearingService
             }
         }
 
-        $hearing = $objectService->saveObject($register, $schema, $data);
+        $hearing = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
         // Send calendar invitations to all participants.
         $this->sendCalendarInvitations(hearing: $hearing, data: $data);
@@ -202,7 +202,7 @@ class HearingService
             'datumAfgerond' => $outcome['datumAfgerond'] ?? date('Y-m-d'),
         ];
 
-        $result = $objectService->saveObject($register, $schema, $updateData, $id);
+        $result = $objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string) $id);
 
         $this->logger->info(
             'Hearing outcome recorded for hearing '.$id,

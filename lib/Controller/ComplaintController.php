@@ -690,7 +690,7 @@ class ComplaintController extends Controller
             $data     = $this->parseBody();
             $register = $this->settingsService->getConfigValue('register');
             $schema   = $this->settingsService->getConfigValue('complaint_category_schema');
-            $category = $objectService->saveObject($register, $schema, $data);
+            $category = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
             if (is_array($category) === true) {
                 return new JSONResponse($category, Http::STATUS_CREATED);
@@ -731,7 +731,7 @@ class ComplaintController extends Controller
             $data     = $this->parseBody();
             $register = $this->settingsService->getConfigValue('register');
             $schema   = $this->settingsService->getConfigValue('complaint_category_schema');
-            $result   = $objectService->saveObject($register, $schema, $data, $id);
+            $result   = $objectService->saveObject(object: $data, register: $register, schema: $schema, uuid: (string) $id);
 
             if (is_array($result) === true) {
                 return new JSONResponse($result);

@@ -205,7 +205,7 @@ class ContactMomentService
 
         [$objectService, $register, $schema] = $this->resolve();
 
-        $saved = $objectService->saveObject($register, $schema, $payload);
+        $saved = $objectService->saveObject(object: $payload, register: $register, schema: $schema);
 
         $this->logger->info(
             'Procest KCC: contact moment created',
@@ -246,7 +246,7 @@ class ContactMomentService
 
         $update = $this->mergeUpdate(existing: $existing, data: $data);
 
-        $saved = $objectService->saveObject($register, $schema, $update, $id);
+        $saved = $objectService->saveObject(object: $update, register: $register, schema: $schema, uuid: (string) $id);
 
         return $this->toArray(value: $saved);
     }//end update()

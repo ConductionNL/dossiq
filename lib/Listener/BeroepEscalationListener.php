@@ -158,10 +158,10 @@ class BeroepEscalationListener implements IEventListener
             }
 
             $objectService->saveObject(
-                $register,
-                $bezwaarSchema,
-                ['dwingendStatus' => $dwingend],
-                $sourceBezwaarId
+                object: ['dwingendStatus' => $dwingend],
+                register: $register,
+                schema: $bezwaarSchema,
+                uuid: (string) $sourceBezwaarId
             );
         } catch (Throwable $e) {
             $this->logger->debug(
