@@ -55,14 +55,14 @@ interface DsoDeadlineObjectServiceStub
     /**
      * Save or update an object.
      *
+     * @param array<string,mixed> $object   Object data
      * @param string              $register Register slug
      * @param string              $schema   Schema slug
-     * @param array<string,mixed> $object   Object data
-     * @param string|null         $id       Optional object UUID for updates
+     * @param string|null         $uuid     Optional object UUID for updates
      *
      * @return array<string,mixed>
      */
-    public function saveObject(string $register, string $schema, array $object, ?string $id=null): array;
+    public function saveObject(array $object, string $register, string $schema, ?string $uuid=null): array;
 }//end interface
 
 /**

@@ -127,7 +127,7 @@ class DsoIntakeService
             'priority'    => 'normal',
         ];
 
-        $caseObj = $objectService->saveObject($register, $caseSchema, $caseData);
+        $caseObj = $objectService->saveObject(object: $caseData, register: $register, schema: $caseSchema);
         $caseId  = $caseObj->getUuid();
 
         // Store DSO-specific properties.
@@ -153,14 +153,14 @@ class DsoIntakeService
             }
 
             $objectService->saveObject(
-                    $register,
-                    $propertySchema,
-                    [
-                        'case'  => $caseId,
-                        'name'  => $name,
-                        'value' => $value,
-                    ]
-                    );
+                object: [
+                    'case'  => $caseId,
+                    'name'  => $name,
+                    'value' => $value,
+                ],
+                register: $register,
+                schema: $propertySchema
+            );
         }
 
         $this->logger->info(
