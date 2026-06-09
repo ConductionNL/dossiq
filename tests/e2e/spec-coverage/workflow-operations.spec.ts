@@ -30,6 +30,26 @@ test.describe('Workflow Board page', () => {
 		).toBeVisible({ timeout: 10000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
+
+	// BUG (flagged, not yet fixed): WorkflowBoard.load() calls
+	// objectStore.fetchCollection('statusType') / ('caseType') but those
+	// object types are never registered in the OpenRegister store, so the
+	// board logs two procest-origin console errors on every load:
+	//   "Object type \"statusType\" is not registered in the store.
+	//    Call registerObjectType('statusType', schemaId, registerId) first."
+	// The board degrades gracefully (empty-state still renders) so the page is
+	// usable, but the columns never populate from configured status types.
+	// The same defect hits the Doorlooptijd analytics view (caseType). This
+	// test documents the expected clean-console contract; un-fixme once the
+	// views register their object types (or the app-config seeds the register).
+	// @e2e openspec/specs/workflow-board/spec.md#workflow-board-loads-without-console-errors
+	test.fixme('workflow board loads without procest console errors', async ({ page }) => {
+		const errors = trackProcestErrors(page)
+		await navTo(page, 'Workflow Board')
+		await expect(page.locator('.workflow-board__header h2')).toBeVisible({ timeout: 15000 })
+		await page.waitForTimeout(1500)
+		expect(errors, errors.join('\n')).toEqual([])
+	})
 })
 
 test.describe('Case Map page', () => {
