@@ -43,3 +43,42 @@ export async function navTo(page: Page, label: string): Promise<void> {
 	await sidebarNav(page).getByRole('link', { name: label, exact: true }).click()
 	await dismissSupportDialog(page)
 }
+
+/**
+ * Console / network errors that originate from Nextcloud core or the test
+ * environment — NOT from the procest app — and must not fail a procest
+ * coverage test. The dev instance emits a 500 on the core user-status
+ * endpoint on every page load (`core: Failed to load user status`), which
+ * surfaces as an un-attributed "Failed to load resource" console error.
+ */
+const NON_PROCEST_NOISE = [
+	'favicon',
+	'status.php',
+	'Download the Vue Devtools',
+	'Download the React',
+	'user status',           // core: Failed to load user status
+	'/apps/user_status/',
+	'Failed to load resource: the server responded with a status of 500', // generic, un-attributed
+]
+
+/**
+ * Attach console-error + 5xx listeners and return a live array of
+ * procest-origin errors. Filters out known Nextcloud-core / environment
+ * noise so a test fails only on errors the app itself is responsible for.
+ * Read the returned array AFTER the page has settled.
+ */
+export function trackProcestErrors(page: Page): string[] {
+	const errors: string[] = []
+	page.on('console', (m) => {
+		if (m.type() !== 'error') return
+		const text = m.text()
+		if (NON_PROCEST_NOISE.some((n) => text.includes(n))) return
+		errors.push(text)
+	})
+	page.on('response', (r) => {
+		if (r.status() >= 500 && r.url().includes('/apps/procest/')) {
+			errors.push(`HTTP ${r.status()} ${r.url()}`)
+		}
+	})
+	return errors
+}
