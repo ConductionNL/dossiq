@@ -6,7 +6,9 @@
     <name lang="nl">Procest</name>
     <summary lang="en">Case management with configurable workflows, deadlines, and decisions</summary>
     <summary lang="nl">Zaakafhandeling met configureerbare workflows, deadlines en besluiten</summary>
-    <description lang="en"><![CDATA[Procest brings structured case management to Nextcloud. Define case types, track progress through status lifecycles, manage deadlines, and record formal decisions — all within a clean, intuitive interface.
+    <description lang="en"><![CDATA[> ⚠️ **Active development — not for production use yet.** This app is under active development. Although it may carry a stable release status, **please do not use it in production environments before 12 June 2026.** See the [app page on conduction.nl](https://conduction.nl/apps/procest) for release planning and what this app does.
+
+Procest brings structured case management to Nextcloud. Define case types, track progress through status lifecycles, manage deadlines, and record formal decisions — all within a clean, intuitive interface.
 
 **Key Features**
 
@@ -25,7 +27,9 @@
 
 Free and open source under the AGPL license.
     ]]></description>
-    <description lang="nl"><![CDATA[Procest brengt gestructureerde zaakafhandeling naar Nextcloud. Definieer zaaktypen, volg voortgang via statuslifecycles, beheer deadlines en leg formele besluiten vast — allemaal in een overzichtelijke, intuitive interface.
+    <description lang="nl"><![CDATA[> ⚠️ **In actieve ontwikkeling — nog niet voor productiegebruik.** Deze app is volop in ontwikkeling. Hoewel de app een stabiele release-status kan hebben, **gebruik deze nog niet in productieomgevingen vóór 12 juni 2026.** Zie de [app-pagina op conduction.nl](https://conduction.nl/apps/procest) voor release-planning en het doel van deze app.
+
+Procest brengt gestructureerde zaakafhandeling naar Nextcloud. Definieer zaaktypen, volg voortgang via statuslifecycles, beheer deadlines en leg formele besluiten vast — allemaal in een overzichtelijke, intuitive interface.
 
 **Belangrijkste functies**
 
