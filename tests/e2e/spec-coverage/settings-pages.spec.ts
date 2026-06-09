@@ -20,6 +20,9 @@ import { dismissSupportDialog, sidebarNav, trackProcestErrors } from '../helpers
  * collapsible Settings nav group, then click a settings link by its live
  * (i18n-rendered) label. Navigating to a settings page collapses the group
  * again, so it must be re-expanded for each test.
+ * @param page
+ * @param label
+ * @param testId
  */
 async function navToSetting(page, label: string, testId?: string): Promise<void> {
 	await page.goto('/index.php/apps/procest/cases')
@@ -41,7 +44,7 @@ async function navToSetting(page, label: string, testId?: string): Promise<void>
 // label (live nav text), the view-specific create button text, optional
 // nav testid when the label is ambiguous across sections.
 const SETTINGS_PAGES: Array<{ label: string, addBtn: string, testId?: string }> = [
-	{ label: 'Case Types', addBtn: 'Save' },                       // CaseType settings form (Save control)
+	{ label: 'Case Types', addBtn: 'Save' }, // CaseType settings form (Save control)
 	// The settings "Fee ordinances" entry resolves to the generic register
 	// list (/legesverordeningen) with an "Add Legesverordening" control — the
 	// custom import view (/leges/verordeningen) is covered by leges-heffingen.spec.

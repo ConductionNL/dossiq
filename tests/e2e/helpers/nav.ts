@@ -17,13 +17,17 @@
 
 import { Page } from '@playwright/test'
 
-/** The app's sidebar navigation container. */
+/**
+ * The app's sidebar navigation container.
+ * @param page
+ */
 export const sidebarNav = (page: Page) => page.locator('[id^="app-navigation"]').first()
 
 /**
  * Dismiss the "Support Procest" dialog if it is open. The dialog's
  * modal-mask intercepts pointer events on the navigation, so it must be
  * closed before any nav click.
+ * @param page
  */
 export async function dismissSupportDialog(page: Page): Promise<void> {
 	const supportDialog = page.locator('[data-testid-modal="cn-support-dialog"]')
@@ -36,6 +40,8 @@ export async function dismissSupportDialog(page: Page): Promise<void> {
 /**
  * Land on the app (a route that resolves), dismiss the support dialog, then
  * click a sidebar nav entry by its visible label to reach the target view.
+ * @param page
+ * @param label
  */
 export async function navTo(page: Page, label: string): Promise<void> {
 	await page.goto('/index.php/apps/procest/cases')
@@ -56,7 +62,7 @@ const NON_PROCEST_NOISE = [
 	'status.php',
 	'Download the Vue Devtools',
 	'Download the React',
-	'user status',           // core: Failed to load user status
+	'user status', // core: Failed to load user status
 	'/apps/user_status/',
 	'Failed to load resource: the server responded with a status of 500', // generic, un-attributed
 ]
@@ -66,6 +72,7 @@ const NON_PROCEST_NOISE = [
  * procest-origin errors. Filters out known Nextcloud-core / environment
  * noise so a test fails only on errors the app itself is responsible for.
  * Read the returned array AFTER the page has settled.
+ * @param page
  */
 export function trackProcestErrors(page: Page): string[] {
 	const errors: string[] = []
