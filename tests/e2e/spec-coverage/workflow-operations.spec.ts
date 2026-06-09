@@ -31,19 +31,18 @@ test.describe('Workflow Board page', () => {
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
-	// BUG (flagged, not yet fixed): WorkflowBoard.load() calls
-	// objectStore.fetchCollection('statusType') / ('caseType') but those
-	// object types are never registered in the OpenRegister store, so the
-	// board logs two procest-origin console errors on every load:
-	//   "Object type \"statusType\" is not registered in the store.
-	//    Call registerObjectType('statusType', schemaId, registerId) first."
-	// The board degrades gracefully (empty-state still renders) so the page is
-	// usable, but the columns never populate from configured status types.
-	// The same defect hits the Doorlooptijd analytics view (caseType). This
-	// test documents the expected clean-console contract; un-fixme once the
-	// views register their object types (or the app-config seeds the register).
+	// FIXED: WorkflowBoard.load() calls objectStore.fetchCollection('statusType')
+	// / ('caseType'). Those types are registered in initializeStores()
+	// (src/store/store.js), but the registration used to be skipped when the
+	// app-config schema id (case_type_schema / status_type_schema) was blank —
+	// which it is on a fresh OR register — leaving the types unregistered and
+	// logging two procest-origin "Object type is not registered" console errors
+	// per load while the kanban columns stayed empty. The same defect hit the
+	// Doorlooptijd analytics view (caseType). store.js now falls back to the
+	// canonical schema slug ('caseType' / 'statusType') when the config id is
+	// empty, so the types are always registered and this contract holds.
 	// @e2e openspec/specs/workflow-board/spec.md#workflow-board-loads-without-console-errors
-	test.fixme('workflow board loads without procest console errors', async ({ page }) => {
+	test('workflow board loads without procest console errors', async ({ page }) => {
 		const errors = trackProcestErrors(page)
 		await navTo(page, 'Workflow Board')
 		await expect(page.locator('.workflow-board__header h2')).toBeVisible({ timeout: 15000 })

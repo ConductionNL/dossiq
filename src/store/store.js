@@ -28,11 +28,21 @@ export async function initializeStores() {
 		if (config.register && config.decision_schema) {
 			objectStore.registerObjectType('decision', config.decision_schema, config.register)
 		}
-		if (config.register && config.case_type_schema) {
-			objectStore.registerObjectType('caseType', config.case_type_schema, config.register)
+		// caseType / statusType power the Workflow Board kanban and the
+		// Doorlooptijd analytics view. Their numeric schema id is not always
+		// seeded into the app-config (case_type_schema/status_type_schema can
+		// be blank on a fresh OR register), which previously left these types
+		// unregistered and produced "Object type is not registered" console
+		// errors plus empty kanban columns. The OR object API resolves a
+		// schema by its canonical slug as well as its numeric id, so fall back
+		// to the schema slug ('caseType' / 'statusType') when the config value
+		// is empty. This keeps the board/analytics functional regardless of
+		// whether the register config carries the numeric ids.
+		if (config.register) {
+			objectStore.registerObjectType('caseType', config.case_type_schema || 'caseType', config.register)
 		}
-		if (config.register && config.status_type_schema) {
-			objectStore.registerObjectType('statusType', config.status_type_schema, config.register)
+		if (config.register) {
+			objectStore.registerObjectType('statusType', config.status_type_schema || 'statusType', config.register)
 		}
 		if (config.register && config.result_type_schema) {
 			objectStore.registerObjectType('resultType', config.result_type_schema, config.register)
