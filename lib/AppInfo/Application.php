@@ -31,18 +31,12 @@ use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Procest\BackgroundJob\AdviceDeadlineJob;
-use OCA\Procest\BackgroundJob\ArchivalJob;
-use OCA\Procest\BackgroundJob\BezwaarTermijnJob;
-use OCA\Procest\BackgroundJob\VergaderingDeadlineJob;
-use OCA\Procest\BackgroundJob\WOODeadlineCheckJob;
 use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Procest\Service\Beschikking\MockArchivalAdapter;
 use OCA\Procest\Service\Beschikking\MockSigningAdapter;
 use OCA\Procest\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Procest\Service\Beschikking\SigningAdapterInterface;
 use OCA\Procest\Service\Beschikking\TemplateEngineAdapterInterface;
-use OCA\Procest\Cron\OriDataQualityCheck;
 use OCA\Procest\Dashboard\CasesOverviewWidget;
 use OCA\Procest\Dashboard\DeadlineAlertsWidget;
 use OCA\Procest\Dashboard\MyTasksWidget;
@@ -147,13 +141,10 @@ class Application extends App implements IBootstrap
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
         $context->registerMiddleware(class: TenantMiddleware::class);
 
-        $context->registerJob(class: AdviceDeadlineJob::class);
-        $context->registerJob(class: OriDataQualityCheck::class);
-        $context->registerJob(class: VergaderingDeadlineJob::class);
-        $context->registerJob(class: WOODeadlineCheckJob::class);
-        $context->registerJob(class: BezwaarTermijnJob::class);
-        $context->registerJob(class: ArchivalJob::class);
-
+        // Background jobs are declared in appinfo/info.xml under
+        // <background-jobs>; Nextcloud auto-registers them with the IJobList.
+        // IRegistrationContext has no registerJob() method.
+        //
         // Beschikking cross-app integration adapters. These resolve to mock
         // implementations until the real OpenConnector (TSP signing),
         // Docudesk (template render), and OpenRegister (archief ingest)
