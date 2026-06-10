@@ -156,6 +156,8 @@ class MapTileService
      * @param int    $y        Tile y.
      *
      * @return string The resolved URL.
+     *
+     * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-6
      */
     public function urlFor(string $template, int $z, int $x, int $y): string
     {

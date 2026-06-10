@@ -8,7 +8,7 @@
 
 - [ ] TASK-GIS-02: Create `lib/Service/PdokService.php` with PDOK Locatieserver integration: `searchAddress()` with autocomplete caching, `searchParcel()` by number or bbox, error handling for PDOK outages, and local caching layer using Nextcloud cache with 1-hour TTL. Add integration tests with mock PDOK responses.
 
-- [ ] TASK-GIS-03: Create `lib/Service/MapLayerService.php` with CRUD for `mapLayer` objects, layer filtering by type (tile/wms/wfs/geojson), visibility toggling, and ordering. Add validation for layer URLs and WMS/WFS endpoint syntax.
+- [x] TASK-GIS-03: Created `lib/Service/MapLayerService.php` with full CRUD (listLayers/getLayer/createLayer/updateLayer/deleteLayer) backed by OpenRegister. Filters by type/isBase/isActive; sorts by `order` ascending. `validatePayload` enforces title required, type in {tile, wms, wfs, geojson}, URL valid (or tile template with `{z}/{x}/{y}` for tile sources), opacity in `[0, 1]`. 9 unit tests cover the validation matrix, missing-title rejection, unknown-type rejection, URL/template acceptance, opacity bounds, and OR-unavailable degradation (`tests/Unit/Service/MapLayerServiceTest.php`).
 
 - [ ] TASK-GIS-04: Create `lib/Service/WfsService.php` to generate OGC WFS 2.0.0-compliant XML responses: `GetCapabilities` (list case features), `GetFeature` (with bbox/BBOX filters, CRS handling), `DescribeFeatureType`. Add unit tests for WFS XML structure and bbox filtering.
 
@@ -29,12 +29,7 @@
   - Pagination for large result sets
   - Response with GeoJSON FeatureCollection + metadata (total, filtered count)
 
-- [ ] TASK-GIS-08: Create `lib/Controller/MapLayerController.php` with admin REST endpoints:
-  - `GET /api/map-layers` — List layers
-  - `POST /api/map-layers` — Create layer
-  - `PUT /api/map-layers/{id}` — Update layer
-  - `DELETE /api/map-layers/{id}` — Delete layer
-  - Add permission checks (admin-only), input validation for URLs and layer names.
+- [x] TASK-GIS-08: Created `lib/Controller/MapLayerController.php` exposing the spec'd endpoints. Read endpoints (`GET /api/map-layers`, `GET /api/map-layers/{id}`) are `#[NoAdminRequired]` + body-side `requireAuthenticated()` guard (any authenticated user can read layers — they're admin-curated, not user-private). Mutating endpoints (`POST`, `PUT /{id}`, `DELETE /{id}`) are gated with `#[AuthorizedAdminSetting(AdminSettings::class)]`. Routes added to `appinfo/routes.php` before the SPA catch-all per ADR-016.
 
 - [ ] TASK-GIS-09: Register all new routes in `appinfo/routes.php` and add permission middleware (authenticated for internal endpoints, public for `/wfs/cases`). Document route structure in inline comments.
 

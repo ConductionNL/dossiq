@@ -40,6 +40,8 @@ interface TranscriberInterface
      * @return string The plain-text transcription.
      *
      * @throws \RuntimeException On transcription failure.
+     *
+     * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-9
      */
     public function transcribe(string $blobRef, string $language): string;
 }//end interface

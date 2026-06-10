@@ -81,14 +81,14 @@
 
 ## 7. Admin Settings — Sub-case Types Tab
 
-- [ ] **T12**: Create `src/views/settings/tabs/SubCaseTypesTab.vue`.
+- [x] **T12**: Created `src/views/settings/tabs/SubCaseTypesTab.vue` with a multi-select list of available caseTypes (excludes self), pre-selects the current caseType's `subCaseTypes`, persists on save via `objectStore.saveObject('caseType', {id, subCaseTypes})`. Dirty-detection so Save only enables when the selection has changed. Renders inline success / error feedback with role=status / role=alert for accessibility. NL Design System CSS variables throughout (ADR-010).
   - Multi-select list of all available caseTypes.
   - Pre-selects the current caseType's `subCaseTypes` UUIDs.
   - On save: PATCH the caseType object with updated `subCaseTypes` array.
   - Shows informational note: "Wijzigingen hebben geen effect op bestaande deelzaken."
   - `@spec openspec/changes/deelzaak-support/tasks.md#T12`
 
-- [ ] **T13**: Add `SubCaseTypesTab` to `src/views/settings/CaseTypeDetail.vue` as a new tab.
+- [x] **T13**: Wired `SubCaseTypesTab` into `src/views/settings/CaseTypeDetail.vue` between the Decisions and Workflow tabs (`id: 'subCaseTypes'`, label "Sub-cases").
   - `@spec openspec/changes/deelzaak-support/tasks.md#T13`
 
 ## 8. Seed Data

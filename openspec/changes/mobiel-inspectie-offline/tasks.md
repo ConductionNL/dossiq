@@ -95,10 +95,10 @@
   - GIVEN daily sync WHEN calculating case addresses THEN PDOK BRT tiles downloaded for zoom 10-18 in 20km radius
   - GIVEN offline view WHEN map component initializes THEN tiles served from IndexedDB cache
   - GIVEN tile cache >30 days old WHEN sync reruns THEN tiles re-downloaded
-- [~] Implement MapTileService.downloadTiles(bounds, zoomLevels) querying PDOK WMTS API
-- [~] Store tiles in IndexedDB with cache key scheme: z/x/y.{format}
-- [~] Implement cache-first fetch in service worker for tile requests
-- [~] Track cache version and expiry timestamp for stale-tile cleanup
+- [x] Implemented `lib/Service/MapTileService.php` — `buildManifest(bbox, zoomLevels, template?)` enumerates the (z, x, y) tiles + URLs the Service Worker should pre-fetch; `estimate(bbox, zoomLevels)` returns count + size estimate without enumerating; Web-Mercator math mirrored server-side. Defaults to the PDOK BRT achtergrondkaart WMTS template; callers can override. `MAX_TILES=50000` guard against accidental whole-NL requests at z=18. 10 unit tests cover small-bbox single-tile, multi-zoom coverage, estimate ↔ manifest equivalence, custom template override, invalid bbox/zoom rejection, the MAX_TILES safety net, and URL token substitution.
+- [~] Store tiles in IndexedDB with cache key scheme: z/x/y.{format} (DEFERRED: Service Worker client concern)
+- [~] Implement cache-first fetch in service worker for tile requests (DEFERRED: client concern)
+- [~] Track cache version and expiry timestamp for stale-tile cleanup (DEFERRED: client concern)
 
 ## 4. GPS and Evidence Capture
 
@@ -137,8 +137,8 @@
 - [~] VoiceMemoRecorder using MediaRecorder API (DEFERRED: browser-only client concern)
 - [x] Server-side max-5min validation (EvidenceMetadataService.isVoiceMemoWithinLimit) + voice_memo payload with transcriptionStatus=pending
 - [~] Store blob in IndexedDB (DEFERRED: client concern)
-- [~] TranscriptionService → qwen LLM endpoint (DEFERRED: needs a live LLM endpoint; queued as operationType=transcribe in the schema)
-- [~] Manual-transcription fallback (DEFERRED: depends on the LLM integration above)
+- [x] TranscriptionService → pluggable `TranscriberInterface` (`lib/Service/TranscriberInterface.php`) so production binds an OpenConnector-routed qwen-3.5 LLM endpoint and tests bind a deterministic stub. `lib/Service/TranscriptionService.php` orchestrates `queue(evidence)` → sets `transcriptionStatus=queued` + timestamp + 5-min duration cap; `process(evidence)` runs the transcriber with retry/backoff (success → done; recoverable error < `MAX_RETRIES` → re-queue + log last error; final → fallback to manual). 10 unit tests cover queue rejection of wrong type / too-long memo, successful transcription, fall-back when no transcriber, recoverable-error requeue, manual fallback after MAX_RETRIES, and the idempotent re-process path.
+- [x] Manual-transcription fallback — `TranscriptionService::manualTranscribe(evidence, text)` marks the record done with `transcriptionNote='Manual transcription.'`
 
 ## 5. Checklist Completion Offline
 
