@@ -6,7 +6,7 @@
 - [x] TASK-CM-04: Implement `DispositionService` with optional coordinator approval gate and Docudesk-driven response-letter generation.
 - [x] TASK-CM-05: Implement `ComplaintAnalyticsService` with frequency aggregation, anonymized employee-threshold alerts (>=3 in 6 months), and systemic-issue detection (>50% QoQ increase).
 - [x] TASK-CM-06: Build `ComplaintController` REST endpoints for complaints, hearings, dispositions, escalation, and analytics.
-- [~] TASK-CM-07: Create `ComplaintList.vue`, `ComplaintDetail.vue` (reusing `DeadlinePanel.vue` and `ActivityTimeline.vue`), `ComplaintDashboardWidget.vue`, and `ComplaintAnalyticsDashboard.vue`. — deferred to downstream cycle / fleet-wide adoption (handoff)
-- [~] TASK-CM-08: Add the three n8n workflows (email-intake, deadline-monitor, attachment-matcher) and document the webhook endpoints they call. — deferred to downstream cycle / fleet-wide adoption (handoff)
-- [~] TASK-CM-09: Add tenant-admin UI for complaint categories (CRUD with default handler and SLA override) under `Settings > Klachtcategorieen`. — deferred to downstream cycle / fleet-wide adoption (handoff)
-- [~] TASK-CM-10: Add Dutch + English i18n strings for all complaint UI and notification templates. — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [ ] TASK-CM-07: Create `ComplaintList.vue`, `ComplaintDetail.vue` (reusing `DeadlinePanel.vue` and `ActivityTimeline.vue`), `ComplaintDashboardWidget.vue`, and `ComplaintAnalyticsDashboard.vue`.
+- [ ] TASK-CM-08: Add the three n8n workflows (email-intake, deadline-monitor, attachment-matcher) and document the webhook endpoints they call.
+- [ ] TASK-CM-09: Add tenant-admin UI for complaint categories (CRUD with default handler and SLA override) under `Settings > Klachtcategorieen`.
+- [ ] TASK-CM-10: Add Dutch + English i18n strings for all complaint UI and notification templates.

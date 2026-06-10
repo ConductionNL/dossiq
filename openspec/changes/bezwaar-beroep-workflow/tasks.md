@@ -241,29 +241,29 @@ a live OpenRegister instance are deferred with reasons.
 
 ## Reviewer verification (pre-merge)
 
-- [~] **T24** (DEFERRED — reviewer runtime verification, needs live OR instance) — Reviewer confirms no parallel workflow service classes — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [ ] **T24** (DEFERRED — reviewer runtime verification, needs live OR instance) — Reviewer confirms no parallel workflow service classes
   exist: scan `lib/` for `BezwaarService`, `BezwaarWorkflow`,
   `BezwaarTermijnService`, `BeroepService`, `TermijnCalculator`,
   `OpschortingService`.
   - acceptance: zero matches in `lib/`
 
-- [~] **T25** (DEFERRED — reviewer runtime verification, needs live OR instance) — Reviewer confirms AWB article citations are present in — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [ ] **T25** (DEFERRED — reviewer runtime verification, needs live OR instance) — Reviewer confirms AWB article citations are present in
   each REQ-BBW requirement prose (art. 6:7, 7:2, 7:10, 7:11-7:12, 7:13,
   3:41).
   - acceptance: 11/11 requirements cite at least one AWB article
 
-- [~] **T26** (DEFERRED — reviewer runtime verification, needs live OR instance) — Reviewer confirms all 9 bezwaar statusType seeds and all — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [ ] **T26** (DEFERRED — reviewer runtime verification, needs live OR instance) — Reviewer confirms all 9 bezwaar statusType seeds and all
   4 beroep statusType seeds are present and linked to their caseTypes.
   - files: `lib/Settings/procest_register.json`
   - acceptance: 9 bezwaar statusTypes (incl. 2 terminal) + 4 beroep
     statusTypes installed
 
-- [~] **T27** (DEFERRED — reviewer runtime verification, needs live OR instance) — Reviewer confirms `hearingSession.hearingWaived` path is — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [ ] **T27** (DEFERRED — reviewer runtime verification, needs live OR instance) — Reviewer confirms `hearingSession.hearingWaived` path is
   tested: a waived hearing without a calendar event advances the workflow
   to Advies commissie or Beslissing op bezwaar.
   - acceptance: integration test scenario passes for waiver path
 
-- [~] **T28** (DEFERRED — reviewer runtime verification, needs live OR instance) — Reviewer confirms manifest navigation entries use generic — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [ ] **T28** (DEFERRED — reviewer runtime verification, needs live OR instance) — Reviewer confirms manifest navigation entries use generic
   `CnIndexPage` and `CnDetailPage` renderers — no custom bezwaar-specific
   Vue page component authored.
   - acceptance: scan `src/views/` for `Bezwaar*.vue` or `Beroep*.vue`

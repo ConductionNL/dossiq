@@ -30,7 +30,7 @@
   - GIVEN ORI register provisioned WHEN unauthenticated client calls `GET /api/registers/ori/oas` THEN endpoint definitions for all ORI schemas returned
   - All read endpoints are accessible without auth headers
 - [x] Verify OasService picks up the register (all schemas have `authorization.read: ["public"]` and `searchable: true`)
-- [~] Add integration test confirming unauth read (requires live Nextcloud — deferred to integration test suite) — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [ ] Add integration test confirming unauth read (requires live Nextcloud — deferred to integration test suite)
 
 ### Task 4: Wire ORI schemas into search
 - **spec_ref**: `openspec/specs/open-raadsinformatie/spec.md#requirement-search-and-filtering-across-ori-entities`
@@ -39,7 +39,7 @@
   - GIVEN seeded mock vergadering "Raadsvergadering 12 juni 2026" WHEN searching "Raad" via `/zoeken` THEN result appears
   - Filtering by `type=raadsvergadering` returns only matching records
 - [x] Confirm searchable=true on each schema (all 6 schemas in ori_register.json have `searchable: true`)
-- [~] Add a Newman smoke test asserting search hits (deferred — requires running Nextcloud instance) — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [ ] Add a Newman smoke test asserting search hits (deferred — requires running Nextcloud instance)
 
 ## 3. Vergadering Case Wrapper
 
@@ -78,4 +78,4 @@
   - GIVEN a vergadering missing locatie/voorzitter WHEN nightly job runs THEN a data_quality_issues entry is written referencing the object
   - Admin dashboard surfaces the count of outstanding quality issues
 - [x] Implement nightly job (checks vergadering locatie, agendapunt references, raadslid references, orphaned documenten)
-- [~] Surface result on admin dashboard (deferred — requires frontend dashboard widget changes) — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [ ] Surface result on admin dashboard (deferred — requires frontend dashboard widget changes)

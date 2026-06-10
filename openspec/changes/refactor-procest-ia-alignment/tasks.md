@@ -26,7 +26,7 @@ self-contained and should take under 15 minutes.
       `<NcButton>` with `@click="$router.push({ name: 'Tasks' })"`) labelled
       `{{ t('procest', 'All tasks') }}` (NL: `Alle taken`). The link MUST be
       visible without scrolling.
-- [~] 2.3 Run `npm run lint` and `npm run dev` from the procest repo root; — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [ ] 2.3 Run `npm run lint` and `npm run dev` from the procest repo root;
       open `http://localhost:3000/apps/procest/my-work` and confirm the new
       affordance renders and navigates to `/apps/procest/tasks`.
       (npm deps unavailable in container; lint skipped — Vue template is
@@ -60,13 +60,13 @@ self-contained and should take under 15 minutes.
 - [x] 5.1 Run `openspec validate refactor-procest-ia-alignment --strict`.
       (openspec CLI not available in container; spec coherence validated
       manually — design.md and specs/task-management align.)
-- [~] 5.2 Browser-verify: navigate Procest end-to-end (Dashboard → Mijn werk — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [ ] 5.2 Browser-verify: navigate Procest end-to-end (Dashboard → Mijn werk
       → Tasks via the new affordance → CaseDetail → CaseTasksTab) and
       screenshot the new nav for the PR. (Requires running NC instance.)
 - [x] 5.3 Run `composer check:strict` (no PHP changes are expected, but the
       gate must stay green). 0 ERRORS (pre-existing warnings only, not
       introduced by this change).
-- [~] 5.4 Run `npm run test` to confirm no Vue tests break. — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [ ] 5.4 Run `npm run test` to confirm no Vue tests break.
       (npm deps unavailable in container; skipped.)
 - [x] 5.5 Open a PR titled `refactor(procest): align Tasks placement with IA
       (Mijn werk › Taken)` targeting `development`.
