@@ -74,7 +74,7 @@ class KccRoutingController extends Controller
     public function index(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
-            return $this->unauthorized();
+            return new JSONResponse(['error' => 'Authenticatie vereist'], Http::STATUS_UNAUTHORIZED);
         }
 
         try {
@@ -184,7 +184,7 @@ class KccRoutingController extends Controller
     public function evaluate(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
-            return $this->unauthorized();
+            return new JSONResponse(['error' => 'Authenticatie vereist'], Http::STATUS_UNAUTHORIZED);
         }
 
         $contactMoment = $this->bodyParams();
