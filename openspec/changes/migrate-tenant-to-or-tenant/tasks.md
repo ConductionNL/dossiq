@@ -15,6 +15,18 @@ Grouped by component. Each task includes an estimate (S = half-day, M = 1–2 da
 > tenant rows (TEST-2) are recorded as done because there is no schema, no
 > data, and no pre-existing rows to migrate. Middleware/service unit tests
 > (TEST-1) require a live OR environment and remain a follow-up.
+>
+> **Build status (hydra audit 2026-06-10).** Verified against dev HEAD:
+> `lib/Service/TenantService::provisionTenant()` already calls
+> `OCA\OpenRegister\Service\TenantLifecycleService` via a runtime
+> container lookup (lines 153–198); `getTenantForUser()`,
+> `getResourceUsage()`, `isPlatformAdmin()` and `getTenantStatus()`
+> all delegate to OR. `TenantMiddleware::beforeController()` reads
+> `status` from the OR-Organisation payload and 403s non-active
+> tenants (lines 113–123). The remaining MW-1 / SVC-1 / SVC-2 tasks
+> describe a constructor-injection refactor (clean over container
+> lookup) + unit tests requiring live OR; they remain open as polish
+> but the functional outcome is shipped.
 
 ---
 
