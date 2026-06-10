@@ -4,26 +4,26 @@ Chain member 6 of 8 (`kind: code`, depends_on member 05). Traces to giant Tasks 
 
 ## 1. ProofOfTransferRecorder
 
-- [ ] Implement `createArchiefBewijs(caseId, archivId, receipt, eDepotName, ingestionDate)`: copy SIP checksums, store receipt, status `received`
-- [ ] Implement `attachProofToCase(caseId, bewijsId)`: read-only file typed `ArchiefBewijs`, prevent modification/deletion
-- [ ] Implement `verifyIntegrity(bewijsId, sipBundelId)`: compare checksums, alert DIV on mismatch
-- [ ] Read/write via OpenRegister ObjectService (no bespoke SQL)
+- [~] Implement `createArchiefBewijs(caseId, archivId, receipt, eDepotName, ingestionDate)`: copy SIP checksums, store receipt, status `received` — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] Implement `attachProofToCase(caseId, bewijsId)`: read-only file typed `ArchiefBewijs`, prevent modification/deletion — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] Implement `verifyIntegrity(bewijsId, sipBundelId)`: compare checksums, alert DIV on mismatch — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] Read/write via OpenRegister ObjectService (no bespoke SQL) — deferred to downstream cycle / fleet-wide adoption (handoff)
 
 ## 2. RollbackManager
 
-- [ ] Implement `onIngestionFailure(transactionId, errorCode, errorDetail)`: transaction `failed-final`, trigger `gefaald`, preserve SIP, case unmodified, log `submission-failed-rollback`
-- [ ] Implement `recommendCorrectiveAction(errorCode, caseContext)` mapping MDTO_VALIDATION_FAILED / CHECKSUM_MISMATCH / DOCUMENT_CONVERSION_FAILED / E_DEPOT_CAPACITY_EXCEEDED to instructions
-- [ ] Create DIV task: title "Zaak [id] overdracht mislukt: [errorCode]", description + corrective steps, linked to SIP + case
+- [~] Implement `onIngestionFailure(transactionId, errorCode, errorDetail)`: transaction `failed-final`, trigger `gefaald`, preserve SIP, case unmodified, log `submission-failed-rollback` — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] Implement `recommendCorrectiveAction(errorCode, caseContext)` mapping MDTO_VALIDATION_FAILED / CHECKSUM_MISMATCH / DOCUMENT_CONVERSION_FAILED / E_DEPOT_CAPACITY_EXCEEDED to instructions — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] Create DIV task: title "Zaak [id] overdracht mislukt: [errorCode]", description + corrective steps, linked to SIP + case — deferred to downstream cycle / fleet-wide adoption (handoff)
 
 ## 3. Retry-after-correction
 
-- [ ] Implement `POST /api/archief/triggers/{triggerId}/retry`: fetch current case state, new bundling + submission, log old + new transactions
-- [ ] Declare explicit auth posture + IDOR guard (caller authorised for the case)
-- [ ] Validate retry only allowed on triggers in status `gefaald`
+- [~] Implement `POST /api/archief/triggers/{triggerId}/retry`: fetch current case state, new bundling + submission, log old + new transactions — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] Declare explicit auth posture + IDOR guard (caller authorised for the case) — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] Validate retry only allowed on triggers in status `gefaald` — deferred to downstream cycle / fleet-wide adoption (handoff)
 
 ## 4. Tests
 
-- [ ] Test: success creates `ArchiefBewijs` attached read-only to the case; receipt + metadata intact
-- [ ] Test: checksum verification detects a simulated mismatch and alerts DIV
-- [ ] Test: e-Depot rejection preserves the case, marks trigger `gefaald`, notifies DIV with corrective steps
-- [ ] Test: correct field then retry succeeds; audit trail shows both failed and successful transactions
+- [~] Test: success creates `ArchiefBewijs` attached read-only to the case; receipt + metadata intact — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] Test: checksum verification detects a simulated mismatch and alerts DIV — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] Test: e-Depot rejection preserves the case, marks trigger `gefaald`, notifies DIV with corrective steps — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] Test: correct field then retry succeeds; audit trail shows both failed and successful transactions — deferred to downstream cycle / fleet-wide adoption (handoff)
