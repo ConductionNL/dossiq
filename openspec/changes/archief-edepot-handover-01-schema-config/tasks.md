@@ -1,5 +1,7 @@
 # Tasks: archief-edepot-handover-01-schema-config
 
+> **Build status (hydra audit).** Greenfield. No archief schemas, services, or UI exist on dev. The 8-member archief-edepot-handover chain implements GiHandover/MDTO compliance from scratch (BewaarTermijnRegel, OverdrachtTrigger, SipBundel, OverdrachtTransactie, ArchiefBewijs, OverdrachtAuditLog schemas + daemon + sip-bundle generator + e-depot submission adapter + audit/admin UI). Tasks remain [ ] as genuine forward work for the next builder. See chain plan in design.md.
+
 Chain member 1 of 8 (`kind: config`). Declares the `procest-archief` schemas + seed + integration test. Traces to giant Tasks 1–2.
 
 ## 1. Schema declaration
