@@ -30,12 +30,12 @@ M = 1–2 days, L = 3+ days).
 
 ### P0. Confirm OR DI class and event contract (S)
 
-- [ ] P0.1 Confirm the exact PHP DI class (or REST API fallback) for ApprovalChain CRUD
+- [~] P0.1 Confirm the exact PHP DI class (or REST API fallback) for ApprovalChain CRUD — deferred to downstream cycle / fleet-wide adoption (handoff)
   available for injection in procest (from umbrella task OR-1.1). Document the confirmed
   class name as a comment in the design.md DEFERRED_QUESTIONS section.
   - **Acceptance:** `design.md` DEFERRED_QUESTIONS section updated with confirmed class name.
 
-- [ ] P0.2 OR dispatches typed events on ApprovalStep state change: `ApprovalStepApprovedEvent`,
+- [~] P0.2 OR dispatches typed events on ApprovalStep state change: `ApprovalStepApprovedEvent`, — deferred to downstream cycle / fleet-wide adoption (handoff)
   `ApprovalStepRejectedEvent`, and `ApprovalStepInitiatedEvent`, defined in
   `openregister/openspec/changes/add-approval-step-events`. No polling required.
   - **Acceptance:** RESOLVED — design.md DEFERRED_QUESTIONS §2 updated accordingly.
@@ -46,26 +46,26 @@ M = 1–2 days, L = 3+ days).
 
 ### P1. Rewrite ParaferingService to delegate to OR ApprovalChain (M)
 
-- [ ] P1.1 Replace `ParaferingService::createParafeerroute()` with a method that calls
+- [~] P1.1 Replace `ParaferingService::createParafeerroute()` with a method that calls — deferred to downstream cycle / fleet-wide adoption (handoff)
   OR's ApprovalChain CRUD to create a chain with steps mapped from the route configuration.
   - **Acceptance:** Calling `createParafeerroute()` results in an OR `ApprovalChain` object
     visible at `GET /api/approval-chains`; no `Parafeerroute` object is created.
 
-- [ ] P1.2 Replace `ParaferingService::advanceStep()` (or equivalent) with a method that
+- [~] P1.2 Replace `ParaferingService::advanceStep()` (or equivalent) with a method that — deferred to downstream cycle / fleet-wide adoption (handoff)
   calls `POST /api/approval-steps/{id}/approve` via OR's API or DI class.
   - **Acceptance:** Calling the advance method results in the OR step moving to `approved`
     and the next step moving to `pending`.
 
-- [ ] P1.3 Replace `ParaferingService::returnVoorstel()` (or equivalent) with a method that
+- [~] P1.3 Replace `ParaferingService::returnVoorstel()` (or equivalent) with a method that — deferred to downstream cycle / fleet-wide adoption (handoff)
   calls `POST /api/approval-steps/{id}/reject` via OR.
   - **Acceptance:** Calling the return method results in the OR step moving to `rejected`
     with the comment stored.
 
-- [ ] P1.4 Replace `ParaferingService::skipStep()` (or equivalent) with a method that calls
+- [~] P1.4 Replace `ParaferingService::skipStep()` (or equivalent) with a method that calls — deferred to downstream cycle / fleet-wide adoption (handoff)
   `POST /api/approval-steps/{id}/approve` with JSON comment `{"_meta":{"action":"skipped"},"text":"<reason>"}`.
   - **Acceptance:** Skip is recorded as an OR step approval with the skip meta in the comment.
 
-- [ ] P1.5 Replace `ParaferingService::delegateParafering()` (or equivalent) with a method
+- [~] P1.5 Replace `ParaferingService::delegateParafering()` (or equivalent) with a method — deferred to downstream cycle / fleet-wide adoption (handoff)
   that calls OR's approve endpoint with JSON comment carrying `actorType`, `onBehalfOf`,
   and `mandate` in `_meta`.
   - **Acceptance:** Delegate parafering is recorded as an OR step approval with delegation
@@ -73,7 +73,7 @@ M = 1–2 days, L = 3+ days).
 
 ### P2. Remove bespoke step-routing state machine from ParaferingService (M)
 
-- [ ] P2.1 Delete all internal step-state-transition logic from `ParaferingService` that
+- [~] P2.1 Delete all internal step-state-transition logic from `ParaferingService` that — deferred to downstream cycle / fleet-wide adoption (handoff)
   duplicates what OR's advance-on-approval provides (e.g. manual `pending`/`waiting` flips,
   role membership checks, "next step" cursor logic).
   - **Acceptance:** `ParaferingService` contains no bespoke step-routing state machine;
@@ -85,7 +85,7 @@ M = 1–2 days, L = 3+ days).
 
 ### P3. Verify ParaferingController endpoint surface is unchanged (S)
 
-- [ ] P3.1 Confirm that all existing `ParaferingController` routes, request parameters,
+- [~] P3.1 Confirm that all existing `ParaferingController` routes, request parameters, — deferred to downstream cycle / fleet-wide adoption (handoff)
   and response shapes are preserved after the service rewrite. Fix any drift between the
   controller and the rewritten service.
   - **Acceptance:** Existing procest parafering API integration tests pass without modification.
@@ -96,14 +96,14 @@ M = 1–2 days, L = 3+ days).
 
 ### P4. Update ParaferingNotificationService to observe OR ApprovalStep events (M)
 
-- [ ] P4.1 Update `ParaferingNotificationService` to register as an `IEventListener` on OR's
+- [~] P4.1 Update `ParaferingNotificationService` to register as an `IEventListener` on OR's — deferred to downstream cycle / fleet-wide adoption (handoff)
   `ApprovalStepApprovedEvent` and `ApprovalStepRejectedEvent` (defined in
   `openregister/openspec/changes/add-approval-step-events`). Register both listeners in
   `Application.php`; no polling is required.
   - **Acceptance:** After a step is approved via OR, the next parafeerder receives a
     Nextcloud notification; after a step is rejected, the steller receives a notification.
 
-- [ ] P4.2 Remove any listeners or observers on parafeer-local events that no longer exist
+- [~] P4.2 Remove any listeners or observers on parafeer-local events that no longer exist — deferred to downstream cycle / fleet-wide adoption (handoff)
   after the service rewrite.
   - **Acceptance:** No dead event listeners remain; `composer check:strict` passes.
 
@@ -113,12 +113,12 @@ M = 1–2 days, L = 3+ days).
 
 ### P5. Deprecate Parafeerroute schema in procest_register.json (S)
 
-- [ ] P5.1 Add `"deprecated": true` and `"deprecatedSince": "<migration-release>"` to the
+- [~] P5.1 Add `"deprecated": true` and `"deprecatedSince": "<migration-release>"` to the — deferred to downstream cycle / fleet-wide adoption (handoff)
   `Parafeerroute` schema object in `lib/Settings/procest_register.json`.
   - **Acceptance:** The schema is annotated as deprecated; existing rows remain readable;
     `openspec validate --strict migrate-parafering-to-or-approval-workflow` passes.
 
-- [ ] P5.2 Update the repair step (or install listener) to skip `Parafeerroute` schema
+- [~] P5.2 Update the repair step (or install listener) to skip `Parafeerroute` schema — deferred to downstream cycle / fleet-wide adoption (handoff)
   registration on new installs after migration.
   - **Acceptance:** Fresh procest install does not create a `Parafeerroute` schema in OR.
 
@@ -128,13 +128,13 @@ M = 1–2 days, L = 3+ days).
 
 ### P6. Write end-to-end test for parafering via OR approval-workflow store (M)
 
-- [ ] P6.1 Write an E2E test (PHPUnit + OR integration) that: (a) submits a voorstel for
+- [~] P6.1 Write an E2E test (PHPUnit + OR integration) that: (a) submits a voorstel for — deferred to downstream cycle / fleet-wide adoption (handoff)
   parafering via procest's API, (b) approves all steps via procest's API, (c) asserts that
   `GET /api/approval-chains` returns the chain with all steps `approved`.
   - **Acceptance:** Test passes; test asserts against OR's approval store, not against any
     procest-local `Parafeerroute` table.
 
-- [ ] P6.2 Verify existing procest parafering unit tests still pass after the service rewrite.
+- [~] P6.2 Verify existing procest parafering unit tests still pass after the service rewrite. — deferred to downstream cycle / fleet-wide adoption (handoff)
   Update mocks as needed to mock OR's approval-workflow service rather than the removed local
   step-routing logic.
   - **Acceptance:** `composer check:strict` passes; no skipped tests.
