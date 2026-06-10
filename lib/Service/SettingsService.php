@@ -36,6 +36,8 @@ use Psr\Log\LoggerInterface;
  * Service for managing Procest application configuration and settings.
  *
  * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — config bridge mapping ~73 schema slugs to appconfig keys; breadth is data, not branching
  */
 class SettingsService
 {
@@ -449,13 +451,13 @@ class SettingsService
                 force: $force,
             );
 
-            $this->logger->info(
-                'Procest: Configuration imported successfully',
-                ['version' => $configVersion]
-            );
-
-            // Auto-configure schema IDs from import result.
             $configuredCount = $this->autoConfigureAfterImport(importResult: $importResult);
+            $this->reconcileSchemaConfig();
+
+            $this->logger->info(
+                'Procest: Configuration imported and reconciled',
+                ['version' => $configVersion, 'configured' => $configuredCount]
+            );
 
             return [
                 'success'    => true,
@@ -570,6 +572,109 @@ class SettingsService
     {
         $this->appConfig->setValueString(Application::APP_ID, $key, $value);
     }//end setConfigValue()
+
+    /**
+     * Reconcile every `*_schema` appconfig key directly from OpenRegister.
+     *
+     * `autoConfigureAfterImport()` only persists schema IDs that appear in the
+     * ConfigurationService import RESULT. On an already-imported instance an
+     * idempotent re-import returns an empty `schemas` list, so the per-schema
+     * config keys (case_type_schema, status_type_schema, status_record_schema,
+     * workflow_template_schema, …) were never written — the status-name lookup
+     * and the WorkflowBoard then silently broke on a fresh deploy.
+     *
+     * This method closes that gap: for each schema slug Procest knows about it
+     * resolves the LIVE schema ID via OpenRegister's SchemaMapper (slug-aware
+     * `find()`) and writes the matching appconfig key. It is fully idempotent —
+     * a key that already holds the correct ID is left untouched — so it is safe
+     * to call on every install/upgrade and after every import.
+     *
+     * @return int The number of schema config keys (re)written.
+     *
+     * @spec openspec/specs/status-transition-engine/spec.md
+     */
+    public function reconcileSchemaConfig(): int
+    {
+        if ($this->isOpenRegisterAvailable() === false) {
+            return 0;
+        }
+
+        try {
+            $schemaMapper = $this->container->get('OCA\OpenRegister\Db\SchemaMapper');
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Procest: Could not access OpenRegister SchemaMapper for reconcile',
+                ['exception' => $e->getMessage()]
+            );
+            return 0;
+        }
+
+        $written = 0;
+        foreach (self::SLUG_TO_CONFIG_KEY as $slug => $configKey) {
+            $written += $this->reconcileSingleSchemaKey(
+                schemaMapper: $schemaMapper,
+                slug: (string) $slug,
+                configKey: $configKey
+            );
+        }
+
+        $this->logger->info(
+            'Procest: Reconciled schema config keys from OpenRegister',
+            ['written' => $written]
+        );
+
+        return $written;
+    }//end reconcileSchemaConfig()
+
+    /**
+     * Resolve one schema slug to its live ID and persist its appconfig key.
+     *
+     * Idempotent: returns 0 (and writes nothing) when the slug does not resolve
+     * or the key already holds the correct ID; returns 1 when it (re)writes.
+     *
+     * @param object $schemaMapper The OpenRegister SchemaMapper.
+     * @param string $slug         The schema slug (e.g. 'caseType').
+     * @param string $configKey    The Procest appconfig key to write.
+     *
+     * @return int 1 when the key was (re)written, 0 otherwise.
+     *
+     * @spec openspec/specs/status-transition-engine/spec.md
+     */
+    private function reconcileSingleSchemaKey(object $schemaMapper, string $slug, string $configKey): int
+    {
+        try {
+            // Slug-aware lookup with RBAC + multi-tenancy disabled: the repair
+            // step runs in a system context that has no active organisation,
+            // and the schema set is app-owned config, not tenant data.
+            $schema   = $schemaMapper->find($slug, [], null, false, false);
+            $schemaId = (string) $schema->getId();
+        } catch (\Throwable $e) {
+            // Slug not present in this OpenRegister instance — skip it.
+            return 0;
+        }
+
+        if ($schemaId === '') {
+            return 0;
+        }
+
+        $current = $this->appConfig->getValueString(Application::APP_ID, $configKey, '');
+        if ($current === $schemaId) {
+            return 0;
+        }
+
+        $this->appConfig->setValueString(Application::APP_ID, $configKey, $schemaId);
+
+        // Keep the stable workflow_definition_schema alias in sync.
+        if ($slug === 'workflowTemplate') {
+            $this->appConfig->setValueString(
+                Application::APP_ID,
+                'workflow_definition_schema',
+                $schemaId
+            );
+        }
+
+        return 1;
+    }//end reconcileSingleSchemaKey()
 
     /**
      * Auto-configure schema and register IDs from the import result.

@@ -86,6 +86,18 @@ class InitializeSettings implements IRepairStep
         try {
             $result = $this->settingsService->loadConfiguration(force: true);
 
+            // Always reconcile EVERY *_schema appconfig key directly from
+            // OpenRegister (idempotent). loadConfiguration() only maps schema
+            // IDs that appear in the import RESULT; an already-imported instance
+            // returns an empty schema list, which previously left
+            // case_type_schema/status_type_schema/status_record_schema/
+            // workflow_template_schema unset and broke status-name resolution +
+            // the WorkflowBoard on a fresh deploy. Running the reconcile here
+            // guarantees the keys are provisioned even when the import is a
+            // no-op (or partially succeeds).
+            $reconciled = $this->settingsService->reconcileSchemaConfig();
+            $output->info('Procest schema config keys reconciled ('.$reconciled.' written)');
+
             if ($result['success'] === true) {
                 $version = ($result['version'] ?? 'unknown');
                 $output->info(

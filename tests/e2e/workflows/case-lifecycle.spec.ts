@@ -19,21 +19,17 @@
  *      REST surface (GET available-transitions / POST transition / GET
  *      transition-history) which is the system of record for guard evaluation.
  *
- * IMPORTANT — engine bug (see the `test.fixme` block below). At the time of
- * writing the guarded transition engine is non-functional in the running app:
+ * ENGINE STATUS — now functional (PHASE-0 fix). The guarded transition engine
+ * previously called `OCA\OpenRegister\Service\ObjectService::findObjects()`,
+ * which does NOT exist on OpenRegister's ObjectService (the real API is
+ * `find` / `findAll` / `searchObjects`), so available-transitions returned
+ * `[]`, POST transition 500'd, and history was empty. Both
  * `WorkflowTemplateLoader::getActiveTemplate()` and
- * `StatusTransitionService::replay()` call
- * `OCA\OpenRegister\Service\ObjectService::findObjects()`, which does NOT
- * exist on OpenRegister's ObjectService (the real API is
- * `find` / `findAll` / `searchObjects`). As a result:
- *   - GET  available-transitions  → catches the error → returns `transitions: []`
- *   - POST transition             → throws an uncaught Exception → HTTP 500
- *   - GET  transition-history     → catches the error → returns empty history
- * The guard-enforcement and history assertions are therefore captured under
- * `test.fixme` (documented, ready to pass once `findObjects` is replaced with
- * the real OR method). The lifecycle facts that DO hold — status renders,
- * status persists, board reflects the column — are asserted as live, passing
- * tests below.
+ * `StatusTransitionService::replay()` were repaired to call the real
+ * `searchObjects()` (register/schema under the `@self` block, object-field
+ * filters at the top level). The full guard-enforcement + history contract is
+ * therefore now asserted as a LIVE test below, alongside the lifecycle facts
+ * (status renders, status persists, board reflects the column).
  *
  * Navigation: sidebar-click (`navTo`), never deep-link goto. Support dialog
  * dismissed before interactions. Playwright = UI for the rendered assertions;
@@ -143,14 +139,16 @@ test.describe('Case lifecycle — state machine', () => {
 		await expect(page.getByText(`${RUN_PREFIX} Board B`, { exact: false }).first()).toBeVisible()
 	})
 
-	// The guarded transition engine + history + guard-blocking. Currently
-	// blocked by the `ObjectService::findObjects()` bug (see file header):
-	// available-transitions returns []/POST transition 500s, so these
-	// assertions cannot pass against the running app yet. Captured here so the
-	// intended correctness contract is explicit and re-enables on the fix.
+	// The guarded transition engine + history + guard-blocking. The engine is
+	// now functional — `WorkflowTemplateLoader::getActiveTemplate()` and
+	// `StatusTransitionService::replay()` were repaired to call OpenRegister's
+	// real `searchObjects()` (the non-existent `findObjects()` call previously
+	// made available-transitions return []/POST transition 500). So
+	// available-transitions populates, executing a transition persists +
+	// records a statusRecord, and an unmet guard blocks the transition (409).
 	//
 	// @e2e openspec/specs/status-transition-engine/spec.md#guarded-transitions
-	test.fixme('engine offers transitions, records history, and BLOCKS an invalid transition', async () => {
+	test('engine offers transitions, records history, and BLOCKS an invalid transition', async () => {
 		const kase = await seedCase(api, token, { title: `${RUN_PREFIX} Engine case`, caseType: sm.caseTypeId, status: sm.statusReceived })
 		const caseId = objectId(kase)
 

@@ -347,14 +347,26 @@ class StatusTransitionService
         }
 
         try {
-            $records = $objectService->findObjects($register, $recordSchema, ['case' => $caseId]);
+            // OpenRegister's ObjectService exposes `searchObjects($query)` —
+            // there is NO `findObjects()` method. Register/schema context lives
+            // under the `@self` block; the `case` field filter sits at the top
+            // level as a server-side equality match.
+            $records = $objectService->searchObjects(
+                [
+                    '@self' => [
+                        'register' => (int) $register,
+                        'schema'   => (int) $recordSchema,
+                    ],
+                    'case'  => $caseId,
+                ],
+            );
         } catch (\Throwable $e) {
             $this->logger->error(
-                'StatusTransitionService: replay findObjects failed',
+                'StatusTransitionService: replay searchObjects failed',
                 ['exception' => $e->getMessage(), 'caseId' => $caseId],
             );
             return ['history' => [], 'replayable' => false];
-        }
+        }//end try
 
         $recordList = [];
         if (is_array($records) === true) {

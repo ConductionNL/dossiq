@@ -94,21 +94,33 @@ class WorkflowTemplateLoader
         }
 
         try {
-            // ObjectService::findObjects signature varies — use the common 4-arg form.
-            $found = $objectService->findObjects(
-                $register,
-                $templateSchema,
-                ['caseType' => $caseTypeId, 'isActive' => true],
+            // OpenRegister's ObjectService exposes `searchObjects($query)` —
+            // there is NO `findObjects()` method (its absence is what previously
+            // broke the engine: the call threw and every lookup returned empty).
+            // The register/schema context lives under the `@self` block; object
+            // field filters (caseType, isActive) sit at the top level and are
+            // applied as server-side equality matches.
+            $found = $objectService->searchObjects(
+                [
+                    '@self'    => [
+                        'register' => (int) $register,
+                        'schema'   => (int) $templateSchema,
+                    ],
+                    'caseType' => $caseTypeId,
+                    'isActive' => true,
+                ],
             );
         } catch (\Throwable $e) {
             $this->logger->error(
-                'WorkflowTemplateLoader: findObjects failed',
+                'WorkflowTemplateLoader: searchObjects failed',
                 ['exception' => $e->getMessage(), 'caseType' => $caseTypeId],
             );
             $this->cache[$caseTypeId] = false;
             return null;
-        }
+        }//end try
 
+        // The normalise() helper already coerces any non-array result (e.g. the
+        // int that searchObjects() returns in count mode) to an empty list.
         $templates = $this->normalise(value: $found);
         if (count($templates) === 0) {
             $this->cache[$caseTypeId] = false;
@@ -171,7 +183,7 @@ class WorkflowTemplateLoader
     }//end clearCache()
 
     /**
-     * Normalise the result of ObjectService::findObjects() to a list of arrays.
+     * Normalise the result of ObjectService::searchObjects() to a list of arrays.
      *
      * @param mixed $value Raw result
      *

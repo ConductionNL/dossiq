@@ -238,11 +238,13 @@ class ZgwAuthMiddleware extends Middleware
      * @param string                       $methodName The method name
      * @param \Exception                   $exception  The exception
      *
-     * @return JSONResponse|null
+     * @return JSONResponse
+     *
+     * @throws \Exception Re-throws any non-ZGW-auth exception for the next middleware.
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $controller/$methodName required by Middleware interface
      */
-    public function afterException($controller, $methodName, \Exception $exception): ?JSONResponse
+    public function afterException($controller, $methodName, \Exception $exception): JSONResponse
     {
         if ($exception instanceof ZgwAuthException) {
             return new JSONResponse(
@@ -257,7 +259,15 @@ class ZgwAuthMiddleware extends Middleware
             );
         }
 
-        return null;
+        // Per the Nextcloud middleware contract, an afterException() handler
+        // MUST return a Response or re-throw — it must never return null.
+        // MiddlewareDispatcher::afterException() does `return $mw->afterException(...)`
+        // against a non-nullable Response type, so a null return raises an
+        // uncaught TypeError ("null returned") that becomes a hard 500 on ANY
+        // unowned exception (this masked every non-ZGW controller error,
+        // e.g. the POST /transition endpoint). Re-throw so the dispatcher
+        // offers the exception to the next middleware / NC's core handler.
+        throw $exception;
     }//end afterException()
 
     /**

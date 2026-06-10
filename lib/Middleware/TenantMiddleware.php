@@ -162,6 +162,10 @@ class TenantMiddleware extends Middleware
             );
         }
 
+        // Per the Nextcloud middleware contract, re-throw any exception this
+        // middleware does not own so MiddlewareDispatcher::afterException() can
+        // offer it to the next middleware (a middleware that returns null here
+        // would trip the dispatcher's non-nullable Response return type).
         throw $exception;
     }//end afterException()
 }//end class

@@ -269,16 +269,11 @@ class StatusTransitionController extends Controller
      */
     private function readJsonBody(): array
     {
-        $content = $this->request->getContent();
-        if ($content === '' || $content === false) {
-            return [];
-        }
-
-        $decoded = json_decode($content, true);
-        if (is_array($decoded) === true) {
-            return $decoded;
-        }
-
-        return [];
+        // Nextcloud's AppFramework auto-decodes a JSON request body and merges
+        // it into the request params, exposed via the PUBLIC getParams(). The
+        // raw getContent() accessor is PROTECTED on OC\AppFramework\Http\Request
+        // and calling it from a controller raises a fatal "Call to protected
+        // method" (HTTP 500) — which is exactly what broke the transition POST.
+        return $this->request->getParams();
     }//end readJsonBody()
 }//end class
