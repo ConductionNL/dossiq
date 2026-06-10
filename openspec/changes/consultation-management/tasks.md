@@ -1,5 +1,7 @@
 # Tasks: consultation-management
 
+> **Build status (hydra audit 2026-06-10).** Backend ships on dev: `lib/Service/ConsultationService.php` (`createConsultation`, `getConsultationsForCase`, `updateStatus`, `submitResponse`, `getOverdueConsultations`) + `lib/Controller/ConsultationController.php` + `lib/Service/AdviceService.php`. Missing: the `consultation`/`adviceResponse`/`advisoryBody` schema declarations on the procest register, seed data, frontend Vue surfaces. Open tasks stay [ ] for the schema + frontend work.
+
 ## Schema & Configuration
 
 - [ ] **TASK-CN-01** — Add `consultation`, `adviceResponse`, and `advisoryBody` schemas to `procest_register.json`; register config keys in `SettingsService::SLUG_TO_CONFIG_KEY`; add seed data objects.

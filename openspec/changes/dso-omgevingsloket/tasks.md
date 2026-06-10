@@ -1,5 +1,7 @@
 # Tasks: dso-omgevingsloket
 
+> **Build status (hydra audit 2026-06-10).** Substantial backend ships on dev: `lib/Service/DsoIntakeService.php::processAanvraag()` + `getDeadlineDuration()`, `lib/Service/DsoCaseService.php` (createZaakFromVergunningaanvraag/transitionStatus/computeDeadline/authorizeZaakMutation), `lib/Service/DsoLvAuthService.php`, `lib/Service/SamenwerkverzoekService.php`, plus `DsoController` + `DSOIntakeController`. Remaining: register schema seeds + admin settings tab + tests. Tasks stay [ ] for those.
+
 ## Implementation Tasks
 
 ### Schema & Configuration
