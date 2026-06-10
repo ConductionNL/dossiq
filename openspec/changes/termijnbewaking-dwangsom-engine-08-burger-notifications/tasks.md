@@ -1,5 +1,7 @@
 # Tasks: termijnbewaking-dwangsom-engine-08-burger-notifications
 
+> **Build status (hydra audit).** Greenfield. No TermijnDefinitie/TermijnInstance/TermijnGebeurtenis/Ingebrekestelling/Dwangsom schemas, no termijn-binding lifecycle, no daily-scan escalation daemon, no dwangsom calculation/financial integration, no burger notifications, no reporting/REST-API surfaces on dev. The 11-member chain delivers the AWB termijnbewaking + dwangsom engine from scratch. Tasks stay [ ] as genuine forward work.
+
 Member 8 of 11 (code). Depends on member 07. Traces to giant Tasks 14, 15 (REQ-TERM-008).
 
 ## 1. Templates (Dutch)

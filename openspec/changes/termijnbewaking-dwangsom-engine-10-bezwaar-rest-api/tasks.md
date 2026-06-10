@@ -1,5 +1,7 @@
 # Tasks: termijnbewaking-dwangsom-engine-10-bezwaar-rest-api
 
+> **Build status (hydra audit).** Greenfield. No TermijnDefinitie/TermijnInstance/TermijnGebeurtenis/Ingebrekestelling/Dwangsom schemas, no termijn-binding lifecycle, no daily-scan escalation daemon, no dwangsom calculation/financial integration, no burger notifications, no reporting/REST-API surfaces on dev. The 11-member chain delivers the AWB termijnbewaking + dwangsom engine from scratch. Tasks stay [ ] as genuine forward work.
+
 Member 10 of 11 (code). Depends on member 09. Traces to giant Tasks 19, 20 (REQ-TERM-010).
 
 ## 1. Bezwaar handling
