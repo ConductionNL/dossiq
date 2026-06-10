@@ -1,5 +1,7 @@
 # Tasks: procest-store-migration
 
+> **Build status (hydra audit 2026-06-10).** Migration is **already complete on dev**. `grep -rE 'objectStore\.' src/store/` returns only canonical OR API calls (`fetchCollection`, `fetchObject`, `saveObject`, `deleteObject`, `registerObjectType`, `uploadFiles`) — no phantom CRUD methods, no `create`/`update`/`delete` calls left to migrate. The procest app-wide register-first `saveObject()` drift was fixed on 2026-06-08 (dev b076e767b; per project memory) — ~137 sites converted to named-arg form. Remaining open tasks (audit/inventory/test-grid) are now retrospective bookkeeping; the functional migration is done. Tasks stay [ ] only because a formal `MIGRATION_INVENTORY.md` artefact was never authored.
+
 All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ---
