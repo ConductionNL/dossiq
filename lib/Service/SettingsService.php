@@ -201,6 +201,21 @@ class SettingsService
         'portaal_bericht_schema',
         'portaal_verzoek_schema',
         'portaal_notificatie_voorkeur_schema',
+        // Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17).
+        'termijn_definitie_schema',
+        'termijn_instance_schema',
+        'termijn_gebeurtenis_schema',
+        'ingebrekestelling_schema',
+        'dwangsom_berekening_schema',
+        'dwangsom_uitbetaling_schema',
+        // Mandaat-matrix authorization engine.
+        'mandaat_regel_schema',
+        'mandaat_assignment_schema',
+        'mandaat_gebeurtenis_schema',
+        // Archief / e-Depot SIP handover engine.
+        'archief_handover_config_schema',
+        'archief_handover_run_schema',
+        'archief_sip_submission_schema',
     ];
 
     /**
@@ -298,6 +313,21 @@ class SettingsService
         'legesKorting'                 => 'leges_korting_schema',
         'legesBerekening'              => 'leges_berekening_schema',
         'legesRestitutie'              => 'leges_restitutie_schema',
+        // Termijnbewaking + dwangsom (AWB 4:13/4:14/4:17).
+        'termijnDefinitie'             => 'termijn_definitie_schema',
+        'termijnInstance'              => 'termijn_instance_schema',
+        'termijnGebeurtenis'           => 'termijn_gebeurtenis_schema',
+        'ingebrekestelling'            => 'ingebrekestelling_schema',
+        'dwangsomBerekening'           => 'dwangsom_berekening_schema',
+        'dwangsomUitbetaling'          => 'dwangsom_uitbetaling_schema',
+        // Mandaat-matrix authorization engine.
+        'mandaatRegel'                 => 'mandaat_regel_schema',
+        'mandaatAssignment'            => 'mandaat_assignment_schema',
+        'mandaatGebeurtenis'           => 'mandaat_gebeurtenis_schema',
+        // Archief / e-Depot SIP handover engine.
+        'archiefHandoverConfig'        => 'archief_handover_config_schema',
+        'archiefHandoverRun'           => 'archief_handover_run_schema',
+        'archiefSipSubmission'         => 'archief_sip_submission_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
