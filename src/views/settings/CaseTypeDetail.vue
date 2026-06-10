@@ -106,6 +106,9 @@
 					v-else-if="activeTab === 'decisions'"
 					:case-type-id="caseTypeId"
 					:is-create="isCreate" />
+				<SubCaseTypesTab
+					v-else-if="activeTab === 'subCaseTypes'"
+					:case-type-id="caseTypeId" />
 				<WorkflowTab
 					v-else-if="activeTab === 'workflow'"
 					:case-type-id="caseTypeId" />
@@ -125,6 +128,7 @@ import RolesTab from './tabs/RolesTab.vue'
 import PropertiesTab from './tabs/PropertiesTab.vue'
 import DocumentTypesTab from './tabs/DocumentTypesTab.vue'
 import DecisionTypesTab from './tabs/DecisionTypesTab.vue'
+import SubCaseTypesTab from './tabs/SubCaseTypesTab.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { validateCaseType, validateForPublish } from '../../utils/caseTypeValidation.js'
 
@@ -168,6 +172,7 @@ export default {
 		PropertiesTab,
 		DocumentTypesTab,
 		DecisionTypesTab,
+		SubCaseTypesTab,
 	},
 	props: {
 		caseTypeId: {
@@ -207,6 +212,7 @@ export default {
 				{ id: 'properties', label: t('procest', 'Properties') },
 				{ id: 'documents', label: t('procest', 'Docs') },
 				{ id: 'decisions', label: t('procest', 'Decisions') },
+				{ id: 'subCaseTypes', label: t('procest', 'Sub-cases') },
 				{ id: 'workflow', label: t('procest', 'Workflow') },
 			]
 		},
