@@ -57,6 +57,8 @@ use OCA\Procest\Listener\LegesCaseWithdrawnListener;
 use OCA\Procest\Listener\ParaferingAuditListener;
 use OCA\Procest\Listener\RoleMutationListener;
 use OCA\Procest\Mcp\ProcestToolProvider;
+use OCA\Procest\Middleware\TenantContextMiddleware;
+use OCA\Procest\Middleware\TenantIsolationMiddleware;
 use OCA\Procest\Middleware\TenantMiddleware;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
 use OCA\Procest\Validator\ParaferingAuditAppendOnlyValidator;
@@ -140,6 +142,10 @@ class Application extends App implements IBootstrap
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
         $context->registerMiddleware(class: TenantMiddleware::class);
+        // SaaS chain (member 04): resolve tenant binding then set Postgres
+        // search_path. Order matters — Context runs before Isolation.
+        $context->registerMiddleware(class: TenantContextMiddleware::class);
+        $context->registerMiddleware(class: TenantIsolationMiddleware::class);
 
         // Background jobs are declared in appinfo/info.xml under
         // <background-jobs>; Nextcloud auto-registers them with the IJobList.
