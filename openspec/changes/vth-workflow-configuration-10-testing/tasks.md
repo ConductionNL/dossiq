@@ -1,5 +1,7 @@
 # Tasks: vth-workflow-configuration-10-testing
 
+
+> **Build status (hydra audit 2026-06-10).** Cross-cutting test suite. Existing unit tests cover slices of the services (`tests/Unit/` has LhsLookupServiceTest et al.). Full chain unit/integration/E2E coverage remains open and is deferred to a dedicated test-harness sprint once the chain UIs land.
 Cross-cutting unit/integration/E2E tests. Traces to giant Tasks 21, 22, 23.
 
 ## 1. Unit Tests

@@ -1,5 +1,7 @@
 # Tasks: vth-workflow-configuration-07-lhso-classification
 
+
+> **Build status (hydra audit 2026-06-10).** `lib/Service/LhsLookupService::lookup()` + `lib/Service/Vth/LhsRecommendationService::recommend()/override()` + `LhsController` ship on dev. The 16-cell LHSO matrix seed (`lhs_matrix_seed.json` + `SeedLhsMatrix` + `SeedVthMatrixCells` repair steps) is wired by member 01. Vue classification-UI remains the open work.
 LHSO lookup service + classification UI. Traces to giant Tasks 12, 13.
 
 ## 1. LhsoLookupService

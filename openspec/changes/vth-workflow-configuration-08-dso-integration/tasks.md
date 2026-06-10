@@ -1,5 +1,7 @@
 # Tasks: vth-workflow-configuration-08-dso-integration
 
+
+> **Build status (hydra audit 2026-06-10).** `lib/Service/DsoIntakeService::processAanvraag()`, `lib/Service/DsoCaseService::createZaakFromVergunningaanvraag()/transitionStatus()/computeDeadline()/authorizeZaakMutation()`, `lib/Service/DsoLvAuthService` + `DsoController` + `DSOIntakeController` ship on dev. End-to-end DSO bus wiring + status-push back are integration concerns (cross-app); admin DSO settings tab is greenfield UI.
 DSO intake, status pushback, deadline tracking. Traces to giant Tasks 14, 15, 16.
 
 ## 1. Intake and Case Mapping

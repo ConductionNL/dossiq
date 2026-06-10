@@ -1,5 +1,7 @@
 # Tasks: vth-workflow-configuration-11-quality-docs
 
+
+> **Build status (hydra audit 2026-06-10).** Dedup check, @spec tags, docs. Code already carries @spec tags where present; remaining @spec sweep + chain README + admin/user docs are the open work.
 Dedup check, @spec tags, docs. Traces to giant Tasks 24, 25, 26.
 
 ## 1. Deduplication

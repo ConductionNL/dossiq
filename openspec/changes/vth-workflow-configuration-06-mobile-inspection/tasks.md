@@ -1,5 +1,7 @@
 # Tasks: vth-workflow-configuration-06-mobile-inspection
 
+
+> **Build status (hydra audit 2026-06-10).** `lib/Service/InspectionService.php` (`getInspections`, `captureLocation`, `addPhoto`, `completeInspection`) + `InspectionChecklistService` + `InspectionController` ship on dev. Responsive Vue mobile views are the remaining work — closely related to mobiel-inspectie-offline (PWA chain) which is the canonical home for the offline-client work.
 Mobile inspection service + responsive UI. Traces to giant Tasks 8, 9. (Checklist-config UI = giant Task 10 → member 09.)
 
 ## 1. MobileInspectionService
