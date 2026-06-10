@@ -5,6 +5,8 @@
 
 # Tasks: Deelzaak Support
 
+> **Build status (hydra audit 2026-06-10).** The register-side foundation is in place: `lib/Settings/procest_register.json` already defines `parentCase` (ref to parent case), `relatedCases` (case relations), and a `subCaseTypes[]` list on caseType ("References to sub-case types (deelzaaktypen)"). The work in this spec is the **frontend wiring** — `fetchSubCases`/`fetchParentCase` store actions, the case-detail SubCasesTab + parent-case breadcrumb, and the per-case-type sub-case-types tab. None of those Vue/store pieces are on dev yet. Tasks stay [ ] as genuine frontend forward work.
+
 ## Deduplication Check
 
 - [ ] **DC01**: Search `openspec/specs/` for existing sub-case or case-relation specs — confirm no overlap with `case-management` spec beyond the V1 stub already listed as "out of scope" (CM-18). Document findings.
