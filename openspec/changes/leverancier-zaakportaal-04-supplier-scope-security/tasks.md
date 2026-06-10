@@ -1,5 +1,7 @@
 # Tasks — Member 04: Supplier Scope & API Security (code)
 
+> **Build status (hydra audit).** Greenfield. No supplier/leverancier schemas, services, or UI exist on dev (the in-tree zaakportaal is the citizen-side mijngemeente portal — separate concern, lives in lib/Service/Zaakportaal + src/views/portaal + lib/Settings/register.d/50-zaakportaal.json). The 16-member chain implements the supplier portal from scratch (Supplier* schemas, eHerkenning auth, RBAC, tender/invoice/contract/messaging surfaces, KPI dashboard, e2e tests). Tasks remain [ ] as genuine forward work.
+
 Traces to giant tasks 3.1 and 4.1; spec REQ-009-B/C.
 
 - [ ] Implement `SupplierScopeService.getCurrentSupplier()` — resolve supplier from session
