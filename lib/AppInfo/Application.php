@@ -137,6 +137,7 @@ class Application extends App implements IBootstrap
 
         $this->registerBezwaarListeners(context: $context);
         $this->registerLegesListeners(context: $context);
+        $this->registerTermijnListeners(context: $context);
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
         $context->registerMiddleware(class: TenantMiddleware::class);
@@ -248,6 +249,28 @@ class Application extends App implements IBootstrap
             listener: LegesCaseWithdrawnListener::class
         );
     }//end registerLegesListeners()
+
+    /**
+     * Register termijnbewaking (AWB deadline engine) listeners.
+     *
+     * On case creation, an AWB TermijnInstance is automatically bound to
+     * the case using the active TermijnDefinitie for the zaaktype. The
+     * listener is a pure observer (ADR-022); all logic lives in
+     * {@see \OCA\Procest\Service\TermijnService}.
+     *
+     * @param IRegistrationContext $context Registration context.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+     */
+    private function registerTermijnListeners(IRegistrationContext $context): void
+    {
+        $context->registerEventListener(
+            event: ObjectCreatedEvent::class,
+            listener: \OCA\Procest\Listener\TermijnCaseCreatedListener::class
+        );
+    }//end registerTermijnListeners()
 
     /**
      * Register dashboard widgets and the MCP tool provider.
