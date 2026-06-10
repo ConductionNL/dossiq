@@ -57,10 +57,13 @@ use OCA\Procest\Listener\LegesCaseWithdrawnListener;
 use OCA\Procest\Listener\ParaferingAuditListener;
 use OCA\Procest\Listener\RoleMutationListener;
 use OCA\Procest\Mcp\ProcestToolProvider;
+use OCA\Procest\Middleware\TenantClaimValidationMiddleware;
 use OCA\Procest\Middleware\TenantContextMiddleware;
 use OCA\Procest\Middleware\TenantIsolationMiddleware;
 use OCA\Procest\Middleware\TenantMiddleware;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
+use OCA\Procest\Service\TenantJwtService;
+use OCP\IConfig;
 use OCA\Procest\Validator\ParaferingAuditAppendOnlyValidator;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -146,6 +149,22 @@ class Application extends App implements IBootstrap
         // search_path. Order matters — Context runs before Isolation.
         $context->registerMiddleware(class: TenantContextMiddleware::class);
         $context->registerMiddleware(class: TenantIsolationMiddleware::class);
+        // SaaS chain (member 05): JWT tenant-claim validation against the
+        // request-bound tenant. Forged / cross-tenant JWT → 403.
+        $context->registerMiddleware(class: TenantClaimValidationMiddleware::class);
+        // SaaS chain (member 05): factory the TenantJwtService with the secret
+        // from app config (procest.jwt_signing_secret). Generates a
+        // per-instance random fallback when unset (dev-friendly; production
+        // must set the secret via occ config:app:set procest jwt_signing_secret).
+        $context->registerService(TenantJwtService::class, function (\Psr\Container\ContainerInterface $c): TenantJwtService {
+            $config = $c->get(IConfig::class);
+            $secret = (string) $config->getAppValue(self::APP_ID, 'jwt_signing_secret', '');
+            if ($secret === '' || strlen($secret) < 16) {
+                $secret = (string) $config->getSystemValue('secret', str_pad(self::APP_ID, 32, '_'));
+            }
+
+            return new TenantJwtService(signingSecret: $secret);
+        });
 
         // Background jobs are declared in appinfo/info.xml under
         // <background-jobs>; Nextcloud auto-registers them with the IJobList.
