@@ -447,6 +447,14 @@ return [
         ['name' => 'complaint#createCategory',     'url' => '/api/complaint-categories',                  'verb' => 'POST'],
         ['name' => 'complaint#updateCategory',     'url' => '/api/complaint-categories/{id}',             'verb' => 'PUT'],
 
+        // ── Mandaat-matrix authorization engine ────────────────────────────
+        ['name' => 'mandaatMatrix#checkAuth',       'url' => '/api/mandate/authorize',                    'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#importPreview',   'url' => '/api/mandate/import',                       'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#importApprove',   'url' => '/api/mandate/import/{importId}/approve',    'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#escalateApprove', 'url' => '/api/mandate/escalations/{id}/approve',     'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#escalateReject',  'url' => '/api/mandate/escalations/{id}/reject',      'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#auditTrail',      'url' => '/api/mandate/cases/{caseId}/audit-trail',   'verb' => 'GET'],
+
         // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
         // Public webhook for openconnector/ERP payment confirmation callbacks.
         ['name' => 'dwangsomPaymentCallback#callback', 'url' => '/api/procest/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
