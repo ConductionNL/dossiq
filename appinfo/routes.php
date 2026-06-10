@@ -487,6 +487,43 @@ return [
         ['name' => 'complaint#createCategory',     'url' => '/api/complaint-categories',                  'verb' => 'POST'],
         ['name' => 'complaint#updateCategory',     'url' => '/api/complaint-categories/{id}',             'verb' => 'PUT'],
 
+        // ── Archief / e-Depot handover ─────────────────────────────────────
+        ['name' => 'archief#listRules',       'url' => '/api/archief/rules',                'verb' => 'GET'],
+        ['name' => 'archief#createRule',      'url' => '/api/archief/rules',                'verb' => 'POST'],
+        ['name' => 'archief#dashboardStats',  'url' => '/api/archief/dashboard/stats',      'verb' => 'GET'],
+        ['name' => 'archief#auditLog',        'url' => '/api/archief/audit-log',            'verb' => 'GET'],
+
+        // ── Mandaat-matrix authorization engine ────────────────────────────
+        ['name' => 'mandaatMatrix#probe',           'url' => '/api/mandate/authorize',                    'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#importPreview',   'url' => '/api/mandate/import',                       'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#importApprove',   'url' => '/api/mandate/import/{importId}/approve',    'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#escalateApprove', 'url' => '/api/mandate/escalations/{id}/approve',     'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#escalateReject',  'url' => '/api/mandate/escalations/{id}/reject',      'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#auditTrail',      'url' => '/api/mandate/cases/{caseId}/audit-trail',   'verb' => 'GET'],
+
+        // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
+        // Public webhook for openconnector/ERP payment confirmation callbacks.
+        ['name' => 'dwangsomPaymentCallback#callback', 'url' => '/api/procest/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
+        // TermijnInstance lifecycle (caseworker / handler).
+        ['name' => 'termijn#create',     'url' => '/api/termijn/instances',                  'verb' => 'POST'],
+        ['name' => 'termijn#show',       'url' => '/api/termijn/instances/{id}',             'verb' => 'GET'],
+        ['name' => 'termijn#pauze',      'url' => '/api/termijn/instances/{id}/pauze',       'verb' => 'POST'],
+        ['name' => 'termijn#hervat',     'url' => '/api/termijn/instances/{id}/hervat',      'verb' => 'POST'],
+        ['name' => 'termijn#verleng',    'url' => '/api/termijn/instances/{id}/verleng',     'verb' => 'POST'],
+        ['name' => 'termijn#voltooi',    'url' => '/api/termijn/instances/{id}/voltooi',     'verb' => 'POST'],
+        // Ingebrekestelling registration.
+        ['name' => 'ingebrekestelling#register', 'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
+        ['name' => 'ingebrekestelling#show',     'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
+        // Dwangsom state + bezwaar.
+        ['name' => 'dwangsom#show',         'url' => '/api/termijn/dwangsom/{id}',             'verb' => 'GET'],
+        ['name' => 'dwangsom#beschikking',  'url' => '/api/termijn/dwangsom/{id}/beschikking', 'verb' => 'POST'],
+        ['name' => 'dwangsom#bezwaar',      'url' => '/api/termijn/dwangsom/{id}/bezwaar',     'verb' => 'POST'],
+        ['name' => 'dwangsom#bezwaarHeroverweging', 'url' => '/api/termijn/dwangsom/{id}/bezwaar/heroverweging', 'verb' => 'POST'],
+        // Reporting (manager / accountant).
+        ['name' => 'termijnReporting#dashboard',         'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
+        ['name' => 'termijnReporting#kwartaalrapport',   'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
+        ['name' => 'termijnReporting#jaarrekening',      'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],
