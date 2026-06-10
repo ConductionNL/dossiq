@@ -57,6 +57,7 @@ class TermijnDailyScanService
         private readonly TermijnService $termijnService,
         private readonly TermijnEscalationService $escalationService,
         private readonly LoggerInterface $logger,
+        private readonly ?DwangsomCalculationService $dwangsomService = null,
     ) {
     }//end __construct()
 
@@ -113,9 +114,55 @@ class TermijnDailyScanService
             }
         }
 
+        // Sweep lopend DwangsomBerekeningen (member 06 hook).
+        $counts['dwangsomAccrued'] = $this->accrueLopendDwangsomBerekeningen();
+
         $this->logger->info('Termijn daily scan complete', $counts);
         return $counts;
     }//end run()
+
+    /**
+     * Run a calculateDaily() pass over all lopend DwangsomBerekening rows.
+     *
+     * @return int Number of berekeningen accrued.
+     */
+    private function accrueLopendDwangsomBerekeningen(): int
+    {
+        if ($this->dwangsomService === null) {
+            return 0;
+        }
+
+        $objectService = $this->settingsService->getObjectService();
+        $register      = (string) $this->settingsService->getConfigValue('register');
+        $schema        = (string) $this->settingsService->getConfigValue('dwangsom_berekening_schema');
+        if ($objectService === null || $register === '' || $schema === '') {
+            return 0;
+        }
+
+        try {
+            $rows = $objectService->findObjects($register, $schema, ['status' => 'lopend']);
+        } catch (\Throwable $e) {
+            return 0;
+        }
+
+        $accrued = 0;
+        foreach ((array) $rows as $row) {
+            if (is_array($row) === false) {
+                continue;
+            }
+            $id = (string) ($row['id'] ?? '');
+            if ($id === '') {
+                continue;
+            }
+            try {
+                $this->dwangsomService->calculateDaily($id);
+                $accrued++;
+            } catch (\Throwable $e) {
+                $this->logger->warning('Dwangsom accrual row failed', ['id' => $id, 'error' => $e->getMessage()]);
+            }
+        }
+        return $accrued;
+    }//end accrueLopendDwangsomBerekeningen()
 
     /**
      * Process a single TermijnInstance row.
