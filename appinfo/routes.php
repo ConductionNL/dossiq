@@ -315,6 +315,15 @@ return [
         ['name' => 'tenant#provision', 'url' => '/api/tenants/{tenantId}/provision',   'verb' => 'POST'],
         ['name' => 'tenant#usage',     'url' => '/api/tenants/{tenantId}/usage',       'verb' => 'GET'],
 
+        // SaaS Tenant CRUD + lifecycle — backed by the `tenant` register schema
+        // (chain member tenant-zaaksysteem-saas-01). Admin-only via the
+        // SecurityMiddleware default; #[AuthorizedAdminSetting] on each method.
+        ['name' => 'tenantSaas#index',   'url' => '/api/saas/tenants',                  'verb' => 'GET'],
+        ['name' => 'tenantSaas#create',  'url' => '/api/saas/tenants',                  'verb' => 'POST'],
+        ['name' => 'tenantSaas#show',    'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'GET'],
+        ['name' => 'tenantSaas#update',  'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'PATCH'],
+        ['name' => 'tenantSaas#destroy', 'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'DELETE'],
+
         // ── Appointment Scheduling (afsprakenbeheer) ────────────────────
         // Specific endpoints (must precede wildcard {appointmentId} routes).
         ['name' => 'appointment#timeslots', 'url' => '/api/appointments/timeslots',                'verb' => 'GET'],
