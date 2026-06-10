@@ -103,6 +103,7 @@ export default {
 			return current !== initial
 		},
 	},
+	/** @spec openspec/changes/deelzaak-support/tasks.md#T12 */
 	async mounted() {
 		if (!this.isCreate) {
 			await this.loadData()
