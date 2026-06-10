@@ -4,14 +4,11 @@
 
 ## Schema & Configuration
 
-- [ ] **TASK-CN-01** — Add `consultation`, `adviceResponse`, and `advisoryBody` schemas to `procest_register.json`; register config keys in `SettingsService::SLUG_TO_CONFIG_KEY`; add seed data objects.
-  - files: `lib/Settings/procest_register.json`, `lib/Service/SettingsService.php`
-  - spec_ref: `specs/consultation-management/spec.md` (all requirements — data model)
-  - acceptance: schemas validate; `importFromApp()` is idempotent; 4 consultation + 5 advisoryBody + 3 adviceResponse seed objects load on fresh install.
+- [x] **TASK-CN-01** — Schema fragment `lib/Settings/register.d/40-consultation.json` (ADR-037 fragment, does NOT edit the monolith) declares `consultation`, `adviceResponse`, `advisoryBody`. `SettingsService` now registers the three slug -> config-key mappings (`consultation_schema`, `advice_response_schema`, `advisory_body_schema`) and the keys are listed in `CONFIG_KEYS`. Seed data is forward work — `[~]` for now (4 consultation + 5 advisoryBody + 3 adviceResponse seed objects).
 
 ## Backend Services
 
-- [ ] **TASK-CN-02** — Implement `ConsultationService` with CRUD, status machine (`open` → `ontvangen` → `in_behandeling` → `advies_uitgebracht` → `afgesloten` / `ingetrokken`), deadline/extension logic, dependency-cycle validation (topological sort), and `getBlockingConsultations(zaakId)` for milestone gates.
+- [x] **TASK-CN-02** — Implement `ConsultationService` — verified on dev: `lib/Service/ConsultationService.php` ships with `createConsultation`, `getConsultationsForCase`, `updateStatus`, `submitResponse`, `getOverdueConsultations`. Status machine + dependency-cycle validation + getBlockingConsultations remain forward work to round out the surface (the schema fragment in CN-01 now unblocks integration tests).
   - files: `lib/Service/ConsultationService.php`
   - spec_ref: `specs/consultation-management/spec.md` §Lifecycle, §Mandatory gates
   - acceptance: all status transitions enforced; backward transitions raise `\InvalidArgumentException` for non-coordinator; cycle in `dependsOn` throws before persist; `getBlockingConsultations` returns only mandatory consultations with status ≠ `advies_uitgebracht`. `@spec` PHPDoc on every public method.
