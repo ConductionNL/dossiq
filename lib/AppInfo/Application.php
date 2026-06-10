@@ -57,6 +57,7 @@ use OCA\Procest\Listener\LegesCaseWithdrawnListener;
 use OCA\Procest\Listener\ParaferingAuditListener;
 use OCA\Procest\Listener\RoleMutationListener;
 use OCA\Procest\Mcp\ProcestToolProvider;
+use OCA\Procest\Middleware\MandateValidationMiddleware;
 use OCA\Procest\Middleware\TenantClaimValidationMiddleware;
 use OCA\Procest\Middleware\TenantContextMiddleware;
 use OCA\Procest\Middleware\TenantIsolationMiddleware;
@@ -152,6 +153,10 @@ class Application extends App implements IBootstrap
         // SaaS chain (member 05): JWT tenant-claim validation against the
         // request-bound tenant. Forged / cross-tenant JWT → 403.
         $context->registerMiddleware(class: TenantClaimValidationMiddleware::class);
+        // SaaS chain (member 06): mandate-matrix authorisation gate. Maps the
+        // HTTP verb (and URL hints like /transition) to a matrix action key
+        // and blocks the request on deny.
+        $context->registerMiddleware(class: MandateValidationMiddleware::class);
         // SaaS chain (member 05): factory the TenantJwtService with the secret
         // from app config (procest.jwt_signing_secret). Generates a
         // per-instance random fallback when unset (dev-friendly; production
