@@ -38,15 +38,34 @@ use Psr\Log\LoggerInterface;
 interface ComplaintObjectServiceStub
 {
     /**
-     * Find a single object by ID.
+     * Find a single object by ID (real OpenRegister ObjectService::find()).
      *
-     * @param string $register Register slug
-     * @param string $schema   Schema slug
-     * @param string $id       Object UUID
+     * @param int|string $id     Object UUID
+     * @param mixed      ...$args Remaining find() args (extend/files/register/schema).
      *
-     * @return array<string,mixed>|null
+     * @return mixed
      */
-    public function findObject(string $register, string $schema, string $id): ?array;
+    public function find(int | string $id, ...$args): mixed;
+
+    /**
+     * Search objects (real ObjectService::searchObjects()).
+     *
+     * @param array<string,mixed> $query Query with @self block and field filters.
+     *
+     * @return array<int,mixed>|int
+     */
+    public function searchObjects(array $query=[]): array | int;
+
+    /**
+     * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
+     *
+     * @param string              $registerSlug Register slug.
+     * @param string              $schemaSlug   Schema slug.
+     * @param array<string,mixed> $filters      Field filters and pagination keys.
+     *
+     * @return array<int,mixed>|int
+     */
+    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters=[]): array | int;
 
     /**
      * Save or update an object.
@@ -228,9 +247,9 @@ class ComplaintServiceTest extends TestCase
                 ['complaint_schema', '', 'complaint'],
             ]);
 
-        // The service calls findObject to retrieve the complaint.
+        // The service calls find() to retrieve the complaint.
         $objectServiceMock
-            ->method('findObject')
+            ->method('find')
             ->willReturn($complaint);
 
         // saveObject receives the updated data.
@@ -260,7 +279,7 @@ class ComplaintServiceTest extends TestCase
         $objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
-        $objectServiceMock->method('findObject')->willReturn($complaint);
+        $objectServiceMock->method('find')->willReturn($complaint);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessageMatches('/not available/i');
@@ -280,7 +299,7 @@ class ComplaintServiceTest extends TestCase
         $objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
-        $objectServiceMock->method('findObject')->willReturn($complaint);
+        $objectServiceMock->method('find')->willReturn($complaint);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessageMatches('/Justificatie/i');
@@ -300,7 +319,7 @@ class ComplaintServiceTest extends TestCase
         $objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
-        $objectServiceMock->method('findObject')->willReturn($complaint);
+        $objectServiceMock->method('find')->willReturn($complaint);
         $objectServiceMock->method('saveObject')->willReturn(['status' => 'ontvangst_bevestigd']);
 
         $result = $this->service->transitionStatus('uuid-123', 'ontvangst_bevestigd');
@@ -319,7 +338,7 @@ class ComplaintServiceTest extends TestCase
         $objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
-        $objectServiceMock->method('findObject')->willReturn($complaint);
+        $objectServiceMock->method('find')->willReturn($complaint);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessageMatches('/not allowed/i');

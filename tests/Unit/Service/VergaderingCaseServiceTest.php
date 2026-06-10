@@ -50,15 +50,24 @@ interface VergaderingObjectServiceStub
     public function saveObject(string $register, string $schema, array $object, string $id=''): array;
 
     /**
-     * Find objects in the register.
+     * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
      *
-     * @param string $register The register name
-     * @param string $schema   The schema slug
-     * @param array  $params   Query parameters
+     * @param string              $registerSlug The register slug
+     * @param string              $schemaSlug   The schema slug
+     * @param array<string,mixed> $filters      Query parameters
      *
-     * @return array
+     * @return array<int,mixed>|int
      */
-    public function findObjects(string $register, string $schema, array $params): array;
+    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters=[]): array | int;
+
+    /**
+     * Search objects (real ObjectService::searchObjects()).
+     *
+     * @param array<string,mixed> $query Query with @self block and field filters.
+     *
+     * @return array<int,mixed>|int
+     */
+    public function searchObjects(array $query=[]): array | int;
 }//end interface
 
 /**
@@ -282,7 +291,7 @@ class VergaderingCaseServiceTest extends TestCase
         $today         = (new \DateTimeImmutable('today'))->format('Y-m-d');
 
         $objectService
-            ->method('findObjects')
+            ->method('searchObjectsBySlug')
             ->willReturn([
                 ['id' => 'case-1', 'status' => 'gepland', 'deadline' => $today],
                 ['id' => 'case-2', 'status' => 'gepland', 'deadline' => $today],

@@ -36,6 +36,7 @@ namespace OCA\Procest\Service;
 
 use DateTime;
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
@@ -47,6 +48,9 @@ use Throwable;
  */
 class AdviceService
 {
+
+    use SearchesObjects;
+
 
     /**
      * Valid advice statuses.
@@ -220,12 +224,11 @@ class AdviceService
         }
 
         try {
-            $results = $objectService->findObjects(
-                $register,
-                $schema,
-                ['case' => $caseId],
-                [],
-                200,
+            return $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['case' => $caseId, '_limit' => 200],
             );
         } catch (Throwable $e) {
             $this->logger->error(
@@ -234,12 +237,6 @@ class AdviceService
             );
             return [];
         }
-
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
     }//end getAdviceForCase()
 
     /**
@@ -264,12 +261,11 @@ class AdviceService
         }
 
         try {
-            $results = $objectService->findObjects(
-                $register,
-                $schema,
-                ['status' => 'aangevraagd'],
-                [],
-                500,
+            return $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['status' => 'aangevraagd', '_limit' => 500],
             );
         } catch (Throwable $e) {
             $this->logger->error(
@@ -278,12 +274,6 @@ class AdviceService
             );
             return [];
         }
-
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
     }//end getOpenAdvice()
 
     /**

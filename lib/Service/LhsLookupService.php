@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -41,6 +42,8 @@ use Throwable;
  */
 class LhsLookupService
 {
+
+    use SearchesObjects;
 
     /**
      * Valid gedrag values (behaviour axis of the LHS matrix).
@@ -159,10 +162,11 @@ class LhsLookupService
         }
 
         try {
-            $results = $objectService->findObjects(
+            $results = $this->searchObjectsAsArrays(
+                objectService: $objectService,
                 register: $register,
                 schema: 'lhsMatrixCell',
-                params: ['gedragRow' => $gedrag, 'gevolgColumn' => $gevolg, '_limit' => 1]
+                filters: ['gedragRow' => $gedrag, 'gevolgColumn' => $gevolg, '_limit' => 1]
             );
 
             if (is_array($results) === true && isset($results[0]) === true && is_array($results[0]) === true) {

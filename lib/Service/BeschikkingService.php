@@ -40,6 +40,7 @@ use DateTimeImmutable;
 use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Procest\Service\Beschikking\SigningAdapterInterface;
 use OCA\Procest\Service\Beschikking\TemplateEngineAdapterInterface;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ZipArchive;
@@ -51,6 +52,9 @@ use ZipArchive;
  */
 class BeschikkingService
 {
+
+    use SearchesObjects;
+
     /**
      * Fields that may NOT be edited once a beschikking is immutable.
      *
@@ -629,7 +633,12 @@ class BeschikkingService
         }
 
         try {
-            $regelingen = $objectService->findObjects($register, $schema, []);
+            $regelingen = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: []
+            );
         } catch (\Throwable $e) {
             $this->logger->error('BeschikkingService: resolveMandaatRegeling failed', ['exception' => $e->getMessage()]);
             return [];
@@ -710,7 +719,12 @@ class BeschikkingService
         }
 
         try {
-            $logs = $objectService->findObjects($register, $schema, ['beschikkingId' => $beschikkingId]);
+            $logs = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['beschikkingId' => $beschikkingId]
+            );
         } catch (\Throwable $e) {
             $this->logger->error('BeschikkingService: findStateMachineLogs failed', ['exception' => $e->getMessage()]);
             return [];

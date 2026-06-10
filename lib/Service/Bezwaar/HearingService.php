@@ -52,6 +52,7 @@ namespace OCA\Procest\Service\Bezwaar;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -63,6 +64,9 @@ use RuntimeException;
  */
 class HearingService
 {
+
+    use SearchesObjects;
+
     /**
      * Awb art. 7:4 lid 2 inspection-of-file floor in days.
      */
@@ -572,10 +576,11 @@ class HearingService
         }
 
         try {
-            $existing = $objectService->findObjects(
-                $register,
-                $schema,
-                ['case' => $caseId]
+            $existing = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['case' => $caseId]
             );
             if (is_array($existing) === true && $existing !== []) {
                 return null;

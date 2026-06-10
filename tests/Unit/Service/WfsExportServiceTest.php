@@ -41,15 +41,24 @@ use Psr\Log\LoggerInterface;
 interface WfsObjectServiceStub
 {
     /**
-     * Find objects in the given register/schema.
+     * Search objects (real ObjectService::searchObjects()).
      *
-     * @param string $register The register name
-     * @param string $schema   The schema name
-     * @param array  $params   Query parameters
+     * @param array<string,mixed> $query Query with @self block and field filters.
      *
-     * @return array<mixed>
+     * @return array<int,mixed>|int
      */
-    public function findObjects(string $register, string $schema, array $params): array;
+    public function searchObjects(array $query=[]): array | int;
+
+    /**
+     * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
+     *
+     * @param string              $registerSlug Register slug.
+     * @param string              $schemaSlug   Schema slug.
+     * @param array<string,mixed> $filters      Field filters and pagination keys.
+     *
+     * @return array<int,mixed>|int
+     */
+    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters=[]): array | int;
 }//end interface
 
 /**
@@ -140,7 +149,7 @@ class WfsExportServiceTest extends TestCase
         ];
 
         $mockObjectService
-            ->method('findObjects')
+            ->method('searchObjectsBySlug')
             ->willReturn($locations);
 
         $this->settingsService
@@ -196,7 +205,7 @@ class WfsExportServiceTest extends TestCase
         ];
 
         $mockObjectService
-            ->method('findObjects')
+            ->method('searchObjectsBySlug')
             ->willReturn($locations);
 
         $this->settingsService
@@ -245,7 +254,7 @@ class WfsExportServiceTest extends TestCase
         ];
 
         $mockObjectService
-            ->method('findObjects')
+            ->method('searchObjectsBySlug')
             ->willReturn($locations);
 
         $this->settingsService->method('getObjectService')->willReturn($mockObjectService);
@@ -275,7 +284,7 @@ class WfsExportServiceTest extends TestCase
 
         $mockObjectService
             ->expects($this->once())
-            ->method('findObjects')
+            ->method('searchObjectsBySlug')
             ->with(
                 'procest',
                 'location',

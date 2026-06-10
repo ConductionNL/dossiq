@@ -41,15 +41,14 @@ use Psr\Log\LoggerInterface;
 interface SamenwerkObjectServiceStub
 {
     /**
-     * Find a single object by ID.
+     * Find a single object by ID (real ObjectService::find()).
      *
-     * @param string $register Register slug
-     * @param string $schema   Schema slug
-     * @param string $id       Object UUID
+     * @param int|string $id     Object UUID
+     * @param mixed      ...$args Remaining find() args (extend/files/register/schema).
      *
-     * @return array<string,mixed>|null
+     * @return mixed
      */
-    public function findObject(string $register, string $schema, string $id): ?array;
+    public function find(int | string $id, ...$args): mixed;
 
     /**
      * Save or update an object.
@@ -150,7 +149,7 @@ class SamenwerkverzoekServiceTest extends TestCase
 
         $objectServiceMock
             ->expects($this->once())
-            ->method('findObject')
+            ->method('find')
             ->willReturn($zaak);
 
         $expectedSamenwerkverzoek = [
@@ -228,7 +227,7 @@ class SamenwerkverzoekServiceTest extends TestCase
 
         $objectServiceMock
             ->expects($this->once())
-            ->method('findObject')
+            ->method('find')
             ->willReturn($verzoek);
 
         $objectServiceMock
@@ -286,7 +285,7 @@ class SamenwerkverzoekServiceTest extends TestCase
         ];
 
         $objectServiceMock
-            ->method('findObject')
+            ->method('find')
             ->willReturn($verzoek);
 
         $objectServiceMock

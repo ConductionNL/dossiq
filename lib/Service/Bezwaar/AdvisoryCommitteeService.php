@@ -44,6 +44,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\StatusTransitionService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCA\Procest\Service\Transitions\GuardFailedException;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -56,6 +57,9 @@ use RuntimeException;
  */
 class AdvisoryCommitteeService
 {
+
+    use SearchesObjects;
+
     /**
      * Allowed advice-request lifecycle states.
      */
@@ -512,10 +516,11 @@ class AdvisoryCommitteeService
                 }
             }
 
-            $objections = $objectService->findObjects(
-                $register,
-                $objectionSchema,
-                ['case' => $caseId]
+            $objections = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $objectionSchema,
+                filters: ['case' => $caseId]
             );
             $objection  = null;
             if (is_array($objections) === true && $objections !== []) {

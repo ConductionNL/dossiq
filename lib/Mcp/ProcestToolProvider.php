@@ -35,6 +35,7 @@ namespace OCA\Procest\Mcp;
 
 use OCA\OpenRegister\Mcp\IMcpToolProvider;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -59,6 +60,9 @@ use Psr\Log\LoggerInterface;
  */
 class ProcestToolProvider implements IMcpToolProvider
 {
+
+    use SearchesObjects;
+
 
     /**
      * Maximum number of items / source descriptors returned per tool result.
@@ -412,23 +416,18 @@ class ProcestToolProvider implements IMcpToolProvider
     private function findCases(array $store, array $filters, int $limit): ?array
     {
         try {
-            $rows = $store['objectService']->findObjects(
-                $store['register'],
-                $store['caseSchema'],
-                $filters,
-                [],
-                $limit,
+            $rows = $this->searchObjectsAsArrays(
+                objectService: $store['objectService'],
+                register: $store['register'],
+                schema: $store['caseSchema'],
+                filters: array_merge($filters, ['_limit' => $limit]),
             );
         } catch (\Throwable $e) {
             $this->logger->error(
-                'Procest MCP: listProcesses findObjects failed',
+                'Procest MCP: listProcesses search failed',
                 ['exception' => $e->getMessage()]
             );
             return null;
-        }
-
-        if (is_array($rows) === false) {
-            return [];
         }
 
         return $rows;
@@ -477,16 +476,15 @@ class ProcestToolProvider implements IMcpToolProvider
         }
 
         try {
-            $records = $store['objectService']->findObjects(
-                $store['register'],
-                $recordSchema,
-                ['case' => $caseUuid],
-                [],
-                self::ITEMS_CAP,
+            $records = $this->searchObjectsAsArrays(
+                objectService: $store['objectService'],
+                register: $store['register'],
+                schema: $recordSchema,
+                filters: ['case' => $caseUuid, '_limit' => self::ITEMS_CAP],
             );
         } catch (\Throwable $e) {
             $this->logger->error(
-                'Procest MCP: loadHistory findObjects failed',
+                'Procest MCP: loadHistory search failed',
                 ['caseUuid' => $caseUuid, 'exception' => $e->getMessage()]
             );
             return [];
@@ -579,19 +577,19 @@ class ProcestToolProvider implements IMcpToolProvider
         }
 
         try {
-            $roles = $objectService->findObjects(
-                $register,
-                $roleSchema,
-                [
+            $roles = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $roleSchema,
+                filters: [
                     'case'        => $caseUuid,
                     'participant' => $userId,
+                    '_limit'      => 1,
                 ],
-                [],
-                1,
             );
         } catch (\Throwable $e) {
             $this->logger->error(
-                'Procest MCP: hasRoleOnCase findObjects failed',
+                'Procest MCP: hasRoleOnCase search failed',
                 ['caseUuid' => $caseUuid, 'exception' => $e->getMessage()]
             );
             return false;

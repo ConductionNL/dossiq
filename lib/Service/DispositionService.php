@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -33,6 +34,9 @@ use Psr\Log\LoggerInterface;
  */
 class DispositionService
 {
+
+    use SearchesObjects;
+
 
     /**
      * Valid disposition judgment values (oordeel).
@@ -217,7 +221,12 @@ class DispositionService
             return null;
         }
 
-        $results = $objectService->findObjects($register, $schema, ['complaint' => $complaintId, '_limit' => 1]);
+        $results = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: ['complaint' => $complaintId, '_limit' => 1]
+        );
 
         if (is_array($results) === true && count($results) > 0) {
             return $results[0];

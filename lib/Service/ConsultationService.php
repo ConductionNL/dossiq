@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -39,6 +40,9 @@ use Psr\Log\LoggerInterface;
  */
 class ConsultationService
 {
+
+    use SearchesObjects;
+
 
     /**
      * Valid consultation statuses.
@@ -147,19 +151,12 @@ class ConsultationService
             return [];
         }
 
-        $results = $objectService->findObjects(
-            $register,
-            $schema,
-            ['parentZaak' => $caseId],
-            [],
-            100,
+        return $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: ['parentZaak' => $caseId, '_limit' => 100],
         );
-
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
     }//end getConsultationsForCase()
 
     /**
@@ -283,35 +280,21 @@ class ConsultationService
         }
 
         // Fetch open/in_behandeling consultations.
-        $allOpen = $objectService->findObjects(
-            $register,
-            $schema,
-            ['status' => 'open'],
-            [],
-            200,
+        $allOpen = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: ['status' => 'open', '_limit' => 200],
         );
 
-        $allInProgress = $objectService->findObjects(
-            $register,
-            $schema,
-            ['status' => 'in_behandeling'],
-            [],
-            200,
+        $allInProgress = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: ['status' => 'in_behandeling', '_limit' => 200],
         );
 
-        if (is_array($allOpen) === true) {
-            $openList = $allOpen;
-        } else {
-            $openList = [];
-        }
-
-        if (is_array($allInProgress) === true) {
-            $inProgressList = $allInProgress;
-        } else {
-            $inProgressList = [];
-        }
-
-        $all     = array_merge($openList, $inProgressList);
+        $all     = array_merge($allOpen, $allInProgress);
         $today   = date('Y-m-d');
         $overdue = [];
 

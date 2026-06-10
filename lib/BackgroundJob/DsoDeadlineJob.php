@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Procest\BackgroundJob;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use OCP\IAppConfig;
@@ -39,6 +40,9 @@ use Psr\Log\LoggerInterface;
  */
 class DsoDeadlineJob extends TimedJob
 {
+
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -120,10 +124,11 @@ class DsoDeadlineJob extends TimedJob
         }
 
         try {
-            $zaken = $objectService->findObjects(
+            $zaakList = $this->searchObjectsAsArrays(
+                objectService: $objectService,
                 register: $register,
                 schema: $caseSchema,
-                params: [
+                filters: [
                     'caseType' => 'omgevingsvergunning',
                     'status'   => ['ingediend', 'in_behandeling'],
                     '_limit'   => 500,
@@ -138,17 +143,7 @@ class DsoDeadlineJob extends TimedJob
             return;
         }
 
-        if (is_array($zaken) === true) {
-            $zaakList = $zaken;
-        } else {
-            $zaakList = [];
-        }
-
         foreach ($zaakList as $zaak) {
-            if (is_array($zaak) === false) {
-                continue;
-            }
-
             try {
                 $this->processZaakDeadline(
                     zaak: $zaak,

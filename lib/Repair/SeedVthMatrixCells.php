@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Repair;
 
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -39,6 +40,9 @@ use Throwable;
  */
 class SeedVthMatrixCells implements IRepairStep
 {
+
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -93,10 +97,11 @@ class SeedVthMatrixCells implements IRepairStep
 
         // Check if cells already exist (idempotent).
         try {
-            $existing = $objectService->findObjects(
+            $existing = $this->searchObjectsAsArrays(
+                objectService: $objectService,
                 register: $register,
                 schema: 'lhsMatrixCell',
-                params: ['_limit' => 1]
+                filters: ['_limit' => 1]
             );
             if (is_array($existing) === true && count($existing) > 0) {
                 $output->info('LHS matrix cells already seeded. Skipping.');

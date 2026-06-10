@@ -42,7 +42,7 @@ use RuntimeException;
  * In-memory ObjectService fake.
  *
  * Mirrors the subset of the OpenRegister ObjectService API the beschikking
- * pipeline relies on: find (positional id + named register/schema), findObjects
+ * pipeline relies on: find (named id/register/schema), searchObjectsBySlug
  * (positional), and saveObject (positional, assigns ids and persists).
  */
 class FakeObjectService
@@ -76,15 +76,15 @@ class FakeObjectService
     }//end find()
 
     /**
-     * Find objects by simple equality filters.
+     * Search objects by simple equality filters (real searchObjectsBySlug()).
      *
-     * @param string               $register The register id.
-     * @param string               $schema   The schema id.
+     * @param string               $register The register slug.
+     * @param string               $schema   The schema slug.
      * @param array<string, mixed> $filters  Equality filters.
      *
      * @return array<int, array<string, mixed>>
      */
-    public function findObjects(string $register, string $schema, array $filters = []): array
+    public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array
     {
         $rows = array_values($this->store[$schema] ?? []);
 
@@ -100,7 +100,7 @@ class FakeObjectService
                 return true;
             },
         ));
-    }//end findObjects()
+    }//end searchObjectsBySlug()
 
     /**
      * Persist an object, assigning an id when absent.
@@ -253,7 +253,7 @@ class BeschikkingServiceTest extends TestCase
         $this->assertNotEmpty($afterSend['bezwaarTermijnEindDatum']);
 
         // A BezwaarTrigger was created with a 6-week termijn. [V08]
-        $triggers = $this->objects->findObjects('procest', 'bezwaarTrigger', ['beschikkingId' => $id]);
+        $triggers = $this->objects->searchObjectsBySlug('procest', 'bezwaarTrigger', ['beschikkingId' => $id]);
         $this->assertCount(1, $triggers);
         $this->assertTrue($triggers[0]['archiefTriggerActief']);
 
@@ -263,7 +263,7 @@ class BeschikkingServiceTest extends TestCase
         $this->assertNotEmpty($afterArchive['archief']['vernietigingsdatum']);
 
         // Every transition was logged. [V05 logging]
-        $logs = $this->objects->findObjects('procest', 'stateMachineLog', ['beschikkingId' => $id]);
+        $logs = $this->objects->searchObjectsBySlug('procest', 'stateMachineLog', ['beschikkingId' => $id]);
         $this->assertGreaterThanOrEqual(4, count($logs));
     }//end testFullLifecycle()
 

@@ -35,6 +35,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
@@ -47,6 +48,9 @@ use Throwable;
  */
 class AuditTrailService
 {
+
+    use SearchesObjects;
+
     /**
      * Allowed transition action values.
      */
@@ -240,12 +244,11 @@ class AuditTrailService
             throw new RuntimeException('paraferingAuditEntry configuration is missing');
         }
 
-        $results = $objectService->findObjects(
-            $register,
-            $schema,
-            ['voorstel' => $voorstelId],
-            [],
-            5000,
+        $results = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: ['voorstel' => $voorstelId, '_limit' => 5000],
         );
 
         $entries = [];

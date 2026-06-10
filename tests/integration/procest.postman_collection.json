@@ -1227,7 +1227,7 @@
 		},
 		{
 			"name": "4. Complaints (klachtafhandeling)",
-			"description": "KNOWN BUG: every complaint endpoint 500s because lib/Service/ComplaintService.php (and ComplaintController::categories) call the non-existent OCA\\OpenRegister\\Service\\ObjectService::findObjects(); the real OR API is findAll(array $config). These requests are QUARANTINED — they assert the current (broken) 500 behavior so the suite stays honest (no fake pass) and will go RED the moment the controller is fixed to findAll, at which point they should be flipped to happy-path assertions. The auth case below does NOT depend on the bug and is a real contract assertion.",
+			"description": "FIXED: the complaints surface previously 500'd because lib/Service/ComplaintService.php (and the hearing/DSO/feed services + ComplaintController) called the non-existent OCA\\OpenRegister\\Service\\ObjectService::findObjects()/findObject(). They now route through the real OR search API (searchObjects() for numeric register/schema, searchObjectsBySlug() for slugs) and find() for single-object lookups, via the OCA\\Procest\\Service\\Support\\SearchesObjects trait. The previously-quarantined complaints-index request is un-quarantined and asserts a happy-path 200. The auth case is a real contract assertion.",
 			"item": [
 				{
 					"name": "complaints index NO AUTH (authz: 401 — real contract)",
@@ -1288,16 +1288,19 @@
 					}
 				},
 				{
-					"name": "complaints index QUARANTINED (known bug: 500 findObjects)",
+					"name": "complaints index (happy path: 200 — findObjects -> searchObjects fix)",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"// QUARANTINE: documents the pre-existing findObjects() bug (ComplaintService.php:211).",
-									"// Asserts the CURRENT broken behavior so this is not a fake pass. When the app is",
-									"// fixed (findObjects -> findAll), this test goes RED -> convert to happy-path 200.",
-									"pm.test('[KNOWN BUG] complaints index returns 500 (ObjectService::findObjects does not exist)', () => pm.response.to.have.status(500));"
+									"// Previously QUARANTINED: ComplaintService::listComplaints() called the",
+									"// non-existent ObjectService::findObjects(), 500-ing the whole complaints",
+									"// surface. Now routed through the real searchObjects()/searchObjectsBySlug()",
+									"// API, so this returns a 200 with a results array.",
+									"pm.test('complaints index returns 200 (not 500)', () => pm.response.to.have.status(200));",
+									"pm.test('not a 500', () => pm.expect(pm.response.code).to.not.eql(500));",
+									"pm.test('body has a results array', () => { const b = pm.response.json(); pm.expect(b.results).to.be.an('array'); });"
 								],
 								"type": "text/javascript"
 							}

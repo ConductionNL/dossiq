@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -40,6 +41,9 @@ use Throwable;
  */
 class VTHTemplateService
 {
+
+    use SearchesObjects;
+
 
     /**
      * Directory containing VTH template JSON files.
@@ -156,10 +160,11 @@ class VTHTemplateService
         );
 
         // Create or update the case type (idempotent by slug).
-        $existing = $objectService->findObjects(
+        $existing = $this->searchObjectsAsArrays(
+            objectService: $objectService,
             register: $register,
             schema: $caseTypeSchema,
-            params: ['slug' => $template['id'], '_limit' => 1]
+            filters: ['slug' => $template['id'], '_limit' => 1]
         );
 
         $caseTypeObj = null;

@@ -48,15 +48,24 @@ interface WOODecisionObjectServiceStub
     public function saveObject(array $object, array $extend=[], ?string $register=null, ?string $schema=null, ?string $uuid=null);
 
     /**
-     * Find objects matching a filter.
+     * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
      *
-     * @param string $register Register id.
-     * @param string $schema   Schema id.
-     * @param array  $filters  Query filters.
+     * @param string              $registerSlug Register slug.
+     * @param string              $schemaSlug   Schema slug.
+     * @param array<string,mixed> $filters      Query filters.
      *
-     * @return array
+     * @return array<int,mixed>|int
      */
-    public function findObjects(string $register, string $schema, array $filters=[]);
+    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters=[]): array | int;
+
+    /**
+     * Search objects (real ObjectService::searchObjects()).
+     *
+     * @param array<string,mixed> $query Query with @self block and field filters.
+     *
+     * @return array<int,mixed>|int
+     */
+    public function searchObjects(array $query=[]): array | int;
 }//end interface
 
 /**
@@ -174,7 +183,7 @@ class WOODecisionServiceTest extends TestCase
         };
 
         $objectServiceMock = $this->createMock(WOODecisionObjectServiceStub::class);
-        $objectServiceMock->method('findObjects')->willReturn([
+        $objectServiceMock->method('searchObjectsBySlug')->willReturn([
             ['documentRef' => 'doc-001', 'classification' => 'openbaar', 'weigeringsgronden' => []],
             ['documentRef' => 'doc-002', 'classification' => 'niet_openbaar', 'weigeringsgronden' => ['5.1.5']],
         ]);

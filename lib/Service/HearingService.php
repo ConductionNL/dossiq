@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -33,6 +34,9 @@ use Psr\Log\LoggerInterface;
  */
 class HearingService
 {
+
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -130,12 +134,12 @@ class HearingService
             return null;
         }
 
-        $result = $objectService->findObject($register, $schema, $id);
-        if (is_array($result) === true) {
-            return $result;
-        }
-
-        return null;
+        return $this->findObjectAsArray(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            id: $id
+        );
     }//end getHearing()
 
     /**
@@ -161,12 +165,12 @@ class HearingService
             return [];
         }
 
-        $results = $objectService->findObjects($register, $schema, ['complaint' => $complaintId]);
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
+        return $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: ['complaint' => $complaintId]
+        );
     }//end getHearingsForComplaint()
 
     /**

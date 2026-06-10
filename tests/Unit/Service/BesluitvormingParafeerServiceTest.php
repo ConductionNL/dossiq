@@ -31,7 +31,26 @@ use Psr\Log\LoggerInterface;
 interface BvwParafeerObjectServiceStub
 {
     public function saveObject(array $object, array $extend=[], ?string $register=null, ?string $schema=null, ?string $uuid=null): ?object;
-    public function findObjects(string $register, string $schema, array $params): array;
+
+    /**
+     * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
+     *
+     * @param string              $registerSlug Register slug.
+     * @param string              $schemaSlug   Schema slug.
+     * @param array<string,mixed> $filters      Field filters.
+     *
+     * @return array<int,mixed>|int
+     */
+    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters=[]): array | int;
+
+    /**
+     * Search objects (real ObjectService::searchObjects()).
+     *
+     * @param array<string,mixed> $query Query with @self block and field filters.
+     *
+     * @return array<int,mixed>|int
+     */
+    public function searchObjects(array $query=[]): array | int;
 
 }//end interface
 
@@ -118,7 +137,7 @@ class BesluitvormingParafeerServiceTest extends TestCase
 
         $objectServiceMock = $this->createMock(BvwParafeerObjectServiceStub::class);
         $objectServiceMock
-            ->method('findObjects')
+            ->method('searchObjectsBySlug')
             ->willReturnCallback(
                 static function (string $register, string $schema, array $params) use ($voorstelObj): array {
                     return [$voorstelObj];
@@ -153,7 +172,7 @@ class BesluitvormingParafeerServiceTest extends TestCase
     {
         $objectServiceMock = $this->createMock(BvwParafeerObjectServiceStub::class);
         $objectServiceMock
-            ->method('findObjects')
+            ->method('searchObjectsBySlug')
             ->willReturn([]);
 
         $this->settingsService
@@ -210,7 +229,7 @@ class BesluitvormingParafeerServiceTest extends TestCase
 
         $objectServiceMock = $this->createMock(BvwParafeerObjectServiceStub::class);
         $objectServiceMock
-            ->method('findObjects')
+            ->method('searchObjectsBySlug')
             ->willReturnCallback(
                 static function (string $register, string $schema, array $params) use ($voorstelObj, $actieObj): array {
                     if (isset($params['id']) === true && $params['id'] === 'actie-uuid-1') {

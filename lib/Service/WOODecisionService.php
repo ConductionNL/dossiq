@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -38,6 +39,8 @@ use Psr\Log\LoggerInterface;
  */
 class WOODecisionService
 {
+
+    use SearchesObjects;
 
     /**
      * Decision type name for WOO besluiten.
@@ -103,10 +106,11 @@ class WOODecisionService
         // Collect all assessments for the case.
         $assessments = [];
         if (empty($assessmentSchema) === false) {
-            $result = $objectService->findObjects(
-                $register,
-                $assessmentSchema,
-                ['caseRef' => $caseId, '_limit' => 500],
+            $result = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $assessmentSchema,
+                filters: ['caseRef' => $caseId, '_limit' => 500],
             );
 
             if (is_array($result) === true) {

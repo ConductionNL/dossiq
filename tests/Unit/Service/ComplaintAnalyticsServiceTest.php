@@ -92,10 +92,10 @@ class ComplaintAnalyticsServiceTest extends TestCase
             ['categorie' => 'Wachttijd', 'ontvangstdatum'  => '2026-03-10'],
         ];
 
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
-        $objectServiceMock->method('findObjects')->willReturn($complaints);
+        $objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);
 
         $result = $this->service->getFrequencyByDimension('categorie', '2026-01-01', '2026-12-31');
 
@@ -116,10 +116,10 @@ class ComplaintAnalyticsServiceTest extends TestCase
             ['ontvangstdatum' => '2026-02-10'],
         ];
 
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
-        $objectServiceMock->method('findObjects')->willReturn($complaints);
+        $objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);
 
         $result = $this->service->getMonthlyTrend('2026-01-01', '2026-12-31');
 
@@ -134,7 +134,7 @@ class ComplaintAnalyticsServiceTest extends TestCase
      */
     public function testDetectSystemicIssuesFlagsHighIncreaseCategories(): void
     {
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
 
@@ -144,7 +144,7 @@ class ComplaintAnalyticsServiceTest extends TestCase
 
         $callCount = 0;
         $objectServiceMock
-            ->method('findObjects')
+            ->method('searchObjectsBySlug')
             ->willReturnCallback(
                 function () use (&$callCount, $currentComplaints, $prevComplaints) {
                     $callCount++;
@@ -166,7 +166,7 @@ class ComplaintAnalyticsServiceTest extends TestCase
      */
     public function testDetectSystemicIssuesDoesNotFlagBelowThreshold(): void
     {
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
 
@@ -176,7 +176,7 @@ class ComplaintAnalyticsServiceTest extends TestCase
 
         $callCount = 0;
         $objectServiceMock
-            ->method('findObjects')
+            ->method('searchObjectsBySlug')
             ->willReturnCallback(
                 function () use (&$callCount, $currentComplaints, $prevComplaints) {
                     $callCount++;
@@ -195,7 +195,7 @@ class ComplaintAnalyticsServiceTest extends TestCase
      */
     public function testCheckEmployeeThresholdAlertsReturnsAlertsAboveThreshold(): void
     {
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
 
@@ -205,7 +205,7 @@ class ComplaintAnalyticsServiceTest extends TestCase
             ['betrokkenMedewerker' => 'medewerker-A', 'categorie' => 'Wachttijd', 'ontvangstdatum'  => '2026-03-10'],
         ];
 
-        $objectServiceMock->method('findObjects')->willReturn($complaints);
+        $objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);
 
         $alerts = $this->service->checkEmployeeThresholdAlerts();
 
@@ -224,7 +224,7 @@ class ComplaintAnalyticsServiceTest extends TestCase
      */
     public function testCheckEmployeeThresholdAlertsReturnsEmptyBelowThreshold(): void
     {
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
 
@@ -233,7 +233,7 @@ class ComplaintAnalyticsServiceTest extends TestCase
             ['betrokkenMedewerker' => 'medewerker-B', 'categorie' => 'Wachttijd', 'ontvangstdatum' => '2026-02-10'],
         ];
 
-        $objectServiceMock->method('findObjects')->willReturn($complaints);
+        $objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);
 
         $alerts = $this->service->checkEmployeeThresholdAlerts();
         $this->assertEmpty($alerts);
@@ -246,7 +246,7 @@ class ComplaintAnalyticsServiceTest extends TestCase
      */
     public function testGetKpiSummaryReturnsExpectedStructure(): void
     {
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['findObjects', 'findObject', 'saveObject'])->getMock();
+        $objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
         $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
         $this->settingsService->method('getConfigValue')->willReturn('procest');
 
@@ -255,7 +255,7 @@ class ComplaintAnalyticsServiceTest extends TestCase
             ['status' => 'in_behandeling', 'ontvangstdatum' => '2026-03-15'],
         ];
 
-        $objectServiceMock->method('findObjects')->willReturn($complaints);
+        $objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);
 
         $kpi = $this->service->getKpiSummary('2026-03-01', '2026-03-31');
 

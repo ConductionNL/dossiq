@@ -26,6 +26,7 @@ namespace OCA\Procest\Cron;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -44,6 +45,9 @@ use Psr\Log\LoggerInterface;
  */
 class OriDataQualityCheck extends TimedJob
 {
+
+    use SearchesObjects;
+
     /**
      * Constructor for OriDataQualityCheck.
      *
@@ -119,10 +123,11 @@ class OriDataQualityCheck extends TimedJob
         $issues = [];
 
         try {
-            $vergaderingen = $objectService->findObjects(
+            $vergaderingen = $this->searchObjectsAsArrays(
+                objectService: $objectService,
                 register: 'ori',
                 schema: 'vergadering',
-                params: ['_limit' => 500]
+                filters: ['_limit' => 500]
             );
         } catch (\Throwable $e) {
             $this->logger->warning(
@@ -162,10 +167,11 @@ class OriDataQualityCheck extends TimedJob
         $issues = [];
 
         try {
-            $agendapunten = $objectService->findObjects(
+            $agendapunten = $this->searchObjectsAsArrays(
+                objectService: $objectService,
                 register: 'ori',
                 schema: 'agendapunt',
-                params: ['_limit' => 1000]
+                filters: ['_limit' => 1000]
             );
         } catch (\Throwable $e) {
             $this->logger->warning(
@@ -184,7 +190,8 @@ class OriDataQualityCheck extends TimedJob
             }
 
             try {
-                $vergadering = $objectService->findObject(
+                $vergadering = $this->findObjectAsArray(
+                    objectService: $objectService,
                     register: 'ori',
                     schema: 'vergadering',
                     id: $vergaderingRef
@@ -227,10 +234,11 @@ class OriDataQualityCheck extends TimedJob
         $issues = [];
 
         try {
-            $raadsleden = $objectService->findObjects(
+            $raadsleden = $this->searchObjectsAsArrays(
+                objectService: $objectService,
                 register: 'ori',
                 schema: 'raadslid',
-                params: ['_limit' => 500]
+                filters: ['_limit' => 500]
             );
         } catch (\Throwable $e) {
             return $issues;
@@ -245,7 +253,8 @@ class OriDataQualityCheck extends TimedJob
             }
 
             try {
-                $fractie = $objectService->findObject(
+                $fractie = $this->findObjectAsArray(
+                    objectService: $objectService,
                     register: 'ori',
                     schema: 'fractie',
                     id: $fractieRef
@@ -281,15 +290,17 @@ class OriDataQualityCheck extends TimedJob
         $issues = [];
 
         try {
-            $documenten   = $objectService->findObjects(
+            $documenten   = $this->searchObjectsAsArrays(
+                objectService: $objectService,
                 register: 'ori',
                 schema: 'raadsdocument',
-                params: ['_limit' => 500]
+                filters: ['_limit' => 500]
             );
-            $agendapunten = $objectService->findObjects(
+            $agendapunten = $this->searchObjectsAsArrays(
+                objectService: $objectService,
                 register: 'ori',
                 schema: 'agendapunt',
-                params: ['_limit' => 1000]
+                filters: ['_limit' => 1000]
             );
         } catch (\Throwable $e) {
             return $issues;

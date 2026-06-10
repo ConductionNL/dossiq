@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -38,6 +39,8 @@ use Psr\Log\LoggerInterface;
  */
 class WOODocumentAssessmentService
 {
+
+    use SearchesObjects;
 
     /**
      * Valid classification values.
@@ -140,10 +143,11 @@ class WOODocumentAssessmentService
             $assessment['assessedAt'] = date('Y-m-d\TH:i:s');
 
             // Find existing assessment for this document in this case.
-            $existing = $objectService->findObjects(
-                $register,
-                $assessmentSchema,
-                [
+            $existing = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $assessmentSchema,
+                filters: [
                     'caseRef'     => $caseId,
                     'documentRef' => $assessment['documentRef'],
                     '_limit'      => 1,
@@ -251,10 +255,11 @@ class WOODocumentAssessmentService
         // Collect all documents for this case.
         $allDocs = [];
         if (empty($docSchema) === false) {
-            $docs = $objectService->findObjects(
-                $register,
-                $docSchema,
-                ['case' => $caseId, '_limit' => 500],
+            $docs = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $docSchema,
+                filters: ['case' => $caseId, '_limit' => 500],
             );
 
             if (is_array($docs) === true) {
@@ -274,10 +279,11 @@ class WOODocumentAssessmentService
         // Collect all assessed document IDs.
         $assessedDocIds = [];
         if (empty($assessmentSchema) === false) {
-            $assessed = $objectService->findObjects(
-                $register,
-                $assessmentSchema,
-                ['caseRef' => $caseId, '_limit' => 500],
+            $assessed = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $assessmentSchema,
+                filters: ['caseRef' => $caseId, '_limit' => 500],
             );
 
             if (is_array($assessed) === true) {

@@ -26,6 +26,7 @@ namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Event\VergunningStatusChangedEvent;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use OCP\IUser;
@@ -43,6 +44,8 @@ use Psr\Log\LoggerInterface;
  */
 class DsoCaseService
 {
+
+    use SearchesObjects;
 
     /**
      * Fixed Dutch national holidays as [month, day] pairs.
@@ -114,7 +117,8 @@ class DsoCaseService
             default: ''
         );
 
-        $vergunningaanvraag = $objectService->findObject(
+        $vergunningaanvraag = $this->findObjectAsArray(
+            objectService: $objectService,
             register: 'dso',
             schema: $vergunningaanvraagSchema,
             id: $vergunningaanvraagId
@@ -220,7 +224,8 @@ class DsoCaseService
             default: ''
         );
 
-        $zaak = $objectService->findObject(
+        $zaak = $this->findObjectAsArray(
+            objectService: $objectService,
             register: $register,
             schema: $caseSchema,
             id: $zaakId
@@ -516,7 +521,8 @@ class DsoCaseService
                 return;
             }
 
-            $aanvraag = $objectService->findObject(
+            $aanvraag = $this->findObjectAsArray(
+                objectService: $objectService,
                 register: 'dso',
                 schema: $vergunningaanvraagSchema,
                 id: $vergunningaanvraagRef

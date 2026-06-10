@@ -31,6 +31,7 @@ use OCA\Procest\Service\BeschikkingGenerationService;
 use OCA\Procest\Service\DsoCaseService;
 use OCA\Procest\Service\SamenwerkverzoekService;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -48,6 +49,9 @@ use Psr\Log\LoggerInterface;
  */
 class DsoController extends Controller
 {
+
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -137,17 +141,12 @@ class DsoController extends Controller
                 return new JSONResponse(['error' => 'Case register not configured'], Http::STATUS_SERVICE_UNAVAILABLE);
             }
 
-            $zaken = $objectService->findObjects(
+            $zakenList = $this->searchObjectsAsArrays(
+                objectService: $objectService,
                 register: $register,
                 schema: $caseSchema,
-                params: $params
+                filters: $params
             );
-
-            if (is_array($zaken) === true) {
-                $zakenList = $zaken;
-            } else {
-                $zakenList = [];
-            }
 
             $filtered = $this->applyInMemoryFilters(
                 zaken: $zakenList,
@@ -526,7 +525,8 @@ class DsoController extends Controller
                 return null;
             }
 
-            return $objectService->findObject(
+            return $this->findObjectAsArray(
+                objectService: $objectService,
                 register: $register,
                 schema: $caseSchema,
                 id: $caseId
@@ -561,7 +561,8 @@ class DsoController extends Controller
                 $samenwerkverzoekSchema = 'samenwerkverzoek';
             }
 
-            return $objectService->findObject(
+            return $this->findObjectAsArray(
+                objectService: $objectService,
                 register: $register,
                 schema: $samenwerkverzoekSchema,
                 id: $samenwerkId

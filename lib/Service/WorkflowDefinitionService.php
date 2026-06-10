@@ -54,6 +54,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -64,6 +65,8 @@ use Psr\Log\LoggerInterface;
  */
 class WorkflowDefinitionService
 {
+
+    use SearchesObjects;
 
     /**
      * Lifecycle states. Mirrors the enum on the workflowTemplate schema.
@@ -566,22 +569,17 @@ class WorkflowDefinitionService
         }
 
         try {
-            $results = $objectService->findObjects(
-                $register,
-                $schema,
-                ['caseType' => $caseTypeId],
-                [],
-                500,
+            $results = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['caseType' => $caseTypeId, '_limit' => 500],
             );
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest: failed to list workflow definitions for caseType',
                 ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
             );
-            return [];
-        }
-
-        if (is_array($results) === false) {
             return [];
         }
 
@@ -711,12 +709,11 @@ class WorkflowDefinitionService
         }
 
         try {
-            $results = $objectService->findObjects(
-                $register,
-                $caseSchema,
-                ['caseType' => $caseTypeId],
-                [],
-                1,
+            $results = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $caseSchema,
+                filters: ['caseType' => $caseTypeId, '_limit' => 1],
             );
         } catch (\Throwable $e) {
             $this->logger->error(
@@ -790,22 +787,17 @@ class WorkflowDefinitionService
         }
 
         try {
-            $rows = $objectService->findObjects(
-                $register,
-                $statusSchema,
-                ['caseType' => $caseTypeId],
-                [],
-                500,
+            $rows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $statusSchema,
+                filters: ['caseType' => $caseTypeId, '_limit' => 500],
             );
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest: failed to list statusTypes for caseType',
                 ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
             );
-            return [];
-        }
-
-        if (is_array($rows) === false) {
             return [];
         }
 

@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -41,6 +42,9 @@ use Throwable;
  */
 class InspectionChecklistService
 {
+
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -80,16 +84,12 @@ class InspectionChecklistService
         }
 
         try {
-            $results = $objectService->findObjects(
+            return $this->searchObjectsAsArrays(
+                objectService: $objectService,
                 register: $register,
                 schema: $schema,
-                params: $params
+                filters: $params
             );
-            if (is_array($results) === true) {
-                return $results;
-            }
-
-            return [];
         } catch (Throwable $e) {
             $this->logger->warning(
                 'Failed to list inspection checklists: '.$e->getMessage(),
@@ -294,16 +294,12 @@ class InspectionChecklistService
         $register = $this->settingsService->getConfigValue('register');
 
         try {
-            $results = $objectService->findObjects(
+            return $this->searchObjectsAsArrays(
+                objectService: $objectService,
                 register: $register,
                 schema: 'inspectionResult',
-                params: ['caseRef' => $caseId, '_limit' => 50, '_order' => 'completedAt']
+                filters: ['caseRef' => $caseId, '_limit' => 50, '_order' => 'completedAt']
             );
-            if (is_array($results) === true) {
-                return $results;
-            }
-
-            return [];
         } catch (Throwable $e) {
             $this->logger->warning(
                 'Failed to get inspection results for case '.$caseId.': '.$e->getMessage(),

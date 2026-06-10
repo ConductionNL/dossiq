@@ -28,6 +28,7 @@ use OCA\Procest\Service\ComplaintService;
 use OCA\Procest\Service\DispositionService;
 use OCA\Procest\Service\HearingService;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -43,6 +44,9 @@ use OCP\IUserSession;
  */
 class ComplaintController extends Controller
 {
+
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -654,11 +658,12 @@ class ComplaintController extends Controller
             return new JSONResponse(['results' => []]);
         }
 
-        $results = $objectService->findObjects($register, $schema, ['_limit' => 200]);
-        $list    = [];
-        if (is_array($results) === true) {
-            $list = $results;
-        }
+        $list = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: ['_limit' => 200]
+        );
 
         return new JSONResponse(['results' => $list]);
     }//end categories()

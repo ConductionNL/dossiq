@@ -42,15 +42,14 @@ use Psr\Log\LoggerInterface;
 interface DsoCaseObjectServiceStub
 {
     /**
-     * Find a single object by ID.
+     * Find a single object by ID (real ObjectService::find()).
      *
-     * @param string $register Register slug
-     * @param string $schema   Schema slug
-     * @param string $id       Object UUID
+     * @param int|string $id     Object UUID
+     * @param mixed      ...$args Remaining find() args (extend/files/register/schema).
      *
-     * @return array<string,mixed>|null
+     * @return mixed
      */
-    public function findObject(string $register, string $schema, string $id): ?array;
+    public function find(int | string $id, ...$args): mixed;
 
     /**
      * Save or update an object.
@@ -301,7 +300,7 @@ class DsoCaseServiceTest extends TestCase
 
         $objectServiceMock
             ->expects($this->once())
-            ->method('findObject')
+            ->method('find')
             ->willReturn($aanvraag);
 
         $savedZaak = ['id' => 'zaak-uuid-1', 'status' => 'ingediend'];

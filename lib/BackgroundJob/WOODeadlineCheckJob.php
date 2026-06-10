@@ -27,6 +27,7 @@ namespace OCA\Procest\BackgroundJob;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCA\Procest\Service\WOODeadlineService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -40,6 +41,9 @@ use Psr\Log\LoggerInterface;
  */
 class WOODeadlineCheckJob extends TimedJob
 {
+
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -94,19 +98,16 @@ class WOODeadlineCheckJob extends TimedJob
         }
 
         // Find active WOO cases.
-        $cases = $objectService->findObjects(
-            $register,
-            $caseSchema,
-            [
+        $cases = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $caseSchema,
+            filters: [
                 'caseType.title' => $caseTypeTitle,
                 'status'         => ['open', 'in_behandeling'],
                 '_limit'         => 500,
             ],
         );
-
-        if (is_array($cases) === false) {
-            return;
-        }
 
         $warned = 0;
         foreach ($cases as $case) {

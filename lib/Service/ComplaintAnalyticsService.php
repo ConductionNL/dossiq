@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -32,6 +33,9 @@ use Psr\Log\LoggerInterface;
  */
 class ComplaintAnalyticsService
 {
+
+    use SearchesObjects;
+
 
     /**
      * Minimum complaints per employee slice before employee data is shown (privacy).
@@ -364,21 +368,16 @@ class ComplaintAnalyticsService
             return [];
         }
 
-        $results = $objectService->findObjects(
-            $register,
-            $schema,
-            [
+        return $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: [
                 'ontvangstdatum>=' => $dateFrom,
                 'ontvangstdatum<=' => $dateTo,
                 '_limit'           => 10000,
             ]
         );
-
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
     }//end fetchComplaintsInRange()
 
     /**

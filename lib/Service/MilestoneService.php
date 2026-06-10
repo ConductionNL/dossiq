@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -35,6 +36,9 @@ use Psr\Log\LoggerInterface;
  */
 class MilestoneService
 {
+
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -72,19 +76,12 @@ class MilestoneService
             return [];
         }
 
-        $results = $objectService->findObjects(
-            $register,
-            $schema,
-            ['caseType' => $caseTypeId],
-            ['order' => 'asc'],
-            100,
+        return $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: ['caseType' => $caseTypeId, '_limit' => 100],
         );
-
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
     }//end getMilestones()
 
     /**
@@ -239,10 +236,11 @@ class MilestoneService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('milestone_record_schema');
 
-        $records = $objectService->findObjects(
-            $register,
-            $schema,
-            [
+        $records = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: [
                 'case'                => $caseId,
                 'milestoneDefinition' => $milestoneDefinitionId,
             ],
@@ -315,18 +313,11 @@ class MilestoneService
             return [];
         }
 
-        $results = $objectService->findObjects(
-            $register,
-            $schema,
-            ['case' => $caseId],
-            [],
-            100,
+        return $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: ['case' => $caseId, '_limit' => 100],
         );
-
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
     }//end getMilestoneRecords()
 }//end class

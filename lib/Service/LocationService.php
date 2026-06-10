@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -53,6 +54,8 @@ use Throwable;
  */
 class LocationService
 {
+
+    use SearchesObjects;
 
     /**
      * Valid `source` enum values mirrored from procest_register.json.
@@ -443,12 +446,11 @@ class LocationService
         }
 
         try {
-            $results = $objectService->findObjects(
-                $register,
-                $schema,
-                ['case' => $caseId],
-                [],
-                500,
+            return $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['case' => $caseId, '_limit' => 500],
             );
         } catch (Throwable $e) {
             $this->logger->error(
@@ -457,11 +459,5 @@ class LocationService
             );
             return [];
         }
-
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
     }//end listForCase()
 }//end class

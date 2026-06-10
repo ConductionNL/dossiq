@@ -37,15 +37,24 @@ use Psr\Log\LoggerInterface;
 interface FeedObjectServiceStub
 {
     /**
-     * Find objects matching the given params.
+     * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
      *
-     * @param string $register The register slug
-     * @param string $schema   The schema slug
-     * @param array  $params   Query parameters
+     * @param string              $registerSlug The register slug
+     * @param string              $schemaSlug   The schema slug
+     * @param array<string,mixed> $filters      Query parameters
      *
-     * @return array
+     * @return array<int,mixed>|int
      */
-    public function findObjects(string $register, string $schema, array $params): array;
+    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters=[]): array | int;
+
+    /**
+     * Search objects (real ObjectService::searchObjects()).
+     *
+     * @param array<string,mixed> $query Query with @self block and field filters.
+     *
+     * @return array<int,mixed>|int
+     */
+    public function searchObjects(array $query=[]): array | int;
 }//end interface
 
 /**
@@ -161,7 +170,7 @@ class RaadsinformatieFeedControllerTest extends TestCase
     public function testFeedResponseContainsAtomXml(): void
     {
         $objectService = $this->createMock(FeedObjectServiceStub::class);
-        $objectService->method('findObjects')->willReturn([
+        $objectService->method('searchObjectsBySlug')->willReturn([
             [
                 '@self'      => ['slug' => 'raadsvergadering-2026-06-15'],
                 'naam'       => 'Raadsvergadering 15 juni 2026',

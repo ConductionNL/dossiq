@@ -28,6 +28,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -53,6 +54,8 @@ use Psr\Log\LoggerInterface;
  */
 class RaadsinformatieFeedController extends Controller
 {
+
+    use SearchesObjects;
 
     /**
      * Maximum number of entries returned per feed.
@@ -190,10 +193,11 @@ class RaadsinformatieFeedController extends Controller
         }
 
         try {
-            return $objectService->findObjects(
+            return $this->searchObjectsAsArrays(
+                objectService: $objectService,
                 register: 'ori',
                 schema: $schema,
-                params: $params
+                filters: $params
             );
         } catch (\Throwable $e) {
             $this->logger->warning(

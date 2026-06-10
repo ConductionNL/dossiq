@@ -33,6 +33,7 @@ use DateTimeImmutable;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\BeschikkingService;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -47,6 +48,9 @@ use Psr\Log\LoggerInterface;
  */
 class BezwaarTermijnJob extends TimedJob
 {
+
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -94,10 +98,11 @@ class BezwaarTermijnJob extends TimedJob
         }
 
         try {
-            $triggers = $objectService->findObjects(
-                $register,
-                $schema,
-                ['archiefTriggerActief' => true],
+            $triggers = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['archiefTriggerActief' => true],
             );
         } catch (\Throwable $e) {
             $this->logger->error('BezwaarTermijnJob: query failed', ['exception' => $e->getMessage()]);

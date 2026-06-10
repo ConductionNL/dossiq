@@ -42,15 +42,24 @@ use Psr\Log\LoggerInterface;
 interface DsoDeadlineObjectServiceStub
 {
     /**
-     * Find objects matching the given parameters.
+     * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
      *
-     * @param string              $register Register slug
-     * @param string              $schema   Schema slug
-     * @param array<string,mixed> $params   Query parameters
+     * @param string              $registerSlug Register slug
+     * @param string              $schemaSlug   Schema slug
+     * @param array<string,mixed> $filters      Query parameters
      *
-     * @return array<int,array<string,mixed>>
+     * @return array<int,mixed>|int
      */
-    public function findObjects(string $register, string $schema, array $params): array;
+    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters=[]): array | int;
+
+    /**
+     * Search objects (real ObjectService::searchObjects()).
+     *
+     * @param array<string,mixed> $query Query with @self block and field filters.
+     *
+     * @return array<int,mixed>|int
+     */
+    public function searchObjects(array $query=[]): array | int;
 
     /**
      * Save or update an object.
@@ -212,7 +221,7 @@ class DsoDeadlineJobTest extends TestCase
 
         $objectServiceMock
             ->expects($this->once())
-            ->method('findObjects')
+            ->method('searchObjectsBySlug')
             ->willReturn($zaken);
 
         // saveObject throws for this zaak — the job must swallow it.

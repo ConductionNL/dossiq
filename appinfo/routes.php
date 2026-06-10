@@ -424,12 +424,17 @@ return [
         // ── Complaints (klachtafhandeling) — Awb chapter 9 ─────────────────
         ['name' => 'complaint#index',              'url' => '/api/complaints',                             'verb' => 'GET'],
         ['name' => 'complaint#create',             'url' => '/api/complaints',                             'verb' => 'POST'],
+        // Literal GET sub-paths MUST be registered before the `/{id}` wildcard,
+        // otherwise `complaint#show` captures `/complaints/deadline-alerts`,
+        // `/complaints/analytics` and `/complaints/kpi` as an `{id}` lookup.
+        ['name' => 'complaint#deadlineAlerts',     'url' => '/api/complaints/deadline-alerts',             'verb' => 'GET'],
+        ['name' => 'complaint#analytics',          'url' => '/api/complaints/analytics',                  'verb' => 'GET'],
+        ['name' => 'complaint#kpi',                'url' => '/api/complaints/kpi',                        'verb' => 'GET'],
         ['name' => 'complaint#show',               'url' => '/api/complaints/{id}',                        'verb' => 'GET'],
         ['name' => 'complaint#update',             'url' => '/api/complaints/{id}',                        'verb' => 'PUT'],
         ['name' => 'complaint#transition',         'url' => '/api/complaints/{id}/transition',             'verb' => 'POST'],
         ['name' => 'complaint#verdaging',          'url' => '/api/complaints/{id}/verdaging',              'verb' => 'POST'],
         ['name' => 'complaint#escalate',           'url' => '/api/complaints/{id}/escalate',               'verb' => 'POST'],
-        ['name' => 'complaint#deadlineAlerts',     'url' => '/api/complaints/deadline-alerts',             'verb' => 'GET'],
         // Hearings.
         ['name' => 'complaint#hearings',           'url' => '/api/complaints/{id}/hearings',               'verb' => 'GET'],
         ['name' => 'complaint#scheduleHearing',    'url' => '/api/complaints/{id}/hearings',               'verb' => 'POST'],
@@ -439,9 +444,6 @@ return [
         ['name' => 'complaint#submitDisposition',  'url' => '/api/complaints/{id}/disposition',            'verb' => 'POST'],
         ['name' => 'complaint#approveDisposition', 'url' => '/api/complaints/{id}/disposition/approve',   'verb' => 'POST'],
         ['name' => 'complaint#generateLetter',     'url' => '/api/complaints/{id}/disposition/letter',    'verb' => 'POST'],
-        // Analytics.
-        ['name' => 'complaint#analytics',          'url' => '/api/complaints/analytics',                  'verb' => 'GET'],
-        ['name' => 'complaint#kpi',                'url' => '/api/complaints/kpi',                        'verb' => 'GET'],
         // Categories (admin).
         ['name' => 'complaint#categories',         'url' => '/api/complaint-categories',                  'verb' => 'GET'],
         ['name' => 'complaint#createCategory',     'url' => '/api/complaint-categories',                  'verb' => 'POST'],

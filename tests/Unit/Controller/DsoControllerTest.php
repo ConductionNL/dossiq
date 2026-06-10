@@ -43,15 +43,14 @@ use Psr\Log\LoggerInterface;
 interface DsoControllerObjectServiceStub
 {
     /**
-     * Find a single object by ID.
+     * Find a single object by ID (real ObjectService::find()).
      *
-     * @param string $register Register slug
-     * @param string $schema   Schema slug
-     * @param string $id       Object UUID
+     * @param int|string $id     Object UUID
+     * @param mixed      ...$args Remaining find() args (extend/files/register/schema).
      *
-     * @return array<string,mixed>|null
+     * @return mixed
      */
-    public function findObject(string $register, string $schema, string $id): ?array;
+    public function find(int | string $id, ...$args): mixed;
 
     /**
      * Save or update an object.
@@ -517,7 +516,7 @@ class DsoControllerTest extends TestCase
         $this->userSession->method('getUser')->willReturn($userMock);
 
         $mockObjectService = $this->createMock(DsoControllerObjectServiceStub::class);
-        $mockObjectService->method('findObject')
+        $mockObjectService->method('find')
             ->willReturn(['id' => 'case-123', 'assigneeUserId' => 'other_user']);
 
         $settingsServiceMock = $this->createMock(SettingsService::class);

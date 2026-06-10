@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\EventDispatcher\GenericEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -43,6 +44,9 @@ use Psr\Log\LoggerInterface;
  */
 class SamenwerkverzoekService
 {
+
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -93,7 +97,8 @@ class SamenwerkverzoekService
             default: ''
         );
 
-        $zaak = $objectService->findObject(
+        $zaak = $this->findObjectAsArray(
+            objectService: $objectService,
             register: $register,
             schema: $caseSchema,
             id: $zaakId
@@ -182,7 +187,8 @@ class SamenwerkverzoekService
             default: 'samenwerkverzoek'
         );
 
-        $verzoek = $objectService->findObject(
+        $verzoek = $this->findObjectAsArray(
+            objectService: $objectService,
             register: $register,
             schema: $samenwerkverzoekSchema,
             id: $samenwerkId

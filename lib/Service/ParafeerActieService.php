@@ -31,6 +31,7 @@ namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Event\ParafeerTransitionEvent;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -54,6 +55,9 @@ use Psr\Log\LoggerInterface;
  */
 class ParafeerActieService
 {
+
+    use SearchesObjects;
+
     /**
      * Action: actor advised on an advies step.
      */
@@ -406,12 +410,11 @@ class ParafeerActieService
                 return [];
             }
 
-            $results = $objectService->findObjects(
-                $register,
-                $actieSchema,
-                ['voorstel' => $voorstelId],
-                [],
-                500,
+            $results = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $actieSchema,
+                filters: ['voorstel' => $voorstelId, '_limit' => 500],
             );
 
             $rows = [];

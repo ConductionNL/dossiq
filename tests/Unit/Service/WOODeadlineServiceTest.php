@@ -29,6 +29,36 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * Typed stub for the OpenRegister ObjectService.
+ *
+ * WOODeadlineService resolves a single case via ObjectService::find(), which
+ * is called with named arguments (id:/register:/schema:). A bare addMethods()
+ * magic mock rejects named arguments with "Unknown named parameter"; this typed
+ * interface lets PHPUnit generate a mock whose signature accepts them.
+ */
+interface WOODeadlineObjectServiceStub
+{
+    /**
+     * Find a single object by ID (real ObjectService::find()).
+     *
+     * @param int|string $id     Object UUID
+     * @param mixed      ...$args Remaining find() args (extend/files/register/schema).
+     *
+     * @return mixed
+     */
+    public function find(int | string $id, ...$args): mixed;
+
+    /**
+     * Save or update an object.
+     *
+     * @param mixed ...$args saveObject() arguments.
+     *
+     * @return mixed
+     */
+    public function saveObject(...$args): mixed;
+}//end interface
+
+/**
  * Unit tests for WOODeadlineService.
  *
  * @covers \OCA\Procest\Service\WOODeadlineService
@@ -111,11 +141,9 @@ class WOODeadlineServiceTest extends TestCase
      */
     public function testExtendDeadlineThrowsOnSecondExtension(): void
     {
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['findObject'])
-            ->getMock();
+        $objectServiceMock = $this->createMock(WOODeadlineObjectServiceStub::class);
         // Return a case that already has deadlineVerlengd = 1.
-        $objectServiceMock->method('findObject')->willReturn([
+        $objectServiceMock->method('find')->willReturn([
             'id'                 => 'case-uuid-001',
             'expectedResolution' => '2026-05-29',
             'deadlineVerlengd'   => 1,
@@ -168,10 +196,8 @@ class WOODeadlineServiceTest extends TestCase
      */
     public function testCheckAndWarnReturnsFalseForDistantDeadline(): void
     {
-        $objectServiceMock = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['findObject'])
-            ->getMock();
-        $objectServiceMock->method('findObject')->willReturn([
+        $objectServiceMock = $this->createMock(WOODeadlineObjectServiceStub::class);
+        $objectServiceMock->method('find')->willReturn([
             'id'                 => 'case-uuid-001',
             'expectedResolution' => '2099-12-31',
         ]);

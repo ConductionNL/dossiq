@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -33,6 +34,9 @@ use Psr\Log\LoggerInterface;
  */
 class ComplaintService
 {
+
+    use SearchesObjects;
+
 
     /**
      * Valid complaint statuses in lifecycle order.
@@ -175,12 +179,12 @@ class ComplaintService
             return null;
         }
 
-        $result = $objectService->findObject($register, $schema, $id);
-        if (is_array($result) === true) {
-            return $result;
-        }
-
-        return null;
+        return $this->findObjectAsArray(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            id: $id
+        );
     }//end getComplaint()
 
     /**
@@ -208,12 +212,12 @@ class ComplaintService
 
         $params = array_merge(['_limit' => 100, '_offset' => 0], $filters);
 
-        $results = $objectService->findObjects($register, $schema, $params);
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
+        return $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: $params
+        );
     }//end listComplaints()
 
     /**
@@ -495,16 +499,14 @@ class ComplaintService
         $yearStart = $year.'-01-01';
         $yearEnd   = $year.'-12-31';
 
-        $existing = $objectService->findObjects(
-            $register,
-            $schema,
-            ['ontvangstdatum>=' => $yearStart, 'ontvangstdatum<=' => $yearEnd, '_limit' => 10000]
+        $existing = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: ['ontvangstdatum>=' => $yearStart, 'ontvangstdatum<=' => $yearEnd, '_limit' => 10000]
         );
 
-        $count = 0;
-        if (is_array($existing) === true) {
-            $count = count($existing);
-        }
+        $count = count($existing);
 
         return 'KL-'.$year.'-'.str_pad((string) ($count + 1), 4, '0', STR_PAD_LEFT);
     }//end generateKlachtnummer()

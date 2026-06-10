@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 
@@ -37,6 +38,8 @@ use Psr\Log\LoggerInterface;
  */
 class WOODeadlineService
 {
+
+    use SearchesObjects;
 
     /**
      * WOO initial processing period in days (WOO Art. 4.4).
@@ -137,7 +140,12 @@ class WOODeadlineService
             throw new \RuntimeException('Case schema not configured');
         }
 
-        $case = $objectService->findObject($register, $caseSchema, $caseId);
+        $case = $this->findObjectAsArray(
+            objectService: $objectService,
+            register: $register,
+            schema: $caseSchema,
+            id: $caseId
+        );
         if ($case === null) {
             throw new \RuntimeException('Case not found: '.$caseId);
         }
@@ -216,7 +224,12 @@ class WOODeadlineService
             return ['warned' => false, 'reason' => 'Case schema not configured'];
         }
 
-        $case = $objectService->findObject($register, $caseSchema, $caseId);
+        $case = $this->findObjectAsArray(
+            objectService: $objectService,
+            register: $register,
+            schema: $caseSchema,
+            id: $caseId
+        );
         if ($case === null) {
             return ['warned' => false, 'reason' => 'Case not found'];
         }

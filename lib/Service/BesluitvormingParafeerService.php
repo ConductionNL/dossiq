@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -33,6 +34,9 @@ use Psr\Log\LoggerInterface;
  */
 class BesluitvormingParafeerService
 {
+
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -75,10 +79,11 @@ class BesluitvormingParafeerService
         }
 
         // Load the voorstel.
-        $voorstelResults = $objectService->findObjects(
-            $register,
-            $voorstelSchema,
-            ['id' => $voorstelId]
+        $voorstelResults = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $voorstelSchema,
+            filters: ['id' => $voorstelId]
         );
 
         if (empty($voorstelResults) === true) {
@@ -92,10 +97,11 @@ class BesluitvormingParafeerService
         $routeResults = [];
         if (empty($routeSchema) === false) {
             $caseTypeId   = $voorstel['caseType'] ?? null;
-            $routeResults = $objectService->findObjects(
-                $register,
-                $routeSchema,
-                ['caseType' => $caseTypeId, 'isDefault' => true]
+            $routeResults = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $routeSchema,
+                filters: ['caseType' => $caseTypeId, 'isDefault' => true]
             );
         }
 
@@ -154,10 +160,11 @@ class BesluitvormingParafeerService
         }
 
         // Load voorstel.
-        $voorstelResults = $objectService->findObjects(
-            $register,
-            $voorstelSchema,
-            ['id' => $voorstelId]
+        $voorstelResults = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $voorstelSchema,
+            filters: ['id' => $voorstelId]
         );
 
         if (empty($voorstelResults) === true) {
@@ -170,10 +177,11 @@ class BesluitvormingParafeerService
         $actie  = [];
         $action = 'goedgekeurd';
         if (empty($actieSchema) === false) {
-            $actieResults = $objectService->findObjects(
-                $register,
-                $actieSchema,
-                ['id' => $parafeeractieId]
+            $actieResults = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $actieSchema,
+                filters: ['id' => $parafeeractieId]
             );
 
             if (empty($actieResults) === false) {
@@ -266,10 +274,11 @@ class BesluitvormingParafeerService
         }
 
         try {
-            $acties = $objectService->findObjects(
-                $register,
-                $actieSchema,
-                ['voorstel' => $voorstelId]
+            $acties = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $actieSchema,
+                filters: ['voorstel' => $voorstelId]
             );
 
             if (empty($acties) === true) {

@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -40,6 +41,9 @@ use Psr\Log\LoggerInterface;
  */
 class WfsExportService
 {
+
+    use SearchesObjects;
+
 
     /**
      * Default maximum number of features to return.
@@ -180,16 +184,17 @@ class WfsExportService
         $params = ['_limit' => $limit];
 
         try {
-            $raw = $objectService->findObjects($register, $locationSchema, $params);
+            $raw = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $locationSchema,
+                filters: $params
+            );
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest WfsExportService: failed to fetch locations: '.$e->getMessage(),
                 ['app' => Application::APP_ID]
             );
-            return [];
-        }
-
-        if (is_array($raw) === false) {
             return [];
         }
 
