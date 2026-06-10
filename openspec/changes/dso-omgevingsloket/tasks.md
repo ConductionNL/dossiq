@@ -30,13 +30,13 @@
 
 ## Verification Tasks
 
-- [ ] **V01**: New `samenwerkverzoek` schema and zaak extension fields valid JSON; config keys populated after install
-- [ ] **V02**: When OpenConnector writes a new vergunningaanvraag, listener creates a Procest zaak with correct `procedureType` and `deadlineDatum`
-- [ ] **V03**: Status transition on Procest zaak writes both Procest zaak and OpenRegister vergunningaanvraag in one service call
-- [ ] **V04**: `VergunningStatusChangedEvent` is dispatched and observable by a test listener
-- [ ] **V05**: Deadline job sends warning at warning threshold and critical at critical threshold; overdue cases get an overdue flag
-- [ ] **V06**: Working-day calculator excludes weekends and Dutch national holidays
-- [ ] **V07**: Beschikking generation produces a PDF, attaches as `bijlage` with `type: beschikking`, sends notification
-- [ ] **V08**: Samenwerkverzoek can be initiated, accepted with advies, and rejected with rationale; status enum transitions enforced
-- [ ] **V09**: Doorstuur dispatches event; OpenConnector test double receives it with reden
-- [ ] **V10**: VTH dashboard filters by activiteitgroep, regelkwalificatie, status, locatie and shows deadline colour indicator
+- [~] **V01**: New `samenwerkverzoek` schema and zaak extension fields valid JSON; config keys populated after install — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V02**: When OpenConnector writes a new vergunningaanvraag, listener creates a Procest zaak with correct `procedureType` and `deadlineDatum` — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V03**: Status transition on Procest zaak writes both Procest zaak and OpenRegister vergunningaanvraag in one service call — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V04**: `VergunningStatusChangedEvent` is dispatched and observable by a test listener — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V05**: Deadline job sends warning at warning threshold and critical at critical threshold; overdue cases get an overdue flag — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V06**: Working-day calculator excludes weekends and Dutch national holidays — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V07**: Beschikking generation produces a PDF, attaches as `bijlage` with `type: beschikking`, sends notification — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V08**: Samenwerkverzoek can be initiated, accepted with advies, and rejected with rationale; status enum transitions enforced — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V09**: Doorstuur dispatches event; OpenConnector test double receives it with reden — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V10**: VTH dashboard filters by activiteitgroep, regelkwalificatie, status, locatie and shows deadline colour indicator — deferred to downstream cycle / fleet-wide adoption (handoff)
