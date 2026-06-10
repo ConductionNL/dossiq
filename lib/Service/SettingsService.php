@@ -216,9 +216,12 @@ class SettingsService
         'mandaat_gebruik_schema',
         'mandaat_escalatie_schema',
         // Archief / e-Depot SIP handover engine.
-        'archief_handover_config_schema',
-        'archief_handover_run_schema',
-        'archief_sip_submission_schema',
+        'bewaar_termijn_regel_schema',
+        'overdracht_trigger_schema',
+        'sip_bundel_schema',
+        'overdracht_transactie_schema',
+        'archief_bewijs_schema',
+        'overdracht_audit_log_schema',
     ];
 
     /**
@@ -331,9 +334,12 @@ class SettingsService
         'mandaatGebruik'               => 'mandaat_gebruik_schema',
         'mandaatEscalatie'             => 'mandaat_escalatie_schema',
         // Archief / e-Depot SIP handover engine.
-        'archiefHandoverConfig'        => 'archief_handover_config_schema',
-        'archiefHandoverRun'           => 'archief_handover_run_schema',
-        'archiefSipSubmission'         => 'archief_sip_submission_schema',
+        'bewaarTermijnRegel'           => 'bewaar_termijn_regel_schema',
+        'overdrachtTrigger'            => 'overdracht_trigger_schema',
+        'sipBundel'                    => 'sip_bundel_schema',
+        'overdrachtTransactie'         => 'overdracht_transactie_schema',
+        'archiefBewijs'                => 'archief_bewijs_schema',
+        'overdrachtAuditLog'           => 'overdracht_audit_log_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

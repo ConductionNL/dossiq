@@ -447,6 +447,12 @@ return [
         ['name' => 'complaint#createCategory',     'url' => '/api/complaint-categories',                  'verb' => 'POST'],
         ['name' => 'complaint#updateCategory',     'url' => '/api/complaint-categories/{id}',             'verb' => 'PUT'],
 
+        // ── Archief / e-Depot handover ─────────────────────────────────────
+        ['name' => 'archief#listRules',       'url' => '/api/archief/rules',                'verb' => 'GET'],
+        ['name' => 'archief#createRule',      'url' => '/api/archief/rules',                'verb' => 'POST'],
+        ['name' => 'archief#dashboardStats',  'url' => '/api/archief/dashboard/stats',      'verb' => 'GET'],
+        ['name' => 'archief#auditLog',        'url' => '/api/archief/audit-log',            'verb' => 'GET'],
+
         // ── Mandaat-matrix authorization engine ────────────────────────────
         ['name' => 'mandaatMatrix#checkAuth',       'url' => '/api/mandate/authorize',                    'verb' => 'POST'],
         ['name' => 'mandaatMatrix#importPreview',   'url' => '/api/mandate/import',                       'verb' => 'POST'],

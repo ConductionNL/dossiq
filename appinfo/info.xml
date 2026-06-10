@@ -95,6 +95,7 @@ Vrij en open source onder de AGPL-licentie.
             <step>OCA\Procest\Repair\SeedVthMatrixCells</step>
             <step>OCA\Procest\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Procest\Repair\SeedTermijnbewakingData</step>
+            <step>OCA\Procest\Repair\SeedArchiefEdepotData</step>
         </post-migration>
     </repair-steps>
 
