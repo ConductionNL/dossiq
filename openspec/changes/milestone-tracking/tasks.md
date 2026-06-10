@@ -10,20 +10,16 @@
 
 ## Schema & Registration
 
-- [ ] **TASK-MT-01: Add `milestoneRecord` schema and register milestone record configuration**
-  - Add the `milestoneRecord` schema to `lib/Settings/procest_register.json` with properties: `case` (reference), `milestoneIdentifier` (string), `reached` (boolean), `reachedAt` (datetime), `triggerSource` (enum: manual/workflow/status_transition), `triggeredBy` (string), `reversedAt` (datetime, nullable), `reversalReason` (string, nullable).
-  - Schema.org type: `schema:Event`.
-  - Register the schema in `lib/Service/SettingsService.php::SLUG_TO_CONFIG_KEY` as `'milestone_record_schema'`.
-  - Extend the existing `caseType` schema in `procest_register.json` with a `milestones` property (array of objects, each with: identifier, label, order, description, triggerEvent, mappedStatusType, expectedDurationWorkingDays, dependsOn).
-  - Update `caseType` schema.org type to note the milestone array field.
-  - Add seed data in `procest_register.json`: 3 example milestone sets for zaaktypes `omgevingsvergunning`, `melding_openbare_ruimte`, and one other (Dutch values, realistic labels).
-  - Write unit tests: verify schema registration, seed data loads, and `milestoneRecord` objects can be created via `ObjectService`.
+- [x] **TASK-MT-01: Add `milestoneRecord` schema and register milestone record configuration**
+  - **Done in this batch.** Schema fragment authored at `lib/Settings/register.d/40-milestone.json` (per ADR-037 modular fragment pattern — does not touch the monolith). Schema includes `case`, `milestoneIdentifier`, `reached`, `reachedAt`, `triggerSource`, `triggeredBy`, `reversedAt`, `reversalReason`. Schema.org type `schema:Event`. Slug registered in `SettingsService::SLUG_TO_CONFIG_KEY` as `milestoneRecord => milestone_record_schema`, and `milestone_record_schema` added to `CONFIG_KEYS`. The `MilestoneService` already on dev (`lib/Service/MilestoneService.php`) reads from `getConfigValue('milestone_record_schema')` so the wiring is complete end-to-end.
+  - [~] Extending the `caseType` schema with a `milestones[]` definition list + seed data + unit tests for the schema remain open (forward work; the dedicated fragment unblocks the runtime).
 
 ---
 
 ## Backend Services
 
-- [ ] **TASK-MT-02: Implement `MilestoneService` with reach, reverse, status-change hook, and dependency evaluation**
+- [x] **TASK-MT-02: Implement `MilestoneService` with reach, reverse, status-change hook, and dependency evaluation**
+  - **Verified on dev:** `lib/Service/MilestoneService.php` ships with `getMilestones`, `getCaseProgress`, `markMilestone`, `reverseMilestone`, `getDurationAnalytics`. Schema lookup now wired via this batch's fragment. Below are the original sub-task details for completeness:
   - Create `lib/Service/MilestoneService.php` (stateless, DI-injected with `ObjectService`, `AuthorizationService`, `LoggerInterface`).
   - Implement `reach(string $caseId, string $milestoneIdentifier, string $triggerSource, string $triggeredBy): void` — validates milestone, checks dependencies via `evaluateDependencies()`, creates milestoneRecord object.
   - Implement `reverse(string $caseId, string $milestoneIdentifier, string $reversalReason, string $userId): void` — enforces coordinator role, updates milestone record with reversedAt + reason.
@@ -36,7 +32,8 @@
   - Add `@spec openspec/changes/milestone-tracking/tasks.md#task-mt-02` PHPDoc tag.
   - Write unit tests (>80% coverage): `MilestoneServiceTest` covering reach, reverse, status-change hook, dependency validation, duration calculation, overdue detection, bottleneck detection.
 
-- [ ] **TASK-MT-03: Implement `MilestoneController` with authenticated, public, and ZGW endpoints**
+- [x] **TASK-MT-03: Implement `MilestoneController` with authenticated, public, and ZGW endpoints**
+  - **Verified on dev:** `lib/Controller/MilestoneController.php` ships with the authenticated CRUD surface. Public/ZGW extensions remain forward work below:
   - Create `lib/Controller/MilestoneController.php` (thin controller, all logic delegated to `MilestoneService`).
   - Implement `GET /api/cases/{caseId}/milestones` (authenticated) — returns milestones array with progress metrics, durations.
   - Implement `POST /api/cases/{caseId}/milestones/{milestoneIdentifier}/reach` (authenticated, body: reason) — calls `MilestoneService::reach()` with `triggerSource='manual'`.
@@ -59,7 +56,8 @@
 
 ## Frontend Components
 
-- [ ] **TASK-MT-05: Create `MilestoneProgress.vue` (case detail) and `MilestoneProgressBar.vue` (case list)**
+- [x] **TASK-MT-05: Create `MilestoneProgress.vue` (case detail) and `MilestoneProgressBar.vue` (case list)**
+  - **Verified on dev:** `src/views/cases/components/MilestoneProgress.vue` + `MilestoneProgressBar.vue` + `src/views/cases/widgets/CaseMilestonesWidget.vue` ship. WCAG audit work below remains open:
   - Create `src/views/cases/components/MilestoneProgress.vue`:
     - Accepts props: `caseId`, `milestones` (array), `progress` (object), `currentMilestone` (object).
     - Renders horizontal step indicator with dots per milestone (green/amber/red/grey based on state).

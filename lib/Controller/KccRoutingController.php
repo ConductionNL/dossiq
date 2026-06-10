@@ -74,7 +74,7 @@ class KccRoutingController extends Controller
     public function index(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
-            return $this->unauthorized();
+            return new JSONResponse(['error' => 'Authenticatie vereist'], Http::STATUS_UNAUTHORIZED);
         }
 
         try {
@@ -89,9 +89,14 @@ class KccRoutingController extends Controller
     /**
      * Create a routing rule (admin / team-lead only).
      *
-     * @return JSONResponse
+     * The body calls `requireAdmin()`, which makes this endpoint admin-only
+     * at runtime. NC's SecurityMiddleware already enforces admin-only as the
+     * default when @NoAdminRequired is absent (see hydra reference note
+     * `nc-security-defaults`), so we drop the annotation. Gate-9
+     * (semantic-auth) flagged the previous combination as
+     * `no-admin-required-annotation-with-admin-body`.
      *
-     * @NoAdminRequired
+     * @return JSONResponse
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
@@ -114,11 +119,12 @@ class KccRoutingController extends Controller
     /**
      * Update a routing rule (admin / team-lead only).
      *
+     * Admin-only via the body `requireAdmin()` check + NC's default
+     * SecurityMiddleware behaviour (no @NoAdminRequired).
+     *
      * @param string $id The rule id.
      *
      * @return JSONResponse
-     *
-     * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
@@ -141,11 +147,12 @@ class KccRoutingController extends Controller
     /**
      * Delete a routing rule (admin / team-lead only).
      *
+     * Admin-only via the body `requireAdmin()` check + NC's default
+     * SecurityMiddleware behaviour (no @NoAdminRequired).
+     *
      * @param string $id The rule id.
      *
      * @return JSONResponse
-     *
-     * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
@@ -177,7 +184,7 @@ class KccRoutingController extends Controller
     public function evaluate(): JSONResponse
     {
         if ($this->userSession->getUser() === null) {
-            return $this->unauthorized();
+            return new JSONResponse(['error' => 'Authenticatie vereist'], Http::STATUS_UNAUTHORIZED);
         }
 
         $contactMoment = $this->bodyParams();

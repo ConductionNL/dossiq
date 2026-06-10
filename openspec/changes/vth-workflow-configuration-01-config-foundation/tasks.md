@@ -27,9 +27,9 @@ Declarative foundation (templates + seed + repair steps + integration test). Tra
 
 ## 3. Seed Cases
 
-- [ ] Create `lib/Settings/vth-seed-cases.json` with 9 cases (3 Omgevingsvergunning, 3 Toezichtzaak, 3 Handhavingszaak) with realistic Dutch data and location references
-- [ ] Create `lib/Repair/VthSeedDataRepairStep.php` loading cases via ObjectService
-- [ ] Make seed-case repair step idempotent
+- [x] Create `lib/Settings/vth-seed-cases.json` with 9 cases (3 Omgevingsvergunning, 3 Toezichtzaak, 3 Handhavingszaak) with realistic Dutch data + BAG references
+- [x] Create `lib/Repair/VthSeedDataRepairStep.php` loading cases via `ObjectService::saveObject()` and register it in `appinfo/info.xml`
+- [x] Make seed-case repair step idempotent (existence check on case `identifier` before save)
 
 ## 4. Master Config Repair Step
 

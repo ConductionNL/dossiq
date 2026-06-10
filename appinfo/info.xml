@@ -79,6 +79,7 @@ Vrij en open source onder de AGPL-licentie.
         <job>OCA\Procest\BackgroundJob\WOODeadlineCheckJob</job>
         <job>OCA\Procest\BackgroundJob\BezwaarTermijnJob</job>
         <job>OCA\Procest\BackgroundJob\ArchivalJob</job>
+        <job>OCA\Procest\BackgroundJob\DsoDeadlineJob</job>
     </background-jobs>
 
     <repair-steps>
@@ -93,6 +94,7 @@ Vrij en open source onder de AGPL-licentie.
             <step>OCA\Procest\Repair\SeedLhsMatrix</step>
             <step>OCA\Procest\Repair\SeedVthMatrixCells</step>
             <step>OCA\Procest\Repair\SeedVthWorkflowTemplates</step>
+            <step>OCA\Procest\Repair\VthSeedDataRepairStep</step>
         </post-migration>
     </repair-steps>
 
