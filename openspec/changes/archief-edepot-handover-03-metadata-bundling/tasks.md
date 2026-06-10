@@ -1,5 +1,7 @@
 # Tasks: archief-edepot-handover-03-metadata-bundling
 
+> **Build status (hydra audit).** Greenfield. No archief schemas, services, or UI exist on dev. The 8-member archief-edepot-handover chain implements GiHandover/MDTO compliance from scratch (BewaarTermijnRegel, OverdrachtTrigger, SipBundel, OverdrachtTransactie, ArchiefBewijs, OverdrachtAuditLog schemas + daemon + sip-bundle generator + e-depot submission adapter + audit/admin UI). Tasks remain [ ] as genuine forward work for the next builder. See chain plan in design.md.
+
 Chain member 3 of 8 (`kind: code`, depends_on member 02). Traces to giant Tasks 5–6 / REQ-ARCH-002.
 
 ## 1. MetadataBundler

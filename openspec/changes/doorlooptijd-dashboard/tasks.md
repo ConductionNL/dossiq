@@ -1,5 +1,7 @@
 # Tasks: doorlooptijd-dashboard
 
+> **Build status (hydra audit 2026-06-10).** The dashboard view ships on dev as `src/views/DoorlooptijdDashboard.vue` (full page with SLA-compliance KPI cards, Compliance-by-case-type donut, performance-breakdown table, weekly throughput line chart, date-range preset + caseType filter), built by the `dashboard` change (closed). It computes KPIs inline from the existing case/caseType/statusType collections — no dedicated `DoorlooptijdService` is needed. `lib/Service/KpiAggregationService.php::computeKpis()` + `lib/Controller/KpiController.php` provide the server-side My-Work KPI surface. This change's open tasks describe a slimmer dedicated `DoorlooptijdService` + `MetricsController` endpoints — value-add (caching, single round-trip) but not blocking. Tasks stay [ ] as forward work; the user-visible deliverable is already on dev.
+
 ## Deduplication Check
 
 - [ ] **D01**: Search `openspec/specs/`, `lib/Service/`, and `lib/Controller/` for any existing doorlooptijd, metrics aggregation, or deadline analytics service. Document findings. Confirm no overlap before beginning T01.

@@ -1,5 +1,7 @@
 # Tasks: vth-workflow-configuration-04-leges-config-ui
 
+
+> **Build status (hydra audit 2026-06-10).** Frontend admin UI for leges. Backend (`LegesVerordingImportService`, `LegesController`, `LegesAdminController`) ships on dev. The Vue admin pages (tariff-table import wizard, version diff, audit log viewer) remain greenfield.
 Admin UI for leges rule sets. Traces to giant Task 5.
 
 ## 1. Components

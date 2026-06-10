@@ -1,5 +1,7 @@
 # Tasks: Milestone Tracking Implementation
 
+> **Build status (hydra audit 2026-06-10).** Partial. `lib/Service/MilestoneService.php` ships with `getMilestones`, `getCaseProgress`, `markMilestone`, `reverseMilestone`, `getDurationAnalytics`; `lib/Controller/MilestoneController.php` + `src/views/cases/widgets/CaseMilestonesWidget.vue` + `src/views/cases/components/MilestoneProgressBar.vue` + `MilestoneProgress.vue` ship too. Missing: the `milestoneRecord` schema declaration on the register (`grep milestone lib/Settings/procest_register.json` → empty), the `caseType.milestones[]` definition list, the seed-data load, and the design-tab UI for editing them per caseType. Open tasks stay [ ] for the schema + caseType-tab + seed work.
+
 ## Deduplication Check
 
 **Finding:** Milestone tracking introduces new data structures (`milestoneRecord` schema, milestone definitions on `caseType`) and new services (`MilestoneService`), but does NOT duplicate existing functionality. The existing `statusRecord` and `StatusTimeline.vue` remain unchanged. Milestones are a thin business-friendly layer (per ADR-001 guidance: app-specific business logic, not platform plumbing). No overlap with `ObjectService`, `StatusService`, or shared components found.

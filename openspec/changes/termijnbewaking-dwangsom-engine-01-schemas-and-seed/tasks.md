@@ -1,5 +1,7 @@
 # Tasks: termijnbewaking-dwangsom-engine-01-schemas-and-seed
 
+> **Build status (hydra audit).** Greenfield. No TermijnDefinitie/TermijnInstance/TermijnGebeurtenis/Ingebrekestelling/Dwangsom schemas, no termijn-binding lifecycle, no daily-scan escalation daemon, no dwangsom calculation/financial integration, no burger notifications, no reporting/REST-API surfaces on dev. The 11-member chain delivers the AWB termijnbewaking + dwangsom engine from scratch. Tasks stay [ ] as genuine forward work.
+
 Member 1 of 11 (config). Declares the six schemas + register template + seed + integration test. Traces to giant Tasks 1, 2, 22 (schema slice).
 
 ## 1. Schema declarations

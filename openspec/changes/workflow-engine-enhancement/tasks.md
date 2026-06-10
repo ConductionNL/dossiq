@@ -1,5 +1,7 @@
 # Tasks: workflow-engine-enhancement
 
+> **Build status (hydra audit 2026-06-10).** Workflow engine ships on dev: `lib/Service/WorkflowDefinitionService.php` (getActive/get/listVersions/publish/deprecate/clone/createDraft lifecycle, replaces the workflowTemplate CRUD asked here), `lib/Service/StatusTransitionService.php` (getAvailableTransitions, execute, executeFreeForm, replay, isAdmin), `lib/Service/StateMachineService.php` (isImmutable, validateTransition, logTransition), `lib/Service/WorkflowTemplateLoader.php`, plus `lib/Controller/WorkflowDefinitionController.php`. The remaining open work is the workflowTemplate schema declaration in the register fragment, the migration from caseType.statusTypes → workflowTemplate.states (still using the legacy shape on the read path), the workflow-graph designer Vue UI, and replay-history audit surfacing. Tasks stay [ ] as the next builder's forward work; the engine to extend is on dev.
+
 All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ---

@@ -1,5 +1,7 @@
 # Tasks: docs-product-pages
 
+> **Build status (hydra audit 2026-06-10).** Almost entirely shipped. `docs/Features/` + `_category_.json`, `docs/user-guide/` + `_category_.json` + `admin/` + `user/` subdirs and their `_category_.json` files all exist on dev. `docs/Features/` contains 30+ feature pages including all the headline ones listed in this spec. The remaining open work is a content sweep + final docusaurus redirect entries — kept as [ ] so an author owns it.
+
 This is a `kind: config` change — no PHP, no Vue, no OpenRegister
 schema changes. All tasks produce documentation files and
 `docusaurus.config.js` edits.

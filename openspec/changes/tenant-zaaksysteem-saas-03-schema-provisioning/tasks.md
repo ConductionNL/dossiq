@@ -1,5 +1,7 @@
 # Tasks: tenant-zaaksysteem-saas-03-schema-provisioning
 
+> **Build status (hydra audit).** The basic TenantService + TenantMiddleware + TenantController shipped via the sibling 'migrate-tenant-to-or-tenant' change (delegates to OR's TenantLifecycleService). This 12-member SaaS chain layers on the full SaaS shape — Tenant/TenantConfiguration/TenantQuota/TenantUser schemas, schema-per-tenant provisioning, JWT tenant-claim auth, mandate validation, onboarding workflow, branding, quota enforcement, shillinq billing, suspension/termination, isolation tests — none of which exist on dev yet. Tasks stay [ ] as genuine forward work.
+
 Member 3 of 12 (code). Depends on member 02. Traces to giant Task 2 + REQ-001-B/C.
 
 ## 1. Schema provisioning

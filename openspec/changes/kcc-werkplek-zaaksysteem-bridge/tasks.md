@@ -1,5 +1,22 @@
 # Tasks: kcc-werkplek-zaaksysteem-bridge
 
+> **Build status (hydra audit).** A first slice of the KCC bridge already
+> ships in dev via the sibling change `kcc-klantcontact-integratie`
+> (closed): `lib/Settings/register.d/30-kcc.json` (ADR-037 fragment with
+> `contactMoment` reusing `customerContact`, `routingRule`, `kccAgent`,
+> `callbackRequest` schemas), `lib/Service/Kcc/{ContactMomentService,
+> RoutingEngine, RoutingRuleService, CallbackService, SlaCalculator}.php`,
+> and `lib/Controller/{KccContactController, KccRoutingController}.php`.
+>
+> This more detailed v2 spec adds further schemas (`burger`,
+> `kccQuickAction`, `belplan`, `specialistBeschikbaarheid`,
+> `doorverbinding`, `klantSentiment`), DigiD/identificatievragen flows,
+> sentiment monitoring, warm-transfer plumbing, and a full Vue
+> workstation UI — none of which is on dev yet. All open tasks remain
+> `[ ]` as genuine forward work, not deferred-marker noise; the v1
+> dependencies (contact entity reuse, RoutingEngine, CallbackService)
+> are the foundation to build on.
+
 ## Implementation Tasks
 
 ### Phase 1: Schema & Configuration

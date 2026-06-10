@@ -1,5 +1,7 @@
 # Tasks: vth-workflow-configuration-05-beschikking-generation
 
+
+> **Build status (hydra audit 2026-06-10).** `lib/Service/BeschikkingGenerationService.php::generateBeschikking()` + the wider `BeschikkingService` (compose, akkoord, onderteken, verzend, verifyMandaat, exportAuditPacket, archive) + `BeschikkingController` are on dev. Template-management Vue UI remains greenfield.
 Beschikking generation service + template UI. Traces to giant Tasks 6, 7.
 
 ## 1. BeschikkingGenerationService

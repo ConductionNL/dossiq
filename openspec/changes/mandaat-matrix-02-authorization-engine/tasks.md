@@ -1,5 +1,7 @@
 # Tasks — Member 02: Authorization Engine (code)
 
+> **Build status (hydra audit).** Mostly greenfield. Dev has only lib/Service/MandaatValidationService.php::validate() (191 lines, single-method) + lib/Controller/MandaatController.php (124 lines). The MandateringsBesluit/Mandaat/OrganisatieRol/MedewerkerRolToewijzing schemas, full authorization+escalation engines, Decidesk import, case+decision integration, temporal+conflict resolver, and admin/user UI are not on dev. Tasks stay [ ] as genuine forward work; the existing slim MandaatValidationService is the foundation to grow on.
+
 Sourced from giant tasks 3–4 (MandaatCheckService; ABAC Policy Engine Integration).
 
 ## 1. MandaatCheckService

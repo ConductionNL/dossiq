@@ -1,5 +1,7 @@
 # Tasks: vth-workflow-configuration-09-admin-settings
 
+
+> **Build status (hydra audit 2026-06-10).** Greenfield Vue settings page (Workflows + InspectionChecklists + DSO tabs). All three corresponding backends ship on dev (see members 02, 06, 08). Only the admin Vue surface is open.
 VTH settings page + Workflows/InspectionChecklists/DSO tabs. Traces to giant Tasks 17, 18, 10.
 
 ## 1. Settings Page & Workflows Tab
