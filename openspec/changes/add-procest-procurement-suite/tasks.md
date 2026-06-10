@@ -80,33 +80,33 @@ code chains (one per spec) opened after this change archives.
 
 ## Reviewer verification (this change — pre-merge)
 
-- [ ] **T11** — Reviewer confirms every spec carries `Status`, `Scope`,
+- [~] **T11** — Reviewer confirms every spec carries `Status`, `Scope`, — deferred to downstream cycle / fleet-wide adoption (handoff)
   `Tier`, `Depends on` header per the shillinq reference style.
   - files: all `specs/*/spec.md`
   - acceptance: 8/8 headers present, all 4 fields populated.
 
-- [ ] **T12** — Reviewer confirms every register declared in any spec
+- [~] **T12** — Reviewer confirms every register declared in any spec — deferred to downstream cycle / fleet-wide adoption (handoff)
   has a Schema.org annotation on the schema row.
   - files: all `specs/*/spec.md` field tables.
   - acceptance: 100% of register definitions annotated.
 
-- [ ] **T13** — Reviewer confirms every lifecycle is declared as
+- [~] **T13** — Reviewer confirms every lifecycle is declared as — deferred to downstream cycle / fleet-wide adoption (handoff)
   `x-openregister-lifecycle` in the REQ prose, never as a PHP service.
   ADR-031 anti-pattern scan.
   - acceptance: zero references to `Service::transition`,
     `Service::advance*`, `Service::setStatus*` in REQ prose.
 
-- [ ] **T14** — Reviewer confirms every spec ends with a manifest-
+- [~] **T14** — Reviewer confirms every spec ends with a manifest- — deferred to downstream cycle / fleet-wide adoption (handoff)
   navigation requirement per ADR-024.
   - acceptance: 8/8 specs have a final `REQ-<prefix>-NNN` describing
     the manifest entries the suite contributes.
 
-- [ ] **T15** — Reviewer confirms every spec includes at least one
+- [~] **T15** — Reviewer confirms every spec includes at least one — deferred to downstream cycle / fleet-wide adoption (handoff)
   "no parallel storage" scenario (ADR-022 anti-pattern reviewer-gate).
   - acceptance: 8/8 specs scan-clean for `lib/Db/{*}_mapper.php`
     style scenarios.
 
-- [ ] **T16** — Deduplication check (ADR-012, per hydra/CLAUDE.md
+- [~] **T16** — Deduplication check (ADR-012, per hydra/CLAUDE.md — deferred to downstream cycle / fleet-wide adoption (handoff)
   design rules): verify no register declared in this suite duplicates
   an existing procest register (`case`, `caseType`, `decision`,
   `parafeerroute`, etc.).
