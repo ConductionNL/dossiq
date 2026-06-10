@@ -29,6 +29,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\BeschikkingGenerationService;
 use OCA\Procest\Service\DsoCaseService;
+use OCA\Procest\Service\DsoLvAuthService;
 use OCA\Procest\Service\SamenwerkverzoekService;
 use OCA\Procest\Service\SettingsService;
 use OCP\AppFramework\Controller;
@@ -57,6 +58,7 @@ class DsoController extends Controller
      * @param BeschikkingGenerationService $beschikkingService The beschikking generation service
      * @param SamenwerkverzoekService      $samenwerkService   The samenwerkverzoek service
      * @param SettingsService              $settingsService    The settings service (config + ObjectService bridge)
+     * @param DsoLvAuthService             $lvAuthService      The LV-DSO outbound-auth service
      * @param IUserSession                 $userSession        The user session
      * @param IEventDispatcher             $eventDispatcher    The event dispatcher
      * @param LoggerInterface              $logger             The logger
@@ -68,6 +70,7 @@ class DsoController extends Controller
         private readonly BeschikkingGenerationService $beschikkingService,
         private readonly SamenwerkverzoekService $samenwerkService,
         private readonly SettingsService $settingsService,
+        private readonly DsoLvAuthService $lvAuthService,
         private readonly IUserSession $userSession,
         private readonly IEventDispatcher $eventDispatcher,
         private readonly LoggerInterface $logger,
@@ -450,6 +453,15 @@ class DsoController extends Controller
             }
 
             $this->dsoCaseService->authorizeZaakMutation(zaak: $zaak, user: $user);
+
+            // Surface a warning when LV-DSO outbound auth has not been
+            // configured — OpenConnector will attempt the doorstuur dispatch
+            // but the downstream LV-DSO call will fail authentication.
+            if ($this->lvAuthService->isAuthConfigured() === false) {
+                $this->logger->warning(
+                    'Procest DsoController::doorsturen dispatched but LV-DSO outbound auth (dso_lv_auth_token) is not configured.'
+                );
+            }
 
             $event = new GenericEvent(
                 subject: $zaak,

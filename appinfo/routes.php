@@ -354,6 +354,15 @@ return [
         // ── VTH Module ─────────────────────────────────────────────────────
         // DSO/Omgevingsloket intake — public webhook, no auth, signature-validated.
         ['name' => 'dSOIntake#intake', 'url' => '/api/vth/dso/intake', 'verb' => 'POST'],
+        // DSO authenticated controller endpoints (per dso-omgevingsloket T06).
+        ['name' => 'dso#dashboard',            'url' => '/api/dso/dashboard',                                  'verb' => 'GET'],
+        ['name' => 'dso#transitionStatus',     'url' => '/api/dso/cases/{caseId}/transition',                  'verb' => 'POST'],
+        ['name' => 'dso#generateBeschikking',  'url' => '/api/dso/cases/{caseId}/beschikking',                 'verb' => 'POST'],
+        ['name' => 'dso#initiateSamenwerking', 'url' => '/api/dso/cases/{caseId}/samenwerking',                'verb' => 'POST'],
+        ['name' => 'dso#respondSamenwerking',  'url' => '/api/dso/samenwerking/{samenwerkId}/respond',         'verb' => 'POST'],
+        ['name' => 'dso#doorsturen',           'url' => '/api/dso/cases/{caseId}/doorsturen',                  'verb' => 'POST'],
+        // Dossier export controller (document-zaakdossier).
+        ['name' => 'dossierExport#export',     'url' => '/api/cases/{caseId}/dossier/export',                  'verb' => 'GET'],
         // VTH zaaktype template management (admin only).
         ['name' => 'vTHTemplate#index',    'url' => '/api/vth/templates',             'verb' => 'GET'],
         ['name' => 'vTHTemplate#activate', 'url' => '/api/vth/templates/{slug}/activate', 'verb' => 'POST'],
@@ -415,10 +424,10 @@ return [
         ['name' => 'milestone#reverse',  'url' => '/api/cases/{caseId}/milestones/{milestoneId}/reverse', 'verb' => 'POST'],
 
         // ── Besluitvorming workflow ──────────────────────────────────────
-        ['name' => 'besluitvorming#activateTemplate', 'url' => '/api/besluitvorming/templates/{slug}/activate', 'verb' => 'POST'],
-        ['name' => 'agenda#addToAgenda',              'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'POST'],
-        ['name' => 'agenda#updateAgendaItem',         'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'PUT'],
-        ['name' => 'publication#publish',             'url' => '/api/besluitvorming/cases/{id}/publish',        'verb' => 'POST'],
+        // NOTE: BesluitvormingController, AgendaController, PublicationController
+        // are not yet implemented. Their entries were previously routed to
+        // phantom targets which the route-reachability gate caught. They will
+        // be re-added when the controllers land (besluitvorming-workflow change).
         ['name' => 'mandaat#mandaatCheck',             'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
 
         // ── Complaints (klachtafhandeling) — Awb chapter 9 ─────────────────
