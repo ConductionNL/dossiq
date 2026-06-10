@@ -68,6 +68,8 @@ class PublicationService
      * @return array<string, mixed> The publication record + updated case ref.
      *
      * @throws \RuntimeException When OR is unavailable or the case can't be loaded.
+     *
+     * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
      */
     public function publish(string $caseId, array $payload): array
     {

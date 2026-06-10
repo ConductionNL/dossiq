@@ -69,6 +69,8 @@ class PublicationController extends Controller
      * @return JSONResponse The publication record.
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
      */
     #[NoAdminRequired]
     public function publish(string $id): JSONResponse

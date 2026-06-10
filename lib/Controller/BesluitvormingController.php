@@ -73,6 +73,8 @@ class BesluitvormingController extends Controller
      * @return JSONResponse The activation result envelope.
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-2
      */
     #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function activateTemplate(string $slug): JSONResponse

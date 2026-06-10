@@ -70,6 +70,8 @@ class AgendaController extends Controller
      * @return JSONResponse The updated agenda items list.
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-4
      */
     #[NoAdminRequired]
     public function addToAgenda(string $id): JSONResponse
@@ -105,6 +107,8 @@ class AgendaController extends Controller
      * @return JSONResponse The updated agenda items list.
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-4
      */
     #[NoAdminRequired]
     public function updateAgendaItem(string $id): JSONResponse

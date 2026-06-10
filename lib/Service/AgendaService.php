@@ -63,6 +63,8 @@ class AgendaService
      * @return array<string, mixed> The updated case agenda item list.
      *
      * @throws \RuntimeException When OR is unavailable.
+     *
+     * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-4
      */
     public function addToAgenda(string $caseId, array $item): array
     {
@@ -84,6 +86,8 @@ class AgendaService
      * @param array<string, mixed> $patch  The patch payload: must include itemId; fields to merge.
      *
      * @return array<string, mixed> The updated case agenda item list.
+     *
+     * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-4
      */
     public function updateAgendaItem(string $caseId, array $patch): array
     {
