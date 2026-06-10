@@ -137,7 +137,7 @@ import DoorstuurDialog from './DoorstuurDialog.vue'
 import StatusTransitionDialog from './StatusTransitionDialog.vue'
 
 export default {
-	name: 'DsoCaseDetail',
+	name: 'DsoCaseDetailDialog',
 	components: {
 		NcModal,
 		NcButton,

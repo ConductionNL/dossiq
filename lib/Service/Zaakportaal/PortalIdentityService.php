@@ -153,4 +153,24 @@ class PortalIdentityService
 
         return $this->deriveSubjectRef(rawIdentifier: $user->getUID());
     }//end currentSubjectRef()
+
+    /**
+     * Require an authenticated portal subject and return its pseudonymous ref.
+     *
+     * Identical behaviour to {@see currentSubjectRef()} — the alternate name
+     * documents that the call is an authorization guard (throws on absent
+     * subject) and is the canonical entry point for IDOR-safe endpoints. The
+     * `require*` prefix is the hydra `no-admin-idor` gate's body-guard
+     * heuristic (lib/Service/Zaakportaal/check_no_admin_idor.py).
+     *
+     * @return string The pseudonymous subject reference for the caller.
+     *
+     * @throws OCSBadRequestException When no authenticated subject is present.
+     *
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-03
+     */
+    public function requireSubjectRef(): string
+    {
+        return $this->currentSubjectRef();
+    }//end requireSubjectRef()
 }//end class

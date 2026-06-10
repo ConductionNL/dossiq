@@ -80,13 +80,7 @@ class DsoLvAuthService
      */
     public function getAuthHeaders(): array
     {
-        $token = $this->appConfig->getValueString(
-            app: Application::APP_ID,
-            key: self::CONFIG_KEY_AUTH_TOKEN,
-            default: ''
-        );
-
-        if ($token === '') {
+        if ($this->isAuthConfigured() === false) {
             $this->logger->warning(
                 'Procest DsoLvAuthService: dso_lv_auth_token is not configured. '
                 .'Outbound DSO-LV calls will be unauthenticated. '
@@ -95,6 +89,12 @@ class DsoLvAuthService
             );
             return [];
         }
+
+        $token = $this->appConfig->getValueString(
+            app: Application::APP_ID,
+            key: self::CONFIG_KEY_AUTH_TOKEN,
+            default: ''
+        );
 
         return ['Authorization' => 'Bearer '.$token];
     }//end getAuthHeaders()

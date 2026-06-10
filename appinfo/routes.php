@@ -91,7 +91,7 @@ return [
         ['name' => 'zaakportaal#cases',                     'url' => '/api/portaal/cases', 'verb' => 'GET'],
         ['name' => 'zaakportaal#messages',                  'url' => '/api/portaal/messages', 'verb' => 'GET'],
         ['name' => 'zaakportaal#sendMessage',               'url' => '/api/portaal/messages', 'verb' => 'POST'],
-        ['name' => 'zaakportaal#validateObjectionDeadline', 'url' => '/api/portaal/objections/validate-deadline', 'verb' => 'POST'],
+        ['name' => 'zaakportaal#objectionDeadline',         'url' => '/api/portaal/objections/validate-deadline', 'verb' => 'POST'],
         ['name' => 'zaakportaal#submitObjection',           'url' => '/api/portaal/objections', 'verb' => 'POST'],
         ['name' => 'zaakportaal#submitComplaint',           'url' => '/api/portaal/complaints', 'verb' => 'POST'],
         ['name' => 'zaakportaal#requests',                  'url' => '/api/portaal/requests', 'verb' => 'GET'],
@@ -420,6 +420,15 @@ return [
         ['name' => 'agenda#updateAgendaItem',         'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'PUT'],
         ['name' => 'publication#publish',             'url' => '/api/besluitvorming/cases/{id}/publish',        'verb' => 'POST'],
         ['name' => 'mandaat#mandaatCheck',             'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
+
+        // ── DSO / Omgevingsloket (DSO controller endpoints) ──────────────
+        ['name' => 'dso#dashboard',            'url' => '/api/dso/dashboard',                                'verb' => 'GET'],
+        ['name' => 'dso#transitionStatus',     'url' => '/api/dso/cases/{caseId}/transition',                'verb' => 'POST'],
+        ['name' => 'dso#generateBeschikking',  'url' => '/api/dso/cases/{caseId}/beschikking',               'verb' => 'POST'],
+        ['name' => 'dso#initiateSamenwerking', 'url' => '/api/dso/cases/{caseId}/samenwerking',              'verb' => 'POST'],
+        ['name' => 'dso#respondSamenwerking',  'url' => '/api/dso/samenwerking/{samenwerkId}/respond',       'verb' => 'POST'],
+        ['name' => 'dso#doorsturen',           'url' => '/api/dso/cases/{caseId}/doorsturen',                'verb' => 'POST'],
+        ['name' => 'dossierExport#export',     'url' => '/api/dossier/{caseId}/export',                      'verb' => 'GET'],
 
         // ── Complaints (klachtafhandeling) — Awb chapter 9 ─────────────────
         ['name' => 'complaint#index',              'url' => '/api/complaints',                             'verb' => 'GET'],
