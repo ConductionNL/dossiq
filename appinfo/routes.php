@@ -421,6 +421,13 @@ return [
         ['name' => 'publication#publish',             'url' => '/api/besluitvorming/cases/{id}/publish',        'verb' => 'POST'],
         ['name' => 'mandaat#mandaatCheck',             'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
 
+        // ── GIS / Map layers (gis-integration) ───────────────────────────
+        ['name' => 'mapLayer#index',   'url' => '/api/map-layers',      'verb' => 'GET'],
+        ['name' => 'mapLayer#create',  'url' => '/api/map-layers',      'verb' => 'POST'],
+        ['name' => 'mapLayer#show',    'url' => '/api/map-layers/{id}', 'verb' => 'GET'],
+        ['name' => 'mapLayer#update',  'url' => '/api/map-layers/{id}', 'verb' => 'PUT'],
+        ['name' => 'mapLayer#destroy', 'url' => '/api/map-layers/{id}', 'verb' => 'DELETE'],
+
         // ── DSO / Omgevingsloket (DSO controller endpoints) ──────────────
         ['name' => 'dso#dashboard',            'url' => '/api/dso/dashboard',                                'verb' => 'GET'],
         ['name' => 'dso#transitionStatus',     'url' => '/api/dso/cases/{caseId}/transition',                'verb' => 'POST'],
