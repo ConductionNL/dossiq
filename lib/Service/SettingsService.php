@@ -209,9 +209,12 @@ class SettingsService
         'dwangsom_berekening_schema',
         'dwangsom_uitbetaling_schema',
         // Mandaat-matrix authorization engine.
-        'mandaat_regel_schema',
-        'mandaat_assignment_schema',
-        'mandaat_gebeurtenis_schema',
+        'mandaterings_besluit_schema',
+        'mandaat_schema',
+        'organisatie_rol_schema',
+        'medewerker_rol_toewijzing_schema',
+        'mandaat_gebruik_schema',
+        'mandaat_escalatie_schema',
         // Archief / e-Depot SIP handover engine.
         'archief_handover_config_schema',
         'archief_handover_run_schema',
@@ -321,9 +324,12 @@ class SettingsService
         'dwangsomBerekening'           => 'dwangsom_berekening_schema',
         'dwangsomUitbetaling'          => 'dwangsom_uitbetaling_schema',
         // Mandaat-matrix authorization engine.
-        'mandaatRegel'                 => 'mandaat_regel_schema',
-        'mandaatAssignment'            => 'mandaat_assignment_schema',
-        'mandaatGebeurtenis'           => 'mandaat_gebeurtenis_schema',
+        'mandateringsBesluit'          => 'mandaterings_besluit_schema',
+        'mandaat'                      => 'mandaat_schema',
+        'organisatieRol'               => 'organisatie_rol_schema',
+        'medewerkerRolToewijzing'      => 'medewerker_rol_toewijzing_schema',
+        'mandaatGebruik'               => 'mandaat_gebruik_schema',
+        'mandaatEscalatie'             => 'mandaat_escalatie_schema',
         // Archief / e-Depot SIP handover engine.
         'archiefHandoverConfig'        => 'archief_handover_config_schema',
         'archiefHandoverRun'           => 'archief_handover_run_schema',
