@@ -58,6 +58,7 @@ class MandaatCheckService
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
+        private readonly ?ConflictOfInterestService $conflictService = null,
     ) {
     }//end __construct()
 
@@ -82,7 +83,20 @@ class MandaatCheckService
         ?DateTimeImmutable $decisionDate = null
     ): array {
         $decisionDate = ($decisionDate ?? new DateTimeImmutable());
-        $role         = $this->resolveUserRole($userId, $decisionDate);
+
+        // Optional belangenconflict check (REQ-MANDAAT-006).
+        if ($this->conflictService !== null) {
+            $conflict = $this->conflictService->checkConflict($userId, $caseId, $caseProperties);
+            if (($conflict['conflict'] ?? false) === true) {
+                return [
+                    'authorized' => false,
+                    'reden'      => self::REDEN_BELANGENCONFLICT,
+                    'conflictReason' => (string) ($conflict['reason'] ?? ''),
+                ];
+            }
+        }
+
+        $role = $this->resolveUserRole($userId, $decisionDate);
         if ($role === null) {
             return ['authorized' => false, 'reden' => self::REDEN_NIET_BEVOEGD];
         }
@@ -207,7 +221,12 @@ class MandaatCheckService
         try {
             $rows = $objectService->findObjects($register, $schema, ['userId' => $userId]);
         } catch (\Throwable $e) {
-            return null;
+            // Fail closed: log and surface "no role" instead of swallowing.
+            $this->logger->error(
+                'MandaatCheckService.resolveUserRole lookup failed (fail-closed)',
+                ['userId' => $userId, 'error' => $e->getMessage()]
+            );
+            $rows = [];
         }
 
         $dateStr = $date->format('Y-m-d');

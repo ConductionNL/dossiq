@@ -33,6 +33,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -55,10 +56,25 @@ class TermijnReportingController extends Controller
         string $appName,
         IRequest $request,
         private readonly TermijnReportingService $service,
+        private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct($appName, $request);
     }//end __construct()
+
+    /**
+     * Per-object authorization guard.
+     *
+     * @return JSONResponse|null
+     */
+    private function ensureAuthenticated(): ?JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
+        }
+        return null;
+    }//end ensureAuthenticated()
 
     /**
      * Dashboard KPI snapshot.
@@ -66,9 +82,12 @@ class TermijnReportingController extends Controller
      * @NoAdminRequired
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
     public function dashboard(): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         try {
             $row = $this->service->getTermijnKpi();
             return new JSONResponse($row);
@@ -87,9 +106,12 @@ class TermijnReportingController extends Controller
      * @param string|null $afdeling Optional department filter.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
     public function kwartaalrapport(string $periode = '', ?string $afdeling = null): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         if ($periode === '') {
             $periode = (string) $this->request->getParam('periode', '');
         }
@@ -113,9 +135,12 @@ class TermijnReportingController extends Controller
      * @param int $jaar Year.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
     public function jaarrekening(int $jaar = 0): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         if ($jaar === 0) {
             $jaar = (int) $this->request->getParam('jaar', '0');
         }

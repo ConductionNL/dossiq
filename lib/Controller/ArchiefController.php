@@ -34,6 +34,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -56,10 +57,25 @@ class ArchiefController extends Controller
         string $appName,
         IRequest $request,
         private readonly SettingsService $settings,
+        private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct($appName, $request);
     }//end __construct()
+
+    /**
+     * Per-object authorization guard.
+     *
+     * @return JSONResponse|null
+     */
+    private function ensureAuthenticated(): ?JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
+        }
+        return null;
+    }//end ensureAuthenticated()
 
     /**
      * List retention rules.
@@ -72,6 +88,7 @@ class ArchiefController extends Controller
      */
     public function listRules(): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         return new JSONResponse($this->fetchAll('bewaar_termijn_regel_schema'));
     }//end listRules()
 
@@ -86,6 +103,7 @@ class ArchiefController extends Controller
      */
     public function createRule(): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $body = $this->jsonBody();
         if ((string) ($body['zaaktypeKey'] ?? '') === '') {
             return new JSONResponse(['message' => 'zaaktypeKey is required'], Http::STATUS_BAD_REQUEST);
@@ -109,6 +127,7 @@ class ArchiefController extends Controller
      */
     public function dashboardStats(): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $triggers = $this->fetchAll('overdracht_trigger_schema');
         $stats = ['ready' => 0, 'inProgress' => 0, 'failed' => 0, 'completed' => 0, 'totalTransferred' => 0];
         foreach ($triggers as $t) {
@@ -133,6 +152,7 @@ class ArchiefController extends Controller
      */
     public function auditLog(): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $zaakId = (string) $this->request->getParam('zaakId', '');
         $rows = $this->fetchAll('overdracht_audit_log_schema');
         if ($zaakId !== '') {

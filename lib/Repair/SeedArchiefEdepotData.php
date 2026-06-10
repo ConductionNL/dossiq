@@ -60,6 +60,8 @@ class SeedArchiefEdepotData implements IRepairStep
     /**
      * @param IOutput $output Output.
      * @return void
+     *
+     * @spec openspec/changes/archief-edepot-handover-01-schema-config/tasks.md
      */
     public function run(IOutput $output): void
     {

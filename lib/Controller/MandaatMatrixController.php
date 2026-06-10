@@ -76,6 +76,20 @@ class MandaatMatrixController extends Controller
     }//end __construct()
 
     /**
+     * Per-object authorization guard.
+     *
+     * @return JSONResponse|null
+     */
+    private function ensureAuthenticated(): ?JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
+        }
+        return null;
+    }//end ensureAuthenticated()
+
+    /**
      * Authorization probe — UI can call this before submitting a decision.
      *
      * @NoAdminRequired
@@ -84,8 +98,9 @@ class MandaatMatrixController extends Controller
      *
      * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
      */
-    public function checkAuth(): JSONResponse
+    public function probe(): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $body         = $this->jsonBody();
         $decisionType = (string) ($body['decisionType'] ?? '');
         $caseId       = (string) ($body['caseId'] ?? '');
@@ -97,7 +112,7 @@ class MandaatMatrixController extends Controller
         $userId = $this->currentUserId();
         $r = $this->check->isAuthorized($userId, $decisionType, $caseId, $caseProps);
         return new JSONResponse($r);
-    }//end checkAuth()
+    }//end probe()
 
     /**
      * Import a CSV of mandaten under a new MandateringsBesluit.
@@ -110,6 +125,7 @@ class MandaatMatrixController extends Controller
      */
     public function importPreview(): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $body          = $this->jsonBody();
         $besluitNummer = (string) ($body['besluitNummer'] ?? '');
         $besluitNaam   = (string) ($body['besluitNaam'] ?? '');
@@ -140,6 +156,7 @@ class MandaatMatrixController extends Controller
      */
     public function importApprove(string $importId): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         try {
             $r = $this->import->approveImport($importId);
             return new JSONResponse($r);
@@ -183,6 +200,7 @@ class MandaatMatrixController extends Controller
      */
     public function escalateReject(string $id): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $body   = $this->jsonBody();
         $reason = (string) ($body['reason'] ?? '');
         if ($reason === '') {
@@ -209,6 +227,7 @@ class MandaatMatrixController extends Controller
      */
     public function auditTrail(string $caseId): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         return new JSONResponse($this->gebruik->getDecisionAuditTrail($caseId));
     }//end auditTrail()
 

@@ -31,6 +31,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -55,10 +56,25 @@ class IngebrekestellingController extends Controller
         IRequest $request,
         private readonly IngebrekestellingService $service,
         private readonly SettingsService $settings,
+        private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct($appName, $request);
     }//end __construct()
+
+    /**
+     * Per-object authorization guard.
+     *
+     * @return JSONResponse|null
+     */
+    private function ensureAuthenticated(): ?JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
+        }
+        return null;
+    }//end ensureAuthenticated()
 
     /**
      * Register an ingebrekestelling.
@@ -66,9 +82,12 @@ class IngebrekestellingController extends Controller
      * @NoAdminRequired
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function register(): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $raw  = method_exists($this->request, 'getContent') === true
             ? (string) $this->request->getContent() : '';
         $body = json_decode($raw, true);
@@ -107,9 +126,12 @@ class IngebrekestellingController extends Controller
      * @param string $id Id.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function show(string $id): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $objectService = $this->settings->getObjectService();
         $register      = (string) $this->settings->getConfigValue('register');
         $schema        = (string) $this->settings->getConfigValue('ingebrekestelling_schema');

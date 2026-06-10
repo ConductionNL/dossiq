@@ -36,6 +36,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -62,10 +63,25 @@ class DwangsomController extends Controller
         private readonly DwangsomCalculationService $calc,
         private readonly DwangsomBezwaarService $bezwaar,
         private readonly SettingsService $settings,
+        private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct($appName, $request);
     }//end __construct()
+
+    /**
+     * Per-object authorization guard.
+     *
+     * @return JSONResponse|null
+     */
+    private function ensureAuthenticated(): ?JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
+        }
+        return null;
+    }//end ensureAuthenticated()
 
     /**
      * Get a DwangsomBerekening by id.
@@ -75,9 +91,12 @@ class DwangsomController extends Controller
      * @param string $id Id.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function show(string $id): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $objectService = $this->settings->getObjectService();
         $register      = (string) $this->settings->getConfigValue('register');
         $schema        = (string) $this->settings->getConfigValue('dwangsom_berekening_schema');
@@ -104,9 +123,12 @@ class DwangsomController extends Controller
      * @param string $id Id.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function beschikking(string $id): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $row = $this->calc->stopForBeschikking($id);
         if ($row === null) {
             return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
@@ -122,9 +144,12 @@ class DwangsomController extends Controller
      * @param string $id Id.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function bezwaar(string $id): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $body       = $this->jsonBody();
         $grondslag  = (string) ($body['grondslag'] ?? 'AWB 7:1');
         $motivering = (string) ($body['motivering'] ?? '');
@@ -145,9 +170,12 @@ class DwangsomController extends Controller
      * @param string $id Id.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function bezwaarHeroverweging(string $id): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $body        = $this->jsonBody();
         $newBedrag   = (int) ($body['newBedragCents'] ?? -1);
         $grondslag   = (string) ($body['grondslag'] ?? 'AWB 7:11');

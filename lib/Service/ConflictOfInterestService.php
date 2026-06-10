@@ -95,6 +95,8 @@ class ConflictOfInterestService
      */
     public function checkConflict(string $userId, string $zaakId, array $caseProperties = []): array
     {
+        $this->logger->debug('Conflict-of-interest probe', ['userId' => $userId, 'zaakId' => $zaakId]);
+
         // Manual registration trumps automatic detection.
         if (isset($this->registered[$zaakId]) === true) {
             return ['conflict' => true, 'reason' => $this->registered[$zaakId]];

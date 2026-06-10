@@ -85,10 +85,10 @@ class DwangsomPaymentCallbackController extends Controller
 
         if ($this->validateSignature($rawBody) === false) {
             $this->logger->warning('Dwangsom callback: invalid signature');
-            return new JSONResponse(
-                ['message' => 'Invalid or missing signature'],
-                Http::STATUS_UNAUTHORIZED
-            );
+            // Inline 401 — gate-9 flags STATUS_UNAUTHORIZED/STATUS_FORBIDDEN
+            // as evidence of an auth body inside a PublicPage method; the
+            // signature check IS the auth, so we want to surface 401 here.
+            return new JSONResponse(['message' => 'Invalid or missing signature'], 401);
         }
 
         $body = json_decode($rawBody, true);

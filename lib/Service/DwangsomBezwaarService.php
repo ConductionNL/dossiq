@@ -67,6 +67,8 @@ class DwangsomBezwaarService
      * @return array<string, mixed> The frozen berekening row.
      *
      * @throws RuntimeException When the berekening is missing.
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function registerBezwaar(string $berekeningId, string $grondslag, string $motivering): array
     {
@@ -138,6 +140,8 @@ class DwangsomBezwaarService
      * @return array<string, mixed>
      *
      * @throws RuntimeException When berekening missing or amount invalid.
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function resolveBezwaar(string $berekeningId, int $newBedragCents, string $grondslag): array
     {

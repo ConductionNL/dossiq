@@ -43,6 +43,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -69,10 +70,33 @@ class TermijnController extends Controller
         private readonly TermijnService $termijn,
         private readonly TermijnPauseService $pause,
         private readonly TermijnExtensionService $extension,
+        private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct($appName, $request);
     }//end __construct()
+
+    /**
+     * Per-object authorization guard.
+     *
+     * Returns a Http::STATUS_FORBIDDEN response when no user is logged in.
+     * Per-object IDOR enforcement (the user must have access to the
+     * specific zaak) is delegated to {@see TermijnService} which only
+     * returns instances bound to a zaak the caller can see — the NC
+     * SecurityMiddleware enforces base auth + we re-check the session
+     * here so the controller cannot be reached anonymously even if
+     * route attributes are misconfigured.
+     *
+     * @return JSONResponse|null
+     */
+    private function ensureAuthenticated(): ?JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
+        }
+        return null;
+    }//end ensureAuthenticated()
 
     /**
      * Create a TermijnInstance for a zaak.
@@ -80,9 +104,12 @@ class TermijnController extends Controller
      * @NoAdminRequired
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function create(): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $body     = $this->jsonBody();
         $zaakId   = (string) ($body['zaakId'] ?? '');
         $zaaktype = (string) ($body['zaaktype'] ?? '');
@@ -106,9 +133,12 @@ class TermijnController extends Controller
      * @param string $id Instance id.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function show(string $id): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $row = $this->termijn->getTermijnInstance($id);
         if ($row === null) {
             return $this->notFound('TermijnInstance not found: '.$id);
@@ -124,9 +154,12 @@ class TermijnController extends Controller
      * @param string $id Instance id.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function pauze(string $id): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $body         = $this->jsonBody();
         $duurDagen    = (int) ($body['duurDagen'] ?? 0);
         $motivering   = (string) ($body['motivering'] ?? '');
@@ -148,9 +181,12 @@ class TermijnController extends Controller
      * @param string $id Instance id.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function hervat(string $id): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $body = $this->jsonBody();
         $when = (string) ($body['aanvullingDatum'] ?? '');
 
@@ -170,9 +206,12 @@ class TermijnController extends Controller
      * @param string $id Instance id.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function verleng(string $id): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $body               = $this->jsonBody();
         $motivering         = (string) ($body['motivering'] ?? '');
         $newEinddatum       = (string) ($body['newEinddatum'] ?? '');
@@ -195,9 +234,12 @@ class TermijnController extends Controller
      * @param string $id Instance id.
      *
      * @return JSONResponse
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function voltooi(string $id): JSONResponse
     {
+        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
         $body         = $this->jsonBody();
         $when         = (string) ($body['voltooiDatum'] ?? '');
         $documentLink = (string) ($body['documentLink'] ?? '');
