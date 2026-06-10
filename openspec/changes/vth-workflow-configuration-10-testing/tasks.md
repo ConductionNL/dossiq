@@ -6,19 +6,19 @@ Cross-cutting unit/integration/E2E tests. Traces to giant Tasks 21, 22, 23.
 
 ## 1. Unit Tests
 
-- [ ] `LegesCalculationServiceTest` (modifiers, verrekening, refund, rule versioning)
-- [ ] `BeschikkingGenerationServiceTest` (merge fields, required-field validation, versioning)
-- [ ] `LhsoLookupServiceTest` (all 16 lookups, invalid inputs)
-- [ ] `DsoIntakeServiceTest` (STAM 2.0 mapping, reference resolution, bijlagen)
-- [ ] `MobileInspectionServiceTest` (photo storage, GPS fallback, required-item/photo validation)
+- [x] `LegesCalculationServiceTest` (verified on dev: `tests/Unit/Service/LegesCaseCalculationServiceTest.php` + `LegesConditionEvaluatorTest.php` + `LegesRestitutieServiceTest.php` + `LegesVerordingImportServiceTest.php`)
+- [x] `BeschikkingGenerationServiceTest` (verified on dev: `tests/Unit/Service/BeschikkingGenerationServiceTest.php` + `BeschikkingServiceTest.php`)
+- [x] `LhsoLookupServiceTest` (verified on dev: `tests/Unit/Service/LhsLookupServiceTest.php`)
+- [~] `DsoIntakeServiceTest` (STAM 2.0 mapping, reference resolution, bijlagen) — partial coverage via `DsoCaseServiceTest`; full intake test deferred
+- [~] `MobileInspectionServiceTest` (photo storage, GPS fallback, required-item/photo validation) — `InspectionChecklistServiceTest` covers checklist surface; mobile-specific paths deferred
 
 ## 2. Integration Tests
 
-- [ ] `WorkflowTransitionTest`: Omgevingsvergunning intake → beschikking → verleend
-- [ ] Test guard validation (e.g. advies required before Beschikking) and notifications per transition
-- [ ] Test Toezichtzaak inspection flow and Handhavingszaak LHSO/intervention flow
+- [~] `WorkflowTransitionTest`: Omgevingsvergunning intake → beschikking → verleend — deferred to a live OR integration harness sprint
+- [~] Test guard validation (e.g. advies required before Beschikking) and notifications per transition — deferred (live OR)
+- [~] Test Toezichtzaak inspection flow and Handhavingszaak LHSO/intervention flow — deferred (live OR)
 
 ## 3. End-to-End
 
-- [ ] `DsoIntegrationTest`: mock STAM 2.0 verzoek, simulate ObjectCreatedEvent, assert case creation
-- [ ] Transition the case and assert VergunningStatusChangedEvent dispatch + payload for each transition
+- [~] `DsoIntegrationTest`: mock STAM 2.0 verzoek, simulate ObjectCreatedEvent, assert case creation — deferred to OpenConnector/Procest cross-app harness
+- [~] Transition the case and assert VergunningStatusChangedEvent dispatch + payload for each transition — deferred to OpenConnector/Procest cross-app harness (StatusChangeDispatcherListener is now in place; unit-level event dispatch can land first)

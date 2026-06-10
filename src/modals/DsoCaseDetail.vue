@@ -134,7 +134,7 @@ import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
 import BeschikkingDialog from './BeschikkingDialog.vue'
 import SamenwerkverzoekDialog from './SamenwerkverzoekDialog.vue'
 import DoorstuurDialog from './DoorstuurDialog.vue'
-import StatusTransitionDialog from './StatusTransitionDialog.vue'
+import StatusTransitionDialog from '../dialogs/StatusTransitionDialog.vue'
 
 export default {
 	name: 'DsoCaseDetailDialog',

@@ -45,6 +45,8 @@ use OCA\Procest\Dashboard\StalledCasesWidget;
 use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Dashboard\StartCaseWidget;
 use OCA\Procest\Listener\BezwaarAdviceRequestedListener;
+use OCA\Procest\Event\VergunningStatusChangedEvent;
+use OCA\Procest\Listener\StatusChangeDispatcherListener;
 use OCA\Procest\Listener\VergunningaanvraagCreatedListener;
 use OCA\Procest\Listener\BezwaarDecisionListener;
 use OCA\Procest\Listener\BezwaarHearingScheduledListener;
@@ -133,6 +135,12 @@ class Application extends App implements IBootstrap
         $context->registerEventListener(
             event: ObjectCreatedEvent::class,
             listener: VergunningaanvraagCreatedListener::class
+        );
+
+        // DSO: status-change pushback dispatcher (Procest -> OR vergunningaanvraag).
+        $context->registerEventListener(
+            event: VergunningStatusChangedEvent::class,
+            listener: StatusChangeDispatcherListener::class
         );
 
         $this->registerBezwaarListeners(context: $context);

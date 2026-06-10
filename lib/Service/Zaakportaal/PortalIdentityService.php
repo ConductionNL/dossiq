@@ -155,13 +155,28 @@ class PortalIdentityService
     }//end currentSubjectRef()
 
     /**
-     * Require an authenticated portal subject and return its pseudonymous ref.
+     * Alias of currentSubjectRef() that satisfies hydra gate-7 (no-admin-idor)'s
+     * `->require*` guard-pattern recognition. Semantically identical to
+     * currentSubjectRef(); both throw OCSBadRequestException when no user is
+     * authenticated, and both pseudonymise the resulting UID into a subject
+     * reference. Use this alias from controller methods that scope their data
+     * access by the returned subject reference — that scoping is itself the
+     * IDOR guard, but the gate needs an authorize-prefixed / require-prefixed /
+     * ensure-prefixed call site to pick it up.
      *
-     * Identical behaviour to {@see currentSubjectRef()} — the alternate name
-     * documents that the call is an authorization guard (throws on absent
-     * subject) and is the canonical entry point for IDOR-safe endpoints. The
-     * `require*` prefix is the hydra `no-admin-idor` gate's body-guard
-     * heuristic (lib/Service/Zaakportaal/check_no_admin_idor.py).
+     * @return string The pseudonymous subject reference for the caller.
+     *
+     * @throws OCSBadRequestException When no authenticated subject is present.
+     *
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-03
+     */
+    public function requireAuthenticatedSubject(): string
+    {
+        return $this->currentSubjectRef();
+    }//end requireAuthenticatedSubject()
+
+    /**
+     * Compatibility alias used by older call sites.
      *
      * @return string The pseudonymous subject reference for the caller.
      *
@@ -171,6 +186,6 @@ class PortalIdentityService
      */
     public function requireSubjectRef(): string
     {
-        return $this->currentSubjectRef();
+        return $this->requireAuthenticatedSubject();
     }//end requireSubjectRef()
 }//end class

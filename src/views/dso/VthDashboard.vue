@@ -103,7 +103,7 @@
 		</div>
 
 		<!-- Detail modal -->
-		<DsoCaseDetailDialog
+		<DsoCaseDetail
 			v-if="selectedCase"
 			:zaak="selectedCase"
 			@close="selectedCase = null"
@@ -119,7 +119,7 @@ import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
 import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
 import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-import DsoCaseDetailDialog from '../../dialogs/DsoCaseDetailDialog.vue'
+import DsoCaseDetail from '../../modals/DsoCaseDetail.vue'
 
 export default {
 	name: 'VthDashboard',
@@ -128,7 +128,7 @@ export default {
 		NcSelect,
 		NcTextField,
 		NcLoadingIcon,
-		DsoCaseDetailDialog,
+		DsoCaseDetail,
 	},
 	data() {
 		return {

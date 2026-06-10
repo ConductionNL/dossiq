@@ -1,0 +1,82 @@
+{
+  "_meta": {
+    "_spec": "openspec/changes/milestone-tracking/tasks.md#TASK-MT-01",
+    "_description": "Milestone tracking schema fragment. Adds milestoneRecord schema for tracking business-friendly progress points on a case. Per ADR-001 a thin app-specific layer over the existing statusRecord."
+  },
+  "components": {
+    "registers": {
+      "procest": {
+        "schemas": [
+          "milestoneRecord"
+        ]
+      }
+    },
+    "schemas": {
+      "milestoneRecord": {
+        "slug": "milestoneRecord",
+        "icon": "FlagOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Event",
+        "title": "Milestone Record",
+        "description": "A business-friendly progress point on a case. Each milestoneRecord captures the moment a case crosses a defined milestone (e.g. 'intake compleet', 'beschikking verzonden'). Drives the CaseMilestonesWidget and CaseProgress widgets without coupling to the underlying statusType graph.",
+        "type": "object",
+        "required": [
+          "case",
+          "milestoneIdentifier"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent case",
+            "title": "Case",
+            "facetable": true
+          },
+          "milestoneIdentifier": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Stable identifier for the milestone (matches caseType.milestones[].identifier)",
+            "title": "Milestone",
+            "facetable": true
+          },
+          "reached": {
+            "type": "boolean",
+            "description": "Whether the milestone is currently reached. Reversal sets this to false.",
+            "default": false,
+            "facetable": true
+          },
+          "reachedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp the milestone was reached (null until reached === true)"
+          },
+          "triggerSource": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "workflow",
+              "status_transition"
+            ],
+            "description": "What caused the milestone to fire",
+            "facetable": true
+          },
+          "triggeredBy": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Nextcloud user UID of the actor (or the system identifier for workflow/status sources)"
+          },
+          "reversedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp the milestone was reversed (nullable)"
+          },
+          "reversalReason": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Why the milestone was reversed (nullable; required when reversedAt is set)"
+          }
+        }
+      }
+    }
+  }
+}
