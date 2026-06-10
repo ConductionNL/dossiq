@@ -6208,6 +6208,183 @@
           }
         }
       },
+      "supplier": {
+        "slug": "supplier",
+        "icon": "Factory",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Organization",
+        "title": "Supplier",
+        "description": "Leverancier / vendor — represents a single supplier organisation that interacts with the municipality through the supplier portal.",
+        "type": "object",
+        "required": [
+          "kvkNumber",
+          "legalName",
+          "status"
+        ],
+        "properties": {
+          "kvkNumber": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "Dutch Chamber of Commerce (KvK) number — natural key"
+          },
+          "legalName": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Legal entity name"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "blacklisted"],
+            "description": "Supplier lifecycle status"
+          },
+          "address": {
+            "type": "object",
+            "description": "Postal address"
+          },
+          "contactPerson": {
+            "type": "string",
+            "description": "Primary contact person"
+          },
+          "iban": {
+            "type": "string",
+            "description": "IBAN — masked at the API layer"
+          },
+          "sbiCodes": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Industry classification codes (CBS SBI)"
+          },
+          "accreditations": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Certificates / accreditations held"
+          }
+        }
+      },
+      "supplierUser": {
+        "slug": "supplierUser",
+        "icon": "AccountOutline",
+        "version": "1.0.0",
+        "title": "Supplier User",
+        "description": "Supplier-side portal user — eHerkenning-authenticated person acting on behalf of a supplier.",
+        "type": "object",
+        "required": ["supplierRef", "email"],
+        "properties": {
+          "supplierRef": {"type": "string", "format": "uuid"},
+          "userRef": {"type": "string", "description": "eHerkenning identifier"},
+          "email": {"type": "string", "format": "email"},
+          "role": {"type": "string", "enum": ["admin", "finance", "contracts", "sales", "read_only"]},
+          "status": {"type": "string", "enum": ["invited", "active", "revoked"]},
+          "eherkenningLevel": {"type": "string", "enum": ["2", "3", "4"]},
+          "activationToken": {"type": "string"},
+          "addedBy": {"type": "string"},
+          "addedAt": {"type": "string", "format": "date-time"},
+          "lastLoginAt": {"type": "string", "format": "date-time"}
+        }
+      },
+      "supplierTender": {
+        "slug": "supplierTender",
+        "icon": "FileDocumentMultiple",
+        "version": "1.0.0",
+        "title": "Supplier Tender",
+        "description": "Tender submitted by a supplier in response to a municipal procurement procedure.",
+        "type": "object",
+        "required": ["supplierRef", "title"],
+        "properties": {
+          "supplierRef": {"type": "string", "format": "uuid"},
+          "caseRef": {"type": "string", "format": "uuid"},
+          "title": {"type": "string"},
+          "status": {"type": "string", "enum": ["submitted", "evaluating", "awarded", "rejected", "withdrawn"]},
+          "submittedDate": {"type": "string", "format": "date"},
+          "value": {"type": "number"},
+          "awardDate": {"type": "string", "format": "date"},
+          "rejectionReason": {"type": "string"},
+          "appealDeadline": {"type": "string", "format": "date"},
+          "evaluationReportRef": {"type": "string"}
+        }
+      },
+      "supplierContract": {
+        "slug": "supplierContract",
+        "icon": "FileSign",
+        "version": "1.0.0",
+        "title": "Supplier Contract",
+        "description": "Contract between the municipality and a supplier.",
+        "type": "object",
+        "required": ["supplierRef", "number"],
+        "properties": {
+          "supplierRef": {"type": "string", "format": "uuid"},
+          "caseRef": {"type": "string", "format": "uuid"},
+          "number": {"type": "string"},
+          "subject": {"type": "string"},
+          "startDate": {"type": "string", "format": "date"},
+          "endDate": {"type": "string", "format": "date"},
+          "value": {"type": "number"},
+          "accountManager": {"type": "string"},
+          "renewalOption": {"type": "string", "enum": ["auto", "manual_request", "none"]},
+          "renewalWarning": {"type": "boolean"}
+        }
+      },
+      "supplierInvoice": {
+        "slug": "supplierInvoice",
+        "icon": "Receipt",
+        "version": "1.0.0",
+        "title": "Supplier Invoice",
+        "description": "Invoice submitted by a supplier.",
+        "type": "object",
+        "required": ["supplierRef", "number"],
+        "properties": {
+          "supplierRef": {"type": "string", "format": "uuid"},
+          "caseRef": {"type": "string", "format": "uuid"},
+          "number": {"type": "string"},
+          "invoiceDate": {"type": "string", "format": "date"},
+          "amount": {"type": "number"},
+          "vatAmount": {"type": "number"},
+          "status": {"type": "string", "enum": ["received", "under_review", "approved", "disputed", "rejected", "paid"]},
+          "dueDate": {"type": "string", "format": "date"},
+          "expectedPaymentDate": {"type": "string", "format": "date"},
+          "actualPaymentDate": {"type": "string", "format": "date"},
+          "disputeReason": {"type": "string"}
+        }
+      },
+      "supplierMessage": {
+        "slug": "supplierMessage",
+        "icon": "MessageText",
+        "version": "1.0.0",
+        "x-insert-only": true,
+        "title": "Supplier Message",
+        "description": "Write-once message between municipality and supplier — immutable audit trail.",
+        "type": "object",
+        "required": ["supplierRef", "direction", "body"],
+        "properties": {
+          "supplierRef": {"type": "string", "format": "uuid"},
+          "caseRef": {"type": "string", "format": "uuid"},
+          "direction": {"type": "string", "enum": ["inbound", "outbound"]},
+          "subject": {"type": "string"},
+          "body": {"type": "string"},
+          "attachmentRefs": {"type": "array", "items": {"type": "string"}},
+          "sentBy": {"type": "string"},
+          "sentAt": {"type": "string", "format": "date-time"}
+        }
+      },
+      "supplierKpi": {
+        "slug": "supplierKpi",
+        "icon": "ChartLine",
+        "version": "1.0.0",
+        "title": "Supplier KPI",
+        "description": "Per-period KPI snapshot for a supplier.",
+        "type": "object",
+        "required": ["supplierRef", "period"],
+        "properties": {
+          "supplierRef": {"type": "string", "format": "uuid"},
+          "period": {"type": "string", "description": "YYYY-MM"},
+          "avgPaymentDays": {"type": "number"},
+          "onTimePercentage": {"type": "number"},
+          "disputeRate": {"type": "number"},
+          "complianceScore": {"type": "number"},
+          "benchmark": {"type": "object"},
+          "sufficientData": {"type": "boolean"}
+        }
+      },
       "tenantOnboardingTask": {
         "slug": "tenantOnboardingTask",
         "icon": "CheckboxMarkedCircleOutline",
@@ -6330,7 +6507,14 @@
           "tenantUser",
           "tenantMandate",
           "tenantBillingEvent",
-          "tenantOnboardingTask"
+          "tenantOnboardingTask",
+          "supplier",
+          "supplierUser",
+          "supplierTender",
+          "supplierContract",
+          "supplierInvoice",
+          "supplierMessage",
+          "supplierKpi"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"
@@ -7313,6 +7497,126 @@
         "tenantRef": "00000000-0000-0000-0000-00000000000d",
         "step": "go_live",
         "status": "pending"
+      },
+      {
+        "@self": {"register": "procest", "schema": "caseType", "slug": "leverancier-contractverlenging-verzoek"},
+        "title": "Leverancier contractverlenging verzoek",
+        "description": "Verzoek tot verlenging van een lopend contract met een leverancier",
+        "purpose": "Behandelen van een contractverlenging-verzoek van een leverancier"
+      },
+      {
+        "@self": {"register": "procest", "schema": "caseType", "slug": "leverancier-iban-wijziging"},
+        "title": "Leverancier IBAN-wijziging",
+        "description": "Wijziging van het bankrekeningnummer van een leverancier (4-ogen procedure)",
+        "purpose": "Verwerken van een IBAN-wijziging onder 4-ogen-controle"
+      },
+      {
+        "@self": {"register": "procest", "schema": "caseType", "slug": "leverancier-accreditatie-verificatie"},
+        "title": "Leverancier accreditatie verificatie",
+        "description": "Verificatie van accreditaties van een leverancier",
+        "purpose": "Controle van geldigheid van leveranciersaccreditaties"
+      },
+      {
+        "@self": {"register": "procest", "schema": "caseType", "slug": "leverancier-mutatie"},
+        "title": "Leverancier mutatie",
+        "description": "Algemene wijziging van leveranciersgegevens",
+        "purpose": "Verwerken van wijzigingen in masterdata van een leverancier"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplier", "slug": "supplier-acme-bouw-bv"},
+        "kvkNumber": "12345678", "legalName": "ACME Bouw B.V.", "status": "active", "iban": "NL00BANK0000000000"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplier", "slug": "supplier-orange-it-bv"},
+        "kvkNumber": "23456789", "legalName": "Orange IT B.V.", "status": "active", "iban": "NL00BANK0000000001"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplier", "slug": "supplier-blokker-schoonmaak"},
+        "kvkNumber": "34567890", "legalName": "Blokker Schoonmaak B.V.", "status": "inactive", "iban": "NL00BANK0000000002"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-acme-admin"},
+        "supplierRef": "supplier-acme-bouw-bv", "email": "admin@acmebouw.example.nl", "role": "admin", "status": "active", "eherkenningLevel": "3"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-acme-finance"},
+        "supplierRef": "supplier-acme-bouw-bv", "email": "finance@acmebouw.example.nl", "role": "finance", "status": "active", "eherkenningLevel": "3"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-orange-contracts"},
+        "supplierRef": "supplier-orange-it-bv", "email": "contracts@orangeit.example.nl", "role": "contracts", "status": "active", "eherkenningLevel": "3"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-orange-sales"},
+        "supplierRef": "supplier-orange-it-bv", "email": "sales@orangeit.example.nl", "role": "sales", "status": "active", "eherkenningLevel": "2"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-blokker-readonly"},
+        "supplierRef": "supplier-blokker-schoonmaak", "email": "viewer@blokker.example.nl", "role": "read_only", "status": "revoked", "eherkenningLevel": "2"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-acme-onderhoud-2026"},
+        "supplierRef": "supplier-acme-bouw-bv", "title": "Onderhoud gemeentehuis 2026", "status": "submitted", "submittedDate": "2026-03-01", "value": 250000
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-orange-software-eval"},
+        "supplierRef": "supplier-orange-it-bv", "title": "Softwarelicentie 2026", "status": "evaluating", "submittedDate": "2026-02-15", "value": 120000
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-acme-awarded"},
+        "supplierRef": "supplier-acme-bouw-bv", "title": "Renovatie schoolgebouw", "status": "awarded", "submittedDate": "2025-12-01", "value": 800000, "awardDate": "2026-01-10"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-blokker-rejected"},
+        "supplierRef": "supplier-blokker-schoonmaak", "title": "Schoonmaak buurthuis", "status": "rejected", "submittedDate": "2025-11-15", "value": 45000, "rejectionReason": "Onvoldoende referenties", "appealDeadline": "2026-02-28"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-orange-withdrawn"},
+        "supplierRef": "supplier-orange-it-bv", "title": "Datacenter migratie", "status": "withdrawn", "submittedDate": "2025-10-01", "value": 600000
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierContract", "slug": "contract-acme-renovatie"},
+        "supplierRef": "supplier-acme-bouw-bv", "number": "C-2026-001", "subject": "Renovatie schoolgebouw", "startDate": "2026-02-01", "endDate": "2026-12-31", "value": 800000, "accountManager": "j.jansen@gemeente.nl", "renewalOption": "manual_request"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierContract", "slug": "contract-orange-licenties"},
+        "supplierRef": "supplier-orange-it-bv", "number": "C-2025-027", "subject": "Softwarelicenties 2025-2026", "startDate": "2025-04-01", "endDate": "2026-08-31", "value": 120000, "accountManager": "m.bakker@gemeente.nl", "renewalOption": "auto", "renewalWarning": true
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierContract", "slug": "contract-orange-cloud"},
+        "supplierRef": "supplier-orange-it-bv", "number": "C-2025-028", "subject": "Cloudhosting", "startDate": "2025-06-01", "endDate": "2027-05-31", "value": 240000, "accountManager": "m.bakker@gemeente.nl", "renewalOption": "none"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierContract", "slug": "contract-blokker-historie"},
+        "supplierRef": "supplier-blokker-schoonmaak", "number": "C-2024-011", "subject": "Schoonmaak 2024-2025", "startDate": "2024-01-01", "endDate": "2025-12-31", "value": 90000, "accountManager": "k.dijk@gemeente.nl", "renewalOption": "none"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-acme-001"},
+        "supplierRef": "supplier-acme-bouw-bv", "number": "INV-2026-001", "invoiceDate": "2026-02-15", "amount": 50000, "vatAmount": 10500, "status": "received", "dueDate": "2026-03-15"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-acme-002"},
+        "supplierRef": "supplier-acme-bouw-bv", "number": "INV-2026-002", "invoiceDate": "2026-03-15", "amount": 75000, "vatAmount": 15750, "status": "under_review", "dueDate": "2026-04-15"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-orange-001"},
+        "supplierRef": "supplier-orange-it-bv", "number": "OR-2026-001", "invoiceDate": "2026-04-01", "amount": 30000, "vatAmount": 6300, "status": "approved", "dueDate": "2026-05-01", "expectedPaymentDate": "2026-04-25"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-orange-disputed"},
+        "supplierRef": "supplier-orange-it-bv", "number": "OR-2026-002", "invoiceDate": "2026-04-15", "amount": 12000, "vatAmount": 2520, "status": "disputed", "dueDate": "2026-05-15", "disputeReason": "Aantal eenheden komt niet overeen met de purchase order"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-blokker-overdue"},
+        "supplierRef": "supplier-blokker-schoonmaak", "number": "BL-2025-099", "invoiceDate": "2025-12-15", "amount": 8000, "vatAmount": 1680, "status": "received", "dueDate": "2026-01-15"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierMessage", "slug": "msg-acme-welcome"},
+        "supplierRef": "supplier-acme-bouw-bv", "direction": "outbound", "subject": "Welkom in het leveranciersportaal", "body": "Beste ACME Bouw, uw toegang tot het leveranciersportaal is geactiveerd.", "sentBy": "system", "sentAt": "2026-01-15T10:00:00+01:00"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierMessage", "slug": "msg-acme-question"},
+        "supplierRef": "supplier-acme-bouw-bv", "direction": "inbound", "subject": "Vraag over INV-2026-002", "body": "Goedendag, kunt u een verwachte betaaldatum delen voor factuur INV-2026-002?", "sentBy": "finance@acmebouw.example.nl", "sentAt": "2026-04-01T14:30:00+02:00"
       }
     ]
   }
