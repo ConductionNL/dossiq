@@ -1,0 +1,292 @@
+openapi: 3.0.0
+info:
+  title: Procest Leverancier Zaakportaal API
+  description: |
+    Supplier-portal endpoints — eHerkenning auth, tender visibility,
+    invoice forecast, contract renewal, messaging, master data
+    self-service, KPI dashboard. All endpoints require a bearer JWT
+    issued by `SupplierAuthService::issueSessionToken()` and are
+    automatically supplier-scoped via `SupplierAuthMiddleware`.
+  version: '0.1.0'
+servers:
+  - url: '/index.php/apps/procest'
+    description: Procest app base path
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      required: [success, error]
+      properties:
+        success: { type: boolean, example: false }
+        error: { type: string }
+    Tender:
+      type: object
+      properties:
+        supplierRef: { type: string, format: uuid }
+        title: { type: string }
+        status: { type: string, enum: [submitted, evaluating, awarded, rejected, withdrawn] }
+        submittedDate: { type: string, format: date }
+        value: { type: number }
+        awardDate: { type: string, format: date }
+        rejectionReason: { type: string }
+        appealDeadline: { type: string, format: date }
+        _derived:
+          type: object
+          properties:
+            appealDeadline: { type: string, format: date, nullable: true }
+            canAppeal: { type: boolean }
+            evaluationDownloadable: { type: boolean }
+    Invoice:
+      type: object
+      properties:
+        supplierRef: { type: string, format: uuid }
+        number: { type: string }
+        invoiceDate: { type: string, format: date }
+        amount: { type: number }
+        status: { type: string, enum: [received, under_review, approved, disputed, rejected, paid] }
+        dueDate: { type: string, format: date }
+        expectedPaymentDate: { type: string, format: date }
+        actualPaymentDate: { type: string, format: date }
+        disputeReason: { type: string }
+    Contract:
+      type: object
+      properties:
+        supplierRef: { type: string, format: uuid }
+        number: { type: string }
+        subject: { type: string }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        value: { type: number }
+        accountManager: { type: string }
+        renewalOption: { type: string, enum: [auto, manual_request, none] }
+        renewalWarning: { type: boolean }
+    KpiSnapshot:
+      type: object
+      properties:
+        avgPaymentDays: { type: number, nullable: true }
+        onTimePercentage: { type: number }
+        disputeRate: { type: number }
+        complianceScore: { type: number }
+        sufficientData: { type: boolean }
+        invoiceCount: { type: integer }
+    DashboardSummary:
+      type: object
+      properties:
+        tenders:
+          type: object
+          properties:
+            count: { type: integer }
+            awarded: { type: integer }
+            evaluating: { type: integer }
+            rejected: { type: integer }
+        invoices:
+          type: object
+          properties:
+            count: { type: integer }
+            overdue90Plus: { type: integer }
+            disputed: { type: integer }
+            ageAnalysis: { type: object }
+        contracts:
+          type: object
+          properties:
+            count: { type: integer }
+            expiringSoon: { type: integer }
+            autoRenewing: { type: integer }
+        kpi:
+          type: object
+          properties:
+            ready: { type: boolean }
+            period: { type: string }
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/supplier-portal/auth/login:
+    get:
+      summary: Start eHerkenning login flow (redirect)
+      security: []
+      responses:
+        '302': { description: Redirect to eHerkenning broker }
+
+  /api/supplier-portal/auth/callback:
+    get:
+      summary: eHerkenning callback — exchanges code, validates KvK, issues session JWT
+      security: []
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Session issued }
+        '401': { description: Unknown / inactive / blacklisted supplier }
+
+  /api/supplier-portal/tenders:
+    get:
+      summary: List supplier tenders
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [submitted, evaluating, awarded, rejected, withdrawn] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Tender' }
+
+  /api/supplier-portal/tenders/{tenderId}:
+    parameters: [{ in: path, name: tenderId, required: true, schema: { type: string } }]
+    get:
+      summary: Show a tender with derived fields (appealDeadline, canAppeal)
+      responses:
+        '200': { description: OK }
+        '404': { description: Not found (out of scope or missing) }
+
+  /api/supplier-portal/tenders/{tenderId}/evaluation-report:
+    parameters: [{ in: path, name: tenderId, required: true, schema: { type: string } }]
+    get:
+      summary: Download the anonymised evaluation report (PDF)
+      responses:
+        '200':
+          description: PDF body
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        '404': { description: Not available }
+
+  /api/supplier-portal/invoices:
+    get:
+      summary: List supplier invoices
+      responses: { '200': { description: OK } }
+
+  /api/supplier-portal/invoices/{invoiceId}/dispute:
+    parameters: [{ in: path, name: invoiceId, required: true, schema: { type: string } }]
+    post:
+      summary: Mark an invoice as disputed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses: { '200': { description: OK } }
+
+  /api/supplier-portal/invoices/age-analysis:
+    get:
+      summary: Bucketed age analysis (0-30 / 31-60 / 61-90 / 90+)
+      responses: { '200': { description: OK } }
+
+  /api/supplier-portal/contracts:
+    get: { summary: List supplier contracts, responses: { '200': { description: OK } } }
+
+  /api/supplier-portal/contracts/{contractId}/request-renewal:
+    parameters: [{ in: path, name: contractId, required: true, schema: { type: string } }]
+    post:
+      summary: Request renewal (admin + contracts only) — creates a Procest case
+      responses:
+        '200': { description: Renewal case created }
+        '403': { description: Not authorised (role gate) }
+        '409': { description: Contract not in renewal window }
+
+  /api/supplier-portal/messages:
+    get:
+      summary: Conversation history for a case
+      parameters: [{ in: query, name: caseId, required: true, schema: { type: string } }]
+      responses: { '200': { description: OK } }
+    post:
+      summary: Send a message (inbound)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [caseRef, body]
+              properties:
+                caseRef: { type: string }
+                body: { type: string }
+                attachmentRefs:
+                  type: array
+                  items: { type: string }
+      responses:
+        '201': { description: Created }
+        '400': { description: Validation error (empty body / bad attachment / too many) }
+
+  /api/supplier-portal/profile:
+    get: { summary: Get supplier profile, responses: { '200': { description: OK } } }
+
+  /api/supplier-portal/profile/address:
+    post:
+      summary: Apply an address change (immediate)
+      responses: { '200': { description: OK } }
+
+  /api/supplier-portal/profile/iban:
+    post:
+      summary: Request an IBAN change (4-eyes Procest case)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newIBAN]
+              properties:
+                newIBAN: { type: string }
+      responses:
+        '200': { description: 4-eyes case created — NOT yet applied }
+        '400': { description: Invalid IBAN }
+        '403': { description: Financial re-auth required }
+
+  /api/supplier-portal/kpis:
+    get:
+      summary: Current-period KPI snapshot
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KpiSnapshot' }
+
+  /api/supplier-portal/kpis/trends:
+    get:
+      summary: 12-month KPI trend
+      responses: { '200': { description: OK } }
+
+  /api/supplier-portal/kpis/export:
+    get:
+      summary: CSV export of KPI history (audit logged)
+      responses:
+        '200':
+          description: OK
+          content:
+            text/csv:
+              schema: { type: string }
+
+  /api/supplier-portal/dashboard:
+    get:
+      summary: Aggregate dashboard summary (4 cards)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DashboardSummary' }
+
+# Cross-cutting error responses
+# - 401 Bearer JWT missing or invalid (SupplierAuthMiddleware)
+# - 403 mandate denied or scope mismatch (SupplierScopeService)
+# - 404 cross-tenant/supplier lookup (search_path scoped query returns empty)
+# - 429 rate limit (SupplierAuthMiddleware bumpAndCheckRateLimit at 100 req/min/IP)
