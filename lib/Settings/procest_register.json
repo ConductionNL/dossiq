@@ -5838,6 +5838,431 @@
             "description": "Whether new complaints can be assigned to this category"
           }
         }
+      },
+      "tenant": {
+        "slug": "tenant",
+        "icon": "OfficeBuildingOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Organization",
+        "title": "Tenant",
+        "description": "SaaS tenant — represents a single municipality / customer of the procest platform. Carries lifecycle status, tier, and isolation mode.",
+        "type": "object",
+        "required": [
+          "slug",
+          "displayName",
+          "status",
+          "tier"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Stable URL-safe tenant identifier (lowercased, hyphens). Unique across the platform."
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Human-readable tenant name shown in the UI"
+          },
+          "legalName": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Legal entity name for invoicing and contracts"
+          },
+          "kvkNumber": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "Dutch Chamber of Commerce (KvK) number"
+          },
+          "contractRef": {
+            "type": "string",
+            "description": "Reference to signed contract document (UUID or filename)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "onboarding",
+              "active",
+              "suspended",
+              "terminated"
+            ],
+            "description": "Lifecycle status — drives access enforcement in TenantMiddleware"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "basic",
+              "standard",
+              "enterprise"
+            ],
+            "description": "Service tier — drives quota defaults and feature flags"
+          },
+          "isolationMode": {
+            "type": "string",
+            "enum": [
+              "schema",
+              "database"
+            ],
+            "default": "schema",
+            "description": "Physical isolation mode — schema-per-tenant (default) or dedicated database"
+          },
+          "dataResidency": {
+            "type": "string",
+            "enum": [
+              "nl",
+              "eu"
+            ],
+            "default": "nl",
+            "description": "Data residency region (AVG art. 28)"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Tenant record creation timestamp"
+          },
+          "activatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when status transitioned to active"
+          },
+          "terminatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when status transitioned to terminated"
+          }
+        }
+      },
+      "tenantConfiguration": {
+        "slug": "tenantConfiguration",
+        "icon": "Cog",
+        "version": "1.0.0",
+        "title": "Tenant Configuration",
+        "description": "Per-tenant configuration — branding, locale, and feature flags. 1:1 with Tenant.",
+        "type": "object",
+        "required": [
+          "tenantRef"
+        ],
+        "properties": {
+          "tenantRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent Tenant"
+          },
+          "branding": {
+            "type": "object",
+            "description": "Branding payload — logo URL, primaryColor, secondaryColor, fontFamily, customCSS",
+            "properties": {
+              "logo": {
+                "type": "string"
+              },
+              "primaryColor": {
+                "type": "string"
+              },
+              "secondaryColor": {
+                "type": "string"
+              },
+              "fontFamily": {
+                "type": "string"
+              },
+              "customCSS": {
+                "type": "string"
+              }
+            }
+          },
+          "domain": {
+            "type": "string",
+            "description": "Custom tenant domain (e.g. zaken.gemeente-amsterdam.nl)"
+          },
+          "locale": {
+            "type": "string",
+            "default": "nl_NL",
+            "description": "Default locale for the tenant"
+          },
+          "timezone": {
+            "type": "string",
+            "default": "Europe/Amsterdam",
+            "description": "IANA timezone"
+          },
+          "dateFormat": {
+            "type": "string",
+            "default": "DD-MM-YYYY",
+            "description": "Display date format"
+          },
+          "currency": {
+            "type": "string",
+            "default": "EUR",
+            "description": "ISO-4217 currency code"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Active feature-flag names for this tenant"
+          }
+        }
+      },
+      "tenantQuota": {
+        "slug": "tenantQuota",
+        "icon": "GaugeFull",
+        "version": "1.0.0",
+        "title": "Tenant Quota",
+        "description": "Per-tenant quota — one row per quota type. Tracks limit, current usage, and enforcement policy.",
+        "type": "object",
+        "required": [
+          "tenantRef",
+          "quotaType"
+        ],
+        "properties": {
+          "tenantRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent Tenant"
+          },
+          "quotaType": {
+            "type": "string",
+            "enum": [
+              "cases_per_month",
+              "storage_gb",
+              "active_users",
+              "api_calls_per_hour"
+            ],
+            "description": "Quota dimension"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Hard limit value (NULL = unlimited)"
+          },
+          "currentUsage": {
+            "type": "integer",
+            "default": 0,
+            "description": "Current usage count"
+          },
+          "resetAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Next reset timestamp (monthly / hourly windows)"
+          },
+          "softLimitWarningPercent": {
+            "type": "integer",
+            "default": 80,
+            "description": "Percentage of limit at which to emit a warning notification"
+          },
+          "enforcement": {
+            "type": "string",
+            "enum": [
+              "warn",
+              "throttle",
+              "block"
+            ],
+            "default": "warn",
+            "description": "What to do when limit is hit"
+          }
+        }
+      },
+      "tenantUser": {
+        "slug": "tenantUser",
+        "icon": "AccountOutline",
+        "version": "1.0.0",
+        "title": "Tenant User",
+        "description": "Per-tenant user membership — maps a Nextcloud user to a tenant with role + eHerkenning level.",
+        "type": "object",
+        "required": [
+          "tenantRef",
+          "userRef"
+        ],
+        "properties": {
+          "tenantRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent Tenant"
+          },
+          "userRef": {
+            "type": "string",
+            "description": "Nextcloud user ID"
+          },
+          "role": {
+            "type": "string",
+            "description": "Role within the tenant (admin, manager, behandelaar, viewer, ...)"
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Membership creation timestamp"
+          },
+          "lastActiveAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last activity timestamp"
+          },
+          "mfaEnabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether MFA is enabled for this membership"
+          },
+          "eherkenningLevel": {
+            "type": "string",
+            "enum": [
+              "2",
+              "3",
+              "4"
+            ],
+            "description": "eHerkenning trust level (EH2/EH3/EH4)"
+          }
+        }
+      },
+      "tenantMandate": {
+        "slug": "tenantMandate",
+        "icon": "FileSignOutline",
+        "version": "1.0.0",
+        "title": "Tenant Mandate",
+        "description": "Signed mandate authorising a tenant to act on behalf of the issuing authority — backs ketenmachtiging (chain-mandate) flows.",
+        "type": "object",
+        "required": [
+          "tenantRef"
+        ],
+        "properties": {
+          "tenantRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent Tenant"
+          },
+          "mandateMatrixRef": {
+            "type": "string",
+            "description": "Reference into the mandate matrix (digi-d MR or VNG mandate registry)"
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Mandate validity start"
+          },
+          "effectiveTo": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Mandate validity end"
+          },
+          "signedBy": {
+            "type": "string",
+            "description": "Signatory identifier (NC user ID or contract reference)"
+          },
+          "documentRef": {
+            "type": "string",
+            "description": "Reference to the signed mandate document"
+          }
+        }
+      },
+      "tenantBillingEvent": {
+        "slug": "tenantBillingEvent",
+        "icon": "CashRegister",
+        "version": "1.0.0",
+        "x-insert-only": true,
+        "title": "Tenant Billing Event",
+        "description": "Insert-only billing event — every billable action emits one row. Consumed by shillinq for invoicing.",
+        "type": "object",
+        "required": [
+          "tenantRef",
+          "eventType",
+          "occurredAt"
+        ],
+        "properties": {
+          "tenantRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent Tenant"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "case_created",
+              "case_closed",
+              "user_activated",
+              "storage_increment",
+              "api_burst",
+              "quota_exceeded",
+              "case_refund"
+            ],
+            "description": "Type of billable event"
+          },
+          "quantity": {
+            "type": "number",
+            "default": 1,
+            "description": "Quantity for the event"
+          },
+          "unitPrice": {
+            "type": "number",
+            "description": "Unit price at time of event in tenant currency"
+          },
+          "currency": {
+            "type": "string",
+            "default": "EUR",
+            "description": "ISO-4217 currency code"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Event timestamp (immutable)"
+          },
+          "invoiceRef": {
+            "type": "string",
+            "description": "Set when the event is rolled into an invoice (null until then)"
+          }
+        }
+      },
+      "tenantOnboardingTask": {
+        "slug": "tenantOnboardingTask",
+        "icon": "CheckboxMarkedCircleOutline",
+        "version": "1.0.0",
+        "title": "Tenant Onboarding Task",
+        "description": "One step of the tenant onboarding workflow — drives the onboarding checklist UI.",
+        "type": "object",
+        "required": [
+          "tenantRef",
+          "step",
+          "status"
+        ],
+        "properties": {
+          "tenantRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent Tenant"
+          },
+          "step": {
+            "type": "string",
+            "enum": [
+              "contract",
+              "mandate_import",
+              "sso_setup",
+              "branding",
+              "zaaktype_selection",
+              "first_user",
+              "go_live"
+            ],
+            "description": "Onboarding step identifier"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "in_progress",
+              "completed",
+              "skipped"
+            ],
+            "description": "Step status"
+          },
+          "completedBy": {
+            "type": "string",
+            "description": "NC user ID who completed the step"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Completion timestamp"
+          },
+          "blockedReason": {
+            "type": "string",
+            "description": "Reason the step is blocked (surfaced in the UI)"
+          }
+        }
       }
     },
     "registers": {
@@ -5898,7 +6323,14 @@
           "complaint",
           "hearing",
           "complaintDisposition",
-          "complaintCategory"
+          "complaintCategory",
+          "tenant",
+          "tenantConfiguration",
+          "tenantQuota",
+          "tenantUser",
+          "tenantMandate",
+          "tenantBillingEvent",
+          "tenantOnboardingTask"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"
@@ -6655,6 +7087,232 @@
         "defaultHandler": "",
         "slaOverride": null,
         "isActive": true
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-basic-cases-per-month"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000000",
+        "quotaType": "cases_per_month",
+        "limit": 100,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-basic-storage-gb"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000000",
+        "quotaType": "storage_gb",
+        "limit": 10,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-basic-active-users"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000000",
+        "quotaType": "active_users",
+        "limit": 5,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "block"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-basic-api-calls-per-hour"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000000",
+        "quotaType": "api_calls_per_hour",
+        "limit": 1000,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "throttle"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-standard-cases-per-month"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000001",
+        "quotaType": "cases_per_month",
+        "limit": 1000,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-standard-storage-gb"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000001",
+        "quotaType": "storage_gb",
+        "limit": 100,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-standard-active-users"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000001",
+        "quotaType": "active_users",
+        "limit": 50,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "block"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-standard-api-calls-per-hour"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000001",
+        "quotaType": "api_calls_per_hour",
+        "limit": 10000,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "throttle"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-enterprise-cases-per-month"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000002",
+        "quotaType": "cases_per_month",
+        "limit": null,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 90,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-enterprise-storage-gb"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000002",
+        "quotaType": "storage_gb",
+        "limit": null,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 90,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-enterprise-active-users"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000002",
+        "quotaType": "active_users",
+        "limit": null,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 90,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-enterprise-api-calls-per-hour"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000002",
+        "quotaType": "api_calls_per_hour",
+        "limit": null,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 90,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantOnboardingTask",
+          "slug": "default-onboarding-contract"
+        },
+        "tenantRef": "00000000-0000-0000-0000-00000000000d",
+        "step": "contract",
+        "status": "pending"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantOnboardingTask",
+          "slug": "default-onboarding-mandate-import"
+        },
+        "tenantRef": "00000000-0000-0000-0000-00000000000d",
+        "step": "mandate_import",
+        "status": "pending"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantOnboardingTask",
+          "slug": "default-onboarding-sso-setup"
+        },
+        "tenantRef": "00000000-0000-0000-0000-00000000000d",
+        "step": "sso_setup",
+        "status": "pending"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantOnboardingTask",
+          "slug": "default-onboarding-branding"
+        },
+        "tenantRef": "00000000-0000-0000-0000-00000000000d",
+        "step": "branding",
+        "status": "pending"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantOnboardingTask",
+          "slug": "default-onboarding-zaaktype-selection"
+        },
+        "tenantRef": "00000000-0000-0000-0000-00000000000d",
+        "step": "zaaktype_selection",
+        "status": "pending"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantOnboardingTask",
+          "slug": "default-onboarding-first-user"
+        },
+        "tenantRef": "00000000-0000-0000-0000-00000000000d",
+        "step": "first_user",
+        "status": "pending"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantOnboardingTask",
+          "slug": "default-onboarding-go-live"
+        },
+        "tenantRef": "00000000-0000-0000-0000-00000000000d",
+        "step": "go_live",
+        "status": "pending"
       }
     ]
   }
