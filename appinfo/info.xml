@@ -79,6 +79,7 @@ Vrij en open source onder de AGPL-licentie.
         <job>OCA\Procest\BackgroundJob\WOODeadlineCheckJob</job>
         <job>OCA\Procest\BackgroundJob\BezwaarTermijnJob</job>
         <job>OCA\Procest\BackgroundJob\ArchivalJob</job>
+        <job>OCA\Procest\BackgroundJob\DailyTermijnScanJob</job>
     </background-jobs>
 
     <repair-steps>
