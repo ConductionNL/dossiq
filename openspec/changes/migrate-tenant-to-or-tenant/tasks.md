@@ -16,6 +16,14 @@ Grouped by component. Each task includes an estimate (S = half-day, M = 1–2 da
 > data, and no pre-existing rows to migrate. Middleware/service unit tests
 > (TEST-1) require a live OR environment and remain a follow-up.
 >
+> **Build status (hydra audit 2026-06-11).** All open tasks are flipped to `[~]`
+> because the functional outcome (TenantService + TenantMiddleware delegating
+> to OR Organisation + TenantLifecycleService) is already shipped on dev
+> (`lib/Service/TenantService.php` + `lib/Middleware/TenantMiddleware.php`).
+> The remaining work is a constructor-injection clean-up + unit tests
+> requiring a live OR environment; MIG-1 / DEP-1 / TEST-2 are moot per the
+> Scope adjustment above (no schema, no data).
+>
 > **Build status (hydra audit 2026-06-10).** Verified against dev HEAD:
 > `lib/Service/TenantService::provisionTenant()` already calls
 > `OCA\OpenRegister\Service\TenantLifecycleService` via a runtime
@@ -34,18 +42,18 @@ Grouped by component. Each task includes an estimate (S = half-day, M = 1–2 da
 
 ### MW-1. Inject TenantLifecycleService into TenantMiddleware
 
-- [ ] MW-1.1 Add `OCA\OpenRegister\Service\TenantLifecycleService` as a constructor argument
+- [~] MW-1.1 Add `OCA\OpenRegister\Service\TenantLifecycleService` as a constructor argument
   to `lib/Middleware/TenantMiddleware.php`.
   - **Acceptance:** `TenantMiddleware` compiles; `composer check:strict` passes.
 
-- [ ] MW-1.2 Replace the absent status check in `beforeController()` with a call to
+- [~] MW-1.2 Replace the absent status check in `beforeController()` with a call to
   `$tenantLifecycleService->isActive($organisationUuid)`. Return HTTP 403 with
   `{"error": "Organisation is {status}", "status": "{status}"}` when `isActive()` returns
   `false`. Read the current status from `OrganisationMapper`.
   - **Acceptance:** A request scoped to a `status: "suspended"` Organisation returns HTTP 403
     with the correct body. A request scoped to a `status: "active"` Organisation proceeds.
 
-- [ ] MW-1.3 Confirm the `_tenantId` injected into request params is the OR Organisation UUID,
+- [~] MW-1.3 Confirm the `_tenantId` injected into request params is the OR Organisation UUID,
   not a procest-local row ID.
   - **Acceptance:** `$request->getParam('_tenantId')` equals the Organisation UUID in a
     unit test covering `beforeController()`.
@@ -56,33 +64,33 @@ Grouped by component. Each task includes an estimate (S = half-day, M = 1–2 da
 
 ### SVC-1. Migrate createTenant to OR Organisation
 
-- [ ] SVC-1.1 Replace the `ObjectService::saveObject(register, schema, data)` call for
+- [~] SVC-1.1 Replace the `ObjectService::saveObject(register, schema, data)` call for
   tenant creation in `TenantService::createTenant()` with `OrganisationMapper::insert()`
   using `status: "provisioning"`. Store `oin`, `domain`, `brandingTokens`, `groupId` as
   custom properties on the Organisation.
   - **Acceptance:** `TenantService::createTenant()` creates an OR Organisation with
     `status: "provisioning"`. No write occurs to procest's private `tenant` schema.
 
-- [ ] SVC-1.2 Update `getTenantByGroupId()` to query OR Organisations by the `groupId`
+- [~] SVC-1.2 Update `getTenantByGroupId()` to query OR Organisations by the `groupId`
   custom property instead of the private `tenant` schema.
   - **Acceptance:** `getTenantForUser()` correctly resolves the Organisation UUID from a
     user's NC group membership, reading from OR's Organisation store.
 
 ### SVC-2. Migrate provisionTenant to OR lifecycle
 
-- [ ] SVC-2.1 After creating the dedicated OR register in `provisionTenant()`, call
+- [~] SVC-2.1 After creating the dedicated OR register in `provisionTenant()`, call
   `TenantLifecycleService::activate($tenantId)` instead of manually setting `isActive: true`
   on the private schema.
   - **Acceptance:** After `provisionTenant()`, the Organisation `status` field is `"active"`.
 
-- [ ] SVC-2.2 Store the newly created `registerId` as a custom property on the Organisation
+- [~] SVC-2.2 Store the newly created `registerId` as a custom property on the Organisation
   via `OrganisationMapper::update()`.
   - **Acceptance:** `GET /api/organisations/{uuid}` returns the Organisation with the
     `registerId` custom property populated.
 
 ### SVC-3. Migrate getResourceUsage to OR quota data
 
-- [ ] SVC-3.1 Replace `maxStorageMb` read from private schema with `storageQuota` read from
+- [~] SVC-3.1 Replace `maxStorageMb` read from private schema with `storageQuota` read from
   the OR Organisation. Call `GET /api/organisations/{uuid}/usage` (via HTTP or direct service
   call) for bandwidth/request quota usage data.
   - **Acceptance:** `TenantService::getResourceUsage()` returns `storageQuota` in bytes
@@ -94,7 +102,7 @@ Grouped by component. Each task includes an estimate (S = half-day, M = 1–2 da
 
 ### MIG-1. Implement occ procest:migrate-tenants command
 
-- [ ] MIG-1.1 Create `lib/Migration/MigrateTenantToOrganisation.php` as a `BackgroundJob`
+- [~] MIG-1.1 Create `lib/Migration/MigrateTenantToOrganisation.php` as a `BackgroundJob`
   or an OCC command class registered in `appinfo/info.xml`. The script reads all procest
   `tenant` schema objects via `ObjectService::getObjects()`, maps each to an Organisation
   (see design.md algorithm), and inserts via `OrganisationMapper::insert()`.
@@ -102,13 +110,13 @@ Grouped by component. Each task includes an estimate (S = half-day, M = 1–2 da
     test instance with 3 pre-existing tenant objects produces 3 OR Organisations with
     correct field values and no duplicates on second run.
 
-- [ ] MIG-1.2 Map `isActive: true` → `status: "active"` and `isActive: false` →
+- [~] MIG-1.2 Map `isActive: true` → `status: "active"` and `isActive: false` →
   `status: "suspended"` in the migration. Map `maxStorageMb * 1048576` → `storageQuota`
   (bytes). Store `maxUsers` as custom property.
   - **Acceptance:** Migration output checked against source tenant objects field-by-field;
     no field loss; status mapping confirmed.
 
-- [ ] MIG-1.3 Preserve OR object UUIDs. If UUID preservation is not possible due to OR
+- [~] MIG-1.3 Preserve OR object UUIDs. If UUID preservation is not possible due to OR
   constraints, write a `tenant_uuid_map.json` file to `appdata/procest/` and add a lookup
   in `TenantService::getTenantByGroupId()` for a transition period.
   - **Acceptance:** Existing `_tenantId` references in stored objects and NC group names
@@ -120,7 +128,7 @@ Grouped by component. Each task includes an estimate (S = half-day, M = 1–2 da
 
 ### DEP-1. Deprecate procest tenant schema
 
-- [ ] DEP-1.1 After confirming successful migration, add `"deprecated": true` and
+- [~] DEP-1.1 After confirming successful migration, add `"deprecated": true` and
   `"deprecatedAt": "2026-05-11"` to the `tenant` schema entry in
   `lib/Settings/procest_register.json` (or the equivalent register configuration file).
   - **Acceptance:** The `tenant` schema entry is annotated as deprecated. `TenantService`
@@ -132,21 +140,21 @@ Grouped by component. Each task includes an estimate (S = half-day, M = 1–2 da
 
 ### TEST-1. Middleware delegation tests
 
-- [ ] TEST-1.1 Add a PHPUnit integration test: create an OR Organisation with
+- [~] TEST-1.1 Add a PHPUnit integration test: create an OR Organisation with
   `status: "suspended"`, assign a test user to the matching NC group, call a procest
   endpoint, assert HTTP 403 with `"status": "suspended"` in the body.
   - **Acceptance:** Test passes in CI; CI does not regress on existing tenant tests.
 
-- [ ] TEST-1.2 Add a PHPUnit integration test: `status: "active"` Organisation allows
+- [~] TEST-1.2 Add a PHPUnit integration test: `status: "active"` Organisation allows
   the request through; `_tenantId` request parameter equals the Organisation UUID.
   - **Acceptance:** Test passes in CI.
 
 ### TEST-2. Migration output tests
 
-- [ ] TEST-2.1 Add a PHPUnit test for `MigrateTenantToOrganisation`: insert 2 `tenant`
+- [~] TEST-2.1 Add a PHPUnit test for `MigrateTenantToOrganisation`: insert 2 `tenant`
   objects (`isActive: true`, `isActive: false`), run migration, assert OR Organisation
   count is 2, assert `status` values are `"active"` and `"suspended"` respectively.
   - **Acceptance:** Test passes in CI; idempotency confirmed by running the migration twice.
 
-- [ ] TEST-2.2 Add a test asserting `maxStorageMb → storageQuota` byte conversion is correct.
+- [~] TEST-2.2 Add a test asserting `maxStorageMb → storageQuota` byte conversion is correct.
   - **Acceptance:** `storageQuota` in the OR Organisation equals `maxStorageMb * 1048576`.

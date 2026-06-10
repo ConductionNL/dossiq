@@ -8,23 +8,23 @@
 
 ## 2. Service Unit Tests — Simple Services
 
-- [ ] 2.1 `ZgwMappingServiceTest` — `getMapping`, `saveMapping`, `listMappings`, `deleteMapping`.
-- [ ] 2.2 `ZgwPaginationHelperTest` — `wrapResults` with various page/count combinations.
-- [ ] 2.3 `ZgwDocumentServiceTest` — `storeBase64`, `storeRaw`, `getContent`, `fileExists`, `deleteFiles`.
+- [x] 2.1 `ZgwMappingServiceTest` — verified on dev (`tests/Unit/Service/ZgwMappingServiceTest.php`).
+- [x] 2.2 `ZgwPaginationHelperTest` — verified on dev (`tests/Unit/Service/ZgwPaginationHelperTest.php`).
+- [ ] 2.3 `ZgwDocumentServiceTest` — `storeBase64`, `storeRaw`, `getContent`, `fileExists`, `deleteFiles` (missing).
 
 ## 3. Service Unit Tests — Business Rules
 
-- [ ] 3.1 Register rules services: `ZgwBrcRulesServiceTest` (besluit create validation, uniqueness, immutability), `ZgwDrcRulesServiceTest` (document create validation, lock checks), `ZgwZtcRulesServiceTest` (concept protection, afleidingswijze validation).
-- [ ] 3.2 `ZgwBusinessRulesServiceTest` — dispatcher delegates to the correct per-register rules service.
+- [~] 3.1 Register rules services: `ZgwBrcRulesServiceTest` (missing), `ZgwDrcRulesServiceTest` (missing), `ZgwZtcRulesServiceTest` (missing). `ZgwZrcRulesServiceTest` exists on dev as a partial slice.
+- [ ] 3.2 `ZgwBusinessRulesServiceTest` — dispatcher delegates to the correct per-register rules service (missing).
 
 ## 4. Service Unit Tests — Complex Services
 
-- [ ] 4.1 `NotificatieServiceTest` (`publish`, deliver-failure logging) and `ZgwServiceTest` (`RESOURCE_MAP` structure, constructor dependencies).
+- [ ] 4.1 `NotificatieServiceTest` (`publish`, deliver-failure logging) and `ZgwServiceTest` (`RESOURCE_MAP` structure, constructor dependencies) (both missing).
 
 ## 5. Controller Unit Tests — Simple Controllers
 
-- [ ] 5.1 `DashboardControllerTest` (`page` → `TemplateResponse`), `HealthControllerTest` (status JSON), `MetricsControllerTest` (`index` → `TextPlainResponse` with Prometheus header).
-- [ ] 5.2 `SettingsControllerTest` (`getSettings`/`updateSettings` delegation) and `ZgwMappingControllerTest` (`index`, `show`, `update`).
+- [~] 5.1 `HealthControllerTest` + `MetricsControllerTest` verified on dev; `DashboardControllerTest` missing.
+- [ ] 5.2 `SettingsControllerTest` and `ZgwMappingControllerTest` (both missing).
 
 ## 6. Controller Unit Tests — ZGW Register Controllers
 
