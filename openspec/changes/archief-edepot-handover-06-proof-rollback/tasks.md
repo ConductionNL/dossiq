@@ -1,7 +1,5 @@
 # Tasks: archief-edepot-handover-06-proof-rollback
 
-> **Build status (hydra audit).** Greenfield. No archief schemas, services, or UI exist on dev. The 8-member archief-edepot-handover chain implements GiHandover/MDTO compliance from scratch (BewaarTermijnRegel, OverdrachtTrigger, SipBundel, OverdrachtTransactie, ArchiefBewijs, OverdrachtAuditLog schemas + daemon + sip-bundle generator + e-depot submission adapter + audit/admin UI). Tasks remain [ ] as genuine forward work for the next builder. See chain plan in design.md.
-
 Chain member 6 of 8 (`kind: code`, depends_on member 05). Traces to giant Tasks 12–14 / REQ-ARCH-006, 007, 008.
 
 ## 1. ProofOfTransferRecorder

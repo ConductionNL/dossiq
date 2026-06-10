@@ -1,7 +1,5 @@
 # Tasks — Member 12: Master Data Self-Service (code)
 
-> **Build status (hydra audit).** Greenfield. No supplier/leverancier schemas, services, or UI exist on dev (the in-tree zaakportaal is the citizen-side mijngemeente portal — separate concern, lives in lib/Service/Zaakportaal + src/views/portaal + lib/Settings/register.d/50-zaakportaal.json). The 16-member chain implements the supplier portal from scratch (Supplier* schemas, eHerkenning auth, RBAC, tender/invoice/contract/messaging surfaces, KPI dashboard, e2e tests). Tasks remain [ ] as genuine forward work.
-
 Traces to giant tasks 3.5 and 2.6; spec REQ-007.
 
 - [ ] Implement `SupplierMasterDataMutationService.updateAddress(supplierRef, newAddress)` — apply immediately, log audit

@@ -1,7 +1,5 @@
 # Tasks
 
-> **Build status (hydra audit 2026-06-10).** Substantial backend already ships on dev: `lib/Service/Pdok/PdokLocatieserverService.php` (`suggest`, `free`, `lookup`, `reverse` PDOK Locatieserver calls with caching), `lib/Service/Pdok/PdokBagService.php`, `lib/Service/LocationService.php` (case-geometry validation + reverse geocode + attach/list per case), `lib/Service/WmsWfsService.php` (layer resolution per caseType + proxy/getMap/getFeature URL builders), `lib/Service/WfsExportService.php`, `lib/Service/GisProxyService.php` (generic upstream proxy + getCapabilities). Missing: the dedicated WFS service publishing case-features as OGC 2.0.0 (the export-side counterpart of the import-side WmsWfsService), the Vue map viewer + drawing UI, and the case-geometry CRUD endpoints. Tasks remain [ ] as forward work but the foundations are in place.
-
 ## Backend Services
 
 - [ ] TASK-GIS-01: Create `lib/Service/GeoService.php` with CRUD methods for case geometry (create, read, update, delete), GeoJSON validation (RFC 7946), and coordinate transformation helpers. Add unit tests for geometry validation and edge cases (MultiPolygon, empty coordinates).

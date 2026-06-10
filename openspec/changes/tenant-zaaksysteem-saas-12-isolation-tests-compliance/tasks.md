@@ -1,7 +1,5 @@
 # Tasks: tenant-zaaksysteem-saas-12-isolation-tests-compliance
 
-> **Build status (hydra audit).** The basic TenantService + TenantMiddleware + TenantController shipped via the sibling 'migrate-tenant-to-or-tenant' change (delegates to OR's TenantLifecycleService). This 12-member SaaS chain layers on the full SaaS shape — Tenant/TenantConfiguration/TenantQuota/TenantUser schemas, schema-per-tenant provisioning, JWT tenant-claim auth, mandate validation, onboarding workflow, branding, quota enforcement, shillinq billing, suspension/termination, isolation tests — none of which exist on dev yet. Tasks stay [ ] as genuine forward work.
-
 Member 12 of 12 (code, final). Depends on member 11. Traces to giant Task 21, 22, 23, 24, 25 + REQ-010.
 
 ## 1. Isolation + E2E tests

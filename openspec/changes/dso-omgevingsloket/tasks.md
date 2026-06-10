@@ -1,7 +1,5 @@
 # Tasks: dso-omgevingsloket
 
-> **Build status (hydra audit 2026-06-10).** Substantial backend ships on dev: `lib/Service/DsoIntakeService.php::processAanvraag()` + `getDeadlineDuration()`, `lib/Service/DsoCaseService.php` (createZaakFromVergunningaanvraag/transitionStatus/computeDeadline/authorizeZaakMutation), `lib/Service/DsoLvAuthService.php`, `lib/Service/SamenwerkverzoekService.php`, plus `DsoController` + `DSOIntakeController`. Remaining: register schema seeds + admin settings tab + tests. Tasks stay [ ] for those.
-
 ## Implementation Tasks
 
 ### Schema & Configuration
@@ -32,18 +30,13 @@
 
 ## Verification Tasks
 
-> **Status (2026-06-11).** Backend code paths exist on dev (audit per T01-T08).
-> Verifications below are runtime checks; deferred to a live container with
-> OpenConnector + Docudesk wired up. Tracked via gate-19 and the cross-app
-> integration harness (ConductionNL/.github testing).
-
-- [~] **V01**: New `samenwerkverzoek` schema and zaak extension fields valid JSON; config keys populated after install — needs live install run
-- [~] **V02**: When OpenConnector writes a new vergunningaanvraag, listener creates a Procest zaak with correct `procedureType` and `deadlineDatum` — verified by code path (`VergunningaanvraagCreatedListener` + `DsoCaseService::createZaakFromVergunningaanvraag()`); runtime assertion deferred to OpenConnector cross-app harness
-- [~] **V03**: Status transition on Procest zaak writes both Procest zaak and OpenRegister vergunningaanvraag in one service call — verified by code path (`DsoCaseService::transitionStatus()` + this batch's `StatusChangeDispatcherListener`); runtime assertion deferred to cross-app harness
-- [~] **V04**: `VergunningStatusChangedEvent` is dispatched and observable by a test listener — verified by code path (`DsoCaseService::transitionStatus()` dispatches via `IEventDispatcher`); unit-level test deferred to vth-workflow-configuration-10-testing
-- [~] **V05**: Deadline job sends warning at warning threshold and critical at critical threshold; overdue cases get an overdue flag — `DsoDeadlineJob` shipped + registered in info.xml this batch; runtime assertion needs scheduled cron run
-- [~] **V06**: Working-day calculator excludes weekends and Dutch national holidays — code path on dev (`DsoCaseService::computeDeadline()`); unit-test addition deferred
-- [~] **V07**: Beschikking generation produces a PDF, attaches as `bijlage` with `type: beschikking`, sends notification — backend ready (`BeschikkingGenerationService::generateBeschikking()` + `BeschikkingService::compose/onderteken/verzend`); runtime assertion needs Docudesk live wiring
-- [~] **V08**: Samenwerkverzoek can be initiated, accepted with advies, and rejected with rationale; status enum transitions enforced — backend ready (`SamenwerkverzoekService`); runtime UI assertion deferred to greenfield Vue work
-- [~] **V09**: Doorstuur dispatches event; OpenConnector test double receives it with reden — backend code path on dev (`DsoController::doorsturen()`); cross-app double assertion deferred to OpenConnector harness
-- [~] **V10**: VTH dashboard filters by activiteitgroep, regelkwalificatie, status, locatie and shows deadline colour indicator — Vue dashboard `src/views/dso/VthDashboard.vue` ships on dev; gate-19 e2e click-through test deferred
+- [ ] **V01**: New `samenwerkverzoek` schema and zaak extension fields valid JSON; config keys populated after install
+- [ ] **V02**: When OpenConnector writes a new vergunningaanvraag, listener creates a Procest zaak with correct `procedureType` and `deadlineDatum`
+- [ ] **V03**: Status transition on Procest zaak writes both Procest zaak and OpenRegister vergunningaanvraag in one service call
+- [ ] **V04**: `VergunningStatusChangedEvent` is dispatched and observable by a test listener
+- [ ] **V05**: Deadline job sends warning at warning threshold and critical at critical threshold; overdue cases get an overdue flag
+- [ ] **V06**: Working-day calculator excludes weekends and Dutch national holidays
+- [ ] **V07**: Beschikking generation produces a PDF, attaches as `bijlage` with `type: beschikking`, sends notification
+- [ ] **V08**: Samenwerkverzoek can be initiated, accepted with advies, and rejected with rationale; status enum transitions enforced
+- [ ] **V09**: Doorstuur dispatches event; OpenConnector test double receives it with reden
+- [ ] **V10**: VTH dashboard filters by activiteitgroep, regelkwalificatie, status, locatie and shows deadline colour indicator

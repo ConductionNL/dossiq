@@ -1,7 +1,5 @@
 # Tasks: case-email-integration
 
-> **Build status (hydra audit 2026-06-10).** Substantial email/messaging stack ships on dev: `lib/Service/CaseEmailService.php`, `lib/Controller/EmailController.php`, `lib/Controller/BerichtenboxController.php`, `lib/Service/BerichtenboxService.php` + routing service + adapter folder + `BerichtenboxReadStatusJob`, plus `lib/Service/Actions/SendEmailHandler.php` and `lib/Service/Transitions/SendEmailHandler.php`. The spec asks for the **leaf-first alignment with the `email` integration leaf** (NC Mail) — the current stack is procest-native messaging. Open work: prove the email leaf endpoint is used (or replace it with the leaf when available), add the `emailTemplate` per-zaaktype schema, retire any compose surface in favour of NC Mail. Tasks stay [ ] as alignment work, not blank-slate construction.
-
 ## Deduplication Check
 
 - [ ] **D01**: Confirm leaf-first compliance per ADR-022 — email display/compose/link map to the `email` integration leaf and are NOT rebuilt in procest.

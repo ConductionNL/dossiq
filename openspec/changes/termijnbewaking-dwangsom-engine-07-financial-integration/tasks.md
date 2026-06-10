@@ -1,7 +1,5 @@
 # Tasks: termijnbewaking-dwangsom-engine-07-financial-integration
 
-> **Build status (hydra audit).** Greenfield. No TermijnDefinitie/TermijnInstance/TermijnGebeurtenis/Ingebrekestelling/Dwangsom schemas, no termijn-binding lifecycle, no daily-scan escalation daemon, no dwangsom calculation/financial integration, no burger notifications, no reporting/REST-API surfaces on dev. The 11-member chain delivers the AWB termijnbewaking + dwangsom engine from scratch. Tasks stay [ ] as genuine forward work.
-
 Member 7 of 11 (code). Depends on member 06. Traces to giant Tasks 12, 13 (REQ-TERM-007).
 
 ## 1. Payment signal preparation

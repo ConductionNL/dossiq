@@ -199,27 +199,27 @@
 
 > DEFERRED (cross-repo). These four tasks implement the real provider endpoints in OpenConnector / OpenRegister / Docudesk. On the Procest side they are abstracted behind `lib/Service/Beschikking/{TemplateEngine,Signing,Archival}AdapterInterface` with `Mock*` implementations (registered as service aliases in `Application.php`), so the Procest pipeline + tests are complete and self-contained today. Swapping a mock alias for the real adapter is the only Procest change required once these land.
 
-- [~] **T23**: (OpenConnector) Implement eIDAS-TSP adapter: — DEFERRED to openconnector repo.
+- [ ] **T23**: (OpenConnector) Implement eIDAS-TSP adapter: — DEFERRED to openconnector repo.
   - `POST /api/tsp/sign` endpoint accepting { pdfBytes, ondertekenaar, tspProvider }
   - Route to the selected TSP (KPN, EvidosSign, etc.)
   - Return { signedPdfBytes, validatieRapportId, certificaatSerienummer, ondertekeningTijdstip }
   - Store the validatierapport durably (in Nextcloud or internal storage)
 
-- [~] **T24**: (OpenConnector) Implement Berichtenbox routing — DEFERRED cross-repo:
+- [ ] **T24**: (OpenConnector) Implement Berichtenbox routing:
   - `POST /api/berichtenbox/send` accepting { pdfBytes, geadresseerde, kenmerk }
   - Route to MijnOverheid (Logius API) for BSN-based burgers
   - Route to eHerkenning OIN for business addressees
   - Fallback to print-post if not activated
   - Return { berichtId, verzondenOp, kanaal }
 
-- [~] **T25**: (OpenRegister) Implement archival ingestion — DEFERRED cross-repo:
+- [ ] **T25**: (OpenRegister) Implement archival ingestion:
   - `POST /api/archief/ingest` endpoint accepting { beschikkingId, pdfBytes, tmloMetadata }
   - Store PDF/A-3 bytes durably
   - Record metadata block
   - Calculate vernietigingsdatum based on gemeente selectielijst
   - Return { archiefId, vernietigingsdatum }
 
-- [~] **T26**: (Docudesk) Ensure template-engine supports — DEFERRED cross-repo:
+- [ ] **T26**: (Docudesk) Ensure template-engine supports:
   - PDF/A-3 output (not just PDF)
   - Version pinning by effectieve datum
   - Placeholder substitution from zaakdata context

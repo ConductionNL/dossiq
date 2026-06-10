@@ -76,6 +76,6 @@ Member 4 of 4 (final) in the case-types chain. `kind: code`. depends_on: case-ty
 
 ## TASK-CT-13: Smoke test verification `[TEST]`
 
-- [~] DEFERRED — requires a live Nextcloud instance with seeded "Omgevingsvergunning" case type. The app has no JS unit-test harness (vitest/jest) configured; the only browser layer is the Playwright `test:e2e` project, which needs the running app + OpenRegister data. The seven-tab integration is verified statically (imports, component registration, `activeTab` dispatch, store calls). Browser smoke run to be executed against the dev instance during opsx-verify.
+- [ ] DEFERRED — requires a live Nextcloud instance with seeded "Omgevingsvergunning" case type. The app has no JS unit-test harness (vitest/jest) configured; the only browser layer is the Playwright `test:e2e` project, which needs the running app + OpenRegister data. The seven-tab integration is verified statically (imports, component registration, `activeTab` dispatch, store calls). Browser smoke run to be executed against the dev instance during opsx-verify.
 - **Spec ref**: ADR-008 smoke testing rules
 - **Deferred reason**: no live instance / seed data available in the build worktree.

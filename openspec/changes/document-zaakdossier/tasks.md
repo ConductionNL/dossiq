@@ -1,7 +1,5 @@
 # Tasks: document-zaakdossier
 
-> **Build status (hydra audit 2026-06-10).** Partial. Dev has `lib/Service/DossierCompiler.php::compile(caseId)` (compiles a dossier shape from existing case+documents), `CaseSharingService`, `CaseTransferService`, and `BeroepDossierExport` (specialised export). Missing: the dedicated ZGW DRC schemas (`informatieobject`, `zaakinformatieobject`, `besluitinformatieobject`, `informatieobjecttype`) on the procest register, the `InformatieobjectAccessGuard` (vertrouwelijkheid clearance filter), the `ZipManifestBuilder` (manifest.csv + sub-folder layout), and the dedicated `ZaakdossierController`. The ZGW backend already lives in `lib/Service/ZgwDocumentService.php` + `ZgwDrcRulesService.php` + the `DrcController` for the ZGW-API surface — this change layers an app-native dossier UI on top. Tasks stay [ ] as real forward work.
-
 ## Implementation Tasks
 
 ### Schema & Configuration

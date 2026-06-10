@@ -84,13 +84,13 @@
 - [x] `phpmd.baseline.xml` deleted (PHPMD clean).
 - [x] `phpstan-baseline.neon` slimmed + documented.
 - [x] No source-file excludes remain in `phpcs.xml`.
-- [~] DEFERRED: weekly `check:strict` smoke-test cron — the per-PR gate gives
+- [ ] DEFERRED: weekly `check:strict` smoke-test cron — the per-PR gate gives
       equivalent coverage; a standalone cron belongs to a fleet CI change.
 
 ## Phase 6 — Documentation
 
 - [x] Updated README quality-gates section (unified `check:strict`, no PHPMD
       baseline, documented slim PHPStan baseline).
-- [~] DEFERRED: app-config.json note — README + this tasks.md are the record.
-- [~] DEFERRED: close the burn-down tracking issue — maintainer does this on
+- [ ] DEFERRED: app-config.json note — README + this tasks.md are the record.
+- [ ] DEFERRED: close the burn-down tracking issue — maintainer does this on
       merge.

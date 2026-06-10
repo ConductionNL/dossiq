@@ -119,7 +119,7 @@ import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
 import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
 import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-import DsoCaseDetail from '../../modals/DsoCaseDetail.vue'
+import DsoCaseDetail from './DsoCaseDetail.vue'
 
 export default {
 	name: 'VthDashboard',

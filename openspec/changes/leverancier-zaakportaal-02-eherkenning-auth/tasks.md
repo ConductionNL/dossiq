@@ -1,7 +1,5 @@
 # Tasks — Member 02: eHerkenning Authentication (code)
 
-> **Build status (hydra audit).** Greenfield. No supplier/leverancier schemas, services, or UI exist on dev (the in-tree zaakportaal is the citizen-side mijngemeente portal — separate concern, lives in lib/Service/Zaakportaal + src/views/portaal + lib/Settings/register.d/50-zaakportaal.json). The 16-member chain implements the supplier portal from scratch (Supplier* schemas, eHerkenning auth, RBAC, tender/invoice/contract/messaging surfaces, KPI dashboard, e2e tests). Tasks remain [ ] as genuine forward work.
-
 Traces to giant tasks 1.1 and 4.2; spec REQ-001.
 
 - [ ] Implement `SupplierAuthService.authenticateViaEHerkenning(code)` — exchange code, extract KvK claim

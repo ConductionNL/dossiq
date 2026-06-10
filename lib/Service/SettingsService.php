@@ -146,12 +146,6 @@ class SettingsService
         'subsidie_vaststelling_schema',
         'terugvordering_schema',
         'bewijsstuk_schema',
-        // Milestone tracking — milestone-tracking spec.
-        'milestone_record_schema',
-        // Consultation management — consultation-management spec.
-        'consultation_schema',
-        'advice_response_schema',
-        'advisory_body_schema',
         // Leges-heffingen (leges-heffingen spec) — Gemeentewet art. 229.
         'leges_tarief_tabel_schema',
         'leges_tarief_schema',
@@ -297,12 +291,6 @@ class SettingsService
         'portaalBericht'               => 'portaal_bericht_schema',
         'portaalVerzoek'               => 'portaal_verzoek_schema',
         'portaalNotificatieVoorkeur'   => 'portaal_notificatie_voorkeur_schema',
-        // Milestone tracking — milestone-tracking spec.
-        'milestoneRecord'              => 'milestone_record_schema',
-        // Consultation management — consultation-management spec.
-        'consultation'                 => 'consultation_schema',
-        'adviceResponse'               => 'advice_response_schema',
-        'advisoryBody'                 => 'advisory_body_schema',
         // Leges (municipal fees) — leges-heffingen spec.
         'legesTariefTabel'             => 'leges_tarief_tabel_schema',
         'legesTarief'                  => 'leges_tarief_schema',

@@ -1,7 +1,5 @@
 # Tasks: Case Types — Member 02 (Backend Validation)
 
-> **Build status (hydra audit 2026-06-10).** Partial. `lib/Service/ZgwZtcRulesService.php` ships `checkConceptProtection`, `defaultConcept`, `preserveConcept`, `rulesZaaktypenCreate`, `rulesBesluittypenCreate`, `rulesZaaktypeinformatieobjecttypenCreate`, `rulesResultaattypenCreate` — but the dedicated `validatePublish(register, caseTypeId)` + the publish workflow are NOT implemented. The frontend uses generic `saveObject` to flip `isDraft`/`isActive` without server-side guard. Tasks stay [ ] as real backend forward work.
-
 Feature tier tags: `[MVP]` = must ship, `[TEST]` = quality gate.
 Member 2 of 4 in the case-types chain. `kind: code`. depends_on: case-types-01-seed-and-stores.
 

@@ -1,7 +1,5 @@
 # Tasks: archief-edepot-handover-05-sip-submission
 
-> **Build status (hydra audit).** Greenfield. No archief schemas, services, or UI exist on dev. The 8-member archief-edepot-handover chain implements GiHandover/MDTO compliance from scratch (BewaarTermijnRegel, OverdrachtTrigger, SipBundel, OverdrachtTransactie, ArchiefBewijs, OverdrachtAuditLog schemas + daemon + sip-bundle generator + e-depot submission adapter + audit/admin UI). Tasks remain [ ] as genuine forward work for the next builder. See chain plan in design.md.
-
 Chain member 5 of 8 (`kind: code`, depends_on member 04). Traces to giant Tasks 9–11 / REQ-ARCH-004, 005.
 
 ## 1. BagIt SIP assembly

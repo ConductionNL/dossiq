@@ -41,7 +41,6 @@ class VergunningStatusChangedEvent extends Event
      * @param string|null $besluitdatum          Optional decision date (ISO 8601)
      * @param string|null $toelichting           Optional explanation text
      * @param string      $userId                The Nextcloud user UID who triggered the transition
-     * @param string|null $beschikkingUrl        Optional URL to the beschikking PDF (set for Verleend/Geweigerd)
      *
      * @spec openspec/changes/dso-omgevingsloket/tasks.md#T01
      */
@@ -52,22 +51,9 @@ class VergunningStatusChangedEvent extends Event
         private readonly ?string $besluitdatum,
         private readonly ?string $toelichting,
         private readonly string $userId,
-        private readonly ?string $beschikkingUrl = null,
     ) {
         parent::__construct();
     }//end __construct()
-
-    /**
-     * Get the optional beschikking URL (set for Verleend/Geweigerd transitions).
-     *
-     * @return string|null
-     *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T01
-     */
-    public function getBeschikkingUrl(): ?string
-    {
-        return $this->beschikkingUrl;
-    }//end getBeschikkingUrl()
 
     /**
      * Get the vergunningaanvraag reference UUID.

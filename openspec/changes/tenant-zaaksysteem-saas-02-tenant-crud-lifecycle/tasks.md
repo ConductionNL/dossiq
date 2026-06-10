@@ -1,7 +1,5 @@
 # Tasks: tenant-zaaksysteem-saas-02-tenant-crud-lifecycle
 
-> **Build status (hydra audit).** The basic TenantService + TenantMiddleware + TenantController shipped via the sibling 'migrate-tenant-to-or-tenant' change (delegates to OR's TenantLifecycleService). This 12-member SaaS chain layers on the full SaaS shape — Tenant/TenantConfiguration/TenantQuota/TenantUser schemas, schema-per-tenant provisioning, JWT tenant-claim auth, mandate validation, onboarding workflow, branding, quota enforcement, shillinq billing, suspension/termination, isolation tests — none of which exist on dev yet. Tasks stay [ ] as genuine forward work.
-
 Member 2 of 12 (code). Depends on member 01. Traces to giant Task 1 + REQ-001-A.
 
 ## 1. TenantService (OpenRegister-backed)

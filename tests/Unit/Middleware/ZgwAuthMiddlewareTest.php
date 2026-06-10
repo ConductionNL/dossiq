@@ -31,7 +31,7 @@ use Psr\Log\LoggerInterface;
  * Unit tests for the ZgwAuthMiddleware class.
  *
  * @covers \OCA\Procest\Middleware\ZgwAuthMiddleware
- * @uses \OCA\Procest\Middleware\ZgwAuthException
+ * @uses   \OCA\Procest\Middleware\ZgwAuthException
  */
 class ZgwAuthMiddlewareTest extends TestCase
 {
@@ -44,6 +44,13 @@ class ZgwAuthMiddlewareTest extends TestCase
     private IRequest $request;
 
     /**
+     * The mocked ZGW JWT validator.
+     *
+     * @var ZgwJwtValidator|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private ZgwJwtValidator $jwtValidator;
+
+    /**
      * The mocked logger interface.
      *
      * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
@@ -51,19 +58,11 @@ class ZgwAuthMiddlewareTest extends TestCase
     private LoggerInterface $logger;
 
     /**
-     * The mocked JWT validator.
-     *
-     * @var ZgwJwtValidator|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private ZgwJwtValidator $jwtValidator;
-
-    /**
      * The middleware under test.
      *
      * @var ZgwAuthMiddleware
      */
     private ZgwAuthMiddleware $middleware;
-
 
     /**
      * Set up test fixtures.
@@ -73,8 +72,8 @@ class ZgwAuthMiddlewareTest extends TestCase
     protected function setUp(): void
     {
         $this->request      = $this->createMock(IRequest::class);
-        $this->logger       = $this->createMock(LoggerInterface::class);
         $this->jwtValidator = $this->createMock(ZgwJwtValidator::class);
+        $this->logger       = $this->createMock(LoggerInterface::class);
 
         $this->middleware = new ZgwAuthMiddleware(
             $this->request,
@@ -83,7 +82,6 @@ class ZgwAuthMiddlewareTest extends TestCase
         );
 
     }//end setUp()
-
 
     /**
      * Test that isConfidentialityAllowed returns true for equal levels.
@@ -98,7 +96,6 @@ class ZgwAuthMiddlewareTest extends TestCase
 
     }//end testConfidentialityEqualLevelAllowed()
 
-
     /**
      * Test that isConfidentialityAllowed returns true when actual is below max.
      *
@@ -111,7 +108,6 @@ class ZgwAuthMiddlewareTest extends TestCase
         );
 
     }//end testConfidentialityBelowMaxAllowed()
-
 
     /**
      * Test that isConfidentialityAllowed returns false when actual exceeds max.
@@ -126,7 +122,6 @@ class ZgwAuthMiddlewareTest extends TestCase
 
     }//end testConfidentialityAboveMaxDenied()
 
-
     /**
      * Test that isConfidentialityAllowed returns false for unknown levels.
      *
@@ -139,7 +134,6 @@ class ZgwAuthMiddlewareTest extends TestCase
         );
 
     }//end testConfidentialityUnknownLevelDenied()
-
 
     /**
      * Test that beforeController skips non-ZgwController instances.
@@ -155,7 +149,6 @@ class ZgwAuthMiddlewareTest extends TestCase
         $this->assertTrue(true);
 
     }//end testBeforeControllerSkipsNonZgwController()
-
 
     /**
      * Test that ZgwController is abstract and cannot be instantiated directly.
@@ -174,7 +167,6 @@ class ZgwAuthMiddlewareTest extends TestCase
         );
 
     }//end testZgwControllerIsAbstract()
-
 
     /**
      * Test that concrete ZGW controllers extend ZgwController.
@@ -204,7 +196,6 @@ class ZgwAuthMiddlewareTest extends TestCase
 
     }//end testZgwControllersExtendBase()
 
-
     /**
      * Test that deriveComponentFromUrl extracts the correct component from each
      * ZGW API group URL (SB1 regression: getParam('zgwApi') was unreachable dead code).
@@ -230,7 +221,6 @@ class ZgwAuthMiddlewareTest extends TestCase
 
     }//end testDeriveComponentFromUrlCoversAllApiGroups()
 
-
     /**
      * Data provider: URI path → expected component code (or null for unknown).
      *
@@ -239,35 +229,41 @@ class ZgwAuthMiddlewareTest extends TestCase
     public static function provideZgwUriToComponent(): array
     {
         return [
-            'zrc (zaken)'       => ['/index.php/apps/procest/api/zgw/zaken/v1/zaken', 'zrc'],
-            'ztc (catalogi)'    => ['/apps/procest/api/zgw/catalogi/v1/zaaktypen', 'ztc'],
-            'brc (besluiten)'   => ['/index.php/apps/procest/api/zgw/besluiten/v1/besluiten', 'brc'],
-            'drc (documenten)'  => ['/apps/procest/api/zgw/documenten/v1/enkelvoudiginformatieobjecten', 'drc'],
+            'zrc (zaken)'        => ['/index.php/apps/procest/api/zgw/zaken/v1/zaken', 'zrc'],
+            'ztc (catalogi)'     => ['/apps/procest/api/zgw/catalogi/v1/zaaktypen', 'ztc'],
+            'brc (besluiten)'    => ['/index.php/apps/procest/api/zgw/besluiten/v1/besluiten', 'brc'],
+            'drc (documenten)'   => ['/apps/procest/api/zgw/documenten/v1/enkelvoudiginformatieobjecten', 'drc'],
             'nrc (notificaties)' => ['/apps/procest/api/zgw/notificaties/v1/kanalen', 'nrc'],
-            'ac (autorisaties)' => ['/apps/procest/api/zgw/autorisaties/v1/applicaties', 'ac'],
-            'unknown api group' => ['/apps/procest/api/zgw/unknown/v1/resources', null],
-            'non-zgw path'      => ['/apps/procest/api/settings', null],
-            'empty path'        => ['', null],
+            'ac (autorisaties)'  => ['/apps/procest/api/zgw/autorisaties/v1/applicaties', 'ac'],
+            'unknown api group'  => ['/apps/procest/api/zgw/unknown/v1/resources', null],
+            'non-zgw path'       => ['/apps/procest/api/settings', null],
+            'empty path'         => ['', null],
         ];
     }//end provideZgwUriToComponent()
 
-
     /**
-     * Test that afterException returns null for non-ZgwAuthException.
+     * Test that afterException re-throws a non-ZgwAuthException unchanged.
+     *
+     * Phase-0 regression lock: the handler must NOT return null for unowned
+     * exceptions. MiddlewareDispatcher::afterException() returns the handler's
+     * result against a non-nullable Response type, so a null return raised an
+     * uncaught TypeError (hard 500) that masked every non-ZGW controller error
+     * (e.g. the POST /transition endpoint). The handler must re-throw so the
+     * dispatcher offers the exception to the next middleware / NC core.
      *
      * @return void
      */
-    public function testAfterExceptionReturnsNullForGenericException(): void
+    public function testAfterExceptionRethrowsGenericException(): void
     {
         $controller = $this->createMock(\OCP\AppFramework\Controller::class);
         $exception  = new \RuntimeException('generic error');
 
-        $result = $this->middleware->afterException($controller, 'index', $exception);
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('generic error');
 
-        $this->assertNull($result);
+        $this->middleware->afterException($controller, 'index', $exception);
 
-    }//end testAfterExceptionReturnsNullForGenericException()
-
+    }//end testAfterExceptionRethrowsGenericException()
 
     /**
      * Test that afterException returns JSONResponse for ZgwAuthException.
@@ -290,7 +286,6 @@ class ZgwAuthMiddlewareTest extends TestCase
         );
 
     }//end testAfterExceptionReturnsJsonForZgwAuthException()
-
 
     /**
      * Test confidentiality ordering is correct across all levels.
@@ -327,6 +322,4 @@ class ZgwAuthMiddlewareTest extends TestCase
         );
 
     }//end testConfidentialityOrderingComplete()
-
-
 }//end class
