@@ -1,0 +1,176 @@
+<?php
+
+/**
+ * Procest DwangsomController.
+ *
+ * REST surface for DwangsomBerekening state + bezwaar lifecycle +
+ * beschikking-stop. Defers all business logic to
+ * {@see DwangsomCalculationService} and {@see DwangsomBezwaarService}
+ * (ADR-022).
+ *
+ * @category Controller
+ * @package  OCA\Procest\Controller
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ *
+ * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Procest\Controller;
+
+use OCA\Procest\Service\DwangsomBezwaarService;
+use OCA\Procest\Service\DwangsomCalculationService;
+use OCA\Procest\Service\SettingsService;
+use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\JSONResponse;
+use OCP\IRequest;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * REST surface for DwangsomBerekening state + bezwaar.
+ *
+ * @psalm-suppress UnusedClass
+ */
+class DwangsomController extends Controller
+{
+    /**
+     * Constructor.
+     *
+     * @param string                     $appName    App id.
+     * @param IRequest                   $request    Request.
+     * @param DwangsomCalculationService $calc       Calculation service.
+     * @param DwangsomBezwaarService     $bezwaar    Bezwaar service.
+     * @param SettingsService            $settings   Settings.
+     * @param LoggerInterface            $logger     Logger.
+     */
+    public function __construct(
+        string $appName,
+        IRequest $request,
+        private readonly DwangsomCalculationService $calc,
+        private readonly DwangsomBezwaarService $bezwaar,
+        private readonly SettingsService $settings,
+        private readonly LoggerInterface $logger,
+    ) {
+        parent::__construct($appName, $request);
+    }//end __construct()
+
+    /**
+     * Get a DwangsomBerekening by id.
+     *
+     * @NoAdminRequired
+     *
+     * @param string $id Id.
+     *
+     * @return JSONResponse
+     */
+    public function show(string $id): JSONResponse
+    {
+        $objectService = $this->settings->getObjectService();
+        $register      = (string) $this->settings->getConfigValue('register');
+        $schema        = (string) $this->settings->getConfigValue('dwangsom_berekening_schema');
+        if ($objectService === null || $register === '' || $schema === '') {
+            return new JSONResponse(['message' => 'Service unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
+        }
+
+        try {
+            $row = $objectService->find($id, register: $register, schema: $schema);
+        } catch (Throwable $e) {
+            return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
+        }
+        if (is_array($row) === false) {
+            return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
+        }
+        return new JSONResponse($row);
+    }//end show()
+
+    /**
+     * Stop the berekening because a beschikking was filed.
+     *
+     * @NoAdminRequired
+     *
+     * @param string $id Id.
+     *
+     * @return JSONResponse
+     */
+    public function beschikking(string $id): JSONResponse
+    {
+        $row = $this->calc->stopForBeschikking($id);
+        if ($row === null) {
+            return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
+        }
+        return new JSONResponse($row);
+    }//end beschikking()
+
+    /**
+     * Register a bezwaar.
+     *
+     * @NoAdminRequired
+     *
+     * @param string $id Id.
+     *
+     * @return JSONResponse
+     */
+    public function bezwaar(string $id): JSONResponse
+    {
+        $body       = $this->jsonBody();
+        $grondslag  = (string) ($body['grondslag'] ?? 'AWB 7:1');
+        $motivering = (string) ($body['motivering'] ?? '');
+
+        try {
+            $row = $this->bezwaar->registerBezwaar($id, $grondslag, $motivering);
+            return new JSONResponse($row);
+        } catch (Throwable $e) {
+            return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+    }//end bezwaar()
+
+    /**
+     * Resolve a bezwaar with a corrected amount.
+     *
+     * @NoAdminRequired
+     *
+     * @param string $id Id.
+     *
+     * @return JSONResponse
+     */
+    public function bezwaarHeroverweging(string $id): JSONResponse
+    {
+        $body        = $this->jsonBody();
+        $newBedrag   = (int) ($body['newBedragCents'] ?? -1);
+        $grondslag   = (string) ($body['grondslag'] ?? 'AWB 7:11');
+        if ($newBedrag < 0) {
+            return new JSONResponse(['message' => 'newBedragCents required and must be >= 0'], Http::STATUS_BAD_REQUEST);
+        }
+
+        try {
+            $row = $this->bezwaar->resolveBezwaar($id, $newBedrag, $grondslag);
+            return new JSONResponse($row);
+        } catch (Throwable $e) {
+            return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+    }//end bezwaarHeroverweging()
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function jsonBody(): array
+    {
+        $raw  = method_exists($this->request, 'getContent') === true
+            ? (string) $this->request->getContent() : '';
+        $body = json_decode($raw, true);
+        return is_array($body) === true ? $body : [];
+    }
+}//end class

@@ -63,6 +63,8 @@ class TermijnExtensionService
      * @return array<string, mixed>
      *
      * @throws RuntimeException With validation failures (cited AWB rule).
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
      */
     public function requestExtension(
         string $termijnInstanceId,

@@ -83,6 +83,8 @@ class DwangsomCalculationService
      * @param int $dayNumber 1-indexed day.
      *
      * @return int Daily tariff in EUR cents.
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
      */
     public function dailyTariffAwb(int $dayNumber): int
     {
@@ -104,6 +106,8 @@ class DwangsomCalculationService
      * @param string $berekeningId Berekening id.
      *
      * @return array<string, mixed>|null
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
      */
     public function calculateDaily(string $berekeningId): ?array
     {
@@ -174,6 +178,8 @@ class DwangsomCalculationService
      * @param string $berekeningId Berekening id.
      *
      * @return array<string, mixed>|null
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
      */
     public function stopForBeschikking(string $berekeningId): ?array
     {

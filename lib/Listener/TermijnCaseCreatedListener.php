@@ -61,6 +61,8 @@ class TermijnCaseCreatedListener implements IEventListener
      * @param Event $event Event.
      *
      * @return void
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
      */
     public function handle(Event $event): void
     {

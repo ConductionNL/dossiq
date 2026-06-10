@@ -67,6 +67,8 @@ class TermijnNotificationService
      * @param array<string, mixed> $context         Extra context (zaak ref, dates, amounts).
      *
      * @return array<string, mixed>  Dispatched payload (with rendered subject + body).
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
      */
     public function sendTermijnNotification(
         string $type,
@@ -101,6 +103,8 @@ class TermijnNotificationService
      * @param array<string, mixed> $context  Extra context.
      *
      * @return array{subject:string, body:string, locale:string}
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
      */
     public function renderTemplate(string $type, array $instance, array $context): array
     {

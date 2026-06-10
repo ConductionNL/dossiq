@@ -68,6 +68,8 @@ class DailyTermijnScanJob extends TimedJob
      * @return void
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
      */
     protected function run($argument): void
     {

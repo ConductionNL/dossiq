@@ -67,6 +67,8 @@ class TermijnDailyScanService
      * @param DateTimeImmutable|null $now Optional "now" override for testing.
      *
      * @return array<string, int> Counts: ['scanned', 'overschreden', 'escalated', 'pauseExpired', 'errors']
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
      */
     public function run(?DateTimeImmutable $now = null): array
     {

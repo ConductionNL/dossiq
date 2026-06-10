@@ -62,6 +62,8 @@ class TermijnReportingService
      * @param string|null $afdeling Optional department filter.
      *
      * @return array<string, mixed>
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
     public function generateQuarterlyReport(string $periode, ?string $afdeling = null): array
     {
@@ -143,6 +145,8 @@ class TermijnReportingService
      * @param int $jaar Year.
      *
      * @return array<string, mixed>
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
     public function generateDwangsomAuditReport(int $jaar): array
     {
@@ -205,6 +209,8 @@ class TermijnReportingService
      * @param array<string, mixed> $filters Optional filters (afdeling, zaaktype).
      *
      * @return array<string, mixed>
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
     public function getTermijnKpi(array $filters = []): array
     {
@@ -252,6 +258,8 @@ class TermijnReportingService
      * @param array<string, mixed> $report Report.
      *
      * @return string
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
     public function quarterlyReportAsCsv(array $report): string
     {

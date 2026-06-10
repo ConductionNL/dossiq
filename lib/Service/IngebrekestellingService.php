@@ -70,6 +70,8 @@ class IngebrekestellingService
      * @return array<string, mixed> The ingebrekestelling row (with possibly null/created berekening).
      *
      * @throws RuntimeException When the instance is missing.
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
      */
     public function registerIngebrekestelling(
         string $termijnInstanceId,

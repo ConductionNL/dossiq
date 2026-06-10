@@ -66,6 +66,8 @@ class TermijnPauseService
      * @return array<string, mixed>
      *
      * @throws RuntimeException When instance missing or duurDagen <= 0.
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
      */
     public function registerPauze(
         string $termijnInstanceId,
@@ -128,6 +130,8 @@ class TermijnPauseService
      * @return array<string, mixed>
      *
      * @throws RuntimeException When instance missing or not paused.
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
      */
     public function resumeAfterPauze(string $termijnInstanceId, ?DateTimeImmutable $aanvullingDatum = null): array
     {

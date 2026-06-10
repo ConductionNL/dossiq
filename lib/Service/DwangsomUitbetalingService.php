@@ -70,6 +70,8 @@ class DwangsomUitbetalingService
      * @return array<string, mixed>
      *
      * @throws RuntimeException When the berekening is missing or IBAN is invalid.
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
      */
     public function prepareBetaling(
         string $berekeningId,
@@ -139,6 +141,8 @@ class DwangsomUitbetalingService
      * @return array<string, mixed>
      *
      * @throws RuntimeException When the referentie is unknown.
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
      */
     public function handleCallback(
         string $referentie,
@@ -186,6 +190,8 @@ class DwangsomUitbetalingService
      * @param string $iban IBAN.
      *
      * @return bool
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
      */
     public function isValidIban(string $iban): bool
     {

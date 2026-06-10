@@ -75,6 +75,8 @@ class TermijnService
      * @return array<string, mixed>
      *
      * @throws RuntimeException When no TermijnDefinitie matches the zaaktype.
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
      */
     public function createTermijnInstance(string $zaakId, string $zaaktype, ?DateTimeImmutable $startDate = null): array
     {
@@ -120,6 +122,8 @@ class TermijnService
      * @param string $termijnInstanceId Instance id.
      *
      * @return array<string, mixed>|null
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
      */
     public function getTermijnInstance(string $termijnInstanceId): ?array
     {
@@ -152,6 +156,8 @@ class TermijnService
      * @param string $zaakId Case id.
      *
      * @return array<string, mixed>|null
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
      */
     public function getTermijnInstanceForZaak(string $zaakId): ?array
     {
@@ -193,6 +199,8 @@ class TermijnService
      * @param array<string, mixed> $patch             Partial patch.
      *
      * @return array<string, mixed>|null
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
      */
     public function updateTermijnInstance(string $termijnInstanceId, array $patch): ?array
     {
@@ -215,6 +223,8 @@ class TermijnService
      * @param string $zaaktype Zaaktype slug.
      *
      * @return array<string, mixed>|null
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
      */
     public function getTermijnDefinitie(string $zaaktype): ?array
     {
@@ -279,6 +289,8 @@ class TermijnService
      * @param string                 $documentLink      Optional document ref.
      *
      * @return array<string, mixed>|null
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
      */
     public function markTermijnCompleted(
         string $termijnInstanceId,
@@ -320,6 +332,8 @@ class TermijnService
      * @param string                 $actor             Optional actor (default 'system').
      *
      * @return array<string, mixed>|null
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
      */
     public function recordEvent(
         string $termijnInstanceId,

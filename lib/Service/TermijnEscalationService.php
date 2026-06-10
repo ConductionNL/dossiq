@@ -67,6 +67,8 @@ class TermijnEscalationService
      * Available threshold buckets, sorted descending so the earliest first.
      *
      * @return array<int, int>
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
      */
     public function thresholds(): array
     {
@@ -83,6 +85,8 @@ class TermijnEscalationService
      * @param int $daysToDeadline Days to deadline (negative = overschreden).
      *
      * @return int|null
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
      */
     public function bucketFor(int $daysToDeadline): ?int
     {
@@ -110,6 +114,8 @@ class TermijnEscalationService
      * @param int                  $threshold Threshold bucket (14/7/2/0).
      *
      * @return bool True if a notification was sent (i.e. not a duplicate).
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
      */
     public function notifyThreshold(array $instance, int $threshold): bool
     {
@@ -154,6 +160,8 @@ class TermijnEscalationService
      * Get the full escalation matrix (for admin UI rendering).
      *
      * @return array<int, array<string, mixed>>
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
      */
     public function matrix(): array
     {
