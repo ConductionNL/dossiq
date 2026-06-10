@@ -1,3 +1,7 @@
+# Tasks: unit-test-coverage-75
+
+> **Build status (hydra audit 2026-06-10).** Partial. The test suite has grown to 100 *Test.php files in tests/. Of the 14 listed in this spec, audit-verified existing: ZgwMappingServiceTest, ZgwPaginationHelperTest, HealthControllerTest, MetricsControllerTest. Missing: ZgwDocumentServiceTest, ZgwBrcRulesServiceTest, ZgwDrcRulesServiceTest, ZgwZtcRulesServiceTest, ZgwBusinessRulesServiceTest, NotificatieServiceTest, ZgwServiceTest, DashboardControllerTest, SettingsControllerTest, ZgwMappingControllerTest. Tasks stay [ ] for the missing tests; the 75% coverage target is real forward work.
+
 ## 1. Test Infrastructure Setup
 
 - [ ] 1.1 Ensure `tests/bootstrap.php` supports `OC::$server` mocking for unit tests that need container access.
