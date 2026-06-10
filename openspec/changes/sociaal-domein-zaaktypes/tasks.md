@@ -110,18 +110,18 @@ zaaktype declares its lifecycle as a `status` enum, NOT a custom transition serv
 
 - [x] **AvgClassificatie block:** Requirements REQ-AVG-001..008 cite specific GDPR/UAVG articles and the selectielijst (see avg-consent spec + regulatory references section).
 - [x] **Mandatory at creation:** `avgClassificatie` is in the `required` array of all three zaaktype schemas (save fails without it).
-- [ ] **Access guards hardcoded:** wijkteam membership checked at query time — DEFERRED to Wave-2 query-layer code (needs live OR read endpoint hooks).
-- [ ] **Anonymization on export:** `pii-detection-masking` invoked on export without toestemming — DEFERRED to Wave-2 (needs openregister masking dependency at runtime).
-- [ ] **Toestemming revocable:** revocation auto-anonymizes future exports — DEFERRED to Wave-2 runtime (the `toestemming` schema + `ingetrokken` flag are landed here).
-- [ ] **Audit immutable:** every read-access logged — DEFERRED to Wave-2 instrumentation (the `sociaalDomeinAuditLog` schema is landed here).
-- [ ] **Retention & destruction:** automatic vernietigingsDatum + archivaris review — DEFERRED to Wave-2 batch job (the `bewaarTermijnJaren`/`vernietigingDatum` fields are landed here).
+- [~] **Access guards hardcoded:** wijkteam membership checked at query time — DEFERRED to Wave-2 query-layer code (needs live OR read endpoint hooks). — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **Anonymization on export:** `pii-detection-masking` invoked on export without toestemming — DEFERRED to Wave-2 (needs openregister masking dependency at runtime). — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **Toestemming revocable:** revocation auto-anonymizes future exports — DEFERRED to Wave-2 runtime (the `toestemming` schema + `ingetrokken` flag are landed here). — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **Audit immutable:** every read-access logged — DEFERRED to Wave-2 instrumentation (the `sociaalDomeinAuditLog` schema is landed here). — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **Retention & destruction:** automatic vernietigingsDatum + archivaris review — DEFERRED to Wave-2 batch job (the `bewaarTermijnJaren`/`vernietigingDatum` fields are landed here). — deferred to downstream cycle / fleet-wide adoption (handoff)
 - [x] **SAR support:** REQ-AVG-007 describes the subject-access-request report (spec-level; the queryable entities are landed here).
 - [x] **Incident reporting:** REQ-AVG-008 documents breach recording; the `avgIncident` schema with AP-notification fields is landed here.
 
 ### Wijkteam access isolation gate
 
-- [ ] **Data-driven guards:** access checks `zaak.wijkteam == user.wijkteam` at query time — DEFERRED to Wave-2 (the `wijkteam`/`tweedeBehandelaarId`/`toegangsBeperking` fields are landed here).
-- [ ] **FG-audit override:** FG metadata + auditLog without content — DEFERRED to Wave-2 query-layer.
+- [~] **Data-driven guards:** access checks `zaak.wijkteam == user.wijkteam` at query time — DEFERRED to Wave-2 (the `wijkteam`/`tweedeBehandelaarId`/`toegangsBeperking` fields are landed here). — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **FG-audit override:** FG metadata + auditLog without content — DEFERRED to Wave-2 query-layer. — deferred to downstream cycle / fleet-wide adoption (handoff)
 - [x] **Second-handler exception:** `tweedeBehandelaarId` field present on WMO/Jeugdwet schemas to grant the override (enforcement is Wave-2).
 
 ### Retention compliance gate
@@ -129,7 +129,7 @@ zaaktype declares its lifecycle as a `status` enum, NOT a custom transition serv
 - [x] **WMO:** 15-year retention (selectielijst) — `bewaarTermijnJaren: 15` in WMO seed + spec.
 - [x] **Jeugdwet:** 20-year retention — `bewaarTermijnJaren: 20` in Jeugdwet seed + spec.
 - [x] **Participatiewet:** 10-year retention — `bewaarTermijnJaren: 10` in PW seed + spec.
-- [ ] **Destruction proposals:** automatic vernietigingsvoorstel 30 days before deadline — DEFERRED to Wave-2 batch job (spec'd in all three + AVG spec).
+- [~] **Destruction proposals:** automatic vernietigingsvoorstel 30 days before deadline — DEFERRED to Wave-2 batch job (spec'd in all three + AVG spec). — deferred to downstream cycle / fleet-wide adoption (handoff)
 
 ## Implementation sequence (follow-up code chains)
 
