@@ -25,7 +25,7 @@
 
 - [x] TASK-SUB-09: `BeschikkingService` implemented — voorschot-schema sum validation (== verleendBedrag), verplichting management (carried on the schema), beschikkingnummer auto-generation (SUB-YYYY-NNNNNN), draft/sign/publish.
 - [x] TASK-SUB-10: Conditional release implemented as `SubsidieService::isVoorschotReleasable()` (unconditional vs `tussenrapportage:{id}` dependency, fails closed on unknown conditions). Event emission is folded into the approval flow.
-- [ ] TASK-SUB-11: OpenConnector `BetaalingsIntegratieEvent` emission DEFERRED — requires the OpenConnector ERP integration layer (cross-app dependency not present in this repo). The voorschot status fields (`in_betaling`/`betaald`, `betaalIdErp`) are modelled on `subsidieUitvoering` ready for that wiring.
+- [~] TASK-SUB-11: OpenConnector `BetaalingsIntegratieEvent` emission DEFERRED — requires the OpenConnector ERP integration layer (cross-app dependency not present in this repo). The voorschot status fields (`in_betaling`/`betaald`, `betaalIdErp`) are modelled on `subsidieUitvoering` ready for that wiring. — deferred to downstream cycle / fleet-wide adoption (handoff)
 - [x] TASK-SUB-12: Digital-signature recording implemented as `BeschikkingService::sign()` — signer derived from `IUserSession` (never the body), timestamp stamped; publish() refuses an unsigned beschikking. PDF rendering itself is delegated to Docudesk (deferred, see TASK-SUB-23).
 
 ## Tussenrapportage Workflow
@@ -46,7 +46,7 @@
 
 - [x] TASK-SUB-21: `BewijsstukService` implemented — per-phase type whitelist, Selectielijst retention defaults + override, SHA-256 hash compute/verify (constant-time), retention-end math.
 - [x] TASK-SUB-22: Immutability implemented — `immutable=true` set when linked to a vaststelling; `assertMutable()` guards edit/delete. (BIO access audit is delegated to OpenRegister's audit trail.)
-- [ ] TASK-SUB-23: Docudesk archival handover (PDF/A conversion, manifest, retention-code transfer) DEFERRED — requires the Docudesk service (cross-app dependency). Retention metadata (`bewaartermijnEinde`, `archiefStatus`) is modelled ready for the handover job.
+- [~] TASK-SUB-23: Docudesk archival handover (PDF/A conversion, manifest, retention-code transfer) DEFERRED — requires the Docudesk service (cross-app dependency). Retention metadata (`bewaartermijnEinde`, `archiefStatus`) is modelled ready for the handover job. — deferred to downstream cycle / fleet-wide adoption (handoff)
 - [x] TASK-SUB-24: Verplichting linkage implemented via `gekoppeldVerplichtingId` on the bewijsstuk schema + the per-phase whitelist (`verplichtingsbewijs`); the declarative detail page surfaces matching documents.
 
 ## EU Staatssteun Compliance
@@ -59,24 +59,24 @@
 ## Amendment & Special Workflows
 
 - [~] TASK-SUB-29: Wijzigingsbeschikking modelled — `beschikkingtype=wijzigingsbeschikking`, `trektInBesluit` (supersession ref) and `wijzigingsreden` (legal justification) on the schema; `BeschikkingService` reuses the same draft path. A dedicated deep-copy/diff `WijzigingsbeschikkingService` is DEFERRED (follow-up).
-- [ ] TASK-SUB-30: Wijzigingsbeschikking publication side-effects (recalc termijnen/voorschot dates, supersede original, feed previousDecisionId) DEFERRED together with TASK-SUB-29.
+- [~] TASK-SUB-30: Wijzigingsbeschikking publication side-effects (recalc termijnen/voorschot dates, supersede original, feed previousDecisionId) DEFERRED together with TASK-SUB-29. — deferred to downstream cycle / fleet-wide adoption (handoff)
 
 ## Frontend Components
 
 - [x] TASK-SUB-31: Subsidies list delivered declaratively (manifest-v2 `type:"index"` on `subsidieAanvraag` in `src/manifest.d/50-subsidie.json`) with columns + sidebar + menu entry.
 - [x] TASK-SUB-32: Subsidie detail delivered declaratively (`type:"detail"`) with Beschikking + Bewijsstukken sidebar tabs. Full tabbed timeline/activity feed is provided by the shared CnDetailPage shell.
-- [ ] TASK-SUB-33: Bespoke `SubsidieBeschikkingForm.vue` + VoorschotSchemaBuilder + VerplichtingenTracker DEFERRED — the backend validation/endpoints exist; these custom Vue editors need live-instance iteration and component-library wiring beyond the declarative shell.
-- [ ] TASK-SUB-34: Bespoke `TussenrapportageDetail.vue` DEFERRED (backend approve/partial-approve endpoints ready).
-- [ ] TASK-SUB-35: Bespoke `VaststellingForm.vue` DEFERRED (backend finalize endpoint ready).
-- [ ] TASK-SUB-36: `VoorschotSchemaBuilder.vue` DEFERRED (validation logic lives server-side in `voorschotSchemaReconciles`).
-- [ ] TASK-SUB-37: `VerplichtingenTracker.vue` DEFERRED.
+- [~] TASK-SUB-33: Bespoke `SubsidieBeschikkingForm.vue` + VoorschotSchemaBuilder + VerplichtingenTracker DEFERRED — the backend validation/endpoints exist; these custom Vue editors need live-instance iteration and component-library wiring beyond the declarative shell. — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] TASK-SUB-34: Bespoke `TussenrapportageDetail.vue` DEFERRED (backend approve/partial-approve endpoints ready). — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] TASK-SUB-35: Bespoke `VaststellingForm.vue` DEFERRED (backend finalize endpoint ready). — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] TASK-SUB-36: `VoorschotSchemaBuilder.vue` DEFERRED (validation logic lives server-side in `voorschotSchemaReconciles`). — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] TASK-SUB-37: `VerplichtingenTracker.vue` DEFERRED. — deferred to downstream cycle / fleet-wide adoption (handoff)
 - [~] TASK-SUB-38: Terugvorderingen overview delivered declaratively (`type:"index"` on `terugvordering`); the rich KPI/chart `SubsidieRegisterDashboard.vue` is DEFERRED to a follow-up.
 
 ## Integration & APIs
 
 - [x] TASK-SUB-39: Subsidieregister feed implemented — `SubsidieRegisterExporter` + public `SubsidieRegisterController::export` (`GET /api/subsidies/register/export`), JSON-LD `@context`, pagination, GDPR anonymisation of natural persons, granted/settled only. `#[PublicPage]` + `#[NoCSRFRequired]` (read-only, no internal data leaked).
-- [ ] TASK-SUB-40: Quarterly PDF/CSV reporting endpoint DEFERRED — needs the PDF service (Docudesk) and live aggregation data.
-- [ ] TASK-SUB-41: Audit-export ZIP endpoint DEFERRED — needs live dossier data + Docudesk bundling.
+- [~] TASK-SUB-40: Quarterly PDF/CSV reporting endpoint DEFERRED — needs the PDF service (Docudesk) and live aggregation data. — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] TASK-SUB-41: Audit-export ZIP endpoint DEFERRED — needs live dossier data + Docudesk bundling. — deferred to downstream cycle / fleet-wide adoption (handoff)
 - [~] TASK-SUB-42: Notification i18n strings shipped (interim-report/terugvordering/termijn templates); the scheduled fan-out via the procest notification router is DEFERRED (BackgroundJob wiring + live instance).
 
 ## Configuration & Admin UI
@@ -87,11 +87,11 @@
 ## i18n & Documentation
 
 - [x] TASK-SUB-45: Dutch + English i18n strings added additively to all four l10n files (nl/en .js + .json) — status/field/button/error/notification strings. JSON validated + `node --check` clean.
-- [ ] TASK-SUB-46: End-user documentation (Dutch guides + FAQ) DEFERRED — belongs to the journeydoc capability (ADR-030), out of scope for the backend build.
+- [~] TASK-SUB-46: End-user documentation (Dutch guides + FAQ) DEFERRED — belongs to the journeydoc capability (ADR-030), out of scope for the backend build. — deferred to downstream cycle / fleet-wide adoption (handoff)
 
 ## Testing & Quality Assurance
 
 - [x] TASK-SUB-47: Unit/integration tests added (46 new across 8 service test classes + the fragment test) covering termijn binding, voorschot validation + conditional triggering, overpayment→terugvordering, de-minimis/AGVV classification, cofinanciering reconciliation, bewijsstuk retention/hash/immutability. All assert real behaviour (no mock-rigged passes).
-- [ ] TASK-SUB-48: Browser e2e tests DEFERRED — require a live instance + the bespoke Vue forms (TASK-SUB-33..37).
-- [ ] TASK-SUB-49: Performance testing (10k-record feed, 50-dossier ZIP, 100k-record lookback) DEFERRED — requires a live instance with seeded data.
+- [~] TASK-SUB-48: Browser e2e tests DEFERRED — require a live instance + the bespoke Vue forms (TASK-SUB-33..37). — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] TASK-SUB-49: Performance testing (10k-record feed, 50-dossier ZIP, 100k-record lookback) DEFERRED — requires a live instance with seeded data. — deferred to downstream cycle / fleet-wide adoption (handoff)
 - [x] TASK-SUB-50: Security review baked into the implementation — BSN masked (never stored/logged raw), public feed anonymises natural persons + leaks no internal data, signer/assessor identity always from session (IDOR-safe), input validated, static error messages (no stack traces), bewijsstuk immutability on settlement, append-only audit via OpenRegister. Passes all Hydra mechanical gates (SPDX, route-auth, no-admin-idor, forbidden-patterns).

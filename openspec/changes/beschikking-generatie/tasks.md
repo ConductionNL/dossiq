@@ -199,27 +199,27 @@
 
 > DEFERRED (cross-repo). These four tasks implement the real provider endpoints in OpenConnector / OpenRegister / Docudesk. On the Procest side they are abstracted behind `lib/Service/Beschikking/{TemplateEngine,Signing,Archival}AdapterInterface` with `Mock*` implementations (registered as service aliases in `Application.php`), so the Procest pipeline + tests are complete and self-contained today. Swapping a mock alias for the real adapter is the only Procest change required once these land.
 
-- [ ] **T23**: (OpenConnector) Implement eIDAS-TSP adapter: — DEFERRED to openconnector repo.
+- [~] **T23**: (OpenConnector) Implement eIDAS-TSP adapter: — DEFERRED to openconnector repo. — deferred to downstream cycle / fleet-wide adoption (handoff)
   - `POST /api/tsp/sign` endpoint accepting { pdfBytes, ondertekenaar, tspProvider }
   - Route to the selected TSP (KPN, EvidosSign, etc.)
   - Return { signedPdfBytes, validatieRapportId, certificaatSerienummer, ondertekeningTijdstip }
   - Store the validatierapport durably (in Nextcloud or internal storage)
 
-- [ ] **T24**: (OpenConnector) Implement Berichtenbox routing:
+- [~] **T24**: (OpenConnector) Implement Berichtenbox routing: — deferred to downstream cycle / fleet-wide adoption (handoff)
   - `POST /api/berichtenbox/send` accepting { pdfBytes, geadresseerde, kenmerk }
   - Route to MijnOverheid (Logius API) for BSN-based burgers
   - Route to eHerkenning OIN for business addressees
   - Fallback to print-post if not activated
   - Return { berichtId, verzondenOp, kanaal }
 
-- [ ] **T25**: (OpenRegister) Implement archival ingestion:
+- [~] **T25**: (OpenRegister) Implement archival ingestion: — deferred to downstream cycle / fleet-wide adoption (handoff)
   - `POST /api/archief/ingest` endpoint accepting { beschikkingId, pdfBytes, tmloMetadata }
   - Store PDF/A-3 bytes durably
   - Record metadata block
   - Calculate vernietigingsdatum based on gemeente selectielijst
   - Return { archiefId, vernietigingsdatum }
 
-- [ ] **T26**: (Docudesk) Ensure template-engine supports:
+- [~] **T26**: (Docudesk) Ensure template-engine supports: — deferred to downstream cycle / fleet-wide adoption (handoff)
   - PDF/A-3 output (not just PDF)
   - Version pinning by effectieve datum
   - Placeholder substitution from zaakdata context

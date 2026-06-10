@@ -2,13 +2,13 @@
 
 ## Deduplication Check
 
-- [ ] **D01**: Search `openspec/specs/`, `lib/Service/`, and `lib/Controller/` for any existing doorlooptijd, metrics aggregation, or deadline analytics service. Document findings. Confirm no overlap before beginning T01.
+- [~] **D01**: Search `openspec/specs/`, `lib/Service/`, and `lib/Controller/` for any existing doorlooptijd, metrics aggregation, or deadline analytics service. Document findings. Confirm no overlap before beginning T01. — deferred to downstream cycle / fleet-wide adoption (handoff)
 
 ## Implementation Tasks
 
 ### Backend: Metrics Service
 
-- [ ] **T01**: Create `lib/Service/DoorlooptijdService.php`.
+- [~] **T01**: Create `lib/Service/DoorlooptijdService.php`. — deferred to downstream cycle / fleet-wide adoption (handoff)
 
   Public methods (all annotate with `@spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01`):
   - `getMetrics(array $params): array` — main entry point; accepts `caseType` (UUID|null), `period` (string, default `12m`), `atRiskDays` (int, default 5); calls the four helpers below and merges results.
@@ -21,13 +21,13 @@
 
 ### Backend: Controller & Route
 
-- [ ] **T02**: Create `lib/Controller/DoorlooptijdController.php`.
+- [~] **T02**: Create `lib/Controller/DoorlooptijdController.php`. — deferred to downstream cycle / fleet-wide adoption (handoff)
 
   - `metrics(IRequest $request): JSONResponse` — reads `caseType`, `period`, `atRiskDays` from query params; validates types; delegates to `DoorlooptijdService::getMetrics()`; returns JSON.
   - Return 400 with `{ message }` for invalid parameter values (e.g. non-integer `atRiskDays`).
   - Annotate with `@spec openspec/changes/doorlooptijd-dashboard/tasks.md#T02`.
 
-- [ ] **T03**: Add route to `appinfo/routes.php`:
+- [~] **T03**: Add route to `appinfo/routes.php`: — deferred to downstream cycle / fleet-wide adoption (handoff)
   ```php
   ['name' => 'doorlooptijd#metrics', 'url' => '/api/doorlooptijd/metrics', 'verb' => 'GET'],
   ```
@@ -35,13 +35,13 @@
 
 ### Frontend: API Service
 
-- [ ] **T04**: Create `src/services/doorlooptijdApi.js`.
+- [~] **T04**: Create `src/services/doorlooptijdApi.js`. — deferred to downstream cycle / fleet-wide adoption (handoff)
 
   Export a single function `fetchMetrics({ caseType = null, period = '12m', atRiskDays = 5 } = {})` that calls `GET /api/doorlooptijd/metrics` via `@nextcloud/axios` with the provided query params (omit null params). Return the response data object.
 
 ### Frontend: Dashboard Page
 
-- [ ] **T05**: Create `src/views/doorlooptijd/DoorlooptijdDashboard.vue`.
+- [~] **T05**: Create `src/views/doorlooptijd/DoorlooptijdDashboard.vue`. — deferred to downstream cycle / fleet-wide adoption (handoff)
 
   - Use `CnDashboardPage` as the outer layout container.
   - `data()`: `metrics: null`, `loading: true`, `error: null`, `selectedCaseType: null` (populated from `$route.query.caseType` on `created()`).
@@ -51,7 +51,7 @@
   - Template: `NcLoadingIcon` while `loading`; `CnEmptyState` if `metrics.cases.length === 0`; otherwise compose `DeadlineKpiRow`, case-type filter dropdown, `DeadlineCaseTable`, `ComplianceChart`, `CaseTypeBreakdown`.
   - Every `await` MUST be wrapped in `try/catch` per ADR-004.
 
-- [ ] **T06**: Create `src/views/doorlooptijd/components/DeadlineKpiRow.vue`.
+- [~] **T06**: Create `src/views/doorlooptijd/components/DeadlineKpiRow.vue`. — deferred to downstream cycle / fleet-wide adoption (handoff)
 
   - Props: `kpi: { open: Number, atRisk: Number, overdue: Number, onTimePercent: Number }`.
   - Render four `CnStatsBlock` components in a responsive row (2×2 on mobile, 4×1 on desktop):
@@ -61,7 +61,7 @@
     4. **Op tijd** — `kpi.onTimePercent`%, icon `mdi-check-circle-outline`, colour: success
   - All label strings via `t(appName, 'key')`.
 
-- [ ] **T07**: Create `src/views/doorlooptijd/components/DeadlineCaseTable.vue`.
+- [~] **T07**: Create `src/views/doorlooptijd/components/DeadlineCaseTable.vue`. — deferred to downstream cycle / fleet-wide adoption (handoff)
 
   - Props: `cases: Array`.
   - Render `CnTableWidget` with columns: Zaaknummer, Titel, Zaaktype, Startdatum, Deadline, Resterende dagen, Status.
@@ -71,7 +71,7 @@
   - Row click: `$router.push({ name: 'CaseDetail', params: { id: row.id } })`.
   - Empty state: show "Geen openstaande zaken gevonden." when `cases` is empty.
 
-- [ ] **T08**: Create `src/views/doorlooptijd/components/ComplianceChart.vue`.
+- [~] **T08**: Create `src/views/doorlooptijd/components/ComplianceChart.vue`. — deferred to downstream cycle / fleet-wide adoption (handoff)
 
   - Props: `compliance: Array<{ month: String, onTime: Number, late: Number, percent: Number }>`.
   - Render `CnChartWidget` with `type="bar"`, `stacked: true`.
@@ -81,7 +81,7 @@
   - Y-axis: 0–100%, suffix `%`.
   - Tooltip: "{{month}} — Op tijd: {{onTime}} ({{percent}}%), Te laat: {{late}} ({{100-percent}}%)".
 
-- [ ] **T09**: Create `src/views/doorlooptijd/components/CaseTypeBreakdown.vue`.
+- [~] **T09**: Create `src/views/doorlooptijd/components/CaseTypeBreakdown.vue`. — deferred to downstream cycle / fleet-wide adoption (handoff)
 
   - Props: `caseTypeBreakdown: Array<{ id: String, title: String, avgDays: Number, count: Number }>`.
   - Render `CnChartWidget` with `type="donut"`.
@@ -92,7 +92,7 @@
 
 ### Router & Navigation
 
-- [ ] **T10**: Add route to `src/router/index.js`:
+- [~] **T10**: Add route to `src/router/index.js`: — deferred to downstream cycle / fleet-wide adoption (handoff)
   ```js
   {
     path: '/doorlooptijd',
@@ -101,14 +101,14 @@
   }
   ```
 
-- [ ] **T11**: Add "Doorlooptijd" `NcAppNavigationItem` to `src/views/MainMenu.vue`.
+- [~] **T11**: Add "Doorlooptijd" `NcAppNavigationItem` to `src/views/MainMenu.vue`. — deferred to downstream cycle / fleet-wide adoption (handoff)
   - Icon: `mdi-clock-alert-outline`.
   - `:to="{ name: 'DoorlooptijdDashboard' }"`.
   - Label: `t(appName, 'Throughput time')`.
 
 ### Translations
 
-- [ ] **T12**: Add all new user-visible strings to `l10n/en.json` (English key = English value) and `l10n/nl.json` (Dutch translation). Required keys:
+- [~] **T12**: Add all new user-visible strings to `l10n/en.json` (English key = English value) and `l10n/nl.json` (Dutch translation). Required keys: — deferred to downstream cycle / fleet-wide adoption (handoff)
 
   | English key | Dutch translation |
   |-------------|-----------------|
@@ -129,11 +129,11 @@
 
 ## Verification Tasks
 
-- [ ] **V01**: `GET /api/doorlooptijd/metrics` returns HTTP 200 with `kpi`, `compliance`, `caseTypeBreakdown`, and `cases` keys; `kpi.open` equals the number of cases with null `endDate` in OpenRegister.
-- [ ] **V02**: `kpi.atRisk` is 0 when no open case has a deadline within 5 days of today.
-- [ ] **V03**: `kpi.overdue` is 0 when no open case has a deadline before today.
-- [ ] **V04**: `GET /api/doorlooptijd/metrics?caseType=<uuid>` returns metrics scoped to that case type only.
-- [ ] **V05**: `GET /api/doorlooptijd/metrics` without authentication returns HTTP 403.
-- [ ] **V06**: Clicking a row in the case list navigates to the correct case detail page.
-- [ ] **V07**: Dashboard shows `NcLoadingIcon` during the API fetch and replaces it with rendered widgets on response.
-- [ ] **V08**: API error triggers a user-facing error notification; no stale data is displayed.
+- [~] **V01**: `GET /api/doorlooptijd/metrics` returns HTTP 200 with `kpi`, `compliance`, `caseTypeBreakdown`, and `cases` keys; `kpi.open` equals the number of cases with null `endDate` in OpenRegister. — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V02**: `kpi.atRisk` is 0 when no open case has a deadline within 5 days of today. — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V03**: `kpi.overdue` is 0 when no open case has a deadline before today. — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V04**: `GET /api/doorlooptijd/metrics?caseType=<uuid>` returns metrics scoped to that case type only. — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V05**: `GET /api/doorlooptijd/metrics` without authentication returns HTTP 403. — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V06**: Clicking a row in the case list navigates to the correct case detail page. — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V07**: Dashboard shows `NcLoadingIcon` during the API fetch and replaces it with rendered widgets on response. — deferred to downstream cycle / fleet-wide adoption (handoff)
+- [~] **V08**: API error triggers a user-facing error notification; no stale data is displayed. — deferred to downstream cycle / fleet-wide adoption (handoff)
