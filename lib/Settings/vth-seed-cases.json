@@ -1,0 +1,187 @@
+{
+  "description": "VTH (Vergunningen, Toezicht, Handhaving) sample case instances — 9 cases (3 per VTH case-type family) with realistic Dutch addresses and location references. Loaded idempotently via VthSeedDataRepairStep keyed on the deterministic case 'identifier'.",
+  "version": "1.0.0",
+  "_links": {
+    "spec": "openspec/changes/vth-workflow-configuration-01-config-foundation/spec.md"
+  },
+  "cases": [
+    {
+      "identifier": "VTH-OMG-2026-0001",
+      "title": "Omgevingsvergunning Bouwactiviteit - Kerkstraat 12",
+      "caseTypeSlug": "omgevingsvergunning-bouwactiviteit",
+      "description": "Aanvraag voor uitbouw aan de achterzijde van een rijwoning. Bouwoppervlakte 18 m2, 1 bouwlaag.",
+      "confidentiality": "openbaar",
+      "intakeChannel": "dso",
+      "address": {
+        "straatnaam": "Kerkstraat",
+        "huisnummer": 12,
+        "postcode": "1234AB",
+        "plaats": "Amsterdam",
+        "bagObject": "0363100012345678"
+      },
+      "properties": {
+        "bouwkosten": 24500,
+        "oppervlakte": 18,
+        "aantalBouwlagen": 1,
+        "procedureType": "regulier"
+      }
+    },
+    {
+      "identifier": "VTH-OMG-2026-0002",
+      "title": "Omgevingsvergunning Bouwactiviteit - Stationsplein 45",
+      "caseTypeSlug": "omgevingsvergunning-bouwactiviteit",
+      "description": "Nieuwbouw kantoorpand 4 verdiepingen op Stationsplein 45. Uitgebreide procedure vereist (categorie milieu).",
+      "confidentiality": "openbaar",
+      "intakeChannel": "dso",
+      "address": {
+        "straatnaam": "Stationsplein",
+        "huisnummer": 45,
+        "postcode": "5678CD",
+        "plaats": "Utrecht",
+        "bagObject": "0344100098765432"
+      },
+      "properties": {
+        "bouwkosten": 1850000,
+        "oppervlakte": 1240,
+        "aantalBouwlagen": 4,
+        "procedureType": "uitgebreid"
+      }
+    },
+    {
+      "identifier": "VTH-OMG-2026-0003",
+      "title": "Sloopmelding - Industrielaan 88",
+      "caseTypeSlug": "sloopmelding",
+      "description": "Sloop van voormalig schoolgebouw met asbestinventarisatie. Oppervlakte 620 m2.",
+      "confidentiality": "openbaar",
+      "intakeChannel": "balie",
+      "address": {
+        "straatnaam": "Industrielaan",
+        "huisnummer": 88,
+        "postcode": "9012EF",
+        "plaats": "Rotterdam",
+        "bagObject": "0599100011223344"
+      },
+      "properties": {
+        "asbestInventarisatie": true,
+        "sloopOppervlakte": 620
+      }
+    },
+    {
+      "identifier": "VTH-TOE-2026-0001",
+      "title": "Toezichtzaak Bouw - Kerkstraat 12 fase 1",
+      "caseTypeSlug": "toezichtzaak-bouw",
+      "description": "Periodiek toezicht op bouwactiviteit. Funderingsinspectie en ruwbouw-inspectie.",
+      "confidentiality": "intern",
+      "intakeChannel": "ambtshalve",
+      "address": {
+        "straatnaam": "Kerkstraat",
+        "huisnummer": 12,
+        "postcode": "1234AB",
+        "plaats": "Amsterdam",
+        "bagObject": "0363100012345678"
+      },
+      "properties": {
+        "inspectionType": "bouw",
+        "inspectiePlanning": "2026-07-15"
+      }
+    },
+    {
+      "identifier": "VTH-TOE-2026-0002",
+      "title": "Toezichtzaak Milieu - Industrielaan 88",
+      "caseTypeSlug": "toezichtzaak-milieu",
+      "description": "Routinematige milieucontrole op afval- en emissie-eisen.",
+      "confidentiality": "intern",
+      "intakeChannel": "ambtshalve",
+      "address": {
+        "straatnaam": "Industrielaan",
+        "huisnummer": 88,
+        "postcode": "9012EF",
+        "plaats": "Rotterdam",
+        "bagObject": "0599100011223344"
+      },
+      "properties": {
+        "inspectionType": "milieu",
+        "checklistRef": "milieu-bedrijfsbezoek-2024"
+      }
+    },
+    {
+      "identifier": "VTH-TOE-2026-0003",
+      "title": "Toezichtzaak Bouw - Stationsplein 45 oplevering",
+      "caseTypeSlug": "toezichtzaak-bouw",
+      "description": "Oplevering-inspectie van nieuwbouw kantoorpand voor ingebruikname.",
+      "confidentiality": "intern",
+      "intakeChannel": "ambtshalve",
+      "address": {
+        "straatnaam": "Stationsplein",
+        "huisnummer": 45,
+        "postcode": "5678CD",
+        "plaats": "Utrecht",
+        "bagObject": "0344100098765432"
+      },
+      "properties": {
+        "inspectionType": "bouw",
+        "inspectiePlanning": "2026-09-12"
+      }
+    },
+    {
+      "identifier": "VTH-HAN-2026-0001",
+      "title": "Handhavingszaak Strijdig gebruik - Marktstraat 7",
+      "caseTypeSlug": "handhavingszaak",
+      "description": "Constatering van strijdig gebruik (bedrijfsvoering in woonbestemming) op Marktstraat 7.",
+      "confidentiality": "intern",
+      "intakeChannel": "melding",
+      "address": {
+        "straatnaam": "Marktstraat",
+        "huisnummer": 7,
+        "postcode": "3456GH",
+        "plaats": "Den Haag",
+        "bagObject": "0518100022334455"
+      },
+      "properties": {
+        "lhsoGedrag": "B",
+        "lhsoGevolgen": "2",
+        "interventieStap": "Bestuurlijk gesprek + waarschuwing"
+      }
+    },
+    {
+      "identifier": "VTH-HAN-2026-0002",
+      "title": "Handhavingszaak Bouwen zonder vergunning - Tuinpad 14",
+      "caseTypeSlug": "handhavingszaak",
+      "description": "Geconstateerde dakopbouw zonder omgevingsvergunning. LHSO categorie C-3.",
+      "confidentiality": "intern",
+      "intakeChannel": "melding",
+      "address": {
+        "straatnaam": "Tuinpad",
+        "huisnummer": 14,
+        "postcode": "7890IJ",
+        "plaats": "Eindhoven",
+        "bagObject": "0772100033445566"
+      },
+      "properties": {
+        "lhsoGedrag": "C",
+        "lhsoGevolgen": "3",
+        "interventieStap": "Last onder dwangsom"
+      }
+    },
+    {
+      "identifier": "VTH-HAN-2026-0003",
+      "title": "Handhavingszaak Milieu-overtreding - Industrielaan 88",
+      "caseTypeSlug": "handhavingszaak",
+      "description": "Geconstateerde overschrijding emissiegrenswaarden. LHSO categorie D-4 (zwaarste interventie).",
+      "confidentiality": "intern",
+      "intakeChannel": "ambtshalve",
+      "address": {
+        "straatnaam": "Industrielaan",
+        "huisnummer": 88,
+        "postcode": "9012EF",
+        "plaats": "Rotterdam",
+        "bagObject": "0599100011223344"
+      },
+      "properties": {
+        "lhsoGedrag": "D",
+        "lhsoGevolgen": "4",
+        "interventieStap": "Last onder bestuursdwang + proces-verbaal"
+      }
+    }
+  ]
+}
