@@ -388,7 +388,8 @@ class TenantSaasService
      */
     private function getObjectService()
     {
-        if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
+        $installed = $this->appManager->getInstalledApps();
+        if (is_array($installed) === false || in_array('openregister', $installed, true) === false) {
             return null;
         }
 
