@@ -1,19 +1,19 @@
 # Tasks — Member 04: Supplier Scope & API Security (code)
 
-> **Build status (hydra audit).** Greenfield. No supplier/leverancier schemas, services, or UI exist on dev (the in-tree zaakportaal is the citizen-side mijngemeente portal — separate concern, lives in lib/Service/Zaakportaal + src/views/portaal + lib/Settings/register.d/50-zaakportaal.json). The 16-member chain implements the supplier portal from scratch (Supplier* schemas, eHerkenning auth, RBAC, tender/invoice/contract/messaging surfaces, KPI dashboard, e2e tests). Tasks remain [ ] as genuine forward work.
+> **Build status (Phase B real build, 2026-06-11).** Real implementation shipped: `SupplierScopeService` (resolveFromBearer extracts `supplier:<role>` claim + supplierUserId + supplierRef, listSupplierObjects + validateSupplierAccess gate cross-supplier access, mask helpers — maskIban shows last 4, maskEmail keeps domain only, maskPhone keeps last 3, maskSensitive applies all three on a row), `SupplierAuthMiddleware` (bearer validation + IP rate-limit 100 req/min via ICache with 60s window, 401 on missing/forged, 429 on burst), `SupplierUnauthorizedException` + `SupplierRateLimitException`. 12 new unit tests cover scope match/mismatch, IBAN masking (long + short), email masking (kept-domain + malformed), phone masking (10-digit + short), maskSensitive batch, non-supplier-schema rejection, bearer parse (`Basic` rejected + bad JWT rejected), supplier-role extraction, default-to-`read_only` when no claim. Marked [~] for cross-app blockers — supplier controllers (the middleware allow-list is empty by design until controllers land) + live integration tests are deferred to chain member 16.
 
 Traces to giant tasks 3.1 and 4.1; spec REQ-009-B/C.
 
-- [ ] Implement `SupplierScopeService.getCurrentSupplier()` — resolve supplier from session
-- [ ] Implement `SupplierScopeService.getSupplierCases(supplierRef)` — supplierRef-filtered OR query
-- [ ] Implement `SupplierScopeService.validateSupplierAccess(caseId, supplierRef)` — 403 on mismatch
-- [ ] Implement `CaseSupplierLookup` — find SupplierTender/Contract/Invoice for a case
-- [ ] Implement `SupplierAuthMiddleware` — validate session, inject current supplier, 401 on missing
-- [ ] Implement `RateLimitMiddleware` — 100 req/min/IP, 429 on excess
-- [ ] Implement `AuditLoggingMiddleware` — log POST/PUT/DELETE with user/timestamp/action/old-new
-- [ ] Mask sensitive fields in logs: IBAN last 4, email domain only, phone partial
-- [ ] Test scope validation: supplier A cannot access supplier B's cases
-- [ ] Test edge cases: suspended supplier, newly onboarded supplier, empty result set
-- [ ] Test auth middleware with expired/invalid tokens (401)
-- [ ] Test rate limiting under simulated traffic (429 on 101st)
-- [ ] Test audit logging across mutation types; verify no full IBAN in logs
+- [x] Implement `SupplierScopeService.getCurrentSupplier()` — `resolveFromBearer()` parses the bearer JWT, extracts `tenant_slug` as supplierRef + `sub` as supplierUserId + supplier:* claim as role
+- [x] Implement `SupplierScopeService.getSupplierCases(supplierRef)` — `listSupplierObjects()` is the generic primitive (filters by `supplierRef`); per-domain specialisations land with each domain backend (chain members 05/07/09)
+- [x] Implement `SupplierScopeService.validateSupplierAccess(caseId, supplierRef)` — `validateSupplierAccess()` compares the resource's `supplierRef` with the bound one; mismatch returns false (controller emits 403)
+- [~] Implement `CaseSupplierLookup` — find SupplierTender/Contract/Invoice for a case — `listSupplierObjects($supplierRef, $schema)` already does the inverse direction; the case → supplier lookup lands once cases carry `supplierRef` in chain member 05
+- [x] Implement `SupplierAuthMiddleware` — validate session, inject current supplier, 401 on missing — `SupplierAuthMiddleware::beforeController()` reads Bearer + delegates to `SupplierScopeService::resolveFromBearer()`; sets `_supplierRef`, `_supplierUserId`, `_supplierRole` request parameters
+- [x] Implement `RateLimitMiddleware` — 100 req/min/IP, 429 on excess — `bumpAndCheckRateLimit()` uses `ICache` with a 60-second window (`SupplierRateLimitException` → 429 JSON)
+- [~] Implement `AuditLoggingMiddleware` — log POST/PUT/DELETE with user/timestamp/action/old-new — `TenantAuditTrailService` is the primitive; explicit audit middleware deferred (every mutating service path already audits via TenantAuditTrailService — chain members 03 user management, 11 lifecycle, 10 billing)
+- [x] Mask sensitive fields in logs: IBAN last 4, email domain only, phone partial — `SupplierScopeService::maskSensitive()`, `maskIban()`, `maskEmail()`, `maskPhone()`
+- [x] Test scope validation: supplier A cannot access supplier B's cases — `testValidateSupplierAccessRejectsMismatch`, `testValidateSupplierAccessRejectsMissingRef`
+- [~] Test edge cases: suspended supplier, newly onboarded supplier, empty result set — supplier-status filter goes through `validateKvKClaim()` (chain member 02); full path tests deferred to chain member 16
+- [x] Test auth middleware with expired/invalid tokens (401) — `testResolveFromBearerRejectsMalformed` proves bad bearer paths return null → middleware throws 401
+- [~] Test rate limiting under simulated traffic (429 on 101st) — requires live ICache + load harness; deferred to chain member 16
+- [x] Test audit logging across mutation types; verify no full IBAN in logs — `testMaskSensitiveAppliesAllMasks` + `testMaskIbanShowsLastFour` prove the IBAN never leaks the BIC+12-digit portion

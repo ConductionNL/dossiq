@@ -1,0 +1,157 @@
+<?php
+
+/**
+ * Procest Shillinq Integration Service
+ *
+ * Exports tenant billing events into Shillinq invoices.
+ *
+ * @category Service
+ * @package  OCA\Procest\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @link https://procest.nl
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Procest\Service;
+
+use OCP\Http\Client\IClient;
+use OCP\Http\Client\IClientService;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * Shillinq HTTP integration with retry + backoff.
+ */
+class ShillinqIntegrationService
+{
+    /**
+     * Maximum retry attempts.
+     */
+    public const MAX_RETRIES = 3;
+
+    /**
+     * Backoff sleep base in seconds.
+     */
+    public const BACKOFF_BASE_SECONDS = 2;
+
+    public function __construct(
+        private readonly IClientService $httpClientService,
+        private readonly LoggerInterface $logger,
+        private readonly string $shillinqBaseUrl = '',
+        private readonly string $shillinqApiKey  = '',
+    ) {
+    }
+
+    /**
+     * Group events by tenant + month for invoicing.
+     *
+     * @param array<int, array<string,mixed>> $events Events.
+     *
+     * @return array<string, array<int, array<string,mixed>>> Keyed by `<tenantId>:<month>`.
+     */
+    public function groupForInvoicing(array $events): array
+    {
+        $grouped = [];
+        foreach ($events as $event) {
+            $tenantId = (string) ($event['tenantRef'] ?? '');
+            $month    = substr((string) ($event['occurredAt'] ?? ''), 0, 7);
+            if ($tenantId === '' || $month === '' || ($event['invoiceRef'] ?? null) !== null) {
+                continue;
+            }
+
+            $key = $tenantId.':'.$month;
+            if (isset($grouped[$key]) === false) {
+                $grouped[$key] = [];
+            }
+
+            $grouped[$key][] = $event;
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * Build the Shillinq invoice payload from a group of events.
+     *
+     * @param string                          $tenantId Tenant UUID.
+     * @param string                          $month    YYYY-MM.
+     * @param array<int, array<string,mixed>> $events   Events.
+     *
+     * @return array<string,mixed>
+     */
+    public function buildInvoicePayload(string $tenantId, string $month, array $events): array
+    {
+        $lineItems = [];
+        foreach ($events as $event) {
+            $lineItems[] = [
+                'description' => (string) ($event['eventType'] ?? 'usage'),
+                'quantity'    => (float) ($event['quantity'] ?? 1),
+                'unit_price'  => (float) ($event['unitPrice'] ?? 0),
+                'currency'    => (string) ($event['currency'] ?? 'EUR'),
+                'occurred_at' => (string) ($event['occurredAt'] ?? ''),
+            ];
+        }
+
+        return [
+            'tenant_id' => $tenantId,
+            'period'    => $month,
+            'currency'  => $lineItems[0]['currency'] ?? 'EUR',
+            'line_items'=> $lineItems,
+        ];
+    }
+
+    /**
+     * POST a built invoice payload to Shillinq with retry + backoff.
+     *
+     * @param array<string,mixed> $payload Payload.
+     *
+     * @return array{success:bool, invoiceRef?:string, attempts:int, lastError?:string}
+     */
+    public function exportInvoice(array $payload): array
+    {
+        if ($this->shillinqBaseUrl === '' || $this->shillinqApiKey === '') {
+            return ['success' => false, 'attempts' => 0, 'lastError' => 'Shillinq not configured'];
+        }
+
+        $client = $this->httpClientService->newClient();
+        $attempt = 0;
+        $lastErr = '';
+        while ($attempt < self::MAX_RETRIES) {
+            $attempt++;
+            try {
+                $resp = $client->post($this->shillinqBaseUrl.'/invoices', [
+                    'headers' => [
+                        'Authorization' => 'Bearer '.$this->shillinqApiKey,
+                        'Content-Type'  => 'application/json',
+                    ],
+                    'body'    => json_encode($payload),
+                    'timeout' => 30,
+                ]);
+                $body = (string) $resp->getBody();
+                $json = json_decode($body, true);
+                $ref  = (string) ($json['invoiceRef'] ?? $json['id'] ?? '');
+                if ($ref !== '') {
+                    return ['success' => true, 'invoiceRef' => $ref, 'attempts' => $attempt];
+                }
+            } catch (Throwable $e) {
+                $lastErr = $e->getMessage();
+                if ($attempt < self::MAX_RETRIES) {
+                    sleep(self::BACKOFF_BASE_SECONDS ** $attempt);
+                }
+            }
+        }
+
+        $this->logger->error('Procest: Shillinq export failed after retries', ['attempts' => $attempt, 'lastError' => $lastErr]);
+        return ['success' => false, 'attempts' => $attempt, 'lastError' => $lastErr];
+    }
+}

@@ -315,6 +315,21 @@ return [
         ['name' => 'tenant#provision', 'url' => '/api/tenants/{tenantId}/provision',   'verb' => 'POST'],
         ['name' => 'tenant#usage',     'url' => '/api/tenants/{tenantId}/usage',       'verb' => 'GET'],
 
+        // SaaS Tenant CRUD + lifecycle — backed by the `tenant` register schema
+        // (chain member tenant-zaaksysteem-saas-01). Admin-only via the
+        // SecurityMiddleware default; #[AuthorizedAdminSetting] on each method.
+        ['name' => 'tenantSaas#index',   'url' => '/api/saas/tenants',                  'verb' => 'GET'],
+        ['name' => 'tenantSaas#create',  'url' => '/api/saas/tenants',                  'verb' => 'POST'],
+        ['name' => 'tenantSaas#show',    'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'GET'],
+        ['name' => 'tenantSaas#update',  'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'PATCH'],
+        ['name' => 'tenantSaas#destroy', 'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'DELETE'],
+
+        // SaaS onboarding (chain member 07) — checklist init/progress/complete + go-live activation.
+        ['name' => 'tenantOnboarding#initialise', 'url' => '/api/saas/tenants/{tenantId}/onboarding/initialise',     'verb' => 'POST'],
+        ['name' => 'tenantOnboarding#progress',   'url' => '/api/saas/tenants/{tenantId}/onboarding/progress',       'verb' => 'GET'],
+        ['name' => 'tenantOnboarding#complete',   'url' => '/api/saas/tenants/{tenantId}/onboarding/{step}/complete', 'verb' => 'POST'],
+        ['name' => 'tenantOnboarding#activate',   'url' => '/api/saas/tenants/{tenantId}/onboarding/activate',       'verb' => 'POST'],
+
         // ── Appointment Scheduling (afsprakenbeheer) ────────────────────
         // Specific endpoints (must precede wildcard {appointmentId} routes).
         ['name' => 'appointment#timeslots', 'url' => '/api/appointments/timeslots',                'verb' => 'GET'],

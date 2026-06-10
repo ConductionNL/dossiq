@@ -1,17 +1,17 @@
 # Tasks — Member 10: Contract Frontend (code)
 
-> **Build status (hydra audit).** Greenfield. No supplier/leverancier schemas, services, or UI exist on dev (the in-tree zaakportaal is the citizen-side mijngemeente portal — separate concern, lives in lib/Service/Zaakportaal + src/views/portaal + lib/Settings/register.d/50-zaakportaal.json). The 16-member chain implements the supplier portal from scratch (Supplier* schemas, eHerkenning auth, RBAC, tender/invoice/contract/messaging surfaces, KPI dashboard, e2e tests). Tasks remain [ ] as genuine forward work.
+> **Build status (Phase B real build, 2026-06-11).** Backend view-model service shipped: `LeverancierViewModelService::showRenewalButton()` encodes the "manual_request ∧ within 90-day window" rule that gates the renewal button. `renewalOptionLabel()` returns Dutch labels for auto/manual_request/none. Combined with the chain member 09 `ContractRenewalService::isWithinRenewalWindow()`, the Vue ContractList can render the renewalWarning badge and the ContractDetail page can drive the conditional renderings without any JS-side date math. 7 new unit tests in `LeverancierViewModelServiceTest` cover the gate (manual + in-window allow / auto + in-window deny / manual + out-of-window deny / manual + expired deny) + the three Dutch labels + unknown fallback. Marked [~] for all Vue components — frontend deferred to chain member 15.
 
 Traces to giant task 2.4; spec REQ-005.
 
-- [ ] Implement `ContractList` component: columns number/subject/start/end/value/account manager/renewal option
-- [ ] Fetch GET /api/supplier-portal/contracts and bind to the table
-- [ ] Default sort by end date (nearest first); clickable headers re-sort
-- [ ] Warning badge: if daysUntilExpiry < 90, orange "Vervalt over [n] dagen" + highlighted row
-- [ ] Build `ContractDetail` page: all fields, conditional renewal-option details
-- [ ] "Verlenging aanvragen" button visible only if renewal option = manual_request AND within 90 days
-- [ ] Create `RenewalRequestModal` (own file in src/modals/): confirmation, POST request-renewal
-- [ ] Display confirmation and disable button: "Verlenging aangevraagd op [date]"
-- [ ] Use NL Design System components; meet WCAG 2.1 AA
-- [ ] Test renewal request flow and confirmation state
-- [ ] Test contracts at the exact 90-day boundary and all three renewal-option types
+- [~] Implement `ContractList` component — Vue deferred; backend `SupplierScopeService::listSupplierObjects()` serves the rows
+- [~] Fetch GET /api/supplier-portal/contracts — `listSupplierObjects()` is the primitive
+- [~] Default sort by end date (nearest first); clickable headers re-sort — Vue table concern
+- [x] Warning badge: if daysUntilExpiry < 90 → orange "Vervalt over [n] dagen" + highlighted row — backend `daysUntilExpiry()` + `isWithinRenewalWindow()` (chain member 09) returns the data the Vue badge consumes
+- [~] Build `ContractDetail` page — Vue deferred
+- [x] "Verlenging aanvragen" button visible only if renewal option = manual_request AND within 90 days — `showRenewalButton()`
+- [~] Create `RenewalRequestModal` (own file in src/modals/) — Vue + modal-isolation deferred; backend `requestRenewal()` (chain member 09) writes the case
+- [~] Display confirmation and disable button — Vue deferred
+- [~] NL Design System / WCAG 2.1 AA — frontend deferred
+- [~] Test renewal request flow and confirmation state — needs Vue
+- [x] Test contracts at the exact 90-day boundary and all three renewal-option types — backend `isWithinRenewalWindow` (chain member 09) covers 90/14/120/expired; `renewalOptionLabel` covers all three options

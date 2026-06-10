@@ -254,11 +254,12 @@ class ZgwAuthMiddlewareTest extends TestCase
 
     /**
      * Test that afterException re-throws non-ZgwAuthException so the
-     * dispatcher can pass the error to the next middleware. The NC
-     * MiddlewareDispatcher::afterException() declares a non-nullable
-     * Response return — returning null raises a TypeError that became a
-     * hard 500 on EVERY non-ZGW controller error, so the implementation
-     * correctly re-throws here and the test must mirror that contract.
+     * MiddlewareDispatcher can offer the exception to the next middleware. The
+     * NC MiddlewareDispatcher::afterException() declares a non-nullable
+     * Response return — returning null raises a TypeError that became a hard
+     * 500 on EVERY non-ZGW controller error, so the implementation correctly
+     * re-throws here and the test must mirror that contract. The contract is
+     * documented in `ZgwAuthMiddleware::afterException()`.
      *
      * @return void
      */
@@ -269,7 +270,6 @@ class ZgwAuthMiddlewareTest extends TestCase
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('generic error');
-
         $this->middleware->afterException($controller, 'index', $exception);
 
     }//end testAfterExceptionRethrowsGenericException()

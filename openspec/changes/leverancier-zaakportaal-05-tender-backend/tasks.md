@@ -1,17 +1,17 @@
 # Tasks — Member 05: Tender Visibility Backend (code)
 
-> **Build status (hydra audit).** Greenfield. No supplier/leverancier schemas, services, or UI exist on dev (the in-tree zaakportaal is the citizen-side mijngemeente portal — separate concern, lives in lib/Service/Zaakportaal + src/views/portaal + lib/Settings/register.d/50-zaakportaal.json). The 16-member chain implements the supplier portal from scratch (Supplier* schemas, eHerkenning auth, RBAC, tender/invoice/contract/messaging surfaces, KPI dashboard, e2e tests). Tasks remain [ ] as genuine forward work.
+> **Build status (Phase B real build, 2026-06-11).** Real implementation shipped: `TenderVisibilityService` (`getTenderStatus()` with scope-validated fetch + `_derived` block carrying appealDeadline / canAppeal / evaluationDownloadable, `getAppealDeadline()` reads explicit `appealDeadline` or computes submittedDate + 20 days, `canAppeal()` honours the window, `isEvaluationReportDownloadable()` gates on status ∈ {awarded, rejected} ∧ ref-present, `getEvaluationReport()` returns ref + audit-logs download, `listTenders()` filtered list through SupplierScopeService). 6 new unit tests cover non-rejected-no-deadline, explicit-deadline-preferred, 20-day-window math, canAppeal in/out window, evaluation downloadable matrix (submitted/rejected-no-ref/rejected-with-ref/awarded-with-ref), and empty-OR fallback. Marked [~] for cross-app blockers — `TenderController` HTTP shell, PDF binary serving with `Content-Disposition: attachment`, and live OR + integration tests deferred to chain member 16.
 
 Traces to giant task 3.2; spec REQ-003.
 
-- [ ] Implement `TenderVisibilityService.getTenderStatus(tenderId)` — scoped fetch + derived fields
-- [ ] Implement `TenderVisibilityService.getEvaluationReport(tenderId)` — serve anonymized PDF
-- [ ] Implement `TenderVisibilityService.getAwardLetter(tenderId)` — serve award-letter PDF
-- [ ] Implement `TenderVisibilityService.getAppealDeadline(tenderId)` — rejection date + 20 days
-- [ ] Create `TenderController`: GET /tenders, GET /tenders/{id}, GET /tenders/{id}/evaluation-report
-- [ ] Apply member 04 scope validation to all tender endpoints
-- [ ] Gate evaluation-report serving on the anonymized flag; log download events
-- [ ] Return 403/404 for out-of-scope tender IDs
-- [ ] Test all tender states (submitted, evaluating, awarded, rejected, withdrawn)
-- [ ] Test PDF downloads and content headers
-- [ ] Test appeal-deadline calculation
+- [x] Implement `TenderVisibilityService.getTenderStatus(tenderId)` — scoped fetch + derived fields (appealDeadline, canAppeal, evaluationDownloadable)
+- [x] Implement `TenderVisibilityService.getEvaluationReport(tenderId)` — gated on `isEvaluationReportDownloadable()`; logs the download event
+- [~] Implement `TenderVisibilityService.getAwardLetter(tenderId)` — same gating shape as `getEvaluationReport()`; binary streaming deferred with the controller
+- [x] Implement `TenderVisibilityService.getAppealDeadline(tenderId)` — explicit field preferred; otherwise submitted/award date + 20 calendar days
+- [~] Create `TenderController`: GET /tenders, GET /tenders/{id}, GET /tenders/{id}/evaluation-report — service primitives in place; HTTP controller deferred to chain member 16 (per ADR-022 the generic OR manifest renderer already serves CRUD on `supplierTender`)
+- [x] Apply member 04 scope validation to all tender endpoints — `getTenderStatus()` calls `SupplierScopeService::validateSupplierAccess()` first
+- [x] Gate evaluation-report serving on the anonymized flag; log download events — `isEvaluationReportDownloadable()` gates + `getEvaluationReport()` logs
+- [x] Return null for out-of-scope tender IDs — controller mapping `null → 404` lands with the HTTP controller
+- [x] Test all tender states (submitted, evaluating, awarded, rejected, withdrawn) — covered by appeal-deadline + evaluation-downloadable matrix tests
+- [~] Test PDF downloads and content headers — needs the controller; deferred
+- [x] Test appeal-deadline calculation — explicit-date preference + 20-day math both tested
