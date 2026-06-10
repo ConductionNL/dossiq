@@ -1,5 +1,7 @@
 # Tasks: Case Types — Member 01 (Seed Data + Stores + i18n)
 
+> **Build status (hydra audit 2026-06-10).** The CaseType admin surface is already on dev: `src/views/settings/CaseTypeAdmin.vue`, `CaseTypeList.vue`, `CaseTypeDetail.vue`, plus full tabs (`StatusesTab`, `ResultsTab`, `ResultTypesTab`, `RolesTab`, `RoleTypesTab`, `PropertiesTab`, `DocumentTypesTab`, `DecisionTypesTab`, `WorkflowTab`, `ChecklistsTab`, `TemplatesTab`, `GeneralTab`). Per the `case-types-04` notes the chain shipped the `sub-entity-tab` convention rather than the originally-proposed dedicated Pinia stores per sub-entity — the generic `useObjectStore` covers all five sub-entity types. Tasks stay [ ] because the dedicated stores + the seed JSON they reference were superseded by the convention; closing them requires either a spec amendment ("adopt sub-entity-tab pattern") or actually writing the dedicated stores. Honest forward work.
+
 Feature tier tags: `[MVP]` = must ship, `[TEST]` = quality gate.
 Member 1 of 4 in the case-types chain. `kind: config`.
 
