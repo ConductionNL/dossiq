@@ -1,0 +1,117 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Procest Contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * DEEP, data-dependent coverage — complaint-family workflow items (bezwaren).
+ *
+ * The prompt asks for "Complaints (klachten) or WorkflowBoard if drivable".
+ * The `complaint` (klacht) schema exists in the procest register but has NO
+ * manifest UI page, so it cannot be driven honestly through the rendered app.
+ * The drivable, status-bearing complaint-family workflow that IS exposed is
+ * Bezwaren (objections) — manifest page `Bezwaren` (`type:"index"`, schema
+ * `bezwaar`, with a `status` column). A bezwaar carries the same kind of
+ * workflow-status lifecycle a complaint would (`Ontvangen` → `In behandeling`
+ * → … → `Afgehandeld`).
+ *
+ * This spec seeds a bezwaar (linked to a seeded case) and asserts:
+ *   - it appears as a row in the Bezwaren list with its AWB reference, and
+ *   - its workflow status renders in the list, and
+ *   - changing the workflow status PERSISTS and re-renders.
+ *
+ * Fixtures seed/clean via the OR object API. Navigation is sidebar-click
+ * (`navTo`), support dialog dismissed. Playwright = UI for assertions.
+ */
+
+import { test, expect, request, type APIRequestContext, type Page } from '@playwright/test'
+import { STORAGE_STATE } from '../helpers/auth'
+import { dismissSupportDialog, navTo } from '../helpers/nav'
+import {
+	RUN_PREFIX, getRequestToken, ensureCaseType, seedCase, createObject,
+	updateObject, showObject, deleteObject, objectId, cleanupRunObjects,
+} from '../helpers/fixtures'
+
+let api: APIRequestContext
+let token: string
+let caseTypeId: string
+let caseTypeSeeded = false
+let caseId: string
+
+test.describe('Complaint-family workflow — bezwaren (objections)', () => {
+	test.describe.configure({ mode: 'serial' })
+
+	test.beforeAll(async ({ baseURL }) => {
+		api = await request.newContext({ baseURL, storageState: STORAGE_STATE })
+		token = await getRequestToken(api)
+		const ct = await ensureCaseType(api, token)
+		caseTypeId = ct.id
+		caseTypeSeeded = ct.seeded
+		const kase = await seedCase(api, token, { title: `${RUN_PREFIX} Bezwaar parent case`, caseType: caseTypeId })
+		caseId = objectId(kase)
+	})
+
+	test.afterAll(async () => {
+		await cleanupRunObjects(api, token, ['bezwaar', 'case'])
+		if (caseTypeSeeded) await deleteObject(api, token, 'caseType', caseTypeId)
+		await api.dispose()
+	})
+
+	/**
+	 * Seed a bezwaar linked to the shared parent case.
+	 * @param awb    The AWB reference (unique, RUN_PREFIX-tagged).
+	 * @param status The initial workflow status.
+	 */
+	async function seedBezwaar(awb: string, status = 'Ontvangen'): Promise<any> {
+		return createObject(api, token, 'bezwaar', {
+			case: caseId,
+			ontvangstdatum: '2026-06-01',
+			status,
+			awbReference: awb,
+		})
+	}
+
+	/**
+	 * Open the Bezwaren list via the sidebar and wait for its rows to load.
+	 * @param page The page.
+	 */
+	async function openBezwaren(page: Page): Promise<void> {
+		await navTo(page, 'Bezwaren')
+		await dismissSupportDialog(page)
+		await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 15000 })
+	}
+
+	// @e2e openspec/specs/bezwaar-management/spec.md#bezwaar-appears-in-list
+	test('a seeded bezwaar appears in the list with its workflow status', async ({ page }) => {
+		const awb = `${RUN_PREFIX}-AWB-LIST`
+		const bz = await seedBezwaar(awb, 'Ontvangen')
+		expect(objectId(bz)).not.toBe('')
+
+		await openBezwaren(page)
+
+		// The row renders the AWB reference …
+		const row = page.locator('tbody tr', { hasText: awb }).first()
+		await expect(row).toBeVisible({ timeout: 15000 })
+		// … and its workflow status ("Ontvangen") renders in that row.
+		await expect(row.getByText('Ontvangen', { exact: false }).first()).toBeVisible()
+	})
+
+	// @e2e openspec/specs/bezwaar-management/spec.md#bezwaar-status-persists
+	test('changing the bezwaar workflow status persists and re-renders', async ({ page }) => {
+		const awb = `${RUN_PREFIX}-AWB-STATUS`
+		const bz = await seedBezwaar(awb, 'Ontvangen')
+		const bzId = objectId(bz)
+
+		// Advance the workflow status (a valid value from the bezwaar enum).
+		await updateObject(api, token, 'bezwaar', bzId, { status: 'In behandeling' })
+
+		// PERSISTENCE: re-read confirms the new status was written.
+		await expect.poll(async () => String((await showObject(api, 'bezwaar', bzId)).status ?? ''), {
+			timeout: 15000, message: 'bezwaar status persisted',
+		}).toBe('In behandeling')
+
+		// The list now renders the new status on the row.
+		await openBezwaren(page)
+		const row = page.locator('tbody tr', { hasText: awb }).first()
+		await expect(row).toBeVisible({ timeout: 15000 })
+		await expect(row.getByText('In behandeling', { exact: false }).first()).toBeVisible()
+	})
+})
