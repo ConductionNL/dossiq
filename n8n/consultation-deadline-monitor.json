@@ -1,0 +1,124 @@
+{
+  "name": "Procest — Consultation Deadline Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "hours", "hoursInterval": 24 }
+          ]
+        }
+      },
+      "id": "daily-trigger",
+      "name": "Daily at 07:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/consultations/overdue",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "OCS-APIRequest", "value": "true" },
+            { "name": "Accept", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "fetch-overdue",
+      "name": "GET /consultations/overdue",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/consultations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "OCS-APIRequest", "value": "true" },
+            { "name": "Accept", "value": "application/json" }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "deadlineWithin", "value": "P5D" },
+            { "name": "status", "value": "uitgevraagd,in_behandeling" }
+          ]
+        }
+      },
+      "id": "fetch-warning",
+      "name": "GET /consultations (deadline ≤ T+5)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compose two streams: warning (T-5) and overdue (past uiterlijkeReactiedatum).\n// Each consultation -> a notification for the assigned advisory body's group\n// (internal) or the configured email address (external).\nconst warning = ($input.first().json.results || $input.first().json.data || []);\nconst overdue = ($input.last().json || []);\nconst today = new Date().toISOString().slice(0, 10);\nconst notifications = [];\nfor (const c of warning) {\n  const deadline = c.uiterlijkeReactiedatum || c.deadline || '';\n  if (!deadline || deadline < today) continue;\n  notifications.push({\n    consultationId: c.id,\n    consultationNummer: c.adviesNummer || c.identificatie,\n    caseId: c.caseId || c.zaakId,\n    adviesinstantieId: c.adviesinstantieId,\n    priority: 'warning',\n    template: 'consultation-deadline-warning',\n    daysRemaining: 5,\n    deadline\n  });\n}\nfor (const c of overdue) {\n  notifications.push({\n    consultationId: c.id,\n    consultationNummer: c.adviesNummer || c.identificatie,\n    caseId: c.caseId || c.zaakId,\n    adviesinstantieId: c.adviesinstantieId,\n    priority: 'overdue',\n    template: 'consultation-deadline-overdue',\n    deadline: c.uiterlijkeReactiedatum\n  });\n}\nreturn notifications.map(n => ({ json: n }));"
+      },
+      "id": "merge",
+      "name": "Build notification list",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/notifications/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "OCS-APIRequest", "value": "true" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"adviesinstantieId\": $json.adviesinstantieId,\n  \"template\": $json.template,\n  \"priority\": $json.priority,\n  \"context\": {\n    \"consultationId\": $json.consultationId,\n    \"consultationNummer\": $json.consultationNummer,\n    \"caseId\": $json.caseId,\n    \"deadline\": $json.deadline,\n    \"daysRemaining\": $json.daysRemaining\n  }\n}"
+      },
+      "id": "send-notification",
+      "name": "POST /api/notifications/send",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 300]
+    }
+  ],
+  "connections": {
+    "Daily at 07:00": {
+      "main": [[
+        { "node": "GET /consultations (deadline ≤ T+5)", "type": "main", "index": 0 },
+        { "node": "GET /consultations/overdue", "type": "main", "index": 0 }
+      ]]
+    },
+    "GET /consultations (deadline ≤ T+5)": {
+      "main": [[{ "node": "Build notification list", "type": "main", "index": 0 }]]
+    },
+    "GET /consultations/overdue": {
+      "main": [[{ "node": "Build notification list", "type": "main", "index": 0 }]]
+    },
+    "Build notification list": {
+      "main": [[{ "node": "POST /api/notifications/send", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "owner": "procest",
+    "spec": "openspec/changes/consultation-management/specs/consultation-management/spec.md#deadline-warning",
+    "purpose": "Daily 07:00 scan: T-5 warnings via /consultations?deadlineWithin=P5D; overdue escalations via /consultations/overdue. Internal bodies are notified via Nextcloud groups; external bodies via configured email."
+  }
+}

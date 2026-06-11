@@ -30,7 +30,7 @@
 
 ## 7. Newman API Tests
 
-- [ ] 7.1 Create `tests/newman/zgw-workflow.postman_collection.json` (ZGW CRUD flow) and `tests/newman/procest-environment.json` (local dev variables).
+- [x] 7.1 Create `tests/newman/zgw-workflow.postman_collection.json` (ZGW CRUD flow: catalogi zaaktype → zaken zaak → besluiten besluit, plus validation + cleanup) and `tests/newman/procest-environment.json` (local dev variables).
 
 ## 8. Verification
 

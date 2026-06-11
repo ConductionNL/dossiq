@@ -54,7 +54,7 @@
 
 ## n8n Workflows
 
-- [ ] **TASK-CN-09** — Add three n8n workflows: (1) daily deadline-monitor (T-5 warning + overdue escalation); (2) email-fanout for external advisory bodies on consultation creation; (3) bottleneck-detection alert when a body's overdue rate exceeds 20%. Document webhook contracts in `docs/n8n-consultation-workflows.md`.
+- [x] **TASK-CN-09** — Add three n8n workflows: (1) daily deadline-monitor (T-5 warning + overdue escalation); (2) email-fanout for external advisory bodies on consultation creation; (3) bottleneck-detection alert when a body's overdue rate exceeds 20%. Document webhook contracts in `docs/n8n-consultation-workflows.md`. Shipped as `n8n/consultation-deadline-monitor.json`, `n8n/consultation-email-fanout.json`, `n8n/consultation-bottleneck-detection.json` + the contracts doc.
   - files: `n8n/consultation-deadline-monitor.json`, `n8n/consultation-email-fanout.json`, `n8n/consultation-bottleneck-detection.json`, `docs/n8n-consultation-workflows.md`
   - spec_ref: `specs/consultation-management/spec.md` §Deadline warning, §Overdue escalation, §Bottleneck detection
   - acceptance: deadline-monitor workflow triggers once daily; email includes secure response link; bottleneck detection reads last-30-days overdue rate per body and sends coordinator notification when >20%.
