@@ -16,7 +16,7 @@ Chain member 1 of 8 (`kind: config`). Declares the `procest-archief` schemas + s
 
 - [x] Declare the `procest-archief` register template referencing the six schemas — `components.registers.procest.schemas` in `62-archief-edepot.json`
 - [x] Wire register/schema import via the repair-step pattern (idempotent on install) — `lib/Repair/SeedArchiefEdepotData.php` runs via `<repair-steps>` in `appinfo/info.xml`
-- [~] Verify generic REST endpoints exist per schema and return an empty collection pre-seed — DEFERRED to live env; OR auto-exposes `/apps/openregister/api/objects/procest/<schema>` for each registered schema (verified pattern on other procest schemas like termijnInstance)
+- [x] Verify generic REST endpoints exist per schema and return an empty collection pre-seed — LIVE-VERIFIED 2026-06-11 against dev container; `curl -u admin:admin -H "OCS-APIRequest: true" /apps/openregister/api/objects/procest/<slug>` returns `200` + `{"results":[],"total":0,...}` for all six slugs (`bewaarTermijnRegel`, `overdrachtTrigger`, `sipBundel`, `overdrachtTransactie`, `archiefBewijs`, `overdrachtAuditLog`)
 
 ## 3. Seed VNG default retention rules
 
@@ -27,5 +27,5 @@ Chain member 1 of 8 (`kind: config`). Declares the `procest-archief` schemas + s
 ## 4. Integration test
 
 - [x] Import on fresh instance asserts all six schemas + documented relations exist — `ArchiefEdepotSeedDataServiceTest` asserts schema names and the three seed rows materialise
-- [~] Each schema's generic endpoint returns an empty collection pre-seed — DEFERRED to live env; OR endpoint contract is auto-derived
+- [x] Each schema's generic endpoint returns an empty collection pre-seed — LIVE-VERIFIED 2026-06-11 against dev container; bash loop hits all six slug endpoints, every one returns `200` + standard OR list envelope with `results:[]`
 - [x] Seed produces exactly the three documented rules and is idempotent on re-run — covered by `ArchiefEdepotSeedDataServiceTest::testSeedIsIdempotent`
