@@ -261,6 +261,16 @@ return [
 
         // Prometheus metrics endpoint.
         ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
+
+        // Doorlooptijd (throughput-time) dashboard metrics.
+        ['name' => 'doorlooptijd#metrics', 'url' => '/api/doorlooptijd/metrics', 'verb' => 'GET'],
+
+        // Deelzaak (sub-case) parent-child relations.
+        ['name' => 'deelzaak#counts',   'url' => '/api/deelzaken/counts',                'verb' => 'GET'],
+        ['name' => 'deelzaak#validate', 'url' => '/api/deelzaken/validate',              'verb' => 'POST'],
+        ['name' => 'deelzaak#list',     'url' => '/api/deelzaken/{caseId}/children',     'verb' => 'GET'],
+        ['name' => 'deelzaak#parent',   'url' => '/api/deelzaken/{caseId}/parent',       'verb' => 'GET'],
+        ['name' => 'deelzaak#unlink',   'url' => '/api/deelzaken/{caseId}/unlink',       'verb' => 'POST'],
         // Health check endpoint.
         ['name' => 'health#index', 'url' => '/api/health', 'verb' => 'GET'],
         // Dashboard KPI aggregation endpoint.
@@ -434,6 +444,16 @@ return [
         ['name' => 'email#sendFromTemplate', 'url' => '/api/email/{caseId}/send-template',   'verb' => 'POST'],
         ['name' => 'email#preview',          'url' => '/api/email/{caseId}/preview',         'verb' => 'POST'],
         ['name' => 'email#templates',        'url' => '/api/email/templates/{caseTypeId}',   'verb' => 'GET'],
+
+        // Email template versioning + IMAP settings (leaf-first: NC Mail still owns send/list/link).
+        ['name' => 'emailTemplate#listTemplates',  'url' => '/api/casetypes/{caseTypeId}/email-templates',                  'verb' => 'GET'],
+        ['name' => 'emailTemplate#createTemplate', 'url' => '/api/casetypes/{caseTypeId}/email-templates',                  'verb' => 'POST'],
+        ['name' => 'emailTemplate#variables',      'url' => '/api/casetypes/{caseTypeId}/email-templates/variables',         'verb' => 'GET'],
+        ['name' => 'emailTemplate#updateTemplate', 'url' => '/api/email-templates/{templateId}',                            'verb' => 'PUT'],
+        ['name' => 'emailTemplate#prefillDraft',   'url' => '/api/cases/{caseId}/email-templates/{templateId}/draft',       'verb' => 'POST'],
+        ['name' => 'emailTemplate#getSettings',    'url' => '/api/settings/email',                                          'verb' => 'GET'],
+        ['name' => 'emailTemplate#saveSettings',   'url' => '/api/settings/email',                                          'verb' => 'PUT'],
+        ['name' => 'emailTemplate#testImap',       'url' => '/api/settings/email/test-imap',                                 'verb' => 'POST'],
 
         // ── Template (workflow step templates) ──────────────────────────
         ['name' => 'template#index',    'url' => '/api/templates',           'verb' => 'GET'],

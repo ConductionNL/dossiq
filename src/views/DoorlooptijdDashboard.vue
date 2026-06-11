@@ -353,6 +353,8 @@ export default {
 			selectedCaseType: null,
 			sortColumn: 'complianceRate',
 			sortDirection: 'asc',
+			// Server-side metrics payload (kpi / compliance / caseTypeBreakdown / cases) — null until loaded.
+			serverMetrics: null,
 		}
 	},
 	computed: {
@@ -767,10 +769,19 @@ export default {
 		await this.loadData()
 	},
 	methods: {
-		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md */
+		/** @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T05 */
 		async loadData() {
 			this.loading = true
 			try {
+				// Primary path: server-aggregated metrics (kpi/compliance/breakdown/cases).
+				try {
+					const { fetchMetrics } = await import('../services/doorlooptijdApi.js')
+					this.serverMetrics = await fetchMetrics({ caseType: this.selectedCaseType })
+				} catch (apiErr) {
+					console.warn('Doorlooptijd server metrics unavailable, falling back to client aggregation', apiErr)
+					this.serverMetrics = null
+				}
+
 				const results = await Promise.allSettled([
 					this.objectStore.fetchCollection('case', { _limit: 5000 }),
 					this.objectStore.fetchCollection('caseType', { _limit: 100 }),
