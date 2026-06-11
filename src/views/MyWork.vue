@@ -8,19 +8,21 @@
 		</div>
 
 		<!-- Filter tabs -->
-		<div class="my-work__tabs" role="tablist" :aria-label="t('procest', 'Filter by type')">
-			<button
-				v-for="tab in tabs"
-				:key="tab.key"
-				role="tab"
-				:aria-selected="activeTab === tab.key"
-				class="my-work__tab"
-				:class="{ 'my-work__tab--active': activeTab === tab.key }"
-				@click="activeTab = tab.key"
-				@keydown.enter="activeTab = tab.key"
-				@keydown.space.prevent="activeTab = tab.key">
-				{{ tab.label }} ({{ tab.count }})
-			</button>
+		<div class="my-work__tabs">
+			<div class="my-work__tablist" role="tablist" :aria-label="t('procest', 'Filter by type')">
+				<button
+					v-for="tab in tabs"
+					:key="tab.key"
+					role="tab"
+					:aria-selected="activeTab === tab.key"
+					class="my-work__tab"
+					:class="{ 'my-work__tab--active': activeTab === tab.key }"
+					@click="activeTab = tab.key"
+					@keydown.enter="activeTab = tab.key"
+					@keydown.space.prevent="activeTab = tab.key">
+					{{ tab.label }} ({{ tab.count }})
+				</button>
+			</div>
 
 			<label class="my-work__completed-toggle">
 				<input
@@ -74,7 +76,7 @@
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row my-work__row--overdue"
 					tabindex="0"
-					role="listitem"
+					role="button"
 					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}, ${item.daysText}`"
 					@click="onItemClick(item)"
 					@keydown.enter="onItemClick(item)"
@@ -107,7 +109,7 @@
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row"
 					tabindex="0"
-					role="listitem"
+					role="button"
 					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}, ${item.daysText}`"
 					@click="onItemClick(item)"
 					@keydown.enter="onItemClick(item)"
@@ -140,7 +142,7 @@
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row"
 					tabindex="0"
-					role="listitem"
+					role="button"
 					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}, ${item.daysText}`"
 					@click="onItemClick(item)"
 					@keydown.enter="onItemClick(item)"
@@ -173,7 +175,7 @@
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row"
 					tabindex="0"
-					role="listitem"
+					role="button"
 					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}`"
 					@click="onItemClick(item)"
 					@keydown.enter="onItemClick(item)"
@@ -468,6 +470,12 @@ export default {
 	margin-bottom: 20px;
 	border-bottom: 1px solid var(--color-border);
 	padding-bottom: 8px;
+}
+
+.my-work__tablist {
+	display: flex;
+	gap: 4px;
+	align-items: center;
 }
 
 .my-work__tab {
