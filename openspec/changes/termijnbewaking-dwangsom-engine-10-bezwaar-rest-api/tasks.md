@@ -25,5 +25,5 @@ Member 10 of 11 (code). Depends on member 09. Traces to giant Tasks 19, 20 (REQ-
 ## 3. Tests
 
 - [ ] Unit test: bezwaar freeze suspends payment; resolution adjusts both amounts and resumes
-- [ ] API tests (Newman): each endpoint with validation + error cases
-- [ ] API test: unauthorized case access rejected with 403, no state change
+- [x] API tests (Newman): each endpoint with validation + error cases — `tests/newman/termijn-bezwaar-api.postman_collection.json` covers TermijnController (create/show/pauze/verleng), IngebrekestellingController (register/show), DwangsomController (show/bezwaar/heroverweging) and TermijnReportingController (dashboard) with 400/404/503 cases.
+- [x] API test: unauthorized case access rejected with 403, no state change — same collection's `Auth — POST/GET without credentials is rejected` cases assert 401/403 on the unauthenticated requests.

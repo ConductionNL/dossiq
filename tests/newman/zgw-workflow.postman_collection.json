@@ -1,0 +1,261 @@
+{
+	"info": {
+		"_postman_id": "c7a4d2e1-1f3d-4c4a-9c0e-procestzgw0001",
+		"name": "Procest ZGW Workflow",
+		"description": "End-to-end CRUD workflow over procest's ZGW REST API. Drives the catalogi (ZTC), zaken (ZRC), and besluiten (BRC) registers through a single happy-path scenario:\n\n1. Create a `zaaktype` in /catalogi/v1/zaaktypen.\n2. Create a `zaak` (referencing that zaaktype) in /zaken/v1/zaken.\n3. List + show the zaak — verify it round-trips.\n4. Create a `besluit` linked to the zaak in /besluiten/v1/besluiten.\n5. List besluiten — verify the new one appears.\n6. Cleanup: DELETE besluit, zaak, zaaktype.\n\nThe controller stack (ZtcController, ZrcController, BrcController → ZgwService) is exercised end-to-end; this collection is the runtime companion to the missing ZtcControllerTest / ZrcControllerTest / BrcControllerTest unit tests called out by openspec/changes/unit-test-coverage-75/tasks.md (task 7.1).\n\nAuth is HTTP Basic + OCS-APIRequest. Defaults to admin:admin against http://localhost:8080.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{"key": "username", "value": "{{admin_user}}", "type": "string"},
+			{"key": "password", "value": "{{admin_pass}}", "type": "string"}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Stable run-id so cleanup at the end can find what THIS run created.",
+					"if (!pm.collectionVariables.get('run_id')) {",
+					"  pm.collectionVariables.set('run_id', 'NM-' + Date.now().toString(36).toUpperCase());",
+					"}"
+				]
+			}
+		}
+	],
+	"item": [
+		{
+			"name": "Catalogi — Create zaaktype",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"identificatie\": \"newman-zaaktype-{{run_id}}\",\n  \"omschrijving\": \"Newman workflow zaaktype {{run_id}}\",\n  \"vertrouwelijkheidaanduiding\": \"openbaar\",\n  \"doel\": \"Geautomatiseerde end-to-end ZGW workflow validatie\",\n  \"aanleiding\": \"Newman regressie\",\n  \"indicatieInternOfExtern\": \"intern\",\n  \"handelingInitiator\": \"indienen\",\n  \"onderwerp\": \"Newman ZGW workflow\",\n  \"handelingBehandelaar\": \"behandelen\",\n  \"doorlooptijd\": \"P30D\",\n  \"opschortingEnAanhoudingMogelijk\": false,\n  \"verlengingMogelijk\": false,\n  \"publicatieIndicatie\": false,\n  \"productenOfDiensten\": [],\n  \"beginGeldigheid\": \"2026-01-01\",\n  \"versiedatum\": \"2026-01-01\",\n  \"concept\": true\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/zgw/catalogi/v1/zaaktypen",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "catalogi", "v1", "zaaktypen"]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('201 Created', function () { pm.response.to.have.status(201) })",
+					"var b = pm.response.json()",
+					"pm.test('returns a URL or UUID', function () { pm.expect(b.url || b.uuid).to.be.a('string') })",
+					"pm.collectionVariables.set('zaaktype_url', b.url || '')",
+					"pm.collectionVariables.set('zaaktype_uuid', b.uuid || (b.url || '').split('/').pop())"
+				]}}
+			]
+		},
+		{
+			"name": "Zaken — Create zaak (references zaaktype)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"bronorganisatie\": \"000000000\",\n  \"zaaktype\": \"{{zaaktype_url}}\",\n  \"verantwoordelijkeOrganisatie\": \"000000000\",\n  \"startdatum\": \"2026-06-11\",\n  \"omschrijving\": \"Newman ZGW workflow zaak {{run_id}}\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/zgw/zaken/v1/zaken",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "zaken", "v1", "zaken"]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('201 Created', function () { pm.response.to.have.status(201) })",
+					"var b = pm.response.json()",
+					"pm.test('zaak has auto-generated identificatie', function () { pm.expect(b.identificatie).to.be.a('string').and.not.empty })",
+					"pm.test('zaak carries the requested zaaktype reference', function () { pm.expect(b.zaaktype).to.eql(pm.collectionVariables.get('zaaktype_url')) })",
+					"pm.collectionVariables.set('zaak_url', b.url || '')",
+					"pm.collectionVariables.set('zaak_uuid', b.uuid || (b.url || '').split('/').pop())",
+					"pm.collectionVariables.set('zaak_identificatie', b.identificatie)"
+				]}}
+			]
+		},
+		{
+			"name": "Zaken — List zaken includes the new zaak",
+			"request": {
+				"method": "GET",
+				"header": [{"key": "OCS-APIRequest", "value": "true"}],
+				"url": {
+					"raw": "{{base_url}}/api/zgw/zaken/v1/zaken?identificatie={{zaak_identificatie}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "zaken", "v1", "zaken"],
+					"query": [{"key": "identificatie", "value": "{{zaak_identificatie}}"}]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('200 OK', function () { pm.response.to.have.status(200) })",
+					"var b = pm.response.json()",
+					"pm.test('response has results array', function () { pm.expect(b.results).to.be.an('array') })",
+					"pm.test('our zaak is in the results', function () {",
+					"  var match = b.results.find(function (r) { return r.identificatie === pm.collectionVariables.get('zaak_identificatie') })",
+					"  pm.expect(match).to.not.be.undefined",
+					"})"
+				]}}
+			]
+		},
+		{
+			"name": "Zaken — Show zaak round-trips",
+			"request": {
+				"method": "GET",
+				"header": [{"key": "OCS-APIRequest", "value": "true"}],
+				"url": {
+					"raw": "{{base_url}}/api/zgw/zaken/v1/zaken/{{zaak_uuid}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "zaken", "v1", "zaken", "{{zaak_uuid}}"]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('200 OK', function () { pm.response.to.have.status(200) })",
+					"var b = pm.response.json()",
+					"pm.test('GET returns the same identificatie we created', function () { pm.expect(b.identificatie).to.eql(pm.collectionVariables.get('zaak_identificatie')) })",
+					"pm.test('GET returns the requested zaaktype', function () { pm.expect(b.zaaktype).to.eql(pm.collectionVariables.get('zaaktype_url')) })"
+				]}}
+			]
+		},
+		{
+			"name": "Besluiten — Create besluit linked to zaak",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"identificatie\": \"newman-besluit-{{run_id}}\",\n  \"verantwoordelijkeOrganisatie\": \"000000000\",\n  \"zaak\": \"{{zaak_url}}\",\n  \"datum\": \"2026-06-11\",\n  \"toelichting\": \"Newman workflow besluit {{run_id}}\",\n  \"ingangsdatum\": \"2026-06-12\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/zgw/besluiten/v1/besluiten",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "besluiten", "v1", "besluiten"]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('201 Created', function () { pm.response.to.have.status(201) })",
+					"var b = pm.response.json()",
+					"pm.test('besluit links back to our zaak', function () { pm.expect(b.zaak).to.eql(pm.collectionVariables.get('zaak_url')) })",
+					"pm.collectionVariables.set('besluit_url', b.url || '')",
+					"pm.collectionVariables.set('besluit_uuid', b.uuid || (b.url || '').split('/').pop())"
+				]}}
+			]
+		},
+		{
+			"name": "Besluiten — List besluiten shows the new one",
+			"request": {
+				"method": "GET",
+				"header": [{"key": "OCS-APIRequest", "value": "true"}],
+				"url": {
+					"raw": "{{base_url}}/api/zgw/besluiten/v1/besluiten?zaak={{zaak_url}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "besluiten", "v1", "besluiten"],
+					"query": [{"key": "zaak", "value": "{{zaak_url}}"}]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('200 OK', function () { pm.response.to.have.status(200) })",
+					"var b = pm.response.json()",
+					"pm.test('results array contains our besluit', function () {",
+					"  var ids = (b.results || []).map(function (r) { return r.uuid || (r.url || '').split('/').pop() })",
+					"  pm.expect(ids).to.include(pm.collectionVariables.get('besluit_uuid'))",
+					"})"
+				]}}
+			]
+		},
+		{
+			"name": "Validation — POST zaak without zaaktype returns 400",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {"mode": "raw", "raw": "{\n  \"bronorganisatie\": \"000000000\",\n  \"verantwoordelijkeOrganisatie\": \"000000000\",\n  \"startdatum\": \"2026-06-11\"\n}"},
+				"url": {
+					"raw": "{{base_url}}/api/zgw/zaken/v1/zaken",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "zaken", "v1", "zaken"]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('rejected with 400', function () { pm.expect(pm.response.code).to.be.oneOf([400, 422]) })"
+				]}}
+			]
+		},
+		{
+			"name": "Cleanup — DELETE besluit",
+			"request": {
+				"method": "DELETE",
+				"header": [{"key": "OCS-APIRequest", "value": "true"}],
+				"url": {
+					"raw": "{{base_url}}/api/zgw/besluiten/v1/besluiten/{{besluit_uuid}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "besluiten", "v1", "besluiten", "{{besluit_uuid}}"]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('204 No Content or 200 OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 204]) })"
+				]}}
+			]
+		},
+		{
+			"name": "Cleanup — DELETE zaak",
+			"request": {
+				"method": "DELETE",
+				"header": [{"key": "OCS-APIRequest", "value": "true"}],
+				"url": {
+					"raw": "{{base_url}}/api/zgw/zaken/v1/zaken/{{zaak_uuid}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "zaken", "v1", "zaken", "{{zaak_uuid}}"]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('204 No Content or 200 OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 204]) })"
+				]}}
+			]
+		},
+		{
+			"name": "Cleanup — DELETE zaaktype",
+			"request": {
+				"method": "DELETE",
+				"header": [{"key": "OCS-APIRequest", "value": "true"}],
+				"url": {
+					"raw": "{{base_url}}/api/zgw/catalogi/v1/zaaktypen/{{zaaktype_uuid}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "catalogi", "v1", "zaaktypen", "{{zaaktype_uuid}}"]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('204 No Content or 200 OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 204]) })"
+				]}}
+			]
+		}
+	],
+	"variable": [
+		{"key": "base_url", "value": "http://localhost:8080/index.php/apps/procest", "type": "string"},
+		{"key": "admin_user", "value": "admin", "type": "string"},
+		{"key": "admin_pass", "value": "admin", "type": "string"}
+	]
+}
