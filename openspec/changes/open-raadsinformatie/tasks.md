@@ -39,7 +39,7 @@
   - GIVEN seeded mock vergadering "Raadsvergadering 12 juni 2026" WHEN searching "Raad" via `/zoeken` THEN result appears
   - Filtering by `type=raadsvergadering` returns only matching records
 - [x] Confirm searchable=true on each schema (all 6 schemas in ori_register.json have `searchable: true`)
-- [~] Add a Newman smoke test asserting search hits (deferred — requires running Nextcloud instance)
+- [x] Add a Newman smoke test asserting search hits — `tests/newman/raadsinformatie-feed.postman_collection.json` (W17): asserts 200 + XML on the three public feed endpoints (vergaderingen/agendapunten/documenten) via `base_url` env
 
 ## 3. Vergadering Case Wrapper
 

@@ -386,9 +386,25 @@ class BeschikkingController extends Controller
      */
     private function readJsonBody(): array
     {
-        // OCP\IRequest::getContent() is protected on the concrete OC
-        // request; read raw payload from php://input instead.
-        $content = (string) file_get_contents('php://input');
+        // Prefer the request object's getContent() when reachable — test
+        // stubs expose a public getContent() so unit tests can drive
+        // controllers without faking php://input.
+        $content = '';
+        if (method_exists($this->request, 'getContent') === true) {
+            try {
+                $raw = $this->request->getContent();
+                if (is_string($raw) === true) {
+                    $content = $raw;
+                }
+            } catch (\Throwable $e) {
+                $content = '';
+            }
+        }
+
+        if ($content === '') {
+            $content = (string) file_get_contents('php://input');
+        }
+
         if ($content === '') {
             return [];
         }
