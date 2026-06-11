@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use DateTimeImmutable;
+use OCA\Procest\Service\DwangsomCalculationService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\TermijnDailyScanService;
 use OCA\Procest\Service\TermijnEscalationService;
@@ -170,5 +171,80 @@ class TermijnDailyScanServiceTest extends TestCase
         $counts = $this->scan->run(new DateTimeImmutable('2026-06-01T10:00:00+00:00'));
         self::assertSame(0, $counts['overschreden']);
         self::assertSame(0, $counts['escalated']);
+    }
+
+    /**
+     * Dwangsom accrual sweep: every `lopend` dwangsomBerekening row is
+     * advanced by exactly one day per `TermijnDailyScanService::run()`
+     * pass. The scan does NOT recalculate retroactively — yesterday's
+     * cumulatievBedrag is the floor and the current tier-day adds on top.
+     * Closes the
+     * `termijnbewaking-dwangsom-engine-06-dwangsom-calculation` integration
+     * deferral for "scan accrues each lopend berekening".
+     *
+     * @return void
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
+     */
+    public function testScanAccruesEveryLopendDwangsomBerekening(): void
+    {
+        $settings = $this->createMock(SettingsService::class);
+        $settings->method('getObjectService')->willReturn($this->objects);
+        $settings->method('getConfigValue')->willReturnCallback(
+            static function (string $key): string {
+                return match ($key) {
+                    'register'                   => 'procest',
+                    'termijn_definitie_schema'   => 'termijnDefinitie',
+                    'termijn_instance_schema'    => 'termijnInstance',
+                    'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
+                    'dwangsom_berekening_schema' => 'dwangsomBerekening',
+                    default                       => '',
+                };
+            },
+        );
+        $logger = $this->createMock(LoggerInterface::class);
+        $calc   = new DwangsomCalculationService($settings, $logger);
+        $scan   = new TermijnDailyScanService(
+            $settings,
+            new TermijnService($settings, $logger),
+            new TermijnEscalationService(new TermijnService($settings, $logger), $logger),
+            $logger,
+            $calc
+        );
+
+        // Three lopend rows on day 0 — tier-1 increment is €23 (2300 cents).
+        foreach (['b1', 'b2', 'b3'] as $id) {
+            $this->objects->saveObject('procest', 'dwangsomBerekening', [
+                'id'                => $id,
+                'termijnInstance'   => 'ti-'.$id,
+                'huidigeDag'        => 0,
+                'cumulatievBedrag'  => 0,
+                'plafondBereikt'    => false,
+                'status'            => 'lopend',
+            ]);
+        }
+        // One stopped row must be skipped.
+        $this->objects->saveObject('procest', 'dwangsomBerekening', [
+            'id'                => 'b-stopped',
+            'termijnInstance'   => 'ti-stopped',
+            'huidigeDag'        => 99,
+            'cumulatievBedrag'  => 999999,
+            'plafondBereikt'    => false,
+            'status'            => 'gestopt-wegens-beschikking',
+        ]);
+
+        $counts = $scan->run(new DateTimeImmutable('2026-06-01T10:00:00+00:00'));
+
+        self::assertSame(3, $counts['dwangsomAccrued'], 'Scan must accrue every lopend row exactly once.');
+
+        // Verify each lopend row advanced one tier-1 day; stopped row untouched.
+        foreach (['b1', 'b2', 'b3'] as $id) {
+            $row = $this->objects->store['dwangsomBerekening'][$id];
+            self::assertSame(1, $row['huidigeDag'], $id.' must advance huidigeDag by 1.');
+            self::assertSame(2300, $row['cumulatievBedrag'], $id.' must add tier-1 (2300 cents) once.');
+        }
+        $stopped = $this->objects->store['dwangsomBerekening']['b-stopped'];
+        self::assertSame(99, $stopped['huidigeDag'], 'stopped row must not advance.');
+        self::assertSame(999999, $stopped['cumulatievBedrag'], 'stopped row must not accrue.');
     }
 }

@@ -6579,6 +6579,78 @@
             }
           ]
         }
+      },
+      {
+        "slug": "leverancier-dashboard",
+        "type": "custom",
+        "title": "Leveranciersportaal",
+        "register": "procest",
+        "path": "/leverancier",
+        "component": "LeverancierDashboard",
+        "description": "Supplier portal operator-side dashboard shell — 4 cards (tenders, invoices, contracts, KPI) bound to SupplierDashboardService::buildSummary(). Each card is a router-link into its feature view. Chain member 15."
+      },
+      {
+        "slug": "leverancier-tenders",
+        "type": "custom",
+        "title": "Aanbestedingen",
+        "register": "procest",
+        "path": "/leverancier/tenders",
+        "component": "TenderList",
+        "description": "Supplier tender list — sortable/filterable, status badge from TenderViewModelService. Chain member 06 frontend."
+      },
+      {
+        "slug": "leverancier-tender-detail",
+        "type": "custom",
+        "title": "Aanbesteding",
+        "register": "procest",
+        "path": "/leverancier/tenders/:id",
+        "component": "TenderDetail",
+        "description": "Supplier tender detail — conditional award/rejection/withdrawal sections from visibilityFlags(). Chain member 06 frontend."
+      },
+      {
+        "slug": "leverancier-invoices",
+        "type": "custom",
+        "title": "Facturen",
+        "register": "procest",
+        "path": "/leverancier/facturen",
+        "component": "InvoiceList",
+        "description": "Supplier invoice list — overdue90Plus flag + status badge from LeverancierViewModelService. Chain member 08 frontend."
+      },
+      {
+        "slug": "leverancier-contracts",
+        "type": "custom",
+        "title": "Contracten",
+        "register": "procest",
+        "path": "/leverancier/contracten",
+        "component": "ContractList",
+        "description": "Supplier contract list — expiring-soon highlighting from ContractRenewalService. Chain member 10 frontend."
+      },
+      {
+        "slug": "leverancier-kpi",
+        "type": "custom",
+        "title": "KPI",
+        "register": "procest",
+        "path": "/leverancier/kpi",
+        "component": "KpiView",
+        "description": "Supplier KPI summary — payment days, on-time pct, dispute rate, compliance score. Chain member 14 frontend."
+      },
+      {
+        "slug": "leverancier-profile",
+        "type": "custom",
+        "title": "Mijn gegevens",
+        "register": "procest",
+        "path": "/leverancier/profiel",
+        "component": "ProfileForm",
+        "description": "Supplier profile form — address + contact (immediate) + IBAN-change (4-eyes via Procest case). Chain member 12."
+      },
+      {
+        "slug": "leverancier-messages",
+        "type": "custom",
+        "title": "Berichten",
+        "register": "procest",
+        "path": "/leverancier/berichten",
+        "component": "MessageThread",
+        "description": "Per-case supplier message thread with composer. Chain member 11 messaging."
       }
     ],
     "objects": [
