@@ -222,6 +222,20 @@ class SettingsService
         'overdracht_transactie_schema',
         'archief_bewijs_schema',
         'overdracht_audit_log_schema',
+        // Case-email integration (case-email-integration spec).
+        // emailTemplate is the only net-new schema; sending/threading live in NC Mail.
+        'email_template_schema',
+        // Shared-mailbox poller / IMAP-side config (ADR-022 exception).
+        'email_imap_host',
+        'email_imap_port',
+        'email_imap_encryption',
+        'email_imap_username',
+        'email_imap_password',
+        'email_imap_folder',
+        'email_transport',
+        'email_poll_interval',
+        'email_poll_batch_size',
+        'email_max_attachment_size',
     ];
 
     /**
@@ -340,6 +354,8 @@ class SettingsService
         'overdrachtTransactie'         => 'overdracht_transactie_schema',
         'archiefBewijs'                => 'archief_bewijs_schema',
         'overdrachtAuditLog'           => 'overdracht_audit_log_schema',
+        // Case-email integration (case-email-integration spec).
+        'emailTemplate'                => 'email_template_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

@@ -82,6 +82,8 @@ Vrij en open source onder de AGPL-licentie.
         <job>OCA\Procest\BackgroundJob\DsoDeadlineJob</job>
         <job>OCA\Procest\BackgroundJob\ResetMonthlyQuotasJob</job>
         <job>OCA\Procest\BackgroundJob\DailyTermijnScanJob</job>
+        <job>OCA\Procest\BackgroundJob\InboundEmailJob</job>
+        <job>OCA\Procest\BackgroundJob\EmailPdfRetryJob</job>
     </background-jobs>
 
     <repair-steps>
