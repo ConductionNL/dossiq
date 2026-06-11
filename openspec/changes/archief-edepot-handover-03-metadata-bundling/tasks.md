@@ -31,3 +31,7 @@ Chain member 3 of 8 (`kind: code`, depends_on member 02). Traces to giant Tasks 
 - [~] Test: bundle a case; validate XML against MDTO XSD — DEFERRED: needs full XSD bundle in repo + libxml; behaviourally exercised via mocked DOMDocument in the unit test scaffold (deferred to follow-up `MetadataBundlerServiceTest`)
 - [x] Test: missing document-type blocks bundling with the correct error message — covered by `tests/Unit/Service/EvidenceMetadataServiceTest.php` (overlapping document-type validation surface) and the documented contract in MetadataBundlerService
 - [~] Test: validate both MDTO 1.1 and TMLO 1.2.1 paths — DEFERRED: validateXsd switches on `metadataXsdVersion`; both XSD bundles ship; full e2e parity needs live OR
+
+## 6. TMLO adapter consumer wiring (W6, 2026-06-11)
+
+- [x] Wire `TmloMetadataBuilderAdapterInterface` into `ArchivalTriggerService::buildTmloBundle(caseId, mdtoVersion, context)`. The dormant `LogTmloMetadataBuilderAdapter` default returns `BUILD_DEFERRED` with a stub XML; swap the DI alias in `lib/AppInfo/Application.php` once openconnector source `mdto-tmlo-builder` (KNVI/Nationaal Archief XSD catalogue + per-tenant archiefvormerId) is provisioned. Audit: every build is mirrored into `overdrachtAuditLog` as `tmlo-build-<status>`. Tests: `tests/Unit/Service/ArchivalServicesTest.php::testBuildTmloBundleReturnsNullWhenNoBuilderBound` / `testBuildTmloBundleDelegatesToBuilderAndLogsEvent`.

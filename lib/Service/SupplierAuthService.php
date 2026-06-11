@@ -28,6 +28,8 @@ namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Procest\Service\Auth\BrokerAssertionResult;
+use OCA\Procest\Service\Auth\EHerkenningSamlAdapterInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -61,6 +63,7 @@ class SupplierAuthService
         private readonly ContainerInterface $container,
         private readonly TenantJwtService $jwt,
         private readonly LoggerInterface $logger,
+        private readonly ?EHerkenningSamlAdapterInterface $eherkenningAdapter = null,
     ) {
     }
 
@@ -219,6 +222,90 @@ class SupplierAuthService
     {
         return ($expSeconds - time()) <= self::SESSION_REFRESH_WINDOW;
     }
+
+    /**
+     * Build a complete portal session from a raw eHerkenning SAML response.
+     *
+     * Pipeline: adapter decodes the SAML response → KvK claim is validated
+     * against the supplier register → SupplierUser is created or linked →
+     * a JWT session token is issued. Each failure stage returns a Dutch
+     * `reason` payload so the caller can surface the operator message
+     * (chain-member 02 task lines 7-10 + 16).
+     *
+     * @param string $samlResponse Base64-encoded SAML response.
+     * @param string $relayState   Original RelayState string (CSRF correlation).
+     *
+     * @return array{
+     *     ok: bool,
+     *     reason?: string,
+     *     token?: string,
+     *     expiresIn?: int,
+     *     financialReauthRequired?: bool,
+     *     supplier?: array<string,mixed>,
+     *     assertion?: array<string,mixed>,
+     * } Session bootstrap payload.
+     *
+     * @spec openspec/changes/leverancier-zaakportaal-02-eherkenning-auth/tasks.md
+     */
+    public function createSessionFromEHerkenning(string $samlResponse, string $relayState): array
+    {
+        if ($this->eherkenningAdapter === null) {
+            return [
+                'ok'     => false,
+                'reason' => 'eHerkenning broker adapter niet geconfigureerd',
+            ];
+        }
+
+        try {
+            $assertion = $this->eherkenningAdapter->decodeAssertion($samlResponse, $relayState);
+        } catch (Throwable $e) {
+            $this->logger->warning(
+                'SupplierAuthService.createSessionFromEHerkenning: adapter rejected the assertion',
+                ['error' => $e->getMessage()]
+            );
+            return [
+                'ok'     => false,
+                'reason' => 'eHerkenning broker weigerde de assertion: '.$e->getMessage(),
+            ];
+        }
+
+        $kvkNumber = (string) $assertion->kvkNummer;
+        $validation = $this->validateKvKClaim($kvkNumber);
+        if (($validation['ok'] ?? false) !== true) {
+            return [
+                'ok'     => false,
+                'reason' => (string) ($validation['reason'] ?? 'Onbekende fout'),
+                'assertion' => $assertion->toArray(),
+            ];
+        }
+
+        $supplier = (array) $validation['supplier'];
+        $supplierRef = (string) ($supplier['uuid'] ?? $supplier['id'] ?? '');
+
+        $claim = [
+            'subject'          => $assertion->assertionId,
+            'eherkenningLevel' => (string) $assertion->level,
+            'role'             => 'read_only',
+            'email'            => (string) ($assertion->attributes['email'] ?? ''),
+            'kvkNumber'        => $kvkNumber,
+        ];
+
+        $supplierUser = $this->createOrLinkSupplierUser($supplierRef, $claim);
+        $supplierUserId = (string) ($supplierUser['uuid'] ?? $supplierUser['id'] ?? $assertion->assertionId);
+
+        $financialReauth = ($assertion->level < 3);
+
+        $session = $this->issueSessionToken($supplierUserId, $supplier, $claim, $financialReauth);
+
+        return [
+            'ok'                      => true,
+            'token'                   => $session['token'],
+            'expiresIn'               => $session['expiresIn'],
+            'financialReauthRequired' => $session['financialReauthRequired'],
+            'supplier'                => $supplier,
+            'assertion'               => $assertion->toArray(),
+        ];
+    }//end createSessionFromEHerkenning()
 
     /**
      * Stub for the broker call. Production wires this to OpenConnector;

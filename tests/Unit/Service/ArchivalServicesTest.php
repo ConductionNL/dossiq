@@ -25,6 +25,10 @@ namespace OCA\Procest\Tests\Unit\Service;
 use OCA\Procest\Service\ArchiefEdepotSeedDataService;
 use OCA\Procest\Service\ArchivalTriggerService;
 use OCA\Procest\Service\BagItBundlerService;
+use OCA\Procest\Service\External\Tmlo\EDepotSubmissionAdapterInterface;
+use OCA\Procest\Service\External\Tmlo\EDepotSubmissionResult;
+use OCA\Procest\Service\External\Tmlo\TmloBundleResult;
+use OCA\Procest\Service\External\Tmlo\TmloMetadataBuilderAdapterInterface;
 use OCA\Procest\Service\MetadataBundlerService;
 use OCA\Procest\Service\ProofOfTransferService;
 use OCA\Procest\Service\SettingsService;
@@ -314,5 +318,114 @@ class ArchivalServicesTest extends TestCase
             }
         }
         self::assertTrue($found, 'Audit log row for blocked detection must reference the zaaktype.');
+    }
+
+    /**
+     * @return void
+     *
+     * @spec openspec/changes/archief-edepot-handover-03-metadata-bundling/tasks.md
+     */
+    public function testBuildTmloBundleReturnsNullWhenNoBuilderBound(): void
+    {
+        $svc = new ArchivalTriggerService($this->settings, $this->createMock(LoggerInterface::class));
+        self::assertNull($svc->buildTmloBundle('C/9', 'mdto-1.1'));
+    }
+
+    /**
+     * @return void
+     *
+     * @spec openspec/changes/archief-edepot-handover-03-metadata-bundling/tasks.md
+     */
+    public function testBuildTmloBundleDelegatesToBuilderAndLogsEvent(): void
+    {
+        $builder = $this->createMock(TmloMetadataBuilderAdapterInterface::class);
+        $builder->expects(self::once())
+            ->method('buildBundle')
+            ->with('C/10', 'mdto-1.1', self::callback(static fn ($c) => is_array($c)))
+            ->willReturn(new TmloBundleResult(
+                buildStatus: 'BUILD_DEFERRED',
+                caseId: 'C/10',
+                metadataXml: '<stub/>',
+                metadataXsdVersion: 'mdto-1.1',
+                dormant: true,
+            ));
+
+        $svc = new ArchivalTriggerService(
+            $this->settings,
+            $this->createMock(LoggerInterface::class),
+            $builder,
+        );
+
+        $r = $svc->buildTmloBundle('C/10', 'mdto-1.1', ['sipBundelId' => 'sip-1']);
+        self::assertNotNull($r);
+        self::assertSame('BUILD_DEFERRED', $r->buildStatus);
+
+        // Builder result is mirrored into the overdrachtAuditLog.
+        $auditRows = array_values($this->objects->store['overdrachtAuditLog'] ?? []);
+        $matched   = false;
+        foreach ($auditRows as $row) {
+            if (str_starts_with((string) ($row['eventType'] ?? ''), 'tmlo-build-')
+                && ($row['zaakId'] ?? '') === 'C/10'
+            ) {
+                $matched = true;
+                break;
+            }
+        }
+        self::assertTrue($matched, 'tmlo-build-* audit row must be persisted.');
+    }
+
+    /**
+     * @return void
+     *
+     * @spec openspec/changes/archief-edepot-handover-05-sip-submission/tasks.md
+     */
+    public function testSubmitToEdepotReturnsNullWhenNoSubmitterBound(): void
+    {
+        $svc = new ArchivalTriggerService($this->settings, $this->createMock(LoggerInterface::class));
+        self::assertNull($svc->submitToEdepot('sip-1', 'C/11'));
+    }
+
+    /**
+     * @return void
+     *
+     * @spec openspec/changes/archief-edepot-handover-05-sip-submission/tasks.md
+     */
+    public function testSubmitToEdepotDelegatesToSubmitterAndLogsEvent(): void
+    {
+        $submitter = $this->createMock(EDepotSubmissionAdapterInterface::class);
+        $submitter->expects(self::once())
+            ->method('submit')
+            ->with('sip-2', self::callback(static fn ($c) => is_array($c)))
+            ->willReturn(new EDepotSubmissionResult(
+                submissionStatus: 'SUBMISSION_DEFERRED',
+                sipBundelId: 'sip-2',
+                archiefId: '',
+                overdrachtTransactieId: 'edepot-test-1',
+                dormant: true,
+            ));
+
+        $svc = new ArchivalTriggerService(
+            $this->settings,
+            $this->createMock(LoggerInterface::class),
+            null,
+            $submitter,
+        );
+
+        $r = $svc->submitToEdepot('sip-2', 'C/12', ['transportMode' => 'https']);
+        self::assertNotNull($r);
+        self::assertSame('SUBMISSION_DEFERRED', $r->submissionStatus);
+        self::assertSame('edepot-test-1', $r->overdrachtTransactieId);
+
+        $auditRows = array_values($this->objects->store['overdrachtAuditLog'] ?? []);
+        $matched   = false;
+        foreach ($auditRows as $row) {
+            if (str_starts_with((string) ($row['eventType'] ?? ''), 'edepot-submit-')
+                && ($row['zaakId'] ?? '') === 'C/12'
+            ) {
+                $matched = true;
+                break;
+            }
+        }
+        self::assertTrue($matched, 'edepot-submit-* audit row must be persisted.');
     }
 }

@@ -21,6 +21,8 @@ namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Procest\Service\External\Kvk\KvkHandelsregisterAdapterInterface;
+use OCA\Procest\Service\External\Kvk\KvkLookupResult;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -37,7 +39,98 @@ class SupplierMasterDataMutationService
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
+        private readonly ?KvkHandelsregisterAdapterInterface $kvkAdapter = null,
     ) {
+    }
+
+    /**
+     * Validate a KvK number against the Handelsregister.
+     *
+     * Performs a format check (8 digits, leading zeros allowed) and, when a
+     * KvK adapter is bound, enriches the result with the entity envelope.
+     * A dormant adapter returns `LOOKUP_DEFERRED`; an active binding returns
+     * `FOUND`/`NOT_FOUND` with the legal entity payload (statutaireNaam,
+     * rsin, vestiging).
+     *
+     * @param string $kvkNumber 8-digit KvK number.
+     * @param string $caseId    Optional zaak id for audit correlation.
+     *
+     * @return array{
+     *     ok: bool,
+     *     reason?: string,
+     *     status?: string,
+     *     entity?: array<string,mixed>,
+     *     dormant?: bool,
+     *     extras?: array<string,mixed>,
+     * }
+     *
+     * @spec openspec/changes/leverancier-zaakportaal-12-master-data-mutations/tasks.md
+     */
+    public function validateKvk(string $kvkNumber, string $caseId = ''): array
+    {
+        $normalised = preg_replace('/\D/', '', $kvkNumber) ?? '';
+        if (strlen($normalised) !== 8) {
+            return ['ok' => false, 'reason' => 'KvK-nummer moet 8 cijfers bevatten'];
+        }
+
+        if ($this->kvkAdapter === null) {
+            return [
+                'ok'      => true,
+                'reason'  => 'KvK-formaat geldig; geen adapter gebonden',
+                'status'  => 'FORMAT_ONLY',
+                'entity'  => [],
+                'dormant' => true,
+            ];
+        }
+
+        try {
+            /** @var KvkLookupResult $result */
+            $result = $this->kvkAdapter->lookup(
+                $normalised,
+                [
+                    'lookupReason'  => 'master-data-mutation',
+                    'caseId'        => $caseId,
+                ]
+            );
+        } catch (Throwable $e) {
+            $this->logger->warning(
+                'SupplierMasterDataMutationService.validateKvk adapter lookup failed',
+                ['error' => $e->getMessage(), 'kvkNumber' => $normalised]
+            );
+            return [
+                'ok'     => false,
+                'reason' => 'KvK Handelsregister lookup mislukt',
+                'status' => 'LOOKUP_ERROR',
+            ];
+        }
+
+        switch ($result->lookupStatus) {
+            case 'FOUND':
+                return [
+                    'ok'      => true,
+                    'status'  => 'FOUND',
+                    'entity'  => $result->entity,
+                    'dormant' => $result->dormant,
+                    'extras'  => $result->extras,
+                ];
+            case 'NOT_FOUND':
+                return [
+                    'ok'     => false,
+                    'reason' => 'KvK-nummer niet gevonden in Handelsregister',
+                    'status' => 'NOT_FOUND',
+                    'dormant'=> $result->dormant,
+                ];
+            case 'LOOKUP_DEFERRED':
+            default:
+                return [
+                    'ok'      => true,
+                    'reason'  => 'KvK-formaat geldig; Handelsregister lookup uitgesteld',
+                    'status'  => $result->lookupStatus,
+                    'entity'  => $result->entity,
+                    'dormant' => $result->dormant,
+                    'extras'  => $result->extras,
+                ];
+        }
     }
 
     /**

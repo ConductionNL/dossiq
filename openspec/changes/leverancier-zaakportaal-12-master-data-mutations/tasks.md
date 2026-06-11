@@ -20,3 +20,7 @@ Traces to giant tasks 3.5 and 2.6; spec REQ-007.
 - [x] Test IBAN change (4-eyes Procest workflow, not applied until approved) — `testRequestIbanChangeRejectsBadIban` + `testRequestIbanChangeRefusesWithoutOpenRegister` exercise the gating; the case-create path runs once OR is wired
 - [x] Test accreditation submission (not auto-applied) — `testSubmitForVerificationReturnsOkFalseWhenOrUnavailable` exercises the fallback
 - [~] Verify email notifications and audit logging on each update — audit log is in place; email notifications deferred to chain member 16
+
+## KvK Handelsregister adapter consumer wiring (W6, 2026-06-11)
+
+- [x] Wire `KvkHandelsregisterAdapterInterface` into `SupplierMasterDataMutationService::validateKvk(kvkNumber, caseId)`. Returns FORMAT_ONLY when no adapter is bound, LOOKUP_DEFERRED for the dormant `LogKvkHandelsregisterAdapter` (default), FOUND with the legal-entity envelope (statutaireNaam, rsin, vestigingen) when an active adapter resolves, and NOT_FOUND when the Handelsregister rejects. Swap the DI alias in `lib/AppInfo/Application.php` once openconnector source `kvk-handelsregister` (Handelsregister API v1 + per-tenant API key) is wired and the kvk feature flag is flipped. Tests: `tests/Unit/Service/SupplierMasterDataMutationServiceTest.php::testValidateKvk*` (5 new tests covering bad-format, no-adapter, dormant-DEFERRED, active-FOUND and NOT_FOUND).

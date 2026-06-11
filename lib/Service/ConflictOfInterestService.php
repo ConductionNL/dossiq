@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use OCA\Procest\Service\External\Brp\BrpHaalCentraalAdapterInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -58,10 +59,16 @@ class ConflictOfInterestService
     /**
      * Constructor.
      *
-     * @param LoggerInterface $logger Logger.
+     * @param LoggerInterface                      $logger      Logger.
+     * @param BrpHaalCentraalAdapterInterface|null $brpAdapter  Optional BRP Haal
+     *                                                          Centraal adapter
+     *                                                          for relationship
+     *                                                          enrichment.
+     *                                                          Dormant by default.
      */
     public function __construct(
         private readonly LoggerInterface $logger,
+        private readonly ?BrpHaalCentraalAdapterInterface $brpAdapter = null,
     ) {
     }//end __construct()
 
@@ -112,22 +119,94 @@ class ConflictOfInterestService
             return ['conflict' => true, 'reason' => 'self'];
         }
 
-        if ($this->relationshipLookup === null) {
-            return ['conflict' => false];
+        if ($this->relationshipLookup !== null) {
+            try {
+                $relation = ($this->relationshipLookup)($userBsn, $applicantBsn);
+            } catch (\Throwable $e) {
+                $this->logger->warning('Relationship lookup failed', ['error' => $e->getMessage()]);
+                return ['conflict' => false];
+            }
+
+            if (is_string($relation) === true && $relation !== '') {
+                return ['conflict' => true, 'reason' => $relation];
+            }
+        }
+
+        // BRP adapter fallback — dormant by default; an active binding looks
+        // up the user's relationship to the applicant via Haal Centraal
+        // `relaties` envelope and short-circuits with `belangenconflict`.
+        $brpRelation = $this->lookupRelationViaBrp($userBsn, $applicantBsn, $zaakId);
+        if ($brpRelation !== null && $brpRelation !== '') {
+            return ['conflict' => true, 'reason' => $brpRelation];
+        }
+
+        return ['conflict' => false];
+    }//end checkConflict()
+
+    /**
+     * Consult the BRP / Haal Centraal adapter for a relationship label.
+     *
+     * The adapter ships dormant by default; the LOOKUP_DEFERRED outcome
+     * yields null so the conflict check stays open. An active binding
+     * returns the user's relation (e.g. `partner`, `parent`, `child`)
+     * via the persoon envelope's `relaties` block.
+     *
+     * Per AVG / WBP article 9 the BSN values themselves are NEVER logged
+     * — the dormant adapter redacts them, and this caller never forwards
+     * them to the structured logger.
+     *
+     * @param string $userBsn      User BSN.
+     * @param string $applicantBsn Applicant BSN.
+     * @param string $zaakId       Case id (audit correlation).
+     *
+     * @return string|null Relationship label, or null when unknown / dormant.
+     *
+     * @spec openspec/changes/mandaat-matrix-06-temporal-and-conflict/tasks.md
+     */
+    private function lookupRelationViaBrp(string $userBsn, string $applicantBsn, string $zaakId): ?string
+    {
+        if ($this->brpAdapter === null) {
+            return null;
         }
 
         try {
-            $relation = ($this->relationshipLookup)($userBsn, $applicantBsn);
+            $result = $this->brpAdapter->lookup(
+                $userBsn,
+                [
+                    'lookupReason'        => 'belangenconflict-detection',
+                    'caseId'              => $zaakId,
+                    'comparisonBsnHash'   => substr(hash('sha256', $applicantBsn), 0, 16),
+                ]
+            );
         } catch (\Throwable $e) {
-            $this->logger->warning('Relationship lookup failed', ['error' => $e->getMessage()]);
-            return ['conflict' => false];
+            $this->logger->warning(
+                'BRP relationship lookup failed',
+                ['zaakId' => $zaakId, 'error' => $e->getMessage()]
+            );
+            return null;
         }
 
-        if (is_string($relation) === true && $relation !== '') {
-            return ['conflict' => true, 'reason' => $relation];
+        if ($result->lookupStatus !== 'FOUND') {
+            return null;
         }
-        return ['conflict' => false];
-    }//end checkConflict()
+
+        $relations = (array) ($result->persoon['relaties'] ?? []);
+        foreach ($relations as $relation) {
+            if (is_array($relation) === false) {
+                continue;
+            }
+            $relatedBsn = (string) ($relation['burgerservicenummer'] ?? '');
+            if ($relatedBsn === '' || $relatedBsn !== $applicantBsn) {
+                continue;
+            }
+            $label = (string) ($relation['relatie'] ?? $relation['type'] ?? '');
+            if ($label !== '') {
+                return $label;
+            }
+        }
+
+        return null;
+    }//end lookupRelationViaBrp()
 
     /**
      * Manually register a belangenconflict on a case.

@@ -23,6 +23,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\ConflictOfInterestService;
+use OCA\Procest\Service\External\Brp\BrpHaalCentraalAdapterInterface;
+use OCA\Procest\Service\External\Brp\BrpLookupResult;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -85,6 +87,72 @@ class ConflictOfInterestServiceTest extends TestCase
         $svc->registerConflict('Z/2026/5', 'persoonlijk');
         $svc->clearConflict('Z/2026/5');
         $r = $svc->checkConflict('alice', 'Z/2026/5');
+        self::assertFalse($r['conflict']);
+    }
+
+    /**
+     * @return void
+     */
+    public function testDormantBrpAdapterLeavesConflictOpen(): void
+    {
+        $brp = $this->createMock(BrpHaalCentraalAdapterInterface::class);
+        $brp->method('lookup')->willReturn(
+            new BrpLookupResult(
+                lookupStatus: 'LOOKUP_DEFERRED',
+                persoon: [],
+                dormant: true,
+            )
+        );
+
+        $svc = new ConflictOfInterestService($this->createMock(LoggerInterface::class), $brp);
+        $r   = $svc->checkConflict('alice', 'Z/2026/6', ['userBsn' => '111', 'applicantBsn' => '222']);
+        self::assertFalse($r['conflict']);
+    }
+
+    /**
+     * @return void
+     */
+    public function testActiveBrpAdapterDetectsRelation(): void
+    {
+        $brp = $this->createMock(BrpHaalCentraalAdapterInterface::class);
+        $brp->method('lookup')->willReturn(
+            new BrpLookupResult(
+                lookupStatus: 'FOUND',
+                persoon: [
+                    'relaties' => [
+                        ['burgerservicenummer' => '222', 'relatie' => 'partner'],
+                    ],
+                ],
+                dormant: false,
+            )
+        );
+
+        $svc = new ConflictOfInterestService($this->createMock(LoggerInterface::class), $brp);
+        $r   = $svc->checkConflict('alice', 'Z/2026/7', ['userBsn' => '111', 'applicantBsn' => '222']);
+        self::assertTrue($r['conflict']);
+        self::assertSame('partner', $r['reason']);
+    }
+
+    /**
+     * @return void
+     */
+    public function testBrpAdapterRelationOnlyFiresWhenBsnMatches(): void
+    {
+        $brp = $this->createMock(BrpHaalCentraalAdapterInterface::class);
+        $brp->method('lookup')->willReturn(
+            new BrpLookupResult(
+                lookupStatus: 'FOUND',
+                persoon: [
+                    'relaties' => [
+                        ['burgerservicenummer' => '999', 'relatie' => 'parent'],
+                    ],
+                ],
+                dormant: false,
+            )
+        );
+
+        $svc = new ConflictOfInterestService($this->createMock(LoggerInterface::class), $brp);
+        $r   = $svc->checkConflict('alice', 'Z/2026/8', ['userBsn' => '111', 'applicantBsn' => '222']);
         self::assertFalse($r['conflict']);
     }
 }
