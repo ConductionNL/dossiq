@@ -528,6 +528,12 @@ return [
         ['name' => 'archief#deleteRule',      'url' => '/api/archief/rules/{ruleId}',       'verb' => 'DELETE'],
         ['name' => 'archief#dashboardStats',  'url' => '/api/archief/dashboard/stats',      'verb' => 'GET'],
         ['name' => 'archief#auditLog',        'url' => '/api/archief/audit-log',            'verb' => 'GET'],
+        ['name' => 'archief#batchInitiate',   'url' => '/api/archief/batch/initiate',       'verb' => 'POST'],
+        ['name' => 'archief#inspectionExport','url' => '/api/archief/inspection-export',    'verb' => 'GET'],
+        // Wildcard routes registered AFTER literal sub-paths so /batch/initiate doesn't get
+        // captured as jobId=initiate (same pattern as complaint#show vs deadline-alerts).
+        ['name' => 'archief#batchStatus',     'url' => '/api/archief/batch/{jobId}',        'verb' => 'GET'],
+        ['name' => 'archief#batchReport',     'url' => '/api/archief/batch/{jobId}/report', 'verb' => 'GET'],
 
         // ── Mandaat-matrix authorization engine ────────────────────────────
         ['name' => 'mandaatMatrix#probe',           'url' => '/api/mandate/authorize',                    'verb' => 'POST'],

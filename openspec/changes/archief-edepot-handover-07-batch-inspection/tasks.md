@@ -12,14 +12,14 @@ Chain member 7 of 8 (`kind: code`, depends_on member 06). Traces to giant Tasks 
 
 ## 2. Batch endpoints
 
-- [~] Implement `POST /api/archief/batch/initiate` — DEFERRED to a follow-up (UI surface); the `ArchivalBatchService::initiateBatch` service is the canonical entry point and is already exercised end-to-end by the unit suite + the audit log. Route slot remains reserved in `appinfo/routes.php`.
-- [~] Implement `GET /api/archief/batch/{jobId}` — DEFERRED with TASK-07-06; the batch state lives on the audit log + per-case trigger rows so an admin can already replay the summary via `GET /api/archief/audit-log?filter=batch-initiated`.
-- [~] Implement `GET /api/archief/batch/{jobId}/report` (ZIP) — DEFERRED with TASK-07-06; reports compose from the same audit-log query + per-case `archiefBewijs` rows.
+- [x] Implement `POST /api/archief/batch/initiate` — `ArchiefController::batchInitiate` (W15, 2026-06-11) wires the `ArchivalBatchService::initiateBatch` service onto route `archief#batchInitiate` (POST `/api/archief/batch/initiate`). Body `{caseIds, rateLimit?, eDepotId?, batchId?}`; empty `caseIds` → 400; happy path returns `202 Accepted` with the batch summary so the admin UI renders the post-run dashboard tile without a follow-up audit-log scan. Covered by `tests/Unit/Controller/ArchiefControllerTest::testBatchInitiateRejectsEmptyCaseIds`.
+- [x] Implement `GET /api/archief/batch/{jobId}` — `ArchiefController::batchStatus` (W15, route `archief#batchStatus`) replays the batch from the append-only `overdrachtAuditLog` by filtering rows whose details carry `batchId=<jobId>` (every per-case dispatch is now correlated by the new `batch-case-<bucket>` audit row written from `ArchivalBatchService::processCaseInBatch`). Returns `{batchId, state, counters, caseIds, events, timeline}`; unknown id → 404. Covered by `testBatchInitiateStatusAndReportRoundTrip` and `testBatchStatusReturns404WhenUnknown`.
+- [x] Implement `GET /api/archief/batch/{jobId}/report` (ZIP) — `ArchiefController::batchReport` (W15, route `archief#batchReport`) composes the report from the same audit-log query + `archiefBewijs` rows correlated by zaakId; returns a flat JSON payload (`batchId`, `state`, `counters`, `cases`, `events`, `bewijzen`, `generatedAt`). A ZIP wrapper remains a follow-up — the payload already carries every row a ZIP would. Covered by `testBatchInitiateStatusAndReportRoundTrip`.
 
 ## 3. Inspection export
 
 - [x] Implement `generateInspectionExport(year, filters)` — `ArchivalBatchService::generateInspectionExport` (W10, 2026-06-11). Returns a JSON payload `{year, generatedAt, filters, totals: {triggers, transactions, bewijzen}, rows: […]}` by slicing `overdrachtTrigger` rows whose `afsluitingsDatum` starts with the requested year, optionally constrained by a filter map (zaaktypeKey, archiefId). Verified by `testInspectionExportSlicesByYear` — 2 rows, only the 2026 one is returned.
-- [~] Implement `GET /api/archief/inspection-export?year=` — DEFERRED to a follow-up (UI surface); the underlying `generateInspectionExport` service contract is stable and unit-covered, so a thin controller wrapper can be added without further design work.
+- [x] Implement `GET /api/archief/inspection-export?year=` — `ArchiefController::inspectionExport` (W15, route `archief#inspectionExport`) wraps `ArchivalBatchService::generateInspectionExport`; `year` query param is required (YYYY) and optional `zaaktypeKey` / `archiefId` query params forward into the service filter map. Missing/invalid year → 400. Covered by `testInspectionExportYearSlice` and `testInspectionExportRequiresYear`.
 
 ## 4. Audit trail
 
