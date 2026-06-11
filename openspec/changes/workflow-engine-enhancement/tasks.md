@@ -162,7 +162,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-20. Unit tests for automatic action executors (M)
 
-- [~] W-20.1 Per-handler unit tests DEFERRED — handlers ship under `lib/Service/Transitions/` (registry pattern) and are exercised end-to-end via `WorkflowEngineServiceTest` + the replay regression; standalone `SendEmailHandlerTest`/`CreateTaskHandlerTest`/etc. are queued for the next live-env iteration alongside the action-side-effect smoke tests. Spec lines kept for reference:
+- [x] W-20.1 Per-handler unit tests shipped under `tests/Unit/Service/Transitions/` covering every handler + every guard: `SendEmailHandlerTest`, `CreateTaskHandlerTest`, `CreateSubCaseHandlerTest`, `WebhookHandlerTest`, `SetFieldHandlerTest`, `NotifyHandlerTest`, `ChecklistGuardTest`, `RequiredFieldGuardTest`, `RequiredDocumentGuardTest`, `RoleGuardTest` — 48 tests, 103 assertions, all green. Each test asserts the spec contract: failing side-effects return an `ActionResult::failure(error: …)` envelope without throwing, success paths return `ActionResult::success(data: …)`, guards return a `GuardResult` with `passed`, `failureMessage`, and `details` (including the `silent: true` flag on RoleGuard mismatches). Original spec lines kept for reference:
   - Test EmailActionExecutor: email template rendered with case data, sent to zaakklant
   - Test TaskActionExecutor: task created, assigned to role, dueDate set correctly
   - Test SubCaseActionExecutor: sub-case created, linked to parent, properties inherited
