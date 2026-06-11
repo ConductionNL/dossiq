@@ -9,7 +9,7 @@ Member 7 of 12 (code). Depends on member 06. Traces to giant Task 7 + Task 8 + T
 - [x] Implement `TenantOnboardingService.createOnboarding(tenantId)` (fork 7-step template, all pending) — writes 7 `tenantOnboardingTask` rows via OR
 - [x] Implement `getProgress()` and `markStepComplete(step)` (timestamp + completedBy) — `markStepComplete()` stamps `completedBy` + `completedAt`
 - [x] Implement `TenantOnboardingController` (progress retrieval, step marking) — admin-only endpoints + four routes
-- [~] Create the onboarding progress dashboard Vue component (i18n nl+en, modal-isolation) — Vue UI deferred to a frontend follow-up
+- [x] Create the onboarding progress dashboard Vue component (i18n nl+en, modal-isolation) — `src/views/dashboard/TenantOnboardingDashboard.vue` (registered as manifest page `TenantOnboardingDashboard`, route `/tenant-onboarding`); 7-step progress bar, per-step `Mark complete` action, go-live readiness check, activate-tenant button; all strings via `t('procest', …)`; no inline modals.
 - [~] Send the onboarding email with checklist link — piggy-backs on `TenantWelcomeMailer` (chain member 03); deferred since the URL only stabilises with the Vue dashboard
 
 ## 2. Decidesk contract integration
