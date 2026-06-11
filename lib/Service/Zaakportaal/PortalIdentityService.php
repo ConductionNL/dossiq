@@ -37,9 +37,12 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service\Zaakportaal;
 
+use OCA\Procest\Service\Auth\BrokerAssertionResult;
+use OCA\Procest\Service\Auth\DigidSamlAdapterInterface;
 use OCA\Procest\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\IUserSession;
+use Throwable;
 
 /**
  * Resolves the portal subject identity and pseudonymises special-category data.
@@ -65,14 +68,92 @@ class PortalIdentityService
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService The settings service.
-     * @param IUserSession    $userSession     The Nextcloud user session.
+     * @param SettingsService              $settingsService The settings service.
+     * @param IUserSession                 $userSession     The Nextcloud user session.
+     * @param DigidSamlAdapterInterface|null $digidAdapter  Optional DigiD broker
+     *                                                     adapter — dormant by default.
+     *                                                     Resolves the SAML
+     *                                                     callback into a
+     *                                                     {@see BrokerAssertionResult}
+     *                                                     carrying the BSN.
      */
     public function __construct(
         private SettingsService $settingsService,
         private IUserSession $userSession,
+        private readonly ?DigidSamlAdapterInterface $digidAdapter = null,
     ) {
     }//end __construct()
+
+    /**
+     * Resolve a DigiD SAML response into a pseudonymous portal subject ref.
+     *
+     * Pipeline: adapter decodes the SAML response → trust level is asserted
+     * against the Wdo minimum → BSN is converted into a salted, one-way
+     * subject reference + masked display value. The raw BSN never leaves
+     * this method (AVG / WBP article 9).
+     *
+     * @param string $samlResponse Base64-encoded SAML response.
+     * @param string $relayState   Original RelayState string (CSRF correlation).
+     *
+     * @return array{
+     *     ok: bool,
+     *     reason?: string,
+     *     subjectRef?: string,
+     *     maskedBsn?: string,
+     *     level?: int,
+     *     dialect?: string,
+     *     assertionId?: string,
+     * } Portal session payload.
+     *
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md
+     */
+    public function createSessionFromDigid(string $samlResponse, string $relayState): array
+    {
+        if ($this->digidAdapter === null) {
+            return [
+                'ok'     => false,
+                'reason' => 'DigiD broker adapter niet geconfigureerd',
+            ];
+        }
+
+        try {
+            $assertion = $this->digidAdapter->decodeAssertion($samlResponse, $relayState);
+        } catch (Throwable $e) {
+            return [
+                'ok'     => false,
+                'reason' => 'DigiD broker weigerde de assertion: '.$e->getMessage(),
+            ];
+        }
+
+        // Map the numeric assurance level to the Wdo trust-level string
+        // expected by assertTrustLevel(). 1=basis, 2=midden, 3=substantieel,
+        // 4=hoog.
+        $trustLevel = match ($assertion->level) {
+            4       => 'hoog',
+            3       => 'substantieel',
+            default => 'midden',
+        };
+
+        try {
+            $this->assertTrustLevel($trustLevel);
+        } catch (OCSBadRequestException $e) {
+            return [
+                'ok'     => false,
+                'reason' => $e->getMessage(),
+                'level'  => $assertion->level,
+            ];
+        }
+
+        $bsn = (string) $assertion->bsn;
+        return [
+            'ok'          => true,
+            'subjectRef'  => $this->deriveSubjectRef($bsn),
+            'maskedBsn'   => $this->maskBsn($bsn),
+            'level'       => $assertion->level,
+            'dialect'     => $assertion->dialect,
+            'assertionId' => $assertion->assertionId,
+        ];
+    }//end createSessionFromDigid()
 
     /**
      * Derive a stable, salted pseudonymous subject reference from a raw
