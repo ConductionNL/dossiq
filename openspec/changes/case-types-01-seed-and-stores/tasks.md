@@ -14,7 +14,7 @@ Member 1 of 4 in the case-types chain. `kind: config`.
 ## TASK-CT-01: Register sub-entity stores `[MVP]`
 
 - [x] In `src/store/store.js`, `registerObjectType` calls for the 5 sub-entities — present at lines 48 (resultType), 51 (roleType), 54 (propertyDefinition), 57 (documentType), 60 (decisionType)
-- [~] Verify type names are kebab-case (ADR-015) — type names use camelCase per the explicit ADR guardrail in member 03 (the convention correction note); the original spec text predates the convention reconciliation. camelCase matches the OR schema slugs and all other procest sub-entity stores.
+- [ ] Verify type names are kebab-case (ADR-015) — type names use camelCase per the explicit ADR guardrail in member 03 (the convention correction note); the original spec text predates the convention reconciliation. camelCase matches the OR schema slugs and all other procest sub-entity stores.
 - [x] Verify no duplicate registrations exist — single registration per type in `store.js`
 
 ---
