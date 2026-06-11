@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\External\Kvk\KvkHandelsregisterAdapterInterface;
+use OCA\Procest\Service\External\Kvk\KvkLookupResult;
 use OCA\Procest\Service\SupplierMasterDataMutationService;
 use OCA\Procest\Service\SupplierScopeService;
 use OCA\Procest\Service\TenantAuditTrailService;
@@ -84,5 +86,109 @@ class SupplierMasterDataMutationServiceTest extends TestCase
     {
         $r = $this->svc->submitForVerification('s-1', 'accreditation', ['file:1'], 'alice');
         $this->assertFalse($r['ok']);
+    }
+
+    public function testValidateKvkRejectsBadFormat(): void
+    {
+        $r = $this->svc->validateKvk('abc');
+        $this->assertFalse($r['ok']);
+        $this->assertStringContainsString('8 cijfers', $r['reason']);
+    }
+
+    public function testValidateKvkWithoutAdapterReturnsFormatOnly(): void
+    {
+        $r = $this->svc->validateKvk('12345678');
+        $this->assertTrue($r['ok']);
+        $this->assertSame('FORMAT_ONLY', $r['status']);
+        $this->assertTrue($r['dormant']);
+    }
+
+    public function testValidateKvkWithDormantAdapterReturnsDeferred(): void
+    {
+        $audit = new TenantAuditTrailService($this->createMock(LoggerInterface::class));
+        $scope = $this->createMock(SupplierScopeService::class);
+        $kvk   = $this->createMock(KvkHandelsregisterAdapterInterface::class);
+        $kvk->method('lookup')->willReturn(
+            new KvkLookupResult(
+                lookupStatus: 'LOOKUP_DEFERRED',
+                kvkNumber: '12345678',
+                entity: [],
+                dormant: true,
+                extras: ['reason' => 'no-outbound-connector-bound'],
+            )
+        );
+
+        $svc = new SupplierMasterDataMutationService(
+            scopeService: $scope,
+            auditTrail: $audit,
+            appManager: $this->createMock(IAppManager::class),
+            container: $this->createMock(ContainerInterface::class),
+            logger: $this->createMock(LoggerInterface::class),
+            kvkAdapter: $kvk,
+        );
+
+        $r = $svc->validateKvk('12345678', 'Z/2026/1');
+        $this->assertTrue($r['ok']);
+        $this->assertSame('LOOKUP_DEFERRED', $r['status']);
+        $this->assertTrue($r['dormant']);
+        $this->assertSame('no-outbound-connector-bound', $r['extras']['reason']);
+    }
+
+    public function testValidateKvkWithActiveAdapterReturnsEntity(): void
+    {
+        $audit = new TenantAuditTrailService($this->createMock(LoggerInterface::class));
+        $scope = $this->createMock(SupplierScopeService::class);
+        $kvk   = $this->createMock(KvkHandelsregisterAdapterInterface::class);
+        $kvk->method('lookup')->willReturn(
+            new KvkLookupResult(
+                lookupStatus: 'FOUND',
+                kvkNumber: '12345678',
+                entity: ['statutaireNaam' => 'Conduction B.V.', 'rsin' => '850000000'],
+                dormant: false,
+            )
+        );
+
+        $svc = new SupplierMasterDataMutationService(
+            scopeService: $scope,
+            auditTrail: $audit,
+            appManager: $this->createMock(IAppManager::class),
+            container: $this->createMock(ContainerInterface::class),
+            logger: $this->createMock(LoggerInterface::class),
+            kvkAdapter: $kvk,
+        );
+
+        $r = $svc->validateKvk('12345678');
+        $this->assertTrue($r['ok']);
+        $this->assertSame('FOUND', $r['status']);
+        $this->assertFalse($r['dormant']);
+        $this->assertSame('Conduction B.V.', $r['entity']['statutaireNaam']);
+    }
+
+    public function testValidateKvkWithNotFoundReturnsRejection(): void
+    {
+        $audit = new TenantAuditTrailService($this->createMock(LoggerInterface::class));
+        $scope = $this->createMock(SupplierScopeService::class);
+        $kvk   = $this->createMock(KvkHandelsregisterAdapterInterface::class);
+        $kvk->method('lookup')->willReturn(
+            new KvkLookupResult(
+                lookupStatus: 'NOT_FOUND',
+                kvkNumber: '99999999',
+                entity: [],
+                dormant: false,
+            )
+        );
+
+        $svc = new SupplierMasterDataMutationService(
+            scopeService: $scope,
+            auditTrail: $audit,
+            appManager: $this->createMock(IAppManager::class),
+            container: $this->createMock(ContainerInterface::class),
+            logger: $this->createMock(LoggerInterface::class),
+            kvkAdapter: $kvk,
+        );
+
+        $r = $svc->validateKvk('99999999');
+        $this->assertFalse($r['ok']);
+        $this->assertSame('NOT_FOUND', $r['status']);
     }
 }
