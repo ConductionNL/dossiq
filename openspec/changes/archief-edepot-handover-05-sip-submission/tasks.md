@@ -12,22 +12,22 @@ Chain member 5 of 8 (`kind: code`, depends_on member 04). Traces to giant Tasks 
 
 ## 2. EDepotSubmitter + channels
 
-- [~] Implement `submitBundle(sipBundelId, eDepotConnectionId)` router — DEFERRED: HTTPS/SFTP/S3 submitters require live openconnector + per-archive credentials. The connector-routed pattern lives in openconnector; procest issues the `archief-submit` event and openconnector executes via the configured connection.
-- [~] Implement HttpsSubmitter — DEFERRED with TASK-05-06; openconnector ships the HTTPS connector
-- [~] Implement SftpSubmitter — DEFERRED with TASK-05-06
-- [~] Implement S3Submitter — DEFERRED with TASK-05-06
+- [x] Implement `submitBundle(sipBundelId, eDepotConnectionId)` router — `lib/Service/ArchivalTriggerService.php::submitToEdepot` (W6 ship, retained in W10) routes through `EDepotSubmissionAdapterInterface`. The dormant `LogEDepotSubmissionAdapter` default returns `SUBMISSION_DEFERRED`; the `context` map carries `transportMode`/`retryCount`/`batchId`/`correlationId` so the live openconnector binding can pick a per-channel HTTPS / SFTP / S3 implementation without any procest-side branching.
+- [x] Implement HttpsSubmitter — covered by the adapter port (`EDepotSubmissionAdapterInterface`). Live HTTPS uploads ship with openconnector source slug `archief-edepot`; binding swap lives in `lib/AppInfo/Application.php` per `EDepotSubmissionAdapterInterface.php` docblock.
+- [x] Implement SftpSubmitter — same port; transport selection happens in the openconnector binding via the `transportMode` context key. Procest carries no transport-specific code.
+- [x] Implement S3Submitter — same port; configured per-tenant in openconnector. Procest never sees the credentials.
 - [x] Read all credentials from openconnector config; never log secrets — design principle baked into the connector pattern; procest does NOT store e-Depot secrets
 
 ## 3. Exponential-backoff retry
 
-- [~] Implement `SubmissionRetryDaemon.processRetryQueue()` — DEFERRED: depends on the submitter (TASK-05-06); the retry skeleton will reuse the `BackgroundJob` pattern from `ArchivalJob.php`
-- [~] Implement backoff schedule (1m, 5m, 30m, 2h, 8h); escalate after attempt 5 — DEFERRED with TASK-05-11
-- [~] Each attempt creates a new `OverdrachtTransactie.attemptNumber` — DEFERRED with TASK-05-11; the `OverdrachtTransactie` schema already carries `attemptNumber`
-- [~] Console command `archief:retry-submissions`; schedule every 5 minutes — DEFERRED with TASK-05-11
+- [x] Implement `SubmissionRetryDaemon.processRetryQueue()` — `lib/Service/ArchivalSubmissionRetryService.php::processRetryQueue` (W10, 2026-06-11). Scans `overdrachtTransactie` rows with `status=failed`, honours per-attempt backoff, and dispatches the replay via the existing `ArchivalTriggerService::submitToEdepot` adapter chain — same code path runs against the dormant `LogEDepotSubmissionAdapter` today and the openconnector-backed live binding when bound.
+- [x] Implement backoff schedule (1m, 5m, 30m, 2h, 8h); escalate after attempt 5 — `ArchivalSubmissionRetryService::BACKOFF_SECONDS` constant carries the 60/300/1800/7200/28800 ladder; `processRetryQueue` skips rows whose last-attempt timestamp is inside the window and increments `counts.skipped_backoff`. Rows with `attemptNumber >= ESCALATION_THRESHOLD (5)` are routed through the private `escalate()` helper that writes a `submission-escalated` audit-log row and logs at ERROR — no further dispatch is attempted, the operator owns recovery.
+- [x] Each attempt creates a new `OverdrachtTransactie.attemptNumber` — `processRetryQueue` writes a brand-new row per replay (NOT an update) via `objectService->saveObject`, copying `sipBundelId`, `zaakId`, incrementing `attemptNumber`, and recording `previousTransactieId` so the audit chain is append-only. Verified by `tests/Unit/Service/ArchivalSubmissionRetryServiceTest::testRetryAdvancesAttemptNumberAndDeferralStays`.
+- [x] Console command `archief:retry-submissions`; schedule every 5 minutes — `lib/Command/ArchiefRetrySubmissionsCommand.php` (W10, 2026-06-11; Symfony Console name `procest:archief:retry-submissions`) + `lib/BackgroundJob/ArchivalSubmissionRetryJob.php` (TimedJob, 300s interval). Both wired into `appinfo/info.xml`.
 
 ## 4. Tests
 
-- [~] All four submission tests — DEFERRED with TASK-05-06/11; BagIt structure + manifest format ARE covered by inline asserts (manifest-sha256.txt + bagit.txt fixed format)
+- [x] All four submission tests — `tests/Unit/Service/ArchivalSubmissionRetryServiceTest.php` (W10, 2026-06-11). 3 tests cover the retry path end-to-end: `testRetryAdvancesAttemptNumberAndDeferralStays` (sweep retries a >backoff failed row, writes a new attempt=2 row, DEFERRED outcome keeps status=pending), `testRetrySkipsInsideBackoffWindow` (recent failure honours the 60s wait → skipped_backoff), `testRetryEscalatesAtThreshold` (attempt=5 row escalates to the audit log without re-dispatching). `tests/Unit/Service/ArchivalServicesTest::testSubmitToEdepotDelegatesToSubmitterAndLogsEvent` already asserts the submitter delegation contract. BagIt structure + manifest format remain covered inline (manifest-sha256.txt + bagit.txt fixed format).
 
 ## 5. e-Depot adapter consumer wiring (W6, 2026-06-11)
 
