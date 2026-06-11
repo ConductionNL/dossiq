@@ -32,10 +32,10 @@
   - GIVEN fresh install WHEN user opens app in mobile browser THEN "Add to Home Screen" prompt appears
   - GIVEN app is installed WHEN device goes offline THEN splash screen or home screen loads from cache
   - Service Worker is registered, scoped to `/apps/procest/`, with update-check every 24 hours
-- [~] Create manifest.json with icons, theme colors, start_url, display: standalone
-- [~] Implement service-worker.js with install, activate, fetch event handlers
-- [~] Register service worker in main layout template
-- [~] Add PWABootstrapper to warm-up cache on first install
+- [ ] Create manifest.json with icons, theme colors, start_url, display: standalone
+- [ ] Implement service-worker.js with install, activate, fetch event handlers
+- [ ] Register service worker in main layout template
+- [ ] Add PWABootstrapper to warm-up cache on first install
 
 ### Task 2: Implement offline cache strategy with Workbox
 - **spec_ref**: `openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization`
@@ -44,10 +44,10 @@
   - GIVEN network-first routes (API calls) WHEN offline THEN cached response returned if available
   - GIVEN static-asset cache-first WHEN offline THEN JS/CSS loaded from cache
   - GIVEN stale-while-revalidate on slow 2G connection THEN cached response shown immediately, refresh in background
-- [~] Configure Workbox routing for API endpoints (network-first + fallback)
-- [~] Configure static assets (cache-first) for JS, CSS, images
-- [~] Implement cache versioning and cleanup for stale entries
-- [~] Add offline fallback page for 404/500 errors
+- [ ] Configure Workbox routing for API endpoints (network-first + fallback)
+- [ ] Configure static assets (cache-first) for JS, CSS, images
+- [ ] Implement cache versioning and cleanup for stale entries
+- [ ] Add offline fallback page for 404/500 errors
 
 ## 2. IndexedDB Data Layer and Sync Queue
 
@@ -58,9 +58,9 @@
   - GIVEN app initialization WHEN Dexie.js opens database THEN all 6 tables created with correct schema
   - GIVEN FieldInspection record WHEN queried by caseRef THEN returns in <100ms (indexed)
   - GIVEN SyncQueue record WHEN status updates THEN atomic write confirms
-- [~] Define Dexie database schema with tables: fieldInspection, checklistResult, fieldEvidence, checklistTemplate, syncQueue, conflictRecord
-- [~] Add indexes: caseRef, deviceId, inspectionRef, status, queuedAt
-- [~] Implement open/close, transaction, and error-handling logic
+- [ ] Define Dexie database schema with tables: fieldInspection, checklistResult, fieldEvidence, checklistTemplate, syncQueue, conflictRecord
+- [ ] Add indexes: caseRef, deviceId, inspectionRef, status, queuedAt
+- [ ] Implement open/close, transaction, and error-handling logic
 
 ### Task 4: Implement SyncQueue entity in OpenRegister schema
 - **spec_ref**: `openspec/specs/mobiel-inspectie-offline/spec.md#requirement-automatic-sync-queue-replay-on-network-reconnection`
@@ -149,11 +149,11 @@
   - GIVEN checklist template loaded to IndexedDB WHEN inspector opens ChecklistView THEN all items rendered with question text, type (yes_no/scale/text/photo_required), required flag
   - GIVEN required=false item WHEN inspector skips THEN OK; when required=true and empty THEN validation error blocks save
   - GIVEN answer stored offline WHEN ChecklistResult created THEN atomic write to IndexedDB includes: questionId, answer, answeredAt, gpsAtAnswer, evidenceRefs[]
-- [~] Build ChecklistView component: load template from IndexedDB, render items sequentially or in flat view
-- [~] Implement answer-storage logic: validate required fields, prevent empty submission for required items
-- [~] Store ChecklistResult record in IndexedDB atomic transaction
-- [~] Queue SyncQueue operation of type "create" for the ChecklistResult
-- [~] Implement progress bar showing N/M items completed
+- [ ] Build ChecklistView component: load template from IndexedDB, render items sequentially or in flat view
+- [ ] Implement answer-storage logic: validate required fields, prevent empty submission for required items
+- [ ] Store ChecklistResult record in IndexedDB atomic transaction
+- [ ] Queue SyncQueue operation of type "create" for the ChecklistResult
+- [ ] Implement progress bar showing N/M items completed
 
 ### Task 11: Build checklist admin UI for template management
 - **spec_ref**: `openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-checklist-completion-and-storage`
@@ -162,10 +162,10 @@
   - GIVEN admin opens Checklists settings WHEN viewing list THEN all templates shown with name, domain, version, last-edit date
   - GIVEN admin clicks "Nieuw" WHEN creating template THEN editor opens; can add items with question text, type, required, helpText, conditionalOn
   - GIVEN template saved WHEN version incremented THEN old version retained for historical inspection reports
-- [~] Create ChecklistsTab in settings navigation
-- [~] Implement ChecklistTemplateEditor: add/edit/delete items, set required/conditional logic, type picker
-- [~] Build item sub-form for photo_required type (upload max 5 evidence files)
-- [~] Register admin CRUD routes
+- [ ] Create ChecklistsTab in settings navigation
+- [ ] Implement ChecklistTemplateEditor: add/edit/delete items, set required/conditional logic, type picker
+- [ ] Build item sub-form for photo_required type (upload max 5 evidence files)
+- [ ] Register admin CRUD routes
 
 ## 6. Sync Queue Replay and Conflict Resolution
 
@@ -218,10 +218,10 @@
   - GIVEN conflict resolution submitted WHEN recorded THEN immutable audit entry created with: timestamp, actor, action=conflict_resolution, details (JSON snapshot of both versions), resolution choice, justification
   - GIVEN app first launch WHEN opening THEN data-processing notice displayed; require consent before sync
   - GIVEN consent recorded WHEN stored THEN audit entry captures user timestamp and acceptance
-- [~] Extend AuditService to log conflict_resolution actions with version snapshots
-- [~] Implement immutability: audit entries never updated/deleted, only appended
-- [~] Build DataProcessingNotice component with PIA text, encryption option, explicit opt-in
-- [~] Store consent timestamp in audit trail on first app initialization
+- [ ] Extend AuditService to log conflict_resolution actions with version snapshots
+- [ ] Implement immutability: audit entries never updated/deleted, only appended
+- [ ] Build DataProcessingNotice component with PIA text, encryption option, explicit opt-in
+- [ ] Store consent timestamp in audit trail on first app initialization
 
 ## 7. Map Drawing and Annotations
 
@@ -232,11 +232,11 @@
   - GIVEN offline map displayed WHEN inspector taps "Annotatie toevoegen" THEN drawing toolbar appears (polygon, point, line tools)
   - GIVEN inspector draws polygon WHEN completed THEN shape captured as GeoJSON, stored as FieldEvidence with type=sketch, queued for sync
   - GIVEN 3 sketches drawn offline WHEN sync completes THEN all linked to case's FieldEvidence collection
-- [~] Build DrawingToolbar component with tools: point, line, polygon, eraser
-- [~] Implement Leaflet/MapLibre drawing integration (use existing library or implement)
-- [~] Store drawn shapes as GeoJSON in FieldEvidence records
-- [~] Capture center coordinates and timestamp
-- [~] Queue sketch upload operations for sync
+- [ ] Build DrawingToolbar component with tools: point, line, polygon, eraser
+- [ ] Implement Leaflet/MapLibre drawing integration (use existing library or implement)
+- [ ] Store drawn shapes as GeoJSON in FieldEvidence records
+- [ ] Capture center coordinates and timestamp
+- [ ] Queue sketch upload operations for sync
 
 ## 8. Integration and Testing
 
@@ -259,13 +259,13 @@
   - TEST: Inspector syncs 5 cases offline → goes offline → answers checklists (3), adds photos (2), records memos (1) → reconnects → all 6 operations replay successfully → case data updated
   - TEST: Conflict scenario: colleague edits case while inspector offline → inspector's update receives 409 → ConflictRecord created → inspector resolves → operation retries with force-flag
   - TEST: Permission loss: inspector loses read access while offline → 403 response → operation marked failed (not retried) → error logged
-- [~] Write integration test suite for offline scenarios (using in-memory OR, fake network simulation)
-- [~] Test SyncQueue replay with various failure modes (503, timeout, connection drop mid-replay)
-- [~] Test conflict resolution with multiple resolution choices (client_wins, server_wins, manual_merge)
-- [~] Test permission-lost and permission-regained scenarios
-- [~] Test compass/geolocation fallback when GPS unavailable
-- [~] Test map tile pre-download and offline rendering
-- [~] Test checklist required-field validation and photo-evidence linking
+- [ ] Write integration test suite for offline scenarios (using in-memory OR, fake network simulation)
+- [ ] Test SyncQueue replay with various failure modes (503, timeout, connection drop mid-replay)
+- [ ] Test conflict resolution with multiple resolution choices (client_wins, server_wins, manual_merge)
+- [ ] Test permission-lost and permission-regained scenarios
+- [ ] Test compass/geolocation fallback when GPS unavailable
+- [ ] Test map tile pre-download and offline rendering
+- [ ] Test checklist required-field validation and photo-evidence linking
 
 ### Task 19: Performance optimization and load testing
 - **spec_ref**: All requirements
@@ -275,8 +275,8 @@
   - TEST: Photo compression 4MB→1.8MB in <3s on mid-range device
   - TEST: IndexedDB queries (FieldInspection by caseRef) return in <100ms with 1000 records
   - TEST: Service Worker install and cache-building complete in <10s on 3G connection
-- [~] Benchmark SyncQueueReplayService with 100+ operations
-- [~] Profile photo compression (test on actual device, not just browser)
-- [~] Load-test IndexedDB query performance with realistic data volume
-- [~] Test cache-building performance on slow connections (throttle to 1Mbps)
-- [~] Optimize bottlenecks identified (e.g., parallelized photo uploads, chunked sync batches)
+- [ ] Benchmark SyncQueueReplayService with 100+ operations
+- [ ] Profile photo compression (test on actual device, not just browser)
+- [ ] Load-test IndexedDB query performance with realistic data volume
+- [ ] Test cache-building performance on slow connections (throttle to 1Mbps)
+- [ ] Optimize bottlenecks identified (e.g., parallelized photo uploads, chunked sync batches)
