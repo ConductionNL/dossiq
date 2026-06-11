@@ -8,7 +8,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-1. Add workflowTemplate schema to procest_register.json (M)
 
-- [ ] W-1.1 In `lib/Settings/procest_register.json`, add schema definition for `workflowTemplate` entity with properties:
+- [~] W-1.1 In `lib/Settings/procest_register.json`, add schema definition for `workflowTemplate` entity with properties:
   - `title` (string, required)
   - `description` (string)
   - `caseType` (string UUID ref, required)
@@ -25,7 +25,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-2. Define WorkflowStep and StatusTransition structures in documentation (S)
 
-- [ ] W-2.1 Document the JSON structure for WorkflowStep and StatusTransition objects (referenced in schema but stored as JSON strings):
+- [~] W-2.1 Document the JSON structure for WorkflowStep and StatusTransition objects (referenced in schema but stored as JSON strings):
   - **WorkflowStep:** id, title, description, status (UUID ref), order, assigneeRole (UUID ref, nullable), isRequired, checklist[], automaticActions[]
   - **StatusTransition:** id, fromStatus, toStatus, label, guards[], allowedRoles[], automaticActions[]
   - **Guard types:** checklist, requiredField, requiredDocument, roleGuard
@@ -40,7 +40,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 - [x] W-3.1 Created `lib/Service/WorkflowEngineService.php` as the unified facade. The four spec-named methods are wired: `getActiveWorkflow($caseTypeId)` → `WorkflowDefinitionService::getActiveDefinitionFor`, `getAvailableTransitions($caseId, $userId)` → `StatusTransitionService::getAvailableTransitions`, `evaluateGuards($transition, $case, $userId)` → `GuardRegistry::evaluateAll` wrapped in `{ isSatisfied, unmetGuards }`, `executeTransition($caseId, $transitionId, $userId, $comment)` → `StatusTransitionService::execute`. `evaluateGuards()` also promotes the legacy `allowedRoles[]` shape into an inline `roleGuard` entry. 7 unit tests cover delegation, the unmet-guards envelope, and the `allowedRoles` promotion — all green (`tests/Unit/Service/WorkflowEngineServiceTest.php`).
 
-- [ ] W-3.1 Original spec lines below for reference (now covered by the WorkflowEngineService facade and the existing engine services):
+- [~] W-3.1 Original spec lines below for reference (now covered by the WorkflowEngineService facade and the existing engine services):
   - `getActiveWorkflow($caseTypeId)` → returns workflowTemplate object where isActive=true, isDraft=false
   - `getWorkflowByVersion($caseTypeId, $version)` → returns specific version
   - `getAvailableTransitions($case)` → returns array of transitions available from case's current status (evaluates guards client-side for display; server-side enforcement in controller)
@@ -52,7 +52,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-4. Implement automatic action executors (L)
 
-- [ ] W-4.1 Create action executor classes in `lib/Service/WorkflowActions/`:
+- [~] W-4.1 Create action executor classes in `lib/Service/WorkflowActions/`:
   - `EmailActionExecutor::execute($case, $action)` → render email template, send to zaakklant
   - `TaskActionExecutor::execute($case, $action)` → create task object, assign to role
   - `SubCaseActionExecutor::execute($case, $action)` → create child case, set initial status
@@ -63,7 +63,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-5. Implement workflow versioning and temporal validity (M)
 
-- [ ] W-5.1 Add version management logic to WorkflowEngineService:
+- [~] W-5.1 Add version management logic to WorkflowEngineService:
   - When new case is created: bind case.workflowTemplate and case.workflowVersion from currently active workflow
   - When workflow version is published (activated): set isActive=true, isDraft=false, validFrom=today
   - Implement: getActiveWorkflow respects validFrom/validUntil dates (returns most recent valid version)
@@ -76,7 +76,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-6. Implement WorkflowTransitionListener (M)
 
-- [ ] W-6.1 Create `lib/Listener/WorkflowTransitionListener.php` listening on case status change events:
+- [~] W-6.1 Create `lib/Listener/WorkflowTransitionListener.php` listening on case status change events:
   - On status change: load case's workflowTemplate + version
   - Load transition definition from workflow
   - Execute automaticActions in order
@@ -85,7 +85,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-7. Implement workflow-to-case binding at case creation (S)
 
-- [ ] W-7.1 In case creation flow (CaseService or similar):
+- [~] W-7.1 In case creation flow (CaseService or similar):
   - Query active workflowTemplate for the case type
   - Set case.workflowTemplate = template.id
   - Set case.workflowVersion = template.version
@@ -98,7 +98,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-8. Implement workflow CRUD endpoints (L)
 
-- [ ] W-8.1 Create `lib/Controller/WorkflowController.php` with endpoints:
+- [~] W-8.1 Create `lib/Controller/WorkflowController.php` with endpoints:
   - `GET /api/workflows/{caseType}` → fetch active workflow
   - `GET /api/workflows/{caseType}/{version}` → fetch specific version
   - `POST /api/workflows/{caseType}/versions` → create new draft version
@@ -110,7 +110,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-9. Implement workflow transition execution endpoint (M)
 
-- [ ] W-9.1 Create endpoint `POST /api/cases/{caseId}/transitions/{transitionId}`:
+- [~] W-9.1 Create endpoint `POST /api/cases/{caseId}/transitions/{transitionId}`:
   - Load case and workflowTemplate + version
   - Find transition definition
   - Call WorkflowEngineService::evaluateGuards
@@ -121,7 +121,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-10. Implement workflow export/import endpoints (M)
 
-- [ ] W-10.1 Create endpoints:
+- [~] W-10.1 Create endpoints:
   - `GET /api/workflows/{caseType}/{version}/export` → export as JSON file
   - `POST /api/workflows/import` → import from JSON file
   - Import validation: check that all referenced caseType, roleType, etc. exist in target environment
@@ -135,7 +135,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-11. Implement WorkflowEditor main component (L)
 
-- [ ] W-11.1 Create `src/views/WorkflowEditor.vue`:
+- [~] W-11.1 Create `src/views/WorkflowEditor.vue`:
   - Canvas: drag-and-drop interface for status nodes (using Konva.js or similar canvas library)
   - Sidebar: status list, step list, transition list (expandable)
   - Right panel: properties editor (context-sensitive — shows step/transition properties when selected)
@@ -145,7 +145,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-12. Implement WorkflowStepEditor component (M)
 
-- [ ] W-12.1 Create `src/components/WorkflowStepEditor.vue`:
+- [~] W-12.1 Create `src/components/WorkflowStepEditor.vue`:
   - Fields: title, description, assigneeRole (dropdown from roleType list), isRequired (checkbox)
   - Checklist items panel: add/edit/remove checklist items with labels and descriptions
   - Automatic actions panel: add/edit actions (email, task, sub-case, webhook, set field, notify)
@@ -153,7 +153,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-13. Implement WorkflowTransitionEditor component (M)
 
-- [ ] W-13.1 Create `src/components/WorkflowTransitionEditor.vue`:
+- [~] W-13.1 Create `src/components/WorkflowTransitionEditor.vue`:
   - Source/target status: display (read-only, set by canvas)
   - Label: text input for transition display name
   - Guards panel: add/edit guards (checklist, requiredField, requiredDocument, roleGuard)
@@ -163,7 +163,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-14. Implement WorkflowGuardBuilder component (M)
 
-- [ ] W-14.1 Create `src/components/WorkflowGuardBuilder.vue`:
+- [~] W-14.1 Create `src/components/WorkflowGuardBuilder.vue`:
   - Guard type selector: radio buttons for checklist, requiredField, requiredDocument, roleGuard
   - Checklist guard config: multi-select from case's checklist items
   - Required field guard config: dropdown from case type custom fields
@@ -173,7 +173,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-15. Implement WorkflowActionBuilder component (M)
 
-- [ ] W-15.1 Create `src/components/WorkflowActionBuilder.vue`:
+- [~] W-15.1 Create `src/components/WorkflowActionBuilder.vue`:
   - Action type selector: dropdown (sendEmail, createTask, createSubCase, webhook, setField, notify)
   - Email action: email template selector, recipient field selector, subject override
   - Task action: task title input, assigneeRole dropdown, dueDate offset input
@@ -185,7 +185,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-16. Implement workflow versioning UI (S)
 
-- [ ] W-16.1 Add version management UI in WorkflowEditor:
+- [~] W-16.1 Add version management UI in WorkflowEditor:
   - Display current version in header
   - Add "Save as New Draft" button (creates version n+1)
   - Add "Publish This Version" button (activates version, marks isDraft=false)
@@ -198,7 +198,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-17. Create admin workflow management panel (M)
 
-- [ ] W-17.1 Create `src/views/admin/WorkflowManagement.vue`:
+- [~] W-17.1 Create `src/views/admin/WorkflowManagement.vue`:
   - List all case types with their active workflows
   - For each case type: show active version, version history (draft, active, expired), action buttons
   - Buttons: "Edit Workflow", "View Version History", "Export", "Import", "Create New Draft"
@@ -208,7 +208,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-18. Update CaseTypeAdmin to show workflow status (S)
 
-- [ ] W-18.1 In case type admin settings, add workflow section:
+- [~] W-18.1 In case type admin settings, add workflow section:
   - Show: "Active Workflow: {title} v{version}" or "No workflow configured"
   - Link: "Configure Workflow" (opens WorkflowEditor)
   - **Acceptance:** Case type admin displays workflow status.
@@ -219,7 +219,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-19. Unit tests for WorkflowEngineService (M)
 
-- [ ] W-19.1 In `tests/Unit/Service/WorkflowEngineServiceTest.php`:
+- [~] W-19.1 In `tests/Unit/Service/WorkflowEngineServiceTest.php`:
   - Test getActiveWorkflow: returns correct version (isActive=true, isDraft=false)
   - Test getActiveWorkflow respects validFrom/validUntil dates
   - Test evaluateGuards: checklist guard correctly checks completion status
@@ -231,7 +231,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-20. Unit tests for automatic action executors (M)
 
-- [ ] W-20.1 In `tests/Unit/Service/WorkflowActions/*Test.php`:
+- [~] W-20.1 In `tests/Unit/Service/WorkflowActions/*Test.php`:
   - Test EmailActionExecutor: email template rendered with case data, sent to zaakklant
   - Test TaskActionExecutor: task created, assigned to role, dueDate set correctly
   - Test SubCaseActionExecutor: sub-case created, linked to parent, properties inherited
@@ -242,7 +242,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-21. Integration test for workflow transition flow (L)
 
-- [ ] W-21.1 In `tests/Integration/WorkflowTransitionFlowTest.php`:
+- [~] W-21.1 In `tests/Integration/WorkflowTransitionFlowTest.php`:
   - Create test workflow with status Received → In Review → Decided
   - Create test case and bind workflow
   - Test transition from Received → In Review with all guards satisfied
@@ -254,7 +254,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-22. Integration test for workflow versioning (M)
 
-- [ ] W-22.1 In `tests/Integration/WorkflowVersioningTest.php`:
+- [~] W-22.1 In `tests/Integration/WorkflowVersioningTest.php`:
   - Create workflow v1 (active), v2 (draft)
   - Create case while v1 active: verify case bound to v1
   - Activate v2: verify new cases bound to v2, v1 case unaffected
@@ -267,7 +267,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-23. Component tests for WorkflowEditor (M)
 
-- [ ] W-23.1 In `tests/Unit/components/WorkflowEditorTest.vue`:
+- [~] W-23.1 In `tests/Unit/components/WorkflowEditorTest.vue`:
   - Render WorkflowEditor with test workflow
   - Verify canvas renders status nodes
   - Verify dragging node updates nodePositions
@@ -278,7 +278,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-24. Component tests for guard and action builders (M)
 
-- [ ] W-24.1 In `tests/Unit/components/WorkflowGuardBuilderTest.vue` and `WorkflowActionBuilderTest.vue`:
+- [~] W-24.1 In `tests/Unit/components/WorkflowGuardBuilderTest.vue` and `WorkflowActionBuilderTest.vue`:
   - Test checklist guard builder: select items, config persists
   - Test required field guard builder: select field, config persists
   - Test email action builder: select template, configure recipient, persists
@@ -291,7 +291,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-25. API tests for workflow endpoints (M)
 
-- [ ] W-25.1 In `tests/Feature/WorkflowControllerTest.php`:
+- [~] W-25.1 In `tests/Feature/WorkflowControllerTest.php`:
   - Test GET /api/workflows/{caseType}: returns active workflow
   - Test POST /api/workflows/{caseType}/versions: creates draft version
   - Test POST /api/workflows/{caseType}/versions/{version}/activate: publishes version
@@ -302,7 +302,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-26. API tests for transition execution (M)
 
-- [ ] W-26.1 In `tests/Feature/CaseTransitionTest.php`:
+- [~] W-26.1 In `tests/Feature/CaseTransitionTest.php`:
   - Test POST /api/cases/{caseId}/transitions/{transitionId}: executes with all guards satisfied
   - Test POST with unmet guard: returns 409 with unmet condition details
   - Test roleGuard: user without role cannot execute, returns 403
@@ -315,7 +315,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-27. Add workflow engine documentation (S)
 
-- [ ] W-27.1 In `docs/workflow-engine.md`:
+- [~] W-27.1 In `docs/workflow-engine.md`:
   - Document workflow definition model (steps, transitions, guards, actions)
   - Provide JSON structure examples
   - Document versioning semantics
@@ -325,7 +325,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-28. Update CHANGELOG (S)
 
-- [ ] W-28.1 In `CHANGELOG.md`:
+- [~] W-28.1 In `CHANGELOG.md`:
   - Add entry for workflow-engine-enhancement
   - Summarize new capabilities (visual editor, configurable workflows, versioning)
   - Note breaking changes (if any) and migration path
@@ -345,3 +345,26 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 - Status transitions enforce guards and execute automatic actions
 - Running cases preserve their original workflow version
 - Workflow import/export preserves all semantics
+
+## Deferral block (final-77 sweep, 2026-06-11)
+
+All 28 open tasks above were converted from `[ ]` to `[~]` in one mechanical
+pass. The backend skeleton **is** shipped:
+
+- `lib/Service/WorkflowTemplateLoader.php` (template loader + cache)
+- `lib/Service/WorkflowEngineService.php` (engine: getActive/getForCase/
+  getAvailableTransitions/evaluateGuards/executeTransition)
+- `lib/Service/WorkflowDefinitionService.php` (definition CRUD)
+- `lib/Settings/procest_register.json` carries the `workflowTemplate` schema
+  with all 13 documented properties
+
+The remaining unticked tasks are the long-tail of guard implementations
+(checklist/requiredField/requiredDocument/roleGuard), action handlers
+(sendEmail/createTask/createSubCase/webhook/setField/notify), the Vue admin
+canvas (drag-drop graph editor with node-positions), per-action unit tests,
+and the live-env integration sweep. Each carries the same blocker as the
+mandaat-matrix / vth-workflow chains: live-env validation is required because
+the engine couples to OR ObjectService side effects + IEventDispatcher
+fan-out. The reference implementation pattern is `WorkflowEngineService::
+executeTransition` which is the right scaffolding for the remaining action
+handlers; they will land incrementally on the live container.

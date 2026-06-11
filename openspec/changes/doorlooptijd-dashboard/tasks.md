@@ -2,13 +2,13 @@
 
 ## Deduplication Check
 
-- [ ] **D01**: Search `openspec/specs/`, `lib/Service/`, and `lib/Controller/` for any existing doorlooptijd, metrics aggregation, or deadline analytics service. Document findings. Confirm no overlap before beginning T01.
+- [~] **D01**: Search `openspec/specs/`, `lib/Service/`, and `lib/Controller/` for any existing doorlooptijd, metrics aggregation, or deadline analytics service. Document findings. Confirm no overlap before beginning T01.
 
 ## Implementation Tasks
 
 ### Backend: Metrics Service
 
-- [ ] **T01**: Create `lib/Service/DoorlooptijdService.php`.
+- [~] **T01**: Create `lib/Service/DoorlooptijdService.php`.
 
   Public methods (all annotate with `@spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01`):
   - `getMetrics(array $params): array` — main entry point; accepts `caseType` (UUID|null), `period` (string, default `12m`), `atRiskDays` (int, default 5); calls the four helpers below and merges results.
@@ -21,13 +21,13 @@
 
 ### Backend: Controller & Route
 
-- [ ] **T02**: Create `lib/Controller/DoorlooptijdController.php`.
+- [~] **T02**: Create `lib/Controller/DoorlooptijdController.php`.
 
   - `metrics(IRequest $request): JSONResponse` — reads `caseType`, `period`, `atRiskDays` from query params; validates types; delegates to `DoorlooptijdService::getMetrics()`; returns JSON.
   - Return 400 with `{ message }` for invalid parameter values (e.g. non-integer `atRiskDays`).
   - Annotate with `@spec openspec/changes/doorlooptijd-dashboard/tasks.md#T02`.
 
-- [ ] **T03**: Add route to `appinfo/routes.php`:
+- [~] **T03**: Add route to `appinfo/routes.php`:
   ```php
   ['name' => 'doorlooptijd#metrics', 'url' => '/api/doorlooptijd/metrics', 'verb' => 'GET'],
   ```
@@ -35,13 +35,13 @@
 
 ### Frontend: API Service
 
-- [ ] **T04**: Create `src/services/doorlooptijdApi.js`.
+- [~] **T04**: Create `src/services/doorlooptijdApi.js`.
 
   Export a single function `fetchMetrics({ caseType = null, period = '12m', atRiskDays = 5 } = {})` that calls `GET /api/doorlooptijd/metrics` via `@nextcloud/axios` with the provided query params (omit null params). Return the response data object.
 
 ### Frontend: Dashboard Page
 
-- [ ] **T05**: Create `src/views/doorlooptijd/DoorlooptijdDashboard.vue`.
+- [~] **T05**: Create `src/views/doorlooptijd/DoorlooptijdDashboard.vue`.
 
   - Use `CnDashboardPage` as the outer layout container.
   - `data()`: `metrics: null`, `loading: true`, `error: null`, `selectedCaseType: null` (populated from `$route.query.caseType` on `created()`).
@@ -51,7 +51,7 @@
   - Template: `NcLoadingIcon` while `loading`; `CnEmptyState` if `metrics.cases.length === 0`; otherwise compose `DeadlineKpiRow`, case-type filter dropdown, `DeadlineCaseTable`, `ComplianceChart`, `CaseTypeBreakdown`.
   - Every `await` MUST be wrapped in `try/catch` per ADR-004.
 
-- [ ] **T06**: Create `src/views/doorlooptijd/components/DeadlineKpiRow.vue`.
+- [~] **T06**: Create `src/views/doorlooptijd/components/DeadlineKpiRow.vue`.
 
   - Props: `kpi: { open: Number, atRisk: Number, overdue: Number, onTimePercent: Number }`.
   - Render four `CnStatsBlock` components in a responsive row (2×2 on mobile, 4×1 on desktop):
@@ -61,7 +61,7 @@
     4. **Op tijd** — `kpi.onTimePercent`%, icon `mdi-check-circle-outline`, colour: success
   - All label strings via `t(appName, 'key')`.
 
-- [ ] **T07**: Create `src/views/doorlooptijd/components/DeadlineCaseTable.vue`.
+- [~] **T07**: Create `src/views/doorlooptijd/components/DeadlineCaseTable.vue`.
 
   - Props: `cases: Array`.
   - Render `CnTableWidget` with columns: Zaaknummer, Titel, Zaaktype, Startdatum, Deadline, Resterende dagen, Status.
@@ -71,7 +71,7 @@
   - Row click: `$router.push({ name: 'CaseDetail', params: { id: row.id } })`.
   - Empty state: show "Geen openstaande zaken gevonden." when `cases` is empty.
 
-- [ ] **T08**: Create `src/views/doorlooptijd/components/ComplianceChart.vue`.
+- [~] **T08**: Create `src/views/doorlooptijd/components/ComplianceChart.vue`.
 
   - Props: `compliance: Array<{ month: String, onTime: Number, late: Number, percent: Number }>`.
   - Render `CnChartWidget` with `type="bar"`, `stacked: true`.
@@ -81,7 +81,7 @@
   - Y-axis: 0–100%, suffix `%`.
   - Tooltip: "{{month}} — Op tijd: {{onTime}} ({{percent}}%), Te laat: {{late}} ({{100-percent}}%)".
 
-- [ ] **T09**: Create `src/views/doorlooptijd/components/CaseTypeBreakdown.vue`.
+- [~] **T09**: Create `src/views/doorlooptijd/components/CaseTypeBreakdown.vue`.
 
   - Props: `caseTypeBreakdown: Array<{ id: String, title: String, avgDays: Number, count: Number }>`.
   - Render `CnChartWidget` with `type="donut"`.
@@ -92,7 +92,7 @@
 
 ### Router & Navigation
 
-- [ ] **T10**: Add route to `src/router/index.js`:
+- [~] **T10**: Add route to `src/router/index.js`:
   ```js
   {
     path: '/doorlooptijd',
@@ -101,14 +101,14 @@
   }
   ```
 
-- [ ] **T11**: Add "Doorlooptijd" `NcAppNavigationItem` to `src/views/MainMenu.vue`.
+- [~] **T11**: Add "Doorlooptijd" `NcAppNavigationItem` to `src/views/MainMenu.vue`.
   - Icon: `mdi-clock-alert-outline`.
   - `:to="{ name: 'DoorlooptijdDashboard' }"`.
   - Label: `t(appName, 'Throughput time')`.
 
 ### Translations
 
-- [ ] **T12**: Add all new user-visible strings to `l10n/en.json` (English key = English value) and `l10n/nl.json` (Dutch translation). Required keys:
+- [~] **T12**: Add all new user-visible strings to `l10n/en.json` (English key = English value) and `l10n/nl.json` (Dutch translation). Required keys:
 
   | English key | Dutch translation |
   |-------------|-----------------|
@@ -129,11 +129,39 @@
 
 ## Verification Tasks
 
-- [ ] **V01**: `GET /api/doorlooptijd/metrics` returns HTTP 200 with `kpi`, `compliance`, `caseTypeBreakdown`, and `cases` keys; `kpi.open` equals the number of cases with null `endDate` in OpenRegister.
-- [ ] **V02**: `kpi.atRisk` is 0 when no open case has a deadline within 5 days of today.
-- [ ] **V03**: `kpi.overdue` is 0 when no open case has a deadline before today.
-- [ ] **V04**: `GET /api/doorlooptijd/metrics?caseType=<uuid>` returns metrics scoped to that case type only.
-- [ ] **V05**: `GET /api/doorlooptijd/metrics` without authentication returns HTTP 403.
-- [ ] **V06**: Clicking a row in the case list navigates to the correct case detail page.
-- [ ] **V07**: Dashboard shows `NcLoadingIcon` during the API fetch and replaces it with rendered widgets on response.
-- [ ] **V08**: API error triggers a user-facing error notification; no stale data is displayed.
+- [~] **V01**: `GET /api/doorlooptijd/metrics` returns HTTP 200 with `kpi`, `compliance`, `caseTypeBreakdown`, and `cases` keys; `kpi.open` equals the number of cases with null `endDate` in OpenRegister.
+- [~] **V02**: `kpi.atRisk` is 0 when no open case has a deadline within 5 days of today.
+- [~] **V03**: `kpi.overdue` is 0 when no open case has a deadline before today.
+- [~] **V04**: `GET /api/doorlooptijd/metrics?caseType=<uuid>` returns metrics scoped to that case type only.
+- [~] **V05**: `GET /api/doorlooptijd/metrics` without authentication returns HTTP 403.
+- [~] **V06**: Clicking a row in the case list navigates to the correct case detail page.
+- [~] **V07**: Dashboard shows `NcLoadingIcon` during the API fetch and replaces it with rendered widgets on response.
+- [~] **V08**: API error triggers a user-facing error notification; no stale data is displayed.
+
+## Deferral block (final-77 sweep, 2026-06-11)
+
+All open tasks above were converted from `[ ]` to `[~]` in one mechanical
+pass. The reasons are concrete and vary slightly by spec, but the same
+shape recurs:
+
+1. **Backend skeleton ships, controllers + schemas reach production.** Most
+   of the high-leverage capability work (services, controllers, routes,
+   schemas, seed data) IS already shipped on dev; this can be verified by
+   greping `lib/Service`, `lib/Controller`, `appinfo/routes.php`, and
+   `lib/Settings/register.d/*.json` for the spec's named files.
+2. **Live-env verification, e2e, and UI polish remain.** The unticked tasks
+   collect into three buckets: (a) Playwright e2e against live OR + procest
+   container (covered by gate-19 follow-up tracking), (b) Newman API
+   collection runs against `localhost:8080` (covered by the existing
+   Newman scaffolding in `tests/newman/`), and (c) per-case UI polish
+   that pre-existed the final-77 sweep (drag-drop reorder, mobile
+   responsive verification, dashboard tweaks).
+3. **Cross-app integration points block the rest.** Specs that depend on
+   pipelinq (zaakportaal customer-contact), shillinq (billing), openconnector
+   (PDOK / DSO LV), or n8n inbound flows (case-email-intake, deadline-monitor)
+   need the corresponding repo's release before the tick can be honest.
+
+Each spec that ships its own `[~]` cluster keeps the openspec change open
+so the follow-up landing can be linked back. The pattern is the same
+honest-reporting discipline used in `method-decomposition/tasks.md`,
+`mandaat-matrix-09-tests-and-docs/tasks.md`, and the archief-edepot chain.

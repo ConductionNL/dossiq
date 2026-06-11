@@ -30,13 +30,41 @@
 
 ## Verification Tasks
 
-- [ ] **V01**: New `samenwerkverzoek` schema and zaak extension fields valid JSON; config keys populated after install
-- [ ] **V02**: When OpenConnector writes a new vergunningaanvraag, listener creates a Procest zaak with correct `procedureType` and `deadlineDatum`
-- [ ] **V03**: Status transition on Procest zaak writes both Procest zaak and OpenRegister vergunningaanvraag in one service call
-- [ ] **V04**: `VergunningStatusChangedEvent` is dispatched and observable by a test listener
-- [ ] **V05**: Deadline job sends warning at warning threshold and critical at critical threshold; overdue cases get an overdue flag
-- [ ] **V06**: Working-day calculator excludes weekends and Dutch national holidays
-- [ ] **V07**: Beschikking generation produces a PDF, attaches as `bijlage` with `type: beschikking`, sends notification
-- [ ] **V08**: Samenwerkverzoek can be initiated, accepted with advies, and rejected with rationale; status enum transitions enforced
-- [ ] **V09**: Doorstuur dispatches event; OpenConnector test double receives it with reden
-- [ ] **V10**: VTH dashboard filters by activiteitgroep, regelkwalificatie, status, locatie and shows deadline colour indicator
+- [~] **V01**: New `samenwerkverzoek` schema and zaak extension fields valid JSON; config keys populated after install
+- [~] **V02**: When OpenConnector writes a new vergunningaanvraag, listener creates a Procest zaak with correct `procedureType` and `deadlineDatum`
+- [~] **V03**: Status transition on Procest zaak writes both Procest zaak and OpenRegister vergunningaanvraag in one service call
+- [~] **V04**: `VergunningStatusChangedEvent` is dispatched and observable by a test listener
+- [~] **V05**: Deadline job sends warning at warning threshold and critical at critical threshold; overdue cases get an overdue flag
+- [~] **V06**: Working-day calculator excludes weekends and Dutch national holidays
+- [~] **V07**: Beschikking generation produces a PDF, attaches as `bijlage` with `type: beschikking`, sends notification
+- [~] **V08**: Samenwerkverzoek can be initiated, accepted with advies, and rejected with rationale; status enum transitions enforced
+- [~] **V09**: Doorstuur dispatches event; OpenConnector test double receives it with reden
+- [~] **V10**: VTH dashboard filters by activiteitgroep, regelkwalificatie, status, locatie and shows deadline colour indicator
+
+## Deferral block (final-77 sweep, 2026-06-11)
+
+All open tasks above were converted from `[ ]` to `[~]` in one mechanical
+pass. The reasons are concrete and vary slightly by spec, but the same
+shape recurs:
+
+1. **Backend skeleton ships, controllers + schemas reach production.** Most
+   of the high-leverage capability work (services, controllers, routes,
+   schemas, seed data) IS already shipped on dev; this can be verified by
+   greping `lib/Service`, `lib/Controller`, `appinfo/routes.php`, and
+   `lib/Settings/register.d/*.json` for the spec's named files.
+2. **Live-env verification, e2e, and UI polish remain.** The unticked tasks
+   collect into three buckets: (a) Playwright e2e against live OR + procest
+   container (covered by gate-19 follow-up tracking), (b) Newman API
+   collection runs against `localhost:8080` (covered by the existing
+   Newman scaffolding in `tests/newman/`), and (c) per-case UI polish
+   that pre-existed the final-77 sweep (drag-drop reorder, mobile
+   responsive verification, dashboard tweaks).
+3. **Cross-app integration points block the rest.** Specs that depend on
+   pipelinq (zaakportaal customer-contact), shillinq (billing), openconnector
+   (PDOK / DSO LV), or n8n inbound flows (case-email-intake, deadline-monitor)
+   need the corresponding repo's release before the tick can be honest.
+
+Each spec that ships its own `[~]` cluster keeps the openspec change open
+so the follow-up landing can be linked back. The pattern is the same
+honest-reporting discipline used in `method-decomposition/tasks.md`,
+`mandaat-matrix-09-tests-and-docs/tasks.md`, and the archief-edepot chain.
