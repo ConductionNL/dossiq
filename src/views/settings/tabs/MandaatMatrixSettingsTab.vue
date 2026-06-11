@@ -93,11 +93,13 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/proposal.md */
 		adminDocsUrl() {
 			return 'https://docs.procest.nl/user/mandate-matrix-admin'
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/proposal.md */
 		async save() {
 			this.saving = true
 			try {

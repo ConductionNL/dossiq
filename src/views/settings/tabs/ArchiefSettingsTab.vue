@@ -90,11 +90,13 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/proposal.md */
 		adminDocsUrl() {
 			return 'https://docs.procest.nl/admin/archief-edepot'
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/proposal.md */
 		async save() {
 			this.saving = true
 			try {

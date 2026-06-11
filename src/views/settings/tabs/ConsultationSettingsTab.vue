@@ -106,11 +106,13 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/consultation-management/specs/consultation-management/spec.md */
 		workflowDocsUrl() {
 			return 'https://docs.procest.nl/n8n-consultation-workflows'
 		},
 	},
 	methods: {
+		/** @spec openspec/changes/consultation-management/specs/consultation-management/spec.md */
 		async save() {
 			this.saving = true
 			try {
