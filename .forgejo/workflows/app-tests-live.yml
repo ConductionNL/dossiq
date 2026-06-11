@@ -10,7 +10,10 @@
 #
 # Gate status for procest (see TESTING-CI-ROLLOUT.md for the evidence table):
 #   deep-e2e: true  — e2e creates via OR object API by register slug 'procest', tears down
-#   newman:   false  — TODO: Newman collection pins register=17 (dev numeric); needs a slug-resolution preflight or env override before arming
+#   newman:   true   — ARMED: the collection "0. Setup / Preflight" request resolves the
+#                      register numeric id from the stable slug 'procest' (and addresses the
+#                      case/complaint schemas by slug), so the suite survives a fresh CI boot
+#                      where the re-imported register gets a different numeric id.
 
 name: app-tests-live
 
@@ -36,5 +39,5 @@ jobs:
       app-id: procest
       is-openregister: false
       run-e2e: true
-      run-newman: false
+      run-newman: true
       newman-entrypoint: tests/integration/run-newman.sh
