@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\Service\ArchivalBatchService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
@@ -62,6 +63,7 @@ class ArchiefController extends Controller
         private readonly SettingsService $settings,
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
+        private readonly ArchivalBatchService $batchService,
     ) {
         parent::__construct($appName, $request);
     }//end __construct()
@@ -228,6 +230,233 @@ class ArchiefController extends Controller
         usort($rows, static fn (array $a, array $b): int => strcmp((string) ($b['timestamp'] ?? ''), (string) ($a['timestamp'] ?? '')));
         return new JSONResponse($rows);
     }//end auditLog()
+
+    /**
+     * Initiate an archival batch run.
+     *
+     * Body: `{caseIds: string[], rateLimit?: int, eDepotId?: string, batchId?: string}`.
+     * Delegates to {@see ArchivalBatchService::initiateBatch}; returns the
+     * batch summary (state + counters) so the admin UI can render the
+     * post-run dashboard tile without a follow-up audit-log scan.
+     *
+     * @NoAdminRequired
+     *
+     * @return JSONResponse
+     *
+     * @spec openspec/changes/archief-edepot-handover-07-batch-inspection/tasks.md
+     */
+    public function batchInitiate(): JSONResponse
+    {
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+        $body    = $this->jsonBody();
+        $caseIds = (array) ($body['caseIds'] ?? []);
+        if ($caseIds === []) {
+            return new JSONResponse(['message' => 'caseIds is required'], Http::STATUS_BAD_REQUEST);
+        }
+        $caseIds = array_values(array_map('strval', $caseIds));
+        $rateLimit = (int) ($body['rateLimit'] ?? 4);
+        if ($rateLimit < 1) {
+            $rateLimit = 4;
+        }
+        $eDepotId = (string) ($body['eDepotId'] ?? '');
+        $batchId  = isset($body['batchId']) === true ? (string) $body['batchId'] : null;
+        try {
+            $summary = $this->batchService->initiateBatch($caseIds, $rateLimit, $eDepotId, $batchId);
+        } catch (Throwable $e) {
+            $this->logger->warning('Archief batchInitiate failed', ['error' => $e->getMessage()]);
+            return new JSONResponse(['message' => 'Batch initiation failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
+        }
+        return new JSONResponse($summary, Http::STATUS_ACCEPTED);
+    }//end batchInitiate()
+
+    /**
+     * Replay batch state from the audit log.
+     *
+     * Returns `{batchId, state, counters, events: []}` reconstructed from
+     * the append-only `overdrachtAuditLog` rows whose `details` string
+     * carries `batchId=<jobId>`. The audit log is the source of truth per
+     * the spec; this endpoint is a thin filtered projection.
+     *
+     * @NoAdminRequired
+     *
+     * @param string $jobId Batch id.
+     *
+     * @return JSONResponse
+     *
+     * @spec openspec/changes/archief-edepot-handover-07-batch-inspection/tasks.md
+     */
+    public function batchStatus(string $jobId): JSONResponse
+    {
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+        if ($jobId === '') {
+            return new JSONResponse(['message' => 'jobId is required'], Http::STATUS_BAD_REQUEST);
+        }
+        $events = $this->batchAuditEvents($jobId);
+        $summary = $this->summariseBatchEvents($jobId, $events);
+        if ($summary['events'] === 0) {
+            return new JSONResponse(['message' => 'batch not found'], Http::STATUS_NOT_FOUND);
+        }
+        return new JSONResponse($summary);
+    }//end batchStatus()
+
+    /**
+     * Compose a batch report (JSON) from audit-log events + per-case bewijzen.
+     *
+     * Returns a flat report payload (no ZIP wrapper) so the admin UI can
+     * stream it directly into a download. A ZIP wrapper remains a deferred
+     * follow-up — the payload already carries every row a ZIP would.
+     *
+     * @NoAdminRequired
+     *
+     * @param string $jobId Batch id.
+     *
+     * @return JSONResponse
+     *
+     * @spec openspec/changes/archief-edepot-handover-07-batch-inspection/tasks.md
+     */
+    public function batchReport(string $jobId): JSONResponse
+    {
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+        if ($jobId === '') {
+            return new JSONResponse(['message' => 'jobId is required'], Http::STATUS_BAD_REQUEST);
+        }
+        $events  = $this->batchAuditEvents($jobId);
+        $summary = $this->summariseBatchEvents($jobId, $events);
+        if ($summary['events'] === 0) {
+            return new JSONResponse(['message' => 'batch not found'], Http::STATUS_NOT_FOUND);
+        }
+        // Attach bewijzen rows correlated by zaakId.
+        $bewijzen   = $this->fetchAll('archief_bewijs_schema');
+        $caseIds    = $summary['caseIds'];
+        $caseIdMap  = array_flip($caseIds);
+        $report     = [
+            'batchId'    => $jobId,
+            'state'      => $summary['state'],
+            'counters'   => $summary['counters'],
+            'cases'      => $caseIds,
+            'events'     => $events,
+            'bewijzen'   => array_values(array_filter(
+                $bewijzen,
+                static fn (array $row): bool => isset($caseIdMap[(string) ($row['zaakId'] ?? '')])
+            )),
+            'generatedAt' => (new \DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+        ];
+        return new JSONResponse($report);
+    }//end batchReport()
+
+    /**
+     * Inspection-year export.
+     *
+     * Delegates to {@see ArchivalBatchService::generateInspectionExport};
+     * accepts `year=` (required) and optional `zaaktypeKey` / `archiefId`
+     * query filters.
+     *
+     * @NoAdminRequired
+     *
+     * @return JSONResponse
+     *
+     * @spec openspec/changes/archief-edepot-handover-07-batch-inspection/tasks.md
+     */
+    public function inspectionExport(): JSONResponse
+    {
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+        $year = (int) $this->request->getParam('year', 0);
+        if ($year < 1970 || $year > 9999) {
+            return new JSONResponse(['message' => 'year is required (YYYY)'], Http::STATUS_BAD_REQUEST);
+        }
+        $filters = [];
+        foreach (['zaaktypeKey', 'archiefId'] as $key) {
+            $val = (string) $this->request->getParam($key, '');
+            if ($val !== '') {
+                $filters[$key] = $val;
+            }
+        }
+        try {
+            $payload = $this->batchService->generateInspectionExport($year, $filters);
+        } catch (Throwable $e) {
+            $this->logger->warning('Archief inspectionExport failed', ['error' => $e->getMessage()]);
+            return new JSONResponse(['message' => 'Export failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
+        }
+        return new JSONResponse($payload);
+    }//end inspectionExport()
+
+    /**
+     * Pull audit-log rows whose details mention the batch id.
+     *
+     * @param string $jobId Batch id.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function batchAuditEvents(string $jobId): array
+    {
+        $rows  = $this->fetchAll('overdracht_audit_log_schema');
+        $token = 'batchId='.$jobId;
+        $hits  = array_values(array_filter(
+            $rows,
+            static fn (array $row): bool => str_contains((string) ($row['details'] ?? ''), $token)
+        ));
+        usort($hits, static fn (array $a, array $b): int => strcmp((string) ($a['timestamp'] ?? ''), (string) ($b['timestamp'] ?? '')));
+        return $hits;
+    }
+
+    /**
+     * Reconstruct batch summary from audit events.
+     *
+     * @param string                            $jobId  Batch id.
+     * @param array<int, array<string, mixed>>  $events Audit rows.
+     *
+     * @return array{
+     *     batchId: string,
+     *     state: string,
+     *     counters: array<string, int>,
+     *     caseIds: array<int, string>,
+     *     events: int,
+     *     timeline: array<int, array<string, mixed>>
+     * }
+     */
+    private function summariseBatchEvents(string $jobId, array $events): array
+    {
+        $state    = 'unknown';
+        $counters = ['succeeded' => 0, 'failed' => 0, 'deferred' => 0, 'skipped' => 0];
+        $caseIds  = [];
+        foreach ($events as $event) {
+            $type    = (string) ($event['eventType'] ?? '');
+            $details = (string) ($event['details'] ?? '');
+            $zaakId  = (string) ($event['zaakId'] ?? '');
+            if ($zaakId !== '' && in_array($zaakId, $caseIds, true) === false) {
+                $caseIds[] = $zaakId;
+            }
+            if ($type === 'batch-initiated' && $state === 'unknown') {
+                $state = 'processing';
+            }
+            if ($type === 'batch-completed') {
+                foreach (['succeeded', 'failed', 'deferred', 'skipped'] as $bucket) {
+                    if (preg_match('/'.$bucket.'=(\d+)/', $details, $m) === 1) {
+                        $counters[$bucket] = (int) $m[1];
+                    }
+                }
+                if (preg_match('/state=([a-z\-]+)/', $details, $m) === 1) {
+                    $state = $m[1];
+                }
+            }
+        }
+        return [
+            'batchId'  => $jobId,
+            'state'    => $state,
+            'counters' => $counters,
+            'caseIds'  => $caseIds,
+            'events'   => count($events),
+            'timeline' => $events,
+        ];
+    }
 
     /**
      * @param string $schemaConfigKey Schema config key.

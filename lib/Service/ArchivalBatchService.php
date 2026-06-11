@@ -214,17 +214,31 @@ class ArchivalBatchService
         );
 
         if ($result === null) {
+            $this->triggerService->logEvent(
+                null,
+                $caseId,
+                'batch-case-deferred',
+                'batchId='.$batchId.' reason=no-submitter sipBundelId='.$sipBundelId
+            );
             return 'deferred';
         }
 
         $status = strtoupper($result->submissionStatus);
-        if ($status === 'FAILED') {
-            return 'failed';
-        }
-        if ($status === 'DEFERRED') {
-            return 'deferred';
-        }
-        return 'succeeded';
+        $bucket = match ($status) {
+            'FAILED'   => 'failed',
+            'DEFERRED' => 'deferred',
+            default    => 'succeeded',
+        };
+        // Correlate every per-case dispatch with the batch id so the
+        // batch status / report endpoints can reconstruct caseIds from
+        // the audit log alone.
+        $this->triggerService->logEvent(
+            null,
+            $caseId,
+            'batch-case-'.$bucket,
+            'batchId='.$batchId.' sipBundelId='.$sipBundelId.' status='.$status
+        );
+        return $bucket;
     }//end processCaseInBatch()
 
     /**
