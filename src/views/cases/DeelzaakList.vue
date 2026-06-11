@@ -1,0 +1,404 @@
+<!--
+  SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+  SPDX-License-Identifier: EUPL-1.2
+
+  DeelzaakList — full-page list of sub-cases (deelzaken) for a given
+  parent case. Mounted under /cases/:id/deelzaken so the manifest can
+  surface it as a tab/quick-link from the parent case detail.
+
+  Wires the deelzaak Pinia store, renders a NL Design System table,
+  exposes the "Create sub-case" action via DeelzaakCreateModal (own
+  file under src/modals/ per ADR-004), and links each row to the
+  DeelzaakDetail view.
+
+  @spec openspec/changes/deelzaak-support/tasks.md#T05
+  @spec openspec/changes/deelzaak-support/tasks.md#T09
+-->
+<template>
+	<div class="deelzaak-list">
+		<div class="deelzaak-list__header">
+			<div class="deelzaak-list__title">
+				<NcButton type="tertiary" :aria-label="t('procest', 'Back to parent case')" @click="goToParent">
+					<template #icon>
+						<ArrowLeft :size="20" />
+					</template>
+				</NcButton>
+				<div>
+					<h2>{{ t('procest', 'Sub-cases') }}</h2>
+					<p v-if="parent" class="deelzaak-list__subtitle">
+						<router-link :to="parentRoute">
+							{{ parent.title || parent.identifier }}
+						</router-link>
+						<span class="deelzaak-list__rollup">
+							{{ rollUpText }}
+						</span>
+					</p>
+				</div>
+			</div>
+			<div class="deelzaak-list__actions">
+				<NcButton
+					v-if="canCreate"
+					type="primary"
+					:aria-label="t('procest', 'Create sub-case')"
+					@click="showCreate = true">
+					<template #icon>
+						<Plus :size="20" />
+					</template>
+					{{ t('procest', 'Create sub-case') }}
+				</NcButton>
+			</div>
+		</div>
+
+		<NcLoadingIcon v-if="loading" :size="32" />
+
+		<NcEmptyContent
+			v-else-if="subCases.length === 0"
+			:name="t('procest', 'No sub-cases yet')"
+			:description="emptyDescription">
+			<template #icon>
+				<FolderMultipleOutline :size="48" />
+			</template>
+			<template #action>
+				<NcButton
+					v-if="canCreate"
+					type="primary"
+					@click="showCreate = true">
+					{{ t('procest', 'Create first sub-case') }}
+				</NcButton>
+			</template>
+		</NcEmptyContent>
+
+		<div v-else class="viewTableContainer">
+			<table class="viewTable">
+				<thead>
+					<tr>
+						<th>{{ t('procest', 'Identifier') }}</th>
+						<th>{{ t('procest', 'Title') }}</th>
+						<th>{{ t('procest', 'Status') }}</th>
+						<th>{{ t('procest', 'Assignee') }}</th>
+						<th>{{ t('procest', 'Deadline') }}</th>
+						<th>{{ t('procest', 'Completed') }}</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr
+						v-for="subCase in sortedSubCases"
+						:key="subCase.id"
+						class="viewTableRow"
+						@click="openSubCase(subCase)">
+						<td>{{ subCase.identifier || '—' }}</td>
+						<td>{{ subCase.title || '—' }}</td>
+						<td>
+							<span class="status-badge" :class="getStatusClass(subCase)">
+								{{ getStatusName(subCase) }}
+							</span>
+						</td>
+						<td>{{ subCase.assignee || '—' }}</td>
+						<td>{{ formatDate(subCase.deadline) }}</td>
+						<td>{{ subCase.endDate ? formatDate(subCase.endDate) : '—' }}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<DeelzaakCreateModal
+			v-if="showCreate && parentCaseId"
+			:parent-case="parentCaseId"
+			:parent-case-type="parentCaseType"
+			@created="onSubCaseCreated"
+			@close="showCreate = false" />
+	</div>
+</template>
+
+<script>
+import {
+	NcButton,
+	NcEmptyContent,
+	NcLoadingIcon,
+} from '@nextcloud/vue'
+import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
+import FolderMultipleOutline from 'vue-material-design-icons/FolderMultipleOutline.vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
+
+import { useObjectStore } from '../../store/modules/object.js'
+import { useDeelzaakStore } from '../../store/modules/deelzaak.js'
+import DeelzaakCreateModal from '../../modals/DeelzaakCreateModal.vue'
+import { formatDate } from '../../utils/caseHelpers.js'
+
+export default {
+	name: 'DeelzaakList',
+	components: {
+		NcButton,
+		NcEmptyContent,
+		NcLoadingIcon,
+		ArrowLeft,
+		FolderMultipleOutline,
+		Plus,
+		DeelzaakCreateModal,
+	},
+	props: {
+		/** Optional override for the parent case UUID (otherwise read from $route.params.id). */
+		caseId: {
+			type: String,
+			default: null,
+		},
+	},
+	data() {
+		return {
+			parent: null,
+			parentCaseType: null,
+			statusTypeCache: {},
+			loading: true,
+			showCreate: false,
+		}
+	},
+	computed: {
+		objectStore() {
+			return useObjectStore()
+		},
+		deelzaakStore() {
+			return useDeelzaakStore()
+		},
+		parentCaseId() {
+			return this.caseId || this.$route?.params?.id || null
+		},
+		subCases() {
+			return this.deelzaakStore.getSubCases || []
+		},
+		sortedSubCases() {
+			return [...this.subCases].sort((a, b) => {
+				// Open before closed; within each group sort by deadline asc.
+				const aOpen = !a.endDate
+				const bOpen = !b.endDate
+				if (aOpen !== bOpen) {
+					return aOpen ? -1 : 1
+				}
+				const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Number.POSITIVE_INFINITY
+				const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Number.POSITIVE_INFINITY
+				return aDeadline - bDeadline
+			})
+		},
+		completedCount() {
+			return this.subCases.filter(sc => sc.endDate).length
+		},
+		totalCount() {
+			return this.subCases.length
+		},
+		rollUpText() {
+			return t('procest', '({completed}/{total} completed)', {
+				completed: this.completedCount,
+				total: this.totalCount,
+			})
+		},
+		canCreate() {
+			if (!this.parent) {
+				return false
+			}
+			if (this.parent.endDate) {
+				return false
+			}
+			if (this.parent.parentCase) {
+				// Already a sub-case — no grandchildren.
+				return false
+			}
+			const allowed = this.parentCaseType?.subCaseTypes || []
+			return Array.isArray(allowed) && allowed.length > 0
+		},
+		emptyDescription() {
+			if (this.canCreate) {
+				return t('procest', 'This case has no sub-cases yet. Use the button above to create the first one.')
+			}
+			if (this.parent?.parentCase) {
+				return t('procest', 'Sub-cases cannot themselves have sub-cases.')
+			}
+			if (this.parent?.endDate) {
+				return t('procest', 'This case is closed; sub-cases can no longer be added.')
+			}
+			return t('procest', 'The parent case type does not allow any sub-cases.')
+		},
+		parentRoute() {
+			return this.parent ? { name: 'CaseDetail', params: { id: this.parent.id } } : { name: 'Cases' }
+		},
+	},
+	watch: {
+		parentCaseId: {
+			immediate: false,
+			handler() {
+				this.reload()
+			},
+		},
+	},
+	async mounted() {
+		await this.reload()
+	},
+	methods: {
+		formatDate,
+		async reload() {
+			if (!this.parentCaseId) {
+				this.loading = false
+				return
+			}
+			this.loading = true
+			try {
+				const [parent, _subs, statusTypes] = await Promise.all([
+					this.objectStore.fetchObject('case', this.parentCaseId).catch(() => null),
+					this.deelzaakStore.fetchSubCases(this.parentCaseId).catch(() => []),
+					this.objectStore.fetchCollection('statusType', { _limit: 200 }).catch(() => []),
+				])
+				this.parent = parent
+				if (parent?.caseType) {
+					this.parentCaseType = await this.objectStore
+						.fetchObject('caseType', parent.caseType)
+						.catch(() => null)
+				}
+				const cache = {}
+				for (const st of (statusTypes || [])) {
+					cache[st.id] = st
+				}
+				this.statusTypeCache = cache
+			} catch (err) {
+				console.error('[DeelzaakList] reload failed', err)
+			} finally {
+				this.loading = false
+			}
+		},
+		getStatusName(subCase) {
+			if (!subCase.status) {
+				return '—'
+			}
+			return this.statusTypeCache[subCase.status]?.name || '—'
+		},
+		getStatusClass(subCase) {
+			if (!subCase.status) {
+				return ''
+			}
+			const st = this.statusTypeCache[subCase.status]
+			if (st?.isFinal === true || st?.isFinal === 'true') {
+				return 'status-badge--final'
+			}
+			return 'status-badge--active'
+		},
+		openSubCase(subCase) {
+			this.$router.push({
+				name: 'DeelzaakDetail',
+				params: { parentId: this.parentCaseId, id: subCase.id },
+			})
+		},
+		goToParent() {
+			this.$router.push(this.parentRoute)
+		},
+		async onSubCaseCreated(newId) {
+			this.showCreate = false
+			await this.reload()
+			if (newId) {
+				this.$router.push({
+					name: 'DeelzaakDetail',
+					params: { parentId: this.parentCaseId, id: newId },
+				})
+			}
+		},
+	},
+}
+</script>
+
+<style scoped>
+.deelzaak-list {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px;
+}
+
+.deelzaak-list__header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.deelzaak-list__title {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+}
+
+.deelzaak-list__title h2 {
+	margin: 0;
+}
+
+.deelzaak-list__subtitle {
+	margin: 4px 0 0;
+	color: var(--color-text-maxcontrast);
+	font-size: 0.95em;
+}
+
+.deelzaak-list__subtitle a {
+	color: var(--color-primary-element);
+	text-decoration: none;
+}
+
+.deelzaak-list__subtitle a:hover {
+	text-decoration: underline;
+}
+
+.deelzaak-list__rollup {
+	margin-left: 8px;
+	color: var(--color-text-lighter);
+}
+
+.viewTableContainer {
+	background: var(--color-main-background);
+	border-radius: var(--border-radius);
+	overflow: hidden;
+	box-shadow: 0 2px 4px var(--color-box-shadow);
+	border: 1px solid var(--color-border);
+}
+
+.viewTable {
+	width: 100%;
+	border-collapse: collapse;
+	background-color: var(--color-main-background);
+}
+
+.viewTable th,
+.viewTable td {
+	padding: 12px;
+	text-align: left;
+	border-bottom: 1px solid var(--color-border);
+	vertical-align: middle;
+}
+
+.viewTable th {
+	background-color: var(--color-background-dark);
+	font-weight: 500;
+	color: var(--color-text-maxcontrast);
+}
+
+.viewTableRow {
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+}
+
+.viewTableRow:hover {
+	background: var(--color-background-hover);
+}
+
+.status-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: var(--border-radius-pill);
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.status-badge--active {
+	background: var(--color-primary-light);
+	color: var(--color-primary-text);
+}
+
+.status-badge--final {
+	background: var(--color-success);
+	color: white;
+}
+</style>
