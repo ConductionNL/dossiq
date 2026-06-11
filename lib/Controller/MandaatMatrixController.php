@@ -232,6 +232,37 @@ class MandaatMatrixController extends Controller
     }//end auditTrail()
 
     /**
+     * Applicable mandates for the case, filtered to the current user's roles.
+     *
+     * @NoAdminRequired
+     *
+     * @param string $caseId Case id.
+     *
+     * @return JSONResponse
+     *
+     * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
+     */
+    public function applicable(string $caseId): JSONResponse
+    {
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+        $userId   = $this->currentUserId();
+        $caseType = (string) $this->request->getParam('caseType', '');
+        $decisionType = (string) $this->request->getParam('decisionType', '');
+        try {
+            $rows = $this->check->getApplicableForUser($userId, $caseType, $decisionType);
+        } catch (Throwable $e) {
+            $this->logger->warning(
+                'MandaatMatrixController.applicable failed',
+                ['caseId' => $caseId, 'error' => $e->getMessage()],
+            );
+            $rows = [];
+        }
+        return new JSONResponse($rows);
+    }//end applicable()
+
+    /**
      * @return string
      */
     private function currentUserId(): string

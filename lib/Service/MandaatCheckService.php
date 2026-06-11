@@ -201,6 +201,48 @@ class MandaatCheckService
     }//end getApplicableMandaten()
 
     /**
+     * Applicable mandates for the given user (filtered to their active role).
+     *
+     * Returns the same row shape as {@see getApplicableMandaten()}, augmented
+     * with a `unilateral` flag (true when the user can take the decision
+     * unilaterally, i.e. without escalation). Empty result when the user holds
+     * no active role.
+     *
+     * @param string $userId       User id.
+     * @param string $caseType     Case type slug (empty = no filter).
+     * @param string $decisionType Decision type slug (empty = list all).
+     *
+     * @return array<int, array<string, mixed>>
+     *
+     * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
+     */
+    public function getApplicableForUser(string $userId, string $caseType = '', string $decisionType = ''): array
+    {
+        $date = new DateTimeImmutable();
+        $role = $this->resolveUserRole($userId, $date);
+        if ($role === null) {
+            return [];
+        }
+        $rolId = (string) ($role['rolId'] ?? '');
+        if ($rolId === '') {
+            return [];
+        }
+        $rows = $this->getApplicableMandaten($decisionType, $caseType, $date);
+
+        $out = [];
+        foreach ($rows as $row) {
+            $mandaatRolId = (string) ($row['gemandateerdeRol'] ?? '');
+            if ($mandaatRolId !== '' && $mandaatRolId !== $rolId) {
+                continue;
+            }
+            $row['unilateral'] = ($mandaatRolId === $rolId);
+            $out[] = $row;
+        }
+
+        return $out;
+    }//end getApplicableForUser()
+
+    /**
      * Resolve the user's *primary* active role at the given date.
      *
      * Returns an array {rolId, toewijzingType, waarnemerVoor} when found.

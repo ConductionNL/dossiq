@@ -977,4 +977,169 @@ class ZgwZtcRulesService extends ZgwRulesBase
 
         return $body;
     }//end resolveGerelateerdeZaaktypen()
+
+    /**
+     * Validate a caseType is publishable (isDraft true → false).
+     *
+     * REQ-CT-02b. Loads the case type's statusType objects and verifies
+     * preconditions: at least one statusType exists, at least one is final,
+     * and the case type itself has a validFrom date.
+     *
+     * @param string $register   Register slug.
+     * @param string $caseTypeId Case type id.
+     *
+     * @return array<int, string> Error strings (empty = valid).
+     *
+     * @spec openspec/changes/case-types-02-backend-validation/tasks.md#task-ct-08
+     */
+    public function validatePublish(string $register, string $caseTypeId): array
+    {
+        $errors = [];
+        if ($this->objectService === null) {
+            $errors[] = "Cannot validate publish: OpenRegister object service unavailable";
+            return $errors;
+        }
+        if ($caseTypeId === '') {
+            $errors[] = "Cannot validate publish: case type id is empty";
+            return $errors;
+        }
+
+        $statusSchema = (string) $this->settingsService->getConfigValue(key: 'status_type_schema');
+        $caseSchema   = (string) $this->settingsService->getConfigValue(key: 'case_type_schema');
+
+        try {
+            $statusTypes = $this->searchObjectsAsArrays(
+                $this->objectService,
+                $register,
+                $statusSchema,
+                ['caseType' => $caseTypeId],
+            );
+        } catch (\Throwable $e) {
+            $errors[] = "Could not load status types for case type";
+            return $errors;
+        }
+
+        if (count($statusTypes) === 0) {
+            $errors[] = "At least one status type must be defined before publishing";
+        } else {
+            $hasFinal = false;
+            foreach ($statusTypes as $row) {
+                if (is_array($row) === true && (bool) ($row['isFinal'] ?? false) === true) {
+                    $hasFinal = true;
+                    break;
+                }
+            }
+            if ($hasFinal === false) {
+                $errors[] = "At least one status type must be marked as final";
+            }
+        }
+
+        try {
+            $caseTypes = $this->searchObjectsAsArrays(
+                $this->objectService,
+                $register,
+                $caseSchema,
+                ['id' => $caseTypeId],
+            );
+        } catch (\Throwable $e) {
+            $caseTypes = [];
+        }
+        $caseType = (count($caseTypes) > 0 && is_array($caseTypes[0]) === true) ? $caseTypes[0] : [];
+        $validFrom = (string) ($caseType['validFrom'] ?? '');
+        if ($validFrom === '') {
+            $errors[] = "'Valid from' date must be set before publishing";
+        }
+
+        return $errors;
+    }//end validatePublish()
+
+    /**
+     * Validate a caseType can be safely deleted (no active cases).
+     *
+     * REQ-CT-01d. Returns a triple-shape result:
+     *
+     *   ['blocked' => bool, 'requiresConfirmation' => bool, 'message' => string]
+     *
+     * - blocked=true   → 409 Conflict; active cases exist.
+     * - requiresConfirmation=true → 200 OK with confirmation prompt (closed-only cases).
+     * - otherwise → safe to delete.
+     *
+     * @param string $register   Register slug.
+     * @param string $caseTypeId Case type id.
+     *
+     * @return array<string, mixed>
+     *
+     * @spec openspec/changes/case-types-02-backend-validation/tasks.md#task-ct-09
+     */
+    public function validateDeletion(string $register, string $caseTypeId): array
+    {
+        $default = ['blocked' => false, 'requiresConfirmation' => false, 'message' => ''];
+        if ($this->objectService === null || $caseTypeId === '') {
+            return $default;
+        }
+
+        $caseSchema = (string) $this->settingsService->getConfigValue(key: 'case_schema');
+
+        try {
+            $cases = $this->searchObjectsAsArrays(
+                $this->objectService,
+                $register,
+                $caseSchema,
+                ['caseType' => $caseTypeId],
+            );
+        } catch (\Throwable $e) {
+            return $default;
+        }
+
+        if (count($cases) === 0) {
+            return $default;
+        }
+
+        $statusSchema = (string) $this->settingsService->getConfigValue(key: 'status_type_schema');
+        try {
+            $finalStatusTypes = $this->searchObjectsAsArrays(
+                $this->objectService,
+                $register,
+                $statusSchema,
+                ['caseType' => $caseTypeId, 'isFinal' => true],
+            );
+        } catch (\Throwable $e) {
+            $finalStatusTypes = [];
+        }
+
+        $finalSlugs = [];
+        foreach ($finalStatusTypes as $row) {
+            if (is_array($row) === true && isset($row['id']) === true) {
+                $finalSlugs[] = (string) $row['id'];
+            }
+        }
+
+        $activeCount = 0;
+        $closedCount = 0;
+        foreach ($cases as $case) {
+            if (is_array($case) === false) {
+                continue;
+            }
+            $caseStatus = (string) ($case['status'] ?? '');
+            if ($caseStatus !== '' && in_array($caseStatus, $finalSlugs, true) === true) {
+                $closedCount++;
+            } else {
+                $activeCount++;
+            }
+        }
+
+        if ($activeCount > 0) {
+            return [
+                'blocked' => true,
+                'requiresConfirmation' => false,
+                'message' => "Cannot delete case type: $activeCount active case(s) still use this type. Close or reassign all cases first.",
+            ];
+        }
+
+        return [
+            'blocked' => false,
+            'requiresConfirmation' => true,
+            'message' => "Deleting will affect $closedCount closed case(s). Confirm to proceed.",
+        ];
+    }//end validateDeletion()
 }//end class

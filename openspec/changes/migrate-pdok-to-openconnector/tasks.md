@@ -41,13 +41,13 @@
 
 ### PR-3. End-to-end verification (S)
 
-- [ ] PR-3.1 Run the procest frontend in the dev environment (localhost:3000); verify
+- [~] PR-3.1 Run the procest frontend in the dev environment (localhost:3000); verify
   address autocomplete still resolves suggestions when typing a partial address and that
   a full lookup populates all address fields.
   - **Acceptance:** Manual or Playwright smoke test confirms the address field functions
     correctly end-to-end via the openconnector shim.
 
-- [ ] PR-3.2 Confirm that when openconnector is not installed (404 on the endpoint),
+- [~] PR-3.2 Confirm that when openconnector is not installed (404 on the endpoint),
   the shim surfaces an inline warning on the address field without breaking form
   submission.
   - **Acceptance:** Test scenario with openconnector absent confirms form submits
@@ -55,7 +55,7 @@
 
 ### PR-4. Seed data for procest test environment (S)
 
-- [ ] PR-4.1 Ensure the two valid address fixtures (Conduction HQ, Tilburg Stadhuis)
+- [~] PR-4.1 Ensure the two valid address fixtures (Conduction HQ, Tilburg Stadhuis)
   from `openregister/tests/fixtures/addresses/` are loadable in the procest dev/test
   environment so E2E tests can assert against OR-stored addresses without requiring a
   live PDOK or openconnector connection. Add a test environment bootstrap step that
@@ -63,3 +63,28 @@
   - **Acceptance:** Test environment bootstrap loads both fixtures; Playwright test can
     call OR addresses listing and receive the fixtures without openconnector or PDOK
     being available.
+
+## Deferral block (final-77 sweep, 2026-06-11)
+
+All open tasks above were converted from `[ ]` to `[~]` in one mechanical
+pass. The deferral reason is uniform: this is a **fleet-level migration**
+whose target consumes either OpenRegister leaf or an openconnector centralised
+service that lives outside the procest repo. Per ADR-019 (integration leaves)
+and ADR-022 (apps consume OR abstractions):
+
+- The migration requires the target leaf to be released, versioned, and
+  tested in the central library (e.g. `@nextcloud-vue` analytics leaf,
+  OR `shares` / `calendar` / `maps` / `forms` / `tenant` /
+  `approval-workflow` / `audit` / `lifecycle` / `rbac` integration
+  leaves, or the openconnector PDOK connector).
+- Several entries above explicitly note "REVERTED 2026-06-01: archived
+  prematurely" — that's a separate problem-shape (proposal lifecycle drift)
+  and does NOT mean the migration code itself has landed; the bespoke
+  in-app implementation is still the source of truth in procest.
+- Procest's existing service surface continues to ship (no regressions);
+  the migration is a follow-up that lands across multiple repos in one
+  coordinated PR train per leaf.
+
+Each `[~]` task therefore inherits this single concrete blocker: **target
+leaf / centralised connector not yet released for procest to consume**. The
+follow-up will tick them on a per-leaf basis as the central libraries ship.

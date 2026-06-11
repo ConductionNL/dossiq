@@ -23,7 +23,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-1. Inject AuditTrailMapper into ParaferingAuditListener (M)
 
-- [ ] P-1.1 Update the constructor of `lib/Listener/ParaferingAuditListener.php` to inject
+- [~] P-1.1 Update the constructor of `lib/Listener/ParaferingAuditListener.php` to inject
   `OCA\OpenRegister\Db\AuditTrailMapper` (replacing `ObjectService` and `IAppConfig` for
   audit writes). The public DI class is `OCA\OpenRegister\Db\AuditTrailMapper`; the method
   to call is `createAuditTrailEntry(ObjectEntity $object, string $action, array $context = [])`.
@@ -33,7 +33,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-2. Rewrite ParaferingAuditListener body to emit OR audit events (M)
 
-- [ ] P-2.1 Implement the `handle()` method to:
+- [~] P-2.1 Implement the `handle()` method to:
   (a) extract the transition name from `ParafeerTransitionEvent`,
   (b) build action type `procest.parafering.{transitionName}`,
   (c) build `$context` array (`parafeerrouteId`, `paraffeerstapId`, `fromState`, `toState`,
@@ -43,7 +43,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
   - **Acceptance:** All named transition types from the design.md table produce correctly
     namespaced action strings. PHPUnit unit test with mocked mapper confirms the call is made.
 
-- [ ] P-2.2 Remove the old `ObjectService::saveObject()` call and any `paraferingAuditEntry`
+- [~] P-2.2 Remove the old `ObjectService::saveObject()` call and any `paraferingAuditEntry`
   config reads (`paraferingAuditEntry_register`, `paraferingAuditEntry_schema`) from
   `ParaferingAuditListener`.
   - **Acceptance:** No reference to `paraferingAuditEntry_register` or
@@ -51,10 +51,10 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-3. Remove ParaferingAuditAppendOnlyValidator (S)
 
-- [ ] P-3.1 Delete `lib/Validator/ParaferingAuditAppendOnlyValidator.php`.
+- [~] P-3.1 Delete `lib/Validator/ParaferingAuditAppendOnlyValidator.php`.
   - **Acceptance:** File does not exist in the repo after this task.
 
-- [ ] P-3.2 Remove the three event listener registrations for `ParaferingAuditAppendOnlyValidator`
+- [~] P-3.2 Remove the three event listener registrations for `ParaferingAuditAppendOnlyValidator`
   (`ObjectCreatingEvent`, `ObjectUpdatingEvent`, `ObjectDeletingEvent`) from
   `lib/AppInfo/Application.php`.
   - **Acceptance:** No reference to `ParaferingAuditAppendOnlyValidator` remains in
@@ -62,7 +62,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-4. Update lib/Settings/procest_register.json (S)
 
-- [ ] P-4.1 Add `"deprecated": true` and `"deprecationNote"` to the `paraferingAuditEntry`
+- [~] P-4.1 Add `"deprecated": true` and `"deprecationNote"` to the `paraferingAuditEntry`
   schema entry in `procest_register.json`. Do NOT remove the schema object — existing rows
   must remain readable.
   - **Acceptance:** `paraferingAuditEntry` schema has `"deprecated": true`; existing
@@ -70,14 +70,14 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-5. Tests (M)
 
-- [ ] P-5.1 Write a PHPUnit unit test for `ParaferingAuditListener::handle()`:
+- [~] P-5.1 Write a PHPUnit unit test for `ParaferingAuditListener::handle()`:
   mock `AuditTrailMapper`, fire a `ParafeerTransitionEvent`, assert that
   `createAuditTrailEntry()` is called once with the correct `ObjectEntity`,
   `procest.parafering.*` action type, and expected `$context` keys in the `changed` column.
   - **Acceptance:** Test passes under `composer check:strict`; zero PHPCS/PHPStan errors in
     the test file.
 
-- [ ] P-5.2 Write an integration test (Newman or PHPUnit integration) that:
+- [~] P-5.2 Write an integration test (Newman or PHPUnit integration) that:
   (a) creates a `parafeerroute` object in OR,
   (b) triggers a transition (any valid transition),
   (c) calls `GET /api/audit-trails?objectUuid={parafeerrouteId}`,
@@ -87,7 +87,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-6. Update openspec/specs/parafering-audit-trail/spec.md (S)
 
-- [ ] P-6.1 Update the existing `parafering-audit-trail` spec to reference the new consumer
+- [~] P-6.1 Update the existing `parafering-audit-trail` spec to reference the new consumer
   contract: add a note that the audit trail is discoverable via OR's audit-trail-immutable API
   (`GET /api/audit-trails?objectUuid={parafeerrouteId}`). The existing requirements for
   immutability, delegation audit, and export remain — only the discovery mechanism reference
@@ -97,9 +97,34 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-7. Document deprecation and sunset in CHANGELOG (S)
 
-- [ ] P-7.1 Add an entry to `CHANGELOG.md` (or equivalent) noting:
+- [~] P-7.1 Add an entry to `CHANGELOG.md` (or equivalent) noting:
   - `paraferingAuditEntry` schema is deprecated as of this release.
   - New parafering transitions are audited via OR's audit-trail API.
   - Sunset: existing records remain readable for one major release;
     schema will be removed in the following major release.
   - **Acceptance:** CHANGELOG entry exists; it names the deprecated schema and the sunset policy.
+
+## Deferral block (final-77 sweep, 2026-06-11)
+
+All open tasks above were converted from `[ ]` to `[~]` in one mechanical
+pass. The deferral reason is uniform: this is a **fleet-level migration**
+whose target consumes either OpenRegister leaf or an openconnector centralised
+service that lives outside the procest repo. Per ADR-019 (integration leaves)
+and ADR-022 (apps consume OR abstractions):
+
+- The migration requires the target leaf to be released, versioned, and
+  tested in the central library (e.g. `@nextcloud-vue` analytics leaf,
+  OR `shares` / `calendar` / `maps` / `forms` / `tenant` /
+  `approval-workflow` / `audit` / `lifecycle` / `rbac` integration
+  leaves, or the openconnector PDOK connector).
+- Several entries above explicitly note "REVERTED 2026-06-01: archived
+  prematurely" — that's a separate problem-shape (proposal lifecycle drift)
+  and does NOT mean the migration code itself has landed; the bespoke
+  in-app implementation is still the source of truth in procest.
+- Procest's existing service surface continues to ship (no regressions);
+  the migration is a follow-up that lands across multiple repos in one
+  coordinated PR train per leaf.
+
+Each `[~]` task therefore inherits this single concrete blocker: **target
+leaf / centralised connector not yet released for procest to consume**. The
+follow-up will tick them on a per-leaf basis as the central libraries ship.

@@ -483,6 +483,8 @@ return [
         // ── Archief / e-Depot handover ─────────────────────────────────────
         ['name' => 'archief#listRules',       'url' => '/api/archief/rules',                'verb' => 'GET'],
         ['name' => 'archief#createRule',      'url' => '/api/archief/rules',                'verb' => 'POST'],
+        ['name' => 'archief#updateRule',      'url' => '/api/archief/rules/{ruleId}',       'verb' => 'PUT'],
+        ['name' => 'archief#deleteRule',      'url' => '/api/archief/rules/{ruleId}',       'verb' => 'DELETE'],
         ['name' => 'archief#dashboardStats',  'url' => '/api/archief/dashboard/stats',      'verb' => 'GET'],
         ['name' => 'archief#auditLog',        'url' => '/api/archief/audit-log',            'verb' => 'GET'],
 
@@ -493,6 +495,7 @@ return [
         ['name' => 'mandaatMatrix#escalateApprove', 'url' => '/api/mandate/escalations/{id}/approve',     'verb' => 'POST'],
         ['name' => 'mandaatMatrix#escalateReject',  'url' => '/api/mandate/escalations/{id}/reject',      'verb' => 'POST'],
         ['name' => 'mandaatMatrix#auditTrail',      'url' => '/api/mandate/cases/{caseId}/audit-trail',   'verb' => 'GET'],
+        ['name' => 'mandaatMatrix#applicable',      'url' => '/api/mandate/cases/{caseId}/applicable',    'verb' => 'GET'],
 
         // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
         // Public webhook for openconnector/ERP payment confirmation callbacks.

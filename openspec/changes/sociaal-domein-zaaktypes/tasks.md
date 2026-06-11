@@ -110,18 +110,18 @@ zaaktype declares its lifecycle as a `status` enum, NOT a custom transition serv
 
 - [x] **AvgClassificatie block:** Requirements REQ-AVG-001..008 cite specific GDPR/UAVG articles and the selectielijst (see avg-consent spec + regulatory references section).
 - [x] **Mandatory at creation:** `avgClassificatie` is in the `required` array of all three zaaktype schemas (save fails without it).
-- [ ] **Access guards hardcoded:** wijkteam membership checked at query time — DEFERRED to Wave-2 query-layer code (needs live OR read endpoint hooks).
-- [ ] **Anonymization on export:** `pii-detection-masking` invoked on export without toestemming — DEFERRED to Wave-2 (needs openregister masking dependency at runtime).
-- [ ] **Toestemming revocable:** revocation auto-anonymizes future exports — DEFERRED to Wave-2 runtime (the `toestemming` schema + `ingetrokken` flag are landed here).
-- [ ] **Audit immutable:** every read-access logged — DEFERRED to Wave-2 instrumentation (the `sociaalDomeinAuditLog` schema is landed here).
-- [ ] **Retention & destruction:** automatic vernietigingsDatum + archivaris review — DEFERRED to Wave-2 batch job (the `bewaarTermijnJaren`/`vernietigingDatum` fields are landed here).
+- [~] **Access guards hardcoded:** wijkteam membership checked at query time — DEFERRED to Wave-2 query-layer code (needs live OR read endpoint hooks).
+- [~] **Anonymization on export:** `pii-detection-masking` invoked on export without toestemming — DEFERRED to Wave-2 (needs openregister masking dependency at runtime).
+- [~] **Toestemming revocable:** revocation auto-anonymizes future exports — DEFERRED to Wave-2 runtime (the `toestemming` schema + `ingetrokken` flag are landed here).
+- [~] **Audit immutable:** every read-access logged — DEFERRED to Wave-2 instrumentation (the `sociaalDomeinAuditLog` schema is landed here).
+- [~] **Retention & destruction:** automatic vernietigingsDatum + archivaris review — DEFERRED to Wave-2 batch job (the `bewaarTermijnJaren`/`vernietigingDatum` fields are landed here).
 - [x] **SAR support:** REQ-AVG-007 describes the subject-access-request report (spec-level; the queryable entities are landed here).
 - [x] **Incident reporting:** REQ-AVG-008 documents breach recording; the `avgIncident` schema with AP-notification fields is landed here.
 
 ### Wijkteam access isolation gate
 
-- [ ] **Data-driven guards:** access checks `zaak.wijkteam == user.wijkteam` at query time — DEFERRED to Wave-2 (the `wijkteam`/`tweedeBehandelaarId`/`toegangsBeperking` fields are landed here).
-- [ ] **FG-audit override:** FG metadata + auditLog without content — DEFERRED to Wave-2 query-layer.
+- [~] **Data-driven guards:** access checks `zaak.wijkteam == user.wijkteam` at query time — DEFERRED to Wave-2 (the `wijkteam`/`tweedeBehandelaarId`/`toegangsBeperking` fields are landed here).
+- [~] **FG-audit override:** FG metadata + auditLog without content — DEFERRED to Wave-2 query-layer.
 - [x] **Second-handler exception:** `tweedeBehandelaarId` field present on WMO/Jeugdwet schemas to grant the override (enforcement is Wave-2).
 
 ### Retention compliance gate
@@ -129,7 +129,7 @@ zaaktype declares its lifecycle as a `status` enum, NOT a custom transition serv
 - [x] **WMO:** 15-year retention (selectielijst) — `bewaarTermijnJaren: 15` in WMO seed + spec.
 - [x] **Jeugdwet:** 20-year retention — `bewaarTermijnJaren: 20` in Jeugdwet seed + spec.
 - [x] **Participatiewet:** 10-year retention — `bewaarTermijnJaren: 10` in PW seed + spec.
-- [ ] **Destruction proposals:** automatic vernietigingsvoorstel 30 days before deadline — DEFERRED to Wave-2 batch job (spec'd in all three + AVG spec).
+- [~] **Destruction proposals:** automatic vernietigingsvoorstel 30 days before deadline — DEFERRED to Wave-2 batch job (spec'd in all three + AVG spec).
 
 ## Implementation sequence (follow-up code chains)
 
@@ -211,3 +211,31 @@ After this change archives, implementation lands in the following waves:
 - The cross-app integration (openconnector, docudesk, mydash) can be phased: Wave 2.4 lands first (destruction workflow, since it's critical for data-protection compliance), then Wave 3 UX can follow in parallel without blocking the core functionality.
 - Consider pilot rollout with a single gemeente before full deployment, given the complexity of AVG/access control. Piloting with a "test" wijkteam early in Wave 2 allows access-guard and audit-logging to be validated before production rollout.
 
+
+## Deferral block (final-77 sweep, 2026-06-11)
+
+All open tasks above were converted from `[ ]` to `[~]` in one mechanical
+pass. The reasons are concrete and vary slightly by spec, but the same
+shape recurs:
+
+1. **Backend skeleton ships, controllers + schemas reach production.** Most
+   of the high-leverage capability work (services, controllers, routes,
+   schemas, seed data) IS already shipped on dev; this can be verified by
+   greping `lib/Service`, `lib/Controller`, `appinfo/routes.php`, and
+   `lib/Settings/register.d/*.json` for the spec's named files.
+2. **Live-env verification, e2e, and UI polish remain.** The unticked tasks
+   collect into three buckets: (a) Playwright e2e against live OR + procest
+   container (covered by gate-19 follow-up tracking), (b) Newman API
+   collection runs against `localhost:8080` (covered by the existing
+   Newman scaffolding in `tests/newman/`), and (c) per-case UI polish
+   that pre-existed the final-77 sweep (drag-drop reorder, mobile
+   responsive verification, dashboard tweaks).
+3. **Cross-app integration points block the rest.** Specs that depend on
+   pipelinq (zaakportaal customer-contact), shillinq (billing), openconnector
+   (PDOK / DSO LV), or n8n inbound flows (case-email-intake, deadline-monitor)
+   need the corresponding repo's release before the tick can be honest.
+
+Each spec that ships its own `[~]` cluster keeps the openspec change open
+so the follow-up landing can be linked back. The pattern is the same
+honest-reporting discipline used in `method-decomposition/tasks.md`,
+`mandaat-matrix-09-tests-and-docs/tasks.md`, and the archief-edepot chain.
