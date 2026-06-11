@@ -172,19 +172,24 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		selectedTenant() {
 			return this.tenantOptions.find(o => o.id === this.tenantId) || null
 		},
+		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		steps() {
 			if (!this.progress) return []
 			return this.progress.steps || this.progress.tasks || []
 		},
+		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		totalSteps() {
 			return this.steps.length || 7
 		},
+		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		completedSteps() {
 			return this.steps.filter(s => s.status === 'complete').length
 		},
+		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		progressPercent() {
 			if (!this.totalSteps) return 0
 			return Math.round((this.completedSteps / this.totalSteps) * 100)
@@ -195,9 +200,11 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		stepLabel(step) {
 			return t('procest', STEP_LABELS[step] || step)
 		},
+		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		onTenantChange(opt) {
 			this.tenantId = opt ? opt.id : ''
 			this.progress = null

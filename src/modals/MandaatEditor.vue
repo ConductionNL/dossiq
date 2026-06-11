@@ -151,11 +151,13 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		title() {
 			return this.mandaat
 				? t('procest', 'Edit mandaat')
 				: t('procest', 'New mandaat')
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
 				{ id: 'beslissingsbevoegdheid', label: t('procest', 'Beslissingsbevoegdheid') },
@@ -164,15 +166,18 @@ export default {
 				{ id: 'doormandaat', label: t('procest', 'Doormandaat') },
 			]
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
 			return this.typeOptions.find(o => o.id === this.form.bevoegdheidType) || this.typeOptions[0]
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedRole() {
 			return this.roleOptions.find(o => o.id === this.form.toegewezenRol) || null
 		},
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		validate() {
 			const errs = {}
 			if (!this.form.mandaatNummer) errs.mandaatNummer = t('procest', 'Mandaatnummer is required')
@@ -187,6 +192,7 @@ export default {
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		async save() {
 			if (!this.validate()) return
 			this.saving = true

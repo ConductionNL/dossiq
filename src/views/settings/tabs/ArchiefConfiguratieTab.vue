@@ -118,18 +118,22 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
 		openNew() {
 			this.editingRule = null
 			this.editorOpen = true
 		},
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
 		openEdit(r) {
 			this.editingRule = r
 			this.editorOpen = true
 		},
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
 		closeEditor() {
 			this.editorOpen = false
 			this.editingRule = null
 		},
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
 		confirmDelete(r) {
 			this.deleting = r
 		},

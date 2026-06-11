@@ -96,19 +96,23 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		isWaarnemer(a) {
 			const tt = (a.toewijzingType || a.type || '').toLowerCase()
 			return tt === 'waarnemer' || tt === 'plaatsvervanger'
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeClass(a) {
 			return this.isWaarnemer(a)
 				? 'toewijzingen-table__type--waarnemer'
 				: 'toewijzingen-table__type--regular'
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		roleLabel(a) {
 			const opt = this.roleOptions.find(o => o.id === (a.rolId || a.role))
 			return opt ? opt.label : (a.rolLabel || a.rolId || a.role || '—')
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		openEnd(a) {
 			this.ending = a
 		},

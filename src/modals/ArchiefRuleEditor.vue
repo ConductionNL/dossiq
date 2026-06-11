@@ -95,20 +95,24 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
 		title() {
 			return this.rule
 				? t('procest', 'Edit retention rule')
 				: t('procest', 'New retention rule')
 		},
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
 		modeOptions() {
 			return [
 				{ id: 'years', label: t('procest', 'Years') },
 				{ id: 'permanent', label: t('procest', 'Permanent (no destruction)') },
 			]
 		},
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
 		selectedMode() {
 			return this.modeOptions.find(o => o.id === this.form.mode) || this.modeOptions[0]
 		},
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
 		triggerOptions() {
 			return [
 				{ id: 'sluitingsdatum', label: t('procest', 'Sluitingsdatum') },
@@ -116,18 +120,21 @@ export default {
 				{ id: 'eindbesluit', label: t('procest', 'Eindbesluit') },
 			]
 		},
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
 		selectedTrigger() {
 			return this.triggerOptions.find(o => o.id === this.form.triggerGebeurtenis) || this.triggerOptions[0]
 		},
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
 		onModeChange(opt) {
 			this.form.mode = opt ? opt.id : 'years'
 			if (this.form.mode === 'permanent') {
 				this.form.vernietiging = false
 			}
 		},
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
 		validate() {
 			const errs = {}
 			if (!this.form.zaaktypeKey) errs.zaaktypeKey = t('procest', 'Zaaktype key is required')
@@ -137,6 +144,7 @@ export default {
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
 		save() {
 			if (!this.validate()) return
 			const payload = {

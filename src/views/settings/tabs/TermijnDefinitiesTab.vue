@@ -153,14 +153,17 @@ export default {
 			const v = def.duurDagen || def.duur || 0
 			return v ? t('procest', '{n} days', { n: v }) : '—'
 		},
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		openNew() {
 			this.editingDefinition = null
 			this.editorOpen = true
 		},
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		openEdit(def) {
 			this.editingDefinition = def
 			this.editorOpen = true
 		},
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		closeEditor() {
 			this.editorOpen = false
 			this.editingDefinition = null

@@ -139,16 +139,19 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		title() {
 			return this.definition
 				? t('procest', 'New version of {z}', { z: this.definition.zaaktype })
 				: t('procest', 'New term definition')
 		},
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		selectedZaaktype() {
 			if (!this.form.zaaktype) return null
 			const hit = this.zaaktypeOptions.find(o => o.id === this.form.zaaktype)
 			return hit || { id: this.form.zaaktype, label: this.form.zaaktype }
 		},
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		categorieOptions() {
 			return [
 				{ id: 'beslis', label: t('procest', 'Beslistermijn') },
@@ -157,12 +160,14 @@ export default {
 				{ id: 'beroep', label: t('procest', 'Beroepstermijn') },
 			]
 		},
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		selectedCategorie() {
 			return this.categorieOptions.find(o => o.id === this.form.categorie) || this.categorieOptions[0]
 		},
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		validate() {
 			const errs = {}
 			if (!this.form.zaaktype) errs.zaaktype = t('procest', 'Zaaktype is required')
@@ -173,6 +178,7 @@ export default {
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		async save() {
 			if (!this.validate()) return
 			this.saving = true

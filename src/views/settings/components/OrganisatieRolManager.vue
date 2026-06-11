@@ -83,6 +83,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		childrenByParent() {
 			const map = {}
 			for (const r of this.roles) {
@@ -92,15 +93,18 @@ export default {
 			}
 			return map
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		roots() {
 			return (this.roles || []).filter(r => !r.parentRole)
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		parentOptions() {
 			return [
 				{ id: '', label: t('procest', '(top level)') },
 				...this.roles.map(r => ({ id: r.id, label: r.naam || r.id })),
 			]
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		deleteBlockedReason() {
 			if (!this.deleting) return ''
 			const refsAsParent = this.roles.some(r => r.parentRole === this.deleting.id)
@@ -110,14 +114,17 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		openEditor(role) {
 			this.editingRole = role
 			this.editorOpen = true
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		closeEditor() {
 			this.editorOpen = false
 			this.editingRole = null
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		confirmDelete(role) {
 			this.deleting = role
 		},

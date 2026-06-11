@@ -102,9 +102,11 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		title() {
 			return this.role ? t('procest', 'Edit role') : t('procest', 'New role')
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
 				{ id: 'bestuurder', label: t('procest', 'Bestuurder') },
@@ -114,21 +116,25 @@ export default {
 				{ id: 'waarnemer', label: t('procest', 'Waarnemer') },
 			]
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
 			return this.typeOptions.find(o => o.id === this.form.type) || this.typeOptions[3]
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedParent() {
 			return this.parentOptions.find(o => o.id === this.form.parentRole) || this.parentOptions[0]
 		},
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		validate() {
 			const errs = {}
 			if (!this.form.naam) errs.naam = t('procest', 'Naam is required')
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		save() {
 			if (!this.validate()) return
 			this.$emit('save', { ...this.form })

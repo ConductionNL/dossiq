@@ -92,6 +92,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		tabOptions() {
 			return [
 				{ id: 'besluiten', label: t('procest', 'Besluiten') },
@@ -100,6 +101,7 @@ export default {
 				{ id: 'import', label: t('procest', 'Import') },
 			]
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		roleOptions() {
 			return (this.roles || []).map(r => ({
 				id: r.id,
@@ -110,6 +112,7 @@ export default {
 	watch: {
 		active: {
 			immediate: true,
+			/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 			handler(v) {
 				if (v === 'besluiten') this.loadBesluiten()
 				else if (v === 'rollen') this.loadRoles()
@@ -155,17 +158,21 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		openEditor(mandaat) {
 			this.editingMandaat = mandaat
 			this.editorOpen = true
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		closeEditor() {
 			this.editorOpen = false
 			this.editingMandaat = null
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		openImport() {
 			this.active = 'import'
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		onImported() {
 			this.active = 'besluiten'
 			this.loadBesluiten()

@@ -164,6 +164,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
 		selectedZaaktype() {
 			if (!this.zaaktypeFilter) return null
 			return this.zaaktypeOptions.find(o => o.id === this.zaaktypeFilter) || null
@@ -174,19 +175,23 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
 		currentQuarter() {
 			const d = new Date()
 			const q = Math.floor(d.getMonth() / 3) + 1
 			return `${d.getFullYear()}-Q${q}`
 		},
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
 		percent(v) {
 			const n = Number(v) || 0
 			return `${n.toFixed(1)} %`
 		},
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
 		euro(v) {
 			const n = Number(v) || 0
 			return n.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })
 		},
+		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
 		onZaaktypeChange(opt) {
 			this.zaaktypeFilter = opt ? opt.id : ''
 			this.load()

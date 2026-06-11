@@ -74,6 +74,7 @@ export default {
 	emits: ['edit', 'import'],
 	methods: {
 		t,
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		badgeClass(status) {
 			const s = (status || '').toLowerCase()
 			if (s === 'actief' || s === 'active') return 'mandaat-matrix-table__badge--ok'

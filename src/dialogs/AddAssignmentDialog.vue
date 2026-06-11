@@ -91,6 +91,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
 				{ id: 'reguliere', label: t('procest', 'Reguliere toewijzing') },
@@ -98,15 +99,18 @@ export default {
 				{ id: 'plaatsvervanger', label: t('procest', 'Plaatsvervanger') },
 			]
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedRole() {
 			return this.roleOptions.find(o => o.id === this.form.rolId) || null
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
 			return this.typeOptions.find(o => o.id === this.form.toewijzingType) || this.typeOptions[0]
 		},
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		validate() {
 			const errs = {}
 			if (!this.form.persoonId) errs.persoonId = t('procest', 'Person is required')
@@ -114,6 +118,7 @@ export default {
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		save() {
 			if (!this.validate()) return
 			this.$emit('save', { ...this.form })

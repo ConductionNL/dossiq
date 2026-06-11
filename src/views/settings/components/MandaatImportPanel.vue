@@ -95,6 +95,7 @@ export default {
 	},
 	methods: {
 		t,
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		onFileChange(e) {
 			const f = e.target.files?.[0]
 			if (!f) return

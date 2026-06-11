@@ -45,6 +45,7 @@ export default {
 		onDelete: { type: Function, required: true },
 	},
 	computed: {
+		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		children() {
 			return this.childrenByParent[this.role.id] || []
 		},

@@ -165,6 +165,7 @@ export default {
 				this.loading = false
 			}
 		},
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
 		badgeClass(status) {
 			const s = (status || '').toLowerCase()
 			if (s === 'geslaagd' || s === 'completed') return 'archief-dashboard__badge--good'
@@ -196,6 +197,7 @@ export default {
 				this.retrying = false
 			}
 		},
+		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
 		viewProof(trigger) {
 			const proof = trigger.proofRef
 			if (!proof) return
