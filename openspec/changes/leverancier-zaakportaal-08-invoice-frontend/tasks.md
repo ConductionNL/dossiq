@@ -5,7 +5,7 @@
 Traces to giant task 2.3; spec REQ-004.
 
 - [~] Implement `InvoiceList` component: sortable/filterable table with status badges — Vue deferred
-- [~] Fetch GET /api/supplier-portal/invoices with status/date/amount filters — `SupplierScopeService::listSupplierObjects()` already supports filtered fetch
+- [ ] Fetch GET /api/supplier-portal/invoices with status/date/amount filters — `SupplierScopeService::listSupplierObjects()` already supports filtered fetch
 - [x] Create status badges: received, under_review, approved, disputed, rejected, paid — `INVOICE_BADGE_COLORS` constant
 - [~] Build `InvoiceDetail` page — Vue deferred; date math in `InvoicePaymentForecastService` (chain member 07)
 - [x] Implement `AgeAnalysisBar` data — `getAgeAnalysis()` returns the 4-bucket payload
