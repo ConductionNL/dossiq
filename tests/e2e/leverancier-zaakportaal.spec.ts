@@ -128,6 +128,37 @@ test.describe('Leverancier-zaakportaal — chain members 06/08/10/14/15', () => 
 		await expect(page.getByRole('heading', { name: /Contracten/i })).toBeVisible()
 	})
 
+	// @e2e openspec/changes/leverancier-zaakportaal-12-master-data-mutations/tasks.md
+	test('profile form renders the 3 sections (address/contact/IBAN)', async ({ page }) => {
+		await page.goto(`${APP_ROOT}/leverancier/profiel`)
+		await expect(page.getByTestId('leverancier-profile-form')).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('heading', { name: /Mijn gegevens/i })).toBeVisible()
+		await expect(page.getByTestId('leverancier-profile-street')).toBeVisible()
+		await expect(page.getByTestId('leverancier-profile-contact')).toBeVisible()
+		await expect(page.getByTestId('leverancier-profile-iban')).toBeVisible()
+		await expect(page.getByTestId('leverancier-profile-address-submit')).toBeVisible()
+		await expect(page.getByTestId('leverancier-profile-contact-submit')).toBeVisible()
+		await expect(page.getByTestId('leverancier-profile-iban-submit')).toBeVisible()
+	})
+
+	// @e2e openspec/changes/leverancier-zaakportaal-12-master-data-mutations/tasks.md
+	test('profile address form posts to the leverancier-portaal/profile/address endpoint', async ({ page }) => {
+		const apiCalls: string[] = []
+		page.on('request', req => {
+			if (req.url().includes('/leverancier-portaal/profile/address')) {
+				apiCalls.push(req.method() + ' ' + req.url())
+			}
+		})
+		await page.goto(`${APP_ROOT}/leverancier/profiel?supplierRef=t1`)
+		await expect(page.getByTestId('leverancier-profile-form')).toBeVisible({ timeout: 15000 })
+		await page.getByTestId('leverancier-profile-street').fill('Damstraat 1')
+		await page.getByTestId('leverancier-profile-postal').fill('1012AA')
+		await page.getByTestId('leverancier-profile-city').fill('Amsterdam')
+		await page.getByTestId('leverancier-profile-address-submit').click()
+		await page.waitForTimeout(500)
+		expect(apiCalls.some(u => u.startsWith('POST'))).toBe(true)
+	})
+
 	// @e2e openspec/changes/leverancier-zaakportaal-10-contract-frontend/tasks.md
 	test('RenewalRequestModal lives in its own file under src/modals/', async () => {
 		// Modal-isolation enforcement (ADR-004): the modal MUST be a separate

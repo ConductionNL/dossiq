@@ -57,6 +57,7 @@ import TenderDetail from './views/leverancier/TenderDetail.vue'
 import InvoiceList from './views/leverancier/InvoiceList.vue'
 import ContractList from './views/leverancier/ContractList.vue'
 import KpiView from './views/leverancier/KpiView.vue'
+import ProfileForm from './views/leverancier/ProfileForm.vue'
 
 /**
  * V2 component registry.
@@ -222,6 +223,11 @@ const registry = {
 		kind: 'page',
 		component: KpiView,
 		_note: 'Supplier KPI summary — payment days, on-time pct, dispute rate, compliance score',
+	},
+	ProfileForm: {
+		kind: 'page',
+		component: ProfileForm,
+		_note: 'Supplier profile form — address + contact (immediate) + IBAN-change (4-eyes via Procest case)',
 	},
 }
 

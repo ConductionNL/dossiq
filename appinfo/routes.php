@@ -111,6 +111,14 @@ return [
         ['name' => 'supplierPortal#kpi',           'url' => '/api/leverancier-portaal/kpi',               'verb' => 'GET'],
         ['name' => 'supplierPortal#messages',      'url' => '/api/leverancier-portaal/messages',          'verb' => 'GET'],
 
+        // Leverancier-zaakportaal — operator-side write endpoints (master-data
+        // mutations, chain member 12). Address + contactPerson apply
+        // immediately; IBAN + accreditation are 4-eyes via Procest cases.
+        ['name' => 'supplierProfile#updateAddress',      'url' => '/api/leverancier-portaal/profile/address',        'verb' => 'POST'],
+        ['name' => 'supplierProfile#updateContact',      'url' => '/api/leverancier-portaal/profile/contact',        'verb' => 'POST'],
+        ['name' => 'supplierProfile#requestIbanChange',  'url' => '/api/leverancier-portaal/profile/iban',           'verb' => 'POST'],
+        ['name' => 'supplierProfile#submitAccreditation','url' => '/api/leverancier-portaal/profile/accreditations', 'verb' => 'POST'],
+
         // ZGW Mapping Management.
         ['name' => 'zgwMapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
         ['name' => 'zgwMapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],

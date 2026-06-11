@@ -41,6 +41,13 @@
 			"type": "custom",
 			"title": "KPI",
 			"component": "KpiView"
+		},
+		{
+			"id": "LeverancierProfile",
+			"route": "/leverancier/profiel",
+			"type": "custom",
+			"title": "Mijn gegevens",
+			"component": "ProfileForm"
 		}
 	],
 	"menu": [

@@ -119,3 +119,52 @@ export async function listMessages(supplierRef, caseRef) {
 	const r = await axios.get(url('messages'), { params: { supplierRef, caseRef } })
 	return r.data
 }
+
+/**
+ * Update the supplier's address (immediate).
+ *
+ * @param {string} supplierRef Supplier UUID
+ * @param {object} address Address payload (street/postalCode/city/country).
+ * @return {Promise<object>} { ok, message }.
+ */
+export async function updateSupplierAddress(supplierRef, address) {
+	const r = await axios.post(url('profile/address'), { supplierRef, address })
+	return r.data
+}
+
+/**
+ * Update the supplier's contact person (immediate).
+ *
+ * @param {string} supplierRef Supplier UUID
+ * @param {string} contactPerson New contact name.
+ * @return {Promise<object>} { ok, message }.
+ */
+export async function updateSupplierContact(supplierRef, contactPerson) {
+	const r = await axios.post(url('profile/contact'), { supplierRef, contactPerson })
+	return r.data
+}
+
+/**
+ * Request an IBAN change (4-eyes — creates a Procest case).
+ *
+ * @param {string} supplierRef Supplier UUID
+ * @param {string} iban Proposed IBAN.
+ * @return {Promise<object>} { ok, caseRef, message }.
+ */
+export async function requestIbanChange(supplierRef, iban) {
+	const r = await axios.post(url('profile/iban'), { supplierRef, iban })
+	return r.data
+}
+
+/**
+ * Submit accreditation documents for verification.
+ *
+ * @param {string} supplierRef Supplier UUID
+ * @param {string} dataType Type of accreditation (e.g. 'iso27001').
+ * @param {string[]} attachments Attachment refs/URLs.
+ * @return {Promise<object>} { ok, caseRef }.
+ */
+export async function submitAccreditation(supplierRef, dataType, attachments) {
+	const r = await axios.post(url('profile/accreditations'), { supplierRef, dataType, attachments })
+	return r.data
+}
