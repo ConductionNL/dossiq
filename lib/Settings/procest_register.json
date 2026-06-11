@@ -6440,6 +6440,57 @@
             "description": "Reason the step is blocked (surfaced in the UI)"
           }
         }
+      },
+      "emailTemplate": {
+        "slug": "emailTemplate",
+        "icon": "EmailOutline",
+        "version": "1.0.0",
+        "x-equivalent": "schema:DigitalDocument",
+        "title": "Email Template",
+        "description": "Per-zaaktype email template with placeholder variables; version-bumped on edit (case-email-integration spec).",
+        "type": "object",
+        "required": [
+          "caseType",
+          "name",
+          "subject",
+          "body",
+          "version"
+        ],
+        "properties": {
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "caseType",
+            "description": "Owning case type"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable template label"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Subject line, may contain {{placeholders}}"
+          },
+          "body": {
+            "type": "string",
+            "description": "Body text, may contain {{placeholders}}"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Version number (incremented on every edit)"
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true,
+            "description": "Only the latest active version surfaces in the picker"
+          },
+          "previousVersion": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the prior version object (audit chain)"
+          }
+        }
       }
     },
     "registers": {
@@ -6514,7 +6565,8 @@
           "supplierContract",
           "supplierInvoice",
           "supplierMessage",
-          "supplierKpi"
+          "supplierKpi",
+          "emailTemplate"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"
