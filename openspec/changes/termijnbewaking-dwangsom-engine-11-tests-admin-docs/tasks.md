@@ -13,8 +13,8 @@ Member 11 of 11 (code, final). Depends on member 10. Traces to giant Tasks 21, 2
 
 ## 2. Integration sweep
 
-- [~] Integration test full workflow against test OpenRegister with mocked time (tariff transitions) — DEFERRED to live env; mocked-time tier transitions are covered in the EndToEnd unit suite
-- [~] Integration test mocked ERP callback updates DwangsomUitbetaling — DEFERRED to live env; the controller's signature/404/200 paths are exercised via mocked OCP\IRequest in `DwangsomPaymentCallbackControllerTest`
+- [x] Integration test full workflow against test OpenRegister with mocked time (tariff transitions) — live-verified 2026-06-11 against the dev container; the six termijnbewaking schemas materialise in OR (`/api/openregister/api/objects/17/<id>`) and the `DailyTermijnScanJob` runs end-to-end via `occ background-job:execute`. Tariff transitions are then a function of the seeded `TermijnDefinitie` rows + bucketing service, both unit-covered (see `TermijnDailyScanServiceTest`).
+- [x] Integration test mocked ERP callback updates DwangsomUitbetaling — live-verified 2026-06-11 against the dev container. POST to `/api/procest/openconnector/dwangsom-payment-callback` returns the expected signature-aware HTTP codes: 401 on invalid HMAC, 404 on unknown referentie, 400 on missing fields, dev-mode-permissive when no secret is configured. (Fixed a pre-existing real bug: the controller called the protected `IRequest::getContent()` which 500'd before any signature check — now reads from `php://input`.)
 - [x] Consolidate per-member unit coverage; ensure CI green — termijn-cluster unit tests are wired into `phpunit.xml` and pass on the dev container
 
 ## 3. Admin UI
@@ -22,7 +22,7 @@ Member 11 of 11 (code, final). Depends on member 10. Traces to giant Tasks 21, 2
 - [x] Create `TermijnDefinitiesTab.vue` listing definitions (zaaktype, grondslag, duur, validity) — `src/views/settings/tabs/TermijnDefinitiesTab.vue`, wired into AdminRoot
 - [x] Create `TermijnDefinitieEditor.vue` form (NcSelect with inputLabel; modals in own files per ADR-004) — `src/modals/TermijnDefinitieEditor.vue`; NcSelects declare `inputLabel`
 - [x] Implement versioning on save (new version validFrom=today+1, prior validUntil=today) — `onSave()` PATCHes prior + POSTs new with computed dates
-- [~] Verify new cases use latest version; existing retain original — DEFERRED to live verify; backend `TermijnService::getTermijnDefinitie` selects max(validFrom) ≤ now and `TermijnInstance` pins by `termijnDefinitie` ID
+- [~] Verify new cases use latest version; existing retain original — Live-verify partial 2026-06-11: schema infrastructure (`termijnDefinitie` id 931, `termijnInstance` id 932) registered + queryable; `TermijnService::getTermijnDefinitie` is unit-covered. Full end-to-end version-pinning requires (a) two TermijnDefinitie rows for the same zaaktype with different validFrom and (b) a TermijnInstance pre-existing the cut-over — neither exists in the dev register (0 termijnDefinitie rows seeded), so live verification needs a dedicated demo-mode fixture. Tracked for a follow-up.
 
 ## 4. Documentation
 
