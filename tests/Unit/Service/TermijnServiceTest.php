@@ -249,6 +249,43 @@ class FakeTermijnStore
     }
 
     /**
+     * Slug-aware search bridge mirroring OpenRegister ObjectService::searchObjectsBySlug().
+     *
+     * The store is keyed by schema slug, so resolution is a direct lookup plus
+     * the same equality-filter semantics as findObjects(). This is the entry
+     * point the SearchesObjects trait selects when register/schema are slugs.
+     *
+     * @param string               $registerSlug Register slug.
+     * @param string               $schemaSlug   Schema slug.
+     * @param array<string, mixed> $filters      Object-field filters.
+     * @return array<int, array<string, mixed>>
+     */
+    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array
+    {
+        return $this->findObjects($registerSlug, $schemaSlug, $filters);
+    }
+
+    /**
+     * Numeric-ID search bridge mirroring OpenRegister ObjectService::searchObjects().
+     *
+     * The SearchesObjects trait packs register/schema into a `@self` block and
+     * keeps object-field filters at the top level. This fake resolves the schema
+     * from `@self.schema` (matching the trait's query shape) and applies the
+     * remaining top-level filters.
+     *
+     * @param array<string, mixed> $query Query with `@self` register/schema plus field filters.
+     * @return array<int, array<string, mixed>>
+     */
+    public function searchObjects(array $query = []): array
+    {
+        $self   = ($query['@self'] ?? []);
+        $schema = (string) ($self['schema'] ?? '');
+        unset($query['@self']);
+
+        return $this->findObjects('', $schema, $query);
+    }
+
+    /**
      * @param string               $register Register.
      * @param string               $schema   Schema.
      * @param array<string, mixed> $object   Object.
