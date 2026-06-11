@@ -149,4 +149,32 @@ class FakeTermijnObjectService
     {
         return array_values($this->store[$schema] ?? []);
     }
+
+    /**
+     * Slug-aware search bridge mirroring ObjectService::searchObjectsBySlug().
+     *
+     * The seed service routes idempotency lookups through the SearchesObjects
+     * trait, which calls this method for slug-form register/schema config.
+     *
+     * @param string               $registerSlug Register slug.
+     * @param string               $schemaSlug   Schema slug.
+     * @param array<string, mixed> $filters      Filters.
+     * @return array<int, array<string, mixed>>
+     */
+    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array
+    {
+        return $this->findObjects($registerSlug, $schemaSlug, $filters);
+    }
+
+    /**
+     * Numeric-ID search bridge mirroring ObjectService::searchObjects().
+     *
+     * @param array<string, mixed> $query Query carrying `@self` register/schema.
+     * @return array<int, array<string, mixed>>
+     */
+    public function searchObjects(array $query = []): array
+    {
+        $schema = (string) (($query['@self'] ?? [])['schema'] ?? '');
+        return $this->findObjects('', $schema);
+    }
 }

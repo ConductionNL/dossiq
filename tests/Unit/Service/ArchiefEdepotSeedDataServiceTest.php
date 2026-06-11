@@ -168,4 +168,33 @@ class FakeArchiefObjectService
     {
         return array_values($this->store[$schema] ?? []);
     }
+
+    /**
+     * Slug-aware search bridge mirroring ObjectService::searchObjectsBySlug().
+     *
+     * The SearchesObjects trait selects this entry point when register/schema
+     * are slugs (as the seed service's config returns), so the fake must expose
+     * it or idempotency detection silently fails open.
+     *
+     * @param string               $registerSlug Register slug.
+     * @param string               $schemaSlug   Schema slug.
+     * @param array<string, mixed> $filters      Filters.
+     * @return array<int, array<string, mixed>>
+     */
+    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array
+    {
+        return $this->findObjects($registerSlug, $schemaSlug, $filters);
+    }
+
+    /**
+     * Numeric-ID search bridge mirroring ObjectService::searchObjects().
+     *
+     * @param array<string, mixed> $query Query carrying `@self` register/schema.
+     * @return array<int, array<string, mixed>>
+     */
+    public function searchObjects(array $query = []): array
+    {
+        $schema = (string) (($query['@self'] ?? [])['schema'] ?? '');
+        return $this->findObjects('', $schema);
+    }
 }
