@@ -8,7 +8,7 @@ Traces to giant tasks 3.6 and 2.5; spec REQ-006.
 - [x] Implement `SupplierMessageService.addResponse(messageRef, handlerResponse)` — outbound message + audit log
 - [x] Implement `SupplierMessageService.getConversationHistory(caseRef, supplierRef)` — scoped chronological thread
 - [~] Implement `RouteSupplierMessageJob` — dispatch handler inbox + email notification — deferred to chain member 16
-- [~] Create `MessageController`: GET /messages?caseId=, POST /messages, GET /messages/{id} — manifest renderer serves CRUD on `supplierMessage`
+- [ ] Create `MessageController`: GET /messages?caseId=, POST /messages, GET /messages/{id} — manifest renderer serves CRUD on `supplierMessage`
 - [x] Apply member 04 scope validation; enforce write-once immutability — schema declares `x-insert-only:true`; service has no update method
 - [x] Implement `MessageComposer` validation: required text, ≤5 attachments ≤10MB each, server-side type/size validation
 - [~] Build `MessageThread`: chronological, inbound (light bg) vs outbound (white bg) — Vue deferred

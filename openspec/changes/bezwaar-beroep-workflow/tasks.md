@@ -48,39 +48,39 @@ a live OpenRegister instance are deferred with reasons.
 
 ## Seed data implementation
 
-- [~] **T4** (already satisfied by prior bezwaar seed work) — Install `Bezwaarschrift behandeling` caseType seed with
+- [x] **T4** (already satisfied by prior bezwaar seed work) — Install `Bezwaarschrift behandeling` caseType seed with
   AWB-compliant fields: `processingDeadline: "P6W"`, `extensionAllowed: true`,
   `extensionPeriod: "P6W"`, `suspensionAllowed: true`, `publicationRequired: true`.
   - files: `lib/Settings/procest_register.json` (caseType entry)
   - acceptance: `GET /api/caseTypes?identifier=bezwaar` returns 1 record
     with all required AWB fields
 
-- [~] **T5** (already satisfied by prior bezwaar seed/workflow work) — Install `Beroepschrift behandeling` caseType seed with
+- [x] **T5** (already satisfied by prior bezwaar seed/workflow work) — Install `Beroepschrift behandeling` caseType seed with
   `processingDeadline: "P52W"`, `extensionAllowed: false`,
   `suspensionAllowed: false`.
   - files: `lib/Settings/procest_register.json` (caseType entry)
   - acceptance: `GET /api/caseTypes?identifier=beroep` returns 1 record
 
-- [~] **T6** (already satisfied by prior bezwaar seed/workflow work) — Install bezwaar statusType seeds: 7 ordered steps
+- [x] **T6** (already satisfied by prior bezwaar seed/workflow work) — Install bezwaar statusType seeds: 7 ordered steps
   (Ontvangen through Bekendmaking) + 2 terminal statuses
   (Niet-ontvankelijk verklaard, Ingetrokken).
   - files: `lib/Settings/procest_register.json` (statusType entries)
   - acceptance: 9 statusType records exist linked to the bezwaar caseType;
     Bekendmaking has `isFinal: true`
 
-- [~] **T7** (already satisfied by prior bezwaar seed/workflow work) — Install beroep statusType seeds: 4 steps (Beroepschrift
+- [x] **T7** (already satisfied by prior bezwaar seed/workflow work) — Install beroep statusType seeds: 4 steps (Beroepschrift
   ontvangen, Verweerschrift opstellen, Zitting, Uitspraak).
   - files: `lib/Settings/procest_register.json` (statusType entries)
   - acceptance: 4 statusType records exist linked to the beroep caseType
 
-- [~] **T8** (already satisfied by prior bezwaar seed/workflow work) — Install roleType seeds for bezwaar (Bezwaarmaker,
+- [x] **T8** (already satisfied by prior bezwaar seed/workflow work) — Install roleType seeds for bezwaar (Bezwaarmaker,
   Vertegenwoordiger, Behandelaar, Commissievoorzitter, Commissielid)
   and beroep (Appellant, Verweerder, Procesgemachtigde).
   - files: `lib/Settings/procest_register.json` (roleType entries)
   - acceptance: 8 roleType records installed; each linked to the correct
     caseType
 
-- [~] **T9** (already satisfied by prior bezwaar seed/workflow work) — Install documentType seeds for bezwaar and beroep:
+- [x] **T9** (already satisfied by prior bezwaar seed/workflow work) — Install documentType seeds for bezwaar and beroep:
   Bezwaarschrift (required), Primair besluit kopie, Verweerschrift,
   Hoorzittingverslag, Advies commissie, Beslissing op bezwaar,
   Beroepschrift, Dossier export.
@@ -88,19 +88,19 @@ a live OpenRegister instance are deferred with reasons.
   - acceptance: 8 documentType records installed; Bezwaarschrift has
     `isRequired: true`
 
-- [~] **T10** (already satisfied by prior bezwaar seed/workflow work) — Install decisionType seeds: Gegrond, Ongegrond,
+- [x] **T10** (already satisfied by prior bezwaar seed/workflow work) — Install decisionType seeds: Gegrond, Ongegrond,
   Niet-ontvankelijk, Gedeeltelijk gegrond — linked to bezwaar caseType.
   - files: `lib/Settings/procest_register.json` (decisionType entries)
   - acceptance: 4 decisionType records linked to bezwaar caseType
 
-- [~] **T11** (already satisfied by prior bezwaar seed/workflow work) — Install resultType seeds: Bezwaar gegrond (herroeping),
+- [x] **T11** (already satisfied by prior bezwaar seed/workflow work) — Install resultType seeds: Bezwaar gegrond (herroeping),
   Bezwaar ongegrond, Bezwaar niet-ontvankelijk, Beroep ingesteld —
   linked to bezwaar caseType with archival periods.
   - files: `lib/Settings/procest_register.json` (resultType entries)
   - acceptance: 4 resultType records with `archivalPeriod` set per
     gemeentelijke selectielijst (bezwaar: P10Y)
 
-- [~] **T12** (already satisfied by prior bezwaar seed/workflow work) — Install propertyDefinition seeds for AWB-specific fields:
+- [x] **T12** (already satisfied by prior bezwaar seed/workflow work) — Install propertyDefinition seeds for AWB-specific fields:
   `verdagingReden` (text), `opschortingReden` (text),
   `opschortingStartDatum` (date), `opschortingEindDatum` (date),
   `proVoorzieningGevraagd` (boolean) — all linked to bezwaar caseType.
@@ -109,14 +109,14 @@ a live OpenRegister instance are deferred with reasons.
 
 ## workflowTemplate implementation
 
-- [~] **T13** (already satisfied by prior bezwaar seed/workflow work) — Author bezwaar `workflowTemplate` JSON with 7 ordered steps,
+- [x] **T13** (already satisfied by prior bezwaar seed/workflow work) — Author bezwaar `workflowTemplate` JSON with 7 ordered steps,
   checklist items per step, and guard-annotated transitions.
   - files: `lib/Settings/bezwaar_workflow.json` (or inline in register seed)
   - acceptance: workflowTemplate activates on bezwaar caseType; all 7 steps
     present with correct statusType references; Niet-ontvankelijk and
     Ingetrokken terminal transitions declared
 
-- [~] **T14** (already satisfied by prior bezwaar seed/workflow work) — Declare ontvankelijkheidstoets guard in workflowTemplate:
+- [x] **T14** (already satisfied by prior bezwaar seed/workflow work) — Declare ontvankelijkheidstoets guard in workflowTemplate:
   `objection.isTimely = true` required for Ontvankelijkheidstoets →
   Hoorzitting plannen; `isTimely = false` routes to Niet-ontvankelijk
   verklaard.
@@ -124,7 +124,7 @@ a live OpenRegister instance are deferred with reasons.
   - acceptance: attempt to advance to Hoorzitting plannen with
     `isTimely = false` returns guard violation error
 
-- [~] **T15** (already satisfied by prior bezwaar seed/workflow work) — Declare hoorzitting guard in workflowTemplate:
+- [x] **T15** (already satisfied by prior bezwaar seed/workflow work) — Declare hoorzitting guard in workflowTemplate:
   `hearingSession` record exists with `scheduledDate` set OR
   `hearingWaived = true` required for Hoorzitting → Advies commissie
   (or Beslissing op bezwaar when commissie track off).
@@ -132,14 +132,14 @@ a live OpenRegister instance are deferred with reasons.
   - acceptance: attempt to advance without hearingSession or waiver
     returns "Hoorrecht (AWB art. 7:2) niet vervuld" guard violation
 
-- [~] **T16** (already satisfied by prior bezwaar seed/workflow work) — Declare commissieadvies skip path in workflowTemplate:
+- [x] **T16** (already satisfied by prior bezwaar seed/workflow work) — Declare commissieadvies skip path in workflowTemplate:
   when `caseType.referenceProcess.commissieTrack = false`, allow direct
   transition Hoorzitting → Beslissing op bezwaar without advisoryReport.
   - files: `lib/Settings/bezwaar_workflow.json`
   - acceptance: bezwaar case without commissie track advances from
     Hoorzitting to Beslissing op bezwaar without requiring advisoryReport
 
-- [~] **T17** (already satisfied by prior bezwaar seed/workflow work) — Declare workflowTemplate automatic actions:
+- [x] **T17** (already satisfied by prior bezwaar seed/workflow work) — Declare workflowTemplate automatic actions:
   - Ontvangen entry: `createTask("Registreer bezwaarschrift", behandelaar)`
   - Ontvankelijkheidstoets → Hoorzitting plannen: `createTask("Plan hoorzitting")`
   - Beslissing op bezwaar entry: `createTask("Stel beslissing op bezwaar op")`
@@ -148,7 +148,7 @@ a live OpenRegister instance are deferred with reasons.
   - files: `lib/Settings/bezwaar_workflow.json`
   - acceptance: tasks are auto-created at the correct step transitions
 
-- [~] **T18** (already satisfied by prior bezwaar seed/workflow work) — Author beroep `workflowTemplate` JSON with 4 ordered steps
+- [x] **T18** (already satisfied by prior bezwaar seed/workflow work) — Author beroep `workflowTemplate` JSON with 4 ordered steps
   (Beroepschrift ontvangen, Verweerschrift opstellen, Zitting, Uitspraak).
   - files: `lib/Settings/beroep_workflow.json`
   - acceptance: workflowTemplate activates on beroep caseType

@@ -35,7 +35,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
   - **Acceptance:** `openspec validate --strict` passes; lifecycle block is present on the
     `Voorstel` schema; repair step registers the schema without errors on the dev environment.
 
-- [~] P-1.2 Create `lib/Lifecycle/VoorstelSubmitGuard.php` with a single method
+- [ ] P-1.2 Create `lib/Lifecycle/VoorstelSubmitGuard.php` with a single method
   `allows(array $object): bool` that validates the required `onderwerp` and `type`
   fields are non-empty.
   - **files:** `lib/Lifecycle/VoorstelSubmitGuard.php`
@@ -70,13 +70,13 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
   - **Acceptance:** All ten transitions registered; sequential AWB progression allowed;
     out-of-sequence transitions (e.g. ontvangen → in_behandeling) rejected with HTTP 422.
 
-- [~] P-3.2 Create `lib/Lifecycle/HoorzittingAfzienGuard.php` with a single method
+- [ ] P-3.2 Create `lib/Lifecycle/HoorzittingAfzienGuard.php` with a single method
   `allows(array $object): bool` that returns `true` if `hoorrecht_afgezien === true`.
   - **files:** `lib/Lifecycle/HoorzittingAfzienGuard.php`
   - **Acceptance:** Guard returns `false` when `hoorrecht_afgezien` is `false` or absent;
     `composer check:strict` passes.
 
-- [~] P-3.3 Create `lib/Lifecycle/BezwaarDeadlineGuard.php` with a single method
+- [ ] P-3.3 Create `lib/Lifecycle/BezwaarDeadlineGuard.php` with a single method
   `allows(array $object): bool` that checks whether `processingDeadline` has not
   been exceeded for deadline-sensitive transitions.
   - **files:** `lib/Lifecycle/BezwaarDeadlineGuard.php`
@@ -89,7 +89,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-4. Remove STATUS_* constants from ParaferingService (S)
 
-- [~] P-4.1 Remove the four `const STATUS_*` declarations from
+- [ ] P-4.1 Remove the four `const STATUS_*` declarations from
   `lib/Service/ParaferingService.php`:
   - `STATUS_CONCEPT`, `STATUS_IN_PARAFERING`, `STATUS_TERUGGESTUURD`, `STATUS_GEPARAFEERD`
   - Update all references in `ParaferingService` itself to use string literals.
@@ -97,14 +97,14 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
   - **Acceptance:** No `const STATUS_` declarations remain; `composer check:strict` passes
     with no undefined constant errors.
 
-- [~] P-4.2 Update all callers of `ParaferingService::STATUS_*` constants across the codebase
+- [ ] P-4.2 Update all callers of `ParaferingService::STATUS_*` constants across the codebase
   (controllers, listeners, tests) to use the string literals that match the
   `x-openregister-lifecycle` enum values.
   - **files:** any PHP file that references `ParaferingService::STATUS_*`
   - **Acceptance:** `grep -rn "STATUS_CONCEPT\|STATUS_IN_PARAFERING\|STATUS_TERUGGESTUURD\|STATUS_GEPARAFEERD"
     lib/` returns zero results; `composer check:strict` passes.
 
-- [~] P-4.3 Remove or refactor direct `saveObject` calls in `ParaferingService` that set
+- [ ] P-4.3 Remove or refactor direct `saveObject` calls in `ParaferingService` that set
   `lifecycle` or `status` fields on voorstel/parafeerroute/bezwaar objects. Replace
   with PATCH requests through OR's object endpoint so OR's lifecycle engine validates
   the transition.
@@ -118,13 +118,13 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-5. Replace Application.php lifecycle action listeners with schema hooks (M)
 
-- [~] P-5.1 Remove Application.php event listener registrations for any
+- [ ] P-5.1 Remove Application.php event listener registrations for any
   `ObjectCreatedEvent`/`ObjectUpdatedEvent` listeners that trigger automatic actions
   (notifications, task creation) on voorstel/parafeerroute/bezwaar lifecycle transitions.
   - **files:** `lib/AppInfo/Application.php`
   - **Acceptance:** No such listener registrations remain; `composer check:strict` passes.
 
-- [~] P-5.2 Add `x-openregister-hooks` entries to the affected schemas in
+- [ ] P-5.2 Add `x-openregister-hooks` entries to the affected schemas in
   `lib/Settings/procest_register.json` for the `updated` event, targeting the existing
   n8n workflows for parafering notification and completion actions. Use `mode: "async"`.
   - **files:** `lib/Settings/procest_register.json`
@@ -137,7 +137,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-6. PHPUnit lifecycle tests for all three schemas (M)
 
-- [~] P-6.1 Create `tests/Unit/Lifecycle/VoorstelLifecycleTest.php` covering:
+- [ ] P-6.1 Create `tests/Unit/Lifecycle/VoorstelLifecycleTest.php` covering:
   (a) `concept → in_parafering` succeeds when `VoorstelSubmitGuard` passes;
   (b) `concept → in_parafering` is blocked when guard returns false;
   (c) `geparafeerd → in_parafering` is rejected (invalid transition);
@@ -145,7 +145,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
   - **files:** `tests/Unit/Lifecycle/VoorstelLifecycleTest.php`
   - **Acceptance:** All test cases pass; `composer test` exits 0.
 
-- [~] P-6.2 Create `tests/Unit/Lifecycle/BezwaarLifecycleTest.php` covering:
+- [ ] P-6.2 Create `tests/Unit/Lifecycle/BezwaarLifecycleTest.php` covering:
   (a) sequential AWB status progression passes;
   (b) skipping `ontvankelijkheidstoets` (ontvangen → in_behandeling) is rejected;
   (c) `hoorzitting_overslaan` blocked when `hoorrecht_afgezien` is false;
@@ -154,7 +154,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
   - **files:** `tests/Unit/Lifecycle/BezwaarLifecycleTest.php`
   - **Acceptance:** All test cases pass; `composer test` exits 0.
 
-- [~] P-6.3 Create `tests/Unit/Lifecycle/ParaferingServiceStepTest.php` confirming
+- [ ] P-6.3 Create `tests/Unit/Lifecycle/ParaferingServiceStepTest.php` confirming
   that step-routing methods (`activateNextStep`, `getActiveStep`, `recordStepAction`)
   do NOT set `lifecycle` or `status` on the parent voorstel or parafeerroute objects.
   - **files:** `tests/Unit/Lifecycle/ParaferingServiceStepTest.php`

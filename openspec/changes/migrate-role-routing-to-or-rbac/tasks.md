@@ -29,7 +29,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-1. Add ncGroupId property to roleType schema (S)
 
-- [~] P-1.1 In `lib/Settings/procest_register.json`, add `ncGroupId` as a nullable string
+- [ ] P-1.1 In `lib/Settings/procest_register.json`, add `ncGroupId` as a nullable string
   property to the `roleType` schema:
   ```json
   "ncGroupId": {
@@ -43,7 +43,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-2. Add authorization block to workflowStep schema (M)
 
-- [~] P-2.1 Add an `authorization` block to the `workflowStep` schema in `procest_register.json`.
+- [ ] P-2.1 Add an `authorization` block to the `workflowStep` schema in `procest_register.json`.
   Use the register's OR RBAC structure to restrict read/update access to users in the group
   resolved from `assigneeRole` → `roleType.ncGroupId`. If OR's named-role expansion at
   register level is not yet available in the deployed `rbac-scopes` implementation, use a
@@ -53,7 +53,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
     {register}/workflowStep` goes through MagicRbacHandler for the procest register; no
     runtime errors on the endpoint.
 
-- [~] P-2.2 Verify the `workflowTemplate` schema does NOT need a restrictive `authorization`
+- [ ] P-2.2 Verify the `workflowTemplate` schema does NOT need a restrictive `authorization`
   block for the step-routing scenario (templates are admin-managed definitions, not per-case
   objects). Document the decision in design.md.
   - **Acceptance:** Design.md updated with the decision; `workflowTemplate` schema unchanged
@@ -65,14 +65,14 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-3. Expose ncGroupId field on roleType admin UI (S)
 
-- [~] P-3.1 In the case type admin settings panel, add a text input field "NC Group ID"
+- [ ] P-3.1 In the case type admin settings panel, add a text input field "NC Group ID"
   for each roleType configuration. The field maps to `ncGroupId` on the roleType OR object.
   Validate the field client-side: if the user enters a value, display a hint "this must be
   an existing Nextcloud group ID."
   - **Acceptance:** Admin can view and edit `ncGroupId` on a roleType in the admin settings
     UI; save correctly updates the OR object.
 
-- [~] P-3.2 In `StepConfigPanel.vue`, add a read-only display field "NC Group:" showing
+- [ ] P-3.2 In `StepConfigPanel.vue`, add a read-only display field "NC Group:" showing
   the `ncGroupId` of the step's resolved roleType (if set). Display "— (not mapped)" if
   `ncGroupId` is null.
   - **Acceptance:** StepConfigPanel shows the resolved NC group ID for steps with a configured
@@ -84,7 +84,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-4. Verify KpiCacheInvalidationListener compliance (S)
 
-- [~] P-4.1 Read `lib/Listener/KpiCacheInvalidationListener.php` and confirm:
+- [ ] P-4.1 Read `lib/Listener/KpiCacheInvalidationListener.php` and confirm:
   (a) All event `use` imports are from `OCA\OpenRegister\Event\*` namespace.
   (b) No `$groupManager->isInGroup()` or equivalent access-control call in the body.
   (c) No write to any parallel audit or permission store.
@@ -99,7 +99,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-5. Integration test: step access enforced by OR RBAC (M)
 
-- [~] P-5.1 Write an integration test (Newman or PHPUnit integration) that:
+- [ ] P-5.1 Write an integration test (Newman or PHPUnit integration) that:
   (a) Creates two NC users: `jan` (not in `vergunningverleners`) and `piet` (in
       `vergunningverleners`).
   (b) Creates a roleType with `ncGroupId: "vergunningverleners"`.
@@ -114,7 +114,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-6. Unit test: roleType ncGroupId resolution (S)
 
-- [~] P-6.1 Write a PHPUnit unit test for the routing resolution logic:
+- [ ] P-6.1 Write a PHPUnit unit test for the routing resolution logic:
   mock an OR `ObjectService` response returning a roleType with `ncGroupId: "group-a"`;
   assert that the step routing service returns `"group-a"` as the enforcement group.
   Mock a roleType with `ncGroupId: null`; assert the routing service returns null (open access).
@@ -126,7 +126,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-7. Update role-based-step-routing cross-reference (S)
 
-- [~] P-7.1 Add a note to `openspec/specs/role-based-step-routing/spec.md` in the `## ADDED
+- [ ] P-7.1 Add a note to `openspec/specs/role-based-step-routing/spec.md` in the `## ADDED
   Requirements` section (or as a standalone comment above) that links to this migration change:
   "Enforcement mechanism: see `migrate-role-routing-to-or-rbac` — step access is enforced
   server-side via OR RBAC (rbac-scopes) using `roleType.ncGroupId` as the NC group identifier."

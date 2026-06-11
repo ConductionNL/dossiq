@@ -58,15 +58,15 @@
 - [x] TASK-ZMP-17: `src/views/portaal/MijnZaken.vue` lists the citizen's cases (Kenmerk, Zaaktype, Onderwerp, Status, Ingediend op, Termijn) with an accessible keyboard-navigable table, empty-state message and skip-to-main-content link. Virtual scrolling / filters are a follow-up enhancement.
 - [x] TASK-ZMP-18: `MijnZaken.vue` detail view shows the StatusTimeline, deadline info and a possible-actions list. Document/messaging tabs reuse the same IDOR-safe endpoints; full tab UI is a follow-up.
 - [x] TASK-ZMP-19: `src/views/portaal/components/StatusTimeline.vue` renders an accessible timeline with green/orange/red deadline indicator, human-readable days-remaining, overdue warning text and a visually-hidden table fallback for screen readers.
-- [~] TASK-ZMP-20: PARTIAL — document ACL + audit logic implemented server-side (`PortalDocumentService`, TASK-ZMP-05). A standalone `DocumentList.vue` tab is a follow-up.
-- [~] TASK-ZMP-21: PARTIAL — messaging persistence implemented server-side (`PortalMessageService`, TASK-ZMP-06). A standalone `MessagingWidget.vue` thread UI is a follow-up.
-- [~] TASK-ZMP-22: PARTIAL — bezwaar validation/submission implemented server-side (`PortalRequestService`, TASK-ZMP-07). A standalone `BezwaarForm.vue` is a follow-up.
-- [~] TASK-ZMP-23: PARTIAL — klacht validation/submission implemented server-side (TASK-ZMP-08). A standalone `KlachtForm.vue` is a follow-up.
+- [ ] TASK-ZMP-20: PARTIAL — document ACL + audit logic implemented server-side (`PortalDocumentService`, TASK-ZMP-05). A standalone `DocumentList.vue` tab is a follow-up.
+- [ ] TASK-ZMP-21: PARTIAL — messaging persistence implemented server-side (`PortalMessageService`, TASK-ZMP-06). A standalone `MessagingWidget.vue` thread UI is a follow-up.
+- [ ] TASK-ZMP-22: PARTIAL — bezwaar validation/submission implemented server-side (`PortalRequestService`, TASK-ZMP-07). A standalone `BezwaarForm.vue` is a follow-up.
+- [ ] TASK-ZMP-23: PARTIAL — klacht validation/submission implemented server-side (TASK-ZMP-08). A standalone `KlachtForm.vue` is a follow-up.
 - [~] TASK-ZMP-24: DEFERRED (cross-app) — subsidie listing requires the opencatalogi API; out of the host-app build scope.
 - [x] TASK-ZMP-25: `src/views/portaal/MijnNotificaties.vue` manages channels (email/SMS toggles) and per-event checkboxes; the Berichtenbox switch is rendered checked and disabled (statutory); persists via PATCH.
-- [~] TASK-ZMP-26: SUPERSEDED — manifest-v2 provides the app shell/menu; the portal adds menu entries via `src/manifest.d/50-zaakportaal.json`. No bespoke MainLayout/MainMenu (they do not exist in manifest-v2).
+- [ ] TASK-ZMP-26: SUPERSEDED — manifest-v2 provides the app shell/menu; the portal adds menu entries via `src/manifest.d/50-zaakportaal.json`. No bespoke MainLayout/MainMenu (they do not exist in manifest-v2).
 - [~] TASK-ZMP-27: PARTIAL — loading + error + skip-link states are inline in the portal views (NcLoadingIcon, role="alert", skip link). A SessionWarning timer is a DEFERRED edge concern.
-- [~] TASK-ZMP-28: SUPERSEDED — routing is declarative via the manifest `pages[]` (`/portaal/mijn-zaken`, `/portaal/notificaties`); manifest-v2 has no `src/router/index.js`.
+- [ ] TASK-ZMP-28: SUPERSEDED — routing is declarative via the manifest `pages[]` (`/portaal/mijn-zaken`, `/portaal/notificaties`); manifest-v2 has no `src/router/index.js`.
 
 ## Styling & Accessibility
 

@@ -22,8 +22,8 @@ Member 8 of 12 (code). Depends on member 07. Traces to giant Task 10 + Task 11 +
 ## 3. Domain provisioning + tests
 
 - [~] Implement `DomainProvisioningService` (validateDomain, requestACME DNS challenge, installCertificate) — live ACME wiring needs cert-manager infra; deferred to chain member 12
-- [~] Let's Encrypt integration + cert install in reverse proxy — same deferral
-- [~] Subdomain → tenant resolution feeding the context middleware — context middleware already accepts `X-Tenant-Id` header; subdomain lookup wires through once a domain provisioning service lands
+- [ ] Let's Encrypt integration + cert install in reverse proxy — same deferral
+- [ ] Subdomain → tenant resolution feeding the context middleware — context middleware already accepts `X-Tenant-Id` header; subdomain lookup wires through once a domain provisioning service lands
 - [~] Integration test: config CRUD + logo upload + feature flags — requires live OR; deferred to chain member 12
 - [x] Unit test: theming-tokens API + injection; custom-CSS sanitiser rejects malicious rules — 6 of the 16 new tests cover sanitiser + theming-token paths
 - [~] Integration test: domain provisioning workflow (mockable) + ACME error handling — deferred with the domain service

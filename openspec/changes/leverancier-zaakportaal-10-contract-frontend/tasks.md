@@ -5,8 +5,8 @@
 Traces to giant task 2.4; spec REQ-005.
 
 - [~] Implement `ContractList` component — Vue deferred; backend `SupplierScopeService::listSupplierObjects()` serves the rows
-- [~] Fetch GET /api/supplier-portal/contracts — `listSupplierObjects()` is the primitive
-- [~] Default sort by end date (nearest first); clickable headers re-sort — Vue table concern
+- [ ] Fetch GET /api/supplier-portal/contracts — `listSupplierObjects()` is the primitive
+- [ ] Default sort by end date (nearest first); clickable headers re-sort — Vue table concern
 - [x] Warning badge: if daysUntilExpiry < 90 → orange "Vervalt over [n] dagen" + highlighted row — backend `daysUntilExpiry()` + `isWithinRenewalWindow()` (chain member 09) returns the data the Vue badge consumes
 - [~] Build `ContractDetail` page — Vue deferred
 - [x] "Verlenging aanvragen" button visible only if renewal option = manual_request AND within 90 days — `showRenewalButton()`

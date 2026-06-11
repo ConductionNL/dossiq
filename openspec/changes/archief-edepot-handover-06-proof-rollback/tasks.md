@@ -18,7 +18,7 @@ Chain member 6 of 8 (`kind: code`, depends_on member 05). Traces to giant Tasks 
 ## 3. Retry-after-correction
 
 - [~] Implement `POST /api/archief/triggers/{triggerId}/retry` — DEFERRED with member 05; controller skeleton is reserved in `lib/Controller/ArchiefController.php` (only `listRules`/`createRule`/`dashboardStats`/`auditLog` shipped so far)
-- [~] Declare explicit auth posture + IDOR guard — will follow the controller's existing `requireAuthenticated()` + per-trigger `requireRoleForCase()` pattern when added
+- [ ] Declare explicit auth posture + IDOR guard — will follow the controller's existing `requireAuthenticated()` + per-trigger `requireRoleForCase()` pattern when added
 - [~] Validate retry only allowed on triggers in status `gefaald` — DEFERRED with TASK-06-03
 
 ## 4. Tests

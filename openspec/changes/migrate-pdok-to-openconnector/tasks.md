@@ -41,13 +41,13 @@
 
 ### PR-3. End-to-end verification (S)
 
-- [~] PR-3.1 Run the procest frontend in the dev environment (localhost:3000); verify
+- [ ] PR-3.1 Run the procest frontend in the dev environment (localhost:3000); verify
   address autocomplete still resolves suggestions when typing a partial address and that
   a full lookup populates all address fields.
   - **Acceptance:** Manual or Playwright smoke test confirms the address field functions
     correctly end-to-end via the openconnector shim.
 
-- [~] PR-3.2 Confirm that when openconnector is not installed (404 on the endpoint),
+- [ ] PR-3.2 Confirm that when openconnector is not installed (404 on the endpoint),
   the shim surfaces an inline warning on the address field without breaking form
   submission.
   - **Acceptance:** Test scenario with openconnector absent confirms form submits
@@ -55,7 +55,7 @@
 
 ### PR-4. Seed data for procest test environment (S)
 
-- [~] PR-4.1 Ensure the two valid address fixtures (Conduction HQ, Tilburg Stadhuis)
+- [ ] PR-4.1 Ensure the two valid address fixtures (Conduction HQ, Tilburg Stadhuis)
   from `openregister/tests/fixtures/addresses/` are loadable in the procest dev/test
   environment so E2E tests can assert against OR-stored addresses without requiring a
   live PDOK or openconnector connection. Add a test environment bootstrap step that
