@@ -23,7 +23,7 @@ Member 8 of 11 (code). Depends on member 07. Traces to giant Tasks 14, 15 (REQ-T
 - [x] Consume the extension trigger from member 03 — listens to `termijn-extension-granted`
 - [x] Consume the ingebrekestelling-receipt trigger from member 05 — listens to `ingebrekestelling-ontvangen`
 - [x] Consume the payment trigger from member 07 — listens to `dwangsom-betaald`
-- [~] Implement async notification queue (non-blocking on SMTP failures) — DEFERRED: current implementation uses Nextcloud's IMailer (synchronous) with try/catch fallback to notification-only; switching to a queue requires either NC global background-job (`OC\Mail\EMailTemplate`) or rabbit; not blocking burger flows since failures are logged + retried by daily-scan
+- [x] Implement async notification queue (non-blocking on SMTP failures) — `lib/Service/TermijnNotificationService.php::queueTermijnNotification` (W10, 2026-06-11) + `lib/BackgroundJob/TermijnNotificationDispatchJob.php`. The service accepts an optional `IJobList` and exposes a `queueTermijnNotification(type, instanceId, recipient, context)` enqueue path: when a job list is wired the method writes a QueuedJob carrying the template arguments and the runner re-enters `sendTermijnNotification` outside the request thread. SMTP / berichtenbox-router failures therefore never block burger flows; the QueuedJob runner retries automatically. The synchronous `sendTermijnNotification` path is preserved for callers that need a same-request payload (template rendering tests + extension lifecycle).
 
 ## 4. Tests
 

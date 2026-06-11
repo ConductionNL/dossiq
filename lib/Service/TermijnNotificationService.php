@@ -30,6 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use OCA\Procest\BackgroundJob\TermijnNotificationDispatchJob;
+use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -50,13 +52,57 @@ class TermijnNotificationService
      * @param TermijnService                $termijnService Termijn service.
      * @param BerichtenboxRoutingService    $router         Router (procest notification-router).
      * @param LoggerInterface               $logger         Logger.
+     * @param IJobList|null                 $jobList        Optional job list for async dispatch.
      */
     public function __construct(
         private readonly TermijnService $termijnService,
         private readonly BerichtenboxRoutingService $router,
         private readonly LoggerInterface $logger,
+        private readonly ?IJobList $jobList = null,
     ) {
     }//end __construct()
+
+    /**
+     * Enqueue a notification for asynchronous dispatch via NC's QueuedJob
+     * runner. The same payload contract as {@see sendTermijnNotification}
+     * but non-blocking on SMTP / berichtenbox-router failure — the job
+     * runner retries automatically.
+     *
+     * @param string               $type              Template type.
+     * @param string               $termijnInstanceId Instance id.
+     * @param string               $recipientUserId   Recipient user id.
+     * @param array<string, mixed> $context           Extra context.
+     *
+     * @return bool TRUE when the job was queued; FALSE when no job list is
+     *              wired (callers MAY fall back to synchronous send).
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+     */
+    public function queueTermijnNotification(
+        string $type,
+        string $termijnInstanceId,
+        string $recipientUserId,
+        array $context = []
+    ): bool {
+        if ($this->jobList === null) {
+            return false;
+        }
+        if (in_array($type, self::TEMPLATES, true) === false) {
+            throw new \InvalidArgumentException('Unknown template: '.$type);
+        }
+
+        $this->jobList->add(TermijnNotificationDispatchJob::class, [
+            'type'              => $type,
+            'termijnInstanceId' => $termijnInstanceId,
+            'recipientUserId'   => $recipientUserId,
+            'context'           => $context,
+        ]);
+        $this->logger->info(
+            'TermijnNotification queued',
+            ['type' => $type, 'recipient' => $recipientUserId, 'instance' => $termijnInstanceId]
+        );
+        return true;
+    }//end queueTermijnNotification()
 
     /**
      * Send a templated termijnbewaking notification.
