@@ -4,13 +4,13 @@ Chain member 4 of 8 (`kind: code`, depends_on member 03). Traces to giant Tasks 
 
 ## 1. DocumentExporter
 
-- [~] Implement `exportToFormatPair(documentId)` → {pdfA, original} — DEFERRED: requires docudesk integration; ADR-022 routes PDF/A conversion through openconnector + docudesk; the BagIt bundler `BagItBundlerService::buildBagIt` currently includes the original document binaries and trusts upstream conversion. Tracked alongside `migrate-pdok-to-openconnector` for the connector layer.
+- [~] Implement `exportToFormatPair(documentId)` → {pdfA, original} — DEFERRED: requires docudesk integration; ADR-022 routes PDF/A conversion through openconnector + docudesk; the BagIt bundler `BagItBundlerService::buildBagIt` currently includes the original document binaries and trusts upstream conversion. Tracked alongside `migrate-pdok-to-openconnector` for the connector layer. **W20 cross-app status (2026-06-12):** docudesk ships PDF/A-3b conversion in `docudesk/lib/Service/PdfService.php` (`pdfa` option, line 248; embedded fonts; archival metadata at line 235) — the rendering backend exists; the missing piece is an explicit cross-app entry point (HTTP endpoint or OCP-bus adapter) and the openconnector adapter shim.
 - [~] Handle digitally signed documents — DEFERRED with TASK-04-01; signature metadata IS preserved on `SipBundel.documents[].documentSignature` per spec-03
 - [x] Read documents and update `SipBundel.documents[]` via OpenRegister ObjectService — `BagItBundlerService` and `MetadataBundlerService` both use ObjectService only
 
 ## 2. PdfAConverter wrapper
 
-- [~] Call docudesk PDF/A conversion (direct HTTP or openconnector adapter) — DEFERRED with TASK-04-01; the adapter pattern is sketched in `lib/Service/Beschikking/SigningAdapterInterface.php` and will reuse the same DI shape
+- [~] Call docudesk PDF/A conversion (direct HTTP or openconnector adapter) — DEFERRED with TASK-04-01; the adapter pattern is sketched in `lib/Service/Beschikking/SigningAdapterInterface.php` and will reuse the same DI shape. W20 cross-app status: docudesk `PdfService::generate(..., ['pdfa' => true])` is the backend call shape the adapter would wrap.
 - [~] Handle async conversion (polling or webhook callback) — DEFERRED with TASK-04-01
 - [~] Add 5-minute timeout and transient-failure retry — DEFERRED with TASK-04-01
 
