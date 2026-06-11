@@ -188,6 +188,23 @@ class Application extends App implements IBootstrap
         $context->registerServiceAlias(SigningAdapterInterface::class, MockSigningAdapter::class);
         $context->registerServiceAlias(ArchivalAdapterInterface::class, MockArchivalAdapter::class);
 
+        // Dormant external auth-broker adapters (lib/Service/Auth/).
+        // Default to the Log* implementations which throw + log so a
+        // misconfigured environment surfaces "broker not configured"
+        // immediately. Activation: configure openconnector's
+        // eHerkenning/DigiD broker entry + private key + certificate,
+        // flip the matching feature_flag app-config key, and swap these
+        // bindings to the active SamlAdapter implementation in a
+        // follow-up change.
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\Auth\EHerkenningSamlAdapterInterface::class,
+            \OCA\Procest\Service\Auth\LogEHerkenningSamlAdapter::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\Auth\DigidSamlAdapterInterface::class,
+            \OCA\Procest\Service\Auth\LogDigidSamlAdapter::class
+        );
+
         $this->registerWidgetsAndProviders(context: $context);
     }//end register()
 
