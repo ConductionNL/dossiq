@@ -348,6 +348,73 @@ export async function updateObject(
 }
 
 /**
+ * Seed a PARENT caseType whose `subCaseTypes` lists one freshly-seeded child
+ * caseType — the configuration the deelzaak UI requires before it will allow
+ * sub-case creation (DeelzaakList.canCreate / DeelzaakCreateModal.availableCaseTypes).
+ *
+ * Returns both ids plus the created list (child-first) for ordered cleanup.
+ * @param api   Authenticated request context.
+ * @param token CSRF request-token.
+ */
+export async function ensureParentChildCaseTypes(
+	api: APIRequestContext,
+	token: string,
+): Promise<{ parentCaseTypeId: string; childCaseTypeId: string; created: Array<[string, string]> }> {
+	const created: Array<[string, string]> = []
+	const child = await createObject(api, token, 'caseType', {
+		title: `${RUN_PREFIX} Child CaseType`,
+		identifier: `${RUN_PREFIX.toLowerCase()}-child-ct`,
+		description: 'Throwaway child caseType for the deelzaak e2e layer.',
+	})
+	const childCaseTypeId = objectId(child)
+	created.push(['caseType', childCaseTypeId])
+
+	const parent = await createObject(api, token, 'caseType', {
+		title: `${RUN_PREFIX} Parent CaseType`,
+		identifier: `${RUN_PREFIX.toLowerCase()}-parent-ct`,
+		description: 'Throwaway parent caseType for the deelzaak e2e layer.',
+		subCaseTypes: [childCaseTypeId],
+	})
+	const parentCaseTypeId = objectId(parent)
+	created.push(['caseType', parentCaseTypeId])
+
+	return { parentCaseTypeId, childCaseTypeId, created }
+}
+
+/**
+ * Seed a sub-case (deelzaak): a `case` whose `parentCase` points at the given
+ * parent case id. This is exactly the relation the DeelzaakController children
+ * endpoint resolves and the DeelzaakList / DeelzaakDetail views render.
+ * @param api      Authenticated request context.
+ * @param token    CSRF request-token.
+ * @param fields   Sub-case fields (title + caseType + parentCase required).
+ */
+export async function seedSubCase(
+	api: APIRequestContext,
+	token: string,
+	fields: Record<string, unknown> & { title: string; caseType: string; parentCase: string },
+): Promise<any> {
+	return createObject(api, token, 'case', {
+		identifier: `${RUN_PREFIX}-SUB-${Math.floor(Math.random() * 1e4)}`,
+		priority: 'normal',
+		intakeChannel: 'manual',
+		...fields,
+	})
+}
+
+/**
+ * GET the resolved sub-cases of a parent case through the procest deelzaak
+ * REST endpoint (the same endpoint DeelzaakList drives). Returns {status, body}.
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param caseId Parent case id/uuid.
+ */
+export async function getDeelzaakChildren(api: APIRequestContext, token: string, caseId: string): Promise<any> {
+	const res = await api.get(`${PROCEST_API}/deelzaken/${caseId}/children`, { headers: writeHeaders(token) })
+	return { status: res.status(), body: await res.json().catch(() => ({})) }
+}
+
+/**
  * Find every object of `schema` whose stringified body contains RUN_PREFIX
  * and delete it. Used by afterAll to guarantee no seeded data is left behind.
  * @param api     Authenticated request context.
