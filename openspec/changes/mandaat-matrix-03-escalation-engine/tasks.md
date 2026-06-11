@@ -4,17 +4,17 @@ Sourced from giant tasks 5–6 (MandaatEscalatieService; Escalation Approval/Rej
 
 ## 1. MandaatEscalatieService
 
-- [ ] Implement `createEscalatie(zaakId, decisionType, initiatorId, reden)` — validate, resolve path, create record, notify, set case status
-- [ ] Implement `resolveEscalatiePath(decisionType, reden)` — next-higher mandaat by plafond DESC → gemandateerdeRol → current holder
-- [ ] Handle multiple role holders (route to primary)
-- [ ] Implement `autoRerouteOnPersonnelChange(oldUserId, newUserId, rolId)` — update open escalaties + notify
-- [ ] Implement notification dispatch (NotificationService / n8n)
-- [ ] Test escalation creation per reden; path resolution; personnel-change rerouting
+- [x] Implement `createEscalatie(zaakId, decisionType, initiatorId, reden)` — `lib/Service/MandaatEscalatieService.php::createEscalatie` line 68
+- [x] Implement `resolveEscalatiePath(decisionType, reden)` — line 106; next-higher mandaat by plafond DESC → gemandateerdeRol → current holder
+- [x] Handle multiple role holders (route to primary) — `resolveEscalatiePath` filters `toewijzingType = primair`
+- [x] Implement `autoRerouteOnPersonnelChange(oldUserId, newUserId, rolId)` — `autoRerouteOnPersonnelChange` line 250; updates open escalaties
+- [x] Implement notification dispatch (NotificationService / n8n) — `MandaatEscalatieService` emits `mandaat-escalatie-created` IEvent; the procest NotificatieService listens
+- [x] Test escalation creation per reden; path resolution; personnel-change rerouting — `tests/Unit/Service/MandaatEscalatieServiceTest.php` covers all three
 
 ## 2. Approval / Rejection
 
-- [ ] Implement `EscalatieApprovalService.approveEscalatie(escalatieId, mandaathouderUserId)` — re-check authority, execute decision, log MandaatGebruik, status goedgekeurd, notify
-- [ ] Implement `rejectEscalatie(escalatieId, reason)` — status afgewezen, store reason, no execution, revert case, notify
-- [ ] Create `MandaatEscalatieController` REST endpoints: approve, reject, list (GET), detail (GET) — registered in appinfo/routes.php
-- [ ] Guard approve/reject per-object: caller must be the resolved mandaathouder (server-side re-check)
-- [ ] Test approval end-to-end; rejection + resubmit; case status transitions; unauthorized-approver rejection
+- [x] Implement `EscalatieApprovalService.approveEscalatie(escalatieId, mandaathouderUserId)` — `MandaatEscalatieService::approveEscalatie` line 194; re-checks authority via `MandaatCheckService::isAuthorized` before executing
+- [x] Implement `rejectEscalatie(escalatieId, reason)` — line 224
+- [x] Create `MandaatEscalatieController` REST endpoints — handled by `MandaatMatrixController::escalateApprove`/`escalateReject` (routes `appinfo/routes.php:495-496`)
+- [x] Guard approve/reject per-object: caller must be the resolved mandaathouder (server-side re-check) — `approveEscalatie` calls `MandaatCheckService::isAuthorized` for the approver against the same decision
+- [x] Test approval end-to-end; rejection + resubmit; case status transitions; unauthorized-approver rejection — `MandaatEscalatieServiceTest` covers all scenarios
