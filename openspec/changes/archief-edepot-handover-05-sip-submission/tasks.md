@@ -28,3 +28,7 @@ Chain member 5 of 8 (`kind: code`, depends_on member 04). Traces to giant Tasks 
 ## 4. Tests
 
 - [~] All four submission tests — DEFERRED with TASK-05-06/11; BagIt structure + manifest format ARE covered by inline asserts (manifest-sha256.txt + bagit.txt fixed format)
+
+## 5. e-Depot adapter consumer wiring (W6, 2026-06-11)
+
+- [x] Wire `EDepotSubmissionAdapterInterface` into `ArchivalTriggerService::submitToEdepot(sipBundelId, caseId, context)`. The dormant `LogEDepotSubmissionAdapter` default returns `SUBMISSION_DEFERRED` with a synthetic `overdrachtTransactieId`; swap the DI alias in `lib/AppInfo/Application.php` once openconnector source `archief-edepot` (per-tenant HTTPS/SFTP/S3 credentials + archief-id mapping rule) is provisioned. Audit: every dispatch is mirrored into `overdrachtAuditLog` as `edepot-submit-<status>` with sipBundelId / overdrachtTransactieId / archiefId. Tests: `tests/Unit/Service/ArchivalServicesTest.php::testSubmitToEdepotReturnsNullWhenNoSubmitterBound` / `testSubmitToEdepotDelegatesToSubmitterAndLogsEvent`.
