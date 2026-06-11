@@ -99,6 +99,27 @@ return [
         ['name' => 'zaakportaal#updatePreferences',         'url' => '/api/portaal/notification-preferences', 'verb' => 'PATCH'],
         ['name' => 'zaakportaal#caseDetail',                'url' => '/api/portaal/cases/{id}', 'verb' => 'GET'],
 
+        // Leverancier-zaakportaal — operator-side read endpoints for the
+        // Vue surface shipped in chain members 06/08/10/11/14/15.
+        // Supplier-facing eHerkenning + JWT flow is exposed by a separate
+        // edge entry-point (chain member 02 — deferred).
+        ['name' => 'supplierPortal#dashboard',     'url' => '/api/leverancier-portaal/dashboard',         'verb' => 'GET'],
+        ['name' => 'supplierPortal#tenders',       'url' => '/api/leverancier-portaal/tenders',           'verb' => 'GET'],
+        ['name' => 'supplierPortal#tenderDetail',  'url' => '/api/leverancier-portaal/tenders/{id}',      'verb' => 'GET'],
+        ['name' => 'supplierPortal#invoices',      'url' => '/api/leverancier-portaal/invoices',          'verb' => 'GET'],
+        ['name' => 'supplierPortal#contracts',     'url' => '/api/leverancier-portaal/contracts',         'verb' => 'GET'],
+        ['name' => 'supplierPortal#kpi',           'url' => '/api/leverancier-portaal/kpi',               'verb' => 'GET'],
+        ['name' => 'supplierPortal#messages',      'url' => '/api/leverancier-portaal/messages',          'verb' => 'GET'],
+        ['name' => 'supplierPortal#sendMessage',   'url' => '/api/leverancier-portaal/messages',          'verb' => 'POST'],
+
+        // Leverancier-zaakportaal — operator-side write endpoints (master-data
+        // mutations, chain member 12). Address + contactPerson apply
+        // immediately; IBAN + accreditation are 4-eyes via Procest cases.
+        ['name' => 'supplierProfile#updateAddress',      'url' => '/api/leverancier-portaal/profile/address',        'verb' => 'POST'],
+        ['name' => 'supplierProfile#updateContact',      'url' => '/api/leverancier-portaal/profile/contact',        'verb' => 'POST'],
+        ['name' => 'supplierProfile#requestIbanChange',  'url' => '/api/leverancier-portaal/profile/iban',           'verb' => 'POST'],
+        ['name' => 'supplierProfile#submitAccreditation','url' => '/api/leverancier-portaal/profile/accreditations', 'verb' => 'POST'],
+
         // ZGW Mapping Management.
         ['name' => 'zgwMapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
         ['name' => 'zgwMapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],

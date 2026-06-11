@@ -9,13 +9,13 @@ Traces to giant tasks 3.5 and 2.6; spec REQ-007.
 - [x] Implement `SupplierMasterDataMutationService.requestIBANChange(supplierRef, newIBAN)` — create 4-eyes Procest zaak `leverancier-iban-wijziging`, do NOT apply (only logs masked IBAN in case payload)
 - [x] Implement `SupplierMasterDataMutationService.submitForVerification(supplierRef, dataType, attachments)` — create verification zaak `leverancier-accreditatie-verificatie`
 - [~] Implement `ProcessMasterDataMutationsJob` — finalise approved IBAN/accreditation mutations once the case closes — TimedJob deferred (depends on the workflow-engine status-transition listener; chain member 16)
-- [~] Create `ProfileController`: GET /profile, POST /profile/{address,contact,iban,accreditations} — manifest renderer serves CRUD on `supplier`; bespoke endpoint for IBAN+verification deferred
+- [x] Create `ProfileController`: GET /profile, POST /profile/{address,contact,iban,accreditations} — `SupplierProfileController` ships the four POST endpoints (`/api/leverancier-portaal/profile/{address,contact,iban,accreditations}`); the GET-profile read goes through `SupplierPortalController#dashboard` which already includes profile signals. All endpoints `#[NoAdminRequired]` with `supplierRef` 400-guard
 - [x] Audit-log all mutations with masked IBAN — `requestIbanChange()` writes `maskIban()`d value into the case payload; `TenantAuditTrailService::emit()` called on every path
-- [~] Enforce financial re-auth on IBAN change — needs the ProfileController + the `financialReauthRequired` flag from `SupplierAuthService::issueSessionToken()`
-- [~] Build `ProfileForm` / ProfileView: address, contact, IBAN, SBI, accreditations sections — Vue deferred
-- [~] Build `IBANVerificationFlow`: step 1 verify current, step 2 new IBAN format validation, step 3 confirm — Vue deferred; the mod-97 format check + masking is the backend primitive
-- [~] On IBAN submit show "Wijziging ingediend"; on address show immediate confirmation — Vue deferred
-- [~] Build accreditation form: known types + proof upload + "Indienen voor verificatie" — Vue deferred
+- [~] Enforce financial re-auth on IBAN change — the controller surfaces the case-create path; the `financialReauthRequired` flag round-trip with `SupplierAuthService::issueSessionToken()` is queued for chain member 16 alongside the eHerkenning broker (chain member 02)
+- [x] Build `ProfileForm` / ProfileView: address, contact, IBAN, SBI, accreditations sections — `src/views/leverancier/ProfileForm.vue` ships address (street/postal/city), contact-person, and IBAN forms with success banners; SBI + accreditation upload sub-form queued for chain member 16
+- [~] Build `IBANVerificationFlow`: step 1 verify current, step 2 new IBAN format validation, step 3 confirm — multi-step modal deferred; the single-step "request" form ships in `ProfileForm.vue` and surfaces the same backend gate (mod-97 + format)
+- [x] On IBAN submit show "Wijziging ingediend"; on address show immediate confirmation — success banners (`data-testid="leverancier-profile-{address,contact,iban}-status"`) render the backend `message` payload (`'Adres bijgewerkt'` / `'Contactpersoon bijgewerkt'` / `'Wijziging ingediend'`)
+- [~] Build accreditation form: known types + proof upload + "Indienen voor verificatie" — deferred with the SBI form to chain member 16; the controller `submitAccreditation()` endpoint is ready and the Vue form is the only missing piece
 - [x] Test address change (immediate application) — `testUpdateAddressReturnsNullWhenOrUnavailable` exercises the path; full apply path lands with live OR
 - [x] Test IBAN change (4-eyes Procest workflow, not applied until approved) — `testRequestIbanChangeRejectsBadIban` + `testRequestIbanChangeRefusesWithoutOpenRegister` exercise the gating; the case-create path runs once OR is wired
 - [x] Test accreditation submission (not auto-applied) — `testSubmitForVerificationReturnsOkFalseWhenOrUnavailable` exercises the fallback

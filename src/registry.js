@@ -50,6 +50,16 @@ import LegesVerordeningenAdmin from './views/settings/LegesVerordeningenAdmin.vu
 import MijnZakenView from './views/portaal/MijnZaken.vue'
 import MijnNotificatiesView from './views/portaal/MijnNotificaties.vue'
 
+// Leverancier-zaakportaal — operator-side Vue surface for supplier dashboards.
+import LeverancierDashboard from './views/leverancier/LeverancierDashboard.vue'
+import TenderList from './views/leverancier/TenderList.vue'
+import TenderDetail from './views/leverancier/TenderDetail.vue'
+import InvoiceList from './views/leverancier/InvoiceList.vue'
+import ContractList from './views/leverancier/ContractList.vue'
+import KpiView from './views/leverancier/KpiView.vue'
+import ProfileForm from './views/leverancier/ProfileForm.vue'
+import MessageThread from './views/leverancier/MessageThread.vue'
+
 /**
  * V2 component registry.
  *
@@ -181,6 +191,49 @@ const registry = {
 		kind: 'page',
 		component: LegesVerordeningenAdmin,
 		_note: 'Admin page listing leges tariff tables with import + approve workflow',
+	},
+
+	// --- Leverancier-zaakportaal (operator-side) — chain members 06/08/10/11/14/15. ---
+	// @spec openspec/changes/leverancier-zaakportaal-15-dashboard-shell/tasks.md
+	LeverancierDashboard: {
+		kind: 'page',
+		component: LeverancierDashboard,
+		_note: 'Supplier portal 4-card dashboard shell — tenders/invoices/contracts/KPI',
+	},
+	TenderList: {
+		kind: 'page',
+		component: TenderList,
+		_note: 'Supplier tender list — sortable/filterable, status badge from TenderViewModelService',
+	},
+	TenderDetail: {
+		kind: 'page',
+		component: TenderDetail,
+		_note: 'Supplier tender detail — conditional award/rejection/withdrawal sections from visibilityFlags()',
+	},
+	InvoiceList: {
+		kind: 'page',
+		component: InvoiceList,
+		_note: 'Supplier invoice list — overdue90Plus flag + status badge from LeverancierViewModelService',
+	},
+	ContractList: {
+		kind: 'page',
+		component: ContractList,
+		_note: 'Supplier contract list — expiring-soon highlighting from ContractRenewalService',
+	},
+	KpiView: {
+		kind: 'page',
+		component: KpiView,
+		_note: 'Supplier KPI summary — payment days, on-time pct, dispute rate, compliance score',
+	},
+	ProfileForm: {
+		kind: 'page',
+		component: ProfileForm,
+		_note: 'Supplier profile form — address + contact (immediate) + IBAN-change (4-eyes via Procest case)',
+	},
+	MessageThread: {
+		kind: 'page',
+		component: MessageThread,
+		_note: 'Per-case supplier message thread with composer — chain member 11 messaging',
 	},
 }
 
