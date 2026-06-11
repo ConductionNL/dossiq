@@ -198,106 +198,78 @@ class TermijnServiceTest extends TestCase
         self::assertNotNull($resolved);
         self::assertSame($second['id'], $resolved['id']);
     }
-}
-
-/**
- * Tiny in-memory ObjectService fake reused by all termijnbewaking unit tests.
- */
-class FakeTermijnStore
-{
-    /** @var array<string, array<string, array<string, mixed>>> */
-    public array $store = [];
-
-    /** @var int */
-    private int $seq = 0;
 
     /**
-     * @param string $id       Id.
-     * @param string $register Register.
-     * @param string $schema   Schema.
-     * @return array<string, mixed>|null
+     * Version-pinning: an existing TermijnInstance keeps its original
+     * `termijnDefinitie` reference even after a new definition version is
+     * published for the same zaaktype. Only newly-created instances bind to
+     * the latest active version. Closes the
+     * `termijnbewaking-dwangsom-engine-11-tests-admin-docs` "new cases use
+     * latest version; existing retain original" deferral.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
      */
-    public function find(string $id, string $register = '', string $schema = ''): ?array
+    public function testExistingTermijnInstanceRetainsOriginalDefinitieAfterVersionBump(): void
     {
-        return ($this->store[$schema][$id] ?? null);
-    }
+        // Phase 1 — case opens against v1 (56 days).
+        $existing = $this->service->createTermijnInstance(
+            'Z/2026/300',
+            'omgevingsvergunning-regulier',
+            new DateTimeImmutable('2026-01-15T09:00:00+00:00')
+        );
+        self::assertSame('td-omgevingsvergunning-regulier', $existing['termijnDefinitie']);
+        // 2026-01-15 + 56 days = 2026-03-12.
+        self::assertSame('2026-03-12', $existing['einddatumBerekend']);
 
-    /**
-     * @param string               $register Register.
-     * @param string               $schema   Schema.
-     * @param array<string, mixed> $filters  Filters.
-     * @return array<int, array<string, mixed>>
-     */
-    public function findObjects(string $register, string $schema, array $filters = []): array
-    {
-        $rows = array_values($this->store[$schema] ?? []);
-        if (count($filters) === 0) {
-            return $rows;
-        }
+        // Phase 2 — publish a new v2 (70 days) for the same zaaktype.
+        $this->objects->saveObject('procest', 'termijnDefinitie', [
+            'id'                  => 'td-omgevingsvergunning-regulier-v2',
+            'zaaktype'            => 'omgevingsvergunning-regulier',
+            'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
+            'standaardDuurDagen'  => 70,
+            'validFrom'           => '2026-03-01',
+        ]);
 
-        return array_values(array_filter(
-            $rows,
-            static function (array $row) use ($filters): bool {
-                foreach ($filters as $key => $value) {
-                    if (($row[$key] ?? null) !== $value) {
-                        return false;
-                    }
-                }
-                return true;
+        // Phase 3 — re-fetch the same instance: definitie reference is
+        // the v1 row, NOT v2. The instance row was persisted with the v1 id
+        // at creation time and is never re-resolved against the catalogue.
+        $reloaded = $this->service->getTermijnInstance((string) $existing['id']);
+        self::assertNotNull($reloaded);
+        self::assertSame('td-omgevingsvergunning-regulier', $reloaded['termijnDefinitie']);
+        self::assertSame('2026-03-12', $reloaded['einddatumBerekend']);
+
+        // Phase 4 — a brand-new instance for the same zaaktype binds to v2.
+        // Reset the definitie cache by creating a fresh service so the new
+        // active row wins the validFrom sort.
+        $settings = $this->createMock(SettingsService::class);
+        $settings->method('getObjectService')->willReturn($this->objects);
+        $settings->method('getConfigValue')->willReturnCallback(
+            static function (string $key): string {
+                return match ($key) {
+                    'register'                   => 'procest',
+                    'termijn_definitie_schema'   => 'termijnDefinitie',
+                    'termijn_instance_schema'    => 'termijnInstance',
+                    'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
+                    default                      => '',
+                };
             },
-        ));
-    }
+        );
+        $freshService = new TermijnService($settings, $this->createMock(LoggerInterface::class));
 
-    /**
-     * Slug-aware search bridge mirroring OpenRegister ObjectService::searchObjectsBySlug().
-     *
-     * The store is keyed by schema slug, so resolution is a direct lookup plus
-     * the same equality-filter semantics as findObjects(). This is the entry
-     * point the SearchesObjects trait selects when register/schema are slugs.
-     *
-     * @param string               $registerSlug Register slug.
-     * @param string               $schemaSlug   Schema slug.
-     * @param array<string, mixed> $filters      Object-field filters.
-     * @return array<int, array<string, mixed>>
-     */
-    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array
-    {
-        return $this->findObjects($registerSlug, $schemaSlug, $filters);
-    }
-
-    /**
-     * Numeric-ID search bridge mirroring OpenRegister ObjectService::searchObjects().
-     *
-     * The SearchesObjects trait packs register/schema into a `@self` block and
-     * keeps object-field filters at the top level. This fake resolves the schema
-     * from `@self.schema` (matching the trait's query shape) and applies the
-     * remaining top-level filters.
-     *
-     * @param array<string, mixed> $query Query with `@self` register/schema plus field filters.
-     * @return array<int, array<string, mixed>>
-     */
-    public function searchObjects(array $query = []): array
-    {
-        $self   = ($query['@self'] ?? []);
-        $schema = (string) ($self['schema'] ?? '');
-        unset($query['@self']);
-
-        return $this->findObjects('', $schema, $query);
-    }
-
-    /**
-     * @param string               $register Register.
-     * @param string               $schema   Schema.
-     * @param array<string, mixed> $object   Object.
-     * @return array<string, mixed>
-     */
-    public function saveObject(string $register, string $schema, array $object): array
-    {
-        if (empty($object['id']) === true) {
-            $this->seq++;
-            $object['id'] = $schema.'-'.$this->seq;
-        }
-        $this->store[$schema][$object['id']] = $object;
-        return $object;
+        $fresh = $freshService->createTermijnInstance(
+            'Z/2026/301',
+            'omgevingsvergunning-regulier',
+            new DateTimeImmutable('2026-04-01T09:00:00+00:00')
+        );
+        self::assertSame('td-omgevingsvergunning-regulier-v2', $fresh['termijnDefinitie']);
+        // 2026-04-01 + 70 days = 2026-06-10.
+        self::assertSame('2026-06-10', $fresh['einddatumBerekend']);
     }
 }
+
+// `FakeTermijnStore` is now declared in tests/Unit/Fixtures/FakeTermijnStore.php
+// and loaded by tests/bootstrap.php so every termijnbewaking + archief-edepot
+// unit test file can resolve the class even when run standalone (e.g. via
+// `phpunit --filter Foo tests/Unit/Service/ArchivalServicesTest.php`).
