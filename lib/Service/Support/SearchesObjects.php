@@ -64,7 +64,7 @@ trait SearchesObjects
      *
      * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
      */
-    private function searchObjectsAsArrays(
+    protected function searchObjectsAsArrays(
         object $objectService,
         int | string $register,
         int | string $schema,
@@ -115,7 +115,7 @@ trait SearchesObjects
      *
      * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
      */
-    private function findObjectAsArray(
+    protected function findObjectAsArray(
         object $objectService,
         int | string $register,
         int | string $schema,

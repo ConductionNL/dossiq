@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use GuzzleHttp\Client;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -44,6 +45,7 @@ use Psr\Log\LoggerInterface;
  */
 abstract class ZgwRulesBase
 {
+    use SearchesObjects;
 
     /**
      * RFC1918 + loopback + link-local + cloud-metadata CIDR blocks to deny in
