@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -43,6 +44,8 @@ use RuntimeException;
  */
 class MandaatImportService
 {
+    use SearchesObjects;
+
     public const REQUIRED_COLUMNS = ['mandaatNummer', 'omschrijving', 'rolNaam', 'plafondCents'];
 
     /**
@@ -224,7 +227,7 @@ class MandaatImportService
 
         // Flip mandaten to active.
         try {
-            $mandaten = $objectService->findObjects($register, $mSchema, ['mandateringsBesluit' => $besluitId]);
+            $mandaten = $this->searchObjectsAsArrays($objectService, $register, $mSchema, ['mandateringsBesluit' => $besluitId]);
         } catch (\Throwable $e) {
             $mandaten = [];
         }
@@ -301,7 +304,7 @@ class MandaatImportService
             return [];
         }
         try {
-            $rows = $objectService->findObjects($register, $schema, []);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, []);
         } catch (\Throwable $e) {
             return [];
         }
@@ -333,7 +336,7 @@ class MandaatImportService
             return null;
         }
         try {
-            $rows = $objectService->findObjects($register, $schema, ['besluitNummer' => $besluitNummer]);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['besluitNummer' => $besluitNummer]);
         } catch (\Throwable $e) {
             return null;
         }
@@ -365,7 +368,7 @@ class MandaatImportService
             return [];
         }
         try {
-            return (array) $objectService->findObjects($register, $schema, ['mandateringsBesluit' => $besluitId]);
+            return (array) $this->searchObjectsAsArrays($objectService, $register, $schema, ['mandateringsBesluit' => $besluitId]);
         } catch (\Throwable $e) {
             return [];
         }

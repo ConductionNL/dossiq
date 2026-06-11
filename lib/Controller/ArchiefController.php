@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -45,6 +46,8 @@ use Throwable;
  */
 class ArchiefController extends Controller
 {
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -176,7 +179,7 @@ class ArchiefController extends Controller
             return [];
         }
         try {
-            $rows = $objectService->findObjects($register, $schema, []);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, []);
             return is_array($rows) === true ? $rows : [];
         } catch (Throwable $e) {
             return [];

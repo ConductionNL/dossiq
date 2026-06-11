@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -39,6 +40,8 @@ use Psr\Log\LoggerInterface;
  */
 class ArchivalTriggerService
 {
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -220,7 +223,7 @@ class ArchivalTriggerService
             return null;
         }
         try {
-            $rows = $objectService->findObjects($register, $schema, ['zaaktypeKey' => $zaaktypeKey]);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['zaaktypeKey' => $zaaktypeKey]);
         } catch (\Throwable $e) {
             return null;
         }
@@ -250,7 +253,7 @@ class ArchivalTriggerService
         }
 
         try {
-            $existing = $objectService->findObjects($register, $schema, ['zaakId' => $caseId]);
+            $existing = $this->searchObjectsAsArrays($objectService, $register, $schema, ['zaakId' => $caseId]);
         } catch (\Throwable $e) {
             $existing = [];
         }

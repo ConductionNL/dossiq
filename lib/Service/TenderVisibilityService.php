@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -36,6 +37,8 @@ use Throwable;
  */
 class TenderVisibilityService
 {
+    use SearchesObjects;
+
     /**
      * Appeal window in calendar days after rejection.
      */
@@ -66,7 +69,7 @@ class TenderVisibilityService
         }
 
         try {
-            $row = $os->findObject(register: TenantSaasService::REGISTER, schema: 'supplierTender', id: $tenderId);
+            $row = $this->findObjectAsArray($os, TenantSaasService::REGISTER, 'supplierTender', $tenderId);
         } catch (Throwable $e) {
             return null;
         }

@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -44,6 +45,8 @@ use Psr\Log\LoggerInterface;
  */
 class TermijnDailyScanService
 {
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -93,7 +96,7 @@ class TermijnDailyScanService
         }
 
         try {
-            $rows = $objectService->findObjects($register, $schema, []);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, []);
         } catch (\Throwable $e) {
             $this->logger->error('Termijn daily scan: list failed', ['error' => $e->getMessage()]);
             return $counts;
@@ -142,7 +145,7 @@ class TermijnDailyScanService
         }
 
         try {
-            $rows = $objectService->findObjects($register, $schema, ['status' => 'lopend']);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['status' => 'lopend']);
         } catch (\Throwable $e) {
             return 0;
         }

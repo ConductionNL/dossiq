@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -41,6 +42,8 @@ use RuntimeException;
  */
 class DwangsomUitbetalingService
 {
+    use SearchesObjects;
+
     /**
      * Default uiterste-betaaldatum offset in days from the ingebrekestelling
      * receipt date (AWB-default 28d).
@@ -158,7 +161,7 @@ class DwangsomUitbetalingService
         }
 
         try {
-            $rows = $objectService->findObjects($register, $uSchema, ['referentie' => $referentie]);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $uSchema, ['referentie' => $referentie]);
         } catch (\Throwable $e) {
             throw new RuntimeException('DwangsomUitbetaling lookup failed: '.$e->getMessage());
         }

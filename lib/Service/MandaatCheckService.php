@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -44,6 +45,8 @@ use Psr\Log\LoggerInterface;
  */
 class MandaatCheckService
 {
+    use SearchesObjects;
+
     public const REDEN_NIET_BEVOEGD                = 'niet_bevoegd';
     public const REDEN_PLAFOND_OVERSCHREDEN        = 'plafond_overschreden';
     public const REDEN_SUBDELEGATIE_NIET_TOEGESTAAN = 'subdelegatie_niet_toegestaan';
@@ -162,7 +165,7 @@ class MandaatCheckService
         }
 
         try {
-            $rows = $objectService->findObjects($register, $schema, ['status' => 'active']);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['status' => 'active']);
         } catch (\Throwable $e) {
             return [];
         }
@@ -219,7 +222,7 @@ class MandaatCheckService
         }
 
         try {
-            $rows = $objectService->findObjects($register, $schema, ['userId' => $userId]);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['userId' => $userId]);
         } catch (\Throwable $e) {
             // Fail closed: log and surface "no role" instead of swallowing.
             $this->logger->error(

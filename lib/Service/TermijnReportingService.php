@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -43,6 +44,8 @@ use RuntimeException;
  */
 class TermijnReportingService
 {
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -158,7 +161,7 @@ class TermijnReportingService
         }
 
         try {
-            $rows = $objectService->findObjects($register, $uSchema, []);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $uSchema, []);
         } catch (\Throwable $e) {
             return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0]];
         }
@@ -316,7 +319,7 @@ class TermijnReportingService
         }
 
         try {
-            $rows = $objectService->findObjects($register, $schema, []);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, []);
         } catch (\Throwable $e) {
             return [];
         }

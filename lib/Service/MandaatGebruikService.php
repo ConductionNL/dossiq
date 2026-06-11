@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -37,6 +38,8 @@ use Psr\Log\LoggerInterface;
  */
 class MandaatGebruikService
 {
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -116,7 +119,7 @@ class MandaatGebruikService
             return [];
         }
         try {
-            $rows = $objectService->findObjects($register, $schema, ['zaakId' => $zaakId]);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['zaakId' => $zaakId]);
             return is_array($rows) === true ? $rows : [];
         } catch (\Throwable $e) {
             return [];
@@ -143,7 +146,7 @@ class MandaatGebruikService
             return [];
         }
         try {
-            $rows = $objectService->findObjects($register, $schema, ['mandaatId' => $mandaatId]);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['mandaatId' => $mandaatId]);
         } catch (\Throwable $e) {
             return [];
         }

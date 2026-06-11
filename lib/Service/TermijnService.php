@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -45,6 +46,8 @@ use RuntimeException;
  */
 class TermijnService
 {
+    use SearchesObjects;
+
     /** @var array<string, array<string, mixed>> */
     private array $definitieCache = [];
 
@@ -173,7 +176,7 @@ class TermijnService
         }
 
         try {
-            $rows = $objectService->findObjects($register, $schema, ['zaak' => $zaakId]);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['zaak' => $zaakId]);
         } catch (\Throwable $e) {
             return null;
         }
@@ -244,7 +247,7 @@ class TermijnService
         }
 
         try {
-            $rows = $objectService->findObjects($register, $schema, ['zaaktype' => $zaaktype]);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['zaaktype' => $zaaktype]);
         } catch (\Throwable $e) {
             $this->logger->warning(
                 'TermijnService.getTermijnDefinitie lookup failed',

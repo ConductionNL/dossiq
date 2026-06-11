@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use InvalidArgumentException;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -48,6 +49,8 @@ use Throwable;
  */
 class TenantSaasService
 {
+    use SearchesObjects;
+
     /**
      * Procest register slug.
      */
@@ -152,7 +155,7 @@ class TenantSaasService
         }
 
         try {
-            $row = $os->findObject(register: self::REGISTER, schema: self::SCHEMA_TENANT, id: $tenantId);
+            $row = $this->findObjectAsArray($os, self::REGISTER, self::SCHEMA_TENANT, $tenantId);
             return is_array($row) ? $row : null;
         } catch (Throwable $e) {
             $this->logger->info('Procest: TenantSaasService::getById miss', ['tenantId' => $tenantId, 'exception' => $e->getMessage()]);

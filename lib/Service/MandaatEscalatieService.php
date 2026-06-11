@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -38,6 +39,8 @@ use RuntimeException;
  */
 class MandaatEscalatieService
 {
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -111,7 +114,7 @@ class MandaatEscalatieService
         }
 
         try {
-            $mandaten = $objectService->findObjects($register, $mSchema, ['status' => 'active']);
+            $mandaten = $this->searchObjectsAsArrays($objectService, $register, $mSchema, ['status' => 'active']);
         } catch (\Throwable $e) {
             return ['mandaatId' => '', 'userId' => ''];
         }
@@ -143,7 +146,7 @@ class MandaatEscalatieService
             }
 
             try {
-                $assigns = $objectService->findObjects($register, $assignSchema, ['rolId' => $rolId]);
+                $assigns = $this->searchObjectsAsArrays($objectService, $register, $assignSchema, ['rolId' => $rolId]);
             } catch (\Throwable $e) {
                 continue;
             }
@@ -254,7 +257,7 @@ class MandaatEscalatieService
         }
 
         try {
-            $rows = $objectService->findObjects($register, $schema, ['status' => 'open', 'targetUserId' => $oldUserId]);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['status' => 'open', 'targetUserId' => $oldUserId]);
         } catch (\Throwable $e) {
             return 0;
         }

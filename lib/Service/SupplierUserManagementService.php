@@ -26,6 +26,7 @@ namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -36,6 +37,8 @@ use Throwable;
  */
 class SupplierUserManagementService
 {
+    use SearchesObjects;
+
     /**
      * Allowed roles (mirrors the supplierUser schema enum).
      *
@@ -210,7 +213,7 @@ class SupplierUserManagementService
         }
 
         try {
-            $user = $os->findObject(register: TenantSaasService::REGISTER, schema: 'supplierUser', id: $userId);
+            $user = $this->findObjectAsArray($os, TenantSaasService::REGISTER, 'supplierUser', $userId);
         } catch (Throwable $e) {
             return null;
         }
@@ -257,7 +260,7 @@ class SupplierUserManagementService
         }
 
         try {
-            $user           = $os->findObject(register: TenantSaasService::REGISTER, schema: 'supplierUser', id: $userId);
+            $user           = $this->findObjectAsArray($os, TenantSaasService::REGISTER, 'supplierUser', $userId);
             $user['status'] = 'revoked';
             $os->saveObject(
                 object: $user,
@@ -349,7 +352,7 @@ class SupplierUserManagementService
         }
 
         try {
-            $row = $os->findObject(register: TenantSaasService::REGISTER, schema: 'supplier', id: $supplierRef);
+            $row = $this->findObjectAsArray($os, TenantSaasService::REGISTER, 'supplier', $supplierRef);
             return is_array($row) ? $row : null;
         } catch (Throwable $e) {
             return null;

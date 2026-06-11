@@ -21,6 +21,7 @@ namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -28,6 +29,8 @@ use Throwable;
 
 class SupplierMasterDataMutationService
 {
+    use SearchesObjects;
+
     public function __construct(
         private readonly SupplierScopeService $scopeService,
         private readonly TenantAuditTrailService $auditTrail,
@@ -208,7 +211,7 @@ class SupplierMasterDataMutationService
         }
 
         try {
-            $row = $os->findObject(register: TenantSaasService::REGISTER, schema: 'supplier', id: $supplierRef);
+            $row = $this->findObjectAsArray($os, TenantSaasService::REGISTER, 'supplier', $supplierRef);
         } catch (Throwable $e) {
             return null;
         }

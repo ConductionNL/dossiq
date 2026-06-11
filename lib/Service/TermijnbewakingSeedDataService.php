@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -37,6 +38,8 @@ use Psr\Log\LoggerInterface;
  */
 class TermijnbewakingSeedDataService
 {
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -121,7 +124,7 @@ class TermijnbewakingSeedDataService
         }
 
         try {
-            $rows = $objectService->findObjects($register, $schema);
+            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema);
         } catch (\Throwable $e) {
             return [];
         }

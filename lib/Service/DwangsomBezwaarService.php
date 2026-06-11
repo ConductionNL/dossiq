@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -40,6 +41,8 @@ use RuntimeException;
  */
 class DwangsomBezwaarService
 {
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -98,7 +101,7 @@ class DwangsomBezwaarService
 
         // Move all linked uitbetalingen to on-hold-bezwaar.
         try {
-            $uitbetalingen = $objectService->findObjects($register, $uSchema, ['dwangsomBerekening' => $berekeningId]);
+            $uitbetalingen = $this->searchObjectsAsArrays($objectService, $register, $uSchema, ['dwangsomBerekening' => $berekeningId]);
         } catch (\Throwable $e) {
             $uitbetalingen = [];
         }
@@ -175,7 +178,7 @@ class DwangsomBezwaarService
         }
 
         try {
-            $uitbetalingen = $objectService->findObjects($register, $uSchema, ['dwangsomBerekening' => $berekeningId]);
+            $uitbetalingen = $this->searchObjectsAsArrays($objectService, $register, $uSchema, ['dwangsomBerekening' => $berekeningId]);
         } catch (\Throwable $e) {
             $uitbetalingen = [];
         }
