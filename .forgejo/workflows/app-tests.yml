@@ -5,15 +5,17 @@
 # run-newman) until the NC service container is wired (see tests.yml TODOs).
 # Additive — sits alongside the existing release/quality workflows.
 #
-# unit-gating: false — procest's tests/Unit suite carries ~45 pre-existing
-# failures on baseline (the team-chain / Termijnbewaking seed-data services:
-# 28 errors + 20 failures observed in the dev container). The phpunit-unit job
-# still runs and reports them, but does not block the PR until that debt is paid
-# down. The authoritative procest unit gate is the in-container run
-# (`docker exec -u 33 -w /var/www/html/custom_apps/procest nextcloud
-#  ./vendor/bin/phpunit --configuration phpunit-unit.xml --no-coverage`), since
-# its bootstrap reaches the NC server tree when one is present. Flip to true once
-# the team-chain suite is green.
+# unit-gating: true — procest's tests/Unit suite is GREEN. The former ~45-red
+# team-chain debt (28 errors + 20 failures: DsoController ctor drift,
+# VergunningaanvraagCreatedListener ObjectEntity normalisation, and stale
+# in-memory ObjectService fakes missing the searchObjects/searchObjectsBySlug
+# bridge that the SearchesObjects trait now uses) was triaged and fixed.
+# Verified green both ways: the standalone CI run (`./vendor/bin/phpunit
+# --configuration phpunit-unit.xml --no-coverage`, 980 tests, 2 OR-dependent
+# listener tests skip when OpenRegister classes are absent) and the in-container
+# run (`docker exec -u 33 -w /var/www/html/custom_apps/procest nextcloud
+#  ./vendor/bin/phpunit --configuration phpunit-unit.xml --no-coverage`, 980/980,
+# also green under --order-by=random). The suite now HARD-GATES every PR.
 
 name: app-tests
 
@@ -40,6 +42,6 @@ jobs:
     uses: ./.forgejo/workflows/tests.yml
     with:
       app-id: procest
-      unit-gating: false
+      unit-gating: true
       run-e2e: ${{ github.event.inputs.run-e2e == 'true' }}
       run-newman: ${{ github.event.inputs.run-newman == 'true' }}
