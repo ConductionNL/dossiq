@@ -46,7 +46,7 @@
 
 - [x] TASK-SUB-21: `BewijsstukService` implemented — per-phase type whitelist, Selectielijst retention defaults + override, SHA-256 hash compute/verify (constant-time), retention-end math.
 - [x] TASK-SUB-22: Immutability implemented — `immutable=true` set when linked to a vaststelling; `assertMutable()` guards edit/delete. (BIO access audit is delegated to OpenRegister's audit trail.)
-- [~] TASK-SUB-23: Docudesk archival handover (PDF/A conversion, manifest, retention-code transfer) DEFERRED — requires the Docudesk service (cross-app dependency). Retention metadata (`bewaartermijnEinde`, `archiefStatus`) is modelled ready for the handover job.
+- [~] TASK-SUB-23: Docudesk archival handover (PDF/A conversion, manifest, retention-code transfer) DEFERRED — requires the Docudesk service (cross-app dependency). Retention metadata (`bewaartermijnEinde`, `archiefStatus`) is modelled ready for the handover job. **W20 cross-app status (2026-06-12):** docudesk PDF/A-3b rendering is in place (`docudesk/lib/Service/PdfService.php`, `pdfa` option) but no cross-app entry point ships yet; handover remains blocked on the adapter layer (shared with `archief-edepot-handover-04`).
 - [x] TASK-SUB-24: Verplichting linkage implemented via `gekoppeldVerplichtingId` on the bewijsstuk schema + the per-phase whitelist (`verplichtingsbewijs`); the declarative detail page surfaces matching documents.
 
 ## EU Staatssteun Compliance
@@ -75,8 +75,8 @@
 ## Integration & APIs
 
 - [x] TASK-SUB-39: Subsidieregister feed implemented — `SubsidieRegisterExporter` + public `SubsidieRegisterController::export` (`GET /api/subsidies/register/export`), JSON-LD `@context`, pagination, GDPR anonymisation of natural persons, granted/settled only. `#[PublicPage]` + `#[NoCSRFRequired]` (read-only, no internal data leaked).
-- [~] TASK-SUB-40: Quarterly PDF/CSV reporting endpoint DEFERRED — needs the PDF service (Docudesk) and live aggregation data.
-- [~] TASK-SUB-41: Audit-export ZIP endpoint DEFERRED — needs live dossier data + Docudesk bundling.
+- [~] TASK-SUB-40: Quarterly PDF/CSV reporting endpoint DEFERRED — needs the PDF service (Docudesk) and live aggregation data. W20: docudesk `PdfService` exists (`pdfa`-capable); the cross-app entry-point is still pending.
+- [~] TASK-SUB-41: Audit-export ZIP endpoint DEFERRED — needs live dossier data + Docudesk bundling. W20: docudesk `lib/Service/EmlPdfAssemblyService.php` is the closest existing bundler primitive.
 - [~] TASK-SUB-42: Notification i18n strings shipped (interim-report/terugvordering/termijn templates); the scheduled fan-out via the procest notification router is DEFERRED (BackgroundJob wiring + live instance).
 
 ## Configuration & Admin UI
