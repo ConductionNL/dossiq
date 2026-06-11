@@ -205,6 +205,51 @@ class Application extends App implements IBootstrap
             \OCA\Procest\Service\Auth\LogDigidSamlAdapter::class
         );
 
+        // Wave-4 external-API ports (low-volume families). All dormant
+        // log-only by default; flip the matching openconnector
+        // source-slug feature flag and override the alias in a
+        // downstream Application::register() to activate.
+        //
+        // - KvK Handelsregister
+        //   (leverancier-zaakportaal eHerkenning kvkNummer enrichment,
+        //   bedrijfszaak intake, brp-kvk-register-sets seed).
+        // - BRP / Haal Centraal
+        //   (citizen zaak intake DigiD BSN → persoon envelope,
+        //   briefcode resolution, register-set seed).
+        // - TMLO / MDTO metadata builder + e-Depot submission
+        //   (archief-edepot-handover-03 metadata bundling +
+        //   archief-edepot-handover-05 SIP submission).
+        // - external-ZGW client
+        //   (cross-municipality zaak hand-off via Zaken-API +
+        //   Documenten-API).
+        // - ZTC / Catalogi-API client
+        //   (zaaktype URL resolution before hand-off +
+        //   regional Catalogi-API zaaktype import).
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\External\Kvk\KvkHandelsregisterAdapterInterface::class,
+            \OCA\Procest\Service\External\Kvk\LogKvkHandelsregisterAdapter::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\External\Brp\BrpHaalCentraalAdapterInterface::class,
+            \OCA\Procest\Service\External\Brp\LogBrpHaalCentraalAdapter::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\External\Tmlo\TmloMetadataBuilderAdapterInterface::class,
+            \OCA\Procest\Service\External\Tmlo\LogTmloMetadataBuilderAdapter::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\External\Tmlo\EDepotSubmissionAdapterInterface::class,
+            \OCA\Procest\Service\External\Tmlo\LogEDepotSubmissionAdapter::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\External\Zgw\ZgwExternalAdapterInterface::class,
+            \OCA\Procest\Service\External\Zgw\LogZgwExternalAdapter::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\External\Ztc\ZtcCatalogiAdapterInterface::class,
+            \OCA\Procest\Service\External\Ztc\LogZtcCatalogiAdapter::class
+        );
+
         $this->registerWidgetsAndProviders(context: $context);
     }//end register()
 
