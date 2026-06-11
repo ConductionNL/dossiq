@@ -196,8 +196,9 @@ class DwangsomController extends Controller
      */
     private function jsonBody(): array
     {
-        $raw  = method_exists($this->request, 'getContent') === true
-            ? (string) $this->request->getContent() : '';
+        // OCP\IRequest::getContent() is protected on the concrete OC
+        // request; read raw payload from php://input instead.
+        $raw  = (string) file_get_contents('php://input');
         $body = json_decode($raw, true);
         return is_array($body) === true ? $body : [];
     }

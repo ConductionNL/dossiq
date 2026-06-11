@@ -92,8 +92,10 @@ class ConsultationController extends Controller
         }
 
         try {
-            $content = $this->request->getContent();
-            if ($content === '' || $content === false) {
+            // OCP\IRequest::getContent() is protected on the concrete OC
+            // request; read raw payload from php://input instead.
+            $content = (string) file_get_contents('php://input');
+            if ($content === '') {
                 $content = '{}';
             }
 
@@ -129,8 +131,10 @@ class ConsultationController extends Controller
         }
 
         try {
-            $content = $this->request->getContent();
-            if ($content === '' || $content === false) {
+            // OCP\IRequest::getContent() is protected on the concrete OC
+            // request; read raw payload from php://input instead.
+            $content = (string) file_get_contents('php://input');
+            if ($content === '') {
                 $content = '{}';
             }
 
@@ -167,8 +171,10 @@ class ConsultationController extends Controller
         }
 
         try {
-            $content = $this->request->getContent();
-            if ($content === '' || $content === false) {
+            // OCP\IRequest::getContent() is protected on the concrete OC
+            // request; read raw payload from php://input instead.
+            $content = (string) file_get_contents('php://input');
+            if ($content === '') {
                 $content = '{}';
             }
 

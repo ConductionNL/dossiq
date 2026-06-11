@@ -97,13 +97,12 @@ class DSOIntakeController extends Controller
     #[NoCSRFRequired]
     public function intake(): JSONResponse
     {
-        // NC's concrete Request class exposes getContent() as a protected
-        // method accessed here via the abstract framework contract.
-        // In production, the DI container injects OC\AppFramework\Http\Request
-        // which does implement this method.
-        $rawBody = method_exists(object_or_class: $this->request, method: 'getContent')
-            ? $this->request->getContent() // phpcs:disable
-            : '';
+        // OCP\AppFramework\Http\Request::getContent() is marked protected, so
+        // calling it across class scopes throws Error at runtime. Read the
+        // raw payload directly from php://input — the documented Symfony/PHP
+        // pattern for webhook receivers — which stays within public API
+        // surface and preserves the byte-exact body needed for HMAC validation.
+        $rawBody = (string) file_get_contents('php://input');
 
         if ($this->checkSignature(body: (string) $rawBody) === false) {
             $this->logger->warning(

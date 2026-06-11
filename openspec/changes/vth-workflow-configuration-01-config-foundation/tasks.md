@@ -31,4 +31,4 @@ Declarative foundation (templates + seed + repair steps + integration test). Tra
 ## 5. Integration Test
 
 - [x] Integration test: templates registered, LHSO cells present — assertion shape mirrored in the existing SeedDataServiceTest pattern (cross-cluster gate)
-- [~] Re-running master repair step produces no duplicates — DEFERRED to live env; each repair step's idempotency guard is the unit-covered branch
+- [x] Re-running master repair step produces no duplicates — live-verified 2026-06-11 against the dev container. Two consecutive `occ maintenance:repair --include-expensive` runs both log idempotent skip lines: `Procest schema config keys reconciled (0 written)` on the second pass, plus `Termijnbewaking seed complete: 0 definities (0 overgeslagen)`, `Repair step already executed` for all `SeedVthWorkflowTemplates` + `SeedVthMatrixCells` + `SeedLegesData` steps. No duplicate rows created in OR.

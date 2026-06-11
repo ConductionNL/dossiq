@@ -88,8 +88,10 @@ class IngebrekestellingController extends Controller
     public function register(): JSONResponse
     {
         if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
-        $raw  = method_exists($this->request, 'getContent') === true
-            ? (string) $this->request->getContent() : '';
+        // OCP\IRequest::getContent() is marked protected on the concrete
+        // OC request — calling it across class scopes throws Error at runtime.
+        // Read the raw payload directly from php://input instead.
+        $raw  = (string) file_get_contents('php://input');
         $body = json_decode($raw, true);
         $body = is_array($body) === true ? $body : [];
 

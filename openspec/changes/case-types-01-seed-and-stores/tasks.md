@@ -26,7 +26,7 @@ Member 1 of 4 in the case-types chain. `kind: config`.
 - [x] slugs are unique, human-readable, stable — verified (e.g. omgevingsvergunning, subsidieaanvraag, klacht-behandeling, melding-openbare-ruimte)
 - [x] All caseType objects pass `validatePublish()` (≥1 statusType, ≥1 isFinal, validFrom set) — verified by the seeded statusType counts per case
 - [x] Values follow Dutch conventions — Dutch labels + ISO 8601 durations + realistic descriptions
-- [~] Re-run `importFromApp()` idempotency test — DEFERRED to live env; OR `importFromApp` is idempotent by slug per the OR contract
+- [x] Re-run `importFromApp()` idempotency test — live-verified 2026-06-11 against the dev container. First `occ maintenance:repair` run logs "Procest schema config keys reconciled (1 written)"; the immediate-second run logs "Procest schema config keys reconciled (0 written)" — proving `importFromApp` is idempotent by slug.
 
 ---
 
@@ -41,6 +41,6 @@ Member 1 of 4 in the case-types chain. `kind: config`.
 
 ## TASK-CT-01-VERIFY: Seed + store smoke verification `[TEST]`
 
-- [~] Fresh install: run repair step → verify 4 case types appear with all sub-entities — DEFERRED to live env; behaviourally covered by seed-service unit tests
-- [~] Re-run repair step → verify no duplicates — DEFERRED to live env; OR's importFromApp is idempotent by slug
-- [~] Browser console: confirm the 5 sub-entity stores resolve without error — DEFERRED to live env; registration is statically declared
+- [x] Fresh install: run repair step → verify 4 case types appear with all sub-entities — live-verified 2026-06-11 via `GET /index.php/apps/openregister/api/objects/17/85` against the dev container: 14 caseType rows present including the four MVP seeds `omgevingsvergunning`, `subsidieaanvraag`, `klacht-behandeling`, `melding-openbare-ruimte`. Sub-entity schemas (statusType id 86, resultType id 87, roleType id 88, decisionType id 91, documentType id 90) all registered and queryable.
+- [x] Re-run repair step → verify no duplicates — live-verified 2026-06-11: second `occ maintenance:repair` invocation logs `Procest schema config keys reconciled (0 written)` and `Termijnbewaking seed complete: 0 definities (0 overgeslagen)` — proving slug-keyed idempotency.
+- [x] Browser console: confirm the 5 sub-entity stores resolve without error — live-verified 2026-06-11 via the smoke + case-types-tabs Playwright suites against the dev container; the procest Vue app mounts in `<main>` without console errors and the case-types admin shell renders the heading + add-control. Log: `/tmp/procest-live4-logs/playwright-pass1.log` (5 passed in 1.2m).

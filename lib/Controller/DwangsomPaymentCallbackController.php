@@ -79,9 +79,12 @@ class DwangsomPaymentCallbackController extends Controller
     #[NoCSRFRequired]
     public function callback(): JSONResponse
     {
-        $rawBody = method_exists($this->request, 'getContent') === true
-            ? (string) $this->request->getContent()
-            : '';
+        // The OCP IRequest::getContent() method is marked protected in
+        // OC\AppFramework\Http\Request, so we cannot call it across scopes —
+        // read the raw payload directly from php://input instead. This
+        // preserves the previous behavior (raw bytes for signature validation)
+        // while staying within public API surface.
+        $rawBody = (string) file_get_contents('php://input');
 
         if ($this->validateSignature($rawBody) === false) {
             $this->logger->warning('Dwangsom callback: invalid signature');
