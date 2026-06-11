@@ -240,11 +240,13 @@ export default {
 			}
 			this.loading = true
 			try {
-				const [parent, _subs, statusTypes] = await Promise.all([
+				const results = await Promise.all([
 					this.objectStore.fetchObject('case', this.parentCaseId).catch(() => null),
 					this.deelzaakStore.fetchSubCases(this.parentCaseId).catch(() => []),
 					this.objectStore.fetchCollection('statusType', { _limit: 200 }).catch(() => []),
 				])
+				const parent = results[0]
+				const statusTypes = results[2]
 				this.parent = parent
 				if (parent?.caseType) {
 					this.parentCaseType = await this.objectStore
