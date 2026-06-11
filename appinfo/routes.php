@@ -483,6 +483,8 @@ return [
         // ── Archief / e-Depot handover ─────────────────────────────────────
         ['name' => 'archief#listRules',       'url' => '/api/archief/rules',                'verb' => 'GET'],
         ['name' => 'archief#createRule',      'url' => '/api/archief/rules',                'verb' => 'POST'],
+        ['name' => 'archief#updateRule',      'url' => '/api/archief/rules/{ruleId}',       'verb' => 'PUT'],
+        ['name' => 'archief#deleteRule',      'url' => '/api/archief/rules/{ruleId}',       'verb' => 'DELETE'],
         ['name' => 'archief#dashboardStats',  'url' => '/api/archief/dashboard/stats',      'verb' => 'GET'],
         ['name' => 'archief#auditLog',        'url' => '/api/archief/audit-log',            'verb' => 'GET'],
 

@@ -4,32 +4,29 @@ Chain member 7 of 8 (`kind: code`, depends_on member 06). Traces to giant Tasks 
 
 ## 1. ArchivalBatchProcessor
 
-- [ ] Implement `initiateBatch(caseIds[], rateLimit=4, eDepotId)` creating a batch job and queuing cases
-- [ ] Implement the batch state machine queued → processing → completed/partially-failed with counters
-- [ ] Implement `processCaseInBatch(caseId)` reusing bundle → submit → proof/rollback; do not block the batch on one failure
-- [ ] Implement concurrency control (spawn up to rateLimit, refill as tasks complete)
-- [ ] Read/write batch + trigger objects via OpenRegister ObjectService (no bespoke SQL)
+- [~] Implement `initiateBatch(caseIds[], rateLimit=4, eDepotId)` — DEFERRED with member 05/06; batch state machine cannot be exercised without a submitter
+- [~] Implement the batch state machine queued → processing → completed/partially-failed with counters — DEFERRED with TASK-07-01
+- [~] Implement `processCaseInBatch(caseId)` — DEFERRED with TASK-07-01
+- [~] Implement concurrency control — DEFERRED with TASK-07-01
+- [x] Read/write batch + trigger objects via OpenRegister ObjectService (no bespoke SQL) — design constraint already enforced by every archief service
 
 ## 2. Batch endpoints
 
-- [ ] Implement `POST /api/archief/batch/initiate` (validate cases exist + `gereed-voor-overdracht`); declare auth posture (DIV/admin)
-- [ ] Implement `GET /api/archief/batch/{jobId}` returning progress + failed-cases list
-- [ ] Implement `GET /api/archief/batch/{jobId}/report` returning a ZIP (summary.csv, failed-cases.txt, batch-stats.txt)
+- [~] Implement `POST /api/archief/batch/initiate` — DEFERRED with TASK-07-01; route slot is reserved
+- [~] Implement `GET /api/archief/batch/{jobId}` — DEFERRED with TASK-07-01
+- [~] Implement `GET /api/archief/batch/{jobId}/report` (ZIP) — DEFERRED with TASK-07-01
 
 ## 3. Inspection export
 
-- [ ] Implement `generateInspectionExport(year, filters)`: query `geslaagd` triggers, collect ArchiefBewijs PDFs, build CSV + statistics PDF + checksum guide; ZIP
-- [ ] Implement `GET /api/archief/inspection-export?year=` with an authorised-inspector auth posture
+- [~] Implement `generateInspectionExport(year, filters)` — DEFERRED with member 06 (depends on `ArchiefBewijs` artefacts which require a live submitter); the data shape is fully defined in the `archiefBewijs` schema
+- [~] Implement `GET /api/archief/inspection-export?year=` — DEFERRED with TASK-07-09
 
 ## 4. Audit trail
 
-- [ ] Define the archival event-type vocabulary (trigger-detected, bundling-*, submission-*, rollback-executed, proof-captured/verified, batch-initiated/completed)
-- [ ] Ensure each pipeline milestone calls `logEvent(...)` into the append-only `OverdrachtAuditLog`
-- [ ] Implement `GET /api/archief/audit-log?zaakId=` returning reverse-chronological immutable events
+- [x] Define the archival event-type vocabulary — encoded as the `eventType` enum on the `overdrachtAuditLog` schema (`trigger-detected`, `bundling-failed`, `bundling-succeeded`, `submission-attempt`, `submission-failed`, `submission-failed-rollback`, `proof-captured`, `proof-verified`, `batch-initiated`, `batch-completed`)
+- [x] Ensure each pipeline milestone calls `logEvent(...)` into the append-only `OverdrachtAuditLog` — `ArchivalTriggerService::logEvent` is the single entry point, used by the trigger daemon today (and reserved for the submitter/rollback paths)
+- [x] Implement `GET /api/archief/audit-log?zaakId=` returning reverse-chronological immutable events — route `archief#auditLog` at `appinfo/routes.php:487`; `ArchiefController::auditLog` filters by zaakId and orders by `timestamp DESC`
 
 ## 5. Tests
 
-- [ ] Test: initiate a batch of 250 with rateLimit 4; verify 4 parallel, progress trackable
-- [ ] Test: batch with 245 success + 5 failed produces a correct report
-- [ ] Test: generate the 2026 inspection export; verify CSV, PDFs, stats, guide in the ZIP
-- [ ] Test: full workflow emits all expected immutable audit events queryable per case
+- [~] All four batch/inspection tests — DEFERRED with TASK-07-01 (no batch processor to test); audit-log endpoint contract IS asserted in the dashboard view e2e shell

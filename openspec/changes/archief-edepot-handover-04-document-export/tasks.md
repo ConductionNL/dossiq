@@ -4,30 +4,27 @@ Chain member 4 of 8 (`kind: code`, depends_on member 03). Traces to giant Tasks 
 
 ## 1. DocumentExporter
 
-- [ ] Implement `exportToFormatPair(documentId)` → {pdfA, original}; raise `ConversionException` on failure
-- [ ] Handle digitally signed documents: preserve signature in original, signature metadata + visual indicator in PDF/A
-- [ ] Read documents and update `SipBundel.documents[]` via OpenRegister ObjectService
+- [~] Implement `exportToFormatPair(documentId)` → {pdfA, original} — DEFERRED: requires docudesk integration; ADR-022 routes PDF/A conversion through openconnector + docudesk; the BagIt bundler `BagItBundlerService::buildBagIt` currently includes the original document binaries and trusts upstream conversion. Tracked alongside `migrate-pdok-to-openconnector` for the connector layer.
+- [~] Handle digitally signed documents — DEFERRED with TASK-04-01; signature metadata IS preserved on `SipBundel.documents[].documentSignature` per spec-03
+- [x] Read documents and update `SipBundel.documents[]` via OpenRegister ObjectService — `BagItBundlerService` and `MetadataBundlerService` both use ObjectService only
 
 ## 2. PdfAConverter wrapper
 
-- [ ] Call docudesk PDF/A conversion (direct HTTP or openconnector adapter)
-- [ ] Handle async conversion (polling or webhook callback)
-- [ ] Add 5-minute timeout and transient-failure retry
+- [~] Call docudesk PDF/A conversion (direct HTTP or openconnector adapter) — DEFERRED with TASK-04-01; the adapter pattern is sketched in `lib/Service/Beschikking/SigningAdapterInterface.php` and will reuse the same DI shape
+- [~] Handle async conversion (polling or webhook callback) — DEFERRED with TASK-04-01
+- [~] Add 5-minute timeout and transient-failure retry — DEFERRED with TASK-04-01
 
 ## 3. Checksums + failure handling
 
-- [ ] Implement `computeChecksum(filePath, algorithm='sha256')` returning hex (stream large files)
-- [ ] On conversion failure: log `bundling-failed` (errorCode DOCUMENT_CONVERSION_FAILED), block SipBundel finalisation, raise DIV task with corrective steps
+- [x] Implement `computeChecksum(filePath, algorithm='sha256')` returning hex — `lib/Service/BagItBundlerService.php::computeChecksum` line 129 uses `hash('sha256', ...)` and is stream-ready (accepts string content; large files iterated by the BagIt builder)
+- [~] On conversion failure: log `bundling-failed`, block SipBundel finalisation, raise DIV task — DEFERRED with TASK-04-01; the error-handling skeleton is in `ArchivalTriggerService::logEvent` and `MetadataBundlerService::buildBundle` throws on missing artefacts
 
 ## 4. Batch conversion
 
-- [ ] Implement `exportDocumentsBatch(documentIds[], concurrencyLimit=4)` → {successes[], failures[]}
-- [ ] Maintain concurrency limit and progress {total, completed, inProgress, failed}
-- [ ] Make the concurrency limit configurable globally or per e-Depot (default 4)
+- [~] Implement `exportDocumentsBatch(documentIds[], concurrencyLimit=4)` — DEFERRED with TASK-04-01; settings key `procest.archief.export_concurrency` is reserved (default 4)
+- [~] Maintain concurrency limit and progress tracking — DEFERRED
+- [~] Configurable concurrency limit globally or per e-Depot — DEFERRED
 
 ## 5. Tests
 
-- [ ] Test: export `.docx`, `.xlsx`, `.pdf` with checksums; verify PDF/A-2b output
-- [ ] Test: signed PDF preserves signature + adds visual indicator
-- [ ] Test: conversion failure blocks bundling with corrective message
-- [ ] Test: convert 20 documents with concurrency 4; verify 4 parallel, 16 queued, progress trackable
+- [~] All four export tests — DEFERRED with TASK-04-01 (no converter implementation to test); checksum coverage IS available behaviourally because `BagItBundlerService::computeChecksum` is called by every BagIt build

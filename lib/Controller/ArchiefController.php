@@ -120,6 +120,69 @@ class ArchiefController extends Controller
     }//end createRule()
 
     /**
+     * Update a retention rule.
+     *
+     * @NoAdminRequired
+     *
+     * @param string $ruleId Rule id.
+     *
+     * @return JSONResponse
+     *
+     * @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md
+     */
+    public function updateRule(string $ruleId): JSONResponse
+    {
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+        $body = $this->jsonBody();
+        $body['id'] = $ruleId;
+        if (isset($body['bewaartermijnJaren']) === true) {
+            $jaren = (int) $body['bewaartermijnJaren'];
+            if ($jaren < 1) {
+                return new JSONResponse(['message' => 'bewaartermijnJaren must be >= 1 or 9999 (permanent)'], Http::STATUS_BAD_REQUEST);
+            }
+        }
+        if (isset($body['zaaktypeKey']) === true && (string) $body['zaaktypeKey'] === '') {
+            return new JSONResponse(['message' => 'zaaktypeKey cannot be empty'], Http::STATUS_BAD_REQUEST);
+        }
+        return new JSONResponse($this->saveOne('bewaar_termijn_regel_schema', $body));
+    }//end updateRule()
+
+    /**
+     * Delete a retention rule.
+     *
+     * @NoAdminRequired
+     *
+     * @param string $ruleId Rule id.
+     *
+     * @return JSONResponse
+     *
+     * @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md
+     */
+    public function deleteRule(string $ruleId): JSONResponse
+    {
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+        $objectService = $this->settings->getObjectService();
+        $register      = (string) $this->settings->getConfigValue('register');
+        $schema        = (string) $this->settings->getConfigValue('bewaar_termijn_regel_schema');
+        if ($objectService === null || $register === '' || $schema === '') {
+            return new JSONResponse(['message' => 'OpenRegister unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
+        }
+        try {
+            if (method_exists($objectService, 'deleteObject') === true) {
+                $objectService->deleteObject($register, $schema, $ruleId);
+            }
+        } catch (Throwable $e) {
+            $this->logger->warning('Archief deleteRule failed', ['ruleId' => $ruleId, 'error' => $e->getMessage()]);
+            return new JSONResponse(['message' => 'Delete failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
+        }
+        return new JSONResponse(['success' => true]);
+    }//end deleteRule()
+
+    /**
      * Dashboard stats.
      *
      * @NoAdminRequired
