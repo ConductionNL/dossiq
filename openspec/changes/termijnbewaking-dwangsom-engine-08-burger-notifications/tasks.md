@@ -4,28 +4,28 @@ Member 8 of 11 (code). Depends on member 07. Traces to giant Tasks 14, 15 (REQ-T
 
 ## 1. Templates (Dutch)
 
-- [ ] Template "ontvangstbevestiging": zaak-ref, wettelijke termijn, berekende einddatum, portal link, contact
-- [ ] Template "extension-notification": new deadline + extension-brief copy
-- [ ] Template "ingebrekestelling-receipt": confirmation date, grace-end date, dwangsom-tariff transparency, beschikking-stop statement
-- [ ] Template "dwangsom-payment-notification": bedrag, payment date, payment reference, confirmation
+- [x] Template "ontvangstbevestiging": zaak-ref, wettelijke termijn, berekende einddatum, portal link, contact — rendered by `lib/Service/TermijnNotificationService.php::renderOntvangstbevestiging`
+- [x] Template "extension-notification": new deadline + extension-brief copy — `renderExtensionNotification`
+- [x] Template "ingebrekestelling-receipt": confirmation date, grace-end date, dwangsom-tariff transparency, beschikking-stop statement — `renderIngebrekestellingReceipt`
+- [x] Template "dwangsom-payment-notification": bedrag, payment date, payment reference, confirmation — `renderDwangsomPaymentNotification`
 
 ## 2. NotificationService + delivery
 
-- [ ] Implement `NotificationService.sendTermijnNotification(type, termijnInstanceId, recipientUserId)`
-- [ ] Render template with case-specific data (zaak-ref, dates, amounts)
-- [ ] Deliver via procest notification-router (Nextcloud notificatie + email + portal)
-- [ ] Route user-facing strings through the en/nl translation layer (no hardcoded copy)
-- [ ] Log all sends to the audit trail
+- [x] Implement `NotificationService.sendTermijnNotification(type, termijnInstanceId, recipientUserId)` — `TermijnNotificationService::sendTermijnNotification` line 73
+- [x] Render template with case-specific data (zaak-ref, dates, amounts) — render-* helpers per template
+- [x] Deliver via procest notification-router (Nextcloud notificatie + email + portal) — calls OCP\Notification\IManager + IMailer
+- [x] Route user-facing strings through the en/nl translation layer (no hardcoded copy) — `$this->l10n->t(...)` keyed strings; en/nl bundled in `l10n/en.json` + `l10n/nl.json`
+- [x] Log all sends to the audit trail — ILogger info + IEventDispatcher `termijn-notification-sent` event consumed by audit listener
 
 ## 3. Lifecycle wiring
 
-- [ ] Consume the ontvangstbevestiging trigger from member 02 (on create)
-- [ ] Consume the extension trigger from member 03
-- [ ] Consume the ingebrekestelling-receipt trigger from member 05
-- [ ] Consume the payment trigger from member 07
-- [ ] Implement async notification queue (non-blocking on SMTP failures)
+- [x] Consume the ontvangstbevestiging trigger from member 02 (on create) — `TermijnNotificationService` subscribed to `termijn-instance-created`
+- [x] Consume the extension trigger from member 03 — listens to `termijn-extension-granted`
+- [x] Consume the ingebrekestelling-receipt trigger from member 05 — listens to `ingebrekestelling-ontvangen`
+- [x] Consume the payment trigger from member 07 — listens to `dwangsom-betaald`
+- [~] Implement async notification queue (non-blocking on SMTP failures) — DEFERRED: current implementation uses Nextcloud's IMailer (synchronous) with try/catch fallback to notification-only; switching to a queue requires either NC global background-job (`OC\Mail\EMailTemplate`) or rabbit; not blocking burger flows since failures are logged + retried by daily-scan
 
 ## 4. Tests
 
-- [ ] Unit test: template rendering with case data + recipient resolution
-- [ ] Integration test: each lifecycle trigger dispatches the correct template; async queue drains
+- [x] Unit test: template rendering with case data + recipient resolution — `tests/Unit/Service/TermijnNotificationServiceTest.php` covers each render-* helper + recipient resolution
+- [~] Integration test: each lifecycle trigger dispatches the correct template — DEFERRED: needs live OR event-bus; covered by EndToEnd unit test which dispatches events manually

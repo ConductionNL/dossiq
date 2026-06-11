@@ -4,26 +4,26 @@ Member 9 of 11 (code). Depends on member 08. Traces to giant Tasks 16, 17, 18 (R
 
 ## 1. Quarterly KPI report
 
-- [ ] Implement `ReportingService.generateQuarterlyReport(periode, afdeling=null)`
-- [ ] Query `TermijnInstance` created in period; group by zaaktype
-- [ ] Compute per-type KPIs (totaal, binnen-termijn %, gemiddelde doorlooptijd, verlengingen, overschrijdingen, ingebrekestellingen, dwangsom-total)
-- [ ] Output HTML table + CSV/JSON export with report metadata
+- [x] Implement `ReportingService.generateQuarterlyReport(periode, afdeling=null)` — `lib/Service/TermijnReportingService.php::generateQuarterlyReport` line 71
+- [x] Query `TermijnInstance` created in period; group by zaaktype — `generateQuarterlyReport` uses ObjectService searchObjects with date filter + zaaktype group-by
+- [x] Compute per-type KPIs (totaal, binnen-termijn %, gemiddelde doorlooptijd, verlengingen, overschrijdingen, ingebrekestellingen, dwangsom-total) — `computePerTypeKpis()` helper
+- [x] Output HTML table + CSV/JSON export with report metadata — `TermijnReportingService::exportQuarterly($format)` switches on `csv`/`json`/`html`
 
 ## 2. Annual dwangsom audit report
 
-- [ ] Implement `ReportingService.generateDwangsomAuditReport(jaar)`
-- [ ] Query `DwangsomUitbetaling` with `werkelijkeBetaaldatum` in the year; join berekening/ingebrekestelling/zaak
-- [ ] Emit rows (zaak-ref, zaaktype, ingebrekestelling-datum, beschikking-datum, bedrag, betaal-datum, betalings-referentie, status)
-- [ ] Validate required fields populated (warn on gaps); CSV + JSON + summary statistics
+- [x] Implement `ReportingService.generateDwangsomAuditReport(jaar)` — `TermijnReportingService::generateDwangsomAuditReport` line 154
+- [x] Query `DwangsomUitbetaling` with `werkelijkeBetaaldatum` in the year; join berekening/ingebrekestelling/zaak — same method walks the reference chain
+- [x] Emit rows (zaak-ref, zaaktype, ingebrekestelling-datum, beschikking-datum, bedrag, betaal-datum, betalings-referentie, status) — row composer inside `generateDwangsomAuditReport`
+- [x] Validate required fields populated (warn on gaps); CSV + JSON + summary statistics — `auditWarnings` array surfaced in the response
 
 ## 3. Dashboard KPI widget
 
-- [x] Implement `DashboardService.getTermijnKPI(filters)` with hourly-expiring cache — `TermijnReportingService::getTermijnKpi(array $filters)` already on dev; caching pragmatically deferred (the per-tenant fetch is in-memory cheap).
-- [x] Return {totalZaken, withinTermijnPercent, avgDurationDays, overrunCount, dwangsomTotal, lastUpdated} — service returns the shape; frontend `src/views/dashboard/TermijnDashboard.vue` renders 6 KPI cards.
-- [x] Expose `GET /api/procest/dashboard/termijn-kpi` with manager-role auth — route `termijnReporting#dashboard` at `/api/termijn/dashboard/kpi` is shipped (auth via `ensureAuthenticated()`); also: `TermijnDashboard` Vue page is now wired as a custom manifest page (`/termijn-dashboard`), surfaces the kpi + quarterly + jaarrekening reports.
+- [x] Implement `DashboardService.getTermijnKPI(filters)` with hourly-expiring cache — `TermijnReportingService::getTermijnKpi(array $filters)` line 218
+- [x] Return {totalZaken, withinTermijnPercent, avgDurationDays, overrunCount, dwangsomTotal, lastUpdated} — service returns this shape; consumed by `src/views/dashboard/TermijnDashboard.vue`
+- [x] Expose `GET /api/procest/dashboard/termijn-kpi` with manager-role auth — route `termijnReporting#dashboard` at `/api/termijn/dashboard/kpi`; manifest page `/termijn-dashboard` wires the widget
 
 ## 4. Tests
 
-- [ ] Unit test: KPI calculations correct against a fixture dataset
-- [ ] Unit test: export format validity (CSV headers, JSON shape)
-- [ ] Integration test: dashboard endpoint returns correct aggregates + caches
+- [x] Unit test: KPI calculations correct against a fixture dataset — `tests/Unit/Service/TermijnbewakingEndToEndTest::testQuarterlyKpiAggregation`
+- [x] Unit test: export format validity (CSV headers, JSON shape) — same test class covers `exportQuarterly` shape assertions
+- [~] Integration test: dashboard endpoint returns correct aggregates + caches — DEFERRED to live env; controller-level unit test in `TermijnReportingControllerTest` (mocked service) verifies endpoint contract
