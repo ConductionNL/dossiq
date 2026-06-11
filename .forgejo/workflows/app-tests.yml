@@ -1,0 +1,45 @@
+# app-tests.yml — procest caller for the reusable feature-test workflow.
+#
+# Runs the PHASE-5 testing layers on every PR to the protected branches.
+# l10n-check HARD-GATES; e2e/newman are scaffolded and opt-in (run-e2e /
+# run-newman) until the NC service container is wired (see tests.yml TODOs).
+# Additive — sits alongside the existing release/quality workflows.
+#
+# unit-gating: false — procest's tests/Unit suite carries ~45 pre-existing
+# failures on baseline (the team-chain / Termijnbewaking seed-data services:
+# 28 errors + 20 failures observed in the dev container). The phpunit-unit job
+# still runs and reports them, but does not block the PR until that debt is paid
+# down. The authoritative procest unit gate is the in-container run
+# (`docker exec -u 33 -w /var/www/html/custom_apps/procest nextcloud
+#  ./vendor/bin/phpunit --configuration phpunit-unit.xml --no-coverage`), since
+# its bootstrap reaches the NC server tree when one is present. Flip to true once
+# the team-chain suite is green.
+
+name: app-tests
+
+on:
+  pull_request:
+    branches:
+      - development
+      - main
+      - beta
+  workflow_dispatch:
+    inputs:
+      run-e2e:
+        type: boolean
+        default: false
+      run-newman:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    uses: ./.forgejo/workflows/tests.yml
+    with:
+      app-id: procest
+      unit-gating: false
+      run-e2e: ${{ github.event.inputs.run-e2e == 'true' }}
+      run-newman: ${{ github.event.inputs.run-newman == 'true' }}
