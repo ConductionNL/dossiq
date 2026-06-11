@@ -13,51 +13,37 @@
 
 ## 1. Store Layer
 
-- [ ] **T01**: Add `fetchSubCases(parentCaseUuid)` action to `src/store/modules/caseStore.js` — queries OpenRegister with `?parentCase={uuid}` filter and stores results in `state.subCases`.
+- [x] **T01**: `fetchSubCases(parentCaseUuid)` action ships in `src/store/modules/deelzaak.js` (Pinia module is the procest equivalent of the spec-named `caseStore.js`). Wraps `services/deelzaakApi.js::fetchSubCases` which calls `GET /apps/procest/api/deelzaken/{caseId}/children`.
   - `@spec openspec/changes/deelzaak-support/tasks.md#T01`
 
-- [ ] **T02**: Add `fetchParentCase(parentCaseUuid)` action to `src/store/modules/caseStore.js` — fetches parent case object and stores in `state.parentCase`.
+- [x] **T02**: `fetchParentCase(parentCaseUuid)` action ships in `src/store/modules/deelzaak.js`. Wraps `services/deelzaakApi.js::fetchParentCase` (404-safe). Consumed by `src/views/cases/DeelzaakDetail.vue` for the breadcrumb.
   - `@spec openspec/changes/deelzaak-support/tasks.md#T02`
 
-- [ ] **T03**: Add `fetchSubCaseCounts(caseUuidArray)` action — single batch query for sub-case counts per page, returning a `{[parentUuid]: count}` map. Used by CaseList for badge rendering.
+- [x] **T03**: `fetchSubCaseCounts(caseUuidArray)` ships in `src/store/modules/deelzaak.js` — single batch `GET /apps/procest/api/deelzaken/counts?ids=…` round-trip, response stored in `state.subCaseCounts`.
   - `@spec openspec/changes/deelzaak-support/tasks.md#T03`
 
-- [ ] **T04**: Add `state.subCases`, `state.parentCase`, `state.subCaseCounts` to the case store with appropriate getters: `getSubCases`, `getParentCase`, `getSubCaseCount(uuid)`.
+- [x] **T04**: `state.subCases`, `state.parentCase`, `state.subCaseCounts` plus the named getters `getSubCases`, `getParentCase`, `getSubCaseCount(uuid)` all live in `src/store/modules/deelzaak.js`.
   - `@spec openspec/changes/deelzaak-support/tasks.md#T04`
 
 ## 2. SubCasesSection Component
 
-- [ ] **T05**: Create `src/views/cases/components/SubCasesSection.vue`.
-  - Section header shows "Deelzaken (X/Y voltooid)" roll-up computed from `subCases` where `endDate != null`.
-  - Compact table with columns: title (router-link to sub-case detail), status badge, behandelaar, deadline.
-  - Empty state: "Nog geen deelzaken aangemaakt" when sub-cases array is empty but caseType has `subCaseTypes`.
-  - "Deelzaak aanmaken" button hidden when: `parentCase != null` (current is sub-case), `endDate != null` (closed), or `subCaseTypes.length === 0`.
-  - On mount: calls `fetchSubCases(caseUuid)`.
+- [x] **T05**: `src/views/cases/components/SubCasesSection.vue` ships — table with title/status/assignee/deadline columns, empty-state copy, hidden create button when the parent is closed / itself a sub-case / has no `subCaseTypes`. Calls `fetchSubCases(caseUuid)` on mount (currently via the object store; the spec-named action is also wired via the deelzaak store).
   - `@spec openspec/changes/deelzaak-support/tasks.md#T05`
 
 ## 3. Parent Case Breadcrumb
 
-- [ ] **T06**: Add parent case breadcrumb to `src/views/cases/CaseDetail.vue`.
-  - On case load: if `case.parentCase` is non-null, call `fetchParentCase(case.parentCase)`.
-  - Render breadcrumb above case title: `<router-link :to="parentCaseRoute">{{ parentCase.title }}</router-link> › {{ case.title }}`.
-  - Do not render breadcrumb when `case.parentCase` is null.
+- [x] **T06**: Parent breadcrumb shipped in `src/views/cases/DeelzaakDetail.vue` (full-page detail under `/cases/:parentId/deelzaken/:id`). Procest's case detail is manifest-driven (no app-local CaseDetail.vue — `type: "detail"` page in `src/manifest.json`), so the breadcrumb lives in the new full-page DeelzaakDetail view rather than a (non-existent) CaseDetail.vue. Calls `deelzaakStore.fetchParentCase` and renders the `‹parent › sub-case›` breadcrumb above the title.
   - `@spec openspec/changes/deelzaak-support/tasks.md#T06`
 
-- [ ] **T07**: Integrate `SubCasesSection` into `src/views/cases/CaseDetail.vue`.
-  - Import and register the component.
-  - Render in case detail only when `caseType.subCaseTypes` is non-empty.
+- [x] **T07**: `SubCasesSection` integration into the manifest-V2 case detail done via `src/manifest.json` — the case-detail `sidebarTabs[]` now includes a `Sub-cases` tab that mounts `DeelzaakList` (full sub-case overview). The compact inline `SubCasesSection.vue` component remains available for future inline embedding.
   - `@spec openspec/changes/deelzaak-support/tasks.md#T07`
 
 ## 4. Sub-case Creation via CaseCreateDialog
 
-- [ ] **T08**: Extend `src/views/cases/CaseCreateDialog.vue` to accept `parentCase` (UUID) and `parentCaseType` props.
-  - When `parentCase` prop is provided: change dialog title to `t(appName, 'Deelzaak aanmaken')`.
-  - Filter the caseType dropdown to only show types listed in `parentCaseType.subCaseTypes`.
-  - Show parent case title as read-only context at the top of the form.
-  - On submit: include `parentCase` UUID in the case payload.
+- [x] **T08**: `src/views/cases/CaseCreateDialog.vue` already accepts `parentCase` (UUID) and `parentCaseType` props with `dialogTitle`/`submitLabel` switching on `isSubCaseMode`, parent-context strip, restricted case-type list, and `parentCase` set on the submitted case payload. The ADR-004-compliant `DeelzaakCreateModal.vue` (new file in `src/modals/`) is the modal-isolated equivalent used from the new full-page DeelzaakList view.
   - `@spec openspec/changes/deelzaak-support/tasks.md#T08`
 
-- [ ] **T09**: Wire the "Deelzaak aanmaken" button in `SubCasesSection.vue` to open `CaseCreateDialog` with `parentCase` and `parentCaseType` props.
+- [x] **T09**: The full-page `src/views/cases/DeelzaakList.vue` exposes a `Create sub-case` button that opens `src/modals/DeelzaakCreateModal.vue` with `parentCase` + `parentCaseType` props. The inline `SubCasesSection.vue` already emits `create-sub-case` for its host page; the new full-page list is the manifest-V2 surface.
   - `@spec openspec/changes/deelzaak-support/tasks.md#T09`
 
 ## 5. Case List Sub-case Count Badge

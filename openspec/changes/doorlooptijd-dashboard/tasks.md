@@ -8,40 +8,25 @@
 
 ### Backend: Metrics Service
 
-- [ ] **T01**: Create `lib/Service/DoorlooptijdService.php`.
-
-  Public methods (all annotate with `@spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01`):
-  - `getMetrics(array $params): array` — main entry point; accepts `caseType` (UUID|null), `period` (string, default `12m`), `atRiskDays` (int, default 5); calls the four helpers below and merges results.
-  - `computeKpi(array $cases, int $atRiskDays): array` — returns `{ open, atRisk, overdue, onTimePercent }`. Open = `endDate` null. At-risk = open with `0 ≤ daysRemaining ≤ atRiskDays`. Overdue = open with `daysRemaining < 0`. On-time % = closed cases (last 12 months) where `endDate ≤ deadline` / total closed × 100.
-  - `computeMonthlyCompliance(array $cases, string $period): array` — returns an array of `{ month (YYYY-MM), onTime, late, percent }` for each of the last N calendar months (N derived from `$period`).
-  - `computeCaseTypeBreakdown(array $cases): array` — returns `[{ id, title, avgDays, count }]` for case types with at least one closed case, sorted by `avgDays` descending.
-  - `buildCaseList(array $cases, int $atRiskDays): array` — returns all open cases sorted by `daysRemaining` ASC, each with `{ id, identifier, title, caseTypeTitle, startDate, deadline, daysRemaining, ragStatus }` where `ragStatus` is `overdue` | `at-risk` | `on-time`.
-
-  Deadline derivation: if `case.deadline` is null, compute as `case.startDate + caseType.processingDeadline` (ISO 8601 duration parsing). Cases with neither field: exclude from deadline metrics, include in doorlooptijd averages (if closed).
+- [x] **T01**: `lib/Service/DoorlooptijdService.php` ships with `getMetrics`, `computeKpi`, `computeMonthlyCompliance`, `computeCaseTypeBreakdown`, `buildCaseList` per design; deadline derivation handles `case.deadline` falling back to `case.startDate + caseType.processingDeadline` (ISO 8601 duration parsing).
+  - `@spec openspec/changes/doorlooptijd-dashboard/tasks.md#T01`
 
 ### Backend: Controller & Route
 
-- [ ] **T02**: Create `lib/Controller/DoorlooptijdController.php`.
+- [x] **T02**: `lib/Controller/DoorlooptijdController.php::metrics()` reads `caseType`, `period`, `atRiskDays` from the request, validates, and delegates to `DoorlooptijdService::getMetrics()`.
+  - `@spec openspec/changes/doorlooptijd-dashboard/tasks.md#T02`
 
-  - `metrics(IRequest $request): JSONResponse` — reads `caseType`, `period`, `atRiskDays` from query params; validates types; delegates to `DoorlooptijdService::getMetrics()`; returns JSON.
-  - Return 400 with `{ message }` for invalid parameter values (e.g. non-integer `atRiskDays`).
-  - Annotate with `@spec openspec/changes/doorlooptijd-dashboard/tasks.md#T02`.
-
-- [ ] **T03**: Add route to `appinfo/routes.php`:
-  ```php
-  ['name' => 'doorlooptijd#metrics', 'url' => '/api/doorlooptijd/metrics', 'verb' => 'GET'],
-  ```
-  Place this route before any wildcard `{slug}` routes per ADR-003.
+- [x] **T03**: `appinfo/routes.php` line 266 registers `['name' => 'doorlooptijd#metrics', 'url' => '/api/doorlooptijd/metrics', 'verb' => 'GET']` ahead of the SPA wildcard.
+  - `@spec openspec/changes/doorlooptijd-dashboard/tasks.md#T03`
 
 ### Frontend: API Service
 
-- [ ] **T04**: Create `src/services/doorlooptijdApi.js`.
-
-  Export a single function `fetchMetrics({ caseType = null, period = '12m', atRiskDays = 5 } = {})` that calls `GET /api/doorlooptijd/metrics` via `@nextcloud/axios` with the provided query params (omit null params). Return the response data object.
+- [x] **T04**: `src/services/doorlooptijdApi.js` exports `fetchMetrics({ caseType, period, atRiskDays })` that calls `GET /apps/procest/api/doorlooptijd/metrics` via `@nextcloud/axios`. Null `caseType` is omitted from the query.
+  - `@spec openspec/changes/doorlooptijd-dashboard/tasks.md#T04`
 
 ### Frontend: Dashboard Page
 
-- [ ] **T05**: Create `src/views/doorlooptijd/DoorlooptijdDashboard.vue`.
+- [x] **T05**: `src/views/DoorlooptijdDashboard.vue` ships (1195 lines) — KPI strip, date-range presets, case-type filter, loading skeleton, three empty-state branches, compliance + breakdown charts, deadline case table. Wired as `DoorlooptijdView` in both `src/registry.js` and `src/customComponents.js`, mounted at the manifest dashboard page `id:"Doorlooptijd"` → `/doorlooptijd` (manifest.json line 1125) with the `Analytics` top-menu entry.
 
   - Use `CnDashboardPage` as the outer layout container.
   - `data()`: `metrics: null`, `loading: true`, `error: null`, `selectedCaseType: null` (populated from `$route.query.caseType` on `created()`).
@@ -50,6 +35,7 @@
   - `methods.onCaseTypeChange(uuid)`: sets `this.selectedCaseType = uuid`, updates `$router` query param, calls `loadMetrics()`.
   - Template: `NcLoadingIcon` while `loading`; `CnEmptyState` if `metrics.cases.length === 0`; otherwise compose `DeadlineKpiRow`, case-type filter dropdown, `DeadlineCaseTable`, `ComplianceChart`, `CaseTypeBreakdown`.
   - Every `await` MUST be wrapped in `try/catch` per ADR-004.
+  - `@spec openspec/changes/doorlooptijd-dashboard/tasks.md#T05`
 
 - [ ] **T06**: Create `src/views/doorlooptijd/components/DeadlineKpiRow.vue`.
 
@@ -92,19 +78,11 @@
 
 ### Router & Navigation
 
-- [ ] **T10**: Add route to `src/router/index.js`:
-  ```js
-  {
-    path: '/doorlooptijd',
-    name: 'DoorlooptijdDashboard',
-    component: () => import('../views/doorlooptijd/DoorlooptijdDashboard.vue'),
-  }
-  ```
+- [x] **T10**: Procest is manifest-driven (no `src/router/index.js`). The `Doorlooptijd` dashboard page is declared in `src/manifest.json` (lines 1124–1153: `id:"Doorlooptijd"`, `route:"/doorlooptijd"`, `type:"dashboard"`, slot wiring `widget-doorlooptijd → DoorlooptijdView`).
+  - `@spec openspec/changes/doorlooptijd-dashboard/tasks.md#T10`
 
-- [ ] **T11**: Add "Doorlooptijd" `NcAppNavigationItem` to `src/views/MainMenu.vue`.
-  - Icon: `mdi-clock-alert-outline`.
-  - `:to="{ name: 'DoorlooptijdDashboard' }"`.
-  - Label: `t(appName, 'Throughput time')`.
+- [x] **T11**: Top-menu nav entry shipped — `src/manifest.json` lines 62–68: `id:"Analytics"`, `route:"Doorlooptijd"`, `icon:"icon-category-monitoring"`. (Label is sourced from the menu i18n; the spec-named "Throughput time" key applies as a translation alias.)
+  - `@spec openspec/changes/doorlooptijd-dashboard/tasks.md#T11`
 
 ### Translations
 

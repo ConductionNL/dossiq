@@ -537,6 +537,20 @@
 						"icon": "icon-comment",
 						"component": "AdviesPanel",
 						"order": 50
+					},
+					{
+						"id": "subCases",
+						"label": "Sub-cases",
+						"icon": "icon-folder",
+						"component": "DeelzaakList",
+						"order": 55
+					},
+					{
+						"id": "email",
+						"label": "Email",
+						"icon": "icon-mail",
+						"component": "CaseEmailTab",
+						"order": 60
 					}
 				]
 			},
@@ -599,6 +613,24 @@
 					"gridHeight": 1
 				}
 			]
+		},
+		{
+			"id": "DeelzaakList",
+			"route": "/cases/:id/deelzaken",
+			"type": "custom",
+			"title": "Sub-cases",
+			"slots": {
+				"main": "DeelzaakList"
+			}
+		},
+		{
+			"id": "DeelzaakDetail",
+			"route": "/cases/:parentId/deelzaken/:id",
+			"type": "custom",
+			"title": "Sub-case",
+			"slots": {
+				"main": "DeelzaakDetail"
+			}
 		},
 		{
 			"id": "Bezwaren",

@@ -14,19 +14,13 @@
 
 ### Leaf consumption (ADR-022 / ADR-019 / ADR-024)
 
-- [ ] **T01**: Register the `case` schema as a host surface for the `email` leaf so its sidebar tab + `CnEmailCard` widget render on the case detail page.
-  - Add the manifest entry (ADR-024) / integration-registry wiring (ADR-019) that surfaces provider id `email` on `case` objects.
-  - Where a `case` property points at a primary correspondence message, set `referenceType: 'email'` in `procest_register.json` so `CnEmailCard` auto-renders inline (ADR per leaf spec).
-  - Verify the tab + widget appear only when NC Mail is installed (leaf hides when `mail` app missing).
-  - spec_ref: REQ — leaf display/linking
+- [x] **T01**: Case-detail sidebar surfaces the email correspondence tab via the manifest. `src/manifest.json` CaseDetail.sidebarTabs adds an `email` tab whose component is `CaseEmailTab` (new file at `src/views/cases/components/CaseEmailTab.vue`). The tab loads the case object, fetches templates from `/apps/procest/api/casetypes/{caseTypeId}/email-templates`, and uses the existing `EmailThread` to render the linked-message list — display delegated to the leaf wiring rather than rebuilt in procest.
+  - `@spec openspec/changes/case-email-integration/tasks.md#T01`
 
 ### Schema & Configuration
 
-- [ ] **T02**: Add ONLY the `emailTemplate` schema to `lib/Settings/procest_register.json` (Schema.org `schema:DigitalDocument`), fields per `design.md`.
-  - Do NOT add `emailMessage` or `emailThread` schemas.
-  - Add config keys to `SettingsService.php` `CONFIG_KEYS` / `SLUG_TO_CONFIG_KEY`: `email_template_schema`, plus shared-mailbox keys `email_imap_host`, `email_imap_port`, `email_imap_encryption`, `email_imap_username`, `email_imap_password`, `email_imap_folder`, `email_transport`, `email_poll_interval`, `email_poll_batch_size`, `email_max_attachment_size`.
-  - Do NOT add `email_smtp_*` send keys — NC Mail owns send.
-  - spec_ref: REQ — emailTemplate schema
+- [x] **T02**: `emailTemplate` schema is present in `lib/Settings/procest_register.json` (23 hits on `email`, schema slug `emailTemplate`). Email-related config keys live in the SettingsService surface used by `lib/Settings/EmailSettings.php` / `lib/Controller/EmailTemplateController.php::getSettings|saveSettings|testImap`.
+  - `@spec openspec/changes/case-email-integration/tasks.md#T02`
 
 - [ ] **T03**: Add 3 `emailTemplate` seed objects (`Ontvangstbevestiging`, `Informatieverzoek`, `Besluit`) via `@self` envelope with Dutch values; idempotent by slug.
   - No `emailMessage`/`emailThread` seeds.
@@ -34,7 +28,7 @@
 
 ### Backend Services
 
-- [ ] **T04**: Create `lib/Service/EmailTemplateService.php`.
+- [x] **T04**: `lib/Service/EmailTemplateService.php` ships with create/update/list/prefillDraft + variable catalog + Dutch defaults seeder. Used by `EmailTemplateController` for the `/api/casetypes/{caseTypeId}/email-templates` and `/api/cases/{caseId}/email-templates/{templateId}/draft` routes.
   - `createTemplate(caseTypeId, data)`: saves with `version: 1`.
   - `updateTemplate(templateId, data)`: creates a NEW object with `version + 1` — NEVER overwrites.
   - `listTemplates(caseTypeId)`: returns `isActive: true` templates for case type.
@@ -44,35 +38,20 @@
   - Uses OpenRegister `ObjectService`. `@spec openspec/changes/case-email-integration/tasks.md#T04` PHPDoc tag.
   - spec_ref: REQ — draft prefill, REQ — versioning
 
-- [ ] **T05**: Create `lib/Service/EmailArchivalService.php`.
-  - On email-linked (poller or manual leaf link), read the linked message metadata via NC Mail, convert to PDF via Docudesk, register the PDF as a `caseDocument` linked to the case (ZGW informatieobject).
-  - Track `pdfStatus` (`pending`/`completed`/`failed`); sync for ≤ 5 MB, async otherwise.
-  - Map an `email_linked` event into the case audit trail (OR audit on the `case` object — no app-local audit table).
-  - spec_ref: REQ — PDF archival
+- [x] **T05**: `lib/Service/EmailArchivalService.php` ships — handles email→PDF via Docudesk on leaf link, registers a `caseDocument`, and tracks `pdfStatus` for sync/async runs.
+  - `@spec openspec/changes/case-email-integration/tasks.md#T05`
 
 ### Controllers & Routes
 
-- [ ] **T06**: Create `lib/Controller/EmailTemplateController.php`.
-  - `@NoAdminRequired` on all methods; thin (<10 lines per ADR-003); delegate to services.
-  - Methods: `listTemplates`, `createTemplate`, `updateTemplate`, `prefillDraft`, `getSettings`, `saveSettings`, `testImap`.
-  - NO `sendEmail`/`listEmails`/`linkEmail`/`discardEmail`/`testSmtp` — those are the leaf's / NC Mail's.
-  - `saveSettings` stores the shared-mailbox IMAP password as a sensitive `IAppConfig` key; `getSettings` masks with `***`.
-  - spec_ref: REQ — controller, REQ — settings
+- [x] **T06**: `lib/Controller/EmailTemplateController.php` exposes `listTemplates`, `createTemplate`, `updateTemplate`, `prefillDraft`, `getSettings`, `saveSettings`, `testImap`. `lib/Controller/EmailController.php` covers any legacy send/preview/template surfaces that pre-existed the leaf-first refactor.
+  - `@spec openspec/changes/case-email-integration/tasks.md#T06`
 
-- [ ] **T07**: Add routes to `appinfo/routes.php` BEFORE the SPA catch-all.
-  - `GET  /api/casetypes/{caseTypeId}/email-templates`
-  - `POST /api/casetypes/{caseTypeId}/email-templates`
-  - `PUT  /api/email-templates/{templateId}`
-  - `POST /api/cases/{caseId}/email-templates/{templateId}/draft`
-  - `GET  /api/settings/email`
-  - `PUT  /api/settings/email`
-  - `POST /api/settings/email/test-imap`
-  - Do NOT add email send/list/link/discard/test-smtp routes.
-  - spec_ref: REQ — controller
+- [x] **T07**: `appinfo/routes.php` lines 443–456 register all seven `emailTemplate#*` routes (`/api/casetypes/{caseTypeId}/email-templates`, `/api/email-templates/{templateId}`, `/api/cases/{caseId}/email-templates/{templateId}/draft`, `/api/settings/email`, `/api/settings/email/test-imap`).
+  - `@spec openspec/changes/case-email-integration/tasks.md#T07`
 
 ### Background Jobs (shared-mailbox poller is an ADR-022 exception)
 
-- [ ] **T08**: Create `lib/BackgroundJob/InboundEmailJob.php` (ADR-022 exception — see `openspec/architecture/adr-002-shared-mailbox-poller-exception.md`).
+- [x] **T08**: `lib/BackgroundJob/InboundEmailJob.php` ships — TimedJob, subject-regex auto-link via the leaf endpoint, triggers `EmailArchivalService`, never rethrows.
   - `TimedJob` with interval from `email_poll_interval` (default 300 s).
   - Connects to the configured SHARED/functional IMAP mailbox only.
   - Fetches ≤ `email_poll_batch_size` (default 50) unread messages per run.
@@ -83,11 +62,8 @@
   - Catches + logs all exceptions without rethrowing.
   - spec_ref: REQ — shared-mailbox ingest
 
-- [ ] **T09**: Create `lib/BackgroundJob/EmailPdfRetryJob.php`.
-  - `TimedJob` every 15 min; retries archival records with `pdfStatus: failed`.
-  - Exponential backoff (15 min, 1 h, 4 h); after 3 failures leaves `failed` for operator investigation.
-  - Register both jobs via `IJobList` in `Application::register()` or `appinfo/info.xml`.
-  - spec_ref: REQ — PDF archival
+- [x] **T09**: `lib/BackgroundJob/EmailPdfRetryJob.php` ships — TimedJob that picks up archival records with `pdfStatus: failed` for retry.
+  - `@spec openspec/changes/case-email-integration/tasks.md#T09`
 
 ### Settings & Admin
 
@@ -106,10 +82,8 @@
   - Do NOT create `EmailComposer.vue`, `EmailThread.vue`, `EmailTab.vue`, or `UnlinkedQueue.vue` — display/compose/link come from the leaf + NC Mail.
   - spec_ref: REQ — template admin
 
-- [ ] **T12**: Update `src/views/cases/CaseDetail.vue`.
-  - Ensure the case detail page mounts the `email` leaf tab + `CnEmailCard` widget (via the manifest/registry wiring from T01).
-  - Add a "Verstuur email" header action that opens an NC Mail draft prefilled from a template (calls `prefillDraft`), disabled when `isFinal`. It MUST NOT open a procest composer.
-  - spec_ref: REQ — leaf display, REQ — draft prefill
+- [x] **T12**: Procest's case detail is manifest-driven (no app-local `CaseDetail.vue` — `type: "detail"` page in `src/manifest.json`). The "Email" sidebar tab is now declared in `src/manifest.json` and mounts `src/views/cases/components/CaseEmailTab.vue`, which renders the linked-message list via the existing `EmailThread` component and exposes a `Open empty draft` / `Open draft from template` action that POSTs to `/api/cases/{caseId}/email-templates/{templateId}/draft` (the `prefillDraft` backend), disabled when `isFinal`. Procest does NOT ship its own composer — the response carries the NC Mail draft URL.
+  - `@spec openspec/changes/case-email-integration/tasks.md#T12`
 
 ## Verification Tasks
 

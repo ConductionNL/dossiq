@@ -37,6 +37,20 @@ import PublicStatusPage from './views/public/PublicStatusPage.vue'
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
+
+// Deelzaak (sub-case) full-page views — wired via manifest routes
+// /cases/:id/deelzaken (list) and /cases/:parentId/deelzaken/:id (detail).
+// Modal isolation per ADR-004: DeelzaakCreateModal lives in src/modals/.
+// @spec openspec/changes/deelzaak-support/tasks.md#T05
+// @spec openspec/changes/deelzaak-support/tasks.md#T06
+import DeelzaakList from './views/cases/DeelzaakList.vue'
+import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
+
+// Case-email integration — leaf-first per ADR-022. The sidebar tab
+// wraps the EmailThread component (display only), reuses NC Mail as
+// the email engine, and triggers prefillDraft via the case-email API.
+// @spec openspec/changes/case-email-integration/tasks.md#T12
+import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
 import AdviesPanel from './views/cases/components/AdviesPanel.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
@@ -142,6 +156,28 @@ const registry = {
 		kind: 'page',
 		component: CaseDocumentsTab,
 		_note: 'Documents where document.case === parent.id',
+	},
+
+	// --- Deelzaak (sub-case) full-page views — manifest routes. ---
+	// @spec openspec/changes/deelzaak-support/tasks.md#T05
+	DeelzaakList: {
+		kind: 'page',
+		component: DeelzaakList,
+		_note: 'Sub-case list for a parent case; mounted under /cases/:id/deelzaken.',
+	},
+	// @spec openspec/changes/deelzaak-support/tasks.md#T06
+	DeelzaakDetail: {
+		kind: 'page',
+		component: DeelzaakDetail,
+		_note: 'Sub-case detail with parent breadcrumb; mounted under /cases/:parentId/deelzaken/:id.',
+	},
+
+	// --- Case-email sidebar tab — leaf-first per ADR-022. ---
+	// @spec openspec/changes/case-email-integration/tasks.md#T12
+	CaseEmailTab: {
+		kind: 'page',
+		component: CaseEmailTab,
+		_note: 'Sidebar tab that surfaces email correspondence linked to the case; consumes the email leaf for display + uses prefillDraft for compose.',
 	},
 	AdviesPanel: {
 		kind: 'page',

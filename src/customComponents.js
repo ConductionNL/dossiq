@@ -52,6 +52,16 @@ import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 
+// --- Deelzaak (sub-case) full-page views — manifest custom routes. ---
+// @spec openspec/changes/deelzaak-support/tasks.md#T05
+// @spec openspec/changes/deelzaak-support/tasks.md#T06
+import DeelzaakList from './views/cases/DeelzaakList.vue'
+import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
+
+// --- Case-email sidebar tab (leaf-first per ADR-022). ---
+// @spec openspec/changes/case-email-integration/tasks.md#T12
+import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
+
 // --- Visual workflow editor — TEMPORARILY UNWIRED. ---
 // `@vue-flow/{core,controls,background}` v1.x are Vue-3-only (they import
 // Fragment / Teleport / createElementVNode / toValue from 'vue'), which breaks
@@ -147,6 +157,13 @@ export default {
 	CaseTasksTab, // tasks where task.case === parent.id
 	CaseDecisionsTab, // decisions where decision.case === parent.id
 	CaseDocumentsTab, // documents where document.case === parent.id
+
+	// --- Deelzaak (sub-case) views (manifest /cases/:id/deelzaken[/...]). ---
+	DeelzaakList, // sub-case list for a parent case
+	DeelzaakDetail, // sub-case detail with parent breadcrumb
+
+	// --- Case-email sidebar tab (display via leaf, compose via NC Mail draft). ---
+	CaseEmailTab,
 
 	// --- Visual workflow editor — temporarily unwired (see import comment above). ---
 	// VisualWorkflowEditor,
