@@ -205,21 +205,21 @@
   - Return { signedPdfBytes, validatieRapportId, certificaatSerienummer, ondertekeningTijdstip }
   - Store the validatierapport durably (in Nextcloud or internal storage)
 
-- [~] **T24**: (OpenConnector) Implement Berichtenbox routing:
+- [ ] **T24**: (OpenConnector) Implement Berichtenbox routing:
   - `POST /api/berichtenbox/send` accepting { pdfBytes, geadresseerde, kenmerk }
   - Route to MijnOverheid (Logius API) for BSN-based burgers
   - Route to eHerkenning OIN for business addressees
   - Fallback to print-post if not activated
   - Return { berichtId, verzondenOp, kanaal }
 
-- [~] **T25**: (OpenRegister) Implement archival ingestion:
+- [ ] **T25**: (OpenRegister) Implement archival ingestion:
   - `POST /api/archief/ingest` endpoint accepting { beschikkingId, pdfBytes, tmloMetadata }
   - Store PDF/A-3 bytes durably
   - Record metadata block
   - Calculate vernietigingsdatum based on gemeente selectielijst
   - Return { archiefId, vernietigingsdatum }
 
-- [~] **T26**: (Docudesk) Ensure template-engine supports:
+- [ ] **T26**: (Docudesk) Ensure template-engine supports:
   - PDF/A-3 output (not just PDF)
   - Version pinning by effectieve datum
   - Placeholder substitution from zaakdata context
