@@ -33,6 +33,7 @@
 					<th scope="col">{{ t('procest', 'Periode') }}</th>
 					<th scope="col">{{ t('procest', 'Einddatum') }}</th>
 					<th scope="col">{{ t('procest', 'Verlenging') }}</th>
+					<th scope="col">{{ t('procest', 'Actie') }}</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -53,6 +54,14 @@
 							{{ renewalLabel(c.renewalOption) }}
 						</span>
 					</td>
+					<td>
+						<button v-if="showRenewalButton(c)"
+							class="lz-renew-button"
+							data-testid="leverancier-contract-renew-button"
+							@click="openRenewal(c)">
+							{{ t('procest', 'Verlenging aanvragen') }}
+						</button>
+					</td>
 				</tr>
 			</tbody>
 		</table>
@@ -60,18 +69,30 @@
 		<p v-else class="lz-empty" data-testid="lz-empty">
 			{{ t('procest', 'Geen contracten gevonden.') }}
 		</p>
+
+		<RenewalRequestModal v-model="renewalOpen"
+			:contract="selectedContract"
+			@confirm="onRenewalConfirm" />
 	</div>
 </template>
 
 <script>
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import { listContracts } from '../../services/leverancierApi.js'
+import RenewalRequestModal from '../../modals/RenewalRequestModal.vue'
 
 export default {
 	name: 'ContractList',
-	components: { NcLoadingIcon },
+	components: { NcLoadingIcon, RenewalRequestModal },
 	data() {
-		return { rows: [], loading: false, error: null }
+		return {
+			rows: [],
+			loading: false,
+			error: null,
+			renewalOpen: false,
+			selectedContract: {},
+			lastConfirmed: null,
+		}
 	},
 	computed: {
 		supplierRef() {
@@ -106,6 +127,26 @@ export default {
 			if (opt === 'manual') { return 'blue' }
 			return 'gray'
 		},
+		// Mirrors backend LeverancierViewModelService::showRenewalButton —
+		// manual_request OR manual renewal option, and the contract is within
+		// the 90-day renewal window. Backend is the source of truth; this is
+		// the optimistic UI gate.
+		showRenewalButton(c) {
+			const opt = c && c.renewalOption
+			const inWindow = !!(c && (c.renewalWindowSoon || c.expiringSoon))
+			return inWindow && (opt === 'manual' || opt === 'manual_request')
+		},
+		openRenewal(c) {
+			this.selectedContract = c || {}
+			this.renewalOpen = true
+		},
+		onRenewalConfirm(payload) {
+			// The actual write endpoint (chain member 09 requestRenewal()) is
+			// deferred; for now we capture the payload locally so the e2e test
+			// can assert the modal-emit path.
+			this.lastConfirmed = payload
+			this.renewalOpen = false
+		},
 	},
 }
 </script>
@@ -123,4 +164,6 @@ export default {
 .lz-badge--green { background: #46ba61; }
 .lz-expiring { display: inline-block; margin-left: 8px; padding: 1px 6px; border-radius: 8px; background: #ed8d04; color: #fff; font-size: 11px; }
 .lz-empty { padding: 40px 20px; text-align: center; color: var(--color-text-maxcontrast, #555); }
+.lz-renew-button { padding: 4px 12px; border: 1px solid var(--color-primary-element, #0082c9); background: var(--color-main-background, #fff); color: var(--color-primary-element, #0082c9); border-radius: 4px; cursor: pointer; font-size: 12px; }
+.lz-renew-button:hover { background: var(--color-primary-element, #0082c9); color: #fff; }
 </style>

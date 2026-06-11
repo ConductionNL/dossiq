@@ -128,6 +128,21 @@ test.describe('Leverancier-zaakportaal — chain members 06/08/10/14/15', () => 
 		await expect(page.getByRole('heading', { name: /Contracten/i })).toBeVisible()
 	})
 
+	// @e2e openspec/changes/leverancier-zaakportaal-10-contract-frontend/tasks.md
+	test('RenewalRequestModal lives in its own file under src/modals/', async () => {
+		// Modal-isolation enforcement (ADR-004): the modal MUST be a separate
+		// file under src/modals/ and the parent must import it.
+		const fs = await import('fs')
+		const path = await import('path')
+		// Resolve from the test file location upward to the procest app root.
+		const appRoot = path.resolve(__dirname, '..', '..')
+		const modalPath = path.join(appRoot, 'src', 'modals', 'RenewalRequestModal.vue')
+		expect(fs.existsSync(modalPath)).toBe(true)
+		const contents = fs.readFileSync(modalPath, 'utf8')
+		expect(contents).toContain('<NcDialog')
+		expect(contents).toContain('data-testid="leverancier-renewal-modal"')
+	})
+
 	// @e2e openspec/changes/leverancier-zaakportaal-14-kpi-frontend/tasks.md
 	test('KPI view renders the heading + summary tiles', async ({ page }) => {
 		await page.goto(`${APP_ROOT}/leverancier/kpi`)
