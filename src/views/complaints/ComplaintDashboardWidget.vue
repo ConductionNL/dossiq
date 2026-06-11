@@ -50,6 +50,8 @@ export default {
 		 * Link to the complaint list.
 		 *
 		 * @return {string} URL.
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-07
 		 */
 		moreUrl() {
 			return OC.generateUrl('/apps/procest/#/complaints')
@@ -65,6 +67,8 @@ export default {
 		 * Fetch KPI + top items.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-07
 		 */
 		async fetch() {
 			try {
@@ -94,6 +98,8 @@ export default {
 		 *
 		 * @param {string} id Complaint id.
 		 * @return {string} URL.
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-07
 		 */
 		itemUrl(id) {
 			return OC.generateUrl('/apps/procest/#/complaints/' + id)

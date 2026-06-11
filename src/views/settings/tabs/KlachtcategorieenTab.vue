@@ -112,6 +112,8 @@ export default {
 		 * Fetch the complaint categories.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-09
 		 */
 		async fetch() {
 			this.loading = true
@@ -135,6 +137,8 @@ export default {
 		 * Start the add flow.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-09
 		 */
 		onAdd() {
 			this.editingId = '__new'
@@ -146,6 +150,8 @@ export default {
 		 *
 		 * @param {Object} cat Category row.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-09
 		 */
 		onEdit(cat) {
 			this.editingId = cat.id
@@ -160,6 +166,8 @@ export default {
 		 * Cancel edit.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-09
 		 */
 		cancelEdit() {
 			this.editingId = null
@@ -169,6 +177,8 @@ export default {
 		 * Save the in-flight category.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-09
 		 */
 		async onSave() {
 			const url = OC.generateUrl('/apps/openregister/api/objects/procest/complaintCategory'
@@ -196,6 +206,8 @@ export default {
 		 *
 		 * @param {Object} cat Category row.
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-09
 		 */
 		async onDelete(cat) {
 			if (!window.confirm(t('procest', 'Delete this complaint category?'))) {

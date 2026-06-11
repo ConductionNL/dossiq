@@ -85,6 +85,8 @@ export default {
 		 * Fetch analytics for the selected period.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-07
 		 */
 		async fetch() {
 			this.loading = true

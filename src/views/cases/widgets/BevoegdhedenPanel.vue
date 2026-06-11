@@ -114,6 +114,8 @@ export default {
 		 * The expanded row object.
 		 *
 		 * @return {Object|null} Expanded row.
+		 *
+		 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
 		 */
 		expandedRow() {
 			if (this.expandedId === null) {
@@ -182,6 +184,8 @@ export default {
 		 *
 		 * @param {Object} row Row.
 		 * @return {string} Formatted range.
+		 *
+		 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
 		 */
 		formatValidity(row) {
 			const from = row.inWerkingtreding || '?'
@@ -194,6 +198,8 @@ export default {
 		 *
 		 * @param {Object} row Row.
 		 * @return {string} Formatted ceiling.
+		 *
+		 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
 		 */
 		formatCeiling(row) {
 			if (row.voorwaarden && typeof row.voorwaarden.plafond === 'number') {
@@ -207,6 +213,8 @@ export default {
 		 *
 		 * @param {Object} row Row.
 		 * @return {Array} Holders.
+		 *
+		 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
 		 */
 		holdersFor(row) {
 			return row.roleHolders || []

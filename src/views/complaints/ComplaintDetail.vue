@@ -81,6 +81,13 @@ export default {
 	watch: {
 		complaintId: {
 			immediate: true,
+			/**
+			 * Refetch the complaint on id change.
+			 *
+			 * @return {void}
+			 *
+			 * @spec openspec/changes/complaint-management/tasks.md#task-cm-07
+			 */
 			handler() {
 				this.fetch()
 			},
@@ -92,6 +99,8 @@ export default {
 		 * Fetch the complaint detail.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-07
 		 */
 		async fetch() {
 			this.loading = true

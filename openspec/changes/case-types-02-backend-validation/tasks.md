@@ -13,7 +13,7 @@ Member 2 of 4 in the case-types chain. `kind: code`. depends_on: case-types-01-s
 - [x] None has `isFinal = true` → append "At least one status type must be marked as final"
 - [x] Load caseType, empty validFrom → append "'Valid from' date must be set before publishing"
 - [x] Return array of error strings (empty = valid)
-- [~] Hook `validatePublish()` into the case type save path: when `isDraft` transitions `true → false`, call validation and return HTTP 422 — DEFERRED: case-type publish is currently driven through OR's generic save endpoint (no procest controller intercept); ZtcController.zaaktypeUpdate handles partial PATCH but the `isDraft` toggle goes via OR's generic objectService. Hook point is reserved at `ZtcController::zaaktypeUpdate`; will land alongside an `OnCaseTypePublishGuard` listener in member 04.
+- [x] Hook `validatePublish()` into the case type save path: when `isDraft` transitions `true → false`, call validation and return HTTP 422 — `lib/Service/ZgwBusinessRulesService.php::validateAndEnrich` (catalogi branch) calls `$this->ztcRules->validatePublish($register, $caseTypeId)` on the `zaaktypen` update/patch path where `existingObject.isDraft=true` and `body.isDraft=false`; returns `{valid: false, status: 422, code: publish_validation_failed}` when errors are non-empty.
 - [x] `@spec openspec/changes/case-types-02-backend-validation/tasks.md#task-ct-08` PHPDoc — present on `validatePublish`
 - [x] SPDX header present in file
 - [x] 3-arg `findObjects` pattern (ADR-015) — via `searchObjectsAsArrays` trait
@@ -27,7 +27,7 @@ Member 2 of 4 in the case-types chain. `kind: code`. depends_on: case-types-01-s
 - [x] `@spec` PHPDoc — present on `validateDeletion`
 - [x] SPDX header
 - [x] 3-arg findObjects pattern
-- [~] Wire the guard into the destroy controller path — DEFERRED with TASK-CT-08 (same hook-point reservation in `ZtcController`)
+- [x] Wire the guard into the destroy controller path — `ZgwBusinessRulesService::validateAndEnrich` (catalogi branch) calls `$this->ztcRules->validateDeletion(...)` on `zaaktypen` destroy actions; returns 409 with `destroy_blocked_active_cases` or `destroy_requires_confirmation` accordingly. Caller can pass `_confirm: true` in the body to bypass the closed-only confirmation prompt.
 
 ## TASK-CT-12: Unit tests for backend validation `[TEST]`
 

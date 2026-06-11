@@ -51,6 +51,8 @@ export default {
 		 * (server enforces the real Awb working-day algorithm + Dutch holidays).
 		 *
 		 * @return {number} Days remaining.
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-07
 		 */
 		daysRemaining() {
 			const today = new Date()
@@ -77,6 +79,8 @@ export default {
 		 * CSS class for severity colour.
 		 *
 		 * @return {string} Class.
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-07
 		 */
 		severityClass() {
 			if (this.daysRemaining < 0) {

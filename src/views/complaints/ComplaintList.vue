@@ -87,6 +87,8 @@ export default {
 		 * Filtered complaint rows.
 		 *
 		 * @return {Array} Rows.
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-07
 		 */
 		filtered() {
 			let out = this.rows
@@ -113,6 +115,8 @@ export default {
 		 * Fetch the complaint list.
 		 *
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-07
 		 */
 		async fetch() {
 			this.loading = true
@@ -135,6 +139,8 @@ export default {
 		 * Open the create dialog.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-07
 		 */
 		openCreate() {
 			this.$emit('open-create')
@@ -145,6 +151,8 @@ export default {
 		 *
 		 * @param {string} id Complaint id.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-07
 		 */
 		openDetail(id) {
 			this.$emit('open-detail', id)
