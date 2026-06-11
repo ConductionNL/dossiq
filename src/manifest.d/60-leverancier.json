@@ -1,0 +1,55 @@
+{
+	"pages": [
+		{
+			"id": "LeverancierDashboard",
+			"route": "/leverancier",
+			"type": "custom",
+			"title": "Leveranciersportaal",
+			"component": "LeverancierDashboard"
+		},
+		{
+			"id": "LeverancierTenders",
+			"route": "/leverancier/tenders",
+			"type": "custom",
+			"title": "Aanbestedingen",
+			"component": "TenderList"
+		},
+		{
+			"id": "LeverancierTenderDetail",
+			"route": "/leverancier/tenders/:id",
+			"type": "custom",
+			"title": "Aanbesteding",
+			"component": "TenderDetail"
+		},
+		{
+			"id": "LeverancierFacturen",
+			"route": "/leverancier/facturen",
+			"type": "custom",
+			"title": "Facturen",
+			"component": "InvoiceList"
+		},
+		{
+			"id": "LeverancierContracten",
+			"route": "/leverancier/contracten",
+			"type": "custom",
+			"title": "Contracten",
+			"component": "ContractList"
+		},
+		{
+			"id": "LeverancierKpi",
+			"route": "/leverancier/kpi",
+			"type": "custom",
+			"title": "KPI",
+			"component": "KpiView"
+		}
+	],
+	"menu": [
+		{
+			"id": "LeverancierDashboard",
+			"label": "Leveranciersportaal",
+			"icon": "icon-category-organization",
+			"route": "LeverancierDashboard",
+			"order": 88
+		}
+	]
+}
