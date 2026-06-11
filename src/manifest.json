@@ -229,6 +229,30 @@
 			"order": 99
 		},
 		{
+			"id": "TermijnDashboardMenu",
+			"label": "Termijnbewaking",
+			"icon": "icon-history",
+			"route": "TermijnDashboard",
+			"section": "main",
+			"order": 71
+		},
+		{
+			"id": "ArchiefDashboardMenu",
+			"label": "Archief",
+			"icon": "icon-folder",
+			"route": "ArchiefDashboard",
+			"section": "settings",
+			"order": 91
+		},
+		{
+			"id": "TenantOnboardingMenu",
+			"label": "Tenant onboarding",
+			"icon": "icon-user",
+			"route": "TenantOnboardingDashboard",
+			"section": "settings",
+			"order": 92
+		},
+		{
 			"id": "SettingsMenu",
 			"label": "Settings",
 			"icon": "icon-settings",
@@ -2611,6 +2635,27 @@
 			"config": {
 				"documentationUrl": "https://procest.conduction.nl"
 			}
+		},
+		{
+			"id": "TermijnDashboard",
+			"route": "/termijn-dashboard",
+			"type": "custom",
+			"title": "Termijn dashboard",
+			"component": "TermijnDashboard"
+		},
+		{
+			"id": "ArchiefDashboard",
+			"route": "/archief-dashboard",
+			"type": "custom",
+			"title": "Archief dashboard",
+			"component": "ArchiefDashboard"
+		},
+		{
+			"id": "TenantOnboardingDashboard",
+			"route": "/tenant-onboarding",
+			"type": "custom",
+			"title": "Tenant onboarding",
+			"component": "TenantOnboardingDashboard"
 		}
 	]
 }

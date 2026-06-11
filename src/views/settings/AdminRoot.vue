@@ -66,17 +66,38 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'Archief & e-Depot')"
-			:description="t('procest', 'GiHandover/MDTO archival pipeline: retention rules, batch concurrency, e-Depot adapter, proof of transfer.')"
+			:name="t('procest', 'AWB Term Definitions')"
+			:description="t('procest', 'Configure statutory term definitions per zaaktype for AWB termijnbewaking (legal basis, duration, validity). Versioning is enforced on save.')"
 			:loading="!storesReady">
-			<ArchiefSettingsTab v-if="storesReady" />
+			<TermijnDefinitiesTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
-			:name="t('procest', 'Mandate Matrix')"
+			:name="t('procest', 'Mandate Matrix — Administration')"
+			:description="t('procest', 'Configure mandate decisions, organisational roles, role assignments, and import legacy mandate exports')"
+			:loading="!storesReady">
+			<MandaatMatrixTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('procest', 'Mandate Matrix — System Settings')"
 			:description="t('procest', 'Awb art. 10:3 mandate administration: Decidesk import, role hierarchy, waarnemer assignments.')"
 			:loading="!storesReady">
 			<MandaatMatrixSettingsTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('procest', 'Archief — Retention Rules')"
+			:description="t('procest', 'Define per-zaaktype retention periods that drive scheduled e-Depot handover (BagIt + MDTO)')"
+			:loading="!storesReady">
+			<ArchiefConfiguratieTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('procest', 'Archief — Pipeline Settings')"
+			:description="t('procest', 'GiHandover/MDTO archival pipeline: batch concurrency, e-Depot adapter, proof of transfer.')"
+			:loading="!storesReady">
+			<ArchiefSettingsTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
@@ -105,6 +126,9 @@ import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import MapLayerSettings from './MapLayerSettings.vue'
 import AiSettingsTab from './tabs/AiSettingsTab.vue'
 import ChecklistsTab from './tabs/ChecklistsTab.vue'
+import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
+import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
+import ArchiefConfiguratieTab from './tabs/ArchiefConfiguratieTab.vue'
 import ArchiefSettingsTab from './tabs/ArchiefSettingsTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
@@ -127,6 +151,9 @@ export default {
 		MapLayerSettings,
 		AiSettingsTab,
 		ChecklistsTab,
+		TermijnDefinitiesTab,
+		MandaatMatrixTab,
+		ArchiefConfiguratieTab,
 		ArchiefSettingsTab,
 		MandaatMatrixSettingsTab,
 		ConsultationSettingsTab,

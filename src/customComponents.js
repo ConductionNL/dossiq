@@ -23,6 +23,10 @@ import WerkvoorraadView from './views/Werkvoorraad.vue'
 // CaseMapView removed — superseded by manifest `type: 'map'` CnMapPage
 // (see openspec/changes/case-map-overview/design.md).
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
+// --- Termijnbewaking + Archief + Tenant dashboards (chain-builds 06/2026). ---
+import TermijnDashboard from './views/dashboard/TermijnDashboard.vue'
+import ArchiefDashboard from './views/dashboard/ArchiefDashboard.vue'
+import TenantOnboardingDashboard from './views/dashboard/TenantOnboardingDashboard.vue'
 // VoorstellenView removed — the Voorstellen list page is now a declarative
 // `type:"index"` on the `voorstel` schema (formatter columns + status badge,
 // see src/manifest.json + src/services/formatters.js).
@@ -104,6 +108,9 @@ export default {
 	// --- Lib gaps: would migrate once lib gains the missing primitive. ---
 	DoorlooptijdView, // KPI dashboard with apexcharts (lib chart-widget gap)
 	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
+	TermijnDashboard, // AWB termijnbewaking + dwangsom KPI dashboard
+	ArchiefDashboard, // e-Depot handover dashboard (stats + triggers + audit)
+	TenantOnboardingDashboard, // SaaS tenant onboarding (7-step + go-live)
 
 	// --- Migration cost: deferred to a follow-up. ---
 	VoorstelDetailView, // parafeerroute multi-step approver flow

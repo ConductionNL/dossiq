@@ -6,13 +6,13 @@ Chain member 8 of 8 (`kind: code`, depends_on member 07). Traces to giant Tasks 
 
 - [ ] Implement `GET /api/archief/rules`, `POST /api/archief/rules`, `PUT /api/archief/rules/{ruleId}`, `DELETE /api/archief/rules/{ruleId}` with admin auth posture
 - [ ] Validate `zaaktypeKey` is a known zaaktype and `bewaartermijnJaren ≥ 1` or "permanent"
-- [ ] Build the admin UI (list, add/edit form dialog, delete with confirmation); NcSelect inputs carry labels; modals isolated
+- [x] Build the admin UI (list, add/edit form dialog, delete with confirmation); NcSelect inputs carry labels; modals isolated — `src/views/settings/tabs/ArchiefConfiguratieTab.vue` (list + delete confirm) + `src/modals/ArchiefRuleEditor.vue` (own-file modal per ADR-004); both NcSelects declare inputLabel.
 - [ ] All strings via `t('procest', ...)`; Dutch + English
 
 ## 2. Dashboard & monitoring
 
 - [ ] Implement `GET /api/archief/dashboard/stats` → {ready, inProgress, failed, completed, totalTransferred}
-- [ ] Build the dashboard view: stat cards, triggers table, batch-jobs table, quick actions (initiate batch, retry failed, view proof)
+- [x] Build the dashboard view: stat cards, triggers table, batch-jobs table, quick actions (initiate batch, retry failed, view proof) — `src/views/dashboard/ArchiefDashboard.vue` registered as manifest page `ArchiefDashboard` (route `/archief-dashboard`); pulls `/api/archief/dashboard/stats` + `/api/archief/audit-log`; emits POST to `/api/archief/batch` + `/api/archief/retry-failed`; proof link opens in new tab.
 
 ## 3. Unit & integration tests
 
