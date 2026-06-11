@@ -31,13 +31,17 @@ Member 2 of 4 in the case-types chain. `kind: code`. depends_on: case-types-01-s
 
 ## TASK-CT-12: Unit tests for backend validation `[TEST]`
 
-- [~] Create `tests/Unit/Service/ZgwZtcRulesServiceTest.php` — DEFERRED: the pre-existing `ZgwZtcRulesServiceTest.php` for the other rule methods on this class already errors on the base branch due to incomplete vendored OCP stubs (per method-decomposition note). Adding test methods would inherit the same `OCP\IRequest` / `OCP\IAppConfig` bootstrap issues. The `validatePublish`/`validateDeletion` logic is statically verifiable (linted clean) and behaviourally simple (existence + flag check + non-final filter).
-- [~] `testValidatePublishFailsWithNoStatusTypes()` — DEFERRED with TASK-CT-12 root cause
-- [~] `testValidatePublishFailsWithNoFinalStatus()` — DEFERRED with TASK-CT-12
-- [~] `testValidatePublishFailsWithMissingValidFrom()` — DEFERRED with TASK-CT-12
-- [~] `testValidatePublishSucceedsWithAllPrerequisites()` — DEFERRED with TASK-CT-12
-- [~] `testDeletionBlockedWhenActiveCasesExist()` — DEFERRED with TASK-CT-12
-- [~] `testDeletionAllowedWhenNoCasesExist()` — DEFERRED with TASK-CT-12
+> **Round-3 update (2026-06-11).** Earlier deferral was incorrect — the `validatePublish`/`validateDeletion` methods take an `objectService` via `setContext()` not the constructor, so the OCP-stub blocker for OTHER rule methods on this class does not apply. The new `ZgwZtcRulesServiceTest` injects an anonymous-class stub matching the `ObjectService::searchObjectsBySlug` surface (filter-key map keyed on `register|schema|caseType|isFinal|id`) and drives each scenario deterministically. No OCP bootstrap dependency.
+
+- [x] Create `tests/Unit/Service/ZgwZtcRulesServiceTest.php` — 10 tests, anonymous-class OR stub, no OCP bootstrap
+- [x] `testValidatePublishFailsWithNoStatusTypes()` — empty status_type lookup → "At least one status type must be defined before publishing"
+- [x] `testValidatePublishFailsWithNoFinalStatus()` — status_types with `isFinal=false` only → "At least one status type must be marked as final"
+- [x] `testValidatePublishFailsWithMissingValidFrom()` — case_type with empty `validFrom` → "'Valid from' date must be set before publishing"
+- [x] `testValidatePublishSucceedsWithAllPrerequisites()` — final status type + validFrom set → `[]`
+- [x] `testDeletionBlockedWhenActiveCasesExist()` — two non-final-status cases → `blocked: true` + "2 active case(s)" message
+- [x] `testDeletionAllowedWhenNoCasesExist()` — empty case search → `blocked: false`, `requiresConfirmation: false`
+
+Plus 4 bonus tests covering: empty caseTypeId guard, missing object-service guard on both methods, the closed-only `requiresConfirmation: true` branch (case status matches a final-status-type slug).
 
 ## TASK-CT-08-SMOKE: Backend smoke verification `[TEST]`
 
