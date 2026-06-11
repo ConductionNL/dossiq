@@ -7,6 +7,9 @@
 		"npm": "^10.0.0"
 	},
 	"scripts": {
+		"test": "vitest run",
+		"test:unit": "vitest run",
+		"test:unit:watch": "vitest",
 		"test:l10n": "node tests/l10n/check-l10n.js",
 		"test:l10n:write": "node tests/l10n/check-l10n.js --write",
 		"build": "NODE_ENV=production webpack --config webpack.config.js --progress",
@@ -86,6 +89,7 @@
 		"stylelint-config-recommended-scss": "^13.1.0",
 		"stylelint-config-recommended-vue": "^1.6.1",
 		"typescript": "^5.9.3",
+		"vitest": "^1.6.1",
 		"vue-loader": "^15.11.1 <16.0.0",
 		"vue-template-compiler": "^2.7.16",
 		"webpack": "^5.94.0",
