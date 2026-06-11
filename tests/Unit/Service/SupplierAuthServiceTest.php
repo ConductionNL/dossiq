@@ -18,6 +18,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use InvalidArgumentException;
+use OCA\Procest\Service\Auth\BrokerAssertionResult;
+use OCA\Procest\Service\Auth\EHerkenningSamlAdapterInterface;
 use OCA\Procest\Service\SupplierAuthService;
 use OCA\Procest\Service\TenantJwtService;
 use OCP\App\IAppManager;
@@ -104,5 +106,58 @@ class SupplierAuthServiceTest extends TestCase
     public function testFindSupplierByKvkReturnsNullWhenOrUnavailable(): void
     {
         $this->assertNull($this->svc->findSupplierByKvk('12345678'));
+    }
+
+    public function testCreateSessionFromEHerkenningReturnsErrorWhenAdapterMissing(): void
+    {
+        // Default ctor in setUp() omits the adapter — make sure the absence is reported gracefully.
+        $r = $this->svc->createSessionFromEHerkenning('saml-resp', 'relay-1');
+        $this->assertFalse($r['ok']);
+        $this->assertStringContainsString('niet geconfigureerd', $r['reason']);
+    }
+
+    public function testCreateSessionFromEHerkenningReturnsErrorWhenAdapterThrows(): void
+    {
+        $adapter = $this->createMock(EHerkenningSamlAdapterInterface::class);
+        $adapter->method('decodeAssertion')->willThrowException(new RuntimeException('broker offline'));
+
+        $svc = new SupplierAuthService(
+            appManager: $this->createMock(IAppManager::class),
+            container: $this->createMock(ContainerInterface::class),
+            jwt: $this->jwt,
+            logger: $this->createMock(LoggerInterface::class),
+            eherkenningAdapter: $adapter,
+        );
+
+        $r = $svc->createSessionFromEHerkenning('saml-resp', 'relay-1');
+        $this->assertFalse($r['ok']);
+        $this->assertStringContainsString('broker offline', $r['reason']);
+    }
+
+    public function testCreateSessionFromEHerkenningStopsOnUnknownSupplier(): void
+    {
+        $adapter = $this->createMock(EHerkenningSamlAdapterInterface::class);
+        $adapter->method('decodeAssertion')->willReturn(
+            BrokerAssertionResult::forEHerkenning(
+                kvkNummer: '99887766',
+                assertionId: 'asrt-1',
+                level: 3,
+                issuer: 'https://broker.example/eh',
+                attributes: ['email' => 'partner@example.com'],
+            )
+        );
+
+        $svc = new SupplierAuthService(
+            appManager: $this->createMock(IAppManager::class),
+            container: $this->createMock(ContainerInterface::class),
+            jwt: $this->jwt,
+            logger: $this->createMock(LoggerInterface::class),
+            eherkenningAdapter: $adapter,
+        );
+
+        $r = $svc->createSessionFromEHerkenning('saml-resp', 'relay-2');
+        $this->assertFalse($r['ok']);
+        $this->assertStringContainsString('Onbekende leverancier', $r['reason']);
+        $this->assertSame('99887766', $r['assertion']['kvkNummer']);
     }
 }
