@@ -32,6 +32,10 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
+use OCA\Procest\Service\External\Tmlo\EDepotSubmissionAdapterInterface;
+use OCA\Procest\Service\External\Tmlo\EDepotSubmissionResult;
+use OCA\Procest\Service\External\Tmlo\TmloBundleResult;
+use OCA\Procest\Service\External\Tmlo\TmloMetadataBuilderAdapterInterface;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -45,14 +49,112 @@ class ArchivalTriggerService
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Settings.
-     * @param LoggerInterface $logger          Logger.
+     * @param SettingsService                          $settingsService Settings.
+     * @param LoggerInterface                          $logger          Logger.
+     * @param TmloMetadataBuilderAdapterInterface|null $tmloBuilder     Optional TMLO/MDTO builder adapter.
+     * @param EDepotSubmissionAdapterInterface|null    $edepotSubmitter Optional e-Depot submission adapter.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
+        private readonly ?TmloMetadataBuilderAdapterInterface $tmloBuilder = null,
+        private readonly ?EDepotSubmissionAdapterInterface $edepotSubmitter = null,
     ) {
     }//end __construct()
+
+    /**
+     * Build a TMLO/MDTO metadata bundle for a case via the dormant or active
+     * adapter and persist the resulting status on the OverdrachtTrigger row.
+     *
+     * @param string $caseId      Zaak id.
+     * @param string $mdtoVersion `mdto-1.1` or `tmlo-1.2.1`.
+     * @param array<string,mixed> $context Optional build context (sipBundelId,
+     *                                     archiefvormerId, correlationId).
+     *
+     * @return TmloBundleResult|null The build result, or null when no builder
+     *                               adapter is bound.
+     *
+     * @spec openspec/changes/archief-edepot-handover-03-metadata-bundling/tasks.md
+     */
+    public function buildTmloBundle(string $caseId, string $mdtoVersion = 'mdto-1.1', array $context = []): ?TmloBundleResult
+    {
+        if ($this->tmloBuilder === null) {
+            $this->logger->info(
+                'ArchivalTriggerService.buildTmloBundle no TMLO builder bound',
+                ['caseId' => $caseId]
+            );
+            return null;
+        }
+
+        try {
+            $result = $this->tmloBuilder->buildBundle($caseId, $mdtoVersion, $context);
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'ArchivalTriggerService.buildTmloBundle adapter threw',
+                ['caseId' => $caseId, 'error' => $e->getMessage()]
+            );
+            $this->logEvent(null, $caseId, 'bundling-failed', 'TMLO builder threw: '.$e->getMessage());
+            return null;
+        }
+
+        $this->logEvent(
+            null,
+            $caseId,
+            'tmlo-build-'.strtolower($result->buildStatus),
+            'mdtoVersion='.$result->metadataXsdVersion.' dormant='.($result->dormant ? '1' : '0')
+        );
+
+        return $result;
+    }//end buildTmloBundle()
+
+    /**
+     * Submit a staged SipBundel to the configured e-Depot via the dormant or
+     * active adapter, recording the dispatch outcome on the audit log.
+     *
+     * @param string              $sipBundelId Pointer at the persisted SipBundel.
+     * @param string              $caseId      Zaak id (audit correlation).
+     * @param array<string,mixed> $context     Optional submit context
+     *                                         (transportMode, retryCount,
+     *                                         correlationId).
+     *
+     * @return EDepotSubmissionResult|null Dispatch result, or null when no
+     *                                     submitter is bound.
+     *
+     * @spec openspec/changes/archief-edepot-handover-05-sip-submission/tasks.md
+     */
+    public function submitToEdepot(string $sipBundelId, string $caseId = '', array $context = []): ?EDepotSubmissionResult
+    {
+        if ($this->edepotSubmitter === null) {
+            $this->logger->info(
+                'ArchivalTriggerService.submitToEdepot no submitter bound',
+                ['sipBundelId' => $sipBundelId]
+            );
+            return null;
+        }
+
+        try {
+            $result = $this->edepotSubmitter->submit($sipBundelId, $context);
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'ArchivalTriggerService.submitToEdepot adapter threw',
+                ['sipBundelId' => $sipBundelId, 'error' => $e->getMessage()]
+            );
+            $this->logEvent(null, $caseId !== '' ? $caseId : null, 'submission-failed', 'e-Depot submit threw: '.$e->getMessage());
+            return null;
+        }
+
+        $this->logEvent(
+            null,
+            $caseId !== '' ? $caseId : null,
+            'edepot-submit-'.strtolower($result->submissionStatus),
+            'sipBundelId='.$result->sipBundelId
+                .' overdrachtTransactieId='.$result->overdrachtTransactieId
+                .' archiefId='.$result->archiefId
+                .' dormant='.($result->dormant ? '1' : '0')
+        );
+
+        return $result;
+    }//end submitToEdepot()
 
     /**
      * Scan a list of closed cases and produce/update OverdrachtTrigger rows.
