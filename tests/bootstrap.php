@@ -100,6 +100,13 @@ require_once __DIR__.'/Unit/Stubs/DoctrineStubs.php';
 // interface_exists guards when a real Nextcloud runtime is present).
 require_once __DIR__.'/Unit/Stubs/OcInternalStubs.php';
 
+// Shared in-memory ObjectService fake. Lives in tests/Unit/Fixtures/ so
+// every termijnbewaking + archief-edepot unit test file can resolve
+// `FakeTermijnStore` even when run standalone (previously it sat at the
+// bottom of TermijnServiceTest.php and only loaded if PHPUnit happened
+// to require that file first).
+require_once __DIR__.'/Unit/Fixtures/FakeTermijnStore.php';
+
 // IMcpToolProvider stub — loaded when the openregister runtime (PR #1466,
 // ai-chat-companion-orchestrator) is absent. ProcestToolProvider implements
 // OCA\OpenRegister\Mcp\IMcpToolProvider; the stub no-ops when the real
