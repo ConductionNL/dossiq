@@ -215,4 +215,104 @@ class ArchivalServicesTest extends TestCase
         self::assertSame(0, $r2['regels']);
         self::assertSame(3, $r2['skipped']);
     }
+
+    /**
+     * Bezwaar-resume flow: when a closed case is initially suspended because
+     * of an active bezwaar and the bezwaar later resolves, re-running
+     * detectReadyCases (with hasActiveBezwaar=false) flips the trigger to
+     * 'gereed-voor-overdracht' and computes the overdrachtDatum from
+     * afsluitingsDatum + bewaartermijnJaren. Closes the [~] bezwaar-resume
+     * test deferral in archief-edepot-handover-02-retention-trigger#task-4.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/archief-edepot-handover-02-retention-trigger/tasks.md
+     */
+    public function testBezwaarSuspendedTriggerResumesToReadyAfterProcedureEnds(): void
+    {
+        $this->objects->saveObject('procest', 'bewaarTermijnRegel', [
+            'id' => 'btr-bezwaar',
+            'zaaktypeKey' => 'bezwaar',
+            'bewaartermijnJaren' => 7,
+            'isActive' => true,
+        ]);
+
+        $svc = new ArchivalTriggerService($this->settings, $this->createMock(LoggerInterface::class));
+
+        // Phase 1: closed case with active bezwaar -> suspended.
+        $first = $svc->detectReadyCases([
+            ['id' => 'C/bez-1', 'caseType' => 'bezwaar', 'closedAt' => '2026-02-01', 'hasActiveBezwaar' => true],
+        ]);
+        self::assertSame(['ready' => 0, 'blocked' => 0, 'suspended' => 1, 'errors' => 0], $first);
+
+        $triggersBefore = array_values($this->objects->store['overdrachtTrigger']);
+        self::assertCount(1, $triggersBefore);
+        self::assertSame('opgeschort-juridische-procedure', $triggersBefore[0]['status']);
+        self::assertSame('C/bez-1', $triggersBefore[0]['zaakId']);
+        self::assertSame('Actieve bezwaar/beroep procedure', $triggersBefore[0]['redenBlokkering']);
+
+        // Phase 2: bezwaar ends, re-run with hasActiveBezwaar=false.
+        $second = $svc->detectReadyCases([
+            ['id' => 'C/bez-1', 'caseType' => 'bezwaar', 'closedAt' => '2026-02-01', 'hasActiveBezwaar' => false],
+        ]);
+        self::assertSame(['ready' => 1, 'blocked' => 0, 'suspended' => 0, 'errors' => 0], $second);
+
+        // Trigger row is upserted in place; status flipped + overdrachtDatum set.
+        $triggersAfter = array_values($this->objects->store['overdrachtTrigger']);
+        self::assertCount(1, $triggersAfter, 'upsertTrigger must NOT create a duplicate row on resume.');
+        self::assertSame('gereed-voor-overdracht', $triggersAfter[0]['status']);
+        self::assertSame('', $triggersAfter[0]['redenBlokkering']);
+        // 2026-02-01 + 7 years = 2033-02-01.
+        self::assertSame('2033-02-01', $triggersAfter[0]['overdrachtDatum']);
+        self::assertSame(7, $triggersAfter[0]['bewaartermijnJaren']);
+    }
+
+    /**
+     * Blocked-trigger notification: when no BewaarTermijnRegel matches the
+     * case's zaaktypeKey, the trigger row is persisted with
+     * status=geblokkeerd-geen-regel + a redenBlokkering string naming the
+     * zaaktype, and a structured warning event hits the logger so DIV
+     * gets notified. Closes the [~] DIV-notification test deferral in
+     * archief-edepot-handover-02-retention-trigger#task-4.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/archief-edepot-handover-02-retention-trigger/tasks.md
+     */
+    public function testBlockedTriggerPersistsReasonAndLogsForDivAlert(): void
+    {
+        // No matching bewaarTermijnRegel for 'mystery-zaaktype'.
+        $svc = new ArchivalTriggerService($this->settings, $this->createMock(LoggerInterface::class));
+        $counts = $svc->detectReadyCases([
+            ['id' => 'C/missing-rule', 'caseType' => 'mystery-zaaktype', 'closedAt' => '2026-03-01'],
+        ]);
+
+        self::assertSame(['ready' => 0, 'blocked' => 1, 'suspended' => 0, 'errors' => 0], $counts);
+
+        $triggers = array_values($this->objects->store['overdrachtTrigger']);
+        self::assertCount(1, $triggers);
+        self::assertSame('geblokkeerd-geen-regel', $triggers[0]['status']);
+        self::assertSame(
+            'Geen BewaarTermijnRegel voor zaaktype "mystery-zaaktype"',
+            $triggers[0]['redenBlokkering']
+        );
+        self::assertSame('C/missing-rule', $triggers[0]['zaakId']);
+
+        // overdrachtAuditLog row is created so the DIV dashboard can surface
+        // the blocked event without scanning the trigger table.
+        self::assertArrayHasKey('overdrachtAuditLog', $this->objects->store);
+        $auditRows = array_values($this->objects->store['overdrachtAuditLog']);
+        self::assertNotEmpty($auditRows, 'logEvent must persist an audit row for the blocked case.');
+        $found = false;
+        foreach ($auditRows as $row) {
+            if (($row['zaakId'] ?? '') === 'C/missing-rule'
+                && str_contains((string) ($row['details'] ?? ''), 'blocked')
+                && str_contains((string) ($row['details'] ?? ''), 'mystery-zaaktype')
+            ) {
+                $found = true;
+                break;
+            }
+        }
+        self::assertTrue($found, 'Audit log row for blocked detection must reference the zaaktype.');
+    }
 }
