@@ -25,4 +25,4 @@ Sourced from giant tasks 14–18 (Unit/Integration tests; @spec + docs; Admin do
 
 ## 4. Admin Documentation
 
-- [ ] `docs/user/mandate-matrix-admin.md`: import workflow, role hierarchy, waarnemer assignment, troubleshooting, sample Excel template, FAQ
+- [x] `docs/user/mandate-matrix-admin.md`: import workflow, role hierarchy, waarnemer assignment, troubleshooting, sample Excel template, FAQ
