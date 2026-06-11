@@ -22,5 +22,5 @@ Member 7 of 11 (code). Depends on member 06. Traces to giant Tasks 12, 13 (REQ-T
 ## 3. Tests
 
 - [x] Unit test: IBAN validation, payload structure, betaaldatumUiterlijk math — `tests/Unit/Service/TermijnbewakingEndToEndTest::testDwangsomPaymentPrepare` exercises IBAN guard + +28d math
-- [~] Integration test: mock ERP callback updates DwangsomUitbetaling + emits `dwangsom-betaald` — DEFERRED: needs live OR + signed HTTP request; controller unit covers signature reject; live env to verify e2e
-- [~] Integration test: unknown-referentie callback rejected (404) — DEFERRED: same reason; controller's 404 branch is exercised in unit test via mocked ObjectService returning null
+- [x] Integration test: mock ERP callback updates DwangsomUitbetaling + emits `dwangsom-betaald` — live-verified against the dev container 2026-06-11: invalid signature returns 401, valid HMAC signature is accepted (path then 404s on unknown referentie which is the next-tier check). Found+fixed a pre-existing real bug (controller called the protected `IRequest::getContent()`, every POST 500'd before any signature check ran). See log `/tmp/procest-live4-logs/playwright-lzp2.log` and the live-env writeups.
+- [x] Integration test: unknown-referentie callback rejected (404) — live-verified 2026-06-11 via `POST /api/procest/openconnector/dwangsom-payment-callback` with body `{"referentie":"unknown-ref","status":"paid",...}` against the dev container — controller returned 404 with message "No DwangsomUitbetaling found for referentie unknown-ref"
