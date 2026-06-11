@@ -277,4 +277,44 @@ class SupplierPortalController extends Controller
         $items = $this->messages->getConversationHistory($caseRef, $supplierRef);
         return new JSONResponse(['items' => $items, 'total' => count($items)]);
     }//end messages()
+
+    /**
+     * Send a message on a case (supplier → operator direction).
+     *
+     * @return JSONResponse
+     *
+     * @NoAdminRequired
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/leverancier-zaakportaal-11-messaging/tasks.md
+     */
+    public function sendMessage(): JSONResponse
+    {
+        $supplierRef = (string) $this->request->getParam('supplierRef', '');
+        $caseRef     = (string) $this->request->getParam('caseRef', '');
+        $body        = trim((string) $this->request->getParam('body', ''));
+        $attachments = (array) ($this->request->getParam('attachments', []));
+        $sentBy      = (string) $this->request->getParam('sentBy', 'supplier');
+        if ($supplierRef === '' || $caseRef === '') {
+            return new JSONResponse(['error' => 'supplierRef and caseRef required'], Http::STATUS_BAD_REQUEST);
+        }
+
+        if ($body === '') {
+            return new JSONResponse(['error' => 'message body required'], Http::STATUS_BAD_REQUEST);
+        }
+
+        try {
+            $this->messages->validateAttachmentSet($attachments);
+        } catch (\Throwable $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+
+        $row = $this->messages->sendMessage($caseRef, $supplierRef, $body, $attachments, $sentBy);
+        if ($row === null) {
+            return new JSONResponse(['error' => 'send failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
+        }
+
+        return new JSONResponse(['ok' => true, 'message' => 'Bericht verstuurd', 'row' => $row]);
+    }//end sendMessage()
 }//end class

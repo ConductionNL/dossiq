@@ -44,6 +44,7 @@ import InvoiceList from './views/leverancier/InvoiceList.vue'
 import ContractList from './views/leverancier/ContractList.vue'
 import KpiView from './views/leverancier/KpiView.vue'
 import ProfileForm from './views/leverancier/ProfileForm.vue'
+import MessageThread from './views/leverancier/MessageThread.vue'
 
 // --- Detail-tab custom components (one per cross-schema relation). ---
 // Stubs for v1 — full implementations follow in `procest-case-relation-tabs`.
@@ -140,6 +141,7 @@ export default {
 	ContractList,
 	KpiView,
 	ProfileForm,
+	MessageThread,
 
 	// --- Detail-tab components (one per case-detail cross-schema relation). ---
 	CaseTasksTab, // tasks where task.case === parent.id

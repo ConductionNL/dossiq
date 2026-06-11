@@ -128,6 +128,22 @@ test.describe('Leverancier-zaakportaal — chain members 06/08/10/14/15', () => 
 		await expect(page.getByRole('heading', { name: /Contracten/i })).toBeVisible()
 	})
 
+	// @e2e openspec/changes/leverancier-zaakportaal-11-messaging/tasks.md
+	test('message thread renders empty-state prompt when no caseRef', async ({ page }) => {
+		await page.goto(`${APP_ROOT}/leverancier/berichten`)
+		await expect(page.getByTestId('leverancier-message-thread')).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('heading', { name: /Bericht thread/i })).toBeVisible()
+	})
+
+	// @e2e openspec/changes/leverancier-zaakportaal-11-messaging/tasks.md
+	test('message thread surfaces the composer when caseRef is set', async ({ page }) => {
+		await page.goto(`${APP_ROOT}/leverancier/berichten?supplierRef=t1&caseRef=c1`)
+		await expect(page.getByTestId('leverancier-message-thread')).toBeVisible({ timeout: 15000 })
+		await expect(page.getByTestId('leverancier-message-composer')).toBeVisible()
+		await expect(page.getByTestId('leverancier-message-body')).toBeVisible()
+		await expect(page.getByTestId('leverancier-message-submit')).toBeVisible()
+	})
+
 	// @e2e openspec/changes/leverancier-zaakportaal-12-master-data-mutations/tasks.md
 	test('profile form renders the 3 sections (address/contact/IBAN)', async ({ page }) => {
 		await page.goto(`${APP_ROOT}/leverancier/profiel`)

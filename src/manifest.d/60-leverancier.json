@@ -48,6 +48,13 @@
 			"type": "custom",
 			"title": "Mijn gegevens",
 			"component": "ProfileForm"
+		},
+		{
+			"id": "LeverancierBerichten",
+			"route": "/leverancier/berichten",
+			"type": "custom",
+			"title": "Berichten",
+			"component": "MessageThread"
 		}
 	],
 	"menu": [

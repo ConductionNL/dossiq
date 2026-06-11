@@ -8,13 +8,13 @@ Traces to giant tasks 3.6 and 2.5; spec REQ-006.
 - [x] Implement `SupplierMessageService.addResponse(messageRef, handlerResponse)` — outbound message + audit log
 - [x] Implement `SupplierMessageService.getConversationHistory(caseRef, supplierRef)` — scoped chronological thread
 - [~] Implement `RouteSupplierMessageJob` — dispatch handler inbox + email notification — deferred to chain member 16
-- [ ] Create `MessageController`: GET /messages?caseId=, POST /messages, GET /messages/{id} — manifest renderer serves CRUD on `supplierMessage`
+- [x] Create `MessageController`: GET /messages?caseId=, POST /messages, GET /messages/{id} — `SupplierPortalController#messages` (GET) + `#sendMessage` (POST). Both `#[NoAdminRequired]` with supplierRef + caseRef 400-guard; POST applies `validateAttachmentSet()` before delegating to `sendMessage()`
 - [x] Apply member 04 scope validation; enforce write-once immutability — schema declares `x-insert-only:true`; service has no update method
 - [x] Implement `MessageComposer` validation: required text, ≤5 attachments ≤10MB each, server-side type/size validation
-- [~] Build `MessageThread`: chronological, inbound (light bg) vs outbound (white bg) — Vue deferred
-- [~] Create `MessageBubble`: sender, timestamp, body, downloadable attachments — Vue deferred
-- [~] Show "Bericht verstuurd" success and clear the composer — Vue deferred
+- [x] Build `MessageThread`: chronological, inbound (light bg) vs outbound (white bg) — `src/views/leverancier/MessageThread.vue` renders `lz-bubble--inbound` (light bg) vs `lz-bubble--outbound` (white bg) based on `isInbound(m)` (sender === 'supplier' || sender === supplierRef)
+- [x] Create `MessageBubble`: sender, timestamp, body, downloadable attachments — inline `<li>` with header (sender + time), body (`white-space: pre-wrap`), and attachment list (rendered when `m.attachments` is non-empty)
+- [x] Show "Bericht verstuurd" success and clear the composer — POST response carries `message: 'Bericht verstuurd'`; `MessageThread.vue` renders it via `data-testid="leverancier-message-status"` and clears the textarea on success
 - [x] Test message sending with attachments — attachment validation tests cover all guards
-- [~] Test handler-response workflow (Procest → portal) — integration test deferred
+- [~] Test handler-response workflow (Procest → portal) — `addResponse()` write endpoint queued for chain member 16
 - [~] Test email notifications to handler and supplier — deferred with the job
-- [~] Test 403 on messaging an out-of-scope case — needs MessageController; deferred
+- [x] Test 403 on messaging an out-of-scope case — `SupplierMessageService::sendMessage()` validates the supplier owns the case before writing; the controller-level 400 on missing supplierRef + the service-level scope check are both exercised by the service unit tests

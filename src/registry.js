@@ -58,6 +58,7 @@ import InvoiceList from './views/leverancier/InvoiceList.vue'
 import ContractList from './views/leverancier/ContractList.vue'
 import KpiView from './views/leverancier/KpiView.vue'
 import ProfileForm from './views/leverancier/ProfileForm.vue'
+import MessageThread from './views/leverancier/MessageThread.vue'
 
 /**
  * V2 component registry.
@@ -228,6 +229,11 @@ const registry = {
 		kind: 'page',
 		component: ProfileForm,
 		_note: 'Supplier profile form — address + contact (immediate) + IBAN-change (4-eyes via Procest case)',
+	},
+	MessageThread: {
+		kind: 'page',
+		component: MessageThread,
+		_note: 'Per-case supplier message thread with composer — chain member 11 messaging',
 	},
 }
 

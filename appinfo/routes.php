@@ -110,6 +110,7 @@ return [
         ['name' => 'supplierPortal#contracts',     'url' => '/api/leverancier-portaal/contracts',         'verb' => 'GET'],
         ['name' => 'supplierPortal#kpi',           'url' => '/api/leverancier-portaal/kpi',               'verb' => 'GET'],
         ['name' => 'supplierPortal#messages',      'url' => '/api/leverancier-portaal/messages',          'verb' => 'GET'],
+        ['name' => 'supplierPortal#sendMessage',   'url' => '/api/leverancier-portaal/messages',          'verb' => 'POST'],
 
         // Leverancier-zaakportaal — operator-side write endpoints (master-data
         // mutations, chain member 12). Address + contactPerson apply
