@@ -114,7 +114,7 @@ class MandaatEscalatieService
         }
 
         try {
-            $mandaten = $this->searchObjectsAsArrays($objectService, $register, $mSchema, ['status' => 'active']);
+            $mandaten = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $mSchema, filters: ['status' => 'active']);
         } catch (\Throwable $e) {
             return ['mandaatId' => '', 'userId' => ''];
         }
@@ -146,7 +146,7 @@ class MandaatEscalatieService
             }
 
             try {
-                $assigns = $this->searchObjectsAsArrays($objectService, $register, $assignSchema, ['rolId' => $rolId]);
+                $assigns = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $assignSchema, filters: ['rolId' => $rolId]);
             } catch (\Throwable $e) {
                 continue;
             }
@@ -257,7 +257,7 @@ class MandaatEscalatieService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['status' => 'open', 'targetUserId' => $oldUserId]);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['status' => 'open', 'targetUserId' => $oldUserId]);
         } catch (\Throwable $e) {
             return 0;
         }

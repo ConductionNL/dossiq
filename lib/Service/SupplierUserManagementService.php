@@ -213,7 +213,7 @@ class SupplierUserManagementService
         }
 
         try {
-            $user = $this->findObjectAsArray($os, TenantSaasService::REGISTER, 'supplierUser', $userId);
+            $user = $this->findObjectAsArray(objectService: $os, register: TenantSaasService::REGISTER, schema: 'supplierUser', id: $userId);
         } catch (Throwable $e) {
             return null;
         }
@@ -260,7 +260,7 @@ class SupplierUserManagementService
         }
 
         try {
-            $user           = $this->findObjectAsArray($os, TenantSaasService::REGISTER, 'supplierUser', $userId);
+            $user           = $this->findObjectAsArray(objectService: $os, register: TenantSaasService::REGISTER, schema: 'supplierUser', id: $userId);
             $user['status'] = 'revoked';
             $os->saveObject(
                 object: $user,
@@ -352,7 +352,7 @@ class SupplierUserManagementService
         }
 
         try {
-            $row = $this->findObjectAsArray($os, TenantSaasService::REGISTER, 'supplier', $supplierRef);
+            $row = $this->findObjectAsArray(objectService: $os, register: TenantSaasService::REGISTER, schema: 'supplier', id: $supplierRef);
             return is_array($row) ? $row : null;
         } catch (Throwable $e) {
             return null;

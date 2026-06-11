@@ -69,7 +69,7 @@ class TenderVisibilityService
         }
 
         try {
-            $row = $this->findObjectAsArray($os, TenantSaasService::REGISTER, 'supplierTender', $tenderId);
+            $row = $this->findObjectAsArray(objectService: $os, register: TenantSaasService::REGISTER, schema: 'supplierTender', id: $tenderId);
         } catch (Throwable $e) {
             return null;
         }

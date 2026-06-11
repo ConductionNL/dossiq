@@ -112,7 +112,7 @@ class ArchiefEdepotSeedDataService
             return [];
         }
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema);
         } catch (\Throwable $e) {
             return [];
         }

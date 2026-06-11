@@ -101,7 +101,7 @@ class DwangsomBezwaarService
 
         // Move all linked uitbetalingen to on-hold-bezwaar.
         try {
-            $uitbetalingen = $this->searchObjectsAsArrays($objectService, $register, $uSchema, ['dwangsomBerekening' => $berekeningId]);
+            $uitbetalingen = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $uSchema, filters: ['dwangsomBerekening' => $berekeningId]);
         } catch (\Throwable $e) {
             $uitbetalingen = [];
         }
@@ -178,7 +178,7 @@ class DwangsomBezwaarService
         }
 
         try {
-            $uitbetalingen = $this->searchObjectsAsArrays($objectService, $register, $uSchema, ['dwangsomBerekening' => $berekeningId]);
+            $uitbetalingen = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $uSchema, filters: ['dwangsomBerekening' => $berekeningId]);
         } catch (\Throwable $e) {
             $uitbetalingen = [];
         }

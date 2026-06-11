@@ -165,7 +165,7 @@ class MandaatCheckService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['status' => 'active']);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['status' => 'active']);
         } catch (\Throwable $e) {
             return [];
         }
@@ -222,7 +222,7 @@ class MandaatCheckService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['userId' => $userId]);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['userId' => $userId]);
         } catch (\Throwable $e) {
             // Fail closed: log and surface "no role" instead of swallowing.
             $this->logger->error(

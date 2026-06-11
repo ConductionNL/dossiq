@@ -155,7 +155,7 @@ class TenantSaasService
         }
 
         try {
-            $row = $this->findObjectAsArray($os, self::REGISTER, self::SCHEMA_TENANT, $tenantId);
+            $row = $this->findObjectAsArray(objectService: $os, register: self::REGISTER, schema: self::SCHEMA_TENANT, id: $tenantId);
             return is_array($row) ? $row : null;
         } catch (Throwable $e) {
             $this->logger->info('Procest: TenantSaasService::getById miss', ['tenantId' => $tenantId, 'exception' => $e->getMessage()]);

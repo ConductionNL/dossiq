@@ -176,7 +176,7 @@ class TermijnService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['zaak' => $zaakId]);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaak' => $zaakId]);
         } catch (\Throwable $e) {
             return null;
         }
@@ -247,7 +247,7 @@ class TermijnService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['zaaktype' => $zaaktype]);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaaktype' => $zaaktype]);
         } catch (\Throwable $e) {
             $this->logger->warning(
                 'TermijnService.getTermijnDefinitie lookup failed',

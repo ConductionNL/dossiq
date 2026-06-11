@@ -223,7 +223,7 @@ class ArchivalTriggerService
             return null;
         }
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['zaaktypeKey' => $zaaktypeKey]);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaaktypeKey' => $zaaktypeKey]);
         } catch (\Throwable $e) {
             return null;
         }
@@ -253,7 +253,7 @@ class ArchivalTriggerService
         }
 
         try {
-            $existing = $this->searchObjectsAsArrays($objectService, $register, $schema, ['zaakId' => $caseId]);
+            $existing = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaakId' => $caseId]);
         } catch (\Throwable $e) {
             $existing = [];
         }

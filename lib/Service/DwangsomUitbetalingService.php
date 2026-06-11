@@ -161,7 +161,7 @@ class DwangsomUitbetalingService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $uSchema, ['referentie' => $referentie]);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $uSchema, filters: ['referentie' => $referentie]);
         } catch (\Throwable $e) {
             throw new RuntimeException('DwangsomUitbetaling lookup failed: '.$e->getMessage());
         }

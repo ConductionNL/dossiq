@@ -179,7 +179,7 @@ class ArchiefController extends Controller
             return [];
         }
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, []);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
             return is_array($rows) === true ? $rows : [];
         } catch (Throwable $e) {
             return [];

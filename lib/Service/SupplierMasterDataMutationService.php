@@ -211,7 +211,7 @@ class SupplierMasterDataMutationService
         }
 
         try {
-            $row = $this->findObjectAsArray($os, TenantSaasService::REGISTER, 'supplier', $supplierRef);
+            $row = $this->findObjectAsArray(objectService: $os, register: TenantSaasService::REGISTER, schema: 'supplier', id: $supplierRef);
         } catch (Throwable $e) {
             return null;
         }

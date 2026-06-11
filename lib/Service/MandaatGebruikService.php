@@ -119,7 +119,7 @@ class MandaatGebruikService
             return [];
         }
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['zaakId' => $zaakId]);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaakId' => $zaakId]);
             return is_array($rows) === true ? $rows : [];
         } catch (\Throwable $e) {
             return [];
@@ -146,7 +146,7 @@ class MandaatGebruikService
             return [];
         }
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['mandaatId' => $mandaatId]);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['mandaatId' => $mandaatId]);
         } catch (\Throwable $e) {
             return [];
         }

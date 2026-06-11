@@ -227,7 +227,7 @@ class MandaatImportService
 
         // Flip mandaten to active.
         try {
-            $mandaten = $this->searchObjectsAsArrays($objectService, $register, $mSchema, ['mandateringsBesluit' => $besluitId]);
+            $mandaten = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $mSchema, filters: ['mandateringsBesluit' => $besluitId]);
         } catch (\Throwable $e) {
             $mandaten = [];
         }
@@ -304,7 +304,7 @@ class MandaatImportService
             return [];
         }
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, []);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
         } catch (\Throwable $e) {
             return [];
         }
@@ -336,7 +336,7 @@ class MandaatImportService
             return null;
         }
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['besluitNummer' => $besluitNummer]);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['besluitNummer' => $besluitNummer]);
         } catch (\Throwable $e) {
             return null;
         }
@@ -368,7 +368,7 @@ class MandaatImportService
             return [];
         }
         try {
-            return (array) $this->searchObjectsAsArrays($objectService, $register, $schema, ['mandateringsBesluit' => $besluitId]);
+            return (array) $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['mandateringsBesluit' => $besluitId]);
         } catch (\Throwable $e) {
             return [];
         }

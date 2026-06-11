@@ -161,7 +161,7 @@ class TermijnReportingService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $uSchema, []);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $uSchema, filters: []);
         } catch (\Throwable $e) {
             return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0]];
         }
@@ -319,7 +319,7 @@ class TermijnReportingService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, []);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
         } catch (\Throwable $e) {
             return [];
         }

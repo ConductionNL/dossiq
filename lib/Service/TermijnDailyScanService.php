@@ -96,7 +96,7 @@ class TermijnDailyScanService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, []);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
         } catch (\Throwable $e) {
             $this->logger->error('Termijn daily scan: list failed', ['error' => $e->getMessage()]);
             return $counts;
@@ -145,7 +145,7 @@ class TermijnDailyScanService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays($objectService, $register, $schema, ['status' => 'lopend']);
+            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['status' => 'lopend']);
         } catch (\Throwable $e) {
             return 0;
         }
