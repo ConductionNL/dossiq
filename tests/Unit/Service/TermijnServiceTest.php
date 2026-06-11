@@ -198,6 +198,75 @@ class TermijnServiceTest extends TestCase
         self::assertNotNull($resolved);
         self::assertSame($second['id'], $resolved['id']);
     }
+
+    /**
+     * Version-pinning: an existing TermijnInstance keeps its original
+     * `termijnDefinitie` reference even after a new definition version is
+     * published for the same zaaktype. Only newly-created instances bind to
+     * the latest active version. Closes the
+     * `termijnbewaking-dwangsom-engine-11-tests-admin-docs` "new cases use
+     * latest version; existing retain original" deferral.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+     */
+    public function testExistingTermijnInstanceRetainsOriginalDefinitieAfterVersionBump(): void
+    {
+        // Phase 1 — case opens against v1 (56 days).
+        $existing = $this->service->createTermijnInstance(
+            'Z/2026/300',
+            'omgevingsvergunning-regulier',
+            new DateTimeImmutable('2026-01-15T09:00:00+00:00')
+        );
+        self::assertSame('td-omgevingsvergunning-regulier', $existing['termijnDefinitie']);
+        // 2026-01-15 + 56 days = 2026-03-12.
+        self::assertSame('2026-03-12', $existing['einddatumBerekend']);
+
+        // Phase 2 — publish a new v2 (70 days) for the same zaaktype.
+        $this->objects->saveObject('procest', 'termijnDefinitie', [
+            'id'                  => 'td-omgevingsvergunning-regulier-v2',
+            'zaaktype'            => 'omgevingsvergunning-regulier',
+            'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
+            'standaardDuurDagen'  => 70,
+            'validFrom'           => '2026-03-01',
+        ]);
+
+        // Phase 3 — re-fetch the same instance: definitie reference is
+        // the v1 row, NOT v2. The instance row was persisted with the v1 id
+        // at creation time and is never re-resolved against the catalogue.
+        $reloaded = $this->service->getTermijnInstance((string) $existing['id']);
+        self::assertNotNull($reloaded);
+        self::assertSame('td-omgevingsvergunning-regulier', $reloaded['termijnDefinitie']);
+        self::assertSame('2026-03-12', $reloaded['einddatumBerekend']);
+
+        // Phase 4 — a brand-new instance for the same zaaktype binds to v2.
+        // Reset the definitie cache by creating a fresh service so the new
+        // active row wins the validFrom sort.
+        $settings = $this->createMock(SettingsService::class);
+        $settings->method('getObjectService')->willReturn($this->objects);
+        $settings->method('getConfigValue')->willReturnCallback(
+            static function (string $key): string {
+                return match ($key) {
+                    'register'                   => 'procest',
+                    'termijn_definitie_schema'   => 'termijnDefinitie',
+                    'termijn_instance_schema'    => 'termijnInstance',
+                    'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
+                    default                      => '',
+                };
+            },
+        );
+        $freshService = new TermijnService($settings, $this->createMock(LoggerInterface::class));
+
+        $fresh = $freshService->createTermijnInstance(
+            'Z/2026/301',
+            'omgevingsvergunning-regulier',
+            new DateTimeImmutable('2026-04-01T09:00:00+00:00')
+        );
+        self::assertSame('td-omgevingsvergunning-regulier-v2', $fresh['termijnDefinitie']);
+        // 2026-04-01 + 70 days = 2026-06-10.
+        self::assertSame('2026-06-10', $fresh['einddatumBerekend']);
+    }
 }
 
 // `FakeTermijnStore` is now declared in tests/Unit/Fixtures/FakeTermijnStore.php
