@@ -91,7 +91,7 @@ return [
         ['name' => 'zaakportaal#cases',                     'url' => '/api/portaal/cases', 'verb' => 'GET'],
         ['name' => 'zaakportaal#messages',                  'url' => '/api/portaal/messages', 'verb' => 'GET'],
         ['name' => 'zaakportaal#sendMessage',               'url' => '/api/portaal/messages', 'verb' => 'POST'],
-        ['name' => 'zaakportaal#validateObjectionDeadline', 'url' => '/api/portaal/objections/validate-deadline', 'verb' => 'POST'],
+        ['name' => 'zaakportaal#objectionDeadline',         'url' => '/api/portaal/objections/validate-deadline', 'verb' => 'POST'],
         ['name' => 'zaakportaal#submitObjection',           'url' => '/api/portaal/objections', 'verb' => 'POST'],
         ['name' => 'zaakportaal#submitComplaint',           'url' => '/api/portaal/complaints', 'verb' => 'POST'],
         ['name' => 'zaakportaal#requests',                  'url' => '/api/portaal/requests', 'verb' => 'GET'],
@@ -315,6 +315,21 @@ return [
         ['name' => 'tenant#provision', 'url' => '/api/tenants/{tenantId}/provision',   'verb' => 'POST'],
         ['name' => 'tenant#usage',     'url' => '/api/tenants/{tenantId}/usage',       'verb' => 'GET'],
 
+        // SaaS Tenant CRUD + lifecycle — backed by the `tenant` register schema
+        // (chain member tenant-zaaksysteem-saas-01). Admin-only via the
+        // SecurityMiddleware default; #[AuthorizedAdminSetting] on each method.
+        ['name' => 'tenantSaas#index',   'url' => '/api/saas/tenants',                  'verb' => 'GET'],
+        ['name' => 'tenantSaas#create',  'url' => '/api/saas/tenants',                  'verb' => 'POST'],
+        ['name' => 'tenantSaas#show',    'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'GET'],
+        ['name' => 'tenantSaas#update',  'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'PATCH'],
+        ['name' => 'tenantSaas#destroy', 'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'DELETE'],
+
+        // SaaS onboarding (chain member 07) — checklist init/progress/complete + go-live activation.
+        ['name' => 'tenantOnboarding#initialise', 'url' => '/api/saas/tenants/{tenantId}/onboarding/initialise',     'verb' => 'POST'],
+        ['name' => 'tenantOnboarding#progress',   'url' => '/api/saas/tenants/{tenantId}/onboarding/progress',       'verb' => 'GET'],
+        ['name' => 'tenantOnboarding#complete',   'url' => '/api/saas/tenants/{tenantId}/onboarding/{step}/complete', 'verb' => 'POST'],
+        ['name' => 'tenantOnboarding#activate',   'url' => '/api/saas/tenants/{tenantId}/onboarding/activate',       'verb' => 'POST'],
+
         // ── Appointment Scheduling (afsprakenbeheer) ────────────────────
         // Specific endpoints (must precede wildcard {appointmentId} routes).
         ['name' => 'appointment#timeslots', 'url' => '/api/appointments/timeslots',                'verb' => 'GET'],
@@ -419,7 +434,23 @@ return [
         ['name' => 'agenda#addToAgenda',              'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'POST'],
         ['name' => 'agenda#updateAgendaItem',         'url' => '/api/besluitvorming/cases/{id}/agenda',         'verb' => 'PUT'],
         ['name' => 'publication#publish',             'url' => '/api/besluitvorming/cases/{id}/publish',        'verb' => 'POST'],
-        ['name' => 'mandaat#mandaatCheck',             'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
+        ['name' => 'mandaat#mandaatCheck',            'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
+
+        // ── GIS / Map layers (gis-integration) ───────────────────────────
+        ['name' => 'mapLayer#index',   'url' => '/api/map-layers',      'verb' => 'GET'],
+        ['name' => 'mapLayer#create',  'url' => '/api/map-layers',      'verb' => 'POST'],
+        ['name' => 'mapLayer#show',    'url' => '/api/map-layers/{id}', 'verb' => 'GET'],
+        ['name' => 'mapLayer#update',  'url' => '/api/map-layers/{id}', 'verb' => 'PUT'],
+        ['name' => 'mapLayer#destroy', 'url' => '/api/map-layers/{id}', 'verb' => 'DELETE'],
+
+        // ── DSO / Omgevingsloket (DSO controller endpoints) ──────────────
+        ['name' => 'dso#dashboard',            'url' => '/api/dso/dashboard',                                'verb' => 'GET'],
+        ['name' => 'dso#transitionStatus',     'url' => '/api/dso/cases/{caseId}/transition',                'verb' => 'POST'],
+        ['name' => 'dso#generateBeschikking',  'url' => '/api/dso/cases/{caseId}/beschikking',               'verb' => 'POST'],
+        ['name' => 'dso#initiateSamenwerking', 'url' => '/api/dso/cases/{caseId}/samenwerking',              'verb' => 'POST'],
+        ['name' => 'dso#respondSamenwerking',  'url' => '/api/dso/samenwerking/{samenwerkId}/respond',       'verb' => 'POST'],
+        ['name' => 'dso#doorsturen',           'url' => '/api/dso/cases/{caseId}/doorsturen',                'verb' => 'POST'],
+        ['name' => 'dossierExport#export',     'url' => '/api/dossier/{caseId}/export',                      'verb' => 'GET'],
 
         // ── Complaints (klachtafhandeling) — Awb chapter 9 ─────────────────
         ['name' => 'complaint#index',              'url' => '/api/complaints',                             'verb' => 'GET'],
@@ -448,6 +479,43 @@ return [
         ['name' => 'complaint#categories',         'url' => '/api/complaint-categories',                  'verb' => 'GET'],
         ['name' => 'complaint#createCategory',     'url' => '/api/complaint-categories',                  'verb' => 'POST'],
         ['name' => 'complaint#updateCategory',     'url' => '/api/complaint-categories/{id}',             'verb' => 'PUT'],
+
+        // ── Archief / e-Depot handover ─────────────────────────────────────
+        ['name' => 'archief#listRules',       'url' => '/api/archief/rules',                'verb' => 'GET'],
+        ['name' => 'archief#createRule',      'url' => '/api/archief/rules',                'verb' => 'POST'],
+        ['name' => 'archief#dashboardStats',  'url' => '/api/archief/dashboard/stats',      'verb' => 'GET'],
+        ['name' => 'archief#auditLog',        'url' => '/api/archief/audit-log',            'verb' => 'GET'],
+
+        // ── Mandaat-matrix authorization engine ────────────────────────────
+        ['name' => 'mandaatMatrix#probe',           'url' => '/api/mandate/authorize',                    'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#importPreview',   'url' => '/api/mandate/import',                       'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#importApprove',   'url' => '/api/mandate/import/{importId}/approve',    'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#escalateApprove', 'url' => '/api/mandate/escalations/{id}/approve',     'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#escalateReject',  'url' => '/api/mandate/escalations/{id}/reject',      'verb' => 'POST'],
+        ['name' => 'mandaatMatrix#auditTrail',      'url' => '/api/mandate/cases/{caseId}/audit-trail',   'verb' => 'GET'],
+
+        // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
+        // Public webhook for openconnector/ERP payment confirmation callbacks.
+        ['name' => 'dwangsomPaymentCallback#callback', 'url' => '/api/procest/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
+        // TermijnInstance lifecycle (caseworker / handler).
+        ['name' => 'termijn#create',     'url' => '/api/termijn/instances',                  'verb' => 'POST'],
+        ['name' => 'termijn#show',       'url' => '/api/termijn/instances/{id}',             'verb' => 'GET'],
+        ['name' => 'termijn#pauze',      'url' => '/api/termijn/instances/{id}/pauze',       'verb' => 'POST'],
+        ['name' => 'termijn#hervat',     'url' => '/api/termijn/instances/{id}/hervat',      'verb' => 'POST'],
+        ['name' => 'termijn#verleng',    'url' => '/api/termijn/instances/{id}/verleng',     'verb' => 'POST'],
+        ['name' => 'termijn#voltooi',    'url' => '/api/termijn/instances/{id}/voltooi',     'verb' => 'POST'],
+        // Ingebrekestelling registration.
+        ['name' => 'ingebrekestelling#register', 'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
+        ['name' => 'ingebrekestelling#show',     'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
+        // Dwangsom state + bezwaar.
+        ['name' => 'dwangsom#show',         'url' => '/api/termijn/dwangsom/{id}',             'verb' => 'GET'],
+        ['name' => 'dwangsom#beschikking',  'url' => '/api/termijn/dwangsom/{id}/beschikking', 'verb' => 'POST'],
+        ['name' => 'dwangsom#bezwaar',      'url' => '/api/termijn/dwangsom/{id}/bezwaar',     'verb' => 'POST'],
+        ['name' => 'dwangsom#bezwaarHeroverweging', 'url' => '/api/termijn/dwangsom/{id}/bezwaar/heroverweging', 'verb' => 'POST'],
+        // Reporting (manager / accountant).
+        ['name' => 'termijnReporting#dashboard',         'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
+        ['name' => 'termijnReporting#kwartaalrapport',   'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
+        ['name' => 'termijnReporting#jaarrekening',      'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
 
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],

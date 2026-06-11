@@ -42,7 +42,9 @@
   - `startIdentificatievragen(burger_naam, geboortedatum, adres, bsn_last4, out_of_wallet_answer)` → Calls BRP lookup (if integrated) or in-memory Burger search; calculates match score (weighted: 0.3× naam, 0.3× geboortedatum, 0.2× adres, 0.15× bsn, 0.05× out_of_wallet); returns score + burgerId (if >= threshold)
   - `createUnverifiedBurger(identification_data)` → Creates Burger record with placeholder bsn (marked encrypted "[UNVERIFIED]"); flags for manual review; returns burgerId
 
-- [ ] **T06**: Create `lib/Service/BelplanRoutingService.php`:
+- [x] **T06**: Created `lib/Service/Kcc/BelplanRoutingService.php`. Stateless KCC call routing — `getActiveBelplan(phoneNumber, belplannen)` E.164-normalises and matches by `triggerNummer` (suffix-match) + `isActive` filter. `resolveVaardigheid(belplan, menuSelection)` supports both 1-based numeric DTMF selection and label match. `routeCall(vaardigheid, pool, overflowThresholds)` filters by skill → picks the lowest-queue available specialist (ties broken by `gemiddeldeBehandelduur`) → on no-one-available escalates when estimated wait or queue length exceed thresholds. 10 unit tests cover belplan match/skip-inactive/no-match, vaardigheid resolution by index + label, low-queue routing, no-candidate escalation, both overflow branches (`tests/Unit/Service/Kcc/BelplanRoutingServiceTest.php`).
+
+- [ ] **T06-spec-original**: Create `lib/Service/BelplanRoutingService.php`:
   - `getActiveBelplan(phoneNumber)` → Looks up Belplan by triggerNummer; returns belplan config with routeringStappen
   - `routeCall(phoneNumber, menuSelection, currentWachtrij)` → Executes belplan routing:
     1. Determine vaardigheid from menuSelection
@@ -66,7 +68,9 @@
   - `rejectTransfer(doorverbinding_id, reden)` → Sets geaccepteerd=false, afgekeurdReden=reden; routes call to voicemail/wachtrij + callback scheduling
   - `appendContextNotes(doorverbinding_id, specialist_notes)` → Appends (not overwrites) to contextOverdracht; audit-trails with timestamp + specialist UID
 
-- [ ] **T09**: Create `lib/Service/SentimentService.php`:
+- [x] **T09**: Created `lib/Service/Kcc/SentimentService.php`. Deterministic Dutch sentiment analyser — DEFAULT_TRIGGER_WORDS list (klacht/advocaat/wethouder/…); SERIOUS_TRIGGERS auto-escalate to `escalatieLevel=rood` regardless of polarity; hand-curated `NEGATIVE_WEIGHTS`/`POSITIVE_WEIGHTS` Dutch word lists. `analyzeSentiment(text, triggerWords?)` returns `{ score [-1..1], label (positief/neutraal/negatief/boos), triggers, escalatieAanbevolen, escalatieLevel (geen/geel/oranje/rood) }`. Word-boundary trigger matching so "krantje" doesn't match "krant". 9 unit tests cover neutral/positive/angry baselines, serious-trigger auto-escalation, custom trigger lists, word-boundary correctness, and the four-step escalation ladder (`tests/Unit/Service/Kcc/SentimentServiceTest.php`). Persisting analysed sentiment to `klantSentiment` objects + the SentimentAnalysisJob TimedJob (T15) remain forward work.
+
+- [ ] **T09-spec-original**: Create `lib/Service/SentimentService.php`:
   - `analyzeSentiment(text, trigger_words_list)` → Detects trigger words (substring match with word-boundary check); calculates sentiment score using simple word-weight algorithm (hardcoded Dutch dictionary); returns {score: -1..+1, label: "positief"|"neutraal"|"negatief"|"boos", triggers: [words], escalatieAanbevolen: boolean}
   - `shouldEscalate(score, triggers)` → Returns true if score <= -0.5 OR triggers includes ["klacht", "advocaat", "media", "rechtszaak"]
   - `getEscalationLevel(score, triggers)` → Returns escalatieLevel: "geen" (>0), "geel" (-0.3 to 0), "oranje" (-0.6 to -0.3), "rood" (<-0.6 or serious-trigger present)

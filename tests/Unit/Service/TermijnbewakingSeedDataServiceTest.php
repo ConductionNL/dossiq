@@ -1,0 +1,152 @@
+<?php
+
+/**
+ * Unit tests for TermijnbewakingSeedDataService.
+ *
+ * Exercises the seed pipeline against an in-memory ObjectService fake,
+ * asserts idempotency, and verifies the documented seed shape
+ * (Omgevingsvergunning-regulier 56d, Wmo-aanvraag 42d, Woo-verzoek 28d
+ * with €15/day max €500 regime).
+ *
+ * @category Tests
+ * @package  OCA\Procest\Tests\Unit\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Procest\Tests\Unit\Service;
+
+use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\TermijnbewakingSeedDataService;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+
+/**
+ * @covers \OCA\Procest\Service\TermijnbewakingSeedDataService
+ */
+class TermijnbewakingSeedDataServiceTest extends TestCase
+{
+    private FakeTermijnObjectService $objects;
+
+    private TermijnbewakingSeedDataService $service;
+
+    protected function setUp(): void
+    {
+        $this->objects = new FakeTermijnObjectService();
+        $settings      = $this->createMock(SettingsService::class);
+        $settings->method('getObjectService')->willReturn($this->objects);
+        $settings->method('getConfigValue')->willReturnCallback(
+            static function (string $key): string {
+                return match ($key) {
+                    'register'                 => 'procest',
+                    'termijn_definitie_schema' => 'termijnDefinitie',
+                    default                    => '',
+                };
+            },
+        );
+
+        $this->service = new TermijnbewakingSeedDataService(
+            $settings,
+            $this->createMock(LoggerInterface::class),
+        );
+    }
+
+    /**
+     * @return void
+     */
+    public function testSeedCreatesThreeDefinitions(): void
+    {
+        $result = $this->service->seed();
+
+        self::assertSame(true, $result['success']);
+        self::assertSame(3, $result['definities']);
+        self::assertSame(0, $result['skipped']);
+        self::assertCount(3, $this->objects->store['termijnDefinitie']);
+    }
+
+    /**
+     * @return void
+     */
+    public function testSeedIsIdempotent(): void
+    {
+        $this->service->seed();
+        $second = $this->service->seed();
+
+        self::assertSame(true, $second['success']);
+        self::assertSame(0, $second['definities']);
+        self::assertSame(3, $second['skipped']);
+        self::assertCount(3, $this->objects->store['termijnDefinitie']);
+    }
+
+    /**
+     * @return void
+     */
+    public function testWooSeedHasCustomRegime(): void
+    {
+        $this->service->seed();
+
+        $woo = $this->objects->store['termijnDefinitie']['td-woo-verzoek'];
+        self::assertSame('woo-verzoek', $woo['zaaktype']);
+        self::assertSame(28, $woo['standaardDuurDagen']);
+        self::assertSame(1500, $woo['afwijkendDwangsomRegime']['dailyTariff']);
+        self::assertSame(50000, $woo['afwijkendDwangsomRegime']['plafond']);
+    }
+
+    /**
+     * @return void
+     */
+    public function testWmoSeedHas42DayDuration(): void
+    {
+        $this->service->seed();
+
+        $wmo = $this->objects->store['termijnDefinitie']['td-wmo-aanvraag'];
+        self::assertSame('wmo-melding', $wmo['zaaktype']);
+        self::assertSame(42, $wmo['standaardDuurDagen']);
+        self::assertSame(0, $wmo['aantalVerlengingen']);
+    }
+}
+
+/**
+ * In-memory ObjectService fake supporting only the calls the seed pipeline needs.
+ */
+class FakeTermijnObjectService
+{
+    /** @var array<string, array<string, array<string, mixed>>> */
+    public array $store = [];
+
+    /**
+     * @param string               $register Register id.
+     * @param string               $schema   Schema id.
+     * @param array<string, mixed> $object   Object.
+     * @return array<string, mixed>
+     */
+    public function saveObject(string $register, string $schema, array $object): array
+    {
+        $id = (string) ($object['id'] ?? ('row-'.count($this->store[$schema] ?? [])));
+        $object['id'] = $id;
+        $this->store[$schema][$id] = $object;
+        return $object;
+    }
+
+    /**
+     * @param string               $register Register id.
+     * @param string               $schema   Schema id.
+     * @param array<string, mixed> $filters  Filters.
+     * @return array<int, array<string, mixed>>
+     */
+    public function findObjects(string $register, string $schema, array $filters = []): array
+    {
+        return array_values($this->store[$schema] ?? []);
+    }
+}

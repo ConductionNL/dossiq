@@ -57,8 +57,15 @@ use OCA\Procest\Listener\LegesCaseWithdrawnListener;
 use OCA\Procest\Listener\ParaferingAuditListener;
 use OCA\Procest\Listener\RoleMutationListener;
 use OCA\Procest\Mcp\ProcestToolProvider;
+use OCA\Procest\Middleware\MandateValidationMiddleware;
+use OCA\Procest\Middleware\QuotaEnforcementMiddleware;
+use OCA\Procest\Middleware\TenantClaimValidationMiddleware;
+use OCA\Procest\Middleware\TenantContextMiddleware;
+use OCA\Procest\Middleware\TenantIsolationMiddleware;
 use OCA\Procest\Middleware\TenantMiddleware;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
+use OCA\Procest\Service\TenantJwtService;
+use OCP\IConfig;
 use OCA\Procest\Validator\ParaferingAuditAppendOnlyValidator;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -137,9 +144,37 @@ class Application extends App implements IBootstrap
 
         $this->registerBezwaarListeners(context: $context);
         $this->registerLegesListeners(context: $context);
+        $this->registerTermijnListeners(context: $context);
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
         $context->registerMiddleware(class: TenantMiddleware::class);
+        // SaaS chain (member 04): resolve tenant binding then set Postgres
+        // search_path. Order matters — Context runs before Isolation.
+        $context->registerMiddleware(class: TenantContextMiddleware::class);
+        $context->registerMiddleware(class: TenantIsolationMiddleware::class);
+        // SaaS chain (member 05): JWT tenant-claim validation against the
+        // request-bound tenant. Forged / cross-tenant JWT → 403.
+        $context->registerMiddleware(class: TenantClaimValidationMiddleware::class);
+        // SaaS chain (member 06): mandate-matrix authorisation gate. Maps the
+        // HTTP verb (and URL hints like /transition) to a matrix action key
+        // and blocks the request on deny.
+        $context->registerMiddleware(class: MandateValidationMiddleware::class);
+        // SaaS chain (member 09): per-request quota enforcement (case creation +
+        // API calls). Runs last in the SaaS chain.
+        $context->registerMiddleware(class: QuotaEnforcementMiddleware::class);
+        // SaaS chain (member 05): factory the TenantJwtService with the secret
+        // from app config (procest.jwt_signing_secret). Generates a
+        // per-instance random fallback when unset (dev-friendly; production
+        // must set the secret via occ config:app:set procest jwt_signing_secret).
+        $context->registerService(TenantJwtService::class, function (\Psr\Container\ContainerInterface $c): TenantJwtService {
+            $config = $c->get(IConfig::class);
+            $secret = (string) $config->getAppValue(self::APP_ID, 'jwt_signing_secret', '');
+            if ($secret === '' || strlen($secret) < 16) {
+                $secret = (string) $config->getSystemValue('secret', str_pad(self::APP_ID, 32, '_'));
+            }
+
+            return new TenantJwtService(signingSecret: $secret);
+        });
 
         // Background jobs are declared in appinfo/info.xml under
         // <background-jobs>; Nextcloud auto-registers them with the IJobList.
@@ -248,6 +283,28 @@ class Application extends App implements IBootstrap
             listener: LegesCaseWithdrawnListener::class
         );
     }//end registerLegesListeners()
+
+    /**
+     * Register termijnbewaking (AWB deadline engine) listeners.
+     *
+     * On case creation, an AWB TermijnInstance is automatically bound to
+     * the case using the active TermijnDefinitie for the zaaktype. The
+     * listener is a pure observer (ADR-022); all logic lives in
+     * {@see \OCA\Procest\Service\TermijnService}.
+     *
+     * @param IRegistrationContext $context Registration context.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+     */
+    private function registerTermijnListeners(IRegistrationContext $context): void
+    {
+        $context->registerEventListener(
+            event: ObjectCreatedEvent::class,
+            listener: \OCA\Procest\Listener\TermijnCaseCreatedListener::class
+        );
+    }//end registerTermijnListeners()
 
     /**
      * Register dashboard widgets and the MCP tool provider.

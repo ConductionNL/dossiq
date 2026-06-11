@@ -48,7 +48,7 @@ Vrij en open source onder de AGPL-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.2.10</version>
+    <version>0.2.12</version>
     <licence>agpl</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Procest</namespace>
@@ -79,6 +79,9 @@ Vrij en open source onder de AGPL-licentie.
         <job>OCA\Procest\BackgroundJob\WOODeadlineCheckJob</job>
         <job>OCA\Procest\BackgroundJob\BezwaarTermijnJob</job>
         <job>OCA\Procest\BackgroundJob\ArchivalJob</job>
+        <job>OCA\Procest\BackgroundJob\DsoDeadlineJob</job>
+        <job>OCA\Procest\BackgroundJob\ResetMonthlyQuotasJob</job>
+        <job>OCA\Procest\BackgroundJob\DailyTermijnScanJob</job>
     </background-jobs>
 
     <repair-steps>
@@ -90,6 +93,12 @@ Vrij en open source onder de AGPL-licentie.
             <step>OCA\Procest\Repair\SeedBezwaarWorkflowDefinition</step>
             <step>OCA\Procest\Repair\RegisterOriRegister</step>
             <step>OCA\Procest\Repair\SeedLegesData</step>
+            <step>OCA\Procest\Repair\SeedLhsMatrix</step>
+            <step>OCA\Procest\Repair\SeedVthMatrixCells</step>
+            <step>OCA\Procest\Repair\SeedVthWorkflowTemplates</step>
+            <step>OCA\Procest\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Procest\Repair\SeedTermijnbewakingData</step>
+            <step>OCA\Procest\Repair\SeedArchiefEdepotData</step>
         </post-migration>
     </repair-steps>
 

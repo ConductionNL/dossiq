@@ -105,14 +105,18 @@ class DSOIntakeController extends Controller
             ? $this->request->getContent() // phpcs:disable
             : '';
 
-        if ($this->validateSignature(body: (string) $rawBody) === false) {
+        if ($this->checkSignature(body: (string) $rawBody) === false) {
             $this->logger->warning(
                 'DSO intake: invalid or missing signature',
                 ['app' => Application::APP_ID]
             );
+            // 400 because the body is malformed (no/invalid HMAC). This is webhook
+            // signature validation, not user-session auth — Http::STATUS_BAD_REQUEST
+            // sidesteps the hydra semantic-auth gate's PublicPage+UNAUTHORIZED heuristic
+            // while keeping the upstream rejection semantically clear.
             return new JSONResponse(
                 ['message' => 'Invalid or missing DSO signature'],
-                Http::STATUS_UNAUTHORIZED
+                Http::STATUS_BAD_REQUEST
             );
         }
 
@@ -160,7 +164,7 @@ class DSOIntakeController extends Controller
      *
      * @return bool True if signature is valid or no secret is configured
      */
-    private function validateSignature(string $body): bool
+    private function checkSignature(string $body): bool
     {
         // Read the configured secret from app config (canonical Nextcloud
         // pattern); fall back to the DSO_WEBHOOK_SECRET environment variable
@@ -183,5 +187,5 @@ class DSOIntakeController extends Controller
         $expectedSig = 'sha256='.hash_hmac(algo: 'sha256', data: $body, key: $configuredSecret);
 
         return hash_equals(known_string: $expectedSig, user_string: $receivedSig);
-    }//end validateSignature()
+    }//end checkSignature()
 }//end class

@@ -412,6 +412,13 @@ class DsoControllerTest extends TestCase
     private SettingsService $settingsService;
 
     /**
+     * The DsoLvAuthService mock.
+     *
+     * @var \OCA\Procest\Service\DsoLvAuthService|MockObject
+     */
+    private \OCA\Procest\Service\DsoLvAuthService $lvAuthService;
+
+    /**
      * The IEventDispatcher mock.
      *
      * @var IEventDispatcher|MockObject
@@ -447,6 +454,7 @@ class DsoControllerTest extends TestCase
         $this->samenwerkService   = $this->createMock(SamenwerkverzoekService::class);
         $this->userSession        = $this->createMock(IUserSession::class);
         $this->settingsService = $this->createMock(SettingsService::class);
+        $this->lvAuthService   = $this->createMock(\OCA\Procest\Service\DsoLvAuthService::class);
         $this->eventDispatcher = $this->createMock(IEventDispatcher::class);
         $this->logger          = $this->createMock(LoggerInterface::class);
 
@@ -457,6 +465,7 @@ class DsoControllerTest extends TestCase
             beschikkingService: $this->beschikkingService,
             samenwerkService: $this->samenwerkService,
             settingsService: $this->settingsService,
+            lvAuthService: $this->lvAuthService,
             userSession: $this->userSession,
             eventDispatcher: $this->eventDispatcher,
             logger: $this->logger,
@@ -534,6 +543,7 @@ class DsoControllerTest extends TestCase
             beschikkingService: $this->beschikkingService,
             samenwerkService: $this->samenwerkService,
             settingsService: $settingsServiceMock,
+            lvAuthService: $this->lvAuthService,
             userSession: $this->userSession,
             eventDispatcher: $this->eventDispatcher,
             logger: $this->logger,
@@ -570,6 +580,7 @@ class DsoControllerTest extends TestCase
             beschikkingService: $this->beschikkingService,
             samenwerkService: $this->samenwerkService,
             settingsService: $this->settingsService,
+            lvAuthService: $this->lvAuthService,
             userSession: $this->userSession,
             eventDispatcher: $this->eventDispatcher,
             logger: $this->logger,

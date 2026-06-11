@@ -1,0 +1,435 @@
+{
+  "components": {
+    "registers": {
+      "procest": {
+        "schemas": [
+          "termijnDefinitie",
+          "termijnInstance",
+          "termijnGebeurtenis",
+          "ingebrekestelling",
+          "dwangsomBerekening",
+          "dwangsomUitbetaling"
+        ]
+      }
+    },
+    "schemas": {
+      "termijnDefinitie": {
+        "slug": "termijnDefinitie",
+        "icon": "TimerOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:DefinedTerm",
+        "title": "Termijn Definitie",
+        "description": "Versioned deadline definition for a zaaktype under the AWB. Sets standard duration, allowed extensions, pause regime, and any custom dwangsom regime (e.g. Woo €15/day max €500).",
+        "type": "object",
+        "required": [
+          "zaaktype",
+          "wettelijkeGrondslag",
+          "validFrom"
+        ],
+        "properties": {
+          "zaaktype": {
+            "type": "string",
+            "description": "Zaaktype slug this definition binds to (e.g. omgevingsvergunning-regulier)",
+            "facetable": true,
+            "maxLength": 255
+          },
+          "wettelijkeGrondslag": {
+            "type": "string",
+            "description": "Legal basis citation (e.g. 'AWB 4:13', 'Wabo 3.9')",
+            "maxLength": 255
+          },
+          "standaardDuurDagen": {
+            "type": "integer",
+            "description": "Standard duration in days",
+            "minimum": 0
+          },
+          "standaardDuurWeken": {
+            "type": "integer",
+            "description": "Standard duration in weeks (alternative representation)",
+            "minimum": 0
+          },
+          "verlengingsRuimte": {
+            "type": "integer",
+            "description": "Maximum days a single AWB 4:14 verlenging may add",
+            "minimum": 0
+          },
+          "aantalVerlengingen": {
+            "type": "integer",
+            "description": "Maximum number of verlengingen allowed",
+            "minimum": 0,
+            "default": 1
+          },
+          "pauzeeVerlengingsDuren": {
+            "type": "array",
+            "description": "Allowed pause durations in days (e.g. AWB 4:5 hersteltermijn)",
+            "items": { "type": "integer" }
+          },
+          "afwijkendDwangsomRegime": {
+            "type": "object",
+            "description": "Custom dwangsom regime overriding the AWB-default (€23/€35/€45 tiers, €1442 plafond)",
+            "properties": {
+              "dailyTariff": {
+                "type": "integer",
+                "description": "Flat daily tariff in EUR cents (e.g. 1500 = €15)"
+              },
+              "plafond": {
+                "type": "integer",
+                "description": "Maximum total in EUR cents (e.g. 50000 = €500)"
+              },
+              "grace": {
+                "type": "integer",
+                "description": "Grace period in days before accrual starts (default 14)"
+              }
+            }
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "description": "Definition takes effect on this date",
+            "facetable": true
+          },
+          "validUntil": {
+            "type": "string",
+            "format": "date",
+            "description": "Definition stops applying on this date; null = current version"
+          }
+        }
+      },
+      "termijnInstance": {
+        "slug": "termijnInstance",
+        "icon": "TimerSandFull",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Action",
+        "title": "Termijn Instance",
+        "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",
+        "type": "object",
+        "required": [
+          "zaak",
+          "termijnDefinitie",
+          "startDatum",
+          "einddatumBerekend",
+          "einddatumActueel",
+          "status"
+        ],
+        "properties": {
+          "zaak": {
+            "type": "string",
+            "description": "Reference to the procest case (case id)",
+            "facetable": true
+          },
+          "termijnDefinitie": {
+            "type": "string",
+            "description": "Reference to the TermijnDefinitie this instance materialised from"
+          },
+          "startDatum": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the deadline started running"
+          },
+          "einddatumBerekend": {
+            "type": "string",
+            "format": "date",
+            "description": "Original computed deadline (never mutated; used for audit)"
+          },
+          "einddatumActueel": {
+            "type": "string",
+            "format": "date",
+            "description": "Effective deadline after pauses and extensions"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "lopend",
+              "gepauzeerd",
+              "verlengd",
+              "voltooid",
+              "overschreden",
+              "ingetrokken"
+            ],
+            "default": "lopend",
+            "description": "Current lifecycle status",
+            "facetable": true
+          },
+          "aantalVerlengingen": {
+            "type": "integer",
+            "default": 0,
+            "description": "Number of verlengingen consumed"
+          },
+          "pauzeDeadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Outstanding pause deadline for the daily scan to watch"
+          },
+          "relevantIngbrekes": {
+            "type": "string",
+            "description": "Reference to the first valid Ingebrekestelling (one-dwangsom guard)"
+          },
+          "notificatiesVerstuurd": {
+            "type": "array",
+            "description": "Threshold bucket numbers already notified (14/7/2/0) to prevent duplicate escalation",
+            "items": { "type": "integer" }
+          }
+        }
+      },
+      "termijnGebeurtenis": {
+        "slug": "termijnGebeurtenis",
+        "icon": "ScriptText",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Event",
+        "title": "Termijn Gebeurtenis",
+        "description": "Immutable append-only audit log entry for any termijn lifecycle event. Once written, never updated.",
+        "type": "object",
+        "required": [
+          "termijnInstance",
+          "type",
+          "tijdstip"
+        ],
+        "properties": {
+          "termijnInstance": {
+            "type": "string",
+            "description": "TermijnInstance reference",
+            "facetable": true
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "start",
+              "pauze",
+              "hervat",
+              "verleng",
+              "voltooi",
+              "overschreden",
+              "ingebrekestelling-ontvangen",
+              "dwangsom-gestart",
+              "pauze-verlopen",
+              "bezwaar-ingediend",
+              "bezwaar-opgelost"
+            ],
+            "description": "Event kind",
+            "facetable": true
+          },
+          "tijdstip": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the event happened"
+          },
+          "actor": {
+            "type": "string",
+            "description": "User id or system process that triggered the event"
+          },
+          "grondslag": {
+            "type": "string",
+            "description": "Legal basis citation (e.g. 'AWB 4:13', 'AWB 4:14 lid 1')"
+          },
+          "motivering": {
+            "type": "string",
+            "description": "Human-readable reason"
+          },
+          "dagenImpact": {
+            "type": "integer",
+            "description": "Net effect on einddatumActueel in days (e.g. +14 for pauze, +28 for verleng)"
+          },
+          "documentLink": {
+            "type": "string",
+            "description": "Reference to the supporting document (e.g. Verlengingsbrief)"
+          }
+        }
+      },
+      "ingebrekestelling": {
+        "slug": "ingebrekestelling",
+        "icon": "EmailAlert",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Message",
+        "title": "Ingebrekestelling",
+        "description": "Burger notice that the deadline has lapsed (AWB 4:17). Validated against the TermijnInstance to start a DwangsomBerekening.",
+        "type": "object",
+        "required": [
+          "termijnInstance",
+          "ontvangstDatum",
+          "kanaal"
+        ],
+        "properties": {
+          "termijnInstance": {
+            "type": "string",
+            "description": "TermijnInstance the notice relates to",
+            "facetable": true
+          },
+          "ontvangstDatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the notice arrived"
+          },
+          "kanaal": {
+            "type": "string",
+            "enum": ["post", "email", "portaal", "balie", "telefoon"],
+            "description": "Receipt channel"
+          },
+          "gevalideerd": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the notice was validated against the lapsed deadline"
+          },
+          "geldigheidStatus": {
+            "type": "string",
+            "enum": ["onbekend", "geldig", "premaat", "ongeldig"],
+            "default": "onbekend",
+            "description": "Validity classification"
+          },
+          "beschikkingGeregistreerdDatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the beschikking was filed (closes the grace period if before)"
+          },
+          "documentLink": {
+            "type": "string",
+            "description": "Reference to the scanned notice PDF"
+          }
+        }
+      },
+      "dwangsomBerekening": {
+        "slug": "dwangsomBerekening",
+        "icon": "Calculator",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:MonetaryAmount",
+        "title": "Dwangsom Berekening",
+        "description": "Daily-accruing dwangsom calculation per AWB 4:17. Tracks current day, tariff tier, cumulative amount in EUR cents, plafond enforcement.",
+        "type": "object",
+        "required": [
+          "ingebrekestelling",
+          "startDatum"
+        ],
+        "properties": {
+          "ingebrekestelling": {
+            "type": "string",
+            "description": "Ingebrekestelling that started the calculation",
+            "facetable": true
+          },
+          "termijnInstance": {
+            "type": "string",
+            "description": "Convenience back-reference to the termijn"
+          },
+          "startDatum": {
+            "type": "string",
+            "format": "date",
+            "description": "First accrual day (= ontvangstDatum + 14d grace, unless regime overrides)"
+          },
+          "huidigeDag": {
+            "type": "integer",
+            "default": 0,
+            "description": "Days accrued so far"
+          },
+          "dagtarief": {
+            "type": "integer",
+            "default": 0,
+            "description": "Today's tariff in EUR cents"
+          },
+          "cumulatievBedrag": {
+            "type": "integer",
+            "default": 0,
+            "description": "Total accrued so far in EUR cents"
+          },
+          "plafondBerekend": {
+            "type": "integer",
+            "description": "Plafond ceiling in EUR cents (e.g. 144200 = €1442)"
+          },
+          "plafondBereikt": {
+            "type": "boolean",
+            "default": false,
+            "description": "True when the plafond has been hit; no further accrual"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "lopend",
+              "gestopt-wegens-beschikking",
+              "voltooid",
+              "bezwaar-bevroren"
+            ],
+            "default": "lopend",
+            "facetable": true
+          },
+          "definitievBedrag": {
+            "type": "integer",
+            "description": "Locked final amount in EUR cents once stopped"
+          },
+          "regime": {
+            "type": "string",
+            "enum": ["awb-default", "afwijkend"],
+            "default": "awb-default",
+            "description": "Active tariff regime"
+          }
+        }
+      },
+      "dwangsomUitbetaling": {
+        "slug": "dwangsomUitbetaling",
+        "icon": "BankTransfer",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:PaymentAction",
+        "title": "Dwangsom Uitbetaling",
+        "description": "Payment signal towards the burger after the dwangsom is locked.",
+        "type": "object",
+        "required": [
+          "dwangsomBerekening",
+          "bedrag",
+          "referentie"
+        ],
+        "properties": {
+          "dwangsomBerekening": {
+            "type": "string",
+            "description": "Berekening reference",
+            "facetable": true
+          },
+          "bedrag": {
+            "type": "integer",
+            "description": "Payable amount in EUR cents"
+          },
+          "rekeninghouderNaam": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "iban": {
+            "type": "string",
+            "description": "IBAN of the burger",
+            "maxLength": 34
+          },
+          "referentie": {
+            "type": "string",
+            "description": "Unique payment reference",
+            "maxLength": 255
+          },
+          "wettelijkeGrondslag": {
+            "type": "string",
+            "description": "Legal basis (defaults to 'AWB 4:17')",
+            "default": "AWB 4:17",
+            "maxLength": 255
+          },
+          "betaaldatumUiterlijk": {
+            "type": "string",
+            "format": "date",
+            "description": "Deadline by which payment must occur (= ontvangstDatum + 28d)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "voorbereid",
+              "in-behandeling",
+              "betaald",
+              "afgewezen",
+              "on-hold-bezwaar"
+            ],
+            "default": "voorbereid",
+            "facetable": true
+          },
+          "betalingsreferentie": {
+            "type": "string",
+            "description": "ERP/bank confirmation reference"
+          },
+          "werkelijkeBetaaldatum": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "bewaarTermijnRegels": [
+    {
+      "id": "btr-omgevingsvergunning",
+      "zaaktypeKey": "omgevingsvergunning-regulier",
+      "bewaartermijnJaren": 5,
+      "selectielijstCategorie": "VNG selectielijst 2020 — 4.3.1 (verleende vergunningen)",
+      "selectielijstVersie": "2020",
+      "eDepotBestemming": "gemeentelijk-edepot",
+      "mdtoVersion": "1.1",
+      "isActive": true
+    },
+    {
+      "id": "btr-wmo-aanvraag",
+      "zaaktypeKey": "wmo-melding",
+      "bewaartermijnJaren": 10,
+      "selectielijstCategorie": "VNG selectielijst 2020 — 5.2.1 (WMO-besluiten)",
+      "selectielijstVersie": "2020",
+      "eDepotBestemming": "gemeentelijk-edepot",
+      "mdtoVersion": "1.1",
+      "isActive": true
+    },
+    {
+      "id": "btr-subsidie-verlening",
+      "zaaktypeKey": "subsidie-verlening",
+      "bewaartermijnJaren": 9999,
+      "selectielijstCategorie": "VNG selectielijst 2020 — 7.1.1 (subsidiebeschikkingen, permanent)",
+      "selectielijstVersie": "2020",
+      "eDepotBestemming": "gemeentelijk-edepot",
+      "mdtoVersion": "1.1",
+      "isActive": true
+    }
+  ]
+}

@@ -38,7 +38,9 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-3. Implement WorkflowEngineService (L)
 
-- [ ] W-3.1 Create `lib/Service/WorkflowEngineService.php` with methods:
+- [x] W-3.1 Created `lib/Service/WorkflowEngineService.php` as the unified facade. The four spec-named methods are wired: `getActiveWorkflow($caseTypeId)` → `WorkflowDefinitionService::getActiveDefinitionFor`, `getAvailableTransitions($caseId, $userId)` → `StatusTransitionService::getAvailableTransitions`, `evaluateGuards($transition, $case, $userId)` → `GuardRegistry::evaluateAll` wrapped in `{ isSatisfied, unmetGuards }`, `executeTransition($caseId, $transitionId, $userId, $comment)` → `StatusTransitionService::execute`. `evaluateGuards()` also promotes the legacy `allowedRoles[]` shape into an inline `roleGuard` entry. 7 unit tests cover delegation, the unmet-guards envelope, and the `allowedRoles` promotion — all green (`tests/Unit/Service/WorkflowEngineServiceTest.php`).
+
+- [ ] W-3.1 Original spec lines below for reference (now covered by the WorkflowEngineService facade and the existing engine services):
   - `getActiveWorkflow($caseTypeId)` → returns workflowTemplate object where isActive=true, isDraft=false
   - `getWorkflowByVersion($caseTypeId, $version)` → returns specific version
   - `getAvailableTransitions($case)` → returns array of transitions available from case's current status (evaluates guards client-side for display; server-side enforcement in controller)

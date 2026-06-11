@@ -5838,6 +5838,608 @@
             "description": "Whether new complaints can be assigned to this category"
           }
         }
+      },
+      "tenant": {
+        "slug": "tenant",
+        "icon": "OfficeBuildingOutline",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Organization",
+        "title": "Tenant",
+        "description": "SaaS tenant — represents a single municipality / customer of the procest platform. Carries lifecycle status, tier, and isolation mode.",
+        "type": "object",
+        "required": [
+          "slug",
+          "displayName",
+          "status",
+          "tier"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Stable URL-safe tenant identifier (lowercased, hyphens). Unique across the platform."
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Human-readable tenant name shown in the UI"
+          },
+          "legalName": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Legal entity name for invoicing and contracts"
+          },
+          "kvkNumber": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "Dutch Chamber of Commerce (KvK) number"
+          },
+          "contractRef": {
+            "type": "string",
+            "description": "Reference to signed contract document (UUID or filename)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "onboarding",
+              "active",
+              "suspended",
+              "terminated"
+            ],
+            "description": "Lifecycle status — drives access enforcement in TenantMiddleware"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "basic",
+              "standard",
+              "enterprise"
+            ],
+            "description": "Service tier — drives quota defaults and feature flags"
+          },
+          "isolationMode": {
+            "type": "string",
+            "enum": [
+              "schema",
+              "database"
+            ],
+            "default": "schema",
+            "description": "Physical isolation mode — schema-per-tenant (default) or dedicated database"
+          },
+          "dataResidency": {
+            "type": "string",
+            "enum": [
+              "nl",
+              "eu"
+            ],
+            "default": "nl",
+            "description": "Data residency region (AVG art. 28)"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Tenant record creation timestamp"
+          },
+          "activatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when status transitioned to active"
+          },
+          "terminatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when status transitioned to terminated"
+          }
+        }
+      },
+      "tenantConfiguration": {
+        "slug": "tenantConfiguration",
+        "icon": "Cog",
+        "version": "1.0.0",
+        "title": "Tenant Configuration",
+        "description": "Per-tenant configuration — branding, locale, and feature flags. 1:1 with Tenant.",
+        "type": "object",
+        "required": [
+          "tenantRef"
+        ],
+        "properties": {
+          "tenantRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent Tenant"
+          },
+          "branding": {
+            "type": "object",
+            "description": "Branding payload — logo URL, primaryColor, secondaryColor, fontFamily, customCSS",
+            "properties": {
+              "logo": {
+                "type": "string"
+              },
+              "primaryColor": {
+                "type": "string"
+              },
+              "secondaryColor": {
+                "type": "string"
+              },
+              "fontFamily": {
+                "type": "string"
+              },
+              "customCSS": {
+                "type": "string"
+              }
+            }
+          },
+          "domain": {
+            "type": "string",
+            "description": "Custom tenant domain (e.g. zaken.gemeente-amsterdam.nl)"
+          },
+          "locale": {
+            "type": "string",
+            "default": "nl_NL",
+            "description": "Default locale for the tenant"
+          },
+          "timezone": {
+            "type": "string",
+            "default": "Europe/Amsterdam",
+            "description": "IANA timezone"
+          },
+          "dateFormat": {
+            "type": "string",
+            "default": "DD-MM-YYYY",
+            "description": "Display date format"
+          },
+          "currency": {
+            "type": "string",
+            "default": "EUR",
+            "description": "ISO-4217 currency code"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Active feature-flag names for this tenant"
+          }
+        }
+      },
+      "tenantQuota": {
+        "slug": "tenantQuota",
+        "icon": "GaugeFull",
+        "version": "1.0.0",
+        "title": "Tenant Quota",
+        "description": "Per-tenant quota — one row per quota type. Tracks limit, current usage, and enforcement policy.",
+        "type": "object",
+        "required": [
+          "tenantRef",
+          "quotaType"
+        ],
+        "properties": {
+          "tenantRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent Tenant"
+          },
+          "quotaType": {
+            "type": "string",
+            "enum": [
+              "cases_per_month",
+              "storage_gb",
+              "active_users",
+              "api_calls_per_hour"
+            ],
+            "description": "Quota dimension"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Hard limit value (NULL = unlimited)"
+          },
+          "currentUsage": {
+            "type": "integer",
+            "default": 0,
+            "description": "Current usage count"
+          },
+          "resetAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Next reset timestamp (monthly / hourly windows)"
+          },
+          "softLimitWarningPercent": {
+            "type": "integer",
+            "default": 80,
+            "description": "Percentage of limit at which to emit a warning notification"
+          },
+          "enforcement": {
+            "type": "string",
+            "enum": [
+              "warn",
+              "throttle",
+              "block"
+            ],
+            "default": "warn",
+            "description": "What to do when limit is hit"
+          }
+        }
+      },
+      "tenantUser": {
+        "slug": "tenantUser",
+        "icon": "AccountOutline",
+        "version": "1.0.0",
+        "title": "Tenant User",
+        "description": "Per-tenant user membership — maps a Nextcloud user to a tenant with role + eHerkenning level.",
+        "type": "object",
+        "required": [
+          "tenantRef",
+          "userRef"
+        ],
+        "properties": {
+          "tenantRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent Tenant"
+          },
+          "userRef": {
+            "type": "string",
+            "description": "Nextcloud user ID"
+          },
+          "role": {
+            "type": "string",
+            "description": "Role within the tenant (admin, manager, behandelaar, viewer, ...)"
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Membership creation timestamp"
+          },
+          "lastActiveAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last activity timestamp"
+          },
+          "mfaEnabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether MFA is enabled for this membership"
+          },
+          "eherkenningLevel": {
+            "type": "string",
+            "enum": [
+              "2",
+              "3",
+              "4"
+            ],
+            "description": "eHerkenning trust level (EH2/EH3/EH4)"
+          }
+        }
+      },
+      "tenantMandate": {
+        "slug": "tenantMandate",
+        "icon": "FileSignOutline",
+        "version": "1.0.0",
+        "title": "Tenant Mandate",
+        "description": "Signed mandate authorising a tenant to act on behalf of the issuing authority — backs ketenmachtiging (chain-mandate) flows.",
+        "type": "object",
+        "required": [
+          "tenantRef"
+        ],
+        "properties": {
+          "tenantRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent Tenant"
+          },
+          "mandateMatrixRef": {
+            "type": "string",
+            "description": "Reference into the mandate matrix (digi-d MR or VNG mandate registry)"
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Mandate validity start"
+          },
+          "effectiveTo": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Mandate validity end"
+          },
+          "signedBy": {
+            "type": "string",
+            "description": "Signatory identifier (NC user ID or contract reference)"
+          },
+          "documentRef": {
+            "type": "string",
+            "description": "Reference to the signed mandate document"
+          }
+        }
+      },
+      "tenantBillingEvent": {
+        "slug": "tenantBillingEvent",
+        "icon": "CashRegister",
+        "version": "1.0.0",
+        "x-insert-only": true,
+        "title": "Tenant Billing Event",
+        "description": "Insert-only billing event — every billable action emits one row. Consumed by shillinq for invoicing.",
+        "type": "object",
+        "required": [
+          "tenantRef",
+          "eventType",
+          "occurredAt"
+        ],
+        "properties": {
+          "tenantRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent Tenant"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "case_created",
+              "case_closed",
+              "user_activated",
+              "storage_increment",
+              "api_burst",
+              "quota_exceeded",
+              "case_refund"
+            ],
+            "description": "Type of billable event"
+          },
+          "quantity": {
+            "type": "number",
+            "default": 1,
+            "description": "Quantity for the event"
+          },
+          "unitPrice": {
+            "type": "number",
+            "description": "Unit price at time of event in tenant currency"
+          },
+          "currency": {
+            "type": "string",
+            "default": "EUR",
+            "description": "ISO-4217 currency code"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Event timestamp (immutable)"
+          },
+          "invoiceRef": {
+            "type": "string",
+            "description": "Set when the event is rolled into an invoice (null until then)"
+          }
+        }
+      },
+      "supplier": {
+        "slug": "supplier",
+        "icon": "Factory",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:Organization",
+        "title": "Supplier",
+        "description": "Leverancier / vendor — represents a single supplier organisation that interacts with the municipality through the supplier portal.",
+        "type": "object",
+        "required": [
+          "kvkNumber",
+          "legalName",
+          "status"
+        ],
+        "properties": {
+          "kvkNumber": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "Dutch Chamber of Commerce (KvK) number — natural key"
+          },
+          "legalName": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Legal entity name"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "blacklisted"],
+            "description": "Supplier lifecycle status"
+          },
+          "address": {
+            "type": "object",
+            "description": "Postal address"
+          },
+          "contactPerson": {
+            "type": "string",
+            "description": "Primary contact person"
+          },
+          "iban": {
+            "type": "string",
+            "description": "IBAN — masked at the API layer"
+          },
+          "sbiCodes": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Industry classification codes (CBS SBI)"
+          },
+          "accreditations": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Certificates / accreditations held"
+          }
+        }
+      },
+      "supplierUser": {
+        "slug": "supplierUser",
+        "icon": "AccountOutline",
+        "version": "1.0.0",
+        "title": "Supplier User",
+        "description": "Supplier-side portal user — eHerkenning-authenticated person acting on behalf of a supplier.",
+        "type": "object",
+        "required": ["supplierRef", "email"],
+        "properties": {
+          "supplierRef": {"type": "string", "format": "uuid"},
+          "userRef": {"type": "string", "description": "eHerkenning identifier"},
+          "email": {"type": "string", "format": "email"},
+          "role": {"type": "string", "enum": ["admin", "finance", "contracts", "sales", "read_only"]},
+          "status": {"type": "string", "enum": ["invited", "active", "revoked"]},
+          "eherkenningLevel": {"type": "string", "enum": ["2", "3", "4"]},
+          "activationToken": {"type": "string"},
+          "addedBy": {"type": "string"},
+          "addedAt": {"type": "string", "format": "date-time"},
+          "lastLoginAt": {"type": "string", "format": "date-time"}
+        }
+      },
+      "supplierTender": {
+        "slug": "supplierTender",
+        "icon": "FileDocumentMultiple",
+        "version": "1.0.0",
+        "title": "Supplier Tender",
+        "description": "Tender submitted by a supplier in response to a municipal procurement procedure.",
+        "type": "object",
+        "required": ["supplierRef", "title"],
+        "properties": {
+          "supplierRef": {"type": "string", "format": "uuid"},
+          "caseRef": {"type": "string", "format": "uuid"},
+          "title": {"type": "string"},
+          "status": {"type": "string", "enum": ["submitted", "evaluating", "awarded", "rejected", "withdrawn"]},
+          "submittedDate": {"type": "string", "format": "date"},
+          "value": {"type": "number"},
+          "awardDate": {"type": "string", "format": "date"},
+          "rejectionReason": {"type": "string"},
+          "appealDeadline": {"type": "string", "format": "date"},
+          "evaluationReportRef": {"type": "string"}
+        }
+      },
+      "supplierContract": {
+        "slug": "supplierContract",
+        "icon": "FileSign",
+        "version": "1.0.0",
+        "title": "Supplier Contract",
+        "description": "Contract between the municipality and a supplier.",
+        "type": "object",
+        "required": ["supplierRef", "number"],
+        "properties": {
+          "supplierRef": {"type": "string", "format": "uuid"},
+          "caseRef": {"type": "string", "format": "uuid"},
+          "number": {"type": "string"},
+          "subject": {"type": "string"},
+          "startDate": {"type": "string", "format": "date"},
+          "endDate": {"type": "string", "format": "date"},
+          "value": {"type": "number"},
+          "accountManager": {"type": "string"},
+          "renewalOption": {"type": "string", "enum": ["auto", "manual_request", "none"]},
+          "renewalWarning": {"type": "boolean"}
+        }
+      },
+      "supplierInvoice": {
+        "slug": "supplierInvoice",
+        "icon": "Receipt",
+        "version": "1.0.0",
+        "title": "Supplier Invoice",
+        "description": "Invoice submitted by a supplier.",
+        "type": "object",
+        "required": ["supplierRef", "number"],
+        "properties": {
+          "supplierRef": {"type": "string", "format": "uuid"},
+          "caseRef": {"type": "string", "format": "uuid"},
+          "number": {"type": "string"},
+          "invoiceDate": {"type": "string", "format": "date"},
+          "amount": {"type": "number"},
+          "vatAmount": {"type": "number"},
+          "status": {"type": "string", "enum": ["received", "under_review", "approved", "disputed", "rejected", "paid"]},
+          "dueDate": {"type": "string", "format": "date"},
+          "expectedPaymentDate": {"type": "string", "format": "date"},
+          "actualPaymentDate": {"type": "string", "format": "date"},
+          "disputeReason": {"type": "string"}
+        }
+      },
+      "supplierMessage": {
+        "slug": "supplierMessage",
+        "icon": "MessageText",
+        "version": "1.0.0",
+        "x-insert-only": true,
+        "title": "Supplier Message",
+        "description": "Write-once message between municipality and supplier — immutable audit trail.",
+        "type": "object",
+        "required": ["supplierRef", "direction", "body"],
+        "properties": {
+          "supplierRef": {"type": "string", "format": "uuid"},
+          "caseRef": {"type": "string", "format": "uuid"},
+          "direction": {"type": "string", "enum": ["inbound", "outbound"]},
+          "subject": {"type": "string"},
+          "body": {"type": "string"},
+          "attachmentRefs": {"type": "array", "items": {"type": "string"}},
+          "sentBy": {"type": "string"},
+          "sentAt": {"type": "string", "format": "date-time"}
+        }
+      },
+      "supplierKpi": {
+        "slug": "supplierKpi",
+        "icon": "ChartLine",
+        "version": "1.0.0",
+        "title": "Supplier KPI",
+        "description": "Per-period KPI snapshot for a supplier.",
+        "type": "object",
+        "required": ["supplierRef", "period"],
+        "properties": {
+          "supplierRef": {"type": "string", "format": "uuid"},
+          "period": {"type": "string", "description": "YYYY-MM"},
+          "avgPaymentDays": {"type": "number"},
+          "onTimePercentage": {"type": "number"},
+          "disputeRate": {"type": "number"},
+          "complianceScore": {"type": "number"},
+          "benchmark": {"type": "object"},
+          "sufficientData": {"type": "boolean"}
+        }
+      },
+      "tenantOnboardingTask": {
+        "slug": "tenantOnboardingTask",
+        "icon": "CheckboxMarkedCircleOutline",
+        "version": "1.0.0",
+        "title": "Tenant Onboarding Task",
+        "description": "One step of the tenant onboarding workflow — drives the onboarding checklist UI.",
+        "type": "object",
+        "required": [
+          "tenantRef",
+          "step",
+          "status"
+        ],
+        "properties": {
+          "tenantRef": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Reference to the parent Tenant"
+          },
+          "step": {
+            "type": "string",
+            "enum": [
+              "contract",
+              "mandate_import",
+              "sso_setup",
+              "branding",
+              "zaaktype_selection",
+              "first_user",
+              "go_live"
+            ],
+            "description": "Onboarding step identifier"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "in_progress",
+              "completed",
+              "skipped"
+            ],
+            "description": "Step status"
+          },
+          "completedBy": {
+            "type": "string",
+            "description": "NC user ID who completed the step"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Completion timestamp"
+          },
+          "blockedReason": {
+            "type": "string",
+            "description": "Reason the step is blocked (surfaced in the UI)"
+          }
+        }
       }
     },
     "registers": {
@@ -5898,7 +6500,21 @@
           "complaint",
           "hearing",
           "complaintDisposition",
-          "complaintCategory"
+          "complaintCategory",
+          "tenant",
+          "tenantConfiguration",
+          "tenantQuota",
+          "tenantUser",
+          "tenantMandate",
+          "tenantBillingEvent",
+          "tenantOnboardingTask",
+          "supplier",
+          "supplierUser",
+          "supplierTender",
+          "supplierContract",
+          "supplierInvoice",
+          "supplierMessage",
+          "supplierKpi"
         ],
         "tablePrefix": "",
         "folder": "Open Registers/Procest"
@@ -6655,6 +7271,352 @@
         "defaultHandler": "",
         "slaOverride": null,
         "isActive": true
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-basic-cases-per-month"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000000",
+        "quotaType": "cases_per_month",
+        "limit": 100,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-basic-storage-gb"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000000",
+        "quotaType": "storage_gb",
+        "limit": 10,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-basic-active-users"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000000",
+        "quotaType": "active_users",
+        "limit": 5,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "block"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-basic-api-calls-per-hour"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000000",
+        "quotaType": "api_calls_per_hour",
+        "limit": 1000,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "throttle"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-standard-cases-per-month"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000001",
+        "quotaType": "cases_per_month",
+        "limit": 1000,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-standard-storage-gb"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000001",
+        "quotaType": "storage_gb",
+        "limit": 100,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-standard-active-users"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000001",
+        "quotaType": "active_users",
+        "limit": 50,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "block"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-standard-api-calls-per-hour"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000001",
+        "quotaType": "api_calls_per_hour",
+        "limit": 10000,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 80,
+        "enforcement": "throttle"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-enterprise-cases-per-month"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000002",
+        "quotaType": "cases_per_month",
+        "limit": null,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 90,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-enterprise-storage-gb"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000002",
+        "quotaType": "storage_gb",
+        "limit": null,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 90,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-enterprise-active-users"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000002",
+        "quotaType": "active_users",
+        "limit": null,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 90,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantQuota",
+          "slug": "tier-template-enterprise-api-calls-per-hour"
+        },
+        "tenantRef": "00000000-0000-0000-0000-000000000002",
+        "quotaType": "api_calls_per_hour",
+        "limit": null,
+        "currentUsage": 0,
+        "softLimitWarningPercent": 90,
+        "enforcement": "warn"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantOnboardingTask",
+          "slug": "default-onboarding-contract"
+        },
+        "tenantRef": "00000000-0000-0000-0000-00000000000d",
+        "step": "contract",
+        "status": "pending"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantOnboardingTask",
+          "slug": "default-onboarding-mandate-import"
+        },
+        "tenantRef": "00000000-0000-0000-0000-00000000000d",
+        "step": "mandate_import",
+        "status": "pending"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantOnboardingTask",
+          "slug": "default-onboarding-sso-setup"
+        },
+        "tenantRef": "00000000-0000-0000-0000-00000000000d",
+        "step": "sso_setup",
+        "status": "pending"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantOnboardingTask",
+          "slug": "default-onboarding-branding"
+        },
+        "tenantRef": "00000000-0000-0000-0000-00000000000d",
+        "step": "branding",
+        "status": "pending"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantOnboardingTask",
+          "slug": "default-onboarding-zaaktype-selection"
+        },
+        "tenantRef": "00000000-0000-0000-0000-00000000000d",
+        "step": "zaaktype_selection",
+        "status": "pending"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantOnboardingTask",
+          "slug": "default-onboarding-first-user"
+        },
+        "tenantRef": "00000000-0000-0000-0000-00000000000d",
+        "step": "first_user",
+        "status": "pending"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "tenantOnboardingTask",
+          "slug": "default-onboarding-go-live"
+        },
+        "tenantRef": "00000000-0000-0000-0000-00000000000d",
+        "step": "go_live",
+        "status": "pending"
+      },
+      {
+        "@self": {"register": "procest", "schema": "caseType", "slug": "leverancier-contractverlenging-verzoek"},
+        "title": "Leverancier contractverlenging verzoek",
+        "description": "Verzoek tot verlenging van een lopend contract met een leverancier",
+        "purpose": "Behandelen van een contractverlenging-verzoek van een leverancier"
+      },
+      {
+        "@self": {"register": "procest", "schema": "caseType", "slug": "leverancier-iban-wijziging"},
+        "title": "Leverancier IBAN-wijziging",
+        "description": "Wijziging van het bankrekeningnummer van een leverancier (4-ogen procedure)",
+        "purpose": "Verwerken van een IBAN-wijziging onder 4-ogen-controle"
+      },
+      {
+        "@self": {"register": "procest", "schema": "caseType", "slug": "leverancier-accreditatie-verificatie"},
+        "title": "Leverancier accreditatie verificatie",
+        "description": "Verificatie van accreditaties van een leverancier",
+        "purpose": "Controle van geldigheid van leveranciersaccreditaties"
+      },
+      {
+        "@self": {"register": "procest", "schema": "caseType", "slug": "leverancier-mutatie"},
+        "title": "Leverancier mutatie",
+        "description": "Algemene wijziging van leveranciersgegevens",
+        "purpose": "Verwerken van wijzigingen in masterdata van een leverancier"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplier", "slug": "supplier-acme-bouw-bv"},
+        "kvkNumber": "12345678", "legalName": "ACME Bouw B.V.", "status": "active", "iban": "NL00BANK0000000000"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplier", "slug": "supplier-orange-it-bv"},
+        "kvkNumber": "23456789", "legalName": "Orange IT B.V.", "status": "active", "iban": "NL00BANK0000000001"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplier", "slug": "supplier-blokker-schoonmaak"},
+        "kvkNumber": "34567890", "legalName": "Blokker Schoonmaak B.V.", "status": "inactive", "iban": "NL00BANK0000000002"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-acme-admin"},
+        "supplierRef": "supplier-acme-bouw-bv", "email": "admin@acmebouw.example.nl", "role": "admin", "status": "active", "eherkenningLevel": "3"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-acme-finance"},
+        "supplierRef": "supplier-acme-bouw-bv", "email": "finance@acmebouw.example.nl", "role": "finance", "status": "active", "eherkenningLevel": "3"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-orange-contracts"},
+        "supplierRef": "supplier-orange-it-bv", "email": "contracts@orangeit.example.nl", "role": "contracts", "status": "active", "eherkenningLevel": "3"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-orange-sales"},
+        "supplierRef": "supplier-orange-it-bv", "email": "sales@orangeit.example.nl", "role": "sales", "status": "active", "eherkenningLevel": "2"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-blokker-readonly"},
+        "supplierRef": "supplier-blokker-schoonmaak", "email": "viewer@blokker.example.nl", "role": "read_only", "status": "revoked", "eherkenningLevel": "2"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-acme-onderhoud-2026"},
+        "supplierRef": "supplier-acme-bouw-bv", "title": "Onderhoud gemeentehuis 2026", "status": "submitted", "submittedDate": "2026-03-01", "value": 250000
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-orange-software-eval"},
+        "supplierRef": "supplier-orange-it-bv", "title": "Softwarelicentie 2026", "status": "evaluating", "submittedDate": "2026-02-15", "value": 120000
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-acme-awarded"},
+        "supplierRef": "supplier-acme-bouw-bv", "title": "Renovatie schoolgebouw", "status": "awarded", "submittedDate": "2025-12-01", "value": 800000, "awardDate": "2026-01-10"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-blokker-rejected"},
+        "supplierRef": "supplier-blokker-schoonmaak", "title": "Schoonmaak buurthuis", "status": "rejected", "submittedDate": "2025-11-15", "value": 45000, "rejectionReason": "Onvoldoende referenties", "appealDeadline": "2026-02-28"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-orange-withdrawn"},
+        "supplierRef": "supplier-orange-it-bv", "title": "Datacenter migratie", "status": "withdrawn", "submittedDate": "2025-10-01", "value": 600000
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierContract", "slug": "contract-acme-renovatie"},
+        "supplierRef": "supplier-acme-bouw-bv", "number": "C-2026-001", "subject": "Renovatie schoolgebouw", "startDate": "2026-02-01", "endDate": "2026-12-31", "value": 800000, "accountManager": "j.jansen@gemeente.nl", "renewalOption": "manual_request"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierContract", "slug": "contract-orange-licenties"},
+        "supplierRef": "supplier-orange-it-bv", "number": "C-2025-027", "subject": "Softwarelicenties 2025-2026", "startDate": "2025-04-01", "endDate": "2026-08-31", "value": 120000, "accountManager": "m.bakker@gemeente.nl", "renewalOption": "auto", "renewalWarning": true
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierContract", "slug": "contract-orange-cloud"},
+        "supplierRef": "supplier-orange-it-bv", "number": "C-2025-028", "subject": "Cloudhosting", "startDate": "2025-06-01", "endDate": "2027-05-31", "value": 240000, "accountManager": "m.bakker@gemeente.nl", "renewalOption": "none"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierContract", "slug": "contract-blokker-historie"},
+        "supplierRef": "supplier-blokker-schoonmaak", "number": "C-2024-011", "subject": "Schoonmaak 2024-2025", "startDate": "2024-01-01", "endDate": "2025-12-31", "value": 90000, "accountManager": "k.dijk@gemeente.nl", "renewalOption": "none"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-acme-001"},
+        "supplierRef": "supplier-acme-bouw-bv", "number": "INV-2026-001", "invoiceDate": "2026-02-15", "amount": 50000, "vatAmount": 10500, "status": "received", "dueDate": "2026-03-15"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-acme-002"},
+        "supplierRef": "supplier-acme-bouw-bv", "number": "INV-2026-002", "invoiceDate": "2026-03-15", "amount": 75000, "vatAmount": 15750, "status": "under_review", "dueDate": "2026-04-15"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-orange-001"},
+        "supplierRef": "supplier-orange-it-bv", "number": "OR-2026-001", "invoiceDate": "2026-04-01", "amount": 30000, "vatAmount": 6300, "status": "approved", "dueDate": "2026-05-01", "expectedPaymentDate": "2026-04-25"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-orange-disputed"},
+        "supplierRef": "supplier-orange-it-bv", "number": "OR-2026-002", "invoiceDate": "2026-04-15", "amount": 12000, "vatAmount": 2520, "status": "disputed", "dueDate": "2026-05-15", "disputeReason": "Aantal eenheden komt niet overeen met de purchase order"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-blokker-overdue"},
+        "supplierRef": "supplier-blokker-schoonmaak", "number": "BL-2025-099", "invoiceDate": "2025-12-15", "amount": 8000, "vatAmount": 1680, "status": "received", "dueDate": "2026-01-15"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierMessage", "slug": "msg-acme-welcome"},
+        "supplierRef": "supplier-acme-bouw-bv", "direction": "outbound", "subject": "Welkom in het leveranciersportaal", "body": "Beste ACME Bouw, uw toegang tot het leveranciersportaal is geactiveerd.", "sentBy": "system", "sentAt": "2026-01-15T10:00:00+01:00"
+      },
+      {
+        "@self": {"register": "procest", "schema": "supplierMessage", "slug": "msg-acme-question"},
+        "supplierRef": "supplier-acme-bouw-bv", "direction": "inbound", "subject": "Vraag over INV-2026-002", "body": "Goedendag, kunt u een verwachte betaaldatum delen voor factuur INV-2026-002?", "sentBy": "finance@acmebouw.example.nl", "sentAt": "2026-04-01T14:30:00+02:00"
       }
     ]
   }

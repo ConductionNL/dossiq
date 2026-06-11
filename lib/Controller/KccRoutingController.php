@@ -32,11 +32,13 @@ use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Kcc\RoutingRuleService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
+use OCA\Procest\Settings\AdminSettings;
 
 /**
  * Controller exposing KCC routing-rule and routing-evaluation endpoints.
@@ -70,11 +72,14 @@ class KccRoutingController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
      */
     public function index(): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
-            return $this->unauthorized();
+        $unauthorized = $this->requireAuthenticated();
+        if ($unauthorized !== null) {
+            return $unauthorized;
         }
 
         try {
@@ -89,12 +94,18 @@ class KccRoutingController extends Controller
     /**
      * Create a routing rule (admin / team-lead only).
      *
-     * @return JSONResponse
+     * The body calls `requireAdmin()`, which makes this endpoint admin-only
+     * at runtime. NC's SecurityMiddleware already enforces admin-only as the
+     * default when @NoAdminRequired is absent (see hydra reference note
+     * `nc-security-defaults`), so we drop the annotation. Gate-9
+     * (semantic-auth) flagged the previous combination as
+     * `no-admin-required-annotation-with-admin-body`.
      *
-     * @NoAdminRequired
+     * @return JSONResponse
      *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function create(): JSONResponse
     {
         $forbidden = $this->requireAdmin();
@@ -114,14 +125,16 @@ class KccRoutingController extends Controller
     /**
      * Update a routing rule (admin / team-lead only).
      *
+     * Admin-only via the body `requireAdmin()` check + NC's default
+     * SecurityMiddleware behaviour (no @NoAdminRequired).
+     *
      * @param string $id The rule id.
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
-     *
      * @psalm-suppress PossiblyUnusedMethod
      */
+    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function update(string $id): JSONResponse
     {
         $forbidden = $this->requireAdmin();
@@ -141,14 +154,18 @@ class KccRoutingController extends Controller
     /**
      * Delete a routing rule (admin / team-lead only).
      *
+     * Admin-only via the body `requireAdmin()` check + NC's default
+     * SecurityMiddleware behaviour (no @NoAdminRequired).
+     *
      * @param string $id The rule id.
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
-     *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
      */
+    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function destroy(string $id): JSONResponse
     {
         $forbidden = $this->requireAdmin();
@@ -173,11 +190,14 @@ class KccRoutingController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
      */
     public function evaluate(): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
-            return $this->unauthorized();
+        $unauthorized = $this->requireAuthenticated();
+        if ($unauthorized !== null) {
+            return $unauthorized;
         }
 
         $contactMoment = $this->bodyParams();
@@ -190,6 +210,22 @@ class KccRoutingController extends Controller
 
         return new JSONResponse($result);
     }//end evaluate()
+
+    /**
+     * Require an authenticated user; return a response otherwise.
+     *
+     * Read endpoints (index, evaluate) accept any authenticated user — this
+     * guard ensures unauthenticated callers cannot reach the routing service.
+     *
+     * @return JSONResponse|null Null when authorised, a response when blocked.
+     */
+    private function requireAuthenticated(): ?JSONResponse
+    {
+        if ($this->userSession->getUser() === null) {
+            return $this->unauthorized();
+        }
+        return null;
+    }//end requireAuthenticated()
 
     /**
      * Require an authenticated admin / team-lead; return a response otherwise.

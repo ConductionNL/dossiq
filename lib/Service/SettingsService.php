@@ -201,6 +201,27 @@ class SettingsService
         'portaal_bericht_schema',
         'portaal_verzoek_schema',
         'portaal_notificatie_voorkeur_schema',
+        // Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17).
+        'termijn_definitie_schema',
+        'termijn_instance_schema',
+        'termijn_gebeurtenis_schema',
+        'ingebrekestelling_schema',
+        'dwangsom_berekening_schema',
+        'dwangsom_uitbetaling_schema',
+        // Mandaat-matrix authorization engine.
+        'mandaterings_besluit_schema',
+        'mandaat_schema',
+        'organisatie_rol_schema',
+        'medewerker_rol_toewijzing_schema',
+        'mandaat_gebruik_schema',
+        'mandaat_escalatie_schema',
+        // Archief / e-Depot SIP handover engine.
+        'bewaar_termijn_regel_schema',
+        'overdracht_trigger_schema',
+        'sip_bundel_schema',
+        'overdracht_transactie_schema',
+        'archief_bewijs_schema',
+        'overdracht_audit_log_schema',
     ];
 
     /**
@@ -298,6 +319,27 @@ class SettingsService
         'legesKorting'                 => 'leges_korting_schema',
         'legesBerekening'              => 'leges_berekening_schema',
         'legesRestitutie'              => 'leges_restitutie_schema',
+        // Termijnbewaking + dwangsom (AWB 4:13/4:14/4:17).
+        'termijnDefinitie'             => 'termijn_definitie_schema',
+        'termijnInstance'              => 'termijn_instance_schema',
+        'termijnGebeurtenis'           => 'termijn_gebeurtenis_schema',
+        'ingebrekestelling'            => 'ingebrekestelling_schema',
+        'dwangsomBerekening'           => 'dwangsom_berekening_schema',
+        'dwangsomUitbetaling'          => 'dwangsom_uitbetaling_schema',
+        // Mandaat-matrix authorization engine.
+        'mandateringsBesluit'          => 'mandaterings_besluit_schema',
+        'mandaat'                      => 'mandaat_schema',
+        'organisatieRol'               => 'organisatie_rol_schema',
+        'medewerkerRolToewijzing'      => 'medewerker_rol_toewijzing_schema',
+        'mandaatGebruik'               => 'mandaat_gebruik_schema',
+        'mandaatEscalatie'             => 'mandaat_escalatie_schema',
+        // Archief / e-Depot SIP handover engine.
+        'bewaarTermijnRegel'           => 'bewaar_termijn_regel_schema',
+        'overdrachtTrigger'            => 'overdracht_trigger_schema',
+        'sipBundel'                    => 'sip_bundel_schema',
+        'overdrachtTransactie'         => 'overdracht_transactie_schema',
+        'archiefBewijs'                => 'archief_bewijs_schema',
+        'overdrachtAuditLog'           => 'overdracht_audit_log_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';

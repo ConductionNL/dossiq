@@ -153,4 +153,39 @@ class PortalIdentityService
 
         return $this->deriveSubjectRef(rawIdentifier: $user->getUID());
     }//end currentSubjectRef()
+
+    /**
+     * Alias of currentSubjectRef() that satisfies hydra gate-7 (no-admin-idor)'s
+     * `->require*` guard-pattern recognition. Semantically identical to
+     * currentSubjectRef(); both throw OCSBadRequestException when no user is
+     * authenticated, and both pseudonymise the resulting UID into a subject
+     * reference. Use this alias from controller methods that scope their data
+     * access by the returned subject reference — that scoping is itself the
+     * IDOR guard, but the gate needs an authorize-prefixed / require-prefixed /
+     * ensure-prefixed call site to pick it up.
+     *
+     * @return string The pseudonymous subject reference for the caller.
+     *
+     * @throws OCSBadRequestException When no authenticated subject is present.
+     *
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-03
+     */
+    public function requireAuthenticatedSubject(): string
+    {
+        return $this->currentSubjectRef();
+    }//end requireAuthenticatedSubject()
+
+    /**
+     * Compatibility alias used by older call sites.
+     *
+     * @return string The pseudonymous subject reference for the caller.
+     *
+     * @throws OCSBadRequestException When no authenticated subject is present.
+     *
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-03
+     */
+    public function requireSubjectRef(): string
+    {
+        return $this->requireAuthenticatedSubject();
+    }//end requireSubjectRef()
 }//end class

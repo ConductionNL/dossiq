@@ -242,14 +242,14 @@ class ZgwAuthMiddlewareTest extends TestCase
     }//end provideZgwUriToComponent()
 
     /**
-     * Test that afterException re-throws a non-ZgwAuthException unchanged.
-     *
-     * Phase-0 regression lock: the handler must NOT return null for unowned
-     * exceptions. MiddlewareDispatcher::afterException() returns the handler's
-     * result against a non-nullable Response type, so a null return raised an
-     * uncaught TypeError (hard 500) that masked every non-ZGW controller error
-     * (e.g. the POST /transition endpoint). The handler must re-throw so the
-     * dispatcher offers the exception to the next middleware / NC core.
+     * Test that afterException re-throws non-ZgwAuthException so the
+     * MiddlewareDispatcher can offer the exception to the next middleware. The
+     * NC MiddlewareDispatcher::afterException() declares a non-nullable
+     * Response return — returning null raises a TypeError that became a hard
+     * 500 on EVERY non-ZGW controller error (e.g. the POST /transition
+     * endpoint), so the implementation correctly re-throws here and the test
+     * must mirror that contract. The contract is documented in
+     * `ZgwAuthMiddleware::afterException()`.
      *
      * @return void
      */
