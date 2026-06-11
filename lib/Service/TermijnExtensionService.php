@@ -150,7 +150,6 @@ class TermijnExtensionService
             $reflection = new \ReflectionClass($this->termijnService);
             if ($reflection->hasProperty('definitieCache') === true) {
                 $prop = $reflection->getProperty('definitieCache');
-                $prop->setAccessible(true);
                 $cache = $prop->getValue($this->termijnService);
                 if (is_array($cache) === true) {
                     foreach ($cache as $row) {

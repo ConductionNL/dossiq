@@ -106,6 +106,11 @@ class TermijnService
         ];
 
         $saved = $this->save('termijn_instance_schema', $instance);
+        if ($saved === null) {
+            throw new RuntimeException(
+                'Failed to persist TermijnInstance for zaak "'.$zaakId.'" (persistence unavailable)'
+            );
+        }
 
         $this->recordEvent(
             termijnInstanceId: (string) ($saved['id'] ?? ''),

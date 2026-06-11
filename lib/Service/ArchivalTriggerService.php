@@ -241,15 +241,15 @@ class ArchivalTriggerService
      * @param string               $caseId      Case id.
      * @param string               $zaaktypeKey Zaaktype key.
      * @param array<string, mixed> $fields      Fields.
-     * @return array<string, mixed>|null
+     * @return void
      */
-    private function upsertTrigger(string $caseId, string $zaaktypeKey, array $fields): ?array
+    private function upsertTrigger(string $caseId, string $zaaktypeKey, array $fields): void
     {
         $objectService = $this->settingsService->getObjectService();
         $register      = (string) $this->settingsService->getConfigValue('register');
         $schema        = (string) $this->settingsService->getConfigValue('overdracht_trigger_schema');
         if ($objectService === null || $register === '' || $schema === '') {
-            return null;
+            return;
         }
 
         try {
@@ -267,10 +267,12 @@ class ArchivalTriggerService
         }
 
         try {
-            $saved = $objectService->saveObject($register, $schema, $row);
-            return is_array($saved) === true ? $saved : $row;
+            $objectService->saveObject($register, $schema, $row);
         } catch (\Throwable $e) {
-            return $row;
+            $this->logger->warning(
+                'ArchivalTriggerService.upsertTrigger persist failed',
+                ['zaakId' => $caseId, 'error' => $e->getMessage()]
+            );
         }
     }
 
