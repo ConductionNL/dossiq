@@ -13,5 +13,5 @@ Traces to giant task 2.2; spec REQ-003.
 - [x] Cache tender list ~5 minutes — `cacheControlHeader()` returns `private, max-age=300`
 - [~] Use NL Design System components; meet WCAG 2.1 AA (keyboard nav, contrast, ARIA) — frontend deferred
 - [~] Test sorting/filtering with 10+ tenders — needs the Vue component
-- [~] Test PDF download from the evaluation report — needs TenderController
+- [ ] Test PDF download from the evaluation report — needs TenderController
 - [x] Verify appeal-deadline formatting and accuracy — backend `TenderVisibilityService::getAppealDeadline()` tests (chain member 05) cover the date math
