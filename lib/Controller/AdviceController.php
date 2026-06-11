@@ -217,8 +217,11 @@ class AdviceController extends Controller
      */
     private function readJsonBody(): array
     {
-        $content = $this->request->getContent();
-        if ($content === '' || $content === false) {
+        // OCP\IRequest::getContent() is marked protected on the concrete OC
+        // request — calling it across class scopes throws Error at runtime.
+        // Read the raw payload directly from php://input instead.
+        $content = (string) file_get_contents('php://input');
+        if ($content === '') {
             return [];
         }
 
