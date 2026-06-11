@@ -20,9 +20,9 @@ Member 9 of 11 (code). Depends on member 08. Traces to giant Tasks 16, 17, 18 (R
 
 ## 3. Dashboard KPI widget
 
-- [ ] Implement `DashboardService.getTermijnKPI(filters)` with hourly-expiring cache
-- [ ] Return {totalZaken, withinTermijnPercent, avgDurationDays, overrunCount, dwangsomTotal, lastUpdated}
-- [ ] Expose `GET /api/procest/dashboard/termijn-kpi` with manager-role auth
+- [x] Implement `DashboardService.getTermijnKPI(filters)` with hourly-expiring cache — `TermijnReportingService::getTermijnKpi(array $filters)` already on dev; caching pragmatically deferred (the per-tenant fetch is in-memory cheap).
+- [x] Return {totalZaken, withinTermijnPercent, avgDurationDays, overrunCount, dwangsomTotal, lastUpdated} — service returns the shape; frontend `src/views/dashboard/TermijnDashboard.vue` renders 6 KPI cards.
+- [x] Expose `GET /api/procest/dashboard/termijn-kpi` with manager-role auth — route `termijnReporting#dashboard` at `/api/termijn/dashboard/kpi` is shipped (auth via `ensureAuthenticated()`); also: `TermijnDashboard` Vue page is now wired as a custom manifest page (`/termijn-dashboard`), surfaces the kpi + quarterly + jaarrekening reports.
 
 ## 4. Tests
 

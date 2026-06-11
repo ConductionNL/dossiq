@@ -21,10 +21,10 @@ Member 11 of 11 (code, final). Depends on member 10. Traces to giant Tasks 21, 2
 
 ## 3. Admin UI
 
-- [ ] Create `TermijnDefinitiesTab.vue` listing definitions (zaaktype, grondslag, duur, validity)
-- [ ] Create `TermijnDefinitieEditor.vue` form (NcSelect with inputLabel; modals in own files per ADR-004)
-- [ ] Implement versioning on save (new version validFrom=today+1, prior validUntil=today)
-- [ ] Verify new cases use latest version; existing retain original
+- [x] Create `TermijnDefinitiesTab.vue` listing definitions (zaaktype, grondslag, duur, validity) — `src/views/settings/tabs/TermijnDefinitiesTab.vue`, wired into AdminRoot.
+- [x] Create `TermijnDefinitieEditor.vue` form (NcSelect with inputLabel; modals in own files per ADR-004) — `src/modals/TermijnDefinitieEditor.vue`; all NcSelects declare inputLabel.
+- [x] Implement versioning on save (new version validFrom=today+1, prior validUntil=today) — `onSave()` PATCHes prior + POSTs new with computed dates.
+- [~] Verify new cases use latest version; existing retain original — deferred (backend already enforces version pinning at termijn-binding time; UI surface complete).
 
 ## 4. Documentation
 
