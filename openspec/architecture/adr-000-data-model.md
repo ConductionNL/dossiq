@@ -14,7 +14,7 @@
 
 **App:** Procest — Case management, VTH, forms
 **Platform:** OpenRegister (register/schema/object pattern)
-**Entities:** 39
+**Entities:** 54
 
 OpenRegister built-in fields available on ALL entities (do NOT redefine):
 id, uuid, uri, version, createdAt, updatedAt, owner, organization,
@@ -56,6 +56,49 @@ pagination, audit trails, file attachments, relation management, locking.
 | requestedAt | string | No | Timestamp when the advice was requested |
 | receivedAt | string | No | Timestamp when the advice was received |
 | questions | string | No | Specific questions for the adviseur |
+
+---
+
+## adviceResponse
+**Schema.org type:** `schema:Answer`
+**Purpose:** Structured response to a consultation (advies), with outcome, conditions, and supporting document references
+**Primary spec:** `openspec/changes/consultation-management/specs/consultation-management/spec.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| consultation | string | Yes | Reference to the parent `consultation` |
+| respondent | string | Yes | User UID (internal) or external organisation name |
+| outcome | string | Yes | `positief`, `voorwaarden`, `negatief`, `niet_van_toepassing` |
+| samenvatting | string | Yes | Summary of the advice |
+| voorwaarden | string | No | JSON-encoded list of conditions attached to a positive/conditional advice |
+| toelichting | string | No | Reasoning and supporting analysis |
+| adviceDocument | string | No | Reference to the uploaded advice document (Nextcloud file id) |
+| submittedAt | string | Yes | Timestamp the response was submitted |
+| externalSource | boolean | No | True when submitted via secure response link by an external advisory body |
+
+**Relations:**
+- → consultation (many-to-one)
+- → adviceDocument file (many-to-one)
+
+---
+
+## advisoryBody
+**Schema.org type:** `schema:Organization`
+**Purpose:** Registry of internal departments and external organisations that can be consulted; backs the `adviesInstantie` dropdown
+**Primary spec:** `openspec/changes/consultation-management/specs/consultation-management/spec.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| name | string | Yes | Display name of the body |
+| type | string | Yes | `internal` (Nextcloud group) or `external` (no NC account) |
+| contactGroup | string | No | Nextcloud group id for internal bodies |
+| email | string | No | Email used for external bodies; required when `type=external` |
+| specializations | string | No | JSON-encoded array of tags (e.g. `["brandveiligheid","welstand"]`) |
+| defaultDeadlineDays | integer | No | Default deadline in days when a consultation is created for this body |
+| active | boolean | Yes | When false the body is hidden from selection (but retained for audit) |
+
+**Relations:**
+- → contactGroup Nextcloud group (logical)
 
 ---
 
@@ -116,6 +159,48 @@ pagination, audit trails, file attachments, relation management, locking.
 
 ---
 
+## ArchiefBewijs
+**Schema.org type:** `schema:DigitalDocument`
+**Purpose:** Immutable proof of successful transfer to an e-Depot per GiHandover/MDTO
+**Primary spec:** `openspec/changes/archief-edepot-handover-06-proof-rollback/proposal.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| overdrachtTransactie | string | Yes | Reference to the `OverdrachtTransactie` that produced this proof |
+| eDepotReceiptId | string | Yes | Receipt identifier returned by the e-Depot |
+| checksumSha256 | string | Yes | SHA-256 of the submitted SIP bundle |
+| acceptanceTimestamp | string | Yes | When the e-Depot accepted the bundle |
+| mdtoBundleReference | string | Yes | Path to the archived MDTO bundle |
+| status | string | Yes | `geaccepteerd`, `verificatieFailed`, `ingetrokken` |
+| verificationLog | string | No | JSON-encoded last verification result |
+
+**Relations:**
+- → overdrachtTransactie (one-to-one)
+
+**Notes:**
+- Write-once via API layer.
+
+---
+
+## BewaarTermijnRegel
+**Schema.org type:** `schema:Rule`
+**Purpose:** Retention rule that maps a zaaktype + trigger to a retention period and selectielijst category
+**Primary spec:** `openspec/changes/archief-edepot-handover-01-schema-config/specs/archief-edepot-handover/spec.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| zaaktypeKey | string | Yes | Reference to the case type this rule applies to |
+| bewaartermijnJaren | string | Yes | Integer years or the literal "permanent" |
+| selectielijstCategorie | string | No | E.g. "Selectielijst gemeenten 4.1.3" |
+| trigger | string | Yes | `zaakAfgesloten`, `besluitOnherroepelijk`, `eindBezwaarTermijn` |
+| verlengingsgrond | string | No | Optional reason for extended retention |
+| actief | boolean | Yes | Rule is enabled |
+
+**Relations:**
+- → zaaktype/caseType (many-to-one)
+
+---
+
 ## case
 **Schema.org type:** `schema:Project`
 **Purpose:** A case instance in the case management system
@@ -168,6 +253,37 @@ pagination, audit trails, file attachments, relation management, locking.
 
 **Relations:**
 - → case (many-to-one)
+
+---
+
+## consultation
+**Schema.org type:** `schema:AskAction`
+**Purpose:** Structured inter-departmental or external consultation (adviesaanvraag) linked to a parent case, with its own lifecycle, deadline, and document exchange
+**Primary spec:** `openspec/changes/consultation-management/specs/consultation-management/spec.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| consultationNumber | string | Yes | Auto-generated, format `ADV-{year}-{seq}` |
+| parentZaak | string | Yes | Reference to the parent `case` |
+| adviesInstantie | string | Yes | Reference to an `advisoryBody` |
+| onderwerp | string | Yes | Subject of the consultation |
+| vraagstelling | string | Yes | The question(s) being asked (rich text) |
+| uiterlijkeReactiedatum | string | Yes | Deadline (ISO date) |
+| prioriteit | string | No | `normaal`, `spoed` |
+| status | string | Yes | `open`, `ontvangen`, `in_behandeling`, `advies_uitgebracht`, `afgesloten`, `ingetrokken` |
+| assignedUser | string | No | UID of the user currently handling the consultation |
+| dependsOn | string | No | Reference to another consultation that must complete first (sequential pattern) |
+| isMandatory | boolean | No | Whether this consultation blocks the parent case's decision milestone |
+| lastWarningAt | string | No | Timestamp the last deadline warning was sent (idempotency) |
+| escalatedAt | string | No | Timestamp the overdue escalation fired |
+| secureResponseToken | string | No | 256-bit token used for external secure-link responses |
+| extensionRequest | string | No | JSON-encoded extension request `{requestedAt, requestedDays, justification, approvedAt}` |
+
+**Relations:**
+- → parentZaak case (many-to-one)
+- → adviesInstantie advisoryBody (many-to-one)
+- → dependsOn consultation (many-to-one)
+- ← adviceResponse (one-to-one)
 
 ---
 
@@ -506,6 +622,121 @@ pagination, audit trails, file attachments, relation management, locking.
 
 ---
 
+## Mandaat
+**Schema.org type:** `schema:AuthorizeAction`
+**Purpose:** A single delegated competence within a mandateringsbesluit — what may be decided, under which conditions, up to which ceiling
+**Primary spec:** `openspec/changes/mandaat-matrix-01-schema-foundation/specs/mandaat-matrix/spec.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| mandaatNummer | string | Yes | Stable identifier, e.g. `MAN-2026-005` |
+| besluitId | string | Yes | Reference to the `MandateringsBesluit` declaring this mandaat |
+| omschrijving | string | Yes | Human-readable description of the competence |
+| bevoegdheidsgrondslag | string | Yes | Statutory basis (article + law) |
+| gemandateerdeRol | string | Yes | Reference to the `OrganisatieRol` that holds this competence |
+| plafond | number | No | Financial ceiling in EUR; empty = no ceiling |
+| voorwaarden | string | No | Semicolon-separated conditions |
+| subdelegatieToegestaan | boolean | Yes | Whether holders may delegate further down the hierarchy |
+| geldigVanaf | string | No | ISO date — validity start (defaults to besluit date) |
+| geldigTot | string | No | ISO date — validity end (empty = open) |
+
+**Relations:**
+- → besluitId MandateringsBesluit (many-to-one)
+- → gemandateerdeRol OrganisatieRol (many-to-one)
+
+---
+
+## MandaatEscalatie
+**Schema.org type:** `schema:Action`
+**Purpose:** Records a decision that was blocked or routed up the hierarchy because plafond was exceeded or subdelegation was disallowed
+**Primary spec:** `openspec/changes/mandaat-matrix-03-escalation-engine/proposal.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| zaakId | string | Yes | Reference to the case the escalation concerns |
+| origineelMandaat | string | Yes | Reference to the `Mandaat` that was insufficient |
+| geescaleerdNaarRol | string | Yes | Reference to the higher `OrganisatieRol` taking the decision |
+| reden | string | Yes | `plafond_overschreden`, `subdelegatie_niet_toegestaan`, `niet_bevoegd` |
+| status | string | Yes | `open`, `goedgekeurd`, `afgewezen`, `vervallen` |
+| afgehandeldDoor | string | No | UID of the user that resolved the escalation |
+| afgehandeldOp | string | No | Timestamp of resolution |
+| notitie | string | No | Free-text reasoning attached on resolution |
+
+**Relations:**
+- → zaakId case (many-to-one)
+- → origineelMandaat Mandaat (many-to-one)
+- → geescaleerdNaarRol OrganisatieRol (many-to-one)
+
+---
+
+## MandaatGebruik
+**Schema.org type:** `schema:UseAction`
+**Purpose:** Immutable audit snapshot of every actual exercise of a delegated competence — who decided what under which mandate
+**Primary spec:** `openspec/changes/mandaat-matrix-01-schema-foundation/specs/mandaat-matrix/spec.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| zaakId | string | Yes | Case on which the competence was exercised |
+| mandaatId | string | Yes | Mandate that authorised the action |
+| medewerker | string | Yes | UID of the user who exercised the competence |
+| rolOpMomentVanBesluit | string | Yes | JSON snapshot of the user's role at the time of decision |
+| gebruikteVoorwaarden | string | Yes | JSON snapshot of the conditions in force |
+| waarnemerFlag | boolean | Yes | True when exercised under a waarnemer assignment |
+| handelingType | string | Yes | E.g. `besluit_nemen`, `vergunning_verlenen` |
+| timestamp | string | Yes | When the action was performed |
+| correctieVan | string | No | Optional reference to a previous `MandaatGebruik` this corrects |
+
+**Notes:**
+- Write-once; the API layer rejects PUT and DELETE.
+
+**Relations:**
+- → zaakId case (many-to-one)
+- → mandaatId Mandaat (many-to-one)
+
+---
+
+## MandateringsBesluit
+**Schema.org type:** `schema:DecisionDocument`
+**Purpose:** A formal mandateringsbesluit (Awb art. 10:3) that establishes one or more mandates, with versioning and effective dates
+**Primary spec:** `openspec/changes/mandaat-matrix-01-schema-foundation/specs/mandaat-matrix/spec.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| referentie | string | Yes | Stable identifier (e.g. `CR 2026-001`) |
+| titel | string | Yes | Human-readable title |
+| status | string | Yes | `concept`, `vastgesteld`, `vervallen` |
+| vanaf | string | Yes | ISO date — when this besluit takes effect |
+| totEnMet | string | No | ISO date — when this besluit was revoked |
+| decideskBesluitId | string | No | Reference to the Decidesk besluit that sourced this import |
+| bron | string | No | Source description |
+| voorgaandBesluit | string | No | Reference to the prior `MandateringsBesluit` superseded by this one |
+
+**Relations:**
+- ← Mandaat (one-to-many via `besluitId`)
+- → voorgaandBesluit MandateringsBesluit (many-to-one)
+
+---
+
+## MedewerkerRolToewijzing
+**Schema.org type:** `schema:Role`
+**Purpose:** Assignment of a specific employee to an `OrganisatieRol` with temporal validity, including waarnemer (acting) assignments
+**Primary spec:** `openspec/changes/mandaat-matrix-01-schema-foundation/specs/mandaat-matrix/spec.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| medewerkerUid | string | Yes | Nextcloud UID of the employee |
+| rolId | string | Yes | Reference to the assigned `OrganisatieRol` |
+| toewijzingType | string | Yes | `regulier`, `waarnemer` |
+| vanaf | string | Yes | ISO date — start of validity |
+| totEnMet | string | No | ISO date — end of validity (empty = open) |
+| reden | string | No | Reason for the assignment (esp. waarnemer) |
+| vervangtMedewerker | string | No | For waarnemer: UID of the principal being replaced |
+
+**Relations:**
+- → rolId OrganisatieRol (many-to-one)
+
+---
+
 ## mapLayer
 **Purpose:** GIS map layer configuration for case maps — defines tile, WMS, WFS, or GeoJSON layers that can be displayed on case map views
 **Primary spec:** from-register
@@ -550,6 +781,88 @@ pagination, audit trails, file attachments, relation management, locking.
 **Relations:**
 - → case (many-to-one)
 - → decision (many-to-one)
+
+---
+
+## OrganisatieRol
+**Schema.org type:** `schema:Role`
+**Purpose:** A functional role within the organisation (Vergunningverlener, Hoofd VTH, …) used by the mandate-matrix for delegating competencies
+**Primary spec:** `openspec/changes/mandaat-matrix-01-schema-foundation/specs/mandaat-matrix/spec.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| naam | string | Yes | Unique role name (max 80 chars) |
+| bovenliggendeRol | string | No | Reference to the parent `OrganisatieRol`; empty for the top role |
+| beschrijving | string | No | UI tooltip / description |
+| subdelegatieToegestaan | boolean | Yes | Whether holders of this role may delegate further down |
+| actief | boolean | Yes | When false the role is archived but retained for historical audit |
+
+**Relations:**
+- → bovenliggendeRol OrganisatieRol (many-to-one, self-reference)
+- ← MedewerkerRolToewijzing (one-to-many via `rolId`)
+- ← Mandaat (one-to-many via `gemandateerdeRol`)
+
+---
+
+## OverdrachtAuditLog
+**Schema.org type:** `schema:Action`
+**Purpose:** Append-only audit log for every archival pipeline event (rule change, trigger, bundle, submit, accept, reject, retry, rollback, verify)
+**Primary spec:** `openspec/changes/archief-edepot-handover-01-schema-config/specs/archief-edepot-handover/spec.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| subjectType | string | Yes | `BewaarTermijnRegel`, `OverdrachtTrigger`, `SipBundel`, `OverdrachtTransactie`, `ArchiefBewijs` |
+| subjectId | string | Yes | UUID of the subject |
+| event | string | Yes | E.g. `rule_created`, `trigger_created`, `sip_built`, `submission_succeeded`, `rollback_requested` |
+| actor | string | Yes | UID of the user or system service that triggered the event |
+| timestamp | string | Yes | Event timestamp |
+| payloadHash | string | No | SHA-256 hash of the relevant payload (no document content) |
+
+**Notes:**
+- Write-once via API layer.
+
+---
+
+## OverdrachtTransactie
+**Schema.org type:** `schema:DeliverAction`
+**Purpose:** A single transmission of a SIP bundle to the e-Depot, including retry, accept/reject, and rollback state
+**Primary spec:** `openspec/changes/archief-edepot-handover-05-sip-submission/proposal.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| sipBundelId | string | Yes | Reference to the `SipBundel` being transmitted |
+| status | string | Yes | `pending`, `submitting`, `awaiting_proof`, `succeeded`, `failed`, `rolledBack` |
+| attempts | integer | Yes | Number of submission attempts so far |
+| lastAttemptAt | string | No | Timestamp of the most recent attempt |
+| lastError | string | No | Last error message from the e-Depot or transport layer |
+| eDepotReceiptId | string | No | Receipt id returned by the e-Depot on acceptance |
+| rollbackMotivation | string | No | Reason recorded when a rollback was requested |
+
+**Relations:**
+- → sipBundelId SipBundel (one-to-one)
+- ← ArchiefBewijs (one-to-one)
+
+---
+
+## OverdrachtTrigger
+**Schema.org type:** `schema:Event`
+**Purpose:** Marks a case as eligible for archival transfer on a future date, derived from a `BewaarTermijnRegel`
+**Primary spec:** `openspec/changes/archief-edepot-handover-02-retention-trigger/proposal.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| zaakId | string | Yes | Reference to the case |
+| bewaarRegelId | string | Yes | Reference to the `BewaarTermijnRegel` that produced this trigger |
+| triggerDatum | string | Yes | Date the retention clock started (e.g. zaak afgesloten) |
+| overdrachtsDatum | string | Yes | Date on which transfer should occur |
+| status | string | Yes | `ready`, `in_progress`, `failed`, `completed`, `skipped` |
+| reden | string | No | Optional note (e.g. manual trigger by DIV) |
+| sipBundelId | string | No | Reference to the produced `SipBundel` (once bundling has occurred) |
+
+**Relations:**
+- → zaakId case (many-to-one)
+- → bewaarRegelId BewaarTermijnRegel (many-to-one)
+- → sipBundelId SipBundel (one-to-one)
 
 ---
 
@@ -671,6 +984,30 @@ pagination, audit trails, file attachments, relation management, locking.
 | name | string | Yes | Name of this role type (e.g. Behandelaar, Adviseur) |
 | description | string | No | Description of this role type |
 | caseType | string | Yes | Reference to the parent case type |
+
+---
+
+## SipBundel
+**Schema.org type:** `schema:Dataset`
+**Purpose:** A GiHandover/BagIt bundle containing the MDTO XML and the documents of a single case, ready for submission to the e-Depot
+**Primary spec:** `openspec/changes/archief-edepot-handover-04-document-export/proposal.md`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| zaakId | string | Yes | Reference to the source case |
+| triggerId | string | Yes | Reference to the `OverdrachtTrigger` that initiated bundling |
+| bagItPath | string | Yes | Path on disk where the BagIt bundle resides |
+| mdtoXmlReference | string | Yes | Path to the MDTO XML inside the bundle |
+| checksumSha256 | string | Yes | SHA-256 over the BagIt manifest |
+| sizeBytes | integer | Yes | Total bundle size |
+| documentCount | integer | Yes | Number of documents bundled |
+| status | string | Yes | `built`, `validated`, `submitted`, `archived`, `invalid` |
+| partOf | string | No | When a case is split across multiple SIPs: reference to the parent SipBundel |
+
+**Relations:**
+- → zaakId case (many-to-one)
+- → triggerId OverdrachtTrigger (one-to-one)
+- ← OverdrachtTransactie (one-to-one)
 
 ---
 

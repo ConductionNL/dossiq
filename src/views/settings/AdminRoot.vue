@@ -65,6 +65,27 @@
 			<AiSettingsTab v-if="storesReady" />
 		</CnSettingsSection>
 
+		<CnSettingsSection
+			:name="t('procest', 'Archief & e-Depot')"
+			:description="t('procest', 'GiHandover/MDTO archival pipeline: retention rules, batch concurrency, e-Depot adapter, proof of transfer.')"
+			:loading="!storesReady">
+			<ArchiefSettingsTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('procest', 'Mandate Matrix')"
+			:description="t('procest', 'Awb art. 10:3 mandate administration: Decidesk import, role hierarchy, waarnemer assignments.')"
+			:loading="!storesReady">
+			<MandaatMatrixSettingsTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('procest', 'Consultation Management')"
+			:description="t('procest', 'Adviesaanvragen: advisory body registry, mandatory-gate config, n8n webhook contracts and external response settings.')"
+			:loading="!storesReady">
+			<ConsultationSettingsTab v-if="storesReady" />
+		</CnSettingsSection>
+
 		<!-- Re-import Status -->
 		<div v-if="message" class="actions-section">
 			<NcNoteCard :type="messageType">
@@ -84,6 +105,9 @@ import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import MapLayerSettings from './MapLayerSettings.vue'
 import AiSettingsTab from './tabs/AiSettingsTab.vue'
 import ChecklistsTab from './tabs/ChecklistsTab.vue'
+import ArchiefSettingsTab from './tabs/ArchiefSettingsTab.vue'
+import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
+import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
 import { generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
 import { initializeStores } from '../../store/store.js'
@@ -103,6 +127,9 @@ export default {
 		MapLayerSettings,
 		AiSettingsTab,
 		ChecklistsTab,
+		ArchiefSettingsTab,
+		MandaatMatrixSettingsTab,
+		ConsultationSettingsTab,
 	},
 	data() {
 		return {

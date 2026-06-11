@@ -141,7 +141,7 @@
   - MapLayerSettings CRUD UI
   - Minimum 70% coverage for Vue components
 
-- [ ] TASK-GIS-24: Create user documentation in `docs/gis-integration.md`:
+- [x] TASK-GIS-24: Create user documentation in `docs/gis-integration.md`:
   - Overview of GIS capabilities
   - User guide: How to set location on a case (address, parcel, map click)
   - Admin guide: Configuring map layers

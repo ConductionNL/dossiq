@@ -24,7 +24,7 @@ Chain member 8 of 8 (`kind: code`, depends_on member 07). Traces to giant Tasks 
 
 ## 4. Documentation
 
-- [ ] Author the admin guide (overview, retention-rule setup, batch processing, proof of transfer, troubleshooting)
-- [ ] Author the developer guide (architecture, extension points, API reference, schemas, testing)
-- [ ] Author the e-Depot integration guide (SIP/BagIt + MDTO format, openconnector config, checksum verification)
-- [ ] Include architecture diagrams and code/sample-data examples
+- [x] Author the admin guide (overview, retention-rule setup, batch processing, proof of transfer, troubleshooting)
+- [x] Author the developer guide (architecture, extension points, API reference, schemas, testing)
+- [x] Author the e-Depot integration guide (SIP/BagIt + MDTO format, openconnector config, checksum verification)
+- [x] Include architecture diagrams and code/sample-data examples
