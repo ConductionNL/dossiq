@@ -28,7 +28,7 @@ Chain member 3 of 8 (`kind: code`, depends_on member 02). Traces to giant Tasks 
 
 ## 5. Tests
 
-- [x] Test: bundle a case; validate XML against MDTO XSD — `tests/Unit/Service/ArchivalServicesTest.php::testMetadataBundlerProducesValidMdto` line 106 builds a real `permit.pdf` case bundle, asserts `<mdto:MDTO` is emitted, and round-trips through `validateXsd()` to assert `valid === true`. The companion `testMetadataBundlerRejectsMalformed` (line 126) asserts a non-MDTO XML body fails the validator. (Note: `validateXsd` is a presence-of-required-elements check per the service docblock; full libxml `DOMDocument::schemaValidate` against published MDTO 1.1 / TMLO 1.2.1 XSDs remains a follow-up when the upstream XSD catalogue is bundled in `lib/Settings/templates/mdto/`.)
+- [~] Test: bundle a case; validate XML against MDTO XSD — DEFERRED: needs full XSD bundle in repo + libxml; behaviourally exercised via mocked DOMDocument in the unit test scaffold (deferred to follow-up `MetadataBundlerServiceTest`)
 - [x] Test: missing document-type blocks bundling with the correct error message — covered by `tests/Unit/Service/EvidenceMetadataServiceTest.php` (overlapping document-type validation surface) and the documented contract in MetadataBundlerService
 - [~] Test: validate both MDTO 1.1 and TMLO 1.2.1 paths — DEFERRED: validateXsd switches on `metadataXsdVersion`; both XSD bundles ship; full e2e parity needs live OR
 
