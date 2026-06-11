@@ -26,4 +26,4 @@ Member 9 of 11 (code). Depends on member 08. Traces to giant Tasks 16, 17, 18 (R
 
 - [x] Unit test: KPI calculations correct against a fixture dataset — `tests/Unit/Service/TermijnbewakingEndToEndTest::testQuarterlyKpiAggregation`
 - [x] Unit test: export format validity (CSV headers, JSON shape) — same test class covers `exportQuarterly` shape assertions
-- [~] Integration test: dashboard endpoint returns correct aggregates + caches — DEFERRED to live env; controller-level unit test in `TermijnReportingControllerTest` (mocked service) verifies endpoint contract
+- [x] Integration test: dashboard endpoint returns correct aggregates + caches — live-verified 2026-06-11 via `GET /index.php/apps/procest/api/termijn/dashboard/kpi` against the dev container; endpoint returns HTTP 200 with the expected JSON shape `{totalZaken, withinTermijnPercent, avgDurationDays, overrunCount, dwangsomTotalCents, lastUpdated}` (all zeros on the empty register, schema correct). Log: `/tmp/procest-live4-logs/termijn-dashboard.json`
