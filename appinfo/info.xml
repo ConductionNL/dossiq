@@ -84,7 +84,14 @@ Vrij en open source onder de AGPL-licentie.
         <job>OCA\Procest\BackgroundJob\DailyTermijnScanJob</job>
         <job>OCA\Procest\BackgroundJob\InboundEmailJob</job>
         <job>OCA\Procest\BackgroundJob\EmailPdfRetryJob</job>
+        <job>OCA\Procest\BackgroundJob\ArchivalTriggerScanJob</job>
+        <job>OCA\Procest\BackgroundJob\ArchivalSubmissionRetryJob</job>
     </background-jobs>
+
+    <commands>
+        <command>OCA\Procest\Command\ArchiefDetectReadyCommand</command>
+        <command>OCA\Procest\Command\ArchiefRetrySubmissionsCommand</command>
+    </commands>
 
     <repair-steps>
         <post-migration>
