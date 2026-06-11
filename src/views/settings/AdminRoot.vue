@@ -65,6 +65,27 @@
 			<AiSettingsTab v-if="storesReady" />
 		</CnSettingsSection>
 
+		<CnSettingsSection
+			:name="t('procest', 'AWB Term Definitions')"
+			:description="t('procest', 'Configure statutory term definitions per zaaktype for AWB termijnbewaking (legal basis, duration, validity). Versioning is enforced on save.')"
+			:loading="!storesReady">
+			<TermijnDefinitiesTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('procest', 'Mandate Matrix')"
+			:description="t('procest', 'Configure mandate decisions, organisational roles, role assignments, and import legacy mandate exports')"
+			:loading="!storesReady">
+			<MandaatMatrixTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('procest', 'Archief retention rules')"
+			:description="t('procest', 'Define per-zaaktype retention periods that drive scheduled e-Depot handover (BagIt + MDTO)')"
+			:loading="!storesReady">
+			<ArchiefConfiguratieTab v-if="storesReady" />
+		</CnSettingsSection>
+
 		<!-- Re-import Status -->
 		<div v-if="message" class="actions-section">
 			<NcNoteCard :type="messageType">
@@ -84,6 +105,9 @@ import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import MapLayerSettings from './MapLayerSettings.vue'
 import AiSettingsTab from './tabs/AiSettingsTab.vue'
 import ChecklistsTab from './tabs/ChecklistsTab.vue'
+import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
+import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
+import ArchiefConfiguratieTab from './tabs/ArchiefConfiguratieTab.vue'
 import { generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
 import { initializeStores } from '../../store/store.js'
@@ -103,6 +127,9 @@ export default {
 		MapLayerSettings,
 		AiSettingsTab,
 		ChecklistsTab,
+		TermijnDefinitiesTab,
+		MandaatMatrixTab,
+		ArchiefConfiguratieTab,
 	},
 	data() {
 		return {
