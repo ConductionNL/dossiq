@@ -88,7 +88,15 @@ class VergunningaanvraagCreatedListener implements IEventListener
             return;
         }
 
+        // OpenRegister's ObjectCreatedEvent::getObject() returns an ObjectEntity
+        // (JsonSerializable). Normalise it to the array shape the schema/id
+        // resolution below expects. A bare array is also accepted for resilience
+        // against alternate event shapes / test doubles.
         $object = $event->getObject();
+        if ($object instanceof \JsonSerializable === true) {
+            $object = $object->jsonSerialize();
+        }
+
         if (is_array($object) === false) {
             return;
         }

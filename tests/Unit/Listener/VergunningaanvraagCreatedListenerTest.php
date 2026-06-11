@@ -121,13 +121,14 @@ class VergunningaanvraagCreatedListenerTest extends TestCase
             $this->markTestSkipped('ObjectCreatedEvent class not available.');
         }
 
-        $event = $this->createMock(ObjectCreatedEvent::class);
-        $event->method('getObject')->willReturn(
-                [
-                    'id'     => 'object-uuid-1',
-                    'schema' => 'some-other-schema-id',
-                ]
-                );
+        // ObjectCreatedEvent::getObject() is type-hinted to return an
+        // ObjectEntity, so build a real entity (its jsonSerialize() exposes the
+        // schema under @self.schema and the id at top level) and wrap it in a
+        // real event.
+        $entity = new \OCA\OpenRegister\Db\ObjectEntity();
+        $entity->setUuid('object-uuid-1');
+        $entity->setSchema('some-other-schema-id');
+        $event = new ObjectCreatedEvent($entity);
 
         $this->appConfig
             ->method('getValueString')
@@ -158,13 +159,10 @@ class VergunningaanvraagCreatedListenerTest extends TestCase
         $configuredSchemaId = 'vergunning-schema-123';
         $objectId           = 'aanvraag-object-uuid';
 
-        $event = $this->createMock(ObjectCreatedEvent::class);
-        $event->method('getObject')->willReturn(
-                [
-                    'id'     => $objectId,
-                    'schema' => $configuredSchemaId,
-                ]
-                );
+        $entity = new \OCA\OpenRegister\Db\ObjectEntity();
+        $entity->setUuid($objectId);
+        $entity->setSchema($configuredSchemaId);
+        $event = new ObjectCreatedEvent($entity);
 
         $this->appConfig
             ->method('getValueString')
