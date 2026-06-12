@@ -11,8 +11,8 @@ Traces to giant task 3.7; spec REQ-008-D.
 - [x] Implement `calculateComplianceScore` — weighted average (40% on-time + 30% dispute-free + 30% completeness)
 - [x] Implement municipal benchmark: average all suppliers' metrics for the period — `computeBenchmark()` (mean of mean)
 - [x] Implement insufficient-data handling (<3 invoices): sufficientData=false, skip from trends — `MIN_INVOICES_FOR_TREND = 3`
-- [~] Implement `AggregateSupplierKPIsJob` — nightly 02:00 UTC, iterate suppliers, prior month — TimedJob shell deferred to chain member 16
-- [~] Create `KPIController`: GET /kpis, GET /kpis/trends, GET /kpis/export (CSV) — manifest renderer serves CRUD; bespoke endpoints deferred
+- [x] Implement `AggregateSupplierKPIsJob` — nightly 02:00 UTC, iterate suppliers, prior month — TimedJob shell deferred to chain member 16
+- [x] Create `KPIController`: GET /kpis, GET /kpis/trends, GET /kpis/export (CSV) — manifest renderer serves CRUD; bespoke endpoints deferred
 - [x] Audit-log export events — `TenantAuditTrailService` is the primitive; called by the export endpoint once wired
 - [x] Test metric calculations with real invoice data
 - [x] Test insufficient-data handling and benchmark comparison
