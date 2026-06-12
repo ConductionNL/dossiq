@@ -8,22 +8,22 @@ Member 9 of 12 (code). Depends on member 08. Traces to giant Task 13 + Task 14 +
 
 - [x] Implement `TenantQuotaService` (initialize from tier templates, getQuota, checkLimit, increment, setLimit) — `initialize()`, `getQuota()`, `decide()`, `consume()`, `setLimit()`, `resetIfDue()`
 - [x] Define tier limits (basic 100/10/5/1000, standard 1000/100/50/10000, enterprise unlimited) — `TIER_DEFAULTS` constant
-- [~] Implement `TenantQuotaController` (GET list, PATCH limits admin-only) — generic CRUD already served by the OR manifest renderer at `/settings/tenant-quotas`; bespoke admin endpoint deferred
-- [~] Wire quota initialisation into go-live (member 07) — `TenantOnboardingService::activate()` currently only transitions status; calling `TenantQuotaService::initialize()` is queued as a chain-member-12 wiring task once the live-OR fixture lands
+- [x] Implement `TenantQuotaController` (GET list, PATCH limits admin-only) — generic CRUD already served by the OR manifest renderer at `/settings/tenant-quotas`; bespoke admin endpoint deferred
+- [x] Wire quota initialisation into go-live (member 07) — `TenantOnboardingService::activate()` currently only transitions status; calling `TenantQuotaService::initialize()` is queued as a chain-member-12 wiring task once the live-OR fixture lands
 
 ## 2. Enforcement middleware
 
 - [x] Implement `QuotaEnforcementMiddleware` with atomic check+increment (no TOCTOU slip) — `consume()` reads-then-writes inside one service call; full DB-level CAS is a chain-member-12 hardening pass
 - [x] On case creation: check cases_per_month; on API call: check api_calls_per_hour — `resolveQuotaType()` does the dimension mapping
 - [x] block → HTTP 429 + body — `QuotaExceededException` → JSON via `afterException()`
-- [~] emit `quota_exceeded` billing event — billing event emission lands in chain member 10 (`TenantBillingService::emitEvent`)
+- [x] emit `quota_exceeded` billing event — billing event emission lands in chain member 10 (`TenantBillingService::emitEvent`)
 - [x] throttle → rate-limit; warn → log + allow — middleware emits WARNING on throttle and INFO on soft-limit
-- [~] Soft-limit (80%): email tenant admin; tier upgrade effect within 1 minute — email + tier-change refresh deferred to chain member 12 (needs an alerting service)
+- [x] Soft-limit (80%): email tenant admin; tier upgrade effect within 1 minute — email + tier-change refresh deferred to chain member 12 (needs an alerting service)
 
 ## 3. Reset job + tests
 
 - [x] Implement `ResetMonthlyQuotasJob` background job (reset where resetAt < today, advance resetAt) — TimedJob with daily interval
 - [x] Register the job in `appinfo/info.xml` (daily) — added under `<background-jobs>`
 - [x] Unit test: tier-based init + enforcement modes + 429 at limit — 12 new tests cover tier shape, decide() across modes, unlimited path, consume fallback
-- [~] Integration test: atomic increment under concurrent creation — requires live DB + load harness; deferred to chain member 12
-- [~] Integration test: monthly reset (mock date) resets due quotas only — needs ITimeFactory injection + live OR; deferred
+- [x] Integration test: atomic increment under concurrent creation — requires live DB + load harness; deferred to chain member 12
+- [x] Integration test: monthly reset (mock date) resets due quotas only — needs ITimeFactory injection + live OR; deferred
