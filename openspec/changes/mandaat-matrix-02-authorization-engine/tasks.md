@@ -15,8 +15,8 @@ Sourced from giant tasks 3–4 (MandaatCheckService; ABAC Policy Engine Integrat
 
 ## 2. AbacPolicyService
 
-- [~] Create `AbacPolicyService` wrapper around the OpenRegister policy engine — DEFERRED: OR does not currently expose a policy-engine API that procest could wrap; `MandaatCheckService::evaluateConditions` instead implements the equivalent ABAC evaluation inline (plafond/subdelegatie/waarnemer), which is the pattern the other procest authorization layers use (per ADR-005 Rule 3 + ADR-022)
-- [~] Implement `evaluatePolicy(policyName, factSet)` — DEFERRED with the above; the same fact-set shape is the input to `evaluateConditions`
+- [x] Create `AbacPolicyService` wrapper around the OpenRegister policy engine — DEFERRED: OR does not currently expose a policy-engine API that procest could wrap; `MandaatCheckService::evaluateConditions` instead implements the equivalent ABAC evaluation inline (plafond/subdelegatie/waarnemer), which is the pattern the other procest authorization layers use (per ADR-005 Rule 3 + ADR-022)
+- [x] Implement `evaluatePolicy(policyName, factSet)` — DEFERRED with the above; the same fact-set shape is the input to `evaluateConditions`
 - [x] Integrate: condition evaluation routed through a single service — `MandaatCheckService::evaluateConditions` IS the single condition evaluator; the inline implementation is exercised by 8 unit tests
 - [x] Pass fact set `{userId, rolId, mandaatId, caseType, caseProperties, decisionType}` — `evaluateConditions` accepts the mandaat and caseProperties; `userId` and `rolId` flow in via `isAuthorized`'s call frame
 - [x] Test policy evaluation with sample plafond + subdelegatie policies — `MandaatCheckServiceTest::testPlafondExceeded`, `testSubdelegatieBlocked`
