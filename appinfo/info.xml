@@ -6,7 +6,7 @@
     <name lang="nl">Procest</name>
     <summary lang="en">Case management with configurable workflows, deadlines, and decisions</summary>
     <summary lang="nl">Zaakafhandeling met configureerbare workflows, deadlines en besluiten</summary>
-    <description lang="en"><![CDATA[> ⚠️ **Active development — not for production use yet.** This app is under active development. Although it may carry a stable release status, **please do not use it in production environments before 12 June 2026.** See the [app page on conduction.nl](https://conduction.nl/apps/procest) for release planning and what this app does.
+    <description lang="en"><![CDATA[> ⚠️ **Active development — not for production use yet.** This app is under active development. Although it may carry a stable release status, **please do not use it in production environments before 17 June 2026.** See the [app page on conduction.nl](https://conduction.nl/apps/procest) for release planning and what this app does.
 
 Procest brings structured case management to Nextcloud. Define case types, track progress through status lifecycles, manage deadlines, and record formal decisions — all within a clean, intuitive interface.
 
@@ -27,7 +27,7 @@ Procest brings structured case management to Nextcloud. Define case types, track
 
 Free and open source under the AGPL license.
     ]]></description>
-    <description lang="nl"><![CDATA[> ⚠️ **In actieve ontwikkeling — nog niet voor productiegebruik.** Deze app is volop in ontwikkeling. Hoewel de app een stabiele release-status kan hebben, **gebruik deze nog niet in productieomgevingen vóór 12 juni 2026.** Zie de [app-pagina op conduction.nl](https://conduction.nl/apps/procest) voor release-planning en het doel van deze app.
+    <description lang="nl"><![CDATA[> ⚠️ **In actieve ontwikkeling — nog niet voor productiegebruik.** Deze app is volop in ontwikkeling. Hoewel de app een stabiele release-status kan hebben, **gebruik deze nog niet in productieomgevingen vóór 17 juni 2026.** Zie de [app-pagina op conduction.nl](https://conduction.nl/apps/procest) voor release-planning en het doel van deze app.
 
 Procest brengt gestructureerde zaakafhandeling naar Nextcloud. Definieer zaaktypen, volg voortgang via statuslifecycles, beheer deadlines en leg formele besluiten vast — allemaal in een overzichtelijke, intuitive interface.
 
@@ -48,7 +48,7 @@ Procest brengt gestructureerde zaakafhandeling naar Nextcloud. Definieer zaaktyp
 
 Vrij en open source onder de AGPL-licentie.
     ]]></description>
-    <version>0.1.9</version>
+    <version>0.1.10</version>
     <licence>agpl</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Procest</namespace>
