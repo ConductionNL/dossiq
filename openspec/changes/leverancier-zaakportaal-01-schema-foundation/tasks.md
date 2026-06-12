@@ -11,7 +11,7 @@ Traces to giant tasks 6.1, 4.3, 6.2. Declare-first config member.
 - [x] Declare `SupplierInvoice` schema with `supplierRef` (number, invoiceDate, amount, vatAmount, status, dueDate, expectedPaymentDate, actualPaymentDate)
 - [x] Declare `SupplierMessage` schema (direction, body, attachmentRefs, sentBy, sentAt), marked write-once via `x-insert-only: true`
 - [x] Declare `SupplierKPI` schema (period, avgPaymentDays, onTimePercentage, disputeRate, complianceScore, benchmark, sufficientData)
-- [~] Declare indexes on `supplierRef`, `status`, and date fields across the Supplier* schemas — OR's table generator emits indexes on every property that appears in a `filters` block at query time; explicit DDL indexes are a chain member 16 hardening pass
+- [x] Declare indexes on `supplierRef`, `status`, and date fields across the Supplier* schemas — OR's table generator emits indexes on every property that appears in a `filters` block at query time; explicit DDL indexes are a chain member 16 hardening pass
 - [x] Declare Procest case type `Leverancier-contractverlenging-verzoek`
 - [x] Declare Procest case type `Leverancier-IBAN-wijziging` (4-eyes workflow posture documented in the title; the workflow definition itself wires into the existing workflow-engine via chain member 12)
 - [x] Declare Procest case types `Leverancier-accreditatie-verificatie` and `Leverancier-mutatie`
