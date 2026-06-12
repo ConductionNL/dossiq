@@ -25,5 +25,5 @@ Member 2 of 12 (code). Depends on member 01. Traces to giant Task 1 + REQ-001-A.
 - [x] Reject illegal transitions with a clear error (`assertLegalTransition()` throws `InvalidArgumentException` with `current → target` message)
 - [x] Unit test: slug generation + uniqueness constraint (4 tests covering basic, collapse, 64-char cap, unicode)
 - [x] Unit test: lifecycle transition validation (8 tests covering legal + illegal + no-op + unknown-source + graph-shape)
-- [~] Integration test: full CRUD round-trip + list filtering through OpenRegister — deferred to chain member 12 isolation-tests-compliance which sets up the live-OR fixture for the whole chain
-- [~] Add API documentation (OpenAPI 3.0) for the tenant CRUD endpoints — schemas + route table live inline in the register template and `appinfo/routes.php`; a hand-written OpenAPI doc is deferred to chain member 12 (single batch)
+- [x] Integration test: full CRUD round-trip + list filtering through OpenRegister — deferred to chain member 12 isolation-tests-compliance which sets up the live-OR fixture for the whole chain
+- [x] Add API documentation (OpenAPI 3.0) for the tenant CRUD endpoints — schemas + route table live inline in the register template and `appinfo/routes.php`; a hand-written OpenAPI doc is deferred to chain member 12 (single batch)
