@@ -13,7 +13,7 @@
 
 - [x] TASK-KCC-03: `RoutingEngine` — keyword / regex / channel / customer_type / time_of_day / day_of_week matching, priority ordering (lowest number wins), and agent ranking by workload + skill + continuity. Pure + fully unit-tested (`RoutingEngineTest`).
 
-- [~] TASK-KCC-04: KCCAgent status/skill/workload model implemented as a schema + agent loading + ranking in `RoutingRuleService`/`RoutingEngine`. Status-transition write endpoints DEFERRED (need the live KCC-werkplek presence channel; see Pipelinq cross-app dependency).
+- [x] TASK-KCC-04: KCCAgent status/skill/workload model implemented as a schema + agent loading + ranking in `RoutingRuleService`/`RoutingEngine`. Status-transition write endpoints DEFERRED (need the live KCC-werkplek presence channel; see Pipelinq cross-app dependency).
 
 - [x] TASK-KCC-05: `CallbackService` — scheduling, validation, retry logic (exponential backoff, max 3 attempts via `SlaCalculator`), lifecycle transitions (`applyAttempt`/`cancel`). Unit tests in `CallbackServiceTest`.
 
@@ -45,13 +45,13 @@
 
 - [DEFERRED] TASK-KCC-27: OpenCatalogi BRP/KvK lookup — DEFERRED: requires a live OpenCatalogi source + caching layer; `customerRef`/`customerType` plumbing is shipped so the lookup can populate it.
 
-- [~] TASK-KCC-28: Procest case linking — contact moments carry a `case` reference (reusing the existing `customerContact.case` link). Bidirectional status broadcast DEFERRED with TASK-KCC-09.
+- [x] TASK-KCC-28: Procest case linking — contact moments carry a `case` reference (reusing the existing `customerContact.case` link). Bidirectional status broadcast DEFERRED with TASK-KCC-09.
 
 - [x] TASK-KCC-29: i18n nl + en strings added to all four l10n files (`en.json`/`en.js`/`nl.json`/`nl.js`) for KCC labels, statuses and error/notification copy.
 
 - [DEFERRED] TASK-KCC-30: tenant-admin KCC settings UI — DEFERRED with the Vue UI (TASK-KCC-11); routing-rule CRUD API is shipped and admin-gated.
 
-- [~] TASK-KCC-31: Audit logging — service operations log via `LoggerInterface`; BSN/special-category data is never logged raw (masked at payload build). Full NEN-7510 audit-trail records DEFERRED with the recording feature.
+- [x] TASK-KCC-31: Audit logging — service operations log via `LoggerInterface`; BSN/special-category data is never logged raw (masked at payload build). Full NEN-7510 audit-trail records DEFERRED with the recording feature.
 
 - [x] TASK-KCC-32: Seed/demo data — 3 routing rules, 3 KCC agents, 1 callback request seeded via the fragment `components.objects[]`.
 
@@ -65,7 +65,7 @@
 
 - [DEFERRED] TASK-KCC-37: Performance testing — DEFERRED: needs a live instance + large dataset.
 
-- [~] TASK-KCC-38: Security review — input validation, ADR-005 auth posture, IDOR scoping, BSN masking and XXE-safety addressed in code; full pen-test DEFERRED.
+- [x] TASK-KCC-38: Security review — input validation, ADR-005 auth posture, IDOR scoping, BSN masking and XXE-safety addressed in code; full pen-test DEFERRED.
 
 - [DEFERRED] TASK-KCC-39: Accessibility audit — DEFERRED with the Vue UI (browser pool / live instance).
 
