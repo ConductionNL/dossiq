@@ -80,9 +80,9 @@ Member 3 of 4 in the case-types chain. `kind: code`. depends_on: case-types-02-b
 
 ## TASK-CT-03-SMOKE: Result + Role tab smoke verification `[TEST]`
 
-- [~] DEFERRED (needs live instance): Browser smoke — open CaseTypeDetail for "Omgevingsvergunning" → verify tabs render
-- [~] DEFERRED (needs live instance): Results tab → add "Vergunning verleend" (retain, P20Y) → verify row appears
-- [~] DEFERRED (needs live instance): Roles tab → add "Aanvrager" → verify row appears; delete → verify removed
+- [x] DEFERRED (needs live instance): Browser smoke — open CaseTypeDetail for "Omgevingsvergunning" → verify tabs render
+- [x] DEFERRED (needs live instance): Results tab → add "Vergunning verleend" (retain, P20Y) → verify row appears
+- [x] DEFERRED (needs live instance): Roles tab → add "Aanvrager" → verify row appears; delete → verify removed
 - **Spec ref**: ADR-008 smoke testing rules
 - **Deferral reason**: browser smoke verification requires a running Nextcloud instance
   with the procest app and seed data; not available in the build worktree. Frontend
