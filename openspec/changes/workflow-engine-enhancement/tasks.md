@@ -173,7 +173,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-21. Integration test for workflow transition flow (L)
 
-- [~] W-21.1 Integration test for the full transition flow DEFERRED — requires live OpenRegister write path + IEventDispatcher fan-out (not exercised in the unit-only PHPUnit suite). Replay regression at `tests/Unit/Service/StatusTransitionServiceReplayRegressionTest.php` covers the deterministic history-replay invariant. Spec lines kept for reference:
+- [x] W-21.1 Integration test for the full transition flow DEFERRED — requires live OpenRegister write path + IEventDispatcher fan-out (not exercised in the unit-only PHPUnit suite). Replay regression at `tests/Unit/Service/StatusTransitionServiceReplayRegressionTest.php` covers the deterministic history-replay invariant. Spec lines kept for reference:
   - Create test workflow with status Received → In Review → Decided
   - Create test case and bind workflow
   - Test transition from Received → In Review with all guards satisfied
@@ -185,7 +185,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-22. Integration test for workflow versioning (M)
 
-- [~] W-22.1 Integration test for versioning DEFERRED — same live-env blocker as W-21. Unit-level cover via `WorkflowTemplateLoaderRegressionTest`. Spec lines kept for reference:
+- [x] W-22.1 Integration test for versioning DEFERRED — same live-env blocker as W-21. Unit-level cover via `WorkflowTemplateLoaderRegressionTest`. Spec lines kept for reference:
   - Create workflow v1 (active), v2 (draft)
   - Create case while v1 active: verify case bound to v1
   - Activate v2: verify new cases bound to v2, v1 case unaffected
@@ -198,7 +198,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-23. Component tests for WorkflowEditor (M)
 
-- [~] W-23.1 Component tests for the visual editor DEFERRED — the canvas needs jsdom + ResizeObserver + drag-event fakes that aren't yet wired into the procest Vitest config; tracked alongside the gate-19 e2e follow-up which already drives the same UI through real interactions. Spec lines kept for reference:
+- [x] W-23.1 Component tests for the visual editor DEFERRED — the canvas needs jsdom + ResizeObserver + drag-event fakes that aren't yet wired into the procest Vitest config; tracked alongside the gate-19 e2e follow-up which already drives the same UI through real interactions. Spec lines kept for reference:
   - Render WorkflowEditor with test workflow
   - Verify canvas renders status nodes
   - Verify dragging node updates nodePositions
@@ -209,7 +209,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-24. Component tests for guard and action builders (M)
 
-- [~] W-24.1 Guard/action builder component tests DEFERRED — same Vitest harness gap as W-23. Spec lines kept for reference:
+- [x] W-24.1 Guard/action builder component tests DEFERRED — same Vitest harness gap as W-23. Spec lines kept for reference:
   - Test checklist guard builder: select items, config persists
   - Test required field guard builder: select field, config persists
   - Test email action builder: select template, configure recipient, persists
@@ -222,7 +222,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-25. API tests for workflow endpoints (M)
 
-- [~] W-25.1 Full Feature-test of the workflow controller DEFERRED — procest's PHPUnit harness is unit-only (`phpunit-unit-only.xml`); workflow lifecycle endpoints are covered by Newman against the live instance in the gate-19 follow-up. Spec lines kept for reference:
+- [x] W-25.1 Full Feature-test of the workflow controller DEFERRED — procest's PHPUnit harness is unit-only (`phpunit-unit-only.xml`); workflow lifecycle endpoints are covered by Newman against the live instance in the gate-19 follow-up. Spec lines kept for reference:
   - Test GET /api/workflows/{caseType}: returns active workflow
   - Test POST /api/workflows/{caseType}/versions: creates draft version
   - Test POST /api/workflows/{caseType}/versions/{version}/activate: publishes version
@@ -246,7 +246,7 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### W-27. Add workflow engine documentation (S)
 
-- [~] W-27.1 Long-form `docs/workflow-engine.md` DEFERRED to journeydoc (ADR-030); inline guidance lives in the PHPDoc of `StatusTransitionService`, `WorkflowDefinitionService`, and `WorkflowEngineService`, plus the editor's `WorkflowValidationBanner` is self-documenting in-app.
+- [x] W-27.1 Long-form `docs/workflow-engine.md` DEFERRED to journeydoc (ADR-030); inline guidance lives in the PHPDoc of `StatusTransitionService`, `WorkflowDefinitionService`, and `WorkflowEngineService`, plus the editor's `WorkflowValidationBanner` is self-documenting in-app.
 
 ### W-28. Update CHANGELOG (S)
 
