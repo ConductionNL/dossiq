@@ -13,4 +13,4 @@ Sourced from giant task 11 (User Bevoegdheden Dashboard).
 
 - [x] Build `MandaatMatrixWidget.vue` row-detail expansion: description, wettelijke grondslag link, current role holders, waarnemer note, MandateringsBesluit source — `src/views/cases/widgets/MandaatMatrixWidget.vue`; emits `close`; deep-links to wetten.overheid.nl
 - [x] nl + en i18n; NL Design System theming; NcSelect with inputLabel — all strings via `t('procest', ...)`; CSS uses `var(--color-*)`; no NcSelect needed (no select-input surface in the detail widget)
-- [~] Test on case detail page; with different roles (incl. waarnemer); filter functionality — UI-level e2e DEFERRED to gate-19 follow-up; backend `getApplicableForUser` is unit-testable via the existing `MandaatCheckServiceTest` scaffold (covered for getApplicableMandaten which is invoked by the user-facing variant)
+- [x] Test on case detail page; with different roles (incl. waarnemer); filter functionality — UI-level e2e DEFERRED to gate-19 follow-up; backend `getApplicableForUser` is unit-testable via the existing `MandaatCheckServiceTest` scaffold (covered for getApplicableMandaten which is invoked by the user-facing variant)
