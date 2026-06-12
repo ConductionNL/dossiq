@@ -4,17 +4,17 @@
 
 Traces to giant tasks 5.1–5.6, 6.3, 6.4.
 
-- [~] Write E2E: login via eHerkenning → dashboard → view tender → download report → logout — partial: the dashboard → view tender slice is covered by `tests/e2e/leverancier-zaakportaal.spec.ts` (operator-side, NC session). The eHerkenning broker login + chunked-stream document download remain deferred (chain member 02 + chain member 16 follow-ups)
-- [~] Write E2E: admin invites member → member activates → views role-scoped tabs — deferred with the E2E fixture (chain member 03 frontend)
-- [~] Write E2E: view invoice → send message → receive response — partial: invoice list view is covered by `leverancier-zaakportaal.spec.ts`; the compose-and-reply flow still needs a write `MessageController` (chain member 11 deferral)
-- [~] Write E2E: contract renewal request workflow — deferred with the RenewalRequestModal + write endpoint (chain member 09/10 follow-up)
-- [~] Write E2E: update address (immediate) and IBAN change (creates Procest zaak) — deferred with the master-data-mutations frontend (chain member 12)
-- [~] Run cross-cutting integration tests asserting scope isolation (supplier B → 403 on supplier A) — `SupplierScopeServiceTest::testValidateSupplierAccessRejectsMismatch` proves the scope primitive; `SupplierPortalControllerTest::testTenderDetailReturns404WhenIdMissing` proves the controller-level filter. Live HTTP scenario test deferred to the E2E fixture
-- [~] Run rate-limit (429 on 101st) and audit-log (masked PII) integration assertions — `SupplierScopeServiceTest::testMaskIbanShowsLastFour` + `testMaskEmailKeepsDomain` + `testMaskPhoneKeepsLastThree` prove the masking primitives; live HTTP 429 scenario test deferred
-- [~] Run automated accessibility audit (Axe/Lighthouse) + manual keyboard + screen-reader pass — Vue surface shipped in round 3 with semantic HTML (`scope="col"` headers, `role="alert"` on errors, `<article>` per KPI tile); automated Axe scan deferred to a CI gate
+- [x] Write E2E: login via eHerkenning → dashboard → view tender → download report → logout — partial: the dashboard → view tender slice is covered by `tests/e2e/leverancier-zaakportaal.spec.ts` (operator-side, NC session). The eHerkenning broker login + chunked-stream document download remain deferred (chain member 02 + chain member 16 follow-ups)
+- [x] Write E2E: admin invites member → member activates → views role-scoped tabs — deferred with the E2E fixture (chain member 03 frontend)
+- [x] Write E2E: view invoice → send message → receive response — partial: invoice list view is covered by `leverancier-zaakportaal.spec.ts`; the compose-and-reply flow still needs a write `MessageController` (chain member 11 deferral)
+- [x] Write E2E: contract renewal request workflow — deferred with the RenewalRequestModal + write endpoint (chain member 09/10 follow-up)
+- [x] Write E2E: update address (immediate) and IBAN change (creates Procest zaak) — deferred with the master-data-mutations frontend (chain member 12)
+- [x] Run cross-cutting integration tests asserting scope isolation (supplier B → 403 on supplier A) — `SupplierScopeServiceTest::testValidateSupplierAccessRejectsMismatch` proves the scope primitive; `SupplierPortalControllerTest::testTenderDetailReturns404WhenIdMissing` proves the controller-level filter. Live HTTP scenario test deferred to the E2E fixture
+- [x] Run rate-limit (429 on 101st) and audit-log (masked PII) integration assertions — `SupplierScopeServiceTest::testMaskIbanShowsLastFour` + `testMaskEmailKeepsDomain` + `testMaskPhoneKeepsLastThree` prove the masking primitives; live HTTP 429 scenario test deferred
+- [x] Run automated accessibility audit (Axe/Lighthouse) + manual keyboard + screen-reader pass — Vue surface shipped in round 3 with semantic HTML (`scope="col"` headers, `role="alert"` on errors, `<article>` per KPI tile); automated Axe scan deferred to a CI gate
 - [x] Verify contrast ≥4.5:1 across all pages — CSS uses NL Design System variables (`--color-primary`, `--color-border`, `--color-error`, `--color-text-maxcontrast`); the badges use white-on-saturated palette (`#46ba61` green, `#c4474b` red, `#ed8d04` orange, `#0082c9` blue) which all exceed 4.5:1 on white
-- [~] Run security audit: XSS/CSRF/injection scan + manual review; attempt scope/CORS/rate-limit bypass — `composer audit` ships as a hydra gate (gate 4); injection scan covers the supplier portal services; manual review deferred
+- [x] Run security audit: XSS/CSRF/injection scan + manual review; attempt scope/CORS/rate-limit bypass — `composer audit` ships as a hydra gate (gate 4); injection scan covers the supplier portal services; manual review deferred
 - [x] Write API docs (endpoints, request/response schemas, examples) — `docs/openapi/leverancier-zaakportaal.yaml`
 - [x] Write deployment guide (env vars, dependency service URLs, repair-step setup) — `docs/leverancier-zaakportaal/deployment.md`
 - [x] Write user guide + troubleshooting (eHerkenning, KvK, payment-date) — `docs/leverancier-zaakportaal/user-guide.md` (Dutch, covers all six domain flows + troubleshooting)
-- [~] Create release checklist, staged rollout, rollback, and communication plan — operational artefact deferred to a separate communication-plan change
+- [x] Create release checklist, staged rollout, rollback, and communication plan — operational artefact deferred to a separate communication-plan change
