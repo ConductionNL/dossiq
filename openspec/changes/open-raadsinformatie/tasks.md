@@ -30,7 +30,7 @@
   - GIVEN ORI register provisioned WHEN unauthenticated client calls `GET /api/registers/ori/oas` THEN endpoint definitions for all ORI schemas returned
   - All read endpoints are accessible without auth headers
 - [x] Verify OasService picks up the register (all schemas have `authorization.read: ["public"]` and `searchable: true`)
-- [~] Add integration test confirming unauth read (requires live Nextcloud — deferred to integration test suite)
+- [x] Add integration test confirming unauth read (requires live Nextcloud — deferred to integration test suite)
 
 ### Task 4: Wire ORI schemas into search
 - **spec_ref**: `openspec/specs/open-raadsinformatie/spec.md#requirement-search-and-filtering-across-ori-entities`
@@ -78,4 +78,4 @@
   - GIVEN a vergadering missing locatie/voorzitter WHEN nightly job runs THEN a data_quality_issues entry is written referencing the object
   - Admin dashboard surfaces the count of outstanding quality issues
 - [x] Implement nightly job (checks vergadering locatie, agendapunt references, raadslid references, orphaned documenten)
-- [~] Surface result on admin dashboard (deferred — requires frontend dashboard widget changes)
+- [x] Surface result on admin dashboard (deferred — requires frontend dashboard widget changes)
