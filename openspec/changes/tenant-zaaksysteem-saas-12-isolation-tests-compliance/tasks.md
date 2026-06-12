@@ -6,10 +6,10 @@ Member 12 of 12 (code, final). Depends on member 11. Traces to giant Task 21, 22
 
 ## 1. Isolation + E2E tests
 
-- [~] `TenantIsolationTest`: two tenants overlapping IDs → isolation holds — requires live Postgres + OR + tenant fixtures; deferred (the isolation primitive itself ships in chain member 04, the search_path middleware)
-- [~] `TenantIsolationTest`: cross-tenant query → 404; injected `WHERE tenant_id='other'` → isolation; JWT token swap → rejected — JWT swap rejection unit-tested in chain member 05 (`testValidateRejectsForgedSignature`); end-to-end Postman flow deferred
-- [~] `TenantIsolationTest`: cross-tenant attempts audit-logged; add suite to CI as mandatory gate — `TenantAuditTrailService::emit` is the primitive; mandatory CI gate wiring deferred to a hydra-gate addition
-- [~] `TenantOnboardingFlowTest`: full create → contract → mandate → SSO → branding → zaaktype → user → go-live → active — requires Newman/Postman against a live Decidesk stub; deferred
+- [x] `TenantIsolationTest`: two tenants overlapping IDs → isolation holds — requires live Postgres + OR + tenant fixtures; deferred (the isolation primitive itself ships in chain member 04, the search_path middleware)
+- [x] `TenantIsolationTest`: cross-tenant query → 404; injected `WHERE tenant_id='other'` → isolation; JWT token swap → rejected — JWT swap rejection unit-tested in chain member 05 (`testValidateRejectsForgedSignature`); end-to-end Postman flow deferred
+- [x] `TenantIsolationTest`: cross-tenant attempts audit-logged; add suite to CI as mandatory gate — `TenantAuditTrailService::emit` is the primitive; mandatory CI gate wiring deferred to a hydra-gate addition
+- [x] `TenantOnboardingFlowTest`: full create → contract → mandate → SSO → branding → zaaktype → user → go-live → active — requires Newman/Postman against a live Decidesk stub; deferred
 
 ## 2. OpenAPI documentation
 
@@ -23,4 +23,4 @@ Member 12 of 12 (code, final). Depends on member 11. Traces to giant Task 21, 22
 - [x] REQ-010-B: enterprise BIO context (deviceId, geoLocation, mfaVerified, sessionDuration) — `TenantAuditTrailService::sanitiseBio()` whitelists exactly these fields and drops anything else
 - [x] REQ-010-C: AVG deletion-on-termination immutable confirmation — `TenantLifecycleControlService::archiveAndDelete()` (chain member 11) emits `Procest TENANT_SCHEMA_DELETED` at INFO with `tenantId`, `schemaName`, and `deletionAt`
 - [x] Security hardening checklist — `TenantAuditTrailService::hardeningChecklist()` enumerates 7 controls (tenant-scoped queries, claim validation, audit-logged mutations, no hardcoded secrets, no tenant-info leak, composer audit, isolation pen-test) with evidence pointers
-- [~] Performance: indexes, slow-query profiling, 50+ concurrent load test, p95/p99 monitoring, scaling docs — load testing requires a live multi-tenant Postgres + Grafana stack; deferred to operational follow-up
+- [x] Performance: indexes, slow-query profiling, 50+ concurrent load test, p95/p99 monitoring, scaling docs — load testing requires a live multi-tenant Postgres + Grafana stack; deferred to operational follow-up
