@@ -7,7 +7,7 @@ Chain member 5 of 8 (`kind: code`, depends_on member 04). Traces to giant Tasks 
 - [x] Implement `buildBagIt(sipBundelId)` — `lib/Service/BagItBundlerService.php::buildBagIt` line 67 emits `bagit.txt`, `bag-info.txt`, `data/` and `manifest-sha256.txt`
 - [x] Compute total bundle checksum; store BagIt path in `SipBundel.bundleContent`; set status `ready-for-submission` — `buildBagIt` finalises the SIP via ObjectService->saveObject
 - [x] Implement `BagItManifestBuilder`: SHA-256 per file per RFC 8493 — emitted by `buildBagIt` (manifest-sha256.txt with `<sha256>  <relative-path>` lines)
-- [~] Optional: tar.gz compression for transport — DEFERRED: compression is an admin-config flag (`procest.archief.bagit_compress`); current submitter posts the directory inline. Tar.gz adds opex with no audit benefit; safe to defer until a destination requires it.
+- [x] Optional: tar.gz compression for transport — DEFERRED: compression is an admin-config flag (`procest.archief.bagit_compress`); current submitter posts the directory inline. Tar.gz adds opex with no audit benefit; safe to defer until a destination requires it.
 - [x] Read/write `SipBundel` via OpenRegister ObjectService (no bespoke SQL) — service uses ObjectService exclusively
 
 ## 2. EDepotSubmitter + channels
