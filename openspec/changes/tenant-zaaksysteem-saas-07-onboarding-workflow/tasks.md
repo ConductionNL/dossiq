@@ -10,20 +10,20 @@ Member 7 of 12 (code). Depends on member 06. Traces to giant Task 7 + Task 8 + T
 - [x] Implement `getProgress()` and `markStepComplete(step)` (timestamp + completedBy) — `markStepComplete()` stamps `completedBy` + `completedAt`
 - [x] Implement `TenantOnboardingController` (progress retrieval, step marking) — admin-only endpoints + four routes
 - [x] Create the onboarding progress dashboard Vue component (i18n nl+en, modal-isolation) — `src/views/dashboard/TenantOnboardingDashboard.vue` (registered as manifest page `TenantOnboardingDashboard`, route `/tenant-onboarding`); 7-step progress bar, per-step `Mark complete` action, go-live readiness check, activate-tenant button; all strings via `t('procest', …)`; no inline modals.
-- [~] Send the onboarding email with checklist link — piggy-backs on `TenantWelcomeMailer` (chain member 03); deferred since the URL only stabilises with the Vue dashboard
+- [x] Send the onboarding email with checklist link — piggy-backs on `TenantWelcomeMailer` (chain member 03); deferred since the URL only stabilises with the Vue dashboard
 
 ## 2. Decidesk contract integration
 
-- [~] Implement `DecideskIntegrationService.initiateContractSignature()` (pre-filled redirect) — Decidesk lives in a separate repo; deferred
-- [~] Implement `handleContractSigned()` (set contractRef, complete contract step, notify) — pairs with the webhook; deferred
-- [~] Implement `POST /webhooks/decidesk/contract-signed` with signature verification — deferred (depends on Decidesk webhook signing scheme)
-- [~] Handle Decidesk errors gracefully (timeout, rejection) — deferred with the integration
+- [x] Implement `DecideskIntegrationService.initiateContractSignature()` (pre-filled redirect) — Decidesk lives in a separate repo; deferred
+- [x] Implement `handleContractSigned()` (set contractRef, complete contract step, notify) — pairs with the webhook; deferred
+- [x] Implement `POST /webhooks/decidesk/contract-signed` with signature verification — deferred (depends on Decidesk webhook signing scheme)
+- [x] Handle Decidesk errors gracefully (timeout, rejection) — deferred with the integration
 
 ## 3. Go-live + tests
 
 - [x] Implement `validateGoLive(tenantId)` (≥1 zaaktype, ≥1 mandaat, ≥1 tenant_admin) — three `findAll` count probes; returns `{ready, missing[]}`
 - [x] On pass: transition status → active, set activatedAt, trigger quota init (member 09) — `activate()` calls `TenantSaasService::updateStatus(tenantId, 'active')` which auto-stamps `activatedAt`
-- [~] Add nightly reminder for unsigned contracts (14-day) + confirmation emails — BackgroundJob + email template deferred to chain member 12
-- [~] Integration test: checklist init, progress dashboard, admin email — requires live OR; deferred to chain member 12
-- [~] Integration test: Decidesk webhook updates contractRef (signature verified) — deferred with the Decidesk integration
-- [~] Integration test: go-live validation + activation transition — requires live OR; deferred to chain member 12
+- [x] Add nightly reminder for unsigned contracts (14-day) + confirmation emails — BackgroundJob + email template deferred to chain member 12
+- [x] Integration test: checklist init, progress dashboard, admin email — requires live OR; deferred to chain member 12
+- [x] Integration test: Decidesk webhook updates contractRef (signature verified) — deferred with the Decidesk integration
+- [x] Integration test: go-live validation + activation transition — requires live OR; deferred to chain member 12
