@@ -107,7 +107,7 @@
 			"id": "Documentation",
 			"label": "Documentation",
 			"icon": "icon-info",
-			"href": "https://conduction.gitbook.io/procest-nextcloud",
+			"href": "https://procest.conduction.nl",
 			"section": "footer",
 			"order": 90
 		},
