@@ -34,6 +34,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Service for parent-child (deelzaak) case relations.
+ *
+ * @spec openspec/changes/deelzaak-support/tasks.md#T01
  */
 class DeelzaakService
 {
@@ -51,7 +53,6 @@ class DeelzaakService
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
-
 
     /**
      * Fetch every sub-case linked to the given parent.
@@ -89,7 +90,6 @@ class DeelzaakService
             ],
         );
     }//end listSubCases()
-
 
     /**
      * Single-query sub-case counts keyed by parent UUID.
@@ -135,7 +135,7 @@ class DeelzaakService
             register: $register,
             schema: $schema,
             filters: [
-                '_limit' => 5000,
+                '_limit'     => 5000,
                 // Limit to children of the requested parents to keep the page small.
                 'parentCase' => array_keys($counts),
             ],
@@ -151,19 +151,84 @@ class DeelzaakService
         return $counts;
     }//end getSubCaseCounts()
 
-
     /**
-     * Fetch the parent case object for breadcrumb rendering.
+     * Fetch the PARENT of a sub-case, by dereferencing the child's
+     * `parentCase` relation.
      *
-     * @param string $parentCaseUuid Parent case UUID.
+     * The argument is the CHILD (sub-case) UUID — this method loads that
+     * child, reads its `parentCase` field, and returns the case it points
+     * at. Returns null when the child has no parent (it is not a sub-case),
+     * when the referenced parent no longer exists, or when the reference is
+     * self-pointing (a data-integrity guard so we never echo the child back
+     * as its own parent).
      *
-     * @return array<string, mixed>|null
+     * @param string $childCaseUuid Sub-case (child) UUID.
+     *
+     * @return array<string, mixed>|null The parent case, or null.
      *
      * @spec openspec/changes/deelzaak-support/tasks.md#T02
      */
-    public function getParentCase(string $parentCaseUuid): ?array
+    public function getParentCase(string $childCaseUuid): ?array
     {
-        if ($parentCaseUuid === '') {
+        if ($childCaseUuid === '') {
+            return null;
+        }
+
+        $child = $this->fetchCaseById(caseUuid: $childCaseUuid);
+        if ($child === null) {
+            return null;
+        }
+
+        $parentRef = $this->extractParentReference(case: $child);
+        if ($parentRef === '' || $parentRef === $childCaseUuid) {
+            // No parent (not a sub-case) or a self-reference — nothing to
+            // dereference. Never return the child as its own parent.
+            return null;
+        }
+
+        return $this->fetchCaseById(caseUuid: $parentRef);
+    }//end getParentCase()
+
+    /**
+     * Read the `parentCase` reference UUID out of a case array.
+     *
+     * Tolerates both the scalar-UUID shape (`parentCase: "<uuid>"`) and an
+     * expanded-object shape (`parentCase: { id|uuid: "<uuid>" }`) that OR
+     * may emit when the relation is hydrated.
+     *
+     * @param array<string, mixed> $case Case object as an array.
+     *
+     * @return string The parent UUID, or '' when absent.
+     */
+    private function extractParentReference(array $case): string
+    {
+        $parent = ($case['parentCase'] ?? null);
+        if (is_string($parent) === true) {
+            return $parent;
+        }
+
+        if (is_array($parent) === true) {
+            $ref = ($parent['id'] ?? $parent['uuid'] ?? '');
+            if (is_string($ref) === true) {
+                return $ref;
+            }
+
+            return '';
+        }
+
+        return '';
+    }//end extractParentReference()
+
+    /**
+     * Fetch a single case object by UUID and normalise it to an array.
+     *
+     * @param string $caseUuid Case UUID.
+     *
+     * @return array<string, mixed>|null The case, or null when missing.
+     */
+    private function fetchCaseById(string $caseUuid): ?array
+    {
+        if ($caseUuid === '') {
             return null;
         }
 
@@ -179,11 +244,11 @@ class DeelzaakService
         }
 
         try {
-            $obj = $objectService->find($parentCaseUuid, register: $register, schema: $schema);
+            $obj = $objectService->find($caseUuid, register: $register, schema: $schema);
         } catch (\Throwable $e) {
             $this->logger->debug(
-                'Parent case lookup failed',
-                ['uuid' => $parentCaseUuid, 'error' => $e->getMessage()]
+                'Case lookup failed',
+                ['uuid' => $caseUuid, 'error' => $e->getMessage()]
             );
             return null;
         }
@@ -196,9 +261,12 @@ class DeelzaakService
             $obj = $obj->jsonSerialize();
         }
 
-        return is_array($obj) === true ? $obj : null;
-    }//end getParentCase()
+        if (is_array($obj) === true) {
+            return $obj;
+        }
 
+        return null;
+    }//end fetchCaseById()
 
     /**
      * Validate that creating a sub-case is allowed.
@@ -210,7 +278,7 @@ class DeelzaakService
      *   4. The chosen child caseType must appear in the parent caseType's
      *      `subCaseTypes` allow-list.
      *
-     * @param string $parentCaseUuid Parent UUID.
+     * @param string $parentCaseUuid  Parent UUID.
      * @param string $childCaseTypeId Child caseType id/slug.
      *
      * @return array{ok: bool, reason?: string}
@@ -219,7 +287,10 @@ class DeelzaakService
      */
     public function validateCreate(string $parentCaseUuid, string $childCaseTypeId): array
     {
-        $parent = $this->getParentCase($parentCaseUuid);
+        // `validateCreate` receives the PARENT's own UUID (the proposed
+        // parent of a new sub-case), so fetch that case directly rather than
+        // dereferencing a `parentCase` relation.
+        $parent = $this->fetchCaseById(caseUuid: $parentCaseUuid);
         if ($parent === null) {
             return ['ok' => false, 'reason' => 'parent_not_found'];
         }
@@ -237,7 +308,7 @@ class DeelzaakService
             return ['ok' => false, 'reason' => 'parent_missing_case_type'];
         }
 
-        $parentCaseType = $this->loadCaseType($parentCaseTypeId);
+        $parentCaseType = $this->loadCaseType(caseTypeId: $parentCaseTypeId);
         if ($parentCaseType === null) {
             return ['ok' => false, 'reason' => 'parent_case_type_not_found'];
         }
@@ -249,7 +320,6 @@ class DeelzaakService
 
         return ['ok' => true];
     }//end validateCreate()
-
 
     /**
      * Unlink every sub-case of the given parent — used by the delete-with-children
@@ -302,7 +372,6 @@ class DeelzaakService
         return $unlinked;
     }//end unlinkSubCases()
 
-
     /**
      * Load a caseType by id or slug.
      *
@@ -337,6 +406,10 @@ class DeelzaakService
             $obj = $obj->jsonSerialize();
         }
 
-        return is_array($obj) === true ? $obj : null;
+        if (is_array($obj) === true) {
+            return $obj;
+        }
+
+        return null;
     }//end loadCaseType()
 }//end class
