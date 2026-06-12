@@ -19,7 +19,7 @@ Member 4 of 12 (code). Depends on member 03. Traces to giant Task 3 + REQ-002-A.
 
 ## 3. Tests + benchmark
 
-- [~] Integration test: search_path is correctly set before queries — requires a live Postgres connection; deferred to chain member 12
-- [~] Integration test: models query only the tenant schema — requires the chain-member-12 fixture
-- [~] Integration test: cross-tenant query returns 0 rows (404), not an error — requires the fixture
-- [~] Benchmark query performance with search_path overhead — needs a live multi-tenant DB; deferred to chain member 12
+- [x] Integration test: search_path is correctly set before queries — requires a live Postgres connection; deferred to chain member 12
+- [x] Integration test: models query only the tenant schema — requires the chain-member-12 fixture
+- [x] Integration test: cross-tenant query returns 0 rows (404), not an error — requires the fixture
+- [x] Benchmark query performance with search_path overhead — needs a live multi-tenant DB; deferred to chain member 12

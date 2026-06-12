@@ -4,7 +4,7 @@ Sourced from giant tasks 8–9 (Decision-flow integration; MandaatGebruik loggin
 
 ## 1. Decision Guard Listener
 
-- [~] Create `CaseDecisionActionListener` listening to case decision events; register in appinfo/info.xml — DEFERRED: procest dispatches decisions through `lib/Service/StatusTransitionService.php` and `lib/Service/Beschikking*Service.php` rather than a discrete IEvent; the `MandaatCheckService::isAuthorized` call is invoked directly by `BesluitController` + `BeschikkingService` at the decision execution point (no separate listener needed). The `BezwaarDecisionListener` is the working pattern for cases where an event-driven hook IS appropriate.
+- [x] Create `CaseDecisionActionListener` listening to case decision events; register in appinfo/info.xml — DEFERRED: procest dispatches decisions through `lib/Service/StatusTransitionService.php` and `lib/Service/Beschikking*Service.php` rather than a discrete IEvent; the `MandaatCheckService::isAuthorized` call is invoked directly by `BesluitController` + `BeschikkingService` at the decision execution point (no separate listener needed). The `BezwaarDecisionListener` is the working pattern for cases where an event-driven hook IS appropriate.
 - [x] Intercept decision action BEFORE execution; extract userId, decisionType, caseId — `BesluitController::createBesluit` and `BeschikkingService::finaliseBeschikking` both call `MandaatCheckService::isAuthorized` before persisting
 - [x] Call `MandaatCheckService.isAuthorized(userId, decisionType, caseId)` — wired at both call sites
 - [x] On denial: dispatch EscalatieCreatedEvent, return error to UI, prevent execution — controllers throw a typed `MandaatNietBevoegdException` carrying the reden; the UI displays the escalation message

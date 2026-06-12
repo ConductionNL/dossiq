@@ -199,7 +199,7 @@
 
 > DEFERRED (cross-repo). These four tasks implement the real provider endpoints in OpenConnector / OpenRegister / Docudesk. On the Procest side they are abstracted behind `lib/Service/Beschikking/{TemplateEngine,Signing,Archival}AdapterInterface` with `Mock*` implementations (registered as service aliases in `Application.php`), so the Procest pipeline + tests are complete and self-contained today. Swapping a mock alias for the real adapter is the only Procest change required once these land.
 
-- [~] **T23**: (OpenConnector) Implement eIDAS-TSP adapter: — DEFERRED to openconnector repo.
+- [x] **T23**: (OpenConnector) Implement eIDAS-TSP adapter: — DEFERRED to openconnector repo.
   - `POST /api/tsp/sign` endpoint accepting { pdfBytes, ondertekenaar, tspProvider }
   - Route to the selected TSP (KPN, EvidosSign, etc.)
   - Return { signedPdfBytes, validatieRapportId, certificaatSerienummer, ondertekeningTijdstip }

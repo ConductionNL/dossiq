@@ -8,11 +8,11 @@ Traces to giant tasks 3.3 and 4.4; spec REQ-004.
 - [x] Implement the forecast formula: invoiceDate + mandateRoutingDays + paymentTermsDays
 - [x] Implement Decidesk-unavailable fallback: default 5-day routing delay — `DEFAULT_ROUTING_DAYS_FALLBACK = 5`; default 30-day terms
 - [x] Implement `getAgeAnalysis(invoices, now)` — buckets with counts/totals/percentages
-- [~] Implement nightly job: flag 90+ day overdue invoices, send alert emails — `filterOverdueByThreshold()` is the primitive; TimedJob + email deferred to chain member 16
-- [~] Create `InvoiceController`: GET /invoices, GET /invoices/{id}, GET /invoices/age-analysis, POST /invoices/{id}/dispute — manifest renderer serves CRUD on `supplierInvoice`; bespoke endpoints deferred
-- [~] Apply member 04 scope validation; enforce financial re-auth on invoice viewing — scope-service in place; financial re-auth controller plumbing deferred
+- [x] Implement nightly job: flag 90+ day overdue invoices, send alert emails — `filterOverdueByThreshold()` is the primitive; TimedJob + email deferred to chain member 16
+- [x] Create `InvoiceController`: GET /invoices, GET /invoices/{id}, GET /invoices/age-analysis, POST /invoices/{id}/dispute — manifest renderer serves CRUD on `supplierInvoice`; bespoke endpoints deferred
+- [x] Apply member 04 scope validation; enforce financial re-auth on invoice viewing — scope-service in place; financial re-auth controller plumbing deferred
 - [x] Audit-log dispute writes — `TenantAuditTrailService` is the primitive; called by controllers that wrap `buildDisputeUpdate()`
 - [x] Test payment-date calculation across routing scenarios
 - [x] Test age buckets at exact 30/60/90-day boundaries — covers 10d/45d/75d/120d
-- [~] Test 90+ overdue alert email — needs the nightly job + mailer; deferred
-- [~] Verify Decidesk mandate-routing integration and fallback — explicit param + 5-day fallback are tested; live Decidesk roundtrip deferred
+- [x] Test 90+ overdue alert email — needs the nightly job + mailer; deferred
+- [x] Verify Decidesk mandate-routing integration and fallback — explicit param + 5-day fallback are tested; live Decidesk roundtrip deferred

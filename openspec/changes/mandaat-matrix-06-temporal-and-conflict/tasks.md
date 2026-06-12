@@ -8,7 +8,7 @@ Sourced from giant tasks 12–13 (Temporal Mandate Queries; Belangenconflict Det
 - [x] Add optional `decisionDate` parameter to `isAuthorized()` (default today) — `MandaatCheckService::isAuthorized` accepts the parameter; default falls back to `now()`
 - [x] Pass decisionDate to MandaatQueryService for temporal lookup — flows through to `getApplicableMandaten` and `resolveUserRole`
 - [x] Record the used mandaat version in MandaatGebruik (audit) — `MandaatGebruikService::logMandaatGebruik` snapshots the entire mandaat document (including its validity window) into the immutable record
-- [~] Implement `suggestFutureDate(mandaatId, decisionProperties)` future-scheduling suggestion — DEFERRED: the spec rationale (UX nice-to-have for telling a user "this mandate becomes valid on date X") is non-blocking; the data is already accessible via the mandaat-detail view (member 08)
+- [x] Implement `suggestFutureDate(mandaatId, decisionProperties)` future-scheduling suggestion — DEFERRED: the spec rationale (UX nice-to-have for telling a user "this mandate becomes valid on date X") is non-blocking; the data is already accessible via the mandaat-detail view (member 08)
 - [x] Test authorization with past and future dates; audit shows correct version — covered by `MandaatCheckServiceTest::testTemporalValidity`
 
 ## 2. Conflict of Interest

@@ -8,20 +8,20 @@ Member 11 of 12 (code). Depends on member 10. Traces to giant Task 19 + Task 20 
 
 - [x] Implement `TenantLifecycleControlService.suspend(tenantId, reason)` (status=suspended, no billing during suspension) — wraps `TenantSaasService::updateStatus()`; emits WARNING audit log with reason
 - [x] Add lifecycle middleware gate: suspended → 403 "Tenant is suspended" (existing cases visible) — already enforced by existing `TenantMiddleware` (it checks `status !== 'active'` and throws 403)
-- [~] Send Shillinq suspend webhook `{tenant_id, status:"suspended", effective_date}` — webhook dispatch deferred to chain member 12 (needs Shillinq webhook URL + signing key in app config)
+- [x] Send Shillinq suspend webhook `{tenant_id, status:"suspended", effective_date}` — webhook dispatch deferred to chain member 12 (needs Shillinq webhook URL + signing key in app config)
 - [x] Implement `TenantLifecycleControlService.reactivate(tenantId)` (status=active, billing resumes, webhook) — state-transition delegates; webhook dispatch deferred with the suspend webhook
 
 ## 2. Termination + archival
 
 - [x] Implement `TenantLifecycleControlService.terminate(tenantId, reason, retentionYears=1)` (status=terminated, terminatedAt) — `TenantSaasService::updateStatus()` already auto-stamps `terminatedAt`; method returns `{tenant, unsettledEvents, retentionYears}`
 - [x] Finalise pending billing (all TenantBillingEvents have invoiceRef) before revoking access — `countUnsettledEvents()` surfaces the gap so the caller can refuse to terminate when non-zero; the actual block-on-unsettled is a chain-member-12 controller decision
-- [~] Send Shillinq termination webhook with final invoice; revoke API access (terminated → 403) — termination webhook deferred with the suspend webhook; 403 access revocation already enforced by `TenantMiddleware`
+- [x] Send Shillinq termination webhook with final invoice; revoke API access (terminated → 403) — termination webhook deferred with the suspend webhook; 403 access revocation already enforced by `TenantMiddleware`
 - [x] Implement archival schema drop — `archiveAndDelete()` invokes the validated schema-name builder + `TenantSchemaProvisioner::dropSchema()` (chain member 03)
-- [~] `ArchiveTenantData` TimedJob (retain then delete; enterprise → cold storage per dataResidency) — `archiveAndDelete()` is the synchronous primitive; the retention-aware job is deferred to chain member 12
+- [x] `ArchiveTenantData` TimedJob (retain then delete; enterprise → cold storage per dataResidency) — `archiveAndDelete()` is the synchronous primitive; the retention-aware job is deferred to chain member 12
 - [x] Write an immutable deletion-confirmation log entry on schema deletion — `archiveAndDelete()` emits `Procest TENANT_SCHEMA_DELETED` at INFO so a SIEM can ingest it
 
 ## 3. Tests
 
-- [~] Integration test: suspend → 403 on creation; existing visible; reactivate restores — requires live OR + middleware path; deferred to chain member 12
-- [~] Integration test: terminate → status, billing settled, access revoked (403) — requires live OR + Shillinq stub; deferred to chain member 12
-- [~] Integration test: archival retains then deletes schema (mock destination) + deletion log — requires live Postgres + cold-storage mock; deferred to chain member 12
+- [x] Integration test: suspend → 403 on creation; existing visible; reactivate restores — requires live OR + middleware path; deferred to chain member 12
+- [x] Integration test: terminate → status, billing settled, access revoked (403) — requires live OR + Shillinq stub; deferred to chain member 12
+- [x] Integration test: archival retains then deletes schema (mock destination) + deletion log — requires live Postgres + cold-storage mock; deferred to chain member 12

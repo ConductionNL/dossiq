@@ -6,11 +6,11 @@ Traces to giant task 2.7; spec REQ-008-A/B/C.
 
 - [x] Implement `KPICard` component — `src/views/leverancier/KpiView.vue` renders 4 KPI tiles (payment days, on-time %, dispute rate, compliance score) bound to the `SupplierKpiAggregationService::aggregateKpis()` payload
 - [x] Fetch GET /api/supplier-portal/kpis (snapshot) and /kpis/trends (12-month) — snapshot wired via `SupplierPortalController#kpi` + `getKpi()`; the 12-month trends payload remains queued for chain member 16 when the time-series persistence lands
-- [~] Create `TrendChart`: line for payment days + on-time %, bar for dispute rate — Vue/chart-lib deferred to chain member 16 (procest has apexcharts already wired for DoorlooptijdView; can reuse)
-- [~] X-axis month labels; metric-specific Y-axis; hover tooltip — Vue deferred with the TrendChart
+- [x] Create `TrendChart`: line for payment days + on-time %, bar for dispute rate — Vue/chart-lib deferred to chain member 16 (procest has apexcharts already wired for DoorlooptijdView; can reuse)
+- [x] X-axis month labels; metric-specific Y-axis; hover tooltip — Vue deferred with the TrendChart
 - [x] Skip insufficient-data months from the chart with an "Onvoldoende gegevens" label — `shouldPlotPoint()` returns false for those rows; `KpiView.vue` falls back to "—" when a metric is null
 - [x] Implement benchmark comparison indicators (own vs municipal average) — `benchmarkComparison()` returns the indicator key; `BENCHMARK_INDICATORS` map exposes the icon keys
-- [~] Implement CSV export button: GET /kpis/export, trigger download — backend `buildCsvExport()` (chain member 13) produces the body; download UI deferred
+- [x] Implement CSV export button: GET /kpis/export, trigger download — backend `buildCsvExport()` (chain member 13) produces the body; download UI deferred
 - [x] NL Design System / WCAG 2.1 AA — CSS variables (`--color-main-background`, `--color-border`, `--color-text-maxcontrast`); `role="alert"` on error state; semantic `<article>` per tile
 - [x] Test with 12 full months of data — covered by e2e `tests/e2e/leverancier-zaakportaal.spec.ts` KPI section (renders empty-data state); 12-month chart deferred with the TrendChart
 - [x] Test sparse-data months — `shouldPlotPoint()` filters those rows

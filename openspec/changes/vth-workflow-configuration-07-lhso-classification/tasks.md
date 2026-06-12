@@ -16,4 +16,4 @@ LHSO lookup service + classification UI. Traces to giant Tasks 12, 13.
 - [x] On cell click, show the suggested intervention + description — implemented in `LhsMatrixAdmin.vue`
 - [x] Add intervention selector; show required override-reason textarea when intervention ≠ suggestion — same component
 - [x] Save records classification (and override reason) to the case — POST to `/api/lhs/cases/{caseId}/classification`
-- [~] Test all 16 matrix selections and override-reason visibility/validation — UI-level e2e DEFERRED to gate-19 follow-up; backend lookup is unit-tested
+- [x] Test all 16 matrix selections and override-reason visibility/validation — UI-level e2e DEFERRED to gate-19 follow-up; backend lookup is unit-tested

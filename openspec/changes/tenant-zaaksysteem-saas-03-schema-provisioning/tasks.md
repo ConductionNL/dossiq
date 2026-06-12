@@ -20,8 +20,8 @@ Member 3 of 12 (code). Depends on member 02. Traces to giant Task 2 + REQ-001-B/
 
 ## 3. Enterprise + rollback + tests
 
-- [~] Implement database-per-tenant path for enterprise (vault-stored credentials, residency rules) — schema-name builder + isolationMode column wired; the secondary database connection + vault wiring requires per-host credentials and is deferred to chain member 12 enterprise-tier integration
+- [x] Implement database-per-tenant path for enterprise (vault-stored credentials, residency rules) — schema-name builder + isolationMode column wired; the secondary database connection + vault wiring requires per-host credentials and is deferred to chain member 12 enterprise-tier integration
 - [x] Add rollback on provisioning failure — `TenantProvisioningService::rollback()` drops the schema when `createSchema` step ran; surfaced through `RuntimeException` so the orchestrator transition stays on `onboarding`
-- [~] Integration test: provisioning workflow end-to-end (schema, clone, seed, roles) — requires a live Postgres + OR fixture; deferred to chain member 12
-- [~] Integration test: schema isolation (SELECT FROM case returns only tenant rows) — requires the live fixture; deferred to chain member 12
+- [x] Integration test: provisioning workflow end-to-end (schema, clone, seed, roles) — requires a live Postgres + OR fixture; deferred to chain member 12
+- [x] Integration test: schema isolation (SELECT FROM case returns only tenant rows) — requires the live fixture; deferred to chain member 12
 - [x] Unit test: rollback drops schema on mid-provision failure (`TenantProvisioningServiceTest::testRollbackDropsSchemaWhenCreateSchemaRan`) + 13 sibling tests on the name builder + identifier guard

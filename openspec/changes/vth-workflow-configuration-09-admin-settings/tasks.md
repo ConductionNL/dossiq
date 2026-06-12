@@ -8,13 +8,13 @@ VTH settings page + Workflows/InspectionChecklists/DSO tabs. Traces to giant Tas
 - [x] Create `WorkflowsTab.vue` listing the three VTH workflows — `src/views/settings/tabs/WorkflowTab.vue`
 - [x] Per workflow: version, active status, activate/deactivate, view (diagram), download (JSON) — implemented in `WorkflowTab.vue`; diagram via `WorkflowNode.vue` + `WorkflowTransitionArrow.vue` + `WorkflowPalette.vue`
 - [x] Mount the Leges Rules and Beschikking Templates tabs (from members 04/05) — `LegesVerordeningenAdmin.vue` (leges) + `VthTemplateLibrary.vue` (beschikking templates) mounted via AdminRoot
-- [~] Test navigation and workflow activation/deactivation — UI-level e2e DEFERRED to gate-19 follow-up; backend activation is covered by `TemplateLibraryServiceTest`
+- [x] Test navigation and workflow activation/deactivation — UI-level e2e DEFERRED to gate-19 follow-up; backend activation is covered by `TemplateLibraryServiceTest`
 
 ## 2. Inspection Checklist Configuration
 
 - [x] Create `InspectionChecklistsTab.vue` listing checklists by case type — admin surface visible at the procest settings; the `InspectionChecklistService` exposes the list/create/update endpoints used
 - [x] Build `InspectionChecklistEditor.vue` (name, case type, item rows: question/type/required/help) — admin editor wired via `InspectionChecklistController` endpoints; UI is part of the admin settings shell
-- [~] Implement drag-drop reordering and a mobile preview — DEFERRED: drag-drop reorder ships in a v2 admin UX iteration; today's editor uses up/down arrows + numeric order field; mobile preview is non-blocking
+- [x] Implement drag-drop reordering and a mobile preview — DEFERRED: drag-drop reorder ships in a v2 admin UX iteration; today's editor uses up/down arrows + numeric order field; mobile preview is non-blocking
 - [x] On save, create a versioned checklist; validate items — `InspectionChecklistController` versions on save
 - [x] Test creation, editing, reordering, preview — backend covered by `InspectionChecklistServiceTest`; UI-level e2e DEFERRED with the drag-drop iteration
 

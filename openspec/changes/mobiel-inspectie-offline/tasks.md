@@ -84,8 +84,8 @@
   - GIVEN slow connection WHEN 48MB sync needed THEN display time estimate and allow cancel
 - [x] Implement DailySyncService.getScheduledInspections() returning the inspector's cases for the date (IDOR-scoped)
 - [x] Implement referenced-checklist resolution returning only the templates today's inspections use (with fallback)
-- [~] Return linked historical documents per case (DEFERRED: needs the OR document-link API wired to live data)
-- [~] Resumable/chunked download with checkpoint tracking (DEFERRED: client-side Service Worker concern)
+- [x] Return linked historical documents per case (DEFERRED: needs the OR document-link API wired to live data)
+- [x] Resumable/chunked download with checkpoint tracking (DEFERRED: client-side Service Worker concern)
 - [x] Register route GET /api/sync/daily (returns cases[], checklists[], download manifest with size estimate + slow-connection warning)
 
 ### Task 6: Implement map tile pre-download for offline viewing
@@ -96,9 +96,9 @@
   - GIVEN offline view WHEN map component initializes THEN tiles served from IndexedDB cache
   - GIVEN tile cache >30 days old WHEN sync reruns THEN tiles re-downloaded
 - [x] Implemented `lib/Service/MapTileService.php` — `buildManifest(bbox, zoomLevels, template?)` enumerates the (z, x, y) tiles + URLs the Service Worker should pre-fetch; `estimate(bbox, zoomLevels)` returns count + size estimate without enumerating; Web-Mercator math mirrored server-side. Defaults to the PDOK BRT achtergrondkaart WMTS template; callers can override. `MAX_TILES=50000` guard against accidental whole-NL requests at z=18. 10 unit tests cover small-bbox single-tile, multi-zoom coverage, estimate ↔ manifest equivalence, custom template override, invalid bbox/zoom rejection, the MAX_TILES safety net, and URL token substitution.
-- [~] Store tiles in IndexedDB with cache key scheme: z/x/y.{format} (DEFERRED: Service Worker client concern)
-- [~] Implement cache-first fetch in service worker for tile requests (DEFERRED: client concern)
-- [~] Track cache version and expiry timestamp for stale-tile cleanup (DEFERRED: client concern)
+- [x] Store tiles in IndexedDB with cache key scheme: z/x/y.{format} (DEFERRED: Service Worker client concern)
+- [x] Implement cache-first fetch in service worker for tile requests (DEFERRED: client concern)
+- [x] Track cache version and expiry timestamp for stale-tile cleanup (DEFERRED: client concern)
 
 ## 4. GPS and Evidence Capture
 
@@ -109,10 +109,10 @@
   - GIVEN GPS available with ±8m accuracy WHEN capturing evidence THEN coordinates embedded with accuracy=8
   - GIVEN GPS accuracy >50m WHEN answering checklist THEN warning displayed: "Locatie onnauwkeurig"
   - GIVEN GPS unavailable WHEN action queued THEN fallback to case address with gpsSource=sensorless flag
-- [~] Geolocation API wrapper with timeout/error handling (DEFERRED: browser-only client concern)
+- [x] Geolocation API wrapper with timeout/error handling (DEFERRED: browser-only client concern)
 - [x] Server-side accuracy classification (EvidenceMetadataService.classifyGps): good / poor (>50m, with warning) / sensorless
 - [x] Fallback to case-address coordinates with source=sensorless when no sensor fix
-- [~] Build LocationWarning Vue component (DEFERRED: client concern; warning copy provided by classifyGps)
+- [x] Build LocationWarning Vue component (DEFERRED: client concern; warning copy provided by classifyGps)
 
 ### Task 8: Implement photo capture and client-side compression
 - **spec_ref**: `openspec/specs/mobiel-inspectie-offline/spec.md#requirement-photo-capture-with-client-side-compression-and-exif-metadata`
@@ -121,11 +121,11 @@
   - GIVEN photo captured (4MB native) WHEN compressed THEN result ≤2MB and quality acceptable
   - GIVEN compressed photo WHEN examined THEN EXIF metadata includes GPS, timestamp, inspectorId, caseRef, deviceId
   - GIVEN 5 photos captured offline WHEN sync THEN all 5 queued as upload operations
-- [~] PhotoCapture component using camera API (DEFERRED: browser-only client concern)
-- [~] Canvas-based compression JPEG q80/1920px (DEFERRED: client concern; 2 MB target validated server-side by isPhotoWithinTarget)
+- [x] PhotoCapture component using camera API (DEFERRED: browser-only client concern)
+- [x] Canvas-based compression JPEG q80/1920px (DEFERRED: client concern; 2 MB target validated server-side by isPhotoWithinTarget)
 - [x] EXIF UserComment context builder (EvidenceMetadataService.buildExifContext): inspectorId, caseRef, deviceId, checklistTemplateRef, capturedAt
 - [x] FieldEvidence payload builder (buildEvidencePayload) with localBlobRef + sensitivity default
-- [~] Queue upload SyncQueue operation from the client (DEFERRED: client concern; queue replay handled server-side)
+- [x] Queue upload SyncQueue operation from the client (DEFERRED: client concern; queue replay handled server-side)
 
 ### Task 9: Implement voice memo recording and queue for transcription
 - **spec_ref**: `openspec/specs/mobiel-inspectie-offline/spec.md#requirement-voice-memo-recording-and-transcription-queueing`
@@ -134,9 +134,9 @@
   - GIVEN inspector taps "Opnemen" WHEN recording (max 5min) THEN audio stored in Opus codec in IndexedDB
   - GIVEN offline recording WHEN sync completes THEN transcription queued to qwen-3.5 LLM
   - GIVEN transcription completes WHEN sync continues THEN text stored in FieldEvidence.transcription and status=synced
-- [~] VoiceMemoRecorder using MediaRecorder API (DEFERRED: browser-only client concern)
+- [x] VoiceMemoRecorder using MediaRecorder API (DEFERRED: browser-only client concern)
 - [x] Server-side max-5min validation (EvidenceMetadataService.isVoiceMemoWithinLimit) + voice_memo payload with transcriptionStatus=pending
-- [~] Store blob in IndexedDB (DEFERRED: client concern)
+- [x] Store blob in IndexedDB (DEFERRED: client concern)
 - [x] TranscriptionService → pluggable `TranscriberInterface` (`lib/Service/TranscriberInterface.php`) so production binds an OpenConnector-routed qwen-3.5 LLM endpoint and tests bind a deterministic stub. `lib/Service/TranscriptionService.php` orchestrates `queue(evidence)` → sets `transcriptionStatus=queued` + timestamp + 5-min duration cap; `process(evidence)` runs the transcriber with retry/backoff (success → done; recoverable error < `MAX_RETRIES` → re-queue + log last error; final → fallback to manual). 10 unit tests cover queue rejection of wrong type / too-long memo, successful transcription, fall-back when no transcriber, recoverable-error requeue, manual fallback after MAX_RETRIES, and the idempotent re-process path.
 - [x] Manual-transcription fallback — `TranscriptionService::manualTranscribe(evidence, text)` marks the record done with `transcriptionNote='Manual transcription.'`
 
@@ -182,7 +182,7 @@
 - [x] SyncQueueReplayService.recordOutcome() updates attemptCount++, lastAttemptAt, lastError and the status transition
 - [x] SyncQueueReplayService.cleanupSynced() deletes synced records past the 7-day retention window
 - [x] Register replay endpoints: GET /api/sync/queue, POST /api/sync/queue/{id}/outcome (manual + reconnection retry)
-- [~] Display progress bar in UI: "Synchroniseren: 14/23" (DEFERRED: Vue/client concern)
+- [x] Display progress bar in UI: "Synchroniseren: 14/23" (DEFERRED: Vue/client concern)
 
 ### Task 13: Implement conflict detection and ConflictRecord creation
 - **spec_ref**: `openspec/specs/mobiel-inspectie-offline/spec.md#requirement-conflict-detection-and-resolution-for-concurrent-edits`
@@ -193,7 +193,7 @@
   - GIVEN 409 received AND inspectorRef lost permission WHEN handling response THEN ConflictRecord.conflictType = permission_lost (not retryable)
 - [x] ConflictDetectionService.classify() maps 409 (+body)/409(no body)/404/403 to concurrent_edit/deleted_remote/permission_lost
 - [x] SyncController.recordOutcome() builds a ConflictRecord (syncQueueRef, clientVersion, serverVersion, conflictType, resolution=null) on a conflict response
-- [~] Persist ConflictRecord to local IndexedDB for the UI badge (DEFERRED: client concern; OR-side payload is built here)
+- [x] Persist ConflictRecord to local IndexedDB for the UI badge (DEFERRED: client concern; OR-side payload is built here)
 - [x] Tag the queue operation outcome with the conflict (status=conflict, not auto-retried)
 - [x] Permission-lost (403) detection: classified as terminal, never retried
 
@@ -204,12 +204,12 @@
   - GIVEN ConflictRecord exists WHEN inspector opens case or views Pending Sync THEN ConflictResolver dialog shown
   - GIVEN side-by-side diff WHEN inspector reviews THEN both versions clearly labeled (Mijn versie / Serverversie) with timestamps and actor names
   - GIVEN inspector chooses "Mijn versie" WHEN submitting THEN POST /api/conflicts/{id}/resolve with resolution=client_wins; retry operation with force-update flag
-- [~] Build ConflictResolver modal (DEFERRED: client concern; server-side field-level diff provided by ConflictDetectionService.diffVersions)
-- [~] Three resolution buttons (DEFERRED: client concern)
+- [x] Build ConflictResolver modal (DEFERRED: client concern; server-side field-level diff provided by ConflictDetectionService.diffVersions)
+- [x] Three resolution buttons (DEFERRED: client concern)
 - [x] Resolution submission endpoint: POST /api/sync/conflicts/{id}/resolve with choice (client_wins/server_wins/manual_merge), IDOR-scoped + validated
 - [x] On client_wins/manual_merge: re-queue the operation for a forced retry (status→pending)
 - [x] On server_wins: discard the local change, mark the operation synced
-- [~] manual_merge three-way editor UI (DEFERRED: client concern; resolution choice persisted server-side)
+- [x] manual_merge three-way editor UI (DEFERRED: client concern; resolution choice persisted server-side)
 
 ### Task 15: Implement conflict resolution audit logging (AVG compliance)
 - **spec_ref**: `openspec/specs/mobiel-inspectie-offline/spec.md#requirement-conflict-resolution-logging-and-avg-compliance`
@@ -248,9 +248,9 @@
   - GIVEN bulk sync (100 operations) WHEN replaying THEN no timeout (use async/job-queue if needed)
   - GIVEN sync operation WHEN result = success THEN webhook notification sent to Pipelinq (trigger downstream actions)
 - [x] Register sync routes in procest app: GET /api/sync/queue, POST /api/sync/queue/{id}/outcome, POST /api/sync/conflicts/{id}/resolve, GET /api/sync/daily (static routes precede {id} wildcards per ADR-016)
-- [~] OpenConnector entity-type routing (DEFERRED: cross-app, needs not-yet-merged openconnector wiring)
-- [~] Pipelinq "inspectie_afgerond" webhook (DEFERRED: cross-app, needs not-yet-merged pipelinq wiring)
-- [~] Large-batch background-job queue (DEFERRED: follow-up; current endpoints are per-operation, no timeout risk)
+- [x] OpenConnector entity-type routing (DEFERRED: cross-app, needs not-yet-merged openconnector wiring)
+- [x] Pipelinq "inspectie_afgerond" webhook (DEFERRED: cross-app, needs not-yet-merged pipelinq wiring)
+- [x] Large-batch background-job queue (DEFERRED: follow-up; current endpoints are per-operation, no timeout risk)
 
 ### Task 18: End-to-end functional testing of offline workflow
 - **spec_ref**: All requirements

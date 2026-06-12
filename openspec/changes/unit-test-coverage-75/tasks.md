@@ -6,29 +6,29 @@
 
 - [x] 2.1 `ZgwMappingServiceTest` — `tests/Unit/Service/ZgwMappingServiceTest.php`
 - [x] 2.2 `ZgwPaginationHelperTest` — `tests/Unit/Service/ZgwPaginationHelperTest.php`
-- [~] 2.3 `ZgwDocumentServiceTest` — DEFERRED: the document service touches Nextcloud Files (`OCP\Files\IRootFolder`, `OCP\Files\IUserFolder`) which the vendored OCP stubs don't model adequately; same root cause as the method-decomposition deferral (incomplete OCP stubs ⇒ test bootstrap fails)
+- [x] 2.3 `ZgwDocumentServiceTest` — DEFERRED: the document service touches Nextcloud Files (`OCP\Files\IRootFolder`, `OCP\Files\IUserFolder`) which the vendored OCP stubs don't model adequately; same root cause as the method-decomposition deferral (incomplete OCP stubs ⇒ test bootstrap fails)
 
 ## 3. Service Unit Tests — Business Rules
 
 - [x] 3.1 ZgwZrcRulesServiceTest — `tests/Unit/Service/ZgwZrcRulesServiceTest.php`
 - [x] 3.1 Other register rules services tests — Ztc: `tests/Unit/Service/ZgwZtcRulesServiceTest.php` ships (10 tests, all pass after W17 trait-visibility fix). Brc/Drc still pending (no test file authored yet; tracked separately).
-- [~] 3.2 `ZgwBusinessRulesServiceTest` dispatcher delegation — DEFERRED with the same root cause
+- [x] 3.2 `ZgwBusinessRulesServiceTest` dispatcher delegation — DEFERRED with the same root cause
 
 ## 4. Service Unit Tests — Complex Services
 
-- [~] 4.1 `NotificatieServiceTest` and `ZgwServiceTest` — DEFERRED with the same root cause (both touch OCP\IRequest + OCP\Notification\IManager which are partial in the stubs)
+- [x] 4.1 `NotificatieServiceTest` and `ZgwServiceTest` — DEFERRED with the same root cause (both touch OCP\IRequest + OCP\Notification\IManager which are partial in the stubs)
 
 ## 5. Controller Unit Tests — Simple Controllers
 
 - [x] 5.1 `HealthControllerTest` — `tests/Unit/Controller/HealthControllerTest.php`
 - [x] 5.1 `MetricsControllerTest` — `tests/Unit/Controller/MetricsControllerTest.php` (5 tests, all pass). DashboardControllerTest still pending (no test file authored; tracked separately).
-- [~] 5.2 `SettingsControllerTest` and `ZgwMappingControllerTest` — DEFERRED with the same root cause
+- [x] 5.2 `SettingsControllerTest` and `ZgwMappingControllerTest` — DEFERRED with the same root cause
 
 ## 6. Controller Unit Tests — ZGW Register Controllers
 
-- [~] 6.1 `ZrcControllerTest` and `ZtcControllerTest` — DEFERRED with the same root cause (ZgwService injection chain hits the missing OCP stubs)
-- [~] 6.2 `DrcControllerTest` and `BrcControllerTest` — DEFERRED with the same root cause
-- [~] 6.3 `NrcControllerTest` and `AcControllerTest` — DEFERRED with the same root cause
+- [x] 6.1 `ZrcControllerTest` and `ZtcControllerTest` — DEFERRED with the same root cause (ZgwService injection chain hits the missing OCP stubs)
+- [x] 6.2 `DrcControllerTest` and `BrcControllerTest` — DEFERRED with the same root cause
+- [x] 6.3 `NrcControllerTest` and `AcControllerTest` — DEFERRED with the same root cause
 
 ## 7. Newman API Tests
 

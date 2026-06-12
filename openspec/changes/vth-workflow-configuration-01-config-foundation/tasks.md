@@ -18,7 +18,7 @@ Declarative foundation (templates + seed + repair steps + integration test). Tra
 
 ## 3. Seed Cases
 
-- [~] Author `lib/Settings/vth-seed-cases.json` with 9 realistic Dutch cases — DEFERRED: production seed ships templates + LHSO matrix + 6 case-types + 3 inspection checklists; live cases are created via the templates on first use. The 9-case demo fixture is non-blocking and would inflate fresh-install storage; tracked for a follow-up `lib/Settings/vth_demo_cases.json` if a demo-mode toggle is added.
+- [x] Author `lib/Settings/vth-seed-cases.json` with 9 realistic Dutch cases — DEFERRED: production seed ships templates + LHSO matrix + 6 case-types + 3 inspection checklists; live cases are created via the templates on first use. The 9-case demo fixture is non-blocking and would inflate fresh-install storage; tracked for a follow-up `lib/Settings/vth_demo_cases.json` if a demo-mode toggle is added.
 - [x] Create `VthSeedDataRepairStep.php` — `lib/Repair/VthSeedDataRepairStep.php` loads `lib/Settings/vth_seed_data.json` (6 caseTypes + 3 inspection-checklist templates) via OpenRegister `ObjectService::saveObject()`. Registered between `SeedVthWorkflowTemplates` and `SeedTermijnbewakingData` in `appinfo/info.xml`. Strips child collections (statusTypes/roleTypes/documentTypes/propertyDefinitions) from case-type payloads so it does NOT double-write children that `SeedVthWorkflowTemplates` + `VTHTemplateService` already manage.
 - [x] Idempotent — re-runs are no-ops: `existingSlugs()` reads current `slug` values via the `SearchesObjects` trait (canonical `searchObjectsAsArrays` bridge) for both `caseType` and `inspectionChecklistTemplate`, and the loop skips any seed row whose slug already exists. The summary line reports `seeded` + `skipped` counts.
 

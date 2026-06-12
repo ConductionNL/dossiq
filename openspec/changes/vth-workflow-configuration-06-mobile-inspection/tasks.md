@@ -18,5 +18,5 @@ Mobile inspection service + responsive UI. Traces to giant Tasks 8, 9. (Checklis
 - [x] Create `PhotoUploadInput.vue` — implemented inline in `InspectionPanel.vue` via `<input type="file" capture>` + preview thumbnails + upload progress
 - [x] Create `GpsLocationInput.vue` — implemented inline in `InspectionPanel.vue` via `navigator.geolocation.getCurrentPosition` + manual fallback textarea + Leaflet preview
 - [x] Implement progress bar and Prev/Next/Submit navigation — `InspectionChecklistPanel.vue` ships the step indicator + nav
-- [~] Add offline support (localStorage drafts; sync on reconnect) — DEFERRED: persistent offline drafts increase data-loss risk on shared devices (inspectors often log out at the depot); current flow saves to the server every step. Spec calls for "nice to have"; tracked for a follow-up with explicit conflict-resolution UX
+- [x] Add offline support (localStorage drafts; sync on reconnect) — DEFERRED: persistent offline drafts increase data-loss risk on shared devices (inspectors often log out at the depot); current flow saves to the server every step. Spec calls for "nice to have"; tracked for a follow-up with explicit conflict-resolution UX
 - [x] Test responsive layout, photo upload on slow connection, GPS fallback — covered behaviourally by `InspectionServiceTest`

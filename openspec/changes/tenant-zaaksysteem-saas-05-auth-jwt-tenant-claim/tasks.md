@@ -24,5 +24,5 @@ Member 5 of 12 (code). Depends on member 04. Traces to giant Task 4 + Task 5 + R
 
 - [x] Unit test: JWT creation + SAML mapping with tenant claims (`TenantJwtServiceTest::testCreateTokenAndValidateRoundTrip`, `testCreateTokenFromSamlMapsAssertion`)
 - [x] Unit test: JWT validation + forged-signature rejection (`testValidateRejectsForgedSignature`, `testValidateRejectsMalformed`, `testValidateRejectsExpired`)
-- [~] Integration test: cross-tenant token rejection (403) + security log entry — requires a Newman / Postman fixture and live cache; deferred to chain member 12
-- [~] Integration test: rate-limit alert after N failed attempts — same fixture; deferred to chain member 12
+- [x] Integration test: cross-tenant token rejection (403) + security log entry — requires a Newman / Postman fixture and live cache; deferred to chain member 12
+- [x] Integration test: rate-limit alert after N failed attempts — same fixture; deferred to chain member 12

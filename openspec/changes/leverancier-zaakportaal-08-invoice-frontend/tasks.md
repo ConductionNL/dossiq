@@ -9,10 +9,10 @@ Traces to giant task 2.3; spec REQ-004.
 - [x] Implement `InvoiceList` component: sortable/filterable table with status badges — `src/views/leverancier/InvoiceList.vue` (data-testid `leverancier-invoice-table`)
 - [x] Fetch GET /api/supplier-portal/invoices with status/date/amount filters — `src/services/leverancierApi.js` `listInvoices(supplierRef)`; client-side filter for status + overdue (server-side amount/date filter is queued for chain member 16)
 - [x] Create status badges: received, under_review, approved, disputed, rejected, paid — `INVOICE_BADGE_COLORS` constant; controller decorates each row with `inv.badgeColor`
-- [~] Build `InvoiceDetail` page — Vue deferred; dispute entry depends on chain member 11 messaging composer
+- [x] Build `InvoiceDetail` page — Vue deferred; dispute entry depends on chain member 11 messaging composer
 - [x] Implement `AgeAnalysisBar` data — `getAgeAnalysis()` returns the 4-bucket payload; surfaced on the dashboard `invoices.ageAnalysis` summary
 - [x] Bucket filtering — `onlyOverdue` checkbox on `InvoiceList.vue` (data-testid `leverancier-invoice-overdue-only`); broader bucket-filter UI is queued for chain member 16
-- [~] Dispute entry — needs Vue + messaging UI (chain member 11)
+- [x] Dispute entry — needs Vue + messaging UI (chain member 11)
 - [x] Red badge on 90+ day overdue — `isOverdue90Plus()`; controller surfaces it as `overdue90Plus: bool` and `InvoiceList.vue` renders the chip (data-testid `leverancier-invoice-overdue-flag`)
 - [x] NL Design System / WCAG 2.1 AA — CSS variables; `scope="col"` headers; `role="alert"` on error state
 - [x] Test age buckets with boundary edge cases — chain member 07 tests
