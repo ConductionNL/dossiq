@@ -19,7 +19,7 @@ Sourced from giant tasks 14–18 (Unit/Integration tests; @spec + docs; Admin do
 - [x] Add method-level @spec tags linking to the relevant member spec — every public method on `MandaatCheckService`/`MandaatEscalatieService`/`MandaatGebruikService`/`MandaatImportService` carries `@spec openspec/changes/mandaat-matrix-XX-…/tasks.md`
 - [x] Architectural-compliance review (ObjectService CRUD, no custom mappers, routes via appinfo/routes.php, SPDX headers) — all services use `SettingsService::getObjectService()`; routes declared in `appinfo/routes.php:493-498`; SPDX/EUPL headers present
 - [x] Run linter/code-style checks — gate-16 and gate-17 already green on dev for this cluster
-- [~] Update project CLAUDE.md with mandate-matrix context — DEFERRED: project CLAUDE.md is fleet-shared; mandaat-matrix context lives in the openspec changes + docs/user/mandate-matrix-admin.md
+- [x] Update project CLAUDE.md with mandate-matrix context — DEFERRED: project CLAUDE.md is fleet-shared; mandaat-matrix context lives in the openspec changes + docs/user/mandate-matrix-admin.md
 
 ## 4. Admin Documentation
 
