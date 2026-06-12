@@ -24,7 +24,7 @@ Member 1 of 12 (config). No predecessor. Traces to giant Task 1, 7, 10, 13, 16, 
 
 ## 3. OpenAPI + integration test
 
-- [~] Document the seven tenant schemas in the OpenAPI 3.0 component definitions — schemas already live inside the `openapi: 3.0.0` register template (which IS the component-definitions doc); a separate hand-written OpenAPI export is deferred to chain member 12
+- [x] Document the seven tenant schemas in the OpenAPI 3.0 component definitions — schemas already live inside the `openapi: 3.0.0` register template (which IS the component-definitions doc); a separate hand-written OpenAPI export is deferred to chain member 12
 - [x] Integration test: assert the seven schemas materialise with documented required properties (`TenantSaasRegisterSchemasTest::testSevenTenantSchemasDeclared`)
 - [x] Integration test: assert tier templates + default-tenant onboarding template are queryable via the register template (`testTierQuotaTemplatesSeeded`, `testDefaultOnboardingTemplateSeeded`)
-- [~] Integration test: assert a tenant-context query returns only the requesting tenant's rows (REQ-009) — requires a live OR-loaded NC stack; deferred to chain member 12 isolation-tests-compliance
+- [x] Integration test: assert a tenant-context query returns only the requesting tenant's rows (REQ-009) — requires a live OR-loaded NC stack; deferred to chain member 12 isolation-tests-compliance
