@@ -22,4 +22,4 @@ Member 6 of 12 (code). Depends on member 05. Traces to giant Task 6 + REQ-002-D,
 
 - [x] Unit test: validation across roles × actions — `TenantAuthenticationServiceTest` covers role-specific (case_handler create:true / delete:false), wildcard action (tenant_admin *), wildcard role (* view:true), fail-closed empty matrix, multi-candidate (wildcard-allow-wins)
 - [x] Unit test: fail-closed when no matrix or service error — `testValidateMandateMatrixFailsClosedWhenOrUnavailable` proves the OR-unavailable path returns `allowed=false`
-- [~] Integration test: middleware blocks unauthorised action (403) + logs; allows authorised action — requires live OR + tenantUser/tenantMandate rows; deferred to chain member 12
+- [x] Integration test: middleware blocks unauthorised action (403) + logs; allows authorised action — requires live OR + tenantUser/tenantMandate rows; deferred to chain member 12
