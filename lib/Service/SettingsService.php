@@ -282,6 +282,20 @@ class SettingsService
         'dossier_clearance_group_map',
         // Baseline clearance for any authenticated user lacking a mapped group.
         'dossier_default_clearance',
+        // GIS / geo viewer settings (gis-integration spec).
+        // Map library used by the frontend viewer ('leaflet' or 'openlayers').
+        'geo_map_library',
+        // Default map centre + zoom (Netherlands) for the cases-on-map view.
+        'geo_default_center_lat',
+        'geo_default_center_lon',
+        'geo_default_zoom',
+        // Pixel radius for client-side marker clustering.
+        'geo_max_cluster_radius',
+        // Toggle: expose the public /wfs/cases OGC WFS endpoint.
+        'geo_wfs_endpoint_enabled',
+        // PDOK Locatieserver cache TTL (seconds) + endpoint override.
+        'pdok_locatieserver_cache_ttl',
+        'pdok_locatieserver_url',
     ];
 
     /**
