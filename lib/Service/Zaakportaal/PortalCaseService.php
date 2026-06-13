@@ -175,6 +175,8 @@ class PortalCaseService
      * @param array<string, mixed> $case The raw case.
      *
      * @return array<string, mixed> The detail shape.
+     *
+     * @spec openspec/specs/zaakportaal-mijngemeente/spec.md
      */
     private function toDetail(array $case): array
     {
