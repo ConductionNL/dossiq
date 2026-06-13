@@ -22,8 +22,10 @@ Member 8 of 12 (code). Depends on member 07. Traces to giant Task 10 + Task 11 +
 ## 3. Domain provisioning + tests
 
 - [x] Implement `DomainProvisioningService` (validateDomain, requestACME DNS challenge, installCertificate) — live ACME wiring needs cert-manager infra; deferred to chain member 12
-- [ ] Let's Encrypt integration + cert install in reverse proxy — same deferral
-- [ ] Subdomain → tenant resolution feeding the context middleware — context middleware already accepts `X-Tenant-Id` header; subdomain lookup wires through once a domain provisioning service lands
+- [~] Let's Encrypt integration + cert install in reverse proxy
+  - **Deferred 2026-06-13 (infra, not app code)**: ACME issuance + certificate installation live in the reverse-proxy / cert-manager layer, outside the Nextcloud app. `DomainProvisioningService` already exposes `requestACME`/`installCertificate` seams; the live wiring is an infrastructure concern deferred to chain member 12, not a procest code deliverable.
+- [~] Subdomain → tenant resolution feeding the context middleware
+  - **Deferred 2026-06-13 (infra dependency)**: `TenantContextMiddleware` already resolves tenants from the `X-Tenant-Id` header (the in-app contract). Mapping an incoming subdomain to a tenant id is a reverse-proxy / domain-provisioning concern that wires through once the domain provisioning service (chain member 12, infra) lands. No procest-side code gap.
 - [x] Integration test: config CRUD + logo upload + feature flags — requires live OR; deferred to chain member 12
 - [x] Unit test: theming-tokens API + injection; custom-CSS sanitiser rejects malicious rules — 6 of the 16 new tests cover sanitiser + theming-token paths
 - [x] Integration test: domain provisioning workflow (mockable) + ACME error handling — deferred with the domain service

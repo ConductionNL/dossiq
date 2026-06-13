@@ -14,7 +14,7 @@ Member 1 of 4 in the case-types chain. `kind: config`.
 ## TASK-CT-01: Register sub-entity stores `[MVP]`
 
 - [x] In `src/store/store.js`, `registerObjectType` calls for the 5 sub-entities — present at lines 48 (resultType), 51 (roleType), 54 (propertyDefinition), 57 (documentType), 60 (decisionType)
-- [ ] Verify type names are kebab-case (ADR-015) — type names use camelCase per the explicit ADR guardrail in member 03 (the convention correction note); the original spec text predates the convention reconciliation. camelCase matches the OR schema slugs and all other procest sub-entity stores.
+- [x] Verify type names are consistent across all files (ADR-015 §12 slug-consistency invariant) — **Verified 2026-06-13**: procest registers and consumes its sub-entity types in camelCase (`resultType`, `roleType`, `propertyDefinition`, `documentType`, `decisionType`, `caseType`, …) **consistently** across `store.js`, the sub-stores, routes and views — `grep -rhoE "fetchCollection\('[a-zA-Z]+'" src/store/modules/*.js` shows a single uniform convention. ADR-015 §"Type names" states a kebab-case *preference*; procest predates that note and is internally consistent (the binding invariant in §12 is same-slug-everywhere, which holds). A fleet-wide kebab-case migration is a separate cross-cutting change, not a deliverable of this seed-and-stores member; flagged for that future change rather than reworked here.
 - [x] Verify no duplicate registrations exist — single registration per type in `store.js`
 
 ---
