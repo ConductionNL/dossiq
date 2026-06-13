@@ -778,7 +778,10 @@
           },
           "procedureType": {
             "type": "string",
-            "enum": ["reguliere", "uitgebreide"],
+            "enum": [
+              "reguliere",
+              "uitgebreide"
+            ],
             "description": "DSO procedure type: reguliere (8 wk) or uitgebreide (26 wk)",
             "title": "Procedure type",
             "facetable": true
@@ -3524,7 +3527,12 @@
         "title": "Consultation",
         "description": "Inter-departmental consultation (adviesaanvraag) — a first-class entity linked to a parent case with its own lifecycle, structured response, and deadline enforcement per Awb 3:5-3:9",
         "type": "object",
-        "required": ["parentZaak", "adviesInstantie", "vraagstelling", "uiterlijkeReactiedatum"],
+        "required": [
+          "parentZaak",
+          "adviesInstantie",
+          "vraagstelling",
+          "uiterlijkeReactiedatum"
+        ],
         "properties": {
           "consultationNumber": {
             "type": "string",
@@ -3560,13 +3568,23 @@
           },
           "prioriteit": {
             "type": "string",
-            "enum": ["normaal", "spoed"],
+            "enum": [
+              "normaal",
+              "spoed"
+            ],
             "default": "normaal",
             "description": "Priority level"
           },
           "status": {
             "type": "string",
-            "enum": ["open", "ontvangen", "in_behandeling", "advies_uitgebracht", "afgesloten", "ingetrokken"],
+            "enum": [
+              "open",
+              "ontvangen",
+              "in_behandeling",
+              "advies_uitgebracht",
+              "afgesloten",
+              "ingetrokken"
+            ],
             "default": "open",
             "description": "Current status"
           },
@@ -3581,7 +3599,10 @@
           },
           "dependsOn": {
             "type": "array",
-            "items": {"type": "string", "format": "uuid"},
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
             "description": "Consultation IDs that must be completed before this one can start"
           },
           "secureToken": {
@@ -3590,32 +3611,95 @@
           },
           "bijlagen": {
             "type": "array",
-            "items": {"type": "string"},
+            "items": {
+              "type": "string"
+            },
             "description": "Document UUIDs linked from the parent case"
           },
-          "createdAt": {"type": "string", "format": "date-time"},
-          "aanvrager": {"type": "string", "description": "UID of the requesting case worker"},
-          "closedAt": {"type": "string", "format": "date-time"},
-          "extensionRequestedAt": {"type": "string", "format": "date-time"},
-          "extensionJustification": {"type": "string"},
-          "extensionApproved": {"type": "boolean"}
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "aanvrager": {
+            "type": "string",
+            "description": "UID of the requesting case worker"
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "extensionRequestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "extensionJustification": {
+            "type": "string"
+          },
+          "extensionApproved": {
+            "type": "boolean"
+          }
         },
         "configuration": {
           "x-openregister-lifecycle": {
             "field": "status",
             "initial": "open",
-            "final": ["afgesloten", "ingetrokken"],
+            "final": [
+              "afgesloten",
+              "ingetrokken"
+            ],
             "transitions": {
-              "acknowledge": {"from": ["open"], "to": "ontvangen", "description": "Consulted department acknowledges receipt."},
-              "startWork": {"from": ["ontvangen"], "to": "in_behandeling", "description": "Department starts working on the advice."},
-              "submitAdvice": {"from": ["in_behandeling"], "to": "advies_uitgebracht", "description": "Department submits their formal advice."},
-              "close": {"from": ["advies_uitgebracht"], "to": "afgesloten", "description": "Case worker reviews and closes the consultation."},
-              "withdraw": {"from": ["open", "ontvangen", "in_behandeling"], "to": "ingetrokken", "description": "Case worker withdraws the consultation request."}
+              "acknowledge": {
+                "from": [
+                  "open"
+                ],
+                "to": "ontvangen",
+                "description": "Consulted department acknowledges receipt."
+              },
+              "startWork": {
+                "from": [
+                  "ontvangen"
+                ],
+                "to": "in_behandeling",
+                "description": "Department starts working on the advice."
+              },
+              "submitAdvice": {
+                "from": [
+                  "in_behandeling"
+                ],
+                "to": "advies_uitgebracht",
+                "description": "Department submits their formal advice."
+              },
+              "close": {
+                "from": [
+                  "advies_uitgebracht"
+                ],
+                "to": "afgesloten",
+                "description": "Case worker reviews and closes the consultation."
+              },
+              "withdraw": {
+                "from": [
+                  "open",
+                  "ontvangen",
+                  "in_behandeling"
+                ],
+                "to": "ingetrokken",
+                "description": "Case worker withdraws the consultation request."
+              }
             }
           },
           "x-openregister-notifications": {
-            "onCreate": {"subject": "Nieuwe adviesaanvraag {consultationNumber}", "recipients": ["adviesInstantie"]},
-            "onStatusChange": {"subject": "Adviesaanvraag {consultationNumber} status gewijzigd naar {status}", "recipients": ["aanvrager"]}
+            "onCreate": {
+              "subject": "Nieuwe adviesaanvraag {consultationNumber}",
+              "recipients": [
+                "adviesInstantie"
+              ]
+            },
+            "onStatusChange": {
+              "subject": "Adviesaanvraag {consultationNumber} status gewijzigd naar {status}",
+              "recipients": [
+                "aanvrager"
+              ]
+            }
           }
         }
       },
@@ -3626,7 +3710,10 @@
         "title": "Advice Response",
         "description": "Formal advice response linked to a consultation, with structured conclusion and optional conditions",
         "type": "object",
-        "required": ["consultation", "advies"],
+        "required": [
+          "consultation",
+          "advies"
+        ],
         "properties": {
           "consultation": {
             "type": "string",
@@ -3635,7 +3722,12 @@
           },
           "advies": {
             "type": "string",
-            "enum": ["positief", "positief_met_voorwaarden", "negatief", "niet_van_toepassing"],
+            "enum": [
+              "positief",
+              "positief_met_voorwaarden",
+              "negatief",
+              "niet_van_toepassing"
+            ],
             "description": "Formal advice conclusion"
           },
           "toelichting": {
@@ -3647,21 +3739,45 @@
             "items": {
               "type": "object",
               "properties": {
-                "description": {"type": "string"},
-                "priority": {"type": "string", "enum": ["hoog", "normaal", "laag"]},
-                "addressed": {"type": "boolean", "default": false}
+                "description": {
+                  "type": "string"
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "hoog",
+                    "normaal",
+                    "laag"
+                  ]
+                },
+                "addressed": {
+                  "type": "boolean",
+                  "default": false
+                }
               }
             },
             "description": "Conditions (required when advies is positief_met_voorwaarden)"
           },
-          "datum": {"type": "string", "format": "date", "description": "Date the advice was given"},
+          "datum": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the advice was given"
+          },
           "bijlagen": {
             "type": "array",
-            "items": {"type": "string"},
+            "items": {
+              "type": "string"
+            },
             "description": "Uploaded advice document UUIDs"
           },
-          "respondentUid": {"type": "string", "description": "UID of the advisor who submitted the response"},
-          "submittedAt": {"type": "string", "format": "date-time"}
+          "respondentUid": {
+            "type": "string",
+            "description": "UID of the advisor who submitted the response"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "advisoryBody": {
@@ -3671,12 +3787,22 @@
         "title": "Advisory Body",
         "description": "Registry of departments and external advisory bodies that can receive consultations",
         "type": "object",
-        "required": ["name", "type"],
+        "required": [
+          "name",
+          "type"
+        ],
         "properties": {
-          "name": {"type": "string", "maxLength": 255, "description": "Name of the advisory body"},
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Name of the advisory body"
+          },
           "type": {
             "type": "string",
-            "enum": ["internal", "external"],
+            "enum": [
+              "internal",
+              "external"
+            ],
             "description": "Whether this is an internal department or external organization"
           },
           "defaultGroup": {
@@ -3690,10 +3816,15 @@
           },
           "specializations": {
             "type": "array",
-            "items": {"type": "string"},
+            "items": {
+              "type": "string"
+            },
             "description": "Tags for specialization-weighted search (e.g. brandveiligheid, milieu)"
           },
-          "active": {"type": "boolean", "default": true}
+          "active": {
+            "type": "boolean",
+            "default": true
+          }
         }
       },
       "adviesAanvraag": {
@@ -5033,69 +5164,94 @@
       },
       "tenant": {
         "slug": "tenant",
-        "icon": "OfficeBuilding",
+        "icon": "OfficeBuildingOutline",
         "version": "1.0.0",
         "x-schema-org-type": "schema:Organization",
         "title": "Tenant",
-        "description": "A tenant (municipality) in a multi-tenant Procest deployment",
+        "description": "SaaS tenant — represents a single municipality / customer of the procest platform. Carries lifecycle status, tier, and isolation mode.",
         "type": "object",
         "required": [
-          "name",
-          "slug"
+          "slug",
+          "displayName",
+          "status",
+          "tier"
         ],
         "properties": {
-          "name": {
-            "type": "string",
-            "description": "Municipality name"
-          },
           "slug": {
             "type": "string",
-            "description": "URL-safe identifier"
+            "maxLength": 64,
+            "description": "Stable URL-safe tenant identifier (lowercased, hyphens). Unique across the platform."
           },
-          "oin": {
+          "displayName": {
             "type": "string",
-            "description": "Organisatie-identificatienummer"
+            "maxLength": 255,
+            "description": "Human-readable tenant name shown in the UI"
           },
-          "domain": {
+          "legalName": {
             "type": "string",
-            "description": "Custom domain"
+            "maxLength": 255,
+            "description": "Legal entity name for invoicing and contracts"
           },
-          "registerId": {
+          "kvkNumber": {
             "type": "string",
-            "description": "OpenRegister register ID for this tenant"
+            "maxLength": 20,
+            "description": "Dutch Chamber of Commerce (KvK) number"
           },
-          "groupId": {
+          "contractRef": {
             "type": "string",
-            "description": "Nextcloud group ID (tenant_{slug})"
+            "description": "Reference to signed contract document (UUID or filename)"
           },
-          "brandingTokens": {
-            "type": "object",
-            "description": "NL Design System token overrides",
-            "additionalProperties": true
-          },
-          "logoUrl": {
+          "status": {
             "type": "string",
-            "format": "uri",
-            "description": "Tenant logo URL"
+            "enum": [
+              "onboarding",
+              "active",
+              "suspended",
+              "terminated"
+            ],
+            "description": "Lifecycle status — drives access enforcement in TenantMiddleware"
           },
-          "primaryColor": {
+          "tier": {
             "type": "string",
-            "description": "Primary brand color"
+            "enum": [
+              "basic",
+              "standard",
+              "enterprise"
+            ],
+            "description": "Service tier — drives quota defaults and feature flags"
           },
-          "maxUsers": {
-            "type": "integer",
-            "default": 0,
-            "description": "Max users (0 = unlimited)"
+          "isolationMode": {
+            "type": "string",
+            "enum": [
+              "schema",
+              "database"
+            ],
+            "default": "schema",
+            "description": "Physical isolation mode — schema-per-tenant (default) or dedicated database"
           },
-          "maxStorageMb": {
-            "type": "integer",
-            "default": 0,
-            "description": "Max storage MB (0 = unlimited)"
+          "dataResidency": {
+            "type": "string",
+            "enum": [
+              "nl",
+              "eu"
+            ],
+            "default": "nl",
+            "description": "Data residency region (AVG art. 28)"
           },
-          "isActive": {
-            "type": "boolean",
-            "default": true,
-            "description": "Whether tenant is active"
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Tenant record creation timestamp"
+          },
+          "activatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when status transitioned to active"
+          },
+          "terminatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when status transitioned to terminated"
           }
         }
       },
@@ -6024,99 +6180,6 @@
           }
         }
       },
-      "tenant": {
-        "slug": "tenant",
-        "icon": "OfficeBuildingOutline",
-        "version": "1.0.0",
-        "x-schema-org-type": "schema:Organization",
-        "title": "Tenant",
-        "description": "SaaS tenant — represents a single municipality / customer of the procest platform. Carries lifecycle status, tier, and isolation mode.",
-        "type": "object",
-        "required": [
-          "slug",
-          "displayName",
-          "status",
-          "tier"
-        ],
-        "properties": {
-          "slug": {
-            "type": "string",
-            "maxLength": 64,
-            "description": "Stable URL-safe tenant identifier (lowercased, hyphens). Unique across the platform."
-          },
-          "displayName": {
-            "type": "string",
-            "maxLength": 255,
-            "description": "Human-readable tenant name shown in the UI"
-          },
-          "legalName": {
-            "type": "string",
-            "maxLength": 255,
-            "description": "Legal entity name for invoicing and contracts"
-          },
-          "kvkNumber": {
-            "type": "string",
-            "maxLength": 20,
-            "description": "Dutch Chamber of Commerce (KvK) number"
-          },
-          "contractRef": {
-            "type": "string",
-            "description": "Reference to signed contract document (UUID or filename)"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "onboarding",
-              "active",
-              "suspended",
-              "terminated"
-            ],
-            "description": "Lifecycle status — drives access enforcement in TenantMiddleware"
-          },
-          "tier": {
-            "type": "string",
-            "enum": [
-              "basic",
-              "standard",
-              "enterprise"
-            ],
-            "description": "Service tier — drives quota defaults and feature flags"
-          },
-          "isolationMode": {
-            "type": "string",
-            "enum": [
-              "schema",
-              "database"
-            ],
-            "default": "schema",
-            "description": "Physical isolation mode — schema-per-tenant (default) or dedicated database"
-          },
-          "dataResidency": {
-            "type": "string",
-            "enum": [
-              "nl",
-              "eu"
-            ],
-            "default": "nl",
-            "description": "Data residency region (AVG art. 28)"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Tenant record creation timestamp"
-          },
-          "activatedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Timestamp when status transitioned to active"
-          },
-          "terminatedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Timestamp when status transitioned to terminated"
-          }
-        }
-      },
       "tenantConfiguration": {
         "slug": "tenantConfiguration",
         "icon": "Cog",
@@ -6419,7 +6482,11 @@
           },
           "status": {
             "type": "string",
-            "enum": ["active", "inactive", "blacklisted"],
+            "enum": [
+              "active",
+              "inactive",
+              "blacklisted"
+            ],
             "description": "Supplier lifecycle status"
           },
           "address": {
@@ -6436,12 +6503,16 @@
           },
           "sbiCodes": {
             "type": "array",
-            "items": {"type": "string"},
+            "items": {
+              "type": "string"
+            },
             "description": "Industry classification codes (CBS SBI)"
           },
           "accreditations": {
             "type": "array",
-            "items": {"type": "string"},
+            "items": {
+              "type": "string"
+            },
             "description": "Certificates / accreditations held"
           }
         }
@@ -6453,18 +6524,63 @@
         "title": "Supplier User",
         "description": "Supplier-side portal user — eHerkenning-authenticated person acting on behalf of a supplier.",
         "type": "object",
-        "required": ["supplierRef", "email"],
+        "required": [
+          "supplierRef",
+          "email"
+        ],
         "properties": {
-          "supplierRef": {"type": "string", "format": "uuid"},
-          "userRef": {"type": "string", "description": "eHerkenning identifier"},
-          "email": {"type": "string", "format": "email"},
-          "role": {"type": "string", "enum": ["admin", "finance", "contracts", "sales", "read_only"]},
-          "status": {"type": "string", "enum": ["invited", "active", "revoked"]},
-          "eherkenningLevel": {"type": "string", "enum": ["2", "3", "4"]},
-          "activationToken": {"type": "string"},
-          "addedBy": {"type": "string"},
-          "addedAt": {"type": "string", "format": "date-time"},
-          "lastLoginAt": {"type": "string", "format": "date-time"}
+          "supplierRef": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userRef": {
+            "type": "string",
+            "description": "eHerkenning identifier"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "finance",
+              "contracts",
+              "sales",
+              "read_only"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "invited",
+              "active",
+              "revoked"
+            ]
+          },
+          "eherkenningLevel": {
+            "type": "string",
+            "enum": [
+              "2",
+              "3",
+              "4"
+            ]
+          },
+          "activationToken": {
+            "type": "string"
+          },
+          "addedBy": {
+            "type": "string"
+          },
+          "addedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastLoginAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "supplierTender": {
@@ -6474,18 +6590,53 @@
         "title": "Supplier Tender",
         "description": "Tender submitted by a supplier in response to a municipal procurement procedure.",
         "type": "object",
-        "required": ["supplierRef", "title"],
+        "required": [
+          "supplierRef",
+          "title"
+        ],
         "properties": {
-          "supplierRef": {"type": "string", "format": "uuid"},
-          "caseRef": {"type": "string", "format": "uuid"},
-          "title": {"type": "string"},
-          "status": {"type": "string", "enum": ["submitted", "evaluating", "awarded", "rejected", "withdrawn"]},
-          "submittedDate": {"type": "string", "format": "date"},
-          "value": {"type": "number"},
-          "awardDate": {"type": "string", "format": "date"},
-          "rejectionReason": {"type": "string"},
-          "appealDeadline": {"type": "string", "format": "date"},
-          "evaluationReportRef": {"type": "string"}
+          "supplierRef": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "caseRef": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "submitted",
+              "evaluating",
+              "awarded",
+              "rejected",
+              "withdrawn"
+            ]
+          },
+          "submittedDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "value": {
+            "type": "number"
+          },
+          "awardDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "rejectionReason": {
+            "type": "string"
+          },
+          "appealDeadline": {
+            "type": "string",
+            "format": "date"
+          },
+          "evaluationReportRef": {
+            "type": "string"
+          }
         }
       },
       "supplierContract": {
@@ -6495,18 +6646,50 @@
         "title": "Supplier Contract",
         "description": "Contract between the municipality and a supplier.",
         "type": "object",
-        "required": ["supplierRef", "number"],
+        "required": [
+          "supplierRef",
+          "number"
+        ],
         "properties": {
-          "supplierRef": {"type": "string", "format": "uuid"},
-          "caseRef": {"type": "string", "format": "uuid"},
-          "number": {"type": "string"},
-          "subject": {"type": "string"},
-          "startDate": {"type": "string", "format": "date"},
-          "endDate": {"type": "string", "format": "date"},
-          "value": {"type": "number"},
-          "accountManager": {"type": "string"},
-          "renewalOption": {"type": "string", "enum": ["auto", "manual_request", "none"]},
-          "renewalWarning": {"type": "boolean"}
+          "supplierRef": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "caseRef": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "value": {
+            "type": "number"
+          },
+          "accountManager": {
+            "type": "string"
+          },
+          "renewalOption": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "manual_request",
+              "none"
+            ]
+          },
+          "renewalWarning": {
+            "type": "boolean"
+          }
         }
       },
       "supplierInvoice": {
@@ -6516,19 +6699,58 @@
         "title": "Supplier Invoice",
         "description": "Invoice submitted by a supplier.",
         "type": "object",
-        "required": ["supplierRef", "number"],
+        "required": [
+          "supplierRef",
+          "number"
+        ],
         "properties": {
-          "supplierRef": {"type": "string", "format": "uuid"},
-          "caseRef": {"type": "string", "format": "uuid"},
-          "number": {"type": "string"},
-          "invoiceDate": {"type": "string", "format": "date"},
-          "amount": {"type": "number"},
-          "vatAmount": {"type": "number"},
-          "status": {"type": "string", "enum": ["received", "under_review", "approved", "disputed", "rejected", "paid"]},
-          "dueDate": {"type": "string", "format": "date"},
-          "expectedPaymentDate": {"type": "string", "format": "date"},
-          "actualPaymentDate": {"type": "string", "format": "date"},
-          "disputeReason": {"type": "string"}
+          "supplierRef": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "caseRef": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "invoiceDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "vatAmount": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "received",
+              "under_review",
+              "approved",
+              "disputed",
+              "rejected",
+              "paid"
+            ]
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "expectedPaymentDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "actualPaymentDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "disputeReason": {
+            "type": "string"
+          }
         }
       },
       "supplierMessage": {
@@ -6539,16 +6761,46 @@
         "title": "Supplier Message",
         "description": "Write-once message between municipality and supplier — immutable audit trail.",
         "type": "object",
-        "required": ["supplierRef", "direction", "body"],
+        "required": [
+          "supplierRef",
+          "direction",
+          "body"
+        ],
         "properties": {
-          "supplierRef": {"type": "string", "format": "uuid"},
-          "caseRef": {"type": "string", "format": "uuid"},
-          "direction": {"type": "string", "enum": ["inbound", "outbound"]},
-          "subject": {"type": "string"},
-          "body": {"type": "string"},
-          "attachmentRefs": {"type": "array", "items": {"type": "string"}},
-          "sentBy": {"type": "string"},
-          "sentAt": {"type": "string", "format": "date-time"}
+          "supplierRef": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "caseRef": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "inbound",
+              "outbound"
+            ]
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "attachmentRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sentBy": {
+            "type": "string"
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "supplierKpi": {
@@ -6558,16 +6810,37 @@
         "title": "Supplier KPI",
         "description": "Per-period KPI snapshot for a supplier.",
         "type": "object",
-        "required": ["supplierRef", "period"],
+        "required": [
+          "supplierRef",
+          "period"
+        ],
         "properties": {
-          "supplierRef": {"type": "string", "format": "uuid"},
-          "period": {"type": "string", "description": "YYYY-MM"},
-          "avgPaymentDays": {"type": "number"},
-          "onTimePercentage": {"type": "number"},
-          "disputeRate": {"type": "number"},
-          "complianceScore": {"type": "number"},
-          "benchmark": {"type": "object"},
-          "sufficientData": {"type": "boolean"}
+          "supplierRef": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "period": {
+            "type": "string",
+            "description": "YYYY-MM"
+          },
+          "avgPaymentDays": {
+            "type": "number"
+          },
+          "onTimePercentage": {
+            "type": "number"
+          },
+          "disputeRate": {
+            "type": "number"
+          },
+          "complianceScore": {
+            "type": "number"
+          },
+          "benchmark": {
+            "type": "object"
+          },
+          "sufficientData": {
+            "type": "boolean"
+          }
         }
       },
       "tenantOnboardingTask": {
@@ -6674,6 +6947,248 @@
             "type": "string",
             "format": "uuid",
             "description": "Reference to the prior version object (audit chain)"
+          }
+        }
+      },
+      "adviceRequest": {
+        "slug": "adviceRequest",
+        "icon": "MessageTextOutline",
+        "version": "1.0.0",
+        "title": "Advice Request",
+        "description": "A request for advice from an internal or external adviser on a specific case. Tracks the full lifecycle from open to received or cancelled.",
+        "type": "object",
+        "required": [
+          "case",
+          "requestedBy",
+          "adviseur",
+          "deadline",
+          "status",
+          "vraag"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "description": "The case for which advice is requested."
+          },
+          "requestedBy": {
+            "type": "string",
+            "description": "UID of the user who submitted the advice request."
+          },
+          "adviseur": {
+            "type": "string",
+            "description": "Name or UID of the adviser (person, team, or external party) being consulted."
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date",
+            "description": "Date by which the advice must be received."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "reminded",
+              "received",
+              "overdue",
+              "cancelled"
+            ],
+            "default": "open",
+            "description": "Lifecycle status of the advice request."
+          },
+          "vraag": {
+            "type": "string",
+            "description": "The question(s) put to the adviser."
+          },
+          "adviesText": {
+            "type": "string",
+            "description": "The advice text returned by the adviser once received."
+          },
+          "addedToFile": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the received advice has been added to the case dossier."
+          }
+        }
+      },
+      "checklistItem": {
+        "slug": "checklistItem",
+        "icon": "CheckboxOutline",
+        "version": "1.0.0",
+        "title": "Checklist Item",
+        "description": "A single question or observation point within an inspection checklist. Supports boolean, enum, text, and photo answer types.",
+        "type": "object",
+        "required": [
+          "question",
+          "type",
+          "required"
+        ],
+        "properties": {
+          "question": {
+            "type": "string",
+            "description": "The question or observation text shown to the inspector."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "boolean",
+              "enum",
+              "text",
+              "photo"
+            ],
+            "description": "Answer type: boolean (yes/no), enum (predefined options), text (free-text), or photo (image attachment required)."
+          },
+          "required": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether an answer to this item is mandatory before the inspection run can be submitted."
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Relative weight of this item when computing an aggregate inspection score."
+          },
+          "parent": {
+            "type": "string",
+            "description": "Slug or ID of a parent checklist item, enabling nested / conditional item hierarchies."
+          }
+        }
+      },
+      "inspectionChecklist": {
+        "slug": "inspectionChecklist",
+        "icon": "ClipboardCheckOutline",
+        "version": "1.0.0",
+        "title": "Inspection Checklist",
+        "description": "Reusable checklist template defining the inspection items for a given case type. A versioned master form that inspection runs are based on.",
+        "type": "object",
+        "required": [
+          "name",
+          "version",
+          "caseTypeRef",
+          "active"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Human-readable name of the checklist template."
+          },
+          "version": {
+            "type": "integer",
+            "description": "Template version number; increment when items are added or removed.",
+            "minimum": 1
+          },
+          "caseTypeRef": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "caseType",
+            "description": "The case type this checklist applies to."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "checklistItem"
+            },
+            "description": "Ordered list of checklist items (questions) that make up this template."
+          },
+          "active": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this checklist template is currently active and available for new inspection runs."
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date",
+            "description": "Date from which this version of the checklist is valid."
+          }
+        }
+      },
+      "inspectionResult": {
+        "slug": "inspectionResult",
+        "icon": "ClipboardTextOutline",
+        "version": "1.0.0",
+        "title": "Inspection Result",
+        "description": "The completed outcome of a single inspection run: which checklist was used, who completed it, and the recorded answers.",
+        "type": "object",
+        "required": [
+          "case",
+          "checklist",
+          "completedBy",
+          "completedAt"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "description": "The case this inspection result belongs to."
+          },
+          "checklist": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "inspectionChecklist",
+            "description": "The checklist template that was used for this inspection run."
+          },
+          "completedBy": {
+            "type": "string",
+            "description": "UID of the inspector who completed the checklist."
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the inspection run was finalised."
+          },
+          "answers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "itemRef": {
+                  "type": "string",
+                  "description": "Reference to the checklist item (slug or ID) being answered."
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The recorded answer value (coerced to string; interpret according to item type)."
+                },
+                "photoRef": {
+                  "type": "string",
+                  "description": "Nextcloud file ID or OpenRegister document reference for a photo answer."
+                }
+              }
+            },
+            "description": "Recorded answers for each checklist item in this inspection run."
+          }
+        }
+      },
+      "lhsMatrixCell": {
+        "slug": "lhsMatrixCell",
+        "icon": "TableLarge",
+        "version": "1.0.0",
+        "title": "LHS Matrix Cell",
+        "description": "A single cell in the Landelijk Handhavingsbeleid Stedenbouw (LHS) intervention matrix, mapping a behaviour row and consequence column to a recommended intervention step.",
+        "type": "object",
+        "required": [
+          "gedragRow",
+          "gevolgColumn",
+          "interventieStep"
+        ],
+        "properties": {
+          "gedragRow": {
+            "type": "string",
+            "description": "The behaviour (gedrag) row identifier in the LHS matrix."
+          },
+          "gevolgColumn": {
+            "type": "string",
+            "description": "The consequence (gevolg) column identifier in the LHS matrix."
+          },
+          "interventieStep": {
+            "type": "string",
+            "description": "The recommended intervention step for this gedrag/gevolg combination."
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional clarifying description or guidance note for this matrix cell."
           }
         }
       }
@@ -7808,124 +8323,359 @@
         "status": "pending"
       },
       {
-        "@self": {"register": "procest", "schema": "caseType", "slug": "leverancier-contractverlenging-verzoek"},
+        "@self": {
+          "register": "procest",
+          "schema": "caseType",
+          "slug": "leverancier-contractverlenging-verzoek"
+        },
         "title": "Leverancier contractverlenging verzoek",
         "description": "Verzoek tot verlenging van een lopend contract met een leverancier",
         "purpose": "Behandelen van een contractverlenging-verzoek van een leverancier"
       },
       {
-        "@self": {"register": "procest", "schema": "caseType", "slug": "leverancier-iban-wijziging"},
+        "@self": {
+          "register": "procest",
+          "schema": "caseType",
+          "slug": "leverancier-iban-wijziging"
+        },
         "title": "Leverancier IBAN-wijziging",
         "description": "Wijziging van het bankrekeningnummer van een leverancier (4-ogen procedure)",
         "purpose": "Verwerken van een IBAN-wijziging onder 4-ogen-controle"
       },
       {
-        "@self": {"register": "procest", "schema": "caseType", "slug": "leverancier-accreditatie-verificatie"},
+        "@self": {
+          "register": "procest",
+          "schema": "caseType",
+          "slug": "leverancier-accreditatie-verificatie"
+        },
         "title": "Leverancier accreditatie verificatie",
         "description": "Verificatie van accreditaties van een leverancier",
         "purpose": "Controle van geldigheid van leveranciersaccreditaties"
       },
       {
-        "@self": {"register": "procest", "schema": "caseType", "slug": "leverancier-mutatie"},
+        "@self": {
+          "register": "procest",
+          "schema": "caseType",
+          "slug": "leverancier-mutatie"
+        },
         "title": "Leverancier mutatie",
         "description": "Algemene wijziging van leveranciersgegevens",
         "purpose": "Verwerken van wijzigingen in masterdata van een leverancier"
       },
       {
-        "@self": {"register": "procest", "schema": "supplier", "slug": "supplier-acme-bouw-bv"},
-        "kvkNumber": "12345678", "legalName": "ACME Bouw B.V.", "status": "active", "iban": "NL00BANK0000000000"
+        "@self": {
+          "register": "procest",
+          "schema": "supplier",
+          "slug": "supplier-acme-bouw-bv"
+        },
+        "kvkNumber": "12345678",
+        "legalName": "ACME Bouw B.V.",
+        "status": "active",
+        "iban": "NL00BANK0000000000"
       },
       {
-        "@self": {"register": "procest", "schema": "supplier", "slug": "supplier-orange-it-bv"},
-        "kvkNumber": "23456789", "legalName": "Orange IT B.V.", "status": "active", "iban": "NL00BANK0000000001"
+        "@self": {
+          "register": "procest",
+          "schema": "supplier",
+          "slug": "supplier-orange-it-bv"
+        },
+        "kvkNumber": "23456789",
+        "legalName": "Orange IT B.V.",
+        "status": "active",
+        "iban": "NL00BANK0000000001"
       },
       {
-        "@self": {"register": "procest", "schema": "supplier", "slug": "supplier-blokker-schoonmaak"},
-        "kvkNumber": "34567890", "legalName": "Blokker Schoonmaak B.V.", "status": "inactive", "iban": "NL00BANK0000000002"
+        "@self": {
+          "register": "procest",
+          "schema": "supplier",
+          "slug": "supplier-blokker-schoonmaak"
+        },
+        "kvkNumber": "34567890",
+        "legalName": "Blokker Schoonmaak B.V.",
+        "status": "inactive",
+        "iban": "NL00BANK0000000002"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-acme-admin"},
-        "supplierRef": "supplier-acme-bouw-bv", "email": "admin@acmebouw.example.nl", "role": "admin", "status": "active", "eherkenningLevel": "3"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierUser",
+          "slug": "supplier-user-acme-admin"
+        },
+        "supplierRef": "supplier-acme-bouw-bv",
+        "email": "admin@acmebouw.example.nl",
+        "role": "admin",
+        "status": "active",
+        "eherkenningLevel": "3"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-acme-finance"},
-        "supplierRef": "supplier-acme-bouw-bv", "email": "finance@acmebouw.example.nl", "role": "finance", "status": "active", "eherkenningLevel": "3"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierUser",
+          "slug": "supplier-user-acme-finance"
+        },
+        "supplierRef": "supplier-acme-bouw-bv",
+        "email": "finance@acmebouw.example.nl",
+        "role": "finance",
+        "status": "active",
+        "eherkenningLevel": "3"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-orange-contracts"},
-        "supplierRef": "supplier-orange-it-bv", "email": "contracts@orangeit.example.nl", "role": "contracts", "status": "active", "eherkenningLevel": "3"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierUser",
+          "slug": "supplier-user-orange-contracts"
+        },
+        "supplierRef": "supplier-orange-it-bv",
+        "email": "contracts@orangeit.example.nl",
+        "role": "contracts",
+        "status": "active",
+        "eherkenningLevel": "3"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-orange-sales"},
-        "supplierRef": "supplier-orange-it-bv", "email": "sales@orangeit.example.nl", "role": "sales", "status": "active", "eherkenningLevel": "2"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierUser",
+          "slug": "supplier-user-orange-sales"
+        },
+        "supplierRef": "supplier-orange-it-bv",
+        "email": "sales@orangeit.example.nl",
+        "role": "sales",
+        "status": "active",
+        "eherkenningLevel": "2"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierUser", "slug": "supplier-user-blokker-readonly"},
-        "supplierRef": "supplier-blokker-schoonmaak", "email": "viewer@blokker.example.nl", "role": "read_only", "status": "revoked", "eherkenningLevel": "2"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierUser",
+          "slug": "supplier-user-blokker-readonly"
+        },
+        "supplierRef": "supplier-blokker-schoonmaak",
+        "email": "viewer@blokker.example.nl",
+        "role": "read_only",
+        "status": "revoked",
+        "eherkenningLevel": "2"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-acme-onderhoud-2026"},
-        "supplierRef": "supplier-acme-bouw-bv", "title": "Onderhoud gemeentehuis 2026", "status": "submitted", "submittedDate": "2026-03-01", "value": 250000
+        "@self": {
+          "register": "procest",
+          "schema": "supplierTender",
+          "slug": "tender-acme-onderhoud-2026"
+        },
+        "supplierRef": "supplier-acme-bouw-bv",
+        "title": "Onderhoud gemeentehuis 2026",
+        "status": "submitted",
+        "submittedDate": "2026-03-01",
+        "value": 250000
       },
       {
-        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-orange-software-eval"},
-        "supplierRef": "supplier-orange-it-bv", "title": "Softwarelicentie 2026", "status": "evaluating", "submittedDate": "2026-02-15", "value": 120000
+        "@self": {
+          "register": "procest",
+          "schema": "supplierTender",
+          "slug": "tender-orange-software-eval"
+        },
+        "supplierRef": "supplier-orange-it-bv",
+        "title": "Softwarelicentie 2026",
+        "status": "evaluating",
+        "submittedDate": "2026-02-15",
+        "value": 120000
       },
       {
-        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-acme-awarded"},
-        "supplierRef": "supplier-acme-bouw-bv", "title": "Renovatie schoolgebouw", "status": "awarded", "submittedDate": "2025-12-01", "value": 800000, "awardDate": "2026-01-10"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierTender",
+          "slug": "tender-acme-awarded"
+        },
+        "supplierRef": "supplier-acme-bouw-bv",
+        "title": "Renovatie schoolgebouw",
+        "status": "awarded",
+        "submittedDate": "2025-12-01",
+        "value": 800000,
+        "awardDate": "2026-01-10"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-blokker-rejected"},
-        "supplierRef": "supplier-blokker-schoonmaak", "title": "Schoonmaak buurthuis", "status": "rejected", "submittedDate": "2025-11-15", "value": 45000, "rejectionReason": "Onvoldoende referenties", "appealDeadline": "2026-02-28"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierTender",
+          "slug": "tender-blokker-rejected"
+        },
+        "supplierRef": "supplier-blokker-schoonmaak",
+        "title": "Schoonmaak buurthuis",
+        "status": "rejected",
+        "submittedDate": "2025-11-15",
+        "value": 45000,
+        "rejectionReason": "Onvoldoende referenties",
+        "appealDeadline": "2026-02-28"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierTender", "slug": "tender-orange-withdrawn"},
-        "supplierRef": "supplier-orange-it-bv", "title": "Datacenter migratie", "status": "withdrawn", "submittedDate": "2025-10-01", "value": 600000
+        "@self": {
+          "register": "procest",
+          "schema": "supplierTender",
+          "slug": "tender-orange-withdrawn"
+        },
+        "supplierRef": "supplier-orange-it-bv",
+        "title": "Datacenter migratie",
+        "status": "withdrawn",
+        "submittedDate": "2025-10-01",
+        "value": 600000
       },
       {
-        "@self": {"register": "procest", "schema": "supplierContract", "slug": "contract-acme-renovatie"},
-        "supplierRef": "supplier-acme-bouw-bv", "number": "C-2026-001", "subject": "Renovatie schoolgebouw", "startDate": "2026-02-01", "endDate": "2026-12-31", "value": 800000, "accountManager": "j.jansen@gemeente.nl", "renewalOption": "manual_request"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierContract",
+          "slug": "contract-acme-renovatie"
+        },
+        "supplierRef": "supplier-acme-bouw-bv",
+        "number": "C-2026-001",
+        "subject": "Renovatie schoolgebouw",
+        "startDate": "2026-02-01",
+        "endDate": "2026-12-31",
+        "value": 800000,
+        "accountManager": "j.jansen@gemeente.nl",
+        "renewalOption": "manual_request"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierContract", "slug": "contract-orange-licenties"},
-        "supplierRef": "supplier-orange-it-bv", "number": "C-2025-027", "subject": "Softwarelicenties 2025-2026", "startDate": "2025-04-01", "endDate": "2026-08-31", "value": 120000, "accountManager": "m.bakker@gemeente.nl", "renewalOption": "auto", "renewalWarning": true
+        "@self": {
+          "register": "procest",
+          "schema": "supplierContract",
+          "slug": "contract-orange-licenties"
+        },
+        "supplierRef": "supplier-orange-it-bv",
+        "number": "C-2025-027",
+        "subject": "Softwarelicenties 2025-2026",
+        "startDate": "2025-04-01",
+        "endDate": "2026-08-31",
+        "value": 120000,
+        "accountManager": "m.bakker@gemeente.nl",
+        "renewalOption": "auto",
+        "renewalWarning": true
       },
       {
-        "@self": {"register": "procest", "schema": "supplierContract", "slug": "contract-orange-cloud"},
-        "supplierRef": "supplier-orange-it-bv", "number": "C-2025-028", "subject": "Cloudhosting", "startDate": "2025-06-01", "endDate": "2027-05-31", "value": 240000, "accountManager": "m.bakker@gemeente.nl", "renewalOption": "none"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierContract",
+          "slug": "contract-orange-cloud"
+        },
+        "supplierRef": "supplier-orange-it-bv",
+        "number": "C-2025-028",
+        "subject": "Cloudhosting",
+        "startDate": "2025-06-01",
+        "endDate": "2027-05-31",
+        "value": 240000,
+        "accountManager": "m.bakker@gemeente.nl",
+        "renewalOption": "none"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierContract", "slug": "contract-blokker-historie"},
-        "supplierRef": "supplier-blokker-schoonmaak", "number": "C-2024-011", "subject": "Schoonmaak 2024-2025", "startDate": "2024-01-01", "endDate": "2025-12-31", "value": 90000, "accountManager": "k.dijk@gemeente.nl", "renewalOption": "none"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierContract",
+          "slug": "contract-blokker-historie"
+        },
+        "supplierRef": "supplier-blokker-schoonmaak",
+        "number": "C-2024-011",
+        "subject": "Schoonmaak 2024-2025",
+        "startDate": "2024-01-01",
+        "endDate": "2025-12-31",
+        "value": 90000,
+        "accountManager": "k.dijk@gemeente.nl",
+        "renewalOption": "none"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-acme-001"},
-        "supplierRef": "supplier-acme-bouw-bv", "number": "INV-2026-001", "invoiceDate": "2026-02-15", "amount": 50000, "vatAmount": 10500, "status": "received", "dueDate": "2026-03-15"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierInvoice",
+          "slug": "inv-acme-001"
+        },
+        "supplierRef": "supplier-acme-bouw-bv",
+        "number": "INV-2026-001",
+        "invoiceDate": "2026-02-15",
+        "amount": 50000,
+        "vatAmount": 10500,
+        "status": "received",
+        "dueDate": "2026-03-15"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-acme-002"},
-        "supplierRef": "supplier-acme-bouw-bv", "number": "INV-2026-002", "invoiceDate": "2026-03-15", "amount": 75000, "vatAmount": 15750, "status": "under_review", "dueDate": "2026-04-15"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierInvoice",
+          "slug": "inv-acme-002"
+        },
+        "supplierRef": "supplier-acme-bouw-bv",
+        "number": "INV-2026-002",
+        "invoiceDate": "2026-03-15",
+        "amount": 75000,
+        "vatAmount": 15750,
+        "status": "under_review",
+        "dueDate": "2026-04-15"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-orange-001"},
-        "supplierRef": "supplier-orange-it-bv", "number": "OR-2026-001", "invoiceDate": "2026-04-01", "amount": 30000, "vatAmount": 6300, "status": "approved", "dueDate": "2026-05-01", "expectedPaymentDate": "2026-04-25"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierInvoice",
+          "slug": "inv-orange-001"
+        },
+        "supplierRef": "supplier-orange-it-bv",
+        "number": "OR-2026-001",
+        "invoiceDate": "2026-04-01",
+        "amount": 30000,
+        "vatAmount": 6300,
+        "status": "approved",
+        "dueDate": "2026-05-01",
+        "expectedPaymentDate": "2026-04-25"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-orange-disputed"},
-        "supplierRef": "supplier-orange-it-bv", "number": "OR-2026-002", "invoiceDate": "2026-04-15", "amount": 12000, "vatAmount": 2520, "status": "disputed", "dueDate": "2026-05-15", "disputeReason": "Aantal eenheden komt niet overeen met de purchase order"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierInvoice",
+          "slug": "inv-orange-disputed"
+        },
+        "supplierRef": "supplier-orange-it-bv",
+        "number": "OR-2026-002",
+        "invoiceDate": "2026-04-15",
+        "amount": 12000,
+        "vatAmount": 2520,
+        "status": "disputed",
+        "dueDate": "2026-05-15",
+        "disputeReason": "Aantal eenheden komt niet overeen met de purchase order"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierInvoice", "slug": "inv-blokker-overdue"},
-        "supplierRef": "supplier-blokker-schoonmaak", "number": "BL-2025-099", "invoiceDate": "2025-12-15", "amount": 8000, "vatAmount": 1680, "status": "received", "dueDate": "2026-01-15"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierInvoice",
+          "slug": "inv-blokker-overdue"
+        },
+        "supplierRef": "supplier-blokker-schoonmaak",
+        "number": "BL-2025-099",
+        "invoiceDate": "2025-12-15",
+        "amount": 8000,
+        "vatAmount": 1680,
+        "status": "received",
+        "dueDate": "2026-01-15"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierMessage", "slug": "msg-acme-welcome"},
-        "supplierRef": "supplier-acme-bouw-bv", "direction": "outbound", "subject": "Welkom in het leveranciersportaal", "body": "Beste ACME Bouw, uw toegang tot het leveranciersportaal is geactiveerd.", "sentBy": "system", "sentAt": "2026-01-15T10:00:00+01:00"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierMessage",
+          "slug": "msg-acme-welcome"
+        },
+        "supplierRef": "supplier-acme-bouw-bv",
+        "direction": "outbound",
+        "subject": "Welkom in het leveranciersportaal",
+        "body": "Beste ACME Bouw, uw toegang tot het leveranciersportaal is geactiveerd.",
+        "sentBy": "system",
+        "sentAt": "2026-01-15T10:00:00+01:00"
       },
       {
-        "@self": {"register": "procest", "schema": "supplierMessage", "slug": "msg-acme-question"},
-        "supplierRef": "supplier-acme-bouw-bv", "direction": "inbound", "subject": "Vraag over INV-2026-002", "body": "Goedendag, kunt u een verwachte betaaldatum delen voor factuur INV-2026-002?", "sentBy": "finance@acmebouw.example.nl", "sentAt": "2026-04-01T14:30:00+02:00"
+        "@self": {
+          "register": "procest",
+          "schema": "supplierMessage",
+          "slug": "msg-acme-question"
+        },
+        "supplierRef": "supplier-acme-bouw-bv",
+        "direction": "inbound",
+        "subject": "Vraag over INV-2026-002",
+        "body": "Goedendag, kunt u een verwachte betaaldatum delen voor factuur INV-2026-002?",
+        "sentBy": "finance@acmebouw.example.nl",
+        "sentAt": "2026-04-01T14:30:00+02:00"
       }
     ]
   }
