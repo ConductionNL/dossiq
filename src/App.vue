@@ -8,19 +8,49 @@
 		:formatters="formatters"
 		app-id="procest"
 		:translate="translateForApp"
-		:permissions="permissions" />
+		:permissions="permissions">
+		<!--
+			Host-mounted object sidebar (decidesk pattern). CnAppRoot
+			suppresses its own auto-mounted CnObjectSidebar because this
+			App provides `objectSidebarState`, so the detail-page tab
+			strip (manifest `config.sidebarTabs` on CaseDetail /
+			BezwaarDetail) only renders when we mount the sidebar here.
+			CnDetailPage publishes its tabs into `objectSidebarState`
+			(shared with this slot via CnAppRoot's ancestor-aware
+			provide); we bind those tabs straight through.
+			`:use-registry="false"` keeps the manifest `component:`-based
+			tabs (CaseTasksTab / CaseEmailTab / …) instead of the
+			integration-registry tabs.
+		-->
+		<template #sidebar>
+			<CnObjectSidebar
+				v-if="objectSidebarState.active"
+				:use-registry="false"
+				:title="objectSidebarState.title"
+				:subtitle="objectSidebarState.subtitle"
+				:object-type="objectSidebarState.objectType"
+				:object-id="objectSidebarState.objectId"
+				:register="objectSidebarState.register"
+				:schema="objectSidebarState.schema"
+				:tabs="objectSidebarState.tabs"
+				:hidden-tabs="objectSidebarState.hiddenTabs"
+				:open="objectSidebarState.open"
+				@update:open="objectSidebarState.open = $event" />
+		</template>
+	</CnAppRoot>
 </template>
 
 <script>
 import Vue from 'vue'
 import { translate as ncT } from '@nextcloud/l10n'
-import { CnAppRoot } from '@conduction/nextcloud-vue'
+import { CnAppRoot, CnObjectSidebar } from '@conduction/nextcloud-vue'
 import { initializeStores } from './store/store.js'
 
 export default {
 	name: 'App',
 	components: {
 		CnAppRoot,
+		CnObjectSidebar,
 	},
 
 	/** @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md */
@@ -76,7 +106,21 @@ export default {
 			objectSidebarState: Vue.observable({
 				active: false,
 				open: true,
-				schema: null,
+				// --- Detail-page object-sidebar fields (written by
+				// CnDetailPage.syncSidebarState via inject). Predefined
+				// here so Vue 2 tracks the writes reactively. ---
+				objectType: '',
+				objectId: '',
+				title: '',
+				subtitle: '',
+				register: '',
+				// `schema` doubles as the legacy index-sidebar schema and
+				// the detail-sidebar schema slug; '' is the inert default.
+				schema: '',
+				hiddenTabs: [],
+				tabs: undefined,
+				// --- Legacy index-sidebar fields (kept for the custom
+				// list components that inject `sidebarState`). ---
 				visibleColumns: null,
 				searchValue: '',
 				activeFilters: {},
