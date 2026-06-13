@@ -106,10 +106,24 @@ export default {
 		},
 	},
 	methods: {
+		/**
+		 * Render a diff cell value for display (objects → JSON, null → dash).
+		 *
+		 * @param {*} value The field value.
+		 * @return {string} The display string.
+		 * @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-conflict-detection-and-resolution-for-concurrent-edits
+		 */
 		display(value) {
 			if (value === null || value === undefined) return '—'
 			return typeof value === 'object' ? JSON.stringify(value) : String(value)
 		},
+		/**
+		 * Emit close when the dialog is dismissed.
+		 *
+		 * @param {boolean} open The dialog open state.
+		 * @return {void}
+		 * @spec exclude trivial dialog close bridge, no behaviour
+		 */
 		onDialogClose(open) {
 			if (open === false) {
 				this.$emit('close')

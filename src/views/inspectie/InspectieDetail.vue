@@ -152,6 +152,13 @@ export default {
 				this.loading = false
 			}
 		},
+		/**
+		 * The validation error message for a question, if any.
+		 *
+		 * @param {string} questionId The question id.
+		 * @return {string} The error message or empty string.
+		 * @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-checklist-completion-and-storage
+		 */
 		errorFor(questionId) {
 			const e = this.errors.find((x) => x.questionId === questionId)
 			return e ? e.message : ''

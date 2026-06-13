@@ -93,11 +93,23 @@ export default {
 			return syncIndicator(this.pendingCount, this.offline === false)
 		},
 	},
+	/**
+	 * Wire online/offline listeners (auto-drain on reconnect) + load local state.
+	 *
+	 * @return {Promise<void>}
+	 * @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-automatic-sync-queue-replay-on-network-reconnection
+	 */
 	async mounted() {
 		window.addEventListener('online', this.onOnline)
 		window.addEventListener('offline', this.onOffline)
 		await this.loadLocal()
 	},
+	/**
+	 * Detach the online/offline listeners.
+	 *
+	 * @return {void}
+	 * @spec exclude trivial Vue lifecycle teardown, no behaviour
+	 */
 	beforeDestroy() {
 		window.removeEventListener('online', this.onOnline)
 		window.removeEventListener('offline', this.onOffline)
@@ -165,13 +177,32 @@ export default {
 				this.syncing = false
 			}
 		},
+		/**
+		 * On reconnect: clear offline state and auto-drain the queue.
+		 *
+		 * @return {void}
+		 * @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-automatic-sync-queue-replay-on-network-reconnection
+		 */
 		onOnline() {
 			this.offline = false
 			this.drain()
 		},
+		/**
+		 * On disconnect: flip the indicator to the offline state.
+		 *
+		 * @return {void}
+		 * @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-checklist-completion-and-storage
+		 */
 		onOffline() {
 			this.offline = true
 		},
+		/**
+		 * Map an inspection lifecycle status to a translated label.
+		 *
+		 * @param {string} status The status enum value.
+		 * @return {string} The translated label.
+		 * @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
+		 */
 		statusLabel(status) {
 			const map = {
 				planned: this.t('procest', 'Planned'),
@@ -181,6 +212,13 @@ export default {
 			}
 			return map[status] || status
 		},
+		/**
+		 * Format an ISO timestamp for display.
+		 *
+		 * @param {string} iso The ISO timestamp.
+		 * @return {string} A locale-formatted time string.
+		 * @spec exclude trivial date formatter, no domain behaviour
+		 */
 		formatTime(iso) {
 			if (!iso) return ''
 			return new Date(iso).toLocaleString()
