@@ -69,6 +69,7 @@ import {
 	NcCheckboxRadioSwitch,
 } from '@nextcloud/vue'
 import { generateUrl } from '@nextcloud/router'
+import { canShare as canShareLevel, formatSize as formatBytes } from '../../../utils/dossierHelpers.js'
 import Delete from 'vue-material-design-icons/Delete.vue'
 import History from 'vue-material-design-icons/History.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
@@ -162,13 +163,7 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T06
 		 */
 		canShare() {
-			const hierarchy = [
-				'openbaar', 'beperkt_openbaar', 'intern', 'zaakvertrouwelijk',
-				'vertrouwelijk', 'confidentieel', 'geheim', 'zeer_geheim',
-			]
-			const docIndex = hierarchy.indexOf(this.document.vertrouwelijkheidaanduiding)
-			const threshold = hierarchy.indexOf('vertrouwelijk')
-			return docIndex >= 0 && docIndex < threshold
+			return canShareLevel(this.document.vertrouwelijkheidaanduiding)
 		},
 	},
 	methods: {
@@ -197,14 +192,7 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T06
 		 */
 		formatSize(bytes) {
-			const value = Number(bytes) || 0
-			if (value < 1024) {
-				return value + ' B'
-			}
-			if (value < (1024 * 1024)) {
-				return (value / 1024).toFixed(1) + ' KB'
-			}
-			return (value / (1024 * 1024)).toFixed(1) + ' MB'
+			return formatBytes(bytes)
 		},
 		/**
 		 * Fall back to a generic icon when the preview fails to load.
