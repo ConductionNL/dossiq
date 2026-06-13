@@ -82,7 +82,7 @@ export const useInspectionStore = defineStore('inspection', {
 			try {
 				const objectStore = useObjectStore()
 				const response = await objectStore.fetchCollection('inspectieChecklist', {
-					filters: { caseType: caseTypeId },
+					'_filters[caseType]': caseTypeId,
 					limit: 100,
 				})
 				this.checklists = response?.results || response || []
@@ -194,7 +194,7 @@ export const useInspectionStore = defineStore('inspection', {
 			try {
 				const objectStore = useObjectStore()
 				const response = await objectStore.fetchCollection('inspectieRapport', {
-					filters: { case: caseId },
+					'_filters[case]': caseId,
 					limit: 100,
 				})
 				this.reports = response?.results || response || []
