@@ -89,6 +89,7 @@ Vrij en open source onder de AGPL-licentie.
         <job>OCA\Procest\BackgroundJob\SentimentAnalysisJob</job>
         <job>OCA\Procest\BackgroundJob\SpecialistBeschikbaarheidRefreshJob</job>
         <job>OCA\Procest\BackgroundJob\BottleneckDetectionJob</job>
+        <job>OCA\Procest\BackgroundJob\ScanExpiringContractsJob</job>
     </background-jobs>
 
     <commands>
