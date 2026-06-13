@@ -1,0 +1,135 @@
+{
+  "components": {
+    "registers": {
+      "procest": {
+        "schemas": [
+          "informatieobject",
+          "zaakinformatieobject",
+          "besluitinformatieobject",
+          "informatieobjecttype"
+        ]
+      }
+    },
+    "schemas": {
+      "informatieobject": {
+        "slug": "informatieobject",
+        "icon": "FileDocumentOutline",
+        "version": "1.0.0",
+        "title": "Informatieobject",
+        "description": "ZGW DRC document with full metadata, stored as a Nextcloud file plus a register object. schema.org DigitalDocument.",
+        "x-schema-org": "DigitalDocument",
+        "type": "object",
+        "required": ["titel", "bestandsnaam", "vertrouwelijkheidaanduiding", "informatieobjecttype"],
+        "properties": {
+          "titel":                {"type": "string", "facetable": true, "maxLength": 1024, "description": "Document title"},
+          "bestandsnaam":         {"type": "string", "maxLength": 1024, "description": "Filename"},
+          "bestandsomvang":       {"type": "integer", "description": "Size in bytes"},
+          "formaat":              {"type": "string", "maxLength": 255, "description": "MIME type"},
+          "vertrouwelijkheidaanduiding": {
+            "type": "string",
+            "facetable": true,
+            "description": "ZGW confidentiality classification (lowest to highest)",
+            "enum": [
+              "openbaar",
+              "beperkt_openbaar",
+              "intern",
+              "zaakvertrouwelijk",
+              "vertrouwelijk",
+              "confidentieel",
+              "geheim",
+              "zeer_geheim"
+            ]
+          },
+          "auteur":               {"type": "string", "maxLength": 255, "description": "Display name of author"},
+          "status": {
+            "type": "string",
+            "facetable": true,
+            "default": "concept",
+            "description": "ZGW DRC document status lifecycle (forward-only)",
+            "enum": ["concept", "definitief", "gearchiveerd"]
+          },
+          "informatieobjecttype": {"type": "string", "facetable": true, "maxLength": 255, "description": "Reference to an informatieobjecttype from the catalog"},
+          "creatiedatum":         {"type": "string", "format": "date", "description": "Creation date (ISO 8601)"},
+          "bronorganisatie":      {"type": "string", "maxLength": 64, "description": "RSIN of the source organization"},
+          "taal":                 {"type": "string", "maxLength": 3, "default": "nld", "description": "ISO 639-2/B language code"},
+          "beschrijving":         {"type": "string", "description": "Free-text description"},
+          "link":                 {"type": "string", "maxLength": 2048, "description": "External URI reference"},
+          "integriteit": {
+            "type": "object",
+            "description": "Integrity hash of the file content",
+            "properties": {
+              "algoritme": {"type": "string", "default": "sha256", "description": "Hash algorithm (fixed sha256)"},
+              "waarde":    {"type": "string", "maxLength": 128, "description": "Hex-encoded SHA-256 hash"},
+              "datum":     {"type": "string", "format": "date-time", "description": "Hash computation timestamp"}
+            }
+          },
+          "vergrendeldOp":        {"type": "string", "format": "date-time", "description": "Timestamp set when status transitions to definitief"},
+          "fileId":               {"type": "integer", "description": "Nextcloud file ID backing this informatieobject"}
+        }
+      },
+      "zaakinformatieobject": {
+        "slug": "zaakinformatieobject",
+        "icon": "LinkVariant",
+        "version": "1.0.0",
+        "title": "Zaakinformatieobject",
+        "description": "ZGW DRC join between a zaak (case) and an informatieobject. Allows a single document to be linked to multiple cases without duplication.",
+        "type": "object",
+        "required": ["zaak", "informatieobject"],
+        "properties": {
+          "zaak":               {"type": "string", "facetable": true, "maxLength": 255, "description": "Reference to the case (zaak)"},
+          "informatieobject":   {"type": "string", "facetable": true, "maxLength": 255, "description": "Reference to the informatieobject"},
+          "aardRelatieWeergave": {
+            "type": "string",
+            "description": "Nature of the relation",
+            "enum": ["Hoort bij, omgekeerd", "Legt vast, omgekeerd"]
+          },
+          "registratiedatum":   {"type": "string", "format": "date-time", "description": "When the link was registered"}
+        }
+      },
+      "besluitinformatieobject": {
+        "slug": "besluitinformatieobject",
+        "icon": "GavelOutline",
+        "version": "1.0.0",
+        "title": "Besluitinformatieobject",
+        "description": "ZGW DRC join between a besluit (decision) and an informatieobject.",
+        "type": "object",
+        "required": ["besluit", "informatieobject"],
+        "properties": {
+          "besluit":            {"type": "string", "facetable": true, "maxLength": 255, "description": "Reference to the besluit"},
+          "informatieobject":   {"type": "string", "facetable": true, "maxLength": 255, "description": "Reference to the informatieobject"},
+          "registratiedatum":   {"type": "string", "format": "date-time", "description": "When the link was registered"}
+        }
+      },
+      "informatieobjecttype": {
+        "slug": "informatieobjecttype",
+        "icon": "FolderTextOutline",
+        "version": "1.0.0",
+        "title": "Informatieobjecttype",
+        "description": "ZGW DRC document type catalog entry. Defines the default confidentiality classification per document category.",
+        "type": "object",
+        "required": ["omschrijving"],
+        "properties": {
+          "omschrijving":             {"type": "string", "facetable": true, "maxLength": 255, "description": "Type name (e.g. Advies)"},
+          "informatieobjectcategorie": {"type": "string", "maxLength": 255, "description": "Category grouping"},
+          "vertrouwelijkheidaanduiding": {
+            "type": "string",
+            "description": "Default classification for documents of this type",
+            "enum": [
+              "openbaar",
+              "beperkt_openbaar",
+              "intern",
+              "zaakvertrouwelijk",
+              "vertrouwelijk",
+              "confidentieel",
+              "geheim",
+              "zeer_geheim"
+            ]
+          },
+          "schema":                   {"type": "string", "maxLength": 255, "description": "Register schema this type applies to"},
+          "beginGeldigheid":          {"type": "string", "format": "date", "description": "Validity start date"},
+          "eindeGeldigheid":          {"type": "string", "format": "date", "description": "Validity end date (nullable)"}
+        }
+      }
+    }
+  }
+}
