@@ -51,17 +51,19 @@ class FakeBelplanObjectService
     public array $specialisten = [];
 
     /**
-     * Mimic OpenRegister ObjectService::findObjects().
+     * Mimic OpenRegister ObjectService::searchObjectsBySlug().
      *
-     * @param string               $register The register id.
-     * @param string               $schema   The schema id.
+     * The production code resolves register/schema slugs through the
+     * SearchesObjects trait, which delegates to searchObjectsBySlug() whenever
+     * a non-numeric identifier is supplied.
+     *
+     * @param string               $register The register id/slug.
+     * @param string               $schema   The schema id/slug.
      * @param array<string, mixed> $filters  The filters (unused in the fake).
-     * @param array<int, mixed>    $sort     The sort (unused).
-     * @param int                  $limit    The limit (unused).
      *
      * @return array<int, array<string, mixed>>
      */
-    public function findObjects(string $register, string $schema, array $filters=[], array $sort=[], int $limit=100): array
+    public function searchObjectsBySlug(string $register, string $schema, array $filters=[]): array
     {
         if ($schema === 'belplan-schema') {
             return $this->belplannen;
@@ -72,7 +74,7 @@ class FakeBelplanObjectService
         }
 
         return [];
-    }//end findObjects()
+    }//end searchObjectsBySlug()
 }//end class
 
 /**

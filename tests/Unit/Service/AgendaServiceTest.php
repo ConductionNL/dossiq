@@ -3,8 +3,9 @@
 /**
  * AgendaService Unit Tests
  *
- * Tests for the agenda compiler: ready-item filtering by gremium, item
- * classification, agenda confirmation, and ordered document generation.
+ * Tests for the besluitvorming agenda item manager: appending agenda items to
+ * a case's agendaItems[] array, item id assignment, patch-by-itemId updates,
+ * and the OpenRegister persistence contract (find + saveObject named args).
  *
  * @category Tests
  * @package  OCA\Procest\Tests\Unit\Service
@@ -26,9 +27,7 @@ namespace OCA\Procest\Tests\Unit\Service;
 use OCA\Procest\Service\AgendaService;
 use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * ObjectService stub matching the named-argument signatures used by AgendaService.
@@ -42,30 +41,20 @@ interface AgendaObjectServiceStub
      * @param string $register The register slug.
      * @param string $schema   The schema id.
      *
-     * @return array
+     * @return mixed
      */
-    public function find(string $id, string $register, string $schema): array;
+    public function find(string $id, string $register, string $schema): mixed;
 
     /**
      * Save or update an object.
      *
+     * @param array  $object   The object payload.
      * @param string $register The register slug.
      * @param string $schema   The schema id.
-     * @param array  $object   The object payload.
-     * @param string $id       Optional id for update.
      *
      * @return array
      */
-    public function saveObject(string $register, string $schema, array $object, string $id=''): array;
-
-    /**
-     * Find objects.
-     *
-     * @param array $params The query params.
-     *
-     * @return array
-     */
-    public function findAll(array $params=[]): array;
+    public function saveObject(array $object, string $register, string $schema): array;
 }//end interface
 
 /**
@@ -75,19 +64,13 @@ interface AgendaObjectServiceStub
  */
 class AgendaServiceTest extends TestCase
 {
+
     /**
      * The mocked settings service.
      *
      * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
      */
     private SettingsService $settingsService;
-
-    /**
-     * The mocked container.
-     *
-     * @var ContainerInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private ContainerInterface $container;
 
     /**
      * The service under test.
@@ -103,120 +86,140 @@ class AgendaServiceTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->settingsService = $this->createMock(SettingsService::class);
-        $this->container       = $this->createMock(ContainerInterface::class);
-        $logger                = $this->createMock(LoggerInterface::class);
+        $this->settingsService = $this->createMock(originalClassName: SettingsService::class);
+        $logger = $this->createMock(originalClassName: LoggerInterface::class);
 
         $this->settingsService->method('getConfigValue')->willReturnCallback(
-            static fn (string $key): string => $key === 'register' ? 'reg' : 'schema-'.$key,
+            static function (string $key): string {
+                if ($key === 'register') {
+                    return 'reg';
+                }
+
+                return 'schema-'.$key;
+            }
         );
 
-        $this->service = new AgendaService($this->settingsService, $this->container, $logger);
+        $this->service = new AgendaService(settingsService: $this->settingsService, logger: $logger);
     }//end setUp()
 
     /**
-     * addItem rejects invalid classifications.
+     * AddToAgenda appends an item with a generated itemId + createdAt and persists it.
      *
      * @return void
      */
-    public function testAddItemRejectsInvalidClassification(): void
+    public function testAddToAgendaAppendsAndPersists(): void
     {
-        $objectService = $this->createMock(AgendaObjectServiceStub::class);
-        $this->settingsService->method('getObjectService')->willReturn($objectService);
+        $objectService = $this->createMock(originalClassName: AgendaObjectServiceStub::class);
+        $objectService->method('find')->willReturn(['id' => 'c1', 'agendaItems' => []]);
 
-        $this->expectException(RuntimeException::class);
-        $this->service->addItem('c1', 'onbekend', 1);
-    }//end testAddItemRejectsInvalidClassification()
-
-    /**
-     * addItem persists the behandeling caseProperty.
-     *
-     * @return void
-     */
-    public function testAddItemPersistsBehandeling(): void
-    {
-        $saved = [];
-        $objectService = $this->createMock(AgendaObjectServiceStub::class);
-        $objectService->method('findAll')->willReturn(['results' => []]);
+        $saved = null;
         $objectService->method('saveObject')->willReturnCallback(
-            static function (string $r, string $s, array $o) use (&$saved): array {
-                $saved[] = $o;
-                return $o;
-            },
+            static function (array $object) use (&$saved): array {
+                $saved = $object;
+                return $object;
+            }
         );
 
         $this->settingsService->method('getObjectService')->willReturn($objectService);
 
-        $result = $this->service->addItem('c1', AgendaService::BEHANDELING_BESPREEKSTUK, 2);
+        $result = $this->service->addToAgenda('c1', ['meetingDate' => '2026-07-01', 'discussionStatus' => 'gepland']);
 
-        $this->assertSame('bespreekstuk', $result['behandeling']);
-        $this->assertSame(2, $result['order']);
-        $names = array_column($saved, 'name');
-        $this->assertContains('behandeling', $names);
-    }//end testAddItemPersistsBehandeling()
+        $this->assertSame(expected: 'c1', actual: $result['caseId']);
+        $this->assertCount(expectedCount: 1, haystack: $result['agendaItems']);
+        $this->assertArrayHasKey(key: 'itemId', array: $result['agendaItems'][0]);
+        $this->assertArrayHasKey(key: 'createdAt', array: $result['agendaItems'][0]);
+        $this->assertSame(expected: '2026-07-01', actual: $result['agendaItems'][0]['meetingDate']);
+        $this->assertNotNull(actual: $saved);
+        $this->assertSame(expected: $result['agendaItems'], actual: $saved['agendaItems']);
+    }//end testAddToAgendaAppendsAndPersists()
 
     /**
-     * getReadyItems returns the cases the register reports.
+     * AddToAgenda decodes a JSON-string agendaItems field (procest string-encoding contract).
      *
      * @return void
      */
-    public function testGetReadyItemsReturnsCases(): void
+    public function testAddToAgendaDecodesJsonStringItems(): void
     {
-        $objectService = $this->createMock(AgendaObjectServiceStub::class);
-        $objectService->method('findAll')->willReturnCallback(
-            static function (array $params): array {
-                $filters = $params['filters'] ?? [];
-                // caseType resolution + statusType resolution return single rows;
-                // the case query returns two cases.
-                if (($filters['schema'] ?? '') === 'schema-case_type_schema') {
-                    return ['results' => [['id' => 'ct-college']]];
-                }
-
-                if (($filters['schema'] ?? '') === 'schema-status_type_schema') {
-                    return ['results' => [['id' => 'status-gereed']]];
-                }
-
-                return ['results' => [['id' => 'c1', 'title' => 'Zaak 1'], ['id' => 'c2', 'title' => 'Zaak 2']]];
-            },
-        );
+        $objectService = $this->createMock(originalClassName: AgendaObjectServiceStub::class);
+        $existing      = json_encode([['itemId' => 'agenda_old', 'meetingDate' => '2026-06-01']]);
+        $objectService->method('find')->willReturn(['id' => 'c1', 'agendaItems' => $existing]);
+        $objectService->method('saveObject')->willReturnArgument(0);
 
         $this->settingsService->method('getObjectService')->willReturn($objectService);
 
-        $items = $this->service->getReadyItems('College-besluit');
-        $this->assertCount(2, $items);
-        $this->assertSame('Zaak 1', $items[0]['title']);
-    }//end testGetReadyItemsReturnsCases()
+        $result = $this->service->addToAgenda('c1', ['meetingDate' => '2026-07-01']);
+
+        $this->assertCount(expectedCount: 2, haystack: $result['agendaItems']);
+        $this->assertSame(expected: 'agenda_old', actual: $result['agendaItems'][0]['itemId']);
+    }//end testAddToAgendaDecodesJsonStringItems()
 
     /**
-     * generateAgendaDocument orders hamerstukken before bespreekstukken.
+     * UpdateAgendaItem merges a patch onto an existing item matched by itemId.
      *
      * @return void
      */
-    public function testGenerateAgendaOrdersHamerstukkenFirst(): void
+    public function testUpdateAgendaItemMergesByItemId(): void
     {
-        $this->container->method('has')->willReturn(false);
-
-        $objectService = $this->createMock(AgendaObjectServiceStub::class);
-        $objectService->method('find')->willReturnCallback(
-            static fn (string $id): array => ['id' => $id, 'title' => 'Zaak '.$id],
+        $objectService = $this->createMock(originalClassName: AgendaObjectServiceStub::class);
+        $objectService->method('find')->willReturn(
+            [
+                'id'          => 'c1',
+                'agendaItems' => [
+                    ['itemId' => 'a1', 'meetingDate' => '2026-06-01', 'discussionStatus' => 'gepland'],
+                ],
+            ]
         );
-        $objectService->method('findAll')->willReturnCallback(
-            static function (array $params): array {
-                $filters = $params['filters'] ?? [];
-                $case    = $filters['case'] ?? '';
-                $name    = $filters['name'] ?? '';
-                if ($name === 'behandeling') {
-                    return ['results' => [['value' => $case === 'b1' ? 'bespreekstuk' : 'hamerstuk']]];
-                }
-
-                return ['results' => [['value' => '1.1']]];
-            },
-        );
+        $objectService->method('saveObject')->willReturnArgument(0);
 
         $this->settingsService->method('getObjectService')->willReturn($objectService);
 
-        $result = $this->service->generateAgendaDocument(['b1', 'h1']);
-        $this->assertSame('h1', $result['items'][0]['case']);
-        $this->assertSame('b1', $result['items'][1]['case']);
-    }//end testGenerateAgendaOrdersHamerstukkenFirst()
+        $result = $this->service->updateAgendaItem('c1', ['itemId' => 'a1', 'discussionStatus' => 'behandeld']);
+
+        $this->assertCount(expectedCount: 1, haystack: $result['agendaItems']);
+        $this->assertSame(expected: 'behandeld', actual: $result['agendaItems'][0]['discussionStatus']);
+        $this->assertSame(expected: '2026-06-01', actual: $result['agendaItems'][0]['meetingDate']);
+    }//end testUpdateAgendaItemMergesByItemId()
+
+    /**
+     * UpdateAgendaItem requires an itemId in the patch.
+     *
+     * @return void
+     */
+    public function testUpdateAgendaItemRequiresItemId(): void
+    {
+        $objectService = $this->createMock(originalClassName: AgendaObjectServiceStub::class);
+        $objectService->method('find')->willReturn(['id' => 'c1', 'agendaItems' => []]);
+        $this->settingsService->method('getObjectService')->willReturn($objectService);
+
+        $this->expectException(exception: \InvalidArgumentException::class);
+        $this->service->updateAgendaItem('c1', ['discussionStatus' => 'behandeld']);
+    }//end testUpdateAgendaItemRequiresItemId()
+
+    /**
+     * UpdateAgendaItem throws when the itemId is not present on the case.
+     *
+     * @return void
+     */
+    public function testUpdateAgendaItemThrowsWhenNotFound(): void
+    {
+        $objectService = $this->createMock(originalClassName: AgendaObjectServiceStub::class);
+        $objectService->method('find')->willReturn(['id' => 'c1', 'agendaItems' => []]);
+        $this->settingsService->method('getObjectService')->willReturn($objectService);
+
+        $this->expectException(exception: \RuntimeException::class);
+        $this->service->updateAgendaItem('c1', ['itemId' => 'missing']);
+    }//end testUpdateAgendaItemThrowsWhenNotFound()
+
+    /**
+     * AddToAgenda throws when OpenRegister is unavailable.
+     *
+     * @return void
+     */
+    public function testAddToAgendaThrowsWhenObjectServiceMissing(): void
+    {
+        $this->settingsService->method('getObjectService')->willReturn(null);
+
+        $this->expectException(exception: \RuntimeException::class);
+        $this->service->addToAgenda('c1', ['meetingDate' => '2026-07-01']);
+    }//end testAddToAgendaThrowsWhenObjectServiceMissing()
 }//end class

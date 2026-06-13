@@ -35,10 +35,60 @@ use Psr\Log\LoggerInterface;
  */
 interface AdvisoryObjectServiceStub
 {
-    public function findObjects(string $register, string $schema, array $filters, array $order, int $limit): array;
-    public function saveObject(string $register, string $schema, array $data, string $id = ''): object;
-    public function deleteObject(string $register, string $schema, string $id): void;
 
+    /**
+     * Search objects by register/schema slug.
+     *
+     * @param string $register The register slug.
+     * @param string $schema   The schema slug.
+     * @param array  $filters  The query filters.
+     *
+     * @return array
+     */
+    public function searchObjectsBySlug(string $register, string $schema, array $filters): array;
+
+    /**
+     * Search objects by numeric @self query.
+     *
+     * @param array $query The query payload.
+     *
+     * @return array
+     */
+    public function searchObjects(array $query): array;
+
+    /**
+     * Find a single object by id.
+     *
+     * @param string $id       The object id.
+     * @param string $register The register slug.
+     * @param string $schema   The schema slug.
+     *
+     * @return array
+     */
+    public function find(string $id, string $register, string $schema): array;
+
+    /**
+     * Save or update an object.
+     *
+     * @param string $register The register slug.
+     * @param string $schema   The schema slug.
+     * @param array  $data     The object payload.
+     * @param string $id       Optional id for update.
+     *
+     * @return object
+     */
+    public function saveObject(string $register, string $schema, array $data, string $id=''): object;
+
+    /**
+     * Delete an object by id.
+     *
+     * @param string $register The register slug.
+     * @param string $schema   The schema slug.
+     * @param string $id       The object id.
+     *
+     * @return void
+     */
+    public function deleteObject(string $register, string $schema, string $id): void;
 }//end interface
 
 /**
@@ -103,7 +153,7 @@ class AdvisoryBodyServiceTest extends TestCase
             ['id' => 'b3', 'name' => 'Milieudienst',       'active' => true, 'specializations' => ['milieu', 'brandveiligheid']],
         ];
 
-        $objectService->method('findObjects')->willReturn($bodies);
+        $objectService->method('searchObjectsBySlug')->willReturn($bodies);
         $this->settings->method('getObjectService')->willReturn($objectService);
         $this->settings->method('getConfigValue')->willReturn('some-id');
 
