@@ -46,6 +46,16 @@
 					</template>
 					{{ t('procest', 'Create sub-case') }}
 				</NcButton>
+				<NcButton
+					v-if="parent"
+					type="error"
+					:aria-label="t('procest', 'Delete parent case')"
+					@click="onDeleteParent">
+					<template #icon>
+						<Delete :size="20" />
+					</template>
+					{{ t('procest', 'Delete case') }}
+				</NcButton>
 			</div>
 		</div>
 
@@ -107,6 +117,13 @@
 			:parent-case-type="parentCaseType"
 			@created="onSubCaseCreated"
 			@close="showCreate = false" />
+
+		<DeelzaakDeleteWarningModal
+			v-if="showDeleteWarning && parentCaseId"
+			:parent-case-id="parentCaseId"
+			:sub-case-count="totalCount"
+			@deleted="onParentDeleted"
+			@close="showDeleteWarning = false" />
 	</div>
 </template>
 
@@ -117,6 +134,7 @@ import {
 	NcLoadingIcon,
 } from '@nextcloud/vue'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
+import Delete from 'vue-material-design-icons/Delete.vue'
 import FolderMultipleOutline from 'vue-material-design-icons/FolderMultipleOutline.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 
@@ -124,7 +142,9 @@ import { useObjectStore } from '../../store/modules/object.js'
 import { useDeelzaakStore } from '../../store/modules/deelzaak.js'
 import { initializeStores } from '../../store/store.js'
 import DeelzaakCreateModal from '../../modals/DeelzaakCreateModal.vue'
+import DeelzaakDeleteWarningModal from '../../modals/DeelzaakDeleteWarningModal.vue'
 import { formatDate } from '../../utils/caseHelpers.js'
+import { requiresOrphanWarning } from '../../utils/deelzaakHelpers.js'
 
 export default {
 	name: 'DeelzaakList',
@@ -133,9 +153,11 @@ export default {
 		NcEmptyContent,
 		NcLoadingIcon,
 		ArrowLeft,
+		Delete,
 		FolderMultipleOutline,
 		Plus,
 		DeelzaakCreateModal,
+		DeelzaakDeleteWarningModal,
 	},
 	props: {
 		/** Optional override for the parent case UUID (otherwise read from $route.params.id). */
@@ -151,6 +173,7 @@ export default {
 			statusTypeCache: {},
 			loading: true,
 			showCreate: false,
+			showDeleteWarning: false,
 		}
 	},
 	computed: {
@@ -303,6 +326,36 @@ export default {
 					params: { parentId: this.parentCaseId, id: newId },
 				})
 			}
+		},
+		/**
+		 * Delete the parent case. When it still has sub-cases, open the
+		 * orphan-warning modal (which unlinks the children, then deletes);
+		 * otherwise take the standard confirm-and-delete path (REQ-DZS-006).
+		 *
+		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
+		 */
+		async onDeleteParent() {
+			if (requiresOrphanWarning(this.totalCount)) {
+				this.showDeleteWarning = true
+				return
+			}
+			if (!window.confirm(t('procest', 'Are you sure you want to delete this case?'))) {
+				return
+			}
+			try {
+				await this.objectStore.deleteObject('case', this.parentCaseId)
+				this.onParentDeleted(this.parentCaseId)
+			} catch (err) {
+				console.error('[DeelzaakList] parent delete failed', err)
+			}
+		},
+		/**
+		 * @param deletedId
+		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
+		 */
+		onParentDeleted(deletedId) {
+			this.showDeleteWarning = false
+			this.$router.push({ name: 'Cases' })
 		},
 	},
 }

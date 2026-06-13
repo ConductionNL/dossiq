@@ -700,6 +700,13 @@ OC.L10N.register(
     "Confidential" : "Vertrouwelijk",
     "Restricted" : "Confidentieel",
     "Secret" : "Geheim",
+    "{count} deelzaken" : "{count} deelzaken",
+    "This case has {count} sub-cases. Deleting it will unlink the sub-cases from their parent. Do you want to continue?" : "Deze zaak heeft {count} deelzaken. Door te verwijderen worden de deelzaken losgekoppeld van hun hoofdzaak. Wilt u doorgaan?",
+    "The sub-cases will remain accessible as standalone cases after deletion." : "De deelzaken blijven na verwijdering toegankelijk als zelfstandige zaken.",
+    "Delete case with sub-cases" : "Zaak met deelzaken verwijderen",
+    "Delete case" : "Zaak verwijderen",
+    "Delete parent case" : "Hoofdzaak verwijderen",
+    "The case could not be deleted. Please try again." : "De zaak kon niet worden verwijderd. Probeer het opnieuw.",
     "_%n document selected_::_%n documents selected_" : ["%n document geselecteerd","%n documenten geselecteerd"]
 },
 "nplurals=2; plural=(n != 1);");
