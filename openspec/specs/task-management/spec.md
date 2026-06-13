@@ -74,7 +74,6 @@ Stored as an OpenRegister object in the `procest` register under the `task` sche
 | `low` | 4 (lowest) | Grey badge |
 
 ---
-
 ## Requirements
 
 ### REQ-TASK-001: Task CRUD
@@ -86,7 +85,6 @@ The system MUST support task create, read, update, and delete operations linked 
 The system MUST support creating, reading, updating, and deleting tasks linked to cases. All task objects are stored in OpenRegister under the `procest` register, `task` schema.
 
 **Tier**: MVP
-
 
 #### Scenario: Create a task linked to a case
 
@@ -147,7 +145,6 @@ The system MUST enforce the CMMN PlanItem lifecycle for task status transitions,
 
 **Tier**: MVP
 
-
 #### Scenario: Start a task (available to active)
 
 - GIVEN a task "Controleer bouwtekeningen" with status `available`
@@ -200,7 +197,6 @@ The system MUST support assigning tasks to Nextcloud users by their user UID. Un
 
 **Tier**: MVP
 
-
 #### Scenario: Assign a task to a user
 
 - GIVEN an available task "Controleer bouwtekeningen" in case #2024-042
@@ -246,7 +242,6 @@ The system MUST support assigning tasks to Nextcloud users by their user UID. Un
 The system MUST provide a list view for tasks with search, sorting, and filtering capabilities. The list view MUST support both a global task list (all tasks) and a case-scoped task list (tasks for a specific case). (Note 2026-06-01: rendered by the CnAppRoot manifest shell; no `src/views/tasks/TaskList.vue` SPA view file exists.)
 
 **Tier**: MVP
-
 
 #### Scenario: View the global task list
 
@@ -303,7 +298,6 @@ The system MUST support due dates and priority levels on tasks. Overdue tasks MU
 
 **Tier**: MVP
 
-
 #### Scenario: Set a due date on a task
 
 - GIVEN a task "Controleer bouwtekeningen" without a due date
@@ -351,7 +345,6 @@ Task cards MUST display key information following a consistent card anatomy acro
 
 **Tier**: MVP (list), V1 (kanban cards)
 
-
 #### Scenario: Task card anatomy in list view
 
 - GIVEN a task with:
@@ -395,7 +388,6 @@ The system MUST provide a kanban board view for tasks.
 The system MUST provide a kanban board view for tasks, with columns corresponding to CMMN task statuses. The board MUST support drag-and-drop to change task status.
 
 **Tier**: V1
-
 
 #### Scenario: View tasks as kanban board
 
@@ -447,7 +439,6 @@ When a task is completed, the system MUST automatically set the `completedDate` 
 
 **Tier**: MVP
 
-
 #### Scenario: Complete a task and record completion date
 
 - GIVEN a task "Locatiebezoek" with status `active` and no `completedDate`
@@ -480,7 +471,6 @@ The system SHALL support checklists within tasks.
 The system SHALL support checklists within tasks for detailed work breakdown. Checklist items are lightweight items stored as part of the task object (not separate OpenRegister objects).
 
 **Tier**: V1
-
 
 #### Scenario: Add checklist items to a task
 
@@ -517,7 +507,6 @@ The system SHALL support declaring dependencies between tasks ("blocked by" rela
 
 **Tier**: V1
 
-
 #### Scenario: Declare a task dependency
 
 - GIVEN task A "Draft besluit" and task B "Review documenten" in case #2024-042
@@ -550,7 +539,6 @@ The system SHALL support defining task templates on case types.
 The system SHALL support defining task templates on case types. When a case of that type is created, the user can choose to instantiate the template tasks.
 
 **Tier**: V1
-
 
 #### Scenario: Define task template on case type
 
@@ -591,7 +579,6 @@ The system SHALL support automatically creating tasks when a case transitions to
 
 **Tier**: Enterprise
 
-
 #### Scenario: Auto-create tasks on status change
 
 - GIVEN case type "Omgevingsvergunning" has a rule: "When status changes to Besluitvorming, create task 'Draft besluit'"
@@ -626,7 +613,6 @@ The system MUST provide clear visual indicators for overdue tasks and support fi
 
 **Tier**: MVP
 
-
 #### Scenario: Overdue task in My Work view
 
 - GIVEN "jan.devries" has an active task "Review documenten" with dueDate "2026-02-20"
@@ -651,6 +637,52 @@ The system MUST provide clear visual indicators for overdue tasks and support fi
 - AND the task MUST NOT appear in the overdue section of My Work
 
 ---
+
+### Requirement: Task list MUST be reached via Mijn werk, not a sibling top-level menu
+
+The global task list view (`/tasks`) MUST be discoverable through the "Mijn
+werk" top-level menu rather than as a sibling top-level menu entry. This
+matches the proposed IA placement `Mijn werk › Taken` and removes the
+duplicate framing where Tasks and My Work compete as separate "what's on my
+plate" entries.
+
+#### Scenario: Tasks does not appear as a top-level menu item
+
+- GIVEN a behandelaar opens the Procest app
+- WHEN the left navigation renders
+- THEN the top-level menu MUST NOT include an entry labelled "Tasks" /
+  "Taken" with a top-level icon
+- AND the manifest `menu[]` array MUST NOT contain an entry with
+  `id: "Tasks"` outside of the `section: "settings"` group
+
+#### Scenario: Task list is reachable from Mijn werk
+
+- GIVEN a behandelaar is on `/my-work`
+- WHEN they look for the global task list
+- THEN the `MyWork` view MUST surface an explicit affordance (tab, link, or
+  button) labelled "Taken" / "Tasks" that navigates to `/tasks`
+- AND the affordance MUST be discoverable above the fold
+
+#### Scenario: Existing /tasks deep links continue to resolve
+
+- GIVEN a stored bookmark or external link points to `/tasks`
+- WHEN a user opens that URL
+- THEN the route MUST still resolve to the existing `Tasks` index page (the
+  manifest `pages[]` entry with `id: "Tasks"` is preserved)
+- AND no 404 or redirect MUST occur
+
+<!--
+  Note (2026-06-13, archive sweep): the original delta carried a
+  `## REMOVED Requirements` block for "Tasks MUST appear as a top-level
+  navigation entry". The canonical `openspec/specs/task-management/spec.md`
+  never expressed that as a formal `### Requirement:` — it was only an
+  implicit assumption in the manifest `menu[]` order. There is no formal
+  requirement to remove, so the REMOVED block was dropped to let the change
+  archive cleanly; the new ADDED requirement above fully supersedes the old
+  navigation placement. The manifest `menu[]` Tasks entry was already removed
+  in the implementation (tasks 1.x) and the `/tasks` page route is preserved
+  for deep links.
+-->
 
 ## Accessibility
 

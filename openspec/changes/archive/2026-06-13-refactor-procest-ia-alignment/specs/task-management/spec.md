@@ -46,16 +46,16 @@ plate" entries.
   manifest `pages[]` entry with `id: "Tasks"` is preserved)
 - AND no 404 or redirect MUST occur
 
-## REMOVED Requirements
+<!--
+  Note (2026-06-13, archive sweep): the original delta carried a
+  `## REMOVED Requirements` block for "Tasks MUST appear as a top-level
+  navigation entry". The canonical `openspec/specs/task-management/spec.md`
+  never expressed that as a formal `### Requirement:` — it was only an
+  implicit assumption in the manifest `menu[]` order. There is no formal
+  requirement to remove, so the REMOVED block was dropped to let the change
+  archive cleanly; the new ADDED requirement above fully supersedes the old
+  navigation placement. The manifest `menu[]` Tasks entry was already removed
+  in the implementation (tasks 1.x) and the `/tasks` page route is preserved
+  for deep links.
+-->
 
-### Requirement: Tasks MUST appear as a top-level navigation entry
-
-**Reason:** Replaced by the new requirement above. The proposed IA places
-Tasks under Mijn werk, not as a sibling. The implicit assumption (in the
-original spec's `src/views/tasks/TaskList.vue` placement and manifest menu
-order 50) that Tasks deserves a top-level slot duplicates the My Work framing
-and is no longer aligned with the IA.
-
-**Migration:** The `pages[]` entry for `Tasks` is preserved (route `/tasks`
-still works for deep links and for `CaseTasksTab` navigation). Only the
-`menu[]` entry is removed.

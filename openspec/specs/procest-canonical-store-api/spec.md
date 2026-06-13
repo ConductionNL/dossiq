@@ -1,15 +1,13 @@
+---
+status: done
+note: Implemented and archived 2026-06-13 (change procest-store-migration). All procest stores use the canonical OR object-store API; 0 phantom create/update/delete calls and 0 wrong-shape `filters:{}` calls remain (all on `_filters[field]`). Test-artifact/lint/live-verify tails were left deferred ([~]) and explained in the change.
+---
+
 # procest-canonical-store-api Specification
 
----
-status: proposed
----
-
 ## Purpose
-
-Procest's Pinia stores that wrap OpenRegister object CRUD MUST use only the canonical `useObjectStore` API surface from `@conduction/nextcloud-vue`. Runtime failures from phantom method calls (e.g., `TypeError: objectStore.X is not a function`) MUST be eliminated by replacing all non-canonical method invocations with their canonical equivalents.
-
-## ADDED Requirements
-
+Defines the canonical OpenRegister object-store API contract for all procest Pinia stores: collections via `fetchCollection(type, {_filters[field]: value})`, single loads via `fetchObject`, create/update via `saveObject`, deletes via `deleteObject`, and file attachments via `uploadFiles`. Replaces the phantom `create/update/delete` methods and the wrong `filters:{}` shape.
+## Requirements
 ### Requirement: A View Fetches a Collection of OpenRegister Objects
 
 All call sites that load a list of OR objects of a registered type MUST use `objectStore.fetchCollection(type, params)` with filter parameters in the `_filters[field]=value` query-key shape (not a `filters: {}` object).
@@ -125,7 +123,7 @@ All call sites that upload a file attached to an OR object MUST use `objectStore
 
 ### Requirement: Procest-Specific Config Stores MAY Remain as Plain Pinia defineStore
 
-Procest carries config endpoints (`/apps/procest/api/settings`, `/apps/procest/api/zgw-mappings`) that are not OpenRegister objects. These stores are out of scope for the library's `useObjectStore`.
+Procest carries config endpoints (`/apps/procest/api/settings`, `/apps/procest/api/zgw-mappings`) that are not OpenRegister objects. These stores are out of scope for the library's `useObjectStore`. Such config stores MAY remain plain Pinia `defineStore`s and SHALL NOT be required to migrate to `useObjectStore`; however, any internal OR-object CRUD they perform MUST use the canonical API.
 
 #### Scenario: A store wraps a procest-specific REST endpoint
 
@@ -158,24 +156,3 @@ Procest's bezwaar, advice, enforcement, gis, inspection, and workflow stores mod
 
 ---
 
-## Test Coverage
-
-### Unit Tests
-
-- **Test: fetchCollection uses canonical API** — Mock `objectStore`, verify that a store action that loads objects calls `objectStore.fetchCollection()` with the correct parameters.
-- **Test: fetchObject uses canonical API** — Mock `objectStore`, verify that a store action that loads a single object calls `objectStore.fetchObject()`.
-- **Test: saveObject for create** — Mock `objectStore`, verify that creating an object calls `objectStore.saveObject(type, data)` with `data.id` unset.
-- **Test: saveObject for update** — Mock `objectStore`, verify that updating an object calls `objectStore.saveObject(type, {...data, id})` with `id` set.
-- **Test: deleteObject uses canonical API** — Mock `objectStore`, verify that deleting an object calls `objectStore.deleteObject()` (not `delete()`).
-- **Test: uploadFiles wraps in FormData** — Mock `objectStore`, verify that file upload calls `objectStore.uploadFiles()` with a FormData instance.
-
-### Integration Tests
-
-- **Test: Full CRUD cycle for each entity** — Create, read, update, delete each procest OR entity (case, objection, adviesAanvraag, handhavingsactie, etc.) via the store; verify data persists in OR.
-- **Test: Filter parameters reach OR correctly** — Load a collection with multiple filters via the store; verify the OR API receives the correct query parameters.
-- **Test: File upload end-to-end** — Upload a file to an object via the store; verify it appears in the object's `files` array on subsequent fetches.
-
-### Linting Rules (CI)
-
-- **Grep rule:** No `objectStore.create(`, `objectStore.update(`, `objectStore.delete(` calls in `src/` directory.
-- **ESLint rule (or lint script):** Warn if `filters: {...}` is used as a parameter in `fetchCollection` calls (suggest `_filters` instead).
