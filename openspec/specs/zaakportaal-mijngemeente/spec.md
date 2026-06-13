@@ -1,23 +1,32 @@
 ---
-status: draft
+status: done
+note: >-
+  Citizen-portal "Mijn gemeente" delivered inside the host procest app (ADR-037).
+  Backend services, schemas, controller and the four citizen forms (DocumentList,
+  MessagingWidget, BezwaarForm, KlachtForm) are shipped and tested (PHPUnit 46,
+  vitest 53, defensive Playwright). The original app-shell/router tasks
+  (TASK-ZMP-26, TASK-ZMP-28) are SUPERSEDED by the procest manifest-v2 migration
+  (menu + routes are declarative in src/manifest.d/50-zaakportaal.json) and were
+  not rebuilt. Live-instance items (DigiD/eHerkenning edge session, IP binding,
+  full E2E/axe/pentest, n8n fan-out, subsidie via opencatalogi) remain DEFERRED
+  with reasons recorded in the archived change tasks.md.
 ---
 # zaakportaal-mijngemeente Specification
 
 ## Purpose
+Zaakportaal ("Mijn gemeente") is a citizen-facing portal, delivered inside the
+host procest app, that grants authenticated burgers and bedrijven real-time
+access to their cases, ACL-filtered documents, status timelines, handler
+messaging, and objection (bezwaar) / complaint (klacht) filing — all IDOR-safe
+and audit-logged. Authentication (DigiD/eHerkenning, minimum trust level
+"substantieel", Machtigen/Ketenmachtiging) is established at the OpenConnector
+edge and surfaced as a pseudonymous subject reference; the host app never
+accepts or returns a raw BSN/KvK.
 
-Zaakportaal ("Mijn gemeente") is a citizen-facing web portal that grants authenticated burgers and bedrijven direct, real-time access to their active cases, documents, and case status with the municipality. It implements the Wdo-mandated authentication (DigiD, eHerkenning), supports delegation via DigiD Machtigen and eHerkenning Ketenmachtiging, and exposes case data read-only from Procest. Citizens can download documents, send messages to case handlers, file complaints and objections, and manage notification preferences — all logged for audit and compliance.
-
-## Context
-
-Dutch municipalities must provide transparent access to case information under the Wet Digitale Overheid (Wdo) and broader accessibility principles (WCAG 2.2 AA). Citizens currently receive status updates passively via Berichtenbox or telephone. A dedicated self-service portal reduces call-center load, improves citizen satisfaction, and centralizes the citizen experience away from the internal case-handling system (Procest).
-
-Zaakportaal integrates with existing municipal infrastructure: it reads from Procest and OpenRegister, posts messages and objections back via restricted APIs, and leverages OpenConnector for authentication. All data is transient (no portal database); all actions are logged to OpenRegister.
-
-## ADDED Requirements
-
+## Requirements
 ### Requirement: DigiD and eHerkenning authentication with Wdo-mandated trust levels
 
-REQ-POR-001: Authenticate citizens via DigiD and businesses via eHerkenning, enforcing minimum trust level "substantieel". Reject lower trust levels and non-supported authentication methods.
+REQ-POR-001: The system SHALL authenticate citizens via DigiD and businesses via eHerkenning, enforcing minimum trust level "substantieel", and SHALL reject lower trust levels and non-supported authentication methods.
 
 #### Scenario: Burger logs in via DigiD
 - **GIVEN** a burger navigates to mijn.gemeente.nl
@@ -45,7 +54,7 @@ REQ-POR-001: Authenticate citizens via DigiD and businesses via eHerkenning, enf
 
 ### Requirement: Session binding to IP and user-agent for security
 
-REQ-POR-002: Bind each session token to the client's IP address and user-agent string. Invalidate the session if either changes.
+REQ-POR-002: The system SHALL bind each session token to the client's IP address and user-agent string, and SHALL invalidate the session if either changes.
 
 #### Scenario: Session is bound on creation
 - **GIVEN** a burger logs in from IP 203.0.113.42 using Safari/Chrome browser
@@ -64,7 +73,7 @@ REQ-POR-002: Bind each session token to the client's IP address and user-agent s
 
 ### Requirement: DigiD Machtigen and eHerkenning Ketenmachtiging support
 
-REQ-POR-003: Allow a gemachtigde (wettelijk vertegenwoordiger, bWindvoerder, mantelzorger) to log in on behalf of a ander persoon using DigiD Machtigen; similarly, allow professional advisors to act via eHerkenning Ketenmachtiging.
+REQ-POR-003: The system SHALL allow a gemachtigde (wettelijk vertegenwoordiger, bewindvoerder, mantelzorger) to log in on behalf of another person using DigiD Machtigen, and SHALL similarly allow professional advisors to act via eHerkenning Ketenmachtiging.
 
 #### Scenario: Mantelzorger logs in via DigiD Machtigen for a dependent
 - **GIVEN** a mantelzorger has been granted a DigiD Machtigen delegation for burgerBS = 123456789
@@ -90,7 +99,7 @@ REQ-POR-003: Allow a gemachtigde (wettelijk vertegenwoordiger, bWindvoerder, man
 
 ### Requirement: Case overview filtered by BSN or KvK
 
-REQ-POR-004: Upon login, retrieve all cases from Procest where the citizen (or their delegation) is involved as aanvrager, geadresseerde, or belanghebbende. Filter by BSN (for burgers/gemachtigden) or KvK (for ondernemers).
+REQ-POR-004: Upon login, the system SHALL retrieve all cases from Procest where the citizen (or their delegation) is involved as aanvrager, geadresseerde, or belanghebbende, and SHALL filter by BSN (for burgers/gemachtigden) or KvK (for ondernemers).
 
 #### Scenario: Burger sees her cases
 - **GIVEN** burger with BSN 123456789 has the following cases in Procest:
@@ -116,7 +125,7 @@ REQ-POR-004: Upon login, retrieve all cases from Procest where the citizen (or t
 
 ### Requirement: Document access control — only citizen-addressable documents
 
-REQ-POR-005: Only display and allow download of documents marked with `downloadbaarVoor = ["aanvrager"]` or equivalent. Internal documents (adviezen, ambtelijke notities) must be completely hidden.
+REQ-POR-005: The system SHALL only display and allow download of documents marked with `downloadbaarVoor = ["aanvrager"]` or equivalent, and internal documents (adviezen, ambtelijke notities) MUST be completely hidden.
 
 #### Scenario: Citizen downloads only her documents
 - **GIVEN** case Z/2026/09128 contains 12 documents in Procest:
@@ -147,7 +156,7 @@ REQ-POR-005: Only display and allow download of documents marked with `downloadb
 
 ### Requirement: Status timeline visualization with deadline tracking
 
-REQ-POR-006: Display a visual timeline of case status transitions with planned and wettelijk deadlines. Highlight remaining time, warn when deadlines approach, and clearly indicate if a deadline has been missed.
+REQ-POR-006: The system SHALL display a visual timeline of case status transitions with planned and wettelijk deadlines, and SHALL highlight remaining time, warn when deadlines approach, and clearly indicate if a deadline has been missed.
 
 #### Scenario: Timeline for active omgevingsvergunning case
 - **GIVEN** case Z/2026/09128 (Omgevingsvergunning) has:
@@ -178,7 +187,7 @@ REQ-POR-006: Display a visual timeline of case status transitions with planned a
 
 ### Requirement: Messaging between citizen and case handler
 
-REQ-POR-007: Citizens can send messages to their case handler, with optional file attachments. Messages are stored in Procest and trigger notifications to the handler; handler replies surface in the portal.
+REQ-POR-007: Citizens SHALL be able to send messages to their case handler, with optional file attachments. Messages SHALL be stored in Procest and trigger notifications to the handler; handler replies SHALL surface in the portal.
 
 #### Scenario: Citizen sends a question message
 - **GIVEN** burger is viewing case Z/2026/09128 with treatment handler "K. Bakker"
@@ -210,7 +219,7 @@ REQ-POR-007: Citizens can send messages to their case handler, with optional fil
 
 ### Requirement: Bezwaar (objection) filing within legal deadline
 
-REQ-POR-008: When a decision is issued, the citizen can file a formal objection (bezwaarschrift) if the deadline (typically 6 weeks after decision) has not passed. The system validates timeliness, collects the objection grounds, and creates a new bezwaar case in Procest.
+REQ-POR-008: When a decision is issued, the citizen SHALL be able to file a formal objection (bezwaarschrift) if the deadline (typically 6 weeks after decision) has not passed. The system SHALL validate timeliness, collect the objection grounds, and create a new bezwaar case in Procest.
 
 #### Scenario: Bezwaar form appears when deadline is open
 - **GIVEN** case Z/2026/09128 has a decision "Beschikking omgevingsvergunning" issued on 2026-04-02
@@ -252,7 +261,7 @@ REQ-POR-008: When a decision is issued, the citizen can file a formal objection 
 
 ### Requirement: Klacht (complaint) filing and optional subsidie aanvragen
 
-REQ-POR-009: Citizens can file formal complaints (klacht) and subsidie-aanvragen independently of any case. Klacht intake routes to the complaint management workflow; subsidie-aanvragen are directed to the appropriate application system.
+REQ-POR-009: Citizens SHALL be able to file formal complaints (klacht) and subsidie-aanvragen independently of any case. Klacht intake SHALL route to the complaint management workflow; subsidie-aanvragen SHALL be directed to the appropriate application system.
 
 #### Scenario: Klacht intake form
 - **GIVEN** a citizen navigates to a standalone "Klacht indienen" form (accessible from the main menu or homepage)
@@ -284,7 +293,7 @@ REQ-POR-009: Citizens can file formal complaints (klacht) and subsidie-aanvragen
 
 ### Requirement: Notification preferences management
 
-REQ-POR-010: Citizens can choose which notification channels (email, Berichtenbox, SMS) and which events (status change, document added, message from handler, deadline reminder) trigger notifications. Berichtenbox must always remain active for statutory notifications.
+REQ-POR-010: Citizens SHALL be able to choose which notification channels (email, Berichtenbox, SMS) and which events (status change, document added, message from handler, deadline reminder) trigger notifications. Berichtenbox MUST always remain active for statutory notifications.
 
 #### Scenario: Citizen disables email notifications
 - **GIVEN** a citizen navigates to "Instellingen > Notificaties"
@@ -318,7 +327,7 @@ REQ-POR-010: Citizens can choose which notification channels (email, Berichtenbo
 
 ### Requirement: Accessibility — WCAG 2.2 AA compliance
 
-REQ-POR-011: The portal must meet Web Content Accessibility Guidelines (WCAG) 2.2 Level AA. All interactive elements must be keyboard accessible; all information conveyed visually must have a text alternative; color contrast must meet WCAG standards.
+REQ-POR-011: The portal MUST meet Web Content Accessibility Guidelines (WCAG) 2.2 Level AA. All interactive elements MUST be keyboard accessible; all information conveyed visually MUST have a text alternative; color contrast MUST meet WCAG standards.
 
 #### Scenario: Keyboard navigation through case list
 - **GIVEN** a citizen uses only a keyboard (no mouse) to navigate the portal
@@ -352,7 +361,7 @@ REQ-POR-011: The portal must meet Web Content Accessibility Guidelines (WCAG) 2.
 
 ### Requirement: NL Design System styling and components
 
-REQ-POR-012: Use NL Design System components (Button, Link, TextInput, Select, etc.) for visual consistency and to align with government digital standards.
+REQ-POR-012: The portal SHALL use NL Design System components (Button, Link, TextInput, Select, etc.) for visual consistency and to align with government digital standards.
 
 #### Scenario: Buttons follow NL Design System
 - **GIVEN** the portal uses buttons throughout (Bezwaar indienen, Bericht sturen, etc.)
@@ -370,37 +379,3 @@ REQ-POR-012: Use NL Design System components (Button, Link, TextInput, Select, e
   - Focus state: blue border + outline
   - Error state: red border + error message
 
-## Cross-Cutting Requirements
-
-### Security & Compliance
-
-**REQ-SEC-001:** All API requests must be authenticated and use HTTPS. Session tokens are short-lived JWTs (15 min TTL) with IP + user-agent binding.
-
-**REQ-SEC-002:** Passwords and sensitive data are never logged. All data access is logged to OpenRegister audit trails, including failed authentication attempts.
-
-**REQ-SEC-003:** File uploads are scanned for malware and restricted to common document types (PDF, DOC, DOCX, XLS, XLSX).
-
-**REQ-SEC-004:** The Procest API layer enforces role-based access control: citizens can only read their own cases and write to restricted endpoints (messages, objections, complaints).
-
-### Performance
-
-**REQ-PERF-001:** Case list loads within 2 seconds (P95). Case detail with timeline and documents loads within 3 seconds.
-
-**REQ-PERF-002:** No client-side caching of case data; all data is fetched fresh on each page load to ensure freshness.
-
-### Privacy & Data Minimization
-
-**REQ-PRIV-001:** The portal stores no persistent citizen data; all session data is in-memory or browser-only.
-
-**REQ-PRIV-002:** Treatment handler details are anonymized where possible: show first name + department only, not full email or phone.
-
-**REQ-PRIV-003:** All citizen actions are logged to OpenRegister for audit and compliance purposes, with retention policies aligned to Wpg (Wet Persoonlijke Gegevens).
-
-## Integration Standards
-
-- **Wet Digitale Overheid (Wdo):** DigiD/eHerkenning authentication at "substantieel" minimum.
-- **WCAG 2.2 AA:** Web accessibility standard.
-- **NL Design System:** Visual and component consistency.
-- **OpenAPI 3.0:** REST API documentation.
-- **OWASP ASVS 4.0 Level 2:** Security baseline.
-- **Forum Standaardisatie "pas toe of leg uit":** SAML 2.0, OpenID Connect, HTTPS, JSON Web Tokens (JWT).
