@@ -13,9 +13,9 @@
 
 		<NcLoadingIcon v-if="loading" :size="32" />
 
-		<CnEmptyState
+		<NcEmptyContent
 			v-else-if="!berekening"
-			:name="t('procest', 'Geen legesberekening')"
+			:title="t('procest', 'Geen legesberekening')"
 			:description="t('procest', 'Voor deze zaak is nog geen leges berekend.')" />
 
 		<div v-else class="leges-panel__body">
@@ -73,8 +73,8 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
-import { CnEmptyState, CnStatusBadge } from '@conduction/nextcloud-vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import { CnStatusBadge } from '@conduction/nextcloud-vue'
 import { calculateLeges, getLegesForCase } from '../../../services/legesApi.js'
 import LegesRefundDialog from '../../../dialogs/LegesRefundDialog.vue'
 
@@ -93,7 +93,7 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 		NcNoteCard,
-		CnEmptyState,
+		NcEmptyContent,
 		CnStatusBadge,
 		LegesRefundDialog,
 	},

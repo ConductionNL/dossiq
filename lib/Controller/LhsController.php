@@ -67,11 +67,11 @@ class LhsController extends Controller
         string $appName,
         IRequest $request,
         private readonly LhsRecommendationService $lhsService,
+        private readonly LhsLookupService $lhsLookupService,
         private readonly SettingsService $settingsService,
         private readonly IUserSession $userSession,
         private readonly IGroupManager $groupManager,
         private readonly LoggerInterface $logger,
-        private readonly LhsLookupService $lhsLookupService,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -226,19 +226,20 @@ class LhsController extends Controller
     }//end override()
 
     /**
-     * Look up the recommended intervention for a gedrag + gevolg combination.
+     * Look up an LHS interventieladder step for a gedrag × gevolg combination.
      *
      * Query parameters:
-     *   - gedrag (string, required): A, B, C or D
-     *   - gevolg (string, required): 1, 2, 3 or 4
+     *   - gedrag (string, required): A | B | C | D
+     *   - gevolg (string, required): 1 | 2 | 3 | 4
      *
-     * @return JSONResponse LHS matrix cell with interventieStep and description
+     * @return JSONResponse The matching lhsMatrixCell {gedragRow, gevolgColumn, interventieStep, description}
      *
      * @NoAdminRequired
      *
+     * @psalm-suppress PossiblyUnusedMethod
+     *
      * @spec openspec/changes/vth-module/tasks.md#task-8
      */
-    #[NoAdminRequired]
     public function lookup(): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -254,14 +255,13 @@ class LhsController extends Controller
 
         if ($gedrag === '' || $gevolg === '') {
             return new JSONResponse(
-                ['error' => 'gedrag and gevolg are required'],
+                ['error' => 'gedrag en gevolg zijn verplicht'],
                 Http::STATUS_BAD_REQUEST,
             );
         }
 
         try {
             $cell = $this->lhsLookupService->lookup(gedrag: $gedrag, gevolg: $gevolg);
-            return new JSONResponse(data: $cell, statusCode: Http::STATUS_OK);
         } catch (RuntimeException $e) {
             return new JSONResponse(
                 ['error' => $e->getMessage()],
@@ -270,9 +270,11 @@ class LhsController extends Controller
         } catch (Throwable $e) {
             $this->logger->error('Procest LHS lookup failed: '.$e->getMessage());
             return new JSONResponse(
-                ['error' => 'LHS lookup failed'],
+                ['error' => 'LHS opzoeken mislukt'],
                 Http::STATUS_INTERNAL_SERVER_ERROR,
             );
         }
+
+        return new JSONResponse($cell);
     }//end lookup()
 }//end class

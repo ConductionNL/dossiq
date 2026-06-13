@@ -19,13 +19,27 @@
 				<select id="lz-inv-status"
 					v-model="statusFilter"
 					data-testid="leverancier-invoice-status-filter">
-					<option value="">{{ t('procest', 'Alle') }}</option>
-					<option value="received">{{ t('procest', 'Ontvangen') }}</option>
-					<option value="under_review">{{ t('procest', 'In behandeling') }}</option>
-					<option value="approved">{{ t('procest', 'Goedgekeurd') }}</option>
-					<option value="disputed">{{ t('procest', 'Betwist') }}</option>
-					<option value="rejected">{{ t('procest', 'Afgewezen') }}</option>
-					<option value="paid">{{ t('procest', 'Betaald') }}</option>
+					<option value="">
+						{{ t('procest', 'Alle') }}
+					</option>
+					<option value="received">
+						{{ t('procest', 'Ontvangen') }}
+					</option>
+					<option value="under_review">
+						{{ t('procest', 'In behandeling') }}
+					</option>
+					<option value="approved">
+						{{ t('procest', 'Goedgekeurd') }}
+					</option>
+					<option value="disputed">
+						{{ t('procest', 'Betwist') }}
+					</option>
+					<option value="rejected">
+						{{ t('procest', 'Afgewezen') }}
+					</option>
+					<option value="paid">
+						{{ t('procest', 'Betaald') }}
+					</option>
 				</select>
 				<label class="lz-checkbox">
 					<input v-model="onlyOverdue"
@@ -40,7 +54,10 @@
 			<NcLoadingIcon :size="24" />
 		</div>
 
-		<div v-else-if="error" data-testid="lz-error" class="lz-state lz-state--error" role="alert">
+		<div v-else-if="error"
+			data-testid="lz-error"
+			class="lz-state lz-state--error"
+			role="alert">
 			{{ error }}
 		</div>
 
@@ -49,10 +66,18 @@
 			data-testid="leverancier-invoice-table">
 			<thead>
 				<tr>
-					<th scope="col">{{ t('procest', 'Factuurnummer') }}</th>
-					<th scope="col">{{ t('procest', 'Bedrag') }}</th>
-					<th scope="col">{{ t('procest', 'Verloopdatum') }}</th>
-					<th scope="col">{{ t('procest', 'Status') }}</th>
+					<th scope="col">
+						{{ t('procest', 'Factuurnummer') }}
+					</th>
+					<th scope="col">
+						{{ t('procest', 'Bedrag') }}
+					</th>
+					<th scope="col">
+						{{ t('procest', 'Verloopdatum') }}
+					</th>
+					<th scope="col">
+						{{ t('procest', 'Status') }}
+					</th>
 				</tr>
 			</thead>
 			<tbody>

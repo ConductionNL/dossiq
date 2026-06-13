@@ -187,7 +187,9 @@ export default {
 				if (this.caseObject) {
 					this.applyCaseObject(this.caseObject)
 				} else {
-					const url = generateUrl(`/apps/openregister/api/objects/case/${encodeURIComponent(this.resolvedCaseId)}`)
+					// OR per-object endpoint needs both register and schema
+					// slugs: /objects/{register}/{schema}/{id}.
+					const url = generateUrl(`/apps/openregister/api/objects/procest/case/${encodeURIComponent(this.resolvedCaseId)}`)
 					const { data } = await axios.get(url).catch(() => ({ data: null }))
 					this.applyCaseObject(data)
 				}

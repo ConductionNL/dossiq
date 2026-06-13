@@ -20,7 +20,10 @@
 			<NcLoadingIcon :size="24" />
 		</div>
 
-		<div v-else-if="error" data-testid="lz-error" class="lz-state lz-state--error" role="alert">
+		<div v-else-if="error"
+			data-testid="lz-error"
+			class="lz-state lz-state--error"
+			role="alert">
 			{{ error }}
 		</div>
 
@@ -29,11 +32,21 @@
 			data-testid="leverancier-contract-table">
 			<thead>
 				<tr>
-					<th scope="col">{{ t('procest', 'Contract') }}</th>
-					<th scope="col">{{ t('procest', 'Periode') }}</th>
-					<th scope="col">{{ t('procest', 'Einddatum') }}</th>
-					<th scope="col">{{ t('procest', 'Verlenging') }}</th>
-					<th scope="col">{{ t('procest', 'Actie') }}</th>
+					<th scope="col">
+						{{ t('procest', 'Contract') }}
+					</th>
+					<th scope="col">
+						{{ t('procest', 'Periode') }}
+					</th>
+					<th scope="col">
+						{{ t('procest', 'Einddatum') }}
+					</th>
+					<th scope="col">
+						{{ t('procest', 'Verlenging') }}
+					</th>
+					<th scope="col">
+						{{ t('procest', 'Actie') }}
+					</th>
 				</tr>
 			</thead>
 			<tbody>

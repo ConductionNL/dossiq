@@ -22,7 +22,9 @@
 			<span class="case-card__identifier">{{ caseItem.identifier || '—' }}</span>
 			<span v-if="caseTypeName" class="case-card__type">{{ caseTypeName }}</span>
 		</div>
-		<p class="case-card__title">{{ caseItem.title || '—' }}</p>
+		<p class="case-card__title">
+			{{ caseItem.title || '—' }}
+		</p>
 		<div class="case-card__footer">
 			<span class="case-card__assignee">
 				{{ caseItem.assignee || t('procest', 'Unassigned') }}

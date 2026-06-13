@@ -16,12 +16,12 @@
 					<th>{{ t('procest', 'Name') }}</th>
 					<th>{{ t('procest', 'Default handler') }}</th>
 					<th>{{ t('procest', 'SLA override (days)') }}</th>
-					<th class="actions"></th>
+					<th class="actions" />
 				</tr>
 			</thead>
 			<tbody>
-				<template v-for="cat in categories" :key="cat.id">
-					<tr v-if="editingId !== cat.id">
+				<template v-for="cat in categories">
+					<tr v-if="editingId !== cat.id" :key="cat.id">
 						<td>{{ cat.name }}</td>
 						<td>{{ cat.defaultHandler || '-' }}</td>
 						<td>{{ cat.slaOverrideDays || t('procest', 'use default') }}</td>
@@ -34,7 +34,7 @@
 							</button>
 						</td>
 					</tr>
-					<tr v-else class="klachtcat-tab__edit-row">
+					<tr v-else :key="cat.id" class="klachtcat-tab__edit-row">
 						<td>
 							<input v-model="form.name" type="text" :placeholder="t('procest', 'Name')">
 						</td>
@@ -148,7 +148,7 @@ export default {
 		/**
 		 * Start the edit flow.
 		 *
-		 * @param {Object} cat Category row.
+		 * @param {object} cat Category row.
 		 * @return {void}
 		 *
 		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-09
@@ -204,7 +204,7 @@ export default {
 		/**
 		 * Delete a category.
 		 *
-		 * @param {Object} cat Category row.
+		 * @param {object} cat Category row.
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-09

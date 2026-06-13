@@ -15,7 +15,9 @@
 
 <script>
 import { NcDashboardWidget, NcEmptyContent } from '@nextcloud/vue'
+import { imagePath } from '@nextcloud/router'
 import { useObjectStore } from '../../store/modules/object.js'
+import { initializeStores } from '../../store/store.js'
 import { getTaskDueReminders } from '../../utils/dashboardHelpers.js'
 import ClipboardCheckOutline from 'vue-material-design-icons/ClipboardCheckOutline.vue'
 
@@ -29,7 +31,7 @@ export default {
 	props: {
 		title: {
 			type: String,
-			required: true,
+			default: '',
 		},
 	},
 	data() {
@@ -55,7 +57,7 @@ export default {
 				id: item.id,
 				mainText: item.title,
 				subText: t('procest', '{days} days overdue', { days: item.daysOverdue }),
-				avatarUrl: '/apps-extra/procest/img/app-dark.svg',
+				avatarUrl: imagePath('procest', 'app-dark.svg'),
 			}))
 			const dueSoonItems = this.reminders.dueSoon.map((item) => ({
 				id: item.id,
@@ -63,12 +65,17 @@ export default {
 				subText: item.daysRemaining === 0
 					? t('procest', 'Due today')
 					: t('procest', '{days} days remaining', { days: item.daysRemaining }),
-				avatarUrl: '/apps-extra/procest/img/app-dark.svg',
+				avatarUrl: imagePath('procest', 'app-dark.svg'),
 			}))
 			return [...overdueItems, ...dueSoonItems].slice(0, 5)
 		},
 	},
-	mounted() {
+	async mounted() {
+		// Ensure object types are registered before fetching. App.vue's
+		// async created() does not block child mounting, so this widget can
+		// mount before initializeStores() has resolved; the same applies
+		// when the widget runs standalone on the Nextcloud Dashboard.
+		await initializeStores()
 		this.fetchData()
 	},
 	methods: {

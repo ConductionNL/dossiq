@@ -392,6 +392,12 @@ return [
         // CRUD of routing rules themselves lives on workflowTemplate (manifest).
         ['name' => 'routing#reroute', 'url' => '/api/cases/{id}/reroute', 'verb' => 'POST'],
 
+        // ── VTH Module: DSO intake, checklist results, advice, LHS lookup ─
+        // @spec openspec/changes/vth-module/tasks.md#task-3
+        ['name' => 'dSOIntake#intake', 'url' => '/api/vth/dso/intake', 'verb' => 'POST'],
+        // @spec openspec/changes/vth-module/tasks.md#task-8
+        ['name' => 'lhs#lookup',          'url' => '/api/vth/lhs/lookup', 'verb' => 'GET'],
+
         // LHS engine actions — matrix lookup + inspector override.
         // CRUD of matrices and recommendations lives on lhsMatrix/lhsRecommendation (manifest).
         ['name' => 'lhs#recommend', 'url' => '/api/lhs/recommend', 'verb' => 'POST'],
@@ -433,11 +439,19 @@ return [
         ['name' => 'beschikking#update',      'url' => '/api/beschikkingen/{id}',                  'verb' => 'PATCH'],
 
         // ── Consultation (advice requests and responses) ─────────────────
-        ['name' => 'consultation#index',          'url' => '/api/consultations/{caseId}',              'verb' => 'GET'],
-        ['name' => 'consultation#create',         'url' => '/api/consultations',                       'verb' => 'POST'],
-        ['name' => 'consultation#updateStatus',   'url' => '/api/consultations/{id}/status',           'verb' => 'POST'],
-        ['name' => 'consultation#submitResponse', 'url' => '/api/consultations/{id}/response',         'verb' => 'POST'],
-        ['name' => 'consultation#overdue',        'url' => '/api/consultations/overdue',               'verb' => 'GET'],
+        ['name' => 'consultation#index',               'url' => '/api/consultations/case/{caseId}',                'verb' => 'GET'],
+        ['name' => 'consultation#create',              'url' => '/api/consultations',                              'verb' => 'POST'],
+        ['name' => 'consultation#show',                'url' => '/api/consultations/{id}',                         'verb' => 'GET'],
+        ['name' => 'consultation#delete',              'url' => '/api/consultations/{id}',                         'verb' => 'DELETE'],
+        ['name' => 'consultation#updateStatus',        'url' => '/api/consultations/{id}/status',                  'verb' => 'POST'],
+        ['name' => 'consultation#submitResponse',      'url' => '/api/consultations/{id}/response',                'verb' => 'POST'],
+        ['name' => 'consultation#requestExtension',    'url' => '/api/consultations/{id}/extension',               'verb' => 'POST'],
+        ['name' => 'consultation#approveExtension',    'url' => '/api/consultations/{id}/extension/approve',       'verb' => 'POST'],
+        ['name' => 'consultation#overdue',             'url' => '/api/consultations/overdue',                      'verb' => 'GET'],
+        ['name' => 'consultation#listAdvisoryBodies',  'url' => '/api/advisory-bodies',                            'verb' => 'GET'],
+        ['name' => 'consultation#searchAdvisoryBodies','url' => '/api/advisory-bodies/search',                     'verb' => 'GET'],
+        ['name' => 'consultation#publicResponseGet',   'url' => '/api/public/consultations/{token}',               'verb' => 'GET'],
+        ['name' => 'consultation#publicResponsePost',  'url' => '/api/public/consultations/{token}',               'verb' => 'POST'],
 
         // ── Email (outbound case communication) ─────────────────────────
         ['name' => 'email#send',             'url' => '/api/email/{caseId}/send',            'verb' => 'POST'],
@@ -492,6 +506,22 @@ return [
         ['name' => 'dso#respondSamenwerking',  'url' => '/api/dso/samenwerking/{samenwerkId}/respond',       'verb' => 'POST'],
         ['name' => 'dso#doorsturen',           'url' => '/api/dso/cases/{caseId}/doorsturen',                'verb' => 'POST'],
         ['name' => 'dossierExport#export',     'url' => '/api/dossier/{caseId}/export',                      'verb' => 'GET'],
+
+        // ── KCC-werkplek bridge (kcc-werkplek-zaaksysteem-bridge) ───────
+        ['name' => 'contactMoment#create',            'url' => '/api/contactmomenten',                     'verb' => 'POST'],
+        ['name' => 'contactMoment#index',             'url' => '/api/contactmomenten',                     'verb' => 'GET'],
+        ['name' => 'contactMoment#voorblad',          'url' => '/api/kcc/voorblad',                        'verb' => 'GET'],
+        ['name' => 'contactMoment#statusGeven',       'url' => '/api/kcc/quick-actions/status-geven',      'verb' => 'POST'],
+        ['name' => 'contactMoment#nieuweZaak',        'url' => '/api/kcc/quick-actions/nieuwe-zaak',       'verb' => 'POST'],
+        ['name' => 'contactMoment#klachtRegistreren', 'url' => '/api/kcc/quick-actions/klacht-registreren', 'verb' => 'POST'],
+        ['name' => 'contactMoment#doorverbinden',     'url' => '/api/kcc/quick-actions/doorverbinden',     'verb' => 'POST'],
+        ['name' => 'contactMoment#acceptDoorverbinding', 'url' => '/api/kcc/doorverbindingen/{id}/accept', 'verb' => 'POST'],
+        ['name' => 'contactMoment#rejectDoorverbinding', 'url' => '/api/kcc/doorverbindingen/{id}/reject', 'verb' => 'POST'],
+        ['name' => 'belplan#route',                   'url' => '/api/kcc/belplannen/route',                'verb' => 'POST'],
+        ['name' => 'belplan#index',                   'url' => '/api/kcc/belplannen',                      'verb' => 'GET'],
+        ['name' => 'belplan#create',                  'url' => '/api/kcc/belplannen',                      'verb' => 'POST'],
+        ['name' => 'belplan#update',                  'url' => '/api/kcc/belplannen/{id}',                 'verb' => 'PUT'],
+        ['name' => 'specialistBeschikbaarheid#index', 'url' => '/api/kcc/specialist-beschikbaarheid',      'verb' => 'GET'],
 
         // ── Complaints (klachtafhandeling) — Awb chapter 9 ─────────────────
         ['name' => 'complaint#index',              'url' => '/api/complaints',                             'verb' => 'GET'],
@@ -567,7 +597,14 @@ return [
         ['name' => 'termijnReporting#kwartaalrapport',   'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
         ['name' => 'termijnReporting#jaarrekening',      'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
 
+        // ── ORI Atom Feeds (public, no auth required) ───────────────────
+        ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen.rss', 'verb' => 'GET'],
+        ['name' => 'raadsinformatieFeed#agendapunten',  'url' => '/feed/ori/agendapunten.rss',  'verb' => 'GET'],
+        ['name' => 'raadsinformatieFeed#documenten',    'url' => '/feed/ori/documenten.rss',    'verb' => 'GET'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
-        ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
+        // 'postfix' keeps the route name unique; without it this entry replaces
+        // the '/' route above (same name) and the app root 404s.
+        ['name' => 'dashboard#page', 'postfix' => 'catchall', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],
 ];

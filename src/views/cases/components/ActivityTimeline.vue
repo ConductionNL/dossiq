@@ -88,6 +88,10 @@ export default {
 				update: '✎',
 				extension: '⏰',
 				note: '💬',
+				consultation_created: '📋',
+				consultation_acknowledged: '✓',
+				consultation_response: '📨',
+				consultation_overdue: '⚠',
 			}
 			return icons[type] || '•'
 		},

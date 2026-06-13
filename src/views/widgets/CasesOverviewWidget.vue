@@ -15,7 +15,9 @@
 
 <script>
 import { NcDashboardWidget, NcEmptyContent } from '@nextcloud/vue'
+import { imagePath } from '@nextcloud/router'
 import { useObjectStore } from '../../store/modules/object.js'
+import { initializeStores } from '../../store/store.js'
 import FolderOpen from 'vue-material-design-icons/FolderOpen.vue'
 
 export default {
@@ -28,7 +30,7 @@ export default {
 	props: {
 		title: {
 			type: String,
-			required: true,
+			default: '',
 		},
 	},
 	data() {
@@ -56,11 +58,16 @@ export default {
 				subText: caseObj.identifier
 					? `#${caseObj.identifier}`
 					: '',
-				avatarUrl: '/apps-extra/procest/img/app-dark.svg',
+				avatarUrl: imagePath('procest', 'app-dark.svg'),
 			}))
 		},
 	},
-	mounted() {
+	async mounted() {
+		// Ensure object types are registered before fetching. App.vue's
+		// async created() does not block child mounting, so this widget can
+		// mount before initializeStores() has resolved; the same applies
+		// when the widget runs standalone on the Nextcloud Dashboard.
+		await initializeStores()
 		this.fetchData()
 	},
 	methods: {

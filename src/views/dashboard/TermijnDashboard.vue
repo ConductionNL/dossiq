@@ -30,28 +30,52 @@
 
 		<div v-if="!loading && kpi" class="termijn-dashboard__grid">
 			<div class="kpi-card kpi-card--neutral">
-				<div class="kpi-card__label">{{ t('procest', 'Total cases (in period)') }}</div>
-				<div class="kpi-card__value">{{ kpi.totalZaken }}</div>
+				<div class="kpi-card__label">
+					{{ t('procest', 'Total cases (in period)') }}
+				</div>
+				<div class="kpi-card__value">
+					{{ kpi.totalZaken }}
+				</div>
 			</div>
 			<div class="kpi-card kpi-card--good">
-				<div class="kpi-card__label">{{ t('procest', 'Within term') }}</div>
-				<div class="kpi-card__value">{{ percent(kpi.withinTermijnPercent) }}</div>
+				<div class="kpi-card__label">
+					{{ t('procest', 'Within term') }}
+				</div>
+				<div class="kpi-card__value">
+					{{ percent(kpi.withinTermijnPercent) }}
+				</div>
 			</div>
 			<div class="kpi-card kpi-card--neutral">
-				<div class="kpi-card__label">{{ t('procest', 'Avg duration (days)') }}</div>
-				<div class="kpi-card__value">{{ kpi.avgDurationDays }}</div>
+				<div class="kpi-card__label">
+					{{ t('procest', 'Avg duration (days)') }}
+				</div>
+				<div class="kpi-card__value">
+					{{ kpi.avgDurationDays }}
+				</div>
 			</div>
 			<div class="kpi-card kpi-card--warn">
-				<div class="kpi-card__label">{{ t('procest', 'Overruns') }}</div>
-				<div class="kpi-card__value">{{ kpi.overrunCount }}</div>
+				<div class="kpi-card__label">
+					{{ t('procest', 'Overruns') }}
+				</div>
+				<div class="kpi-card__value">
+					{{ kpi.overrunCount }}
+				</div>
 			</div>
 			<div class="kpi-card kpi-card--alert">
-				<div class="kpi-card__label">{{ t('procest', 'Dwangsom total (€)') }}</div>
-				<div class="kpi-card__value">{{ euro(kpi.dwangsomTotal) }}</div>
+				<div class="kpi-card__label">
+					{{ t('procest', 'Dwangsom total (€)') }}
+				</div>
+				<div class="kpi-card__value">
+					{{ euro(kpi.dwangsomTotal) }}
+				</div>
 			</div>
 			<div class="kpi-card kpi-card--meta">
-				<div class="kpi-card__label">{{ t('procest', 'Last updated') }}</div>
-				<div class="kpi-card__value kpi-card__value--small">{{ kpi.lastUpdated || '—' }}</div>
+				<div class="kpi-card__label">
+					{{ t('procest', 'Last updated') }}
+				</div>
+				<div class="kpi-card__value kpi-card__value--small">
+					{{ kpi.lastUpdated || '—' }}
+				</div>
 			</div>
 		</div>
 
@@ -67,7 +91,9 @@
 					{{ t('procest', 'Load report') }}
 				</NcButton>
 				<NcButton :disabled="!quarterly" type="secondary" @click="downloadQuarterCsv">
-					<template #icon><FileExport :size="18" /></template>
+					<template #icon>
+						<FileExport :size="18" />
+					</template>
 					{{ t('procest', 'Export CSV') }}
 				</NcButton>
 			</div>
@@ -181,17 +207,26 @@ export default {
 			const q = Math.floor(d.getMonth() / 3) + 1
 			return `${d.getFullYear()}-Q${q}`
 		},
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
+		/**
+		 * @param v
+		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+		 */
 		percent(v) {
 			const n = Number(v) || 0
 			return `${n.toFixed(1)} %`
 		},
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
+		/**
+		 * @param v
+		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+		 */
 		euro(v) {
 			const n = Number(v) || 0
 			return n.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })
 		},
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
+		/**
+		 * @param opt
+		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+		 */
 		onZaaktypeChange(opt) {
 			this.zaaktypeFilter = opt ? opt.id : ''
 			this.load()

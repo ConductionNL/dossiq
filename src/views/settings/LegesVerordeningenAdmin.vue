@@ -11,9 +11,9 @@
 
 		<NcLoadingIcon v-if="loading" :size="32" />
 
-		<CnEmptyState
+		<NcEmptyContent
 			v-else-if="verordeningen.length === 0"
-			:name="t('procest', 'Geen verordeningen')"
+			:title="t('procest', 'Geen verordeningen')"
 			:description="t('procest', 'Importeer een legesverordening uit een raadsbesluit om te beginnen.')" />
 
 		<table v-else class="leges-admin__table">
@@ -57,8 +57,8 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
-import { CnEmptyState, CnStatusBadge } from '@conduction/nextcloud-vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import { CnStatusBadge } from '@conduction/nextcloud-vue'
 import { approveVerordening, listVerordeningen } from '../../services/legesApi.js'
 import LegesVerordeningImportDialog from '../../dialogs/LegesVerordeningImportDialog.vue'
 
@@ -74,7 +74,7 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 		NcNoteCard,
-		CnEmptyState,
+		NcEmptyContent,
 		CnStatusBadge,
 		LegesVerordeningImportDialog,
 	},

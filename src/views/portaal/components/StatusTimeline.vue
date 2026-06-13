@@ -39,9 +39,15 @@
 			<caption>{{ t('procest', 'Status timeline, {count} steps', { count: steps.length }) }}</caption>
 			<thead>
 				<tr>
-					<th scope="col">{{ t('procest', 'Date') }}</th>
-					<th scope="col">{{ t('procest', 'Status') }}</th>
-					<th scope="col">{{ t('procest', 'Explanation') }}</th>
+					<th scope="col">
+						{{ t('procest', 'Date') }}
+					</th>
+					<th scope="col">
+						{{ t('procest', 'Status') }}
+					</th>
+					<th scope="col">
+						{{ t('procest', 'Explanation') }}
+					</th>
 				</tr>
 			</thead>
 			<tbody>

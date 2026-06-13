@@ -14,10 +14,18 @@
 				class="complaint-list__search"
 				:placeholder="t('procest', 'Search complaints…')">
 			<select v-model="statusFilter" class="complaint-list__status">
-				<option value="">{{ t('procest', 'Any status') }}</option>
-				<option value="ingediend">{{ t('procest', 'Submitted') }}</option>
-				<option value="in-behandeling">{{ t('procest', 'In progress') }}</option>
-				<option value="afgehandeld">{{ t('procest', 'Closed') }}</option>
+				<option value="">
+					{{ t('procest', 'Any status') }}
+				</option>
+				<option value="ingediend">
+					{{ t('procest', 'Submitted') }}
+				</option>
+				<option value="in-behandeling">
+					{{ t('procest', 'In progress') }}
+				</option>
+				<option value="afgehandeld">
+					{{ t('procest', 'Closed') }}
+				</option>
 			</select>
 		</div>
 
@@ -59,8 +67,6 @@
 </template>
 
 <script>
-import ComplaintCreateDialog from './components/ComplaintCreateDialog.vue'
-
 /**
  * Complaint list view.
  *
@@ -68,10 +74,6 @@ import ComplaintCreateDialog from './components/ComplaintCreateDialog.vue'
  */
 export default {
 	name: 'ComplaintList',
-
-	components: {
-		ComplaintCreateDialog,
-	},
 
 	data() {
 		return {

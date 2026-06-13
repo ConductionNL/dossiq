@@ -1,0 +1,157 @@
+{
+  "components": {
+    "schemas": {
+      "case": {
+        "properties": {
+          "vergunningaanvraagRef": {
+            "type": "string",
+            "description": "Reference to the DSO vergunningaanvraag object in OpenRegister",
+            "visible": false
+          },
+          "procedureType": {
+            "type": "string",
+            "enum": ["reguliere", "uitgebreide"],
+            "description": "DSO procedure type: reguliere (8 wk) or uitgebreide (26 wk)",
+            "visible": false
+          },
+          "deadlineDatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Computed DSO statutory deadline (working days from indieningsdatum)",
+            "visible": false
+          },
+          "bevoegdGezag": {
+            "type": "string",
+            "description": "OIN or organization name of the bevoegd gezag",
+            "visible": false
+          },
+          "samenwerkverzoeken": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "UUIDs of linked samenwerkverzoek objects",
+            "visible": false
+          },
+          "dsoStatus": {
+            "type": "string",
+            "enum": ["ingediend", "in_behandeling", "verleend", "geweigerd", "ingetrokken"],
+            "description": "DSO-LV status value mirrored from the vergunningaanvraag",
+            "visible": false
+          },
+          "besluitdatum": {
+            "type": "string",
+            "format": "date",
+            "description": "Date the decision was made (set when dsoStatus = verleend/geweigerd)",
+            "visible": false
+          },
+          "dsoToelichting": {
+            "type": "string",
+            "description": "Decision motivation or rejection reasoning for DSO transparency",
+            "visible": false
+          }
+        }
+      },
+      "samenwerkverzoek": {
+        "slug": "samenwerkverzoek",
+        "icon": "AccountMultipleOutline",
+        "version": "1.0.0",
+        "title": "Samenwerkverzoek",
+        "description": "Request for collaboration between bevoegd gezag on a vergunningaanvraag",
+        "type": "object",
+        "required": [
+          "initiatorBevoegdGezag",
+          "aangezochtBevoegdGezag",
+          "vergunningaanvraagRef",
+          "status"
+        ],
+        "properties": {
+          "initiatorBevoegdGezag": {
+            "type": "string",
+            "description": "OIN or organization name of the initiating bevoegd gezag"
+          },
+          "aangezochtBevoegdGezag": {
+            "type": "string",
+            "description": "OIN or organization name of the receiving bevoegd gezag"
+          },
+          "vergunningaanvraagRef": {
+            "type": "string",
+            "description": "Reference to the linked vergunningaanvraag object"
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Reason for requesting collaboration"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["aangevraagd", "geaccepteerd", "geweigerd", "afgerond"],
+            "description": "Current status of the samenwerkverzoek",
+            "facetable": true
+          },
+          "advies": {
+            "type": "string",
+            "description": "Advice given by the aangezochte bevoegd gezag"
+          },
+          "aangevraagdOp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the samenwerkverzoek was initiated"
+          },
+          "gereageerdOp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the aangezochte bevoegd gezag responded"
+          },
+          "zaakId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID of the linked Procest zaak"
+          }
+        }
+      }
+    },
+    "objects": [
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "samenwerkverzoek",
+          "slug": "samenwerkverzoek-demo-001"
+        },
+        "initiatorBevoegdGezag": "Gemeente Amsterdam",
+        "aangezochtBevoegdGezag": "Waterschap Amstel, Gooi en Vecht",
+        "vergunningaanvraagRef": "nl.dso.aanvraag.2026-AMS-001",
+        "rationale": "Aanvraag betreft activiteiten nabij waterkering, afstemming waterschap vereist.",
+        "status": "geaccepteerd",
+        "advies": "Waterschap heeft geen bezwaar mits geluidsnormen worden nageleefd.",
+        "aangevraagdOp": "2026-03-20T09:00:00+01:00",
+        "gereageerdOp": "2026-03-28T14:30:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "samenwerkverzoek",
+          "slug": "samenwerkverzoek-demo-002"
+        },
+        "initiatorBevoegdGezag": "Gemeente Rotterdam",
+        "aangezochtBevoegdGezag": "Provincie Zuid-Holland",
+        "vergunningaanvraagRef": "nl.dso.aanvraag.2026-RTD-007",
+        "rationale": "Grootschalig bouwproject raakt provinciaal belang omgevingsvisie.",
+        "status": "aangevraagd",
+        "aangevraagdOp": "2026-04-10T10:15:00+02:00"
+      },
+      {
+        "@self": {
+          "register": "procest",
+          "schema": "samenwerkverzoek",
+          "slug": "samenwerkverzoek-demo-003"
+        },
+        "initiatorBevoegdGezag": "Gemeente Utrecht",
+        "aangezochtBevoegdGezag": "Rijkswaterstaat",
+        "vergunningaanvraagRef": "nl.dso.aanvraag.2026-UTR-014",
+        "rationale": "Activiteit vindt plaats binnen rijkszone langs snelweg A12.",
+        "status": "geweigerd",
+        "advies": "Rijkswaterstaat kan niet meewerken wegens veiligheidszone.",
+        "aangevraagdOp": "2026-02-15T08:00:00+01:00",
+        "gereageerdOp": "2026-02-22T16:45:00+01:00"
+      }
+    ]
+  }
+}

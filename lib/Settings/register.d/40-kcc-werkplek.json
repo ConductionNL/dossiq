@@ -1,0 +1,152 @@
+{
+    "components": {
+        "registers": {
+            "procest": {
+                "schemas": [
+                    "contactmoment",
+                    "kccQuickAction",
+                    "belplan",
+                    "specialistBeschikbaarheid",
+                    "doorverbinding",
+                    "klantSentiment"
+                ]
+            }
+        },
+        "schemas": {
+            "contactmoment": {
+                "slug": "contactmoment",
+                "icon": "PhoneInTalk",
+                "version": "1.0.0",
+                "title": "Contactmoment",
+                "description": "A single inbound or outbound contact (telefoon, email, chat, webformulier, social media, balie) handled in the KCC-werkplek, logged against the case and the identified burger.",
+                "type": "object",
+                "required": ["kanaal", "richting", "identificatieMethode", "kccMedewerkerId", "aard", "samenvatting"],
+                "properties": {
+                    "kanaal": {"type": "string", "enum": ["telefoon", "email", "webformulier", "chat", "social_media", "balie"], "description": "Communication channel"},
+                    "richting": {"type": "string", "enum": ["inkomend", "uitgaand"], "description": "Direction of the contact"},
+                    "startTijd": {"type": "string", "format": "date-time", "description": "Start time of the contact"},
+                    "eindTijd": {"type": "string", "format": "date-time", "description": "End time of the contact"},
+                    "duurSeconden": {"type": "integer", "description": "Calculated duration in seconds"},
+                    "bellerIdentificatie": {"type": "string", "description": "Phone number, email or social handle of the caller"},
+                    "geidentificeerdeBurgerId": {"type": "string", "description": "Opaque reference to the identified burger (NC contact / external person id); null when unidentified"},
+                    "identificatieMethode": {"type": "string", "enum": ["digid", "bsn_verificatie", "identificatievragen", "niet_geidentificeerd"], "description": "How the caller was identified"},
+                    "identificatieScore": {"type": "number", "description": "Identification confidence score (0.0-1.0)"},
+                    "kccMedewerkerId": {"type": "string", "description": "Nextcloud UID of the handling KCC-medewerker"},
+                    "gerelateerdeZaken": {"type": "array", "items": {"type": "string"}, "description": "Case ids this contact relates to"},
+                    "nieuweZaakIds": {"type": "array", "items": {"type": "string"}, "description": "Case ids created during this contact"},
+                    "aard": {"type": "string", "enum": ["informatieverzoek", "statusverzoek", "klacht", "melding", "nieuwe_aanvraag", "doorverbinding"], "description": "Nature of the contact"},
+                    "samenvatting": {"type": "string", "description": "Summary of the contact"},
+                    "volgensIntent": {"type": "string", "description": "Detected dialogue intent"},
+                    "firstTimeFix": {"type": "boolean", "default": false, "description": "Whether the issue was resolved in one contact"},
+                    "transcriptie": {"type": "string", "description": "Optional voice-to-text transcription"},
+                    "transferNaar": {"type": "string", "description": "Specialist user id or wachtrij name if transferred"}
+                }
+            },
+            "kccQuickAction": {
+                "slug": "kccQuickAction",
+                "icon": "GestureTapButton",
+                "version": "1.0.0",
+                "title": "KCC Quick Action",
+                "description": "A configurable one-click action available to KCC-medewerkers in the werkplek.",
+                "type": "object",
+                "required": ["naam", "actieType"],
+                "properties": {
+                    "naam": {"type": "string", "description": "Display name of the quick action"},
+                    "actieType": {"type": "string", "enum": ["status_geven", "nieuwe_zaak", "klacht_registreren", "doorverbinden", "bel_terug_inplannen", "email_sturen", "kopie_document_sturen"], "description": "Action type"},
+                    "vereisteContext": {"type": "array", "items": {"type": "string"}, "description": "Required context conditions (has_open_case, is_geidentificeerd, ...)"},
+                    "targetZaaktype": {"type": "string", "description": "Target case type slug for nieuwe-zaak actions"},
+                    "template": {"type": "string", "description": "Email template reference for email actions"},
+                    "permissies": {"type": "array", "items": {"type": "string"}, "description": "KCC roles allowed to run this action"},
+                    "volgorde": {"type": "integer", "default": 0, "description": "Display order"},
+                    "isActive": {"type": "boolean", "default": true, "description": "Whether the action is active"}
+                }
+            },
+            "belplan": {
+                "slug": "belplan",
+                "icon": "PhoneForward",
+                "version": "1.0.0",
+                "title": "Belplan",
+                "description": "Routing rules for inbound telephony, datagedreven on keuzemenu, vaardigheid matching and wachtrij-overflow.",
+                "type": "object",
+                "required": ["naam"],
+                "properties": {
+                    "naam": {"type": "string", "description": "Name of the belplan"},
+                    "triggerNummer": {"type": "array", "items": {"type": "string"}, "description": "Phone number(s) this plan applies to"},
+                    "routeringStappen": {"type": "array", "items": {"type": "object"}, "description": "Ordered routing steps (keuzemenu, vaardigheid_match, wachtrij_overflow)"},
+                    "openingstijden": {"type": "string", "description": "Opening hours (e.g. Mo-Fr 08:00-17:00), null for 24/7"},
+                    "terugvalActie": {"type": "string", "enum": ["voicemail", "sms_callback", "email_callback"], "default": "voicemail", "description": "Fallback action outside opening hours"},
+                    "prioriteit": {"type": "integer", "default": 0, "description": "Matching priority, higher wins"},
+                    "isActive": {"type": "boolean", "default": true, "description": "Whether the belplan is active"}
+                }
+            },
+            "specialistBeschikbaarheid": {
+                "slug": "specialistBeschikbaarheid",
+                "icon": "AccountClock",
+                "version": "1.0.0",
+                "title": "Specialist Beschikbaarheid",
+                "description": "Real-time availability of a back-office specialist for warm doorverbinden.",
+                "type": "object",
+                "required": ["medewerkerId", "status"],
+                "properties": {
+                    "medewerkerId": {"type": "string", "description": "Nextcloud UID of the specialist"},
+                    "expertises": {"type": "array", "items": {"type": "string"}, "description": "Vaardigheid / zaaktype codes the specialist handles"},
+                    "status": {"type": "string", "enum": ["beschikbaar", "in_gesprek", "wrap_up", "afwezig", "niet_storen"], "description": "Current availability status"},
+                    "huidigeWachtrijLengte": {"type": "integer", "default": 0, "description": "Number of calls currently queued"},
+                    "gemiddeldeBehandelduur": {"type": "integer", "default": 0, "description": "Rolling average handling time in seconds"},
+                    "gespreksInProgress": {"type": "integer", "default": 0, "description": "Number of active calls"},
+                    "laatsteUpdate": {"type": "string", "format": "date-time", "description": "Timestamp of the last status update"}
+                }
+            },
+            "doorverbinding": {
+                "slug": "doorverbinding",
+                "icon": "PhoneForward",
+                "version": "1.0.0",
+                "title": "Doorverbinding",
+                "description": "A warm transfer with immutable context-overdracht snapshot to a specialist.",
+                "type": "object",
+                "required": ["contactmomentId", "vanMedewerkerId"],
+                "properties": {
+                    "contactmomentId": {"type": "string", "description": "Reference to the originating contactmoment"},
+                    "vanMedewerkerId": {"type": "string", "description": "Nextcloud UID of the transferring medewerker"},
+                    "naarMedewerkerId": {"type": "string", "description": "Nextcloud UID of the receiving specialist, null when to a wachtrij"},
+                    "naarWachtrij": {"type": "string", "description": "Target wachtrij name, null when to a specialist"},
+                    "doorverbindingsReden": {"type": "string", "description": "Reason for the transfer"},
+                    "contextOverdracht": {"type": "string", "description": "Append-only handover notes"},
+                    "contextSnapshot": {"type": "string", "description": "Immutable JSON snapshot captured at transfer time"},
+                    "geaccepteerd": {"type": "boolean", "description": "Whether the specialist accepted, null until answered"},
+                    "acceptatieTijd": {"type": "string", "format": "date-time", "description": "When the specialist answered"},
+                    "afgekeurdReden": {"type": "string", "description": "Reason for rejection, null when accepted"},
+                    "warmTransferStarted": {"type": "string", "format": "date-time", "description": "When the transfer was initiated"}
+                }
+            },
+            "klantSentiment": {
+                "slug": "klantSentiment",
+                "icon": "EmoticonSad",
+                "version": "1.0.0",
+                "title": "Klant Sentiment",
+                "description": "Sentiment classification for a contactmoment with escalation recommendation.",
+                "type": "object",
+                "required": ["contactmomentId", "sentimentLabel"],
+                "properties": {
+                    "contactmomentId": {"type": "string", "description": "Reference to the analysed contactmoment"},
+                    "sentimentScore": {"type": "number", "description": "Sentiment score from -1.0 (very negative) to +1.0 (very positive)"},
+                    "sentimentLabel": {"type": "string", "enum": ["positief", "neutraal", "negatief", "boos"], "description": "Sentiment label"},
+                    "triggerWoorden": {"type": "array", "items": {"type": "string"}, "description": "Detected trigger words"},
+                    "transcriptieSnippet": {"type": "string", "description": "Quote from the transcription with the trigger words"},
+                    "escalatieAanbevolen": {"type": "boolean", "default": false, "description": "Whether escalation is recommended"},
+                    "escalatieLevel": {"type": "string", "enum": ["geen", "geel", "oranje", "rood"], "default": "geen", "description": "Recommended escalation level"},
+                    "createdAt": {"type": "string", "format": "date-time", "description": "Creation timestamp"}
+                }
+            }
+        },
+        "objects": [
+            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "naam": "Status terugkoppelen", "actieType": "status_geven", "vereisteContext": ["is_geidentificeerd", "has_open_case"], "permissies": ["kcc_medewerker"], "volgorde": 1, "isActive": true},
+            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "naam": "Nieuwe zaak", "actieType": "nieuwe_zaak", "vereisteContext": ["is_geidentificeerd"], "permissies": ["kcc_medewerker"], "volgorde": 2, "isActive": true},
+            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "naam": "Klacht registreren", "actieType": "klacht_registreren", "vereisteContext": [], "permissies": ["kcc_medewerker", "klachtenfunctionaris"], "volgorde": 3, "isActive": true},
+            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "naam": "Doorverbinden", "actieType": "doorverbinden", "vereisteContext": [], "permissies": ["kcc_medewerker"], "volgorde": 4, "isActive": true},
+            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "naam": "Bel terug inplannen", "actieType": "bel_terug_inplannen", "vereisteContext": [], "permissies": ["kcc_medewerker"], "volgorde": 5, "isActive": true},
+            {"@self": {"schema": "belplan", "register": "procest"}, "naam": "Algemeen gemeentenummer", "triggerNummer": ["14000"], "routeringStappen": [{"type": "keuzemenu", "options": ["Omgevingsvergunningen", "Bouwtoezicht", "Infocentrum"]}, {"type": "vaardigheid_match", "zaaktype_to_vaardigheid": {"omgevingsvergunning": "omgevingsvergunningen", "bouwtoezicht": "bouwtoezicht"}}, {"type": "wachtrij_overflow", "threshold_wachttijd_sec": 180, "fallback_rol": "generalist"}], "openingstijden": "Mo-Fr 08:00-17:00", "terugvalActie": "voicemail", "prioriteit": 10, "isActive": true},
+            {"@self": {"schema": "belplan", "register": "procest"}, "naam": "Vaknummer Vergunningen", "triggerNummer": ["140001"], "routeringStappen": [{"type": "vaardigheid_match", "zaaktype_to_vaardigheid": {"omgevingsvergunning": "omgevingsvergunningen"}}, {"type": "wachtrij_overflow", "threshold_wachttijd_sec": 240, "fallback_rol": "generalist"}], "openingstijden": "Mo-Fr 09:00-12:00", "terugvalActie": "sms_callback", "prioriteit": 20, "isActive": true}
+        ]
+    }
+}

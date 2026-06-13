@@ -1,0 +1,103 @@
+{
+    "slug": "mandaatbesluit",
+    "caseType": {
+        "identifier": "bvw-mandaatbesluit",
+        "title": "Mandaatbesluit",
+        "description": "Besluit genomen op basis van ambtelijk of politiek mandaat",
+        "purpose": "Vastleggen van besluiten binnen gedelegeerde bevoegdheden",
+        "trigger": "Aanvraag of beleidswijziging binnen mandaatgrens",
+        "subject": "Mandaatbesluit",
+        "processingDeadline": "P14D",
+        "publicationRequired": false,
+        "internalOrExternal": "intern",
+        "isDraft": false,
+        "confidentiality": "intern",
+        "mandateGuard": true,
+        "statusTypes": [
+            { "name": "Voorstel opstellen", "order": 1, "isFinal": false, "description": "Steller stelt het DT-advies op" },
+            { "name": "Ambtelijk advies", "order": 2, "isFinal": false, "description": "Inhoudelijk advies" },
+            { "name": "Parafering", "order": 3, "isFinal": false, "description": "Verkorte parafeerroute" },
+            { "name": "Gereed voor agendering", "order": 4, "isFinal": false, "description": "Klaar voor besluit binnen mandaat" },
+            { "name": "Geagendeerd", "order": 5, "isFinal": false, "description": "Opgevoerd voor mandaatbesluit" },
+            { "name": "Vergadering", "order": 6, "isFinal": false, "description": "Behandeling binnen mandaat" },
+            { "name": "Besluit genomen", "order": 7, "isFinal": false, "description": "Mandaatbesluit geregistreerd" },
+            { "name": "Gearchiveerd", "order": 8, "isFinal": true, "description": "Dossier gearchiveerd conform selectielijst" }
+        ],
+        "roleTypes": [
+            { "name": "Steller", "description": "Ambtenaar die het voorstel opstelt", "genericRole": "initiator" },
+            { "name": "Beleidsadviseur", "description": "Adviseur die inhoudelijk advies levert" },
+            { "name": "Directeur", "description": "Directeur die het mandaatbesluit ondertekent" },
+            { "name": "Aanwezig lid", "description": "Lid dat aanwezig was bij de behandeling" }
+        ],
+        "propertyDefinitions": [
+            { "name": "stemuitslag", "propertyType": "string", "isRequired": false, "description": "Uitkomst van de behandeling" },
+            { "name": "vergadergremium", "propertyType": "string", "isRequired": true, "description": "Het mandaathoudende orgaan" },
+            { "name": "agendanummer", "propertyType": "string", "isRequired": false, "description": "Volgnummer" },
+            { "name": "behandeling", "propertyType": "string", "isRequired": false, "description": "Classificatie als hamerstuk of bespreekstuk" },
+            { "name": "mandaatCategorie", "propertyType": "string", "isRequired": true, "description": "Mandaatcategorie uit het mandaatregister (bijv. 'VTH-M-04')" }
+        ],
+        "documentTypes": [
+            { "name": "DT-advies", "description": "Het voorstel-/adviesdocument", "isRequired": true },
+            { "name": "Besluitdocument", "description": "Het ondertekende mandaatbesluit", "isRequired": true }
+        ],
+        "resultTypes": [
+            { "name": "Besluit genomen", "description": "Mandaatbesluit is genomen en vastgelegd", "archivalPeriod": "P10Y", "archivalAction": "destroy" },
+            { "name": "Aangehouden", "description": "Besluit is aangehouden", "archivalPeriod": "P5Y", "archivalAction": "destroy" },
+            { "name": "Ingetrokken", "description": "Voorstel is ingetrokken", "archivalPeriod": "P5Y", "archivalAction": "destroy" }
+        ],
+        "workflowTemplate": {
+            "title": "Mandaatbesluit workflow v1",
+            "description": "Verkorte besluitvormingsworkflow voor mandaatbesluiten met mandaat-autoriteitscontrole en zonder publicatie",
+            "version": 1,
+            "isActive": true,
+            "isDraft": false,
+            "steps": [
+                { "title": "Voorstel opstellen", "statusName": "Voorstel opstellen", "order": 1, "isRequired": true, "description": "Steller stelt het DT-advies op" },
+                { "title": "Ambtelijk advies", "statusName": "Ambtelijk advies", "order": 2, "isRequired": true, "description": "Inhoudelijk advies" },
+                { "title": "Parafering", "statusName": "Parafering", "order": 3, "isRequired": true, "description": "Verkorte parafeerroute", "automaticActions": [{ "type": "besluitvormingActivate" }] },
+                { "title": "Gereed voor agendering", "statusName": "Gereed voor agendering", "order": 4, "isRequired": true, "description": "Klaar voor mandaatbesluit" },
+                { "title": "Geagendeerd", "statusName": "Geagendeerd", "order": 5, "isRequired": true, "description": "Opgevoerd voor besluit" },
+                { "title": "Vergadering", "statusName": "Vergadering", "order": 6, "isRequired": true, "description": "Behandeling binnen mandaat" },
+                { "title": "Besluit genomen", "statusName": "Besluit genomen", "order": 7, "isRequired": true, "description": "Mandaatbesluit vastgelegd" },
+                { "title": "Gearchiveerd", "statusName": "Gearchiveerd", "order": 8, "isRequired": true, "description": "Dossier gearchiveerd", "isFinal": true }
+            ],
+            "transitions": [
+                { "fromStatusName": "Voorstel opstellen", "toStatusName": "Ambtelijk advies", "label": "Naar advies" },
+                { "fromStatusName": "Ambtelijk advies", "toStatusName": "Parafering", "label": "Start parafering" },
+                {
+                    "fromStatusName": "Parafering", "toStatusName": "Gereed voor agendering", "label": "Parafering compleet",
+                    "guards": [{ "type": "requiredField", "config": { "field": "paraferingCompleet" } }]
+                },
+                { "fromStatusName": "Gereed voor agendering", "toStatusName": "Geagendeerd", "label": "Agenderen" },
+                { "fromStatusName": "Geagendeerd", "toStatusName": "Vergadering", "label": "Naar behandeling" },
+                {
+                    "fromStatusName": "Vergadering", "toStatusName": "Besluit genomen", "label": "Mandaatbesluit vastleggen",
+                    "guards": [
+                        { "type": "requiredField", "config": { "field": "stemuitslag" } },
+                        { "type": "mandaatGuard", "config": {} }
+                    ]
+                },
+                {
+                    "fromStatusName": "Besluit genomen", "toStatusName": "Gearchiveerd", "label": "Archiveren",
+                    "guards": [
+                        { "type": "requiredDocument", "config": { "documentType": "DT-advies" } },
+                        { "type": "requiredDocument", "config": { "documentType": "Besluitdocument" } }
+                    ],
+                    "automaticActions": [
+                        { "type": "setField", "field": "archiveStatus", "value": "gearchiveerd" }
+                    ]
+                }
+            ]
+        },
+        "parafeerroute": {
+            "name": "Mandaatbesluit - verkorte route",
+            "voorstelType": "dt_advies",
+            "isDefault": true,
+            "description": "Verkorte route voor mandaatbesluiten: directeur is eindparafeerder",
+            "steps": [
+                { "order": 1, "type": "parafering", "actor": "Beleidsadviseur", "actorType": "role", "mandatory": true },
+                { "order": 2, "type": "parafering", "actor": "Directeur", "actorType": "role", "mandatory": true }
+            ]
+        }
+    }
+}

@@ -86,6 +86,8 @@ Vrij en open source onder de AGPL-licentie.
         <job>OCA\Procest\BackgroundJob\EmailPdfRetryJob</job>
         <job>OCA\Procest\BackgroundJob\ArchivalTriggerScanJob</job>
         <job>OCA\Procest\BackgroundJob\ArchivalSubmissionRetryJob</job>
+        <job>OCA\Procest\BackgroundJob\SentimentAnalysisJob</job>
+        <job>OCA\Procest\BackgroundJob\SpecialistBeschikbaarheidRefreshJob</job>
     </background-jobs>
 
     <commands>
@@ -100,6 +102,7 @@ Vrij en open source onder de AGPL-licentie.
             <step>OCA\Procest\Repair\SeedBezwaarBeroepData</step>
             <step>OCA\Procest\Repair\MigrateWorkflowDefinitions</step>
             <step>OCA\Procest\Repair\SeedBezwaarWorkflowDefinition</step>
+            <step>OCA\Procest\Repair\SeedBesluitvormingTemplates</step>
             <step>OCA\Procest\Repair\RegisterOriRegister</step>
             <step>OCA\Procest\Repair\SeedLegesData</step>
             <step>OCA\Procest\Repair\SeedLhsMatrix</step>

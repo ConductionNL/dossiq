@@ -53,8 +53,12 @@
 				{{ t('procest', 'Save preferences') }}
 			</NcButton>
 
-			<p v-if="message" class="zp-message" role="status">{{ message }}</p>
-			<p v-if="error" class="zp-message zp-message--error" role="alert">{{ error }}</p>
+			<p v-if="message" class="zp-message" role="status">
+				{{ message }}
+			</p>
+			<p v-if="error" class="zp-message zp-message--error" role="alert">
+				{{ error }}
+			</p>
 		</form>
 	</div>
 </template>

@@ -1,87 +1,66 @@
 <!--
-  SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+  Procest VTH Checklist Admin Tab
   SPDX-License-Identifier: EUPL-1.2
+  SPDX-FileCopyrightText: 2026 Conduction B.V.
+  @spec openspec/changes/vth-module/tasks.md#task-5
 -->
 <template>
 	<div class="checklists-tab">
 		<div class="checklists-tab__header">
-			<h3>{{ t('procest', 'Inspection Checklists') }}</h3>
-			<p class="checklists-tab__description">
-				{{ t('procest', 'Configure reusable inspection checklists per case type. Checklists are versioned — active inspections always use the version they started with.') }}
-			</p>
-			<NcButton type="primary" @click="showEditor = true; editingChecklist = null">
-				<template #icon>
-					<Plus :size="18" />
-				</template>
+			<h3>{{ t('procest', 'VTH Inspection Checklists') }}</h3>
+			<NcButton type="primary" @click="openEditor(null)">
 				{{ t('procest', 'New checklist') }}
 			</NcButton>
 		</div>
 
 		<NcLoadingIcon v-if="loading" :size="32" />
 
-		<NcNoteCard v-if="error" type="error">
-			{{ error }}
-		</NcNoteCard>
+		<NcEmptyContent
+			v-if="!loading && checklists.length === 0 && !editing"
+			:name="t('procest', 'No checklists')"
+			:description="t('procest', 'Create an inspection checklist to get started.')">
+			<template #icon>
+				<NcIconSvgWrapper :svg="clipboardIcon" />
+			</template>
+		</NcEmptyContent>
 
-		<!-- Checklist list -->
-		<div v-if="!loading && !showEditor" class="checklists-tab__list">
+		<div v-if="!loading && !editing" class="checklists-tab__list">
 			<div
 				v-for="checklist in checklists"
 				:key="checklist.id"
 				class="checklists-tab__item">
 				<div class="checklists-tab__item-info">
-					<strong class="checklists-tab__item-name">{{ checklist.name }}</strong>
-					<span class="checklists-tab__badge" :class="'checklists-tab__badge--' + (checklist.active ? 'active' : 'inactive')">
+					<strong>{{ checklist.name }}</strong>
+					<span class="checklists-tab__badge" :class="checklist.active ? 'checklists-tab__badge--active' : 'checklists-tab__badge--inactive'">
 						{{ checklist.active ? t('procest', 'Active') : t('procest', 'Inactive') }}
 					</span>
-					<span class="checklists-tab__version">v{{ checklist.version || 1 }}</span>
-					<span class="checklists-tab__item-count">
-						{{ t('procest', '{count} items', { count: (checklist.items || []).length }) }}
-					</span>
+					<span class="checklists-tab__meta">v{{ checklist.version || 1 }} &bull; {{ (checklist.items || []).length }} {{ t('procest', 'items') }}</span>
 				</div>
 				<div class="checklists-tab__item-actions">
-					<NcButton size="small" @click="openEditor(checklist)">
+					<NcButton @click="openEditor(checklist)">
 						{{ t('procest', 'Edit') }}
 					</NcButton>
-					<NcButton size="small" type="error" @click="confirmDelete(checklist)">
+					<NcButton type="error" @click="confirmDelete(checklist)">
 						{{ t('procest', 'Delete') }}
 					</NcButton>
 				</div>
 			</div>
-
-			<NcEmptyContent v-if="checklists.length === 0"
-				:name="t('procest', 'No checklists')"
-				:description="t('procest', 'No inspection checklists configured. Create one to get started.')">
-				<template #icon>
-					<ClipboardListOutline :size="48" />
-				</template>
-			</NcEmptyContent>
 		</div>
 
-		<!-- Inline editor -->
 		<InspectionChecklistEditor
-			v-if="showEditor"
+			v-if="editing"
 			:checklist="editingChecklist"
-			@save="onSave"
-			@cancel="showEditor = false" />
-
-		<!-- Delete confirmation dialog (extracted to src/dialogs/ per ADR-004) -->
-		<DeleteChecklistDialog
-			v-if="deletingChecklist"
-			:checklist="deletingChecklist"
-			@confirm="doDelete"
-			@cancel="deletingChecklist = null" />
+			:saving="saving"
+			@save="saveChecklist"
+			@cancel="closeEditor" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
-import DeleteChecklistDialog from '../../../dialogs/DeleteChecklistDialog.vue'
-import { translate as t } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
+import { NcButton, NcLoadingIcon, NcEmptyContent, NcIconSvgWrapper } from '@nextcloud/vue'
 import axios from '@nextcloud/axios'
-import ClipboardListOutline from 'vue-material-design-icons/ClipboardListOutline.vue'
-import Plus from 'vue-material-design-icons/Plus.vue'
+import { generateUrl } from '@nextcloud/router'
+import { showError, showSuccess } from '@nextcloud/dialogs'
 import InspectionChecklistEditor from '../../../components/InspectionChecklistEditor.vue'
 
 export default {
@@ -89,77 +68,91 @@ export default {
 
 	components: {
 		NcButton,
-		NcEmptyContent,
 		NcLoadingIcon,
-		NcNoteCard,
-		ClipboardListOutline,
-		Plus,
+		NcEmptyContent,
+		NcIconSvgWrapper,
 		InspectionChecklistEditor,
-		DeleteChecklistDialog,
 	},
 
 	data() {
 		return {
-			loading: false,
-			error: null,
 			checklists: [],
-			showEditor: false,
+			loading: false,
+			editing: false,
+			saving: false,
 			editingChecklist: null,
-			deletingChecklist: null,
+			clipboardIcon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19,3H14.82C14.25,1.44 12.53,0.64 11,1.2C10.14,1.5 9.5,2.16 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M7,7H17V5H19V19H5V5H7V7Z" /></svg>',
 		}
 	},
 
-	/** @spec openspec/changes/vth-module/tasks.md#task-5 */
-	async created() {
-		await this.loadChecklists()
+	mounted() {
+		this.loadChecklists()
 	},
 
 	methods: {
-		/** @spec openspec/changes/vth-module/tasks.md#task-5 */
 		async loadChecklists() {
 			this.loading = true
-			this.error = null
 			try {
-				const { data } = await axios.get(generateUrl('/apps/procest/api/vth/checklists'))
-				this.checklists = Array.isArray(data) ? data : (data.results || [])
-			} catch (err) {
-				this.error = err?.response?.data?.message || t('procest', 'Failed to load checklists')
+				const url = generateUrl('/apps/procest/api/objects/inspectionChecklist')
+				const response = await axios.get(url)
+				this.checklists = response.data?.results || response.data || []
+			} catch (e) {
+				showError(t('procest', 'Failed to load checklists'))
 			} finally {
 				this.loading = false
 			}
 		},
 
-		/** @spec openspec/changes/vth-module/tasks.md#task-5 */
 		openEditor(checklist) {
-			this.editingChecklist = { ...checklist }
-			this.showEditor = true
+			this.editingChecklist = checklist
+				? { ...checklist }
+				: {
+					name: '',
+					version: 1,
+					caseTypeRef: '',
+					items: [],
+					active: false,
+					validFrom: new Date().toISOString().split('T')[0],
+				}
+			this.editing = true
 		},
 
-		/** @spec openspec/changes/vth-module/tasks.md#task-5 */
-		async onSave(checklist) {
-			this.showEditor = false
-			await this.loadChecklists()
+		closeEditor() {
+			this.editing = false
+			this.editingChecklist = null
 		},
 
-		/** @spec openspec/changes/vth-module/tasks.md#task-5 */
-		confirmDelete(checklist) {
-			this.deletingChecklist = checklist
-		},
-
-		/** @spec openspec/changes/vth-module/tasks.md#task-5 */
-		async doDelete() {
-			if (!this.deletingChecklist) return
+		async saveChecklist(checklist) {
+			this.saving = true
 			try {
-				await axios.delete(generateUrl('/apps/procest/api/vth/checklists/' + encodeURIComponent(this.deletingChecklist.id)))
-				this.deletingChecklist = null
+				const url = checklist.id
+					? generateUrl('/apps/procest/api/objects/inspectionChecklist/' + encodeURIComponent(checklist.id))
+					: generateUrl('/apps/procest/api/objects/inspectionChecklist')
+				const method = checklist.id ? 'put' : 'post'
+				await axios[method](url, checklist)
+				showSuccess(t('procest', 'Checklist saved'))
+				this.closeEditor()
 				await this.loadChecklists()
-			} catch (err) {
-				this.error = err?.response?.data?.message || t('procest', 'Failed to delete checklist')
-				this.deletingChecklist = null
+			} catch (e) {
+				showError(t('procest', 'Failed to save checklist'))
+			} finally {
+				this.saving = false
 			}
 		},
 
-		t,
+		async confirmDelete(checklist) {
+			if (!window.confirm(t('procest', 'Delete checklist "{name}"?', { name: checklist.name }))) {
+				return
+			}
+			try {
+				const url = generateUrl('/apps/procest/api/objects/inspectionChecklist/' + encodeURIComponent(checklist.id))
+				await axios.delete(url)
+				showSuccess(t('procest', 'Checklist deleted'))
+				await this.loadChecklists()
+			} catch (e) {
+				showError(t('procest', 'Failed to delete checklist'))
+			}
+		},
 	},
 }
 </script>
@@ -167,17 +160,9 @@ export default {
 <style scoped>
 .checklists-tab__header {
 	display: flex;
+	justify-content: space-between;
 	align-items: center;
-	gap: 12px;
 	margin-bottom: 16px;
-	flex-wrap: wrap;
-}
-
-.checklists-tab__description {
-	flex: 1 1 100%;
-	color: var(--color-text-maxcontrast);
-	font-size: 0.9em;
-	margin: 0;
 }
 
 .checklists-tab__item {
@@ -193,8 +178,12 @@ export default {
 .checklists-tab__item-info {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.checklists-tab__item-actions {
+	display: flex;
+	gap: 8px;
 }
 
 .checklists-tab__badge {
@@ -203,21 +192,18 @@ export default {
 	font-size: 0.8em;
 }
 
-.checklists-tab__badge--active { background: var(--color-success-hover); color: var(--color-success); }
-.checklists-tab__badge--inactive { background: var(--color-warning-hover); color: var(--color-warning); }
-
-.checklists-tab__version {
-	color: var(--color-text-maxcontrast);
-	font-size: 0.85em;
+.checklists-tab__badge--active {
+	background: var(--color-success);
+	color: white;
 }
 
-.checklists-tab__item-count {
-	color: var(--color-text-maxcontrast);
-	font-size: 0.85em;
+.checklists-tab__badge--inactive {
+	background: var(--color-warning);
+	color: white;
 }
 
-.checklists-tab__item-actions {
-	display: flex;
-	gap: 8px;
+.checklists-tab__meta {
+	color: var(--color-text-maxcontrast);
+	font-size: 0.9em;
 }
 </style>

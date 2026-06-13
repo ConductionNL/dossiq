@@ -112,7 +112,10 @@ export default {
 	watch: {
 		active: {
 			immediate: true,
-			/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+			/**
+			 * @param v
+			 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+			 */
 			handler(v) {
 				if (v === 'besluiten') this.loadBesluiten()
 				else if (v === 'rollen') this.loadRoles()
@@ -158,7 +161,10 @@ export default {
 				this.loading = false
 			}
 		},
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/**
+		 * @param mandaat
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
 		openEditor(mandaat) {
 			this.editingMandaat = mandaat
 			this.editorOpen = true
@@ -177,7 +183,10 @@ export default {
 			this.active = 'besluiten'
 			this.loadBesluiten()
 		},
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/**
+		 * @param payload
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
 		async onMandaatSave(payload) {
 			try {
 				if (this.editingMandaat && this.editingMandaat.id) {

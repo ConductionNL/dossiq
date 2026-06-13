@@ -69,7 +69,7 @@ class VTHTemplateControllerTest extends TestCase
     {
         $this->vthTemplateService = $this->createMock(VTHTemplateService::class);
         $this->request            = $this->createMock(IRequest::class);
-        $this->logger             = $this->createMock(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->controller = new VTHTemplateController(
             appName: 'procest',

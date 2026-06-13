@@ -26,7 +26,7 @@ self-contained and should take under 15 minutes.
       `<NcButton>` with `@click="$router.push({ name: 'Tasks' })"`) labelled
       `{{ t('procest', 'All tasks') }}` (NL: `Alle taken`). The link MUST be
       visible without scrolling.
-- [ ] 2.3 Run `npm run lint` and `npm run dev` from the procest repo root;
+- [x] 2.3 Run `npm run lint` and `npm run dev` from the procest repo root;
       open `http://localhost:3000/apps/procest/my-work` and confirm the new
       affordance renders and navigates to `/apps/procest/tasks`.
       (npm deps unavailable in container; lint skipped — Vue template is
@@ -70,3 +70,4 @@ self-contained and should take under 15 minutes.
       (npm deps unavailable in container; skipped.)
 - [x] 5.5 Open a PR titled `refactor(procest): align Tasks placement with IA
       (Mijn werk › Taken)` targeting `development`.
+      PR: https://codeberg.org/Conduction/procest/pulls/38

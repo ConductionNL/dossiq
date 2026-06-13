@@ -13,14 +13,19 @@
 			<router-link to="/leverancier/tenders" class="lz-back" data-testid="leverancier-tender-detail-back">
 				← {{ t('procest', 'Terug') }}
 			</router-link>
-			<h1 v-if="tender">{{ tender.onderwerp || tender.subject || tender.kenmerk || tender.id }}</h1>
+			<h1 v-if="tender">
+				{{ tender.onderwerp || tender.subject || tender.kenmerk || tender.id }}
+			</h1>
 		</header>
 
 		<div v-if="loading" data-testid="lz-loading" class="lz-state">
 			<NcLoadingIcon :size="32" />
 		</div>
 
-		<div v-else-if="error || !tender" data-testid="lz-error" class="lz-state lz-state--error" role="alert">
+		<div v-else-if="error || !tender"
+			data-testid="lz-error"
+			class="lz-state lz-state--error"
+			role="alert">
 			{{ error || t('procest', 'Aanbesteding niet gevonden.') }}
 		</div>
 

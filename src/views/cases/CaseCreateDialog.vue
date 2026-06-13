@@ -298,21 +298,23 @@ export default {
 				result: null,
 				extensionCount: 0,
 				parentCase: this.parentCase || null,
-				statusHistory: [
+				// statusHistory/activity are JSON-encoded strings per the
+				// case schema (procest_register.json).
+				statusHistory: JSON.stringify([
 					{
 						status: initialStatus?.id || null,
 						date: now.toISOString(),
 						changedBy: currentUser,
 					},
-				],
-				activity: [
+				]),
+				activity: JSON.stringify([
 					{
 						date: now.toISOString(),
 						type: 'created',
 						description: activityDescription,
 						user: currentUser,
 					},
-				],
+				]),
 			}
 
 			const result = await this.objectStore.saveObject('case', caseData)
@@ -603,21 +605,23 @@ export default {
 				extensionCount: 0,
 				workflowTemplate: this.activeWorkflowId || null,
 				workflowVersion: this.activeWorkflowVersion || null,
-				statusHistory: [
+				// statusHistory/activity are JSON-encoded strings per the
+				// case schema (procest_register.json).
+				statusHistory: JSON.stringify([
 					{
 						status: initialStatus?.id || null,
 						date: now.toISOString(),
 						changedBy: currentUser,
 					},
-				],
-				activity: [
+				]),
+				activity: JSON.stringify([
 					{
 						date: now.toISOString(),
 						type: 'created',
 						description: t('procest', 'Case created with type \'{type}\'', { type: this.selectedCaseType.title }),
 						user: currentUser,
 					},
-				],
+				]),
 			}
 
 			const result = await this.objectStore.saveObject('case', caseData)

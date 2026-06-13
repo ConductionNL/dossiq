@@ -42,6 +42,8 @@ use Throwable;
  * OpenRegister. Activation is idempotent.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/vth-module/tasks.md#task-2
  */
 class VTHTemplateController extends Controller
 {

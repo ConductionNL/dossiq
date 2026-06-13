@@ -2,7 +2,9 @@
 	<aside class="mandaat-widget">
 		<header class="mandaat-widget__header">
 			<h4>{{ mandaat.omschrijving || mandaat.mandaatNummer }}</h4>
-			<button type="button" class="mandaat-widget__close" @click="$emit('close')">×</button>
+			<button type="button" class="mandaat-widget__close" @click="$emit('close')">
+				×
+			</button>
 		</header>
 
 		<dl class="mandaat-widget__props">
@@ -11,7 +13,10 @@
 
 			<dt>{{ t('procest', 'Legal basis') }}</dt>
 			<dd>
-				<a v-if="legalLink" :href="legalLink" target="_blank" rel="noopener">
+				<a v-if="legalLink"
+					:href="legalLink"
+					target="_blank"
+					rel="noopener">
 					{{ mandaat.wettelijkeGrondslag }}
 				</a>
 				<span v-else>{{ mandaat.wettelijkeGrondslag || '-' }}</span>

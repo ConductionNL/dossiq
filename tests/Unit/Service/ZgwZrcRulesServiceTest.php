@@ -44,9 +44,10 @@ use Psr\Log\LoggerInterface;
 interface ObjectServiceStub
 {
     public function find(string $id, string $register, string $schema): ?array;
-    public function buildSearchQuery(array $requestParams, string $register, string $schema): array;
-    public function searchObjectsPaginated(array $query): array;
 
+    public function buildSearchQuery(array $requestParams, string $register, string $schema): array;
+
+    public function searchObjectsPaginated(array $query): array;
 }//end interface
 
 /**
@@ -75,7 +76,6 @@ class ZgwZrcRulesServiceTest extends TestCase
      */
     private ZgwZrcRulesService $service;
 
-
     /**
      * Set up the test environment.
      *
@@ -98,11 +98,9 @@ class ZgwZrcRulesServiceTest extends TestCase
 
     }//end setUp()
 
-
     // -------------------------------------------------------------------------
     // Task 6.1 — detectEindstatus() tests
     // -------------------------------------------------------------------------
-
 
     /**
      * Test detectEindstatus returns false when objectService is null.
@@ -121,7 +119,6 @@ class ZgwZrcRulesServiceTest extends TestCase
 
     }//end testDetectEindstatusReturnsFalseWithoutObjectService()
 
-
     /**
      * Test detectEindstatus returns true when isEindstatus is explicitly true.
      *
@@ -130,10 +127,12 @@ class ZgwZrcRulesServiceTest extends TestCase
     public function testDetectEindstatusExplicitTrue(): void
     {
         $objectService = $this->createMock(ObjectServiceStub::class);
-        $objectService->method('find')->willReturn([
-            'isEindstatus' => true,
-            'caseType'     => 'uuid-zt-1',
-        ]);
+        $objectService->method('find')->willReturn(
+                [
+                    'isEindstatus' => true,
+                    'caseType'     => 'uuid-zt-1',
+                ]
+                );
 
         $this->settingsService
             ->method('getConfigValue')
@@ -160,7 +159,6 @@ class ZgwZrcRulesServiceTest extends TestCase
 
     }//end testDetectEindstatusExplicitTrue()
 
-
     /**
      * Test detectEindstatus returns false when isEindstatus is explicitly false.
      *
@@ -169,10 +167,12 @@ class ZgwZrcRulesServiceTest extends TestCase
     public function testDetectEindstatusExplicitFalse(): void
     {
         $objectService = $this->createMock(ObjectServiceStub::class);
-        $objectService->method('find')->willReturn([
-            'isEindstatus' => false,
-            'caseType'     => 'uuid-zt-1',
-        ]);
+        $objectService->method('find')->willReturn(
+                [
+                    'isEindstatus' => false,
+                    'caseType'     => 'uuid-zt-1',
+                ]
+                );
 
         $this->service->setContext(
             objectService: $objectService,
@@ -188,7 +188,6 @@ class ZgwZrcRulesServiceTest extends TestCase
 
     }//end testDetectEindstatusExplicitFalse()
 
-
     /**
      * Test detectEindstatus uses volgnummer fallback when isEindstatus is absent.
      *
@@ -202,20 +201,24 @@ class ZgwZrcRulesServiceTest extends TestCase
         $objectService = $this->createMock(ObjectServiceStub::class);
 
         // find() returns statustype data (no isEindstatus field).
-        $objectService->method('find')->willReturn([
-            'id'             => $uuidHighest,
-            'caseType'       => 'uuid-zt-1',
-            'sequenceNumber' => 10,
-        ]);
+        $objectService->method('find')->willReturn(
+                [
+                    'id'             => $uuidHighest,
+                    'caseType'       => 'uuid-zt-1',
+                    'sequenceNumber' => 10,
+                ]
+                );
 
         $objectService->method('buildSearchQuery')->willReturn(['caseType' => 'uuid-zt-1']);
 
-        $objectService->method('searchObjectsPaginated')->willReturn([
-            'results' => [
-                ['id' => $uuidHighest, 'sequenceNumber' => 10],
-                ['id' => $uuidLower, 'sequenceNumber' => 5],
-            ],
-        ]);
+        $objectService->method('searchObjectsPaginated')->willReturn(
+                [
+                    'results' => [
+                        ['id' => $uuidHighest, 'sequenceNumber' => 10],
+                        ['id' => $uuidLower, 'sequenceNumber' => 5],
+                    ],
+                ]
+                );
 
         $this->settingsService
             ->method('getConfigValue')
@@ -242,7 +245,6 @@ class ZgwZrcRulesServiceTest extends TestCase
 
     }//end testDetectEindstatusVolgnummerFallbackHighestIsEindstatus()
 
-
     /**
      * Test detectEindstatus returns false for lower volgnummer when isEindstatus absent.
      *
@@ -255,20 +257,24 @@ class ZgwZrcRulesServiceTest extends TestCase
 
         $objectService = $this->createMock(ObjectServiceStub::class);
 
-        $objectService->method('find')->willReturn([
-            'id'             => $uuidLower,
-            'caseType'       => 'uuid-zt-1',
-            'sequenceNumber' => 5,
-        ]);
+        $objectService->method('find')->willReturn(
+                [
+                    'id'             => $uuidLower,
+                    'caseType'       => 'uuid-zt-1',
+                    'sequenceNumber' => 5,
+                ]
+                );
 
         $objectService->method('buildSearchQuery')->willReturn(['caseType' => 'uuid-zt-1']);
 
-        $objectService->method('searchObjectsPaginated')->willReturn([
-            'results' => [
-                ['id' => $uuidHighest, 'sequenceNumber' => 10],
-                ['id' => $uuidLower, 'sequenceNumber' => 5],
-            ],
-        ]);
+        $objectService->method('searchObjectsPaginated')->willReturn(
+                [
+                    'results' => [
+                        ['id' => $uuidHighest, 'sequenceNumber' => 10],
+                        ['id' => $uuidLower, 'sequenceNumber' => 5],
+                    ],
+                ]
+                );
 
         $this->settingsService
             ->method('getConfigValue')
@@ -294,11 +300,9 @@ class ZgwZrcRulesServiceTest extends TestCase
 
     }//end testDetectEindstatusVolgnummerFallbackLowerIsNotEindstatus()
 
-
     // -------------------------------------------------------------------------
     // Task 6.2 — filterZakenForConsumer() tests
     // -------------------------------------------------------------------------
-
 
     /**
      * Test filterZakenForConsumer returns all zaken when no authorizations provided.
@@ -320,7 +324,6 @@ class ZgwZrcRulesServiceTest extends TestCase
         $this->assertCount(2, $result);
 
     }//end testFilterZakenForConsumerUnfilteredWithoutAuthorizations()
-
 
     /**
      * Test filterZakenForConsumer excludes zaken from unauthorized zaaktypen.
@@ -351,7 +354,6 @@ class ZgwZrcRulesServiceTest extends TestCase
 
     }//end testFilterZakenForConsumerExcludesUnauthorizedZaaktype()
 
-
     /**
      * Test filterZakenForConsumer excludes zaken exceeding maxVertrouwelijkheidaanduiding.
      *
@@ -380,11 +382,9 @@ class ZgwZrcRulesServiceTest extends TestCase
 
     }//end testFilterZakenForConsumerExcludesExceedingVertrouwelijkheid()
 
-
     // -------------------------------------------------------------------------
     // Task 6.3 — Error code fix tests (zrc-010, zrc-013a, zrc-002, zrc-015)
     // -------------------------------------------------------------------------
-
 
     /**
      * Test zrc-010: communicatiekanaal valid URL without UUID → invalid-resource.
@@ -404,7 +404,6 @@ class ZgwZrcRulesServiceTest extends TestCase
 
     }//end testCommunicatiekanaalCollectionUrlReturnsInvalidResource()
 
-
     /**
      * Test zrc-010: completely invalid URL → bad-url.
      *
@@ -421,7 +420,6 @@ class ZgwZrcRulesServiceTest extends TestCase
 
     }//end testCommunicatiekanaalInvalidUrlReturnsBadUrl()
 
-
     /**
      * Test zrc-013a: hoofdzaak not found returns does-not-exist (not no_match).
      *
@@ -429,8 +427,8 @@ class ZgwZrcRulesServiceTest extends TestCase
      */
     public function testHoofdzaakNotFoundReturnsDoesNotExist(): void
     {
-        $zaaktypeUuid   = 'aabbccdd-1111-2222-3333-444455556666';
-        $hoofdzaakUuid  = 'ccddccdd-5555-6666-7777-888899990000';
+        $zaaktypeUuid  = 'aabbccdd-1111-2222-3333-444455556666';
+        $hoofdzaakUuid = 'ccddccdd-5555-6666-7777-888899990000';
 
         // Zaaktype lookup returns a valid (published) zaaktype; hoofdzaak lookup returns null.
         $objectService = $this->createMock(ObjectServiceStub::class);
@@ -457,8 +455,8 @@ class ZgwZrcRulesServiceTest extends TestCase
         );
 
         $body = [
-            'zaaktype'   => "http://example.com/zaaktypen/{$zaaktypeUuid}",
-            'hoofdzaak'  => "http://example.com/zaken/{$hoofdzaakUuid}",
+            'zaaktype'  => "http://example.com/zaaktypen/{$zaaktypeUuid}",
+            'hoofdzaak' => "http://example.com/zaken/{$hoofdzaakUuid}",
         ];
 
         $result = $this->service->rulesZakenCreate($body);
@@ -469,11 +467,9 @@ class ZgwZrcRulesServiceTest extends TestCase
 
     }//end testHoofdzaakNotFoundReturnsDoesNotExist()
 
-
     // -------------------------------------------------------------------------
     // Task 6.4 — Side effect tests (vertrouwelijkheidaanduiding override)
     // -------------------------------------------------------------------------
-
 
     /**
      * Test zrc-009: zaaktype vertrouwelijkheidaanduiding overrides incoming value.
@@ -487,11 +483,13 @@ class ZgwZrcRulesServiceTest extends TestCase
         $objectService = $this->createMock(ObjectServiceStub::class);
 
         // find() returns zaaktype with confidentiality = 'vertrouwelijk'.
-        $objectService->method('find')->willReturn([
-            'id'            => $zaaktypeUuid,
-            'confidentiality' => 'vertrouwelijk',
-            'isDraft'       => false,
-        ]);
+        $objectService->method('find')->willReturn(
+                [
+                    'id'              => $zaaktypeUuid,
+                    'confidentiality' => 'vertrouwelijk',
+                    'isDraft'         => false,
+                ]
+                );
 
         $objectService->method('buildSearchQuery')->willReturn([]);
         $objectService->method('searchObjectsPaginated')->willReturn(['results' => [], 'total' => 0]);
@@ -526,7 +524,6 @@ class ZgwZrcRulesServiceTest extends TestCase
 
     }//end testVertrouwelijkheidaanduidingAlwaysOverridesFromZaaktype()
 
-
     /**
      * Test zrc-009: incoming value preserved when zaaktype has no confidentiality.
      *
@@ -539,10 +536,12 @@ class ZgwZrcRulesServiceTest extends TestCase
         $objectService = $this->createMock(ObjectServiceStub::class);
 
         // Zaaktype has no confidentiality field.
-        $objectService->method('find')->willReturn([
-            'id'       => $zaaktypeUuid,
-            'isDraft'  => false,
-        ]);
+        $objectService->method('find')->willReturn(
+                [
+                    'id'      => $zaaktypeUuid,
+                    'isDraft' => false,
+                ]
+                );
 
         $objectService->method('buildSearchQuery')->willReturn([]);
         $objectService->method('searchObjectsPaginated')->willReturn(['results' => [], 'total' => 0]);
@@ -576,11 +575,9 @@ class ZgwZrcRulesServiceTest extends TestCase
 
     }//end testVertrouwelijkheidaanduidingFallsBackToIncomingWhenZaaktypeHasNone()
 
-
     // -------------------------------------------------------------------------
     // WF1 — isSafeExternalUrl SSRF guard (ZgwRulesBase::fetchExternalUrl)
     // -------------------------------------------------------------------------
-
 
     /**
      * Test that isSafeExternalUrl rejects IMDS/cloud-metadata address.
@@ -607,7 +604,6 @@ class ZgwZrcRulesServiceTest extends TestCase
 
     }//end testSafeExternalUrlBlocksPrivateAddresses()
 
-
     /**
      * Data provider: URLs that must be blocked by the SSRF guard.
      *
@@ -618,16 +614,15 @@ class ZgwZrcRulesServiceTest extends TestCase
     public static function provideBlockedUrls(): array
     {
         return [
-            'IMDS cloud metadata'    => ['http://169.254.169.254/latest/meta-data/'],
-            'RFC1918 class-A'        => ['http://10.0.0.1/admin'],
-            'RFC1918 class-B'        => ['https://172.16.0.5/secret'],
-            'RFC1918 class-C'        => ['https://192.168.1.1/login'],
-            'localhost'              => ['http://127.0.0.1/internal'],
-            'non-http scheme'        => ['ftp://example.com/file'],
-            'file scheme'            => ['file:///etc/passwd'],
+            'IMDS cloud metadata' => ['http://169.254.169.254/latest/meta-data/'],
+            'RFC1918 class-A'     => ['http://10.0.0.1/admin'],
+            'RFC1918 class-B'     => ['https://172.16.0.5/secret'],
+            'RFC1918 class-C'     => ['https://192.168.1.1/login'],
+            'localhost'           => ['http://127.0.0.1/internal'],
+            'non-http scheme'     => ['ftp://example.com/file'],
+            'file scheme'         => ['file:///etc/passwd'],
         ];
     }//end provideBlockedUrls()
-
 
     /**
      * Test that isSafeExternalUrl allows a public https URL.
@@ -652,6 +647,4 @@ class ZgwZrcRulesServiceTest extends TestCase
         $this->assertIsBool($result);
 
     }//end testSafeExternalUrlAllowsPublicHttpsUrl()
-
-
 }//end class

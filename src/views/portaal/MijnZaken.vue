@@ -31,12 +31,24 @@
 				<table v-else class="zp-cases-table">
 					<thead>
 						<tr>
-							<th scope="col">{{ t('procest', 'Reference') }}</th>
-							<th scope="col">{{ t('procest', 'Type') }}</th>
-							<th scope="col">{{ t('procest', 'Subject') }}</th>
-							<th scope="col">{{ t('procest', 'Status') }}</th>
-							<th scope="col">{{ t('procest', 'Submitted') }}</th>
-							<th scope="col">{{ t('procest', 'Deadline') }}</th>
+							<th scope="col">
+								{{ t('procest', 'Reference') }}
+							</th>
+							<th scope="col">
+								{{ t('procest', 'Type') }}
+							</th>
+							<th scope="col">
+								{{ t('procest', 'Subject') }}
+							</th>
+							<th scope="col">
+								{{ t('procest', 'Status') }}
+							</th>
+							<th scope="col">
+								{{ t('procest', 'Submitted') }}
+							</th>
+							<th scope="col">
+								{{ t('procest', 'Deadline') }}
+							</th>
 						</tr>
 					</thead>
 					<tbody>

@@ -24,7 +24,9 @@
 						<dt>{{ t('procest', 'Bevoegd gezag') }}</dt>
 						<dd>{{ zaak.bevoegdGezag || '—' }}</dd>
 						<dt>{{ t('procest', 'Deadline') }}</dt>
-						<dd :class="deadlineClass">{{ formattedDeadline }}</dd>
+						<dd :class="deadlineClass">
+							{{ formattedDeadline }}
+						</dd>
 						<dt>{{ t('procest', 'Vergunningaanvraag ref') }}</dt>
 						<dd>{{ zaak.vergunningaanvraagRef || '—' }}</dd>
 					</dl>
@@ -41,7 +43,9 @@
 							</span>
 						</li>
 					</ul>
-					<p v-else>{{ t('procest', 'No activiteiten available.') }}</p>
+					<p v-else>
+						{{ t('procest', 'No activiteiten available.') }}
+					</p>
 				</section>
 
 				<!-- Locatie section -->
@@ -69,7 +73,9 @@
 				<!-- Samenwerkverzoeken section -->
 				<section class="dso-section">
 					<h3>{{ t('procest', 'Samenwerkverzoeken') }}</h3>
-					<p v-if="samenwerkverzoeken.length === 0">{{ t('procest', 'No samenwerkverzoeken.') }}</p>
+					<p v-if="samenwerkverzoeken.length === 0">
+						{{ t('procest', 'No samenwerkverzoeken.') }}
+					</p>
 					<ul v-else class="dso-samenwerk-list">
 						<li v-for="sw in samenwerkverzoeken" :key="sw.id">
 							<strong>{{ sw.aangezochtBevoegdGezag }}</strong>
@@ -134,10 +140,10 @@ import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
 import BeschikkingDialog from './BeschikkingDialog.vue'
 import SamenwerkverzoekDialog from './SamenwerkverzoekDialog.vue'
 import DoorstuurDialog from './DoorstuurDialog.vue'
-import StatusTransitionDialog from '../dialogs/StatusTransitionDialog.vue'
+import StatusTransitionDialog from '../../dialogs/StatusTransitionDialog.vue'
 
 export default {
-	name: 'DsoCaseDetailDialog',
+	name: 'DsoCaseDetail',
 	components: {
 		NcModal,
 		NcButton,

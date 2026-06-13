@@ -34,7 +34,10 @@ export const useDeelzaakStore = defineStore('deelzaak', {
 		getSubCaseCount: (state) => (uuid) => state.subCaseCounts[uuid] || 0,
 	},
 	actions: {
-		/** @spec openspec/changes/deelzaak-support/tasks.md#T01 */
+		/**
+		 * @param parentCaseUuid
+		 * @spec openspec/changes/deelzaak-support/tasks.md#T01
+		 */
 		async fetchSubCases(parentCaseUuid) {
 			this.loading = true
 			this.error = null
@@ -50,7 +53,10 @@ export const useDeelzaakStore = defineStore('deelzaak', {
 			}
 		},
 
-		/** @spec openspec/changes/deelzaak-support/tasks.md#T02 */
+		/**
+		 * @param parentCaseUuid
+		 * @spec openspec/changes/deelzaak-support/tasks.md#T02
+		 */
 		async fetchParentCase(parentCaseUuid) {
 			try {
 				this.parentCase = await apiFetchParentCase(parentCaseUuid)
@@ -61,7 +67,10 @@ export const useDeelzaakStore = defineStore('deelzaak', {
 			}
 		},
 
-		/** @spec openspec/changes/deelzaak-support/tasks.md#T03 */
+		/**
+		 * @param caseUuidArray
+		 * @spec openspec/changes/deelzaak-support/tasks.md#T03
+		 */
 		async fetchSubCaseCounts(caseUuidArray) {
 			if (!Array.isArray(caseUuidArray) || caseUuidArray.length === 0) {
 				return {}
@@ -71,12 +80,18 @@ export const useDeelzaakStore = defineStore('deelzaak', {
 			return counts
 		},
 
-		/** @spec openspec/changes/deelzaak-support/tasks.md#T08 */
+		/**
+		 * @param params
+		 * @spec openspec/changes/deelzaak-support/tasks.md#T08
+		 */
 		async validateSubCase(params) {
 			return apiValidateSubCase(params)
 		},
 
-		/** @spec openspec/changes/deelzaak-support/tasks.md#T11 */
+		/**
+		 * @param parentCaseUuid
+		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
+		 */
 		async unlinkSubCases(parentCaseUuid) {
 			const unlinked = await apiUnlinkSubCases(parentCaseUuid)
 			// Drop the local cache count so the UI re-renders fresh on next read.

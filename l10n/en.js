@@ -172,6 +172,7 @@ OC.L10N.register(
     "Akkoord aanvragen" : "Request approval",
     "Akkoord door" : "Approved by",
     "All" : "All",
+    "All tasks" : "All tasks",
     "All case types" : "All case types",
     "All cases active" : "All cases active",
     "All caught up!" : "All caught up!",

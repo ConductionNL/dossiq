@@ -12,19 +12,25 @@
 				{{ t('procest', 'Configure retention periods per zaaktype. Cases reaching their retention threshold trigger e-Depot handover; permanent retention skips archive submission.') }}
 			</p>
 			<NcButton type="primary" @click="openNew">
-				<template #icon><Plus :size="18" /></template>
+				<template #icon>
+					<Plus :size="18" />
+				</template>
 				{{ t('procest', 'New rule') }}
 			</NcButton>
 		</div>
 
 		<NcLoadingIcon v-if="loading" :size="32" />
-		<NcNoteCard v-if="error" type="error">{{ error }}</NcNoteCard>
+		<NcNoteCard v-if="error" type="error">
+			{{ error }}
+		</NcNoteCard>
 
 		<NcEmptyContent
 			v-if="!loading && rules.length === 0"
 			:name="t('procest', 'No retention rules')"
 			:description="t('procest', 'No bewaartermijnregels configured. Add one per zaaktype to enable scheduled archive handover.')">
-			<template #icon><FolderClock :size="48" /></template>
+			<template #icon>
+				<FolderClock :size="48" />
+			</template>
 		</NcEmptyContent>
 
 		<table v-if="!loading && rules.length > 0" class="archief-config-tab__table">
@@ -51,8 +57,12 @@
 					<td>{{ r.vernietiging ? t('procest', 'Yes') : t('procest', 'No') }}</td>
 					<td>{{ r.triggerGebeurtenis || t('procest', 'sluitingsdatum') }}</td>
 					<td>
-						<NcButton size="small" @click="openEdit(r)">{{ t('procest', 'Edit') }}</NcButton>
-						<NcButton size="small" type="error" @click="confirmDelete(r)">{{ t('procest', 'Delete') }}</NcButton>
+						<NcButton size="small" @click="openEdit(r)">
+							{{ t('procest', 'Edit') }}
+						</NcButton>
+						<NcButton size="small" type="error" @click="confirmDelete(r)">
+							{{ t('procest', 'Delete') }}
+						</NcButton>
 					</td>
 				</tr>
 			</tbody>
@@ -71,8 +81,12 @@
 			@update:open="v => { if (!v) deleting = null }">
 			<p>{{ t('procest', 'Delete the retention rule for {z}? Cases already in the e-Depot handover pipeline are not affected.', { z: deleting.zaaktypeKey }) }}</p>
 			<template #actions>
-				<NcButton @click="deleting = null">{{ t('procest', 'Cancel') }}</NcButton>
-				<NcButton type="error" @click="doDelete">{{ t('procest', 'Delete') }}</NcButton>
+				<NcButton @click="deleting = null">
+					{{ t('procest', 'Cancel') }}
+				</NcButton>
+				<NcButton type="error" @click="doDelete">
+					{{ t('procest', 'Delete') }}
+				</NcButton>
 			</template>
 		</NcDialog>
 	</div>
@@ -123,7 +137,10 @@ export default {
 			this.editingRule = null
 			this.editorOpen = true
 		},
-		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
+		/**
+		 * @param r
+		 * @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md
+		 */
 		openEdit(r) {
 			this.editingRule = r
 			this.editorOpen = true
@@ -133,11 +150,17 @@ export default {
 			this.editorOpen = false
 			this.editingRule = null
 		},
-		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
+		/**
+		 * @param r
+		 * @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md
+		 */
 		confirmDelete(r) {
 			this.deleting = r
 		},
-		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
+		/**
+		 * @param payload
+		 * @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md
+		 */
 		async onSave(payload) {
 			try {
 				if (this.editingRule && this.editingRule.id) {

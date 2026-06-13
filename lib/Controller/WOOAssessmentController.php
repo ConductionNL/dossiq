@@ -44,6 +44,9 @@ use Psr\Log\LoggerInterface;
  * Controller for WOO document assessment, deadline extension, and besluit.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/woo-case-type/tasks.md#task-5
+ * @spec openspec/changes/woo-case-type/tasks.md#task-7
  */
 class WOOAssessmentController extends Controller
 {

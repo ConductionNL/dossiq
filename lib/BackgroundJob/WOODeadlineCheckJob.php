@@ -38,6 +38,8 @@ use Psr\Log\LoggerInterface;
  * Daily timed job that checks WOO case deadlines and emits T-7 warnings.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/woo-case-type/tasks.md#task-4
  */
 class WOODeadlineCheckJob extends TimedJob
 {

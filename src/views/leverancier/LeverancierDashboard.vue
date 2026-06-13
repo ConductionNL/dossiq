@@ -37,7 +37,10 @@
 				<p>{{ t('procest', 'Loading dashboard…') }}</p>
 			</div>
 
-			<div v-else-if="error" data-testid="lz-error" class="lz-state lz-state--error" role="alert">
+			<div v-else-if="error"
+				data-testid="lz-error"
+				class="lz-state lz-state--error"
+				role="alert">
 				<p>{{ error }}</p>
 			</div>
 
@@ -48,7 +51,9 @@
 			<div v-else class="lz-cards">
 				<router-link to="/leverancier/tenders" class="lz-card lz-card--tenders" data-testid="lz-card-tenders">
 					<h2>{{ t('procest', 'Aanbestedingen') }}</h2>
-					<p class="lz-count">{{ summary.tenders.count }}</p>
+					<p class="lz-count">
+						{{ summary.tenders.count }}
+					</p>
 					<ul class="lz-card-detail">
 						<li>{{ t('procest', 'Gegund') }}: {{ summary.tenders.awarded }}</li>
 						<li>{{ t('procest', 'Evaluatie') }}: {{ summary.tenders.evaluating }}</li>
@@ -58,7 +63,9 @@
 
 				<router-link to="/leverancier/facturen" class="lz-card lz-card--invoices" data-testid="lz-card-invoices">
 					<h2>{{ t('procest', 'Facturen') }}</h2>
-					<p class="lz-count">{{ summary.invoices.count }}</p>
+					<p class="lz-count">
+						{{ summary.invoices.count }}
+					</p>
 					<ul class="lz-card-detail">
 						<li>{{ t('procest', 'Open > 90 dagen') }}: {{ summary.invoices.overdue90Plus }}</li>
 						<li>{{ t('procest', 'Betwist') }}: {{ summary.invoices.disputed }}</li>
@@ -67,7 +74,9 @@
 
 				<router-link to="/leverancier/contracten" class="lz-card lz-card--contracts" data-testid="lz-card-contracts">
 					<h2>{{ t('procest', 'Contracten') }}</h2>
-					<p class="lz-count">{{ summary.contracts.count }}</p>
+					<p class="lz-count">
+						{{ summary.contracts.count }}
+					</p>
 					<ul class="lz-card-detail">
 						<li>{{ t('procest', 'Bijna afloop') }}: {{ summary.contracts.expiringSoon }}</li>
 						<li>{{ t('procest', 'Auto-verleng') }}: {{ summary.contracts.autoRenewing }}</li>
@@ -76,7 +85,9 @@
 
 				<router-link to="/leverancier/kpi" class="lz-card lz-card--kpi" data-testid="lz-card-kpi">
 					<h2>{{ t('procest', 'KPI') }}</h2>
-					<p class="lz-count">{{ summary.kpi.ready ? t('procest', 'Beschikbaar') : t('procest', 'Onvoldoende data') }}</p>
+					<p class="lz-count">
+						{{ summary.kpi.ready ? t('procest', 'Beschikbaar') : t('procest', 'Onvoldoende data') }}
+					</p>
 					<ul class="lz-card-detail">
 						<li>{{ t('procest', 'Periode') }}: {{ summary.kpi.period }}</li>
 					</ul>

@@ -18,17 +18,23 @@
 					:placeholder="t('procest', 'Pick a tenant')"
 					@input="onTenantChange" />
 				<NcButton type="secondary" @click="loadProgress">
-					<template #icon><Refresh :size="18" /></template>
+					<template #icon>
+						<Refresh :size="18" />
+					</template>
 					{{ t('procest', 'Refresh') }}
 				</NcButton>
 			</div>
 		</div>
 
 		<NcLoadingIcon v-if="loading" :size="32" />
-		<NcNoteCard v-if="error" type="error">{{ error }}</NcNoteCard>
+		<NcNoteCard v-if="error" type="error">
+			{{ error }}
+		</NcNoteCard>
 
 		<NcEmptyContent v-if="!loading && !tenantId">
-			<template #icon><AccountTie :size="48" /></template>
+			<template #icon>
+				<AccountTie :size="48" />
+			</template>
 			<template #default>
 				{{ t('procest', 'Select a tenant to view onboarding progress.') }}
 			</template>
@@ -55,7 +61,9 @@
 						<CircleOutline v-else :size="22" />
 					</div>
 					<div class="tenant-onboarding__step-body">
-						<div class="tenant-onboarding__step-title">{{ stepLabel(step.step) }}</div>
+						<div class="tenant-onboarding__step-title">
+							{{ stepLabel(step.step) }}
+						</div>
 						<div v-if="step.completedAt" class="tenant-onboarding__step-meta">
 							{{ t('procest', 'Completed {at} by {who}', { at: step.completedAt, who: step.completedBy || '—' }) }}
 						</div>
@@ -101,7 +109,9 @@
 						<div>
 							<strong>{{ t('procest', 'Not ready. Missing:') }}</strong>
 							<ul class="tenant-onboarding__missing">
-								<li v-for="m in (goLiveResult.missing || [])" :key="m">{{ m }}</li>
+								<li v-for="m in (goLiveResult.missing || [])" :key="m">
+									{{ m }}
+								</li>
 							</ul>
 						</div>
 					</div>
@@ -200,11 +210,17 @@ export default {
 	},
 	methods: {
 		t,
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/**
+		 * @param step
+		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+		 */
 		stepLabel(step) {
 			return t('procest', STEP_LABELS[step] || step)
 		},
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/**
+		 * @param opt
+		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+		 */
 		onTenantChange(opt) {
 			this.tenantId = opt ? opt.id : ''
 			this.progress = null
@@ -262,7 +278,10 @@ export default {
 				this.error = e?.response?.data?.message || e.message || t('procest', 'Failed to initialise')
 			}
 		},
-		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
+		/**
+		 * @param step
+		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+		 */
 		async markComplete(step) {
 			this.markingStep = step
 			try {

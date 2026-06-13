@@ -94,7 +94,9 @@
 			</div>
 
 			<div class="mandaat-editor__actions">
-				<NcButton @click="$emit('close')">{{ t('procest', 'Cancel') }}</NcButton>
+				<NcButton @click="$emit('close')">
+					{{ t('procest', 'Cancel') }}
+				</NcButton>
 				<NcButton type="primary" :disabled="saving" @click="save">
 					<template #icon>
 						<NcLoadingIcon v-if="saving" :size="18" />
