@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+<!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <template>
 	<div class="consultation-panel">
 		<h4 class="consultation-panel__title">
@@ -65,6 +67,12 @@
 						{{ t('procest', 'Acknowledge') }}
 					</NcButton>
 					<NcButton
+						v-if="cons.status === 'in_behandeling' && !cons.advies"
+						type="secondary"
+						@click="openResponseDialog(cons)">
+						{{ t('procest', 'Submit response') }}
+					</NcButton>
+					<NcButton
 						v-if="cons.status === 'advies_uitgebracht'"
 						type="secondary"
 						@click="$emit('update-status', { id: cons.id, status: 'afgesloten' })">
@@ -78,62 +86,48 @@
 			{{ t('procest', 'No consultations for this case.') }}
 		</div>
 
-		<!-- Create form -->
-		<div v-if="showCreateForm" class="consultation-panel__create-form">
-			<h5>{{ t('procest', 'New Consultation') }}</h5>
-			<div class="form-group">
-				<label>{{ t('procest', 'Department / Organization') }} *</label>
-				<NcTextField
-					:value="newForm.adviesInstantie"
-					:placeholder="t('procest', 'e.g., Brandweer, Welstandscommissie')"
-					@update:value="v => newForm.adviesInstantie = v" />
-			</div>
-			<div class="form-group">
-				<label>{{ t('procest', 'Subject') }} *</label>
-				<NcTextField
-					:value="newForm.onderwerp"
-					@update:value="v => newForm.onderwerp = v" />
-			</div>
-			<div class="form-group">
-				<label>{{ t('procest', 'Questions') }}</label>
-				<textarea v-model="newForm.vraagstelling" rows="3" />
-			</div>
-			<div class="form-group">
-				<label>{{ t('procest', 'Response deadline') }} *</label>
-				<NcTextField
-					:value="newForm.uiterlijkeReactiedatum"
-					type="date"
-					@update:value="v => newForm.uiterlijkeReactiedatum = v" />
-			</div>
-			<div class="consultation-panel__form-actions">
-				<NcButton @click="showCreateForm = false">
-					{{ t('procest', 'Cancel') }}
-				</NcButton>
-				<NcButton type="primary" :disabled="!isFormValid" @click="submitCreate">
-					{{ t('procest', 'Create Consultation') }}
-				</NcButton>
-			</div>
-		</div>
-
-		<NcButton v-if="!showCreateForm && !isReadOnly" @click="showCreateForm = true">
+		<NcButton v-if="!isReadOnly" @click="showCreateDialog = true">
 			{{ t('procest', 'New Consultation') }}
 		</NcButton>
+
+		<!-- Create consultation dialog -->
+		<ConsultationCreateDialog
+			:open="showCreateDialog"
+			:case-id="caseId"
+			:parent-zaak-title="caseTitle"
+			@close="showCreateDialog = false"
+			@created="onConsultationCreated" />
+
+		<!-- Response form dialog -->
+		<ConsultationResponseForm
+			:open="showResponseDialog"
+			:consultation-id="activeConsultationId"
+			:consultation-subject="activeConsultationSubject"
+			@close="showResponseDialog = false"
+			@submitted="onResponseSubmitted" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcTextField } from '@nextcloud/vue'
+import { NcButton } from '@nextcloud/vue'
+import ConsultationCreateDialog from '../../../dialogs/ConsultationCreateDialog.vue'
+import ConsultationResponseForm from '../../../dialogs/ConsultationResponseForm.vue'
 
 export default {
 	name: 'ConsultationPanel',
 	components: {
 		NcButton,
-		NcTextField,
+		ConsultationCreateDialog,
+		ConsultationResponseForm,
 	},
 	props: {
 		caseId: {
 			type: String,
 			required: true,
+		},
+		caseTitle: {
+			type: String,
+			default: '',
 		},
 		consultations: {
 			type: Array,
@@ -144,35 +138,27 @@ export default {
 			default: false,
 		},
 	},
+	emits: ['create', 'update-status', 'respond'],
 	data() {
 		return {
-			showCreateForm: false,
-			newForm: {
-				adviesInstantie: '',
-				onderwerp: '',
-				vraagstelling: '',
-				uiterlijkeReactiedatum: '',
-			},
+			showCreateDialog: false,
+			showResponseDialog: false,
+			activeConsultationId: '',
+			activeConsultationSubject: '',
 		}
 	},
 	computed: {
-		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
+		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		openCount() {
 			return this.consultations.filter(
 				c => c.status === 'open' || c.status === 'in_behandeling',
 			).length
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
-		isFormValid() {
-			return this.newForm.adviesInstantie.trim() !== ''
-				&& this.newForm.onderwerp.trim() !== ''
-				&& this.newForm.uiterlijkeReactiedatum !== ''
-		},
 	},
 	methods: {
 		/**
 		 * @param status
-		 * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md
+		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
 		 */
 		getStatusLabel(status) {
 			const labels = {
@@ -185,7 +171,7 @@ export default {
 		},
 		/**
 		 * @param advies
-		 * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md
+		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
 		 */
 		getAdviceLabel(advies) {
 			const labels = {
@@ -198,7 +184,7 @@ export default {
 		},
 		/**
 		 * @param dateStr
-		 * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md
+		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
 		 */
 		formatDate(dateStr) {
 			if (!dateStr) return '---'
@@ -208,7 +194,7 @@ export default {
 		},
 		/**
 		 * @param cons
-		 * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md
+		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
 		 */
 		isOverdue(cons) {
 			if (!cons.uiterlijkeReactiedatum) return false
@@ -217,7 +203,7 @@ export default {
 		},
 		/**
 		 * @param cons
-		 * @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md
+		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
 		 */
 		conditions(cons) {
 			if (!cons.voorwaarden) return []
@@ -230,19 +216,30 @@ export default {
 				return []
 			}
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-consultation-management/tasks.md */
-		submitCreate() {
-			this.$emit('create', {
-				parentZaak: this.caseId,
-				...this.newForm,
-			})
-			this.newForm = {
-				adviesInstantie: '',
-				onderwerp: '',
-				vraagstelling: '',
-				uiterlijkeReactiedatum: '',
-			}
-			this.showCreateForm = false
+		/**
+		 * @param formData
+		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
+		 */
+		onConsultationCreated(formData) {
+			this.$emit('create', formData)
+			this.showCreateDialog = false
+		},
+		/**
+		 * @param cons
+		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
+		 */
+		openResponseDialog(cons) {
+			this.activeConsultationId = cons.id
+			this.activeConsultationSubject = cons.onderwerp || ''
+			this.showResponseDialog = true
+		},
+		/**
+		 * @param responseData
+		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
+		 */
+		onResponseSubmitted(responseData) {
+			this.$emit('respond', responseData)
+			this.showResponseDialog = false
 		},
 	},
 }

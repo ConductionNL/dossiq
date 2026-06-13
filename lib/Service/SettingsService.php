@@ -236,6 +236,10 @@ class SettingsService
         'email_poll_interval',
         'email_poll_batch_size',
         'email_max_attachment_size',
+        // Consultation management (consultation-management spec).
+        'consultation_schema',
+        'advice_response_schema',
+        'advisory_body_schema',
     ];
 
     /**
@@ -356,6 +360,10 @@ class SettingsService
         'overdrachtAuditLog'           => 'overdracht_audit_log_schema',
         // Case-email integration (case-email-integration spec).
         'emailTemplate'                => 'email_template_schema',
+        // Consultation management (consultation-management spec).
+        'consultation'                 => 'consultation_schema',
+        'adviceResponse'               => 'advice_response_schema',
+        'advisoryBody'                 => 'advisory_body_schema',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
@@ -936,4 +944,4 @@ class SettingsService
 
         return true;
     }//end isList()
-}//end class
+    }//end class
