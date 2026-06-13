@@ -602,6 +602,20 @@ return [
         ['name' => 'termijnReporting#kwartaalrapport',   'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
         ['name' => 'termijnReporting#jaarrekening',      'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
 
+        // ── ZGW DRC Case Dossier (document-zaakdossier spec) ────────────
+        // Specific endpoints precede the {infoObjectId} wildcards so bulk/status routes resolve first.
+        ['name' => 'zaakdossier#listDossier',          'url' => '/api/cases/{caseId}/dossier',                     'verb' => 'GET'],
+        ['name' => 'zaakdossier#uploadDocument',       'url' => '/api/cases/{caseId}/dossier',                     'verb' => 'POST'],
+        ['name' => 'zaakdossier#downloadZip',          'url' => '/api/cases/{caseId}/dossier/zip',                 'verb' => 'POST'],
+        ['name' => 'zaakdossier#linkExisting',         'url' => '/api/cases/{caseId}/dossier/{infoObjectId}/link', 'verb' => 'POST'],
+        ['name' => 'zaakdossier#unlinkDocument',       'url' => '/api/cases/{caseId}/dossier/{infoObjectId}/link', 'verb' => 'DELETE'],
+        ['name' => 'zaakdossier#bulkTransitionStatus', 'url' => '/api/informatieobjecten/bulk/status',            'verb' => 'POST'],
+        ['name' => 'zaakdossier#bulkUpdateMetadata',   'url' => '/api/informatieobjecten/bulk/metadata',          'verb' => 'POST'],
+        ['name' => 'zaakdossier#transitionStatus',     'url' => '/api/informatieobjecten/{infoObjectId}/status',   'verb' => 'PATCH'],
+        ['name' => 'zaakdossier#updateMetadata',       'url' => '/api/informatieobjecten/{infoObjectId}',          'verb' => 'PATCH'],
+        ['name' => 'zaakdossier#downloadFile',         'url' => '/api/objects/{register}/{schema}/{objectId}/files/{fileId}/download', 'verb' => 'GET'],
+        ['name' => 'zaakdossier#downloadZgwDocumenten','url' => '/api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/download', 'verb' => 'GET'],
+
         // ── ORI Atom Feeds (public, no auth required) ───────────────────
         ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen.rss', 'verb' => 'GET'],
         ['name' => 'raadsinformatieFeed#agendapunten',  'url' => '/feed/ori/agendapunten.rss',  'verb' => 'GET'],
