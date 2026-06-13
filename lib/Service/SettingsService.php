@@ -396,6 +396,9 @@ class SettingsService
         'consultation'                 => 'consultation_schema',
         'adviceResponse'               => 'advice_response_schema',
         'advisoryBody'                 => 'advisory_body_schema',
+        // Milestone tracking (milestone-tracking spec).
+        'milestoneDefinition'          => 'milestone_definition_schema',
+        'milestoneRecord'              => 'milestone_record_schema',
     ];
 
     /**
