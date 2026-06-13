@@ -567,6 +567,11 @@ return [
         ['name' => 'termijnReporting#kwartaalrapport',   'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
         ['name' => 'termijnReporting#jaarrekening',      'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
 
+        // ── ORI Atom Feeds (public, no auth required) ───────────────────
+        ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen.rss', 'verb' => 'GET'],
+        ['name' => 'raadsinformatieFeed#agendapunten',  'url' => '/feed/ori/agendapunten.rss',  'verb' => 'GET'],
+        ['name' => 'raadsinformatieFeed#documenten',    'url' => '/feed/ori/documenten.rss',    'verb' => 'GET'],
+
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
         // 'postfix' keeps the route name unique; without it this entry replaces
         // the '/' route above (same name) and the app root 404s.

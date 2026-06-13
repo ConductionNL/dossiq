@@ -146,6 +146,12 @@ class Application extends App implements IBootstrap
         $this->registerLegesListeners(context: $context);
         $this->registerTermijnListeners(context: $context);
 
+        // DSO Omgevingsloket: create Procest zaak when a vergunningaanvraag is written.
+        $context->registerEventListener(
+            event: ObjectCreatedEvent::class,
+            listener: VergunningaanvraagCreatedListener::class
+        );
+
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
         $context->registerMiddleware(class: TenantMiddleware::class);
         // SaaS chain (member 04): resolve tenant binding then set Postgres
