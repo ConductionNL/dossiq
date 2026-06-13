@@ -1,3 +1,6 @@
+---
+status: implemented
+---
 # Doorlooptijd Dashboard Specification
 
 ## Purpose

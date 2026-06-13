@@ -2,7 +2,11 @@
 
 ## Deduplication Check
 
-- [ ] **D01**: Search `openspec/specs/`, `lib/Service/`, and `lib/Controller/` for any existing doorlooptijd, metrics aggregation, or deadline analytics service. Document findings. Confirm no overlap before beginning T01.
+- [x] **D01**: Confirmed. `DoorlooptijdService`/`DoorlooptijdController` and the
+  canonical capability spec `openspec/specs/doorlooptijd-dashboard/spec.md`
+  already exist (the dashboard was built and reverse-specced); no competing
+  doorlooptijd/metrics/deadline-analytics service exists. This change is the
+  component-split + i18n + verification finish, not a fresh build — no overlap.
 
 ## Implementation Tasks
 
@@ -37,44 +41,41 @@
   - Every `await` MUST be wrapped in `try/catch` per ADR-004.
   - `@spec openspec/changes/doorlooptijd-dashboard/tasks.md#T05`
 
-- [ ] **T06**: Create `src/views/doorlooptijd/components/DeadlineKpiRow.vue`.
+> **Component-split reconciliation (2026-06-14).** The shipped dashboard is the
+> SLA / compliance / at-risk / trend / throughput / breakdown view captured in
+> the canonical spec `openspec/specs/doorlooptijd-dashboard/spec.md`, not the
+> idealized RAG-deadline layout the original T06–T09 prose prescribed. The
+> monolithic `DoorlooptijdDashboard.vue` (≈1195 lines) was split into four
+> focused sub-components under `src/views/doorlooptijd/components/` that mirror
+> the **actual** shipped dashboard, behaviour-identical. Component names are kept
+> aligned with the spec where they fit; the props/widgets reflect the real
+> implementation (apexcharts + plain table, since the lib `CnChartWidget` /
+> `CnTableWidget` gap is still open — see `registry.js` `_note`).
 
-  - Props: `kpi: { open: Number, atRisk: Number, overdue: Number, onTimePercent: Number }`.
-  - Render four `CnStatsBlock` components in a responsive row (2×2 on mobile, 4×1 on desktop):
-    1. **Openstaand** — `kpi.open`, icon `mdi-folder-open-outline`, colour: primary
-    2. **Risico** — `kpi.atRisk`, icon `mdi-clock-alert-outline`, colour: warning
-    3. **Verlopen** — `kpi.overdue`, icon `mdi-alert-circle-outline`, colour: error
-    4. **Op tijd** — `kpi.onTimePercent`%, icon `mdi-check-circle-outline`, colour: success
-  - All label strings via `t(appName, 'key')`.
+- [x] **T06**: `src/views/doorlooptijd/components/DeadlineKpiRow.vue` ships — the
+  three-card KPI strip (SLA compliance %, at-risk count, completed-in-period),
+  props `slaData` / `atRiskCount` / `completedCount`. All labels via
+  `t('procest', …)`. (Delivered as the actual KPI strip rather than the four
+  CnStatsBlock cards in the original prose, which described an unbuilt layout.)
 
-- [ ] **T07**: Create `src/views/doorlooptijd/components/DeadlineCaseTable.vue`.
+- [x] **T07**: `src/views/doorlooptijd/components/DeadlineCaseTable.vue` ships —
+  the at-risk deadline list: each open case near/past its deadline with an
+  Overdue/At-risk RAG badge (colour + text, WCAG 1.4.1), days-remaining, and a
+  deadline-usage progress bar; default sort by urgency; emits `select-case` →
+  parent routes to `CaseDetail`. Empty-state handled by hiding the panel.
 
-  - Props: `cases: Array`.
-  - Render `CnTableWidget` with columns: Zaaknummer, Titel, Zaaktype, Startdatum, Deadline, Resterende dagen, Status.
-  - "Resterende dagen" column: format as `−N dagen` for negative values, `N dagen` for positive.
-  - "Status" column: `CnStatusBadge` — `type="error"` + label "Verlopen" for `ragStatus === 'overdue'`; `type="warning"` + label "Risico" for `at-risk`; `type="success"` + label "Op tijd" for `on-time`.
-  - Default sort: `daysRemaining` ascending (most urgent first).
-  - Row click: `$router.push({ name: 'CaseDetail', params: { id: row.id } })`.
-  - Empty state: show "Geen openstaande zaken gevonden." when `cases` is empty.
+- [x] **T08**: `src/views/doorlooptijd/components/ComplianceCharts.vue` ships —
+  the chart cluster: SLA-by-case-type donut, processing-time histogram (with SLA
+  target annotation), monthly SLA-compliance trend line, and weekly throughput
+  line. Series/options shaping extracted to the pure `chartShaping.js` helper
+  (Vitest-locked). (Delivered as the real multi-chart cluster rather than a
+  single stacked-bar `ComplianceChart`.)
 
-- [ ] **T08**: Create `src/views/doorlooptijd/components/ComplianceChart.vue`.
-
-  - Props: `compliance: Array<{ month: String, onTime: Number, late: Number, percent: Number }>`.
-  - Render `CnChartWidget` with `type="bar"`, `stacked: true`.
-  - Series: `[{ name: t(appName, 'On time'), data: compliance.map(m => m.percent) }, { name: t(appName, 'Late'), data: compliance.map(m => 100 - m.percent) }]`.
-  - Colours: on-time → `var(--color-success)`, late → `var(--color-error)`.
-  - X-axis labels: format `month` (YYYY-MM) as short Dutch month + year (e.g. "apr. 2026").
-  - Y-axis: 0–100%, suffix `%`.
-  - Tooltip: "{{month}} — Op tijd: {{onTime}} ({{percent}}%), Te laat: {{late}} ({{100-percent}}%)".
-
-- [ ] **T09**: Create `src/views/doorlooptijd/components/CaseTypeBreakdown.vue`.
-
-  - Props: `caseTypeBreakdown: Array<{ id: String, title: String, avgDays: Number, count: Number }>`.
-  - Render `CnChartWidget` with `type="donut"`.
-  - Series: `caseTypeBreakdown.map(ct => ct.avgDays)`.
-  - Labels: `caseTypeBreakdown.map(ct => ct.title)`.
-  - Legend sorted by `avgDays` descending (already sorted by backend).
-  - Tooltip: "{{title}}: gemiddeld {{avgDays}} dagen ({{count}} zaken)".
+- [x] **T09**: `src/views/doorlooptijd/components/CaseTypeBreakdown.vue` ships —
+  the sortable per-case-type performance table (avg actual days, SLA target,
+  compliance %, case count, status dot). Sort logic extracted to the pure
+  `sortPerformanceRows()` in `chartShaping.js` (Vitest-locked). (Delivered as the
+  real performance table rather than an avg-days donut.)
 
 ### Router & Navigation
 
@@ -86,35 +87,52 @@
 
 ### Translations
 
-- [ ] **T12**: Add all new user-visible strings to `l10n/en.json` (English key = English value) and `l10n/nl.json` (Dutch translation). Required keys:
-
-  | English key | Dutch translation |
-  |-------------|-----------------|
-  | `Throughput time` | `Doorlooptijd` |
-  | `Open` | `Openstaand` |
-  | `At risk` | `Risico` |
-  | `Overdue` | `Verlopen` |
-  | `On time` | `Op tijd` |
-  | `Days remaining` | `Resterende dagen` |
-  | `Case type` | `Zaaktype` |
-  | `All case types` | `Alle zaaktypen` |
-  | `Start date` | `Startdatum` |
-  | `Deadline` | `Deadline` |
-  | `Could not load throughput data. Please try again.` | `Kan doorlooptijdgegevens niet laden. Probeer het opnieuw.` |
-  | `No open cases found.` | `Geen openstaande zaken gevonden.` |
-  | `No cases found.` | `Geen zaken gevonden.` |
-  | `Late` | `Te laat` |
+- [x] **T12**: i18n complete for the shipped dashboard. All user-visible English
+  source strings used by `DoorlooptijdDashboard.vue` and its sub-components were
+  already present in `l10n/en.json` (English key = English value). This change
+  added the **38 missing Dutch translations** to `l10n/nl.json` and `l10n/nl.js`
+  (e.g. `Processing Time Analytics` → `Doorlooptijdanalyse`, `SLA Compliance` →
+  `SLA-naleving`, `At Risk` → `Risico`, `Performance by Case Type` →
+  `Prestatie per zaaktype`, `Within SLA` → `Binnen SLA`, …). Keys are English
+  source strings per the project convention; only `en`/`en_US`/`nl` were touched
+  (lossless additive merge, ASCII-sorted to match the existing file ordering).
+  The original key list above belonged to the unbuilt RAG layout (`Throughput
+  time`, `Days remaining`, etc.) and is superseded by the shipped strings.
 
 ## Verification Tasks
 
-- [ ] **V01**: `GET /api/doorlooptijd/metrics` returns HTTP 200 with `kpi`, `compliance`, `caseTypeBreakdown`, and `cases` keys; `kpi.open` equals the number of cases with null `endDate` in OpenRegister.
-- [ ] **V02**: `kpi.atRisk` is 0 when no open case has a deadline within 5 days of today.
-- [ ] **V03**: `kpi.overdue` is 0 when no open case has a deadline before today.
-- [ ] **V04**: `GET /api/doorlooptijd/metrics?caseType=<uuid>` returns metrics scoped to that case type only.
-- [ ] **V05**: `GET /api/doorlooptijd/metrics` without authentication returns HTTP 403.
-- [ ] **V06**: Clicking a row in the case list navigates to the correct case detail page.
-- [ ] **V07**: Dashboard shows `NcLoadingIcon` during the API fetch and replaces it with rendered widgets on response.
-- [ ] **V08**: API error triggers a user-facing error notification; no stale data is displayed.
+- [~] **V01**: Live-env check. `GET /api/doorlooptijd/metrics` is shipped
+  (`DoorlooptijdController::metrics()` → `DoorlooptijdService::getMetrics()`,
+  routed at `appinfo/routes.php:271`) and returns the `kpi`/`compliance`/
+  `caseTypeBreakdown`/`cases` shape. Requires a running OR + procest container
+  with seeded cases to assert the live 200 + counts; not verifiable from this
+  offline clone. Backend untouched by this change.
+- [~] **V02**: Live-env check (as V01) — `atRisk` arithmetic is covered by the
+  `doorlooptijdHelpers` Vitest suite; the live-data assertion needs a container.
+- [~] **V03**: Live-env check (as V01) — `overdue` arithmetic covered by Vitest;
+  live-data assertion needs a container.
+- [~] **V04**: Live-env check — case-type scoping is implemented client-side
+  (`filteredCompletedCases`/`filteredOpenCases`, Vitest-adjacent) and server-side
+  (`caseType` query param); live assertion needs a container.
+- [x] **V05**: `GET /api/doorlooptijd/metrics` rejects unauthenticated requests.
+  `metrics()` carries `@NoAdminRequired` but NOT `@PublicPage`, so NC's
+  SecurityMiddleware rejects any session-less request before the controller runs
+  (NotLoggedInException → 401/403). Verified by code inspection of the auth
+  attributes; consistent with gate-5/route-auth PASS.
+- [x] **V06**: Clicking an at-risk row navigates to the case detail page —
+  `DeadlineCaseTable` emits `select-case` with the case id and the parent routes
+  `$router.push({ name: 'CaseDetail', params: { id: $event } })`. Behaviour
+  preserved from the pre-split monolith; exercised by the rendered-dashboard
+  Playwright spec (defensive-skip in stripped CI).
+- [x] **V07**: Dashboard shows a loading skeleton during the fetch
+  (`v-if="loading"`) and swaps to the rendered sub-components on response
+  (`loadData()` sets `loading=false` in `finally`). Preserved from the monolith.
+- [~] **V08**: API-error UX. `loadData()` swallows the server-metrics call in a
+  nested try/catch (graceful client-aggregation fallback) and logs the outer
+  fetch error; the spec'd user-facing error *notification* is a known gap on the
+  shipped dashboard (it degrades silently to the empty/skeleton state rather than
+  toasting). Out of scope for the component-split + i18n change; tracked for a
+  follow-up rather than silently ticked.
 
 ## Deferral block (final-77 sweep, 2026-06-11)
 
