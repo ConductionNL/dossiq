@@ -585,6 +585,15 @@ return [
         ['name' => 'mandaatMatrix#auditTrail',      'url' => '/api/mandate/cases/{caseId}/audit-trail',   'verb' => 'GET'],
         ['name' => 'mandaatMatrix#applicable',      'url' => '/api/mandate/cases/{caseId}/applicable',    'verb' => 'GET'],
 
+        // ── Handler vervanging/waarneming + bulk reassignment (handler-vervanging-waarneming) ──
+        ['name' => 'substitution#index',           'url' => '/api/substitutions',                 'verb' => 'GET'],
+        ['name' => 'substitution#create',          'url' => '/api/substitutions',                 'verb' => 'POST'],
+        ['name' => 'substitution#substitutedWork', 'url' => '/api/substitutions/work',            'verb' => 'GET'],
+        ['name' => 'substitution#actions',         'url' => '/api/substitutions/{id}/actions',    'verb' => 'GET'],
+        ['name' => 'substitution#revoke',          'url' => '/api/substitutions/{id}/revoke',     'verb' => 'POST'],
+        ['name' => 'substitution#reassignPreview', 'url' => '/api/reassignments/preview',         'verb' => 'POST'],
+        ['name' => 'substitution#reassignExecute', 'url' => '/api/reassignments/execute',         'verb' => 'POST'],
+
         // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
         // Public webhook for openconnector/ERP payment confirmation callbacks.
         ['name' => 'dwangsomPaymentCallback#callback', 'url' => '/api/procest/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],

@@ -28,6 +28,8 @@ import WerkvoorraadView from './views/Werkvoorraad.vue'
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import AdminRootView from './views/settings/AdminRoot.vue'
+import SubstitutionSettingsView from './views/settings/SubstitutionSettings.vue'
+import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import AgendaCompilerView from './views/besluitvorming/AgendaCompilerView.vue'
 import VergaderingDetailView from './views/besluitvorming/VergaderingDetailView.vue'
@@ -171,6 +173,20 @@ const registry = {
 		kind: 'page',
 		component: AdminRootView,
 		_note: 'Multi-tab admin root; pending lib settings-custom-slot support.',
+	},
+
+	// --- Handler vervanging/waarneming (handler-vervanging-waarneming). ---
+	// @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	SubstitutionSettingsView: {
+		kind: 'page',
+		component: SubstitutionSettingsView,
+		_note: 'User self-service vervanging settings; register/revoke own waarnemer. No index-page analogue (custom form + own-records table).',
+	},
+	// @spec openspec/specs/handler-vervanging-waarneming/spec.md
+	SubstitutionAdminView: {
+		kind: 'page',
+		component: SubstitutionAdminView,
+		_note: 'Coordinator substitution admin + bulk reassignment + capacity action list. Coordinator-gated server-side.',
 	},
 
 	// --- Migration cost: deferred to a follow-up. ---

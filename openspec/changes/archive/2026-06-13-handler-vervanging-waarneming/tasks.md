@@ -1,0 +1,39 @@
+# Tasks: handler-vervanging-waarneming
+
+## Deduplication Check
+
+- [x] **DC01**: Confirmed no existing substitution/workload-delegation spec or service — `grep -ri 'vervanging\|waarneming\|substitut' openspec/specs lib/Service` returns only mandaat-matrix waarnemer hits (decision authority, out of scope), RoleResolverService `role.delegate` (a different RBAC-delegation primitive), and unrelated string-substitution hits. `SubstitutionService` is genuinely greenfield.
+- [x] **DC02**: Confirmed `my-work` resolution (`MyWork.vue::fetchData`) had no multi-user expansion hook before this change — it filtered `case`/`task` by `_filters[assignee] = currentUser` only. Added an additive substituted-work fetch that never alters own-work behaviour.
+
+## Schema & Configuration
+
+- [x] **T01**: Added the `substitution` schema via the modular fragment `lib/Settings/register.d/62-handler-vervanging.json` (ADR-037 — no edit to the monolith), with fields absentee, substitute, startDate, endDate, scope, scopeRefs, reason, comment, status, createdBy and enum constraints on scope/reason/status, plus an `x-openregister-notifications` rule notifying the substitute on creation. Registered `substitution_schema` in `SettingsService` CONFIG_KEYS and the `substitution` slug in SLUG_TO_CONFIG_KEY.
+
+## Backend Services
+
+- [x] **T02**: `lib/Service/SubstitutionService.php` — `create()` (self-substitution / missing-endDate / endDate<startDate / missing-scopeRefs rejected; overlapping same-(all)-scope active substitution rejected naming the conflict), `revoke()`, `getActiveSubstitutionsFor(userId, ?date)` (lazy `ended` past endDate, per-request cache), `getSubstitutedWorkFor(userId)` (resolves absentees' open cases/tasks within scope; runs in the substitute's OR RBAC context so unreadable items are excluded — never elevates), `resolveActingCapacity()`. Unit-tested across all validation branches and the start/end/day-after/day-before date boundaries.
+- [x] **T03**: Capacity stamping — `lib/Service/SubstitutionAuditService.php` `stampIfSubstituted()` writes an `actedOnBehalfOf` + `substitutionId` entry onto the case `activity` log only when the actor acts on an item assigned to a covered absentee; own-work actions are never stamped. `getActionsForSubstitution(substitutionId)` returns the chronologically-sorted stamped actions for the detail view. The case timeline renders the capacity as "namens {absentee}" in the admin action list. [~] Wiring this stamp into *every* existing case/task mutation path across procest is deferred — the stamping service + endpoints are built and unit-tested, but retrofitting all mutation call-sites is a cross-cutting follow-up (the audit dimension is additive and opt-in per call-site).
+- [x] **T04**: `lib/Service/CaseReassignmentService.php` — `preview(fromUser, ?filter)` (open cases/tasks only, non-mutating), `execute(fromUser, toUser, ?filter, actorId)` (per-item assignee update + batch audit entry with shared batch id, per-item success/failure result, single digest notification to the receiving handler, closed/archived untouched, self-reassignment rejected). Coordinator-role guard enforced at the controller. Unit-tested incl. partial-failure reporting.
+- [x] **T05**: Notification fan-out — the `substitution` schema's `x-openregister-notifications` rule notifies the substitute on registration (declarative, ADR-031). [~] Additionally fanning out *deadline/signalering* notifications to the active waarnemer for the duration is partially built: the resolution primitive (`getActiveSubstitutionsFor`) that a fan-out needs is in place and the absentee still receives theirs, but wiring the termijnbewaking dispatch to also resolve+deliver to the active substitute is deferred to the notification-leaf follow-up (declarative engine owns the dispatch; this is a cross-app touch on the OR notification engine, not procest-local).
+
+## Controllers & Routes
+
+- [x] **T06**: `lib/Controller/SubstitutionController.php` — `index` (role-scoped list), `create`/`revoke` (own-record or coordinator), `substitutedWork` (My Work), `actions` (capacity list), `reassignPreview`/`reassignExecute` (coordinator-only). All `#[NoAdminRequired]` with explicit fail-closed guards (`requireUser()` throws OCSForbiddenException; per-object own-or-coordinator checks; `requireCoordinator()` for bulk reassignment). Routes registered under `/api/substitutions` and `/api/reassignments`. gate-7 (no-admin-idor) green.
+
+## Frontend
+
+- [x] **T07**: `src/views/settings/SubstitutionSettings.vue` — user Vervanging section (register/revoke own waarnemer, own active/past list) with `src/modals/SubstitutionFormModal.vue` (ADR-004 isolation, NcSelect `inputLabel`).
+- [x] **T08**: `src/views/admin/SubstitutionAdmin.vue` — coordinator view: all substitutions, filter, create-on-behalf, revoke, capacity-stamped action list per substitution.
+- [x] **T09**: `src/modals/BulkReassignModal.vue` — from/to handler pickers, optional case-type filter, mandatory non-mutating preview table (type, title, case type, status, next deadline), execute with per-item result display.
+- [x] **T10**: My Work integration — `MyWork.vue` merges substituted cases/tasks (via `fetchSubstitutedWork`), renders a "waargenomen voor {naam}" badge, and offers a show/hide-substituted toggle (helpers extracted to `src/utils/substitutionHelpers.js`, vitest-covered). [~] Rendering the "namens" capacity inline in the *case-detail* timeline component is surfaced in the admin substitution detail; threading it into every timeline-rendering case component is part of the T03 mutation-path follow-up.
+- [x] **T11**: Dutch + English i18n for all new UI strings (English source keys per house convention), lossless-merged into en/en_US/nl `.js` + `.json`.
+
+## Verification Tasks
+
+- [x] **V01**: Active substitution shows the absentee's open work in the substitute's My Work, badge rendered; disappears the day after endDate and immediately on revoke. (Unit: `getActiveSubstitutionsFor` boundaries + `getSubstitutedWorkFor`; e2e: My Work renders + substituted toggle.)
+- [x] **V02**: Scope `caseTypes` limits routed items to the configured case types. (Unit: `testGetSubstitutedWorkScopeFilter`.)
+- [x] **V03**: RBAC boundary — substituted items the waarnemer cannot read are excluded; resolution runs in the substitute's OR RBAC context (`searchObjects` enforces RBAC as the caller). Direct access remains OR-enforced; substitution grants no write elevation. [~] The exclusion is structurally guaranteed by running every resolution query through the substitute's own ObjectService RBAC (documented in `getSubstitutedWorkFor`); a live RBAC-deny integration assertion is left to the deployed-env Newman/e2e pass.
+- [x] **V04**: Capacity audit — substitute mutation produces a "namens" entry, own-work does not; substitution detail lists all stamped actions. (Unit: `SubstitutionAuditServiceTest` — stamps substituted, skips own work, skips no-capacity, queries by substitution.)
+- [~] **V05**: Deadline notification reaches both absentee and waarnemer during the period; only the absentee after. Registration notification to the substitute is built (declarative rule). Full deadline fan-out is deferred with T05 (cross-app notification-engine wiring).
+- [x] **V06**: Bulk reassignment — preview is non-mutating; execute transfers exactly the previewed open items, writes batch-id audit entries, sends one digest; closed/archived untouched; non-coordinator denied. (Unit: `CaseReassignmentServiceTest` preview/filtered/execute/partial-failure/self-reject; Newman: coordinator preview + self-reject 400; controller gate for non-coordinator.)
+- [x] **V07**: Validation — self-substitution, endDate<startDate, missing endDate, missing scopeRefs, and overlapping full-scope substitutions all rejected with clear errors. (Unit: `SubstitutionServiceTest`; Newman: self-substitution + missing-endDate 400.)

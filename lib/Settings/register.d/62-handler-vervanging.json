@@ -1,0 +1,48 @@
+{
+  "components": {
+    "registers": {
+      "procest": {
+        "schemas": [
+          "substitution"
+        ]
+      }
+    },
+    "schemas": {
+      "substitution": {
+        "slug": "substitution",
+        "icon": "AccountSwitch",
+        "version": "1.0.0",
+        "title": "Substitution",
+        "description": "Vervanging/waarneming registration — who covers an absent handler's workload, when, and for what scope. Domain data on top of OpenRegister RBAC; grants no permissions of its own (handler-vervanging-waarneming spec).",
+        "type": "object",
+        "required": ["absentee", "substitute", "startDate", "endDate", "scope", "reason", "status"],
+        "properties": {
+          "absentee":   {"type": "string", "title": "Absentee", "description": "Nextcloud user id of the handler being covered", "facetable": true, "maxLength": 255},
+          "substitute": {"type": "string", "title": "Substitute", "description": "Nextcloud user id of the waarnemer", "facetable": true, "maxLength": 255},
+          "startDate":  {"type": "string", "title": "Start date", "format": "date", "description": "First day of the absence period (inclusive)"},
+          "endDate":    {"type": "string", "title": "End date", "format": "date", "description": "Last day of the absence period (inclusive); required"},
+          "scope":      {"type": "string", "title": "Scope", "enum": ["all", "caseTypes", "cases"], "default": "all", "facetable": true, "description": "What workload is covered"},
+          "scopeRefs":  {"type": "array", "title": "Scope references", "items": {"type": "string"}, "description": "caseType or case UUIDs when scope is narrowed"},
+          "reason":     {"type": "string", "title": "Reason", "enum": ["verlof", "ziekte", "anders"], "default": "verlof", "facetable": true},
+          "comment":    {"type": "string", "title": "Comment", "maxLength": 1024},
+          "status":     {"type": "string", "title": "Status", "enum": ["active", "ended", "revoked"], "default": "active", "facetable": true, "description": "ended is set lazily on resolution past endDate"},
+          "createdBy":  {"type": "string", "title": "Created by", "description": "User id that created the record (self-service or coordinator)", "maxLength": 255}
+        },
+        "x-openregister-notifications": {
+          "substitutionRegisteredForSubstitute": {
+            "trigger": {"type": "created"},
+            "enabled": true,
+            "channels": ["nc-notification"],
+            "recipients": [
+              {"kind": "field", "field": "substitute"}
+            ],
+            "subject": {
+              "nl": "Je bent geregistreerd als waarnemer voor {{absentee}}",
+              "en": "You have been registered as waarnemer for {{absentee}}"
+            }
+          }
+        }
+      }
+    }
+  }
+}
