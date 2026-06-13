@@ -667,7 +667,7 @@ All task management interfaces MUST comply with WCAG AA:
 - **Task CRUD**: Via the shared object store (`src/store/modules/object.js`) for OpenRegister-based tasks.
 - **My Work integration**: `src/views/MyWork.vue` includes tasks in the unified view with overdue highlighting, priority indicators, grouped sections (REQ-TASK-013).
 - **Dashboard widgets**: `lib/Dashboard/MyTasksWidget.php` and `src/views/widgets/MyTasksWidget.vue` -- Nextcloud dashboard widget showing assigned tasks. `src/views/dashboard/MyWorkPreview.vue` shows task summary on app dashboard.
-- **Navigation**: The global task list (`/tasks`) is reached via **Mijn werk** (the "Alle taken" affordance in `MyWork.vue`); there is no top-level "Tasks" menu entry. The manifest `pages[]` entry for `Tasks` is preserved so that `/tasks` deep links and `CaseTasksTab` navigation continue to resolve.
+- **Navigation**: The global task list is reached via Mijn werk, not as a sibling top-level menu entry. The `Tasks` entry has been removed from `src/manifest.json` `menu[]`; the `pages[]` entry for `id: "Tasks"` is preserved so that `/tasks` continues to resolve for deep links and `CaseTasksTab` navigation. `src/views/MyWork.vue` surfaces an explicit "All tasks" (`Alle taken`) button that navigates to `/tasks`.
 - **Router**: `src/router/index.js` includes routes for `/tasks`, `/tasks/new`, and `/tasks/:id`.
 - **Overdue highlighting**: Implemented in `MyWork.vue` with red indicators and "X days overdue" text (REQ-TASK-005, REQ-TASK-013).
 - **Priority badges**: Priority indicators shown in My Work view for high and urgent priorities.

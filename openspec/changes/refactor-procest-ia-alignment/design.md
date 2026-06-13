@@ -1,6 +1,6 @@
 ---
 status: pr-created
-pr: https://codeberg.org/Conduction/procest/pulls/39
+pr: https://codeberg.org/Conduction/procest/pulls/38
 ---
 
 # Design: Procest IA Topology

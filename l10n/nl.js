@@ -202,6 +202,7 @@ OC.L10N.register(
     "Akkoord aanvragen" : "Akkoord aanvragen",
     "Akkoord door" : "Akkoord door",
     "All" : "Alle",
+    "All tasks" : "Alle taken",
     "All case types" : "Alle zaaktypen",
     "All cases active" : "Alle zaken actief",
     "All caught up!" : "Alles bijgewerkt!",

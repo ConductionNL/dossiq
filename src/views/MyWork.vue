@@ -31,10 +31,13 @@
 					@change="onToggleCompleted">
 				{{ t('procest', 'Show completed') }}
 			</label>
+		</div>
 
-			<router-link :to="{ name: 'Tasks' }" class="my-work__all-tasks-link">
+		<!-- All tasks link -->
+		<div class="my-work__all-tasks">
+			<NcButton type="tertiary" @click="$router.push({ name: 'Tasks' })">
 				{{ t('procest', 'All tasks') }}
-			</router-link>
+			</NcButton>
 		</div>
 
 		<!-- Loading state -->
@@ -225,7 +228,7 @@
 </template>
 
 <script>
-import { NcLoadingIcon, NcEmptyContent } from '@nextcloud/vue'
+import { NcLoadingIcon, NcEmptyContent, NcButton } from '@conduction/nextcloud-vue'
 import AccountCheck from 'vue-material-design-icons/AccountCheck.vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
 import ParafeerInbox from './voorstellen/components/ParafeerInbox.vue'
@@ -238,6 +241,7 @@ export default {
 	components: {
 		NcLoadingIcon,
 		NcEmptyContent,
+		NcButton,
 		AccountCheck,
 		CheckCircle,
 		ParafeerInbox,
@@ -511,23 +515,6 @@ export default {
 	color: var(--color-text-maxcontrast);
 }
 
-.my-work__all-tasks-link {
-	margin-left: 8px;
-	padding: 6px 14px;
-	font-size: 14px;
-	border-radius: var(--border-radius-pill);
-	color: var(--color-primary-element);
-	text-decoration: none;
-	white-space: nowrap;
-	border: 1px solid var(--color-primary-element);
-	transition: background 0.15s ease, color 0.15s ease;
-}
-
-.my-work__all-tasks-link:hover {
-	background: var(--color-primary-element-light);
-	color: var(--color-primary-element-light-text);
-}
-
 /* Sections */
 .my-work__section {
 	margin-bottom: 24px;
@@ -647,6 +634,11 @@ export default {
 	font-size: 11px;
 	color: var(--color-text-maxcontrast);
 	font-style: italic;
+}
+
+/* All tasks link */
+.my-work__all-tasks {
+	margin-bottom: 16px;
 }
 
 /* Focus outline for keyboard navigation */
