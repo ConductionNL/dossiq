@@ -23,7 +23,7 @@ No OpenRegister entities are added or modified by this spec.
 
 ## ADDED Requirements
 
-### REQ-DOCS-001: Canonical folder taxonomy under `docs/`
+### Requirement: REQ-DOCS-001 Canonical folder taxonomy under `docs/`
 
 The documentation site SHALL use the following canonical top-level
 folder structure under `docs/`:
@@ -75,7 +75,7 @@ automatically.
 
 ---
 
-### REQ-DOCS-002: Root index document
+### Requirement: REQ-DOCS-002 Root index document
 
 The documentation site SHALL have a `docs/index.md` with the
 following Docusaurus frontmatter:
@@ -109,7 +109,7 @@ Documentation section.
 
 ---
 
-### REQ-DOCS-003: Installation guide
+### Requirement: REQ-DOCS-003 Installation guide
 
 The documentation site SHALL provide `docs/installation.md` covering
 the following topics in order:
@@ -140,7 +140,7 @@ the following topics in order:
 
 ---
 
-### REQ-DOCS-004: Redocusaurus API documentation route
+### Requirement: REQ-DOCS-004 Redocusaurus API documentation route
 
 The documentation site SHALL mount `redocusaurus@^2.0.0` as a
 Docusaurus plugin, configured to render the Procest OpenAPI spec
@@ -173,7 +173,7 @@ and patch upgrades are permitted, major is not).
 
 ---
 
-### REQ-DOCS-005: Dutch locale declared
+### Requirement: REQ-DOCS-005 Dutch locale declared
 
 The documentation site SHALL declare `locales: ['en', 'nl']` in the
 `i18n` section of `docusaurus.config.js`. The `defaultLocale` SHALL
@@ -197,7 +197,7 @@ production deployment.
 
 ---
 
-### REQ-DOCS-006: Em-dash-free documentation prose
+### Requirement: REQ-DOCS-006 Em-dash-free documentation prose
 
 All markdown files under `docs/` SHALL contain zero em-dash
 characters (`—`). This requirement applies to all files regardless

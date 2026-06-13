@@ -9,7 +9,7 @@
 
 ---
 
-### REQ-BBW-001: Bezwaar caseType seed SHALL be installed with AWB-compliant process configuration
+### Requirement: REQ-BBW-001 Bezwaar caseType seed SHALL be installed with AWB-compliant process configuration
 
 A seeded `caseType` with identifier `bezwaar` (title: "Bezwaarschrift behandeling",
 Schema.org `schema:Project`) MUST be present after installation. Its
@@ -51,7 +51,7 @@ via `caseType.workflowTemplate` reference.
 
 ---
 
-### REQ-BBW-002: Bezwaar workflow SHALL enforce AWB-mandated status step order and pre-conditions
+### Requirement: REQ-BBW-002 Bezwaar workflow SHALL enforce AWB-mandated status step order and pre-conditions
 
 The bezwaar `workflowTemplate` MUST declare 7 ordered process steps
 matching the AWB procedure, plus 2 terminal status paths:
@@ -103,7 +103,7 @@ is authored for lifecycle guards.
 
 ---
 
-### REQ-BBW-003: Bezwaar case creation SHALL link to the primair besluit and record the formal objection
+### Requirement: REQ-BBW-003 Bezwaar case creation SHALL link to the primair besluit and record the formal objection
 
 When a bezwaar case is created, the system MUST:
 
@@ -143,7 +143,7 @@ not a parallel service) or via direct API call on case creation.
 
 ---
 
-### REQ-BBW-004: AWB 6-week beslissingstermijn SHALL be tracked declaratively with verdaging and opschorting support
+### Requirement: REQ-BBW-004 AWB 6-week beslissingstermijn SHALL be tracked declaratively with verdaging and opschorting support
 
 The AWB decision deadline MUST be derived from the bezwaar caseType's
 `processingDeadline: "P6W"` and must support:
@@ -195,7 +195,7 @@ the derived effective date.
 
 ---
 
-### REQ-BBW-005: Ontvankelijkheidstoets SHALL assess admissibility and gate the hearing step
+### Requirement: REQ-BBW-005 Ontvankelijkheidstoets SHALL assess admissibility and gate the hearing step
 
 The ontvankelijkheidstoets is a mandatory pre-hearing assessment. The
 bezwaar workflowTemplate step 2 (Ontvankelijkheidstoets) MUST include
@@ -238,7 +238,7 @@ judgement.
 
 ---
 
-### REQ-BBW-006: Hoorzitting SHALL be scheduled via Nextcloud Calendar with formal participant invitations
+### Requirement: REQ-BBW-006 Hoorzitting SHALL be scheduled via Nextcloud Calendar with formal participant invitations
 
 When a `hearingSession` record is created for a bezwaar case, the system
 MUST:
@@ -294,7 +294,7 @@ accept a waived hearing as a valid completion of the Hoorzitting step.
 
 ---
 
-### REQ-BBW-007: Bezwaarschriftencommissie advisory track SHALL produce an advisoryReport record per AWB art. 7:13
+### Requirement: REQ-BBW-007 Bezwaarschriftencommissie advisory track SHALL produce an advisoryReport record per AWB art. 7:13
 
 When a bezwaarschriftencommissie is installed (commissie track active),
 the Advies commissie step MUST result in an `advisoryReport` record
@@ -339,7 +339,7 @@ Nextcloud file referenced by URI, not stored in procest tables.
 
 ---
 
-### REQ-BBW-008: Beslissing op bezwaar SHALL be recorded as an appealDecision with disposition and rechtsmiddelenclausule
+### Requirement: REQ-BBW-008 Beslissing op bezwaar SHALL be recorded as an appealDecision with disposition and rechtsmiddelenclausule
 
 The formal bezwaar decision MUST be recorded as an `appealDecision`
 record (Schema.org `schema:LegalForceStatus`) with:
@@ -390,7 +390,7 @@ automatic action on the Bekendmaking transition.
 
 ---
 
-### REQ-BBW-009: Bezwaar dossier SHALL compile documents from the original case and the bezwaar case into an exportable set
+### Requirement: REQ-BBW-009 Bezwaar dossier SHALL compile documents from the original case and the bezwaar case into an exportable set
 
 The bezwaar dossier is a defined ordered set of documents spanning both
 the primair besluit case and the bezwaar case. The system MUST support
@@ -437,7 +437,7 @@ existing `caseDocument` records. No new document entity is introduced.
 
 ---
 
-### REQ-BBW-010: Beroep case SHALL inherit the bezwaar dossier and maintain three-level case links
+### Requirement: REQ-BBW-010 Beroep case SHALL inherit the bezwaar dossier and maintain three-level case links
 
 When a beroep case is created after an unsuccessful bezwaar (ongegrond,
 niet-ontvankelijk), the system MUST:
@@ -484,7 +484,7 @@ required by tender specifications.
 
 ---
 
-### REQ-BBW-011: Bezwaar en beroep registers SHALL be reachable through the procest manifest navigation
+### Requirement: REQ-BBW-011 Bezwaar en beroep registers SHALL be reachable through the procest manifest navigation
 
 `src/manifest.json` MUST declare:
 

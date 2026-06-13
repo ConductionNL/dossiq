@@ -265,7 +265,7 @@ Team leads and managers must see KCC performance metrics and capacity trends.
   - Total: ~1000 for week (vs. normal 1250)
 
 ### Requirement: Configuration and admin UI
-Team leads must be able to create and modify routing rules.
+Team leads MUST be able to create and modify routing rules.
 
 #### Scenario: Create new routing rule via admin UI
 - **GIVEN** team lead is in Settings > Routing Rules
@@ -288,7 +288,7 @@ Team leads must be able to create and modify routing rules.
 - **AND** change is saved and takes effect immediately
 
 ### Requirement: Data privacy and compliance
-Contact data must be protected and logged per NEN 7510 and AVG.
+Contact data MUST be protected and logged per NEN 7510 and AVG.
 
 #### Scenario: Encrypt call recordings at rest and in transit
 - **GIVEN** ContactMoment has a transcript from recorded call

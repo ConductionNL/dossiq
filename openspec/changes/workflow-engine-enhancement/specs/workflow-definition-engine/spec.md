@@ -237,7 +237,7 @@ A status transition MAY trigger automatic actions. The system MUST execute confi
 
 ### Requirement: Workflow Inheritance (Enterprise Tier)
 
-Workflows MAY inherit from a parent workflow. Child workflows inherit all parent steps and transitions but MAY override specific steps. This enables zaaktype hierarchies (e.g. generic Bezwaar → VTH-specific Bezwaar).
+Workflows MAY inherit from a parent workflow. When a child workflow declares a `parentWorkflow`, the engine SHALL merge all parent steps and transitions into the child, and the child MAY override specific steps. This enables zaaktype hierarchies (e.g. generic Bezwaar → VTH-specific Bezwaar).
 
 #### Scenario: Child workflow inherits parent steps and transitions
 

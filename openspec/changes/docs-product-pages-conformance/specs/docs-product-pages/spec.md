@@ -7,7 +7,7 @@
 
 ## ADDED Requirements
 
-### REQ-DPP-001: Canonical folder taxonomy SHALL match the product-pages standard
+### Requirement: REQ-DPP-001 Canonical folder taxonomy SHALL match the product-pages standard
 
 The `docs/` directory MUST use the following canonical top-level folder
 structure as defined by `@conduction/docusaurus-preset`:
@@ -61,7 +61,7 @@ value to prevent Docusaurus alphabetical re-ordering after case renames.
 
 ---
 
-### REQ-DPP-002: Root document SHALL be `index.md` with Docusaurus frontmatter
+### Requirement: REQ-DPP-002 Root document SHALL be `index.md` with Docusaurus frontmatter
 
 `docs/index.md` MUST exist (renamed from `docs/README.md` via `git mv`)
 and MUST contain the following frontmatter block:
@@ -92,7 +92,7 @@ sidebar_position: 1
 
 ---
 
-### REQ-DPP-003: Installation guide SHALL cover prerequisites, install, post-install config, and troubleshooting
+### Requirement: REQ-DPP-003 Installation guide SHALL cover prerequisites, install, post-install config, and troubleshooting
 
 `docs/installation.md` MUST exist with `sidebar_position: 2` frontmatter
 and MUST contain the following four sections:
@@ -129,7 +129,7 @@ and MUST contain the following four sections:
 
 ---
 
-### REQ-DPP-004: Redocusaurus API documentation SHALL be mounted at `/api` with a navbar entry
+### Requirement: REQ-DPP-004 Redocusaurus API documentation SHALL be mounted at `/api` with a navbar entry
 
 `docs/package.json` MUST declare `"redocusaurus": "^2.0.0"` as a
 dependency.
@@ -179,7 +179,7 @@ shim (`openapi: 3.0.0`, `info.title: Procest`, `info.version: 0.0.0`,
 
 ---
 
-### REQ-DPP-005: Dutch locale SHALL be declared in `docusaurus.config.js`
+### Requirement: REQ-DPP-005 Dutch locale SHALL be declared in `docusaurus.config.js`
 
 `docs/docusaurus.config.js` MUST declare `i18n.locales: ['en', 'nl']`
 and MUST include `nl: { label: 'Nederlands' }` in `i18n.localeConfigs`.
@@ -212,7 +212,7 @@ The reversion is acceptable as a known escape hatch (ADR-030).
 
 ---
 
-### REQ-DPP-006: Documentation prose SHALL contain zero em-dash characters
+### Requirement: REQ-DPP-006 Documentation prose SHALL contain zero em-dash characters
 
 All markdown files under `docs/` MUST contain zero em-dash characters
 (`—`). The gate command `git grep -E '—' docs/` (excluding `node_modules/`
@@ -260,7 +260,7 @@ The 12 known affected files are:
 
 ---
 
-### REQ-DPP-007: Documentation site SHALL build cleanly after all structural changes
+### Requirement: REQ-DPP-007 Documentation site SHALL build cleanly after all structural changes
 
 After applying all tasks (REQ-DPP-001 through REQ-DPP-006), running
 `npm install --legacy-peer-deps && npm run build` in `docs/` MUST exit 0.

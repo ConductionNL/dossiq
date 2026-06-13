@@ -17,7 +17,7 @@ Market evidence: 264 requirements and 126 tenders explicitly request bestuurlijk
 
 ## ADDED Requirements
 
-### Requirement REQ-BVW-001: Zaaktype templates MUST be pre-configured for the three core besluitvorming types
+### Requirement: REQ-BVW-001 Zaaktype templates MUST be pre-configured for the three core besluitvorming types
 
 The system SHALL ship pre-configured `caseType` + `workflowTemplate` bundles for College-besluit, Raadsbesluit, and Mandaatbesluit, activated via the repair step. Each bundle MUST include `statusType`, `propertyDefinition`, `roleType`, `documentType`, and `resultType` records.
 
@@ -49,7 +49,7 @@ The system SHALL ship pre-configured `caseType` + `workflowTemplate` bundles for
 
 ---
 
-### Requirement REQ-BVW-002: Parafering chain MUST activate automatically when a voorstel is submitted
+### Requirement: REQ-BVW-002 Parafering chain MUST activate automatically when a voorstel is submitted
 
 When a `voorstel` is submitted for parafering, the system SHALL activate the configured `parafeerroute`, snapshot the steps, and create a `task` for the first parafeerder. Each subsequent parafeerder MUST receive a task only after the previous step is completed.
 
@@ -91,7 +91,7 @@ When a `voorstel` is submitted for parafering, the system SHALL activate the con
 
 ---
 
-### Requirement REQ-BVW-003: Case MUST auto-transition to "Gereed voor agendering" when all parafen are collected
+### Requirement: REQ-BVW-003 Case MUST auto-transition to "Gereed voor agendering" when all parafen are collected
 
 When the final parafeeractie in the route is completed with `action = 'goedgekeurd'`, the system SHALL automatically update the voorstel status and trigger the case workflow transition.
 
@@ -114,7 +114,7 @@ When the final parafeeractie in the route is completed with `action = 'goedgekeu
 
 ---
 
-### Requirement REQ-BVW-004: Agenda compiler MUST support hamerstukken and bespreekstukken with configurable ordering
+### Requirement: REQ-BVW-004 Agenda compiler MUST support hamerstukken and bespreekstukken with configurable ordering
 
 The system SHALL allow an agenda manager to compile multiple ready-for-agendering cases into a meeting agenda, classify each item as `hamerstuk` or `bespreekstuk`, and reorder items.
 
@@ -152,7 +152,7 @@ The system SHALL allow an agenda manager to compile multiple ready-for-agenderin
 
 ---
 
-### Requirement REQ-BVW-005: Decision MUST be recorded with structured metadata including stemuitslag and attending members
+### Requirement: REQ-BVW-005 Decision MUST be recorded with structured metadata including stemuitslag and attending members
 
 When a vergadering concludes, the system SHALL require the recording of the formal `decision` object including stemuitslag, governingBody, and attending members before allowing the case to advance.
 
@@ -188,7 +188,7 @@ When a vergadering concludes, the system SHALL require the recording of the form
 
 ---
 
-### Requirement REQ-BVW-006: Publication MUST provide an integration point for DROP/LVBB with required metadata
+### Requirement: REQ-BVW-006 Publication MUST provide an integration point for DROP/LVBB with required metadata
 
 When a besluit must be published, the system SHALL assemble the publication payload and dispatch it to the configured DROP or LVBB endpoint, then store the publication reference on the case.
 
@@ -226,7 +226,7 @@ When a besluit must be published, the system SHALL assemble the publication payl
 
 ---
 
-### Requirement REQ-BVW-007: Mandaatbesluit MUST validate signing authority against the mandaatregister
+### Requirement: REQ-BVW-007 Mandaatbesluit MUST validate signing authority against the mandaatregister
 
 Before a Mandaatbesluit case can advance to "Besluit genomen", the system SHALL verify that the signing official has sufficient delegated authority for the subject matter of the decision.
 
@@ -257,7 +257,7 @@ Before a Mandaatbesluit case can advance to "Besluit genomen", the system SHALL 
 
 ---
 
-### Requirement REQ-BVW-008: Archival MUST link all case documents in the dossier before closing
+### Requirement: REQ-BVW-008 Archival MUST link all case documents in the dossier before closing
 
 When a besluitvorming case is archived, the system SHALL verify that all required documents (voorstel, adviezen, parafen, besluit, bekendmaking record) are linked in the case dossier before setting the final archived status.
 
