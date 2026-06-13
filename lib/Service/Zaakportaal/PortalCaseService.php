@@ -46,13 +46,15 @@ class PortalCaseService
     /**
      * Constructor.
      *
-     * @param SettingsService    $settingsService The settings service.
-     * @param AwbDeadlineService $deadlineService The Awb deadline helper.
-     * @param LoggerInterface    $logger          The logger.
+     * @param SettingsService       $settingsService The settings service.
+     * @param AwbDeadlineService    $deadlineService The Awb deadline helper.
+     * @param PortalDocumentService $documentService The citizen document ACL service.
+     * @param LoggerInterface       $logger          The logger.
      */
     public function __construct(
         private SettingsService $settingsService,
         private AwbDeadlineService $deadlineService,
+        private PortalDocumentService $documentService,
         private LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -197,9 +199,42 @@ class PortalCaseService
                 'termijnOverschreden'  => $overschreden,
                 'dagenResterend'       => $remaining,
             ],
-            'mogelijkeActies' => $this->possibleActions(case: $case),
+            'mogelijkeActies'  => $this->possibleActions(case: $case),
+            'documenten'       => $this->visibleDocuments(case: $case),
+            'beschikkingDatum' => (string) ($case['decisionDate'] ?? ($case['beschikkingDatum'] ?? '')),
         ];
     }//end toDetail()
+
+    /**
+     * Resolve the citizen-addressable documents on a case.
+     *
+     * Reads the raw document array off the case (under any of the recognised
+     * keys), then delegates to the {@see PortalDocumentService} ACL filter so
+     * only documents whose `downloadbaarVoor` overlaps the citizen's roles are
+     * surfaced; internal documents are dropped entirely (IDOR-safe — the case
+     * itself is already proven to be owned by the subject before this runs).
+     *
+     * @param array<string, mixed> $case The raw, owner-verified case.
+     *
+     * @return array<int, array<string, mixed>> The visible documents.
+     *
+     * @spec openspec/specs/zaakportaal-mijngemeente/spec.md
+     */
+    private function visibleDocuments(array $case): array
+    {
+        $raw = ($case['documenten'] ?? ($case['documents'] ?? ($case['bijlagen'] ?? [])));
+        if (is_array($raw) === false || $raw === []) {
+            return [];
+        }
+
+        $roles = [];
+        $rawRoles = ($case['portaalRollen'] ?? ($case['rollen'] ?? []));
+        if (is_array($rawRoles) === true) {
+            $roles = array_values(array_map('strval', $rawRoles));
+        }
+
+        return $this->documentService->filterVisible(documents: $raw, citizenRoles: $roles);
+    }//end visibleDocuments()
 
     /**
      * Normalise a status history array into timeline entries.

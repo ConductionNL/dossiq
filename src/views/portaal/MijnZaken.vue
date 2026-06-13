@@ -24,6 +24,16 @@
 			</div>
 
 			<div v-else-if="!selectedCase">
+				<div class="zp-toolbar">
+					<NcButton type="secondary"
+						data-testid="portaal-toggle-klacht"
+						@click="showKlacht = !showKlacht">
+						{{ showKlacht ? t('procest', 'Hide complaint form') : t('procest', 'File a complaint') }}
+					</NcButton>
+				</div>
+
+				<KlachtForm v-if="showKlacht" data-testid="portaal-klacht-section" />
+
 				<p v-if="cases.length === 0" class="zp-empty">
 					{{ t('procest', 'You currently have no active cases.') }}
 				</p>
@@ -92,7 +102,30 @@
 							{{ actieLabel(actie) }}
 						</li>
 					</ul>
+					<div class="zp-actions__buttons">
+						<NcButton v-if="canObject"
+							type="secondary"
+							data-testid="portaal-toggle-bezwaar"
+							@click="showBezwaar = !showBezwaar">
+							{{ showBezwaar ? t('procest', 'Cancel objection') : t('procest', 'File an objection') }}
+						</NcButton>
+					</div>
 				</section>
+
+				<BezwaarForm v-if="showBezwaar"
+					:case-id="selectedCase.zaakId"
+					:case-reference="selectedCase.zaakKenmerk"
+					:decision-date="selectedCase.beschikkingDatum || ''"
+					:decision-title="selectedCase.onderwerp"
+					data-testid="portaal-bezwaar-section"
+					@request-message="scrollToMessages"
+					@submitted="onBezwaarSubmitted" />
+
+				<DocumentList :raw-documents="selectedCase.documenten || []" />
+
+				<MessagingWidget ref="messages"
+					:case-id="selectedCase.zaakId"
+					:case-reference="selectedCase.zaakKenmerk" />
 			</div>
 		</main>
 	</div>
@@ -103,6 +136,10 @@ import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { generateUrl } from '@nextcloud/router'
 import axios from '@nextcloud/axios'
 import StatusTimeline from './components/StatusTimeline.vue'
+import DocumentList from './components/DocumentList.vue'
+import MessagingWidget from './components/MessagingWidget.vue'
+import BezwaarForm from './components/BezwaarForm.vue'
+import KlachtForm from './components/KlachtForm.vue'
 
 export default {
 	name: 'MijnZaken',
@@ -110,6 +147,10 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 		StatusTimeline,
+		DocumentList,
+		MessagingWidget,
+		BezwaarForm,
+		KlachtForm,
 	},
 	data() {
 		return {
@@ -117,7 +158,21 @@ export default {
 			error: '',
 			cases: [],
 			selectedCase: null,
+			showKlacht: false,
+			showBezwaar: false,
 		}
+	},
+	computed: {
+		/**
+		 * Whether the selected case offers an objection action.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/specs/zaakportaal-mijngemeente/spec.md
+		 */
+		canObject() {
+			const acties = (this.selectedCase && this.selectedCase.mogelijkeActies) || []
+			return acties.includes('bezwaar-indienen')
+		},
 	},
 	async mounted() {
 		await this.loadCases()
@@ -138,6 +193,7 @@ export default {
 		async openCase(id) {
 			this.loading = true
 			this.error = ''
+			this.showBezwaar = false
 			try {
 				const { data } = await axios.get(generateUrl('/apps/procest/api/portaal/cases/' + encodeURIComponent(id)))
 				this.selectedCase = data
@@ -149,6 +205,28 @@ export default {
 		},
 		closeCase() {
 			this.selectedCase = null
+			this.showBezwaar = false
+		},
+		/**
+		 * Close the bezwaar form after a successful submission.
+		 *
+		 * @return {void}
+		 * @spec openspec/specs/zaakportaal-mijngemeente/spec.md
+		 */
+		onBezwaarSubmitted() {
+			this.showBezwaar = false
+		},
+		/**
+		 * Scroll focus to the messaging widget (from the deadline-expired notice).
+		 *
+		 * @return {void}
+		 * @spec openspec/specs/zaakportaal-mijngemeente/spec.md
+		 */
+		scrollToMessages() {
+			const el = this.$refs.messages && this.$refs.messages.$el
+			if (el && el.scrollIntoView) {
+				el.scrollIntoView({ behavior: 'smooth' })
+			}
 		},
 		actieLabel(actie) {
 			const labels = {
@@ -221,5 +299,15 @@ export default {
 
 .zp-detail__ref {
 	color: var(--color-text-maxcontrast, #6b6b6b);
+}
+
+.zp-toolbar {
+	display: flex;
+	justify-content: flex-end;
+	margin-bottom: 12px;
+}
+
+.zp-actions__buttons {
+	margin-top: 8px;
 }
 </style>
