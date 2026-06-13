@@ -45,6 +45,7 @@ The system SHALL store vervanging/waarneming registrations as objects of a dedic
 
 #### Scenario: Overlapping full-scope substitutions are rejected
 
+@e2e exclude server-side validation — covered by SubstitutionServiceTest::testOverlappingFullScopeRejected/testDisjointScopeAccepted (unit) and the Newman collection; no UI surface to drive
 - **GIVEN** an active substitution covering Jan with scope `all` from 2026-07-01 through 2026-07-21
 - **WHEN** a second substitution for Jan with scope `all` and an overlapping period is submitted
 - **THEN** the request MUST be rejected with a validation error naming the conflicting substitution
@@ -52,6 +53,7 @@ The system SHALL store vervanging/waarneming registrations as objects of a dedic
 
 #### Scenario: Period validation
 
+@e2e exclude server-side validation — covered by SubstitutionServiceTest period-boundary tests (unit) and Newman missing-endDate 400; no distinct UI surface beyond the form
 - **WHEN** a substitution is submitted with `endDate` before `startDate`, or without an `endDate`
 - **THEN** the request MUST be rejected with a validation error
 
@@ -76,6 +78,7 @@ While a substitution is active (status `active` and today within the period), th
 
 #### Scenario: Deadline signals fan out to the waarnemer
 
+@e2e exclude notification dispatch — deferred cross-app to the OR notification-engine (notification-leaf follow-up); not a procest UI surface
 - **GIVEN** an active substitution where Marieke covers Jan
 - **WHEN** a deadline warning (streef- or fatale termijn) fires for one of Jan's substituted cases
 - **THEN** the notification MUST be delivered to Marieke in addition to Jan
@@ -83,6 +86,7 @@ While a substitution is active (status `active` and today within the period), th
 
 #### Scenario: Routing stops automatically when the period ends
 
+@e2e exclude time-dependent resolution — covered by SubstitutionServiceTest::testActiveResolutionDateBoundaries (day-after exclusion + lazy `ended`); not reproducible in a Playwright run without date control
 - **GIVEN** a substitution where Marieke covers Jan through 2026-07-21
 - **WHEN** Marieke opens My Work on 2026-07-22
 - **THEN** Jan's items MUST no longer appear in her werkvoorraad
@@ -91,6 +95,7 @@ While a substitution is active (status `active` and today within the period), th
 
 #### Scenario: Revocation takes effect immediately
 
+@e2e exclude state transition — covered by SubstitutionServiceTest::testRevoke (unit) + revoke endpoint; the revoke button is exercised via the admin/settings UI but the immediacy assertion is unit-level
 - **GIVEN** an active substitution where Marieke covers Jan
 - **WHEN** Jan or a coordinator revokes the substitution
 - **THEN** the substitution status MUST become `revoked`
@@ -109,6 +114,7 @@ Every mutation a substitute performs on a case or task that is in their werkvoor
 
 #### Scenario: Actions on own work are not capacity-stamped
 
+@e2e exclude audit-metadata assertion — covered by SubstitutionAuditServiceTest::testOwnWorkNotStamped (unit); not observable as a UI surface
 - **GIVEN** the same active substitution
 - **WHEN** Marieke updates one of her own cases
 - **THEN** the audit entry MUST NOT contain `actedOnBehalfOf`
@@ -125,6 +131,7 @@ Substitution SHALL grant no permissions. Resolved substituted work items SHALL b
 
 #### Scenario: Items the substitute cannot read are excluded
 
+@e2e exclude OR RBAC boundary — structurally enforced by running resolution through the substitute's own ObjectService (getSubstitutedWorkFor); a live RBAC-deny assertion belongs to the deployed-env Newman/integration pass, not a Playwright UI test
 - **GIVEN** an active substitution where Marieke covers Jan with scope `all`
 - **AND** one of Jan's cases is confidential to a group Marieke is not a member of
 - **WHEN** Marieke opens My Work
@@ -133,6 +140,7 @@ Substitution SHALL grant no permissions. Resolved substituted work items SHALL b
 
 #### Scenario: Substitution confers no write elevation
 
+@e2e exclude OR RBAC boundary — the write rejection is enforced by OpenRegister RBAC (substitution never elevates); covered by reasoning + Newman/integration, not a procest Playwright surface
 - **GIVEN** an active substitution where Marieke covers Jan, and Marieke has read-only OR RBAC access to a substituted case
 - **WHEN** Marieke attempts to update that case
 - **THEN** the update MUST be rejected by OR RBAC
@@ -150,6 +158,7 @@ A user with the procest coordinator role SHALL be able to permanently transfer a
 
 #### Scenario: Execute full reassignment
 
+@e2e exclude data-mutation outcome — the per-item assignee update + batch audit + single digest is covered by CaseReassignmentServiceTest::testExecuteFullReassignment (unit); the execute UI affordance is exercised in the bulk-reassign e2e, but asserting the transferred state needs seeded multi-handler fixtures (Newman/integration)
 - **GIVEN** the preview above
 - **WHEN** the coordinator confirms reassignment of everything to Pieter
 - **THEN** every listed open case and task MUST have its handler/assignee set to Pieter
@@ -159,6 +168,7 @@ A user with the procest coordinator role SHALL be able to permanently transfer a
 
 #### Scenario: Filtered partial reassignment
 
+@e2e exclude data-mutation outcome — covered by CaseReassignmentServiceTest::testFilteredPreview (unit); the case-type filter control is present in the bulk-reassign modal but the transferred-subset assertion needs seeded fixtures
 - **WHEN** the coordinator restricts the reassignment to the VTH case type before executing
 - **THEN** only Jan's open VTH cases and their tasks are transferred
 - **AND** Jan's other open work is unchanged
@@ -171,6 +181,7 @@ A user with the procest coordinator role SHALL be able to permanently transfer a
 
 #### Scenario: Partial failure is reported per item
 
+@e2e exclude error-path outcome — covered by CaseReassignmentServiceTest::testPartialFailureReported (unit); a concurrent-modification failure is not deterministically reproducible from a Playwright UI run
 - **GIVEN** a bulk reassignment where one case update fails (e.g. concurrent modification)
 - **WHEN** the batch completes
 - **THEN** the response MUST report per-item success/failure

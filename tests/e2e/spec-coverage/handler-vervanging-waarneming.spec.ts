@@ -64,6 +64,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#preview-before-execution
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#bulk-reassignment-is-coordinator-only
+	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#coordinator-registers-a-substitution-on-behalf-of-an-absent-handler
 	test('coordinator admin exposes a bulk-reassign action with a mandatory preview', async ({ page }) => {
 		await page.goto('/apps/procest/substitution-admin')
 		await dismissSupportDialog(page)
@@ -80,6 +81,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	})
 
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#all-actions-under-a-substitution-are-queryable
+	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#timeline-shows-the-substituted-capacity
 	test('coordinator admin lists substitutions with an actions affordance', async ({ page }) => {
 		await page.goto('/apps/procest/substitution-admin')
 		await dismissSupportDialog(page)
