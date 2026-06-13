@@ -149,6 +149,7 @@ export default {
 		}
 	},
 	computed: {
+		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
@@ -239,6 +240,7 @@ export default {
 				this.executing = false
 			}
 		},
+		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		onDialogClose(open) {
 			if (!open) {
 				this.$emit('close')

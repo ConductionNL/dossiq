@@ -1,10 +1,10 @@
 ---
-status: proposed
+status: done
 ---
 
 # Spec: handler-vervanging-waarneming
 
-**Status:** proposed
+**Status:** done
 **Scope:** procest
 **Depends on:** my-work, case-management, task-management, openregister (RBAC + notification engine, per ADR-022)
 **Related:** mandaat-matrix (decision-authority waarneming — explicitly out of scope here)
@@ -17,6 +17,19 @@ tasks, and deadline signals for a bounded period, every action taken in that cap
 audit-trailed as "namens", and a coordinator can transfer all open work of a departing handler
 in one previewed, audited batch. Substitution is domain logic on top of OpenRegister RBAC and
 grants no permissions of its own.
+
+> **Implementation residue (2026-06-13):** the substitution record/schema,
+> resolution + RBAC-scoped routing, capacity-stamp service + query, bulk
+> reassignment (preview/execute/audit/digest), all controllers/routes, and the
+> full UI (user settings, coordinator admin, bulk-reassign modal, My Work badge
+> + filter) are built and tested. Two cross-app items are deferred: (a) fanning
+> deadline/signalering notifications out to the active waarnemer for the
+> duration — the substitute is notified on registration and the resolution
+> primitive exists, but wiring the termijnbewaking dispatch to the substitute
+> is owned by the OR notification engine (notification-leaf follow-up); and
+> (b) threading `stampIfSubstituted()` into every existing case/task mutation
+> call-site — the stamp service + endpoints exist and are tested, but the
+> retrofit across all mutation paths is a cross-cutting follow-up.
 
 ## ADDED Requirements
 

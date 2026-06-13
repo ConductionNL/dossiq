@@ -98,9 +98,10 @@ class SubstitutionController extends Controller
     #[NoAdminRequired]
     public function index(): JSONResponse
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return $this->forbidden();
+        try {
+            $user = $this->requireUser();
+        } catch (OCSForbiddenException $e) {
+            return $this->forbidden($e->getMessage());
         }
 
         $userId = $user->getUID();
@@ -133,17 +134,16 @@ class SubstitutionController extends Controller
     #[NoAdminRequired]
     public function create(): JSONResponse
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return $this->forbidden();
-        }
+        try {
+            $actorId  = $this->requireUser()->getUID();
+            $absentee = (string) $this->request->getParam('absentee', $actorId);
 
-        $actorId  = $user->getUID();
-        $absentee = (string) $this->request->getParam('absentee', $actorId);
-
-        // Per-object guard: own absence, or coordinator acting for another.
-        if ($absentee !== $actorId && $this->isCoordinator($actorId) === false) {
-            return $this->forbidden('You may only register a substitution for yourself');
+            // Per-object guard: own absence, or coordinator acting for another.
+            if ($absentee !== $actorId && $this->isCoordinator($actorId) === false) {
+                throw new OCSForbiddenException('You may only register a substitution for yourself');
+            }
+        } catch (OCSForbiddenException $e) {
+            return $this->forbidden($e->getMessage());
         }
 
         try {
@@ -181,13 +181,13 @@ class SubstitutionController extends Controller
     #[NoAdminRequired]
     public function revoke(string $id): JSONResponse
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return $this->forbidden();
+        try {
+            $actorId = $this->requireUser()->getUID();
+        } catch (OCSForbiddenException $e) {
+            return $this->forbidden($e->getMessage());
         }
 
-        $actorId = $user->getUID();
-        $row     = $this->findSubstitution($id);
+        $row = $this->findSubstitution($id);
         if ($row === null) {
             return new JSONResponse(['error' => 'Substitution not found'], Http::STATUS_NOT_FOUND);
         }
@@ -212,9 +212,10 @@ class SubstitutionController extends Controller
     #[NoAdminRequired]
     public function substitutedWork(): JSONResponse
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return $this->forbidden();
+        try {
+            $user = $this->requireUser();
+        } catch (OCSForbiddenException $e) {
+            return $this->forbidden($e->getMessage());
         }
 
         // Resolution runs in the calling user's RBAC context, so items the
@@ -237,13 +238,13 @@ class SubstitutionController extends Controller
     #[NoAdminRequired]
     public function actions(string $id): JSONResponse
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return $this->forbidden();
+        try {
+            $actorId = $this->requireUser()->getUID();
+        } catch (OCSForbiddenException $e) {
+            return $this->forbidden($e->getMessage());
         }
 
-        $actorId = $user->getUID();
-        $row     = $this->findSubstitution($id);
+        $row = $this->findSubstitution($id);
         if ($row === null) {
             return new JSONResponse(['error' => 'Substitution not found'], Http::STATUS_NOT_FOUND);
         }
@@ -359,6 +360,26 @@ class SubstitutionController extends Controller
 
         return $this->groupManager->isAdmin($userId);
     }//end isCoordinator()
+
+    /**
+     * Require an authenticated user; throw OCSForbiddenException otherwise.
+     *
+     * Per ADR-005 Rule 3 — unauthenticated callers are denied before any data
+     * work runs (fail closed).
+     *
+     * @return IUser The authenticated user.
+     *
+     * @throws OCSForbiddenException When no user is authenticated.
+     */
+    private function requireUser(): IUser
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            throw new OCSForbiddenException('Not authenticated');
+        }
+
+        return $user;
+    }//end requireUser()
 
     /**
      * Require a coordinator; returns a JSONResponse to short-circuit on failure.
