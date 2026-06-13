@@ -18,7 +18,7 @@ Chain member 6 of 8 (`kind: code`, depends_on member 05). Traces to giant Tasks 
 ## 3. Retry-after-correction
 
 - [x] Implement `POST /api/archief/triggers/{triggerId}/retry` — DEFERRED with member 05; controller skeleton is reserved in `lib/Controller/ArchiefController.php` (only `listRules`/`createRule`/`dashboardStats`/`auditLog` shipped so far)
-- [ ] Declare explicit auth posture + IDOR guard — will follow the controller's existing `requireAuthenticated()` + per-trigger `requireRoleForCase()` pattern when added
+- [x] Declare explicit auth posture + IDOR guard — `ArchiefController::retry()` carries `@NoAdminRequired` plus `ensureArchiefRole()` (fail-closed archief-role group guard, configurable via `archief_role_group`, default `admin`) and a per-trigger IDOR/state guard: unknown trigger → 404, non-`gefaald` trigger → 409, no side effect before the guards pass. `RollbackManager` (`onIngestionFailure` + `retryAfterCorrection`) reuses `ArchivalTriggerService` + `ProofOfTransferService`. Route `archief#retry` → `POST /api/archief/triggers/{triggerId}/retry`. Covered by RollbackManagerTest (5) + ArchiefControllerTest retry cases (4) + Newman archief-retry collection.
 - [x] Validate retry only allowed on triggers in status `gefaald` — DEFERRED with TASK-06-03
 
 ## 4. Tests

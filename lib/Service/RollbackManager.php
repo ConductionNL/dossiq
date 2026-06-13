@@ -271,6 +271,8 @@ class RollbackManager
      * @param string $triggerId Trigger id.
      *
      * @return array<string, mixed>|null
+     *
+     * @spec openspec/changes/archief-edepot-handover-06-proof-rollback/tasks.md
      */
     public function findTrigger(string $triggerId): ?array
     {
