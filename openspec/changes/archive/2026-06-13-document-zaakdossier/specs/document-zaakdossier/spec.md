@@ -1,10 +1,17 @@
 ---
-status: proposed
+status: done
 ---
 
 # Spec: document-zaakdossier
 
-**Status:** proposed
+**Status:** done
+
+> Implemented ground-up 2026-06-13 (feature/document-zaakdossier). The four ZGW DRC
+> schemas (register.d fragment), ZaakdossierService, InformatieobjectAccessGuard
+> (vertrouwelijkheid matrix, fail-closed), ZipManifestBuilder, RangeStreamResponse,
+> ZaakdossierController, the BackfillInformatieobjectMetadata repair step and six Vue
+> components all ship and are covered by PHPUnit + vitest + Playwright + Newman.
+
 **Scope:** procest
 **Depends on:** case-management, openregister (file handlers: CreateFileHandler, FileSharingHandler, FilePublishingHandler, TextExtractionService, per ADR-022)
 
@@ -24,7 +31,7 @@ management; 65% explicitly demand ZGW DRC compliance.
 
 ## ADDED Requirements
 
-### REQ-ZAK-001: Zaak objects MUST support linked documents via ZGW informatieobject and zaakinformatieobject
+### Requirement: REQ-ZAK-001 Zaak objects MUST support linked documents via ZGW informatieobject and zaakinformatieobject
 
 Every uploaded document MUST be represented as both a Nextcloud file stored at
 `Open Registers/{Register Title} Register/{objectUuid}/` AND an `informatieobject` register
@@ -37,7 +44,7 @@ The link between the zaak and the informatieobject MUST be a separate `zaakinfor
 join object with fields: `zaak`, `informatieobject`, `aardRelatieWeergave`, `registratiedatum`.
 This join pattern allows a single document to be linked to multiple cases without duplication.
 
-#### Scenario REQ-ZAK-001a: Upload creates informatieobject and zaakinformatieobject
+#### Scenario: REQ-ZAK-001a Upload creates informatieobject and zaakinformatieobject
 
 - **GIVEN** zaak `vergunning-2026-0042` exists in register `Vergunningen`
 - **WHEN** a user uploads `aanvraagformulier.pdf` via `ZaakdossierService.uploadDocument()`
@@ -50,7 +57,7 @@ This join pattern allows a single document to be linked to multiple cases withou
   `registratiedatum` → current timestamp
 - **AND** the file MUST receive system tags `object:{uuid}` and `doctype:{type}` via `TaggingHandler`
 
-#### Scenario REQ-ZAK-001b: Same informatieobject linked to two cases without duplication
+#### Scenario: REQ-ZAK-001b Same informatieobject linked to two cases without duplication
 
 - **GIVEN** informatieobject `advies-brandweer.pdf` is already linked to `vergunning-1`
 - **WHEN** `ZaakdossierService.linkExistingInformatieobject('vergunning-2', infoObjectId)` is called
@@ -58,7 +65,7 @@ This join pattern allows a single document to be linked to multiple cases withou
 - **AND** the informatieobject record itself MUST NOT be duplicated
 - **AND** both zaak dossier views MUST show the document
 
-#### Scenario REQ-ZAK-001c: Unlink preserves informatieobject
+#### Scenario: REQ-ZAK-001c Unlink preserves informatieobject
 
 - **GIVEN** `bijlage.pdf` is linked to `vergunning-1` via `zaakinformatieobject` `zio-0001`
 - **WHEN** `ZaakdossierService.unlinkInformatieobject('vergunning-1', infoObjectId)` is called
@@ -68,7 +75,7 @@ This join pattern allows a single document to be linked to multiple cases withou
 
 ---
 
-### REQ-ZAK-002: Informatieobjecten MUST follow the ZGW status lifecycle concept → definitief → gearchiveerd
+### Requirement: REQ-ZAK-002 Informatieobjecten MUST follow the ZGW status lifecycle concept → definitief → gearchiveerd
 
 The `status` field MUST enforce a one-way, forward-only lifecycle. `ZaakdossierService.transitionStatus()`
 MUST validate each transition and:
@@ -77,7 +84,7 @@ MUST validate each transition and:
 - Return HTTP 409 from `DeleteFileHandler` for `definitief` documents
 - Allow reverse transitions from `definitief` to any earlier status: NEVER (HTTP 400)
 
-#### Scenario REQ-ZAK-002a: Transition concept → definitief locks the file
+#### Scenario: REQ-ZAK-002a Transition concept → definitief locks the file
 
 - **GIVEN** informatieobject `besluit.pdf` with `status` = `concept`
 - **WHEN** `ZaakdossierService.transitionStatus(id, 'definitief')` is called
@@ -86,7 +93,7 @@ MUST validate each transition and:
 - **AND** a subsequent upload of a new version MUST return HTTP 409 with message
   "Definitieve documenten kunnen niet worden gewijzigd"
 
-#### Scenario REQ-ZAK-002b: Reverse transition definitief → concept is rejected
+#### Scenario: REQ-ZAK-002b Reverse transition definitief → concept is rejected
 
 - **GIVEN** informatieobject `besluit.pdf` with `status` = `definitief`
 - **WHEN** any actor calls `transitionStatus(id, 'concept')` via `PATCH /api/informatieobjecten/{id}/status`
@@ -94,14 +101,14 @@ MUST validate each transition and:
 - **AND** the response body MUST indicate the invalid transition
 - **AND** the `status` and `vergrendeldOp` MUST remain unchanged
 
-#### Scenario REQ-ZAK-002c: Deletion of definitief document is rejected
+#### Scenario: REQ-ZAK-002c Deletion of definitief document is rejected
 
 - **GIVEN** informatieobject `besluit.pdf` with `status` = `definitief`
 - **WHEN** a user attempts to delete the document via `DeleteFileHandler` or the dossier UI
 - **THEN** the deletion MUST be rejected with HTTP 409 Conflict
 - **AND** the informatieobject record MUST remain intact
 
-#### Scenario REQ-ZAK-002d: Transition definitief → gearchiveerd is permitted
+#### Scenario: REQ-ZAK-002d Transition definitief → gearchiveerd is permitted
 
 - **GIVEN** informatieobject with `status` = `definitief`
 - **WHEN** `transitionStatus(id, 'gearchiveerd')` is called (e.g., by the archival process)
@@ -110,14 +117,14 @@ MUST validate each transition and:
 
 ---
 
-### REQ-ZAK-003: Access to informatieobjecten MUST be gated by vertrouwelijkheidaanduiding
+### Requirement: REQ-ZAK-003 Access to informatieobjecten MUST be gated by vertrouwelijkheidaanduiding
 
 `InformatieobjectAccessGuard` MUST enforce the ZGW confidentiality hierarchy
 (ordered lowest → highest: `openbaar`, `beperkt_openbaar`, `intern`, `zaakvertrouwelijk`,
 `vertrouwelijk`, `confidentieel`, `geheim`, `zeer_geheim`) on every read, share, publish,
 and download operation. Guards MUST be checked at the service layer, not only in the UI.
 
-#### Scenario REQ-ZAK-003a: User below clearance level cannot read a document
+#### Scenario: REQ-ZAK-003a User below clearance level cannot read a document
 
 - **GIVEN** informatieobject has `vertrouwelijkheidaanduiding` = `geheim`
 - **AND** the requesting user's clearance is `vertrouwelijk` (two levels below)
@@ -126,7 +133,7 @@ and download operation. Guards MUST be checked at the service layer, not only in
 - **AND** the API MUST respond with HTTP 403 Forbidden
 - **AND** the document MUST NOT appear in the dossier listing for that user
 
-#### Scenario REQ-ZAK-003b: Filtered dossier listing respects clearance
+#### Scenario: REQ-ZAK-003b Filtered dossier listing respects clearance
 
 - **GIVEN** a dossier with 10 documents at various vertrouwelijkheidaanduiding levels
 - **AND** the user has clearance `intern`
@@ -135,14 +142,14 @@ and download operation. Guards MUST be checked at the service layer, not only in
   with vertrouwelijkheidaanduiding above `intern` from the response
 - **AND** documents with `openbaar`, `beperkt_openbaar`, or `intern` MUST be returned
 
-#### Scenario REQ-ZAK-003c: Public share rejected for confidential documents
+#### Scenario: REQ-ZAK-003c Public share rejected for confidential documents
 
 - **GIVEN** informatieobject has `vertrouwelijkheidaanduiding` = `vertrouwelijk`
 - **WHEN** a user attempts to create a public share link for this document
 - **THEN** `InformatieobjectAccessGuard.canPublish(informatieobject)` MUST return `false`
 - **AND** the share creation MUST be blocked with an appropriate error message
 
-#### Scenario REQ-ZAK-003d: Default vertrouwelijkheidaanduiding from informatieobjecttype
+#### Scenario: REQ-ZAK-003d Default vertrouwelijkheidaanduiding from informatieobjecttype
 
 - **GIVEN** informatieobjecttype `intern-advies` has default `vertrouwelijkheidaanduiding` = `intern`
 - **WHEN** a user uploads a document of this type without specifying a classification
@@ -151,7 +158,7 @@ and download operation. Guards MUST be checked at the service layer, not only in
 
 ---
 
-### REQ-ZAK-004: The zaakdossier view MUST render documents grouped by informatieobjecttype
+### Requirement: REQ-ZAK-004 The zaakdossier view MUST render documents grouped by informatieobjecttype
 
 `DossierTab.vue` MUST render the complete dossier for a zaak, grouping documents in collapsible
 sections per `informatieobjecttype` via `DossierGroup.vue`. `DocumentRow.vue` MUST display
@@ -161,7 +168,7 @@ titel, status badge (orange=concept, green=definitief, grey=gearchiveerd),
 menu (open, share, publish, version history, delete-if-concept). The tab header MUST show a
 count badge (e.g., "Dossier (8)").
 
-#### Scenario REQ-ZAK-004a: Dossier groups documents by type with count badge
+#### Scenario: REQ-ZAK-004a Dossier groups documents by type with count badge
 
 - **GIVEN** zaak `vergunning-2026-0042` has 8 informatieobjecten: Aanvraag (2), Advies (3),
   Beschikking (1), Correspondentie (2)
@@ -171,14 +178,14 @@ count badge (e.g., "Dossier (8)").
 - **AND** each row MUST show titel, status badge, creatiedatum, auteur,
   bestandsomvang, vertrouwelijkheidaanduiding badge
 
-#### Scenario REQ-ZAK-004b: Empty dossier shows upload CTA with drag-and-drop zone
+#### Scenario: REQ-ZAK-004b Empty dossier shows upload CTA with drag-and-drop zone
 
 - **GIVEN** a new zaak with no linked informatieobjecten
 - **WHEN** the user opens the DossierTab
 - **THEN** an empty state MUST be shown with an upload button and drag-and-drop zone indicator
 - **AND** no error or broken state MUST appear
 
-#### Scenario REQ-ZAK-004c: Sort and filter controls work per column
+#### Scenario: REQ-ZAK-004c Sort and filter controls work per column
 
 - **GIVEN** a dossier with 25 informatieobjecten of mixed status and type
 - **WHEN** the user filters by `status = definitief` and sorts by `creatiedatum` ascending
@@ -187,7 +194,7 @@ count badge (e.g., "Dossier (8)").
 
 ---
 
-### REQ-ZAK-005: Upload MUST present a metadata dialog and require informatieobjecttype and vertrouwelijkheidaanduiding
+### Requirement: REQ-ZAK-005 Upload MUST present a metadata dialog and require informatieobjecttype and vertrouwelijkheidaanduiding
 
 `DocumentMetadataDialog.vue` MUST be shown on drag-drop or upload click, requiring the user to
 select an `informatieobjecttype` (dropdown from catalog filtered by current register schema)
@@ -195,7 +202,7 @@ and a `vertrouwelijkheidaanduiding` (default from selected type, overridable to 
 `titel` MUST be pre-filled from the filename and be editable. `beschrijving` is optional.
 Multi-file upload MUST share the same metadata with per-file upload progress indicators.
 
-#### Scenario REQ-ZAK-005a: Drag-drop triggers metadata dialog before upload
+#### Scenario: REQ-ZAK-005a Drag-drop triggers metadata dialog before upload
 
 - **GIVEN** the user drags two PDF files onto the DossierTab drop zone
 - **WHEN** the files are dropped
@@ -203,7 +210,7 @@ Multi-file upload MUST share the same metadata with per-file upload progress ind
 - **AND** a single `informatieobjecttype` selection MUST apply to both files
 - **AND** the dialog MUST NOT close or upload until all required fields are filled
 
-#### Scenario REQ-ZAK-005b: Per-file upload progress with shared metadata
+#### Scenario: REQ-ZAK-005b Per-file upload progress with shared metadata
 
 - **GIVEN** the user has filled in metadata and clicks "Uploaden" for 3 files
 - **WHEN** upload starts
@@ -211,7 +218,7 @@ Multi-file upload MUST share the same metadata with per-file upload progress ind
 - **AND** on completion, each informatieobject MUST be created in the register
 - **AND** a failure on one file MUST NOT block successful upload of the other two
 
-#### Scenario REQ-ZAK-005c: File validation blocks executable uploads
+#### Scenario: REQ-ZAK-005c File validation blocks executable uploads
 
 - **GIVEN** a user drops `malware.exe` onto the dossier
 - **WHEN** `FileValidationHandler.blockExecutableFile()` runs before storage
@@ -221,14 +228,14 @@ Multi-file upload MUST share the same metadata with per-file upload progress ind
 
 ---
 
-### REQ-ZAK-006: Version history MUST be surfaced via Nextcloud Files versions API
+### Requirement: REQ-ZAK-006 Version history MUST be surfaced via Nextcloud Files versions API
 
 `VersionHistoryPanel.vue` MUST fetch document versions via
 `/dav/versions/{userId}/versions/{fileId}` and display for each version:
 version number, timestamp, and uploader. Each version MUST be downloadable.
 Restore action MUST be disabled when informatieobject status = `definitief`.
 
-#### Scenario REQ-ZAK-006a: Concept document version history shows restore
+#### Scenario: REQ-ZAK-006a Concept document version history shows restore
 
 - **GIVEN** informatieobject `aanvraag.pdf` with `status` = `concept` has 3 versions
 - **WHEN** the user opens VersionHistoryPanel
@@ -236,7 +243,7 @@ Restore action MUST be disabled when informatieobject status = `definitief`.
 - **AND** each version MUST have a "Downloaden" link
 - **AND** versions 1 and 2 MUST have an active "Herstellen" button
 
-#### Scenario REQ-ZAK-006b: Restore is disabled for definitief documents
+#### Scenario: REQ-ZAK-006b Restore is disabled for definitief documents
 
 - **GIVEN** informatieobject `besluit.pdf` with `status` = `definitief` has 2 versions
 - **WHEN** the user opens VersionHistoryPanel
@@ -246,13 +253,13 @@ Restore action MUST be disabled when informatieobject status = `definitief`.
 
 ---
 
-### REQ-ZAK-007: Full-text search MUST be available within the dossier scope
+### Requirement: REQ-ZAK-007 Full-text search MUST be available within the dossier scope
 
 `TextExtractionService` MUST run asynchronously via `FileTextExtractionJob` after each upload.
 Extracted text MUST be indexed for search within the dossier. Dossier-scoped content and
 metadata search MUST be supported via `FileSearchController`.
 
-#### Scenario REQ-ZAK-007a: Upload triggers async text extraction
+#### Scenario: REQ-ZAK-007a Upload triggers async text extraction
 
 - **GIVEN** a user uploads `aanvraagformulier.pdf` containing readable text
 - **WHEN** the upload completes
@@ -261,7 +268,7 @@ metadata search MUST be supported via `FileSearchController`.
 - **AND** the document MUST become full-text searchable once extraction completes
 - **AND** the upload response MUST not wait for extraction to finish
 
-#### Scenario REQ-ZAK-007b: Dossier search returns only matching documents
+#### Scenario: REQ-ZAK-007b Dossier search returns only matching documents
 
 - **GIVEN** a dossier with 25 documents, 3 containing the phrase "brandveiligheidsplan"
 - **WHEN** the user searches "brandveiligheidsplan" in the dossier search bar
@@ -270,7 +277,7 @@ metadata search MUST be supported via `FileSearchController`.
 
 ---
 
-### REQ-ZAK-008: Bulk operations MUST support ZIP export with manifest, bulk status transition, and bulk metadata update
+### Requirement: REQ-ZAK-008 Bulk operations MUST support ZIP export with manifest, bulk status transition, and bulk metadata update
 
 `BulkActionsBar.vue` MUST appear when the user selects multiple documents. `ZipManifestBuilder`
 MUST produce a streaming ZIP (via ZipStream) containing selected documents in
@@ -278,7 +285,7 @@ informatieobjecttype sub-folders plus a `manifest.csv` with columns:
 `bestandsnaam`, `titel`, `informatieobjecttype`, `status`, `vertrouwelijkheidaanduiding`,
 `creatiedatum`, `auteur`. Documents above the caller's clearance MUST be excluded from the ZIP.
 
-#### Scenario REQ-ZAK-008a: ZIP export includes manifest.csv and type sub-folders
+#### Scenario: REQ-ZAK-008a ZIP export includes manifest.csv and type sub-folders
 
 - **GIVEN** a dossier with 8 documents across 3 informatieobjecttype values
 - **WHEN** the user selects all 8 and clicks "Download selectie als ZIP"
@@ -287,7 +294,7 @@ informatieobjecttype sub-folders plus a `manifest.csv` with columns:
 - **AND** the ZIP MUST contain sub-folders per informatieobjecttype
 - **AND** the ZIP MUST contain `manifest.csv` with all 8 rows populated
 
-#### Scenario REQ-ZAK-008b: ZIP excludes documents above caller clearance
+#### Scenario: REQ-ZAK-008b ZIP excludes documents above caller clearance
 
 - **GIVEN** a dossier has 8 documents, 2 of which have `vertrouwelijkheidaanduiding` = `geheim`
 - **AND** the caller's clearance is `vertrouwelijk`
@@ -295,7 +302,7 @@ informatieobjecttype sub-folders plus a `manifest.csv` with columns:
 - **THEN** the ZIP MUST contain only 6 documents
 - **AND** `manifest.csv` MUST contain only those 6 rows
 
-#### Scenario REQ-ZAK-008c: Bulk status transition returns per-document result
+#### Scenario: REQ-ZAK-008c Bulk status transition returns per-document result
 
 - **GIVEN** the user selects 5 concept documents and clicks "Markeer als definitief"
 - **WHEN** `POST /api/informatieobjecten/bulk/status` is called with all 5 IDs and `definitief`
@@ -304,7 +311,7 @@ informatieobjecttype sub-folders plus a `manifest.csv` with columns:
 
 ---
 
-### REQ-ZAK-009: ZGW DRC-compatible download MUST support HTTP Range requests for resumable streaming
+### Requirement: REQ-ZAK-009 ZGW DRC-compatible download MUST support HTTP Range requests for resumable streaming
 
 `ZaakdossierController.downloadZgwDocumenten()` MUST expose a ZGW DRC-compatible endpoint at
 `GET /api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/download` that uses
@@ -313,7 +320,7 @@ informatieobjecttype sub-folders plus a `manifest.csv` with columns:
 All download endpoints MUST pass through `InformatieobjectAccessGuard.canRead()` before
 streaming begins.
 
-#### Scenario REQ-ZAK-009a: ZGW DRC endpoint streams large file with Range support
+#### Scenario: REQ-ZAK-009a ZGW DRC endpoint streams large file with Range support
 
 - **GIVEN** informatieobject with UUID `inf-bbbb-0002` has `bestandsomvang` = 52 MB
 - **WHEN** the client sends `GET /api/zgw/documenten/v1/enkelvoudiginformatieobjecten/inf-bbbb-0002/download`
@@ -322,7 +329,7 @@ streaming begins.
 - **AND** the response MUST include `Content-Range: bytes 0-1048575/54525952`
 - **AND** the first 1 MB of file content MUST be returned
 
-#### Scenario REQ-ZAK-009b: Download blocked when user lacks clearance
+#### Scenario: REQ-ZAK-009b Download blocked when user lacks clearance
 
 - **GIVEN** informatieobject has `vertrouwelijkheidaanduiding` = `geheim`
 - **AND** the requesting user's clearance is `intern`
@@ -332,7 +339,7 @@ streaming begins.
 
 ---
 
-### REQ-ZAK-010: Existing linked files MUST be back-filled with ZGW informatieobject metadata
+### Requirement: REQ-ZAK-010 Existing linked files MUST be back-filled with ZGW informatieobject metadata
 
 `BackfillInformatieobjectMetadata` MUST be an idempotent repair step registered via
 `info.xml` `repair-steps`. It MUST iterate all existing object folders, create `informatieobject`
@@ -341,7 +348,7 @@ records with defaults (`status` = `concept`, `vertrouwelijkheidaanduiding` = `in
 and create `zaakinformatieobject` joins for already-linked files. Files that already have an
 informatieobject MUST be skipped.
 
-#### Scenario REQ-ZAK-010a: Back-fill creates informatieobject for pre-existing file
+#### Scenario: REQ-ZAK-010a Back-fill creates informatieobject for pre-existing file
 
 - **GIVEN** a Nextcloud file `vergunning.pdf` linked to case `vergunning-1` without an
   informatieobject record
@@ -351,7 +358,7 @@ informatieobject MUST be skipped.
   and `integriteit.waarde` = SHA-256 hash of the file content
 - **AND** a `zaakinformatieobject` join MUST link the informatieobject to `vergunning-1`
 
-#### Scenario REQ-ZAK-010b: Back-fill is idempotent on re-run
+#### Scenario: REQ-ZAK-010b Back-fill is idempotent on re-run
 
 - **GIVEN** `BackfillInformatieobjectMetadata` has already run and created informatieobject
   records for all existing files

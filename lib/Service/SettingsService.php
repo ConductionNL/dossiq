@@ -265,6 +265,21 @@ class SettingsService
         // Mandaatregister authority validation — empty falls back to manual confirmation.
         'mandaatregister_endpoint',
         'mandaatregister_token',
+        // ZGW DRC case dossier (document-zaakdossier spec).
+        'dossier_informatieobject_schema',
+        'dossier_zaakinformatieobject_schema',
+        'dossier_besluitinformatieobject_schema',
+        'dossier_informatieobjecttype_schema',
+        // Maximum upload size in bytes (0 = no app-level limit, NC limit applies).
+        'dossier_max_file_size',
+        // Toggle: organise ZIP export into per-informatieobjecttype sub-folders.
+        'dossier_subfolder_per_type',
+        // Comma-separated map of NC group ids to clearance levels, e.g.
+        // "vertrouwelijk-cleared:vertrouwelijk,geheim-cleared:geheim". Empty
+        // means every authenticated user has the baseline clearance below.
+        'dossier_clearance_group_map',
+        // Baseline clearance for any authenticated user lacking a mapped group.
+        'dossier_default_clearance',
     ];
 
     /**
@@ -399,6 +414,11 @@ class SettingsService
         // Milestone tracking (milestone-tracking spec).
         'milestoneDefinition'          => 'milestone_definition_schema',
         'milestoneRecord'              => 'milestone_record_schema',
+        // ZGW DRC case dossier (document-zaakdossier spec).
+        'informatieobject'             => 'dossier_informatieobject_schema',
+        'zaakinformatieobject'         => 'dossier_zaakinformatieobject_schema',
+        'besluitinformatieobject'      => 'dossier_besluitinformatieobject_schema',
+        'informatieobjecttype'         => 'dossier_informatieobjecttype_schema',
     ];
 
     /**
