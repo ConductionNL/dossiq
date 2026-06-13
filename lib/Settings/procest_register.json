@@ -553,6 +553,11 @@
         "title": "Case",
         "description": "A case instance in the case management system",
         "type": "object",
+        "configuration": {
+          "linkedTypes": [
+            "mail"
+          ]
+        },
         "required": [
           "title",
           "caseType"

@@ -13,8 +13,12 @@
  * NOTE: procest serves its SPA at /apps/procest/index (the bare
  * /apps/procest/ route 404s), so navigation targets the /index entrypoint.
  */
-import { test } from '@playwright/test'
+import { test, request, type APIRequestContext } from '@playwright/test'
 import { shootSurface, shootByNav } from './_visual-helpers'
+import { STORAGE_STATE } from '../helpers/auth'
+import {
+	getRequestToken, ensureCaseType, seedCase, objectId, cleanupRunObjects, deleteObject,
+} from '../helpers/fixtures'
 
 const APP = '/index.php/apps/procest/index'
 
@@ -25,5 +29,53 @@ test.describe('Procest — visual baselines', () => {
 
 	test('cases list', async ({ page }) => {
 		await shootByNav(page, `${APP}#/`, 'Cases', 'cases.png')
+	})
+})
+
+/*
+ * New-UI surface (this week): the CaseDetail page is where the deelzaak
+ * (Sub-cases) + case-email (Email) tabs attach. Baseline the detail shell on a
+ * seeded case. Dynamic regions (ids, timestamps, owner) are masked by the
+ * shared visual helper, so the shot is deterministic across runs even though
+ * the seeded case's uuid differs each time.
+ *
+ * FLAG: in the deployed @conduction/nextcloud-vue (beta.108) the CaseDetail
+ * main panel renders empty in the fixed visual viewport (the same slot-render
+ * gap that hides the Sub-cases/Email tabs — see deelzaak-case-email.spec.ts).
+ * The baseline therefore captures the detail SHELL (nav + content host) and is
+ * kept `fixme` until the lib renders the detail body, so a misleading blank
+ * baseline is never committed. The e2e proves the underlying data round-trip.
+ */
+test.describe('Procest — case detail (deelzaak/email host) visual', () => {
+	let api: APIRequestContext
+	let token: string
+	let caseId: string
+	let caseTypeId: string
+	let caseTypeSeeded = false
+
+	test.beforeAll(async ({ baseURL }) => {
+		api = await request.newContext({ baseURL, storageState: STORAGE_STATE })
+		token = await getRequestToken(api)
+		const ct = await ensureCaseType(api, token)
+		caseTypeId = ct.id
+		caseTypeSeeded = ct.seeded
+		const kase = await seedCase(api, token, {
+			title: 'VISUAL-BASELINE Case detail',
+			caseType: caseTypeId,
+			identifier: 'VISUAL-BASELINE-DETAIL',
+			description: 'Stable case for the CaseDetail visual baseline.',
+		})
+		caseId = objectId(kase)
+	})
+
+	test.afterAll(async () => {
+		await cleanupRunObjects(api, token, ['case'])
+		if (caseTypeSeeded) await deleteObject(api, token, 'caseType', caseTypeId)
+		await api.dispose()
+	})
+
+	test.fixme('case detail', async ({ page }) => {
+		// History-mode detail route (verified live): /apps/procest/cases/:id.
+		await shootSurface(page, `/index.php/apps/procest/cases/${caseId}`, 'case-detail.png')
 	})
 })
