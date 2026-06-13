@@ -568,6 +568,8 @@ return [
         ['name' => 'termijnReporting#jaarrekening',      'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
 
         // SPA catch-all — serves the Vue app for any frontend route (history mode).
-        ['name' => 'dashboard#page', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
+        // 'postfix' keeps the route name unique; without it this entry replaces
+        // the '/' route above (same name) and the app root 404s.
+        ['name' => 'dashboard#page', 'postfix' => 'catchall', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
     ],
 ];

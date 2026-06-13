@@ -287,19 +287,21 @@ export default {
 					result: null,
 					extensionCount: 0,
 					parentCase: this.parentCase,
-					statusHistory: [{
+					// statusHistory/activity are JSON-encoded strings per the
+					// case schema (procest_register.json).
+					statusHistory: JSON.stringify([{
 						status: initialStatus?.id || null,
 						date: now.toISOString(),
 						changedBy: currentUser,
-					}],
-					activity: [{
+					}]),
+					activity: JSON.stringify([{
 						date: now.toISOString(),
 						type: 'created',
 						description: t('procest', 'Sub-case created with type \'{type}\'', {
 							type: this.selectedCaseType.title,
 						}),
 						user: currentUser,
-					}],
+					}]),
 				}
 
 				const result = await this.objectStore.saveObject('case', caseData)

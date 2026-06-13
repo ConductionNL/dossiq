@@ -271,7 +271,7 @@ class MetricsController extends Controller
                 ->selectAlias($qb->func()->count('o.id'), 'cnt')
                 ->from('openregister_objects', 'o')
                 ->innerJoin('o', 'openregister_schemas', 's', $qb->expr()->eq('o.schema', 's.id'))
-                ->where($qb->expr()->like('s.title', $qb->createNamedParameter('%aak%')))
+                ->where($qb->expr()->eq('s.title', $qb->createNamedParameter('Case')))
                 ->groupBy('status', 'case_type');
 
             $result = $qb->executeQuery();
@@ -298,7 +298,7 @@ class MetricsController extends Controller
             $qb->select($qb->func()->count('o.id', 'cnt'))
                 ->from('openregister_objects', 'o')
                 ->innerJoin('o', 'openregister_schemas', 's', $qb->expr()->eq('o.schema', 's.id'))
-                ->where($qb->expr()->like('s.title', $qb->createNamedParameter('%aak%')))
+                ->where($qb->expr()->eq('s.title', $qb->createNamedParameter('Case')))
                 ->andWhere($qb->expr()->isNotNull($qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.uiterlijkeEinddatumAfdoening'))")))
                 ->andWhere(
                     $qb->expr()->lt(
@@ -331,7 +331,7 @@ class MetricsController extends Controller
             $qb->select($qb->func()->count('o.id', 'cnt'))
                 ->from('openregister_objects', 'o')
                 ->innerJoin('o', 'openregister_schemas', 's', $qb->expr()->eq('o.schema', 's.id'))
-                ->where($qb->expr()->like('s.title', $qb->createNamedParameter('%aak%')))
+                ->where($qb->expr()->eq('s.title', $qb->createNamedParameter('Case')))
                 ->andWhere(
                     $qb->expr()->like(
                         $qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.startDate'))"),
@@ -365,7 +365,7 @@ class MetricsController extends Controller
                 ->selectAlias($qb->func()->count('o.id'), 'cnt')
                 ->from('openregister_objects', 'o')
                 ->innerJoin('o', 'openregister_schemas', 's', $qb->expr()->eq('o.schema', 's.id'))
-                ->where($qb->expr()->like('s.title', $qb->createNamedParameter('%taak%')))
+                ->where($qb->expr()->eq('s.title', $qb->createNamedParameter('Task')))
                 ->groupBy('status');
 
             $result = $qb->executeQuery();
@@ -392,7 +392,7 @@ class MetricsController extends Controller
             $qb->select($qb->func()->count('o.id', 'cnt'))
                 ->from('openregister_objects', 'o')
                 ->innerJoin('o', 'openregister_schemas', 's', $qb->expr()->eq('o.schema', 's.id'))
-                ->where($qb->expr()->like('s.title', $qb->createNamedParameter('%taak%')))
+                ->where($qb->expr()->eq('s.title', $qb->createNamedParameter('Task')))
                 ->andWhere($qb->expr()->isNotNull($qb->createFunction("JSON_UNQUOTE(JSON_EXTRACT(o.object, '$.deadline'))")))
                 ->andWhere(
                     $qb->expr()->lt(

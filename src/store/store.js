@@ -86,6 +86,11 @@ export async function initializeStores() {
 		if (config.register && config.parafeeractie_schema) {
 			objectStore.registerObjectType('parafeeractie', config.parafeeractie_schema, config.register)
 		}
+		// Case-document relation records (case detail Documents tab +
+		// DocumentChecklist). Slug fallback like caseType/statusType above.
+		if (config.register) {
+			objectStore.registerObjectType('caseDocument', config.case_document_schema || 'caseDocument', config.register)
+		}
 	}
 
 	return { settingsStore, objectStore }

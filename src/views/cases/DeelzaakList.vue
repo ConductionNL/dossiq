@@ -122,6 +122,7 @@ import Plus from 'vue-material-design-icons/Plus.vue'
 
 import { useObjectStore } from '../../store/modules/object.js'
 import { useDeelzaakStore } from '../../store/modules/deelzaak.js'
+import { initializeStores } from '../../store/store.js'
 import DeelzaakCreateModal from '../../modals/DeelzaakCreateModal.vue'
 import { formatDate } from '../../utils/caseHelpers.js'
 
@@ -229,6 +230,10 @@ export default {
 		},
 	},
 	async mounted() {
+		// Object types are registered by App.vue's async created(), which
+		// does not block child mounting — on a deep link this tab can
+		// mount first, so wait for the registry before fetching.
+		await initializeStores()
 		await this.reload()
 	},
 	methods: {
