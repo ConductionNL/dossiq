@@ -4,7 +4,7 @@
 
 @e2e exclude Pinia store migration spec; store API compliance is covered by unit tests, not browser E2E.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Procest MUST use `@conduction/nextcloud-vue` `useObjectStore` for all OpenRegister object CRUD
 
@@ -41,7 +41,7 @@ All Pinia store call sites in procest that operate on OpenRegister objects MUST 
 
 ### Requirement: Procest-specific config stores MAY remain as plain Pinia `defineStore`s
 
-Procest carries config endpoints (`/apps/procest/api/settings`, `/apps/procest/api/zgw-mappings`) that are not OpenRegister objects. These stores are out of scope for the lib's `useObjectStore`.
+Procest carries config endpoints (`/apps/procest/api/settings`, `/apps/procest/api/zgw-mappings`) that are not OpenRegister objects. These stores are out of scope for the lib's `useObjectStore` and MUST NOT be required to migrate to `createObjectStore`.
 
 #### Scenario: A store wraps a procest-specific REST endpoint
 

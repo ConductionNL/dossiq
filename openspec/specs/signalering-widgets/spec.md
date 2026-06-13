@@ -126,9 +126,9 @@ The dashboard SHALL display a Stalled Cases widget identifying cases that have h
 
 ### Requirement: Nextcloud Dashboard Signalering Widgets [V1]
 
-@e2e exclude NC dashboard widget picker requires opening the Nextcloud system dashboard widget picker; NC IWidget registration is covered by PHPUnit, not Playwright.
-
 The system SHALL register Nextcloud-native dashboard widgets (IWidget) for the signalering components so they appear on the main Nextcloud dashboard.
+
+@e2e exclude NC dashboard widget picker requires opening the Nextcloud system dashboard widget picker; NC IWidget registration is covered by PHPUnit, not Playwright.
 
 #### Scenario: Deadline Alerts Nextcloud widget available
 - **WHEN** the user views the main Nextcloud dashboard widget picker
@@ -149,9 +149,9 @@ The system SHALL register Nextcloud-native dashboard widgets (IWidget) for the s
 
 ### Requirement: Signalering Helper Functions [V1]
 
-@e2e exclude Dashboard helper functions (getDeadlineAlerts, getTaskDueReminders, getStalledCases) are pure JS utility functions; covered by dashboardHelpers.js unit tests, not browser Playwright.
-
 The system SHALL provide dashboard helper functions for computing deadline proximity, stalled case detection, and alert urgency sorting.
+
+@e2e exclude Dashboard helper functions (getDeadlineAlerts, getTaskDueReminders, getStalledCases) are pure JS utility functions; covered by dashboardHelpers.js unit tests, not browser Playwright.
 
 #### Scenario: getDeadlineAlerts returns at-risk and overdue cases
 - **WHEN** called with open cases array, case types array, and warning threshold of 3
@@ -191,6 +191,8 @@ The existing dashboard layout SHALL be extended to include the signalering widge
 
 ### REQ-001: Each signalering widget SHALL implement Nextcloud IWidget with id/title/order/icon/url metadata
 
+Each signalering widget SHALL implement Nextcloud IWidget with id/title/order/icon/url metadata.
+
 @e2e exclude PHP IWidget getId() method return value; widget metadata is covered by PHPUnit, not Playwright.
 
 Each of `DeadlineAlertsWidget`, `OverdueCasesWidget`, `StalledCasesWidget`, and `TaskRemindersWidget` SHALL implement `OCP\Dashboard\IWidget` and expose the canonical metadata via `getId()`, `getTitle()`, `getOrder()`, `getIconClass()`, and `getUrl()`. The widget id SHALL be a stable kebab-case identifier (`procest-deadline-alerts`, `procest-overdue-cases`, `procest-stalled-cases`, `procest-task-reminders`) used by both the Nextcloud dashboard registry and the in-app `widgetDefs` map. The title SHALL be returned through `IL10N::t()` so it follows the user locale.
@@ -202,6 +204,8 @@ Each of `DeadlineAlertsWidget`, `OverdueCasesWidget`, `StalledCasesWidget`, and 
 
 ### REQ-002: Each signalering widget SHALL register its frontend bundle via load()
 
+Each signalering widget SHALL register its frontend bundle via `load()`.
+
 @e2e exclude PHP IWidget::load() bundle registration; covered by PHPUnit and smoke test verifying script tags, not Playwright.
 
 `IWidget::load()` SHALL call `Util::addScript('procest', '<widget>-main')` and `Util::addStyle('procest', '<widget>-main')` for the widget's compiled Vue bundle. The widget SHALL NOT compute its data payload server-side in PHP — the Vue component fetches data via the Procest API after mounting. The PHP class exists solely to register the widget with Nextcloud's dashboard system and load the frontend bundle.
@@ -211,6 +215,8 @@ Each of `DeadlineAlertsWidget`, `OverdueCasesWidget`, `StalledCasesWidget`, and 
 - **THEN** `DeadlineAlertsWidget::load()` SHALL run and the `deadlineAlertsWidget-main.js` + `.css` bundles SHALL be added to the page
 
 ### REQ-003: All four signalering widgets SHALL be registered at app boot via Application
+
+All four signalering widgets SHALL be registered at app boot via `Application`.
 
 @e2e exclude NC Application::register() PHP bootstrap; widget picker registration covered by PHPUnit.
 

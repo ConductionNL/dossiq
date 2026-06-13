@@ -79,6 +79,8 @@ Stored as an OpenRegister object in the `procest` register under the `task` sche
 
 ### REQ-TASK-001: Task CRUD
 
+The system MUST support task create, read, update, and delete operations linked to cases.
+
 @e2e exclude Task CRUD requires existing cases to link tasks to; data-dependent create/read/update/delete flows not testable without pre-seeded cases.
 
 The system MUST support creating, reading, updating, and deleting tasks linked to cases. All task objects are stored in OpenRegister under the `procest` register, `task` schema.
@@ -137,6 +139,8 @@ The system MUST support creating, reading, updating, and deleting tasks linked t
 
 ### REQ-TASK-002: Task Status Lifecycle
 
+The system MUST enforce the CMMN PlanItem task status lifecycle.
+
 @e2e exclude Task lifecycle transitions require existing tasks with specific statuses; data-dependent state machine tests covered by taskLifecycle.js unit tests.
 
 The system MUST enforce the CMMN PlanItem lifecycle for task status transitions, as implemented in `src/utils/taskLifecycle.js`. Invalid transitions MUST be rejected.
@@ -187,6 +191,8 @@ The system MUST enforce the CMMN PlanItem lifecycle for task status transitions,
 ---
 
 ### REQ-TASK-003: Task Assignment
+
+The system MUST support assigning tasks to Nextcloud users.
 
 @e2e exclude Task assignment requires existing tasks; data-dependent assignment flows not testable without pre-seeded tasks.
 
@@ -289,6 +295,8 @@ The system MUST provide a list view for tasks with search, sorting, and filterin
 
 ### REQ-TASK-005: Task Due Dates and Priorities
 
+The system MUST support task due dates and priority levels.
+
 @e2e exclude Due date/priority display and overdue highlighting require existing tasks with specific dates; data-dependent visual tests covered by taskHelpers.js unit tests.
 
 The system MUST support due dates and priority levels on tasks. Overdue tasks MUST be visually highlighted, as implemented in `src/utils/taskHelpers.js`.
@@ -335,6 +343,8 @@ The system MUST support due dates and priority levels on tasks. Overdue tasks MU
 
 ### REQ-TASK-006: Task Card Display
 
+Task cards MUST display key task information consistently.
+
 @e2e exclude Task card anatomy requires existing tasks to render; data-dependent card display not testable without pre-seeded tasks.
 
 Task cards MUST display key information following a consistent card anatomy across all views.
@@ -377,6 +387,8 @@ Task cards MUST display key information following a consistent card anatomy acro
 ---
 
 ### REQ-TASK-007: Kanban Board View
+
+The system MUST provide a kanban board view for tasks.
 
 @e2e exclude Kanban board is V1; drag-and-drop canvas interactions are not testable in the current Playwright-testable build.
 
@@ -427,6 +439,8 @@ The system MUST provide a kanban board view for tasks, with columns correspondin
 
 ### REQ-TASK-008: Task Completion
 
+The system MUST set the completedDate and enforce lifecycle rules when a task is completed.
+
 @e2e exclude Task completion requires an active task to complete; data-dependent lifecycle flow not testable without pre-seeded tasks.
 
 When a task is completed, the system MUST automatically set the `completedDate` and enforce lifecycle rules.
@@ -458,6 +472,8 @@ When a task is completed, the system MUST automatically set the `completedDate` 
 ---
 
 ### REQ-TASK-009: Task Checklist (Sub-Items)
+
+The system SHALL support checklists within tasks.
 
 @e2e exclude Task checklists are V1; sub-item UI is not yet built in the current Playwright-testable build.
 
@@ -493,6 +509,8 @@ The system SHALL support checklists within tasks for detailed work breakdown. Ch
 
 ### REQ-TASK-010: Task Dependencies
 
+The system SHALL support declaring dependencies between tasks.
+
 @e2e exclude Task dependencies are V1; dependency UI is not yet built in the current Playwright-testable build.
 
 The system SHALL support declaring dependencies between tasks ("blocked by" relationships). Dependencies are advisory: they provide visual indicators but do not strictly prevent work.
@@ -524,6 +542,8 @@ The system SHALL support declaring dependencies between tasks ("blocked by" rela
 ---
 
 ### REQ-TASK-011: Task Templates per Case Type
+
+The system SHALL support defining task templates on case types.
 
 @e2e exclude Task templates are V1; template definition UI on case types is not yet built in the current Playwright-testable build.
 
@@ -563,6 +583,8 @@ The system SHALL support defining task templates on case types. When a case of t
 
 ### REQ-TASK-012: Automated Task Creation on Case Status Change
 
+The system SHALL support automatically creating tasks on case status change.
+
 @e2e exclude Automated task creation is Enterprise tier; n8n webhook automation is a backend integration not testable via Playwright.
 
 The system SHALL support automatically creating tasks when a case transitions to a specific status. This can be implemented via n8n workflows that listen for case status change events.
@@ -595,6 +617,8 @@ The system SHALL support automatically creating tasks when a case transitions to
 ---
 
 ### REQ-TASK-013: Overdue Task Management
+
+The system MUST provide clear visual indicators for overdue tasks.
 
 @e2e exclude Overdue task indicators require tasks with past due dates; data-dependent visual tests covered by taskHelpers.js unit tests.
 

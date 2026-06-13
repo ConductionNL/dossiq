@@ -97,7 +97,7 @@ Fix ~56 failing VNG Newman test suite assertions across ZRC, ZTC, DRC, and BRC b
 
 <!-- BEGIN retrofit-2026-05-24-zgw-business-rules-compliance -->
 
-## Implementation Surface (retrofit)
+## Requirements
 
 ### REQ-001: ZgwRulesBase SHALL provide a shared base class for all per-API rule services
 

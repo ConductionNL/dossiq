@@ -42,9 +42,9 @@ Provide a reusable Leaflet-based map component for Procest that renders GeoJSON 
 
 ### REQ-MAP-01: Base Map Component
 
-**Feature tier**: V1
-
 The system MUST provide a reusable Vue map component based on Leaflet that can be embedded in any view.
+
+**Feature tier**: V1
 
 #### Scenario MAP-01a: Render map with PDOK base layer
 
@@ -75,9 +75,9 @@ The system MUST provide a reusable Vue map component based on Leaflet that can b
 
 ### REQ-MAP-02: GeoJSON Geometry Rendering
 
-**Feature tier**: V1
-
 The map component MUST render GeoJSON geometries (Point, LineString, Polygon, MultiPolygon) with configurable styling.
+
+**Feature tier**: V1
 
 #### Scenario MAP-02a: Render case location point
 
@@ -104,9 +104,9 @@ The map component MUST render GeoJSON geometries (Point, LineString, Polygon, Mu
 
 ### REQ-MAP-03: Marker Clustering
 
-**Feature tier**: V1
-
 When displaying multiple case locations, the map MUST use marker clustering to maintain performance and readability.
+
+**Feature tier**: V1
 
 #### Scenario MAP-03a: Cluster markers at low zoom
 
@@ -133,9 +133,9 @@ When displaying multiple case locations, the map MUST use marker clustering to m
 
 ### REQ-MAP-04: Keyboard and Accessibility
 
-**Feature tier**: V1
-
 The map component MUST be keyboard-navigable and meet WCAG AA requirements.
+
+**Feature tier**: V1
 
 #### Scenario MAP-04a: Keyboard navigation
 

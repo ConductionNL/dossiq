@@ -1,14 +1,16 @@
 ## Purpose
 
+Provide deelzaak (sub-case) support in Procest: creating sub-cases from a parent case, listing them on the parent detail, parent breadcrumb navigation, progress roll-up, case-list count badges, and deletion protection. Maps to the ZGW `hoofdzaak` / `deelzaken` relations on the Zaak resource.
+
 @e2e exclude Sub-case creation is V1; deelzaak UI panel in case detail is not yet built in the current Playwright-testable build.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Sub-case creation from parent case
 
-**Feature tier**: V1
+The system SHALL allow users to create a sub-case (deelzaak) from a parent case's detail view.
 
-The system SHALL allow users to create a sub-case (deelzaak) from a parent case's detail view. The sub-case MUST have its `parentCase` field set to the parent case's UUID. The case type selection MUST be restricted to types listed in the parent case type's `subCaseTypes` array. Maps to ZGW `hoofdzaak` field on the Zaak resource.
+**Feature tier**: V1 The sub-case MUST have its `parentCase` field set to the parent case's UUID. The case type selection MUST be restricted to types listed in the parent case type's `subCaseTypes` array. Maps to ZGW `hoofdzaak` field on the Zaak resource.
 
 #### Scenario: Create sub-case from parent case detail
 
@@ -35,9 +37,9 @@ The system SHALL allow users to create a sub-case (deelzaak) from a parent case'
 
 ### Requirement: Sub-cases section on parent case detail
 
-**Feature tier**: V1
+The case detail view SHALL display a "Sub-cases" section
 
-The case detail view SHALL display a "Sub-cases" section listing all cases whose `parentCase` references the current case. The section MUST show each sub-case's title, status, assignee, and deadline. Maps to ZGW `deelzaken` on the Zaak resource.
+**Feature tier**: V1 listing all cases whose `parentCase` references the current case. The section MUST show each sub-case's title, status, assignee, and deadline. Maps to ZGW `deelzaken` on the Zaak resource.
 
 #### Scenario: Parent case shows sub-cases list
 
@@ -59,9 +61,9 @@ The case detail view SHALL display a "Sub-cases" section listing all cases whose
 
 ### Requirement: Parent case breadcrumb navigation
 
-**Feature tier**: V1
+When viewing a sub-case (a case with a non-null `parentCase`), the system SHALL display a breadcrumb
 
-When viewing a sub-case (a case with a non-null `parentCase`), the system SHALL display a breadcrumb above the case title linking back to the parent case. The breadcrumb MUST show the parent case's title.
+**Feature tier**: V1 above the case title linking back to the parent case. The breadcrumb MUST show the parent case's title.
 
 #### Scenario: Sub-case shows parent breadcrumb
 
@@ -76,9 +78,9 @@ When viewing a sub-case (a case with a non-null `parentCase`), the system SHALL 
 
 ### Requirement: Sub-case progress roll-up on parent case
 
-**Feature tier**: V1
+The parent case detail SHALL display a progress indicator
 
-The parent case detail SHALL display a progress indicator summarizing sub-case completion status. The indicator MUST show the count of completed sub-cases vs total (e.g., "3/5 completed").
+**Feature tier**: V1 summarizing sub-case completion status. The indicator MUST show the count of completed sub-cases vs total (e.g., "3/5 completed").
 
 #### Scenario: Roll-up shows completion progress
 
@@ -92,9 +94,9 @@ The parent case detail SHALL display a progress indicator summarizing sub-case c
 
 ### Requirement: Sub-case count in case list
 
-**Feature tier**: V1
+The case list view SHALL display a sub-case count badge
 
-The case list view SHALL display a sub-case count badge for cases that have sub-cases. Cases with zero sub-cases MUST NOT show a badge.
+**Feature tier**: V1 for cases that have sub-cases. Cases with zero sub-cases MUST NOT show a badge.
 
 #### Scenario: Case list shows sub-case count
 
@@ -108,9 +110,9 @@ The case list view SHALL display a sub-case count badge for cases that have sub-
 
 ### Requirement: Sub-case deletion protection
 
-**Feature tier**: V1
+When a user attempts to delete a parent case that has sub-cases, the system SHALL warn the user
 
-When a user attempts to delete a parent case that has sub-cases, the system SHALL warn the user and require confirmation. The system MUST clear the `parentCase` field on all child cases before proceeding with deletion (orphan cleanup).
+**Feature tier**: V1 and require confirmation. The system MUST clear the `parentCase` field on all child cases before proceeding with deletion (orphan cleanup).
 
 #### Scenario: Delete parent case with sub-cases shows warning
 

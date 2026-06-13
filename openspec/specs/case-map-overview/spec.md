@@ -13,9 +13,9 @@ Provide an overview map showing all cases (or filtered subsets) plotted on a map
 
 ### REQ-OVERVIEW-01: Cases Map View
 
-**Feature tier**: V1
-
 The system MUST provide a map overview of all cases with geometry, accessible from the main navigation.
+
+**Feature tier**: V1
 
 #### Scenario OVERVIEW-01a: Display all cases on map
 
@@ -48,9 +48,9 @@ The system MUST provide a map overview of all cases with geometry, accessible fr
 
 ### REQ-OVERVIEW-02: Map Filters
 
-**Feature tier**: V1
-
 The overview map MUST support filtering cases by standard attributes.
+
+**Feature tier**: V1
 
 #### Scenario OVERVIEW-02a: Filter by case type
 
@@ -84,9 +84,9 @@ The overview map MUST support filtering cases by standard attributes.
 
 ### REQ-OVERVIEW-03: Spatial Selection
 
-**Feature tier**: V1
-
 The overview map MUST support selecting cases by geographic area.
+
+**Feature tier**: V1
 
 #### Scenario OVERVIEW-03a: Rectangle selection
 
@@ -114,9 +114,9 @@ The overview map MUST support selecting cases by geographic area.
 
 ### REQ-OVERVIEW-04: Dashboard Map Widget
 
-**Feature tier**: V1
-
 The Procest dashboard MUST support an optional map widget showing case locations.
+
+**Feature tier**: V1
 
 #### Scenario OVERVIEW-04a: Map widget on dashboard
 

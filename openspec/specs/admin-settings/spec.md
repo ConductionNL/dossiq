@@ -28,7 +28,7 @@ All admin settings data is stored as OpenRegister objects in the `procest` regis
 
 ## Requirements
 
-### REQ-ADMIN-001: Nextcloud Admin Panel Registration [MVP]
+### Requirement: Nextcloud Admin Panel Registration [MVP]
 
 The system MUST register a settings page in the Nextcloud admin panel under the standard administration section, using the `AdminSettings` and `SettingsSection` classes to integrate with Nextcloud's settings framework.
 
@@ -64,7 +64,7 @@ The system MUST register a settings page in the Nextcloud admin panel under the 
 - AND the case type list MUST show an appropriate error state rather than an empty list
 - AND all form controls MUST be disabled until OpenRegister is available
 
-### REQ-ADMIN-UI-01: In-app Settings page render [MVP]
+### Requirement: In-app Settings page render [MVP]
 
 The in-app Settings page (`Settings.vue`, route `/settings`) SHALL mount and
 render its configuration shell on navigation — the "Version Information" and
@@ -81,7 +81,7 @@ distinct from the Nextcloud admin-settings panel (REQ-ADMIN-001).
 - **AND** a "Case Type Management" section heading
 - **AND** a "Save" control MUST be present
 
-### REQ-ADMIN-002: Case Type List View [MVP]
+### Requirement: Case Type List View [MVP]
 
 The admin settings MUST display a list of all case types with key metadata, following the `CaseTypeList.vue` component's `CnIndexPage` pattern.
 
@@ -132,7 +132,7 @@ The admin settings MUST display a list of all case types with key metadata, foll
 - AND the "+ Add Case Type" button MUST be prominently displayed
 - AND the system SHOULD provide guidance (e.g., "Create your first case type to start managing cases")
 
-### REQ-ADMIN-003: Create Case Type [MVP]
+### Requirement: Create Case Type [MVP]
 
 The admin MUST be able to create new case types that start in draft status, following the ZGW Catalogi `ZaakType` data model.
 
@@ -171,11 +171,11 @@ The admin MUST be able to create new case types that start in draft status, foll
 - THEN the system SHOULD display a warning that a case type with this title already exists
 - AND the system MAY allow the creation (titles are not required to be unique, but the warning helps prevent mistakes)
 
-### REQ-ADMIN-004: Case Type Detail/Edit View -- Tabbed Interface [MVP]
-
-@e2e exclude Tabbed detail view requires navigating into an existing case type; a case type must be created first; covered by the create + list tests for now; deep-dive tab tests deferred.
+### Requirement: Case Type Detail/Edit View -- Tabbed Interface [MVP]
 
 The case type detail view MUST use a tabbed interface for organizing the various type definitions, following the `CaseTypeDetail.vue` component pattern.
+
+@e2e exclude Tabbed detail view requires navigating into an existing case type; a case type must be created first; covered by the create + list tests for now; deep-dive tab tests deferred.
 
 #### Scenario: Tab layout
 - GIVEN the admin opens the detail view for case type "Omgevingsvergunning"
@@ -209,11 +209,11 @@ The case type detail view MUST use a tabbed interface for organizing the various
 - AND confirming MUST navigate back without saving
 - AND canceling MUST keep the admin on the detail view
 
-### REQ-ADMIN-005: General Tab [MVP]
-
-@e2e exclude General tab field editing requires an existing case type to navigate into; data-dependent CRUD scenarios not testable without pre-seeded case types.
+### Requirement: General Tab [MVP]
 
 The General tab MUST allow editing all core case type fields, as implemented in `GeneralTab.vue`.
+
+@e2e exclude General tab field editing requires an existing case type to navigate into; data-dependent CRUD scenarios not testable without pre-seeded case types.
 
 #### Scenario: Display and edit general fields
 - GIVEN the admin is on the General tab for "Omgevingsvergunning"
@@ -260,11 +260,11 @@ The General tab MUST allow editing all core case type fields, as implemented in 
 - THEN the "Responsible unit" field MUST allow the admin to specify which organizational unit is responsible for cases of this type
 - AND this field SHOULD support free text or a dropdown populated from an organizational structure (if available)
 
-### REQ-ADMIN-006: Status Type Management [MVP]
-
-@e2e exclude Status type management requires an existing case type to navigate into; data-dependent CRUD and reorder scenarios not testable without pre-seeded case types.
+### Requirement: Status Type Management [MVP]
 
 The Statuses tab MUST allow managing the ordered list of status types for a case type, as implemented in `StatusesTab.vue`. Status types correspond to ZGW `StatusType` and CMMN Milestone concepts.
+
+@e2e exclude Status type management requires an existing case type to navigate into; data-dependent CRUD and reorder scenarios not testable without pre-seeded case types.
 
 #### Scenario: List status types
 - GIVEN case type "Omgevingsvergunning" has the following status types:
@@ -306,11 +306,11 @@ The Statuses tab MUST allow managing the ordered list of status types for a case
 - AND the admin MUST be able to enter text such as "Uw zaak is in behandeling genomen"
 - AND when the toggle is OFF, the notification text field MUST be hidden
 
-### REQ-ADMIN-007: Default Case Type Selection [MVP]
-
-@e2e exclude Default case type selection requires published case types to exist; data-dependent interaction not testable without pre-seeded case types.
+### Requirement: Default Case Type Selection [MVP]
 
 The admin MUST be able to designate one case type as the default, persisted via the `SettingsService` config key `default_case_type`.
+
+@e2e exclude Default case type selection requires published case types to exist; data-dependent interaction not testable without pre-seeded case types.
 
 #### Scenario: Set default case type
 - GIVEN case types "Omgevingsvergunning" (default), "Subsidieaanvraag", "Klacht behandeling" exist
@@ -330,11 +330,11 @@ The admin MUST be able to designate one case type as the default, persisted via 
 - WHEN a user creates a new case
 - THEN the case creation form MUST require explicit case type selection (no pre-selection)
 
-### REQ-ADMIN-008: Case Type Publish Action [MVP]
-
-@e2e exclude Publish action requires a draft case type with/without statuses; data-dependent validation flow not testable without pre-seeded data.
+### Requirement: Case Type Publish Action [MVP]
 
 The admin MUST be able to publish a draft case type after validating its completeness. This corresponds to the ZGW Catalogi concept of activating a `ZaakType`.
+
+@e2e exclude Publish action requires a draft case type with/without statuses; data-dependent validation flow not testable without pre-seeded data.
 
 #### Scenario: Publish a complete case type
 - GIVEN draft case type "Bezwaarschrift" with:
@@ -371,11 +371,11 @@ The admin MUST be able to publish a draft case type after validating its complet
 - AND the case type MUST no longer appear as an option when creating new cases
 - AND existing cases of this type MUST NOT be affected
 
-### REQ-ADMIN-009: Result Type Management [V1]
-
-@e2e exclude Results tab is V1; result type CRUD requires a published case type with data; not testable in the current Playwright-testable build.
+### Requirement: Result Type Management [V1]
 
 The Results tab SHALL allow managing result types with archival rules per case type. Result types correspond to ZGW `ResultaatType` and control case archival behavior per the Archiefwet.
+
+@e2e exclude Results tab is V1; result type CRUD requires a published case type with data; not testable in the current Playwright-testable build.
 
 #### Scenario: List result types
 - GIVEN case type "Omgevingsvergunning" has the following result types:
@@ -417,11 +417,11 @@ The Results tab SHALL allow managing result types with archival rules per case t
 - AND result type "Ingetrokken" with archiveAction "destroy" MUST cause cases to be scheduled for destruction after the retention period expires
 - AND retention date source "case_completed" MUST calculate the destruction date from the case's endDate
 
-### REQ-ADMIN-010: Role Type Management [V1]
-
-@e2e exclude Roles tab is V1; role type CRUD requires a published case type with data; not testable in the current Playwright-testable build.
+### Requirement: Role Type Management [V1]
 
 The Roles tab SHALL allow managing role types with generic role mapping per case type. Role types correspond to ZGW `RolType` with `omschrijvingGeneriek`.
+
+@e2e exclude Roles tab is V1; role type CRUD requires a published case type with data; not testable in the current Playwright-testable build.
 
 #### Scenario: List role types
 - GIVEN case type "Omgevingsvergunning" has the following role types:
@@ -461,11 +461,11 @@ The Roles tab SHALL allow managing role types with generic role mapping per case
 - THEN the system MUST allow both role types (multiple role types can share the same generic role)
 - AND both MUST appear as options when assigning participants to cases of this type
 
-### REQ-ADMIN-011: Property Definition Management [V1]
-
-@e2e exclude Properties tab is V1; property definition CRUD requires a published case type with data; not testable in the current Playwright-testable build.
+### Requirement: Property Definition Management [V1]
 
 The Properties tab SHALL allow managing custom field definitions per case type. Property definitions correspond to ZGW `Eigenschap`.
+
+@e2e exclude Properties tab is V1; property definition CRUD requires a published case type with data; not testable in the current Playwright-testable build.
 
 #### Scenario: List property definitions
 - GIVEN case type "Omgevingsvergunning" has the following property definitions:
@@ -501,11 +501,11 @@ The Properties tab SHALL allow managing custom field definitions per case type. 
 - THEN the property definition MUST be deleted
 - AND any existing case property values for "Oppervlakte" SHOULD be retained on existing cases (orphaned but not lost)
 
-### REQ-ADMIN-012: Document Type Management [V1]
-
-@e2e exclude Documents tab is V1; document type CRUD requires a published case type with data; not testable in the current Playwright-testable build.
+### Requirement: Document Type Management [V1]
 
 The Documents tab SHALL allow managing document type requirements per case type. Document types correspond to ZGW `InformatieObjectType`.
+
+@e2e exclude Documents tab is V1; document type CRUD requires a published case type with data; not testable in the current Playwright-testable build.
 
 #### Scenario: List document types
 - GIVEN case type "Omgevingsvergunning" has the following document types:
@@ -541,11 +541,11 @@ The Documents tab SHALL allow managing document type requirements per case type.
 - THEN the system SHOULD check whether all required document types have been uploaded
 - AND if not, the system SHOULD display a warning on the case detail indicating missing documents
 
-### REQ-ADMIN-013: Decision Type Management [V1]
-
-@e2e exclude Decisions tab is V1; decision type CRUD requires a published case type with data; not testable in the current Playwright-testable build.
+### Requirement: Decision Type Management [V1]
 
 The Decisions tab SHALL allow managing decision type definitions per case type. Decision types correspond to ZGW `BesluitType` and control publication and objection period rules per the Wet open overheid (WOO).
+
+@e2e exclude Decisions tab is V1; decision type CRUD requires a published case type with data; not testable in the current Playwright-testable build.
 
 #### Scenario: List decision types
 - GIVEN case type "Omgevingsvergunning" has the following decision types:
@@ -576,11 +576,11 @@ The Decisions tab SHALL allow managing decision type definitions per case type. 
 - THEN future decisions of this type MUST require publication
 - AND existing decisions MUST NOT be retroactively affected
 
-### REQ-ADMIN-014: Validation Rules [MVP]
-
-@e2e exclude Validation rules require editing an existing case type with specific data states; data-dependent flows not testable without pre-seeded case types.
+### Requirement: Validation Rules [MVP]
 
 The admin settings MUST enforce validation rules on case type configuration, with validation logic implemented in `src/utils/caseTypeValidation.js`.
+
+@e2e exclude Validation rules require editing an existing case type with specific data states; data-dependent flows not testable without pre-seeded case types.
 
 #### Scenario: Processing deadline format validation
 - GIVEN the admin enters a processing deadline
@@ -606,11 +606,11 @@ The admin settings MUST enforce validation rules on case type configuration, wit
 - THEN the system MUST display: "A status type with this name already exists for this case type"
 - AND the creation MUST be blocked
 
-### REQ-ADMIN-015: Error Scenarios [MVP]
-
-@e2e exclude Error scenarios require specific data conditions (active cases, concurrent edits, network failures); not reproducible in stable Playwright test environment.
+### Requirement: Error Scenarios [MVP]
 
 The admin settings MUST handle error conditions gracefully, preserving user data and providing actionable feedback.
+
+@e2e exclude Error scenarios require specific data conditions (active cases, concurrent edits, network failures); not reproducible in stable Playwright test environment.
 
 #### Scenario: Delete published case type with active cases
 - GIVEN published case type "Omgevingsvergunning" has 10 active (non-final) cases
@@ -707,7 +707,7 @@ This spec is highly specific and implementation-ready. Requirements are well-str
 2. How should the system handle case type versioning -- can a published case type be edited, or must it be unpublished first?
 3. Should delete of status types cascade to status records on existing cases?
 
-### REQ-ADMIN-016: SettingsController SHALL expose `index`, `create`, and `load` JSON endpoints for the admin UI runtime
+### Requirement: SettingsController SHALL expose `index`, `create`, and `load` JSON endpoints for the admin UI runtime
 
 @e2e exclude Backend PHP controller spec; covered by PHPUnit controller tests.
 
@@ -733,7 +733,7 @@ This spec is highly specific and implementation-ready. Requirements are well-str
 - **THEN** the controller SHALL call `SettingsService::loadConfiguration(force: true)`
 - **AND** SHALL return the result envelope unchanged (no `success: true` wrapper)
 
-### REQ-ADMIN-017: SettingsService SHALL be the single resolver for OpenRegister wiring and SHALL persist all Procest config as IAppConfig key/value pairs
+### Requirement: SettingsService SHALL be the single resolver for OpenRegister wiring and SHALL persist all Procest config as IAppConfig key/value pairs
 
 @e2e exclude Backend PHP service spec; covered by PHPUnit service tests.
 
@@ -770,7 +770,7 @@ This spec is highly specific and implementation-ready. Requirements are well-str
 - Both `getObjectService()` and `getConfigurationService()` look up services from the DI container at call time (NOT injection-time) — this is deliberate so Procest can boot even when `openregister` is not yet installed.
 - ADR-022 calls out that every register-aware service in Procest MUST go through `SettingsService::getObjectService()` rather than wiring its own ObjectService injection.
 
-### REQ-ADMIN-016: SettingsController SHALL expose `index`, `create`, and `load` JSON endpoints for the admin UI runtime
+### Requirement: SettingsController SHALL expose `index`, `create`, and `load` JSON endpoints for the admin UI runtime
 
 @e2e exclude Backend PHP controller spec; covered by PHPUnit controller tests.
 
@@ -796,7 +796,7 @@ This spec is highly specific and implementation-ready. Requirements are well-str
 - **THEN** the controller SHALL call `SettingsService::loadConfiguration(force: true)`
 - **AND** SHALL return the result envelope unchanged (no `success: true` wrapper)
 
-### REQ-ADMIN-017: SettingsService SHALL be the single resolver for OpenRegister wiring and SHALL persist all Procest config as IAppConfig key/value pairs
+### Requirement: SettingsService SHALL be the single resolver for OpenRegister wiring and SHALL persist all Procest config as IAppConfig key/value pairs
 
 @e2e exclude Backend PHP service spec; covered by PHPUnit service tests.
 

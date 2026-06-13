@@ -2,7 +2,7 @@
 
 @e2e exclude Seed data imported via repair step; data presence is covered by PHPUnit repair-step tests.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: VTH case type seed data for Vergunningen
 
