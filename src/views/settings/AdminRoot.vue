@@ -114,6 +114,13 @@
 			<EmailSettings v-if="storesReady" />
 		</CnSettingsSection>
 
+		<CnSettingsSection
+			:name="t('procest', 'KCC-werkplek Integration')"
+			:description="t('procest', 'Burger identification, case-voorblad limits, sentiment trigger words, and belplan overflow thresholds for the KCC contact-center bridge.')"
+			:loading="!storesReady">
+			<KccIntegrationSettings v-if="storesReady" />
+		</CnSettingsSection>
+
 		<!-- Re-import Status -->
 		<div v-if="message" class="actions-section">
 			<NcNoteCard :type="messageType">
@@ -140,6 +147,7 @@ import ArchiefSettingsTab from './tabs/ArchiefSettingsTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
 import EmailSettings from './EmailSettings.vue'
+import KccIntegrationSettings from './KccIntegrationSettings.vue'
 import { generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
 import { initializeStores } from '../../store/store.js'
@@ -166,6 +174,7 @@ export default {
 		MandaatMatrixSettingsTab,
 		ConsultationSettingsTab,
 		EmailSettings,
+		KccIntegrationSettings,
 	},
 	data() {
 		return {

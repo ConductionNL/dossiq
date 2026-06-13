@@ -1,0 +1,112 @@
+{
+    "kccQuickActions": [
+        {
+            "id": "kcc-qa-status-geven",
+            "naam": "Status terugkoppelen",
+            "actieType": "status_geven",
+            "vereisteContext": ["has_open_case", "is_geidentificeerd"],
+            "targetZaaktype": "",
+            "template": "",
+            "permissies": ["kcc_medewerker"],
+            "volgorde": 1,
+            "isActive": true
+        },
+        {
+            "id": "kcc-qa-nieuwe-zaak",
+            "naam": "Nieuwe zaak",
+            "actieType": "nieuwe_zaak",
+            "vereisteContext": ["is_geidentificeerd"],
+            "targetZaaktype": "",
+            "template": "",
+            "permissies": ["kcc_medewerker"],
+            "volgorde": 2,
+            "isActive": true
+        },
+        {
+            "id": "kcc-qa-klacht-registreren",
+            "naam": "Klacht registreren",
+            "actieType": "klacht_registreren",
+            "vereisteContext": [],
+            "targetZaaktype": "klacht_ex_artikel_9_1_awb",
+            "template": "",
+            "permissies": ["kcc_medewerker", "klachtenfunctionaris"],
+            "volgorde": 3,
+            "isActive": true
+        },
+        {
+            "id": "kcc-qa-doorverbinden",
+            "naam": "Doorverbinden",
+            "actieType": "doorverbinden",
+            "vereisteContext": [],
+            "targetZaaktype": "",
+            "template": "",
+            "permissies": ["kcc_medewerker"],
+            "volgorde": 4,
+            "isActive": true
+        },
+        {
+            "id": "kcc-qa-bel-terug-inplannen",
+            "naam": "Bel terug inplannen",
+            "actieType": "bel_terug_inplannen",
+            "vereisteContext": ["is_geidentificeerd"],
+            "targetZaaktype": "",
+            "template": "",
+            "permissies": ["kcc_medewerker"],
+            "volgorde": 5,
+            "isActive": true
+        }
+    ],
+    "belplannen": [
+        {
+            "id": "kcc-belplan-algemeen",
+            "naam": "Algemeen gemeentenummer",
+            "triggerNummer": ["+31123456789"],
+            "routeringStappen": [
+                {
+                    "type": "keuzemenu",
+                    "options": ["Omgevingsvergunningen", "Bouwtoezicht", "Infocentrum", "Overig"]
+                },
+                {
+                    "type": "vaardigheid_match",
+                    "zaaktype_to_vaardigheid": {
+                        "Omgevingsvergunningen": "omgevingsvergunning",
+                        "Bouwtoezicht": "bouwtoezicht",
+                        "Infocentrum": "generalist",
+                        "Overig": "generalist"
+                    }
+                },
+                {
+                    "type": "wachtrij_overflow",
+                    "threshold_wachttijd_sec": 180,
+                    "fallback_rol": "generalist"
+                }
+            ],
+            "openingstijden": "Mo-Fr 08:00-17:00",
+            "terugvalActie": "voicemail",
+            "prioriteit": 10,
+            "isActive": true
+        },
+        {
+            "id": "kcc-belplan-meldingen",
+            "naam": "Meldingen openbare ruimte",
+            "triggerNummer": ["+31123456790"],
+            "routeringStappen": [
+                {
+                    "type": "vaardigheid_match",
+                    "zaaktype_to_vaardigheid": {
+                        "default": "melding_openbare_ruimte"
+                    }
+                },
+                {
+                    "type": "wachtrij_overflow",
+                    "threshold_wachttijd_sec": 240,
+                    "fallback_rol": "generalist"
+                }
+            ],
+            "openingstijden": "Mo-Fr 08:00-17:00",
+            "terugvalActie": "sms_callback",
+            "prioriteit": 5,
+            "isActive": true
+        }
+    ]
+}
