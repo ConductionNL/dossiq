@@ -565,6 +565,7 @@ return [
         ['name' => 'archief#auditLog',        'url' => '/api/archief/audit-log',            'verb' => 'GET'],
         ['name' => 'archief#batchInitiate',   'url' => '/api/archief/batch/initiate',       'verb' => 'POST'],
         ['name' => 'archief#inspectionExport','url' => '/api/archief/inspection-export',    'verb' => 'GET'],
+        ['name' => 'archief#retry',           'url' => '/api/archief/triggers/{triggerId}/retry', 'verb' => 'POST'],
         // Wildcard routes registered AFTER literal sub-paths so /batch/initiate doesn't get
         // captured as jobId=initiate (same pattern as complaint#show vs deadline-alerts).
         ['name' => 'archief#batchStatus',     'url' => '/api/archief/batch/{jobId}',        'verb' => 'GET'],
