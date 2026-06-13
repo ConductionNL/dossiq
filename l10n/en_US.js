@@ -3,6 +3,12 @@ OC.L10N.register(
     {
     "A substitute is required" : "A substitute is required",
     "Absent handler (user id)" : "Absent handler (user id)",
+    "All statuses" : "All statuses",
+    "Cases on map" : "Cases on map",
+    "Export visible cases (GeoJSON)" : "Export visible cases (GeoJSON)",
+    "Map data could not be loaded. Showing what is available." : "Map data could not be loaded. Showing what is available.",
+    "Showing {filtered} of {total} located cases" : "Showing {filtered} of {total} located cases",
+    "This case has no geographic location yet." : "This case has no geographic location yet.",
     "Absentee" : "Absentee",
     "Actions performed under this substitution" : "Actions performed under this substitution",
     "Affected open work" : "Affected open work",

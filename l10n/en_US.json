@@ -2,6 +2,12 @@
     "translations": {
         "%n document selected": "%n document selected",
         "%n documents selected": "%n documents selected",
+        "All statuses": "All statuses",
+        "Cases on map": "Cases on map",
+        "Export visible cases (GeoJSON)": "Export visible cases (GeoJSON)",
+        "Map data could not be loaded. Showing what is available.": "Map data could not be loaded. Showing what is available.",
+        "Showing {filtered} of {total} located cases": "Showing {filtered} of {total} located cases",
+        "This case has no geographic location yet.": "This case has no geographic location yet.",
         "+{n} today": "+{n} today",
         "0 today": "0 today",
         "1 day": "1 day",

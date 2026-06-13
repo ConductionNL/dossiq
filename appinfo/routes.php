@@ -241,6 +241,14 @@ return [
         ['name' => 'wfsExport#getFeatures', 'url' => '/api/gis/wfs', 'verb' => 'GET'],
         ['name' => 'wfsExport#getCapabilities', 'url' => '/api/gis/wfs/capabilities', 'verb' => 'GET'],
 
+        // OGC WFS 2.0.0 XML endpoint — case locations as a standard WFS layer
+        // (GetCapabilities / DescribeFeatureType / GetFeature). gis-integration spec.
+        ['name' => 'wfs#cases', 'url' => '/wfs/cases', 'verb' => 'GET'],
+
+        // Cases-on-map dashboard data — clustered, filtered, per-object access guarded.
+        // gis-integration spec.
+        ['name' => 'caseGeo#geo', 'url' => '/api/cases/geo', 'verb' => 'GET'],
+
         // ── Parafeerroute (B&W parafering engine) ───────────────────────
         // CRUD on parafeerroute objects is served by OpenRegister's auto-exposed
         // /api/objects/<register>/<schema> endpoints — only engine routes remain.
