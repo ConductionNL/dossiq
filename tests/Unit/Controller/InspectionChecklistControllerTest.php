@@ -80,10 +80,10 @@ class InspectionChecklistControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->inspectionChecklistService = $this->createMock(InspectionChecklistService::class);
-        $this->request                    = $this->createMock(IRequest::class);
-        $this->userSession                = $this->createMock(IUserSession::class);
-        $this->groupManager               = $this->createMock(IGroupManager::class);
-        $this->logger                     = $this->createMock(LoggerInterface::class);
+        $this->request      = $this->createMock(IRequest::class);
+        $this->userSession  = $this->createMock(IUserSession::class);
+        $this->groupManager = $this->createMock(IGroupManager::class);
+        $this->logger       = $this->createMock(LoggerInterface::class);
 
         $this->controller = new InspectionChecklistController(
             appName: 'procest',

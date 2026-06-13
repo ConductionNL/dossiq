@@ -38,6 +38,8 @@ use Throwable;
  * defines a complete case type configuration (status types, document types,
  * role types, property definitions). Activation is idempotent: re-running
  * on an existing case type updates it in-place rather than duplicating it.
+ *
+ * @spec openspec/changes/vth-module/tasks.md#task-2
  */
 class VTHTemplateService
 {

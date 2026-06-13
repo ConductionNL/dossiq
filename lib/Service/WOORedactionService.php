@@ -34,6 +34,8 @@ use Psr\Log\LoggerInterface;
  * Service for WOO document redaction with Docudesk feature detection.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/woo-case-type/tasks.md#task-8
  */
 class WOORedactionService
 {

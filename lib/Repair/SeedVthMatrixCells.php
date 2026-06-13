@@ -59,6 +59,8 @@ class SeedVthMatrixCells implements IRepairStep
      * Get the name of this repair step.
      *
      * @return string
+     *
+     * @spec openspec/changes/vth-module/tasks.md#task-8
      */
     public function getName(): string
     {

@@ -36,6 +36,8 @@ use Psr\Log\LoggerInterface;
  * Service for WOO per-document disclosure assessments.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/woo-case-type/tasks.md#task-5
  */
 class WOODocumentAssessmentService
 {

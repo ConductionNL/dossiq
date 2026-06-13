@@ -112,6 +112,49 @@ procest/
 └── docusaurus/        # Product documentation site (procest.app)
 ```
 
+## KCC-werkplek Integration
+
+The `kcc-werkplek-zaaksysteem-bridge` capability surfaces real-time zaaksysteem
+context inside the pipelinq KCC-werkplek. Pipelinq owns the contact-center UI;
+Procest exposes a read/write API plus background jobs.
+
+**Schemas** (modular `lib/Settings/register.d/40-kcc-werkplek.json`, ADR-037 — the
+monolith is never edited): `contactmoment`, `kccQuickAction`, `belplan`,
+`specialistBeschikbaarheid`, `doorverbinding`, `klantSentiment`. A *burger* is a
+Nextcloud contact entity resolved through `OCP\Contacts\IManager`; no bespoke
+person/customer schema is introduced.
+
+**Services**: `ContactMomentService` (log contacts, append immutable case
+activity), `BurgerIdentificationService` (DigiD pseudonymisation + weighted
+identificatievragen scoring), `CaseVoorbladService` (open zaken + history +
+suggested topic), `BelplanRoutingService` (vaardigheid match + wachtrij-overflow),
+`QuickActionService` (status / nieuwe zaak / klacht / bel-terug),
+`DoorverbindingService` (immutable context snapshot + accept/reject),
+`SentimentService` (Dutch trigger-word + escalatie scoring).
+
+**Controllers / routes** (under `/api/` and `/api/kcc/`): `ContactMomentController`,
+`BelplanController` (belplan CRUD is admin-gated), `SpecialistBeschikbaarheidController`
+(read-only).
+
+**Background jobs**: `SentimentAnalysisJob` (every 10 min, scores transcriptions),
+`SpecialistBeschikbaarheidRefreshJob` (every 30 s, ages out stale availability).
+
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `identification_method` | `both` | digid / bsn_questions / both |
+| `identification_score_threshold` | `0.8` | minimum identificatievragen score to link a burger |
+| `sentiment_polling_interval` | `5` | seconds |
+| `specialist_availability_polling_interval` | `30` | seconds (drives the refresh job staleness window) |
+| `max_zaken_voorblad` | `10` | open zaken shown on the voorblad |
+| `max_contactmomenten_history` | `5` | recent contactmomenten shown |
+| `sentiment_trigger_words` | JSON list | Dutch escalation trigger words |
+
+**Troubleshooting** — *specialist-beschikbaarheid API unreachable?* The refresh
+job logs a warning and keeps the existing (stale) cache; routing keeps using the
+last known availability, and stale records are marked `afwezig` after
+`specialist_availability_polling_interval × 4` so calls are never routed to a
+silent specialist.
+
 ## Requirements
 
 | Dependency | Version |

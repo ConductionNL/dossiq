@@ -39,6 +39,8 @@ use Throwable;
  * conformity completion during a mobile inspection run). This service
  * manages the template lifecycle: create/read/update/delete of
  * `inspectionChecklist` objects and submission of `inspectionResult` records.
+ *
+ * @spec openspec/changes/vth-module/tasks.md#task-4
  */
 class InspectionChecklistService
 {

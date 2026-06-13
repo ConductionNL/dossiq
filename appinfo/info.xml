@@ -86,6 +86,8 @@ Vrij en open source onder de AGPL-licentie.
         <job>OCA\Procest\BackgroundJob\EmailPdfRetryJob</job>
         <job>OCA\Procest\BackgroundJob\ArchivalTriggerScanJob</job>
         <job>OCA\Procest\BackgroundJob\ArchivalSubmissionRetryJob</job>
+        <job>OCA\Procest\BackgroundJob\SentimentAnalysisJob</job>
+        <job>OCA\Procest\BackgroundJob\SpecialistBeschikbaarheidRefreshJob</job>
     </background-jobs>
 
     <commands>

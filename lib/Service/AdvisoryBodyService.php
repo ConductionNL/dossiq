@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -39,6 +40,8 @@ use Psr\Log\LoggerInterface;
  */
 class AdvisoryBodyService
 {
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -74,12 +77,11 @@ class AdvisoryBodyService
             return [];
         }
 
-        $results = $objectService->findObjects(
-            $register,
-            $schema,
-            $filters,
-            [],
-            200,
+        $results = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: array_merge($filters, ['_limit' => 200]),
         );
 
         if (is_array($results) === true) {
@@ -112,12 +114,11 @@ class AdvisoryBodyService
             return null;
         }
 
-        $results = $objectService->findObjects(
-            $register,
-            $schema,
-            ['id' => $id],
-            [],
-            1,
+        $results = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: ['id' => $id, '_limit' => 1],
         );
 
         if (is_array($results) === true && empty($results) === false) {
