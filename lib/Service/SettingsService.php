@@ -240,6 +240,13 @@ class SettingsService
         'consultation_schema',
         'advice_response_schema',
         'advisory_body_schema',
+        // Besluitvorming workflow integration endpoints (besluitvorming-workflow spec).
+        // Official publication (DROP / LVBB) — empty disables dispatch.
+        'drop_lvbb_endpoint',
+        'drop_lvbb_token',
+        // Mandaatregister authority validation — empty falls back to manual confirmation.
+        'mandaatregister_endpoint',
+        'mandaatregister_token',
     ];
 
     /**

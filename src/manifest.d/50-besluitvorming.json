@@ -1,0 +1,28 @@
+{
+	"pages": [
+		{
+			"id": "AgendaCompiler",
+			"route": "/besluitvorming/agenda",
+			"type": "custom",
+			"title": "Agenda",
+			"component": "AgendaCompilerView"
+		},
+		{
+			"id": "VergaderingDetail",
+			"route": "/besluitvorming/vergaderingen/:id",
+			"type": "custom",
+			"title": "Vergadering",
+			"component": "VergaderingDetailView"
+		}
+	],
+	"menu": [
+		{
+			"id": "BesluitvormingAgenda",
+			"label": "Agenda",
+			"icon": "icon-calendar-dark",
+			"route": "AgendaCompiler",
+			"order": 72,
+			"requiresRole": ["Behandelaar", "Agendabeheerder", "Griffier"]
+		}
+	]
+}

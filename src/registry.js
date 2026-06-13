@@ -29,6 +29,9 @@ import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import AdminRootView from './views/settings/AdminRoot.vue'
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
+import AgendaCompilerView from './views/besluitvorming/AgendaCompilerView.vue'
+import VergaderingDetailView from './views/besluitvorming/VergaderingDetailView.vue'
+import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
 import PublicCaseView from './views/public/PublicCaseView.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
@@ -171,6 +174,23 @@ const registry = {
 		kind: 'page',
 		component: VoorstelDetailView,
 		_note: 'Parafeerroute multi-step approver flow; complex enough to defer.',
+	},
+
+	// --- Besluitvorming workflow views. ---
+	AgendaCompilerView: {
+		kind: 'page',
+		component: AgendaCompilerView,
+		_note: 'Agenda compiler: available vs agenda panels, hamerstuk/bespreekstuk toggle (besluitvorming-workflow).',
+	},
+	VergaderingDetailView: {
+		kind: 'page',
+		component: VergaderingDetailView,
+		_note: 'Decision recording per geagendeerd case: stemuitslag, attending members, aanhouden flow.',
+	},
+	BesluitPublicatiePanel: {
+		kind: 'page',
+		component: BesluitPublicatiePanel,
+		_note: 'DROP/LVBB publication status + retry; embeddable as a case-detail sidebar tab component.',
 	},
 
 	// --- Anonymous-public routes (no auth, no main menu). ---
