@@ -461,6 +461,17 @@ class ZaakdossierController extends Controller
      */
     public function downloadFile(string $register, string $schema, string $objectId, int $fileId): DataDownloadResponse | JSONResponse
     {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // Per-object clearance gate before any content is read (OWASP A01:2021).
+        $authError = $this->guardReadable(user: $user, infoObjectId: $objectId);
+        if ($authError !== null) {
+            return $authError;
+        }
+
         return $this->streamSingle(infoObjectId: $objectId);
     }//end downloadFile()
 

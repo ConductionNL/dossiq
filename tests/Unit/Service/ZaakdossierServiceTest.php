@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\InformatieobjectAccessGuard;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\ZaakdossierService;
 use OCA\Procest\Service\ZgwDocumentService;
@@ -118,6 +119,13 @@ class ZaakdossierServiceTest extends TestCase
     private ZgwDocumentService $documents;
 
     /**
+     * Real access guard (admin-clearance, permissive defaults).
+     *
+     * @var InformatieobjectAccessGuard
+     */
+    private InformatieobjectAccessGuard $accessGuard;
+
+    /**
      * Service under test.
      *
      * @var ZaakdossierService
@@ -146,9 +154,15 @@ class ZaakdossierServiceTest extends TestCase
                 return ($map[$key] ?? $default);
             }
         );
+        $this->accessGuard = new InformatieobjectAccessGuard(
+            settingsService: $this->settings,
+            groupManager: $this->createMock(\OCP\IGroupManager::class),
+            logger: $this->createMock(LoggerInterface::class),
+        );
         $this->service = new ZaakdossierService(
             settingsService: $this->settings,
             documentService: $this->documents,
+            accessGuard: $this->accessGuard,
             logger: $this->createMock(LoggerInterface::class),
         );
 
@@ -267,6 +281,30 @@ class ZaakdossierServiceTest extends TestCase
         $this->assertSame('inf-1', $captured['zaakinformatieobject']['informatieobject']);
 
     }//end testUploadCreatesInformatieobjectAndJoinWithHash()
+
+
+    /**
+     * uploadDocument rejects a classification less restrictive than the type default.
+     *
+     * @return void
+     */
+    public function testUploadRejectsLessRestrictiveClassification(): void
+    {
+        $os = $this->createMock(DossierObjectServiceStub::class);
+        $this->settings->method('getObjectService')->willReturn($os);
+        // Type default is 'geheim'; user requests 'openbaar' (less restrictive).
+        $os->method('find')->willReturn(['id' => 'iot-1', 'vertrouwelijkheidaanduiding' => 'geheim']);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->service->uploadDocument(
+            caseId: 'case-1',
+            fileName: 'a.pdf',
+            content: 'data',
+            metadata: ['informatieobjecttype' => 'iot-1', 'vertrouwelijkheidaanduiding' => 'openbaar'],
+        );
+
+    }//end testUploadRejectsLessRestrictiveClassification()
 
 
     /**
