@@ -27,9 +27,12 @@ use OCA\Procest\Service\ArchivalBatchService;
 use OCA\Procest\Service\ArchivalTriggerService;
 use OCA\Procest\Service\External\Tmlo\EDepotSubmissionAdapterInterface;
 use OCA\Procest\Service\External\Tmlo\EDepotSubmissionResult;
+use OCA\Procest\Service\ProofOfTransferService;
+use OCA\Procest\Service\RollbackManager;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Tests\Unit\Service\FakeTermijnStore;
 use OCP\AppFramework\Http;
+use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -52,6 +55,8 @@ class ArchiefControllerTest extends TestCase
     private SettingsService $settings;
     private ArchivalTriggerService $triggerSvc;
     private ArchivalBatchService $batchSvc;
+    private RollbackManager $rollbackMgr;
+    private IGroupManager $groupManager;
     private IRequest $request;
     private IUserSession $session;
     private LoggerInterface $logger;
@@ -88,12 +93,19 @@ class ArchiefControllerTest extends TestCase
         $this->logger     = $this->createMock(LoggerInterface::class);
         $this->triggerSvc = new ArchivalTriggerService($this->settings, $this->logger, null, $adapter);
         $this->batchSvc   = new ArchivalBatchService($this->settings, $this->triggerSvc, $this->logger);
+        $proofSvc         = new ProofOfTransferService($this->settings, $this->triggerSvc, $this->logger);
+        $this->rollbackMgr = new RollbackManager($this->settings, $this->triggerSvc, $proofSvc, $this->logger);
 
         $this->request = $this->createMock(IRequest::class);
         $user          = $this->createMock(IUser::class);
         $user->method('getUID')->willReturn('alice');
         $this->session = $this->createMock(IUserSession::class);
         $this->session->method('getUser')->willReturn($user);
+
+        // Default: caller IS an authorised archief role (admin).
+        $this->groupManager = $this->createMock(IGroupManager::class);
+        $this->groupManager->method('isAdmin')->willReturn(true);
+        $this->groupManager->method('isInGroup')->willReturn(true);
     }
 
     private function controller(): ArchiefController
@@ -105,6 +117,8 @@ class ArchiefControllerTest extends TestCase
             $this->session,
             $this->logger,
             $this->batchSvc,
+            $this->rollbackMgr,
+            $this->groupManager,
         );
     }
 
@@ -226,5 +240,92 @@ class ArchiefControllerTest extends TestCase
         );
         $response = $this->controller()->inspectionExport();
         self::assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+    }
+
+    /**
+     * Retry endpoint rejects an anonymous / unauthorised caller (fail closed).
+     *
+     * @return void
+     */
+    public function testRetryRejectsUnauthorisedCaller(): void
+    {
+        $this->objects->saveObject('procest', 'overdrachtTrigger', [
+            'id' => 'tr-x', 'zaakId' => 'C/X', 'status' => 'gefaald',
+        ]);
+        $groups = $this->createMock(IGroupManager::class);
+        $groups->method('isAdmin')->willReturn(false);
+        $groups->method('isInGroup')->willReturn(false);
+        $controller = new ArchiefController(
+            'procest',
+            $this->request,
+            $this->settings,
+            $this->session,
+            $this->logger,
+            $this->batchSvc,
+            $this->rollbackMgr,
+            $groups,
+        );
+        $response = $controller->retry('tr-x');
+        self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+    }
+
+    /**
+     * Retry on an unknown trigger id → 404 (IDOR guard, no side effect).
+     *
+     * @return void
+     */
+    public function testRetryReturns404WhenTriggerUnknown(): void
+    {
+        $response = $this->controller()->retry('tr-does-not-exist');
+        self::assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+    }
+
+    /**
+     * Retry on a trigger that is NOT in status `gefaald` → 409.
+     *
+     * @return void
+     */
+    public function testRetryRejectsTriggerNotInGefaald(): void
+    {
+        $this->objects->saveObject('procest', 'overdrachtTrigger', [
+            'id' => 'tr-ok', 'zaakId' => 'C/OK', 'status' => 'geslaagd',
+        ]);
+        $response = $this->controller()->retry('tr-ok');
+        self::assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+    }
+
+    /**
+     * Happy path: a `gefaald` trigger retried by an authorised archief role
+     * re-submits and returns 202 with the retry summary.
+     *
+     * @return void
+     */
+    public function testRetryHappyPathReSubmits(): void
+    {
+        $this->objects->saveObject('procest', 'overdrachtTrigger', [
+            'id' => 'tr-fail', 'zaakId' => 'C/FAIL', 'status' => 'gefaald',
+        ]);
+        $response = $this->controller()->retry('tr-fail');
+        self::assertSame(Http::STATUS_ACCEPTED, $response->getStatus());
+        $body = $response->getData();
+        self::assertTrue($body['ok']);
+        self::assertSame('tr-fail', $body['triggerId']);
+        self::assertSame('C/FAIL', $body['zaakId']);
+        self::assertSame('geslaagd', $body['status']);
+
+        // Trigger is flipped to geslaagd in the store.
+        $trigger = $this->objects->find('tr-fail', 'procest', 'overdrachtTrigger');
+        self::assertSame('geslaagd', $trigger['status']);
+
+        // A retry-after-correction audit row was recorded.
+        $auditRows = array_values($this->objects->store['overdrachtAuditLog'] ?? []);
+        $found = false;
+        foreach ($auditRows as $row) {
+            if (($row['eventType'] ?? '') === 'retry-after-correction') {
+                $found = true;
+                break;
+            }
+        }
+        self::assertTrue($found, 'retry-after-correction audit row must be persisted.');
     }
 }//end class

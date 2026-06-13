@@ -30,11 +30,13 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\ArchivalBatchService;
+use OCA\Procest\Service\RollbackManager;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -64,9 +66,98 @@ class ArchiefController extends Controller
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
         private readonly ArchivalBatchService $batchService,
+        private readonly RollbackManager $rollbackManager,
+        private readonly IGroupManager $groupManager,
     ) {
         parent::__construct($appName, $request);
     }//end __construct()
+
+    /**
+     * Per-object authorization guard for archival operations.
+     *
+     * Archival/e-Depot handover is a DIV / records-management duty. A caller
+     * may only retry a failed trigger when they hold the configured archief
+     * role group (defaulting to `admin`). Fails closed: returns a 403
+     * JSONResponse when the session is anonymous or the user is not in the
+     * archief role group, otherwise null.
+     *
+     * @return JSONResponse|null
+     */
+    private function ensureArchiefRole(): ?JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
+        }
+        $uid   = $user->getUID();
+        $group = (string) $this->settings->getConfigValue('archief_role_group');
+        if ($group === '') {
+            $group = 'admin';
+        }
+        $authorised = $this->groupManager->isAdmin($uid)
+            || $this->groupManager->isInGroup($uid, $group);
+        if ($authorised === false) {
+            return new JSONResponse(
+                ['message' => 'Not authorised for archief operations'],
+                Http::STATUS_FORBIDDEN
+            );
+        }
+        return null;
+    }//end ensureArchiefRole()
+
+    /**
+     * Retry a failed e-Depot handover after the case has been corrected.
+     *
+     * Re-bundles with the current case state and re-submits, retaining both
+     * the old failed and the new transaction in the audit log. Security: this
+     * is the first user-facing HTTP surface in the chain — it carries an
+     * explicit `@NoAdminRequired` posture plus a per-trigger IDOR guard. The
+     * caller MUST hold the archief role group ({@see self::ensureArchiefRole})
+     * and the trigger MUST exist and be in status `gefaald`; an unknown
+     * trigger returns 404 and any other status returns 409. Retry on an
+     * arbitrary or out-of-state trigger is rejected (fail closed).
+     *
+     * @NoAdminRequired
+     *
+     * @param string $triggerId Trigger id.
+     *
+     * @return JSONResponse
+     *
+     * @spec openspec/changes/archief-edepot-handover-06-proof-rollback/tasks.md
+     */
+    public function retry(string $triggerId): JSONResponse
+    {
+        if (($denied = $this->ensureArchiefRole()) !== null) {
+            return $denied;
+        }
+        if ($triggerId === '') {
+            return new JSONResponse(['message' => 'triggerId is required'], Http::STATUS_BAD_REQUEST);
+        }
+
+        // IDOR guard: resolve the trigger first; reject unknown ids (404) and
+        // reject any trigger that is not in the recoverable `gefaald` state
+        // (409) before performing any side effect.
+        $trigger = $this->rollbackManager->findTrigger($triggerId);
+        if ($trigger === null) {
+            return new JSONResponse(['message' => 'trigger not found'], Http::STATUS_NOT_FOUND);
+        }
+        if ((string) ($trigger['status'] ?? '') !== 'gefaald') {
+            return new JSONResponse(
+                ['message' => 'retry only allowed on triggers in status gefaald'],
+                Http::STATUS_CONFLICT
+            );
+        }
+
+        try {
+            $result = $this->rollbackManager->retryAfterCorrection($triggerId);
+        } catch (Throwable $e) {
+            $this->logger->warning('Archief retry failed', ['triggerId' => $triggerId, 'error' => $e->getMessage()]);
+            return new JSONResponse(['message' => 'Retry failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
+        }
+
+        $status = $result['ok'] === true ? Http::STATUS_ACCEPTED : Http::STATUS_OK;
+        return new JSONResponse($result, $status);
+    }//end retry()
 
     /**
      * Per-object authorization guard.
