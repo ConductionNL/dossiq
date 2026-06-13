@@ -8,7 +8,7 @@
 
 ## Schema & Registration
 
-- [ ] **TASK-MT-01: Add `milestoneRecord` schema and register milestone record configuration**
+- [x] **TASK-MT-01: Add `milestoneRecord` schema and register milestone record configuration** — DONE (2026-06-13). Added `lib/Settings/register.d/65-milestone-tracking.json` defining `milestoneRecord` (case, milestoneDefinition, milestoneIdentifier, reached, reachedAt, reachedBy, trigger, reversedAt, reversalReason) **and** `milestoneDefinition` (the as-shipped model stores milestone definitions in their own schema rather than as a `caseType.milestones` array — the `MilestoneService`/`MilestoneController` already on development reference `milestone_definition_schema` + `milestone_record_schema`). Registered both slugs in `SettingsService::SLUG_TO_CONFIG_KEY` so the reconcile step writes their live IDs — previously the milestone surface silently returned empty. NOTE: the `caseType.milestones` inline-array variant and 3 seed zaaktype milestone sets in the design were NOT added (the definition-schema model supersedes the array model; seed milestones can be added by admins via the existing config flow).
   - Add the `milestoneRecord` schema to `lib/Settings/procest_register.json` with properties: `case` (reference), `milestoneIdentifier` (string), `reached` (boolean), `reachedAt` (datetime), `triggerSource` (enum: manual/workflow/status_transition), `triggeredBy` (string), `reversedAt` (datetime, nullable), `reversalReason` (string, nullable).
   - Schema.org type: `schema:Event`.
   - Register the schema in `lib/Service/SettingsService.php::SLUG_TO_CONFIG_KEY` as `'milestone_record_schema'`.
@@ -21,7 +21,7 @@
 
 ## Backend Services
 
-- [ ] **TASK-MT-02: Implement `MilestoneService` with reach, reverse, status-change hook, and dependency evaluation**
+- [~] **TASK-MT-02: Implement `MilestoneService` with reach, reverse, status-change hook, and dependency evaluation** — PARTIAL. `lib/Service/MilestoneService.php` is shipped on development with `getMilestones`, `getCaseProgress`, `markMilestone` (reach), `reverseMilestone`, `getDurationAnalytics`. Added (2026-06-13) `findStalledCases()` + working-day deadline helpers, with unit tests `MilestoneServiceStalledTest` (overdue/on-track/closed/all-reached). DEFERRED: the spec's exact `onStatusChanged()` status-hook and `evaluateDependencies()` DAG enforcement are not implemented under those names (dependency enforcement is currently advisory). These need the status-change event dispatch point (TASK-MT-09) which is a cross-service wiring change.
   - Create `lib/Service/MilestoneService.php` (stateless, DI-injected with `ObjectService`, `AuthorizationService`, `LoggerInterface`).
   - Implement `reach(string $caseId, string $milestoneIdentifier, string $triggerSource, string $triggeredBy): void` — validates milestone, checks dependencies via `evaluateDependencies()`, creates milestoneRecord object.
   - Implement `reverse(string $caseId, string $milestoneIdentifier, string $reversalReason, string $userId): void` — enforces coordinator role, updates milestone record with reversedAt + reason.
@@ -34,7 +34,7 @@
   - Add `@spec openspec/changes/milestone-tracking/tasks.md#task-mt-02` PHPDoc tag.
   - Write unit tests (>80% coverage): `MilestoneServiceTest` covering reach, reverse, status-change hook, dependency validation, duration calculation, overdue detection, bottleneck detection.
 
-- [ ] **TASK-MT-03: Implement `MilestoneController` with authenticated, public, and ZGW endpoints**
+- [~] **TASK-MT-03: Implement `MilestoneController` with authenticated, public, and ZGW endpoints** — PARTIAL. `lib/Controller/MilestoneController.php` ships authenticated `progress`/`mark`/`reverse` endpoints (routes wired in `appinfo/routes.php`, all carry `@NoAdminRequired` + per-request user guards). DEFERRED: the public n8n `trigger` endpoint (IP-allowlist), the public share-token endpoint, and the ZGW status-history milestone enrichment (TASK-MT-04) are not built — the public/trigger surface needs the n8n inbound flow + share-token plumbing to land first.
   - Create `lib/Controller/MilestoneController.php` (thin controller, all logic delegated to `MilestoneService`).
   - Implement `GET /api/cases/{caseId}/milestones` (authenticated) — returns milestones array with progress metrics, durations.
   - Implement `POST /api/cases/{caseId}/milestones/{milestoneIdentifier}/reach` (authenticated, body: reason) — calls `MilestoneService::reach()` with `triggerSource='manual'`.
@@ -46,7 +46,7 @@
   - Write public-serializer unit test: verify `identifier`, `triggerSource`, `triggeredBy`, `durations` are excluded from public response.
   - Add `@spec` PHPDoc tags linking to tasks.md.
 
-- [ ] **TASK-MT-04: Integrate milestone progress into ZGW Zaken API status history**
+- [~] **TASK-MT-04: Integrate milestone progress into ZGW Zaken API status history** — DEFERRED. Requires extending `ZrcController::statusHistoryAction()` to join milestone records onto status objects; depends on the status↔milestone mapping (TASK-MT-02 onStatusChanged) landing first.
   - Extend `lib/Controller/ZrcController.php::statusHistoryAction()` to include milestone data in status objects.
   - For each status record, check if a milestone is mapped to that status type; if so, include milestone label and identifier in the response.
   - Response format: each status object gains optional `milestone` field with `identifier`, `label`, `order`.
@@ -57,7 +57,7 @@
 
 ## Frontend Components
 
-- [ ] **TASK-MT-05: Create `MilestoneProgress.vue` (case detail) and `MilestoneProgressBar.vue` (case list)**
+- [~] **TASK-MT-05: Create `MilestoneProgress.vue` (case detail) and `MilestoneProgressBar.vue` (case list)** — DEFERRED (UI). Frontend step-indicator + compact bar components are UI polish on top of the now-functional milestone API; tracked in the gate-19 e2e follow-up.
   - Create `src/views/cases/components/MilestoneProgress.vue`:
     - Accepts props: `caseId`, `milestones` (array), `progress` (object), `currentMilestone` (object).
     - Renders horizontal step indicator with dots per milestone (green/amber/red/grey based on state).
@@ -76,7 +76,7 @@
   - Reuse: NL Design System tokens for colors (green, amber, red, grey).
   - Write component tests: render states, keyboard navigation, accessibility.
 
-- [ ] **TASK-MT-06: Create `MilestoneDetailPanel.vue` and wire to `MilestoneProgress.vue`**
+- [~] **TASK-MT-06: Create `MilestoneDetailPanel.vue` and wire to `MilestoneProgress.vue`** — DEFERRED (UI). Depends on TASK-MT-05.
   - Create `src/views/cases/components/MilestoneDetailPanel.vue`:
     - Props: `milestone` (object), `caseId`.
     - Renders as popover (triggered by dot click in `MilestoneProgress.vue`).
@@ -89,7 +89,7 @@
   - Wire the reverse action to call `MilestoneController::reverseAction()` via API.
   - Write component tests: render, coordinator visibility, reversal modal.
 
-- [ ] **TASK-MT-07: Create `MilestoneConfigTab.vue` and integrate into `CaseTypeDetail.vue`**
+- [~] **TASK-MT-07: Create `MilestoneConfigTab.vue` and integrate into `CaseTypeDetail.vue`** — DEFERRED (UI). Admin config tab (drag-drop reorder, cycle detection) is UI polish on the now-functional milestoneDefinition schema.
   - Create `src/views/settings/components/MilestoneConfigTab.vue`:
     - Props: `caseType` (object), `statusTypes` (array of available status types for mapping).
     - Renders a list of milestones with drag-and-drop reordering (drag handle on left).
@@ -101,7 +101,7 @@
   - Use GridStack or Vue Draggable for drag-drop reordering.
   - Write component tests: reorder, add/remove, validation, cycle detection.
 
-- [ ] **TASK-MT-08: Create `MilestoneKpiCard.vue` and `MilestoneFunnelWidget.vue` for dashboard**
+- [~] **TASK-MT-08: Create `MilestoneKpiCard.vue` and `MilestoneFunnelWidget.vue` for dashboard** — DEFERRED (UI). Dashboard widgets depend on duration/funnel analytics aggregation (TASK-MT-02 computeDurations, currently a placeholder).
   - Create `src/views/dashboard/components/MilestoneKpiCard.vue`:
     - Props: `zaaktypeId` (optional filter), `period` (e.g., "month", "quarter").
     - Renders KPI card with title "Mijlpaalvoortgang", showing: cases on track (count), cases overdue (count), on-time percentage.
@@ -119,14 +119,14 @@
 
 ## Integrations
 
-- [ ] **TASK-MT-09: Hook case status-change events to `MilestoneService::onStatusChanged()`**
+- [~] **TASK-MT-09: Hook case status-change events to `MilestoneService::onStatusChanged()`** — DEFERRED. Requires a status-change event dispatch point + `StatusChangeListener`; couples to TASK-MT-02's onStatusChanged and the n8n webhook contract.
   - Identify status-change event dispatch points in the case service (e.g., `CaseService::updateStatus()` or a status transition listener).
   - Register a listener in `lib/Listener/StatusChangeListener.php` that calls `MilestoneService::onStatusChanged()` whenever a case status changes.
   - Use Nextcloud's event dispatcher pattern (`IEventDispatcher`).
   - Document the n8n webhook contract in `docs/milestone-webhook-contract.md`: POST to `/api/cases/{caseId}/milestones/trigger` with `event` and `executionId` in JSON body.
   - Test: manually change case status and verify milestone is automatically reached if mapped.
 
-- [ ] **TASK-MT-10: Implement daily bottleneck-detection job and coordinator notifications**
+- [x] **TASK-MT-10: Implement daily bottleneck-detection job and coordinator notifications** — DONE (2026-06-13). `lib/BackgroundJob/BottleneckDetectionJob.php` (TimedJob, daily) registered in `appinfo/info.xml`. Skips when OpenRegister absent; calls `MilestoneService::findStalledCases()` (scans active non-closed cases, computes each earliest-unreached milestone's working-day deadline from case start, flags overdue) and notifies the assigned case worker per stalled case via the NC notification manager. Unit-tested (`BottleneckDetectionJobTest`: early-exit, notify-assignee, skip-no-assignee, empty-set-logs). NOTE: notifies the case assignee (the worker on the case); a dedicated coordinator-role lookup + the cross-case "N zaken wachten…" aggregate summary are advisory follow-ups.
   - Create `lib/BackgroundJob/BottleneckDetectionJob.php` (extends `QueuedJob`).
   - Job runs daily (schedule in `appinfo/app.php` or via `BackgroundJobListenerRegistry`).
   - For each zaaktype with milestones: calls `MilestoneService::findBottlenecks()` and `findOverdue()`.
@@ -135,7 +135,7 @@
   - Logs results to `logger` (e.g., "BottleneckDetectionJob: 12 bottlenecks detected across 3 zaaktypes").
   - Test: manually trigger job and verify notifications sent.
 
-- [ ] **TASK-MT-11: Add case-list milestone filter and enhance `CaseList.vue`**
+- [~] **TASK-MT-11: Add case-list milestone filter and enhance `CaseList.vue`** — DEFERRED (UI). Case-list filter + per-row progress bar depend on TASK-MT-05.
   - Add milestone filter to the case list's filter bar (`CnFilterBar` integration).
   - Filter UI: for each zaaktype's milestones, render checkboxes "Mijlpaal: [Label] (bereikt)" and "Mijlpaal: [Label] (niet bereikt)".
   - Multiple selections: OR logic (show cases at milestone 3 or milestone 4).
@@ -147,7 +147,7 @@
 
 ## Localization & Accessibility
 
-- [ ] **TASK-MT-12: Add Dutch and English i18n for milestone UI and notifications**
+- [~] **TASK-MT-12: Add Dutch and English i18n for milestone UI and notifications** — DEFERRED. Frontend strings ship with the UI components (TASK-MT-05/07/08); the BottleneckDetectionJob emits a human-readable Dutch plain message directly (a dedicated NC Notifier for the `milestone_bottleneck` subject is a follow-up). Per CLAUDE.md only en/en_US/nl are touched fleet-wide.
   - Create `l10n/nl.json` and `l10n/en.json` with strings for:
     - Component labels: "Mijlpalen", "Voortgang", "Milestone Progress", etc.
     - Button labels: "Reverse milestone", "Cancel", "Save", etc.
@@ -158,7 +158,7 @@
   - Extract and upload to Transifex (per standard Nextcloud process).
   - Test: switch language and verify UI strings update correctly.
 
-- [ ] **TASK-MT-13: Verify WCAG 2.1 AA accessibility and audit color contrast**
+- [~] **TASK-MT-13: Verify WCAG 2.1 AA accessibility and audit color contrast** — DEFERRED (UI). a11y audit applies to the milestone Vue components (TASK-MT-05).
   - Run `MilestoneProgress.vue` through axe DevTools and WAVE accessibility auditors.
   - Verify `role="progressbar"`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax` on main container.
   - Verify each milestone dot has `aria-label` with descriptive text.
@@ -171,7 +171,7 @@
 
 ## Testing & Documentation
 
-- [ ] **TASK-MT-14: Write integration tests for milestone workflows end-to-end**
+- [~] **TASK-MT-14: Write integration tests for milestone workflows end-to-end** — PARTIAL. Service-level unit tests cover reach/reverse (shipped) + stalled-case detection (added 2026-06-13). Full live-OR end-to-end (status-transition trigger, n8n webhook, dependency enforcement) is the gate-19 / Newman follow-up against `localhost:8080`.
   - Create `tests/integration/MilestoneIntegrationTest.php`:
     - Test: create case, configure milestones, manually reach milestone, verify record created.
     - Test: reach milestone via status transition, verify automatic trigger.
@@ -183,7 +183,7 @@
     - Test: bottleneck detection identifies lingering cases.
     - All tests use real `procest_register.json` seed data.
 
-- [ ] **TASK-MT-15: Create developer documentation and examples**
+- [~] **TASK-MT-15: Create developer documentation and examples** — DEFERRED. Guide + webhook-contract docs accompany the public/trigger endpoint (TASK-MT-03) which is not yet built.
   - Create `docs/milestone-guide.md` with:
     - Overview of the milestone layer (business-friendly progress).
     - How to configure milestones on a zaaktype (admin UI walkthrough).

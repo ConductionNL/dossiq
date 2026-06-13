@@ -1,5 +1,17 @@
 ---
 retrofit: true
+status: done
+note: >-
+  Core milestone surface is live: milestoneDefinition + milestoneRecord
+  schemas registered (register.d/65-milestone-tracking.json + SLUG_TO_CONFIG_KEY),
+  MilestoneService (progress/reach/reverse/findStalledCases) and
+  MilestoneController (authenticated progress/mark/reverse) shipped, and the
+  daily BottleneckDetectionJob flags cases stalled past a milestone deadline
+  and notifies the assigned worker. Deferred (tracked in the change tasks.md):
+  the public n8n-trigger + share-token endpoints, ZGW status-history
+  enrichment, the status-transition auto-reach hook, dependency-DAG
+  enforcement, and the milestone Vue UI (progress indicator, config tab,
+  dashboard widgets) — UI/cross-app follow-ups.
 ---
 
 # Milestone Tracking Specification
