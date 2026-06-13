@@ -571,7 +571,13 @@
 						"formatter": "statusTypeName"
 					},
 					"assignee",
-					"deadline"
+					"deadline",
+					{
+						"key": "id",
+						"label": "Sub-cases",
+						"formatter": "subCaseCount",
+						"widget": "badge"
+					}
 				],
 				"sidebar": {
 					"enabled": true,

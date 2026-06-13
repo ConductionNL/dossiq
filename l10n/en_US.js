@@ -608,6 +608,13 @@ OC.L10N.register(
     "OK" : "OK",
     "Limited public" : "Limited public",
     "Case-confidential" : "Case-confidential",
+    "{count} deelzaken" : "{count} deelzaken",
+    "This case has {count} sub-cases. Deleting it will unlink the sub-cases from their parent. Do you want to continue?" : "This case has {count} sub-cases. Deleting it will unlink the sub-cases from their parent. Do you want to continue?",
+    "The sub-cases will remain accessible as standalone cases after deletion." : "The sub-cases will remain accessible as standalone cases after deletion.",
+    "Delete case with sub-cases" : "Delete case with sub-cases",
+    "Delete case" : "Delete case",
+    "Delete parent case" : "Delete parent case",
+    "The case could not be deleted. Please try again." : "The case could not be deleted. Please try again.",
     "_%n document selected_::_%n documents selected_" : ["%n document selected","%n documents selected"]
 },
 "nplurals=2; plural=(n != 1);");
