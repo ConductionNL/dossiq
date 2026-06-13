@@ -17,6 +17,8 @@ The system SHALL flag contracts within 90 days of expiry and compute the days re
 
 #### Scenario: Contract within the threshold is flagged
 
+@e2e exclude Backend-only — driven by the nightly ScanExpiringContractsJob (TimedJob) with no UI surface; covered by ScanExpiringContractsJobTest + ContractRenewalServiceTest. Contract UI is chain member 10.
+
 - GIVEN the nightly expiry-scan job runs
 - WHEN a contract's `endDate` is within 90 days
 - THEN its `renewalWarning` SHALL be set true and `daysUntilExpiry` computed
@@ -29,6 +31,8 @@ The system SHALL create a Procest renewal zaak when a supplier requests renewal 
 account manager.
 
 #### Scenario: Renewal request opens a Procest case
+
+@e2e exclude Backend REST contract — exercised via the Newman leverancier-contract-api collection + ContractControllerTest (role gate, manual-only, window, cross-supplier 403); no UI surface in this chain member. Contract renewal UI is chain member 10.
 
 - GIVEN a contracts or admin user requests renewal of a manual-renewal contract within 90 days
 - WHEN the request endpoint is called
