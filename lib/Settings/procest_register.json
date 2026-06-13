@@ -680,7 +680,7 @@
           },
           "relatedCases": {
             "type": "string",
-            "description": "References to related cases (JSON-encoded array)",
+            "description": "Typed peer relations to other cases, JSON-encoded array of objects {caseId (uuid, required), aardRelatie (enum: vervolg|onderwerp|bijdrage, required), toelichting (string, optional)} per RGBZ/ZRC relevanteAndereZaken. Written symmetrically by CaseRelationService; do not edit directly.",
             "visible": false
           },
           "geometry": {

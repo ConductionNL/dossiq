@@ -34,6 +34,7 @@ namespace OCA\Procest\Controller;
 
 use DateInterval;
 use DateTime;
+use OCA\Procest\Service\CaseRelationService;
 use OCA\Procest\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -87,14 +88,16 @@ class ZrcController extends ZgwController
      *
      * @param string     $appName    The application name
      * @param IRequest   $request    The incoming request
-     * @param ZgwService $zgwService The shared ZGW service
-     * @param IL10N      $l10n       The localization service
+     * @param ZgwService          $zgwService          The shared ZGW service
+     * @param IL10N               $l10n                The localization service
+     * @param CaseRelationService $caseRelationService Typed peer-relation service
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly ZgwService $zgwService,
         private readonly IL10N $l10n,
+        private readonly CaseRelationService $caseRelationService,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -126,6 +129,8 @@ class ZrcController extends ZgwController
         // Zrc-006a: Filter zaken results based on consumer's vertrouwelijkheidaanduiding.
         if ($resource === 'zaken' && $response->getStatus() === Http::STATUS_OK) {
             $response = $this->filterZakenByAuthorisation(response: $response);
+            // related-case-linking: populate relevanteAndereZaken per result.
+            $response = $this->enrichZakenListRelevanteAndereZaken(response: $response);
         }
 
         return $response;
@@ -254,6 +259,20 @@ class ZrcController extends ZgwController
 
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
 
+            // related-case-linking: route inbound relevanteAndereZaken through
+            // the guarded, symmetric case-relation service. A relation URL that
+            // does not resolve to a local case is rejected with the standard ZGW
+            // validation error shape.
+            if ($resource === 'zaken') {
+                $relError = $this->applyInboundRelevanteAndereZaken(
+                    caseUuid: (string) $objectUuid,
+                    body: $originalBody
+                );
+                if ($relError !== null) {
+                    return $relError;
+                }
+            }
+
             // ZRC-specific: handle eindstatus / heropenen effect for statussen.
             if ($resource === 'statussen') {
                 $this->handleEindstatusEffect(body: $originalBody, objectData: $objectData);
@@ -336,7 +355,14 @@ class ZrcController extends ZgwController
             }
         }
 
-        return $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
+        $response = $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
+
+        // related-case-linking: populate relevanteAndereZaken from relatedCases.
+        if ($resource === 'zaken' && $response->getStatus() === Http::STATUS_OK) {
+            $response = $this->enrichZaakRelevanteAndereZaken(response: $response);
+        }
+
+        return $response;
     }//end show()
 
     /**
@@ -396,6 +422,20 @@ class ZrcController extends ZgwController
         // Zrc-004b: Enrich ZIO response with immutable aardRelatieWeergave.
         if ($resource === 'zaakinformatieobjecten' && $response->getStatus() === Http::STATUS_OK) {
             $response = $this->enrichZioJsonResponse(response: $response);
+        }
+
+        // related-case-linking: route inbound relevanteAndereZaken (PUT) through
+        // the guarded, symmetric case-relation service and re-emit on success.
+        if ($resource === 'zaken' && $response->getStatus() === Http::STATUS_OK) {
+            $relError = $this->applyInboundRelevanteAndereZaken(
+                caseUuid: $uuid,
+                body: $this->zgwService->getRequestBody($this->request)
+            );
+            if ($relError !== null) {
+                return $relError;
+            }
+
+            $response = $this->enrichZaakRelevanteAndereZaken(response: $response);
         }
 
         return $response;
@@ -458,6 +498,20 @@ class ZrcController extends ZgwController
         // Zrc-004c: Enrich ZIO response with immutable aardRelatieWeergave.
         if ($resource === 'zaakinformatieobjecten' && $response->getStatus() === Http::STATUS_OK) {
             $response = $this->enrichZioJsonResponse(response: $response);
+        }
+
+        // related-case-linking: route inbound relevanteAndereZaken (PATCH) through
+        // the guarded, symmetric case-relation service and re-emit on success.
+        if ($resource === 'zaken' && $response->getStatus() === Http::STATUS_OK) {
+            $relError = $this->applyInboundRelevanteAndereZaken(
+                caseUuid: $uuid,
+                body: $this->zgwService->getRequestBody($this->request)
+            );
+            if ($relError !== null) {
+                return $relError;
+            }
+
+            $response = $this->enrichZaakRelevanteAndereZaken(response: $response);
         }
 
         return $response;
@@ -1258,6 +1312,18 @@ class ZrcController extends ZgwController
                 );
             }//end try
         }//end if
+
+        // related-case-linking: strip this case's entries from every counterpart
+        // case's relatedCases BEFORE deletion so no dangling peer references
+        // survive (mirrors the deelzaak orphan cleanup). Run while the case is
+        // still readable so its own relation list can be dereferenced.
+        try {
+            $this->caseRelationService->cleanupForDeletedCase(caseId: $uuid);
+        } catch (\Throwable $e) {
+            $this->zgwService->getLogger()->warning(
+                'related-case-linking: relation cleanup failed for deleted zaak '.$uuid.': '.$e->getMessage()
+            );
+        }
 
         // Cascade delete of sub-resources (rol, status, resultaat, etc.)
         // is handled by OpenRegister via onDelete: CASCADE in schema definitions.
@@ -2444,6 +2510,183 @@ class ZrcController extends ZgwController
 
         return $response;
     }//end enrichZioJsonResponse()
+
+
+    /**
+     * Build the ZRC relevanteAndereZaken array for a single zaak from its
+     * relatedCases field (outbound). Emits absolute zaak URLs and the
+     * aardRelatie; never emits the procest-local toelichting. Always an array
+     * (empty when there are no relations), per VNG schema compliance.
+     *
+     * @param array<string, mixed> $zaakData The mapped zaak response data.
+     *
+     * @return array<int, array{url: string, aardRelatie: string}>
+     *
+     * @spec openspec/changes/related-case-linking/specs/zgw-api-mapping/spec.md
+     */
+    private function buildRelevanteAndereZaken(array $zaakData): array
+    {
+        $uuid = (string) ($zaakData['uuid'] ?? ($zaakData['identificatie'] ?? ''));
+        if ($uuid !== '' && preg_match('/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', $uuid, $m) === 1) {
+            $uuid = $m[1];
+        } else {
+            // Fall back to extracting the UUID from the self URL.
+            $selfUrl = (string) ($zaakData['url'] ?? '');
+            if (preg_match('/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', $selfUrl, $m2) === 1) {
+                $uuid = $m2[1];
+            }
+        }
+
+        if ($uuid === '') {
+            return [];
+        }
+
+        $relations = $this->caseRelationService->listRelations(caseId: $uuid);
+        if ($relations === []) {
+            return [];
+        }
+
+        $baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, 'zaken');
+        $out     = [];
+        foreach ($relations as $relation) {
+            $targetId = (string) ($relation['caseId'] ?? '');
+            $aard     = (string) ($relation['aardRelatie'] ?? '');
+            if ($targetId === '' || $aard === '') {
+                continue;
+            }
+
+            $out[] = [
+                'url'         => $baseUrl.'/'.$targetId,
+                'aardRelatie' => $aard,
+            ];
+        }
+
+        return $out;
+    }//end buildRelevanteAndereZaken()
+
+
+    /**
+     * Set relevanteAndereZaken on a single-zaak (show/update/patch) response.
+     *
+     * @param JSONResponse $response The zaak response.
+     *
+     * @return JSONResponse
+     *
+     * @spec openspec/changes/related-case-linking/specs/zgw-api-mapping/spec.md
+     */
+    private function enrichZaakRelevanteAndereZaken(JSONResponse $response): JSONResponse
+    {
+        $data = $response->getData();
+        if (is_array($data) === true) {
+            $data['relevanteAndereZaken'] = $this->buildRelevanteAndereZaken(zaakData: $data);
+            $response->setData($data);
+        }
+
+        return $response;
+    }//end enrichZaakRelevanteAndereZaken()
+
+
+    /**
+     * Set relevanteAndereZaken on every result of a zaken list response.
+     *
+     * @param JSONResponse $response The zaken list response.
+     *
+     * @return JSONResponse
+     *
+     * @spec openspec/changes/related-case-linking/specs/zgw-api-mapping/spec.md
+     */
+    private function enrichZakenListRelevanteAndereZaken(JSONResponse $response): JSONResponse
+    {
+        $data = $response->getData();
+        if (is_array($data) === false || isset($data['results']) === false || is_array($data['results']) === false) {
+            return $response;
+        }
+
+        foreach ($data['results'] as $idx => $zaak) {
+            if (is_array($zaak) === true) {
+                $zaak['relevanteAndereZaken'] = $this->buildRelevanteAndereZaken(zaakData: $zaak);
+                $data['results'][$idx]        = $zaak;
+            }
+        }
+
+        $response->setData($data);
+
+        return $response;
+    }//end enrichZakenListRelevanteAndereZaken()
+
+
+    /**
+     * Resolve an inbound relevanteAndereZaken array on a zaak write into local
+     * case UUIDs and route each through the guarded, symmetric
+     * CaseRelationService. A relation URL that does not resolve to a local case
+     * is rejected with the capability's standard ZGW validation error shape.
+     *
+     * @param string               $caseUuid The local UUID of the written zaak.
+     * @param array<string, mixed> $body     The original (Dutch) request body.
+     *
+     * @return JSONResponse|null A 400 validation error, or null on success.
+     *
+     * @spec openspec/changes/related-case-linking/specs/zgw-api-mapping/spec.md
+     */
+    private function applyInboundRelevanteAndereZaken(string $caseUuid, array $body): ?JSONResponse
+    {
+        $relevanteZaken = ($body['relevanteAndereZaken'] ?? null);
+        if (is_array($relevanteZaken) === false || $relevanteZaken === [] || $caseUuid === '') {
+            return null;
+        }
+
+        $uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
+        foreach ($relevanteZaken as $idx => $relZaak) {
+            if (is_array($relZaak) === false) {
+                continue;
+            }
+
+            $url  = (string) ($relZaak['url'] ?? '');
+            $aard = (string) ($relZaak['aardRelatie'] ?? '');
+            if ($url === '') {
+                continue;
+            }
+
+            // Resolve the URL to a local case UUID.
+            $targetUuid = '';
+            if (preg_match($uuidPattern, $url, $m) === 1) {
+                $targetUuid = $m[1];
+            }
+
+            $result = null;
+            if ($targetUuid !== '') {
+                $result = $this->caseRelationService->addRelation(
+                    caseId: $caseUuid,
+                    targetId: $targetUuid,
+                    aardRelatie: $aard,
+                );
+            }
+
+            // Unresolvable URL (no local case) or access/guard failure that
+            // means the referenced zaak is not a usable local case → reject.
+            if ($targetUuid === '' || ($result !== null && $result['ok'] === false && ($result['reason'] ?? '') === 'access_denied')) {
+                return new JSONResponse(
+                    data: [
+                        'type'          => 'ValidationError',
+                        'code'          => 'invalid',
+                        'title'         => 'Ongeldige invoer.',
+                        'status'        => 400,
+                        'detail'        => 'relevanteAndereZaken verwijst naar een onbekende zaak.',
+                        'invalidParams' => [
+                            [
+                                'name'   => "relevanteAndereZaken.{$idx}.url",
+                                'code'   => 'unknown-zaak',
+                                'reason' => 'De zaak-URL verwijst niet naar een bekende lokale zaak.',
+                            ],
+                        ],
+                    ],
+                    statusCode: Http::STATUS_BAD_REQUEST
+                );
+            }//end if
+        }//end foreach
+
+        return null;
+    }//end applyInboundRelevanteAndereZaken()
 
     /**
      * Create an ObjectInformatieObject in the DRC when a ZaakInformatieObject is created (zrc-005a).
