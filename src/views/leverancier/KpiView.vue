@@ -20,26 +20,37 @@
 			<NcLoadingIcon :size="32" />
 		</div>
 
-		<div v-else-if="error" data-testid="lz-error" class="lz-state lz-state--error" role="alert">
+		<div v-else-if="error"
+			data-testid="lz-error"
+			class="lz-state lz-state--error"
+			role="alert">
 			{{ error }}
 		</div>
 
 		<div v-else-if="kpi" class="lz-kpi-grid">
 			<article class="lz-kpi-tile" data-testid="leverancier-kpi-payment-days">
 				<h2>{{ t('procest', 'Gem. betaaldagen') }}</h2>
-				<p class="lz-kpi-value">{{ formatDays(kpi.paymentDays) }}</p>
+				<p class="lz-kpi-value">
+					{{ formatDays(kpi.paymentDays) }}
+				</p>
 			</article>
 			<article class="lz-kpi-tile" data-testid="leverancier-kpi-ontime">
 				<h2>{{ t('procest', 'Op tijd betaald') }}</h2>
-				<p class="lz-kpi-value">{{ formatPct(kpi.onTimePercentage) }}</p>
+				<p class="lz-kpi-value">
+					{{ formatPct(kpi.onTimePercentage) }}
+				</p>
 			</article>
 			<article class="lz-kpi-tile" data-testid="leverancier-kpi-dispute">
 				<h2>{{ t('procest', 'Betwistratio') }}</h2>
-				<p class="lz-kpi-value">{{ formatPct(kpi.disputeRate) }}</p>
+				<p class="lz-kpi-value">
+					{{ formatPct(kpi.disputeRate) }}
+				</p>
 			</article>
 			<article class="lz-kpi-tile" data-testid="leverancier-kpi-compliance">
 				<h2>{{ t('procest', 'Compliance score') }}</h2>
-				<p class="lz-kpi-value">{{ formatScore(kpi.complianceScore) }}</p>
+				<p class="lz-kpi-value">
+					{{ formatScore(kpi.complianceScore) }}
+				</p>
 			</article>
 		</div>
 

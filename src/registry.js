@@ -89,6 +89,16 @@ import StatusChartWidget from './views/widgets/StatusChartWidget.vue'
 import CasesByTypeWidget from './views/widgets/CasesByTypeWidget.vue'
 import DashboardHeaderActions from './views/dashboard/DashboardHeaderActions.vue'
 
+// Leverancier-zaakportaal — operator-side Vue surface for supplier dashboards.
+import LeverancierDashboard from './views/leverancier/LeverancierDashboard.vue'
+import TenderList from './views/leverancier/TenderList.vue'
+import TenderDetail from './views/leverancier/TenderDetail.vue'
+import InvoiceList from './views/leverancier/InvoiceList.vue'
+import ContractList from './views/leverancier/ContractList.vue'
+import KpiView from './views/leverancier/KpiView.vue'
+import ProfileForm from './views/leverancier/ProfileForm.vue'
+import MessageThread from './views/leverancier/MessageThread.vue'
+
 /*
  * Grid metadata required for every kind:"widget" entry by the ADR-036
  * registry validator in CnAppRoot. Sizes mirror the manifest layout.
@@ -115,16 +125,6 @@ const HEADER_ACTIONS_META = {
 	allowedSlots: ['header-actions'],
 	propsSchema: null,
 }
-
-// Leverancier-zaakportaal — operator-side Vue surface for supplier dashboards.
-import LeverancierDashboard from './views/leverancier/LeverancierDashboard.vue'
-import TenderList from './views/leverancier/TenderList.vue'
-import TenderDetail from './views/leverancier/TenderDetail.vue'
-import InvoiceList from './views/leverancier/InvoiceList.vue'
-import ContractList from './views/leverancier/ContractList.vue'
-import KpiView from './views/leverancier/KpiView.vue'
-import ProfileForm from './views/leverancier/ProfileForm.vue'
-import MessageThread from './views/leverancier/MessageThread.vue'
 
 /**
  * V2 component registry.

@@ -35,7 +35,9 @@
 						{{ h.format }} — {{ h.scheduledAt }} — {{ h.outcome || t('procest', 'pending') }}
 					</li>
 				</ul>
-				<p v-else>{{ t('procest', 'No hearings scheduled.') }}</p>
+				<p v-else>
+					{{ t('procest', 'No hearings scheduled.') }}
+				</p>
 			</section>
 
 			<ActivityTimeline :events="timeline" />

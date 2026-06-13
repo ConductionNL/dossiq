@@ -8,7 +8,10 @@
 			<span class="besluit-publicatie-panel__badge besluit-publicatie-panel__badge--success">
 				{{ t('procest', 'Gepubliceerd') }}
 			</span>
-			<a v-if="reference" :href="reference" target="_blank" rel="noopener noreferrer">
+			<a v-if="reference"
+				:href="reference"
+				target="_blank"
+				rel="noopener noreferrer">
 				{{ t('procest', 'Bekijk publicatie in DROP/LVBB') }}
 			</a>
 		</div>

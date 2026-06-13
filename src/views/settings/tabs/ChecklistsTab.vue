@@ -104,14 +104,16 @@ export default {
 		},
 
 		openEditor(checklist) {
-			this.editingChecklist = checklist ? { ...checklist } : {
-				name: '',
-				version: 1,
-				caseTypeRef: '',
-				items: [],
-				active: false,
-				validFrom: new Date().toISOString().split('T')[0],
-			}
+			this.editingChecklist = checklist
+				? { ...checklist }
+				: {
+					name: '',
+					version: 1,
+					caseTypeRef: '',
+					items: [],
+					active: false,
+					validFrom: new Date().toISOString().split('T')[0],
+				}
 			this.editing = true
 		},
 

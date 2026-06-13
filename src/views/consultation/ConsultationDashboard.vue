@@ -41,14 +41,14 @@
 				<input
 					v-model="filters.dateFrom"
 					type="date"
-					class="consultation-dashboard__date-input" />
+					class="consultation-dashboard__date-input">
 				<label class="consultation-dashboard__filter-label">
 					{{ t('procest', 'tot') }}
 				</label>
 				<input
 					v-model="filters.dateTo"
 					type="date"
-					class="consultation-dashboard__date-input" />
+					class="consultation-dashboard__date-input">
 			</div>
 
 			<NcButton @click="loadConsultations">

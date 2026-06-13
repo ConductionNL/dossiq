@@ -141,14 +141,20 @@ export default {
 				this.loading = false
 			}
 		},
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/**
+		 * @param def
+		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+		 */
 		isActive(def) {
 			const today = new Date().toISOString().slice(0, 10)
 			const from = def.validFrom || '0000-00-00'
 			const until = def.validUntil || '9999-12-31'
 			return from <= today && today <= until
 		},
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/**
+		 * @param def
+		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+		 */
 		formatDuur(def) {
 			const v = def.duurDagen || def.duur || 0
 			return v ? t('procest', '{n} days', { n: v }) : '—'
@@ -158,7 +164,10 @@ export default {
 			this.editingDefinition = null
 			this.editorOpen = true
 		},
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/**
+		 * @param def
+		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+		 */
 		openEdit(def) {
 			this.editingDefinition = def
 			this.editorOpen = true
@@ -168,7 +177,10 @@ export default {
 			this.editorOpen = false
 			this.editingDefinition = null
 		},
-		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
+		/**
+		 * @param payload
+		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+		 */
 		async onSave(payload) {
 			// Versioning: new version's validFrom=tomorrow, prior validUntil=today.
 			const today = new Date()

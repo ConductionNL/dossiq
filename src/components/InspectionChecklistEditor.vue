@@ -67,10 +67,18 @@
 						class="checklist-editor__input checklist-editor__input--question"
 						:placeholder="t('procest', 'Question or instruction')">
 					<select v-model="item.type" class="checklist-editor__select">
-						<option value="boolean">{{ t('procest', 'Yes/No') }}</option>
-						<option value="text">{{ t('procest', 'Text') }}</option>
-						<option value="enum">{{ t('procest', 'Multiple choice') }}</option>
-						<option value="photo">{{ t('procest', 'Photo') }}</option>
+						<option value="boolean">
+							{{ t('procest', 'Yes/No') }}
+						</option>
+						<option value="text">
+							{{ t('procest', 'Text') }}
+						</option>
+						<option value="enum">
+							{{ t('procest', 'Multiple choice') }}
+						</option>
+						<option value="photo">
+							{{ t('procest', 'Photo') }}
+						</option>
 					</select>
 					<label class="checklist-editor__checkbox-label">
 						<input v-model="item.required" type="checkbox">

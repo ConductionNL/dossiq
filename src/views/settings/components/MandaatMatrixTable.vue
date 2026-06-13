@@ -6,11 +6,15 @@
 	<div class="mandaat-matrix-table">
 		<div class="mandaat-matrix-table__toolbar">
 			<NcButton type="primary" @click="$emit('edit', null)">
-				<template #icon><Plus :size="18" /></template>
+				<template #icon>
+					<Plus :size="18" />
+				</template>
 				{{ t('procest', 'New mandaat') }}
 			</NcButton>
 			<NcButton type="secondary" @click="$emit('import')">
-				<template #icon><Import :size="18" /></template>
+				<template #icon>
+					<Import :size="18" />
+				</template>
 				{{ t('procest', 'Import from Decidesk') }}
 			</NcButton>
 		</div>
@@ -74,7 +78,10 @@ export default {
 	emits: ['edit', 'import'],
 	methods: {
 		t,
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/**
+		 * @param status
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
 		badgeClass(status) {
 			const s = (status || '').toLowerCase()
 			if (s === 'actief' || s === 'active') return 'mandaat-matrix-table__badge--ok'

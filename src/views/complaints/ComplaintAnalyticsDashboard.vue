@@ -24,7 +24,9 @@
 					<tbody>
 						<tr v-for="row in analytics.byCategory || []" :key="row.category">
 							<td>{{ row.category }}</td>
-							<td class="num">{{ row.count }}</td>
+							<td class="num">
+								{{ row.count }}
+							</td>
 						</tr>
 					</tbody>
 				</table>
@@ -37,7 +39,9 @@
 						{{ alert.employeeAnon }} — {{ alert.count }} {{ t('procest', 'complaints') }}
 					</li>
 				</ul>
-				<p v-else>{{ t('procest', 'No alerts above threshold.') }}</p>
+				<p v-else>
+					{{ t('procest', 'No alerts above threshold.') }}
+				</p>
 			</section>
 
 			<section class="complaint-analytics__card">
@@ -47,7 +51,9 @@
 						{{ issue.category }} — {{ Math.round(issue.qoqDelta * 100) }}%
 					</li>
 				</ul>
-				<p v-else>{{ t('procest', 'No systemic issues detected.') }}</p>
+				<p v-else>
+					{{ t('procest', 'No systemic issues detected.') }}
+				</p>
 			</section>
 
 			<section class="complaint-analytics__card">

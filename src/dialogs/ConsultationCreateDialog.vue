@@ -50,7 +50,7 @@
 					v-model="form.uiterlijkeReactiedatum"
 					type="date"
 					class="consultation-create-dialog__date-input"
-					:min="today" />
+					:min="today">
 			</div>
 
 			<div class="consultation-create-dialog__field">

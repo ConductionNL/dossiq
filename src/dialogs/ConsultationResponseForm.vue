@@ -49,7 +49,7 @@
 						v-model="voorwaarde.description"
 						class="consultation-response-form__condition-input"
 						:placeholder="t('procest', 'Beschrijving voorwaarde')"
-						type="text" />
+						type="text">
 					<NcSelect
 						v-model="voorwaarde.priority"
 						:options="priorityOptions"
@@ -78,7 +78,7 @@
 					v-model="form.datum"
 					type="date"
 					class="consultation-response-form__date-input"
-					:max="today" />
+					:max="today">
 			</div>
 
 			<NcNoteCard v-if="validationError" type="error">

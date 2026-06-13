@@ -158,6 +158,8 @@ export default {
 		 * Update the classification of an agenda item.
 		 *
 		 * @param {object} payload The { id, behandeling } payload.
+		 * @param payload.id
+		 * @param payload.behandeling
 		 */
 		async onSetBehandeling({ id, behandeling }) {
 			const idx = this.agenda.findIndex(i => i.id === id)

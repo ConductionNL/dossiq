@@ -23,7 +23,9 @@
 		</div>
 
 		<template #actions>
-			<NcButton @click="$emit('close')">{{ t('procest', 'Cancel') }}</NcButton>
+			<NcButton @click="$emit('close')">
+				{{ t('procest', 'Cancel') }}
+			</NcButton>
 			<NcButton type="primary" :disabled="!endDate" @click="$emit('save', endDate)">
 				{{ t('procest', 'End assignment') }}
 			</NcButton>

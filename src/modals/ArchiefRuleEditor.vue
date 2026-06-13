@@ -57,8 +57,12 @@
 			</div>
 
 			<div class="archief-rule-editor__actions">
-				<NcButton @click="$emit('close')">{{ t('procest', 'Cancel') }}</NcButton>
-				<NcButton type="primary" @click="save">{{ t('procest', 'Save rule') }}</NcButton>
+				<NcButton @click="$emit('close')">
+					{{ t('procest', 'Cancel') }}
+				</NcButton>
+				<NcButton type="primary" @click="save">
+					{{ t('procest', 'Save rule') }}
+				</NcButton>
 			</div>
 		</div>
 	</NcModal>
@@ -127,7 +131,10 @@ export default {
 	},
 	methods: {
 		t,
-		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
+		/**
+		 * @param opt
+		 * @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md
+		 */
 		onModeChange(opt) {
 			this.form.mode = opt ? opt.id : 'years'
 			if (this.form.mode === 'permanent') {

@@ -200,7 +200,7 @@ export default {
 		/** @spec openspec/changes/woo-case-type/tasks.md#task-6 */
 		assessedCount() {
 			return this.documents.filter(doc =>
-				this.localAssessments[doc.id] && this.localAssessments[doc.id].classification
+				this.localAssessments[doc.id] && this.localAssessments[doc.id].classification,
 			).length
 		},
 	},
@@ -286,7 +286,7 @@ export default {
 		/**
 		 * Validate all assessments client-side before submitting.
 		 *
-		 * @returns {boolean}
+		 * @return {boolean}
 		 * @spec openspec/changes/woo-case-type/tasks.md#task-6
 		 */
 		validateAll() {
@@ -304,7 +304,7 @@ export default {
 						this.t('procest', '"{doc}" is {class} but has no weigeringsgrond selected.', {
 							doc: name,
 							class: a.classification,
-						})
+						}),
 					)
 				}
 			}

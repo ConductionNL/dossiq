@@ -82,7 +82,9 @@
 							<span>{{ entry.oldStatus }} → {{ entry.newStatus }}</span>
 						</li>
 					</ul>
-					<p v-else>{{ t('procest', 'No activity recorded') }}</p>
+					<p v-else>
+						{{ t('procest', 'No activity recorded') }}
+					</p>
 				</section>
 			</div>
 		</template>

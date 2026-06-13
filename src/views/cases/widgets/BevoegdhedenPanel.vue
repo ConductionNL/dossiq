@@ -113,7 +113,7 @@ export default {
 		/**
 		 * The expanded row object.
 		 *
-		 * @return {Object|null} Expanded row.
+		 * @return {object | null} Expanded row.
 		 *
 		 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
 		 */
@@ -171,7 +171,7 @@ export default {
 		/**
 		 * Expand or collapse a row.
 		 *
-		 * @param {Object} row Row.
+		 * @param {object} row Row.
 		 *
 		 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
 		 */
@@ -182,7 +182,7 @@ export default {
 		/**
 		 * Format the validity window.
 		 *
-		 * @param {Object} row Row.
+		 * @param {object} row Row.
 		 * @return {string} Formatted range.
 		 *
 		 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
@@ -196,7 +196,7 @@ export default {
 		/**
 		 * Format the ceiling.
 		 *
-		 * @param {Object} row Row.
+		 * @param {object} row Row.
 		 * @return {string} Formatted ceiling.
 		 *
 		 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
@@ -211,7 +211,7 @@ export default {
 		/**
 		 * Look up role holders for a mandate.
 		 *
-		 * @param {Object} row Row.
+		 * @param {object} row Row.
 		 * @return {Array} Holders.
 		 *
 		 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md

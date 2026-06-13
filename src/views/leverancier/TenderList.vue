@@ -22,12 +22,24 @@
 					v-model="statusFilter"
 					data-testid="leverancier-tender-status-filter"
 					@change="reload">
-					<option value="">{{ t('procest', 'Alle') }}</option>
-					<option value="submitted">{{ t('procest', 'Ingediend') }}</option>
-					<option value="evaluating">{{ t('procest', 'Evaluatie') }}</option>
-					<option value="awarded">{{ t('procest', 'Gegund') }}</option>
-					<option value="rejected">{{ t('procest', 'Afgewezen') }}</option>
-					<option value="withdrawn">{{ t('procest', 'Ingetrokken') }}</option>
+					<option value="">
+						{{ t('procest', 'Alle') }}
+					</option>
+					<option value="submitted">
+						{{ t('procest', 'Ingediend') }}
+					</option>
+					<option value="evaluating">
+						{{ t('procest', 'Evaluatie') }}
+					</option>
+					<option value="awarded">
+						{{ t('procest', 'Gegund') }}
+					</option>
+					<option value="rejected">
+						{{ t('procest', 'Afgewezen') }}
+					</option>
+					<option value="withdrawn">
+						{{ t('procest', 'Ingetrokken') }}
+					</option>
 				</select>
 
 				<label for="lz-search" class="lz-filter-label">
@@ -46,7 +58,10 @@
 			<NcLoadingIcon :size="24" />
 		</div>
 
-		<div v-else-if="error" data-testid="lz-error" class="lz-state lz-state--error" role="alert">
+		<div v-else-if="error"
+			data-testid="lz-error"
+			class="lz-state lz-state--error"
+			role="alert">
 			{{ error }}
 		</div>
 
@@ -65,7 +80,9 @@
 					<th scope="col" @click="setSort('publishedOn')">
 						{{ t('procest', 'Gepubliceerd') }} <span v-if="sortKey === 'publishedOn'">{{ sortArrow }}</span>
 					</th>
-					<th scope="col">{{ t('procest', 'Actie') }}</th>
+					<th scope="col">
+						{{ t('procest', 'Actie') }}
+					</th>
 				</tr>
 			</thead>
 			<tbody>

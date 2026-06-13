@@ -16,7 +16,9 @@
 
 		<!-- Success state (after submission) -->
 		<div v-else-if="submitted" class="external-consultation-response__success">
-			<div class="external-consultation-response__success-icon">✓</div>
+			<div class="external-consultation-response__success-icon">
+				✓
+			</div>
 			<h2>{{ t('procest', 'Advies ingediend') }}</h2>
 			<p>{{ t('procest', 'Uw advies is succesvol ontvangen. U kunt dit venster sluiten.') }}</p>
 		</div>
@@ -103,7 +105,7 @@
 								v-model="voorwaarde.description"
 								class="external-consultation-response__condition-input"
 								:placeholder="t('procest', 'Beschrijving voorwaarde')"
-								type="text" />
+								type="text">
 							<NcSelect
 								v-model="voorwaarde.priority"
 								:options="priorityOptions"
@@ -131,7 +133,7 @@
 						<input
 							v-model="responseForm.datum"
 							type="date"
-							class="external-consultation-response__date-input" />
+							class="external-consultation-response__date-input">
 					</div>
 
 					<NcNoteCard v-if="submitError" type="error">

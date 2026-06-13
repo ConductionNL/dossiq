@@ -6,7 +6,9 @@
 	<div class="rol-manager">
 		<div class="rol-manager__toolbar">
 			<NcButton type="primary" @click="openEditor(null)">
-				<template #icon><Plus :size="18" /></template>
+				<template #icon>
+					<Plus :size="18" />
+				</template>
 				{{ t('procest', 'New role') }}
 			</NcButton>
 		</div>
@@ -17,7 +19,9 @@
 			v-if="!loading && roles.length === 0"
 			:name="t('procest', 'No organisational roles')"
 			:description="t('procest', 'Define roles to build a mandate hierarchy. Roles can have parents (afdeling/team) and a mandaat level.')">
-			<template #icon><AccountGroup :size="48" /></template>
+			<template #icon>
+				<AccountGroup :size="48" />
+			</template>
 		</NcEmptyContent>
 
 		<!-- Hierarchical role list (depth-first render). -->
@@ -48,7 +52,9 @@
 				{{ deleteBlockedReason }}
 			</p>
 			<template #actions>
-				<NcButton @click="deleting = null">{{ t('procest', 'Cancel') }}</NcButton>
+				<NcButton @click="deleting = null">
+					{{ t('procest', 'Cancel') }}
+				</NcButton>
 				<NcButton type="error" :disabled="!!deleteBlockedReason" @click="doDelete">
 					{{ t('procest', 'Delete') }}
 				</NcButton>
@@ -114,7 +120,10 @@ export default {
 	},
 	methods: {
 		t,
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/**
+		 * @param role
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
 		openEditor(role) {
 			this.editingRole = role
 			this.editorOpen = true
@@ -124,11 +133,17 @@ export default {
 			this.editorOpen = false
 			this.editingRole = null
 		},
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/**
+		 * @param role
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
 		confirmDelete(role) {
 			this.deleting = role
 		},
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/**
+		 * @param payload
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
 		async onSave(payload) {
 			try {
 				if (this.editingRole && this.editingRole.id) {

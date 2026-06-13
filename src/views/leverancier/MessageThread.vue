@@ -25,7 +25,10 @@
 			<NcLoadingIcon :size="24" />
 		</div>
 
-		<div v-else-if="error" data-testid="lz-error" class="lz-state lz-state--error" role="alert">
+		<div v-else-if="error"
+			data-testid="lz-error"
+			class="lz-state lz-state--error"
+			role="alert">
 			{{ error }}
 		</div>
 
@@ -40,7 +43,9 @@
 					<span class="lz-bubble-sender">{{ m.sentBy || t('procest', 'Onbekend') }}</span>
 					<time class="lz-bubble-time">{{ m.timestamp || m.sentAt || '—' }}</time>
 				</header>
-				<p class="lz-bubble-body">{{ m.body }}</p>
+				<p class="lz-bubble-body">
+					{{ m.body }}
+				</p>
 				<ul v-if="m.attachments && m.attachments.length" class="lz-bubble-attachments">
 					<li v-for="a in m.attachments" :key="a.ref || a.id">
 						<a :href="a.url || '#'">{{ a.name || a.ref }}</a>

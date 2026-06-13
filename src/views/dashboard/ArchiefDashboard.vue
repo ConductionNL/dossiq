@@ -11,35 +11,59 @@
 			<h2>{{ t('procest', 'Archief e-Depot handover') }}</h2>
 			<div class="archief-dashboard__controls">
 				<NcButton type="secondary" @click="load">
-					<template #icon><Refresh :size="18" /></template>
+					<template #icon>
+						<Refresh :size="18" />
+					</template>
 					{{ t('procest', 'Refresh') }}
 				</NcButton>
 			</div>
 		</div>
 
 		<NcLoadingIcon v-if="loading" :size="32" />
-		<NcNoteCard v-if="error" type="error">{{ error }}</NcNoteCard>
+		<NcNoteCard v-if="error" type="error">
+			{{ error }}
+		</NcNoteCard>
 
 		<div v-if="!loading && stats" class="archief-dashboard__grid">
 			<div class="kpi-card kpi-card--neutral">
-				<div class="kpi-card__label">{{ t('procest', 'Ready') }}</div>
-				<div class="kpi-card__value">{{ stats.ready }}</div>
+				<div class="kpi-card__label">
+					{{ t('procest', 'Ready') }}
+				</div>
+				<div class="kpi-card__value">
+					{{ stats.ready }}
+				</div>
 			</div>
 			<div class="kpi-card kpi-card--neutral">
-				<div class="kpi-card__label">{{ t('procest', 'In progress') }}</div>
-				<div class="kpi-card__value">{{ stats.inProgress }}</div>
+				<div class="kpi-card__label">
+					{{ t('procest', 'In progress') }}
+				</div>
+				<div class="kpi-card__value">
+					{{ stats.inProgress }}
+				</div>
 			</div>
 			<div class="kpi-card kpi-card--alert">
-				<div class="kpi-card__label">{{ t('procest', 'Failed') }}</div>
-				<div class="kpi-card__value">{{ stats.failed }}</div>
+				<div class="kpi-card__label">
+					{{ t('procest', 'Failed') }}
+				</div>
+				<div class="kpi-card__value">
+					{{ stats.failed }}
+				</div>
 			</div>
 			<div class="kpi-card kpi-card--good">
-				<div class="kpi-card__label">{{ t('procest', 'Completed') }}</div>
-				<div class="kpi-card__value">{{ stats.completed }}</div>
+				<div class="kpi-card__label">
+					{{ t('procest', 'Completed') }}
+				</div>
+				<div class="kpi-card__value">
+					{{ stats.completed }}
+				</div>
 			</div>
 			<div class="kpi-card kpi-card--neutral">
-				<div class="kpi-card__label">{{ t('procest', 'Total transferred') }}</div>
-				<div class="kpi-card__value">{{ stats.totalTransferred }}</div>
+				<div class="kpi-card__label">
+					{{ t('procest', 'Total transferred') }}
+				</div>
+				<div class="kpi-card__value">
+					{{ stats.totalTransferred }}
+				</div>
 			</div>
 		</div>
 
@@ -52,7 +76,9 @@
 				{{ t('procest', 'Initiate batch') }}
 			</NcButton>
 			<NcButton type="secondary" :disabled="retrying" @click="retryFailed">
-				<template #icon><Replay :size="18" /></template>
+				<template #icon>
+					<Replay :size="18" />
+				</template>
 				{{ t('procest', 'Retry failed') }}
 			</NcButton>
 		</div>
@@ -86,7 +112,9 @@
 				</tbody>
 			</table>
 			<NcEmptyContent v-else :name="t('procest', 'No triggers yet')">
-				<template #icon><PackageVariantClosed :size="48" /></template>
+				<template #icon>
+					<PackageVariantClosed :size="48" />
+				</template>
 			</NcEmptyContent>
 		</div>
 
@@ -111,7 +139,9 @@
 				</tbody>
 			</table>
 			<NcEmptyContent v-else :name="t('procest', 'No audit entries')">
-				<template #icon><ScriptText :size="48" /></template>
+				<template #icon>
+					<ScriptText :size="48" />
+				</template>
 			</NcEmptyContent>
 		</div>
 	</div>
@@ -165,7 +195,10 @@ export default {
 				this.loading = false
 			}
 		},
-		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
+		/**
+		 * @param status
+		 * @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md
+		 */
 		badgeClass(status) {
 			const s = (status || '').toLowerCase()
 			if (s === 'geslaagd' || s === 'completed') return 'archief-dashboard__badge--good'
@@ -197,7 +230,10 @@ export default {
 				this.retrying = false
 			}
 		},
-		/** @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md */
+		/**
+		 * @param trigger
+		 * @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md
+		 */
 		viewProof(trigger) {
 			const proof = trigger.proofRef
 			if (!proof) return

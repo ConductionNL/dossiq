@@ -44,12 +44,16 @@
 				:disabled="!importId || approving"
 				type="success"
 				@click="approve">
-				<template #icon><CheckBold :size="18" /></template>
+				<template #icon>
+					<CheckBold :size="18" />
+				</template>
 				{{ t('procest', 'Approve & import') }}
 			</NcButton>
 		</div>
 
-		<NcNoteCard v-if="error" type="error">{{ error }}</NcNoteCard>
+		<NcNoteCard v-if="error" type="error">
+			{{ error }}
+		</NcNoteCard>
 
 		<div v-if="previewResult" class="mandaat-import__preview">
 			<h4>{{ t('procest', 'Preview') }}</h4>
@@ -95,7 +99,10 @@ export default {
 	},
 	methods: {
 		t,
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/**
+		 * @param e
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
 		onFileChange(e) {
 			const f = e.target.files?.[0]
 			if (!f) return

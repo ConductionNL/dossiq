@@ -102,12 +102,11 @@ export default {
 			saveError: '',
 		}
 	},
-	mounted() {
-		this.loadCaseTypes()
-		this.loadAdvisoryBodies()
-	},
 	watch: {
-		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-07 */
+		/**
+		 * @param newId
+		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-07
+		 */
 		selectedCaseTypeId(newId) {
 			if (newId) {
 				this.loadConsultationTypes(newId)
@@ -115,6 +114,10 @@ export default {
 				this.consultationTypes = []
 			}
 		},
+	},
+	mounted() {
+		this.loadCaseTypes()
+		this.loadAdvisoryBodies()
 	},
 	methods: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-07 */
@@ -143,7 +146,10 @@ export default {
 				console.error('Failed to load advisory bodies', e)
 			}
 		},
-		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-07 */
+		/**
+		 * @param caseTypeId
+		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-07
+		 */
 		async loadConsultationTypes(caseTypeId) {
 			try {
 				const { data } = await axios.get('/apps/procest/api/settings')

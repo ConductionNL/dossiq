@@ -21,9 +21,9 @@ const METRICS_URL = generateUrl('/apps/procest/api/doorlooptijd/metrics')
  * Fetch throughput-time metrics.
  *
  * @param {object} options Optional filters.
- * @param {string|null} [options.caseType=null] CaseType UUID or slug to scope on.
- * @param {string} [options.period='12m'] Period spec (e.g. `12m`, `6m`).
- * @param {number} [options.atRiskDays=5] At-risk threshold (days).
+ * @param {string|null} [options.caseType] CaseType UUID or slug to scope on.
+ * @param {string} [options.period] Period spec (e.g. `12m`, `6m`).
+ * @param {number} [options.atRiskDays] At-risk threshold (days).
  * @return {Promise<object>} Metrics body { kpi, compliance, caseTypeBreakdown, cases }.
  */
 export async function fetchMetrics({ caseType = null, period = '12m', atRiskDays = 5 } = {}) {

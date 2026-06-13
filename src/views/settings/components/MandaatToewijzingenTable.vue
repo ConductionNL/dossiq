@@ -9,7 +9,9 @@
 	<div class="toewijzingen-table">
 		<div class="toewijzingen-table__toolbar">
 			<NcButton type="primary" @click="addOpen = true">
-				<template #icon><Plus :size="18" /></template>
+				<template #icon>
+					<Plus :size="18" />
+				</template>
 				{{ t('procest', 'Add assignment') }}
 			</NcButton>
 		</div>
@@ -20,7 +22,9 @@
 			v-if="!loading && assignments.length === 0"
 			:name="t('procest', 'No role assignments')"
 			:description="t('procest', 'Assign roles to employees to enable mandate-driven authorisation.')">
-			<template #icon><AccountMultiple :size="48" /></template>
+			<template #icon>
+				<AccountMultiple :size="48" />
+			</template>
 		</NcEmptyContent>
 
 		<table v-if="!loading && assignments.length > 0" class="toewijzingen-table__table">
@@ -96,27 +100,42 @@ export default {
 	},
 	methods: {
 		t,
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/**
+		 * @param a
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
 		isWaarnemer(a) {
 			const tt = (a.toewijzingType || a.type || '').toLowerCase()
 			return tt === 'waarnemer' || tt === 'plaatsvervanger'
 		},
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/**
+		 * @param a
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
 		typeClass(a) {
 			return this.isWaarnemer(a)
 				? 'toewijzingen-table__type--waarnemer'
 				: 'toewijzingen-table__type--regular'
 		},
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/**
+		 * @param a
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
 		roleLabel(a) {
 			const opt = this.roleOptions.find(o => o.id === (a.rolId || a.role))
 			return opt ? opt.label : (a.rolLabel || a.rolId || a.role || '—')
 		},
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/**
+		 * @param a
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
 		openEnd(a) {
 			this.ending = a
 		},
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/**
+		 * @param payload
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
 		async onAdd(payload) {
 			try {
 				await axios.post(generateUrl('/apps/procest/api/mandate/toewijzingen'), payload)
@@ -124,7 +143,10 @@ export default {
 				this.$emit('reload')
 			} catch (e) { /* dialog stays open */ }
 		},
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
+		/**
+		 * @param endDate
+		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 */
 		async onEnd(endDate) {
 			try {
 				await axios.patch(
