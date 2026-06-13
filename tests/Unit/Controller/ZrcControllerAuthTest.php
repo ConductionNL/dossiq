@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\ZrcController;
+use OCA\Procest\Service\CaseRelationService;
 use OCA\Procest\Service\ZgwService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -67,6 +68,13 @@ class ZrcControllerAuthTest extends TestCase
     private IL10N $l10n;
 
     /**
+     * The mocked case-relation service.
+     *
+     * @var CaseRelationService|MockObject
+     */
+    private CaseRelationService $caseRelationService;
+
+    /**
      * The controller under test.
      *
      * @var ZrcController
@@ -91,6 +99,7 @@ class ZrcControllerAuthTest extends TestCase
         $this->request    = $this->createMock(originalClassName: IRequest::class);
         $this->zgwService = $this->createMock(originalClassName: ZgwService::class);
         $this->l10n       = $this->createMock(originalClassName: IL10N::class);
+        $this->caseRelationService = $this->createMock(originalClassName: CaseRelationService::class);
 
         $this->unauthResponse = new JSONResponse(
             data: [
@@ -108,6 +117,7 @@ class ZrcControllerAuthTest extends TestCase
             request: $this->request,
             zgwService: $this->zgwService,
             l10n: $this->l10n,
+            caseRelationService: $this->caseRelationService,
         );
     }//end setUp()
 

@@ -126,6 +126,7 @@ export default {
 	watch: {
 		resolvedCaseId: {
 			immediate: true,
+			/** @spec openspec/specs/related-case-linking/spec.md */
 			handler() {
 				this.load()
 			},
