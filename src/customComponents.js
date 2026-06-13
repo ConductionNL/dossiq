@@ -58,6 +58,11 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 import DeelzaakList from './views/cases/DeelzaakList.vue'
 import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 
+// --- Mobiel-inspectie offline PWA views (mobiel-inspectie-offline). ---
+// @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
+import InspectieList from './views/inspectie/InspectieList.vue'
+import InspectieDetail from './views/inspectie/InspectieDetail.vue'
+
 // --- Case-email sidebar tab (leaf-first per ADR-022). ---
 // @spec openspec/changes/case-email-integration/tasks.md#T12
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
@@ -165,6 +170,10 @@ export default {
 	// --- Deelzaak (sub-case) views (manifest /cases/:id/deelzaken[/...]). ---
 	DeelzaakList, // sub-case list for a parent case
 	DeelzaakDetail, // sub-case detail with parent breadcrumb
+
+	// --- Mobiel-inspectie offline PWA (daily planning + offline checklists). ---
+	InspectieList, // offline daily planning + sync indicator
+	InspectieDetail, // offline checklist completion (atomic local store + queue)
 
 	// --- Case-email sidebar tab (display via leaf, compose via NC Mail draft). ---
 	CaseEmailTab,

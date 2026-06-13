@@ -35,12 +35,16 @@ The system SHALL allow inspectors to synchronize their daily schedule to local s
 
 #### Scenario: Sync updates incomplete sync on connection loss
 
+@e2e exclude Resumable chunked download is a Service Worker / browser-network concern; not deterministically drivable headless. Replay-ordering logic is covered by tests/vitest/syncQueueEngine.spec.js.
+
 - **GIVEN** a sync download is in progress (15% complete) when network connection drops
 - **WHEN** the inspector taps "Dag synchroniseren" again and network is restored
 - **THEN** the system SHALL resume the download from the last completed checkpoint (not restart from 0%)
 - **AND** SHALL display progress as "Hervatten: 28 MB van 48 MB"
 
 #### Scenario: Sync size warning for slow connections
+
+@e2e exclude Connection-speed estimation depends on the Network Information API + a live throttled link; not headless-drivable. Size-manifest math is server-side (MapTileService) + unit-tested.
 
 - **GIVEN** the inspector is on a 3G connection with bandwidth ~1 Mbps
 - **WHEN** they initiate sync for a schedule that totals 48 MB
@@ -82,12 +86,16 @@ The system SHALL automatically capture GPS coordinates (latitude, longitude, acc
 
 #### Scenario: GPS coordinates captured with checklist answer
 
+@e2e exclude Geolocation API requires a device sensor / fake-geo permission grant; not headless-deterministic. GPS classification logic is unit-tested (classifyGps).
+
 - **GIVEN** an inspector is at case address (52.1601°N, 5.3878°E, estimated ±8 meters accuracy)
 - **WHEN** they answer a checklist question offline
 - **THEN** the system SHALL automatically append GPS coordinates (lat, lon, accuracy, timestamp) to the ChecklistResult record without user interaction
 - **AND** the GPS metadata SHALL be stored in a `gpsAtAnswer` field
 
 #### Scenario: GPS accuracy warning when poor signal
+
+@e2e exclude Requires a controllable Geolocation sensor reading; not headless-deterministic. Poor-accuracy (>50m) warning copy is unit-tested (classifyGps).
 
 - **GIVEN** GPS signal provides coordinates with accuracy worse than 50 meters (e.g., ±200 meters in a shielded basement)
 - **WHEN** an inspector attempts to answer a checklist question or take a photo
@@ -96,6 +104,8 @@ The system SHALL automatically capture GPS coordinates (latitude, longitude, acc
 - **AND** enable an optional manual address/location correction field
 
 #### Scenario: GPS fallback to case address when signal is lost
+
+@e2e exclude Sensor-failure fallback requires simulating Geolocation API denial; not headless-deterministic. Sensorless fallback is unit-tested (classifyGps) + server-side (EvidenceMetadataService).
 
 - **GIVEN** GPS fails entirely (e.g., indoor in metal-framed building with no Geolocation API signal)
 - **WHEN** an inspector captures evidence
@@ -109,6 +119,8 @@ The system SHALL capture photos using the device camera, compress them client-si
 
 #### Scenario: Capture and compress photo
 
+@e2e exclude Camera capture + canvas compression need a device camera / MediaDevices; not headless-deterministic. The 2MB target validator is unit-tested (isPhotoWithinTarget) + server-side.
+
 - **GIVEN** an inspector taps "Foto toevoegen" on a checklist question
 - **WHEN** they use the camera to capture a photo (native camera app or Web Camera API)
 - **THEN** the system SHALL:
@@ -117,6 +129,8 @@ The system SHALL capture photos using the device camera, compress them client-si
   - Display "Comprimering voltooid: 1.8 MB"
 
 #### Scenario: EXIF metadata embedded in captured photo
+
+@e2e exclude EXIF embedding operates on a real captured image blob; not headless-deterministic. EXIF context builder is server-side + unit-tested (EvidenceMetadataService.buildExifContext).
 
 - **GIVEN** a photo is captured during an inspection
 - **WHEN** the photo is processed
@@ -127,6 +141,8 @@ The system SHALL capture photos using the device camera, compress them client-si
 - **AND** store the blob locally in IndexedDB with reference in a FieldEvidence record
 
 #### Scenario: Photo upload queue on reconnect
+
+@e2e exclude Upload-on-reconnect is a Service Worker / IndexedDB replay concern; not headless-deterministic. Queue replay + status transitions are unit-tested (syncQueueEngine.nextState) and PHPUnit (SyncController).
 
 - **GIVEN** inspectors have captured 5 photos during offline fieldwork (total 9 MB uncompressed, ~5 MB after compression)
 - **WHEN** network connectivity returns
@@ -140,6 +156,8 @@ The system SHALL allow inspectors to record voice memos (audio notes) during ins
 
 #### Scenario: Record voice memo offline
 
+@e2e exclude MediaRecorder (Opus) needs a real microphone stream; not headless-deterministic. The 5-min limit validator is unit-tested (isVoiceMemoWithinLimit) + server-side.
+
 - **GIVEN** an inspector taps "Spraakmemo opnemen" on a checklist question
 - **WHEN** they record a voice memo (e.g., verbal observation or note to self)
 - **THEN** the system SHALL:
@@ -149,6 +167,8 @@ The system SHALL allow inspectors to record voice memos (audio notes) during ins
   - Store the audio blob locally in IndexedDB as a FieldEvidence record with `type: "voice_memo"`
 
 #### Scenario: Transcription queued on sync
+
+@e2e exclude Transcription routing to a qwen LLM endpoint is cross-app (OpenConnector) + needs a live model; not headless-deterministic. Queue/process/fallback flow is covered by PHPUnit TranscriptionServiceTest.
 
 - **GIVEN** an inspector recorded a voice memo offline: "De fundering is flink verzakt in de linkerkant. Dit ziet er ernstig uit, meer onderzoek nodig."
 - **WHEN** the device reconnects and sync begins
@@ -165,6 +185,8 @@ The system SHALL detect network reconnection and automatically replay all queued
 
 #### Scenario: Auto-detect reconnection and start replay
 
+@e2e exclude navigator.onLine reconnection detection + auto-replay are Service Worker concerns; not headless-deterministic. Ordering + drain logic is unit-tested (orderForReplay) and PHPUnit (SyncQueueReplayService).
+
 - **GIVEN** the device was offline for 45 minutes, with 23 pending SyncQueue operations (checklist answers, photos, voice memos)
 - **WHEN** network connectivity returns (navigator.onLine event + successful ping to OpenRegister API)
 - **THEN** the system SHALL:
@@ -173,6 +195,8 @@ The system SHALL detect network reconnection and automatically replay all queued
   - Display a sync progress bar: "Synchroniseren: 1/23"
 
 #### Scenario: Replay operations in order with exponential backoff
+
+@e2e exclude Backoff timing (1s/5s/30s/5min/30min) is non-deterministic in a headless run. The schedule + transitions are exhaustively unit-tested (delayForAttempt, nextState) and PHPUnit (SyncBackoffService).
 
 - **GIVEN** the sync queue contains 23 operations to replay
 - **AND** operation #5 temporarily fails (e.g., 503 Service Unavailable)
@@ -185,6 +209,8 @@ The system SHALL detect network reconnection and automatically replay all queued
 
 #### Scenario: Progress bar and completion notification
 
+@e2e exclude Live replay-progress requires queued offline operations + a reconnection event; not headless-deterministic. The drain tally (synced/conflict/failed counts) is in syncReplayService over the unit-tested engine.
+
 - **GIVEN** sync is replaying 23 operations
 - **WHEN** operations #1-14 have completed successfully
 - **THEN** the system SHALL:
@@ -194,6 +220,8 @@ The system SHALL detect network reconnection and automatically replay all queued
   - Automatically dismiss successful-operation SyncQueue records after 7 days
 
 #### Scenario: Offline during sync attempt
+
+@e2e exclude Mid-replay network-drop + resume is a Service Worker concern; not headless-deterministic. Resume-from-next-pending is guaranteed by orderForReplay filtering terminal ops (unit-tested).
 
 - **GIVEN** sync is replaying operations and the network drops mid-replay (at operation #8 of 23)
 - **WHEN** network reconnects again
@@ -207,6 +235,8 @@ The system SHALL detect when a colleague has edited the same case while the insp
 
 #### Scenario: Detect conflict on sync replay
 
+@e2e exclude Requires an offline-created result + a concurrent server edit to trigger a 409; not headless-deterministic. Conflict classification + record building is covered by PHPUnit (SyncControllerTest, ConflictDetectionServiceTest) and vitest (classifyConflict).
+
 - **GIVEN** inspector Anja completed a checklist offline with answer "goedgekeurd" for "Keuring afgewerkt?"
 - **AND** while she was offline, her colleague Piet (back at the office) changed the same case's inspection status to "afgekeurd"
 - **WHEN** Anja's sync queue replays her ChecklistResult update
@@ -219,6 +249,8 @@ The system SHALL detect when a colleague has edited the same case while the insp
 
 #### Scenario: Show conflict merge UI to inspector
 
+@e2e exclude The merge modal only renders once a ConflictRecord exists in the local store (requires an offline-created conflict); not headless-deterministic. The side-by-side field diff is unit-tested (diffVersions) and the modal renders it via ConflictResolverModal.vue.
+
 - **GIVEN** a ConflictRecord has been created
 - **WHEN** the inspector views the case or sync detail
 - **THEN** the system SHALL display a merge dialog with side-by-side comparison:
@@ -227,6 +259,8 @@ The system SHALL detect when a colleague has edited the same case while the insp
   - Three buttons: "Mijn versie gebruiken" (keep mine), "Serverversie accepteren" (accept server), "Handmatig samenvoegen" (manual merge)
 
 #### Scenario: Inspector resolves conflict
+
+@e2e exclude Resolution flow needs a live ConflictRecord; not headless-deterministic. The resolve → re-queue / discard policy is covered by PHPUnit (SyncControllerTest client_wins/server_wins) and vitest (resolveConflictChoice).
 
 - **GIVEN** the merge UI is displayed
 - **WHEN** the inspector taps "Mijn versie gebruiken"
@@ -237,6 +271,8 @@ The system SHALL detect when a colleague has edited the same case while the insp
   - Display confirmation: "Jouw versie is opgeslagen."
 
 #### Scenario: Permission lost during offline work
+
+@e2e exclude Requires revoking case permission while offline to force a 403 on replay; not headless-deterministic. Terminal permission_lost handling is covered by PHPUnit (SyncControllerTest) and vitest (classifyConflict/isConflictRetryable).
 
 - **GIVEN** an inspector worked offline on a sensitive case (e.g., social-welfare home visit)
 - **AND** while she was offline, a manager revoked her read permission on that case
@@ -252,6 +288,8 @@ The system SHALL pre-download relevant map tiles (PDOK BRT background, cadaster 
 
 #### Scenario: Pre-download map tiles for case addresses
 
+@e2e exclude PDOK tile pre-download + IndexedDB tile cache is a Service Worker concern; not headless-deterministic. Tile enumeration / size estimate math is server-side + unit-tested (MapTileServiceTest).
+
 - **GIVEN** the daily sync downloads cases in a radius around the city center (52.0692°N, 5.3039°E)
 - **WHEN** the system calculates map tile coverage for zoom levels 10-18
 - **THEN** the system SHALL:
@@ -261,6 +299,8 @@ The system SHALL pre-download relevant map tiles (PDOK BRT background, cadaster 
   - Mark the tiles with the sync timestamp for cache expiry (re-sync if >30 days old)
 
 #### Scenario: Display offline map and fall back to cached tiles
+
+@e2e exclude Offline tile-cache fallback requires a populated IndexedDB tile store + offline network state; not headless-deterministic. The Service Worker serves tiles cache-first (public/service-worker.js).
 
 - **GIVEN** an inspector opens a case map in the field with no network
 - **WHEN** the map viewer initializes
@@ -272,6 +312,8 @@ The system SHALL pre-download relevant map tiles (PDOK BRT background, cadaster 
 
 #### Scenario: Inspector draws annotation on map
 
+@e2e exclude Leaflet-draw sketching needs a rendered offline map with cached tiles + touch/pointer drawing; not headless-deterministic. Sketch is stored as a GeoJSON FieldEvidence and queued via the unit-tested engine.
+
 - **GIVEN** the inspector is viewing a case map in the field (offline)
 - **WHEN** they tap "Annotatie toevoegen" and draw a polygon around a property boundary or area of concern
 - **THEN** the system SHALL:
@@ -281,6 +323,8 @@ The system SHALL pre-download relevant map tiles (PDOK BRT background, cadaster 
   - Queue a sync operation to upload the sketch to the case when online
 
 #### Scenario: Sketches visible after sync
+
+@e2e exclude Sketch upload-on-reconnect is a Service Worker / IndexedDB replay concern; not headless-deterministic. Upload queue replay is covered by the unit-tested engine + PHPUnit (SyncQueueReplayService).
 
 - **GIVEN** an inspector drew 3 annotation sketches on the map during offline fieldwork
 - **WHEN** the device reconnects and sync completes
@@ -294,6 +338,8 @@ The system SHALL pre-download relevant map tiles (PDOK BRT background, cadaster 
 The system SHALL record all conflict resolution decisions in an immutable audit trail that meets AVG article 5 (lawfulness, fairness, transparency) and 25/32 (privacy-by-design) requirements, demonstrating what data was modified and by whom, when, and why.
 
 #### Scenario: Audit log entry for conflict resolution
+
+@e2e exclude Immutable audit-trail persistence depends on a resolved live ConflictRecord + the OR audit log; not headless-deterministic. The conflict-resolution record (resolvedBy/resolvedAt/resolution) is built + asserted by PHPUnit (ConflictDetectionService.applyResolution, SyncControllerTest).
 
 - **GIVEN** inspector Anja resolves a conflict by choosing her local version
 - **WHEN** the resolution is processed
@@ -309,6 +355,8 @@ The system SHALL record all conflict resolution decisions in an immutable audit 
 - **AND** SHALL be visible only to the inspector, their manager, and compliance staff (RBAC)
 
 #### Scenario: Data processing agreement compliance
+
+@e2e exclude First-launch PIA consent + local-encryption opt-in is a first-run client flow against IndexedDB state; not headless-deterministic and deferred (DataProcessingNotice + AuditService consent are follow-up — see tasks.md Task 15).
 
 - **GIVEN** the PWA stores sensitive personal data locally (case details, inspector notes, GPS coordinates)
 - **WHEN** the app initializes on first launch
