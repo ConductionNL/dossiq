@@ -128,6 +128,7 @@ Vrij en open source onder de AGPL-licentie.
 
     <settings>
         <admin>OCA\Procest\Settings\AdminSettings</admin>
+        <admin>OCA\Procest\Settings\EmailSettings</admin>
         <admin-section>OCA\Procest\Sections\SettingsSection</admin-section>
     </settings>
 </info>

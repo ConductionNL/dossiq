@@ -23,6 +23,10 @@ webpackConfig.entry = {
 		import: path.join(__dirname, 'src', 'settings.js'),
 		filename: appId + '-settings.js',
 	},
+	emailSettings: {
+		import: path.join(__dirname, 'src', 'emailSettings.js'),
+		filename: appId + '-email-settings.js',
+	},
 	casesOverviewWidget: {
 		import: path.join(__dirname, 'src', 'casesOverviewWidget.js'),
 		filename: appId + '-casesOverviewWidget.js',

@@ -1,15 +1,11 @@
----
-status: proposed
----
+# case-email-integration Specification
 
-# Spec: case-email-integration
+**Status:** partial — all self-contained additive work built and unit-verified (emailTemplate schema + 3 Dutch seeds, EmailTemplateService/Controller/routes, InboundEmailJob + EmailPdfRetryJob, EmailArchivalService, EmailSettings admin surface, EmailTemplateAdmin editor). Residual: pre-existing EmailComposer/EmailThread Vue from `retrofit-2026-05-24-case-management` not yet removed (leaf-first cleanup deferred); live end-to-end verification of NC Mail draft-open, IMAP auto-link, and Docudesk PDF archival deferred pending those cross-app dependencies.
 
-**Status:** proposed
-**Scope:** procest
-**Depends on:** case-management, case-types, admin-settings, openregister (`email` integration leaf + ObjectService + audit + RBAC per ADR-022 / ADR-019 / ADR-024), docudesk (PDF conversion)
+## Purpose
+Link every relevant email to its case and surface it on the case detail page (consuming the OpenRegister `email` integration leaf for display/compose/link per ADR-022), archive linked mail as a PDF `caseDocument` for Archiefwet/ZGW compliance, and add the only genuinely case-specific extensions the leaf cannot provide: per-zaaktype email templating, a documented shared-mailbox ingest poller, and shared-mailbox admin settings.
 
-## ADDED Requirements
-
+## Requirements
 ### Requirement: Email display and linking on the case consume the `email` integration leaf
 
 Email correspondence on a `case` MUST be displayed and linked through the OpenRegister `email` integration leaf (NC Mail; provider id `email`, group `comms`, storage `link-table`), per hydra ADR-022 (integrate, don't build), ADR-019 (integration registry), and ADR-024 (app manifest). Procest MUST NOT build a parallel email message store, compose dialog, thread view, or link table.
@@ -18,6 +14,8 @@ Email correspondence on a `case` MUST be displayed and linked through the OpenRe
 - Linking an email to a case MUST use the leaf endpoint `POST /api/objects/{register}/{schema}/{id}/email` with `{mailAccountId, mailMessageId}`; unlink is the leaf's own action.
 - Composing/sending an email MUST happen in NC Mail (the leaf is link-only). Procest MAY prefill an NC Mail draft from a template, but MUST NOT send mail itself.
 - No `emailMessage` or `emailThread` schema, no `EmailComposer.vue`, `EmailThread.vue`, `EmailTab.vue`, or `UnlinkedQueue.vue` MAY be created.
+
+@e2e exclude Leaf display/linking is owned by NC Mail's `email` integration leaf (cross-app); rendering of the leaf tab/widget and the link endpoint cannot be exercised by procest UI e2e without NC Mail installed. Reviewer no-parallel-storage scan is a static code check, not a UI surface.
 
 #### Scenario: Linked emails appear via the leaf tab on the case
 
@@ -57,6 +55,8 @@ No custom PHP Entity, Mapper, or database table MAY be created for `emailTemplat
 | `version` | integer | No | Incremented on each edit (starts at 1) |
 | `isActive` | boolean | No | Whether selectable (default: true) |
 
+@e2e exclude Schema declaration + enumeration is an OpenRegister config/load-register concern; covered by PHPUnit (EmailTemplateFragmentTest) + OR schema validation, not a procest UI surface.
+
 #### Scenario: Template schema loads without errors
 
 - **GIVEN** procest is installed and `procest_register.json` contains the `emailTemplate` schema
@@ -76,6 +76,8 @@ No custom PHP Entity, Mapper, or database table MAY be created for `emailTemplat
 `EmailTemplateService` MUST resolve `{{variable}}` placeholders from case, contact, and caseType data and hand the rendered subject + body to NC Mail as a **draft** (via the configured Mail account). Procest MUST NOT operate an SMTP transport.
 
 The method MUST return the list of unresolved variable names so the frontend can highlight them in red; a draft MUST NOT be created containing raw `{{...}}` tokens.
+
+@e2e exclude `EmailTemplateService::prefillDraft` variable resolution, unresolved-name return, and isFinal-reject are backend service logic covered by PHPUnit + the Newman draft-prefill endpoint; opening the actual NC Mail draft is cross-app (NC Mail), not a procest UI surface.
 
 #### Scenario: Template variables resolve before prefilling a draft
 
@@ -101,6 +103,8 @@ The method MUST return the list of unresolved variable names so the frontend can
 ### Requirement: The system SHALL version email templates on edit — old versions are retained, not overwritten
 
 `EmailTemplateService::updateTemplate(templateId, data)` MUST create a **new** `emailTemplate` OR object with `version` incremented. The previous version MUST remain. Overwriting the existing object is forbidden.
+
+@e2e exclude Version-on-edit semantics and per-case-type default seeding are backend service logic covered by PHPUnit; verifying retained OR object versions is not a procest UI assertion.
 
 #### Scenario: Template update creates new version, old version retained
 
@@ -131,6 +135,8 @@ The job MUST be scoped strictly to ingest + auto-link, and MUST record every lin
 6. Move processed messages to the "Processed" IMAP folder
 7. Leave unmatched messages in the mailbox (manual linking remains a leaf affordance — no procest queue)
 8. Catch all exceptions without rethrowing; log via `LoggerInterface`
+
+@e2e exclude `InboundEmailJob` is a headless TimedJob ingesting a live IMAP mailbox and writing via the NC Mail leaf endpoint (cross-app); it has no procest UI surface. Auto-link/skip/no-queue behaviour and the ADR-022 exception doc are covered by PHPUnit + the static ADR check.
 
 #### Scenario: Subject-tagged inbound email auto-links via the leaf
 
@@ -164,6 +170,8 @@ When an email is linked to a case (by the shared-mailbox poller or manually via 
 
 `pdfStatus` tracks state: `pending` → `completed` or `failed`. Conversion is synchronous for messages ≤ 5 MB; asynchronous for larger. `EmailPdfRetryJob` (every 15 min) retries `pdfStatus: failed` up to 3× with exponential backoff (15 min, 1 h, 4 h).
 
+@e2e exclude PDF archival + retry run via `EmailArchivalService`/`EmailPdfRetryJob` against the Docudesk integration (cross-app, headless background jobs); no procest UI surface. Covered by PHPUnit and live cross-app verification.
+
 #### Scenario: Docudesk failure does not block linking
 
 - **GIVEN** Docudesk is temporarily unavailable
@@ -195,6 +203,8 @@ When an email is linked to a case (by the shared-mailbox poller or manually via 
 
 All routes MUST be registered in `appinfo/routes.php` BEFORE the Vue SPA catch-all per ADR-003.
 
+@e2e exclude Controller endpoint routing + the absence of send/link routes are API/route-registration concerns covered by Newman + the route-reachability gate, not a procest UI surface.
+
 #### Scenario: API routes resolve before SPA catch-all
 
 - **GIVEN** `GET /index.php/apps/procest/api/casetypes/{caseTypeId}/email-templates` is requested
@@ -221,6 +231,8 @@ It MUST import from `@conduction/nextcloud-vue` (ADR-004) and route all user-vis
 
 #### Scenario: Unresolved variable highlighted in live preview
 
+@e2e exclude The red unresolved-variable highlight logic is unit-tested in tests/vitest/emailTemplatePreview.spec.js; exercising it in the live editor requires a seeded caseType + template (data-dependent), so it is covered by the vitest unit suite rather than Playwright.
+
 - **GIVEN** template body containing `{{case.nonExistentField}}`
 - **WHEN** the admin views the live preview in `EmailTemplateAdmin.vue`
 - **THEN** the placeholder MUST be rendered with a red background highlight and a warning listing unresolved names
@@ -245,6 +257,8 @@ Per-user SMTP/IMAP is NOT configured here — NC Mail owns user accounts. The sh
 
 #### Scenario: Saved shared-mailbox password not returned in plaintext
 
+@e2e exclude Password masking is an API response contract (`GET /api/settings/email` returns `***`) covered by Newman + PHPUnit; sensitive storage is verified by EmailTemplateFragmentTest. Not assertable as a procest UI surface (the field is a password input).
+
 - **GIVEN** an admin saves shared-mailbox IMAP credentials
 - **WHEN** `GET /api/settings/email` is called
 - **THEN** the response MUST contain `"imap_password": "***"`, not the actual password
@@ -261,6 +275,8 @@ Per-user SMTP/IMAP is NOT configured here — NC Mail owns user accounts. The sh
 
 Per ADR-001, `procest_register.json` MUST include realistic seed `emailTemplate` objects using the `@self` envelope (3 templates: `Ontvangstbevestiging`, `Informatieverzoek`, `Besluit` as defined in `design.md`). No `emailMessage`/`emailThread` seeds — linked emails live in the leaf link-table, populated at runtime. Seed loading MUST be idempotent — slug-matched objects are not duplicated.
 
+@e2e exclude Seed idempotency is an OpenRegister load-register concern (slug upsert) covered by PHPUnit (EmailTemplateFragmentTest); the prefill-selector appearance is data-dependent on a live seeded caseType + NC Mail draft flow (cross-app), not assertable as a standalone procest UI e2e here.
+
 #### Scenario: Seed templates load idempotently
 
 - **GIVEN** `openregister:load-register` has already run once
@@ -272,3 +288,4 @@ Per ADR-001, `procest_register.json` MUST include realistic seed `emailTemplate`
 - **GIVEN** the seed data is loaded and a case of the matching `caseType` is open
 - **WHEN** a handler opens the template selector to prefill a draft
 - **THEN** `Ontvangstbevestiging`, `Informatieverzoek`, and `Besluit` MUST appear
+
