@@ -107,7 +107,7 @@
 			"id": "Documentation",
 			"label": "Documentation",
 			"icon": "icon-info",
-			"href": "https://conduction.gitbook.io/procest-nextcloud",
+			"href": "https://procest.conduction.nl",
 			"section": "footer",
 			"order": 90
 		},
@@ -275,153 +275,195 @@
 			"route": "/",
 			"type": "dashboard",
 			"title": "Dashboard",
-			"config": {},
-			"widgets": [
-				{
-					"widgetKey": "custom",
-					"slot": "body",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 2,
-					"gridHeight": 2,
-					"props": {
-						"title": "Open Cases",
+			"actionsComponent": "DashboardHeaderActions",
+			"config": {
+				"widgets": [
+					{
+						"id": "kpi-open-cases",
+						"type": "custom",
+						"title": "Open Cases"
+					},
+					{
+						"id": "kpi-overdue",
+						"type": "custom",
+						"title": "Overdue"
+					},
+					{
+						"id": "kpi-completed",
+						"type": "custom",
+						"title": "Completed This Month"
+					},
+					{
+						"id": "kpi-my-tasks",
+						"type": "custom",
+						"title": "My Tasks"
+					},
+					{
+						"id": "cases-by-status",
+						"type": "custom",
+						"title": "Cases by Status"
+					},
+					{
+						"id": "cases-by-type",
+						"type": "custom",
+						"title": "Cases by Type"
+					},
+					{
+						"id": "open-cases",
+						"type": "custom",
+						"title": "Open Cases"
+					},
+					{
+						"id": "overdue-cases",
+						"type": "custom",
+						"title": "Overdue"
+					},
+					{
+						"id": "my-tasks",
+						"type": "custom",
+						"title": "My Tasks"
+					},
+					{
+						"id": "deadline-alerts",
+						"type": "custom",
+						"title": "Deadline Alerts"
+					},
+					{
+						"id": "task-reminders",
+						"type": "custom",
+						"title": "Task Due Reminders"
+					},
+					{
+						"id": "stalled-cases",
+						"type": "custom",
+						"title": "Stalled Cases"
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "kpi-open-cases",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 3,
+						"gridHeight": 2,
 						"showTitle": false
-					}
-				},
-				{
-					"widgetKey": "custom",
-					"slot": "body",
-					"gridX": 2,
-					"gridY": 0,
-					"gridWidth": 3,
-					"gridHeight": 2,
-					"props": {
-						"title": "Overdue",
+					},
+					{
+						"id": "2",
+						"widgetId": "kpi-overdue",
+						"gridX": 3,
+						"gridY": 0,
+						"gridWidth": 3,
+						"gridHeight": 2,
 						"showTitle": false
-					}
-				},
-				{
-					"widgetKey": "custom",
-					"slot": "body",
-					"gridX": 5,
-					"gridY": 0,
-					"gridWidth": 3,
-					"gridHeight": 2,
-					"props": {
-						"title": "Completed This Month",
+					},
+					{
+						"id": "3",
+						"widgetId": "kpi-completed",
+						"gridX": 6,
+						"gridY": 0,
+						"gridWidth": 3,
+						"gridHeight": 2,
 						"showTitle": false
-					}
-				},
-				{
-					"widgetKey": "custom",
-					"slot": "body",
-					"gridX": 8,
-					"gridY": 0,
-					"gridWidth": 2,
-					"gridHeight": 2,
-					"props": {
-						"title": "My Tasks",
+					},
+					{
+						"id": "4",
+						"widgetId": "kpi-my-tasks",
+						"gridX": 9,
+						"gridY": 0,
+						"gridWidth": 3,
+						"gridHeight": 2,
 						"showTitle": false
-					}
-				},
-				{
-					"widgetKey": "custom",
-					"slot": "body",
-					"gridX": 10,
-					"gridY": 0,
-					"gridWidth": 2,
-					"gridHeight": 2,
-					"props": {
-						"title": "SLA Compliance",
+					},
+					{
+						"id": "5",
+						"widgetId": "cases-by-status",
+						"gridX": 0,
+						"gridY": 2,
+						"gridWidth": 6,
+						"gridHeight": 4,
 						"showTitle": false
-					}
-				},
-				{
-					"widgetKey": "custom",
-					"slot": "body",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 4,
-					"gridHeight": 4,
-					"props": {
-						"title": "Cases by Status",
+					},
+					{
+						"id": "6",
+						"widgetId": "cases-by-type",
+						"gridX": 6,
+						"gridY": 2,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"showTitle": false
+					},
+					{
+						"id": "7",
+						"widgetId": "open-cases",
+						"gridX": 0,
+						"gridY": 6,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "8",
+						"widgetId": "overdue-cases",
+						"gridX": 4,
+						"gridY": 6,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "9",
+						"widgetId": "my-tasks",
+						"gridX": 8,
+						"gridY": 6,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "10",
+						"widgetId": "deadline-alerts",
+						"gridX": 0,
+						"gridY": 10,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "11",
+						"widgetId": "task-reminders",
+						"gridX": 4,
+						"gridY": 10,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "12",
+						"widgetId": "stalled-cases",
+						"gridX": 8,
+						"gridY": 10,
+						"gridWidth": 4,
+						"gridHeight": 4,
 						"showTitle": true
 					}
-				},
-				{
-					"widgetKey": "custom",
-					"slot": "body",
-					"gridX": 4,
-					"gridY": 2,
-					"gridWidth": 4,
-					"gridHeight": 4,
-					"props": {
-						"title": "Cases by Type",
-						"showTitle": true
-					}
-				},
-				{
-					"widgetKey": "custom",
-					"slot": "body",
-					"gridX": 8,
-					"gridY": 2,
-					"gridWidth": 4,
-					"gridHeight": 4,
-					"props": {
-						"title": "My Work",
-						"showTitle": true
-					}
-				},
-				{
-					"widgetKey": "custom",
-					"slot": "body",
-					"gridX": 0,
-					"gridY": 10,
-					"gridWidth": 12,
-					"gridHeight": 6,
-					"props": {
-						"title": "Case Map",
-						"showTitle": true
-					}
-				},
-				{
-					"widgetKey": "custom",
-					"slot": "body",
-					"gridX": 0,
-					"gridY": 6,
-					"gridWidth": 4,
-					"gridHeight": 4,
-					"props": {
-						"title": "Deadline Alerts",
-						"showTitle": true
-					}
-				},
-				{
-					"widgetKey": "custom",
-					"slot": "body",
-					"gridX": 4,
-					"gridY": 6,
-					"gridWidth": 4,
-					"gridHeight": 4,
-					"props": {
-						"title": "Task Due Reminders",
-						"showTitle": true
-					}
-				},
-				{
-					"widgetKey": "custom",
-					"slot": "body",
-					"gridX": 8,
-					"gridY": 6,
-					"gridWidth": 4,
-					"gridHeight": 4,
-					"props": {
-						"title": "Stalled Cases",
-						"showTitle": true
-					}
-				}
-			]
+				]
+			},
+			"slots": {
+				"widget-kpi-open-cases": "kpiOpenCases",
+				"widget-kpi-overdue": "kpiOverdue",
+				"widget-kpi-completed": "kpiCompleted",
+				"widget-kpi-my-tasks": "kpiMyTasks",
+				"widget-cases-by-status": "statusChart",
+				"widget-cases-by-type": "casesByType",
+				"widget-open-cases": "casesOverview",
+				"widget-overdue-cases": "overdueCases",
+				"widget-my-tasks": "myTasks",
+				"widget-deadline-alerts": "deadlineAlerts",
+				"widget-task-reminders": "taskReminders",
+				"widget-stalled-cases": "stalledCases"
+			}
 		},
 		{
 			"id": "MyWork",
@@ -487,11 +529,30 @@
 			"config": {
 				"register": "procest",
 				"schema": "case",
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "CaseDetail",
+						"type": "handler"
+					}
+				],
 				"columns": [
 					"identifier",
 					"title",
-					"caseType",
-					"status",
+					{
+						"key": "caseType",
+						"label": "Case type",
+						"formatter": "caseTypeName"
+					},
+					{
+						"key": "status",
+						"label": "Status",
+						"formatter": "statusTypeName"
+					},
 					"assignee",
 					"deadline"
 				],
@@ -640,6 +701,17 @@
 			"config": {
 				"register": "procest",
 				"schema": "bezwaar",
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "BezwaarDetail",
+						"type": "handler"
+					}
+				],
 				"columns": [
 					"case",
 					"status",
@@ -732,6 +804,7 @@
 					"status",
 					"publishedAt"
 				],
+				"showViewAction": false,
 				"actions": [
 					{
 						"id": "view",
@@ -845,6 +918,17 @@
 			"config": {
 				"register": "procest",
 				"schema": "task",
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "TaskDetail",
+						"type": "handler"
+					}
+				],
 				"columns": [
 					"title",
 					"case",
@@ -1060,7 +1144,16 @@
 						"label": "Steller"
 					}
 				],
+				"showViewAction": false,
 				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "VoorstelDetail",
+						"type": "handler"
+					},
 					{
 						"id": "reminder",
 						"label": "Herinnering sturen",
@@ -1100,6 +1193,17 @@
 			"config": {
 				"register": "procest",
 				"schema": "adviesAanvraag",
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "AdviceDetail",
+						"type": "handler"
+					}
+				],
 				"columns": [
 					"onderwerp",
 					"case",
@@ -1241,11 +1345,19 @@
 					"status",
 					"isActive"
 				],
+				"showViewAction": false,
 				"actions": [
 					"create",
 					"edit",
 					"delete",
-					"view"
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "LegesverordeningDetail",
+						"type": "handler"
+					}
 				],
 				"sidebar": {
 					"enabled": true,
@@ -1269,6 +1381,7 @@
 					"groupId",
 					"isActive"
 				],
+				"showViewAction": false,
 				"actions": [
 					{
 						"id": "provision",
@@ -1316,7 +1429,16 @@
 						"key": "isDefault"
 					}
 				],
+				"showViewAction": false,
 				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "ParafeerrouteDetail",
+						"type": "handler"
+					},
 					{
 						"key": "edit",
 						"type": "handler"
@@ -1361,7 +1483,16 @@
 						"key": "active"
 					}
 				],
+				"showViewAction": false,
 				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "WmsLayerDetail",
+						"type": "handler"
+					},
 					{
 						"key": "create",
 						"type": "handler"
@@ -1517,8 +1648,16 @@
 					"calculatedBy",
 					"calculatedAt"
 				],
+				"showViewAction": false,
 				"actions": [
-					"view",
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "LegesberekeningDetail",
+						"type": "handler"
+					},
 					"delete"
 				],
 				"sidebar": {
@@ -1711,11 +1850,19 @@
 					"contactEmail",
 					"active"
 				],
+				"showViewAction": false,
 				"actions": [
 					"create",
 					"edit",
 					"delete",
-					"view"
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "PartnerDetail",
+						"type": "handler"
+					}
 				],
 				"sidebar": {
 					"enabled": true,
@@ -1770,6 +1917,17 @@
 			"config": {
 				"register": "procest",
 				"schema": "casetransfer",
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "TransferDetail",
+						"type": "handler"
+					}
+				],
 				"columns": [
 					"case",
 					"fromOrg",
@@ -1837,11 +1995,19 @@
 					"isPublished",
 					"active"
 				],
+				"showViewAction": false,
 				"actions": [
 					"create",
 					"edit",
 					"delete",
-					"view"
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "AutomaticActionDetail",
+						"type": "handler"
+					}
 				],
 				"sidebar": {
 					"enabled": true,
@@ -1928,11 +2094,19 @@
 					"isActive",
 					"updatedAt"
 				],
+				"showViewAction": false,
 				"actions": [
 					"create",
 					"edit",
 					"delete",
-					"view"
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "WorkflowDefinitionDetail",
+						"type": "handler"
+					}
 				],
 				"sidebar": {
 					"enabled": true,
@@ -2053,8 +2227,16 @@
 						"key": "createdAt"
 					}
 				],
+				"showViewAction": false,
 				"actions": [
-					"view"
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "StatusRecordDetail",
+						"type": "handler"
+					}
 				],
 				"sidebar": {
 					"enabled": true,
@@ -2148,9 +2330,17 @@
 					"active",
 					"createdAt"
 				],
+				"showViewAction": false,
 				"actions": [
 					"create",
-					"view"
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "LhsMatrixDetail",
+						"type": "handler"
+					}
 				],
 				"sidebar": {
 					"enabled": true,
@@ -2189,8 +2379,16 @@
 						"key": "accuracyRadius"
 					}
 				],
+				"showViewAction": false,
 				"actions": [
-					"view",
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "LocationDetail",
+						"type": "handler"
+					},
 					"edit",
 					"delete"
 				],
@@ -2290,8 +2488,16 @@
 					"override",
 					"matrixVersion"
 				],
+				"showViewAction": false,
 				"actions": [
-					"view"
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "LhsRecommendationDetail",
+						"type": "handler"
+					}
 				],
 				"sidebar": {
 					"enabled": true,
@@ -2393,6 +2599,7 @@
 					"active",
 					"termEndsOn"
 				],
+				"showViewAction": false,
 				"actions": [
 					{
 						"id": "view",
@@ -2464,6 +2671,7 @@
 					"deadline",
 					"conclusion"
 				],
+				"showViewAction": false,
 				"actions": [
 					{
 						"id": "view",
@@ -2553,6 +2761,7 @@
 					"judgmentOutcome",
 					"cascadeAction"
 				],
+				"showViewAction": false,
 				"actions": [
 					{
 						"id": "view",

@@ -13,9 +13,9 @@
 
 		<NcLoadingIcon v-if="loading" :size="32" />
 
-		<CnEmptyState
+		<NcEmptyContent
 			v-else-if="advies.length === 0"
-			:name="t(appName, 'Geen adviezen aangevraagd')"
+			:title="t(appName, 'Geen adviezen aangevraagd')"
 			:description="t(appName, 'Vraag advies aan bij interne of externe partijen om hier te tonen.')" />
 
 		<ul v-else class="advies-panel__list">
@@ -74,8 +74,8 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
-import { CnEmptyState, CnStatusBadge } from '@conduction/nextcloud-vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
+import { CnStatusBadge } from '@conduction/nextcloud-vue'
 import {
 	dispatchReminder,
 	getAdviceForCase,
@@ -89,8 +89,8 @@ export default {
 	name: 'AdviesPanel',
 	components: {
 		NcButton,
+		NcEmptyContent,
 		NcLoadingIcon,
-		CnEmptyState,
 		CnStatusBadge,
 		AdviesAanvraagDialog,
 	},

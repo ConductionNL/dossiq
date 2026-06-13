@@ -97,7 +97,7 @@ class DeelzaakController extends Controller
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $parent = $this->deelzaakService->getParentCase(parentCaseUuid: $caseId);
+        $parent = $this->deelzaakService->getParentCase(childCaseUuid: $caseId);
         if ($parent === null) {
             return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
         }

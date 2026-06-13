@@ -114,6 +114,7 @@ import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
 
 import { useObjectStore } from '../../store/modules/object.js'
 import { useDeelzaakStore } from '../../store/modules/deelzaak.js'
+import { initializeStores } from '../../store/store.js'
 import { formatDate } from '../../utils/caseHelpers.js'
 
 export default {
@@ -175,6 +176,10 @@ export default {
 		},
 	},
 	async mounted() {
+		// Object types are registered by App.vue's async created(), which
+		// does not block child mounting — on a deep link this view can
+		// mount first, so wait for the registry before fetching.
+		await initializeStores()
 		await this.reload()
 	},
 	methods: {

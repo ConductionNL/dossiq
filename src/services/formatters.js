@@ -14,6 +14,45 @@
 // marker formatting.)
 
 import { translate as t } from '@nextcloud/l10n'
+import { useObjectStore } from '../store/modules/object.js'
+
+// Guard so each lookup collection is fetched at most once per page load.
+const lookupFetchStarted = {}
+
+/**
+ * Resolve a related object's UUID to its human label by reading the
+ * (reactive) objectStore collection for `type`. Fires a one-off
+ * fetchCollection when the collection is not loaded yet — the pinia
+ * state access is tracked by the rendering component, so the cell
+ * re-renders with the label once the collection arrives.
+ *
+ * @param {string} type Registered object type ('caseType' / 'statusType').
+ * @param {string} uuid The related object's UUID.
+ * @return {string} The label, or the raw UUID while unresolved.
+ */
+function lookupRelatedName(type, uuid) {
+	if (!uuid) return '-'
+	let store
+	try {
+		store = useObjectStore()
+	} catch {
+		return uuid
+	}
+	const collection = store.collections[type]
+	if (!collection && !lookupFetchStarted[type]) {
+		// Only fetch once the type is registered (initializeStores done).
+		if (store.objectTypeRegistry && store.objectTypeRegistry[type]) {
+			lookupFetchStarted[type] = true
+			store.fetchCollection(type, { _limit: 500 }).catch(() => {
+				lookupFetchStarted[type] = false
+			})
+		}
+	}
+	const hit = (collection || []).find(
+		(o) => o.id === uuid || (o['@self'] && o['@self'].id === uuid),
+	)
+	return hit ? (hit.title || hit.name || uuid) : uuid
+}
 
 const VOORSTEL_STATUS_LABELS = {
 	concept: 'Concept',
@@ -122,4 +161,20 @@ export default {
 		const days = Math.floor((Date.now() - new Date(updated).getTime()) / 86400000)
 		return `${days}d`
 	},
+
+	/**
+	 * Human label for a case's `caseType` UUID reference.
+	 *
+	 * @param {string} value The caseType UUID.
+	 * @return {string}
+	 */
+	caseTypeName: (value) => lookupRelatedName('caseType', value),
+
+	/**
+	 * Human label for a case's `status` UUID reference (statusType).
+	 *
+	 * @param {string} value The statusType UUID.
+	 * @return {string}
+	 */
+	statusTypeName: (value) => lookupRelatedName('statusType', value),
 }
