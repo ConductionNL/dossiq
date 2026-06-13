@@ -31,6 +31,13 @@
 					@change="onToggleCompleted">
 				{{ t('procest', 'Show completed') }}
 			</label>
+
+			<label v-if="hasSubstitutedWork" class="my-work__completed-toggle" data-testid="substituted-toggle">
+				<input
+					v-model="showSubstituted"
+					type="checkbox">
+				{{ t('procest', 'Show substituted work') }}
+			</label>
 		</div>
 
 		<!-- All tasks link -->
@@ -89,6 +96,7 @@
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="substitutedFor(item)" class="my-work__substituted-badge" data-testid="substituted-badge">{{ t('procest', 'waargenomen voor {name}', { name: substitutedFor(item) }) }}</span>
 						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
@@ -122,6 +130,7 @@
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="substitutedFor(item)" class="my-work__substituted-badge" data-testid="substituted-badge">{{ t('procest', 'waargenomen voor {name}', { name: substitutedFor(item) }) }}</span>
 						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
@@ -155,6 +164,7 @@
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="substitutedFor(item)" class="my-work__substituted-badge" data-testid="substituted-badge">{{ t('procest', 'waargenomen voor {name}', { name: substitutedFor(item) }) }}</span>
 						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
@@ -188,6 +198,7 @@
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="substitutedFor(item)" class="my-work__substituted-badge" data-testid="substituted-badge">{{ t('procest', 'waargenomen voor {name}', { name: substitutedFor(item) }) }}</span>
 						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
@@ -216,6 +227,7 @@
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="substitutedFor(item)" class="my-work__substituted-badge" data-testid="substituted-badge">{{ t('procest', 'waargenomen voor {name}', { name: substitutedFor(item) }) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
 					<div class="my-work__deadline">
@@ -235,6 +247,8 @@ import ParafeerInbox from './voorstellen/components/ParafeerInbox.vue'
 import { useObjectStore } from '../store/modules/object.js'
 import { getGroupedMyWorkItems } from '../utils/dashboardHelpers.js'
 import { fetchTasksForCases } from '../services/taskApi.js'
+import { fetchSubstitutedWork } from '../services/substitutionApi.js'
+import { buildSubstitutedMap, mergeSubstitutedCases, substitutedFor as resolveSubstitutedFor, applySubstitutedFilter } from '../utils/substitutionHelpers.js'
 
 export default {
 	name: 'MyWork',
@@ -251,11 +265,15 @@ export default {
 			loading: true,
 			activeTab: 'all',
 			showCompleted: false,
+			showSubstituted: true,
 			cases: [],
 			normalizedTasks: [],
 			completedCases: [],
 			completedTasks: [],
 			caseTypeMap: {},
+			// Map of "type:id" -> absentee name for items routed via substitution.
+			substitutedById: {},
+			hasSubstitutedWork: false,
 		}
 	},
 	computed: {
@@ -301,13 +319,21 @@ export default {
 		},
 		/** @spec openspec/changes/my-work/tasks.md */
 		filteredGroups() {
-			if (this.activeTab === 'all') return this.grouped
+			const subFilter = (arr) => applySubstitutedFilter(arr, this.substitutedById, this.showSubstituted)
+			if (this.activeTab === 'all') {
+				return {
+					overdue: subFilter(this.grouped.overdue),
+					dueThisWeek: subFilter(this.grouped.dueThisWeek),
+					upcoming: subFilter(this.grouped.upcoming),
+					noDeadline: subFilter(this.grouped.noDeadline),
+				}
+			}
 			const filterType = this.activeTab === 'cases' ? 'case' : 'task'
 			return {
-				overdue: this.grouped.overdue.filter(i => i.type === filterType),
-				dueThisWeek: this.grouped.dueThisWeek.filter(i => i.type === filterType),
-				upcoming: this.grouped.upcoming.filter(i => i.type === filterType),
-				noDeadline: this.grouped.noDeadline.filter(i => i.type === filterType),
+				overdue: subFilter(this.grouped.overdue.filter(i => i.type === filterType)),
+				dueThisWeek: subFilter(this.grouped.dueThisWeek.filter(i => i.type === filterType)),
+				upcoming: subFilter(this.grouped.upcoming.filter(i => i.type === filterType)),
+				noDeadline: subFilter(this.grouped.noDeadline.filter(i => i.type === filterType)),
 			}
 		},
 		/** @spec openspec/changes/my-work/tasks.md */
@@ -373,11 +399,46 @@ export default {
 					console.warn('Failed to fetch CalDAV tasks, showing cases only:', err)
 					this.normalizedTasks = []
 				}
+
+				// Substitution integration: append the absent handlers' work that
+				// is routed to the current user as their waarnemer. The backend
+				// filters through the substitute's own OR RBAC, so anything here
+				// is already readable to the user.
+				await this.fetchSubstitutedWork()
 			} catch (err) {
 				console.error('Failed to fetch my work data:', err)
 			} finally {
 				this.loading = false
 			}
+		},
+		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
+		async fetchSubstitutedWork() {
+			try {
+				const work = await fetchSubstitutedWork()
+				const subCases = Array.isArray(work.cases) ? work.cases : []
+				const subTasks = Array.isArray(work.tasks) ? work.tasks : []
+				this.hasSubstitutedWork = (subCases.length > 0 || subTasks.length > 0)
+
+				this.substitutedById = buildSubstitutedMap(subCases, subTasks)
+				this.cases = mergeSubstitutedCases(this.cases, subCases)
+
+				// Fetch CalDAV tasks for the substituted cases so they surface.
+				try {
+					const fetched = await fetchTasksForCases(subCases)
+					this.normalizedTasks = [...this.normalizedTasks, ...fetched]
+				} catch (err) {
+					console.warn('Failed to fetch substituted CalDAV tasks:', err)
+				}
+			} catch (err) {
+				// Substitution is additive; never break My Work on failure.
+				console.warn('Failed to fetch substituted work:', err)
+				this.substitutedById = {}
+				this.hasSubstitutedWork = false
+			}
+		},
+		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
+		substitutedFor(item) {
+			return resolveSubstitutedFor(this.substitutedById, item)
 		},
 		/** @spec openspec/changes/my-work/tasks.md */
 		async onToggleCompleted() {
@@ -634,6 +695,16 @@ export default {
 	font-size: 11px;
 	color: var(--color-text-maxcontrast);
 	font-style: italic;
+}
+
+.my-work__substituted-badge {
+	font-size: 11px;
+	color: var(--color-primary-element);
+	font-weight: 600;
+	background: var(--color-primary-element-light);
+	border-radius: var(--border-radius-pill);
+	padding: 1px 8px;
+	width: fit-content;
 }
 
 /* All tasks link */
