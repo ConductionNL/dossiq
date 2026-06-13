@@ -98,6 +98,11 @@ export default {
 	watch: {
 		document: {
 			immediate: true,
+			/**
+			 * Refetch versions when the active document changes.
+			 *
+			 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+			 */
 			handler() {
 				this.fetchVersions()
 			},

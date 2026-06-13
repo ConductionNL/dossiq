@@ -70,6 +70,7 @@ class ZaakdossierService
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly ZgwDocumentService $documentService,
+        private readonly InformatieobjectAccessGuard $accessGuard,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -106,9 +107,15 @@ class ZaakdossierService
             throw new \RuntimeException('informatieobjecttype is required');
         }
 
-        $classification = (string) ($metadata['vertrouwelijkheidaanduiding'] ?? '');
+        $defaultClassification = $this->resolveDefaultClassification($type);
+        $classification        = (string) ($metadata['vertrouwelijkheidaanduiding'] ?? '');
         if ($classification === '') {
-            $classification = $this->resolveDefaultClassification($type);
+            $classification = $defaultClassification;
+        } else if ($this->accessGuard->isClassificationAllowed($defaultClassification, $classification) === false) {
+            // REQ-ZAK-003d: a user may only override to a MORE restrictive level.
+            throw new \InvalidArgumentException(
+                'Classification may not be less restrictive than the document type default'
+            );
         }
 
         $infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');

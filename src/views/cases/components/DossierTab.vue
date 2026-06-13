@@ -204,6 +204,11 @@ export default {
 	watch: {
 		caseId: {
 			immediate: true,
+			/**
+			 * Reload the dossier and type catalog when the case changes.
+			 *
+			 * @spec openspec/changes/document-zaakdossier/tasks.md#T06
+			 */
 			handler() {
 				this.fetchDossier()
 				this.fetchTypes()
