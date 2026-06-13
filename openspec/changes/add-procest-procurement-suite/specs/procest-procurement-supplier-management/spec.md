@@ -7,7 +7,7 @@
 
 ## ADDED Requirements
 
-### REQ-SUP-001: The system SHALL store suppliers as an OpenRegister-managed `Supplier` register
+### Requirement: REQ-SUP-001 — The system SHALL store suppliers as an OpenRegister-managed `Supplier` register
 
 Suppliers MUST be declared as a register in
 `lib/Settings/procest_register.json` per ADR-024, with the `Supplier`
@@ -58,7 +58,7 @@ suppliers to be qualifiable + auditable + excludable; the schema's
 - **THEN** no such classes SHALL exist; all supplier data flows
   through the OR object API.
 
-### REQ-SUP-002: Supplier onboarding SHALL be modelled as a procest case-type, reusing existing case-management machinery
+### Requirement: REQ-SUP-002 — Supplier onboarding SHALL be modelled as a procest case-type, reusing existing case-management machinery
 
 Procest MUST seed a `caseType` named `supplier-onboarding` (Schema.org
 `schema:Project`) in `lib/Settings/procest_register.json`. The case
@@ -100,7 +100,7 @@ supplier-onboarding` — see REQ-SUP-003.
   related-objects sidebar (consumed from OR's `object-interactions`
   per ADR-022).
 
-### REQ-SUP-003: The `Supplier` lifecycle SHALL be declarative per ADR-031
+### Requirement: REQ-SUP-003 — The `Supplier` lifecycle SHALL be declarative per ADR-031
 
 The `Supplier` schema MUST declare an `x-openregister-lifecycle`
 block with these states and transitions:
@@ -147,7 +147,9 @@ The lifecycle is the only state machine.
 - **THEN** the transition MUST fail with a guard violation; the
   audit trail MUST record the failed attempt.
 
-### REQ-SUP-004: Supplier qualification SHALL be a `SupplierQualification` register backed by configurable questionnaires
+### Requirement: REQ-SUP-004 — Supplier qualification SHALL be a `SupplierQualification` register backed by configurable questionnaires
+
+Supplier qualification SHALL be modelled as a dedicated register, not as Supplier fields.
 
 Qualification activities (KYC, financial-health, references, ISO,
 SBB certificates, CO2-prestatieladder) MUST be modelled as a
@@ -191,7 +193,9 @@ hard-coded enums (ADR-031).
   supplier's primary contact AND to the procurement officer assigned
   to any open contract with this supplier.
 
-### REQ-SUP-005: Supplier performance SHALL be derived via `x-openregister-aggregations`, not authored as a service
+### Requirement: REQ-SUP-005 — Supplier performance SHALL be derived via `x-openregister-aggregations`, not authored as a service
+
+Supplier performance SHALL be derived via declarative aggregations and MUST NOT be authored as a PHP service.
 
 Supplier performance scorecards (on-time delivery, defect rate,
 SLA adherence) MUST be expressed as aggregations on existing OR
@@ -224,7 +228,9 @@ calculated field reads aggregations declared at the supplier-level:
   `class *SupplierScorecardService*`
 - **THEN** no such classes SHALL exist.
 
-### REQ-SUP-006: Supplier portal access SHALL flow through OR RBAC, not a parallel auth surface
+### Requirement: REQ-SUP-006 — Supplier portal access SHALL flow through OR RBAC, not a parallel auth surface
+
+Supplier portal access SHALL flow through OpenRegister RBAC; procest MUST NOT define a parallel auth surface.
 
 External supplier users (representatives logging in to update profile,
 upload certificates, accept POs) MUST be modelled as Nextcloud user
@@ -263,7 +269,7 @@ block restricting:
 - **WHEN** they PATCH `S1.qualificationLevel: "preferred"`
 - **THEN** the save MUST fail with a per-field RBAC violation.
 
-### REQ-SUP-007: Supplier notifications SHALL be declarative per ADR-031
+### Requirement: REQ-SUP-007 — Supplier notifications SHALL be declarative per ADR-031
 
 The `Supplier` and `SupplierQualification` schemas MUST declare
 `x-openregister-notifications` blocks covering:
@@ -291,7 +297,7 @@ this is the exact notification anti-pattern.
   `2026-07-02`, and `2026-07-25` (90/30/7 days prior), each carrying
   the same template body with adjusted urgency.
 
-### REQ-SUP-008: Supplier registers SHALL be reachable through the procest manifest navigation
+### Requirement: REQ-SUP-008 — Supplier registers SHALL be reachable through the procest manifest navigation
 
 `src/manifest.json` MUST declare:
 

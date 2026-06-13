@@ -7,7 +7,7 @@
 
 ## ADDED Requirements
 
-### REQ-PCC-001: Drempelbedragen SHALL be a `ProcurementThreshold` register, not hardcoded enums
+### Requirement: REQ-PCC-001 — Drempelbedragen SHALL be a `ProcurementThreshold` register, not hardcoded enums
 
 EU + nationale drempelbedragen (procurement thresholds) MUST be
 seeded as a `ProcurementThreshold` register, not as constants in PHP.
@@ -42,7 +42,7 @@ values.
 - **THEN** new tender procedure recommendations MUST consult the new
   thresholds without a procest code change.
 
-### REQ-PCC-002: Procedure-type recommendation SHALL be a declarative calculation on the Tender register
+### Requirement: REQ-PCC-002 — Procedure-type recommendation SHALL be a declarative calculation on the Tender register
 
 The `Tender` schema MUST declare an `x-openregister-calculations`
 field `recommendedProcedureType` that, given `estimatedValue` +
@@ -75,7 +75,9 @@ to the compliance officer.
   dispatched to the `procurement-compliance-officer` group with the
   justification text.
 
-### REQ-PCC-003: UEA SHALL be modelled as a `UeaDeclaration` register, not a PDF blob
+### Requirement: REQ-PCC-003 — UEA SHALL be modelled as a `UeaDeclaration` register, not a PDF blob
+
+The UEA SHALL be modelled as a structured `UeaDeclaration` register; the PDF rendering MUST be a docudesk artifact, not the canonical record.
 
 The Uniform European Self-Declaration (UEA / ESPD, Annex 2 of EU
 Verordening 2016/7) MUST be modelled as a structured `UeaDeclaration`
@@ -109,7 +111,9 @@ fields treated as `schema:Dataset` payload.
 - **THEN** all three tenders' EVA spec MUST be able to verify the
   same UEA record — without a new declaration per tender.
 
-### REQ-PCC-004: EML-bestand (Eigen Verklaring) SHALL be modelled as a downloadable export from the UEA register
+### Requirement: REQ-PCC-004 — EML-bestand (Eigen Verklaring) SHALL be modelled as a downloadable export from the UEA register
+
+The EML-bestand SHALL be a declarative export derived from the `UeaDeclaration` register; procest MUST NOT author an export service.
 
 For NL-domestic operators using the older `Eigen Verklaring`
 mechanism (still accepted under Aw 2012 art. 2.86 for sub-threshold),
@@ -125,7 +129,7 @@ also acceptable), NOT a `EmlBestandExportService`.
 - **THEN** the resulting XML MUST contain the structured field
   payload; the procest call path MUST contain no XML-templating PHP.
 
-### REQ-PCC-005: Compliance KPI dashboard SHALL be declarative widgets, not a `ComplianceReportService`
+### Requirement: REQ-PCC-005 — Compliance KPI dashboard SHALL be declarative widgets, not a `ComplianceReportService`
 
 The compliance officer dashboard MUST be declared as
 `x-openregister-widgets` blocks on the relevant registers covering:
@@ -155,7 +159,7 @@ per ADR-031 this is the aggregation + widget anti-pattern.
 - **THEN** the tender MUST appear in `awards-without-publication`
   with the days-overdue field calculated declaratively.
 
-### REQ-PCC-006: Compliance notifications SHALL be declarative per ADR-031
+### Requirement: REQ-PCC-006 — Compliance notifications SHALL be declarative per ADR-031
 
 The relevant schemas MUST declare `x-openregister-notifications`
 covering:
@@ -179,7 +183,7 @@ Procest MUST NOT author `ComplianceNotificationService`.
   dispatched (idempotency MUST prevent re-fire on subsequent edits
   to unrelated fields).
 
-### REQ-PCC-007: Compliance pages SHALL be reachable through the procest manifest navigation
+### Requirement: REQ-PCC-007 — Compliance pages SHALL be reachable through the procest manifest navigation
 
 `src/manifest.json` MUST declare:
 
