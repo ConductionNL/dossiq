@@ -1,13 +1,19 @@
-# Spec: procest-procurement-publication-platform
+---
+status: specified
+status-note: "Synced 2026-06-14 from archived consolidation change add-procest-procurement-suite (kind:config). SPEC-COMPLETE; code chain pending (ADR-032). Depends on the openconnector TED/TenderNed source rows from add-openconnector-eu-procurement-sources."
+---
 
-**Status:** proposed
-**Scope:** procest
-**Tier:** procurement-suite
-**Depends on:** procest-procurement-tender-management (Tender ref), procest-procurement-evaluation-award (award decision ref), procest-procurement-system-integration (PSI slots for transport), openregister (lifecycle + audit + retention per ADR-022), openconnector (TED, TenderNed, national platforms), docudesk (publication renderings)
+# procest-procurement-publication-platform Specification
 
-## ADDED Requirements
-
-### REQ-PPP-001: Publication notices SHALL be modelled as a `PublicationNotice` register, separate from `Tender`
+## Purpose
+Define TED/OJEU + national notice publication for procest: notices as a
+`PublicationNotice` register, eForms standard-form codes as a
+`PublicationTemplate` register, declarative notice lifecycle, declarative
+material-change (wezenlijke-wijziging) detection with re-publication
+recommendation, publication via PSI slots — anchored in EU 2014/24 +
+Verordening 2019/1780 (eForms) + Aw 2012.
+## Requirements
+### Requirement: REQ-PPP-001 — Publication notices SHALL be modelled as a `PublicationNotice` register, separate from `Tender`
 
 A publication on TED, TenderNed, or a national platform MUST be a
 distinct `PublicationNotice` record (Schema.org `schema:PublicationEvent`)
@@ -54,7 +60,9 @@ per Aw 2012 art. 2.108 + 2.130.
 - **THEN** no such classes SHALL exist; all notice data flows through
   the OR object API.
 
-### REQ-PPP-002: TED eForms standard-form codes SHALL be a `PublicationTemplate` register, not hardcoded enums
+### Requirement: REQ-PPP-002 — TED eForms standard-form codes SHALL be a `PublicationTemplate` register, not hardcoded enums
+
+TED eForms standard-form codes SHALL be seeded as a `PublicationTemplate` register; procest MUST NOT hardcode them as enums.
 
 The set of TED eForms / legacy F01–F25 standard form codes — each
 with field schema, mandatory-field rules, allowed CPV scope, allowed
@@ -83,7 +91,7 @@ Schema.org annotation: `schema:CreativeWorkSeries`.
 - **THEN** OR's schema validation MUST reject the payload citing the
   missing block.
 
-### REQ-PPP-003: The `PublicationNotice` lifecycle SHALL be declarative per ADR-031
+### Requirement: REQ-PPP-003 — The `PublicationNotice` lifecycle SHALL be declarative per ADR-031
 
 The `PublicationNotice` schema MUST declare an
 `x-openregister-lifecycle` block:
@@ -107,7 +115,9 @@ transition*` methods.
 - **THEN** the lifecycle MUST transition to `confirmed` and
   `externalRef` + `publishedAt` MUST be set from the event payload.
 
-### REQ-PPP-004: Material changes to a published tender SHALL be a declarative `wezenlijke-wijziging` calculation, surfacing a re-publication recommendation
+### Requirement: REQ-PPP-004 — Material changes to a published tender SHALL be a declarative `wezenlijke-wijziging` calculation, surfacing a re-publication recommendation
+
+Material changes SHALL be surfaced by a declarative calculation; procest MUST NOT author a material-change detector service.
 
 When fields on a published `Tender` change (CPV codes, estimated
 value moving past a threshold, procedure type, award criteria
@@ -140,7 +150,7 @@ procedure (case C-454/06 *pressetext*).
 - **THEN** `isMaterialChange` MUST resolve to `false`; no recommendation
   fires.
 
-### REQ-PPP-005: Publication SHALL flow through the resolved PSI slot, never a hand-rolled TED or TenderNed client
+### Requirement: REQ-PPP-005 — Publication SHALL flow through the resolved PSI slot, never a hand-rolled TED or TenderNed client
 
 The `draft → submitted` transition MUST dispatch the payload via the
 openconnector source resolved from `targetPlatformSlot`. Procest MUST
@@ -166,7 +176,7 @@ registry anti-pattern.
   `tenderned-tenders` source with the payload; procest's code path
   MUST not invoke any HTTP client directly.
 
-### REQ-PPP-006: Publication pages SHALL be reachable through the procest manifest navigation
+### Requirement: REQ-PPP-006 — Publication pages SHALL be reachable through the procest manifest navigation
 
 `src/manifest.json` MUST declare:
 
@@ -192,3 +202,4 @@ renderers per ADR-024 Tier-4.
   `/index.php/apps/procest/publications?targetPlatform=ted-ojeu`
 - **THEN** the page MUST render via `CnIndexPage` showing only TED
   notices — no procest-side filter controller invoked.
+

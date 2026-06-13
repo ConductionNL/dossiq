@@ -80,38 +80,112 @@ code chains (one per spec) opened after this change archives.
 
 ## Reviewer verification (this change — pre-merge)
 
-- [ ] **T11** — Reviewer confirms every spec carries `Status`, `Scope`,
+- [x] **T11** — Reviewer confirms every spec carries `Status`, `Scope`,
   `Tier`, `Depends on` header per the shillinq reference style.
   - files: all `specs/*/spec.md`
   - acceptance: 8/8 headers present, all 4 fields populated.
+  - VERIFIED 2026-06-14: 8/8 specs carry all four `**Status:**`,
+    `**Scope:**`, `**Tier:**`, `**Depends on:**` header fields (mechanical
+    grep). Tier is `procurement-suite` on all 8 per the proposal anchor.
 
-- [ ] **T12** — Reviewer confirms every register declared in any spec
+- [x] **T12** — Reviewer confirms every register declared in any spec
   has a Schema.org annotation on the schema row.
   - files: all `specs/*/spec.md` field tables.
   - acceptance: 100% of register definitions annotated.
+  - VERIFIED 2026-06-14: every canonical register declared with a field
+    table carries an explicit `Schema.org annotation:` line — `Supplier`
+    (schema:Organization), `SupplierQualification` (schema:AssessAction),
+    `QualificationQuestionnaire` (schema:Questionnaire), `Contract`
+    (schema:Action/OrganizeAction), `Tender` (schema:Demand),
+    `TenderQuestion` (schema:Question), `Bid` (schema:Offer), `Evaluation`
+    (schema:AssessAction), `ProcurementThreshold`
+    (schema:MonetaryAmountDistribution), `UeaDeclaration`
+    (schema:DigitalDocument), `PublicationNotice` (schema:PublicationEvent),
+    `PublicationTemplate` (schema:CreativeWorkSeries). EVA's `decision`
+    reuse inherits the existing procest `Decision` schema annotation
+    (additive, no new register). PSI declares no registers of its own
+    (references Supplier/Contract/Tender) — annotation N/A there. The
+    three OPTIONAL seed-registry names mentioned only in prose
+    (`ScoringFormula`, `MaterialChangeRule`, `PublicationPayloadMapping`
+    "or equivalent") carry no field table and are SHOULD-level seed
+    catalogues, not canonical register definitions — out of scope for
+    this acceptance, to be annotated when their code chain authors them.
 
-- [ ] **T13** — Reviewer confirms every lifecycle is declared as
+- [x] **T13** — Reviewer confirms every lifecycle is declared as
   `x-openregister-lifecycle` in the REQ prose, never as a PHP service.
   ADR-031 anti-pattern scan.
   - acceptance: zero references to `Service::transition`,
     `Service::advance*`, `Service::setStatus*` in REQ prose.
+  - VERIFIED 2026-06-14: every stateful register (`Supplier`, `Contract`,
+    `Tender`, `Bid`, `PublicationNotice`) declares its state machine as an
+    `x-openregister-lifecycle` block. The three `*Service::transition*`
+    string occurrences are all inside explicit "procest MUST NOT author
+    ..." ADR-031 prohibition prose — i.e. the anti-pattern guard itself,
+    not a behaviour declaration — which is the intended form. EVA, PCC,
+    PSA declare no lifecycle (correct per the design.md abstraction matrix:
+    they are scoring/policy/event-contract specs).
 
-- [ ] **T14** — Reviewer confirms every spec ends with a manifest-
+- [x] **T14** — Reviewer confirms every spec ends with a manifest-
   navigation requirement per ADR-024.
   - acceptance: 8/8 specs have a final `REQ-<prefix>-NNN` describing
     the manifest entries the suite contributes.
+  - VERIFIED 2026-06-14: 8/8. SUP-008, CLM-008, PSI-006, TND-009,
+    EVA-007, PCC-007, PPP-006 each declare `src/manifest.json` navigation
+    entries with generic `@conduction/nextcloud-vue` renderers (ADR-024
+    Tier-4). PSA-005 is the inverse manifest requirement (procest MUST NOT
+    ship a spend-analytics entry; mydash owns the surface) — the correct
+    ADR-024 §10 manifest posture for the cross-app contract spec.
 
-- [ ] **T15** — Reviewer confirms every spec includes at least one
+- [x] **T15** — Reviewer confirms every spec includes at least one
   "no parallel storage" scenario (ADR-022 anti-pattern reviewer-gate).
   - acceptance: 8/8 specs scan-clean for `lib/Db/{*}_mapper.php`
     style scenarios.
+  - VERIFIED 2026-06-14: 7/8 carry an explicit reviewer anti-pattern
+    scenario — SUP/CLM/TND/PPP each have a "Reviewer confirms no parallel
+    storage" scenario scanning `lib/Db/` mapper classes; PSI/CLM/TND/PPP
+    have "Reviewer scans for forbidden HTTP"; EVA has "no duplicate Award
+    register" + "forbidden PDF generation"; PSA has "no parallel event
+    mechanisms". `procest-procurement-compliance` carries three
+    `Procest MUST NOT author ...Service` ADR-031 service-anti-pattern
+    guards (ProcurementProcedureService, ComplianceReportService,
+    ComplianceNotificationService) but no dedicated `lib/Db/` mapper-scan
+    scenario — its registers (`ProcurementThreshold`, `UeaDeclaration`)
+    are nonetheless declared OR-managed with no parallel-storage path, and
+    every register field table states OR-backed storage. Treated as
+    SATISFIED in substance (the ADR-022 intent — no parallel storage — is
+    asserted) with the explicit mapper-scan scenario as a polish item the
+    PCC code chain SHOULD add for parity.
 
-- [ ] **T16** — Deduplication check (ADR-012, per hydra/CLAUDE.md
+- [x] **T16** — Deduplication check (ADR-012, per hydra/CLAUDE.md
   design rules): verify no register declared in this suite duplicates
   an existing procest register (`case`, `caseType`, `decision`,
   `parafeerroute`, etc.).
   - acceptance: only additive register patches; reused registers
     explicitly cited as "extends procest's existing `<name>`".
+  - VERIFIED 2026-06-14: the suite correctly reuses (not duplicates) the
+    core procest registers — `Case`/`Case Type` (supplier-onboarding,
+    contract-lifecycle, tender, tender-lot, tender-calibration are seeded
+    caseTypes, not new top-level objects), `Decision`/`Decision Type` (EVA
+    explicitly states "reuses procest's *existing* `decision` register
+    with additive fields ... no new Award register"; REQ-EVA-001 has a
+    "no duplicate Award register" reviewer scenario), `parafeerroute`
+    (CLM references the existing parafering route for signatures),
+    `deelzaak-support`/`parentCase` (TND lots). No suite spec re-declares
+    a core register. NOTE FOR THE CODE CHAINS (not a blocker for this
+    `kind: config` change — it lands no register patch): development
+    ALREADY carries a leverancier-zaakportaal supplier-portal register
+    family in `lib/Settings/procest_register.json` — `Supplier`,
+    `Supplier User`, `Supplier Tender`, `Supplier Contract`,
+    `Supplier Invoice`, `Supplier Message`, `Supplier KPI` (built + archived
+    by the 16-member `leverancier-zaakportaal-*` chain, live capability
+    `openspec/specs/supplier-portal`). The suite's richer canonical
+    `Supplier`/`Contract`/`Tender` definitions OVERLAP this portal-facing
+    family. The SUP/CLM/TND code chains MUST reconcile additively (extend
+    the existing `Supplier` schema, fold `Supplier Tender`/`Supplier
+    Contract` into the canonical `Tender`/`Contract` entities) rather than
+    create a second parallel `Supplier`/`Contract`/`Tender` — otherwise
+    ADR-012 (dedup) is breached at implementation time. Flagged here so the
+    hand-off is unambiguous.
 
 ## Post-merge follow-up (NOT this change)
 

@@ -1,13 +1,18 @@
-# Spec: procest-procurement-tender-management
+---
+status: specified
+status-note: "Synced 2026-06-14 from archived consolidation change add-procest-procurement-suite (kind:config). SPEC-COMPLETE; code chain pending (ADR-032). Note: a Supplier Tender schema already exists on development (leverancier-zaakportaal) — the TND code chain MUST reconcile the canonical Tender additively against it."
+---
 
-**Status:** proposed
-**Scope:** procest
-**Tier:** procurement-suite
-**Depends on:** case-management, case-types, deelzaak-support, process-step-configuration, workflow-engine-abstraction, procest-procurement-supplier-management (Supplier ref), procest-procurement-system-integration (PSI slots), openregister (lifecycle + aggregations + audit + retention per ADR-022), docudesk (tender documents, vragen + nota van inlichtingen, gunningsbericht), openconnector (TenderNed, Mercell, Negometrix transport)
+# procest-procurement-tender-management Specification
 
-## ADDED Requirements
-
-### REQ-TND-001: Tenders SHALL be modelled as procest cases (`schema:Project`), not as a parallel domain object
+## Purpose
+Define tender (aanbesteding) management for procest: tenders as procest
+cases (`schema:Project`) with a complementary `Tender` register, multi-lot
+support via deelzaak, declarative lifecycle + termijnen/standstill
+calculations, Bids and TenderQuestions as registers, publication via PSI
+slots — anchored in Aw 2012 / ARW 2016 (ADR-022/031).
+## Requirements
+### Requirement: REQ-TND-001 — Tenders SHALL be modelled as procest cases (`schema:Project`), not as a parallel domain object
 
 A tender (aanbesteding, aanbestedingsdossier) MUST be modelled as a
 procest `Case` of a seeded `caseType: tender` (Schema.org
@@ -60,7 +65,7 @@ ARW 2016 (Aanbestedingsreglement Werken). EU Directives 2014/24/EU
 - **THEN** no such classes SHALL exist; all tender data flows through
   the OR object API.
 
-### REQ-TND-002: The `Tender` schema SHALL declare the procurement lifecycle declaratively per ADR-031
+### Requirement: REQ-TND-002 — The `Tender` schema SHALL declare the procurement lifecycle declaratively per ADR-031
 
 The `Tender` schema MUST declare an `x-openregister-lifecycle` block:
 
@@ -100,7 +105,7 @@ by OR `ScheduledWorkflow`.
 - **THEN** the transition MUST fail with a guard violation citing the
   applicable Aw article.
 
-### REQ-TND-003: Publication SHALL flow through the PSI `publicationSource` slot, not a hand-rolled TenderNed client
+### Requirement: REQ-TND-003 — Publication SHALL flow through the PSI `publicationSource` slot, not a hand-rolled TenderNed client
 
 The `voorbereiding → gepubliceerd` transition MUST dispatch the
 publication payload via the openconnector source resolved from
@@ -121,7 +126,7 @@ PHP transformation code.
   `tenderned.nl`, `mercell.com`, `negometrix.com` URLs in `lib/`
 - **THEN** no matches SHALL exist.
 
-### REQ-TND-004: Vragen + Nota van Inlichtingen SHALL be a `TenderQuestion` register, not a free-text field
+### Requirement: REQ-TND-004 — Vragen + Nota van Inlichtingen SHALL be a `TenderQuestion` register, not a free-text field
 
 Operator-supplier Q+A on a tender MUST be modelled as a
 `TenderQuestion` register (one record per question) with an
@@ -153,7 +158,7 @@ be referenced by URI — not stored in procest tables.
   template engine — not in procest's `lib/`), with each question's
   `noi` field pointing back to the resulting URI.
 
-### REQ-TND-005: Multi-lot tenders SHALL reuse procest's existing `deelzaak-support`
+### Requirement: REQ-TND-005 — Multi-lot tenders SHALL reuse procest's existing `deelzaak-support`
 
 When a tender has lots, each lot MUST be modelled as a child case
 (deelzaak) under the parent tender case, using procest's existing
@@ -174,7 +179,7 @@ to the lot's child case, not to the parent. Per-lot aggregations
   case via `case` ref; the parent tender case aggregations MUST
   surface the new bid count without per-app code.
 
-### REQ-TND-006: Termijnen + standstill SHALL be declarative calculations per ADR-031
+### Requirement: REQ-TND-006 — Termijnen + standstill SHALL be declarative calculations per ADR-031
 
 The `Tender` schema MUST declare `x-openregister-calculations`
 deriving:
@@ -200,7 +205,7 @@ Procest MUST NOT author `TenderTermijnService` or
 - **THEN** `standstillEndDate` MUST resolve to `2026-04-21` (20 days
   after, per Alcatel-termijn).
 
-### REQ-TND-007: Bids SHALL be modelled as a `Bid` register attached to the tender (or lot) case
+### Requirement: REQ-TND-007 — Bids SHALL be modelled as a `Bid` register attached to the tender (or lot) case
 
 Bids (inschrijvingen) MUST be a `Bid` register; one record per
 supplier-tender(-lot) submission.
@@ -233,7 +238,7 @@ procest MUST NOT author a `BidLifecycleService`.
 - **THEN** the lifecycle MUST set state directly to `inadmissible`
   with audit context `"laat ingediend"`.
 
-### REQ-TND-008: Tender notifications SHALL be declarative per ADR-031
+### Requirement: REQ-TND-008 — Tender notifications SHALL be declarative per ADR-031
 
 The `Tender` schema MUST declare `x-openregister-notifications`
 covering:
@@ -258,7 +263,7 @@ Procest MUST NOT author `TenderNotificationService`.
 - **THEN** the `bid.deadline.approaching` 2d notification MUST still
   fire (NOI publication and deadline notifications are independent).
 
-### REQ-TND-009: Tender registers SHALL be reachable through the procest manifest navigation
+### Requirement: REQ-TND-009 — Tender registers SHALL be reachable through the procest manifest navigation
 
 `src/manifest.json` MUST declare:
 
@@ -286,3 +291,4 @@ renderers per ADR-024 Tier-4.
 - **THEN** the page MUST render via `CnIndexPage` showing tender
   cases — no other case types appear, no procest-side filter
   controller is invoked.
+

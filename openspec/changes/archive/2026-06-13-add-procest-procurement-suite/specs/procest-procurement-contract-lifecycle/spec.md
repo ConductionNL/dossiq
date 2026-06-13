@@ -7,7 +7,7 @@
 
 ## ADDED Requirements
 
-### REQ-CLM-001: The system SHALL store contracts as an OpenRegister-managed `Contract` register
+### Requirement: REQ-CLM-001 — The system SHALL store contracts as an OpenRegister-managed `Contract` register
 
 Contracts MUST be declared as a register in
 `lib/Settings/procest_register.json` per ADR-024, with the `Contract`
@@ -63,7 +63,7 @@ cap at 4 years unless justified.
 - **THEN** no such classes SHALL exist; all contract data flows
   through the OR object API.
 
-### REQ-CLM-002: Each contract SHALL be governed by a `contract-lifecycle` case-type
+### Requirement: REQ-CLM-002 — Each contract SHALL be governed by a `contract-lifecycle` case-type
 
 Procest MUST seed a `caseType` named `contract-lifecycle` (Schema.org
 `schema:Project`). Every contract MUST have an associated case
@@ -87,7 +87,7 @@ customise per organisation via the existing visual workflow editor.
   the workflow template bound; the contract's `caseId` MUST be set
   before the contract save returns.
 
-### REQ-CLM-003: The `Contract` lifecycle SHALL be declarative per ADR-031
+### Requirement: REQ-CLM-003 — The `Contract` lifecycle SHALL be declarative per ADR-031
 
 The `Contract` schema MUST declare an `x-openregister-lifecycle`
 block:
@@ -130,7 +130,7 @@ external systems" — not by a per-app `OverdueContractsJob`.
 - **THEN** the contract MUST transition to `pending-renewal` AND
   three notifications (REQ-CLM-006) MUST fire before `2026-12-31`.
 
-### REQ-CLM-004: Signature collection SHALL be delegated to OR's e-signature integration (ADR-019)
+### Requirement: REQ-CLM-004 — Signature collection SHALL be delegated to OR's e-signature integration (ADR-019)
 
 The `awaiting-signature → signed` transition MUST consume an
 OpenConnector source named `e-signature` (ADR-019 pluggable
@@ -165,7 +165,9 @@ e-signature event closes the route.
 - **THEN** no matches SHALL exist (the openconnector source is the
   only path).
 
-### REQ-CLM-005: Contract documents SHALL live in docudesk, referenced by URI
+### Requirement: REQ-CLM-005 — Contract documents SHALL live in docudesk, referenced by URI
+
+Contract documents SHALL live in docudesk and MUST be referenced from the `Contract` register by URI only.
 
 The signed PDF, the negotiated drafts, the supplier's countersigned
 copy, and any annexes MUST be stored in docudesk and referenced from
@@ -183,7 +185,7 @@ anti-pattern.
   `signedDocumentRef`; procest's code path MUST NOT contain the PDF
   bytes.
 
-### REQ-CLM-006: Contract notifications SHALL be declarative per ADR-031
+### Requirement: REQ-CLM-006 — Contract notifications SHALL be declarative per ADR-031
 
 The `Contract` schema MUST declare `x-openregister-notifications`
 covering at minimum:
@@ -213,7 +215,9 @@ this is the exact notification anti-pattern.
 - **THEN** exactly one `renewal.window-missed` notification MUST be
   dispatched (the engine's idempotency MUST prevent duplicates).
 
-### REQ-CLM-007: Contract analytics SHALL be derived via `x-openregister-aggregations` and exposed via widgets
+### Requirement: REQ-CLM-007 — Contract analytics SHALL be derived via `x-openregister-aggregations` and exposed via widgets
+
+Contract analytics SHALL be derived via declarative aggregations and widgets; procest MUST NOT author an analytics service.
 
 Common contract dashboards (open contracts by supplier, expiring in
 next 90 days, value at risk, renewal-policy mix) MUST be expressed as
@@ -234,7 +238,7 @@ capability — no per-widget Vue component is needed.
   `effectiveUntil < today + 90` AND `state IN (in-effect,
   pending-renewal)`, computed via aggregation — no per-app code path.
 
-### REQ-CLM-008: Contract registers SHALL be reachable through the procest manifest navigation
+### Requirement: REQ-CLM-008 — Contract registers SHALL be reachable through the procest manifest navigation
 
 `src/manifest.json` MUST declare:
 

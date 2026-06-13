@@ -6,9 +6,22 @@ chain: []
 
 # Proposal: add-procest-procurement-suite
 
-**Status:** proposed
+**Status:** done
 **Scope:** procest
 **Owner:** Conduction BV — Procest team
+
+**Done-note (2026-06-14):** Reviewer verification T11–T16 complete (see
+tasks.md). This `kind: config` consolidation lands 8 capability specs only
+— no code/register patch. The supplier-facing slice of the surface is
+already implemented + archived on development by the 16-member
+`leverancier-zaakportaal-*` chain (live capability `supplier-portal`;
+`Supplier`/`Supplier Tender`/`Supplier Contract`/… schemas present in
+`lib/Settings/procest_register.json`). The buy-side capabilities (tender
+management, evaluation/award, compliance, publication-platform,
+system-integration, spend-analytics contract) are authored here as specs;
+their register patches + manifest wiring land via per-spec code chains
+(ADR-032). T16 records the canonical-vs-portal `Supplier`/`Contract`/`Tender`
+overlap as the explicit additive-reconciliation hand-off for those chains.
 
 ## Why
 

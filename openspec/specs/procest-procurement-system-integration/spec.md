@@ -1,13 +1,18 @@
-# Spec: procest-procurement-system-integration
+---
+status: specified
+status-note: "Synced 2026-06-14 from archived consolidation change add-procest-procurement-suite (kind:config). SPEC-COMPLETE; code chain pending (ADR-032). Concrete openconnector source rows for the declared slots land in a separate add-openconnector-eu-procurement-sources change."
+---
 
-**Status:** proposed
-**Scope:** procest
-**Tier:** procurement-suite
-**Depends on:** openconnector (transport — ADR-019 source providers), openregister (integration registry — ADR-019), procest-procurement-supplier-management (Supplier ref), procest-procurement-contract-lifecycle (Contract ref), procest-procurement-tender-management (Tender ref)
+# procest-procurement-system-integration Specification
 
-## ADDED Requirements
-
-### REQ-PSI-001: Procest SHALL declare logical connector slots; openconnector SHALL own transport
+## Purpose
+Define procest's external-procurement integration posture: procest
+declares logical connector slots (TenderNed, Mercell, Negometrix, Peppol,
+KvK, e-signature, ...) while OpenConnector owns transport (ADR-019).
+Inbound via OR's integration registry, slot mappings as schema metadata,
+failures surfaced as procest tasks — zero transport code in procest lib/.
+## Requirements
+### Requirement: REQ-PSI-001 — Procest SHALL declare logical connector slots; openconnector SHALL own transport
 
 Per ADR-019 + ADR-022, procest MUST NOT author transport code
 (`*Client`, `*HttpService`, `curl_init`, `GuzzleHttp\Client`) for any
@@ -51,7 +56,9 @@ change):
 - **THEN** the dispatch MUST resolve via OR's `ScheduledWorkflow` →
   openconnector source lookup, with no per-app HTTP client.
 
-### REQ-PSI-002: Inbound integration events SHALL flow through OR's integration registry, not a procest webhook controller
+### Requirement: REQ-PSI-002 — Inbound integration events SHALL flow through OR's integration registry, not a procest webhook controller
+
+Inbound integration events SHALL flow through OR's integration registry; procest MUST NOT define a webhook controller for external systems.
 
 External systems that push to procest (Mercell bid received, TenderNed
 publication confirmation, Peppol invoice forwarded, e-signature
@@ -73,7 +80,9 @@ any of the listed external systems.
   MUST consume it via `x-openregister-lifecycle.requires` — no
   procest webhook controller is invoked.
 
-### REQ-PSI-003: Connector slot mapping SHALL be declared as schema metadata, not as code
+### Requirement: REQ-PSI-003 — Connector slot mapping SHALL be declared as schema metadata, not as code
+
+Connector slot mapping SHALL be declared as schema metadata; procest MUST NOT author a connector-registry resolution service.
 
 Each slot's mapping (which procest event triggers which slot, which
 CloudEvent type returns) MUST be declared as `x-openregister-relations`
@@ -89,7 +98,7 @@ the slot-to-source resolution.
   + registers an openconnector source
 - **THEN** no procest PHP code MUST change.
 
-### REQ-PSI-004: KvK supplier lookup SHALL be a declarative source enrichment, not a hand-rolled service
+### Requirement: REQ-PSI-004 — KvK supplier lookup SHALL be a declarative source enrichment, not a hand-rolled service
 
 The `Supplier` register's `kvkNumber` field MUST declare an
 `x-openregister-calculations` or `x-openregister-enrichment` block
@@ -110,7 +119,9 @@ Procest MUST NOT author a `KvkLookupService` HTTP wrapper.
   `legalForm`, and `addresses[registered]` from the KvK source, with
   the audit trail recording the source and timestamp.
 
-### REQ-PSI-005: Outbound integration failures SHALL surface in procest as task signals, not as silent retries
+### Requirement: REQ-PSI-005 — Outbound integration failures SHALL surface in procest as task signals, not as silent retries
+
+Outbound integration failures SHALL surface as procest `task` records on the relevant case; procest MUST NOT author a parallel failure-log register.
 
 When an outbound dispatch via an openconnector slot fails terminally
 (after openconnector's retry policy), the failure MUST surface as a
@@ -131,7 +142,7 @@ narrative.
 - **THEN** a task MUST appear on the Tender case, assigned to the
   case's `assignee`, with the failure payload in description.
 
-### REQ-PSI-006: Integration manifest entries SHALL be admin-only and declarative per ADR-024
+### Requirement: REQ-PSI-006 — Integration manifest entries SHALL be admin-only and declarative per ADR-024
 
 `src/manifest.json` MUST declare an admin-only navigation entry
 `Procurement > Integrations` of `type: custom` that points at OR's
@@ -155,3 +166,4 @@ The entry's visibility predicate restricts it to the
 - **THEN** the page MUST render `CnIntegrationsPage` from
   `@conduction/nextcloud-vue` filtered to slot types declared by
   procest's procurement suite (no procest-side admin component).
+

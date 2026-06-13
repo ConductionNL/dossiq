@@ -1,13 +1,20 @@
-# Spec: procest-procurement-spend-analytics-integration
+---
+status: specified
+status-note: "Synced 2026-06-14 from archived consolidation change add-procest-procurement-suite (kind:config). SPEC-COMPLETE; cross-app contract. The posting/spend side depends on [future] financeq (repo does not yet exist); mydash owns the analytics surface (ADR-024 §10) and consumes procest via runtime OR GraphQL — no install-time dependency."
+---
 
-**Status:** proposed
-**Scope:** procest (event emitter), mydash (consumer — separate fleet rollout)
-**Tier:** procurement-suite
-**Depends on:** procest-procurement-supplier-management, procest-procurement-contract-lifecycle, procest-procurement-tender-management, procest-procurement-evaluation-award, openregister (events + webhooks per ADR-022), [future] financeq (referenced as `[future]`, no live dep)
+# procest-procurement-spend-analytics-integration Specification
 
-## ADDED Requirements
+## Purpose
+Define the cross-app spend-analytics contract: procest emits procurement
+CloudEvents and exposes its registers via OR GraphQL; mydash consumes them
+at runtime to render spend analytics. Commitment side from procest,
+posting side from [future] financeq. RBAC stays OR-canonical; procest ships
+no analytics manifest entry (mydash owns the surface).
+## Requirements
+### Requirement: REQ-PSA-001 — Procest SHALL emit procurement-domain CloudEvents; mydash SHALL consume them via runtime GraphQL
 
-### REQ-PSA-001: Procest SHALL emit procurement-domain CloudEvents; mydash SHALL consume them via runtime GraphQL
+Procest SHALL emit procurement-domain CloudEvents via OR's event pipeline; mydash SHALL consume them at runtime and MUST NOT declare an install-time dependency.
 
 This spec is a **cross-app contract** spec. Procest emits domain
 events; mydash consumes them to render the spend-analytics surface.
@@ -57,7 +64,7 @@ is the only path.
 - **THEN** no such procest-specific event-machinery classes SHALL
   exist.
 
-### REQ-PSA-002: Procest SHALL expose a procurement GraphQL schema slice via OR's GraphQL abstraction
+### Requirement: REQ-PSA-002 — Procest SHALL expose a procurement GraphQL schema slice via OR's GraphQL abstraction
 
 Mydash's spend-analytics widgets MUST query procest data via OR's
 GraphQL endpoint (per ADR-022 row "Schema declarative extensions" +
@@ -79,7 +86,9 @@ resolver code.
   OR RBAC; procest's code path MUST NOT contain a `GraphQLResolver`
   class for these queries.
 
-### REQ-PSA-003: RBAC on the GraphQL contract SHALL be the OR-canonical scope, not a mydash-side bypass
+### Requirement: REQ-PSA-003 — RBAC on the GraphQL contract SHALL be the OR-canonical scope, not a mydash-side bypass
+
+RBAC on the GraphQL contract SHALL be the OR-canonical procurement roles; mydash MUST NOT bypass scope with a service-account role.
 
 The roles that grant cross-app procurement read access via mydash
 MUST be the same OR roles procest uses internally
@@ -99,7 +108,9 @@ mydash UI), but the underlying OR role check is canonical.
 - **THEN** the OR GraphQL response MUST be empty (RBAC-filtered);
   mydash MUST surface "no data" without a stack trace.
 
-### REQ-PSA-004: Aggregate spend calculations SHALL forward to `[future]` financeq, not be computed in procest
+### Requirement: REQ-PSA-004 — Aggregate spend calculations SHALL forward to `[future]` financeq, not be computed in procest
+
+Aggregate posted-spend calculations SHALL come from financeq; procest MUST NOT compute the posting side and MUST mark the gap as `[future]`.
 
 Where the analytics widget needs actual posted spend (GL postings,
 invoiced amounts, paid amounts), the data MUST come from financeq,
@@ -123,7 +134,7 @@ This is the same forward-looking pattern shillinq specs use for
 - **THEN** the commitment side MUST display `€100.000` and the spend
   side MUST display the `[future]` gap label — not zero, not blank.
 
-### REQ-PSA-005: Procest MUST NOT ship a spend-analytics manifest entry; mydash owns the surface
+### Requirement: REQ-PSA-005 — Procest MUST NOT ship a spend-analytics manifest entry; mydash owns the surface
 
 `procest/src/manifest.json` MUST NOT declare a `Procurement >
 Spend analytics` navigation entry. The spend-analytics surface lives
@@ -151,3 +162,4 @@ link controller.
 - **THEN** the link MUST route to
   `/index.php/apps/procest/contracts/<uuid>` via the OR deep-link
   registry; mydash MUST NOT hard-code the URL.
+
