@@ -113,6 +113,7 @@ Vrij en open source onder de AGPL-licentie.
             <step>OCA\Procest\Repair\VthSeedDataRepairStep</step>
             <step>OCA\Procest\Repair\SeedTermijnbewakingData</step>
             <step>OCA\Procest\Repair\SeedArchiefEdepotData</step>
+            <step>OCA\Procest\Repair\SeedKccWerkplekData</step>
             <step>OCA\Procest\Repair\BackfillInformatieobjectMetadata</step>
         </post-migration>
     </repair-steps>
