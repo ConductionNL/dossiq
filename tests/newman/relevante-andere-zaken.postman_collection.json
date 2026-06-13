@@ -1,0 +1,336 @@
+{
+	"info": {
+		"_postman_id": "b3a1f0c2-7d4e-4e2a-9c1b-related-case-linking",
+		"name": "Procest ZGW relevanteAndereZaken (related-case-linking)",
+		"description": "Contract tests for the bidirectional relevanteAndereZaken mapping on the ZRC Zaak resource (related-case-linking). Verifies: outbound relevanteAndereZaken is present as an array (empty when no relations), inbound PATCH with a valid local zaak URL creates the symmetric relation and is re-emitted, and an unresolvable relation URL is rejected with the standard ZGW validation error. Self-contained and idempotent: seeds a zaaktype + two zaken and deletes them in teardown.\n\n@spec openspec/changes/related-case-linking/specs/zgw-api-mapping/spec.md",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{ "key": "username", "value": "{{admin_user}}", "type": "string" },
+			{ "key": "password", "value": "{{admin_pass}}", "type": "string" }
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"if (!pm.collectionVariables.get('run_id')) {",
+					"  pm.collectionVariables.set('run_id', Date.now().toString())",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{ "key": "base_url", "value": "http://localhost:8080/index.php/apps/procest" },
+		{ "key": "admin_user", "value": "admin" },
+		{ "key": "admin_pass", "value": "admin" }
+	],
+	"item": [
+		{
+			"name": "Catalogi — Create zaaktype",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "OCS-APIRequest", "value": "true" },
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"identificatie\": \"newman-rcl-zaaktype-{{run_id}}\",\n  \"omschrijving\": \"Newman relevanteAndereZaken zaaktype {{run_id}}\",\n  \"vertrouwelijkheidaanduiding\": \"openbaar\",\n  \"doel\": \"related-case-linking contract test\",\n  \"aanleiding\": \"Newman regressie\",\n  \"indicatieInternOfExtern\": \"intern\",\n  \"handelingInitiator\": \"indienen\",\n  \"onderwerp\": \"Newman relevanteAndereZaken\",\n  \"handelingBehandelaar\": \"behandelen\",\n  \"doorlooptijd\": \"P30D\",\n  \"opschortingEnAanhoudingMogelijk\": false,\n  \"verlengingMogelijk\": false,\n  \"publicatieIndicatie\": false,\n  \"productenOfDiensten\": [],\n  \"beginGeldigheid\": \"2026-01-01\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/zgw/catalogi/v1/zaaktypen",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "catalogi", "v1", "zaaktypen"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('zaaktype created', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]) })",
+							"var b = pm.response.json()",
+							"pm.collectionVariables.set('zaaktype_url', b.url || '')"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Zaken — Create zaak A",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "OCS-APIRequest", "value": "true" },
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"bronorganisatie\": \"000000000\",\n  \"zaaktype\": \"{{zaaktype_url}}\",\n  \"verantwoordelijkeOrganisatie\": \"000000000\",\n  \"startdatum\": \"2026-06-11\",\n  \"omschrijving\": \"Newman RCL zaak A {{run_id}}\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/zgw/zaken/v1/zaken",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "zaken", "v1", "zaken"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('201 Created', function () { pm.response.to.have.status(201) })",
+							"var b = pm.response.json()",
+							"pm.collectionVariables.set('zaak_a_url', b.url || '')",
+							"pm.collectionVariables.set('zaak_a_uuid', b.uuid || (b.url || '').split('/').pop())",
+							"pm.test('relevanteAndereZaken present as empty array when no relations', function () { pm.expect(b.relevanteAndereZaken).to.be.an('array').that.is.empty })"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Zaken — Create zaak B",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "OCS-APIRequest", "value": "true" },
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"bronorganisatie\": \"000000000\",\n  \"zaaktype\": \"{{zaaktype_url}}\",\n  \"verantwoordelijkeOrganisatie\": \"000000000\",\n  \"startdatum\": \"2026-06-11\",\n  \"omschrijving\": \"Newman RCL zaak B {{run_id}}\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/zgw/zaken/v1/zaken",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "zaken", "v1", "zaken"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('201 Created', function () { pm.response.to.have.status(201) })",
+							"var b = pm.response.json()",
+							"pm.collectionVariables.set('zaak_b_url', b.url || '')",
+							"pm.collectionVariables.set('zaak_b_uuid', b.uuid || (b.url || '').split('/').pop())"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Zaken — PATCH A with relevanteAndereZaken referencing B (inbound)",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{ "key": "OCS-APIRequest", "value": "true" },
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"relevanteAndereZaken\": [ { \"url\": \"{{zaak_b_url}}\", \"aardRelatie\": \"vervolg\" } ]\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/zgw/zaken/v1/zaken/{{zaak_a_uuid}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "zaken", "v1", "zaken", "{{zaak_a_uuid}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('200 OK', function () { pm.response.to.have.status(200) })",
+							"var b = pm.response.json()",
+							"pm.test('relevanteAndereZaken re-emitted with B + aardRelatie', function () {",
+							"  pm.expect(b.relevanteAndereZaken).to.be.an('array')",
+							"  var found = (b.relevanteAndereZaken || []).some(function (r) { return r.aardRelatie === 'vervolg' && (r.url || '').indexOf(pm.collectionVariables.get('zaak_b_uuid')) !== -1 })",
+							"  pm.expect(found).to.be.true",
+							"})",
+							"pm.test('toelichting is never emitted in the ZGW shape', function () {",
+							"  (b.relevanteAndereZaken || []).forEach(function (r) { pm.expect(r).to.not.have.property('toelichting') })",
+							"})"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Zaken — GET A round-trips relevanteAndereZaken (outbound)",
+			"request": {
+				"method": "GET",
+				"header": [ { "key": "OCS-APIRequest", "value": "true" } ],
+				"url": {
+					"raw": "{{base_url}}/api/zgw/zaken/v1/zaken/{{zaak_a_uuid}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "zaken", "v1", "zaken", "{{zaak_a_uuid}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('200 OK', function () { pm.response.to.have.status(200) })",
+							"var b = pm.response.json()",
+							"pm.test('outbound relevanteAndereZaken has absolute URL + aardRelatie', function () {",
+							"  pm.expect(b.relevanteAndereZaken).to.be.an('array').that.is.not.empty",
+							"  var rel = b.relevanteAndereZaken[0]",
+							"  pm.expect(rel.aardRelatie).to.eql('vervolg')",
+							"  pm.expect(rel.url).to.match(/^https?:\\/\\//)",
+							"})"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Zaken — GET B shows the symmetric inverse relation",
+			"request": {
+				"method": "GET",
+				"header": [ { "key": "OCS-APIRequest", "value": "true" } ],
+				"url": {
+					"raw": "{{base_url}}/api/zgw/zaken/v1/zaken/{{zaak_b_uuid}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "zaken", "v1", "zaken", "{{zaak_b_uuid}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('200 OK', function () { pm.response.to.have.status(200) })",
+							"var b = pm.response.json()",
+							"pm.test('B carries the inverse relation back to A', function () {",
+							"  var found = (b.relevanteAndereZaken || []).some(function (r) { return r.aardRelatie === 'vervolg' && (r.url || '').indexOf(pm.collectionVariables.get('zaak_a_uuid')) !== -1 })",
+							"  pm.expect(found).to.be.true",
+							"})"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Validation — PATCH A with unresolvable relation URL is rejected",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{ "key": "OCS-APIRequest", "value": "true" },
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"relevanteAndereZaken\": [ { \"url\": \"https://example.org/api/zgw/zaken/v1/zaken/00000000-0000-0000-0000-000000000000\", \"aardRelatie\": \"onderwerp\" } ]\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/zgw/zaken/v1/zaken/{{zaak_a_uuid}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "zaken", "v1", "zaken", "{{zaak_a_uuid}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('400 Bad Request for unresolvable relation URL', function () { pm.response.to.have.status(400) })",
+							"var b = pm.response.json()",
+							"pm.test('error identifies the offending relevanteAndereZaken url', function () {",
+							"  var params = b.invalidParams || []",
+							"  var hit = params.some(function (p) { return (p.name || '').indexOf('relevanteAndereZaken') !== -1 })",
+							"  pm.expect(hit).to.be.true",
+							"})"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Cleanup — DELETE zaak A",
+			"request": {
+				"method": "DELETE",
+				"header": [ { "key": "OCS-APIRequest", "value": "true" } ],
+				"url": {
+					"raw": "{{base_url}}/api/zgw/zaken/v1/zaken/{{zaak_a_uuid}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "zaken", "v1", "zaken", "{{zaak_a_uuid}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('204 or 200', function () { pm.expect(pm.response.code).to.be.oneOf([200, 204]) })"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Cleanup — DELETE zaak B",
+			"request": {
+				"method": "DELETE",
+				"header": [ { "key": "OCS-APIRequest", "value": "true" } ],
+				"url": {
+					"raw": "{{base_url}}/api/zgw/zaken/v1/zaken/{{zaak_b_uuid}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "zaken", "v1", "zaken", "{{zaak_b_uuid}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('204 or 200', function () { pm.expect(pm.response.code).to.be.oneOf([200, 204]) })"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Cleanup — DELETE zaaktype",
+			"request": {
+				"method": "DELETE",
+				"header": [ { "key": "OCS-APIRequest", "value": "true" } ],
+				"url": {
+					"raw": "{{base_url}}/api/zgw/catalogi/v1/zaaktypen/{{zaaktype_url}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "zgw", "catalogi", "v1", "zaaktypen", "{{zaaktype_url}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('cleanup attempted', function () { pm.expect(pm.response.code).to.be.oneOf([200, 204, 400, 404]) })"
+						]
+					}
+				}
+			]
+		}
+	]
+}

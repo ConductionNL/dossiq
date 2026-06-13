@@ -23,6 +23,8 @@ RBAC-safe masking.
 
 The system SHALL store peer relations in the existing `case.relatedCases` array as `{caseId, aardRelatie, toelichting}` entries, where `aardRelatie` is one of `vervolg`, `onderwerp`, `bijdrage` per ZRC, and `toelichting` is an optional free-text clarification.
 
+@e2e exclude Backend storage/typing contract — proven by CaseRelationService PHPUnit (typed entries, enum constraint) and the controller validation tests; no dedicated UI surface beyond the add-relation flow covered under the render requirement.
+
 #### Scenario: Link a bezwaar to the original besluit-zaak
 
 - **GIVEN** a bezwaar case and the case containing the contested besluit
@@ -37,6 +39,8 @@ The system SHALL store peer relations in the existing `case.relatedCases` array 
 ### Requirement: Peer relations MUST be bidirectionally consistent
 
 Adding a relation SHALL make it visible from both cases; removing it from either side SHALL remove it from both; deleting a case SHALL remove its entries from all counterpart cases, leaving no dangling references.
+
+@e2e exclude Backend two-sided invariant — proven by CaseRelationService PHPUnit (testAddRelationIsTwoSided, testRemovalIsTwoSided, testCleanupForDeletedCaseRemovesCounterparts) and the Newman symmetric-inverse case; storage-level guarantee with no separate UI proof.
 
 #### Scenario: Relation visible from both sides
 
@@ -58,6 +62,8 @@ Adding a relation SHALL make it visible from both cases; removing it from either
 ### Requirement: Relation creation MUST be guarded
 
 The system SHALL reject self-relations, duplicate `{caseId, aardRelatie}` pairs, and peer relations that duplicate an existing direct hoofdzaak/deelzaak hierarchy link, and SHALL require the linking user to have read access to both cases under OpenRegister RBAC.
+
+@e2e exclude Server-authoritative guards — proven by CaseRelationService PHPUnit (self, duplicate-pair, hierarchy-overlap, access-denied) and CaseRelationController PHPUnit (reason→HTTP-status mapping); the guard responses surface inline in the add-relation modal covered under the render requirement.
 
 #### Scenario: Self-relation rejected
 
