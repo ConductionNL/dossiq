@@ -1,3 +1,7 @@
+---
+status: done
+status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change; capability code confirmed present on development.
+---
 # vth-dso-integration Specification
 
 ## Purpose
