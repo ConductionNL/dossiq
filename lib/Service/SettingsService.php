@@ -233,6 +233,8 @@ class SettingsService
         'medewerker_rol_toewijzing_schema',
         'mandaat_gebruik_schema',
         'mandaat_escalatie_schema',
+        // Handler vervanging/waarneming (handler-vervanging-waarneming spec).
+        'substitution_schema',
         // Archief / e-Depot SIP handover engine.
         'bewaar_termijn_regel_schema',
         'overdracht_trigger_schema',
@@ -398,6 +400,7 @@ class SettingsService
         'medewerkerRolToewijzing'      => 'medewerker_rol_toewijzing_schema',
         'mandaatGebruik'               => 'mandaat_gebruik_schema',
         'mandaatEscalatie'             => 'mandaat_escalatie_schema',
+        'substitution'                 => 'substitution_schema',
         // Archief / e-Depot SIP handover engine.
         'bewaarTermijnRegel'           => 'bewaar_termijn_regel_schema',
         'overdrachtTrigger'            => 'overdracht_trigger_schema',
