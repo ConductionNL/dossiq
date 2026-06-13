@@ -27,7 +27,7 @@ const ADMIN_SETTINGS_URL = '/settings/admin/procest'
 
 test.describe('kcc-werkplek-zaaksysteem-bridge spec coverage', () => {
 
-	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#identification-scoring
+	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#kcc-integration-settings-render-and-persist
 	test('KCC integration settings render the identification + sentiment controls', async ({ page }) => {
 		await page.goto(ADMIN_SETTINGS_URL)
 		await expect(page).not.toHaveURL(/login/, { timeout: 10000 })
@@ -41,7 +41,7 @@ test.describe('kcc-werkplek-zaaksysteem-bridge spec coverage', () => {
 		await expect(page.locator('#kcc_sentiment_trigger_words')).toBeVisible({ timeout: 10000 })
 	})
 
-	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#belplan-configuration
+	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#kcc-integration-settings-render-and-persist
 	test('KCC integration settings expose belplan overflow + voorblad-limit controls', async ({ page }) => {
 		await page.goto(ADMIN_SETTINGS_URL)
 		await expect(page).not.toHaveURL(/login/, { timeout: 10000 })
