@@ -586,10 +586,10 @@
 						"order": 30
 					},
 					{
-						"id": "documents",
-						"label": "Documents",
+						"id": "dossier",
+						"label": "Dossier",
 						"icon": "icon-files",
-						"component": "CaseDocumentsTab",
+						"component": "DossierTab",
 						"order": 40
 					},
 					{

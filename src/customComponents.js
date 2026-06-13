@@ -62,6 +62,10 @@ import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // @spec openspec/changes/case-email-integration/tasks.md#T12
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
 
+// --- ZGW DRC case dossier sidebar tab. ---
+// @spec openspec/changes/document-zaakdossier/tasks.md#T10
+import DossierTab from './views/cases/components/DossierTab.vue'
+
 // --- Visual workflow editor — TEMPORARILY UNWIRED. ---
 // `@vue-flow/{core,controls,background}` v1.x are Vue-3-only (they import
 // Fragment / Teleport / createElementVNode / toValue from 'vue'), which breaks
@@ -164,6 +168,9 @@ export default {
 
 	// --- Case-email sidebar tab (display via leaf, compose via NC Mail draft). ---
 	CaseEmailTab,
+
+	// --- ZGW DRC case dossier tab (document-zaakdossier). ---
+	DossierTab,
 
 	// --- Visual workflow editor — temporarily unwired (see import comment above). ---
 	// VisualWorkflowEditor,
