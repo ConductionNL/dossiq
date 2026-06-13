@@ -2,66 +2,70 @@
 
 ## 1. Data Model & Entities
 
-### Task 1: Create LegesTariefTabel entity and database schema
+### Task 1: Create LegesTariefTabel schema (OpenRegister abstraction)
 - **spec_ref**: `openspec/changes/leges-heffingen/specs.md#req-leges-001-a`
-- **files**: `lib/Db/LegesTariefTabel.php`, `lib/Db/LegesTariefTabelMapper.php`, database migration
+- **files**: `lib/Settings/register.d/30-leges.json` (slug `legesTariefTabel`)
+- **note**: Per ADR-022 the leges entities are delivered as OpenRegister schemas (no local `lib/Db/*` entity/mapper classes or DB migration); CRUD + findByPeriod/findLatest are served by OR ObjectService.
 - **acceptance_criteria**:
-  - Entity has fields: naam, geldigVanaf, geldigTotEnMet, vastgesteldDoor, vastgesteldOp, status, createdAt, updatedAt
-  - Mapper supports CRUD + findByPeriod(date) + findLatest()
-  - Database migration creates table with indices on geldigVanaf, status
-- [x] Create entity class with proper OpenRegister integration
-- [x] Implement mapper with query methods
-- [x] Write database migration
-- [x] Add to procest_register.json schema definitions
+  - Schema has fields: naam, geldigVanaf, geldigTotEnMet, vastgesteldDoor, vastgesteldOp, status, createdAt, updatedAt
+  - OR ObjectService supports CRUD + period/latest lookups via the services below
+- [x] Define `legesTariefTabel` schema in register.d (OR abstraction, not a local entity class)
+- [x] Period/latest lookups served via LegesVerordeningService over OR ObjectService
+- [x] Schema registered through register.d (no DB migration — OR-backed)
+- [x] Add to register.d schema definitions
 
-### Task 2: Create LegesTarief entity and mapper
+### Task 2: Create LegesTarief schema (OpenRegister abstraction)
 - **spec_ref**: `openspec/changes/leges-heffingen/specs.md#req-leges-002`
-- **files**: `lib/Db/LegesTarief.php`, `lib/Db/LegesTariefMapper.php`
+- **files**: `lib/Settings/register.d/30-leges.json` (slug `legesTarief`)
+- **note**: OR-backed schema (no local entity/mapper class); query methods served via OR ObjectService.
 - **acceptance_criteria**:
-  - Entity has fields: tariefTabelId, tariefNummer, omschrijving, bedrag, grondslag, eenheid, staffelWaarden (JSON), btwTarief, grootboekrekening, kostendrager, productCode
-  - Mapper supports: findByTariefNummer(), findByGroundage(), findByTabel()
+  - Schema has fields: tariefTabelId, tariefNummer, omschrijving, bedrag, grondslag, eenheid, staffelWaarden (JSON), btwTarief, grootboekrekening, kostendrager, productCode
+  - findByTariefNummer/findByGroundage/findByTabel served via OR ObjectService
   - StaffelWaarden is properly JSON-serialized (array of {min, max, bedrag})
-- [x] Create entity class
-- [x] Implement mapper
-- [x] Database migration with proper indices
+- [x] Define `legesTarief` schema in register.d (OR abstraction)
+- [x] Query methods served via OR ObjectService
+- [x] Schema registered through register.d (no DB migration — OR-backed)
 
-### Task 3: Create LegesVariant entity and mapper
+### Task 3: Create LegesVariant schema (OpenRegister abstraction)
 - **spec_ref**: `openspec/changes/leges-heffingen/specs.md#req-leges-003`
-- **files**: `lib/Db/LegesVariant.php`, `lib/Db/LegesVariantMapper.php`
+- **files**: `lib/Settings/register.d/30-leges.json` (slug `legesVariant`)
+- **note**: OR-backed schema; condition evaluation served by `lib/Service/LegesConditionEvaluator.php`.
 - **acceptance_criteria**:
-  - Entity has: tariefId, variantNaam, condities (JSON), bedragOpslag, bedragOverride
-  - Mapper: findByTarief(), evaluateCondities(conditions, zaakData) returns boolean
-- [x] Create entity and mapper
-- [x] Database migration
+  - Schema has: tariefId, variantNaam, condities (JSON), bedragOpslag, bedragOverride
+  - findByTarief via OR ObjectService; evaluateCondities via LegesConditionEvaluator
+- [x] Define `legesVariant` schema in register.d (OR abstraction)
+- [x] Schema registered through register.d (no DB migration — OR-backed)
 
-### Task 4: Create LegesKorting entity and mapper
+### Task 4: Create LegesKorting schema (OpenRegister abstraction)
 - **spec_ref**: `openspec/changes/leges-heffingen/specs.md#req-leges-004`
-- **files**: `lib/Db/LegesKorting.php`, `lib/Db/LegesKortingMapper.php`
+- **files**: `lib/Settings/register.d/30-leges.json` (slug `legesKorting`)
+- **note**: OR-backed schema; applicability/condition logic served by LegesConditionEvaluator + LegesCalculationService.
 - **acceptance_criteria**:
-  - Entity: naam, tariefIds (JSON array), kortingsType, kortingsWaarde, condities, wettelijkeGrondslag, geldigVanaf, geldigTotEnMet
-  - Mapper: findApplicableFor(zaakId, date) returns eligible discounts
-  - evaluateCondities(condities, zaakData, brpData) returns boolean
-- [x] Create entity and mapper
-- [x] Database migration
+  - Schema: naam, tariefIds (JSON array), kortingsType, kortingsWaarde, condities, wettelijkeGrondslag, geldigVanaf, geldigTotEnMet
+  - findApplicableFor + evaluateCondities served via OR ObjectService + LegesConditionEvaluator
+- [x] Define `legesKorting` schema in register.d (OR abstraction)
+- [x] Schema registered through register.d (no DB migration — OR-backed)
 
-### Task 5: Create LegesBerekening entity and mapper
+### Task 5: Create LegesBerekening schema (OpenRegister abstraction)
 - **spec_ref**: `openspec/changes/leges-heffingen/specs.md#req-leges-002`, `req-leges-008`
-- **files**: `lib/Db/LegesBerekening.php`, `lib/Db/LegesBerekeningMapper.php`
+- **files**: `lib/Settings/register.d/30-leges.json` (slug `legesBerekening`)
+- **note**: OR-backed schema; persistence/lookups served by `lib/Service/LegesBerekeningService.php` over OR ObjectService.
 - **acceptance_criteria**:
-  - Entity: zaakId, tariefTabelId, tariefId, variantId, appliedKortingen (JSON), bedragExclBtw, btwBedrag, bedragInclBtw, berekendeOp, berekendDoor, berekeningsToelichting, factuurId, status
-  - Mapper: findByZaak(), findByStatus(), updateStatus()
+  - Schema: zaakId, tariefTabelId, tariefId, variantId, appliedKortingen (JSON), bedragExclBtw, btwBedrag, bedragInclBtw, berekendeOp, berekendDoor, berekeningsToelichting, factuurId, status
+  - findByZaak/findByStatus/updateStatus served via OR ObjectService
   - Audit trail fields properly stored
-- [x] Create entity and mapper
-- [x] Database migration
+- [x] Define `legesBerekening` schema in register.d (OR abstraction)
+- [x] Schema registered through register.d (no DB migration — OR-backed)
 
-### Task 6: Create LegesRestitutie entity and mapper
+### Task 6: Create LegesRestitutie schema (OpenRegister abstraction)
 - **spec_ref**: `openspec/changes/leges-heffingen/specs.md#req-leges-006`
-- **files**: `lib/Db/LegesRestitutie.php`, `lib/Db/LegesRestituteMapper.php`
+- **files**: `lib/Settings/register.d/30-leges.json` (slug `legesRestitutie`)
+- **note**: OR-backed schema; refund workflow served by `lib/Service/LegesRestitutieService.php`.
 - **acceptance_criteria**:
-  - Entity: berekeningId, restitutieReden, fase, restitutiePercentage, restitutieBedrag, creditfactuurId, besluitNemerId, besluitDatum
-  - Mapper: findByBerekening(), findByFase()
-- [x] Create entity and mapper
-- [x] Database migration
+  - Schema: berekeningId, restitutieReden, fase, restitutiePercentage, restitutieBedrag, creditfactuurId, besluitNemerId, besluitDatum
+  - findByBerekening/findByFase served via OR ObjectService
+- [x] Define `legesRestitutie` schema in register.d (OR abstraction)
+- [x] Schema registered through register.d (no DB migration — OR-backed)
 
 ---
 
@@ -330,15 +334,16 @@
 - [x] Document operations
 - [x] Document API endpoints
 
-### Task 23: Create schema migrations and seed data
+### Task 23: Register schemas and seed data (OpenRegister)
 - **spec_ref**: All entities
-- **files**: Database migrations
+- **files**: `lib/Settings/register.d/30-leges.json`, `lib/Service/LegesSeedDataService.php`
+- **note**: Per ADR-022 the 6 LegesXxx entities are OR schemas (no relational DB migration); seed data is provided via LegesSeedDataService.
 - **acceptance_criteria**:
-  - All 6 LegesXxx tables created with proper indices and constraints
-  - Seed data loaded: 3-5 example tarieventabellen (Amsterdam 2026, Rotterdam 2026, etc.) with 20-30 sample tariefen
+  - All 6 legesXxx schemas registered in register.d with proper field definitions
+  - Seed data loaded: example tarieventabellen with sample tariefen
   - Seed data includes examples of: vast tarief, staffel, variant, discount
-- [x] Write all migrations
-- [x] Create seed data (Dutch values)
+- [x] Register all 6 schemas in register.d (OR abstraction, no DB migration)
+- [x] Create seed data via LegesSeedDataService (Dutch values)
 - [x] Validate schema
 
 ### Task 24: Integration with procest app info & settings

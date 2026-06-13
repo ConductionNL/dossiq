@@ -13,5 +13,5 @@ Traces to giant task 3.2; spec REQ-003.
 - [x] Gate evaluation-report serving on the anonymized flag; log download events — `isEvaluationReportDownloadable()` gates + `getEvaluationReport()` logs
 - [x] Return null for out-of-scope tender IDs — controller mapping `null → 404` lands with the HTTP controller
 - [x] Test all tender states (submitted, evaluating, awarded, rejected, withdrawn) — covered by appeal-deadline + evaluation-downloadable matrix tests
-- [x] Test PDF downloads and content headers — needs the controller; deferred
+- [~] Test PDF downloads and content headers — PDF/binary evaluation-report export (`GET /tenders/{id}/evaluation-report` with `Content-Disposition: attachment`) is NOT built; deferred to chain member 16. Service-side gating (`isEvaluationReportDownloadable()`) and download-event logging are built and tested; only the binary-streaming HTTP surface remains.
 - [x] Test appeal-deadline calculation — explicit-date preference + 20-day math both tested
