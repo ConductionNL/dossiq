@@ -107,6 +107,13 @@
 			<ConsultationSettingsTab v-if="storesReady" />
 		</CnSettingsSection>
 
+		<CnSettingsSection
+			:name="t('procest', 'Case Email — Shared Mailbox')"
+			:description="t('procest', 'Shared functional mailbox ingest (IMAP) and transport for case correspondence. Outbound mail and per-user accounts are owned by Nextcloud Mail.')"
+			:loading="!storesReady">
+			<EmailSettings v-if="storesReady" />
+		</CnSettingsSection>
+
 		<!-- Re-import Status -->
 		<div v-if="message" class="actions-section">
 			<NcNoteCard :type="messageType">
@@ -132,6 +139,7 @@ import ArchiefConfiguratieTab from './tabs/ArchiefConfiguratieTab.vue'
 import ArchiefSettingsTab from './tabs/ArchiefSettingsTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
+import EmailSettings from './EmailSettings.vue'
 import { generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
 import { initializeStores } from '../../store/store.js'
@@ -157,6 +165,7 @@ export default {
 		ArchiefSettingsTab,
 		MandaatMatrixSettingsTab,
 		ConsultationSettingsTab,
+		EmailSettings,
 	},
 	data() {
 		return {

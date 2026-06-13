@@ -262,10 +262,14 @@ class EmailTemplateController extends Controller
                 continue;
             }
 
+            // Sensitive keys (the shared-mailbox password) are stored with the
+            // sensitive flag so they are masked in `occ config:list` and the API.
             $this->appConfig->setValueString(
                 Application::APP_ID,
                 $key,
                 (string) $value,
+                false,
+                $sensitive,
             );
         }
 

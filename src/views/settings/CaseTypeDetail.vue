@@ -112,6 +112,9 @@
 				<WorkflowTab
 					v-else-if="activeTab === 'workflow'"
 					:case-type-id="caseTypeId" />
+				<EmailTemplateAdmin
+					v-else-if="activeTab === 'emailTemplates'"
+					:case-type-id="caseTypeId" />
 			</div>
 		</template>
 	</div>
@@ -129,6 +132,7 @@ import PropertiesTab from './tabs/PropertiesTab.vue'
 import DocumentTypesTab from './tabs/DocumentTypesTab.vue'
 import DecisionTypesTab from './tabs/DecisionTypesTab.vue'
 import SubCaseTypesTab from './tabs/SubCaseTypesTab.vue'
+import EmailTemplateAdmin from '../casetypes/components/EmailTemplateAdmin.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { validateCaseType, validateForPublish } from '../../utils/caseTypeValidation.js'
 
@@ -173,6 +177,7 @@ export default {
 		DocumentTypesTab,
 		DecisionTypesTab,
 		SubCaseTypesTab,
+		EmailTemplateAdmin,
 	},
 	props: {
 		caseTypeId: {
@@ -214,6 +219,7 @@ export default {
 				{ id: 'decisions', label: t('procest', 'Decisions') },
 				{ id: 'subCaseTypes', label: t('procest', 'Sub-cases') },
 				{ id: 'workflow', label: t('procest', 'Workflow') },
+				{ id: 'emailTemplates', label: t('procest', 'Email') },
 			]
 		},
 	},
