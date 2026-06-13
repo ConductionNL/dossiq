@@ -1,6 +1,6 @@
 ---
 status: done
-status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change; capability code confirmed present on development.
+status-note: Reverse-synced 2026-06-13 from archived implemented changes. Member 09 (contract backend) completed 2026-06-13 — the previously-deferred ContractController (GET /contracts/list, GET /contracts/{id}, POST /contracts/{id}/request-renewal; supplier-scoped, 403 on cross-supplier) and the nightly ScanExpiringContractsJob (TimedJob wrapping ContractRenewalService::scanAndFlagExpiring) are now genuinely built, routed, and unit-tested.
 ---
 # supplier-portal Specification
 
@@ -505,4 +505,29 @@ The system SHALL render status-specific tender detail and document download cont
 - THEN the award date and award-letter download button SHALL be shown
 - AND WHEN the tender is rejected THEN the rejection reason, appeal deadline, and anonymized
   evaluation-report download button SHALL be shown
+
+### Requirement: Contract Expiry Detection
+
+The system SHALL flag contracts within 90 days of expiry and compute the days remaining.
+
+#### Scenario: Contract within the threshold is flagged
+
+- GIVEN the nightly expiry-scan job runs
+- WHEN a contract's `endDate` is within 90 days
+- THEN its `renewalWarning` SHALL be set true and `daysUntilExpiry` computed
+- AND the supplier SHALL be emailed about the expiring contract
+- AND a contract more than 90 days from expiry SHALL NOT be flagged
+
+### Requirement: Contract Renewal Request
+
+The system SHALL create a Procest renewal zaak when a supplier requests renewal and notify the
+account manager.
+
+#### Scenario: Renewal request opens a Procest case
+
+- GIVEN a contracts or admin user requests renewal of a manual-renewal contract within 90 days
+- WHEN the request endpoint is called
+- THEN a Procest zaak of type `Leverancier-contractverlenging-verzoek` SHALL be created with the
+  contract reference and an email sent to the account manager
+- AND a cross-supplier contract request SHALL return 403
 
