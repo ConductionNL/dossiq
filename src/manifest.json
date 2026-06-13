@@ -607,6 +607,13 @@
 						"order": 55
 					},
 					{
+						"id": "relatedCases",
+						"label": "Related cases",
+						"icon": "icon-link",
+						"component": "RelatedCasesSection",
+						"order": 58
+					},
+					{
 						"id": "email",
 						"label": "Email",
 						"icon": "icon-mail",

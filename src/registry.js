@@ -55,6 +55,10 @@ import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // @spec openspec/changes/case-email-integration/tasks.md#T12
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
 import AdviesPanel from './views/cases/components/AdviesPanel.vue'
+// Related-case linking — typed peer relations (relevanteAndereZaken) sidebar tab.
+// Modal isolation per ADR-004: AddCaseRelationModal lives in src/modals/.
+// @spec openspec/specs/related-case-linking/spec.md
+import RelatedCasesSection from './views/cases/components/RelatedCasesSection.vue'
 // VTH-specific case detail panels
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
 import InspectionChecklistPanel from './views/cases/components/InspectionChecklistPanel.vue'
@@ -252,6 +256,14 @@ const registry = {
 		kind: 'page',
 		component: AdviesPanel,
 		_note: 'Advice/advies panel used in CaseDetail and BezwaarDetail sidebar tabs',
+	},
+
+	// --- Related-case linking sidebar tab. ---
+	// @spec openspec/specs/related-case-linking/spec.md
+	RelatedCasesSection: {
+		kind: 'page',
+		component: RelatedCasesSection,
+		_note: 'Typed peer relations (relevanteAndereZaken) on the case detail; add/view/remove typed links with RBAC-safe masking.',
 	},
 
 	// --- VTH module: case detail sidebar tabs. ---

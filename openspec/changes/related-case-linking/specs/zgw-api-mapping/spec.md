@@ -12,6 +12,8 @@ specified in `related-case-linking`.
 
 ### Requirement: ZRC Zaak resource MUST map relevanteAndereZaken bidirectionally
 
+@e2e exclude ZGW API-contract requirement — proven by the Newman collection tests/newman/relevante-andere-zaken.postman_collection.json (outbound array shape, inbound resolve+guard, unresolvable-URL rejection, empty-array) and ZrcController unit-level mapping; no Playwright UI surface (ZGW is a machine-to-machine API).
+
 The ZGW mapping layer SHALL translate `case.relatedCases` to the ZRC Zaak field `relevanteAndereZaken` as an array of `{url, aardRelatie}` objects (outbound), and SHALL accept `relevanteAndereZaken` on inbound zaak create/update by resolving each `url` to a local case UUID and routing the result through the case-relation guards, per the existing URL-reference translation and error-diagnostic requirements of this capability.
 
 #### Scenario: Outbound zaak includes relevanteAndereZaken
