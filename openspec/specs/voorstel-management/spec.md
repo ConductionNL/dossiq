@@ -32,7 +32,7 @@ canonical_home: case-management/spec.md
 | Multiple Voorstellen per Case | REQ-CM-18 Sub-Cases (deelzaak) — each B&W-voorstel that needs an independent route is modeled as a deelzaak under its parent case. |
 | Voorstel Detail View | REQ-CM-06 Case Detail View — including parafering progress timeline (REQ-CM-07) and audit trail (REQ-CM-22). |
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Voorstel Schema Registration
 

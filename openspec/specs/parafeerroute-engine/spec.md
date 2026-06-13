@@ -19,7 +19,7 @@ canonical_home: case-management/spec.md
 
 @e2e exclude RETIRED spec; requirements consolidated into case-management/spec.md.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Parafeerroute Schema Registration
 

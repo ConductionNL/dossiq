@@ -23,7 +23,7 @@ retrofit_extensions:
 
 @e2e exclude RETIRED spec; requirements consolidated into case-management/spec.md.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Parafeeractie Schema Registration
 
@@ -144,9 +144,9 @@ The system SHALL support registering a formal besluit (decision) when the colleg
 
 <!-- BEGIN retrofit-2026-05-24-parafering-actions-impl -->
 
-## Implementation Surface (retrofit — general controller)
+**Implementation Surface (retrofit — general controller)**
 
-### REQ-101: ParaferingController SHALL expose voorstel CRUD + per-action endpoints + audit trail
+### Requirement: ParaferingController SHALL expose voorstel CRUD + per-action endpoints + audit trail
 
 `OCA\Procest\Controller\ParaferingController` SHALL provide HTTP endpoints for: `createVoorstel()`, `startParafering($id)`, `paraferen($id)`, `terugsturen($id)`, `adviseren($id)`, and `auditTrail($id)`. The controller SHALL delegate all state mutation to `ParaferingService` and SHALL enforce that the calling user holds the role required by the current parafering step before executing an action.
 
@@ -155,7 +155,7 @@ The system SHALL support registering a formal besluit (decision) when the colleg
 - **WHEN** a user without that role calls `POST /api/paraferingen/{id}/adviseren`
 - **THEN** the controller SHALL respond `403 Forbidden`
 
-### REQ-102: ParaferingService SHALL implement voorstel lifecycle + action execution + step resolution
+### Requirement: ParaferingService SHALL implement voorstel lifecycle + action execution + step resolution
 
 `OCA\Procest\Service\ParaferingService` SHALL provide the canonical lifecycle: `createVoorstel(...)`, `startParafering(...)`, `executeAction(...)`, `getCurrentStep(...)`, `getAuditTrail(...)`, and `overrideRoute(...)`. The service SHALL persist every action as an audit-trail entry attached to the voorstel and SHALL advance the parafering route after each successful action — except `terugsturen`, which SHALL rewind to the previous handler.
 
@@ -169,7 +169,7 @@ The system SHALL support registering a formal besluit (decision) when the colleg
 - **WHEN** `terugsturen` is invoked with a comment
 - **THEN** the voorstel SHALL move back to S1 and the comment SHALL be attached to both the rewind audit entry and the original S1 handler's notification
 
-### REQ-103: ParaferingNotificationService SHALL emit step + reminder + completion notifications
+### Requirement: ParaferingNotificationService SHALL emit step + reminder + completion notifications
 
 `OCA\Procest\Service\ParaferingNotificationService` SHALL emit Nextcloud notifications: `notifyStepActivated()` when a new step's assigned handlers become responsible, `notifyVoorstelReturned()` when an upstream handler returns the voorstel for rework, and `notifyParaferingReminder()` on the BackgroundJob cadence for steps approaching their deadline. Notifications SHALL be deduplicated per (voorstel, step, type) so handlers do not see repeat noise within the same step.
 

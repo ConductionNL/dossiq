@@ -7,9 +7,11 @@ retrofit_extensions:
 
 ## Purpose
 
+Provide VTH inspection (toezicht) checklist support in Procest: a versioned inspection-checklist schema linked to case types, an admin UI for managing checklists, completion of checklists into inspection rapporten stored as case documents, and a case-dashboard inspection panel showing progress and rapport history.
+
 @e2e exclude Inspection checklists is V1; checklist schema and admin tab are not yet built in the Playwright-testable UI.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Inspection checklist schema
 

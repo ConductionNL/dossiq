@@ -1,8 +1,10 @@
 ## Purpose
 
+Provide VTH enforcement (handhaving) support in Procest based on the Landelijke Handhavingsstrategie (LHS): a configurable ernst x gedrag interventie matrix, an enforcement-action schema with dwangsom tracking and status lifecycle, a guided enforcement wizard, and a case-dashboard enforcement panel.
+
 @e2e exclude LHS matrix configuration is V1; matrix admin UI is a generic index page not yet exercised in Playwright tests.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: LHS matrix configuration
 
