@@ -35,7 +35,12 @@
 			<p>{{ t('procest', 'No workflow statuses configured. Define status types in Settings to use the board.') }}</p>
 		</div>
 
-		<div v-else class="workflow-board__columns">
+		<div
+			v-else
+			class="workflow-board__columns"
+			tabindex="0"
+			role="region"
+			:aria-label="t('procest', 'Workflow board columns')">
 			<BoardColumn
 				v-for="col in columns"
 				:key="col.id"
