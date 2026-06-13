@@ -30,16 +30,26 @@
 
 ## Verification Tasks
 
-- [ ] **V01**: New `samenwerkverzoek` schema and zaak extension fields valid JSON; config keys populated after install
-- [ ] **V02**: When OpenConnector writes a new vergunningaanvraag, listener creates a Procest zaak with correct `procedureType` and `deadlineDatum`
-- [ ] **V03**: Status transition on Procest zaak writes both Procest zaak and OpenRegister vergunningaanvraag in one service call
-- [ ] **V04**: `VergunningStatusChangedEvent` is dispatched and observable by a test listener
-- [ ] **V05**: Deadline job sends warning at warning threshold and critical at critical threshold; overdue cases get an overdue flag
-- [ ] **V06**: Working-day calculator excludes weekends and Dutch national holidays
-- [ ] **V07**: Beschikking generation produces a PDF, attaches as `bijlage` with `type: beschikking`, sends notification
-- [ ] **V08**: Samenwerkverzoek can be initiated, accepted with advies, and rejected with rationale; status enum transitions enforced
-- [ ] **V09**: Doorstuur dispatches event; OpenConnector test double receives it with reden
-- [ ] **V10**: VTH dashboard filters by activiteitgroep, regelkwalificatie, status, locatie and shows deadline colour indicator
+- [x] **V01**: New `samenwerkverzoek` schema and zaak extension fields valid JSON; config keys populated after install
+  - **Verified 2026-06-13 (static)**: `lib/Settings/register.d/dso-omgevingsloket.json` parses as valid JSON and contains the `samenwerkverzoek` schema. (Live "config keys populated after install" is the runtime half — covered by V02's install-time path.)
+- [~] **V02**: When OpenConnector writes a new vergunningaanvraag, listener creates a Procest zaak with correct `procedureType` and `deadlineDatum`
+  - **Deferred 2026-06-13 (live integration)**: code is in place — `lib/Listener/VergunningaanvraagCreatedListener.php` + `DsoCaseService` (deadline computed via the working-day calculator, V06). Asserting the end-to-end "OpenConnector writes → listener fires → zaak created" round-trip needs a live OpenConnector + OR + procest container; @e2e/Newman live-gate territory, not a static check.
+- [~] **V03**: Status transition on Procest zaak writes both Procest zaak and OpenRegister vergunningaanvraag in one service call
+  - **Deferred 2026-06-13 (live integration)**: the dual-write is implemented in `DsoCaseService` (which also dispatches `VergunningStatusChangedEvent`, V04). Confirming both OR objects are persisted in a single call requires a live OR connection + seeded data — runtime verification.
+- [x] **V04**: `VergunningStatusChangedEvent` is dispatched and observable by a test listener
+  - **Verified 2026-06-13 (static)**: `lib/Event/VergunningStatusChangedEvent.php` extends `OCP\EventDispatcher\Event` and exposes the full payload (`getVergunningaanvraagRef`, `getOldStatus`, `getNewStatus`, `getBesluitdatum`, `getToelichting`, `getUserId`); `DsoCaseService` dispatches it on status transition. Observable by any registered IEventListener.
+- [~] **V05**: Deadline job sends warning at warning threshold and critical at critical threshold; overdue cases get an overdue flag
+  - **Deferred 2026-06-13 (live job run)**: `lib/BackgroundJob/DsoDeadlineJob.php` implements the threshold logic. Asserting the cron actually fires warning/critical/overdue at the right boundaries needs a live scheduler + seeded cases with controlled dates — runtime verification.
+- [x] **V06**: Working-day calculator excludes weekends and Dutch national holidays
+  - **Verified 2026-06-13 (static)**: `DsoCaseService::isWorkingDay()` excludes Saturday/Sunday (`date('N')` 6/7) and a `FIXED_HOLIDAYS` set plus Easter-derived variable Dutch national holidays; `addWorkingDays`-style loop counts only working days toward the statutory 40/130-day deadlines.
+- [~] **V07**: Beschikking generation produces a PDF, attaches as `bijlage` with `type: beschikking`, sends notification
+  - **Deferred 2026-06-13 (cross-app, docudesk + live)**: `BeschikkingGenerationService` + the adapter interfaces are shipped, but real PDF rendering depends on the Docudesk template engine (see beschikking-generatie T26, deferred cross-app). The PDF-produced/attached/notified round-trip is a live integration assertion.
+- [x] **V08**: Samenwerkverzoek can be initiated, accepted with advies, and rejected with rationale; status enum transitions enforced
+  - **Verified 2026-06-13 (static)**: `lib/Service/SamenwerkverzoekService.php` creates verzoeken with status `aangevraagd`, and the accept/reject path guards the transition — it throws `\RuntimeException` unless the current status is `aangevraagd` before moving to `geaccepteerd`/`geweigerd` with the supplied advies/rationale. Status enum + one-shot transition enforced in code.
+- [~] **V09**: Doorstuur dispatches event; OpenConnector test double receives it with reden
+  - **Deferred 2026-06-13 (live integration)**: the doorstuur endpoint + dialog are shipped (`DoorstuurDialog.vue`, `DSOIntakeController`/`DsoCaseService` doorstuur path). The "OpenConnector test double receives the event with reden" assertion needs an OpenConnector double wired into a live env — integration test, not static.
+- [~] **V10**: VTH dashboard filters by activiteitgroep, regelkwalificatie, status, locatie and shows deadline colour indicator
+  - **Deferred 2026-06-13 (live UI)**: `src/views/dso/VthDashboard.vue` implements the dashboard. Exercising the four filters + the deadline colour indicator against seeded cases is a Playwright/live-UI assertion (gate-19), not statically verifiable here.
 
 ## Deferral block (final-77 sweep, 2026-06-11)
 

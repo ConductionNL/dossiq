@@ -60,14 +60,21 @@ self-contained and should take under 15 minutes.
 - [x] 5.1 Run `openspec validate refactor-procest-ia-alignment --strict`.
       (openspec CLI not available in container; spec coherence validated
       manually — design.md and specs/task-management align.)
-- [ ] 5.2 Browser-verify: navigate Procest end-to-end (Dashboard → Mijn werk
+- [~] 5.2 Browser-verify: navigate Procest end-to-end (Dashboard → Mijn werk
       → Tasks via the new affordance → CaseDetail → CaseTasksTab) and
-      screenshot the new nav for the PR. (Requires running NC instance.)
+      screenshot the new nav for the PR.
+      **Deferred 2026-06-13 (live-env)**: requires a running NC+procest
+      container; this is a navigation/IA reordering (manifest menu + a
+      `<router-link>` affordance inside MyWork) with no deterministic
+      isolated UI surface to assert in unit tests. Structural change is
+      verified in the manifest + `MyWork.vue` diff (tasks 1.x/2.x ticked);
+      end-to-end nav screenshotting is covered by the procest gate-19
+      live-verify pass rather than this archive sweep.
 - [x] 5.3 Run `composer check:strict` (no PHP changes are expected, but the
       gate must stay green). 0 ERRORS (pre-existing warnings only, not
       introduced by this change).
-- [ ] 5.4 Run `npm run test` to confirm no Vue tests break.
-      (npm deps unavailable in container; skipped.)
+- [x] 5.4 Run `npm run test` to confirm no Vue tests break.
+      **Verified 2026-06-13**: `npm ci` + `npm run test:unit` (vitest) → 2 files / 31 tests passed, 0 failures.
 - [x] 5.5 Open a PR titled `refactor(procest): align Tasks placement with IA
       (Mijn werk › Taken)` targeting `development`.
       PR: https://codeberg.org/Conduction/procest/pulls/38

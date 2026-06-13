@@ -205,25 +205,28 @@
   - Return { signedPdfBytes, validatieRapportId, certificaatSerienummer, ondertekeningTijdstip }
   - Store the validatierapport durably (in Nextcloud or internal storage)
 
-- [ ] **T24**: (OpenConnector) Implement Berichtenbox routing:
+- [~] **T24**: (OpenConnector) Implement Berichtenbox routing:
   - `POST /api/berichtenbox/send` accepting { pdfBytes, geadresseerde, kenmerk }
   - Route to MijnOverheid (Logius API) for BSN-based burgers
   - Route to eHerkenning OIN for business addressees
   - Fallback to print-post if not activated
   - Return { berichtId, verzondenOp, kanaal }
+  - **Deferred 2026-06-13 (cross-app, openconnector)**: Berichtenbox/Logius routing is an OpenConnector deliverable, not procest. Procest's `BeschikkingService` already calls the send seam via the MockArchivalAdapter/adapter interfaces; the live route lands in openconnector. Tracked there.
 
-- [ ] **T25**: (OpenRegister) Implement archival ingestion:
+- [~] **T25**: (OpenRegister) Implement archival ingestion:
   - `POST /api/archief/ingest` endpoint accepting { beschikkingId, pdfBytes, tmloMetadata }
   - Store PDF/A-3 bytes durably
   - Record metadata block
   - Calculate vernietigingsdatum based on gemeente selectielijst
   - Return { archiefId, vernietigingsdatum }
+  - **Deferred 2026-06-13 (cross-app, openregister)**: durable archival ingestion + retention-date calculation is an OpenRegister concern. Procest integrates through `ArchivalAdapterInterface` (MockArchivalAdapter shipped); the OR ingest endpoint is the OR programme's deliverable.
 
-- [ ] **T26**: (Docudesk) Ensure template-engine supports:
+- [~] **T26**: (Docudesk) Ensure template-engine supports:
   - PDF/A-3 output (not just PDF)
   - Version pinning by effectieve datum
   - Placeholder substitution from zaakdata context
   - Return of checksumSha256 and paginas count
+  - **Deferred 2026-06-13 (cross-app, docudesk)**: PDF/A-3 template-engine capability lives in Docudesk. Procest consumes it via `TemplateEngineAdapterInterface` (MockTemplateEngineAdapter shipped); the engine upgrade is a Docudesk deliverable.
 
 ---
 

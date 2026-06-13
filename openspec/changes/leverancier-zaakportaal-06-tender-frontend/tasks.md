@@ -15,5 +15,6 @@ Traces to giant task 2.2; spec REQ-003.
 - [x] Cache tender list ~5 minutes — `cacheControlHeader()` returns `private, max-age=300`; `SupplierPortalController#tenders` adds the header on the response
 - [x] Use NL Design System components; meet WCAG 2.1 AA (keyboard nav, contrast, ARIA) — CSS variables (`--color-primary`, `--color-border`, `--color-text-maxcontrast`); table headers are `scope="col"`; `role="alert"` on error state; `:focus` outline on cards/links
 - [x] Test sorting/filtering with 10+ tenders — covered by the Vue unit-spec strategy in `tests/e2e/leverancier-zaakportaal.spec.ts`; the spec exercises the sort toggle + status filter against seeded fixtures (or empty-state when the register is unseeded)
-- [ ] Test PDF download from the evaluation report — needs TenderController
+- [~] Test PDF download from the evaluation report
+  - **Deferred 2026-06-13 (blocked on backend)**: no `TenderController` PDF/download endpoint exists yet — the chunked-streaming download route is explicitly deferred to chain member 16 (see task 14). The frontend half is done: `TenderDetail.vue` renders the download links against `tender.awardLetterUrl` / `tender.evaluationReportUrl`. The download round-trip test can only run once member 16 lands the backend route — a backend dependency, not a frontend gap.
 - [x] Verify appeal-deadline formatting and accuracy — backend `TenderVisibilityService::getAppealDeadline()` tests (chain member 05) cover the date math; the controller surfaces it as `appealDeadline` + `canAppeal` flags on the detail payload

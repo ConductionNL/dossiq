@@ -14,7 +14,8 @@ Member 4 of 12 (code). Depends on member 03. Traces to giant Task 3 + REQ-002-A.
 
 - [x] Implement `TenantIsolationMiddleware` to set `search_path = '<tenant_schema>',public` per request — `applySearchPath()`
 - [x] Build the schema name from the resolved Tenant UUID + slug (never raw input) — delegated to `TenantProvisioningService::buildSchemaName()` (chain member 03) which is fully validated
-- [ ] Return HTTP 404 (not 403) for cross-tenant lookups — the search_path naturally returns 0 rows; explicit "404 not 403" status mapping is a controller-level concern wired up in chain members 05+ as controllers land
+- [~] Return HTTP 404 (not 403) for cross-tenant lookups
+  - **Deferred 2026-06-13 (downstream controllers)**: the isolation primitive in scope for *this* change already enforces tenant separation — `TenantIsolationMiddleware::applySearchPath()` scopes every query to the tenant schema, so a cross-tenant row is simply absent (0 rows) rather than forbidden. The explicit "return 404, not 403" *status mapping* is a controller-level concern that lands as the SaaS chain members 05+ add the tenant-scoped controllers; there is no controller in this member to attach the mapping to. Tracked with the chain, not a gap in the context-isolation middleware.
 - [x] Register both middlewares in the procest middleware pipeline (Authenticate → Context → Isolation) — `Application.php` registers TenantContextMiddleware then TenantIsolationMiddleware after the existing ZgwAuth + Tenant chain
 
 ## 3. Tests + benchmark
