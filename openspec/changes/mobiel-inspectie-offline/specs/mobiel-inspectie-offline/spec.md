@@ -1,5 +1,18 @@
 ---
-status: proposed
+status: partial
+residue: >
+  Backend complete (5 OR schemas + sync engine + IDOR-safe SyncController, 59 unit
+  tests) and the offline PWA client core is built: Dexie/IndexedDB store, a pure
+  unit-tested sync-queue engine (ordering/backoff/conflict-classification/replay/
+  resolution/diff), offline checklist + daily-planning views, conflict-resolution
+  merge modal, replay glue, PWA Service Worker + web manifest, and the sync API
+  surface (Newman + gate-19 Playwright). GENUINELY DEFERRED to follow-ups (device
+  APIs / cross-app / live instance): camera+canvas photo compression, MediaRecorder
+  Opus voice capture, GPS sensor wiring, Leaflet/PDOK offline tile cache + map
+  drawing, the AVG DataProcessingNotice + immutable AuditService consent log, qwen
+  LLM transcription routing, OpenConnector DLQ + Pipelinq inspectie_afgerond webhook,
+  Docudesk PDF-on-sync, and the live functional/performance suites. Their
+  offline-independent logic is unit-tested; the device/cross-app glue remains.
 ---
 
 # mobiel-inspectie-offline Specification
