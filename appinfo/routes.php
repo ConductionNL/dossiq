@@ -112,6 +112,11 @@ return [
         ['name' => 'supplierPortal#messages',      'url' => '/api/leverancier-portaal/messages',          'verb' => 'GET'],
         ['name' => 'supplierPortal#sendMessage',   'url' => '/api/leverancier-portaal/messages',          'verb' => 'POST'],
 
+        // Leverancier-zaakportaal — contract list/detail + renewal request (chain member 09).
+        ['name' => 'contract#index',          'url' => '/api/leverancier-portaal/contracts/list',                'verb' => 'GET'],
+        ['name' => 'contract#requestRenewal', 'url' => '/api/leverancier-portaal/contracts/{id}/request-renewal', 'verb' => 'POST'],
+        ['name' => 'contract#show',           'url' => '/api/leverancier-portaal/contracts/{id}',                'verb' => 'GET'],
+
         // Leverancier-zaakportaal — operator-side write endpoints (master-data
         // mutations, chain member 12). Address + contactPerson apply
         // immediately; IBAN + accreditation are 4-eyes via Procest cases.
