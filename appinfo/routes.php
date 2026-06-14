@@ -307,6 +307,9 @@ return [
         ['name' => 'sync#queue',         'url' => '/api/sync/queue',                       'verb' => 'GET'],
         ['name' => 'sync#recordOutcome', 'url' => '/api/sync/queue/{id}/outcome',          'verb' => 'POST'],
         ['name' => 'sync#resolveConflict', 'url' => '/api/sync/conflicts/{id}/resolve',    'verb' => 'POST'],
+        // PWA assets (must precede the catch-all /{path} shell route below).
+        ['name' => 'dashboard#serviceWorker', 'url' => '/service-worker.js',           'verb' => 'GET'],
+        ['name' => 'dashboard#webManifest',   'url' => '/manifest.webmanifest',        'verb' => 'GET'],
 
         // ── Legesberekening (municipal fee calculation) ─────────────────
         ['name' => 'leges#calculate',   'url' => '/api/leges/calculate',    'verb' => 'POST'],

@@ -173,3 +173,16 @@ new Vue({
 		},
 	}),
 }).$mount('#content')
+
+// Register the mobiel-inspectie-offline Service Worker (PWA offline shell).
+// Fire-and-forget: registration failure must never block app boot, and the
+// app degrades gracefully to online-only when the worker is unavailable.
+// @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+	window.addEventListener('load', () => {
+		navigator.serviceWorker
+			.register(generateUrl('/apps/procest/service-worker.js'), { scope: generateUrl('/apps/procest/') })
+			// eslint-disable-next-line no-console
+			.catch((e) => console.warn('[procest] service worker registration failed', e))
+	})
+}

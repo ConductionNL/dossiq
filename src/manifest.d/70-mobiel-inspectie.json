@@ -1,0 +1,27 @@
+{
+	"pages": [
+		{
+			"id": "Inspecties",
+			"route": "/inspecties",
+			"type": "custom",
+			"title": "Field inspections",
+			"component": "InspectieList"
+		},
+		{
+			"id": "InspectieDetail",
+			"route": "/inspecties/:id",
+			"type": "custom",
+			"title": "Inspection",
+			"component": "InspectieDetail"
+		}
+	],
+	"menu": [
+		{
+			"id": "Inspecties",
+			"label": "Field inspections",
+			"icon": "icon-category-monitoring",
+			"route": "Inspecties",
+			"order": 95
+		}
+	]
+}
