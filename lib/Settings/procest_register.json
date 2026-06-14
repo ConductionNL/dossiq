@@ -2225,9 +2225,11 @@
         "slug": "paraferingAuditEntry",
         "icon": "ShieldCheckOutline",
         "version": "1.0.0",
+        "deprecated": true,
+        "deprecationNote": "Superseded by OR audit trail via migrate-parafering-to-or-audit (ADR-022, consume-or-audit-trail-fleet-wide). New parafering transitions are recorded through OR's hash-chained audit trail (procest.parafering.* actions, discoverable via GET /api/audit-trails?objectUuid={voorstelId}). No new writes after migration. Sunset: one major procest release after spec acceptance; existing rows remain readable until then.",
         "x-schema-org-type": "schema:Action",
         "title": "Parafering audit entry",
-        "description": "Append-only, regulator-grade audit entry for a parafeerroute transition. One entry per transition (started, paraferd, advised, terugsturen, route-changed, completed). Captures actor, role, timestamp, reason, content snapshot at action moment, redacted IP, and SHA-256 hash of the canonical payload for tamper detection. UPDATE and DELETE are blocked by the ParaferingAuditAppendOnlyValidator listener.",
+        "description": "DEPRECATED (migrate-parafering-to-or-audit): historical append-only audit entries for parafeerroute transitions. New transitions are recorded via OR's native audit trail instead of this schema. Existing rows remain readable for one major release. Originally: regulator-grade entry per transition (started, paraferd, advised, terugsturen, route-changed, completed) with actor, role, timestamp, reason, content snapshot, redacted IP, and SHA-256 tamper-detection hash.",
         "type": "object",
         "required": [
           "voorstel",

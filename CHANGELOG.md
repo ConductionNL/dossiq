@@ -4,6 +4,14 @@ All notable changes to Procest are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- `migrate-parafering-to-or-audit` (ADR-022 / consume-or-audit-trail-fleet-wide): parafering transitions are now recorded through OpenRegister's native, hash-chained, append-only audit trail instead of a parallel `paraferingAuditEntry` object store. `ParaferingAuditListener` emits `procest.parafering.{action}` entries via `AuditTrailMapper::createAuditTrailEntry()`, carrying the transition context (`parafeerrouteId`, `paraffeerstapId`, `fromState`, `toState`, `actorUuid`, `comment`) in OR's `changed` JSON column. The in-app `ParaferingAuditAppendOnlyValidator` and its `ObjectCreating/Updating/Deleting` registrations were removed — OR's audit trail rejects PUT/DELETE natively.
+
+### Deprecated
+
+- The `paraferingAuditEntry` schema is deprecated as of this release. New parafering transitions are audited via OR's audit-trail API (`GET /api/audit-trails?objectUuid={voorstelId}`). Existing `paraferingAuditEntry` rows remain readable for one major release; the schema will be removed in the following major release.
+
 ### Documented
 
 - `workflow-engine-enhancement`: backfilled the openspec change to reflect the shipped engine. The visual workflow editor (canvas, step/transition/guard/action panels, version management) is live under

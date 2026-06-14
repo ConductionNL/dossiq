@@ -26,11 +26,8 @@ namespace OCA\Procest\AppInfo;
 
 use OCA\OpenRegister\Event\DeepLinkRegistrationEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
-use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Procest\Service\Beschikking\MockArchivalAdapter;
 use OCA\Procest\Service\Beschikking\MockSigningAdapter;
@@ -67,7 +64,6 @@ use OCA\Procest\Middleware\TenantMiddleware;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
 use OCA\Procest\Service\TenantJwtService;
 use OCP\IConfig;
-use OCA\Procest\Validator\ParaferingAuditAppendOnlyValidator;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -281,26 +277,14 @@ class Application extends App implements IBootstrap
             listener: BezwaarLifecycleListener::class
         );
 
-        // Parafering audit trail: one listener writes append-only audit entries
-        // for every parafeerroute transition (spec parafering-audit-trail).
+        // Parafering audit trail: one listener emits an OR audit-trail entry
+        // (hash-chained, natively immutable) for every parafeerroute transition.
+        // Per ADR-022 + consume-or-audit-trail-fleet-wide (migrate-parafering-to-or-audit),
+        // there is no parallel paraferingAuditEntry write path and no in-app
+        // append-only validator — OR's audit trail rejects PUT/DELETE natively.
         $context->registerEventListener(
             event: ParafeerTransitionEvent::class,
             listener: ParaferingAuditListener::class
-        );
-
-        // Parafering audit trail: append-only validator blocks UPDATE/DELETE
-        // on paraferingAuditEntry objects via OR's pre-save hooks.
-        $context->registerEventListener(
-            event: ObjectCreatingEvent::class,
-            listener: ParaferingAuditAppendOnlyValidator::class
-        );
-        $context->registerEventListener(
-            event: ObjectUpdatingEvent::class,
-            listener: ParaferingAuditAppendOnlyValidator::class
-        );
-        $context->registerEventListener(
-            event: ObjectDeletingEvent::class,
-            listener: ParaferingAuditAppendOnlyValidator::class
         );
 
         // Parafering notifications now observe OpenRegister's approval-workflow
