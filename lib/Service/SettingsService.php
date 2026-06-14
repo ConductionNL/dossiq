@@ -524,6 +524,77 @@ class SettingsService
         }
     }//end getObjectService()
 
+
+    /**
+     * Lazily resolve OpenRegister's ApprovalService for parafering chain delegation.
+     *
+     * Per ADR-022 (apps consume OpenRegister abstractions) the parafering
+     * (sign-off routing) chain-state backend is OpenRegister's
+     * `approval-workflow` capability, exposed through
+     * `OCA\OpenRegister\Service\ApprovalService`. OpenRegister is an optional
+     * runtime dependency, so — exactly like getObjectService() — the class is
+     * resolved through the container at call time rather than type-hinted in the
+     * constructor. Callers MUST handle the null case (graceful degradation to
+     * the legacy in-array path during the migration window).
+     *
+     * @return object|null The OpenRegister ApprovalService or null when unavailable
+     *
+     * @psalm-suppress MixedReturnStatement
+     * @psalm-suppress MixedInferredReturnType
+     *
+     * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
+     */
+    public function getApprovalService(): ?object
+    {
+        if ($this->isOpenRegisterAvailable() === false) {
+            return null;
+        }
+
+        try {
+            return $this->container->get('OCA\OpenRegister\Service\ApprovalService');
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Procest: Could not access OpenRegister ApprovalService',
+                ['exception' => $e->getMessage()]
+            );
+            return null;
+        }
+    }//end getApprovalService()
+
+
+    /**
+     * Lazily resolve an OpenRegister DI class by fully-qualified name.
+     *
+     * Generic helper for the parafering approval bridge to reach OpenRegister's
+     * ApprovalChainMapper / ApprovalStepMapper without a hard constructor
+     * dependency on the optional OpenRegister app.
+     *
+     * @param string $class Fully-qualified OpenRegister class name
+     *
+     * @return object|null The resolved service, or null when unavailable
+     *
+     * @psalm-suppress MixedReturnStatement
+     * @psalm-suppress MixedInferredReturnType
+     *
+     * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
+     */
+    public function getOpenRegisterClass(string $class): ?object
+    {
+        if ($this->isOpenRegisterAvailable() === false) {
+            return null;
+        }
+
+        try {
+            return $this->container->get($class);
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Procest: Could not access OpenRegister class',
+                ['class' => $class, 'exception' => $e->getMessage()]
+            );
+            return null;
+        }
+    }//end getOpenRegisterClass()
+
     /**
      * Load the register configuration from procest_register.json via ConfigurationService.
      *

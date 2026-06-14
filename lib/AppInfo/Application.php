@@ -51,6 +51,7 @@ use OCA\Procest\Listener\BezwaarHearingScheduledListener;
 use OCA\Procest\Listener\BezwaarLifecycleListener;
 use OCA\Procest\Event\ParafeerTransitionEvent;
 use OCA\Procest\Listener\DeepLinkRegistrationListener;
+use OCA\Procest\Listener\ApprovalStepNotificationListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
 use OCA\Procest\Listener\LegesCaseCreatedListener;
 use OCA\Procest\Listener\LegesCaseWithdrawnListener;
@@ -300,6 +301,21 @@ class Application extends App implements IBootstrap
         $context->registerEventListener(
             event: ObjectDeletingEvent::class,
             listener: ParaferingAuditAppendOnlyValidator::class
+        );
+
+        // Parafering notifications now observe OpenRegister's approval-workflow
+        // step events (ADR-022 / migrate-parafering-to-or-approval-workflow):
+        // when a step is approved the next parafeerder is notified; when a step
+        // is rejected (terugsturen) the steller is notified. The OpenRegister
+        // event classes are registered by FQN string so procest carries no
+        // hard compile-time dependency on the optional OpenRegister app.
+        $context->registerEventListener(
+            event: 'OCA\OpenRegister\Event\ApprovalStepApprovedEvent',
+            listener: ApprovalStepNotificationListener::class
+        );
+        $context->registerEventListener(
+            event: 'OCA\OpenRegister\Event\ApprovalStepRejectedEvent',
+            listener: ApprovalStepNotificationListener::class
         );
 
         // Bezwaar-advisory-committee auto-assignment when a bezwaar enters
