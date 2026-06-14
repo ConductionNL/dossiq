@@ -80,11 +80,12 @@ class ParafeerRouteService
     /**
      * Constructor.
      *
-     * @param SettingsService     $settingsService The Procest settings/config bridge to OpenRegister
-     * @param IUserSession        $userSession     The current Nextcloud user session
-     * @param LoggerInterface     $logger          The logger
-     * @param RoleResolverService $roleResolver    Central role-routing engine
-     * @param IEventDispatcher    $eventDispatcher The event dispatcher
+     * @param SettingsService          $settingsService The Procest settings/config bridge to OpenRegister
+     * @param IUserSession             $userSession     The current Nextcloud user session
+     * @param LoggerInterface          $logger          The logger
+     * @param RoleResolverService      $roleResolver    Central role-routing engine
+     * @param IEventDispatcher         $eventDispatcher The event dispatcher
+     * @param ParaferingApprovalBridge $approvalBridge  Bridge to OpenRegister approval-workflow (ADR-022)
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -92,6 +93,7 @@ class ParafeerRouteService
         private readonly LoggerInterface $logger,
         private readonly RoleResolverService $roleResolver,
         private readonly IEventDispatcher $eventDispatcher,
+        private readonly ParaferingApprovalBridge $approvalBridge,
     ) {
     }//end __construct()
 
@@ -178,6 +180,15 @@ class ParafeerRouteService
         $voorstel['currentStep']   = 1;
         $voorstel['status']        = self::STATUS_IN_PARAFERING;
 
+        // Per ADR-022, the chain-state backend is OpenRegister's approval-workflow.
+        // Create the OpenRegister ApprovalChain and persist its UUID on the voorstel.
+        // No new procest-local Parafeerroute row is written for the chain state.
+        $voorstelUuid = (string) ($voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId);
+        $chainUuid    = $this->createApprovalChain(voorstelUuid: $voorstelUuid, route: $route, steps: $steps);
+        if ($chainUuid !== null) {
+            $voorstel['approvalChainUuid'] = $chainUuid;
+        }
+
         $voorstel = $this->toArray(value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema));
 
         $this->activateStep(voorstel: $voorstel, step: 1, steps: $steps);
@@ -192,6 +203,44 @@ class ParafeerRouteService
 
         return $voorstel;
     }//end startParafering()
+
+    /**
+     * Create the OpenRegister ApprovalChain backing this parafering route.
+     *
+     * Best-effort: returns the created chain UUID, or null when OpenRegister's
+     * approval-workflow backend is unavailable (the legacy in-array
+     * routeSnapshot path then remains the source of truth for this voorstel
+     * during the migration window).
+     *
+     * @param string                           $voorstelUuid The voorstel UUID.
+     * @param array<string, mixed>             $route        The route object (provides the chain name).
+     * @param array<int, array<string, mixed>> $steps        The normalised route steps.
+     *
+     * @return string|null The ApprovalChain UUID, or null when unavailable.
+     *
+     * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P1.1
+     */
+    private function createApprovalChain(string $voorstelUuid, array $route, array $steps): ?string
+    {
+        if ($this->approvalBridge->isAvailable() === false) {
+            return null;
+        }
+
+        try {
+            $name = (string) ($route['name'] ?? 'Parafeerroute');
+            return $this->approvalBridge->initializeChainForVoorstel(
+                voorstelUuid: $voorstelUuid,
+                name: $name,
+                steps: $steps,
+            );
+        } catch (Throwable $e) {
+            $this->logger->warning(
+                'Procest: ApprovalChain creation failed, falling back to in-array routing',
+                ['voorstel' => $voorstelUuid, 'exception' => $e->getMessage()]
+            );
+            return null;
+        }
+    }//end createApprovalChain()
 
     /**
      * Complete the current parafering step and advance to the next step.

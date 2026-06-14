@@ -1990,10 +1990,12 @@
       "parafeerroute": {
         "slug": "parafeerroute",
         "icon": "RoutesClock",
-        "version": "1.0.0",
+        "version": "1.1.0",
+        "deprecated": true,
+        "deprecatedSince": "2026-06-14",
         "x-schema-org-type": "schema:HowTo",
         "title": "Parafeerroute",
-        "description": "A configurable endorsement route defining the sequence of parafering steps for a voorstel",
+        "description": "DEPRECATED (migrate-parafering-to-or-approval-workflow): parafering chain-state is now backed by OpenRegister's approval-workflow (ApprovalChain/ApprovalStep) per ADR-022. Existing rows remain readable until sunset; no new rows are written. A configurable endorsement route defining the sequence of parafering steps for a voorstel.",
         "type": "object",
         "required": [
           "name",
