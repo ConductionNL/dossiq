@@ -50,17 +50,14 @@ use Throwable;
  * availability via isAvailable() so callers can fall back to the legacy
  * in-array routing path during the migration window.
  *
+ * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/specs/parafering-via-or-approval/spec.md
+ *
  * @psalm-suppress UnusedClass
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class ParaferingApprovalBridge
 {
-    /**
-     * Fully-qualified name of OpenRegister's ApprovalChain entity.
-     */
-    private const OR_CHAIN_ENTITY = 'OCA\OpenRegister\Db\ApprovalChain';
-
     /**
      * Fully-qualified name of OpenRegister's ApprovalChainMapper.
      */
@@ -87,6 +84,8 @@ class ParaferingApprovalBridge
      * Whether OpenRegister's approval-workflow backend is reachable.
      *
      * @return bool True when the ApprovalService and mappers can be resolved.
+     *
+     * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/specs/parafering-via-or-approval/spec.md
      */
     public function isAvailable(): bool
     {
@@ -113,6 +112,8 @@ class ParaferingApprovalBridge
      * @return string|null The created ApprovalChain UUID, or null when OpenRegister is unavailable.
      *
      * @throws RuntimeException When chain creation fails while OpenRegister is available.
+     *
+     * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/specs/parafering-via-or-approval/spec.md
      */
     public function initializeChainForVoorstel(string $voorstelUuid, string $name, array $steps): ?string
     {
@@ -165,14 +166,16 @@ class ParaferingApprovalBridge
      * `pending`, and dispatches the approval events. App-specific metadata is
      * encoded in the comment as JSON.
      *
-     * @param string                $voorstelUuid The voorstel UUID.
-     * @param string                $userId       The acting user UID (from IUserSession).
-     * @param string                $text         The human-readable comment/reden.
-     * @param array<string, mixed>  $meta         Machine-readable meta (action, actorType, onBehalfOf, mandate, advice).
+     * @param string               $voorstelUuid The voorstel UUID.
+     * @param string               $userId       The acting user UID (from IUserSession).
+     * @param string               $text         The human-readable comment/reden.
+     * @param array<string, mixed> $meta         Machine-readable meta (action, actorType, onBehalfOf, mandate, advice).
      *
      * @return array<string, mixed>|null The OpenRegister approveStep result, or null when unavailable.
      *
      * @throws RuntimeException When no pending step exists or the approval fails.
+     *
+     * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/specs/parafering-via-or-approval/spec.md
      */
     public function approveCurrentStep(string $voorstelUuid, string $userId, string $text, array $meta): ?array
     {
@@ -208,6 +211,8 @@ class ParaferingApprovalBridge
      * @return array<string, mixed>|null The OpenRegister rejectStep result, or null when unavailable.
      *
      * @throws RuntimeException When no pending step exists or the rejection fails.
+     *
+     * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/specs/parafering-via-or-approval/spec.md
      */
     public function rejectCurrentStep(string $voorstelUuid, string $userId, string $text, array $meta): ?array
     {
@@ -258,11 +263,11 @@ class ParaferingApprovalBridge
             }
 
             $mapped[] = [
-                'order'          => (int) ($step['order'] ?? $order),
-                'role'           => (string) ($step['role'] ?? ($step['actor'] ?? '')),
-                'type'           => (string) ($step['type'] ?? 'parafering'),
+                'order'           => (int) ($step['order'] ?? $order),
+                'role'            => (string) ($step['role'] ?? ($step['actor'] ?? '')),
+                'type'            => (string) ($step['type'] ?? 'parafering'),
                 'statusOnApprove' => (string) ($step['statusOnApprove'] ?? 'approved'),
-                'statusOnReject' => (string) ($step['statusOnReject'] ?? 'rejected'),
+                'statusOnReject'  => (string) ($step['statusOnReject'] ?? 'rejected'),
             ];
             $order++;
         }//end foreach
@@ -329,7 +334,10 @@ class ParaferingApprovalBridge
         }
 
         $encoded = json_encode(['text' => $text, '_meta' => $filtered]);
+        if ($encoded === false) {
+            return $text;
+        }
 
-        return $encoded === false ? $text : $encoded;
+        return $encoded;
     }//end encodeComment()
 }//end class

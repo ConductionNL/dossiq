@@ -56,6 +56,8 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
+ * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/specs/parafering-via-or-approval/spec.md
+ *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class ApprovalStepNotificationListener implements IEventListener
@@ -100,12 +102,12 @@ class ApprovalStepNotificationListener implements IEventListener
         try {
             $class = get_class($event);
             if ($class === self::EVENT_APPROVED) {
-                $this->handleApproved($event);
+                $this->handleApproved(event: $event);
                 return;
             }
 
             if ($class === self::EVENT_REJECTED) {
-                $this->handleRejected($event);
+                $this->handleRejected(event: $event);
             }
         } catch (Throwable $e) {
             $this->logger->warning(
@@ -183,7 +185,7 @@ class ApprovalStepNotificationListener implements IEventListener
         if (method_exists($event, 'getStep') === true) {
             $step = $event->getStep();
             if (is_object($step) === true && method_exists($step, 'getComment') === true) {
-                $comment = $this->extractCommentText((string) ($step->getComment() ?? ''));
+                $comment = $this->extractCommentText(comment: (string) ($step->getComment() ?? ''));
             }
         }
 
@@ -222,16 +224,7 @@ class ApprovalStepNotificationListener implements IEventListener
 
         try {
             $voorstel = $objectService->find($objectUuid, register: $register, schema: $schema);
-            if (is_array($voorstel) === true) {
-                return $voorstel;
-            }
-
-            if (is_object($voorstel) === true && method_exists($voorstel, 'jsonSerialize') === true) {
-                $serialized = $voorstel->jsonSerialize();
-                if (is_array($serialized) === true) {
-                    return $serialized;
-                }
-            }
+            return $this->normalizeToArray(value: $voorstel);
         } catch (Throwable $e) {
             $this->logger->warning(
                 'Procest: could not load voorstel for approval notification',
@@ -241,6 +234,29 @@ class ApprovalStepNotificationListener implements IEventListener
 
         return [];
     }//end loadVoorstel()
+
+    /**
+     * Normalize an OpenRegister return value (array or jsonSerializable) to an array.
+     *
+     * @param mixed $value The ObjectService return value.
+     *
+     * @return array<string, mixed> The normalized array, or an empty array.
+     */
+    private function normalizeToArray($value): array
+    {
+        if (is_array($value) === true) {
+            return $value;
+        }
+
+        if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
+            $serialized = $value->jsonSerialize();
+            if (is_array($serialized) === true) {
+                return $serialized;
+            }
+        }
+
+        return [];
+    }//end normalizeToArray()
 
     /**
      * Resolve the Nextcloud user IDs that are members of a role group.
