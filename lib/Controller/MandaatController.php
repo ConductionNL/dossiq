@@ -64,15 +64,24 @@ class MandaatController extends Controller
     /**
      * Check whether the signing user holds a valid mandate for a case.
      *
+     * NOTE: As of procest-delegate-contract-decision, the mandate/route-stage
+     * assignee model is now owned by decidesk (Person|GovernanceBody assignee,
+     * ambtelijk↔politiek route seeds). This endpoint still validates local
+     * mandaat constraints but new mandate-decision flows should be raised via
+     * ContractDecisionDelegationService with the appropriate mandateContext.
+     *
      * @param string $id The case UUID.
      *
      * @return JSONResponse Validation result envelope or an error response.
      *
      * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-10
+     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md
      */
     #[NoAdminRequired]
     public function mandaatCheck(string $id): JSONResponse
     {
+        // Mandate validation: local Awb constraints remain owned by procest;
+        // route-stage assignee decisions are delegated to decidesk (ADR-019).
         try {
             $this->authorizeMandaatAccess(caseId: $id, user: $this->userSession->getUser());
         } catch (OCSForbiddenException $e) {

@@ -74,7 +74,14 @@ class BesluitvormingController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      *
+     * @deprecated Decision types (bvw-* templates) are now managed by decidesk
+     *             (procest-delegate-contract-decision). Template activation is
+     *             kept for historical read access until the sunset of the local
+     *             besluit engine. New decision flows must use
+     *             ContractDecisionDelegationService::raiseContractDecision().
+     *
      * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-2
+     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md
      */
     #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function activateTemplate(string $slug): JSONResponse

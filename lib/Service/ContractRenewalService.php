@@ -20,6 +20,7 @@
  * @link https://procest.nl
  *
  * @spec openspec/changes/leverancier-zaakportaal-09-contract-backend/tasks.md
+ * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
@@ -36,6 +37,7 @@ use Throwable;
  * Contract renewal helper.
  *
  * @spec openspec/changes/leverancier-zaakportaal-09-contract-backend/tasks.md
+ * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md
  */
 class ContractRenewalService
 {
@@ -47,11 +49,12 @@ class ContractRenewalService
     /**
      * Constructor.
      *
-     * @param SupplierScopeService    $scopeService Scope helper.
-     * @param TenantAuditTrailService $auditTrail   Audit trail emitter.
-     * @param IAppManager             $appManager   App manager.
-     * @param ContainerInterface      $container    Service container (resolves OR).
-     * @param LoggerInterface         $logger       Logger.
+     * @param SupplierScopeService              $scopeService        Scope helper.
+     * @param TenantAuditTrailService           $auditTrail          Audit trail emitter.
+     * @param IAppManager                       $appManager          App manager.
+     * @param ContainerInterface                $container           Service container (resolves OR).
+     * @param LoggerInterface                   $logger              Logger.
+     * @param ContractDecisionDelegationService $decisionDelegation  Decision delegation to decidesk (ADR-019).
      */
     public function __construct(
         private readonly SupplierScopeService $scopeService,
@@ -59,6 +62,7 @@ class ContractRenewalService
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
+        private readonly ContractDecisionDelegationService $decisionDelegation,
     ) {
     }//end __construct()
 
@@ -214,14 +218,22 @@ class ContractRenewalService
     }//end canRequestRenewal()
 
     /**
-     * Request a renewal. Creates a Procest case + audit-logs the request.
+     * Request a renewal. Creates a Procest case, raises a decidesk Decision
+     * (ADR-019 delegation), persists the decisionRef on the case, and
+     * audit-logs the request.
+     *
+     * When the decidesk leaf is unavailable this method returns ok=false with
+     * the reason — it NEVER auto-approves the renewal (fail-closed per
+     * REQ-PDCD-002).
      *
      * @param array<string,mixed> $contract Contract row.
      * @param string              $actor    Requesting NC / supplier user.
      *
-     * @return array{ok: bool, caseRef?: string, reason?: string}
+     * @return array{ok: bool, caseRef?: string, decisionRef?: string, reason?: string}
      *
      * @spec openspec/changes/leverancier-zaakportaal-09-contract-backend/tasks.md
+     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md#req-pdcd-001
+     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md#req-pdcd-002
      */
     public function requestRenewal(array $contract, string $actor): array
     {
@@ -235,11 +247,13 @@ class ContractRenewalService
             return ['ok' => false, 'reason' => 'Contract has no end date'];
         }
 
+        $contractRef = (string) ($contract['uuid'] ?? $contract['id'] ?? '');
+
         $payload = [
             'caseTypeSlug' => 'leverancier-contractverlenging-verzoek',
             'title'        => 'Verlengingsverzoek voor contract '.((string) ($contract['number'] ?? '')),
             'supplierRef'  => (string) ($contract['supplierRef'] ?? ''),
-            'contractRef'  => (string) ($contract['uuid'] ?? $contract['id'] ?? ''),
+            'contractRef'  => $contractRef,
             'submittedBy'  => $actor,
             'submittedAt'  => (new DateTimeImmutable('now'))->format(DATE_ATOM),
         ];
@@ -257,16 +271,54 @@ class ContractRenewalService
         }
 
         $caseRef = (string) ($row['uuid'] ?? $row['id'] ?? '');
+
+        // REQ-PDCD-001 / REQ-PDCD-002: delegate the approval decision to decidesk
+        // via the ADR-019 integration registry. Fail closed — never auto-approve.
+        try {
+            $decisionRef = $this->decisionDelegation->raiseContractDecision(
+                caseRef: $caseRef,
+                contractRef: $contractRef,
+                decisionType: ContractDecisionDelegationService::DECISION_TYPE_CONTRACT_RENEWAL,
+                subject: [
+                    'subjectRegister' => TenantSaasService::REGISTER,
+                    'subjectSchema'   => 'supplierContract',
+                    'subjectId'       => $contractRef,
+                    'subjectLabel'    => 'Verlengingsverzoek voor contract '.((string) ($contract['number'] ?? '')),
+                ],
+                mandateContext: [
+                    'requestedBy' => $actor,
+                    'mandateRole' => 'contracts',
+                ],
+            );
+
+            // Persist the decisionRef on the case so the outcome can be
+            // consumed later via BesluitMaterialisationService.
+            $os->saveObject(
+                object: array_merge(is_array($row) === true ? $row : [], ['decisionRef' => $decisionRef]),
+                register: TenantSaasService::REGISTER,
+                schema: 'case',
+                uuid: $caseRef,
+            );
+        } catch (\RuntimeException $e) {
+            $this->logger->error(
+                'Procest: requestRenewal: decidesk Decision raise failed — failing closed',
+                ['caseRef' => $caseRef, 'exception' => $e->getMessage()]
+            );
+            // REQ-PDCD-002: fail closed; do not return a partial ok.
+            return ['ok' => false, 'reason' => 'Decision service unavailable: '.$e->getMessage()];
+        }
+
         $this->auditTrail->emit(
                 [
-                    'action'   => 'contract.renewal_requested',
-                    'actor'    => $actor,
-                    'resource' => 'contract:'.((string) ($contract['uuid'] ?? '')),
-                    'tenantId' => (string) ($contract['supplierRef'] ?? ''),
+                    'action'      => 'contract.renewal_requested',
+                    'actor'       => $actor,
+                    'resource'    => 'contract:'.$contractRef,
+                    'tenantId'    => (string) ($contract['supplierRef'] ?? ''),
+                    'decisionRef' => $decisionRef,
                 ]
                 );
 
-        return ['ok' => true, 'caseRef' => $caseRef];
+        return ['ok' => true, 'caseRef' => $caseRef, 'decisionRef' => $decisionRef];
     }//end requestRenewal()
 
     /**

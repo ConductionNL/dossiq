@@ -6,6 +6,10 @@
 		</div>
 
 		<template v-else>
+			<!-- Deprecation notice: decision types are now managed by decidesk -->
+			<NcNoteCard type="warning">
+				{{ t('procest', 'Decision types are now managed by decidesk (procest-delegate-contract-decision). Local decision type configuration is kept for historical read access only. New decision flows are raised via the decidesk integration (ADR-019).') }}
+			</NcNoteCard>
 			<NcLoadingIcon v-if="loading" />
 
 			<template v-else>
@@ -114,14 +118,14 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField, NcCheckboxRadioSwitch } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcNoteCard, NcTextField, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
 	name: 'DecisionTypesTab',
-	components: { NcButton, NcLoadingIcon, NcTextField, NcCheckboxRadioSwitch, PencilIcon, DeleteIcon },
+	components: { NcButton, NcLoadingIcon, NcNoteCard, NcTextField, NcCheckboxRadioSwitch, PencilIcon, DeleteIcon },
 	props: {
 		caseTypeId: { type: String, default: null },
 		isCreate: { type: Boolean, default: false },
