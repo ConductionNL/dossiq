@@ -57,6 +57,8 @@ class MigrateTenantsCommand extends Command
      * Define command name + description.
      *
      * @return void
+     *
+     * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
      */
     protected function configure(): void
     {
@@ -71,6 +73,8 @@ class MigrateTenantsCommand extends Command
      * @param OutputInterface $output Console output.
      *
      * @return int Symfony command exit code.
+     *
+     * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
