@@ -32,6 +32,14 @@ module.exports = {
 				find: /^@nextcloud\/l10n$/,
 				replacement: path.resolve(__dirname, 'tests/vitest/stubs/nextcloud-l10n.js'),
 			},
+			{
+				find: /^@nextcloud\/axios$/,
+				replacement: path.resolve(__dirname, 'tests/vitest/stubs/nextcloud-axios.js'),
+			},
+			{
+				find: /^@nextcloud\/router$/,
+				replacement: path.resolve(__dirname, 'tests/vitest/stubs/nextcloud-router.js'),
+			},
 		],
 	},
 }

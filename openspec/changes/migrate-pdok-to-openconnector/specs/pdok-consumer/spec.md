@@ -44,12 +44,16 @@ MUST remain pure utility functions with no network calls.
 
 #### Scenario: extractCoordinates remains a pure utility function
 
+@e2e exclude pure synchronous utility with no UI surface — verified by vitest tests/vitest/pdokService.spec.js
+
 - GIVEN the shim is loaded
 - WHEN a procest component calls `extractCoordinates("POINT(4.88525 52.37025)")`
 - THEN the shim SHALL return `{lat: 52.37025, lng: 4.88525}`
 - AND this function SHALL NOT make any network request
 
 #### Scenario: No direct api.pdok.nl reference remains in the file
+
+@e2e exclude static source-file assertion (grep), not a runtime UI behaviour — enforced by hydra forbidden-patterns and vitest routing tests
 
 - GIVEN the shim file has been replaced
 - WHEN the file content is inspected
@@ -72,6 +76,8 @@ this change.
 - AND no existing procest caller SHALL need modification
 
 #### Scenario: Existing procest tests pass unchanged against the shim
+
+@e2e exclude test-runner outcome (npm run test), not a runtime UI behaviour — covered by the vitest suite
 
 - GIVEN the shim is in place and `npm run test` is executed
 - WHEN the test runner completes
