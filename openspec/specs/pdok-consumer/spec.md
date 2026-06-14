@@ -1,29 +1,16 @@
----
-status: draft
----
-# procest PDOK Consumer via openconnector
+# pdok-consumer Specification
 
 ## Purpose
+Defines the procest-side contract for routing all PDOK Locatieserver access
+through the openconnector PDOK adapter (`/index.php/apps/openconnector/api/pdok/*`)
+instead of calling `api.pdok.nl` directly from the browser. procest's
+`src/services/pdokService.js` is a thin shim that preserves the six existing
+exports (`suggest`, `lookup`, `free`, `reverse`, `extractCoordinates`,
+`formatAddress`) so no caller changes, delegates the four network functions to
+openconnector, and degrades gracefully on HTTP 503 (PDOK unavailable) and HTTP 404
+(openconnector absent). Per ADR-022 (apps consume OR/openconnector abstractions).
 
-This spec defines the procest-side requirements for routing all PDOK Locatieserver
-access through the openconnector PDOK adapter instead of calling `api.pdok.nl`
-directly from the browser. The consumer contract is intentionally minimal: procest
-replaces one service file with a thin shim and updates its tests — all other address
-logic remains unchanged.
-
-**Upstream dependency:** The openconnector PDOK adapter
-(`openconnector/openspec/changes/add-pdok-adapter/`) provides the endpoints this shim
-calls. The shim can be built and tested independently against the documented endpoint
-contract; full end-to-end functionality requires openconnector to be installed and
-the OR `addresses` register to exist.
-
-**Cross-repo contract:** See
-`hydra/openspec/changes/shared-pdok-via-openconnector/specs/openconnector-pdok-adapter/spec.md`
-(Requirement: Frontend Shim Contract) for the umbrella-level requirement. This spec
-scopes requirements to the procest repo only.
-
-## ADDED Requirements
-
+## Requirements
 ### Requirement: Frontend Shim Routes All PDOK Calls Through openconnector
 
 `src/services/pdokService.js` MUST NOT contain any direct calls to `https://api.pdok.nl`.
@@ -44,12 +31,16 @@ MUST remain pure utility functions with no network calls.
 
 #### Scenario: extractCoordinates remains a pure utility function
 
+@e2e exclude pure synchronous utility with no UI surface — verified by vitest tests/vitest/pdokService.spec.js
+
 - GIVEN the shim is loaded
 - WHEN a procest component calls `extractCoordinates("POINT(4.88525 52.37025)")`
 - THEN the shim SHALL return `{lat: 52.37025, lng: 4.88525}`
 - AND this function SHALL NOT make any network request
 
 #### Scenario: No direct api.pdok.nl reference remains in the file
+
+@e2e exclude static source-file assertion (grep), not a runtime UI behaviour — enforced by hydra forbidden-patterns and vitest routing tests
 
 - GIVEN the shim file has been replaced
 - WHEN the file content is inspected
@@ -72,6 +63,8 @@ this change.
 - AND no existing procest caller SHALL need modification
 
 #### Scenario: Existing procest tests pass unchanged against the shim
+
+@e2e exclude test-runner outcome (npm run test), not a runtime UI behaviour — covered by the vitest suite
 
 - GIVEN the shim is in place and `npm run test` is executed
 - WHEN the test runner completes
@@ -105,3 +98,4 @@ breaking form submission:
 - WHEN a procest component calls `suggest("Tilburg")`
 - THEN the shim SHALL surface an inline warning on the address field
 - AND form submission SHALL remain possible (address field is non-blocking)
+
