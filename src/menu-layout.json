@@ -1,0 +1,29 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"description": "Canonical navigation layout applied AFTER all manifest.d fragments merge (see applyMenuRelocations in main.js). Fragments stay the source of WHAT exists in the menu (ADR-037); this file is the single place deciding WHERE entries live. relocations: sourceId -> targetGroupId (groups dissolve into the target, leaves move under it). removals: leaf menu-entry ids retired as duplicate navigation — their PAGES stay routable for deep links and e2e specs."
+	},
+	"relocations": {
+		"Cases": "CasesGroup",
+		"Werkvoorraad": "CasesGroup",
+		"WorkflowBoard": "CasesGroup",
+		"Transfers": "CasesGroup",
+		"Bezwaren": "BezwaarBeroepGroup",
+		"Beroepen": "BezwaarBeroepGroup",
+		"BezwaarDecisions": "BezwaarBeroepGroup",
+		"BezwaarAdviceRequests": "BezwaarBeroepGroup",
+		"Analytics": "AnalyticsGroup",
+		"TermijnDashboardMenu": "AnalyticsGroup",
+		"CaseMap": "AnalyticsGroup",
+		"Voorstellen": "BesluitvormingGroup",
+		"Advice": "BesluitvormingGroup",
+		"BesluitvormingAgenda": "BesluitvormingGroup",
+		"Subsidies": "SubsidiesGroup",
+		"Subsidieregelingen": "SubsidiesGroup",
+		"LeverancierDashboard": "PortaalGroup",
+		"MijnZaken": "PortaalGroup",
+		"MijnNotificaties": "PortaalGroup"
+	},
+	"removals": []
+}

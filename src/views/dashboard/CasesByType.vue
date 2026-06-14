@@ -137,11 +137,16 @@ export default {
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius-large);
 	padding: 16px;
+	height: 100%;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
 }
 
 .type-chart__title {
 	font-size: 15px;
 	margin: 0 0 12px;
+	flex-shrink: 0;
 }
 
 .type-chart__row {
