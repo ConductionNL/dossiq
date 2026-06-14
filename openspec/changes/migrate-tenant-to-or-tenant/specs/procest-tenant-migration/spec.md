@@ -12,6 +12,8 @@ endpoints and response shapes. Introduces a one-time data migration from procest
 `tenant` schema to OR's Organisation entity. References `consume-or-tenant-fleet-wide` as
 the authoritative fleet-wide policy.
 
+@e2e exclude Backend tenant-infrastructure migration with no UI surface — middleware 403/context-injection, service delegation, the `procest:migrate-tenants` OCC command, and schema deprecation are covered by PHPUnit (`tests/Unit/Service/TenantMigrationServiceTest.php`) and the live-NC integration round-trip (deferred TEST-1/TEST-2), not Playwright.
+
 ## ADDED Requirements
 
 ### Requirement: TenantMiddleware MUST Delegate Status Check to OR
