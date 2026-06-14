@@ -39,11 +39,17 @@
 			<div class="form-row">
 				<div class="form-group">
 					<label for="sub-start">{{ t('procest', 'Start date') }} *</label>
-					<input id="sub-start" v-model="form.startDate" type="date" class="substitution-form__date">
+					<input id="sub-start"
+						v-model="form.startDate"
+						type="date"
+						class="substitution-form__date">
 				</div>
 				<div class="form-group">
 					<label for="sub-end">{{ t('procest', 'End date') }} *</label>
-					<input id="sub-end" v-model="form.endDate" type="date" class="substitution-form__date">
+					<input id="sub-end"
+						v-model="form.endDate"
+						type="date"
+						class="substitution-form__date">
 				</div>
 			</div>
 
@@ -226,7 +232,10 @@ export default {
 				this.saving = false
 			}
 		},
-		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
+		/**
+		 * @param open
+		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+		 */
 		onDialogClose(open) {
 			if (!open) {
 				this.$emit('close')
