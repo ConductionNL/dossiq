@@ -1,5 +1,5 @@
 ---
-status: implemented
+status: done
 openspec_changes:
   - add-server-side-kpi-aggregation
 retrofit_extensions:

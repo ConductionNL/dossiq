@@ -1,5 +1,5 @@
 ---
-status: implemented
+status: done
 retrofit_extensions:
   - REQ-PROM-011
 ---

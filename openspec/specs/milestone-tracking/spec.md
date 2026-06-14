@@ -1,7 +1,10 @@
 ---
 retrofit: true
-status: done
+status: partial
 note: >-
+  Demoted done->partial (2026-06-14, honest-status sweep): backend is built but
+  the entire milestone Vue UI (progress indicator, config tab, dashboard widgets)
+  plus several backend hooks remain deferred — see below.
   Core milestone surface is live: milestoneDefinition + milestoneRecord
   schemas registered (register.d/65-milestone-tracking.json + SLUG_TO_CONFIG_KEY),
   MilestoneService (progress/reach/reverse/findStalledCases) and

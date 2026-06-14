@@ -1,5 +1,5 @@
 ---
-status: implemented
+status: done
 ---
 # Doorlooptijd Dashboard Specification
 
