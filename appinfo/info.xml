@@ -116,6 +116,7 @@ Vrij en open source onder de AGPL-licentie.
             <step>OCA\Procest\Repair\SeedArchiefEdepotData</step>
             <step>OCA\Procest\Repair\SeedKccWerkplekData</step>
             <step>OCA\Procest\Repair\BackfillInformatieobjectMetadata</step>
+            <step>OCA\Procest\Repair\LinkInFlightContractDecisionsRepair</step>
         </post-migration>
     </repair-steps>
 

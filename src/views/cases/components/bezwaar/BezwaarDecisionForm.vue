@@ -240,13 +240,29 @@ export default {
 
 			return Object.keys(this.errors).length === 0
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
+		/**
+		 * Save the bezwaar decision.
+		 *
+		 * The besluit is raised as a decidesk Decision (procest-delegate-contract-decision,
+		 * ADR-019 integration registry) and materialised on the case via
+		 * BesluitMaterialisationService when decidesk posts the outcome.
+		 * The Awb domain rules (art 7:12 motivering, reformatio in peius guard,
+		 * rechtsmiddelenclausule) are owned by procest and validated here before
+		 * the decision is submitted to decidesk.
+		 *
+		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
+		 * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md
+		 */
 		async save() {
 			if (!this.validate()) return
 
 			this.saving = true
 			const bezwaarStore = useBezwaarStore()
 
+			// Awb domain rules validated above (art 7:12, reformatio in peius,
+			// rechtsmiddelenclausule). Delegation to decidesk occurs server-side
+			// via ContractDecisionDelegationService; the outcome is materialised
+			// on the case by BesluitMaterialisationService (REQ-PDCD-003).
 			await bezwaarStore.createAppealDecision({
 				case: this.caseId,
 				contestedDecision: this.contestedDecisionId,

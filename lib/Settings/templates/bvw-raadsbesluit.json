@@ -1,5 +1,7 @@
 {
     "slug": "raadsbesluit",
+    "deprecated": true,
+    "deprecationNote": "Decision types are now managed by decidesk (procest-delegate-contract-decision). These templates are kept for historical read access until sunset.",
     "caseType": {
         "identifier": "bvw-raadsbesluit",
         "title": "Raadsbesluit",

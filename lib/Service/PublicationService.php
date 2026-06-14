@@ -62,6 +62,13 @@ class PublicationService
      * Idempotent per (caseId, channel): re-publishing on the same channel
      * updates the publishedAt timestamp rather than appending duplicates.
      *
+     * NOTE: As of procest-delegate-contract-decision, this method publishes the
+     * already-recorded ZGW Besluit (fed by the decidesk Decision outcome via
+     * BesluitMaterialisationService) rather than authoring a new local besluit.
+     * The publication record is appended to the case's publications[] array;
+     * cross-app publication to Open Raadsinformatie / GemeenteBlad is handled
+     * by openconnector wiring (out of scope for the host app build).
+     *
      * @param string               $caseId  The case id.
      * @param array<string, mixed> $payload The publish payload: { channel, publishedAt?, notes? }.
      *
@@ -70,6 +77,7 @@ class PublicationService
      * @throws \RuntimeException When OR is unavailable or the case can't be loaded.
      *
      * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
+     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md#req-pdcd-003
      */
     public function publish(string $caseId, array $payload): array
     {

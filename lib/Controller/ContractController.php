@@ -142,9 +142,10 @@ class ContractController extends Controller
     }//end show()
 
     /**
-     * Request renewal of a contract — opens a Procest case + notifies the
-     * account manager. Restricted to contracts/admin roles; cross-supplier
-     * requests are rejected with 403.
+     * Request renewal of a contract — opens a Procest case, delegates the
+     * approval decision to decidesk (ADR-019), and notifies the account manager.
+     * Restricted to contracts/admin roles; cross-supplier requests are rejected
+     * with 403. Returns both caseRef and decisionRef in the response envelope.
      *
      * @param string $id Contract UUID.
      *
@@ -153,6 +154,7 @@ class ContractController extends Controller
      * @psalm-suppress PossiblyUnusedMethod
      *
      * @spec openspec/changes/leverancier-zaakportaal-09-contract-backend/specs/supplier-portal/spec.md
+     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md#req-pdcd-001
      */
     #[NoAdminRequired]
     public function requestRenewal(string $id): JSONResponse
@@ -191,7 +193,12 @@ class ContractController extends Controller
             return new JSONResponse(['error' => ($result['reason'] ?? 'renewal request failed')], Http::STATUS_INTERNAL_SERVER_ERROR);
         }
 
-        return new JSONResponse(['ok' => true, 'caseRef' => ($result['caseRef'] ?? '')]);
+        // REQ-PDCD-001: return decisionRef so the caller can track the decidesk Decision.
+        return new JSONResponse([
+            'ok'          => true,
+            'caseRef'     => (string) ($result['caseRef'] ?? ''),
+            'decisionRef' => (string) ($result['decisionRef'] ?? ''),
+        ]);
     }//end requestRenewal()
 
     /**
