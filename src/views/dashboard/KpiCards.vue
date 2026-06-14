@@ -94,7 +94,6 @@ export default {
 	display: grid;
 	grid-template-columns: repeat(4, 1fr);
 	gap: 16px;
-	margin-bottom: 20px;
 }
 
 @media (max-width: 768px) {
