@@ -1,7 +1,15 @@
 # procest-tenant-migration Specification
 
 ## Purpose
-TBD - created by archiving change migrate-tenant-to-or-tenant. Update Purpose after archive.
+
+Migrate procest's parallel `TenantService`, `TenantMiddleware`, and `TenantController` to
+consume OpenRegister's Organisation entity + tenant-lifecycle API, preserving all existing
+API endpoints and response shapes, plus a one-time idempotent data migration
+(`occ procest:migrate-tenants`) from procest's deprecated private `tenant` schema to OR
+Organisations. References `consume-or-tenant-fleet-wide` as the authoritative fleet policy.
+
+@e2e exclude Backend tenant-infrastructure migration with no UI surface — middleware 403/context-injection, service delegation, the `procest:migrate-tenants` OCC command, and schema deprecation are covered by PHPUnit (`tests/Unit/Service/TenantMigrationServiceTest.php`) and the live-NC integration round-trip (deferred TEST-1), not Playwright.
+
 ## Requirements
 ### Requirement: TenantMiddleware MUST Delegate Status Check to OR
 
