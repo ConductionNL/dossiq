@@ -1,19 +1,16 @@
 # procest-tenant-migration Specification
 
----
-status: proposed
----
-
 ## Purpose
 
 Migrate procest's parallel `TenantService`, `TenantMiddleware`, and `TenantController` to
-consume OR's Organisation entity and tenant-lifecycle API. Preserves all existing API
-endpoints and response shapes. Introduces a one-time data migration from procest's private
-`tenant` schema to OR's Organisation entity. References `consume-or-tenant-fleet-wide` as
-the authoritative fleet-wide policy.
+consume OpenRegister's Organisation entity + tenant-lifecycle API, preserving all existing
+API endpoints and response shapes, plus a one-time idempotent data migration
+(`occ procest:migrate-tenants`) from procest's deprecated private `tenant` schema to OR
+Organisations. References `consume-or-tenant-fleet-wide` as the authoritative fleet policy.
 
-## ADDED Requirements
+@e2e exclude Backend tenant-infrastructure migration with no UI surface — middleware 403/context-injection, service delegation, the `procest:migrate-tenants` OCC command, and schema deprecation are covered by PHPUnit (`tests/Unit/Service/TenantMigrationServiceTest.php`) and the live-NC integration round-trip (deferred TEST-1), not Playwright.
 
+## Requirements
 ### Requirement: TenantMiddleware MUST Delegate Status Check to OR
 
 procest's `TenantMiddleware::beforeController()` MUST check tenant status by calling OR's
@@ -191,3 +188,4 @@ objects.
 - THEN `OrganisationMapper::findAll()` MUST include 2 new Organisations
 - AND the first MUST have `status: "active"`, the second MUST have `status: "suspended"`
 - AND all non-status fields MUST match the source tenant objects
+

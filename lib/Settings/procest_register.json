@@ -5170,9 +5170,11 @@
         "slug": "tenant",
         "icon": "OfficeBuildingOutline",
         "version": "1.0.0",
+        "deprecated": true,
+        "deprecationNote": "Superseded by OpenRegister's Organisation entity via migrate-tenant-to-or-tenant (ADR-022, consume-or-tenant-fleet-wide). Tenant identity, lifecycle status, and quotas now live on OR Organisations; TenantService + TenantMiddleware consume them directly. Run `occ procest:migrate-tenants` to project any legacy tenant rows onto Organisations (idempotent). No new writes after migration. Sunset: one major procest release after spec acceptance; existing rows remain readable until then.",
         "x-schema-org-type": "schema:Organization",
         "title": "Tenant",
-        "description": "SaaS tenant — represents a single municipality / customer of the procest platform. Carries lifecycle status, tier, and isolation mode.",
+        "description": "DEPRECATED (migrate-tenant-to-or-tenant): legacy SaaS tenant record. Tenant identity now lives on OpenRegister's Organisation entity; this schema is retained only so pre-migration rows remain readable until sunset. Originally: a single municipality / customer of the procest platform, carrying lifecycle status, tier, and isolation mode.",
         "type": "object",
         "required": [
           "slug",
