@@ -134,6 +134,25 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
   - **Acceptance:** `role-based-step-routing/spec.md` references this migration change by
     slug; no existing requirement text is altered.
 
+## REAL BLOCKER (re-spec 2026-06-15)
+
+The boilerplate deferral note below ("target leaf not yet released") is STALE
+and was a misdiagnosis. There is no "RBAC leaf" to wait on — the blocker is the
+**OR RBAC enforcement stack** itself, which is not yet present:
+
+> Migrating procest's role-based step routing to OR RBAC needs OR to provide
+> (and enforce) the full stack:
+> 1. `ncGroupId` on `roleType` (binding a procest role to a Nextcloud group),
+> 2. **workflow-step authorization blocks** (a step declaring which role/group
+>    may execute or advance it), AND
+> 3. **runtime enforcement** of those blocks in the OR object/transition path
+>    (server-side rejection when the acting user lacks the role/group).
+
+Today procest enforces step routing in-app (`role-based-step-routing`,
+`mandaat-matrix`, `ChecklistGuard` / transition guards). Until OR ships the
+ncGroupId binding + workflow-step authorization + runtime enforcement, there is
+nothing to delegate to. NOT buildable today.
+
 ## Deferral block (final-77 sweep, 2026-06-11)
 
 All open tasks above were converted from `[ ]` to `[~]` in one mechanical

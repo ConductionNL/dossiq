@@ -37,6 +37,30 @@ Implementation runs through Hydra; this change is specs-only.
 - [ ] P3.2 `composer check:strict` and `npm run lint` pass; doorlooptijd unit tests for the SLA calc
   still pass.
 
+## REAL BLOCKER (re-spec 2026-06-15)
+
+The boilerplate deferral note below ("target leaf not yet released") is STALE
+and was a misdiagnosis. OR's `AnalyticsProvider` **is** present and
+DI-registered on openregister development — but it does **not** satisfy this
+migration:
+
+> `AnalyticsProvider` is a **per-object sidebar report-link list**. For a single
+> OR object it surfaces links to related analytics reports; it is NOT a
+> **page-level chart/series render surface**. The SLA / doorlooptijd dashboard
+> (`DoorlooptijdDashboard`, `termijn-reporting`) needs page-level time-series and
+> aggregate charts across many cases — a render surface the analytics leaf does
+> not expose.
+
+This migration therefore CANNOT proceed against the leaf as it stands. The real
+prerequisite is OR work being built separately:
+
+1. A **page-level chart / series render surface** in the OR integration registry
+   (the analytics leaf must render aggregate time-series, not just a per-object
+   report-link list).
+
+Until that surface lands, procest's bespoke SLA / doorlooptijd dashboard stays
+the source of truth. NOT buildable today.
+
 ## Deferral block (final-77 sweep, 2026-06-11)
 
 All open tasks above were converted from `[ ]` to `[~]` in one mechanical
