@@ -1,6 +1,36 @@
 # Proposal: migrate-role-routing-to-or-rbac
 
-> REVERTED 2026-06-01: archived prematurely; implementation not present on development — re-opened for real apply. (`ncGroupId` was never added to the `roleType` schema in `lib/Settings/procest_register.json`; no `authorization` block on `workflowStep`; no OR-RBAC enforcement wired.)
+> BUILT 2026-06-15 (build/migrate-role-routing-to-or-rbac-2026-06-15):
+> OpenRegister PR #153 landed the declarative per-transition authorization gate
+> (`authorization: ["<ncGroupId>"]` enforced by `PermissionHandler::isTransitionAuthorized`).
+> Procest now consumes the OR RBAC group model:
+> - Added nullable `ncGroupId` to the `roleType` schema (the canonical role→group bridge).
+> - `WorkflowStepAuthorizationResolver` (new service): resolves a step/transition's
+>   `assigneeRole`/`allowedRoles`/`routingRule` roleType UUIDs → `roleType.ncGroupId`
+>   literal NC group ids.
+> - `WorkflowDefinitionService::publish()` now resolves and freezes those group ids
+>   into each transition's `authorization` list at publish time (the OR #153 gate format).
+> - `StatusTransitionService::execute()` enforces that `authorization` list via OR's
+>   single trusted membership check (`IGroupManager`), with OR's exact semantics
+>   (empty=open, anonymous denied, admin bypass) — replacing reliance on the bespoke
+>   `RoleGuard` role-resolution for the group decision.
+> - Admin UI: `RoleTypesTab.vue` gained an editable "NC Group ID" field + a badge.
+> - `KpiCacheInvalidationListener` verified compliant (no access decisions) + annotated.
+> - Tests: `WorkflowStepAuthorizationResolverTest` (role→group resolution) +
+>   `StatusTransitionGroupAuthTest` (unauthorized rejected / authorized passes / open / admin).
+>
+> SCOPE CORRECTION (supersedes the stale note below): the design assumed `workflowStep`
+> objects are standalone OR rows queried via `GET /api/objects/{register}/workflowStep`
+> and filtered by `MagicRbacHandler`. They are NOT — steps/transitions are embedded
+> JSON inside `workflowTemplate`, and routing gates *case status transitions*, not row
+> reads. So the gate is applied to transition execution, not object listing.
+>
+> RESIDUAL OR GAP (genuine, flagged): OR's declarative transition-authorization (PR #153)
+> only fires on a schema carrying `x-openregister-lifecycle`. `case.status` is a UUID ref
+> to a per-caseType `statusType` (dynamic per-caseType state machine, no fixed lifecycle
+> table), so OR cannot intercept case-status saves. Procest therefore enforces the SAME
+> OR group model in-app at the transition boundary. Full server-side OR enforcement needs
+> OR to support a per-object/workflow-driven dynamic transition table.
 
 ## Why
 

@@ -78,13 +78,15 @@ class WorkflowDefinitionService
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService The settings service
-     * @param IUserSession    $userSession     The user session
-     * @param LoggerInterface $logger          The logger
+     * @param SettingsService                   $settingsService The settings service
+     * @param IUserSession                      $userSession     The user session
+     * @param WorkflowStepAuthorizationResolver $authResolver    Resolves step/transition roles to NC group ids (OR RBAC)
+     * @param LoggerInterface                   $logger          The logger
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly IUserSession $userSession,
+        private readonly WorkflowStepAuthorizationResolver $authResolver,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -262,8 +264,16 @@ class WorkflowDefinitionService
             return null;
         }
 
-        // Deprecate previously active versions of the same caseType.
-        $previousActive = $this->getActiveDefinitionFor(caseTypeId: $caseTypeId);
+        // Resolve each transition's assignee role to its NC group id(s) and
+        // freeze the result into the transition `authorization` list (OR PR
+        // #153 declarative gate, ADR-022). Publishing is the one moment a
+        // definition becomes immutable, so the group ids resolved here back
+        // the OR-enforced "only group X may perform this transition" rule for
+        // the lifetime of this version. A transition whose role is unmapped
+        // (`roleType.ncGroupId` null) gets no authorization entry and stays
+        // open to all authenticated users — matching the pre-migration default.
+        $authoredTransitions = $this->authorizeTransitions(definition: $current);
+        $previousActive      = $this->getActiveDefinitionFor(caseTypeId: $caseTypeId);
         if ($previousActive !== null && (string) ($previousActive['id'] ?? '') !== $id) {
             try {
                 $objectService->saveObject(
@@ -284,14 +294,12 @@ class WorkflowDefinitionService
             }
         }
 
-        // Flip target to published+active.
+        // Flip target to published+active, writing back the authorization-
+        // enriched transitions (JSON-encoded STRING per the workflowTemplate
+        // schema) when any were resolved.
         try {
             $updated = $objectService->saveObject(
-                object: [
-                    'lifecycleStatus' => self::STATUS_PUBLISHED,
-                    'isActive'        => true,
-                    'isDraft'         => false,
-                ],
+                object: $this->buildPublishPayload(authoredTransitions: $authoredTransitions),
                 register: $register,
                 schema: $schema,
                 uuid: (string) $id,
@@ -816,6 +824,73 @@ class WorkflowDefinitionService
 
         return $ids;
     }//end collectStatusTypeIdsFor()
+
+    /**
+     * Build the saveObject payload that flips a draft to published+active,
+     * including the authorization-enriched transitions when any resolved.
+     *
+     * @param array<int, array<string, mixed>>|null $authoredTransitions Enriched transitions, or null when none.
+     *
+     * @return array<string, mixed> The publish payload.
+     */
+    private function buildPublishPayload(?array $authoredTransitions): array
+    {
+        $payload = [
+            'lifecycleStatus' => self::STATUS_PUBLISHED,
+            'isActive'        => true,
+            'isDraft'         => false,
+        ];
+
+        if ($authoredTransitions !== null) {
+            $payload['transitions'] = json_encode($authoredTransitions);
+        }
+
+        return $payload;
+    }//end buildPublishPayload()
+
+    /**
+     * Resolve role-routing to OR-enforceable group authorization for every
+     * transition in a definition. Decodes the `transitions` JSON string,
+     * resolves each transition's assignee role to its NC group id(s) via
+     * WorkflowStepAuthorizationResolver, and stamps the result on the
+     * transition's `authorization` key (literal group ids, the OR PR #153
+     * gate format). Transitions whose role maps to no group keep no
+     * `authorization` key (open to all authenticated users).
+     *
+     * @param array<string, mixed> $definition The draft definition row.
+     *
+     * @return array<int, array<string, mixed>>|null The enriched transitions, or null when the definition declares none.
+     *
+     * @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-2.1
+     */
+    private function authorizeTransitions(array $definition): ?array
+    {
+        $transitions = $this->decodeArray(raw: ($definition['transitions'] ?? null));
+        if ($transitions === []) {
+            return null;
+        }
+
+        $authored = [];
+        foreach ($transitions as $transition) {
+            if (is_array($transition) === false) {
+                $authored[] = $transition;
+                continue;
+            }
+
+            // Drop any stale authorization first so an unmapped role reverts
+            // to open access rather than keeping a group resolved under a
+            // previous mapping; re-stamp only when a group id resolves.
+            unset($transition['authorization']);
+            $groupIds = $this->authResolver->resolveGroupIds(entry: $transition);
+            if ($groupIds !== []) {
+                $transition['authorization'] = array_values($groupIds);
+            }
+
+            $authored[] = $transition;
+        }//end foreach
+
+        return $authored;
+    }//end authorizeTransitions()
 
     /**
      * Decode a JSON-encoded array property; returns an empty array on any

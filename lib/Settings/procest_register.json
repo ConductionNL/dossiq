@@ -317,6 +317,11 @@
             "type": "string",
             "format": "uuid",
             "description": "Reference to the parent case type"
+          },
+          "ncGroupId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nextcloud group ID that holds this role. OpenRegister RBAC uses this as the canonical role identifier (ADR-022): at workflow-publish time procest resolves each step/transition's assignee role to this group id and writes the literal id into the transition authorization list, so OR enforces step access server-side via IGroupManager. IGroupManager::groupExists() must return true for the value. Null = role not yet mapped to a group (open to all authenticated users)."
           }
         }
       },

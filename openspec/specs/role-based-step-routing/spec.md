@@ -2,6 +2,12 @@
 
 @e2e exclude Role-based step routing is V1; role-filtered task generation is backend logic covered by PHPUnit.
 
+> Enforcement mechanism: see `migrate-role-routing-to-or-rbac` — step/transition
+> access is enforced on the OpenRegister RBAC group model using `roleType.ncGroupId`
+> as the canonical NC group identifier. Roles are resolved to literal group ids at
+> workflow-publish time and frozen onto each transition's `authorization` list; the
+> requirements below (observable routing behaviour) are unchanged.
+
 ## Requirements
 
 ### Requirement: Role-Based Step Visibility

@@ -187,6 +187,20 @@ class StatusTransitionService
             throw new RuntimeException('transition_from_status_mismatch');
         }
 
+        // OR-RBAC role-routing gate (ADR-022). At publish time
+        // WorkflowDefinitionService resolves each transition's assignee role
+        // to its `roleType.ncGroupId` and freezes the literal group id(s) on
+        // the transition `authorization` list — the same OR PR #153 gate
+        // format OR enforces declaratively on schemas that carry an
+        // x-openregister-lifecycle. `case.status` is a per-caseType dynamic
+        // state machine with no static lifecycle table, so OR cannot enforce
+        // it on saveObject; this engine therefore enforces the SAME group
+        // model here using OR's single trusted membership check (IGroupManager),
+        // not a bespoke role-resolution scheme. An empty/absent list = open.
+        if ($this->isTransitionGroupAuthorized(transition: $transition, userId: $userId) === false) {
+            throw new RuntimeException('transition_unauthorized');
+        }
+
         // Defence in depth — re-evaluate guards on the server side.
         $guards = $this->extractGuards(transition: $transition);
         $eval   = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
@@ -417,6 +431,60 @@ class StatusTransitionService
             return false;
         }
     }//end isAdmin()
+
+    /**
+     * Enforce a transition's OR-RBAC group authorization list.
+     *
+     * Consumes the `authorization` array frozen onto the transition at
+     * publish time (literal NC group ids resolved from `roleType.ncGroupId`).
+     * Semantics mirror OR's `PermissionHandler::isTransitionAuthorized`:
+     *   - an absent or empty list authorises everyone (open transition);
+     *   - an anonymous caller can never satisfy a group gate;
+     *   - admins bypass;
+     *   - otherwise the caller MUST belong to at least one listed group.
+     *
+     * @param array<string, mixed> $transition The transition spec.
+     * @param string               $userId     The acting user UID.
+     *
+     * @return bool True when the caller may perform the transition.
+     *
+     * @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-2.1
+     */
+    private function isTransitionGroupAuthorized(array $transition, string $userId): bool
+    {
+        $authorization = ($transition['authorization'] ?? []);
+        if (is_array($authorization) === false || $authorization === []) {
+            return true;
+        }
+
+        if ($userId === '') {
+            return false;
+        }
+
+        if ($this->isAdmin(userId: $userId) === true) {
+            return true;
+        }
+
+        foreach ($authorization as $groupId) {
+            $groupId = (string) $groupId;
+            if ($groupId === '') {
+                continue;
+            }
+
+            try {
+                if ($this->groupManager->isInGroup($userId, $groupId) === true) {
+                    return true;
+                }
+            } catch (\Throwable $e) {
+                $this->logger->error(
+                    'StatusTransitionService: group membership check failed',
+                    ['exception' => $e->getMessage(), 'groupId' => $groupId],
+                );
+            }
+        }
+
+        return false;
+    }//end isTransitionGroupAuthorized()
 
     // ------------------------------------------------------------------
     // Internal helpers
