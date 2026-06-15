@@ -290,6 +290,19 @@ const registry = {
 		component: CaseEmailTab,
 		_note: 'Sidebar tab that surfaces email correspondence linked to the case; consumes the email leaf for display + uses prefillDraft for compose.',
 	},
+
+	// --- Case-appointment (internal calendar) sidebar tab — leaf-first per ADR-022. ---
+	// The former bespoke LocalBackend scheduling surface is replaced by OR's
+	// `calendar` integration leaf (CalendarProvider): the leaf owns event
+	// list/create/link/unlink/delete and fetches straight from OR using the
+	// objectId/register/schema/apiBase that CnObjectSidebar injects. Procest
+	// keeps only zaak-specific metadata + external Qmatic/JCC (ADR-022 exception).
+	// @spec openspec/changes/migrate-appointments-to-calendar-leaf/tasks.md#P1.2
+	CalendarLeafTab: {
+		kind: 'page',
+		component: leafTab('calendar'),
+		_note: 'OR calendar integration leaf (CnCalendarTab) surfaced on the case detail; replaces the bespoke LocalBackend appointment UI (ADR-022).',
+	},
 	AdviesPanel: {
 		kind: 'page',
 		component: AdviesPanel,
@@ -320,6 +333,26 @@ const registry = {
 		kind: 'page',
 		component: InspectionPanel,
 		_note: 'VTH inspection panel — shows completed inspectionResult records for a case',
+	},
+
+	// --- Forms + Photos leaves — leaf-first per ADR-022. ---
+	// Inspection checklist / advice forms render through OR's `forms` leaf
+	// (FormsProvider / CnFormsTab), inspection photos through OR's `photos`
+	// leaf (PhotosProvider / CnPhotosTab). Both are resolved from the lib's
+	// builtinIntegrations registry and fetch straight from OpenRegister using
+	// the objectId/register/schema/apiBase CnObjectSidebar injects. The
+	// checklist photo-gate + append-only immutability stay in-app (domain rules).
+	// @spec openspec/changes/migrate-inspection-forms-to-forms-leaf/tasks.md#P1.2
+	// @spec openspec/changes/migrate-inspection-forms-to-forms-leaf/tasks.md#P1.3
+	FormsLeafTab: {
+		kind: 'page',
+		component: leafTab('forms'),
+		_note: 'OR forms integration leaf (CnFormsTab) — renders checklist/advice forms on the case detail; replaces the bespoke hand-rendered checklist inputs (ADR-022).',
+	},
+	PhotosLeafTab: {
+		kind: 'page',
+		component: leafTab('photos'),
+		_note: 'OR photos integration leaf (CnPhotosTab) — stores/shows inspection photos as files attached to the object; replaces inline photos[] payloads (ADR-022).',
 	},
 
 	// --- Maps leaf — leaf-first per ADR-022 (per-case map surface). ---

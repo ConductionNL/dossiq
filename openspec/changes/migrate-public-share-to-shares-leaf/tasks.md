@@ -37,6 +37,29 @@ Implementation runs through Hydra; this change is specs-only.
 - [ ] P3.2 `composer check:strict` and `npm run lint` pass; route-auth gate clean for any remaining
   public route.
 
+## REAL BLOCKER (re-spec 2026-06-15)
+
+The boilerplate deferral note below ("target leaf not yet released") is STALE
+and was a misdiagnosis. OR's `SharesProvider` **is** present and DI-registered
+on openregister development — but it does **not** satisfy this migration:
+
+> `SharesProvider` is **read / unlink-only over Nextcloud FILE shares**. It
+> lists and revokes existing `\OCP\Share\IShare` file/folder shares attached to
+> an object; it has **no `create()`**, and it has **no public CASE-TOKEN
+> status-link surface** (the citizen-facing "track my case by token" link
+> procest's `PublicStatusController` / `caseShare` provides).
+
+This migration therefore CANNOT proceed against the leaf as it stands. The real
+prerequisite is OR work being built separately:
+
+1. A `create()` on the shares leaf (so the app can mint a share through the leaf
+   instead of its own controller), AND
+2. A **public case-token status-link** surface in OR (a tokenised, anonymous,
+   read-only case-status view) — distinct from NC file shares.
+
+Until that OR surface lands, procest's bespoke public-share / case-token
+status-link stays the source of truth. NOT buildable today.
+
 ## Deferral block (final-77 sweep, 2026-06-11)
 
 All open tasks above were converted from `[ ]` to `[~]` in one mechanical

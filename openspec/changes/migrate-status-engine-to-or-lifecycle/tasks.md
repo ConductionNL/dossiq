@@ -161,6 +161,25 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
   - **Acceptance:** Mocked `ObjectService` confirms `saveObject` is not called with a
     `lifecycle`/`status` mutation from step-routing methods; `composer test` exits 0.
 
+## REAL BLOCKER (re-spec 2026-06-15)
+
+The boilerplate deferral note below ("target leaf not yet released") is STALE
+and was a misdiagnosis. There is no "lifecycle leaf" to wait on — the blocker is
+that OR has **no lifecycle / transition-guard engine** yet:
+
+> Migrating procest's status engine (`status-transition-engine`,
+> `StatusTransitionService`, the transition guards under
+> `lib/Service/Transitions/`) to OR lifecycle needs OR to own:
+> 1. a declarative **state/transition model** on the schema (allowed states +
+>    allowed transitions), AND
+> 2. a **runtime transition-guard engine** that enforces those transitions on
+>    `saveObject` (rejecting an illegal state change server-side), with hooks for
+>    app-supplied guard conditions (quorum, photo-gate, role checks).
+
+OR currently has no such engine — status changes are plain field writes. Until
+OR ships the lifecycle/transition-guard engine, procest's in-app status engine
+stays the source of truth. NOT buildable today.
+
 ## Deferral block (final-77 sweep, 2026-06-11)
 
 All open tasks above were converted from `[ ]` to `[~]` in one mechanical
