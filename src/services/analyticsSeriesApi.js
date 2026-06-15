@@ -21,7 +21,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
- * @spec openspec/changes/migrate-sla-dashboard-to-analytics-leaf/tasks.md#P1.1
+ * @spec openspec/specs/sla-charts-via-analytics-leaf/spec.md
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -41,6 +41,7 @@ const REGISTER_URL = generateUrl('/apps/openregister/api/integrations/analytics/
  * @param {string} [series.visibility] private|group|public (default private).
  * @return {Promise<object|null>} The stored render contract, or null on failure
  *   (the dashboard degrades to its empty state — never throws into the view).
+ * @spec openspec/specs/sla-charts-via-analytics-leaf/spec.md
  */
 export async function registerSeries({ seriesKey, labels = [], datasets = [], title = null, chartType = 'line', visibility = 'private' }) {
 	try {
@@ -66,6 +67,7 @@ export async function registerSeries({ seriesKey, labels = [], datasets = [], ti
  * @return {Promise<object|null>} The render contract { seriesKey, title,
  *   chartType, labels, datasets, visibility }, or null when unknown / not
  *   readable (uniform 404, fail-closed) / OR unavailable.
+ * @spec openspec/specs/sla-charts-via-analytics-leaf/spec.md
  */
 export async function fetchSeries(seriesKey) {
 	try {
