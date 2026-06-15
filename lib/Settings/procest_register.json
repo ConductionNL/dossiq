@@ -556,7 +556,9 @@
         "configuration": {
           "linkedTypes": [
             "mail",
-            "calendar"
+            "calendar",
+            "forms",
+            "photos"
           ]
         },
         "required": [
@@ -4987,6 +4989,12 @@
         "title": "Inspection Checklist Run",
         "description": "Per-inspection runtime instance of an inspectionChecklistTemplate (REQ-IC-2). Once submitted (status=ingediend) the run is append-only: edits are rejected by REQ-IC-8 enforcement.",
         "type": "object",
+        "configuration": {
+          "linkedTypes": [
+            "forms",
+            "photos"
+          ]
+        },
         "required": [
           "case",
           "template",
