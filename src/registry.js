@@ -23,6 +23,7 @@
 //   current manifest pages reference MapComponent by key directly; retained as
 //   a pass-through.
 
+import { leafTab } from './integrations/leafTabs.js'
 import MyWorkView from './views/MyWork.vue'
 import WerkvoorraadView from './views/Werkvoorraad.vue'
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
@@ -319,6 +320,21 @@ const registry = {
 		kind: 'page',
 		component: InspectionPanel,
 		_note: 'VTH inspection panel — shows completed inspectionResult records for a case',
+	},
+
+	// --- Maps leaf — leaf-first per ADR-022 (per-case map surface). ---
+	// The case's location is rendered by OR's `maps` integration leaf
+	// (MapsProvider / CnMapsTab): the leaf owns tiles, layers, zoom and
+	// marker interaction and fetches straight from OpenRegister using the
+	// objectId/register/schema/apiBase CnObjectSidebar injects. Replaces the
+	// bespoke per-case Leaflet surface (LocationTab → CaseMap). The
+	// multi-object cases-on-map overview (CasesOnMapView / /map page) is OUT
+	// OF SCOPE here — tracked as a separate OR maps-overview follow-up.
+	// @spec openspec/changes/migrate-maps-to-maps-leaf/tasks.md#P1.2
+	MapsLeafTab: {
+		kind: 'page',
+		component: leafTab('maps'),
+		_note: 'OR maps integration leaf (CnMapsTab) — renders the case location marker on the case detail; replaces the bespoke per-case LocationTab/CaseMap (ADR-022).',
 	},
 
 	// --- Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente). ---

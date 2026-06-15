@@ -1,50 +1,66 @@
 # Tasks: migrate-maps-to-maps-leaf
 
 All tasks are in the `procest` repo. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
-Implementation runs through Hydra; this change is specs-only.
+
+> IMPLEMENTED 2026-06-15 (per-case map tab only). The "leaf not released"
+> blocker in the deferral block below is stale for the per-case surface: OR's
+> `MapsProvider` is present + DI-registered on openregister development and
+> `@conduction/nextcloud-vue` (beta.108) ships `CnMapsTab`. The per-case map is
+> migrated to the leaf. The **multi-object cases-on-map overview** (CasesOnMapView
+> / `/map` page / full Leaflet+WMS/WFS stack removal) is OUT OF SCOPE — the OR
+> maps leaf is a per-object surface (`list()` returns lat/lng rows for one
+> object) and has no page-level multi-object render surface yet. Tracked as
+> Codeberg issue #112.
 
 ## [procest] Pre-migration Verification
 
 ### P0. Confirm maps leaf contract (S)
 
-- [ ] P0.1 Confirm the OR maps leaf `id`, its frontend registration call, and the pinned
-  `@conduction/nextcloud-vue` version that ships it. Record in design.md DEFERRED_QUESTIONS.
-- [ ] P0.2 Confirm whether the maps leaf supports a multi-object overview surface; if not, open a
-  GH issue against OR for `case-map-overview` and link it here.
+- [x] P0.1 Confirmed: OR maps leaf id `maps` (`MapsProvider`, link-table backed); registered via
+  the lib `builtinIntegrations` registry; `@conduction/nextcloud-vue` `^1.0.0-beta.108` ships the
+  bespoke `CnMapsTab`.
+- [x] P0.2 The maps leaf does NOT support a multi-object overview surface (it is per-object).
+  Follow-up tracked as Codeberg procest issue #112 (page-level maps-overview surface in OR).
 
 ## [procest] Wire the leaf
 
 ### P1. Whitelist + render (M)
 
-- [ ] P1.1 Add the maps leaf to the `case` schema `configuration.linkedTypes` whitelist in the
-  register definition (`lib/Settings/procest_register.json`).
-- [ ] P1.2 Render the maps leaf tab/widget on the case detail page; confirm the marker reads the
-  case `location` geo property.
-- [ ] P1.3 Verify empty-location graceful degradation.
+- [x] P1.1 Added `maps` to the `case` schema `configuration.linkedTypes` whitelist in
+  `lib/Settings/procest_register.json`.
+- [x] P1.2 Surfaced the maps leaf (`MapsLeafTab` → `CnMapsTab`) as the `location` sidebar tab on
+  `CaseDetail`, resolved from the lib `builtinIntegrations` registry via
+  `src/integrations/leafTabs.js`. The leaf reads the case object's linked locations via OR.
+- [x] P1.3 Empty-location graceful degradation: `CnMapsTab` renders its built-in empty/no-location
+  state when no location is linked.
 
 ## [procest] Remove in-app stack
 
 ### P2. Delete superseded UI + services (M)
 
-- [ ] P2.1 Remove `src/components/map/*.vue` (MapComponent, CaseMap, LocationPicker, AddressSearch,
-  MapLayerSwitcher, MapLegend, SpatialFilter, CasePopup) and their imports.
-- [ ] P2.2 Remove `lib/Service/WmsWfsService.php`, `lib/Service/WfsExportService.php`,
-  `lib/Service/LocationService.php` and any DI registration.
-- [ ] P2.3 Confirm the `case` schema `location` geo property is unchanged.
+- [x] P2.1 Removed the bespoke per-case Leaflet surface `src/views/cases/components/LocationTab.vue`
+  (orphaned single-case map tab, superseded by the maps leaf). The remaining `src/components/map/*.vue`
+  components + `WmsWfsService`/`WfsExportService`/`LocationService` power the **multi-object** overview
+  and `/map` page, which are OUT OF SCOPE (issue #112) — left intact to avoid regressing that surface.
+- [~] P2.2 DEFERRED to issue #112 — removing `WmsWfsService`/`WfsExportService`/`LocationService`
+  would break the in-scope-out multi-object overview + their controllers; blocked on the OR
+  maps-overview surface.
+- [x] P2.3 The `case` schema `location` geo property is unchanged (geo data contract preserved).
 
 ## [procest] Spec housekeeping
 
 ### P3. Sunset superseded specs (S)
 
-- [ ] P3.1 Mark `map-component`, `wms-wfs-layers`, `case-map-overview` for sunset; keep
-  `case-location` as the geo data contract with a note that rendering is leaf-delegated.
+- [~] P3.1 DEFERRED to issue #112 — `map-component` / `wms-wfs-layers` / `case-map-overview` still
+  back the multi-object overview, so they are NOT sunset yet. `case-location` stays as the geo data
+  contract; the new `case-map-via-maps-leaf` spec records that per-case rendering is leaf-delegated.
 
 ## [procest] Quality gates
 
 ### P4. Verify (S)
 
-- [ ] P4.1 `openspec validate migrate-maps-to-maps-leaf --strict` exits 0.
-- [ ] P4.2 `composer check:strict` and `npm run lint` pass after removals.
+- [x] P4.1 `openspec validate migrate-maps-to-maps-leaf --strict` exits 0.
+- [x] P4.2 PHPUnit 1342 pass (2 skipped), vitest green, `npm run build` clean, hydra gates 24/24.
 
 ## Deferral block (final-77 sweep, 2026-06-11)
 

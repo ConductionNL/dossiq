@@ -39,19 +39,28 @@ parallel location store or write map-UI state to its register.
 - **THEN** the `location` property SHALL still be present and `geo`-typed (GeoJSON)
 - **AND** editing the case `location` through OR's object form SHALL update the marker the leaf renders
 
-#### Scenario: In-app geo services are removed
+#### Scenario: The bespoke per-case map surface is removed
 
 - **GIVEN** the procest codebase after this migration
-- **WHEN** `lib/Service/` is inspected
-- **THEN** `WmsWfsService`, `WfsExportService`, and `LocationService` SHALL NOT be present
-- **AND** `src/components/map/` SHALL NOT contain in-app map rendering components
+- **WHEN** `src/views/cases/components/` is inspected
+- **THEN** the bespoke per-case `LocationTab.vue` (single-case Leaflet surface) SHALL NOT be present
+- **AND** the case detail SHALL surface the maps leaf tab instead
+
+> NOTE (scope): Removing `WmsWfsService` / `WfsExportService` /
+> `LocationService` and the `src/components/map/*.vue` stack is DEFERRED. Those
+> back the **multi-object** cases-on-map overview (`CasesOnMapView`, the `/map`
+> page), which the per-object maps leaf cannot yet render (it returns lat/lng
+> rows for one object). That removal is blocked on a page-level maps-overview
+> surface in OR — tracked as Codeberg procest issue #112.
 
 ---
 
 ### Requirement: WMS/WFS And Layer Rendering Are Delegated To The Leaf
 
-WMS/WFS background layers, layer switching, and legend rendering SHALL be the maps leaf's
-responsibility. Procest SHALL NOT ship a WMS/WFS client or a layer-switcher component.
+On the per-case map surface, WMS/WFS background layers, layer switching, and legend rendering SHALL
+be the maps leaf's responsibility; the per-case detail SHALL NOT mount an in-app layer-switcher
+component. (Procest's WMS/WFS service classes remain in place for the multi-object overview until
+issue #112 lands — they are not invoked by the per-case maps-leaf tab.)
 
 #### Scenario: Layer controls come from the leaf
 
