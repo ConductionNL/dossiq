@@ -11,12 +11,16 @@
  *
  * Every endpoint is `#[NoAdminRequired]` because procurement officers and
  * supplier users are NOT necessarily NC admins (the SecurityMiddleware admin
- * default is too strict). Cross-supplier IDOR is prevented per-object: list
- * reads go through `SupplierScopeService::listSupplierObjects()` (filtered by
+ * default is too strict). The `supplierRef` and role are derived from the
+ * SERVER-TRUSTED supplier session (`SupplierSessionService`, validated from the
+ * portal bearer JWT) — never from a client-supplied parameter — and every
+ * endpoint FAILS CLOSED with 401 when no valid session is present. Cross-supplier
+ * IDOR is then prevented per-object: list reads go through
+ * `SupplierScopeService::listSupplierObjects()` (filtered by the session
  * `supplierRef`); detail + renewal re-resolve the object inside the supplier's
  * own scope and FAIL CLOSED with 403 when the requested id is not owned by the
- * caller's `supplierRef`. Renewal additionally enforces the contracts/admin
- * role gate and rejects cross-supplier requests with 403.
+ * caller. Renewal additionally enforces the contracts/admin role gate using the
+ * session role, so a read_only supplier cannot self-elevate.
  *
  * @category Controller
  * @package  OCA\Procest\Controller
@@ -38,8 +42,10 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Middleware\SupplierUnauthorizedException;
 use OCA\Procest\Service\ContractRenewalService;
 use OCA\Procest\Service\SupplierScopeService;
+use OCA\Procest\Service\SupplierSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -61,14 +67,37 @@ class ContractController extends Controller
      * @param IRequest               $request The request.
      * @param SupplierScopeService   $scope   Scope + per-object access guard.
      * @param ContractRenewalService $renewal Contract renewal orchestration.
+     * @param SupplierSessionService $session Server-trusted supplier session resolver.
      */
     public function __construct(
         IRequest $request,
         private readonly SupplierScopeService $scope,
         private readonly ContractRenewalService $renewal,
+        private readonly SupplierSessionService $session,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
+
+    /**
+     * Resolve the server-trusted supplier reference for the calling session.
+     *
+     * Fails CLOSED: sets `$error` to a 401 response when no valid supplier
+     * session is present. Callers MUST short-circuit before any object access.
+     *
+     * @param JSONResponse|null $error Set to a 401 response when no valid session.
+     *
+     * @return string The server-trusted supplier reference ('' when unauthenticated).
+     */
+    private function resolveSupplierRef(?JSONResponse &$error): string
+    {
+        $error = null;
+        try {
+            return $this->session->requireSupplierRef();
+        } catch (SupplierUnauthorizedException $e) {
+            $error = new JSONResponse(['error' => 'Bearer token required'], Http::STATUS_UNAUTHORIZED);
+            return '';
+        }
+    }//end resolveSupplierRef()
 
     /**
      * Contract list for the calling supplier.
@@ -87,9 +116,9 @@ class ContractController extends Controller
     #[NoAdminRequired]
     public function index(): JSONResponse
     {
-        $supplierRef = (string) $this->request->getParam('supplierRef', '');
-        if ($supplierRef === '') {
-            return new JSONResponse(['error' => 'supplierRef required'], Http::STATUS_BAD_REQUEST);
+        $supplierRef = $this->resolveSupplierRef($err);
+        if ($err !== null) {
+            return $err;
         }
 
         $contracts = $this->scope->listSupplierObjects($supplierRef, 'supplierContract');
@@ -120,9 +149,9 @@ class ContractController extends Controller
     #[NoAdminRequired]
     public function show(string $id): JSONResponse
     {
-        $supplierRef = (string) $this->request->getParam('supplierRef', '');
-        if ($supplierRef === '') {
-            return new JSONResponse(['error' => 'supplierRef required'], Http::STATUS_BAD_REQUEST);
+        $supplierRef = $this->resolveSupplierRef($err);
+        if ($err !== null) {
+            return $err;
         }
 
         // Per-object scope guard (fail closed). findOwnedContract re-resolves the
@@ -159,13 +188,15 @@ class ContractController extends Controller
     #[NoAdminRequired]
     public function requestRenewal(string $id): JSONResponse
     {
-        $supplierRef = (string) $this->request->getParam('supplierRef', '');
-        if ($supplierRef === '') {
-            return new JSONResponse(['error' => 'supplierRef required'], Http::STATUS_BAD_REQUEST);
+        $supplierRef = $this->resolveSupplierRef($err);
+        if ($err !== null) {
+            return $err;
         }
 
         // Role gate — only contracts/admin may request renewal (member 04 scope).
-        $role = (string) $this->request->getParam('role', 'read_only');
+        // The role is read from the SERVER-TRUSTED session, never the client,
+        // so a read_only supplier cannot self-elevate by passing role=admin.
+        $role = $this->session->requireSupplierRole();
         if ($this->renewal->canRequestRenewal($role) === false) {
             return new JSONResponse(['error' => 'insufficient role'], Http::STATUS_FORBIDDEN);
         }

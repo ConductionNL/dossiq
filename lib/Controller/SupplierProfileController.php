@@ -16,10 +16,12 @@
  * via `submitForVerification()`.
  *
  * Every endpoint is `#[NoAdminRequired]` because procurement officers
- * are NOT necessarily NC admins. The `supplierRef` is REQUIRED on
- * every write and validated against `SupplierScopeService` — the
- * scope service filters by `supplierRef` so cross-supplier IDOR is
- * impossible.
+ * are NOT necessarily NC admins. The `supplierRef` is derived from the
+ * SERVER-TRUSTED supplier session (`SupplierSessionService`, validated
+ * from the portal bearer JWT) — never from a client-supplied parameter —
+ * and every write FAILS CLOSED with 401 when no valid session is present.
+ * The scope service then filters by that session `supplierRef`, so
+ * cross-supplier IDOR is impossible.
  *
  * @category Controller
  * @package  OCA\Procest\Controller
@@ -41,8 +43,10 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Middleware\SupplierUnauthorizedException;
 use OCA\Procest\Service\SupplierMasterDataMutationService;
 use OCA\Procest\Service\SupplierScopeService;
+use OCA\Procest\Service\SupplierSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -63,12 +67,14 @@ class SupplierProfileController extends Controller
      * @param SupplierMasterDataMutationService   $mutation Master-data mutation service.
      * @param SupplierScopeService                $scope    Scope + masking helpers.
      * @param IUserSession                        $userSession Current NC user session.
+     * @param SupplierSessionService              $session  Server-trusted supplier session resolver.
      */
     public function __construct(
         IRequest $request,
         private readonly SupplierMasterDataMutationService $mutation,
         private readonly SupplierScopeService $scope,
         private readonly IUserSession $userSession,
+        private readonly SupplierSessionService $session,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -85,19 +91,24 @@ class SupplierProfileController extends Controller
     }//end actorId()
 
     /**
-     * Validate a supplierRef and 400 if missing.
+     * Resolve the server-trusted supplier reference for the calling session.
      *
-     * @param string $supplierRef Supplier UUID.
+     * Fails CLOSED: sets `$error` to a 401 response when no valid supplier
+     * session is present. Callers MUST short-circuit before any write.
      *
-     * @return JSONResponse|null Null when valid; 400 JSON response otherwise.
+     * @param JSONResponse|null $error Set to a 401 response when no valid session.
+     *
+     * @return string The server-trusted supplier reference ('' when unauthenticated).
      */
-    private function requireSupplierRef(string $supplierRef): ?JSONResponse
+    private function requireSupplierRef(?JSONResponse &$error): string
     {
-        if ($supplierRef === '') {
-            return new JSONResponse(['error' => 'supplierRef required'], Http::STATUS_BAD_REQUEST);
+        $error = null;
+        try {
+            return $this->session->requireSupplierRef();
+        } catch (SupplierUnauthorizedException $e) {
+            $error = new JSONResponse(['error' => 'Bearer token required'], Http::STATUS_UNAUTHORIZED);
+            return '';
         }
-
-        return null;
     }//end requireSupplierRef()
 
     /**
@@ -113,8 +124,8 @@ class SupplierProfileController extends Controller
      */
     public function updateAddress(): JSONResponse
     {
-        $supplierRef = (string) $this->request->getParam('supplierRef', '');
-        if (($err = $this->requireSupplierRef($supplierRef)) !== null) {
+        $supplierRef = $this->requireSupplierRef($err);
+        if ($err !== null) {
             return $err;
         }
 
@@ -144,8 +155,8 @@ class SupplierProfileController extends Controller
      */
     public function updateContact(): JSONResponse
     {
-        $supplierRef = (string) $this->request->getParam('supplierRef', '');
-        if (($err = $this->requireSupplierRef($supplierRef)) !== null) {
+        $supplierRef = $this->requireSupplierRef($err);
+        if ($err !== null) {
             return $err;
         }
 
@@ -175,8 +186,8 @@ class SupplierProfileController extends Controller
      */
     public function requestIbanChange(): JSONResponse
     {
-        $supplierRef = (string) $this->request->getParam('supplierRef', '');
-        if (($err = $this->requireSupplierRef($supplierRef)) !== null) {
+        $supplierRef = $this->requireSupplierRef($err);
+        if ($err !== null) {
             return $err;
         }
 
@@ -213,15 +224,16 @@ class SupplierProfileController extends Controller
      */
     public function submitAccreditation(): JSONResponse
     {
-        $supplierRef = (string) $this->request->getParam('supplierRef', '');
-        if (($err = $this->requireSupplierRef($supplierRef)) !== null) {
+        $supplierRef = $this->requireSupplierRef($err);
+        if ($err !== null) {
             return $err;
         }
 
         $dataType    = (string) $this->request->getParam('dataType', 'accreditation');
         $attachments = (array) ($this->request->getParam('attachments', []));
+        $kvkNumber   = (string) $this->request->getParam('kvkNumber', '');
 
-        $r = $this->mutation->submitForVerification($supplierRef, $dataType, $attachments, $this->actorId());
+        $r = $this->mutation->submitForVerification($supplierRef, $dataType, $attachments, $this->actorId(), $kvkNumber);
         if (($r['ok'] ?? false) === false) {
             return new JSONResponse(
                 ['error' => $r['reason'] ?? 'Submission refused'],
