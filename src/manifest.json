@@ -91,7 +91,7 @@
 			"label": "BAC-adviezen",
 			"icon": "icon-comment",
 			"route": "BezwaarAdviceRequests",
-			"order": 76
+			"order": 48
 		},
 		{
 			"id": "AnalyticsGroup",
@@ -264,8 +264,7 @@
 			"label": "Bezwaaradviescommissies",
 			"icon": "icon-group",
 			"route": "BezwaarCommittees",
-			"section": "settings",
-			"order": 99
+			"order": 49
 		},
 		{
 			"id": "TermijnDashboardMenu",

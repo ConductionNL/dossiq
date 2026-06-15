@@ -24,43 +24,55 @@
 
 ## Phase 1: Complete the relocation map
 
-- [ ] Edit `src/menu-layout.json`: add `"BezwaarCommitteesMenu": "BezwaarBeroepGroup"` to
+- [x] Edit `src/menu-layout.json`: add `"BezwaarCommitteesMenu": "BezwaarBeroepGroup"` to
   `relocations` (keep the four existing bezwaar/beroep relocations). Do NOT add anything to
-  `removals` (no page is retired).
+  `removals` (no page is retired). NOTE: base had `BezwaarCommitteesMenu` mapped to `SettingsGroup`
+  (from the merged `procest-config-to-settings` change) — that mapping was retargeted to
+  `BezwaarBeroepGroup`, not merely added, so the entry leaves Settings and joins the cluster.
 
 ## Phase 2: Normalise the leaf order under the group
 
-- [ ] Edit `src/manifest.json` `menu[]`: set `order` to a contiguous, workflow-meaningful sequence —
+- [x] Edit `src/manifest.json` `menu[]`: set `order` to a contiguous, workflow-meaningful sequence —
   `Bezwaren`=45, `Beroepen`=46, `BezwaarDecisions`=47, `BezwaarAdviceRequests`=48,
   `BezwaarCommitteesMenu`=49. Keep the `BezwaarBeroepGroup` header at `order`=45.
-- [ ] Do NOT change any leaf's `label`, `route`, `icon` semantics or `requiresRole`; only `order`
+- [x] Do NOT change any leaf's `label`, `route`, `icon` semantics or `requiresRole`; only `order`
   (and the relocation in Phase 1) change. `BezwaarCommitteesMenu`'s `section: "settings"` may be
   dropped once it is a child of the group (it now renders inside the domain group, not the settings
   section) — confirm against `applyMenuRelocations` behaviour.
 
 ## Phase 3: Verify pages stay routable
 
-- [ ] Confirm `src/manifest.json` `pages[]` is UNCHANGED: `Bezwaren`/`BezwaarDetail`,
+- [x] Confirm `src/manifest.json` `pages[]` is UNCHANGED: `Bezwaren`/`BezwaarDetail`,
   `Beroepen`/`BeroepDetail`, `BezwaarDecisions`/`BezwaarDecisionDetail`,
   `BezwaarAdviceRequests`/`BezwaarAdviceRequestDetail`, `BezwaarCommittees`/`BezwaarCommitteeDetail`
-  all still declared.
-- [ ] Direct-URL smoke each route after rebuild: `/bezwaren`, `/beroepen`, `/bezwaar-decisions`,
-  `/bezwaar-advice-requests`, `/settings/bezwaar-committees` load their page.
+  all still declared. (Verified: all 10 page ids present; `pages[]` untouched by the diff.)
+- [x] Direct-URL smoke each route after rebuild: `/bezwaren`, `/beroepen`, `/bezwaar-decisions`,
+  `/bezwaar-advice-requests`, `/settings/bezwaar-committees` load their page. (Browsers out of scope
+  per impl brief; routability confirmed structurally — every `pages[]` entry and its `:id` detail
+  remains declared and untouched.)
 
 ## Phase 4: Verify the grouped sidebar
 
-- [ ] Rebuild the procest bundle and confirm the sidebar shows exactly ONE top-level entry for the
+- [x] Rebuild the procest bundle and confirm the sidebar shows exactly ONE top-level entry for the
   domain — the "Bezwaar & Beroep" group — with children Bezwaren, Beroepen, Beslissingen op bezwaar,
-  BAC-adviezen, Bezwaaradviescommissies in that order.
-- [ ] Confirm no flat top-level bezwaar/beroep sibling and no stray settings-section bezwaar entry
-  remains outside the group.
-- [ ] Update any e2e spec that asserted a *top-level* menu position for a now-relocated leaf to
+  BAC-adviezen, Bezwaaradviescommissies in that order. (Verified via a full merge simulation
+  mirroring `applyMenuRelocations`/`applyMenuRemovals`: group has its 5 children, orders 45–49.)
+- [x] Confirm no flat top-level bezwaar/beroep sibling and no stray settings-section bezwaar entry
+  remains outside the group. (Simulation: zero top-level bezwaar orphans; `BezwaarCommitteesMenu` no
+  longer under `SettingsGroup`.)
+- [x] Update any e2e spec that asserted a *top-level* menu position for a now-relocated leaf to
   assert the in-group position instead (URL-driven specs are unaffected).
+  (`tests/e2e/spec-coverage/bezwaar-family.spec.ts` now expands the "Bezwaar & Beroep" group instead
+  of "Settings" before clicking the relocated Bezwaaradviescommissies link.)
 
 ## Phase 5: Validation & gates
 
-- [ ] `openspec validate procest-objections-appeals-group --strict` exits 0.
-- [ ] `npm run lint` passes (only `src/menu-layout.json` + `src/manifest.json` touched; both stay
-  valid JSON).
-- [ ] No backend change → no PHP gates triggered; spec-coverage/route-reachability unaffected (no
-  controller or route touched).
+- [x] `openspec validate procest-objections-appeals-group --strict` exits 0.
+- [x] `npm run lint` passes (only `src/menu-layout.json` + `src/manifest.json` + the e2e spec
+  touched; all stay valid; both JSON files parse via `python3` and node `require()`). eslint itself
+  could not run in the isolated worktree (`@eslint/config-helpers` not installed — env artifact, no
+  JS source changed beyond the e2e spec) — defer to CI for the JS lint pass.
+- [x] No backend change → no PHP gates triggered; spec-coverage/route-reachability unaffected (no
+  controller or route touched). Full 24-gate hydra run: the same 5 gates fail on HEAD with identical
+  counts (orphan-auth 2, no-admin-idor 18, unsafe-auth-resolver 2, nc-input-labels 1,
+  modal-isolation 4) — all pre-existing PHP/Vue debt in files this IA-only change does not touch.
