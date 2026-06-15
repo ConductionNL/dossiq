@@ -46,6 +46,7 @@ use OCA\Procest\Listener\VergunningaanvraagCreatedListener;
 use OCA\Procest\Listener\BezwaarDecisionListener;
 use OCA\Procest\Listener\BezwaarHearingScheduledListener;
 use OCA\Procest\Listener\BezwaarLifecycleListener;
+use OCA\Procest\Listener\DecisionConcludedListener;
 use OCA\Procest\Event\ParafeerTransitionEvent;
 use OCA\Procest\Listener\DeepLinkRegistrationListener;
 use OCA\Procest\Listener\ApprovalStepNotificationListener;
@@ -143,6 +144,7 @@ class Application extends App implements IBootstrap
         $this->registerBezwaarListeners(context: $context);
         $this->registerLegesListeners(context: $context);
         $this->registerTermijnListeners(context: $context);
+        $this->registerDecisionListeners(context: $context);
 
         // DSO Omgevingsloket: create Procest zaak when a vergunningaanvraag is written.
         $context->registerEventListener(
@@ -175,15 +177,18 @@ class Application extends App implements IBootstrap
         // from app config (procest.jwt_signing_secret). Generates a
         // per-instance random fallback when unset (dev-friendly; production
         // must set the secret via occ config:app:set procest jwt_signing_secret).
-        $context->registerService(TenantJwtService::class, function (\Psr\Container\ContainerInterface $c): TenantJwtService {
-            $config = $c->get(IConfig::class);
-            $secret = (string) $config->getAppValue(self::APP_ID, 'jwt_signing_secret', '');
-            if ($secret === '' || strlen($secret) < 16) {
-                $secret = (string) $config->getSystemValue('secret', str_pad(self::APP_ID, 32, '_'));
-            }
+        $context->registerService(
+                TenantJwtService::class,
+                function (\Psr\Container\ContainerInterface $c): TenantJwtService {
+                    $config = $c->get(IConfig::class);
+                    $secret = (string) $config->getAppValue(self::APP_ID, 'jwt_signing_secret', '');
+                    if ($secret === '' || strlen($secret) < 16) {
+                        $secret = (string) $config->getSystemValue('secret', str_pad(self::APP_ID, 32, '_'));
+                    }
 
-            return new TenantJwtService(signingSecret: $secret);
-        });
+                    return new TenantJwtService(signingSecret: $secret);
+                }
+                );
 
         // Background jobs are declared in appinfo/info.xml under
         // <background-jobs>; Nextcloud auto-registers them with the IJobList.
@@ -220,20 +225,20 @@ class Application extends App implements IBootstrap
         // downstream Application::register() to activate.
         //
         // - KvK Handelsregister
-        //   (leverancier-zaakportaal eHerkenning kvkNummer enrichment,
-        //   bedrijfszaak intake, brp-kvk-register-sets seed).
+        // (leverancier-zaakportaal eHerkenning kvkNummer enrichment,
+        // bedrijfszaak intake, brp-kvk-register-sets seed).
         // - BRP / Haal Centraal
-        //   (citizen zaak intake DigiD BSN → persoon envelope,
-        //   briefcode resolution, register-set seed).
+        // (citizen zaak intake DigiD BSN → persoon envelope,
+        // briefcode resolution, register-set seed).
         // - TMLO / MDTO metadata builder + e-Depot submission
-        //   (archief-edepot-handover-03 metadata bundling +
-        //   archief-edepot-handover-05 SIP submission).
+        // (archief-edepot-handover-03 metadata bundling +
+        // archief-edepot-handover-05 SIP submission).
         // - external-ZGW client
-        //   (cross-municipality zaak hand-off via Zaken-API +
-        //   Documenten-API).
+        // (cross-municipality zaak hand-off via Zaken-API +
+        // Documenten-API).
         // - ZTC / Catalogi-API client
-        //   (zaaktype URL resolution before hand-off +
-        //   regional Catalogi-API zaaktype import).
+        // (zaaktype URL resolution before hand-off +
+        // regional Catalogi-API zaaktype import).
         $context->registerServiceAlias(
             \OCA\Procest\Service\External\Kvk\KvkHandelsregisterAdapterInterface::class,
             \OCA\Procest\Service\External\Kvk\LogKvkHandelsregisterAdapter::class
@@ -379,6 +384,38 @@ class Application extends App implements IBootstrap
             listener: \OCA\Procest\Listener\TermijnCaseCreatedListener::class
         );
     }//end registerTermijnListeners()
+
+    /**
+     * Register the decidesk decision-outcome listener.
+     *
+     * Procest delegates contract / besluit / bezwaar / advice DECISIONS to
+     * decidesk by dispatching `DecisionRequestedEvent`; the terminal outcome
+     * arrives back as decidesk's `DecisionConcludedEvent`. This listener
+     * materialises the ZGW `Besluit` from that outcome (filtered to this app via
+     * `getSourceApp()`). The event class is registered by FQN string and only
+     * when decidesk is installed, so procest carries no hard compile-time
+     * dependency on the optional decidesk app.
+     *
+     * @param IRegistrationContext $context Registration context.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+     */
+    private function registerDecisionListeners(IRegistrationContext $context): void
+    {
+        if (class_exists('\\OCA\\Decidesk\\Event\\DecisionConcludedEvent') === false) {
+            return;
+        }
+
+        // FQN string (not ::class) so there is no hard compile-time dependency
+        // on the optional decidesk app — mirrors the OpenRegister approval-event
+        // registration above.
+        $context->registerEventListener(
+            event: 'OCA\Decidesk\Event\DecisionConcludedEvent',
+            listener: DecisionConcludedListener::class
+        );
+    }//end registerDecisionListeners()
 
     /**
      * Register dashboard widgets and the MCP tool provider.

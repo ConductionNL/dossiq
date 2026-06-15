@@ -4,18 +4,18 @@
  * Procest Bezwaar Decision Delegation Service
  *
  * Delegates the beslissing-op-bezwaar (decision on objection) to decidesk via
- * the OpenRegister ADR-019 integration registry. procest keeps the Awb domain
- * rules and the ZGW Besluit recording (as a projection); decidesk owns the
- * *making* of the decision. This service is a thin sibling of
+ * the decidesk `DecisionRequestedEvent` (IEventDispatcher). procest keeps the
+ * Awb domain rules and the ZGW Besluit recording (as a projection); decidesk
+ * owns the *making* of the decision. This service is a thin sibling of
  * ContractDecisionDelegationService — it reuses that service's shared
- * registry-resolution + raiseDecision core and only fixes the
- * `bezwaar-decision` decisionType + provenance. It does NOT add a second
- * integration mechanism.
+ * event-dispatch raiseDecision core and only fixes the `bezwaar-decision`
+ * decisionType + provenance. It does NOT add a second delegation mechanism.
  *
  *  - raiseBezwaarDecision() — raise a decidesk `bezwaar-decision` Decision.
- *  - consumeOutcome()       — read the decided outcome (delegates to the core).
  *
- * FAILS CLOSED when the decidesk leaf is unavailable (never auto-decides).
+ * The terminal outcome is delivered by decidesk's `DecisionConcludedEvent`
+ * (consumed by {@see \OCA\Procest\Listener\DecisionConcludedListener}), not by
+ * a poll. FAILS CLOSED when decidesk is unavailable (never auto-decides).
  *
  * @category Service
  * @package  OCA\Procest\Service
@@ -46,7 +46,7 @@ class BezwaarDecisionDelegationService
     /**
      * Constructor.
      *
-     * @param ContractDecisionDelegationService $core Shared registry-resolution + raiseDecision core (ADR-019).
+     * @param ContractDecisionDelegationService $core Shared event-dispatch raiseDecision core.
      */
     public function __construct(
         private readonly ContractDecisionDelegationService $core,
@@ -59,10 +59,12 @@ class BezwaarDecisionDelegationService
      * The caller (Bezwaar/DecisionService) MUST have run the Awb validity
      * matrix (7:11 disposition set, 7:12 reasoning+legalBasis, proceskosten,
      * replacement guard) BEFORE invoking this — the domain rules stay in
-     * procest. FAILS CLOSED when the decidesk leaf is unavailable.
+     * procest. FAILS CLOSED when decidesk is unavailable.
      *
      * @param string              $bezwaarId The bezwaar/case reference (UUID) persisted on the decidesk Decision.
-     * @param array<string,mixed> $payload   Decision payload: disposition, reasoning, legalBasis, replacementDecision, subjectLabel, subjectRegister, subjectSchema, subjectId.
+     * @param array<string,mixed> $payload   Decision payload: disposition, reasoning, legalBasis,
+     *                                       replacementDecision, subjectLabel, subjectRegister,
+     *                                       subjectSchema, subjectId.
      *
      * @return string The decidesk decisionRef (UUID) to persist on the case.
      *
@@ -90,20 +92,4 @@ class BezwaarDecisionDelegationService
             ],
         );
     }//end raiseBezwaarDecision()
-
-    /**
-     * Consume the outcome of a decidesk `bezwaar-decision` Decision.
-     *
-     * @param string $decisionRef The decidesk Decision UUID.
-     *
-     * @return array{result:string, decidedAt:string, motivering:string, signer:string, method:string, raw:array<string,mixed>}
-     *
-     * @throws \RuntimeException When the decidesk leaf is unavailable or the outcome cannot be read.
-     *
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-003-the-zgw-besluitadvice-record-is-a-projection-of-the-decidesk-outcome
-     */
-    public function consumeOutcome(string $decisionRef): array
-    {
-        return $this->core->consumeOutcome(decisionRef: $decisionRef);
-    }//end consumeOutcome()
 }//end class
