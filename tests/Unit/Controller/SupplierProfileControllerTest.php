@@ -19,8 +19,10 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\SupplierProfileController;
+use OCA\Procest\Middleware\SupplierUnauthorizedException;
 use OCA\Procest\Service\SupplierMasterDataMutationService;
 use OCA\Procest\Service\SupplierScopeService;
+use OCA\Procest\Service\SupplierSessionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -35,7 +37,7 @@ class SupplierProfileControllerTest extends TestCase
     /**
      * Build a controller bound to mocked services + a mocked request.
      *
-     * @param array<string, mixed> $params Request param map.
+     * @param array<string, mixed>                   $params   Request param map.
      * @param SupplierMasterDataMutationService|null $mutation Optional override.
      *
      * @return SupplierProfileController
@@ -61,14 +63,43 @@ class SupplierProfileControllerTest extends TestCase
             $mutation ?? $this->createMock(SupplierMasterDataMutationService::class),
             $this->createMock(SupplierScopeService::class),
             $session,
+            $this->makeSession($params),
         );
     }//end makeController()
 
+    /**
+     * A SupplierSessionService mock driven by the request param map.
+     *
+     * The supplierRef is SERVER-TRUSTED: the controller reads it from the
+     * session, never the client. A missing `supplierRef` makes the session
+     * throw SupplierUnauthorizedException (→ 401 "Bearer token required"),
+     * matching the fail-closed contract.
+     *
+     * @param array<string,mixed> $params Request param map (supplierRef).
+     *
+     * @return SupplierSessionService
+     */
+    private function makeSession(array $params): SupplierSessionService
+    {
+        $supplierSession = $this->createMock(SupplierSessionService::class);
+        $supplierRef     = (string) ($params['supplierRef'] ?? '');
+
+        if ($supplierRef === '') {
+            $supplierSession->method('requireSupplierRef')
+                ->willThrowException(new SupplierUnauthorizedException('no session'));
+            return $supplierSession;
+        }
+
+        $supplierSession->method('requireSupplierRef')->willReturn($supplierRef);
+        return $supplierSession;
+    }//end makeSession()
+
     public function testUpdateAddressRequiresSupplierRef(): void
     {
+        // No supplier session → the session resolver fails closed with 401.
         $c = $this->makeController([]);
         $r = $c->updateAddress();
-        $this->assertSame(Http::STATUS_BAD_REQUEST, $r->getStatus());
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $r->getStatus());
     }//end testUpdateAddressRequiresSupplierRef()
 
     public function testUpdateAddressRequiresAddressPayload(): void
@@ -153,11 +184,14 @@ class SupplierProfileControllerTest extends TestCase
         $mut->expects($this->once())->method('submitForVerification')
             ->with('s1', 'iso27001', ['ref-a', 'ref-b'], 'admin')
             ->willReturn(['ok' => true, 'caseRef' => 'case-12']);
-        $c = $this->makeController([
-            'supplierRef' => 's1',
-            'dataType'    => 'iso27001',
-            'attachments' => ['ref-a', 'ref-b'],
-        ], mutation: $mut);
+        $c = $this->makeController(
+                [
+                    'supplierRef' => 's1',
+                    'dataType'    => 'iso27001',
+                    'attachments' => ['ref-a', 'ref-b'],
+                ],
+                mutation: $mut
+                );
         $r = $c->submitAccreditation();
         $this->assertSame(Http::STATUS_OK, $r->getStatus());
     }//end testSubmitAccreditationDelegates()

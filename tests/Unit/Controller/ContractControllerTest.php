@@ -27,8 +27,10 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\ContractController;
+use OCA\Procest\Middleware\SupplierUnauthorizedException;
 use OCA\Procest\Service\ContractRenewalService;
 use OCA\Procest\Service\SupplierScopeService;
+use OCA\Procest\Service\SupplierSessionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -67,8 +69,40 @@ class ContractControllerTest extends TestCase
             $request,
             $scope ?? $this->createMock(SupplierScopeService::class),
             $renewal ?? $this->makeRealRenewalService(),
+            $this->makeSession($params),
         );
     }//end makeController()
+
+    /**
+     * A SupplierSessionService mock driven by the request param map.
+     *
+     * The supplierRef and role are SERVER-TRUSTED (member 04): the controller
+     * reads them from the session, never the client. A missing `supplierRef`
+     * makes the session throw SupplierUnauthorizedException (→ 401), matching
+     * the fail-closed contract.
+     *
+     * @param array<string,string|null> $params Request param map (supplierRef, role).
+     *
+     * @return SupplierSessionService
+     */
+    private function makeSession(array $params): SupplierSessionService
+    {
+        $session     = $this->createMock(SupplierSessionService::class);
+        $supplierRef = (string) ($params['supplierRef'] ?? '');
+        $role        = (string) ($params['role'] ?? '');
+
+        if ($supplierRef === '') {
+            $session->method('requireSupplierRef')
+                ->willThrowException(new SupplierUnauthorizedException('no session'));
+            $session->method('requireSupplierRole')
+                ->willThrowException(new SupplierUnauthorizedException('no session'));
+            return $session;
+        }
+
+        $session->method('requireSupplierRef')->willReturn($supplierRef);
+        $session->method('requireSupplierRole')->willReturn($role);
+        return $session;
+    }//end makeSession()
 
     /**
      * A real ContractRenewalService whose dependencies are mocked — exercises
@@ -90,9 +124,10 @@ class ContractControllerTest extends TestCase
 
     public function testIndexRequiresSupplierRef(): void
     {
+        // No supplier session → the session resolver fails closed with 401.
         $c = $this->makeController([]);
         $r = $c->index();
-        $this->assertSame(Http::STATUS_BAD_REQUEST, $r->getStatus());
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $r->getStatus());
     }//end testIndexRequiresSupplierRef()
 
     public function testIndexReturnsScopedRowsWithComputedFields(): void
