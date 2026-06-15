@@ -35,7 +35,6 @@ import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import AgendaCompilerView from './views/besluitvorming/AgendaCompilerView.vue'
 import VergaderingDetailView from './views/besluitvorming/VergaderingDetailView.vue'
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
-import PublicCaseView from './views/public/PublicCaseView.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
 
@@ -236,10 +235,11 @@ const registry = {
 	},
 
 	// --- Anonymous-public routes (no auth, no main menu). ---
-	PublicCaseView: {
-		kind: 'page',
-		component: PublicCaseView,
-	},
+	// The bespoke public case-view (PublicCaseView) was removed by
+	// migrate-public-share-to-shares-leaf: its password/comment/contribute
+	// model was tied to the bespoke share-token controller. The citizen
+	// "track your case" status page (PublicStatusPage) now resolves through
+	// OpenRegister's shares-leaf #[PublicPage] case-token endpoint (ADR-022).
 	PublicAppointmentPage: {
 		kind: 'page',
 		component: PublicAppointmentPage,

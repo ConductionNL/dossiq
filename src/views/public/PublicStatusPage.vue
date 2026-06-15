@@ -72,17 +72,35 @@ export default {
 		this.loadStatus()
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * Resolve the public "track your case" token through OpenRegister's
+		 * shares integration leaf (ADR-022). The OR `#[PublicPage]` endpoint
+		 * `GET /apps/openregister/api/public/case-tokens/{token}` returns an
+		 * RBAC-respecting, public-safe view of the case (only the fields the
+		 * public group may read) — procest no longer runs its own public
+		 * token-resolution controller. An unknown / revoked / expired token,
+		 * or an RBAC-denied object, resolves to a uniform 404.
+		 *
+		 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P2.1
+		 */
 		async loadStatus() {
 			this.loading = true
 			try {
-				const response = await fetch(`/apps/procest/api/public/status/${this.token}`)
-				const data = await response.json()
+				const response = await fetch(`/apps/openregister/api/public/case-tokens/${encodeURIComponent(this.token)}`)
+				if (!response.ok) {
+					this.error = t('procest', 'Status unavailable')
+					return
+				}
 
-				if (!data.success) {
-					this.error = data.error || t('procest', 'Status unavailable')
-				} else {
-					this.statusData = data.status
+				const data = await response.json()
+				const obj = data.object || {}
+				// Map the public-safe OR object view onto the citizen status fields.
+				this.statusData = {
+					title: obj.title || data.label || '',
+					identifier: obj.identifier || '',
+					currentStatus: obj.status || '',
+					plannedEndDate: obj.plannedEndDate || null,
+					startDate: obj.startDate || null,
 				}
 			} catch (err) {
 				this.error = t('procest', 'Could not load status')

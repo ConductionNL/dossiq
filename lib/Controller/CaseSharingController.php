@@ -115,23 +115,25 @@ class CaseSharingController extends Controller
                 $user->getUID(),
             );
         } else {
-            $expiresAt       = $this->request->getParam('expiresAt');
-            $password        = $this->request->getParam('password');
-            $fieldExclusions = json_decode($this->request->getParam('fieldExclusions', '[]'), true);
-            if (is_array($fieldExclusions) === false) {
-                $fieldExclusions = [];
-            }
+            // Public "track your case" token link — minted through the OR
+            // shares integration leaf (ADR-022). The leaf owns token
+            // generation, expiry and the RBAC-respecting public resolve
+            // path; procest no longer stores a token, password or
+            // field-exclusion list. The C2 owner/handler guard above is the
+            // authz scope for minting a public surface (ADR-005).
+            $expiresAt = $this->request->getParam('expiresAt');
 
             $share = $this->caseSharingService->createTokenShare(
                 $caseId,
-                $permissionLevel,
                 $label,
                 $user->getUID(),
                 $expiresAt,
-                $password,
-                $fieldExclusions,
             );
         }//end if
+
+        if (isset($share['error']) === true) {
+            return new JSONResponse(['success' => false, 'error' => $share['error']], Http::STATUS_BAD_GATEWAY);
+        }
 
         return new JSONResponse(['success' => true, 'share' => $share]);
     }//end createShare()
@@ -154,6 +156,31 @@ class CaseSharingController extends Controller
             return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
+        // Public "track your case" token revoke — delegated to the OR shares
+        // leaf (ADR-022). A `caseId` param signals the {shareId} addresses a
+        // leaf-minted token. IDOR guard (ADR-005, Rule 3): the caller must be
+        // an owner/handler of the case AND the token must actually belong to
+        // that case (so a handler of case A cannot revoke case B's token by id).
+        $tokenCaseId = $this->request->getParam('caseId');
+        if (empty($tokenCaseId) === false) {
+            if ($this->caseSharingService->canUserAccessCase($tokenCaseId, $user->getUID()) === false
+                || $this->caseSharingService->tokenBelongsToCase($shareId, $tokenCaseId) === false
+            ) {
+                return new JSONResponse(
+                    ['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
+                    Http::STATUS_FORBIDDEN
+                );
+            }
+
+            $revoked = $this->caseSharingService->revokeTokenShare($shareId);
+            if ($revoked === false) {
+                return new JSONResponse(['success' => false, 'error' => 'Could not revoke share link'], Http::STATUS_BAD_GATEWAY);
+            }
+
+            return new JSONResponse(['success' => true]);
+        }
+
+        // Partner-organisation handover revoke (zaak-domain, in-app object).
         // C2: Resolve the share's caseId, then verify the caller has access to that case.
         $caseId = $this->caseSharingService->getCaseIdForShare($shareId);
         if ($caseId !== null

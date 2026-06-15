@@ -1,33 +1,33 @@
 <template>
 	<div class="share-tab">
-		<h3>{{ t('procest', 'Shares') }}</h3>
+		<h3>{{ t('procest', 'Partner shares') }}</h3>
 
-		<!-- Active shares list -->
+		<!--
+			Partner-organisation handovers only (zaak-domain). Public
+			"track your case" token links live in OpenRegister's shares
+			integration leaf (ADR-022) — minted/listed/revoked there, not
+			in this tab. The bespoke token-share rows were removed by
+			migrate-public-share-to-shares-leaf.
+		-->
 		<div v-if="loading" class="share-tab__loading">
 			<NcLoadingIcon :size="20" />
 			{{ t('procest', 'Loading shares...') }}
 		</div>
 
 		<div v-else-if="shares.length === 0" class="share-tab__empty">
-			<p>{{ t('procest', 'This case has not been shared yet.') }}</p>
+			<p>{{ t('procest', 'This case has not been shared with a partner yet.') }}</p>
 		</div>
 
 		<ul v-else class="share-tab__list">
 			<li v-for="share in shares" :key="share.id" class="share-tab__item">
 				<div class="share-tab__item-header">
-					<span class="share-tab__type-badge" :class="`share-tab__type-badge--${share.shareType}`">
-						{{ share.shareType === 'token' ? t('procest', 'Link') : t('procest', 'Partner') }}
+					<span class="share-tab__type-badge share-tab__type-badge--partner">
+						{{ t('procest', 'Partner') }}
 					</span>
 					<span class="share-tab__label">{{ share.label || t('procest', 'Unnamed share') }}</span>
 				</div>
 				<div class="share-tab__item-details">
 					<span>{{ permissionLabel(share.permissionLevel) }}</span>
-					<span v-if="share.expiresAt" class="share-tab__expires">
-						{{ t('procest', 'Expires: {date}', { date: formatDate(share.expiresAt) }) }}
-					</span>
-					<span v-if="share.lastAccessedAt" class="share-tab__accessed">
-						{{ t('procest', 'Last accessed: {date}', { date: formatDate(share.lastAccessedAt) }) }}
-					</span>
 				</div>
 				<div class="share-tab__item-actions">
 					<NcButton type="error" @click="$emit('revoke', share.id)">
@@ -37,12 +37,9 @@
 			</li>
 		</ul>
 
-		<!-- Create share buttons -->
+		<!-- Create partner share -->
 		<div class="share-tab__actions">
-			<NcButton type="primary" @click="$emit('create-token-share')">
-				{{ t('procest', 'Create share link') }}
-			</NcButton>
-			<NcButton @click="$emit('create-partner-share')">
+			<NcButton type="primary" @click="$emit('create-partner-share')">
 				{{ t('procest', 'Share with partner') }}
 			</NcButton>
 		</div>
@@ -68,11 +65,11 @@ export default {
 			default: false,
 		},
 	},
-	emits: ['revoke', 'create-token-share', 'create-partner-share'],
+	emits: ['revoke', 'create-partner-share'],
 	methods: {
 		/**
 		 * @param level
-		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P2.2
 		 */
 		permissionLabel(level) {
 			const labels = {
@@ -81,18 +78,6 @@ export default {
 				bekijken_bijdragen: t('procest', 'View + Contribute'),
 			}
 			return labels[level] || level
-		},
-		/**
-		 * @param dateString
-		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-		 */
-		formatDate(dateString) {
-			if (!dateString) return ''
-			return new Date(dateString).toLocaleDateString('nl-NL', {
-				year: 'numeric',
-				month: 'long',
-				day: 'numeric',
-			})
 		},
 	},
 }
@@ -128,11 +113,6 @@ export default {
 	border-radius: var(--border-radius);
 	font-size: 12px;
 	font-weight: bold;
-}
-
-.share-tab__type-badge--token {
-	background: var(--color-primary-element-light);
-	color: var(--color-primary-element);
 }
 
 .share-tab__type-badge--partner {
