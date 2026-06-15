@@ -203,6 +203,8 @@ class SupplierUserManagementService
      * @param string $actor   Admin doing the change.
      *
      * @return array<string,mixed>|null
+     *
+     * @spec openspec/changes/procest-security-hardening/specs/security-hardening/spec.md
      */
     public function updateRole(string $userId, string $newRole, string $actor): ?array
     {
@@ -215,7 +217,15 @@ class SupplierUserManagementService
         try {
             $user = $this->findObjectAsArray(objectService: $os, register: TenantSaasService::REGISTER, schema: 'supplierUser', id: $userId);
         } catch (Throwable $e) {
-            return null;
+            // Fail CLOSED on a backend error: do NOT swallow it as "user not
+            // found". A silent null would let a caller treat a transient lookup
+            // failure as an authorised no-op. Log and re-throw so the role
+            // change is rejected.
+            $this->logger->error(
+                'Procest: updateRole lookup failed (fail-closed)',
+                ['userId' => $userId, 'newRole' => $newRole, 'exception' => $e->getMessage()]
+            );
+            throw $e;
         }
 
         if (is_array($user) === false) {
@@ -240,7 +250,14 @@ class SupplierUserManagementService
             ]);
             return $persisted;
         } catch (Throwable $e) {
-            return null;
+            // Fail CLOSED: a persist failure must not be reported as success.
+            // Log and re-throw rather than returning a null the caller could
+            // misread as "no change needed".
+            $this->logger->error(
+                'Procest: updateRole persist failed (fail-closed)',
+                ['userId' => $userId, 'newRole' => $newRole, 'exception' => $e->getMessage()]
+            );
+            throw $e;
         }
     }
 

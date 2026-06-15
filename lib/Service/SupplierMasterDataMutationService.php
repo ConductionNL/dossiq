@@ -215,14 +215,31 @@ class SupplierMasterDataMutationService
      * Submit a master-data change for verification (accreditations, certificates).
      *
      * @param string $supplierRef Supplier UUID.
-     * @param string $dataType    Data type ('accreditation', 'sbi', ...).
+     * @param string $dataType    Data type ('accreditation', 'sbi', 'kvk', ...).
      * @param array<int, string> $attachments Attachment refs.
      * @param string $actor       Actor id.
+     * @param string $kvkNumber   Optional KvK number — when the verification is a
+     *                            KvK registration check (dataType 'kvk' or a number
+     *                            is supplied) it is validated against the
+     *                            Handelsregister before the case is opened.
      *
-     * @return array{ok:bool, caseRef?:string}
+     * @return array{ok:bool, caseRef?:string, reason?:string}
+     *
+     * @spec openspec/changes/procest-security-hardening/specs/security-hardening/spec.md
      */
-    public function submitForVerification(string $supplierRef, string $dataType, array $attachments, string $actor): array
+    public function submitForVerification(string $supplierRef, string $dataType, array $attachments, string $actor, string $kvkNumber = ''): array
     {
+        // Fail closed: a KvK verification with a malformed / unverifiable KvK
+        // number must not open a verification case. validateKvk() runs the
+        // format check (and, when an adapter is bound, the Handelsregister
+        // lookup) and returns ok=false on rejection.
+        if ($dataType === 'kvk' || $kvkNumber !== '') {
+            $kvkResult = $this->validateKvk($kvkNumber);
+            if (($kvkResult['ok'] ?? false) === false) {
+                return ['ok' => false, 'reason' => (string) ($kvkResult['reason'] ?? 'KvK-validatie mislukt')];
+            }
+        }
+
         $os = $this->getObjectService();
         if ($os === null) {
             return ['ok' => false];

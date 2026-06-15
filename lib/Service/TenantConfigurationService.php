@@ -221,11 +221,23 @@ class TenantConfigurationService
      * @return array<string,mixed> Sanitised.
      *
      * @throws InvalidArgumentException When a hex color is invalid.
+     *
+     * @spec openspec/changes/procest-security-hardening/specs/security-hardening/spec.md
      */
     public function sanitiseBranding(array $branding): array
     {
         $out = [];
         if (isset($branding['logo']) === true) {
+            // Fail closed: when the upload carries MIME/size metadata, enforce
+            // the logo MIME-type + 5 MB guard before accepting it.
+            // validateLogoUpload() throws InvalidArgumentException on a
+            // disallowed MIME type or an oversized file.
+            $logoMime  = (string) ($branding['logoMimeType'] ?? '');
+            $logoBytes = (int) ($branding['logoBytes'] ?? 0);
+            if ($logoMime !== '' || $logoBytes > 0) {
+                $this->validateLogoUpload($logoMime, $logoBytes);
+            }
+
             $out['logo'] = (string) $branding['logo'];
         }
 

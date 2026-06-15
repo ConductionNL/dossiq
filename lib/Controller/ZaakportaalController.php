@@ -92,7 +92,7 @@ class ZaakportaalController extends Controller
     public function cases(): JSONResponse
     {
         try {
-            $subjectRef = $this->identityService->currentSubjectRef();
+            $subjectRef = $this->identityService->requireAuthenticatedSubject();
             $cases      = $this->caseService->listForSubject($subjectRef, $this->zaaktypeScope());
             $this->auditLogger->record('case-list', $subjectRef);
         } catch (OCSBadRequestException $e) {
@@ -118,7 +118,7 @@ class ZaakportaalController extends Controller
     public function caseDetail(string $id): JSONResponse
     {
         try {
-            $subjectRef = $this->identityService->currentSubjectRef();
+            $subjectRef = $this->identityService->requireAuthenticatedSubject();
             $case       = $this->caseService->detailForSubject($id, $subjectRef, $this->zaaktypeScope());
             $this->auditLogger->record('case-view', $subjectRef, 'success', ['caseId' => $id]);
         } catch (OCSBadRequestException $e) {
@@ -144,7 +144,7 @@ class ZaakportaalController extends Controller
         $caseId = (string) $this->request->getParam('caseId', '');
 
         try {
-            $subjectRef = $this->identityService->currentSubjectRef();
+            $subjectRef = $this->identityService->requireAuthenticatedSubject();
             $thread     = $this->messageService->threadForSubject($caseId, $subjectRef);
         } catch (OCSBadRequestException $e) {
             return $this->error(exception: $e);
@@ -167,7 +167,7 @@ class ZaakportaalController extends Controller
     public function sendMessage(): JSONResponse
     {
         try {
-            $subjectRef = $this->identityService->currentSubjectRef();
+            $subjectRef = $this->identityService->requireAuthenticatedSubject();
             $message    = $this->messageService->send($this->bodyParams(), $subjectRef);
             $this->auditLogger->record('message-send', $subjectRef, 'success', ['caseId' => (string) ($message['caseId'] ?? '')]);
         } catch (OCSBadRequestException $e) {
@@ -192,7 +192,7 @@ class ZaakportaalController extends Controller
     {
         try {
             // Scoping check: caller must be an authenticated portal subject.
-            $this->identityService->currentSubjectRef();
+            $this->identityService->requireAuthenticatedSubject();
             $result = $this->requestService->validateBezwaarDeadline((string) $this->request->getParam('decisionDate', ''));
         } catch (OCSBadRequestException $e) {
             return $this->error(exception: $e);
@@ -215,7 +215,7 @@ class ZaakportaalController extends Controller
     public function submitObjection(): JSONResponse
     {
         try {
-            $subjectRef = $this->identityService->currentSubjectRef();
+            $subjectRef = $this->identityService->requireAuthenticatedSubject();
             $verzoek    = $this->requestService->submitBezwaar($this->bodyParams(), $subjectRef);
             $this->auditLogger->record('objection-submit', $subjectRef, 'success', ['caseId' => (string) ($verzoek['tegenZaakId'] ?? '')]);
         } catch (OCSBadRequestException $e) {
@@ -239,7 +239,7 @@ class ZaakportaalController extends Controller
     public function submitComplaint(): JSONResponse
     {
         try {
-            $subjectRef = $this->identityService->currentSubjectRef();
+            $subjectRef = $this->identityService->requireAuthenticatedSubject();
             $verzoek    = $this->requestService->submitKlacht($this->bodyParams(), $subjectRef);
             $this->auditLogger->record('complaint-submit', $subjectRef);
         } catch (OCSBadRequestException $e) {
@@ -263,7 +263,7 @@ class ZaakportaalController extends Controller
     public function requests(): JSONResponse
     {
         try {
-            $subjectRef = $this->identityService->currentSubjectRef();
+            $subjectRef = $this->identityService->requireAuthenticatedSubject();
             $results    = $this->requestService->listForSubject($subjectRef, (string) $this->request->getParam('soort', ''));
         } catch (OCSBadRequestException $e) {
             return $this->error(exception: $e);
@@ -286,7 +286,7 @@ class ZaakportaalController extends Controller
     public function getPreferences(): JSONResponse
     {
         try {
-            $subjectRef  = $this->identityService->currentSubjectRef();
+            $subjectRef  = $this->identityService->requireAuthenticatedSubject();
             $preferences = $this->preferenceService->getForSubject($subjectRef);
         } catch (OCSBadRequestException $e) {
             return $this->error(exception: $e);
@@ -309,7 +309,7 @@ class ZaakportaalController extends Controller
     public function updatePreferences(): JSONResponse
     {
         try {
-            $subjectRef  = $this->identityService->currentSubjectRef();
+            $subjectRef  = $this->identityService->requireAuthenticatedSubject();
             $preferences = $this->preferenceService->updateForSubject($subjectRef, $this->bodyParams());
             $this->auditLogger->record('preference-update', $subjectRef);
         } catch (OCSBadRequestException $e) {

@@ -107,7 +107,7 @@
 			v-if="selectedCase"
 			:zaak="selectedCase"
 			@close="selectedCase = null"
-			@updated="onCaseUpdated" />
+			@transition="onCaseUpdated" />
 	</div>
 </template>
 
@@ -119,7 +119,7 @@ import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
 import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
 import NcTextField from '@nextcloud/vue/dist/Components/NcTextField.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
-import DsoCaseDetail from './DsoCaseDetail.vue'
+import DsoCaseDetail from '../../dialogs/DsoCaseDetail.vue'
 
 export default {
 	name: 'VthDashboard',

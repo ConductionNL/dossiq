@@ -50,8 +50,9 @@ class SupplierAuthMiddleware extends Middleware
      * @var array<int, string>
      */
     private const SUPPLIER_CONTROLLERS = [
-        // Once supplier portal controllers ship they're added here. Until then
-        // the middleware is a no-op for every existing controller.
+        \OCA\Procest\Controller\SupplierPortalController::class,
+        \OCA\Procest\Controller\SupplierProfileController::class,
+        \OCA\Procest\Controller\ContractController::class,
     ];
 
     /**
