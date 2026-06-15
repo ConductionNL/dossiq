@@ -42,7 +42,7 @@ class SupplierDashboardServiceTest extends TestCase
         $this->svc = new SupplierDashboardService(
             scopeService: $scope,
             invoiceForecast: new InvoicePaymentForecastService($scope, $logger),
-            contractRenewal: new ContractRenewalService($scope, $audit, $this->createMock(IAppManager::class), $this->createMock(ContainerInterface::class), $logger),
+            contractRenewal: new ContractRenewalService($scope, $audit, $this->createMock(IAppManager::class), $this->createMock(ContainerInterface::class), $logger, $this->createMock(\OCA\Procest\Service\ContractDecisionDelegationService::class)),
             viewModel: new LeverancierViewModelService(),
         );
     }

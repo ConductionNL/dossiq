@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\AdviceDelegationService;
 use OCA\Procest\Service\ConsultationService;
 use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -115,6 +116,13 @@ class ConsultationServiceTest extends TestCase
     private LoggerInterface $logger;
 
     /**
+     * Mocked AdviceDelegationService.
+     *
+     * @var AdviceDelegationService|MockObject
+     */
+    private AdviceDelegationService $adviceDelegation;
+
+    /**
      * Service under test.
      *
      * @var ConsultationService
@@ -129,11 +137,13 @@ class ConsultationServiceTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->settings = $this->createMock(SettingsService::class);
-        $this->logger   = $this->createMock(LoggerInterface::class);
-        $this->service  = new ConsultationService(
+        $this->settings         = $this->createMock(SettingsService::class);
+        $this->logger           = $this->createMock(LoggerInterface::class);
+        $this->adviceDelegation = $this->createMock(AdviceDelegationService::class);
+        $this->service          = new ConsultationService(
             settingsService: $this->settings,
             logger: $this->logger,
+            adviceDelegation: $this->adviceDelegation,
         );
 
     }//end setUp()

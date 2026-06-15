@@ -56,6 +56,13 @@ class ContractDecisionDelegationService
     public const DECISION_TYPE_BEZWAAR            = 'bezwaar-beslissing';
 
     /**
+     * Decision types for the remaining decision/advice flows delegated by
+     * `procest-delegate-remaining-decisions-to-decidesk` (ADR-005 decisionType).
+     */
+    public const DECISION_TYPE_BEZWAAR_DECISION = 'bezwaar-decision';
+    public const DECISION_TYPE_ADVICE           = 'advice';
+
+    /**
      * Constructor.
      *
      * @param IAppManager        $appManager App manager.
@@ -144,6 +151,82 @@ class ContractDecisionDelegationService
 
         return $decisionRef;
     }//end raiseContractDecision()
+
+    /**
+     * Raise a decidesk Decision of an arbitrary decisionType via the ADR-019
+     * integration registry. This is the shared core reused by the remaining
+     * decision/advice delegation siblings (BezwaarDecisionDelegationService,
+     * AdviceDelegationService) so there is exactly one integration mechanism.
+     *
+     * FAILS CLOSED: when the leaf is unavailable or the request fails this
+     * method throws — it never silently returns null / auto-decides (mirrors
+     * hydra-gate-unsafe-auth-resolver).
+     *
+     * @param string              $decisionType  Decision type slug (ADR-005), e.g. self::DECISION_TYPE_ADVICE.
+     * @param string              $externalReference The ZGW case/subject reference persisted on the decidesk Decision.
+     * @param array<string,mixed> $subject       Subject fields: subjectRegister, subjectSchema, subjectId, subjectLabel.
+     * @param array<string,mixed> $context       Optional decision context (disposition, reasoning, legalBasis, mandate, etc.).
+     *
+     * @return string The decidesk decisionRef (UUID) to persist on the case.
+     *
+     * @throws RuntimeException When the decidesk leaf is unavailable or the Decision could not be created.
+     *
+     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
+     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
+     */
+    public function raiseDecision(
+        string $decisionType,
+        string $externalReference,
+        array $subject,
+        array $context = [],
+    ): string {
+        $integrationService = $this->resolveIntegrationService();
+
+        // REQ-PDRD-002: fail closed — when the leaf is unavailable surface a
+        // clear error; NEVER fall back to a procest-local authoring path.
+        if ($integrationService === null) {
+            $this->logger->error(
+                'ContractDecisionDelegationService: decidesk integration leaf unavailable; failing closed (raiseDecision)',
+                ['externalReference' => $externalReference, 'decisionType' => $decisionType]
+            );
+            throw new RuntimeException('Decision service unavailable: decidesk integration leaf not registered or unavailable. Decision cannot proceed.');
+        }
+
+        $payload = [
+            'decisionType'       => $decisionType,
+            'sourceApp'          => 'procest',
+            'subjectRegister'    => (string) ($subject['subjectRegister'] ?? ''),
+            'subjectSchema'      => (string) ($subject['subjectSchema'] ?? ''),
+            'subjectId'          => (string) ($subject['subjectId'] ?? ''),
+            'subjectLabel'       => (string) ($subject['subjectLabel'] ?? ''),
+            'externalReference'  => $externalReference,
+            'outcomeCallbackUrl' => '',
+            'context'            => $context,
+        ];
+
+        try {
+            $result = $integrationService->createDecision(payload: $payload);
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'ContractDecisionDelegationService: createDecision (raiseDecision) failed',
+                ['externalReference' => $externalReference, 'error' => $e->getMessage()]
+            );
+            // REQ-PDRD-002: re-throw to fail closed; caller must not proceed.
+            throw new RuntimeException('Decision service error: '.$e->getMessage(), 0, $e);
+        }
+
+        $decisionRef = (string) ($result['id'] ?? $result['uuid'] ?? '');
+        if ($decisionRef === '') {
+            throw new RuntimeException('Decision service returned an empty decisionRef; failing closed.');
+        }
+
+        $this->logger->info(
+            'ContractDecisionDelegationService: decidesk Decision raised (raiseDecision)',
+            ['externalReference' => $externalReference, 'decisionType' => $decisionType, 'decisionRef' => $decisionRef]
+        );
+
+        return $decisionRef;
+    }//end raiseDecision()
 
     /**
      * Consume the outcome of a decidesk Decision.

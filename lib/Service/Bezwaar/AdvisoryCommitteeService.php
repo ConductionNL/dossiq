@@ -42,6 +42,7 @@ namespace OCA\Procest\Service\Bezwaar;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use OCA\Procest\Service\AdviceDelegationService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\StatusTransitionService;
 use OCA\Procest\Service\Support\SearchesObjects;
@@ -104,13 +105,15 @@ class AdvisoryCommitteeService
      *                                                 the case-level status FSM
      *                                                 (used when the lifecycle
      *                                                 advances the parent case)
-     * @param LoggerInterface         $logger          Logger
+     * @param LoggerInterface         $logger             Logger
+     * @param AdviceDelegationService $adviceDelegation   Advice delegation to decidesk (ADR-019)
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly IUserSession $userSession,
         private readonly StatusTransitionService $transitions,
         private readonly LoggerInterface $logger,
+        private readonly AdviceDelegationService $adviceDelegation,
     ) {
     }//end __construct()
 
@@ -224,6 +227,8 @@ class AdvisoryCommitteeService
      * @throws GuardFailedException When the independence check fails
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
+     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-procest
      */
     public function transitionAdviceStatus(
         string $requestId,
@@ -308,6 +313,7 @@ class AdvisoryCommitteeService
 
         // Guard: in-deliberation → advice-issued requires the structured
         // advice content (REQ-BAC-4).
+        $adviceDecisionRef = '';
         if ($from === 'in-deliberation' && $newStatus === 'advice-issued') {
             $merged = array_merge($current, $payload);
             foreach (self::REQUIRED_ADVICE_FIELDS as $field) {
@@ -319,13 +325,41 @@ class AdvisoryCommitteeService
                     );
                 }
             }
-        }
+
+            // REQ-PDRD-001 / REQ-PDRD-002: the BAC advice is *made* in decidesk.
+            // After the procest domain guards (panel-independence above,
+            // required-fields here) pass, raise a decidesk `advice` Decision
+            // and persist its ref. Fail CLOSED — never author the advice
+            // outcome locally as a fallback.
+            try {
+                $adviceDecisionRef = $this->adviceDelegation->raiseAdviceDecision(
+                    subjectSchema: 'bacAdviceRequest',
+                    subjectId: (string) $requestId,
+                    payload: [
+                        'subjectRegister'   => $register,
+                        'externalReference' => (string) ($current['bezwaar'] ?? $requestId),
+                        'subjectLabel'      => (string) ($merged['conclusion'] ?? 'BAC-advies'),
+                        'adviceType'        => (string) ($merged['recommendation'] ?? ''),
+                        'question'          => (string) ($merged['conclusion'] ?? ''),
+                    ],
+                );
+            } catch (RuntimeException $e) {
+                $this->logger->error(
+                    'Procest BAC: decidesk advice Decision raise failed — failing closed: '
+                    .$e->getMessage()
+                );
+                throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
+            }
+        }//end if
 
         $userId = $this->resolveUserId();
 
         // Compose the update.
         $update           = $payload;
         $update['status'] = $newStatus;
+        if ($adviceDecisionRef !== '') {
+            $update['decisionRef'] = $adviceDecisionRef;
+        }
 
         if ($newStatus === 'advice-issued' || $newStatus === 'niet-ontvankelijk') {
             $update['adviceIssuedAt'] = (new DateTimeImmutable())

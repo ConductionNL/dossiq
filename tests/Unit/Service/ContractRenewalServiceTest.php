@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\ContractDecisionDelegationService;
 use OCA\Procest\Service\ContractRenewalService;
 use OCA\Procest\Service\SupplierScopeService;
 use OCA\Procest\Service\TenantAuditTrailService;
@@ -77,6 +78,7 @@ class ContractRenewalServiceTest extends TestCase
             appManager: $this->createMock(IAppManager::class),
             container: $this->createMock(ContainerInterface::class),
             logger: $this->createMock(LoggerInterface::class),
+            decisionDelegation: $this->createMock(ContractDecisionDelegationService::class),
         );
     }//end setUp()
 
@@ -190,6 +192,7 @@ class ContractRenewalServiceTest extends TestCase
             appManager: $appManager,
             container: $container,
             logger: $this->createMock(LoggerInterface::class),
+            decisionDelegation: $this->createMock(ContractDecisionDelegationService::class),
         );
     }//end buildServiceWithObjectService()
 }//end class

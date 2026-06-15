@@ -78,12 +78,14 @@ class ConsultationService
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Settings service
-     * @param LoggerInterface $logger          Logger
+     * @param SettingsService         $settingsService  Settings service
+     * @param LoggerInterface         $logger           Logger
+     * @param AdviceDelegationService $adviceDelegation Advice delegation to decidesk (ADR-019)
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
+        private readonly AdviceDelegationService $adviceDelegation,
     ) {
     }//end __construct()
 
@@ -96,9 +98,11 @@ class ConsultationService
      *
      * @return array<string, mixed> Created consultation with ID and number
      *
-     * @throws \RuntimeException If OpenRegister unavailable or required fields missing
+     * @throws \RuntimeException If OpenRegister unavailable, required fields missing, or decidesk fails closed
      *
      * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
+     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
      */
     public function createConsultation(array $data): array
     {
@@ -146,6 +150,39 @@ class ConsultationService
 
         $consultationId = is_object($consultation) === true ? $consultation->getUuid() : ($data['id'] ?? '');
 
+        // REQ-PDRD-001 / REQ-PDRD-002: a consultatie is an advice request that
+        // is *decided* in decidesk. Raise a decidesk `advice` Decision and
+        // persist its ref. Fail CLOSED — never author the consultation advice
+        // outcome locally as a fallback.
+        try {
+            $decisionRef = $this->adviceDelegation->raiseAdviceDecision(
+                subjectSchema: 'consultation',
+                subjectId: (string) $consultationId,
+                payload: [
+                    'subjectRegister'   => $register,
+                    'externalReference' => (string) ($data['parentZaak'] ?? ''),
+                    'subjectLabel'      => (string) ($data['consultationNumber'] ?? 'Consultatie'),
+                    'question'          => (string) ($data['vraagstelling'] ?? ''),
+                ],
+            );
+
+            if ((string) $consultationId !== '') {
+                $objectService->saveObject(
+                    object: ['decisionRef' => $decisionRef],
+                    register: $register,
+                    schema: $schema,
+                    uuid: (string) $consultationId,
+                );
+            }
+        } catch (\RuntimeException $e) {
+            $this->logger->error(
+                'Procest: createConsultation: decidesk advice Decision raise failed — failing closed: '.$e->getMessage(),
+                ['app' => Application::APP_ID],
+            );
+            // REQ-PDRD-002: fail closed; surface the error.
+            throw new \RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
+        }//end try
+
         $this->logger->info(
             'Consultation created: '.$consultationId
             .' ('.$data['consultationNumber'].') for case '.$data['parentZaak'],
@@ -156,6 +193,7 @@ class ConsultationService
             'id'                 => $consultationId,
             'consultationNumber' => $data['consultationNumber'],
             'status'             => 'open',
+            'decisionRef'        => $decisionRef,
         ];
     }//end createConsultation()
 

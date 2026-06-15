@@ -111,27 +111,28 @@ export async function dispatchReminder(id) {
  * @return {Promise<object>} Created record
  */
 /**
- * @param data
+ * Create an advice request and raise the decidesk advice Decision.
+ *
+ * Routes through the procest `advice#createForCase` controller endpoint
+ * (AdviceService::requestAdvice) instead of writing the object directly to
+ * OpenRegister, so the advice request raises a decidesk `advice` Decision via
+ * the ADR-019 integration registry (procest-delegate-remaining-decisions-to-decidesk,
+ * REQ-PDRD-001) and fails CLOSED server-side when decidesk is unavailable
+ * (REQ-PDRD-002). The advice outcome is consumed as a projection.
+ *
+ * @param {object} data Advice payload (case, adviseur, type, deadline, ...)
+ * @return {Promise<object>} Created record
  * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
+ * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
  */
 export async function createAdviceWithNotification(data) {
-	const payload = {
+	const caseId = data.case || data.caseRef || data.zaak
+	const url = generateUrl('/apps/procest/api/vth/cases/{caseId}/advice-requests', { caseId })
+	const created = await axios.post(url, {
 		...data,
-		status: 'aangevraagd',
 		requestedAt: new Date().toISOString(),
-	}
-	const created = await axios.post(orUrl(), payload)
-	const record = created.data
-	const id = record?.id || record?.uuid
-	if (id) {
-		try {
-			await transitionStatus(id, { to: 'aangevraagd' })
-		} catch (error) {
-			// Persistence already succeeded; surface but do not fail the caller.
-			console.warn('Procest: advice notification dispatch failed', error)
-		}
-	}
-	return record
+	})
+	return created.data
 }
 
 export default {
