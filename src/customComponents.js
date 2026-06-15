@@ -32,7 +32,6 @@ import TenantOnboardingDashboard from './views/dashboard/TenantOnboardingDashboa
 // see src/manifest.json + src/services/formatters.js).
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import AdminRootView from './views/settings/AdminRoot.vue'
-import PublicCaseView from './views/public/PublicCaseView.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
 
@@ -148,7 +147,6 @@ export default {
 	voorstelReminder, // Voorstellen index → POST a parafering reminder
 
 	// --- Anonymous-public routes (no auth, no main menu). ---
-	PublicCaseView,
 	PublicAppointmentPage,
 	PublicStatusPage,
 

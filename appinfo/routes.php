@@ -400,19 +400,24 @@ return [
         ['name' => 'publicAppointment#cancel', 'url' => '/api/public/appointment/{token}/cancel',  'verb' => 'POST'],
 
         // Case sharing & collaboration — domain endpoints only.
-        // CRUD over caseShare / partnerOrganization / casetransfer is
-        // served by the OpenRegister manifest renderer; these routes only
-        // own the token-generation + audit + transfer workflow actions.
+        // Public "track your case" token links are minted/revoked through
+        // OpenRegister's shares integration leaf (ADR-022): createShare
+        // delegates to the leaf's case-token surface; revokeShare delegates
+        // to the leaf revoke. Partner-organisation handover + case transfer
+        // stay in-app (zaak-domain). CRUD over the partner/transfer schemas
+        // is served by the OpenRegister manifest renderer.
+        //
+        // The bespoke procest public-share controller + its token routes
+        // (/api/public/share/*, /api/public/status/*) were REMOVED: the
+        // citizen-facing public case-status page now resolves anonymously
+        // through OR's `#[PublicPage]` endpoint
+        // `GET /apps/openregister/api/public/case-tokens/{token}` — an
+        // audited, RBAC-respecting surface (only public-group-readable
+        // fields), not a hand-maintained procest auth surface.
         ['name' => 'caseSharing#createShare',      'url' => '/api/shares',                   'verb' => 'POST'],
         ['name' => 'caseSharing#revokeShare',      'url' => '/api/shares/{shareId}',         'verb' => 'DELETE'],
         ['name' => 'caseSharing#initiateTransfer', 'url' => '/api/transfers',                'verb' => 'POST'],
         ['name' => 'caseSharing#handleTransfer',   'url' => '/api/transfers/{transferId}',   'verb' => 'PUT'],
-
-        // Public share endpoints — unauthenticated token-based access.
-        ['name' => 'publicShare#accessShare',     'url' => '/api/public/share/{token}',          'verb' => 'GET'],
-        ['name' => 'publicShare#addComment',      'url' => '/api/public/share/{token}/comment',  'verb' => 'POST'],
-        ['name' => 'publicShare#uploadDocument',  'url' => '/api/public/share/{token}/upload',   'verb' => 'POST'],
-        ['name' => 'publicShare#viewStatus',      'url' => '/api/public/status/{token}',         'verb' => 'GET'],
 
         // Role-based routing engine action — manual recompute of step assignees.
         // CRUD of routing rules themselves lives on workflowTemplate (manifest).
