@@ -20,6 +20,12 @@
 			"order": 20
 		},
 		{
+			"id": "WorkGroup",
+			"label": "Work",
+			"icon": "icon-toggle",
+			"order": 20
+		},
+		{
 			"id": "CasesGroup",
 			"label": "Cases",
 			"icon": "icon-folder",
@@ -27,7 +33,7 @@
 		},
 		{
 			"id": "Cases",
-			"label": "Cases",
+			"label": "All cases",
 			"icon": "icon-folder",
 			"route": "Cases",
 			"order": 40
@@ -95,7 +101,7 @@
 		},
 		{
 			"id": "Analytics",
-			"label": "Analytics",
+			"label": "Doorlooptijd",
 			"icon": "icon-category-monitoring",
 			"route": "Doorlooptijd",
 			"order": 55

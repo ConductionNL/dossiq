@@ -5,10 +5,14 @@
 		"description": "Canonical navigation layout applied AFTER all manifest.d fragments merge (see applyMenuRelocations in main.js). Fragments stay the source of WHAT exists in the menu (ADR-037); this file is the single place deciding WHERE entries live. relocations: sourceId -> targetGroupId (groups dissolve into the target, leaves move under it). removals: leaf menu-entry ids retired as duplicate navigation — their PAGES stay routable for deep links and e2e specs."
 	},
 	"relocations": {
+		"MyWork": "WorkGroup",
+		"Werkvoorraad": "WorkGroup",
+		"WorkflowBoard": "WorkGroup",
+		"Transfers": "WorkGroup",
 		"Cases": "CasesGroup",
-		"Werkvoorraad": "CasesGroup",
-		"WorkflowBoard": "CasesGroup",
-		"Transfers": "CasesGroup",
+		"LocationsMenu": "CasesGroup",
+		"StatusRecordsMenu": "CasesGroup",
+		"ArchiefDashboardMenu": "CasesGroup",
 		"Bezwaren": "BezwaarBeroepGroup",
 		"Beroepen": "BezwaarBeroepGroup",
 		"BezwaarDecisions": "BezwaarBeroepGroup",
@@ -25,5 +29,7 @@
 		"MijnZaken": "PortaalGroup",
 		"MijnNotificaties": "PortaalGroup"
 	},
-	"removals": []
+	"removals": [
+		"SubstitutionMenu"
+	]
 }
