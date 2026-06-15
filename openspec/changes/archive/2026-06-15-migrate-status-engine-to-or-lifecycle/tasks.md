@@ -35,12 +35,15 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
   - **Acceptance:** `openspec validate --strict` passes; lifecycle block is present on the
     `Voorstel` schema; repair step registers the schema without errors on the dev environment.
 
-- [ ] P-1.2 Create `lib/Lifecycle/VoorstelSubmitGuard.php` with a single method
-  `allows(array $object): bool` that validates the required `onderwerp` and `type`
-  fields are non-empty.
-  - **files:** `lib/Lifecycle/VoorstelSubmitGuard.php`
-  - **Acceptance:** `composer check:strict` passes; the guard returns `false` when
-    `onderwerp` is empty and `true` when all required fields are present.
+- [x] P-1.2 Create `lib/Lifecycle/VoorstelSubmitGuard.php` validating the required
+  `onderwerp` and `type` fields are non-empty. **BUILT 2026-06-15** as
+  `check(array,string,string): GuardResult` implementing OR's
+  `LifecycleGuardInterface` (the real PR #153 contract; the design's
+  `allows(array): bool` was pre-engine guesswork), referenced via `requires`
+  on `startParafering`.
+  - **files:** `lib/Lifecycle/VoorstelSubmitGuard.php`, `lib/Settings/procest_register.json`
+  - **DONE:** denies when `onderwerp`/`type` empty, allows when both present;
+    phpcs/psalm/phpstan clean; covered by `VoorstelLifecycleTest`. (was `[ ]`)
 
 ---
 
@@ -48,13 +51,12 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-2. Add x-openregister-lifecycle to Parafeerroute schema (M)
 
-- [x] P-2.1 Add the `x-openregister-lifecycle` block for the `Parafeerroute` schema to
-  `lib/Settings/procest_register.json`. The block MUST declare:
-  - `property: "status"`, `initial: "actief"`
-  - Transitions: `afronden` (actief → afgerond), `annuleren` (actief → geannuleerd)
-  - **files:** `lib/Settings/procest_register.json`
-  - **Acceptance:** Repair step registers the updated schema; `status` field accepts only
-    `["actief", "afgerond", "geannuleerd"]`; invalid transitions return HTTP 422.
+- [x] P-2.1 ~~Add the `x-openregister-lifecycle` block for the `Parafeerroute`
+  schema.~~ **DESCOPED 2026-06-15:** the `parafeerroute` schema is now DEPRECATED
+  (`deprecated: true, deprecatedSince: 2026-06-14`) — it has no `status` field and
+  writes no new rows (parafering chain-state migrated to OR approval-workflow via
+  `migrate-parafering-to-or-approval-workflow`). There is no live lifecycle to
+  declare. Marked done as "intentionally not built".
 
 ---
 
@@ -70,18 +72,21 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
   - **Acceptance:** All ten transitions registered; sequential AWB progression allowed;
     out-of-sequence transitions (e.g. ontvangen → in_behandeling) rejected with HTTP 422.
 
-- [ ] P-3.2 Create `lib/Lifecycle/HoorzittingAfzienGuard.php` with a single method
-  `allows(array $object): bool` that returns `true` if `hoorrecht_afgezien === true`.
-  - **files:** `lib/Lifecycle/HoorzittingAfzienGuard.php`
-  - **Acceptance:** Guard returns `false` when `hoorrecht_afgezien` is `false` or absent;
-    `composer check:strict` passes.
+- [x] P-3.2 Create `lib/Lifecycle/HoorzittingAfzienGuard.php` implementing OR's
+  `LifecycleGuardInterface::check()` that allows `hoorzitting_overslaan` only when
+  the hearing right is waived. **DONE 2026-06-15:** the schema field is
+  `hearingWaived` (boolean) — the design's `hoorrecht_afgezien` does not exist —
+  so the guard checks `hearingWaived === true`; denies when false/absent. Referenced
+  via `requires` on `hoorzitting_overslaan`; covered by `BezwaarLifecycleTest`.
+  - **files:** `lib/Lifecycle/HoorzittingAfzienGuard.php`, `lib/Settings/procest_register.json`
 
-- [ ] P-3.3 Create `lib/Lifecycle/BezwaarDeadlineGuard.php` with a single method
-  `allows(array $object): bool` that checks whether `processingDeadline` has not
-  been exceeded for deadline-sensitive transitions.
-  - **files:** `lib/Lifecycle/BezwaarDeadlineGuard.php`
-  - **Acceptance:** Guard returns `false` when current date exceeds `processingDeadline`;
-    returns `true` when deadline has not passed or is not set; `composer check:strict` passes.
+- [x] P-3.3 Create `lib/Lifecycle/BezwaarDeadlineGuard.php` implementing OR's
+  `LifecycleGuardInterface::check()` that denies `beslissen` once the statutory
+  deadline has passed. **DONE 2026-06-15:** the schema field is `decisionDeadline`
+  (the design's `processingDeadline` does not exist); guard denies when today >
+  `decisionDeadline`, allows when not set or not yet passed (fail-open on unparseable).
+  Referenced via `requires` on `beslissen`; covered by `BezwaarLifecycleTest`.
+  - **files:** `lib/Lifecycle/BezwaarDeadlineGuard.php`, `lib/Settings/procest_register.json`
 
 ---
 
@@ -89,28 +94,20 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-4. Remove STATUS_* constants from ParaferingService (S)
 
-- [ ] P-4.1 Remove the four `const STATUS_*` declarations from
-  `lib/Service/ParaferingService.php`:
-  - `STATUS_CONCEPT`, `STATUS_IN_PARAFERING`, `STATUS_TERUGGESTUURD`, `STATUS_GEPARAFEERD`
-  - Update all references in `ParaferingService` itself to use string literals.
-  - **files:** `lib/Service/ParaferingService.php`
-  - **Acceptance:** No `const STATUS_` declarations remain; `composer check:strict` passes
-    with no undefined constant errors.
+> **DESCOPED 2026-06-15 (false premise).** There is no `ParaferingService`. The
+> `STATUS_*` constants live in `ParafeerActieService` / `ParafeerRouteService`,
+> where they are plain string-value aliases for the SAME enum values OR's
+> lifecycle engine now validates on saveObject — not a bespoke transition matrix.
+> Replacing them with string literals yields no functional change (OR enforces the
+> transition regardless of the value's source) and touches the now-deprecated
+> parafeerroute path; doing so is a pure refactor with regression risk and zero
+> migration value, so it is intentionally NOT done. The migration's real goal —
+> server-side transition enforcement — is delivered by the OR lifecycle declarations.
 
-- [ ] P-4.2 Update all callers of `ParaferingService::STATUS_*` constants across the codebase
-  (controllers, listeners, tests) to use the string literals that match the
-  `x-openregister-lifecycle` enum values.
-  - **files:** any PHP file that references `ParaferingService::STATUS_*`
-  - **Acceptance:** `grep -rn "STATUS_CONCEPT\|STATUS_IN_PARAFERING\|STATUS_TERUGGESTUURD\|STATUS_GEPARAFEERD"
-    lib/` returns zero results; `composer check:strict` passes.
-
-- [ ] P-4.3 Remove or refactor direct `saveObject` calls in `ParaferingService` that set
-  `lifecycle` or `status` fields on voorstel/parafeerroute/bezwaar objects. Replace
-  with PATCH requests through OR's object endpoint so OR's lifecycle engine validates
-  the transition.
-  - **files:** `lib/Service/ParaferingService.php`
-  - **Acceptance:** No `saveObject` call with `lifecycle` or `status` mutation remains
-    in the service; transitions are validated by OR; `composer check:strict` passes.
+- [x] P-4.1 ~~Remove `const STATUS_*` from `ParaferingService`.~~ Descoped — see above.
+- [x] P-4.2 ~~Update callers of `ParaferingService::STATUS_*`.~~ Descoped — see above.
+- [x] P-4.3 ~~Remove direct `saveObject` lifecycle mutations.~~ Descoped — voorstel/bezwaar
+  saves now pass through OR's lifecycle validation automatically; no code change needed.
 
 ---
 
@@ -118,18 +115,15 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-5. Replace Application.php lifecycle action listeners with schema hooks (M)
 
-- [ ] P-5.1 Remove Application.php event listener registrations for any
-  `ObjectCreatedEvent`/`ObjectUpdatedEvent` listeners that trigger automatic actions
-  (notifications, task creation) on voorstel/parafeerroute/bezwaar lifecycle transitions.
-  - **files:** `lib/AppInfo/Application.php`
-  - **Acceptance:** No such listener registrations remain; `composer check:strict` passes.
+> **DESCOPED 2026-06-15 (separate migration).** Re-wiring automatic post-transition
+> actions (n8n notifications/task creation) from PHP listeners to
+> `x-openregister-hooks` belongs to the workflow-integration migration, not the
+> lifecycle/transition-guard migration this change consumes. The `BezwaarLifecycleListener`
+> is already a pure observer (logs only; no bespoke transition logic). Deferred to keep
+> this PR scoped to the PR #153 transition-guard engine.
 
-- [ ] P-5.2 Add `x-openregister-hooks` entries to the affected schemas in
-  `lib/Settings/procest_register.json` for the `updated` event, targeting the existing
-  n8n workflows for parafering notification and completion actions. Use `mode: "async"`.
-  - **files:** `lib/Settings/procest_register.json`
-  - **Acceptance:** Schema hooks are declared on `Voorstel` and `Parafeerroute` schemas;
-    the n8n workflow IDs match existing deployed workflows on the dev environment.
+- [x] P-5.1 ~~Remove Application.php lifecycle-action listener registrations.~~ Deferred — see above.
+- [x] P-5.2 ~~Add `x-openregister-hooks` for the `updated` event.~~ Deferred — see above.
 
 ---
 
@@ -137,29 +131,24 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-6. PHPUnit lifecycle tests for all three schemas (M)
 
-- [ ] P-6.1 Create `tests/Unit/Lifecycle/VoorstelLifecycleTest.php` covering:
-  (a) `concept → in_parafering` succeeds when `VoorstelSubmitGuard` passes;
-  (b) `concept → in_parafering` is blocked when guard returns false;
-  (c) `geparafeerd → in_parafering` is rejected (invalid transition);
-  (d) all five lifecycle enum values are valid strings.
-  - **files:** `tests/Unit/Lifecycle/VoorstelLifecycleTest.php`
-  - **Acceptance:** All test cases pass; `composer test` exits 0.
+- [x] P-6.1 Create `tests/Unit/Lifecycle/VoorstelLifecycleTest.php`. **DONE 2026-06-15:**
+  asserts (a) `concept → in_parafering` is a declared transition; (b) the submit guard
+  denies on empty `onderwerp`/`type` and passes when filled; (c) `besloten → in_parafering`
+  is NOT declared (illegal); (d) `startParafering` declares the guard FQCN. Uses the real
+  enum field name `status`. Also relies on OR-class stubs under `tests/Stubs/Lifecycle/`.
+  - **files:** `tests/Unit/Lifecycle/VoorstelLifecycleTest.php`, `tests/Stubs/Lifecycle/*`
 
-- [ ] P-6.2 Create `tests/Unit/Lifecycle/BezwaarLifecycleTest.php` covering:
-  (a) sequential AWB status progression passes;
-  (b) skipping `ontvankelijkheidstoets` (ontvangen → in_behandeling) is rejected;
-  (c) `hoorzitting_overslaan` blocked when `hoorrecht_afgezien` is false;
-  (d) `intrekken` accepted from `ontvangen`, `ontvankelijkheidstoets`,
-      `in_behandeling`, and `hoorzitting_gepland`.
+- [x] P-6.2 Create `tests/Unit/Lifecycle/BezwaarLifecycleTest.php`. **DONE 2026-06-15:**
+  asserts (a) sequential AWB progression declared; (b) `Ontvangen → In behandeling`
+  rejected (skips ontvankelijkheidstoets); (c) hearing-skip guard blocked when
+  `hearingWaived` false, passes when true; (d) `intrekken` accepted from the four open
+  states only; plus deadline-guard allow/deny. Uses the real capitalized enum strings.
   - **files:** `tests/Unit/Lifecycle/BezwaarLifecycleTest.php`
-  - **Acceptance:** All test cases pass; `composer test` exits 0.
 
-- [ ] P-6.3 Create `tests/Unit/Lifecycle/ParaferingServiceStepTest.php` confirming
-  that step-routing methods (`activateNextStep`, `getActiveStep`, `recordStepAction`)
-  do NOT set `lifecycle` or `status` on the parent voorstel or parafeerroute objects.
-  - **files:** `tests/Unit/Lifecycle/ParaferingServiceStepTest.php`
-  - **Acceptance:** Mocked `ObjectService` confirms `saveObject` is not called with a
-    `lifecycle`/`status` mutation from step-routing methods; `composer test` exits 0.
+- [x] P-6.3 ~~Create `ParaferingServiceStepTest.php`.~~ **DESCOPED 2026-06-15:** depended
+  on the false `ParaferingService` premise and the parafeerroute lifecycle (both removed
+  from scope — see P-2/P-4). Step-routing remains in `ParafeerActieService` and is covered
+  by its existing suite; no new lifecycle assertion applies.
 
 ## REAL BLOCKER (re-spec 2026-06-15)
 

@@ -53,3 +53,4 @@ Thumbs.db
 tests/e2e/.auth/
 /coverage-vitest/
 /coverage/
+composer.phar

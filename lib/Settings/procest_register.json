@@ -1934,7 +1934,8 @@
                   "concept"
                 ],
                 "to": "in_parafering",
-                "description": "Start initialing route."
+                "requires": "OCA\\Procest\\Lifecycle\\VoorstelSubmitGuard",
+                "description": "Start initialing route. Rejected when the required onderwerp or type fields are empty."
               },
               "paraferingDone": {
                 "from": [
@@ -2505,7 +2506,98 @@
             "outputField": "dwangsom",
             "legalSource": "AWB Art. 4:17 lid 1-2"
           }
-        ]
+        ],
+        "configuration": {
+          "x-openregister-lifecycle": {
+            "field": "status",
+            "initial": "Ontvangen",
+            "final": [
+              "Afgehandeld",
+              "Niet-ontvankelijk",
+              "Ingetrokken"
+            ],
+            "transitions": {
+              "ontvankelijkheidstoets_starten": {
+                "from": [
+                  "Ontvangen"
+                ],
+                "to": "Ontvankelijkheidstoets",
+                "description": "Start de ontvankelijkheidstoets (AWB 6:4)."
+              },
+              "in_behandeling_nemen": {
+                "from": [
+                  "Ontvankelijkheidstoets"
+                ],
+                "to": "In behandeling",
+                "description": "Neem het bezwaar inhoudelijk in behandeling."
+              },
+              "hoorzitting_plannen": {
+                "from": [
+                  "In behandeling"
+                ],
+                "to": "Hoorzitting gepland",
+                "description": "Plan de hoorzitting (AWB 7:2)."
+              },
+              "hoorzitting_afronden": {
+                "from": [
+                  "Hoorzitting gepland"
+                ],
+                "to": "Hoorzitting afgerond",
+                "description": "Rond de hoorzitting af."
+              },
+              "advies_uitbrengen": {
+                "from": [
+                  "Hoorzitting afgerond"
+                ],
+                "to": "Advies uitgebracht",
+                "description": "De bezwaarschriftencommissie brengt advies uit (AWB 7:13)."
+              },
+              "beslissen": {
+                "from": [
+                  "Hoorzitting afgerond",
+                  "Advies uitgebracht",
+                  "In behandeling"
+                ],
+                "to": "Beslissing op bezwaar",
+                "requires": "OCA\\Procest\\Lifecycle\\BezwaarDeadlineGuard",
+                "description": "Neem de beslissing op bezwaar (AWB 7:11). Geweigerd wanneer de beslistermijn is verstreken zonder verdaging/opschorting."
+              },
+              "afronden": {
+                "from": [
+                  "Beslissing op bezwaar"
+                ],
+                "to": "Afgehandeld",
+                "description": "Handel het bezwaar af."
+              },
+              "niet_ontvankelijk_verklaren": {
+                "from": [
+                  "Ontvankelijkheidstoets"
+                ],
+                "to": "Niet-ontvankelijk",
+                "description": "Verklaar het bezwaar niet-ontvankelijk (AWB 6:6)."
+              },
+              "intrekken": {
+                "from": [
+                  "Ontvangen",
+                  "Ontvankelijkheidstoets",
+                  "In behandeling",
+                  "Hoorzitting gepland"
+                ],
+                "to": "Ingetrokken",
+                "description": "De bezwaarmaker trekt het bezwaar in (AWB 6:21)."
+              },
+              "hoorzitting_overslaan": {
+                "from": [
+                  "Ontvankelijkheidstoets",
+                  "In behandeling"
+                ],
+                "to": "Advies uitgebracht",
+                "requires": "OCA\\Procest\\Lifecycle\\HoorzittingAfzienGuard",
+                "description": "Sla de hoorzitting over wanneer het hoorrecht is afgezien (AWB 7:3). Geweigerd wanneer hearingWaived niet is gezet."
+              }
+            }
+          }
+        }
       },
       "objection": {
         "slug": "objection",
