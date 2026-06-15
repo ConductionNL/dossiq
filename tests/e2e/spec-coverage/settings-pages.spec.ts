@@ -45,11 +45,13 @@ async function navToSetting(page, label: string, testId?: string): Promise<void>
 // nav testid when the label is ambiguous across sections.
 const SETTINGS_PAGES: Array<{ label: string, addBtn: string, testId?: string }> = [
 	{ label: 'Case Types', addBtn: 'Save' }, // CaseType settings form (Save control)
-	// The settings "Fee ordinances" entry resolves to the generic register
-	// list (/legesverordeningen) with an "Add Legesverordening" control — the
-	// custom import view (/leges/verordeningen) is covered by leges-heffingen.spec.
-	{ label: 'Fee ordinances', addBtn: 'Add Legesverordening', testId: 'cn-nav-entry-LegesverordeningenMenu' },
-	{ label: 'Legesberekeningen', addBtn: 'Add Leges berekening' },
+	// The single canonical "Legesverordeningen" Settings entry is the custom
+	// import/approval admin view (/leges/verordeningen), covered by
+	// leges-heffingen.spec. The former duplicate generic-list nav leaf
+	// (LegesverordeningenMenu → /legesverordeningen) was removed in
+	// procest-config-to-settings; its page stays routable by deep link.
+	// Legesberekeningen (live per-case fee output) moved to the working nav and
+	// is no longer a Settings entry.
 	{ label: 'Parafeerroutes', addBtn: 'Add Parafeerroute' },
 	{ label: 'Automatische acties', addBtn: 'Add Automatic Action' },
 	{ label: 'Handhavingsstrategie', addBtn: 'Add LHS Matrix' },
