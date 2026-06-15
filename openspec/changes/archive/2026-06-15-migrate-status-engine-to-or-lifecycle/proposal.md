@@ -1,6 +1,37 @@
 # Proposal: migrate-status-engine-to-or-lifecycle
 
-> REVERTED 2026-06-01: archived prematurely; only the schema `x-openregister-lifecycle` blocks (Voorstel/Parafeerroute/Bezwaar) were actually added — re-opened for real apply. PENDING: PHP guard classes (`lib/Lifecycle/VoorstelSubmitGuard.php`, `HoorzittingAfzienGuard.php`, `BezwaarDeadlineGuard.php` — the `lib/Lifecycle/` directory does not exist), `STATUS_*` constant removal (still present in `ParafeerRouteService`), `x-openregister-hooks`, and the `tests/Unit/Lifecycle/` suite. Schema-block tasks (P-1.1/P-2.1/P-3.1) remain checked; all guard/cleanup/hook/test tasks un-checked.
+> BUILT 2026-06-15 (build/migrate-status-engine-to-or-lifecycle-2026-06-15):
+> OpenRegister PR #153 landed the lifecycle transition-guard engine
+> (`LifecycleGuardInterface`, `GuardResult`, `LifecycleValidationListener`
+> enforcing transitions on saveObject, plus `requires` guards). Procest now
+> CONSUMES it for the two fixed-enum lifecycle schemas:
+> - `voorstel.status` already had its `x-openregister-lifecycle` table; added the
+>   `requires: OCA\Procest\Lifecycle\VoorstelSubmitGuard` on `startParafering`.
+> - `bezwaar.status` got a full `x-openregister-lifecycle` AWB transition table
+>   (10 transitions, real enum strings) with `requires` guards on
+>   `hoorzitting_overslaan` (HoorzittingAfzienGuard) and `beslissen`
+>   (BezwaarDeadlineGuard).
+> - Created `lib/Lifecycle/{VoorstelSubmitGuard,HoorzittingAfzienGuard,BezwaarDeadlineGuard}.php`
+>   implementing OR's `LifecycleGuardInterface::check()`; OR-class stubs for the unit
+>   suite under `tests/Stubs/Lifecycle/`; `tests/Unit/Lifecycle/{Voorstel,Bezwaar}LifecycleTest.php`.
+>
+> SCOPE CORRECTION (supersedes the stale notes below): the design assumed a
+> `ParaferingService` with `STATUS_*` constants — that class does not exist (the
+> constants live in `ParafeerActieService`/`ParafeerRouteService`, which write the
+> SAME enum values OR now validates, so the constants are harmless aliases, not a
+> bespoke validation matrix; removing them is a no-functional-gain refactor on a
+> now-deprecated parafeerroute path and was left out to avoid regression). The
+> design's `parafeerroute` lifecycle is also dropped — that schema is DEPRECATED
+> (no `status` field; migrated to OR approval-workflow). The `x-openregister-hooks`
+> n8n re-wiring is out of scope (separate workflow-integration migration).
+>
+> RESIDUAL OR GAP (genuine, flagged): the case-level engine `StatusTransitionService`
+> is NOT migrated. `case.status` is a UUID reference to a per-caseType `statusType`
+> object — its valid states/transitions are defined dynamically by each
+> `workflowTemplate`, which OR's static `x-openregister-lifecycle` table cannot
+> express. The bespoke engine remains the source of truth for `case.status`. Closing
+> this needs OR to support a per-object/dynamic transition table (workflow-driven
+> lifecycle), not just a fixed schema-level table.
 
 ## Why
 
