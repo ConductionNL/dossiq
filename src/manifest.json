@@ -2185,14 +2185,6 @@
 			]
 		},
 		{
-			"id": "PublicCase",
-			"route": "/public/cases/:id",
-			"type": "custom",
-			"title": "Public case",
-			"component": "PublicCaseView",
-			"_note": "Lib gap: anonymous/token-based public pages have no v2 typed primitive — they render outside the authenticated app shell (no sidebar, no auth headers). Collapse to type:\"detail\" with a public:true escape hatch when nc-vue adds public-page support."
-		},
-		{
 			"id": "PublicAppointment",
 			"route": "/public/appointments/:id",
 			"type": "custom",
@@ -2206,7 +2198,7 @@
 			"type": "custom",
 			"title": "Public status",
 			"component": "PublicStatusPage",
-			"_note": "Lib gap: anonymous token-based public pages have no v2 typed primitive — see PublicCase _note. Collapse when nc-vue adds public-page support."
+			"_note": "Citizen 'track your case' page. Resolves anonymously through OpenRegister's shares-leaf #[PublicPage] endpoint GET /apps/openregister/api/public/case-tokens/{token} (ADR-022) — RBAC-respecting, public-safe fields only. Lib gap: anonymous public pages still have no v2 typed primitive; collapse when nc-vue adds public-page support."
 		},
 		{
 			"id": "WorkflowDefinitions",

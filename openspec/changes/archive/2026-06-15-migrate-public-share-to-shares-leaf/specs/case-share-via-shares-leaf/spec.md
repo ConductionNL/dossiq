@@ -8,6 +8,8 @@ Procest SHALL create, list, and revoke public share links for a case through Ope
 `shares` integration leaf (ADR-019). Procest SHALL NOT generate share tokens of its own after this
 migration.
 
+@e2e exclude Token mint / revoke / public resolution are owned by OpenRegister's `shares` integration leaf (cross-app, ADR-019): mint runs through OR's `SharesProvider::create({type:'public-token'})` / `CaseTokenService::mint`, revoke through the leaf `delete(token:)`, and anonymous resolution through OR's `#[PublicPage]` `GET /api/public/case-tokens/{token}` (RBAC-respecting). None is a procest-only browser UI surface drivable without the OR shares leaf installed; the procest side is the in-process consumer wiring (verified by PHPUnit + code review). Mirrors the case-map-via-maps-leaf / inspection-forms-via-forms-leaf precedent.
+
 #### Scenario: Creating a share link uses the shares leaf
 
 - **GIVEN** a `case` object and the OR shares leaf enabled + whitelisted on the `case` schema
@@ -31,6 +33,8 @@ Procest SHALL remove the in-app token-sharing path: the `PublicShareController` 
 logic and the `CreateShareDialog.vue` "Share link" token path SHALL NOT remain after this
 migration.
 
+@e2e exclude This is a static codebase-removal check (absence of `PublicShareController.php`, the bespoke token routes, `validateToken`/`generateToken`/`getFilteredCaseData`, and the `CreateShareDialog.vue` token tab) verified by code review + PHPUnit + grep, not a procest-only browser UI surface. The replacement public resolution is OR's cross-app `#[PublicPage]` endpoint, which a procest-only e2e cannot mount without the OR shares leaf installed.
+
 #### Scenario: In-app token path is gone
 
 - **GIVEN** the procest codebase after this migration
@@ -45,6 +49,8 @@ migration.
 Procest SHALL treat the "Partner organization" share type as zaak-domain handover logic, not a
 generic share, and SHALL NOT migrate it to the shares leaf unless it is confirmed to be a generic
 share token.
+
+@e2e exclude Verifying that the partner-organisation handover path stays in-app (and is NOT moved to the shares leaf) is a static scope/code-review check on `CaseSharingService::createPartnerShare` + the reduced `CreateShareDialog.vue`/`ShareTab.vue` partner-only surface, covered by PHPUnit + code review — not a distinct procest browser UI surface introduced by this migration.
 
 #### Scenario: Partner handover is not forced onto the leaf
 
