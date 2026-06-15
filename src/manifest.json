@@ -683,6 +683,13 @@
 						"icon": "icon-mail",
 						"component": "CaseEmailTab",
 						"order": 60
+					},
+					{
+						"id": "appointments",
+						"label": "Appointments",
+						"icon": "icon-calendar-dark",
+						"component": "CalendarLeafTab",
+						"order": 65
 					}
 				],
 				"documentationUrl": "https://procest.conduction.nl"

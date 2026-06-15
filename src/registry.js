@@ -23,6 +23,7 @@
 //   current manifest pages reference MapComponent by key directly; retained as
 //   a pass-through.
 
+import { leafTab } from './integrations/leafTabs.js'
 import MyWorkView from './views/MyWork.vue'
 import WerkvoorraadView from './views/Werkvoorraad.vue'
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
@@ -288,6 +289,19 @@ const registry = {
 		kind: 'page',
 		component: CaseEmailTab,
 		_note: 'Sidebar tab that surfaces email correspondence linked to the case; consumes the email leaf for display + uses prefillDraft for compose.',
+	},
+
+	// --- Case-appointment (internal calendar) sidebar tab — leaf-first per ADR-022. ---
+	// The former bespoke LocalBackend scheduling surface is replaced by OR's
+	// `calendar` integration leaf (CalendarProvider): the leaf owns event
+	// list/create/link/unlink/delete and fetches straight from OR using the
+	// objectId/register/schema/apiBase that CnObjectSidebar injects. Procest
+	// keeps only zaak-specific metadata + external Qmatic/JCC (ADR-022 exception).
+	// @spec openspec/changes/migrate-appointments-to-calendar-leaf/tasks.md#P1.2
+	CalendarLeafTab: {
+		kind: 'page',
+		component: leafTab('calendar'),
+		_note: 'OR calendar integration leaf (CnCalendarTab) surfaced on the case detail; replaces the bespoke LocalBackend appointment UI (ADR-022).',
 	},
 	AdviesPanel: {
 		kind: 'page',
