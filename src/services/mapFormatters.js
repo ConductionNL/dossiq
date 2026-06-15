@@ -150,6 +150,42 @@ export function caseMarkerFormatter(caseObj) {
 	}
 }
 
+/**
+ * Shape OpenRegister maps-overview point rows into the GeoJSON Feature array
+ * that `@conduction/nextcloud-vue`'s `CnMapWidget` renders inline
+ * (`markers.features[]`). Each OR point is `{ id, label, lat, lng, register,
+ * schema, geometry, ...rest }`; OR has already done the geometry extraction
+ * and RBAC scoping, so this is pure presentation: it carries the case id +
+ * label through to `properties` for the popup / click-through and colours the
+ * marker by status when the row exposes one.
+ *
+ * Defensive: rows without a finite `lat`/`lng` are skipped (OR never emits
+ * them, but a malformed payload yields a blank map rather than a throw).
+ *
+ * @param {Array<object>} points OR maps-overview point rows.
+ * @return {Array<object>} GeoJSON Point Feature array for CnMapWidget.
+ * @spec openspec/specs/case-map-overview/spec.md
+ */
+export function shapeMarkerFeatures(points) {
+	if (!Array.isArray(points)) {
+		return []
+	}
+	return points
+		.filter((p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lng))
+		.map((p) => ({
+			type: 'Feature',
+			geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+			properties: {
+				caseId: p.id != null ? String(p.id) : null,
+				title: p.label || '',
+				status: p.status || null,
+				color: statusColor(p.status),
+				icon: statusIcon(p.status),
+			},
+		}))
+}
+
 export default {
 	caseMarkerFormatter,
+	shapeMarkerFeatures,
 }

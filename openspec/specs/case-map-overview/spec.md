@@ -2,9 +2,11 @@
 
 ## Purpose
 
-Provide an overview map showing all cases (or filtered subsets) plotted on a map with marker clustering, status-based coloring, and interactive filtering. This enables case handlers and managers to get a geographic overview of their workload and identify spatial patterns (e.g., clusters of meldingen in a neighborhood, VTH cases near a construction site).
+Provide an overview map showing all cases (or filtered subsets) plotted on a map with marker clustering, status-based coloring, and filtering. This enables case handlers and managers to get a geographic overview of their workload and identify spatial patterns (e.g., clusters of meldingen in a neighborhood, VTH cases near a construction site).
 
-**Standards**: GeoJSON (RFC 7946), PDOK tile services
+The overview is rendered from OpenRegister's page-level **maps-overview** integration surface (ADR-022, openregister PR #154): procest declares a `cases-on-map` overview and fetches RBAC-scoped marker points (`GET /apps/openregister/api/integrations/maps/overviews/{register}/{schema}/points`), which render through `@conduction/nextcloud-vue`'s declarative `CnMapWidget`. OR owns the geometry extraction, RBAC scoping (fail-closed), and the declarative base-layer config (PDOK WMTS default). Procest ships no bespoke Leaflet / WMS / WFS stack and no bespoke geo-query endpoint (issue #112, change `migrate-cases-on-map-to-maps-overview-leaf`).
+
+**Standards**: GeoJSON (RFC 7946), PDOK tile services (via OR base-layer config)
 **Feature tier**: V1
 
 ## Requirements

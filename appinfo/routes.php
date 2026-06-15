@@ -228,26 +228,13 @@ return [
         ['name' => 'nrc#patch', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'PATCH'],
         ['name' => 'nrc#destroy', 'url' => '/api/zgw/notificaties/v1/{resource}/{uuid}', 'verb' => 'DELETE'],
 
-        // GIS Proxy endpoints.
-        ['name' => 'gisProxy#proxy', 'url' => '/api/gis/proxy', 'verb' => 'POST'],
-        ['name' => 'gisProxy#capabilities', 'url' => '/api/gis/capabilities', 'verb' => 'GET'],
-
-        // WMS/WFS per-layer proxy (wms-wfs-layers spec) — action endpoint only;
-        // CRUD on wmsLayer objects is served by OpenRegister manifest pages.
-        ['name' => 'wmsWfs#proxy', 'url' => '/api/wms-wfs/proxy', 'verb' => 'GET'],
-
-        // WFS export — exposes case locations as a GeoJSON WFS layer for external GIS applications.
-        // gis-integration spec AC 6.
-        ['name' => 'wfsExport#getFeatures', 'url' => '/api/gis/wfs', 'verb' => 'GET'],
-        ['name' => 'wfsExport#getCapabilities', 'url' => '/api/gis/wfs/capabilities', 'verb' => 'GET'],
-
-        // OGC WFS 2.0.0 XML endpoint — case locations as a standard WFS layer
-        // (GetCapabilities / DescribeFeatureType / GetFeature). gis-integration spec.
-        ['name' => 'wfs#cases', 'url' => '/wfs/cases', 'verb' => 'GET'],
-
-        // Cases-on-map dashboard data — clustered, filtered, per-object access guarded.
-        // gis-integration spec.
-        ['name' => 'caseGeo#geo', 'url' => '/api/cases/geo', 'verb' => 'GET'],
+        // GIS / cases-on-map: the multi-object overview is served by
+        // OpenRegister's page-level maps-overview surface (OR #154) — RBAC-scoped
+        // marker points at /apps/openregister/api/integrations/maps/overviews/...
+        // Procest's bespoke GIS-proxy / WMS-WFS-proxy / WFS-export / WFS-XML /
+        // map-layer-CRUD / cases-geo routes were removed with that migration
+        // (issue #112, ADR-022). PDOK address resolution is owned separately by
+        // the migrate-pdok-to-openconnector change.
 
         // ── Parafeerroute (B&W parafering engine) ───────────────────────
         // CRUD on parafeerroute objects is served by OpenRegister's auto-exposed
@@ -522,12 +509,9 @@ return [
         ['name' => 'publication#publish',             'url' => '/api/besluitvorming/cases/{id}/publish',        'verb' => 'POST'],
         ['name' => 'mandaat#mandaatCheck',            'url' => '/api/besluitvorming/cases/{id}/mandaat-check',  'verb' => 'GET'],
 
-        // ── GIS / Map layers (gis-integration) ───────────────────────────
-        ['name' => 'mapLayer#index',   'url' => '/api/map-layers',      'verb' => 'GET'],
-        ['name' => 'mapLayer#create',  'url' => '/api/map-layers',      'verb' => 'POST'],
-        ['name' => 'mapLayer#show',    'url' => '/api/map-layers/{id}', 'verb' => 'GET'],
-        ['name' => 'mapLayer#update',  'url' => '/api/map-layers/{id}', 'verb' => 'PUT'],
-        ['name' => 'mapLayer#destroy', 'url' => '/api/map-layers/{id}', 'verb' => 'DELETE'],
+        // GIS map-layer CRUD removed (issue #112): base-layer config is now
+        // declarative on OpenRegister's maps-overview surface (PDOK WMTS default,
+        // overridable) — procest no longer manages WMS/WFS overlay layers.
 
         // ── DSO / Omgevingsloket (DSO controller endpoints) ──────────────
         ['name' => 'dso#dashboard',            'url' => '/api/dso/dashboard',                                'verb' => 'GET'],

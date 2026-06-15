@@ -3,13 +3,13 @@
 		<div class="cases-on-map__sidebar">
 			<h2>{{ t('procest', 'Cases on map') }}</h2>
 			<p class="cases-on-map__summary">
-				{{ t('procest', 'Showing {filtered} of {total} located cases', { filtered: summary.filtered, total: summary.total }) }}
+				{{ t('procest', 'Showing {filtered} of {total} located cases', { filtered: features.length, total: total }) }}
 			</p>
 
 			<NcSelect
-				v-model="filterZaaktype"
+				v-model="filterCaseType"
 				:input-label="t('procest', 'Case type')"
-				:options="zaaktypeOptions"
+				:options="caseTypeOptions"
 				:placeholder="t('procest', 'All case types')"
 				:clearable="true"
 				class="cases-on-map__filter"
@@ -28,179 +28,153 @@
 				<AlertIcon :size="20" />
 				<span>{{ t('procest', 'Map data could not be loaded. Showing what is available.') }}</span>
 			</div>
-
-			<NcButton
-				:disabled="summary.cases === 0"
-				class="cases-on-map__export"
-				@click="exportGeoJson">
-				<template #icon>
-					<DownloadIcon :size="20" />
-				</template>
-				{{ t('procest', 'Export visible cases (GeoJSON)') }}
-			</NcButton>
 		</div>
 
 		<div class="cases-on-map__map">
-			<CaseMap
-				ref="map"
-				:geometries="geometries"
-				:clustering="false"
-				:auto-fit="geometries.length > 0"
-				:show-legend="true"
+			<CnMapWidget
+				:markers="markers"
+				:clustering="true"
+				:auto-fit="features.length > 0"
 				height="100%"
-				@marker-click="onMarkerClick"
-				@bounds-changed="onBoundsChanged" />
+				@marker-click="onMarkerClick" />
 			<NcLoadingIcon v-if="loading" :size="40" class="cases-on-map__loading" />
 		</div>
 	</div>
 </template>
 
 <script>
-import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
-import NcButton from '@nextcloud/vue/dist/Components/NcButton.js'
 import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
 import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
 import AlertIcon from 'vue-material-design-icons/Alert.vue'
-import DownloadIcon from 'vue-material-design-icons/Download.vue'
-import { toMapGeometries, buildGeoQuery, summariseGeo, toExportGeoJson } from '../services/caseGeoService.js'
-
-const CaseMap = () => import(/* webpackChunkName: "map" */ '../components/map/CaseMap.vue')
+import { CnMapWidget } from '@conduction/nextcloud-vue'
+import { registerCasesOnMapOverview, fetchCasePoints } from '../services/casesOnMapApi.js'
+import { shapeMarkerFeatures } from '../services/mapFormatters.js'
 
 /**
- * CasesOnMapView — full-screen cases-on-map dashboard.
+ * CasesOnMapView — full-screen multi-object cases-on-map overview.
  *
- * Fetches the clustered `/api/cases/geo` FeatureCollection, shapes it into
- * CaseMap geometries via the pure `caseGeoService` helpers, and offers
- * zaaktype/status filtering plus a GeoJSON export of the visible cases.
- * Map rendering is delegated to CaseMap; this view owns only data + filters.
- * Degrades gracefully when the backend / PDOK tiles are unavailable.
+ * MIGRATED to OpenRegister's page-level maps-overview leaf (ADR-022, OR #154):
  *
- * @spec openspec/specs/gis-integration/spec.md
+ * - On mount it DECLARES the `cases-on-map` overview with OR's maps-overview
+ *   surface (POST /api/integrations/maps/overviews) and FETCHES the RBAC-scoped
+ *   marker points from OR (GET .../maps/overviews/{register}/{schema}/points).
+ *   OR owns the geometry extraction + RBAC scoping (fail-closed, no IDOR) and
+ *   the declarative base-layer config (PDOK WMTS).
+ * - The markers are rendered by the library's declarative `CnMapWidget`, which
+ *   owns the Leaflet engine, clustering, and tile layers. Procest embeds NO
+ *   Leaflet / WMS / WFS stack of its own — the bespoke `CaseMap` /
+ *   `src/components/map/*` plumbing and the `/api/cases/geo` endpoint are gone.
+ * - This view owns only data shaping (status colour via `shapeMarkerFeatures`)
+ *   and the case-type / status filters, which it forwards to OR as object
+ *   filters. Degrades gracefully when OR is unavailable.
+ *
+ * @spec openspec/specs/case-map-overview/spec.md
  */
 export default {
 	name: 'CasesOnMapView',
-	components: { CaseMap, NcButton, NcSelect, NcLoadingIcon, AlertIcon, DownloadIcon },
+	components: { CnMapWidget, NcSelect, NcLoadingIcon, AlertIcon },
+	props: {
+		/** OpenRegister register slug holding the cases. @type {string} */
+		register: {
+			type: String,
+			default: 'procest',
+		},
+		/** OpenRegister schema slug for the case objects. @type {string} */
+		schema: {
+			type: String,
+			default: 'case',
+		},
+	},
 	data() {
 		return {
-			collection: null,
+			points: [],
+			total: 0,
 			loading: false,
 			degraded: false,
-			filterZaaktype: null,
+			filterCaseType: null,
 			filterStatus: null,
-			zoom: 7,
-			bounds: null,
 			statusOptions: ['open', 'in_progress', 'blocked', 'closed'],
-			zaaktypeOptions: [],
+			caseTypeOptions: [],
 		}
 	},
 	computed: {
 		/**
-		 * Geometry descriptors for CaseMap.
+		 * GeoJSON Point features for CnMapWidget, shaped from the OR point set.
 		 *
-		 * @return {Array<object>} Geometries.
-		 * @spec openspec/specs/gis-integration/spec.md
+		 * @return {Array<object>} GeoJSON Feature array.
+		 * @spec openspec/specs/case-map-overview/spec.md
 		 */
-		geometries() {
-			return toMapGeometries(this.collection)
+		features() {
+			return shapeMarkerFeatures(this.points)
 		},
 		/**
-		 * Count summary for the badge.
+		 * CnMapWidget marker config — inline features + popup field. The
+		 * features already carry the status colour from `shapeMarkerFeatures`.
 		 *
-		 * @return {object} `{ total, filtered, clusters, cases }`.
-		 * @spec openspec/specs/gis-integration/spec.md
+		 * @return {object} CnMapWidget `markers` prop.
+		 * @spec openspec/specs/case-map-overview/spec.md
 		 */
-		summary() {
-			return summariseGeo(this.collection)
+		markers() {
+			return {
+				features: this.features,
+				popupField: 'title',
+				clustering: true,
+			}
 		},
 	},
+	/**
+	 * Declare the overview once (idempotent on the OR side), then load points.
+	 *
+	 * @return {void}
+	 * @spec openspec/specs/case-map-overview/spec.md
+	 */
 	mounted() {
+		registerCasesOnMapOverview({ register: this.register, schema: this.schema })
 		this.reload()
 	},
 	methods: {
 		/**
-		 * Fetch the cases-on-map FeatureCollection for the active filters.
+		 * Fetch the RBAC-scoped case points from OR for the active filters.
 		 *
 		 * @return {Promise<void>} Resolves when loaded.
-		 * @spec openspec/specs/gis-integration/spec.md
+		 * @spec openspec/specs/case-map-overview/spec.md
 		 */
 		async reload() {
 			this.loading = true
 			this.degraded = false
-			const query = buildGeoQuery({
-				zaaktype: this.filterZaaktype,
-				status: this.filterStatus,
-				zoom: this.zoom,
-				bounds: this.bounds,
-			})
+			const filters = {}
+			if (this.filterCaseType) {
+				filters.caseType = this.filterCaseType
+			}
+			if (this.filterStatus) {
+				filters.status = this.filterStatus
+			}
 			try {
-				const url = generateUrl('/apps/procest/api/cases/geo') + (query ? `?${query}` : '')
-				const response = await axios.get(url)
-				this.collection = response.data
-				this.collectZaaktypes()
-			} catch {
-				// Graceful degradation — keep last good data, flag the banner.
-				this.degraded = true
-				if (!this.collection) {
-					this.collection = { type: 'FeatureCollection', features: [], total: 0, filtered: 0 }
+				const points = await fetchCasePoints({ register: this.register, schema: this.schema, filters })
+				this.points = points
+				if (!this.filterCaseType && !this.filterStatus) {
+					this.total = points.length
 				}
+			} catch {
+				this.degraded = true
+				this.points = []
 			} finally {
 				this.loading = false
 			}
 		},
 		/**
-		 * Harvest distinct zaaktypes from the loaded features for the filter.
+		 * Navigate to the case detail when a marker is clicked.
 		 *
+		 * @param {object} payload `{ feature, latlng }` from CnMapWidget.
 		 * @return {void}
-		 * @spec openspec/specs/gis-integration/spec.md
+		 * @spec openspec/specs/case-map-overview/spec.md
 		 */
-		collectZaaktypes() {
-			const seen = new Set(this.zaaktypeOptions)
-			for (const feature of (this.collection?.features || [])) {
-				const zaaktype = feature?.properties?.zaaktype
-				if (zaaktype) {
-					seen.add(zaaktype)
-				}
-			}
-			this.zaaktypeOptions = [...seen]
-		},
-		/**
-		 * Navigate to the case detail (skips cluster markers).
-		 *
-		 * @param {object} properties Clicked feature properties.
-		 * @return {void}
-		 * @spec openspec/specs/gis-integration/spec.md
-		 */
-		onMarkerClick(properties) {
-			if (properties?.cluster === true || !properties?.caseId) {
+		onMarkerClick(payload) {
+			const caseId = payload?.feature?.properties?.caseId
+			if (!caseId) {
 				return
 			}
-			this.$router?.push({ name: 'CaseDetail', params: { id: properties.caseId } })
-		},
-		/**
-		 * Update the viewport bounds and re-query (server-side bbox filter).
-		 *
-		 * @param {object} bounds `{ north, south, east, west }`.
-		 * @return {void}
-		 * @spec openspec/specs/gis-integration/spec.md
-		 */
-		onBoundsChanged(bounds) {
-			this.bounds = bounds
-		},
-		/**
-		 * Download the currently-visible single cases as a GeoJSON file.
-		 *
-		 * @return {void}
-		 * @spec openspec/specs/gis-integration/spec.md
-		 */
-		exportGeoJson() {
-			const json = toExportGeoJson(this.collection)
-			const blob = new Blob([json], { type: 'application/geo+json' })
-			const link = document.createElement('a')
-			link.href = URL.createObjectURL(blob)
-			link.download = 'procest-cases.geojson'
-			link.click()
-			URL.revokeObjectURL(link.href)
+			this.$router?.push({ name: 'CaseDetail', params: { id: caseId } })
 		},
 	},
 }
@@ -239,10 +213,6 @@ export default {
 	margin: 12px 0;
 	border-radius: var(--border-radius);
 	background: var(--color-warning, var(--color-background-hover));
-}
-
-.cases-on-map__export {
-	margin-top: 16px;
 }
 
 .cases-on-map__map {

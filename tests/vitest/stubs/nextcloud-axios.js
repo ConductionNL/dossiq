@@ -6,15 +6,16 @@
  *
  * The real package is a thin wrapper around axios that injects the Nextcloud
  * CSRF token and base URL from the browser runtime — neither exists under
- * Vitest's node environment. The pdokService shim only uses `axios.get`, so
- * the stub exposes a `get` that tests replace with `vi.fn()` mock
- * implementations via `axios.get.mockImplementation(...)`.
+ * Vitest's node environment. Consumers (pdokService, casesOnMapApi, …) use
+ * `axios.get` / `axios.post`, so the stub exposes both as `vi.fn()` that tests
+ * replace via `axios.get.mockImplementation(...)` / `axios.post.mock...`.
  */
 
 import { vi } from 'vitest'
 
 const axios = {
 	get: vi.fn(),
+	post: vi.fn(),
 }
 
 export default axios
