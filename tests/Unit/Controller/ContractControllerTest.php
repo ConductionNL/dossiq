@@ -84,6 +84,7 @@ class ContractControllerTest extends TestCase
             appManager: $this->createMock(\OCP\App\IAppManager::class),
             container: $this->createMock(\Psr\Container\ContainerInterface::class),
             logger: $this->createMock(\Psr\Log\LoggerInterface::class),
+            decisionDelegation: $this->createMock(\OCA\Procest\Service\ContractDecisionDelegationService::class),
         );
     }//end makeRealRenewalService()
 
@@ -213,6 +214,8 @@ class ContractControllerTest extends TestCase
         );
         $r = $c->requestRenewal('c1');
         $this->assertSame(Http::STATUS_OK, $r->getStatus());
-        $this->assertSame(['ok' => true, 'caseRef' => 'case-99'], $r->getData());
+        // The controller returns the decidesk decisionRef in the envelope
+        // (REQ-PDCD-001); the renewal mock omits it so it defaults to ''.
+        $this->assertSame(['ok' => true, 'caseRef' => 'case-99', 'decisionRef' => ''], $r->getData());
     }//end testRequestRenewalHappyPathDelegatesToService()
 }//end class

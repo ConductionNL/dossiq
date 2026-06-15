@@ -40,79 +40,79 @@
 
 ## Phase 1: Delegation services (raise decidesk Decisions via ADR-019)
 
-- [ ] Add `lib/Service/BezwaarDecisionDelegationService.php` (or extend `ContractDecisionDelegationService`):
+- [x] Add `lib/Service/BezwaarDecisionDelegationService.php` (or extend `ContractDecisionDelegationService`):
       `raiseBezwaarDecision(string $bezwaarId, array $payload): string` — resolve the `decidesk`
       integration leaf from the OR registry (ADR-019), `POST /api/v1/decisions` with decisionType
       `bezwaar-decision` + provenance (sourceApp=procest, subjectSchema=`bezwaarDecision`,
       subjectId=$bezwaarId), return `decisionRef`. Fail **closed** when the leaf is unavailable.
-- [ ] Add `lib/Service/AdviceDelegationService.php`: `raiseAdviceDecision(string $subjectSchema,
+- [x] Add `lib/Service/AdviceDelegationService.php`: `raiseAdviceDecision(string $subjectSchema,
       string $subjectId, array $payload): string` — decisionType `advice`; reused by BAC,
       adviesAanvraag and consultation. Fail **closed** when unavailable.
-- [ ] Add a `raiseVoorstelBesluit(string $voorstelId, array $payload): string` path — decisionType
+- [x] Add a `raiseVoorstelBesluit(string $voorstelId, array $payload): string` path — decisionType
       `report-adoption`; subjectSchema=`voorstel`. Fail **closed** when unavailable.
-- [ ] Reuse `BesluitMaterialisationService` (from the merged change) for outcome → ZGW `Besluit`.
-- [ ] Register the new services in `lib/AppInfo/Application.php` DI.
-- [ ] Unit tests: leaf-available → Decision raised + ref returned per decisionType; leaf-unavailable
+- [x] Reuse `BesluitMaterialisationService` (from the merged change) for outcome → ZGW `Besluit`.
+- [x] Register the new services in `lib/AppInfo/Application.php` DI.
+- [x] Unit tests: leaf-available → Decision raised + ref returned per decisionType; leaf-unavailable
       → fails closed, no local decision/advice state set.
 
 ## Phase 2: Delegate beslissing-op-bezwaar (backend)
 
-- [ ] `lib/Service/Bezwaar/DecisionService.php` — run the Awb validity matrix (7:11 disposition set,
+- [x] `lib/Service/Bezwaar/DecisionService.php` — run the Awb validity matrix (7:11 disposition set,
       7:12 reasoning+legalBasis required, proceskosten rules, replacementDecision guard) as
       pre-flight validation, then `raiseBezwaarDecision(...)` instead of authoring the besluit.
       `applyToBezwaar()` consumes the decidesk outcome and materialises the ZGW `Besluit` +
       rechtsmiddelenclausule on the case. STOP setting `status:'draft'`/`publishedAt` as a local
       decision state.
-- [ ] Keep `BezwaarDecisionListener`/`BezwaarLifecycleListener` wiring; point them at the outcome
+- [x] Keep `BezwaarDecisionListener`/`BezwaarLifecycleListener` wiring; point them at the outcome
       consumption path rather than local authoring.
-- [ ] Update `@spec` tags on the touched methods to point at this change's spec.
+- [x] Update `@spec` tags on the touched methods to point at this change's spec.
 
 ## Phase 3: Delegate BAC-adviezen + advies + consultatie
 
-- [ ] `lib/Service/Bezwaar/AdvisoryCommitteeService.php` — keep `assignToCommittee` (panel set) +
+- [x] `lib/Service/Bezwaar/AdvisoryCommitteeService.php` — keep `assignToCommittee` (panel set) +
       the panel-independence guard; raise a decidesk `advice` Decision for the committee advice;
       `recordCouncilDeviation` records the council deviation against that advice Decision outcome.
-- [ ] `lib/Service/AdviceService.php` / `lib/Controller/AdviceController.php` — keep the IDOR gate
+- [x] `lib/Service/AdviceService.php` / `lib/Controller/AdviceController.php` — keep the IDOR gate
       (`assertAdviceCallerIsAuthorized`); `requestAdvice` raises a decidesk `advice` Decision;
       `submitAdvice`/`transitionStatus` consume/reflect the advice outcome rather than authoring it.
-- [ ] `lib/Service/ConsultationService.php` / `lib/Controller/ConsultationController.php` —
+- [x] `lib/Service/ConsultationService.php` / `lib/Controller/ConsultationController.php` —
       `createConsultation` raises a decidesk `advice` Decision; `submitResponse` consumes the outcome.
-- [ ] Update `@spec` tags on the touched methods.
+- [x] Update `@spec` tags on the touched methods.
 
 ## Phase 4: Delegate Voorstel → besluit (UI)
 
-- [ ] `src/views/voorstellen/components/BesluitRegistration.vue` + `VoorstelDetail.vue` — on
+- [x] `src/views/voorstellen/components/BesluitRegistration.vue` + `VoorstelDetail.vue` — on
       "Besluit registreren", raise a decidesk `report-adoption` Decision for the voorstel; on
       outcome materialise the ZGW `Besluit` on the case. Do NOT author a procest-local besluit.
-- [ ] Leave the parafeerroute components (`ParafeerActieDialog`/`ParafeerInbox`/`ProgressTimeline`)
+- [x] Leave the parafeerroute components (`ParafeerActieDialog`/`ParafeerInbox`/`ProgressTimeline`)
       UNTOUCHED (parafering is owned by `migrate-parafering-to-or-approval-workflow`).
 
 ## Phase 5: Decision/advice UI → decidesk-backed reads
 
-- [ ] `src/views/cases/components/bezwaar/AdvisoryReportPanel.vue` — read the decidesk advice
+- [x] `src/views/cases/components/bezwaar/AdvisoryReportPanel.vue` — read the decidesk advice
       Decision outcome (advice type / summary / grounds / recommendation / deviation) instead of a
       procest-local advice record where the field is decided in decidesk; keep the create-form Awb
       fields as procest input that feeds the raised Decision.
-- [ ] `src/views/cases/components/Advice*.vue`, `AdviesAanvraagDialog.vue` — raise/read the decidesk
+- [x] `src/views/cases/components/Advice*.vue`, `AdviesAanvraagDialog.vue` — raise/read the decidesk
       advice Decision via the delegation endpoints; update the relevant Pinia store/service calls.
 
 ## Phase 6: Migration of in-flight cases
 
-- [ ] Add `lib/Repair/LinkInFlightRemainingDecisionsRepair.php`: for each open bezwaar-decision /
+- [x] Add `lib/Repair/LinkInFlightRemainingDecisionsRepair.php`: for each open bezwaar-decision /
       advies / consultatie / voorstel case, link it to a decidesk Decision so its outcome can
       complete there; if a `Besluit`/advice is already recorded, keep it as the authoritative
       historical record. Idempotent + fail-safe; no decision/advice data dropped. Use the
       `setRegister(slug)->setSchema(Name)->findAll([])` read pattern + POSITIONAL args for OCP calls.
-- [ ] Register the repair step in `appinfo/info.xml` `<repair-steps>`.
-- [ ] Confirm historical records stay authoritative (Out-of-Scope) — only in-flight cases linked forward.
+- [x] Register the repair step in `appinfo/info.xml` `<repair-steps>`.
+- [x] Confirm historical records stay authoritative (Out-of-Scope) — only in-flight cases linked forward.
 
 ## Phase 7: Validation & gates
 
-- [ ] `openspec validate --strict procest-delegate-remaining-decisions-to-decidesk` exits 0.
-- [ ] Hydra gates green: spec-coverage `@spec` on touched methods; unsafe-auth-resolver clean (every
+- [x] `openspec validate --strict procest-delegate-remaining-decisions-to-decidesk` exits 0.
+- [x] Hydra gates green: spec-coverage `@spec` on touched methods; unsafe-auth-resolver clean (every
       delegation fails closed — no `catch { return null }` fall-open); route-reachability/route-auth
       on touched endpoints; redundant-controller clean.
-- [ ] e2e: a beslissing-op-bezwaar / BAC-advies / advies / voorstel-besluit each raises a decidesk
+- [x] e2e: a beslissing-op-bezwaar / BAC-advies / advies / voorstel-besluit each raises a decidesk
       Decision and materialises the ZGW `Besluit`/advice record on outcome; decidesk-unavailable
       fails closed; ZGW `Besluit` shape unchanged.
-- [ ] Confirm NO nav/menu-layout edit was made (sibling `procest-objections-appeals-group` owns nav).
+- [x] Confirm NO nav/menu-layout edit was made (sibling `procest-objections-appeals-group` owns nav).
