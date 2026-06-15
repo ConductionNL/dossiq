@@ -70,6 +70,7 @@ class AdviceService
      * @param IGroupManager        $groupManager        Group manager (Wilco #6 IDOR fix)
      * @param INotificationManager $notificationManager The notification manager
      * @param LoggerInterface      $logger              The logger
+     * @param AdviceDelegationService $adviceDelegation Advice delegation to decidesk (ADR-019)
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -77,6 +78,7 @@ class AdviceService
         private readonly IGroupManager $groupManager,
         private readonly INotificationManager $notificationManager,
         private readonly LoggerInterface $logger,
+        private readonly AdviceDelegationService $adviceDelegation,
     ) {
     }//end __construct()
 
@@ -464,7 +466,16 @@ class AdviceService
         }
 
         try {
-            $result = $objectService->saveObject($register, $schema, $update, $adviceId);
+            // Pre-existing positional-arg drift fixed (CLAUDE.md mandate):
+            // saveObject is (object, register, schema, uuid) — the previous
+            // ($register, $schema, $update, $adviceId) order wrote the wrong
+            // fields. Use named args to match every other call in this service.
+            $result = $objectService->saveObject(
+                object: $update,
+                register: $register,
+                schema: $schema,
+                uuid: (string) $adviceId
+            );
         } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: failed to submit advice: '.$e->getMessage(),
@@ -512,11 +523,13 @@ class AdviceService
         );
 
         try {
+            // Pre-existing positional-arg drift fixed (CLAUDE.md mandate):
+            // saveObject is (object, register, schema, uuid).
             $result = $objectService->saveObject(
-                $register,
-                $schema,
-                ['status' => 'cancelled'],
-                $adviceId
+                object: ['status' => 'cancelled'],
+                register: $register,
+                schema: $schema,
+                uuid: (string) $adviceId
             );
         } catch (Throwable $e) {
             $this->logger->error(
@@ -638,9 +651,11 @@ class AdviceService
      *
      * @return array<string, mixed> Saved adviceRequest object
      *
-     * @throws RuntimeException If OpenRegister is unavailable
+     * @throws RuntimeException If OpenRegister is unavailable or decidesk fails closed
      *
      * @spec openspec/changes/vth-module/tasks.md#task-6
+     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
+     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
      */
     public function requestAdvice(string $caseId, array $data, string $requestedBy): array
     {
@@ -667,6 +682,41 @@ class AdviceService
             schema: 'adviceRequest',
             object: $payload
         );
+
+        $adviceId = is_array($saved) === true ? (string) ($saved['id'] ?? ($saved['uuid'] ?? '')) : '';
+
+        // REQ-PDRD-001 / REQ-PDRD-002: the advice is *made* in decidesk. Raise a
+        // decidesk `advice` Decision for this request and persist its ref. Fail
+        // CLOSED — never author an advice outcome locally as a fallback.
+        try {
+            $decisionRef = $this->adviceDelegation->raiseAdviceDecision(
+                subjectSchema: 'adviesAanvraag',
+                subjectId: $adviceId !== '' ? $adviceId : $caseId,
+                payload: [
+                    'subjectRegister'   => $register,
+                    'externalReference' => $caseId,
+                    'subjectLabel'      => (string) ($data['vraag'] ?? 'Adviesaanvraag'),
+                    'question'          => (string) ($data['vraag'] ?? ''),
+                    'adviseur'          => (string) ($payload['adviseur'] ?? ''),
+                ],
+            );
+
+            if ($adviceId !== '') {
+                $objectService->saveObject(
+                    object: array_merge(is_array($saved) === true ? $saved : [], ['decisionRef' => $decisionRef]),
+                    register: $register,
+                    schema: 'adviceRequest',
+                    uuid: $adviceId,
+                );
+            }
+        } catch (RuntimeException $e) {
+            $this->logger->error(
+                'Procest: requestAdvice: decidesk advice Decision raise failed — failing closed: '.$e->getMessage(),
+                ['app' => Application::APP_ID]
+            );
+            // REQ-PDRD-002: fail closed; surface the error.
+            throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
+        }
 
         $adviseur = $payload['adviseur'];
         if ($adviseur !== '') {
