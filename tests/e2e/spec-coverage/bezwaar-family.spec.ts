@@ -15,11 +15,16 @@
 import { test, expect } from '@playwright/test'
 import { navTo, dismissSupportDialog, sidebarNav, trackProcestErrors } from '../helpers/nav'
 
-/** Open the collapsible Settings nav group so its links become clickable. */
-async function expandSettings(page) {
-	const present = await sidebarNav(page).getByRole('button', { name: 'Settings' }).count()
+/**
+ * Open the collapsible "Bezwaar & Beroep" nav group so its links become
+ * clickable. Bezwaaradviescommissies now lives under this domain group (it
+ * was relocated out of the Settings section by
+ * procest-objections-appeals-group).
+ */
+async function expandBezwaarBeroep(page) {
+	const present = await sidebarNav(page).getByRole('button', { name: 'Bezwaar & Beroep' }).count()
 	if (present) {
-		await sidebarNav(page).getByRole('button', { name: 'Settings' }).click().catch(() => {})
+		await sidebarNav(page).getByRole('button', { name: 'Bezwaar & Beroep' }).click().catch(() => {})
 		await page.waitForTimeout(500)
 	}
 }
@@ -66,17 +71,17 @@ test.describe('BAC-adviezen (advice requests) index page', () => {
 	})
 })
 
-test.describe('Bezwaaradviescommissies (advisory committees) settings page', () => {
+test.describe('Bezwaaradviescommissies (advisory committees) page', () => {
 	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#bezwaar-committees-settings-page-renders-list-shell
-	test('bezwaar committees settings page renders its own create control', async ({ page }) => {
+	test('bezwaar committees page renders its own create control', async ({ page }) => {
 		const errors = trackProcestErrors(page)
 		await page.goto('/index.php/apps/procest/cases')
 		await dismissSupportDialog(page)
-		await expandSettings(page)
+		await expandBezwaarBeroep(page)
 		await sidebarNav(page).getByRole('link', { name: 'Bezwaaradviescommissies', exact: true }).click()
 		await dismissSupportDialog(page)
-		// Committee-specific create control distinguishes this view from any
-		// other settings list.
+		// Committee-specific create control distinguishes this view from the
+		// other bezwaar/beroep lists in the group.
 		await expect(page.getByRole('button', { name: 'Add Bezwaaradviescommissie' }))
 			.toBeVisible({ timeout: 15000 })
 		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
