@@ -165,7 +165,19 @@ export default {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.hasAdvisoryReport
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
+		/**
+		 * The BAC advisory report read for display.
+		 *
+		 * The committee advice is *decided* in decidesk as an `advice` Decision
+		 * (procest-delegate-remaining-decisions-to-decidesk, REQ-PDRD-001); the
+		 * advice fields surfaced here (adviceType / summary / grounds /
+		 * recommendation / deviation) are a projection of the decidesk advice
+		 * outcome consumed by AdvisoryCommitteeService. The create-form Awb
+		 * fields below remain procest input that feeds the raised Decision.
+		 *
+		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
+		 * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-003-the-zgw-besluitadvice-record-is-a-projection-of-the-decidesk-outcome
+		 */
 		report() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.currentAdvisoryReport

@@ -68,8 +68,8 @@
 
 <script>
 import { NcButton, NcDialog, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
-import { getCurrentUser } from '@nextcloud/auth'
 import { useObjectStore } from '../../../store/modules/object.js'
+import { registerBesluit } from '../../../services/voorstelBesluitApi.js'
 
 export default {
 	name: 'BesluitRegistration',
@@ -116,7 +116,19 @@ export default {
 		}
 	},
 	methods: {
-		/** @spec openspec/specs/parafering-actions/spec.md */
+		/**
+		 * Register a besluit on the voorstel.
+		 *
+		 * The besluit is no longer authored locally as a procest `decision`
+		 * object. It is raised as a decidesk `report-adoption` Decision via the
+		 * ADR-019 integration registry (procest-delegate-remaining-decisions-to-decidesk,
+		 * REQ-PDRD-001); the ZGW Besluit becomes a projection of the decidesk
+		 * outcome. The server fails CLOSED (REQ-PDRD-002) when decidesk is
+		 * unavailable — no local besluit is authored as a fallback.
+		 *
+		 * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
+		 * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
+		 */
 		async register() {
 			this.errors = {}
 			if (!this.form.title.trim()) {
@@ -126,34 +138,29 @@ export default {
 
 			this.saving = true
 			try {
-				// Create decision object using existing decision schema
-				const decisionData = {
+				// Raise a decidesk report-adoption Decision for this voorstel.
+				// procest keeps the parafeerroute untouched; only the besluit
+				// decision is delegated, and the besluit is materialised from
+				// the decidesk outcome.
+				await registerBesluit(this.voorstel.id || this.voorstel._self?.id, {
 					title: this.form.title.trim(),
-					case: this.voorstel.case,
-					decisionDate: new Date().toISOString().split('T')[0],
 					effectiveDate: this.form.effectiveDate || undefined,
 					explanation: this.form.explanation || undefined,
 					governingBody: this.form.governingBody || undefined,
-					decidedBy: getCurrentUser()?.uid || '',
-				}
+					decisionType: this.selectedDecisionType ? this.selectedDecisionType.id : undefined,
+				})
 
-				if (this.selectedDecisionType) {
-					decisionData.decisionType = this.selectedDecisionType.id
-				}
-
-				const decision = await this.objectStore.saveObject('decision', decisionData)
-
-				// Update voorstel status to 'besloten' and link the decision
+				// Reflect the awaiting-decidesk state on the voorstel (projection;
+				// the decided besluit lands when decidesk posts the outcome).
 				await this.objectStore.saveObject('voorstel', {
 					...this.voorstel,
-					status: 'besloten',
-					decision: decision.id || decision._self?.id,
+					status: 'awaiting-decidesk',
 				})
 
 				this.$emit('registered')
 			} catch (error) {
 				console.error('Failed to register besluit:', error)
-				this.errors.title = error.message || t('procest', 'Registratie mislukt')
+				this.errors.title = error.response?.data?.error || error.message || t('procest', 'Registratie mislukt')
 			} finally {
 				this.saving = false
 			}

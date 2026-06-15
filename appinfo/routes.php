@@ -257,6 +257,11 @@ return [
         ['name' => 'parafeerRoute#skipStep',     'url' => '/api/parafeer-route/voorstel/{voorstelId}/skip-step',      'verb' => 'POST'],
         ['name' => 'parafeerRoute#addStep',      'url' => '/api/parafeer-route/voorstel/{voorstelId}/add-step',       'verb' => 'POST'],
 
+        // Voorstel → besluit registration delegates to a decidesk report-adoption
+        // Decision (procest-delegate-remaining-decisions-to-decidesk, ADR-019).
+        // The parafeerroute above is untouched; only the besluit decision moves.
+        ['name' => 'voorstelBesluit#registerBesluit', 'url' => '/api/voorstellen/{voorstelId}/register-besluit',       'verb' => 'POST'],
+
         // NOTE: ParaferingController + ParaferingService were superseded scaffolding
         // that operated entirely in-memory (no persistence, client-supplied state).
         // Deleted in wave-3 security fix. The live engine is ParafeerActieService /
