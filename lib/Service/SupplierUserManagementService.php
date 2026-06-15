@@ -203,6 +203,8 @@ class SupplierUserManagementService
      * @param string $actor   Admin doing the change.
      *
      * @return array<string,mixed>|null
+     *
+     * @spec openspec/changes/procest-security-hardening/specs/security-hardening/spec.md
      */
     public function updateRole(string $userId, string $newRole, string $actor): ?array
     {

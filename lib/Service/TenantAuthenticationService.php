@@ -207,6 +207,8 @@ class TenantAuthenticationService
      * @param string $userId   NC user ID.
      *
      * @return string|null Role name or null when unresolved.
+     *
+     * @spec openspec/changes/procest-security-hardening/specs/security-hardening/spec.md
      */
     public function resolveUserRole(string $tenantId, string $userId): ?string
     {
