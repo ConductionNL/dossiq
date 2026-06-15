@@ -221,6 +221,8 @@ class TenantConfigurationService
      * @return array<string,mixed> Sanitised.
      *
      * @throws InvalidArgumentException When a hex color is invalid.
+     *
+     * @spec openspec/changes/procest-security-hardening/specs/security-hardening/spec.md
      */
     public function sanitiseBranding(array $branding): array
     {

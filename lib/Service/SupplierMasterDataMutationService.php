@@ -224,6 +224,8 @@ class SupplierMasterDataMutationService
      *                            Handelsregister before the case is opened.
      *
      * @return array{ok:bool, caseRef?:string, reason?:string}
+     *
+     * @spec openspec/changes/procest-security-hardening/specs/security-hardening/spec.md
      */
     public function submitForVerification(string $supplierRef, string $dataType, array $attachments, string $actor, string $kvkNumber = ''): array
     {

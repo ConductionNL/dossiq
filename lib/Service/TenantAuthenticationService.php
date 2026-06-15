@@ -229,7 +229,15 @@ class TenantAuthenticationService
                 return $role !== '' ? $role : null;
             }
         } catch (Throwable $e) {
-            return null;
+            // Fail CLOSED: a backend error is NOT "no role". Surfacing it as a
+            // null role would let the mandate-matrix caller treat the lookup as
+            // simply absent and silently fall open. Log it and re-throw so the
+            // single caller (validateMandateMatrix) denies the action.
+            $this->logger->error(
+                'Procest: resolveUserRole lookup failed (fail-closed)',
+                ['tenantId' => $tenantId, 'userId' => $userId, 'exception' => $e->getMessage()]
+            );
+            throw $e;
         }
 
         return null;

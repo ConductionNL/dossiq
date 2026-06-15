@@ -34,7 +34,7 @@
 			<!-- Toolbar with template-driven compose action -->
 			<div class="case-email-tab__toolbar">
 				<NcSelect
-					v-if="templates.length > 0"
+					v-if="templates.length"
 					v-model="selectedTemplate"
 					:options="templates"
 					:aria-label-combobox="t('procest', 'Email template')"

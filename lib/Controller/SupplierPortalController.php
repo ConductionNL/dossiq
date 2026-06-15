@@ -108,7 +108,7 @@ class SupplierPortalController extends Controller
      *
      * @return string The server-trusted supplier reference ('' when unauthenticated).
      */
-    private function resolveSupplierRef(?JSONResponse &$error): string
+    private function requireSupplierRef(?JSONResponse &$error): string
     {
         $error = null;
         try {
@@ -117,7 +117,7 @@ class SupplierPortalController extends Controller
             $error = new JSONResponse(['error' => 'Bearer token required'], Http::STATUS_UNAUTHORIZED);
             return '';
         }
-    }//end resolveSupplierRef()
+    }//end requireSupplierRef()
 
     /**
      * Dashboard summary — 4 cards.
@@ -132,7 +132,7 @@ class SupplierPortalController extends Controller
      */
     public function dashboard(): JSONResponse
     {
-        $supplierRef = $this->resolveSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef($err);
         if ($err !== null) {
             return $err;
         }
@@ -153,7 +153,7 @@ class SupplierPortalController extends Controller
      */
     public function tenders(): JSONResponse
     {
-        $supplierRef = $this->resolveSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef($err);
         if ($err !== null) {
             return $err;
         }
@@ -187,7 +187,7 @@ class SupplierPortalController extends Controller
      */
     public function tenderDetail(string $id): JSONResponse
     {
-        $supplierRef = $this->resolveSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef($err);
         if ($err !== null) {
             return $err;
         }
@@ -219,7 +219,7 @@ class SupplierPortalController extends Controller
      */
     public function invoices(): JSONResponse
     {
-        $supplierRef = $this->resolveSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef($err);
         if ($err !== null) {
             return $err;
         }
@@ -248,7 +248,7 @@ class SupplierPortalController extends Controller
      */
     public function contracts(): JSONResponse
     {
-        $supplierRef = $this->resolveSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef($err);
         if ($err !== null) {
             return $err;
         }
@@ -270,7 +270,7 @@ class SupplierPortalController extends Controller
      */
     public function kpi(): JSONResponse
     {
-        $supplierRef = $this->resolveSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef($err);
         if ($err !== null) {
             return $err;
         }
@@ -292,7 +292,7 @@ class SupplierPortalController extends Controller
      */
     public function messages(): JSONResponse
     {
-        $supplierRef = $this->resolveSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef($err);
         if ($err !== null) {
             return $err;
         }
@@ -319,7 +319,7 @@ class SupplierPortalController extends Controller
      */
     public function sendMessage(): JSONResponse
     {
-        $supplierRef = $this->resolveSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef($err);
         if ($err !== null) {
             return $err;
         }
