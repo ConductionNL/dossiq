@@ -12,7 +12,11 @@ test.describe('Sidebar Navigation', () => {
 		// ("Documentation" is a `section: "footer"` external link in the
 		// manifest — it lives in a collapsed footer area and is not a visible
 		// top-level nav entry, so it is asserted separately below.)
-		for (const label of ['Dashboard', 'My Work', 'Cases', 'Tasks']) {
+		// Per procest-nav-dedup-and-grouping the operational core is grouped:
+		// "My Work" now lives under the "Work" group and the "Cases" leaf was
+		// relabelled to "All cases" (under the "Cases" group) to drop the
+		// duplicate "Cases" label. All routes are unchanged.
+		for (const label of ['Dashboard', 'My Work', 'All cases', 'Tasks']) {
 			await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible()
 		}
 
@@ -26,7 +30,8 @@ test.describe('Sidebar Navigation', () => {
 
 		const expected: Record<string, string> = {
 			'My Work': '/apps/procest/my-work',
-			Cases: '/apps/procest/cases',
+			// "Cases" leaf relabelled to "All cases" (route/href unchanged).
+			'All cases': '/apps/procest/cases',
 			Tasks: '/apps/procest/tasks',
 		}
 
@@ -55,7 +60,8 @@ test.describe('Sidebar Navigation', () => {
 		}
 
 		const nav = sidebarNav(page)
-		await nav.getByRole('link', { name: 'Cases', exact: true }).click()
+		// "Cases" leaf relabelled to "All cases" (route unchanged).
+		await nav.getByRole('link', { name: 'All cases', exact: true }).click()
 		await expect(page).toHaveURL(/.*cases/)
 	})
 })
