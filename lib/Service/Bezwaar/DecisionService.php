@@ -55,7 +55,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Service\Bezwaar;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\BesluitMaterialisationService;
 use OCA\Procest\Service\BezwaarDecisionDelegationService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\StatusTransitionService;
@@ -129,17 +128,19 @@ class DecisionService
     /**
      * Constructor.
      *
-     * @param SettingsService         $settingsService Schema/register bridge.
-     * @param IUserSession            $userSession     Acting identity source.
-     * @param StatusTransitionService $transitions     Engine used by
-     *                                                 applyToBezwaar() to
-     *                                                 transition the
-     *                                                 linked bezwaar
-     *                                                 without bespoke
-     *                                                 transition logic.
+     * @param SettingsService                  $settingsService    Schema/register bridge.
+     * @param IUserSession                     $userSession        Acting identity source.
+     * @param StatusTransitionService          $transitions        Engine used by
+     *                                                             applyToBezwaar()
+     *                                                             to transition
+     *                                                             the linked
+     *                                                             bezwaar
+     *                                                             without
+     *                                                             bespoke
+     *                                                             transition
+     *                                                             logic.
      * @param LoggerInterface                  $logger             Logger.
-     * @param BezwaarDecisionDelegationService $decisionDelegation Decision delegation to decidesk (ADR-019).
-     * @param BesluitMaterialisationService    $besluitMaterialiser ZGW Besluit projection from the decidesk outcome.
+     * @param BezwaarDecisionDelegationService $decisionDelegation Decision delegation to decidesk (event dispatch).
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -147,7 +148,6 @@ class DecisionService
         private readonly StatusTransitionService $transitions,
         private readonly LoggerInterface $logger,
         private readonly BezwaarDecisionDelegationService $decisionDelegation,
-        private readonly BesluitMaterialisationService $besluitMaterialiser,
     ) {
     }//end __construct()
 
@@ -244,11 +244,12 @@ class DecisionService
      *
      * Runs the full Awb validity matrix (REQ-BD-3, REQ-BD-5, REQ-BD-6,
      * REQ-BD-7) as procest domain validation (REQ-PDRD-004), then raises a
-     * decidesk `bezwaar-decision` Decision via the ADR-019 integration registry
+     * decidesk `bezwaar-decision` Decision by dispatching a `DecisionRequestedEvent`
      * (REQ-PDRD-001) and persists the returned `decisionRef` on the record.
      * procest no longer authors the besluit locally: there is no
      * `status:'published'` local decision state — the besluit is materialised
-     * from the decidesk outcome in {@see applyToBezwaar()} (REQ-PDRD-003,
+     * from the decidesk `DecisionConcludedEvent` by
+     * {@see \OCA\Procest\Listener\DecisionConcludedListener} (REQ-PDRD-003,
      * REQ-PDRD-007). FAILS CLOSED when decidesk is unavailable (REQ-PDRD-002):
      * no local decided state is set as a fallback.
      *
@@ -294,12 +295,17 @@ class DecisionService
         $bezwaarId = (string) ($current['bezwaar'] ?? '');
 
         // REQ-PDRD-001 / REQ-PDRD-002: delegate the deciding to decidesk via the
-        // ADR-019 integration registry. Fail closed — never author the besluit
+        // decidesk DecisionRequestedEvent. Fail closed — never author the besluit
         // locally as a fallback. The decisionRef returned is persisted on the
-        // record so the outcome can be consumed + materialised later.
+        // record so the outcome can be materialised later from the concluded event.
+        $bezwaarRef = $decisionId;
+        if ($bezwaarId !== '') {
+            $bezwaarRef = $bezwaarId;
+        }
+
         try {
             $decisionRef = $this->decisionDelegation->raiseBezwaarDecision(
-                bezwaarId: $bezwaarId !== '' ? $bezwaarId : $decisionId,
+                bezwaarId: $bezwaarRef,
                 payload: [
                     'subjectRegister'     => $register,
                     'subjectSchema'       => $decisionSchema,
@@ -319,7 +325,7 @@ class DecisionService
                 .$e->getMessage()
             );
             throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
-        }
+        }//end try
 
         // Persist the decisionRef + notification audit list ONLY — no local
         // "published" decision state; the besluit is the decidesk outcome.
@@ -355,22 +361,21 @@ class DecisionService
     }//end publish()
 
     /**
-     * Consume the decidesk Decision outcome and apply it back to the bezwaar.
+     * Apply the bezwaar status transition once decidesk has concluded.
      *
-     * Invoked when decidesk reports the outcome for a previously-raised
-     * `bezwaar-decision` Decision. Reads the outcome via the delegation service
-     * (REQ-PDRD-003), materialises the ZGW `Besluit` on the case as a
-     * PROJECTION (preserving the Besluiten-API shape) via
-     * BesluitMaterialisationService, then triggers the configured status
-     * transition. Never authors the besluit locally — the besluit is the
-     * decidesk outcome. The status engine still owns guards + side effects.
+     * The ZGW `Besluit` is materialised from the decidesk outcome by
+     * {@see \OCA\Procest\Listener\DecisionConcludedListener} when decidesk
+     * dispatches a `DecisionConcludedEvent` — there is no procest-local poll of
+     * the decidesk outcome here. This method only triggers the configured
+     * status transition on the linked bezwaar; the status engine still owns
+     * guards + side effects, and the besluit is never authored locally.
      *
      * @param string $bezwaarId  UUID of the source bezwaar.
-     * @param string $decisionId UUID of the bezwaarDecision whose decidesk outcome is consumed.
+     * @param string $decisionId UUID of the bezwaarDecision being applied.
      *
      * @return void
-
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-003-the-zgw-besluitadvice-record-is-a-projection-of-the-decidesk-outcome
+     *
+     * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
      */
     public function applyToBezwaar(string $bezwaarId, string $decisionId): void
     {
@@ -379,9 +384,8 @@ class DecisionService
             return;
         }
 
-        $register       = $this->settingsService->getConfigValue(key: 'register');
-        $bezwaarSchema  = $this->settingsService->getConfigValue(key: 'bezwaar_schema');
-        $decisionSchema = $this->settingsService->getConfigValue(key: 'bezwaar_decision_schema');
+        $register      = $this->settingsService->getConfigValue(key: 'register');
+        $bezwaarSchema = $this->settingsService->getConfigValue(key: 'bezwaar_schema');
         if ($register === '' || $bezwaarSchema === '') {
             return;
         }
@@ -394,32 +398,6 @@ class DecisionService
         $caseId = (string) ($bezwaar['case'] ?? '');
         if ($caseId === '') {
             return;
-        }
-
-        // REQ-PDRD-003: consume the decidesk outcome and materialise the ZGW
-        // Besluit as a projection. Resolve the decisionRef from the record.
-        if ($decisionSchema !== '') {
-            try {
-                $decision    = $objectService->find($decisionId, register: $register, schema: $decisionSchema);
-                $decisionRef = is_array($decision) === true ? (string) ($decision['decisionRef'] ?? '') : '';
-                if ($decisionRef !== '') {
-                    $outcome     = $this->decisionDelegation->consumeOutcome(decisionRef: $decisionRef);
-                    $besluitId   = (string) ($bezwaar['besluitRef'] ?? '');
-                    $this->besluitMaterialiser->materialise(
-                        caseId: $caseId,
-                        besluitId: $besluitId,
-                        outcome: $outcome,
-                    );
-                }
-            } catch (Throwable $e) {
-                // Outcome not yet available (or leaf unavailable): do NOT author
-                // a besluit locally; leave the transition to run when the
-                // outcome lands. Log and continue.
-                $this->logger->warning(
-                    'Procest bezwaar-decision: could not materialise Besluit from decidesk outcome yet: '
-                    .$e->getMessage()
-                );
-            }
         }
 
         try {

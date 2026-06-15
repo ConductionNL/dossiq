@@ -4,12 +4,16 @@
  * Procest Contract Decision Delegation Service
  *
  * Delegates contract approval / renewal / besluit decisions to decidesk via
- * the OpenRegister ADR-019 integration registry. procest keeps ZGW case
- * management; decidesk owns the deciding. This service:
+ * the Nextcloud event dispatcher (decidesk's merged event contract). procest
+ * keeps ZGW case management; decidesk owns the deciding. This service:
  *
- * - Raises a decidesk Decision for any contract approval/renewal/sign-off.
- * - Consumes the decidesk Decision outcome.
- * - FAILS CLOSED when the decidesk leaf is unavailable (never auto-approves).
+ * - Raises a decidesk Decision by dispatching `DecisionRequestedEvent`.
+ * - Reads the synchronous result the decidesk listener writes back onto the
+ *   event (`isHandled()` / `getDecisionId()`).
+ * - FAILS CLOSED when decidesk is unavailable (never auto-approves).
+ *
+ * The terminal outcome is delivered separately, by decidesk dispatching a
+ * `DecisionConcludedEvent` consumed by {@see \OCA\Procest\Listener\DecisionConcludedListener}.
  *
  * @category Service
  * @package  OCA\Procest\Service
@@ -23,37 +27,32 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md
+ * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
-use OCP\App\IAppManager;
-use Psr\Container\ContainerInterface;
+use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
 
 /**
- * Raises and consumes decidesk Decisions for contract / besluit decisions.
+ * Raises decidesk Decisions (via `DecisionRequestedEvent`) for contract /
+ * besluit decisions.
  *
- * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md
+ * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md
  */
 class ContractDecisionDelegationService
 {
     /**
-     * The decidesk integration leaf identifier in the OR registry (ADR-019).
-     */
-    public const DECIDESK_INTEGRATION_LEAF = 'decidesk';
-
-    /**
      * Decision types supported by the contract delegation surface.
      */
-    public const DECISION_TYPE_CONTRACT_RENEWAL   = 'contract-renewal';
-    public const DECISION_TYPE_REPORT_ADOPTION    = 'report-adoption';
-    public const DECISION_TYPE_BEZWAAR            = 'bezwaar-beslissing';
+    public const DECISION_TYPE_CONTRACT_RENEWAL = 'contract-renewal';
+    public const DECISION_TYPE_REPORT_ADOPTION  = 'report-adoption';
+    public const DECISION_TYPE_BEZWAAR          = 'bezwaar-beslissing';
 
     /**
      * Decision types for the remaining decision/advice flows delegated by
@@ -63,15 +62,19 @@ class ContractDecisionDelegationService
     public const DECISION_TYPE_ADVICE           = 'advice';
 
     /**
+     * The decidesk request-event FQN. Guarded by class_exists so procest stays
+     * installable without decidesk (decidesk is an optional runtime dependency).
+     */
+    private const DECISION_REQUESTED_EVENT = '\\OCA\\Decidesk\\Event\\DecisionRequestedEvent';
+
+    /**
      * Constructor.
      *
-     * @param IAppManager        $appManager App manager.
-     * @param ContainerInterface $container  Service container.
-     * @param LoggerInterface    $logger     Logger.
+     * @param IEventDispatcher $eventDispatcher Nextcloud typed event dispatcher.
+     * @param LoggerInterface  $logger          Logger.
      */
     public function __construct(
-        private readonly IAppManager $appManager,
-        private readonly ContainerInterface $container,
+        private readonly IEventDispatcher $eventDispatcher,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -79,23 +82,24 @@ class ContractDecisionDelegationService
     /**
      * Raise a decidesk Decision for a contract approval / renewal / sign-off.
      *
-     * Resolves the `decidesk` integration leaf from the OR integration registry
-     * (ADR-019) and creates a decidesk Decision. FAILS CLOSED: when the leaf is
-     * unavailable or the request fails this method throws — it never silently
-     * returns a null / auto-approves (mirrors hydra-gate-unsafe-auth-resolver).
+     * Dispatches a `DecisionRequestedEvent` synchronously and reads the result
+     * the decidesk listener writes back. FAILS CLOSED: when decidesk is not
+     * installed, did not handle the event, or returned no decisionId, this
+     * method throws — it never silently returns null / auto-approves (mirrors
+     * hydra-gate-unsafe-auth-resolver).
      *
      * @param string              $caseRef        The ZGW case reference (UUID) that owns this decision.
-     * @param string              $contractRef     The contract object UUID.
-     * @param string              $decisionType    Decision type slug (e.g. self::DECISION_TYPE_CONTRACT_RENEWAL).
-     * @param array<string,mixed> $subject         Subject fields: sourceApp, subjectRegister, subjectSchema, subjectId, subjectLabel.
-     * @param array<string,mixed> $mandateContext  Mandate context: requestedBy, mandateRole, mandateScope.
+     * @param string              $contractRef    The contract object UUID.
+     * @param string              $decisionType   Decision type slug (e.g. self::DECISION_TYPE_CONTRACT_RENEWAL).
+     * @param array<string,mixed> $subject        Subject fields: subjectRegister, subjectSchema, subjectId, subjectLabel.
+     * @param array<string,mixed> $mandateContext Mandate context: requestedBy, mandateRole, mandateScope.
      *
      * @return string The decidesk decisionRef (UUID) to persist on the case.
      *
-     * @throws RuntimeException When the decidesk leaf is unavailable or the Decision could not be created.
+     * @throws RuntimeException When decidesk is unavailable or the Decision could not be created.
      *
-     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md#req-pdcd-001
-     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md#req-pdcd-002
+     * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-001-contract-decisions-are-raised-as-decidesk-decisions-via-events
+     * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-002-delegation-fails-closed-when-decidesk-is-unavailable
      */
     public function raiseContractDecision(
         string $caseRef,
@@ -104,198 +108,147 @@ class ContractDecisionDelegationService
         array $subject,
         array $mandateContext,
     ): string {
-        $integrationService = $this->resolveIntegrationService();
-
-        // REQ-PDCD-002: fail closed — when the leaf is unavailable surface a
-        // clear error; NEVER fall back to a procest-local auto-approve.
-        if ($integrationService === null) {
-            $this->logger->error(
-                'ContractDecisionDelegationService: decidesk integration leaf unavailable; failing closed',
-                ['caseRef' => $caseRef, 'contractRef' => $contractRef, 'decisionType' => $decisionType]
-            );
-            throw new RuntimeException('Decision service unavailable: decidesk integration leaf not registered or unavailable. Contract decision cannot proceed.');
-        }
-
-        $payload = [
-            'decisionType'        => $decisionType,
-            'sourceApp'           => 'procest',
-            'subjectRegister'     => (string) ($subject['subjectRegister'] ?? ''),
-            'subjectSchema'       => (string) ($subject['subjectSchema'] ?? ''),
-            'subjectId'           => (string) ($subject['subjectId'] ?? $contractRef),
-            'subjectLabel'        => (string) ($subject['subjectLabel'] ?? ''),
-            'externalReference'   => $caseRef,
-            'outcomeCallbackUrl'  => '',
-            'mandateContext'      => $mandateContext,
-        ];
-
-        try {
-            $result = $integrationService->createDecision(payload: $payload);
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'ContractDecisionDelegationService: createDecision failed',
-                ['caseRef' => $caseRef, 'error' => $e->getMessage()]
-            );
-            // REQ-PDCD-002: re-throw to fail closed; caller must not proceed.
-            throw new RuntimeException('Decision service error: '.$e->getMessage(), 0, $e);
-        }
-
-        $decisionRef = (string) ($result['id'] ?? $result['uuid'] ?? '');
-        if ($decisionRef === '') {
-            throw new RuntimeException('Decision service returned an empty decisionRef; failing closed.');
-        }
-
-        $this->logger->info(
-            'ContractDecisionDelegationService: decidesk Decision raised',
-            ['caseRef' => $caseRef, 'contractRef' => $contractRef, 'decisionRef' => $decisionRef]
+        return $this->dispatchDecisionRequest(
+            decisionType: $decisionType,
+            externalReference: $caseRef,
+            subject: [
+                'subjectRegister' => (string) ($subject['subjectRegister'] ?? ''),
+                'subjectSchema'   => (string) ($subject['subjectSchema'] ?? ''),
+                'subjectId'       => (string) ($subject['subjectId'] ?? $contractRef),
+                'subjectLabel'    => (string) ($subject['subjectLabel'] ?? ''),
+            ],
+            actorId: (string) ($mandateContext['requestedBy'] ?? ''),
+            payload: [
+                'title'   => (string) ($subject['subjectLabel'] ?? ''),
+                'context' => $mandateContext,
+            ],
         );
-
-        return $decisionRef;
     }//end raiseContractDecision()
 
     /**
-     * Raise a decidesk Decision of an arbitrary decisionType via the ADR-019
-     * integration registry. This is the shared core reused by the remaining
-     * decision/advice delegation siblings (BezwaarDecisionDelegationService,
-     * AdviceDelegationService) so there is exactly one integration mechanism.
+     * Raise a decidesk Decision of an arbitrary decisionType. This is the shared
+     * core reused by the remaining decision/advice delegation siblings
+     * (BezwaarDecisionDelegationService, AdviceDelegationService) so there is
+     * exactly one delegation mechanism (the event dispatch).
      *
-     * FAILS CLOSED: when the leaf is unavailable or the request fails this
-     * method throws — it never silently returns null / auto-decides (mirrors
-     * hydra-gate-unsafe-auth-resolver).
+     * FAILS CLOSED: when decidesk is unavailable or did not handle the event
+     * this method throws — it never silently returns null / auto-decides.
      *
-     * @param string              $decisionType  Decision type slug (ADR-005), e.g. self::DECISION_TYPE_ADVICE.
+     * @param string              $decisionType      Decision type slug (ADR-005), e.g. self::DECISION_TYPE_ADVICE.
      * @param string              $externalReference The ZGW case/subject reference persisted on the decidesk Decision.
-     * @param array<string,mixed> $subject       Subject fields: subjectRegister, subjectSchema, subjectId, subjectLabel.
-     * @param array<string,mixed> $context       Optional decision context (disposition, reasoning, legalBasis, mandate, etc.).
+     * @param array<string,mixed> $subject           Subject fields: subjectRegister, subjectSchema, subjectId, subjectLabel.
+     * @param array<string,mixed> $context           Optional decision context (disposition, reasoning, legalBasis, etc.).
      *
      * @return string The decidesk decisionRef (UUID) to persist on the case.
      *
-     * @throws RuntimeException When the decidesk leaf is unavailable or the Decision could not be created.
+     * @throws RuntimeException When decidesk is unavailable or the Decision could not be created.
      *
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
+     * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-001-contract-decisions-are-raised-as-decidesk-decisions-via-events
+     * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-002-delegation-fails-closed-when-decidesk-is-unavailable
      */
     public function raiseDecision(
         string $decisionType,
         string $externalReference,
         array $subject,
-        array $context = [],
+        array $context=[],
     ): string {
-        $integrationService = $this->resolveIntegrationService();
-
-        // REQ-PDRD-002: fail closed — when the leaf is unavailable surface a
-        // clear error; NEVER fall back to a procest-local authoring path.
-        if ($integrationService === null) {
-            $this->logger->error(
-                'ContractDecisionDelegationService: decidesk integration leaf unavailable; failing closed (raiseDecision)',
-                ['externalReference' => $externalReference, 'decisionType' => $decisionType]
-            );
-            throw new RuntimeException('Decision service unavailable: decidesk integration leaf not registered or unavailable. Decision cannot proceed.');
-        }
-
-        $payload = [
-            'decisionType'       => $decisionType,
-            'sourceApp'          => 'procest',
-            'subjectRegister'    => (string) ($subject['subjectRegister'] ?? ''),
-            'subjectSchema'      => (string) ($subject['subjectSchema'] ?? ''),
-            'subjectId'          => (string) ($subject['subjectId'] ?? ''),
-            'subjectLabel'       => (string) ($subject['subjectLabel'] ?? ''),
-            'externalReference'  => $externalReference,
-            'outcomeCallbackUrl' => '',
-            'context'            => $context,
-        ];
-
-        try {
-            $result = $integrationService->createDecision(payload: $payload);
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'ContractDecisionDelegationService: createDecision (raiseDecision) failed',
-                ['externalReference' => $externalReference, 'error' => $e->getMessage()]
-            );
-            // REQ-PDRD-002: re-throw to fail closed; caller must not proceed.
-            throw new RuntimeException('Decision service error: '.$e->getMessage(), 0, $e);
-        }
-
-        $decisionRef = (string) ($result['id'] ?? $result['uuid'] ?? '');
-        if ($decisionRef === '') {
-            throw new RuntimeException('Decision service returned an empty decisionRef; failing closed.');
-        }
-
-        $this->logger->info(
-            'ContractDecisionDelegationService: decidesk Decision raised (raiseDecision)',
-            ['externalReference' => $externalReference, 'decisionType' => $decisionType, 'decisionRef' => $decisionRef]
+        return $this->dispatchDecisionRequest(
+            decisionType: $decisionType,
+            externalReference: $externalReference,
+            subject: [
+                'subjectRegister' => (string) ($subject['subjectRegister'] ?? ''),
+                'subjectSchema'   => (string) ($subject['subjectSchema'] ?? ''),
+                'subjectId'       => (string) ($subject['subjectId'] ?? ''),
+                'subjectLabel'    => (string) ($subject['subjectLabel'] ?? ''),
+            ],
+            actorId: (string) ($context['actorId'] ?? ''),
+            payload: [
+                'title'   => (string) ($subject['subjectLabel'] ?? ''),
+                'context' => $context,
+            ],
         );
-
-        return $decisionRef;
     }//end raiseDecision()
 
     /**
-     * Consume the outcome of a decidesk Decision.
+     * Build, dispatch and resolve a decidesk `DecisionRequestedEvent`.
      *
-     * Reads the decided Decision (result, decidedAt, motivering,
-     * signer/mandaathouder, method) from decidesk via the integration registry.
-     * Returns a normalised outcome array for use by BesluitMaterialisationService.
+     * Guarded by class_exists — when decidesk is not installed the method fails
+     * closed (throws). After `dispatchTyped()` the decidesk listener has written
+     * `isHandled()` / `getDecisionId()` onto the event synchronously; when the
+     * event is not handled or carries no decisionId the method fails closed.
      *
-     * @param string $decisionRef The decidesk Decision UUID.
+     * @param string              $decisionType      The decision type slug.
+     * @param string              $externalReference The ZGW case/subject reference.
+     * @param array<string,mixed> $subject           Subject fields (subjectRegister/Schema/Id/Label).
+     * @param string              $actorId           The requesting actor id (may be empty).
+     * @param array<string,mixed> $payload           Decision body payload (title/text/decisionDate/outcome/context).
      *
-     * @return array{result:string, decidedAt:string, motivering:string, signer:string, method:string, raw:array<string,mixed>}
+     * @return string The decidesk decisionId.
      *
-     * @throws RuntimeException When the decidesk leaf is unavailable or the outcome cannot be read.
-     *
-     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md#req-pdcd-003
+     * @throws RuntimeException When decidesk is unavailable or did not handle the request.
      */
-    public function consumeOutcome(string $decisionRef): array
-    {
-        $integrationService = $this->resolveIntegrationService();
+    private function dispatchDecisionRequest(
+        string $decisionType,
+        string $externalReference,
+        array $subject,
+        string $actorId,
+        array $payload,
+    ): string {
+        $eventClass = self::DECISION_REQUESTED_EVENT;
 
-        if ($integrationService === null) {
-            throw new RuntimeException('Decision service unavailable: cannot consume outcome for '.$decisionRef);
-        }
-
-        try {
-            $raw = $integrationService->getDecisionOutcome(decisionRef: $decisionRef);
-        } catch (Throwable $e) {
-            throw new RuntimeException('Decision service error consuming outcome: '.$e->getMessage(), 0, $e);
-        }
-
-        if (is_array($raw) === false) {
-            throw new RuntimeException('Decision service returned non-array outcome for '.$decisionRef);
-        }
-
-        return [
-            'result'     => (string) ($raw['result'] ?? ''),
-            'decidedAt'  => (string) ($raw['decidedAt'] ?? $raw['decided_at'] ?? ''),
-            'motivering' => (string) ($raw['motivering'] ?? $raw['motivation'] ?? ''),
-            'signer'     => (string) ($raw['signer'] ?? $raw['mandaathouder'] ?? ''),
-            'method'     => (string) ($raw['method'] ?? ''),
-            'raw'        => $raw,
-        ];
-    }//end consumeOutcome()
-
-    /**
-     * Resolve the decidesk integration service from the OR registry (ADR-019).
-     *
-     * Returns null when OpenRegister is not installed or the decidesk leaf is
-     * not configured — the caller MUST treat null as "fail closed".
-     *
-     * @return object|null The resolved integration leaf service, or null.
-     */
-    private function resolveIntegrationService(): ?object
-    {
-        $installed = $this->appManager->getInstalledApps();
-        if (is_array($installed) === false || in_array('openregister', $installed, true) === false) {
-            return null;
-        }
-
-        try {
-            // ADR-019: resolve the integration registry and look up the decidesk leaf.
-            $registry = $this->container->get('OCA\\OpenRegister\\Service\\IntegrationService');
-            return $registry->getLeaf(name: self::DECIDESK_INTEGRATION_LEAF);
-        } catch (Throwable $e) {
-            $this->logger->warning(
-                'ContractDecisionDelegationService: could not resolve decidesk integration leaf',
-                ['error' => $e->getMessage()]
+        // REQ-PDCD-002: fail closed when decidesk is not installed.
+        if (class_exists($eventClass) === false) {
+            $this->logger->error(
+                'ContractDecisionDelegationService: decidesk is not installed (DecisionRequestedEvent missing); failing closed',
+                ['externalReference' => $externalReference, 'decisionType' => $decisionType]
             );
-            return null;
+            throw new RuntimeException('Decision service unavailable: decidesk is not installed. Decision cannot proceed.');
         }
-    }//end resolveIntegrationService()
+
+        try {
+            // Positional ctor args (decidesk contract): sourceApp, subjectRegister,
+            // subjectSchema, subjectId, subjectLabel, decisionType, actorId,
+            // payload, externalReference, correlationId.
+            $event = new $eventClass(
+                'procest',
+                (string) $subject['subjectRegister'],
+                (string) $subject['subjectSchema'],
+                (string) $subject['subjectId'],
+                (string) $subject['subjectLabel'],
+                $decisionType,
+                $actorId,
+                $payload,
+                $externalReference,
+                $externalReference
+            );
+
+            $this->eventDispatcher->dispatchTyped($event);
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'ContractDecisionDelegationService: DecisionRequestedEvent dispatch failed',
+                ['externalReference' => $externalReference, 'error' => $e->getMessage()]
+            );
+            // REQ-PDCD-002: re-throw to fail closed; caller must not proceed.
+            throw new RuntimeException('Decision service error: '.$e->getMessage(), 0, $e);
+        }//end try
+
+        // REQ-PDCD-002: the decidesk listener writes isHandled()/getDecisionId()
+        // back onto the event synchronously. Anything else fails closed.
+        $handled    = (bool) $event->isHandled();
+        $decisionId = $event->getDecisionId();
+        if ($handled === false || $decisionId === null || $decisionId === '') {
+            $this->logger->error(
+                'ContractDecisionDelegationService: decidesk did not handle the decision request; failing closed',
+                ['externalReference' => $externalReference, 'decisionType' => $decisionType, 'handled' => $handled]
+            );
+            throw new RuntimeException('Decision service unavailable: decidesk did not handle the decision request. Decision cannot proceed.');
+        }
+
+        $this->logger->info(
+            'ContractDecisionDelegationService: decidesk Decision raised via event',
+            ['externalReference' => $externalReference, 'decisionType' => $decisionType, 'decisionRef' => (string) $decisionId]
+        );
+
+        return (string) $decisionId;
+    }//end dispatchDecisionRequest()
 }//end class

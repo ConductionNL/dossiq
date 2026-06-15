@@ -32,11 +32,13 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\SupplierPortalController;
+use OCA\Procest\Middleware\SupplierUnauthorizedException;
 use OCA\Procest\Service\LeverancierViewModelService;
 use OCA\Procest\Service\SupplierDashboardService;
 use OCA\Procest\Service\SupplierKpiAggregationService;
 use OCA\Procest\Service\SupplierMessageService;
 use OCA\Procest\Service\SupplierScopeService;
+use OCA\Procest\Service\SupplierSessionService;
 use OCA\Procest\Service\TenderViewModelService;
 use OCA\Procest\Service\TenderVisibilityService;
 use OCP\AppFramework\Http;
@@ -53,13 +55,13 @@ class SupplierPortalControllerTest extends TestCase
     /**
      * Build a controller with given request param map.
      *
-     * @param array<string,string|null> $params       Request param map.
-     * @param SupplierDashboardService|null $dashboard Optional override.
-     * @param SupplierScopeService|null $scope         Optional override.
-     * @param TenderViewModelService|null $tenderVm    Optional override.
-     * @param LeverancierViewModelService|null $vm     Optional override.
-     * @param SupplierKpiAggregationService|null $kpi  Optional override.
-     * @param SupplierMessageService|null $messages    Optional override.
+     * @param array<string,string|null>          $params    Request param map.
+     * @param SupplierDashboardService|null      $dashboard Optional override.
+     * @param SupplierScopeService|null          $scope     Optional override.
+     * @param TenderViewModelService|null        $tenderVm  Optional override.
+     * @param LeverancierViewModelService|null   $vm        Optional override.
+     * @param SupplierKpiAggregationService|null $kpi       Optional override.
+     * @param SupplierMessageService|null        $messages  Optional override.
      *
      * @return SupplierPortalController
      */
@@ -88,15 +90,44 @@ class SupplierPortalControllerTest extends TestCase
             $vm ?? $this->createMock(LeverancierViewModelService::class),
             $messages ?? $this->createMock(SupplierMessageService::class),
             $kpi ?? $this->createMock(SupplierKpiAggregationService::class),
+            $this->makeSession($params),
         );
     }//end makeController()
 
+    /**
+     * A SupplierSessionService mock driven by the request param map.
+     *
+     * The supplierRef is SERVER-TRUSTED: the controller reads it from the
+     * session, never the client. A missing `supplierRef` makes the session
+     * throw SupplierUnauthorizedException (→ 401 "Bearer token required"),
+     * matching the fail-closed contract.
+     *
+     * @param array<string,string|null> $params Request param map (supplierRef).
+     *
+     * @return SupplierSessionService
+     */
+    private function makeSession(array $params): SupplierSessionService
+    {
+        $session     = $this->createMock(SupplierSessionService::class);
+        $supplierRef = (string) ($params['supplierRef'] ?? '');
+
+        if ($supplierRef === '') {
+            $session->method('requireSupplierRef')
+                ->willThrowException(new SupplierUnauthorizedException('no session'));
+            return $session;
+        }
+
+        $session->method('requireSupplierRef')->willReturn($supplierRef);
+        return $session;
+    }//end makeSession()
+
     public function testDashboardRequiresSupplierRef(): void
     {
+        // No supplier session → the session resolver fails closed with 401.
         $c = $this->makeController([]);
         $r = $c->dashboard();
-        $this->assertSame(Http::STATUS_BAD_REQUEST, $r->getStatus());
-        $this->assertSame(['error' => 'supplierRef required'], $r->getData());
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $r->getStatus());
+        $this->assertSame(['error' => 'Bearer token required'], $r->getData());
     }//end testDashboardRequiresSupplierRef()
 
     public function testDashboardReturnsBuiltSummary(): void
@@ -112,9 +143,10 @@ class SupplierPortalControllerTest extends TestCase
 
     public function testTendersRequiresSupplierRef(): void
     {
+        // No supplier session → the session resolver fails closed with 401.
         $c = $this->makeController([]);
         $r = $c->tenders();
-        $this->assertSame(Http::STATUS_BAD_REQUEST, $r->getStatus());
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $r->getStatus());
     }//end testTendersRequiresSupplierRef()
 
     public function testTendersDecoratesEachRowWithBadgeAndVisibility(): void
@@ -123,10 +155,12 @@ class SupplierPortalControllerTest extends TestCase
         $tenderV = $this->createMock(TenderViewModelService::class);
         $scope->expects($this->once())->method('listSupplierObjects')
             ->with('sup-1', 'supplierTender', [])
-            ->willReturn([
-                ['id' => 't1', 'status' => 'awarded'],
-                ['id' => 't2', 'status' => 'rejected'],
-            ]);
+            ->willReturn(
+                    [
+                        ['id' => 't1', 'status' => 'awarded'],
+                        ['id' => 't2', 'status' => 'rejected'],
+                    ]
+                    );
         $tenderV->expects($this->exactly(2))->method('badgeColor')
             ->willReturnOnConsecutiveCalls('green', 'red');
         $tenderV->expects($this->exactly(2))->method('visibilityFlags')
@@ -168,10 +202,12 @@ class SupplierPortalControllerTest extends TestCase
     {
         $scope = $this->createMock(SupplierScopeService::class);
         $vm    = $this->createMock(LeverancierViewModelService::class);
-        $scope->method('listSupplierObjects')->willReturn([
-            ['id' => 'i1', 'status' => 'received', 'dueDate' => '2025-01-01'],
-            ['id' => 'i2', 'status' => 'paid',     'dueDate' => '2025-01-01'],
-        ]);
+        $scope->method('listSupplierObjects')->willReturn(
+                [
+                    ['id' => 'i1', 'status' => 'received', 'dueDate' => '2025-01-01'],
+                    ['id' => 'i2', 'status' => 'paid',     'dueDate' => '2025-01-01'],
+                ]
+                );
         $vm->expects($this->exactly(2))->method('invoiceBadgeColor')
             ->willReturnOnConsecutiveCalls('gray', 'green');
         $vm->expects($this->exactly(2))->method('isOverdue90Plus')
@@ -222,11 +258,11 @@ class SupplierPortalControllerTest extends TestCase
             ->method('getConversationHistory')
             ->with('case-1', 'sup-1')
             ->willReturn([['body' => 'hi']]);
-        $c = $this->makeController(
+        $c    = $this->makeController(
             ['supplierRef' => 'sup-1', 'caseRef' => 'case-1'],
             messages: $messages,
         );
-        $r = $c->messages();
+        $r    = $c->messages();
         $data = $r->getData();
         $this->assertSame(1, $data['total']);
     }//end testMessagesDelegatesToConversationHistory()

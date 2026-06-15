@@ -122,6 +122,18 @@ if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
     include_once __DIR__.'/Stubs/Mcp/IMcpToolProvider.php';
 }
 
+// Decidesk decision-event stubs — loaded when the decidesk app is absent so the
+// procest delegation services + DecisionConcludedListener can be unit-tested
+// against the decidesk event contract. The real classes ship in decidesk
+// (OCA\Decidesk\Event\*); these stubs no-op when the real classes are present.
+if (class_exists('\\OCA\\Decidesk\\Event\\DecisionRequestedEvent') === false) {
+    include_once __DIR__.'/Stubs/Decidesk/Event/DecisionRequestedEvent.php';
+}
+
+if (class_exists('\\OCA\\Decidesk\\Event\\DecisionConcludedEvent') === false) {
+    include_once __DIR__.'/Stubs/Decidesk/Event/DecisionConcludedEvent.php';
+}
+
 if (defined('OC_CONSOLE') === false && class_exists('\OC_App') === true) {
     \OC_App::loadApps();
     \OC_App::loadApp('procest');

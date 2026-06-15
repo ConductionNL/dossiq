@@ -64,7 +64,7 @@ class BesluitMaterialisationService
      *
      * @param string              $caseId    The case UUID.
      * @param string              $besluitId The existing ZGW Besluit UUID on the case (or empty for new).
-     * @param array<string,mixed> $outcome   Normalised outcome from ContractDecisionDelegationService::consumeOutcome().
+     * @param array<string,mixed> $outcome   Normalised outcome (result, decidedAt, motivering, signer, method).
      *
      * @return array<string,mixed> The persisted Besluit record.
      *
@@ -80,14 +80,19 @@ class BesluitMaterialisationService
         }
 
         $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('besluit_schema') ?: 'besluit';
+        $schema   = $this->settingsService->getConfigValue('besluit_schema');
+        if ($schema === '') {
+            $schema = 'besluit';
+        }
 
         // Build the ZGW Besluit payload from the decidesk outcome (REQ-PDCD-003).
         $besluit = $this->buildBesluitPayload(caseId: $caseId, outcome: $outcome);
 
         // Merge with existing Besluit when updating (non-empty UUID), otherwise create.
+        $uuid = null;
         if ($besluitId !== '') {
             $besluit['uuid'] = $besluitId;
+            $uuid            = $besluitId;
         }
 
         try {
@@ -95,7 +100,7 @@ class BesluitMaterialisationService
                 object: $besluit,
                 register: $register,
                 schema: $schema,
-                uuid: $besluitId !== '' ? $besluitId : null,
+                uuid: $uuid,
             );
         } catch (Throwable $e) {
             $this->logger->error(
@@ -111,6 +116,46 @@ class BesluitMaterialisationService
 
         return $saved;
     }//end materialise()
+
+    /**
+     * Materialise the ZGW Besluit from a decidesk `DecisionConcludedEvent`.
+     *
+     * Maps the decidesk event getters into the normalised-outcome array shape
+     * that {@see materialise()} consumes, then materialises the ZGW Besluit. The
+     * Besluiten-API payload shape is unchanged; only the *origin* of the values
+     * is the concluded event rather than a poll of the decidesk outcome.
+     *
+     * The `getOutcome()` string is used as the ZGW result verbatim when present,
+     * falling back to `getStatus()` (approved/rejected/withdrawn/pending).
+     *
+     * @param string              $caseId    The case UUID.
+     * @param string              $besluitId The existing ZGW Besluit UUID on the case (or empty for new).
+     * @param array<string,mixed> $event     The event projection: status, outcome, decidedAt, motivering, signer, method.
+     *
+     * @return array<string,mixed> The persisted Besluit record.
+     *
+     * @throws RuntimeException When the case cannot be loaded or the Besluit cannot be persisted.
+     *
+     * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+     */
+    public function materialiseFromConcludedEvent(string $caseId, string $besluitId, array $event): array
+    {
+        $result = (string) ($event['outcome'] ?? '');
+        if ($result === '') {
+            $result = (string) ($event['status'] ?? '');
+        }
+
+        $outcome = [
+            'result'     => $result,
+            'decidedAt'  => (string) ($event['decidedAt'] ?? ''),
+            'motivering' => (string) ($event['motivering'] ?? ''),
+            'signer'     => (string) ($event['signer'] ?? ''),
+            'method'     => (string) ($event['method'] ?? ''),
+            'raw'        => $event,
+        ];
+
+        return $this->materialise(caseId: $caseId, besluitId: $besluitId, outcome: $outcome);
+    }//end materialiseFromConcludedEvent()
 
     /**
      * Build the Besluiten-API payload from a decidesk outcome.
@@ -132,14 +177,14 @@ class BesluitMaterialisationService
 
         // ZGW Besluiten-API shape — datum, result, toelichting are the canonical fields.
         return [
-            'zaakRef'             => $caseId,
-            'result'              => $result,
-            'datum'               => $decidedAt,
-            'toelichting'         => $motivering,
+            'zaakRef'        => $caseId,
+            'result'         => $result,
+            'datum'          => $decidedAt,
+            'toelichting'    => $motivering,
             // Audit fields: decision-origin provenance for the zaak dossier.
-            'mandaathouder'       => $signer,
-            'besluitMethode'      => $method,
-            'besluitBron'         => 'decidesk',
+            'mandaathouder'  => $signer,
+            'besluitMethode' => $method,
+            'besluitBron'    => 'decidesk',
         ];
     }//end buildBesluitPayload()
 }//end class

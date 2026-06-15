@@ -3,48 +3,34 @@
 /**
  * Remaining Decision Delegation Unit Tests
  *
- * Covers the procest-delegate-remaining-decisions-to-decidesk delegation
- * plumbing: the shared raiseDecision core fails CLOSED when the decidesk
- * integration leaf is unavailable (REQ-PDRD-002), and the thin per-flow
- * siblings (BezwaarDecisionDelegationService, AdviceDelegationService) raise a
- * Decision of the right decisionType and return the ref when the leaf is
- * available (REQ-PDRD-001).
+ * Covers the procest decision-delegation plumbing after the switch to the
+ * decidesk IEventDispatcher contract: the shared raiseDecision core fails CLOSED
+ * when the dispatched DecisionRequestedEvent is not handled (REQ-PDCD-002), and
+ * the thin per-flow siblings (BezwaarDecisionDelegationService,
+ * AdviceDelegationService) dispatch a Decision of the right decisionType and
+ * return the decidesk decisionId when it is handled (REQ-PDCD-001).
  *
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @copyright 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md
+ * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Decidesk\Event\DecisionRequestedEvent;
 use OCA\Procest\Service\AdviceDelegationService;
 use OCA\Procest\Service\BezwaarDecisionDelegationService;
 use OCA\Procest\Service\ContractDecisionDelegationService;
-use OCP\App\IAppManager;
+use OCP\EventDispatcher\Event;
+use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-
-/**
- * Integration-leaf stub matching the decidesk hub named-arg surface.
- */
-interface DecisionLeafStub
-{
-    /**
-     * Create a decidesk Decision.
-     *
-     * @param array<string,mixed> $payload The decision payload.
-     *
-     * @return array<string,mixed>
-     */
-    public function createDecision(array $payload): array;
-}//end interface
 
 /**
  * @covers \OCA\Procest\Service\ContractDecisionDelegationService
@@ -53,21 +39,19 @@ interface DecisionLeafStub
  */
 class RemainingDecisionDelegationTest extends TestCase
 {
-
     /**
-     * raiseDecision fails CLOSED when OpenRegister (the leaf source) is absent.
+     * raiseDecision fails CLOSED when the dispatched event is not handled.
      *
      * @return void
      */
-    public function testRaiseDecisionFailsClosedWhenLeafUnavailable(): void
+    public function testRaiseDecisionFailsClosedWhenEventUnhandled(): void
     {
-        $appManager = $this->createMock(IAppManager::class);
-        // No openregister installed → resolveIntegrationService() returns null.
-        $appManager->method('getInstalledApps')->willReturn(['procest']);
+        // Dispatcher that does NOT handle the event (decidesk listener absent).
+        $dispatcher = $this->createMock(IEventDispatcher::class);
+        $dispatcher->method('dispatchTyped');
 
         $core = new ContractDecisionDelegationService(
-            $appManager,
-            $this->createMock(ContainerInterface::class),
+            $dispatcher,
             $this->createMock(LoggerInterface::class),
         );
 
@@ -79,26 +63,23 @@ class RemainingDecisionDelegationTest extends TestCase
             externalReference: 'case-1',
             subject: ['subjectSchema' => 'adviesAanvraag', 'subjectId' => 'a-1'],
         );
-    }//end testRaiseDecisionFailsClosedWhenLeafUnavailable()
+    }//end testRaiseDecisionFailsClosedWhenEventUnhandled()
 
     /**
-     * raiseDecision returns the decidesk decisionRef when the leaf is available.
+     * raiseDecision returns the decidesk decisionId when the event is handled.
      *
      * @return void
      */
-    public function testRaiseDecisionReturnsRefWhenLeafAvailable(): void
+    public function testRaiseDecisionReturnsRefWhenHandled(): void
     {
-        $leaf = $this->createMock(DecisionLeafStub::class);
-        $leaf->expects($this->once())
-            ->method('createDecision')
-            ->willReturnCallback(function (array $payload): array {
-                // The decisionType + sourceApp provenance must be carried.
-                $this->assertSame('advice', $payload['decisionType']);
-                $this->assertSame('procest', $payload['sourceApp']);
-                return ['id' => 'decision-uuid-123'];
-            });
-
-        $core = $this->coreWithLeaf($leaf);
+        $core = $this->coreThatHandlesWith(
+                'decision-uuid-123',
+                function (DecisionRequestedEvent $event): void {
+                    // The decisionType + sourceApp provenance must be carried.
+                    $this->assertSame('advice', $event->getDecisionType());
+                    $this->assertSame('procest', $event->getSourceApp());
+                }
+                );
 
         $ref = $core->raiseDecision(
             decisionType: ContractDecisionDelegationService::DECISION_TYPE_ADVICE,
@@ -107,47 +88,50 @@ class RemainingDecisionDelegationTest extends TestCase
         );
 
         $this->assertSame('decision-uuid-123', $ref);
-    }//end testRaiseDecisionReturnsRefWhenLeafAvailable()
+    }//end testRaiseDecisionReturnsRefWhenHandled()
 
     /**
-     * The bezwaar sibling raises a bezwaar-decision Decision and returns the ref.
+     * The bezwaar sibling dispatches a bezwaar-decision Decision and returns the ref.
      *
      * @return void
      */
     public function testBezwaarSiblingRaisesBezwaarDecision(): void
     {
-        $leaf = $this->createMock(DecisionLeafStub::class);
-        $leaf->method('createDecision')->willReturnCallback(function (array $payload): array {
-            $this->assertSame('bezwaar-decision', $payload['decisionType']);
-            $this->assertSame('bezwaarDecision', $payload['subjectSchema']);
-            return ['id' => 'bd-1'];
-        });
+        $core = $this->coreThatHandlesWith(
+                'bd-1',
+                function (DecisionRequestedEvent $event): void {
+                    $this->assertSame('bezwaar-decision', $event->getDecisionType());
+                    $this->assertSame('bezwaarDecision', $event->getSubjectSchema());
+                }
+                );
 
-        $sibling = new BezwaarDecisionDelegationService($this->coreWithLeaf($leaf));
+        $sibling = new BezwaarDecisionDelegationService($core);
 
-        $ref = $sibling->raiseBezwaarDecision('bezwaar-1', [
-            'subjectId'       => 'dec-1',
-            'dispositionType' => 'ongegrond',
-            'reasoning'       => 'r',
-            'legalBasis'      => 'Awb 7:11',
-        ]);
+        $ref = $sibling->raiseBezwaarDecision(
+                'bezwaar-1',
+                [
+                    'subjectId'       => 'dec-1',
+                    'dispositionType' => 'ongegrond',
+                    'reasoning'       => 'r',
+                    'legalBasis'      => 'Awb 7:11',
+                ]
+                );
 
         $this->assertSame('bd-1', $ref);
     }//end testBezwaarSiblingRaisesBezwaarDecision()
 
     /**
-     * The advice sibling fails CLOSED when the leaf is unavailable.
+     * The advice sibling fails CLOSED when the event is not handled.
      *
      * @return void
      */
     public function testAdviceSiblingFailsClosed(): void
     {
-        $appManager = $this->createMock(IAppManager::class);
-        $appManager->method('getInstalledApps')->willReturn(['procest']);
+        $dispatcher = $this->createMock(IEventDispatcher::class);
+        $dispatcher->method('dispatchTyped');
 
         $core    = new ContractDecisionDelegationService(
-            $appManager,
-            $this->createMock(ContainerInterface::class),
+            $dispatcher,
             $this->createMock(LoggerInterface::class),
         );
         $sibling = new AdviceDelegationService($core);
@@ -159,67 +143,56 @@ class RemainingDecisionDelegationTest extends TestCase
     }//end testAdviceSiblingFailsClosed()
 
     /**
-     * The voorstel besluit path raises a report-adoption Decision.
+     * The voorstel besluit path dispatches a report-adoption Decision.
      *
      * @return void
      */
     public function testVoorstelBesluitRaisesReportAdoption(): void
     {
-        $leaf = $this->createMock(DecisionLeafStub::class);
-        $leaf->method('createDecision')->willReturnCallback(function (array $payload): array {
-            $this->assertSame('report-adoption', $payload['decisionType']);
-            $this->assertSame('voorstel', $payload['subjectSchema']);
-            return ['id' => 'ra-1'];
-        });
+        $core = $this->coreThatHandlesWith(
+                'ra-1',
+                function (DecisionRequestedEvent $event): void {
+                    $this->assertSame('report-adoption', $event->getDecisionType());
+                    $this->assertSame('voorstel', $event->getSubjectSchema());
+                }
+                );
 
-        $sibling = new AdviceDelegationService($this->coreWithLeaf($leaf));
+        $sibling = new AdviceDelegationService($core);
 
         $ref = $sibling->raiseVoorstelBesluit('voorstel-1', ['title' => 'Besluit X']);
         $this->assertSame('ra-1', $ref);
     }//end testVoorstelBesluitRaisesReportAdoption()
 
     /**
-     * Build a delegation core whose ADR-019 registry resolves to the given leaf.
+     * Build a delegation core whose dispatcher simulates the decidesk listener
+     * marking the event handled and writing the given decisionId.
      *
-     * @param object $leaf The integration leaf stub.
+     * @param string        $decisionId The decisionId the simulated listener writes.
+     * @param callable|null $assert     Optional assertion callback on the dispatched event.
      *
      * @return ContractDecisionDelegationService
      */
-    private function coreWithLeaf(object $leaf): ContractDecisionDelegationService
+    private function coreThatHandlesWith(string $decisionId, ?callable $assert=null): ContractDecisionDelegationService
     {
-        $appManager = $this->createMock(IAppManager::class);
-        $appManager->method('getInstalledApps')->willReturn(['procest', 'openregister']);
+        $dispatcher = $this->createMock(IEventDispatcher::class);
+        $dispatcher->expects($this->once())
+            ->method('dispatchTyped')
+            ->willReturnCallback(
+                    function (Event $event) use ($decisionId, $assert): void {
+                        $this->assertInstanceOf(DecisionRequestedEvent::class, $event);
+                        if ($assert !== null) {
+                            $assert($event);
+                        }
 
-        $registry = new class($leaf) {
-            /**
-             * @param object $leaf Leaf to return from getLeaf().
-             */
-            public function __construct(private object $leaf)
-            {
-            }
-
-            /**
-             * Resolve a named integration leaf.
-             *
-             * @param string $name Leaf name.
-             *
-             * @return object
-             */
-            public function getLeaf(string $name): object
-            {
-                return $this->leaf;
-            }
-        };
-
-        $container = $this->createMock(ContainerInterface::class);
-        $container->method('get')
-            ->with('OCA\\OpenRegister\\Service\\IntegrationService')
-            ->willReturn($registry);
+                        // Simulate the decidesk in-process listener writing the result.
+                        $event->setHandled(true);
+                        $event->setDecisionId($decisionId);
+                    }
+                    );
 
         return new ContractDecisionDelegationService(
-            $appManager,
-            $container,
+            $dispatcher,
             $this->createMock(LoggerInterface::class),
         );
-    }//end coreWithLeaf()
+    }//end coreThatHandlesWith()
 }//end class
