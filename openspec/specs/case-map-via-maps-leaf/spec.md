@@ -51,12 +51,14 @@ parallel location store or write map-UI state to its register.
 - **THEN** the bespoke per-case `LocationTab.vue` (single-case Leaflet surface) SHALL NOT be present
 - **AND** the case detail SHALL surface the maps leaf tab instead
 
-> NOTE (scope): Removing `WmsWfsService` / `WfsExportService` /
-> `LocationService` and the `src/components/map/*.vue` stack is DEFERRED. Those
-> back the **multi-object** cases-on-map overview (`CasesOnMapView`, the `/map`
-> page), which the per-object maps leaf cannot yet render (it returns lat/lng
-> rows for one object). That removal is blocked on a page-level maps-overview
-> surface in OR — tracked as Codeberg procest issue #112.
+> NOTE (scope): RESOLVED (issue #112, change `migrate-cases-on-map-to-maps-overview-leaf`).
+> The **multi-object** cases-on-map overview (`CasesOnMapView`, the `/map` page)
+> now consumes OpenRegister's page-level **maps-overview** surface (openregister
+> PR #154) — RBAC-scoped marker points + a declarative base layer, rendered
+> through the library's `CnMapWidget`. The bespoke Leaflet stack
+> (`src/components/map/*`) and the WMS/WFS service classes (`WmsWfsService` /
+> `WfsService` / `WfsExportService` / `GeoService` / `LocationService` /
+> `MapLayerService` / `GisProxyService`) have been removed.
 
 ---
 

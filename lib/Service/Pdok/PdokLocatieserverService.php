@@ -17,8 +17,8 @@
  *
  * Outage handling: 3 consecutive 5xx responses within 60 s flip the service
  * into a 5 min "degraded" state; during that window `suggest` short-circuits
- * to an empty array so the calling LocationService can fall back to free-text
- * (REQ-CL-3 graceful degradation).
+ * to an empty array so the calling address-resolution path can fall back to
+ * free-text (REQ-CL-3 graceful degradation).
  *
  * @category Service
  * @package  OCA\Procest\Service\Pdok
@@ -115,7 +115,7 @@ class PdokLocatieserverService
      * Autocomplete suggest call.
      *
      * Returns an empty array while the service is in a degraded state so the
-     * caller (LocationService) can fall back to free-text input.
+     * caller can fall back to free-text input.
      *
      * @param string $query Free-text address fragment.
      * @param array  $fq    Optional Solr-style filter queries (e.g.

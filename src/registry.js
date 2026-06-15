@@ -38,12 +38,12 @@ import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicati
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
 
-// GIS / cases-on-map — full-screen clustered map dashboard + read-only
-// single-case geo viewer. Both are thin wrappers over CaseMap; data shaping
-// lives in src/services/caseGeoService.js (pure, unit-tested).
-// @spec openspec/specs/gis-integration/spec.md
+// Cases-on-map — full-screen multi-object overview. Consumes OpenRegister's
+// page-level maps-overview leaf (OR #154): OR owns the geometry extraction,
+// RBAC scoping, and base-layer config; the markers render through the lib's
+// `CnMapWidget`. No bespoke Leaflet / WMS / WFS stack in procest (ADR-022).
+// @spec openspec/specs/case-map-overview/spec.md
 import CasesOnMapView from './views/CasesOnMapView.vue'
-import GeoViewer from './components/map/GeoViewer.vue'
 
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
@@ -162,18 +162,12 @@ const registry = {
 		_note: 'KPI-strip-driven work queue.',
 	},
 
-	// --- GIS / cases-on-map (gis-integration). ---
-	// @spec openspec/specs/gis-integration/spec.md
+	// --- Cases-on-map overview (case-map-overview). ---
+	// @spec openspec/specs/case-map-overview/spec.md
 	CasesOnMapView: {
 		kind: 'page',
 		component: CasesOnMapView,
-		_note: 'Full-screen clustered map of located cases (filters + GeoJSON export). Map rendering delegated to CaseMap; data via /api/cases/geo with a per-object access guard.',
-	},
-	// @spec openspec/specs/gis-integration/spec.md
-	GeoViewer: {
-		kind: 'widget',
-		component: GeoViewer,
-		_note: 'Read-only embedded single-case map (case-detail Locatie tab). Thin wrapper over CaseMap.',
+		_note: 'Full-screen multi-object cases-on-map overview. Markers come from OpenRegister\'s page-level maps-overview surface (RBAC-scoped, OR #154) and render through the lib\'s CnMapWidget — no bespoke Leaflet/WMS/WFS plumbing (ADR-022).',
 	},
 
 	DoorlooptijdView: {
