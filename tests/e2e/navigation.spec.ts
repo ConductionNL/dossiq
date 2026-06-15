@@ -15,8 +15,12 @@ test.describe('Sidebar Navigation', () => {
 		// Per procest-nav-dedup-and-grouping the operational core is grouped:
 		// "My Work" now lives under the "Work" group and the "Cases" leaf was
 		// relabelled to "All cases" (under the "Cases" group) to drop the
-		// duplicate "Cases" label. All routes are unchanged.
-		for (const label of ['Dashboard', 'My Work', 'All cases', 'Tasks']) {
+		// duplicate "Cases" label. The standalone "Tasks" top-level entry was
+		// dropped by that same dedup pass — Tasks is now reached from a case's
+		// Tasks sidebar tab (and the /tasks page route stays deep-linkable,
+		// covered by pages.spec.ts), so it is no longer a top-level nav link.
+		// All routes are unchanged.
+		for (const label of ['Dashboard', 'My Work', 'All cases']) {
 			await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible()
 		}
 
@@ -32,7 +36,8 @@ test.describe('Sidebar Navigation', () => {
 			'My Work': '/apps/procest/my-work',
 			// "Cases" leaf relabelled to "All cases" (route/href unchanged).
 			'All cases': '/apps/procest/cases',
-			Tasks: '/apps/procest/tasks',
+			// "Tasks" is no longer a top-level nav entry (dropped by the
+			// nav-dedup pass); its /tasks page route stays deep-linkable.
 		}
 
 		for (const [name, href] of Object.entries(expected)) {

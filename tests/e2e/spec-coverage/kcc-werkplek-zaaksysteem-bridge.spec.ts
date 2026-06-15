@@ -22,19 +22,32 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { loadAllAdminSections } from '../helpers/nav'
 
 const ADMIN_SETTINGS_URL = '/settings/admin/procest'
 
 test.describe('kcc-werkplek-zaaksysteem-bridge spec coverage', () => {
+	// The procest admin settings page is very heavy (1.9MB DOM, 20+ sections
+	// with maps + forms) and renders sections progressively, so triple the
+	// per-test budget — the default 30s is not enough to load + scroll it.
+	test.slow()
 
 	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#kcc-integration-settings-render-and-persist
 	test('KCC integration settings render the identification + sentiment controls', async ({ page }) => {
-		await page.goto(ADMIN_SETTINGS_URL)
+		// The procest admin settings page mounts many heavy sections (ZGW, VTH,
+		// Map Layers, AI, …); waiting for the full `load` event races past the
+		// 30s test timeout and leaves page.url() empty. `domcontentloaded` is
+		// enough — the KCC fields are asserted explicitly below.
+		await page.goto(ADMIN_SETTINGS_URL, { waitUntil: 'domcontentloaded' })
 		await expect(page).not.toHaveURL(/login/, { timeout: 10000 })
 
-		// The KCC-werkplek Integration section heading renders inside AdminRoot.
-		const heading = page.getByRole('heading', { name: /KCC-werkplek Integration/i })
-		await expect(heading.first()).toBeVisible({ timeout: 15000 })
+		// The admin settings page renders its sections progressively; the KCC
+		// section is near the bottom and only mounts once scrolled near, so
+		// load every section into the DOM before asserting.
+		await loadAllAdminSections(page)
+		const heading = page.getByRole('heading', { name: /KCC-werkplek Integration/i }).first()
+		await heading.scrollIntoViewIfNeeded({ timeout: 15000 }).catch(() => {})
+		await expect(heading).toBeVisible({ timeout: 15000 })
 
 		// Identification score threshold and sentiment trigger-word fields are present.
 		await expect(page.locator('#kcc_identification_score_threshold')).toBeVisible({ timeout: 10000 })
@@ -43,11 +56,17 @@ test.describe('kcc-werkplek-zaaksysteem-bridge spec coverage', () => {
 
 	// @e2e openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#kcc-integration-settings-render-and-persist
 	test('KCC integration settings expose belplan overflow + voorblad-limit controls', async ({ page }) => {
-		await page.goto(ADMIN_SETTINGS_URL)
+		// The procest admin settings page mounts many heavy sections (ZGW, VTH,
+		// Map Layers, AI, …); waiting for the full `load` event races past the
+		// 30s test timeout and leaves page.url() empty. `domcontentloaded` is
+		// enough — the KCC fields are asserted explicitly below.
+		await page.goto(ADMIN_SETTINGS_URL, { waitUntil: 'domcontentloaded' })
 		await expect(page).not.toHaveURL(/login/, { timeout: 10000 })
 
-		await expect(page.getByRole('heading', { name: /KCC-werkplek Integration/i }).first())
-			.toBeVisible({ timeout: 15000 })
+		await loadAllAdminSections(page)
+		const kccHeading = page.getByRole('heading', { name: /KCC-werkplek Integration/i }).first()
+		await kccHeading.scrollIntoViewIfNeeded({ timeout: 15000 }).catch(() => {})
+		await expect(kccHeading).toBeVisible({ timeout: 15000 })
 
 		await expect(page.locator('#kcc_max_zaken_voorblad')).toBeVisible({ timeout: 10000 })
 		await expect(page.locator('#kcc_belplan_overflow_threshold_wachttijd')).toBeVisible({ timeout: 10000 })
