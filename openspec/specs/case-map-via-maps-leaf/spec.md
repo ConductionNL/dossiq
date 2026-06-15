@@ -5,6 +5,8 @@ TBD - created by archiving change migrate-maps-to-maps-leaf. Update Purpose afte
 ## Requirements
 ### Requirement: Case Detail Renders Its Location Through The OR Maps Leaf
 
+@e2e exclude Map rendering (tiles, marker placement, empty/no-location state) is owned by OpenRegister's `maps` integration leaf (cross-app, ADR-019); the leaf tab surfaces via `@conduction/nextcloud-vue`'s builtin integration registry and fetches from the OR integrations endpoint. Without the OR maps leaf installed it cannot be exercised by a procest-only UI e2e. The procest-side change is the removal of the bespoke `CaseMap.vue`/Leaflet surface (a static no-parallel-UI check) plus the registry/manifest tab wiring (gate-22 manifest validation), not a procest UI surface.
+
 The case detail page SHALL render the case's geographic location using OpenRegister's `maps`
 integration leaf (ADR-019) instead of an in-app Leaflet component. Procest SHALL NOT register
 its own map UI, tile source, or layer switcher.
@@ -28,6 +30,8 @@ its own map UI, tile source, or layer switcher.
 ---
 
 ### Requirement: Geo Data Contract Stays In Procest's Register
+
+@e2e exclude The `location` geo property declaration is an OpenRegister schema/config concern verified by schema validation + PHPUnit (`caseGeoService`), and the removal of the bespoke per-case `LocationTab.vue` is a static codebase check — neither is a procest-only browser UI surface. Editing `location` and seeing the marker update is driven by OR's object form + the cross-app maps leaf, which a procest-only e2e cannot mount without the OR maps leaf installed.
 
 The `case` schema SHALL retain its `location` geo-typed property as the single source of truth
 for case coordinates. The maps leaf SHALL read this property; procest SHALL NOT introduce a
@@ -57,6 +61,8 @@ parallel location store or write map-UI state to its register.
 ---
 
 ### Requirement: WMS/WFS And Layer Rendering Are Delegated To The Leaf
+
+@e2e exclude Layer switching / WMS/WFS background rendering on the per-case surface is owned by the OR maps leaf (cross-app, ADR-019); the procest-side assertion ("procest issues no direct WMS/WFS HTTP request from its own service classes" on the per-case tab) is a static no-direct-call check covered by code review + PHPUnit, not a procest-only browser UI surface drivable without the OR maps leaf installed.
 
 On the per-case map surface, WMS/WFS background layers, layer switching, and legend rendering SHALL
 be the maps leaf's responsibility; the per-case detail SHALL NOT mount an in-app layer-switcher
