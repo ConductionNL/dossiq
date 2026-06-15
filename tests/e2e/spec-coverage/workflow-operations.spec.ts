@@ -11,7 +11,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { navTo, trackProcestErrors } from '../helpers/nav'
+import { navTo, navToRoute, trackProcestErrors } from '../helpers/nav'
 
 test.describe('Workflow Board page', () => {
 	// @e2e openspec/specs/workflow-board/spec.md#workflow-board-renders-kanban-shell
@@ -23,10 +23,13 @@ test.describe('Workflow Board page', () => {
 		await expect(page.locator('.workflow-board__header h2'))
 			.toBeVisible({ timeout: 15000 })
 		// With no status types configured the board shows its guidance
-		// empty-state; with statuses it renders columns. Accept either, never
-		// an error render.
+		// empty-state; with statuses it renders one `.board-column` per status
+		// type (the seeded register uses the Dutch ZGW status names —
+		// "Ontvangen", … — each with a per-column "No cases" surface). Assert
+		// the data- and locale-independent kanban surface: a status column or
+		// the no-statuses guidance, never an error render.
 		await expect(
-			page.locator('main').getByText(/No workflow statuses configured|To Do|In Progress|Done/).first(),
+			page.locator('.board-column, .workflow-board__empty').first(),
 		).toBeVisible({ timeout: 10000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
@@ -55,7 +58,9 @@ test.describe('Case Map page', () => {
 	// @e2e openspec/specs/case-map/spec.md#case-map-renders-map-surface
 	test('case map renders its heading and an interactive map surface', async ({ page }) => {
 		const errors = trackProcestErrors(page)
-		await navTo(page, 'Map')
+		// Case Map has no top-level sidebar leaf after the nav-dedup pass; its
+		// /map page route stays reachable, so navigate to it client-side.
+		await navToRoute(page, '/map')
 		await expect(page.getByRole('heading', { name: 'Case map' }))
 			.toBeVisible({ timeout: 15000 })
 		// Leaflet renders a tile/zoom container — assert the map pane exists
