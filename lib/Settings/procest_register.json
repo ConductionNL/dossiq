@@ -555,7 +555,8 @@
         "type": "object",
         "configuration": {
           "linkedTypes": [
-            "mail"
+            "mail",
+            "calendar"
           ]
         },
         "required": [

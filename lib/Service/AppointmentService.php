@@ -3,9 +3,15 @@
 /**
  * Procest Appointment Service.
  *
- * Orchestrates citizen appointments across pluggable scheduling backends
- * (JCC, Qmatic, or local fallback) and persists appointment records in
- * OpenRegister.
+ * Orchestrates citizen appointments against EXTERNAL municipal scheduling
+ * systems (JCC Afspraken, Qmatic Orchestra) and persists the resulting
+ * appointment records — plus their zaak-specific metadata — in OpenRegister.
+ *
+ * The former in-app `LocalBackend` scheduling path has been removed: internal
+ * (non-external) case appointments are now scheduled and surfaced through
+ * OpenRegister's `calendar` integration leaf on the case detail page (ADR-022).
+ * External Qmatic/JCC timeslot booking is an ADR-022 exception the leaf cannot
+ * host (see docs/adr/0001-external-appointment-backends-exception.md).
  *
  * @category Service
  * @package  OCA\Procest\Service
@@ -26,9 +32,9 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\Service\AppointmentBackend\AppointmentBackendInterface;
-use OCA\Procest\Service\AppointmentBackend\LocalBackend;
 use OCA\Procest\Service\AppointmentBackend\JccBackend;
 use OCA\Procest\Service\AppointmentBackend\QmaticBackend;
+use RuntimeException;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
 use Psr\Container\ContainerInterface;
@@ -37,8 +43,9 @@ use Psr\Log\LoggerInterface;
 /**
  * Service for managing appointments linked to cases.
  *
- * Dispatches to configured backend (JCC, Qmatic, or local fallback)
- * and stores appointment records in OpenRegister.
+ * Dispatches to the configured EXTERNAL backend (JCC or Qmatic) and stores
+ * appointment records in OpenRegister. There is no local fallback — internal
+ * scheduling lives in the OR calendar leaf.
  */
 class AppointmentService
 {
@@ -245,16 +252,20 @@ class AppointmentService
     }//end getAppointmentByToken()
 
     /**
-     * Get the configured appointment backend.
+     * Get the configured EXTERNAL appointment backend (JCC or Qmatic).
      *
-     * @return AppointmentBackendInterface The backend instance.
+     * The in-app `LocalBackend` fallback was removed when internal scheduling
+     * moved to the OR calendar leaf (ADR-022). Only external municipal-system
+     * backends remain; an unconfigured or unknown backend is a configuration
+     * error rather than a silent local fallback.
+     *
+     * @return AppointmentBackendInterface The external backend instance.
+     *
+     * @throws RuntimeException When no supported external backend is configured.
      */
     private function getBackend(): AppointmentBackendInterface
     {
         $backendType = $this->settingsService->getConfigValue('appointment_backend');
-        if ($backendType === '') {
-            $backendType = 'local';
-        }
 
         $apiUrl = $this->settingsService->getConfigValue('appointment_backend_url');
         $apiKey = $this->settingsService->getConfigValue('appointment_backend_api_key');
@@ -275,7 +286,10 @@ class AppointmentService
                     apiKey: $apiKey
                 );
             default:
-                return new LocalBackend(logger: $this->logger);
+                throw new RuntimeException(
+                    'No external appointment backend configured. Configure JCC or Qmatic, '
+                    .'or schedule internal appointments through the OpenRegister calendar leaf.'
+                );
         }
     }//end getBackend()
 

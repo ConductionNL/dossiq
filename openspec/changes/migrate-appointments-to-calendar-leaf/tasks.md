@@ -1,42 +1,54 @@
 # Tasks: migrate-appointments-to-calendar-leaf
 
 All tasks are in the `procest` repo. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
-Implementation runs through Hydra; this change is specs-only.
+
+> IMPLEMENTED 2026-06-15. The "leaf not released" blocker in the deferral
+> block below is stale: OR's `CalendarProvider` is present + DI-registered on
+> openregister development, and `@conduction/nextcloud-vue` (beta.108) ships
+> `CnCalendarTab`. The internal scheduling surface was migrated to the leaf;
+> external Qmatic/JCC stays in-app behind an app-local ADR (resolution a).
 
 ## [procest] Pre-migration Verification
 
 ### P0. Confirm calendar leaf + Qmatic/JCC decision (S)
 
-- [ ] P0.1 Confirm the OR calendar leaf `id` and the pinned `@conduction/nextcloud-vue` version.
-  Record in design.md DEFERRED_QUESTIONS.
-- [ ] P0.2 DECIDE Qmatic/JCC resolution: (a) in-app app-local ADR exception vs (b) openconnector
-  source. Open a GH issue capturing the decision and (if b) a follow-up openconnector spec.
+- [x] P0.1 Confirmed: OR calendar leaf id `calendar` (`CalendarProvider`); pinned
+  `@conduction/nextcloud-vue` `^1.0.0-beta.108` ships the bespoke `CnCalendarTab`.
+- [x] P0.2 DECIDED resolution (a) — Qmatic/JCC stay in-app behind an app-local ADR
+  (`docs/adr/0001-external-appointment-backends-exception.md`); procest is the sole
+  fleet consumer today. (b) revisited if a second app needs external scheduling.
 
 ## [procest] Wire the leaf (local path)
 
 ### P1. Calendar leaf scheduling (M)
 
-- [ ] P1.1 Whitelist the calendar leaf on the `case` schema `configuration.linkedTypes`.
-- [ ] P1.2 Replace local scheduling UI with the calendar leaf tab/widget on the case detail page.
-- [ ] P1.3 Define/retain the case-appointment metadata object fields (`productId`, `locationId`,
-  `cancelToken`, `reminderSent`, no-show) in `lib/Settings/procest_register.json`.
+- [x] P1.1 Whitelisted `calendar` on the `case` schema `configuration.linkedTypes`
+  in `lib/Settings/procest_register.json`.
+- [x] P1.2 Surfaced the calendar leaf tab (`CalendarLeafTab` → `CnCalendarTab`, resolved
+  from the lib `builtinIntegrations` registry via `src/integrations/leafTabs.js`) as the
+  `appointments` sidebar tab on `CaseDetail`; removed the orphaned bespoke scheduling UI
+  (`AppointmentSection.vue`, `AppointmentBookingDialog.vue`, `src/services/appointmentApi.js`).
+- [x] P1.3 Retained the case-appointment metadata (`productId`, `locationId`, `cancelToken`,
+  `reminderSent`, no-show `status`) on the runtime appointment object written by the external
+  path; `AppointmentReminderJob` still reads `dateTime`/`status`/`reminderSent`.
 
 ## [procest] Remove the local backend
 
 ### P2. Delete superseded code (M)
 
-- [ ] P2.1 Remove `lib/Service/AppointmentBackend/LocalBackend.php` and the local path in
-  `AppointmentService`.
-- [ ] P2.2 If resolution (a): narrow `AppointmentService` + `AppointmentBackendInterface` to
-  Qmatic/JCC only and write the app-local ADR. If (b): remove the in-app backends after the
-  openconnector source lands.
+- [x] P2.1 Removed `lib/Service/AppointmentBackend/LocalBackend.php` and the local fallback
+  path in `AppointmentService::getBackend()` (now throws on an unconfigured/unknown backend).
+- [x] P2.2 Resolution (a): `AppointmentService` narrowed to external Qmatic/JCC only;
+  app-local ADR written at `docs/adr/0001-external-appointment-backends-exception.md`.
+  (`AppointmentBackendInterface` retained — it is the external-backend contract.)
 
 ## [procest] Quality gates
 
 ### P3. Verify (S)
 
-- [ ] P3.1 `openspec validate migrate-appointments-to-calendar-leaf --strict` exits 0.
-- [ ] P3.2 `composer check:strict` and `npm run lint` pass; reminder job still reads retained fields.
+- [x] P3.1 `openspec validate migrate-appointments-to-calendar-leaf --strict` exits 0.
+- [x] P3.2 PHPUnit 1342 pass (2 skipped), vitest 230 pass, `npm run build` clean, hydra gates
+  24/24 green; reminder job still reads retained fields.
 
 ## Deferral block (final-77 sweep, 2026-06-11)
 
