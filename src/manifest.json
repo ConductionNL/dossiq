@@ -704,6 +704,13 @@
 						"icon": "icon-picture",
 						"component": "PhotosLeafTab",
 						"order": 75
+					},
+					{
+						"id": "location",
+						"label": "Location",
+						"icon": "icon-address",
+						"component": "MapsLeafTab",
+						"order": 80
 					}
 				],
 				"documentationUrl": "https://procest.conduction.nl"
