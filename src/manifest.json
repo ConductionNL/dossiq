@@ -685,6 +685,13 @@
 						"order": 60
 					},
 					{
+						"id": "appointments",
+						"label": "Appointments",
+						"icon": "icon-calendar-dark",
+						"component": "CalendarLeafTab",
+						"order": 65
+					},
+					{
 						"id": "forms",
 						"label": "Forms",
 						"icon": "icon-edit",

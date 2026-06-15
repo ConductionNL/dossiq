@@ -4,9 +4,9 @@
 // Leaf-tab resolver — ADR-022 (apps consume OR integration leaves).
 //
 // OpenRegister ships integration *providers* (PHP) under
-// `lib/Service/Integration/Providers/` (FormsProvider, PhotosProvider,
-// CalendarProvider, MapsProvider, …). Their matching Vue surfaces
-// (CnFormsTab, CnPhotosTab, CnCalendarTab, CnMapsTab) live in
+// `lib/Service/Integration/Providers/` (CalendarProvider, FormsProvider,
+// PhotosProvider, MapsProvider, …). Their matching Vue surfaces
+// (CnCalendarTab, CnFormsTab, CnPhotosTab, CnMapsTab) live in
 // `@conduction/nextcloud-vue`'s built-in integration registry and fetch
 // from `/apps/openregister/api/objects/{register}/{schema}/{id}/integrations/{id}`.
 //

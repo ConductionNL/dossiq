@@ -556,6 +556,7 @@
         "configuration": {
           "linkedTypes": [
             "mail",
+            "calendar",
             "forms",
             "photos"
           ]
