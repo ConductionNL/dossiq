@@ -146,6 +146,12 @@
 			"order": 87
 		},
 		{
+			"id": "SettingsGroup",
+			"label": "Settings",
+			"icon": "icon-settings",
+			"order": 200
+		},
+		{
 			"id": "Documentation",
 			"label": "Documentation",
 			"icon": "icon-info",
@@ -162,20 +168,11 @@
 			"order": 95
 		},
 		{
-			"id": "LegesverordeningenMenu",
-			"label": "Legesverordeningen",
-			"icon": "icon-category-office",
-			"route": "Legesverordeningen",
-			"section": "settings",
-			"order": 96
-		},
-		{
 			"id": "LegesberekeningenMenu",
 			"label": "Legesberekeningen",
 			"icon": "icon-category-monitoring",
 			"route": "Legesberekeningen",
-			"section": "settings",
-			"order": 97
+			"order": 50
 		},
 		{
 			"id": "PartnersMenu",

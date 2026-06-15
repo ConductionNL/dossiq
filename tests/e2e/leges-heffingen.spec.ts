@@ -25,12 +25,19 @@ import { test, expect } from '@playwright/test'
 import { dismissSupportDialog, sidebarNav } from './helpers/nav'
 
 /**
- * Land on the app and click the "Legesverordeningen" sidebar entry to reach
- * the leges admin view (LegesVerordeningenAdmin.vue).
+ * Land on the app, expand the collapsible "Settings" nav group (the leges
+ * admin leaf now lives under it after the config-to-settings IA change), and
+ * click the "Legesverordeningen" sidebar entry to reach the leges admin view
+ * (LegesVerordeningenAdmin.vue).
  */
 async function gotoLegesAdmin(page: import('@playwright/test').Page): Promise<void> {
 	await page.goto('/index.php/apps/procest/cases')
 	await dismissSupportDialog(page)
+	const settingsBtn = sidebarNav(page).getByRole('button', { name: 'Settings' })
+	if (await settingsBtn.count()) {
+		await settingsBtn.click().catch(() => {})
+		await page.waitForTimeout(500)
+	}
 	await sidebarNav(page).getByRole('link', { name: 'Legesverordeningen', exact: true }).click()
 	await dismissSupportDialog(page)
 	await expect(page).toHaveURL(/\/leges\/verordeningen/)
