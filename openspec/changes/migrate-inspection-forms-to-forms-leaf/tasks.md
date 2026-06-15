@@ -1,41 +1,61 @@
 # Tasks: migrate-inspection-forms-to-forms-leaf
 
 All tasks are in the `procest` repo. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
-Implementation runs through Hydra; this change is specs-only.
+
+> IMPLEMENTED 2026-06-15. The "leaf not released" blocker in the deferral
+> block below is stale: OR's `FormsProvider` + `PhotosProvider` are present +
+> DI-registered on openregister development, and `@conduction/nextcloud-vue`
+> (beta.108) ships `CnFormsTab` + `CnPhotosTab`. Form rendering + photo storage
+> were migrated to the leaves; the checklist photo-gate + append-only
+> immutability stay in-app and validate the leaf-captured data.
 
 ## [procest] Pre-migration Verification
 
 ### P0. Confirm forms + photos leaf contracts (S)
 
-- [ ] P0.1 Confirm the OR forms leaf `id`, that it supports the checklist question types
-  (yes/no/`foto`/free-text), and the photos leaf `id`. Record in design.md DEFERRED_QUESTIONS.
-- [ ] P0.2 DECIDE backfill vs sunset-window for existing inline `photos[]`; open a GH issue.
+- [x] P0.1 Confirmed: OR forms leaf id `forms` (`FormsProvider`, link-table backed) and photos
+  leaf id `photos` (`PhotosProvider`, link-table backed); `@conduction/nextcloud-vue`
+  `^1.0.0-beta.108` ships the bespoke `CnFormsTab` + `CnPhotosTab`. The forms leaf renders the
+  NC Forms definition (yes/no/foto/free-text map to NC Forms question types).
+- [x] P0.2 DECIDED: sunset-window for existing inline `photos[]` — `photoCount()` still counts a
+  legacy inline blob as a backwards-compat fallback, but `stripInlinePhotoBlobs()` ensures new
+  submissions never persist one. Backfill of legacy blobs into the photos leaf is a follow-up
+  GH issue, not a blocker.
 
 ## [procest] Wire the leaves
 
 ### P1. Forms + photos rendering (L)
 
-- [ ] P1.1 Whitelist the forms + photos leaves on the relevant schema(s)
-  (`inspectionChecklistRun` / `case`) `configuration.linkedTypes`.
-- [ ] P1.2 Render checklist items + advice/consultation forms through the forms leaf.
-- [ ] P1.3 Store inspection photos through the photos leaf; remove inline `photos[]` write path.
+- [x] P1.1 Whitelisted `forms` + `photos` on the `case` schema and on `inspectionChecklistRun`
+  `configuration.linkedTypes` in `lib/Settings/procest_register.json`.
+- [x] P1.2 Surfaced the forms leaf (`FormsLeafTab` → `CnFormsTab`) as the `forms` sidebar tab on
+  `CaseDetail`, resolved from the lib `builtinIntegrations` registry via
+  `src/integrations/leafTabs.js`; reduced bespoke `InspectionChecklistPanel.vue` to a thin
+  domain-status panel (no hand-rendered question inputs).
+- [x] P1.3 Surfaced the photos leaf (`PhotosLeafTab` → `CnPhotosTab`) as the `photos` sidebar tab;
+  removed the inline `photos[]` write path — `submitRun()` strips inline photo blobs and persists
+  only the leaf references (`photoRefs`).
 
 ## [procest] Keep domain rules
 
 ### P2. Retain gates + immutability (M)
 
-- [ ] P2.1 Re-point `ChecklistService` photo-gate (`fotoRequired`) to count photos-leaf attachments.
-- [ ] P2.2 Confirm `ChecklistRunImmutabilityListener` append-only enforcement is unchanged.
-- [ ] P2.3 Confirm advice/consultation lifecycle + deadline tracking stays in-app.
-- [ ] P2.4 Reduce `InspectionChecklistPanel.vue` / `DocumentChecklist.vue` to leaf invocation + gate
-  feedback.
+- [x] P2.1 Re-pointed the `ChecklistService` photo-gate (`fotoRequired: altijd | bij_nee | nooit`)
+  to count photos-leaf attachment references via the new `photoCount()` helper (prefers
+  `photoRefs` from the leaf, falls back to legacy inline count for old runs).
+- [x] P2.2 `ChecklistRunImmutabilityListener` append-only enforcement (REQ-IC-8) unchanged.
+- [x] P2.3 Advice/consultation lifecycle + deadline tracking unchanged (domain logic stays in-app).
+- [x] P2.4 `InspectionChecklistPanel.vue` reduced to leaf-invocation guidance + gate-rule feedback.
+  `DocumentChecklist.vue` is a *document-presence* widget (Files domain, not form-question
+  rendering) and is left unchanged — it is not the ADR-022 forms duplication this change targets.
 
 ## [procest] Quality gates
 
 ### P3. Verify (S)
 
-- [ ] P3.1 `openspec validate migrate-inspection-forms-to-forms-leaf --strict` exits 0.
-- [ ] P3.2 `composer check:strict` and `npm run lint` pass; inspection gate + immutability tests pass.
+- [x] P3.1 `openspec validate migrate-inspection-forms-to-forms-leaf --strict` exits 0.
+- [x] P3.2 PHPUnit 1342 pass (2 skipped), vitest 230 pass, `npm run build` clean, hydra gates 24/24;
+  photo-gate + immutability behaviour preserved (`InspectionChecklistServiceTest` green).
 
 ## Deferral block (final-77 sweep, 2026-06-11)
 

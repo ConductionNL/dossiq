@@ -23,6 +23,7 @@
 //   current manifest pages reference MapComponent by key directly; retained as
 //   a pass-through.
 
+import { leafTab } from './integrations/leafTabs.js'
 import MyWorkView from './views/MyWork.vue'
 import WerkvoorraadView from './views/Werkvoorraad.vue'
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
@@ -319,6 +320,26 @@ const registry = {
 		kind: 'page',
 		component: InspectionPanel,
 		_note: 'VTH inspection panel — shows completed inspectionResult records for a case',
+	},
+
+	// --- Forms + Photos leaves — leaf-first per ADR-022. ---
+	// Inspection checklist / advice forms render through OR's `forms` leaf
+	// (FormsProvider / CnFormsTab), inspection photos through OR's `photos`
+	// leaf (PhotosProvider / CnPhotosTab). Both are resolved from the lib's
+	// builtinIntegrations registry and fetch straight from OpenRegister using
+	// the objectId/register/schema/apiBase CnObjectSidebar injects. The
+	// checklist photo-gate + append-only immutability stay in-app (domain rules).
+	// @spec openspec/changes/migrate-inspection-forms-to-forms-leaf/tasks.md#P1.2
+	// @spec openspec/changes/migrate-inspection-forms-to-forms-leaf/tasks.md#P1.3
+	FormsLeafTab: {
+		kind: 'page',
+		component: leafTab('forms'),
+		_note: 'OR forms integration leaf (CnFormsTab) — renders checklist/advice forms on the case detail; replaces the bespoke hand-rendered checklist inputs (ADR-022).',
+	},
+	PhotosLeafTab: {
+		kind: 'page',
+		component: leafTab('photos'),
+		_note: 'OR photos integration leaf (CnPhotosTab) — stores/shows inspection photos as files attached to the object; replaces inline photos[] payloads (ADR-022).',
 	},
 
 	// --- Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente). ---
