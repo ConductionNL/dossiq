@@ -23,6 +23,9 @@
 							<span v-if="item.genericRole" class="sub-entity-row__badge">
 								{{ genericRoleLabel(item.genericRole) }}
 							</span>
+							<span v-if="item.ncGroupId" class="sub-entity-row__badge" :title="t('procest', 'Enforced NC group for this role')">
+								{{ item.ncGroupId }}
+							</span>
 							<span v-if="item.description" class="sub-entity-row__meta" :title="item.description">
 								{{ truncate(item.description) }}
 							</span>
@@ -55,6 +58,14 @@
 										:input-label="t('procest', 'Generic role')"
 										:placeholder="t('procest', 'Generic role')"
 										class="edit-field" />
+								</div>
+								<div class="edit-row">
+									<NcTextField
+										:value="editForm.ncGroupId"
+										:label="t('procest', 'NC Group ID')"
+										:helper-text="ncGroupHint"
+										class="edit-field edit-field--full"
+										@update:value="v => editForm.ncGroupId = v" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
@@ -121,10 +132,19 @@ export default {
 			error: '',
 			items: [],
 			editingId: null,
-			editForm: { name: '', description: '', genericRole: '' },
+			editForm: { name: '', description: '', genericRole: '', ncGroupId: '' },
 			editError: '',
 			genericRoleOptions: Object.keys(GENERIC_ROLE_LABELS),
 		}
+	},
+	computed: {
+		/**
+		 * @return {string} Helper text for the NC Group ID field.
+		 * @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-3.1
+		 */
+		ncGroupHint() {
+			return t('procest', 'Nextcloud group that holds this role. OpenRegister uses it to enforce who may perform this role\'s workflow steps. Must be an existing Nextcloud group ID; leave empty for no group restriction.')
+		},
 	},
 	async mounted() {
 		if (!this.isCreate) await this.loadItems()
@@ -166,7 +186,7 @@ export default {
 		/** @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md */
 		startAdd() {
 			this.editingId = 'new'
-			this.editForm = { name: '', description: '', genericRole: '' }
+			this.editForm = { name: '', description: '', genericRole: '', ncGroupId: '' }
 			this.editError = ''
 			this.items.push({ id: 'new', name: '' })
 		},
@@ -180,6 +200,7 @@ export default {
 				name: item.name,
 				description: item.description || '',
 				genericRole: item.genericRole || '',
+				ncGroupId: item.ncGroupId || '',
 			}
 			this.editError = ''
 		},
@@ -189,7 +210,7 @@ export default {
 			this.editingId = null
 			this.editError = ''
 		},
-		/** @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md */
+		/** @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-3.1 */
 		async saveEdit() {
 			if (!this.editForm.name.trim()) {
 				this.editError = t('procest', 'Name is required')
@@ -203,6 +224,7 @@ export default {
 				description: this.editForm.description.trim(),
 				caseType: this.caseTypeId,
 				genericRole: this.editForm.genericRole || null,
+				ncGroupId: this.editForm.ncGroupId.trim() || null,
 			}
 			if (this.editingId !== 'new') data.id = this.editingId
 			try {

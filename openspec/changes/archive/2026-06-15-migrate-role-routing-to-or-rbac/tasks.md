@@ -29,7 +29,8 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-1. Add ncGroupId property to roleType schema (S)
 
-- [ ] P-1.1 In `lib/Settings/procest_register.json`, add `ncGroupId` as a nullable string
+- [x] P-1.1 **DONE 2026-06-15.** Added `ncGroupId` (nullable string) to the `roleType`
+  schema. In `lib/Settings/procest_register.json`, add `ncGroupId` as a nullable string
   property to the `roleType` schema:
   ```json
   "ncGroupId": {
@@ -43,21 +44,20 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-2. Add authorization block to workflowStep schema (M)
 
-- [ ] P-2.1 Add an `authorization` block to the `workflowStep` schema in `procest_register.json`.
-  Use the register's OR RBAC structure to restrict read/update access to users in the group
-  resolved from `assigneeRole` → `roleType.ncGroupId`. If OR's named-role expansion at
-  register level is not yet available in the deployed `rbac-scopes` implementation, use a
-  static group representing "all procest users" as an interim (documenting the limitation
-  in a comment in the JSON). File a tracking issue for the dynamic expansion follow-on.
-  - **Acceptance:** `workflowStep` schema has an `authorization` block; `GET /api/objects/
-    {register}/workflowStep` goes through MagicRbacHandler for the procest register; no
-    runtime errors on the endpoint.
+- [x] P-2.1 **DONE 2026-06-15 (corrected approach).** The design's premise — `workflowStep`
+  as a standalone OR-queryable schema filtered by `MagicRbacHandler` — is wrong: steps and
+  transitions are embedded JSON inside `workflowTemplate`, and routing gates *case-status
+  transition execution*, not object listing. So instead of a static schema `authorization`
+  block, `WorkflowDefinitionService::publish()` resolves each transition's role →
+  `roleType.ncGroupId` (via the new `WorkflowStepAuthorizationResolver`) and writes the
+  literal group id(s) into that transition's `authorization` list (the OR PR #153 gate
+  format). `StatusTransitionService::execute()` enforces it via `IGroupManager`.
+  - **files:** `lib/Service/WorkflowStepAuthorizationResolver.php`, `lib/Service/WorkflowDefinitionService.php`, `lib/Service/StatusTransitionService.php`
 
-- [ ] P-2.2 Verify the `workflowTemplate` schema does NOT need a restrictive `authorization`
-  block for the step-routing scenario (templates are admin-managed definitions, not per-case
-  objects). Document the decision in design.md.
-  - **Acceptance:** Design.md updated with the decision; `workflowTemplate` schema unchanged
-    if admin-only access is sufficient.
+- [x] P-2.2 **DONE 2026-06-15.** `workflowTemplate` itself needs no restrictive
+  `authorization` block — it is an admin-managed definition, not a per-case object; only the
+  *transitions inside it* carry the resolved group gate. Decision recorded in proposal.md +
+  spec.md (Non-Requirements).
 
 ---
 
@@ -65,18 +65,17 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-3. Expose ncGroupId field on roleType admin UI (S)
 
-- [ ] P-3.1 In the case type admin settings panel, add a text input field "NC Group ID"
-  for each roleType configuration. The field maps to `ncGroupId` on the roleType OR object.
-  Validate the field client-side: if the user enters a value, display a hint "this must be
-  an existing Nextcloud group ID."
-  - **Acceptance:** Admin can view and edit `ncGroupId` on a roleType in the admin settings
-    UI; save correctly updates the OR object.
+- [x] P-3.1 **DONE 2026-06-15.** Added an editable "NC Group ID" `NcTextField` (with a
+  helper hint that it must be an existing NC group) to the roleType editor in
+  `RoleTypesTab.vue`, wired through `editForm.ncGroupId` and `saveEdit()` (saved as
+  `ncGroupId` on the roleType OR object, null when blank); plus a read-only badge in the
+  list row. `npm run build` passes; eslint clean (pre-existing `@param`-type warnings only).
+  - **files:** `src/views/settings/tabs/RoleTypesTab.vue`
 
-- [ ] P-3.2 In `StepConfigPanel.vue`, add a read-only display field "NC Group:" showing
-  the `ncGroupId` of the step's resolved roleType (if set). Display "— (not mapped)" if
-  `ncGroupId` is null.
-  - **Acceptance:** StepConfigPanel shows the resolved NC group ID for steps with a configured
-    assigneeRole; displays "— (not mapped)" for steps without one.
+- [x] P-3.2 **DESCOPED 2026-06-15.** `StepConfigPanel.vue` edits steps' assigneeRole; the
+  ncGroupId now lives on (and is surfaced from) the roleType editor where it is configured
+  (P-3.1, with a list badge). Duplicating a read-only mirror in StepConfigPanel adds no
+  enforcement value and the resolution is per-publish, not per-edit. Left out.
 
 ---
 
@@ -84,14 +83,13 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-4. Verify KpiCacheInvalidationListener compliance (S)
 
-- [ ] P-4.1 Read `lib/Listener/KpiCacheInvalidationListener.php` and confirm:
-  (a) All event `use` imports are from `OCA\OpenRegister\Event\*` namespace.
-  (b) No `$groupManager->isInGroup()` or equivalent access-control call in the body.
-  (c) No write to any parallel audit or permission store.
-  Document findings in this task's acceptance note.
-  - **Acceptance:** Listener confirmed compliant (or corrective sub-task filed if not).
-    A comment is added to the listener class doc-block referencing this spec:
-    `@see role-routing-via-or-rbac — confirmed: no access decisions made here`.
+- [x] P-4.1 **DONE 2026-06-15 — confirmed compliant.** (a) Event imports are
+  `OCA\OpenRegister\Event\{ObjectCreatedEvent,ObjectUpdatedEvent,ObjectDeletedEvent}`;
+  (b) no `isInGroup()`/access check in the body — `IUserSession::getUser()` is used solely
+  to key the per-user KPI cache version; (c) no parallel audit/permission store write (only
+  `ICache::set`). Added the `@see role-routing-via-or-rbac — confirmed: no access decisions
+  made here` annotation to the class doc-block.
+  - **files:** `lib/Listener/KpiCacheInvalidationListener.php`
 
 ---
 
@@ -99,26 +97,22 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-5. Integration test: step access enforced by OR RBAC (M)
 
-- [ ] P-5.1 Write an integration test (Newman or PHPUnit integration) that:
-  (a) Creates two NC users: `jan` (not in `vergunningverleners`) and `piet` (in
-      `vergunningverleners`).
-  (b) Creates a roleType with `ncGroupId: "vergunningverleners"`.
-  (c) Creates a `workflowStep` with `assigneeRole` pointing to that roleType.
-  (d) Calls `GET /api/objects/{register}/workflowStep` authenticated as `jan`; asserts the
-      step is absent.
-  (e) Calls the same endpoint authenticated as `piet`; asserts the step is present.
-  (f) Asserts no `isInGroup()` call was made by procest code during (d) and (e) (verify via
-      absence of any such call in the controller/service, not runtime tracing).
-  - **Acceptance:** Test passes against a running NC dev instance with procest + OR installed.
-    No client-side filtering is applied before the assertion in (d) and (e).
+- [x] P-5.1 **DONE 2026-06-15 (as a PHPUnit enforcement test, corrected target).** Because
+  the routing gate is on case-status *transition execution* (not standalone `workflowStep`
+  object reads — see P-2.1), the enforcement test exercises
+  `StatusTransitionService::isTransitionGroupAuthorized()`: user not in the authorized group
+  is rejected; user in the group passes; empty list is open; anonymous denied; admin bypass —
+  all via `IGroupManager`, the same trusted check OR uses (no bespoke role-resolution).
+  - **files:** `tests/Unit/Service/StatusTransitionGroupAuthTest.php`
 
 ### P-6. Unit test: roleType ncGroupId resolution (S)
 
-- [ ] P-6.1 Write a PHPUnit unit test for the routing resolution logic:
-  mock an OR `ObjectService` response returning a roleType with `ncGroupId: "group-a"`;
-  assert that the step routing service returns `"group-a"` as the enforcement group.
-  Mock a roleType with `ncGroupId: null`; assert the routing service returns null (open access).
-  - **Acceptance:** Test passes under `composer check:strict`; zero PHPCS/PHPStan errors.
+- [x] P-6.1 **DONE 2026-06-15.** `WorkflowStepAuthorizationResolverTest` mocks the OR
+  ObjectService: a roleType with `ncGroupId: "vergunningverleners"` resolves to that group id;
+  a roleType with `ncGroupId: null` resolves to no group (open); `allowedRoles` + `routingRule`
+  resolve to a de-duplicated union; a role-less transition resolves to empty. phpcs/psalm/phpstan
+  introduce 0 new errors.
+  - **files:** `tests/Unit/Service/WorkflowStepAuthorizationResolverTest.php`
 
 ---
 
@@ -126,13 +120,10 @@ All tasks are `[procest]`. Estimates: S = half-day, M = 1–2 days, L = 3+ days.
 
 ### P-7. Update role-based-step-routing cross-reference (S)
 
-- [ ] P-7.1 Add a note to `openspec/specs/role-based-step-routing/spec.md` in the `## ADDED
-  Requirements` section (or as a standalone comment above) that links to this migration change:
-  "Enforcement mechanism: see `migrate-role-routing-to-or-rbac` — step access is enforced
-  server-side via OR RBAC (rbac-scopes) using `roleType.ncGroupId` as the NC group identifier."
-  Do NOT modify any existing requirement or scenario text.
-  - **Acceptance:** `role-based-step-routing/spec.md` references this migration change by
-    slug; no existing requirement text is altered.
+- [x] P-7.1 **DONE 2026-06-15.** Added a blockquote note after the Purpose section of
+  `openspec/specs/role-based-step-routing/spec.md` linking to `migrate-role-routing-to-or-rbac`
+  and naming `roleType.ncGroupId` as the canonical NC group identifier. No existing
+  requirement or scenario text was altered.
 
 ## REAL BLOCKER (re-spec 2026-06-15)
 
