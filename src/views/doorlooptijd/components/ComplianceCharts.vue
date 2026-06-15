@@ -1,21 +1,31 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <!--
-	Doorlooptijd chart cluster — the four ApexCharts widgets of the
-	processing-time dashboard, extracted from the monolithic
-	DoorlooptijdDashboard.vue:
+	Doorlooptijd chart cluster — the four processing-time charts of the SLA
+	dashboard:
 
 	  1. Donut — SLA compliance by case type
 	  2. Bar histogram — processing-time distribution (with SLA target line)
 	  3. Line — monthly SLA compliance trend
 	  4. Line — weekly throughput (cases closed per week)
 
-	The component takes the already-aggregated data arrays as props and owns
-	the chart-option shaping (series, axes, tooltips, annotations). The exact
-	data shaping is locked by Vitest. Behaviour is identical to the inline
-	markup it replaces.
+	MIGRATED to the OpenRegister analytics-series leaf (ADR-022):
+
+	- Procest OWNS the SLA maths: the parent computes compliance / distribution
+	  / trend / throughput (computeSlaCompliance etc.), and chartShaping.js maps
+	  those into labels + datasets. That zaak-domain calc STAYS in-app.
+	- Each computed series is REGISTERED with OR's page-level analytics-series
+	  surface (POST /api/integrations/analytics/series) so OR owns persistence +
+	  the chart-ready render contract + the page-widget declaration.
+	- The chart itself is drawn by `@conduction/nextcloud-vue`'s declarative
+	  `CnChartWidget` (which owns the chart engine). Procest embeds NO chart
+	  library of its own — the bespoke `vue-apexcharts` import + per-chart
+	  ApexCharts option objects were removed.
+
+	The series-shaping arithmetic is still locked by Vitest (chartShaping.js).
 
 	Spec: openspec/specs/doorlooptijd-dashboard/spec.md
+	      openspec/changes/migrate-sla-dashboard-to-analytics-leaf/specs/sla-charts-via-analytics-leaf/spec.md
 -->
 <template>
 	<div class="doorlooptijd-charts">
@@ -24,11 +34,12 @@
 			<div class="chart-card">
 				<h3>{{ t('procest', 'Compliance by Case Type') }}</h3>
 				<div v-if="donutSeries.length > 0" class="chart-container">
-					<apexchart
+					<CnChartWidget
 						type="donut"
-						height="280"
-						:options="donutOptions"
-						:series="donutSeries" />
+						:height="280"
+						:series="donutSeries"
+						:labels="donutLabels"
+						:options="donutOptions" />
 				</div>
 				<div v-else class="chart-empty">
 					{{ t('procest', 'No data available') }}
@@ -39,11 +50,12 @@
 			<div class="chart-card">
 				<h3>{{ t('procest', 'Processing Time Distribution') }}</h3>
 				<div v-if="histogramSeries.length > 0" class="chart-container">
-					<apexchart
+					<CnChartWidget
 						type="bar"
-						height="280"
-						:options="histogramOptions"
-						:series="histogramSeries" />
+						:height="280"
+						:series="histogramSeries"
+						:categories="histogramCategories"
+						:options="histogramOptions" />
 				</div>
 				<div v-else class="chart-empty">
 					{{ t('procest', 'No data available') }}
@@ -55,11 +67,12 @@
 		<div class="chart-card chart-card--full">
 			<h3>{{ t('procest', 'Monthly SLA Trend') }}</h3>
 			<div v-if="trendData.length > 0" class="chart-container">
-				<apexchart
+				<CnChartWidget
 					type="line"
-					height="280"
-					:options="trendOptions"
-					:series="trendSeries" />
+					:height="280"
+					:series="trendSeries"
+					:categories="trendCategories"
+					:options="trendOptions" />
 			</div>
 			<div v-else class="chart-empty">
 				{{ t('procest', 'No trend data available') }}
@@ -70,11 +83,12 @@
 		<div class="chart-card chart-card--full">
 			<h3>{{ t('procest', 'Throughput (cases closed per week)') }}</h3>
 			<div v-if="throughputData.length > 0" class="chart-container">
-				<apexchart
+				<CnChartWidget
 					type="line"
-					height="280"
-					:options="throughputOptions"
-					:series="throughputSeries" />
+					:height="280"
+					:series="throughputSeries"
+					:categories="throughputCategories"
+					:options="throughputOptions" />
 			</div>
 			<div v-else class="chart-empty">
 				{{ t('procest', 'No completed cases in the selected range') }}
@@ -84,8 +98,7 @@
 </template>
 
 <script>
-// eslint-disable-next-line import/no-unresolved
-import VueApexCharts from 'vue-apexcharts'
+import { CnChartWidget } from '@conduction/nextcloud-vue'
 import {
 	buildDonutSeries,
 	buildDonutLabels,
@@ -94,11 +107,12 @@ import {
 	buildTrendSeries,
 	buildThroughputSeries,
 } from './chartShaping.js'
+import { registerSeries } from '../../../services/analyticsSeriesApi.js'
 
 export default {
 	name: 'ComplianceCharts',
 	components: {
-		apexchart: VueApexCharts,
+		CnChartWidget,
 	},
 	props: {
 		/** computeSlaCompliance() output: { byType: [{ name, total, withinSla, rate }], ... }. */
@@ -132,18 +146,22 @@ export default {
 			return buildDonutSeries(this.slaData)
 		},
 		/**
-		 * Donut chart options (labels, colours, legend, tooltip).
+		 * Donut slice labels (one per qualifying case type).
 		 *
 		 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+		 */
+		donutLabels() {
+			return buildDonutLabels(this.slaData)
+		},
+		/**
+		 * Donut render options handed to the analytics-leaf chart widget
+		 * (colours, legend, tooltip). The widget owns the chart engine.
+		 *
+		 * @spec openspec/changes/migrate-sla-dashboard-to-analytics-leaf/tasks.md#P1.1
 		 */
 		donutOptions() {
 			const types = this.slaData.byType.filter(t => t.total > 0)
 			return {
-				chart: {
-					type: 'donut',
-					fontFamily: 'inherit',
-				},
-				labels: buildDonutLabels(this.slaData),
 				colors: [
 					'var(--color-success)',
 					'var(--color-primary)',
@@ -152,21 +170,13 @@ export default {
 					'var(--color-primary-element-light)',
 					'var(--color-text-maxcontrast)',
 				],
-				legend: {
-					position: 'bottom',
-					labels: {
-						colors: 'var(--color-main-text)',
-					},
-				},
+				legend: { position: 'bottom' },
 				plotOptions: {
 					pie: {
 						donut: {
 							labels: {
 								show: true,
-								total: {
-									show: true,
-									label: t('procest', 'Within SLA'),
-								},
+								total: { show: true, label: t('procest', 'Within SLA') },
 							},
 						},
 					},
@@ -191,9 +201,17 @@ export default {
 			return buildHistogramSeries(this.distributionData, t('procest', 'Cases'))
 		},
 		/**
-		 * Histogram chart options with the SLA-target annotation line.
+		 * Histogram x-axis categories (the processing-time bins).
 		 *
 		 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+		 */
+		histogramCategories() {
+			return (this.distributionData.bins || []).map(b => b.label)
+		},
+		/**
+		 * Histogram render options with the SLA-target annotation line.
+		 *
+		 * @spec openspec/changes/migrate-sla-dashboard-to-analytics-leaf/tasks.md#P1.1
 		 */
 		histogramOptions() {
 			const bins = this.distributionData.bins
@@ -201,9 +219,7 @@ export default {
 
 			if (this.distributionData.slaTargetDays !== null) {
 				const targetDays = this.distributionData.slaTargetDays
-				// Find which bin index the target falls in
 				const targetBinIndex = findHistogramTargetBinIndex(bins, targetDays)
-
 				annotations.push({
 					x: bins[targetBinIndex]?.label || '',
 					borderColor: 'var(--color-error)',
@@ -218,38 +234,19 @@ export default {
 			}
 
 			return {
-				chart: {
-					type: 'bar',
-					fontFamily: 'inherit',
-					toolbar: { show: false },
-				},
 				plotOptions: {
-					bar: {
-						borderRadius: 4,
-						columnWidth: '70%',
-					},
+					bar: { borderRadius: 4, columnWidth: '70%' },
 				},
 				xaxis: {
-					categories: bins.map(b => b.label),
 					title: { text: t('procest', 'Processing time (days)') },
-					labels: {
-						style: { colors: 'var(--color-main-text)' },
-					},
 				},
 				yaxis: {
 					title: { text: t('procest', 'Number of cases') },
-					labels: {
-						style: { colors: 'var(--color-main-text)' },
-					},
 				},
 				colors: ['var(--color-primary)'],
-				annotations: {
-					xaxis: annotations,
-				},
+				annotations: { xaxis: annotations },
 				tooltip: {
-					y: {
-						formatter: (val) => `${val} ${t('procest', 'cases')}`,
-					},
+					y: { formatter: (val) => `${val} ${t('procest', 'cases')}` },
 				},
 			}
 		},
@@ -262,40 +259,29 @@ export default {
 			return buildTrendSeries(this.trendData, t('procest', 'SLA Compliance %'))
 		},
 		/**
-		 * Trend chart options (0–100% axis, 100%-target annotation, tooltip).
+		 * Trend x-axis categories (months).
 		 *
 		 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 		 */
+		trendCategories() {
+			return this.trendData.map(d => d.month)
+		},
+		/**
+		 * Trend render options (0–100% axis, 100%-target annotation, tooltip).
+		 *
+		 * @spec openspec/changes/migrate-sla-dashboard-to-analytics-leaf/tasks.md#P1.1
+		 */
 		trendOptions() {
 			return {
-				chart: {
-					type: 'line',
-					fontFamily: 'inherit',
-					toolbar: { show: false },
-				},
-				xaxis: {
-					categories: this.trendData.map(d => d.month),
-					labels: {
-						style: { colors: 'var(--color-main-text)' },
-					},
-				},
 				yaxis: {
 					min: 0,
 					max: 100,
 					title: { text: t('procest', 'Compliance %') },
-					labels: {
-						style: { colors: 'var(--color-main-text)' },
-						formatter: (val) => val !== null ? val + '%' : '',
-					},
+					labels: { formatter: (val) => val !== null ? val + '%' : '' },
 				},
 				colors: ['var(--color-primary)'],
-				stroke: {
-					curve: 'smooth',
-					width: 3,
-				},
-				markers: {
-					size: 5,
-				},
+				stroke: { curve: 'smooth', width: 3 },
+				markers: { size: 5 },
 				annotations: {
 					yaxis: [{
 						y: 100,
@@ -330,40 +316,87 @@ export default {
 			return buildThroughputSeries(this.throughputData, t('procest', 'Cases closed'))
 		},
 		/**
-		 * Throughput chart options (integer y-axis, smooth line).
+		 * Throughput x-axis categories (ISO week labels).
 		 *
 		 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 		 */
+		throughputCategories() {
+			return this.throughputData.map(w => w.weekLabel)
+		},
+		/**
+		 * Throughput render options (integer y-axis, smooth line).
+		 *
+		 * @spec openspec/changes/migrate-sla-dashboard-to-analytics-leaf/tasks.md#P1.1
+		 */
 		throughputOptions() {
 			return {
-				chart: {
-					type: 'line',
-					fontFamily: 'inherit',
-					toolbar: { show: false },
-				},
-				xaxis: {
-					categories: this.throughputData.map(w => w.weekLabel),
-					labels: {
-						style: { colors: 'var(--color-main-text)' },
-					},
-				},
 				yaxis: {
 					min: 0,
 					forceNiceScale: true,
 					title: { text: t('procest', 'Cases closed') },
-					labels: {
-						style: { colors: 'var(--color-main-text)' },
-						formatter: (val) => Math.round(val),
-					},
+					labels: { formatter: (val) => Math.round(val) },
 				},
 				colors: ['var(--color-primary)'],
-				stroke: {
-					curve: 'smooth',
-					width: 3,
-				},
-				markers: {
-					size: 4,
-				},
+				stroke: { curve: 'smooth', width: 3 },
+				markers: { size: 4 },
+			}
+		},
+	},
+	watch: {
+		slaData: { handler: 'publishSeries', immediate: false },
+		distributionData: { handler: 'publishSeries' },
+		trendData: { handler: 'publishSeries' },
+		throughputData: { handler: 'publishSeries' },
+	},
+	mounted() {
+		this.publishSeries()
+	},
+	methods: {
+		/**
+		 * Register the four computed SLA series with OpenRegister's page-level
+		 * analytics-series surface so OR owns persistence + the render contract
+		 * + the page-widget declaration (ADR-022). Procest computes the maths;
+		 * OR is the analytics leaf. Fire-and-forget: registration failures never
+		 * block the dashboard (it still renders the same series via CnChartWidget).
+		 *
+		 * @spec openspec/changes/migrate-sla-dashboard-to-analytics-leaf/tasks.md#P1.1
+		 */
+		publishSeries() {
+			if (this.donutSeries.length > 0) {
+				registerSeries({
+					seriesKey: 'procest-sla-compliance-by-type',
+					title: t('procest', 'Compliance by Case Type'),
+					chartType: 'doughnut',
+					labels: this.donutLabels,
+					datasets: this.donutSeries,
+				})
+			}
+			if (this.histogramSeries.length > 0) {
+				registerSeries({
+					seriesKey: 'procest-sla-processing-time-distribution',
+					title: t('procest', 'Processing Time Distribution'),
+					chartType: 'bar',
+					labels: this.histogramCategories,
+					datasets: this.histogramSeries,
+				})
+			}
+			if (this.trendData.length > 0) {
+				registerSeries({
+					seriesKey: 'procest-sla-monthly-trend',
+					title: t('procest', 'Monthly SLA Trend'),
+					chartType: 'line',
+					labels: this.trendCategories,
+					datasets: this.trendSeries,
+				})
+			}
+			if (this.throughputData.length > 0) {
+				registerSeries({
+					seriesKey: 'procest-sla-weekly-throughput',
+					title: t('procest', 'Throughput (cases closed per week)'),
+					chartType: 'line',
+					labels: this.throughputCategories,
+					datasets: this.throughputSeries,
+				})
 			}
 		},
 	},

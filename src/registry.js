@@ -176,11 +176,10 @@ const registry = {
 		_note: 'Read-only embedded single-case map (case-detail Locatie tab). Thin wrapper over CaseMap.',
 	},
 
-	// --- Lib gaps: would migrate once lib gains the missing primitive. ---
 	DoorlooptijdView: {
 		kind: 'page',
 		component: DoorlooptijdView,
-		_note: 'KPI dashboard with apexcharts; pending lib chart-widget support.',
+		_note: 'SLA / processing-time dashboard. SLA maths stays in-app (doorlooptijdHelpers.js); charts render through OR\'s analytics-series leaf surface via the lib CnChartWidget (ADR-022) — no bespoke chart library.',
 	},
 
 	// --- Workflow Board — Kanban with drag-to-advance status transitions. ---

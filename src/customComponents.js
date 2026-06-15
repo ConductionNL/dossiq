@@ -134,7 +134,7 @@ export default {
 	// CaseMapView removed — see import comment above.
 
 	// --- Lib gaps: would migrate once lib gains the missing primitive. ---
-	DoorlooptijdView, // KPI dashboard with apexcharts (lib chart-widget gap)
+	DoorlooptijdView, // SLA dashboard — charts via OR analytics-series leaf + lib CnChartWidget (ADR-022)
 	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
 	TermijnDashboard, // AWB termijnbewaking + dwangsom KPI dashboard
 	ArchiefDashboard, // e-Depot handover dashboard (stats + triggers + audit)
