@@ -6654,7 +6654,8 @@
         "properties": {
           "supplierRef": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "$ref": "supplier"
           },
           "userRef": {
             "type": "string",
@@ -6720,7 +6721,8 @@
         "properties": {
           "supplierRef": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "$ref": "supplier"
           },
           "caseRef": {
             "type": "string",
@@ -6776,7 +6778,8 @@
         "properties": {
           "supplierRef": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "$ref": "supplier"
           },
           "caseRef": {
             "type": "string",
@@ -6829,7 +6832,8 @@
         "properties": {
           "supplierRef": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "$ref": "supplier"
           },
           "caseRef": {
             "type": "string",
@@ -6892,7 +6896,8 @@
         "properties": {
           "supplierRef": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "$ref": "supplier"
           },
           "caseRef": {
             "type": "string",
@@ -6940,7 +6945,8 @@
         "properties": {
           "supplierRef": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "$ref": "supplier"
           },
           "period": {
             "type": "string",
@@ -8524,7 +8530,7 @@
           "schema": "supplierUser",
           "slug": "supplier-user-acme-admin"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "email": "admin@acmebouw.example.nl",
         "role": "admin",
         "status": "active",
@@ -8536,7 +8542,7 @@
           "schema": "supplierUser",
           "slug": "supplier-user-acme-finance"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "email": "finance@acmebouw.example.nl",
         "role": "finance",
         "status": "active",
@@ -8548,7 +8554,7 @@
           "schema": "supplierUser",
           "slug": "supplier-user-orange-contracts"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "email": "contracts@orangeit.example.nl",
         "role": "contracts",
         "status": "active",
@@ -8560,7 +8566,7 @@
           "schema": "supplierUser",
           "slug": "supplier-user-orange-sales"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "email": "sales@orangeit.example.nl",
         "role": "sales",
         "status": "active",
@@ -8572,7 +8578,7 @@
           "schema": "supplierUser",
           "slug": "supplier-user-blokker-readonly"
         },
-        "supplierRef": "supplier-blokker-schoonmaak",
+        "supplierRef": "@ref:supplier-blokker-schoonmaak",
         "email": "viewer@blokker.example.nl",
         "role": "read_only",
         "status": "revoked",
@@ -8584,7 +8590,7 @@
           "schema": "supplierTender",
           "slug": "tender-acme-onderhoud-2026"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "title": "Onderhoud gemeentehuis 2026",
         "status": "submitted",
         "submittedDate": "2026-03-01",
@@ -8596,7 +8602,7 @@
           "schema": "supplierTender",
           "slug": "tender-orange-software-eval"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "title": "Softwarelicentie 2026",
         "status": "evaluating",
         "submittedDate": "2026-02-15",
@@ -8608,7 +8614,7 @@
           "schema": "supplierTender",
           "slug": "tender-acme-awarded"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "title": "Renovatie schoolgebouw",
         "status": "awarded",
         "submittedDate": "2025-12-01",
@@ -8621,7 +8627,7 @@
           "schema": "supplierTender",
           "slug": "tender-blokker-rejected"
         },
-        "supplierRef": "supplier-blokker-schoonmaak",
+        "supplierRef": "@ref:supplier-blokker-schoonmaak",
         "title": "Schoonmaak buurthuis",
         "status": "rejected",
         "submittedDate": "2025-11-15",
@@ -8635,7 +8641,7 @@
           "schema": "supplierTender",
           "slug": "tender-orange-withdrawn"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "title": "Datacenter migratie",
         "status": "withdrawn",
         "submittedDate": "2025-10-01",
@@ -8647,7 +8653,7 @@
           "schema": "supplierContract",
           "slug": "contract-acme-renovatie"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "number": "C-2026-001",
         "subject": "Renovatie schoolgebouw",
         "startDate": "2026-02-01",
@@ -8662,7 +8668,7 @@
           "schema": "supplierContract",
           "slug": "contract-orange-licenties"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "number": "C-2025-027",
         "subject": "Softwarelicenties 2025-2026",
         "startDate": "2025-04-01",
@@ -8678,7 +8684,7 @@
           "schema": "supplierContract",
           "slug": "contract-orange-cloud"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "number": "C-2025-028",
         "subject": "Cloudhosting",
         "startDate": "2025-06-01",
@@ -8693,7 +8699,7 @@
           "schema": "supplierContract",
           "slug": "contract-blokker-historie"
         },
-        "supplierRef": "supplier-blokker-schoonmaak",
+        "supplierRef": "@ref:supplier-blokker-schoonmaak",
         "number": "C-2024-011",
         "subject": "Schoonmaak 2024-2025",
         "startDate": "2024-01-01",
@@ -8708,7 +8714,7 @@
           "schema": "supplierInvoice",
           "slug": "inv-acme-001"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "number": "INV-2026-001",
         "invoiceDate": "2026-02-15",
         "amount": 50000,
@@ -8722,7 +8728,7 @@
           "schema": "supplierInvoice",
           "slug": "inv-acme-002"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "number": "INV-2026-002",
         "invoiceDate": "2026-03-15",
         "amount": 75000,
@@ -8736,7 +8742,7 @@
           "schema": "supplierInvoice",
           "slug": "inv-orange-001"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "number": "OR-2026-001",
         "invoiceDate": "2026-04-01",
         "amount": 30000,
@@ -8751,7 +8757,7 @@
           "schema": "supplierInvoice",
           "slug": "inv-orange-disputed"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "number": "OR-2026-002",
         "invoiceDate": "2026-04-15",
         "amount": 12000,
@@ -8766,7 +8772,7 @@
           "schema": "supplierInvoice",
           "slug": "inv-blokker-overdue"
         },
-        "supplierRef": "supplier-blokker-schoonmaak",
+        "supplierRef": "@ref:supplier-blokker-schoonmaak",
         "number": "BL-2025-099",
         "invoiceDate": "2025-12-15",
         "amount": 8000,
@@ -8780,7 +8786,7 @@
           "schema": "supplierMessage",
           "slug": "msg-acme-welcome"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "direction": "outbound",
         "subject": "Welkom in het leveranciersportaal",
         "body": "Beste ACME Bouw, uw toegang tot het leveranciersportaal is geactiveerd.",
@@ -8793,7 +8799,7 @@
           "schema": "supplierMessage",
           "slug": "msg-acme-question"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "direction": "inbound",
         "subject": "Vraag over INV-2026-002",
         "body": "Goedendag, kunt u een verwachte betaaldatum delen voor factuur INV-2026-002?",
