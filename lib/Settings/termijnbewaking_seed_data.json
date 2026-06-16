@@ -1,0 +1,42 @@
+{
+  "termijnDefinities": [
+    {
+      "id": "td-omgevingsvergunning-regulier",
+      "zaaktype": "omgevingsvergunning-regulier",
+      "wettelijkeGrondslag": "Wabo 3.9 lid 1",
+      "standaardDuurDagen": 56,
+      "standaardDuurWeken": 8,
+      "verlengingsRuimte": 42,
+      "aantalVerlengingen": 1,
+      "pauzeeVerlengingsDuren": [14, 28],
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-wmo-aanvraag",
+      "zaaktype": "wmo-melding",
+      "wettelijkeGrondslag": "Wmo 2015 art 2.3.5",
+      "standaardDuurDagen": 42,
+      "standaardDuurWeken": 6,
+      "verlengingsRuimte": 0,
+      "aantalVerlengingen": 0,
+      "pauzeeVerlengingsDuren": [14],
+      "validFrom": "2026-01-01"
+    },
+    {
+      "id": "td-woo-verzoek",
+      "zaaktype": "woo-verzoek",
+      "wettelijkeGrondslag": "Woo art 4.4",
+      "standaardDuurDagen": 28,
+      "standaardDuurWeken": 4,
+      "verlengingsRuimte": 14,
+      "aantalVerlengingen": 1,
+      "pauzeeVerlengingsDuren": [14],
+      "afwijkendDwangsomRegime": {
+        "dailyTariff": 1500,
+        "plafond": 50000,
+        "grace": 14
+      },
+      "validFrom": "2026-01-01"
+    }
+  ]
+}

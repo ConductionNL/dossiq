@@ -11,6 +11,12 @@ canonical_home: case-management/spec.md
 > annotation. Immutability is provided by OR's `audit-trail-immutable`
 > capability, not a procest-specific custom service. See ADR-022.
 >
+> Per `migrate-parafering-to-or-audit` the audit trail is now discoverable via
+> OR's audit-trail-immutable API
+> (`GET /api/audit-trails?objectUuid={voorstelId}`), with each transition
+> recorded as a `procest.parafering.{action}` entry. The new consumer contract
+> lives in `parafering-audit-via-or/spec.md`.
+>
 > This file is preserved as a historical appendix. Refer to
 > `case-management/spec.md` for canonical audit semantics.
 
@@ -18,7 +24,7 @@ canonical_home: case-management/spec.md
 
 @e2e exclude RETIRED spec; requirements consolidated into case-management/spec.md.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Immutable Parafering Audit Trail
 

@@ -50,6 +50,11 @@ use Psr\Log\LoggerInterface;
  *
  * @implements IEventListener<Event>
  *
+ * @see role-routing-via-or-rbac — confirmed: no access decisions made here.
+ *      Listens only on OCA\OpenRegister\Event\* object events; uses
+ *      IUserSession::getUser() solely to key the per-user KPI cache version,
+ *      never to gate access; writes no parallel audit or permission store.
+ *
  * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T12
  */
 class KpiCacheInvalidationListener implements IEventListener

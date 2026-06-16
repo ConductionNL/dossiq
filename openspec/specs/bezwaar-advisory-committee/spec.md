@@ -1,8 +1,10 @@
 ## Purpose
 
+Records advisory reports from the bezwaarschriftencommissie (objection advisory committee, AWB art. 7:13) on bezwaar cases, and tracks committee composition to safeguard independence and surface conflicts of interest.
+
 @e2e exclude Advisory committee report schema is V1; generic index page, no specific Playwright-testable UI interactions yet.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Advisory Committee Report Schema
 

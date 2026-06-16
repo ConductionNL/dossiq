@@ -1,0 +1,112 @@
+{
+    "slug": "college-besluit",
+    "deprecated": true,
+    "deprecationNote": "Decision types are now managed by decidesk (procest-delegate-contract-decision). These templates are kept for historical read access until sunset.",
+    "caseType": {
+        "identifier": "bvw-college-besluit",
+        "title": "College-besluit",
+        "description": "Formeel besluit van het college van burgemeester en wethouders",
+        "purpose": "Vaststellen van collegebesluiten conform het collegeprogramma",
+        "trigger": "Beleidsvoorstel of wettelijke verplichting",
+        "subject": "Bestuurlijk besluit College B&W",
+        "processingDeadline": "P30D",
+        "publicationRequired": true,
+        "internalOrExternal": "intern",
+        "isDraft": false,
+        "confidentiality": "openbaar",
+        "statusTypes": [
+            { "name": "Voorstel opstellen", "order": 1, "isFinal": false, "description": "Ambtenaar stelt het collegeadvies op" },
+            { "name": "Ambtelijk advies", "order": 2, "isFinal": false, "description": "Inhoudelijk advies door beleidsadviseur" },
+            { "name": "Parafering", "order": 3, "isFinal": false, "description": "Sequentiele goedkeuring via parafeerroute" },
+            { "name": "Gereed voor agendering", "order": 4, "isFinal": false, "description": "Alle parafen verzameld, klaar voor planning vergadering" },
+            { "name": "Geagendeerd", "order": 5, "isFinal": false, "description": "Opgevoerd op de agenda van een vergadering" },
+            { "name": "Vergadering", "order": 6, "isFinal": false, "description": "Behandeling tijdens de vergadering" },
+            { "name": "Besluit genomen", "order": 7, "isFinal": false, "description": "Besluit geregistreerd inclusief stemuitslag" },
+            { "name": "Bekendmaking", "order": 8, "isFinal": false, "description": "Publicatie via DROP of LVBB" },
+            { "name": "Gearchiveerd", "order": 9, "isFinal": true, "description": "Dossier gearchiveerd conform selectielijst" }
+        ],
+        "roleTypes": [
+            { "name": "Steller", "description": "Ambtenaar die het voorstel opstelt", "genericRole": "initiator" },
+            { "name": "Portefeuillehouder", "description": "Wethouder of burgemeester verantwoordelijk voor het dossier" },
+            { "name": "Beleidsadviseur", "description": "Adviseur die inhoudelijk advies levert" },
+            { "name": "Afdelingshoofd", "description": "Hoofd van de betrokken afdeling" },
+            { "name": "Aanwezig lid", "description": "Lid van het besluitvormend orgaan dat aanwezig was bij de vergadering" }
+        ],
+        "propertyDefinitions": [
+            { "name": "stemuitslag", "propertyType": "string", "isRequired": false, "description": "Uitkomst van de stemming (bijv. 'Unaniem', '15-8')" },
+            { "name": "portefeuillehouder", "propertyType": "string", "isRequired": true, "description": "Nextcloud-gebruiker van de verantwoordelijk wethouder" },
+            { "name": "vergadergremium", "propertyType": "string", "isRequired": true, "description": "Het besluitvormend orgaan (College B&W / Gemeenteraad / Commissie)" },
+            { "name": "agendanummer", "propertyType": "string", "isRequired": false, "description": "Nummer op de vergaderagenda (bijv. '5.3')" },
+            { "name": "behandeling", "propertyType": "string", "isRequired": false, "description": "Classificatie als hamerstuk of bespreekstuk" },
+            { "name": "publicatieReferentie", "propertyType": "string", "isRequired": false, "description": "Referentie-URI van de publicatie in DROP of LVBB" }
+        ],
+        "documentTypes": [
+            { "name": "Collegeadvies", "description": "Het voorstel-/adviesdocument", "isRequired": true },
+            { "name": "Besluitdocument", "description": "Het ondertekende besluitdocument", "isRequired": true },
+            { "name": "Bekendmakingsbewijs", "description": "Bevestiging van publicatie via DROP/LVBB", "isRequired": true }
+        ],
+        "resultTypes": [
+            { "name": "Besluit genomen", "description": "Besluit is genomen en vastgelegd", "archivalPeriod": "P20Y", "archivalAction": "keep" },
+            { "name": "Aangehouden", "description": "Besluit is aangehouden voor een volgende vergadering", "archivalPeriod": "P5Y", "archivalAction": "destroy" },
+            { "name": "Ingetrokken", "description": "Voorstel is ingetrokken", "archivalPeriod": "P5Y", "archivalAction": "destroy" }
+        ],
+        "workflowTemplate": {
+            "title": "College-besluit workflow v1",
+            "description": "Standaard besluitvormingsworkflow voor het college van B&W: voorstel -> advies -> parafering -> agendering -> vergadering -> besluit -> bekendmaking -> archivering",
+            "version": 1,
+            "isActive": true,
+            "isDraft": false,
+            "steps": [
+                { "title": "Voorstel opstellen", "statusName": "Voorstel opstellen", "order": 1, "isRequired": true, "description": "Ambtenaar stelt het collegeadvies op" },
+                { "title": "Ambtelijk advies", "statusName": "Ambtelijk advies", "order": 2, "isRequired": true, "description": "Inhoudelijk advies door beleidsadviseur" },
+                { "title": "Parafering", "statusName": "Parafering", "order": 3, "isRequired": true, "description": "Sequentiele goedkeuring", "automaticActions": [{ "type": "besluitvormingActivate" }] },
+                { "title": "Gereed voor agendering", "statusName": "Gereed voor agendering", "order": 4, "isRequired": true, "description": "Klaar voor agendacompilatie" },
+                { "title": "Geagendeerd", "statusName": "Geagendeerd", "order": 5, "isRequired": true, "description": "Op de agenda gezet" },
+                { "title": "Vergadering", "statusName": "Vergadering", "order": 6, "isRequired": true, "description": "Behandeling tijdens de vergadering" },
+                { "title": "Besluit genomen", "statusName": "Besluit genomen", "order": 7, "isRequired": true, "description": "Besluit vastgelegd" },
+                { "title": "Bekendmaking", "statusName": "Bekendmaking", "order": 8, "isRequired": true, "description": "Publicatie via DROP/LVBB", "automaticActions": [{ "type": "besluitvormingPublish" }] },
+                { "title": "Gearchiveerd", "statusName": "Gearchiveerd", "order": 9, "isRequired": true, "description": "Dossier gearchiveerd", "isFinal": true }
+            ],
+            "transitions": [
+                { "fromStatusName": "Voorstel opstellen", "toStatusName": "Ambtelijk advies", "label": "Naar advies" },
+                { "fromStatusName": "Ambtelijk advies", "toStatusName": "Parafering", "label": "Start parafering" },
+                {
+                    "fromStatusName": "Parafering", "toStatusName": "Gereed voor agendering", "label": "Parafering compleet",
+                    "guards": [{ "type": "requiredField", "config": { "field": "paraferingCompleet" } }]
+                },
+                { "fromStatusName": "Gereed voor agendering", "toStatusName": "Geagendeerd", "label": "Agenderen" },
+                { "fromStatusName": "Geagendeerd", "toStatusName": "Vergadering", "label": "Naar vergadering" },
+                {
+                    "fromStatusName": "Vergadering", "toStatusName": "Besluit genomen", "label": "Besluit vastleggen",
+                    "guards": [{ "type": "requiredField", "config": { "field": "stemuitslag" } }]
+                },
+                {
+                    "fromStatusName": "Besluit genomen", "toStatusName": "Bekendmaking", "label": "Bekendmaken",
+                    "guards": [{ "type": "requiredDocument", "config": { "documentType": "Besluitdocument" } }]
+                },
+                {
+                    "fromStatusName": "Bekendmaking", "toStatusName": "Gearchiveerd", "label": "Archiveren",
+                    "guards": [
+                        { "type": "requiredDocument", "config": { "documentType": "Collegeadvies" } },
+                        { "type": "requiredDocument", "config": { "documentType": "Besluitdocument" } },
+                        { "type": "requiredDocument", "config": { "documentType": "Bekendmakingsbewijs" } }
+                    ],
+                    "automaticActions": [
+                        { "type": "setField", "field": "archiveStatus", "value": "gearchiveerd" }
+                    ]
+                }
+            ]
+        },
+        "parafeerroute": {
+            "name": "Collegeadvies standaard - 3 stappen",
+            "voorstelType": "collegeadvies",
+            "isDefault": true,
+            "description": "Standaard parafeerketen voor collegeadviezen: beleidsadviseur -> afdelingshoofd -> gemeentesecretaris",
+            "steps": [
+                { "order": 1, "type": "parafering", "actor": "Beleidsadviseur", "actorType": "role", "mandatory": true },
+                { "order": 2, "type": "parafering", "actor": "Afdelingshoofd", "actorType": "role", "mandatory": true },
+                { "order": 3, "type": "parafering", "actor": "Gemeentesecretaris", "actorType": "role", "mandatory": true }
+            ]
+        }
+    }
+}

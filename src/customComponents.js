@@ -23,20 +23,52 @@ import WerkvoorraadView from './views/Werkvoorraad.vue'
 // CaseMapView removed — superseded by manifest `type: 'map'` CnMapPage
 // (see openspec/changes/case-map-overview/design.md).
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
+// --- Termijnbewaking + Archief + Tenant dashboards (chain-builds 06/2026). ---
+import TermijnDashboard from './views/dashboard/TermijnDashboard.vue'
+import ArchiefDashboard from './views/dashboard/ArchiefDashboard.vue'
+import TenantOnboardingDashboard from './views/dashboard/TenantOnboardingDashboard.vue'
 // VoorstellenView removed — the Voorstellen list page is now a declarative
 // `type:"index"` on the `voorstel` schema (formatter columns + status badge,
 // see src/manifest.json + src/services/formatters.js).
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import AdminRootView from './views/settings/AdminRoot.vue'
-import PublicCaseView from './views/public/PublicCaseView.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
+
+// --- Leverancier-zaakportaal (operator-side) — chain members 06/08/10/11/14/15. ---
+import LeverancierDashboard from './views/leverancier/LeverancierDashboard.vue'
+import TenderList from './views/leverancier/TenderList.vue'
+import TenderDetail from './views/leverancier/TenderDetail.vue'
+import InvoiceList from './views/leverancier/InvoiceList.vue'
+import ContractList from './views/leverancier/ContractList.vue'
+import KpiView from './views/leverancier/KpiView.vue'
+import ProfileForm from './views/leverancier/ProfileForm.vue'
+import MessageThread from './views/leverancier/MessageThread.vue'
 
 // --- Detail-tab custom components (one per cross-schema relation). ---
 // Stubs for v1 — full implementations follow in `procest-case-relation-tabs`.
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
+
+// --- Deelzaak (sub-case) full-page views — manifest custom routes. ---
+// @spec openspec/changes/deelzaak-support/tasks.md#T05
+// @spec openspec/changes/deelzaak-support/tasks.md#T06
+import DeelzaakList from './views/cases/DeelzaakList.vue'
+import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
+
+// --- Mobiel-inspectie offline PWA views (mobiel-inspectie-offline). ---
+// @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
+import InspectieList from './views/inspectie/InspectieList.vue'
+import InspectieDetail from './views/inspectie/InspectieDetail.vue'
+
+// --- Case-email sidebar tab (leaf-first per ADR-022). ---
+// @spec openspec/changes/case-email-integration/tasks.md#T12
+import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
+
+// --- ZGW DRC case dossier sidebar tab. ---
+// @spec openspec/changes/document-zaakdossier/tasks.md#T10
+import DossierTab from './views/cases/components/DossierTab.vue'
 
 // --- Visual workflow editor — TEMPORARILY UNWIRED. ---
 // `@vue-flow/{core,controls,background}` v1.x are Vue-3-only (they import
@@ -47,11 +79,6 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // library (or procest migrates to Vue 3). See
 // openspec/changes/visual-workflow-editor/design.md.
 // import VisualWorkflowEditor from './components/workflow/VisualWorkflowEditor.vue'
-
-// --- Shared map surface (case detail map tab, dashboard widget, public case page). ---
-// Thin wrapper around CnMapWidget; registered here so manifest entries
-// MAY reference it by string name. See openspec/changes/map-component/.
-import MapComponent from './components/map/MapComponent.vue'
 
 // --- Features & Roadmap page — thin wrapper around the lib's
 //     CnFeaturesAndRoadmapView (the in-product roadmap surface powered by
@@ -102,8 +129,11 @@ export default {
 	// CaseMapView removed — see import comment above.
 
 	// --- Lib gaps: would migrate once lib gains the missing primitive. ---
-	DoorlooptijdView, // KPI dashboard with apexcharts (lib chart-widget gap)
+	DoorlooptijdView, // SLA dashboard — charts via OR analytics-series leaf + lib CnChartWidget (ADR-022)
 	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
+	TermijnDashboard, // AWB termijnbewaking + dwangsom KPI dashboard
+	ArchiefDashboard, // e-Depot handover dashboard (stats + triggers + audit)
+	TenantOnboardingDashboard, // SaaS tenant onboarding (7-step + go-live)
 
 	// --- Migration cost: deferred to a follow-up. ---
 	VoorstelDetailView, // parafeerroute multi-step approver flow
@@ -112,20 +142,40 @@ export default {
 	voorstelReminder, // Voorstellen index → POST a parafering reminder
 
 	// --- Anonymous-public routes (no auth, no main menu). ---
-	PublicCaseView,
 	PublicAppointmentPage,
 	PublicStatusPage,
+
+	// --- Leverancier-zaakportaal (operator-side) — chain members 06/08/10/11/14/15. ---
+	LeverancierDashboard,
+	TenderList,
+	TenderDetail,
+	InvoiceList,
+	ContractList,
+	KpiView,
+	ProfileForm,
+	MessageThread,
 
 	// --- Detail-tab components (one per case-detail cross-schema relation). ---
 	CaseTasksTab, // tasks where task.case === parent.id
 	CaseDecisionsTab, // decisions where decision.case === parent.id
 	CaseDocumentsTab, // documents where document.case === parent.id
 
+	// --- Deelzaak (sub-case) views (manifest /cases/:id/deelzaken[/...]). ---
+	DeelzaakList, // sub-case list for a parent case
+	DeelzaakDetail, // sub-case detail with parent breadcrumb
+
+	// --- Mobiel-inspectie offline PWA (daily planning + offline checklists). ---
+	InspectieList, // offline daily planning + sync indicator
+	InspectieDetail, // offline checklist completion (atomic local store + queue)
+
+	// --- Case-email sidebar tab (display via leaf, compose via NC Mail draft). ---
+	CaseEmailTab,
+
+	// --- ZGW DRC case dossier tab (document-zaakdossier). ---
+	DossierTab,
+
 	// --- Visual workflow editor — temporarily unwired (see import comment above). ---
 	// VisualWorkflowEditor,
-
-	// --- Shared map surface — referenceable from manifest pages. ---
-	MapComponent,
 
 	// --- Features & Roadmap page (lib's CnFeaturesAndRoadmapView). ---
 }

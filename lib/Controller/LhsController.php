@@ -28,10 +28,12 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\Service\LhsLookupService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\Vth\LhsRecommendationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -52,18 +54,20 @@ class LhsController extends Controller
     /**
      * Constructor.
      *
-     * @param string                   $appName         App name
-     * @param IRequest                 $request         Request
-     * @param LhsRecommendationService $lhsService      LHS engine
-     * @param SettingsService          $settingsService Settings bridge
-     * @param IUserSession             $userSession     User session
-     * @param IGroupManager            $groupManager    Group manager
-     * @param LoggerInterface          $logger          Logger
+     * @param string                   $appName          App name
+     * @param IRequest                 $request          Request
+     * @param LhsRecommendationService $lhsService       LHS engine
+     * @param SettingsService          $settingsService  Settings bridge
+     * @param IUserSession             $userSession      User session
+     * @param IGroupManager            $groupManager     Group manager
+     * @param LoggerInterface          $logger           Logger
+     * @param LhsLookupService         $lhsLookupService LHS simple lookup service
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly LhsRecommendationService $lhsService,
+        private readonly LhsLookupService $lhsLookupService,
         private readonly SettingsService $settingsService,
         private readonly IUserSession $userSession,
         private readonly IGroupManager $groupManager,
@@ -220,4 +224,57 @@ class LhsController extends Controller
 
         return new JSONResponse($updated);
     }//end override()
+
+    /**
+     * Look up an LHS interventieladder step for a gedrag × gevolg combination.
+     *
+     * Query parameters:
+     *   - gedrag (string, required): A | B | C | D
+     *   - gevolg (string, required): 1 | 2 | 3 | 4
+     *
+     * @return JSONResponse The matching lhsMatrixCell {gedragRow, gevolgColumn, interventieStep, description}
+     *
+     * @NoAdminRequired
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/vth-module/tasks.md#task-8
+     */
+    public function lookup(): JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(
+                ['error' => 'Authenticatie vereist'],
+                Http::STATUS_UNAUTHORIZED,
+            );
+        }
+
+        $gedrag = (string) $this->request->getParam('gedrag', '');
+        $gevolg = (string) $this->request->getParam('gevolg', '');
+
+        if ($gedrag === '' || $gevolg === '') {
+            return new JSONResponse(
+                ['error' => 'gedrag en gevolg zijn verplicht'],
+                Http::STATUS_BAD_REQUEST,
+            );
+        }
+
+        try {
+            $cell = $this->lhsLookupService->lookup(gedrag: $gedrag, gevolg: $gevolg);
+        } catch (RuntimeException $e) {
+            return new JSONResponse(
+                ['error' => $e->getMessage()],
+                Http::STATUS_BAD_REQUEST,
+            );
+        } catch (Throwable $e) {
+            $this->logger->error('Procest LHS lookup failed: '.$e->getMessage());
+            return new JSONResponse(
+                ['error' => 'LHS opzoeken mislukt'],
+                Http::STATUS_INTERNAL_SERVER_ERROR,
+            );
+        }
+
+        return new JSONResponse($cell);
+    }//end lookup()
 }//end class

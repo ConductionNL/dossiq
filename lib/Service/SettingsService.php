@@ -17,6 +17,9 @@
  * @link https://procest.nl
  *
  * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -31,6 +34,10 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Service for managing Procest application configuration and settings.
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — config bridge mapping ~73 schema slugs to appconfig keys; breadth is data, not branching
  */
 class SettingsService
 {
@@ -123,6 +130,33 @@ class SettingsService
         'beroep_schema',
         // Bezwaar decision (bezwaar-decision spec) — Awb art. 7:11/7:12.
         'bezwaar_decision_schema',
+        // KCC klantcontact-integratie (kcc-klantcontact-integratie spec).
+        // contactMoment reuses the existing customer_contact_schema; only the
+        // KCC-specific operational schemas get new config keys here.
+        'routing_rule_schema',
+        'kcc_agent_schema',
+        'callback_request_schema',
+        // Subsidieverlening-keten (subsidieverlening-keten spec) — AWB titel 4.2.
+        'subsidie_regeling_schema',
+        'subsidie_aanvraag_schema',
+        'subsidie_beoordeling_schema',
+        'subsidie_beschikking_schema',
+        'subsidie_uitvoering_schema',
+        'tussenrapportage_schema',
+        'subsidie_vaststelling_schema',
+        'terugvordering_schema',
+        'bewijsstuk_schema',
+        // Leges-heffingen (leges-heffingen spec) — Gemeentewet art. 229.
+        'leges_tarief_tabel_schema',
+        'leges_tarief_schema',
+        'leges_variant_schema',
+        'leges_korting_schema',
+        'leges_berekening_schema',
+        'leges_restitutie_schema',
+        // Shillinq accounts-receivable integration toggles.
+        'leges_shillinq_enabled',
+        'leges_shillinq_source',
+        'leges_betalingstermijn_dagen',
         'lhsMatrix',
         'lhs_matrix_schema',
         'lhs_recommendation_schema',
@@ -158,6 +192,110 @@ class SettingsService
         // Outage banner copy (nl + en).
         'pdok_outage_banner_nl',
         'pdok_outage_banner_en',
+        // KCC-werkplek bridge schema config keys (kcc-werkplek-zaaksysteem-bridge).
+        'contactmoment_schema',
+        'kcc_quick_action_schema',
+        'belplan_schema',
+        'specialist_beschikbaarheid_schema',
+        'doorverbinding_schema',
+        'klant_sentiment_schema',
+        // KCC-werkplek bridge behaviour settings.
+        'identification_method',
+        'identification_score_threshold',
+        'sentiment_polling_interval',
+        'specialist_availability_polling_interval',
+        'max_zaken_voorblad',
+        'max_contactmomenten_history',
+        'quick_action_templates',
+        'belplan_overflow_threshold_wachttijd',
+        'belplan_overflow_threshold_wachtrij_lengte',
+        'sentiment_trigger_words',
+        // Complaint management (klachtafhandeling) — Awb chapter 9.
+        'complaint_schema',
+        'hearing_schema',
+        'complaint_disposition_schema',
+        'complaint_category_schema',
+        // Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente).
+        'portaal_bericht_schema',
+        'portaal_verzoek_schema',
+        'portaal_notificatie_voorkeur_schema',
+        // Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17).
+        'termijn_definitie_schema',
+        'termijn_instance_schema',
+        'termijn_gebeurtenis_schema',
+        'ingebrekestelling_schema',
+        'dwangsom_berekening_schema',
+        'dwangsom_uitbetaling_schema',
+        // Mandaat-matrix authorization engine.
+        'mandaterings_besluit_schema',
+        'mandaat_schema',
+        'organisatie_rol_schema',
+        'medewerker_rol_toewijzing_schema',
+        'mandaat_gebruik_schema',
+        'mandaat_escalatie_schema',
+        // Handler vervanging/waarneming (handler-vervanging-waarneming spec).
+        'substitution_schema',
+        // Archief / e-Depot SIP handover engine.
+        'bewaar_termijn_regel_schema',
+        'overdracht_trigger_schema',
+        'sip_bundel_schema',
+        'overdracht_transactie_schema',
+        'archief_bewijs_schema',
+        'overdracht_audit_log_schema',
+        // Case-email integration (case-email-integration spec).
+        // emailTemplate is the only net-new schema; sending/threading live in NC Mail.
+        'email_template_schema',
+        // Shared-mailbox poller / IMAP-side config (ADR-022 exception).
+        'email_imap_host',
+        'email_imap_port',
+        'email_imap_encryption',
+        'email_imap_username',
+        'email_imap_password',
+        'email_imap_folder',
+        'email_transport',
+        'email_poll_interval',
+        'email_poll_batch_size',
+        'email_max_attachment_size',
+        // Consultation management (consultation-management spec).
+        'consultation_schema',
+        'advice_response_schema',
+        'advisory_body_schema',
+        // Besluitvorming workflow integration endpoints (besluitvorming-workflow spec).
+        // Official publication (DROP / LVBB) — empty disables dispatch.
+        'drop_lvbb_endpoint',
+        'drop_lvbb_token',
+        // Mandaatregister authority validation — empty falls back to manual confirmation.
+        'mandaatregister_endpoint',
+        'mandaatregister_token',
+        // ZGW DRC case dossier (document-zaakdossier spec).
+        'dossier_informatieobject_schema',
+        'dossier_zaakinformatieobject_schema',
+        'dossier_besluitinformatieobject_schema',
+        'dossier_informatieobjecttype_schema',
+        // Maximum upload size in bytes (0 = no app-level limit, NC limit applies).
+        'dossier_max_file_size',
+        // Toggle: organise ZIP export into per-informatieobjecttype sub-folders.
+        'dossier_subfolder_per_type',
+        // Comma-separated map of NC group ids to clearance levels, e.g.
+        // "vertrouwelijk-cleared:vertrouwelijk,geheim-cleared:geheim". Empty
+        // means every authenticated user has the baseline clearance below.
+        'dossier_clearance_group_map',
+        // Baseline clearance for any authenticated user lacking a mapped group.
+        'dossier_default_clearance',
+        // GIS / geo viewer settings (gis-integration spec).
+        // Map library used by the frontend viewer ('leaflet' or 'openlayers').
+        'geo_map_library',
+        // Default map centre + zoom (Netherlands) for the cases-on-map view.
+        'geo_default_center_lat',
+        'geo_default_center_lon',
+        'geo_default_zoom',
+        // Pixel radius for client-side marker clustering.
+        'geo_max_cluster_radius',
+        // Toggle: expose the public /wfs/cases OGC WFS endpoint.
+        'geo_wfs_endpoint_enabled',
+        // PDOK Locatieserver cache TTL (seconds) + endpoint override.
+        'pdok_locatieserver_cache_ttl',
+        'pdok_locatieserver_url',
     ];
 
     /**
@@ -227,6 +365,96 @@ class SettingsService
         'bacAdviceRequest'             => 'bac_advice_request_schema',
         'beroep'                       => 'beroep_schema',
         'bezwaarDecision'              => 'bezwaar_decision_schema',
+        'routingRule'                  => 'routing_rule_schema',
+        'kccAgent'                     => 'kcc_agent_schema',
+        'callbackRequest'              => 'callback_request_schema',
+        'subsidieRegeling'             => 'subsidie_regeling_schema',
+        'subsidieAanvraag'             => 'subsidie_aanvraag_schema',
+        'subsidieBeoordeling'          => 'subsidie_beoordeling_schema',
+        'subsidieBeschikking'          => 'subsidie_beschikking_schema',
+        'subsidieUitvoering'           => 'subsidie_uitvoering_schema',
+        'tussenrapportage'             => 'tussenrapportage_schema',
+        'subsidieVaststelling'         => 'subsidie_vaststelling_schema',
+        'terugvordering'               => 'terugvordering_schema',
+        'bewijsstuk'                   => 'bewijsstuk_schema',
+        // KCC-werkplek bridge schemas (kcc-werkplek-zaaksysteem-bridge).
+        'contactmoment'                => 'contactmoment_schema',
+        'kccQuickAction'               => 'kcc_quick_action_schema',
+        'belplan'                      => 'belplan_schema',
+        'specialistBeschikbaarheid'    => 'specialist_beschikbaarheid_schema',
+        'doorverbinding'               => 'doorverbinding_schema',
+        'klantSentiment'               => 'klant_sentiment_schema',
+        // Complaint management (klachtafhandeling) — Awb chapter 9.
+        'complaint'                    => 'complaint_schema',
+        'hearing'                      => 'hearing_schema',
+        'complaintDisposition'         => 'complaint_disposition_schema',
+        'complaintCategory'            => 'complaint_category_schema',
+        // Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente).
+        'portaalBericht'               => 'portaal_bericht_schema',
+        'portaalVerzoek'               => 'portaal_verzoek_schema',
+        'portaalNotificatieVoorkeur'   => 'portaal_notificatie_voorkeur_schema',
+        // Leges (municipal fees) — leges-heffingen spec.
+        'legesTariefTabel'             => 'leges_tarief_tabel_schema',
+        'legesTarief'                  => 'leges_tarief_schema',
+        'legesVariant'                 => 'leges_variant_schema',
+        'legesKorting'                 => 'leges_korting_schema',
+        'legesBerekening'              => 'leges_berekening_schema',
+        'legesRestitutie'              => 'leges_restitutie_schema',
+        // Termijnbewaking + dwangsom (AWB 4:13/4:14/4:17).
+        'termijnDefinitie'             => 'termijn_definitie_schema',
+        'termijnInstance'              => 'termijn_instance_schema',
+        'termijnGebeurtenis'           => 'termijn_gebeurtenis_schema',
+        'ingebrekestelling'            => 'ingebrekestelling_schema',
+        'dwangsomBerekening'           => 'dwangsom_berekening_schema',
+        'dwangsomUitbetaling'          => 'dwangsom_uitbetaling_schema',
+        // Mandaat-matrix authorization engine.
+        'mandateringsBesluit'          => 'mandaterings_besluit_schema',
+        'mandaat'                      => 'mandaat_schema',
+        'organisatieRol'               => 'organisatie_rol_schema',
+        'medewerkerRolToewijzing'      => 'medewerker_rol_toewijzing_schema',
+        'mandaatGebruik'               => 'mandaat_gebruik_schema',
+        'mandaatEscalatie'             => 'mandaat_escalatie_schema',
+        'substitution'                 => 'substitution_schema',
+        // Archief / e-Depot SIP handover engine.
+        'bewaarTermijnRegel'           => 'bewaar_termijn_regel_schema',
+        'overdrachtTrigger'            => 'overdracht_trigger_schema',
+        'sipBundel'                    => 'sip_bundel_schema',
+        'overdrachtTransactie'         => 'overdracht_transactie_schema',
+        'archiefBewijs'                => 'archief_bewijs_schema',
+        'overdrachtAuditLog'           => 'overdracht_audit_log_schema',
+        // Case-email integration (case-email-integration spec).
+        'emailTemplate'                => 'email_template_schema',
+        // Consultation management (consultation-management spec).
+        'consultation'                 => 'consultation_schema',
+        'adviceResponse'               => 'advice_response_schema',
+        'advisoryBody'                 => 'advisory_body_schema',
+        // Milestone tracking (milestone-tracking spec).
+        'milestoneDefinition'          => 'milestone_definition_schema',
+        'milestoneRecord'              => 'milestone_record_schema',
+        // ZGW DRC case dossier (document-zaakdossier spec).
+        'informatieobject'             => 'dossier_informatieobject_schema',
+        'zaakinformatieobject'         => 'dossier_zaakinformatieobject_schema',
+        'besluitinformatieobject'      => 'dossier_besluitinformatieobject_schema',
+        'informatieobjecttype'         => 'dossier_informatieobjecttype_schema',
+    ];
+
+    /**
+     * Default values for KCC-werkplek bridge behaviour settings.
+     *
+     * Used by getKccConfigValue() so that an unset app-config key resolves to
+     * the documented default rather than an empty string.
+     */
+    public const KCC_DEFAULTS = [
+        'identification_method'                      => 'both',
+        'identification_score_threshold'             => '0.8',
+        'sentiment_polling_interval'                 => '5',
+        'specialist_availability_polling_interval'   => '30',
+        'max_zaken_voorblad'                         => '10',
+        'max_contactmomenten_history'                => '5',
+        'belplan_overflow_threshold_wachttijd'       => '180',
+        'belplan_overflow_threshold_wachtrij_lengte' => '5',
+        'sentiment_trigger_words'                    => '["ongelooflijk","klacht","wethouder","advocaat","media","rechtszaak"]',
+        'quick_action_templates'                     => '{}',
     ];
 
     private const OPENREGISTER_APP_ID = 'openregister';
@@ -253,6 +481,8 @@ class SettingsService
      * Check if OpenRegister is installed and enabled.
      *
      * @return bool
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
      */
     public function isOpenRegisterAvailable(): bool
     {
@@ -293,6 +523,77 @@ class SettingsService
             return null;
         }
     }//end getObjectService()
+
+
+    /**
+     * Lazily resolve OpenRegister's ApprovalService for parafering chain delegation.
+     *
+     * Per ADR-022 (apps consume OpenRegister abstractions) the parafering
+     * (sign-off routing) chain-state backend is OpenRegister's
+     * `approval-workflow` capability, exposed through
+     * `OCA\OpenRegister\Service\ApprovalService`. OpenRegister is an optional
+     * runtime dependency, so — exactly like getObjectService() — the class is
+     * resolved through the container at call time rather than type-hinted in the
+     * constructor. Callers MUST handle the null case (graceful degradation to
+     * the legacy in-array path during the migration window).
+     *
+     * @return object|null The OpenRegister ApprovalService or null when unavailable
+     *
+     * @psalm-suppress MixedReturnStatement
+     * @psalm-suppress MixedInferredReturnType
+     *
+     * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
+     */
+    public function getApprovalService(): ?object
+    {
+        if ($this->isOpenRegisterAvailable() === false) {
+            return null;
+        }
+
+        try {
+            return $this->container->get('OCA\OpenRegister\Service\ApprovalService');
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Procest: Could not access OpenRegister ApprovalService',
+                ['exception' => $e->getMessage()]
+            );
+            return null;
+        }
+    }//end getApprovalService()
+
+
+    /**
+     * Lazily resolve an OpenRegister DI class by fully-qualified name.
+     *
+     * Generic helper for the parafering approval bridge to reach OpenRegister's
+     * ApprovalChainMapper / ApprovalStepMapper without a hard constructor
+     * dependency on the optional OpenRegister app.
+     *
+     * @param string $class Fully-qualified OpenRegister class name
+     *
+     * @return object|null The resolved service, or null when unavailable
+     *
+     * @psalm-suppress MixedReturnStatement
+     * @psalm-suppress MixedInferredReturnType
+     *
+     * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
+     */
+    public function getOpenRegisterClass(string $class): ?object
+    {
+        if ($this->isOpenRegisterAvailable() === false) {
+            return null;
+        }
+
+        try {
+            return $this->container->get($class);
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Procest: Could not access OpenRegister class',
+                ['class' => $class, 'exception' => $e->getMessage()]
+            );
+            return null;
+        }
+    }//end getOpenRegisterClass()
 
     /**
      * Load the register configuration from procest_register.json via ConfigurationService.
@@ -378,13 +679,13 @@ class SettingsService
                 force: $force,
             );
 
-            $this->logger->info(
-                'Procest: Configuration imported successfully',
-                ['version' => $configVersion]
-            );
-
-            // Auto-configure schema IDs from import result.
             $configuredCount = $this->autoConfigureAfterImport(importResult: $importResult);
+            $this->reconcileSchemaConfig();
+
+            $this->logger->info(
+                'Procest: Configuration imported and reconciled',
+                ['version' => $configVersion, 'configured' => $configuredCount]
+            );
 
             return [
                 'success'    => true,
@@ -433,6 +734,8 @@ class SettingsService
      * to ordinary authenticated users.
      *
      * @return array
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
      */
     public function getPublicSettings(): array
     {
@@ -475,11 +778,37 @@ class SettingsService
      * @param string $default The default value if key not found
      *
      * @return string
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
      */
     public function getConfigValue(string $key, string $default=''): string
     {
         return $this->appConfig->getValueString(Application::APP_ID, $key, $default);
     }//end getConfigValue()
+
+    /**
+     * Get a KCC-werkplek behaviour setting, falling back to its documented default.
+     *
+     * Unlike getConfigValue(), an unset key resolves to the value declared in
+     * self::KCC_DEFAULTS rather than an empty string. This keeps the KCC bridge
+     * functional out-of-the-box before an administrator visits the settings form.
+     *
+     * @param string $key The configuration key (must exist in self::KCC_DEFAULTS).
+     *
+     * @return string The configured value, or the documented default.
+     *
+     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md
+     */
+    public function getKccConfigValue(string $key): string
+    {
+        $default = (self::KCC_DEFAULTS[$key] ?? '');
+        $value   = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+        if ($value === '') {
+            return $default;
+        }
+
+        return $value;
+    }//end getKccConfigValue()
 
     /**
      * Set a single configuration value.
@@ -488,11 +817,116 @@ class SettingsService
      * @param string $value The value to set
      *
      * @return void
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
      */
     public function setConfigValue(string $key, string $value): void
     {
         $this->appConfig->setValueString(Application::APP_ID, $key, $value);
     }//end setConfigValue()
+
+    /**
+     * Reconcile every `*_schema` appconfig key directly from OpenRegister.
+     *
+     * `autoConfigureAfterImport()` only persists schema IDs that appear in the
+     * ConfigurationService import RESULT. On an already-imported instance an
+     * idempotent re-import returns an empty `schemas` list, so the per-schema
+     * config keys (case_type_schema, status_type_schema, status_record_schema,
+     * workflow_template_schema, …) were never written — the status-name lookup
+     * and the WorkflowBoard then silently broke on a fresh deploy.
+     *
+     * This method closes that gap: for each schema slug Procest knows about it
+     * resolves the LIVE schema ID via OpenRegister's SchemaMapper (slug-aware
+     * `find()`) and writes the matching appconfig key. It is fully idempotent —
+     * a key that already holds the correct ID is left untouched — so it is safe
+     * to call on every install/upgrade and after every import.
+     *
+     * @return int The number of schema config keys (re)written.
+     *
+     * @spec openspec/specs/status-transition-engine/spec.md
+     */
+    public function reconcileSchemaConfig(): int
+    {
+        if ($this->isOpenRegisterAvailable() === false) {
+            return 0;
+        }
+
+        try {
+            $schemaMapper = $this->container->get('OCA\OpenRegister\Db\SchemaMapper');
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Procest: Could not access OpenRegister SchemaMapper for reconcile',
+                ['exception' => $e->getMessage()]
+            );
+            return 0;
+        }
+
+        $written = 0;
+        foreach (self::SLUG_TO_CONFIG_KEY as $slug => $configKey) {
+            $written += $this->reconcileSingleSchemaKey(
+                schemaMapper: $schemaMapper,
+                slug: (string) $slug,
+                configKey: $configKey
+            );
+        }
+
+        $this->logger->info(
+            'Procest: Reconciled schema config keys from OpenRegister',
+            ['written' => $written]
+        );
+
+        return $written;
+    }//end reconcileSchemaConfig()
+
+    /**
+     * Resolve one schema slug to its live ID and persist its appconfig key.
+     *
+     * Idempotent: returns 0 (and writes nothing) when the slug does not resolve
+     * or the key already holds the correct ID; returns 1 when it (re)writes.
+     *
+     * @param object $schemaMapper The OpenRegister SchemaMapper.
+     * @param string $slug         The schema slug (e.g. 'caseType').
+     * @param string $configKey    The Procest appconfig key to write.
+     *
+     * @return int 1 when the key was (re)written, 0 otherwise.
+     *
+     * @spec openspec/specs/status-transition-engine/spec.md
+     */
+    private function reconcileSingleSchemaKey(object $schemaMapper, string $slug, string $configKey): int
+    {
+        try {
+            // Slug-aware lookup with RBAC + multi-tenancy disabled: the repair
+            // step runs in a system context that has no active organisation,
+            // and the schema set is app-owned config, not tenant data.
+            $schema   = $schemaMapper->find($slug, [], null, false, false);
+            $schemaId = (string) $schema->getId();
+        } catch (\Throwable $e) {
+            // Slug not present in this OpenRegister instance — skip it.
+            return 0;
+        }
+
+        if ($schemaId === '') {
+            return 0;
+        }
+
+        $current = $this->appConfig->getValueString(Application::APP_ID, $configKey, '');
+        if ($current === $schemaId) {
+            return 0;
+        }
+
+        $this->appConfig->setValueString(Application::APP_ID, $configKey, $schemaId);
+
+        // Keep the stable workflow_definition_schema alias in sync.
+        if ($slug === 'workflowTemplate') {
+            $this->appConfig->setValueString(
+                Application::APP_ID,
+                'workflow_definition_schema',
+                $schemaId
+            );
+        }
+
+        return 1;
+    }//end reconcileSingleSchemaKey()
 
     /**
      * Auto-configure schema and register IDs from the import result.
@@ -696,4 +1130,4 @@ class SettingsService
 
         return true;
     }//end isList()
-}//end class
+    }//end class

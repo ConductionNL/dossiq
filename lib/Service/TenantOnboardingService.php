@@ -1,0 +1,293 @@
+<?php
+
+/**
+ * Procest Tenant Onboarding Service
+ *
+ * Owns the per-tenant onboarding checklist — fork the 7-step template,
+ * track progress, mark steps complete, validate go-live readiness.
+ *
+ * @category Service
+ * @package  OCA\Procest\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @link https://procest.nl
+ *
+ * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Procest\Service;
+
+use DateTimeImmutable;
+use InvalidArgumentException;
+use OCP\App\IAppManager;
+use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * Onboarding workflow service.
+ */
+class TenantOnboardingService
+{
+    /**
+     * The seven canonical onboarding steps.
+     */
+    public const STEPS = [
+        'contract',
+        'mandate_import',
+        'sso_setup',
+        'branding',
+        'zaaktype_selection',
+        'first_user',
+        'go_live',
+    ];
+
+    public function __construct(
+        private readonly TenantSaasService $tenantSaasService,
+        private readonly IAppManager $appManager,
+        private readonly ContainerInterface $container,
+        private readonly LoggerInterface $logger,
+    ) {
+    }
+
+    /**
+     * Fork the default 7-step template into the tenant's onboarding list.
+     *
+     * @param string $tenantId Tenant UUID.
+     *
+     * @return array<int, array<string, mixed>> Created task rows.
+     */
+    public function createOnboarding(string $tenantId): array
+    {
+        $os = $this->getObjectService();
+        if ($os === null) {
+            $this->logger->info('Procest: createOnboarding skipped — OR unavailable');
+            return [];
+        }
+
+        $created = [];
+        foreach (self::STEPS as $step) {
+            try {
+                $row = $os->saveObject(
+                    object: ['tenantRef' => $tenantId, 'step' => $step, 'status' => 'pending'],
+                    register: TenantSaasService::REGISTER,
+                    schema: 'tenantOnboardingTask',
+                    uuid: null
+                );
+                if (is_array($row) === true) {
+                    $created[] = $row;
+                }
+            } catch (Throwable $e) {
+                $this->logger->error(
+                    'Procest: createOnboarding step write failed',
+                    ['tenantId' => $tenantId, 'step' => $step, 'exception' => $e->getMessage()]
+                );
+            }
+        }
+
+        return $created;
+    }
+
+    /**
+     * Get the per-step progress and overall completion fraction.
+     *
+     * @param string $tenantId Tenant UUID.
+     *
+     * @return array{steps: array<int, array<string, mixed>>, completed: int, total: int, fraction: float}
+     */
+    public function getProgress(string $tenantId): array
+    {
+        $os = $this->getObjectService();
+        if ($os === null) {
+            return ['steps' => [], 'completed' => 0, 'total' => count(self::STEPS), 'fraction' => 0.0];
+        }
+
+        try {
+            $rows = $os->findAll(
+                register: TenantSaasService::REGISTER,
+                schema: 'tenantOnboardingTask',
+                limit: 100,
+                offset: 0,
+                filters: ['tenantRef' => $tenantId]
+            );
+        } catch (Throwable $e) {
+            $rows = [];
+        }
+
+        $rows      = is_array($rows) ? $rows : [];
+        $completed = 0;
+        foreach ($rows as $r) {
+            if ((string) ($r['status'] ?? '') === 'completed') {
+                $completed++;
+            }
+        }
+
+        $total    = max(count(self::STEPS), count($rows));
+        $fraction = $total === 0 ? 0.0 : ($completed / $total);
+        return [
+            'steps'     => array_values($rows),
+            'completed' => $completed,
+            'total'     => $total,
+            'fraction'  => round($fraction, 2),
+        ];
+    }
+
+    /**
+     * Mark a step as completed.
+     *
+     * @param string $tenantId    Tenant UUID.
+     * @param string $step        Step name.
+     * @param string $completedBy NC user ID who completed it.
+     *
+     * @return array<string,mixed>|null Updated task row.
+     *
+     * @throws InvalidArgumentException On invalid step.
+     */
+    public function markStepComplete(string $tenantId, string $step, string $completedBy): ?array
+    {
+        if (in_array($step, self::STEPS, true) === false) {
+            throw new InvalidArgumentException('Unknown onboarding step: '.$step);
+        }
+
+        $os = $this->getObjectService();
+        if ($os === null) {
+            return null;
+        }
+
+        try {
+            $rows = $os->findAll(
+                register: TenantSaasService::REGISTER,
+                schema: 'tenantOnboardingTask',
+                limit: 1,
+                offset: 0,
+                filters: ['tenantRef' => $tenantId, 'step' => $step]
+            );
+            if (is_array($rows) === false || count($rows) === 0) {
+                return null;
+            }
+
+            $task                = $rows[0];
+            $task['status']      = 'completed';
+            $task['completedBy'] = $completedBy;
+            $task['completedAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
+
+            $uuid = (string) ($task['uuid'] ?? $task['id'] ?? '');
+            $row  = $os->saveObject(
+                object: $task,
+                register: TenantSaasService::REGISTER,
+                schema: 'tenantOnboardingTask',
+                uuid: $uuid !== '' ? $uuid : null
+            );
+            return is_array($row) ? $row : $task;
+        } catch (Throwable $e) {
+            $this->logger->error('Procest: markStepComplete failed', ['exception' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
+     * Validate that the tenant is ready to go live.
+     *
+     * Acceptance criteria: ≥1 zaaktype, ≥1 mandate, ≥1 tenant_admin user.
+     *
+     * @param string $tenantId Tenant UUID.
+     *
+     * @return array{ready: bool, missing: array<int, string>}
+     */
+    public function validateGoLive(string $tenantId): array
+    {
+        $os = $this->getObjectService();
+        if ($os === null) {
+            return ['ready' => false, 'missing' => ['openregister_unavailable']];
+        }
+
+        $missing = [];
+        if ($this->countSchemaRows($os, 'caseType', ['tenantRef' => $tenantId]) === 0) {
+            $missing[] = 'zaaktype';
+        }
+
+        if ($this->countSchemaRows($os, 'tenantMandate', ['tenantRef' => $tenantId]) === 0) {
+            $missing[] = 'mandate';
+        }
+
+        if ($this->countSchemaRows($os, 'tenantUser', ['tenantRef' => $tenantId, 'role' => 'tenant_admin']) === 0) {
+            $missing[] = 'tenant_admin';
+        }
+
+        return ['ready' => count($missing) === 0, 'missing' => $missing];
+    }
+
+    /**
+     * Trigger the activation flow when go-live validates.
+     *
+     * @param string $tenantId Tenant UUID.
+     *
+     * @return array{activated: bool, missing?: array<int, string>}
+     */
+    public function activate(string $tenantId): array
+    {
+        $check = $this->validateGoLive($tenantId);
+        if ($check['ready'] === false) {
+            return ['activated' => false, 'missing' => $check['missing']];
+        }
+
+        try {
+            $this->tenantSaasService->updateStatus(tenantId: $tenantId, newStatus: 'active');
+        } catch (Throwable $e) {
+            $this->logger->error('Procest: activation transition failed', ['exception' => $e->getMessage()]);
+            return ['activated' => false, 'missing' => ['transition_failed']];
+        }
+
+        return ['activated' => true];
+    }
+
+    /**
+     * Count rows in a schema with a filter.
+     *
+     * @param mixed $os Object service.
+     * @param string $schema Schema slug.
+     * @param array<string,mixed> $filters Filters.
+     *
+     * @return int
+     */
+    private function countSchemaRows($os, string $schema, array $filters): int
+    {
+        try {
+            $rows = $os->findAll(
+                register: TenantSaasService::REGISTER,
+                schema: $schema,
+                limit: 1,
+                offset: 0,
+                filters: $filters
+            );
+            return is_array($rows) ? count($rows) : 0;
+        } catch (Throwable $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * @return mixed|null
+     */
+    private function getObjectService()
+    {
+        $installed = $this->appManager->getInstalledApps();
+        if (is_array($installed) === false || in_array('openregister', $installed, true) === false) {
+            return null;
+        }
+
+        try {
+            return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+}

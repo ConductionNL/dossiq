@@ -31,6 +31,7 @@ namespace OCA\Procest\Repair;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCA\Procest\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -41,6 +42,9 @@ use Psr\Log\LoggerInterface;
  */
 class MigrateWorkflowDefinitions implements IRepairStep
 {
+
+    use SearchesObjects;
+
     /**
      * Constructor.
      *
@@ -103,17 +107,18 @@ class MigrateWorkflowDefinitions implements IRepairStep
         }
 
         try {
-            $caseTypes = $objectService->findObjects($register, $caseTypeSchema, [], [], 500);
+            $caseTypes = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $caseTypeSchema,
+                filters: ['_limit' => 500]
+            );
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest: workflow backfill failed to list caseTypes',
                 ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
             );
             $output->warning('Could not list caseTypes — skipping workflow backfill.');
-            return;
-        }
-
-        if (is_array($caseTypes) === false) {
             return;
         }
 
@@ -157,9 +162,9 @@ class MigrateWorkflowDefinitions implements IRepairStep
 
             try {
                 $created = $objectService->saveObject(
-                    $register,
-                    $templateSchema,
-                    $template,
+                    object: $template,
+                    register: $register,
+                    schema: $templateSchema,
                 );
             } catch (\Throwable $e) {
                 $this->logger->error(
@@ -176,10 +181,10 @@ class MigrateWorkflowDefinitions implements IRepairStep
             if ($newId !== '') {
                 try {
                     $objectService->saveObject(
-                        $register,
-                        $caseTypeSchema,
-                        ['workflowDefinition' => $newId],
-                        $caseTypeId,
+                        object: ['workflowDefinition' => $newId],
+                        register: $register,
+                        schema: $caseTypeSchema,
+                        uuid: (string) $caseTypeId,
                     );
                 } catch (\Throwable $e) {
                     $this->logger->error(
@@ -228,12 +233,11 @@ class MigrateWorkflowDefinitions implements IRepairStep
         string $statusSchema,
     ): ?array {
         try {
-            $statusRows = $objectService->findObjects(
-                $register,
-                $statusSchema,
-                ['caseType' => $caseTypeId],
-                [],
-                500,
+            $statusRows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $statusSchema,
+                filters: ['caseType' => $caseTypeId, '_limit' => 500],
             );
         } catch (\Throwable $e) {
             $this->logger->error(
@@ -243,7 +247,7 @@ class MigrateWorkflowDefinitions implements IRepairStep
             return null;
         }
 
-        if (is_array($statusRows) === false || $statusRows === []) {
+        if ($statusRows === []) {
             return null;
         }
 
@@ -341,22 +345,17 @@ class MigrateWorkflowDefinitions implements IRepairStep
         string $templateId,
     ): void {
         try {
-            $cases = $objectService->findObjects(
-                $register,
-                $caseSchema,
-                ['caseType' => $caseTypeId],
-                [],
-                500,
+            $cases = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $caseSchema,
+                filters: ['caseType' => $caseTypeId, '_limit' => 500],
             );
         } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest: workflow backfill failed to list cases',
                 ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
             );
-            return;
-        }
-
-        if (is_array($cases) === false) {
             return;
         }
 
@@ -378,13 +377,13 @@ class MigrateWorkflowDefinitions implements IRepairStep
 
             try {
                 $objectService->saveObject(
-                    $register,
-                    $caseSchema,
-                    [
+                    object: [
                         'workflowTemplate' => $templateId,
                         'workflowVersion'  => 1,
                     ],
-                    $caseId,
+                    register: $register,
+                    schema: $caseSchema,
+                    uuid: (string) $caseId,
                 );
             } catch (\Throwable $e) {
                 $this->logger->error(

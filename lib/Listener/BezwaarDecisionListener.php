@@ -143,11 +143,16 @@ class BezwaarDecisionListener implements IEventListener
             return true;
         }
 
+        // A bezwaarDecision is "decided" either when it carries the legacy
+        // local `status:published` (historical records) OR when it has been
+        // delegated to decidesk and carries a `decisionRef` (the besluit is the
+        // decidesk outcome — procest-delegate-remaining-decisions-to-decidesk,
+        // REQ-PDRD-001/REQ-PDRD-003). Both satisfy the published-decision guard.
         try {
-            $matches = $objectService->findAll(
+            $all = $objectService->findAll(
                 $register,
                 $decisionSchema,
-                ['bezwaar' => $bezwaarId, 'status' => 'published']
+                ['bezwaar' => $bezwaarId]
             );
         } catch (Throwable $e) {
             $this->logger->debug(
@@ -157,11 +162,23 @@ class BezwaarDecisionListener implements IEventListener
             return true;
         }
 
-        if (is_array($matches) === false) {
+        if (is_array($all) === false) {
             return false;
         }
 
-        return count($matches) > 0;
+        foreach ($all as $decision) {
+            if (is_array($decision) === false) {
+                continue;
+            }
+
+            $status      = (string) ($decision['status'] ?? '');
+            $decisionRef = (string) ($decision['decisionRef'] ?? '');
+            if ($status === 'published' || $decisionRef !== '') {
+                return true;
+            }
+        }
+
+        return false;
     }//end hasPublishedDecision()
 
     /**
@@ -204,10 +221,10 @@ class BezwaarDecisionListener implements IEventListener
 
         try {
             $objectService->saveObject(
-                $register,
-                $bezwaarSchema,
-                ['status' => $previous],
-                $bezwaarId
+                object: ['status' => $previous],
+                register: $register,
+                schema: $bezwaarSchema,
+                uuid: (string) $bezwaarId
             );
             $this->logger->warning(
                 'Procest bezwaar-decision: blocked transition into "'

@@ -1,0 +1,163 @@
+{
+  "components": {
+    "registers": {
+      "procest": {
+        "schemas": [
+          "bewaarTermijnRegel",
+          "overdrachtTrigger",
+          "sipBundel",
+          "overdrachtTransactie",
+          "archiefBewijs",
+          "overdrachtAuditLog"
+        ]
+      }
+    },
+    "schemas": {
+      "bewaarTermijnRegel": {
+        "slug": "bewaarTermijnRegel",
+        "icon": "ArchiveOutline",
+        "version": "1.0.0",
+        "title": "Bewaartermijn Regel",
+        "description": "Retention rule per zaaktype mapping a selectielijst category to a retention period and an e-Depot destination.",
+        "type": "object",
+        "required": ["zaaktypeKey", "bewaartermijnJaren", "selectielijstCategorie"],
+        "properties": {
+          "zaaktypeKey":           {"type": "string", "facetable": true, "maxLength": 255},
+          "bewaartermijnJaren":    {"type": "integer", "description": "Years; use 9999 for permanent retention"},
+          "selectielijstCategorie":{"type": "string", "maxLength": 255},
+          "selectielijstVersie":   {"type": "string", "maxLength": 64},
+          "eDepotBestemming":      {"type": "string", "maxLength": 255},
+          "eDepotConnectionId":    {"type": "string"},
+          "mdtoVersion":           {"type": "string", "enum": ["1.1", "1.0"], "default": "1.1"},
+          "uitzonderingen":        {"type": "string"},
+          "isActive":              {"type": "boolean", "default": true}
+        }
+      },
+      "overdrachtTrigger": {
+        "slug": "overdrachtTrigger",
+        "icon": "CalendarClock",
+        "version": "1.0.0",
+        "title": "Overdracht Trigger",
+        "description": "Trigger row tracking a case's path to e-Depot handover.",
+        "type": "object",
+        "required": ["zaakId", "zaaktypeKey", "status"],
+        "properties": {
+          "zaakId":             {"type": "string", "facetable": true},
+          "zaaktypeKey":        {"type": "string", "facetable": true},
+          "afsluitingsDatum":   {"type": "string", "format": "date"},
+          "bewaartermijnJaren": {"type": "integer"},
+          "overdrachtDatum":    {"type": "string", "format": "date"},
+          "status": {
+            "type": "string",
+            "enum": [
+              "gereed-voor-overdracht",
+              "in-bundling",
+              "in-overdracht",
+              "geslaagd",
+              "gefaald",
+              "geblokkeerd-geen-regel",
+              "opgeschort-juridische-procedure"
+            ],
+            "default": "gereed-voor-overdracht",
+            "facetable": true
+          },
+          "aanmeldingsDatum":   {"type": "string", "format": "date-time"},
+          "redenBlokkering":    {"type": "string"}
+        }
+      },
+      "sipBundel": {
+        "slug": "sipBundel",
+        "icon": "PackageVariant",
+        "version": "1.0.0",
+        "title": "SIP Bundel",
+        "description": "Submission Information Package — MDTO metadata + documents + manifest, ready for e-Depot submission.",
+        "type": "object",
+        "required": ["zaakId", "status"],
+        "properties": {
+          "zaakId":             {"type": "string", "facetable": true},
+          "metadataXml":        {"type": "string"},
+          "metadataXsdVersion": {"type": "string", "default": "1.1"},
+          "metadataXsdValid":   {"type": "boolean", "default": false},
+          "documents":          {"type": "array", "items": {"type": "object"}},
+          "bundleFormat":       {"type": "string", "enum": ["bagit", "bagit-tar-gz"], "default": "bagit"},
+          "manifestChecksum":   {"type": "string", "description": "SHA-256 hex of manifest-sha256.txt"},
+          "bundleSize":         {"type": "integer", "description": "Total bytes"},
+          "status":             {"type": "string", "enum": ["prepared", "ready-for-submission", "submitted", "failed"], "default": "prepared", "facetable": true},
+          "createdAt":          {"type": "string", "format": "date-time"},
+          "bundleContent":      {"type": "string", "description": "Filesystem path or storage handle for the BagIt content"}
+        }
+      },
+      "overdrachtTransactie": {
+        "slug": "overdrachtTransactie",
+        "icon": "Send",
+        "version": "1.0.0",
+        "title": "Overdracht Transactie",
+        "description": "Per-attempt record of e-Depot submission.",
+        "type": "object",
+        "required": ["sipBundelId", "attemptNumber", "status"],
+        "properties": {
+          "sipBundelId":         {"type": "string", "facetable": true},
+          "eDepotConnectionId":  {"type": "string"},
+          "eDepotNaam":          {"type": "string"},
+          "submissionChannel":   {"type": "string", "enum": ["https", "sftp", "s3"], "default": "https"},
+          "submissionTime":      {"type": "string", "format": "date-time"},
+          "attemptNumber":       {"type": "integer", "default": 1},
+          "httpStatus":          {"type": "integer"},
+          "responseBody":        {"type": "string"},
+          "archivId":            {"type": "string", "description": "The e-Depot assigned archive id"},
+          "status":              {"type": "string", "enum": ["pending", "succeeded", "retrying", "failed-final"], "default": "pending", "facetable": true},
+          "errorCode":           {"type": "string"},
+          "errorDetail":         {"type": "string"},
+          "nextRetryTime":       {"type": "string", "format": "date-time"}
+        }
+      },
+      "archiefBewijs": {
+        "slug": "archiefBewijs",
+        "icon": "CertificateOutline",
+        "version": "1.0.0",
+        "title": "Archief Bewijs",
+        "description": "Proof of successful handover (read-only once received).",
+        "type": "object",
+        "required": ["zaakId", "archivId", "status"],
+        "properties": {
+          "zaakId":              {"type": "string", "facetable": true},
+          "archivId":            {"type": "string", "facetable": true},
+          "eDepotNaam":          {"type": "string"},
+          "ingestionDatum":      {"type": "string", "format": "date-time"},
+          "ontvangstBevestiging":{"type": "string", "description": "Receipt payload from e-Depot"},
+          "checksums":           {"type": "object", "description": "{algorithm: hex}"},
+          "sipBundelId":         {"type": "string"},
+          "status":              {"type": "string", "enum": ["received", "verified", "alert-mismatch"], "default": "received", "facetable": true},
+          "createdAt":           {"type": "string", "format": "date-time"}
+        }
+      },
+      "overdrachtAuditLog": {
+        "slug": "overdrachtAuditLog",
+        "icon": "FileDocumentMultiple",
+        "version": "1.0.0",
+        "title": "Overdracht Audit Log",
+        "description": "Append-only audit entries for the handover lifecycle.",
+        "type": "object",
+        "required": ["eventType", "timestamp"],
+        "properties": {
+          "triggerId":   {"type": "string", "facetable": true},
+          "zaakId":      {"type": "string", "facetable": true},
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "trigger-detected", "bundling-started", "bundling-failed", "bundling-completed",
+              "submission-started", "submission-failed-rollback", "submission-completed",
+              "rollback-executed", "proof-captured", "proof-verified",
+              "batch-initiated", "batch-completed"
+            ],
+            "facetable": true
+          },
+          "timestamp":   {"type": "string", "format": "date-time"},
+          "actor":       {"type": "string"},
+          "details":     {"type": "string"},
+          "relatedId":   {"type": "string"}
+        }
+      }
+    }
+  }
+}

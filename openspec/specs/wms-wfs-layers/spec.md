@@ -21,9 +21,9 @@ Enable administrators to configure external WMS (Web Map Service) and WFS (Web F
 
 ### REQ-LAYER-01: Admin Layer Configuration
 
-**Feature tier**: V1
-
 Administrators MUST be able to configure WMS and WFS layers in the Procest admin settings.
+
+**Feature tier**: V1
 
 #### Scenario LAYER-01a: Add WMS layer
 
@@ -63,9 +63,9 @@ Administrators MUST be able to configure WMS and WFS layers in the Procest admin
 
 ### REQ-LAYER-02: Layer Display on Maps
 
-**Feature tier**: V1
-
 Configured layers MUST be available as overlays on all map views (case detail, overview, location picker).
+
+**Feature tier**: V1
 
 #### Scenario LAYER-02a: Toggle WMS overlay
 
@@ -92,9 +92,9 @@ Configured layers MUST be available as overlays on all map views (case detail, o
 
 ### REQ-LAYER-03: GIS Proxy Endpoint
 
-**Feature tier**: V1
-
 The backend MUST provide a proxy endpoint for WMS/WFS requests to handle CORS restrictions.
+
+**Feature tier**: V1
 
 #### Scenario LAYER-03a: Proxy WMS GetMap request
 
@@ -131,9 +131,9 @@ The backend MUST provide a proxy endpoint for WMS/WFS requests to handle CORS re
 
 ### REQ-LAYER-04: GetCapabilities Parser
 
-**Feature tier**: V1
-
 The system MUST parse WMS/WFS GetCapabilities responses to assist administrators.
+
+**Feature tier**: V1
 
 #### Scenario LAYER-04a: Parse WMS capabilities
 

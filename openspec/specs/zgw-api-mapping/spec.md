@@ -1,5 +1,5 @@
 ---
-status: implemented
+status: done
 retrofit_extensions:
   - REQ-001
   - REQ-002
@@ -37,9 +37,7 @@ The ZGW standard defines 5 APIs:
 - **NRC - Notificaties API** (Notifications) -- v1.0.0
 
 All API endpoints are served by OpenRegister. Procest stores the mapping configuration and ZGW-specific metadata. The Endpoint entity's `inputMapping`/`outputMapping` fields provide the bridge between ZGW routes and Mapping entities.
-
 ## Requirements
-
 ### Requirement: Mapping engine MUST support ZGW-specific Twig filters and functions
 The existing `MappingExtension` and `MappingRuntime` classes MUST provide all Twig filters and functions needed for ZGW field transformation, including enum translation (outbound and inbound), URL-to-UUID extraction, and URL construction.
 
@@ -695,6 +693,36 @@ Notes
 - The seeder defines 36 private `create…Mapping()` methods, one per resource. Adding a new default mapping is a code-level operation; future work may move this to a JSON manifest under `openspec/`.
 
 <!-- END retrofit-2026-05-24-zgw-api-mapping -->
+
+### Requirement: ZRC Zaak resource MUST map relevanteAndereZaken bidirectionally
+
+The ZGW mapping layer SHALL translate `case.relatedCases` to the ZRC Zaak field `relevanteAndereZaken` as an array of `{url, aardRelatie}` objects (outbound), and SHALL accept `relevanteAndereZaken` on inbound zaak create/update by resolving each `url` to a local case UUID and routing the result through the case-relation guards, per the existing URL-reference translation and error-diagnostic requirements of this capability.
+
+@e2e exclude ZGW API-contract requirement — proven by the Newman collection tests/newman/relevante-andere-zaken.postman_collection.json (outbound array shape, inbound resolve+guard, unresolvable-URL rejection, empty-array); no Playwright UI surface (ZGW is a machine-to-machine API).
+
+#### Scenario: Outbound zaak includes relevanteAndereZaken
+
+- **GIVEN** a case whose `relatedCases` contains `{caseId: <uuid-B>, aardRelatie: onderwerp}`
+- **WHEN** a ZGW consumer retrieves the zaak via `GET /api/zgw/zaken/v1/zaken/{uuid}`
+- **THEN** the response MUST contain `relevanteAndereZaken: [{url: <absolute zaak URL for uuid-B>, aardRelatie: "onderwerp"}]`
+- **AND** the procest-local `toelichting` MUST NOT appear in the ZGW shape
+
+#### Scenario: Inbound relevanteAndereZaken is resolved and guarded
+
+- **GIVEN** an authenticated ZGW client PATCHes a zaak with `relevanteAndereZaken: [{url: <zaak URL of case B>, aardRelatie: "vervolg"}]`
+- **WHEN** the mapping layer processes the request
+- **THEN** the URL MUST be resolved to case B's local UUID and the relation stored on both cases per the bidirectional-consistency requirement of `related-case-linking`
+
+#### Scenario: Unresolvable relation URL is rejected with diagnostics
+
+- **WHEN** an inbound zaak write references a `relevanteAndereZaken` URL that does not resolve to a local case
+- **THEN** the request MUST be rejected with the capability's standard ZGW validation error shape identifying the offending URL
+
+#### Scenario: Empty relations map to an empty array
+
+- **GIVEN** a case with no peer relations
+- **WHEN** the zaak is retrieved via the ZRC endpoint
+- **THEN** `relevanteAndereZaken` MUST be present as `[]` (VNG schema compliance), not omitted or null
 
 ## Non-Requirements
 - Full ZGW compliance certification -- this is a compatibility layer, not a VNG reference implementation

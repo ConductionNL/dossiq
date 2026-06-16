@@ -1,15 +1,19 @@
 {
-  "spec": "openspec/changes/open-raadsinformatie",
+  "spec": "openspec/changes/complaint-management",
   "verified": [
-    {"task": "1", "file": "lib/Settings/ori_register.json", "ok": true},
-    {"task": "2", "file": "lib/Repair/RegisterOriRegister.php", "ok": true},
-    {"task": "3", "note": "OasService picks up register via authorization.read:public config", "ok": true},
-    {"task": "4", "note": "All 6 schemas have searchable:true in ori_register.json", "ok": true},
-    {"task": "5", "file": "lib/Service/VergaderingCaseService.php", "ok": true},
-    {"task": "5b", "file": "lib/BackgroundJob/VergaderingDeadlineJob.php", "ok": true},
-    {"task": "6", "note": "106 demo objects in ori_register.json components.objects", "ok": true},
-    {"task": "7", "file": "lib/Controller/RaadsinformatieFeedController.php", "ok": true},
-    {"task": "8", "file": "lib/Cron/OriDataQualityCheck.php", "ok": true}
+    {"task": "TASK-CM-01", "file": "lib/Settings/procest_register.json", "ok": true},
+    {"task": "TASK-CM-01", "file": "lib/Service/SettingsService.php", "ok": true},
+    {"task": "TASK-CM-02", "file": "lib/Service/ComplaintService.php", "ok": true},
+    {"task": "TASK-CM-02", "file": "tests/Unit/Service/ComplaintServiceTest.php", "ok": true},
+    {"task": "TASK-CM-03", "file": "lib/Service/HearingService.php", "ok": true},
+    {"task": "TASK-CM-03", "file": "tests/Unit/Service/HearingServiceTest.php", "ok": true},
+    {"task": "TASK-CM-04", "file": "lib/Service/DispositionService.php", "ok": true},
+    {"task": "TASK-CM-04", "file": "tests/Unit/Service/DispositionServiceTest.php", "ok": true},
+    {"task": "TASK-CM-05", "file": "lib/Service/ComplaintAnalyticsService.php", "ok": true},
+    {"task": "TASK-CM-05", "file": "tests/Unit/Service/ComplaintAnalyticsServiceTest.php", "ok": true},
+    {"task": "TASK-CM-06", "file": "lib/Controller/ComplaintController.php", "ok": true},
+    {"task": "TASK-CM-06", "file": "appinfo/routes.php", "ok": true},
+    {"task": "TASK-CM-06", "file": "tests/Unit/Controller/ComplaintControllerTest.php", "ok": true}
   ],
   "stubs": [],
   "missing_routes": []

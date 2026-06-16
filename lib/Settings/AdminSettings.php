@@ -28,12 +28,16 @@ use OCA\Procest\AppInfo\Application;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
-use OCP\Settings\ISettings;
+use OCP\Settings\IDelegatedSettings;
 
 /**
  * Provides the admin settings form for the Procest application.
+ *
+ * Implements IDelegatedSettings so the form can be guarded by
+ * #[AuthorizedAdminSetting(settings: AdminSettings::class)] on the
+ * controllers that mutate Procest configuration.
  */
-class AdminSettings implements ISettings
+class AdminSettings implements IDelegatedSettings
 {
     /**
      * Constructor.
@@ -84,4 +88,28 @@ class AdminSettings implements ISettings
     {
         return 10;
     }//end getPriority()
+
+    /**
+     * Human-readable name of the delegated settings section.
+     *
+     * @return string|null The section name, or null to use the section default.
+     */
+    public function getName(): ?string
+    {
+        return null;
+    }//end getName()
+
+    /**
+     * App config keys an authorized (delegated) admin may manage.
+     *
+     * Returned as a map of appId => list of allowed config keys. Procest
+     * exposes no delegatable sub-keys yet, so this is intentionally empty;
+     * the attribute still scopes the endpoint to full admins.
+     *
+     * @return array<string,string[]> Map of appId to allowed config keys.
+     */
+    public function getAuthorizedAppConfig(): array
+    {
+        return [];
+    }//end getAuthorizedAppConfig()
 }//end class

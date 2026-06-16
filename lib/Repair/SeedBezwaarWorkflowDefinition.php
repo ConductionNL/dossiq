@@ -34,6 +34,7 @@ namespace OCA\Procest\Repair;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCA\Procest\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -44,6 +45,9 @@ use Psr\Log\LoggerInterface;
  */
 class SeedBezwaarWorkflowDefinition implements IRepairStep
 {
+
+    use SearchesObjects;
+
 
     /**
      * Required guards for transitions that change legal posture
@@ -118,12 +122,11 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
 
         // Locate the bezwaar caseType.
         try {
-            $caseTypes = $objectService->findObjects(
-                $register,
-                $caseTypeSchema,
-                ['identifier' => 'bezwaar'],
-                [],
-                5,
+            $caseTypes = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $caseTypeSchema,
+                filters: ['identifier' => 'bezwaar', '_limit' => 5],
             );
         } catch (\Throwable $e) {
             $this->logger->error(
@@ -134,7 +137,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
             return;
         }
 
-        if (is_array($caseTypes) === false || $caseTypes === []) {
+        if ($caseTypes === []) {
             $output->info('Bezwaar caseType not present yet — skipping workflow seed.');
             return;
         }
@@ -158,12 +161,11 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
 
         // Pull statusType rows for the bezwaar caseType.
         try {
-            $statusRows = $objectService->findObjects(
-                $register,
-                $statusSchema,
-                ['caseType' => $caseTypeId],
-                [],
-                50,
+            $statusRows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $statusSchema,
+                filters: ['caseType' => $caseTypeId, '_limit' => 50],
             );
         } catch (\Throwable $e) {
             $this->logger->error(
@@ -173,7 +175,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
             return;
         }
 
-        if (is_array($statusRows) === false || $statusRows === []) {
+        if ($statusRows === []) {
             $output->info('Bezwaar statusTypes missing — skipping workflow seed.');
             return;
         }
@@ -234,9 +236,9 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
 
         try {
             $created = $objectService->saveObject(
-                $register,
-                $templateSchema,
-                $template,
+                object: $template,
+                register: $register,
+                schema: $templateSchema,
             );
         } catch (\Throwable $e) {
             $this->logger->error(
@@ -253,10 +255,10 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
         if ($newId !== '') {
             try {
                 $objectService->saveObject(
-                    $register,
-                    $caseTypeSchema,
-                    ['workflowDefinition' => $newId],
-                    $caseTypeId,
+                    object: ['workflowDefinition' => $newId],
+                    register: $register,
+                    schema: $caseTypeSchema,
+                    uuid: (string) $caseTypeId,
                 );
             } catch (\Throwable $e) {
                 $this->logger->error(

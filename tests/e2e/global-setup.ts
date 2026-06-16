@@ -43,8 +43,8 @@ async function ensureNextcloudReachable(baseURL: string): Promise<void> {
 		const res = await ctx.get(`${baseURL}/status.php`, { failOnStatusCode: false })
 		if (!res.ok()) {
 			throw new Error(
-				`Nextcloud status.php returned ${res.status()} at ${baseURL}. ` +
-				'Make sure the docker container is running and reachable.',
+				`Nextcloud status.php returned ${res.status()} at ${baseURL}. `
+				+ 'Make sure the docker container is running and reachable.',
 			)
 		}
 		const body = await res.json().catch(() => ({}))
@@ -74,10 +74,31 @@ async function globalSetup(config: FullConfig): Promise<void> {
 	const context = await browser.newContext({ baseURL })
 	const page = await context.newPage()
 
-	await page.goto('/index.php/login')
+	// `domcontentloaded` (not the default `load`) so first-paint themed-asset
+	// compilation on a cold instance doesn't blow the 30s navigation budget;
+	// the form inputs we need are in the initial HTML. Retry once on a spike.
+	try {
+		await page.goto('/index.php/login', { waitUntil: 'domcontentloaded', timeout: 60_000 })
+	} catch {
+		await page.goto('/index.php/login', { waitUntil: 'domcontentloaded', timeout: 60_000 })
+	}
+	await page.locator('input[name="user"]').waitFor({ state: 'visible', timeout: 30_000 })
 	await page.locator('input[name="user"]').fill(user)
 	await page.locator('input[name="password"]').fill(password)
-	await page.locator('button[type="submit"], input[type="submit"]').first().click()
+	// The themed NC submit button sometimes swallows a plain .click() (the
+	// click lands but no navigation is scheduled). Submit the form directly so
+	// the POST always fires; fall back to the button click if no form is found.
+	const submitted = await page.evaluate(() => {
+		const form = document.querySelector('form[action*="login"]') || document.querySelector('form')
+		if (form && typeof (form as HTMLFormElement).requestSubmit === 'function') {
+			(form as HTMLFormElement).requestSubmit()
+			return true
+		}
+		return false
+	})
+	if (submitted === false) {
+		await page.locator('button[type="submit"], input[type="submit"]').first().click()
+	}
 	// Nextcloud bounces to /apps/dashboard/ on success.
 	try {
 		await page.waitForURL('**/apps/dashboard/**', { timeout: 30_000 })
@@ -87,8 +108,8 @@ async function globalSetup(config: FullConfig): Promise<void> {
 	const currentUrl = page.url()
 	if (/\/login(\?|$|\/)/.test(currentUrl)) {
 		throw new Error(
-			`Login appears to have failed — still on ${currentUrl}. ` +
-			'Check ADMIN_USER / ADMIN_PASSWORD (defaults admin/admin).',
+			`Login appears to have failed — still on ${currentUrl}. `
+			+ 'Check ADMIN_USER / ADMIN_PASSWORD (defaults admin/admin).',
 		)
 	}
 

@@ -1,0 +1,18 @@
+{
+  "slug": "vth-omgevingsvergunning",
+  "title": "VTH Omgevingsvergunning",
+  "version": "1.0.0",
+  "description": "Template voor omgevingsvergunning aanvragen (VTH module)",
+  "statusTypes": ["Ontvangen", "Ontvankelijkheidstoets", "In behandeling", "Advies", "Besluitvorming", "Afgehandeld"],
+  "documentTypes": ["Bouwtekening", "Constructieberekening", "Situatietekening", "Welstandsadvies", "Fotos bestaande situatie"],
+  "propertyDefinitions": [
+    {"name": "bouwkosten", "type": "number"},
+    {"name": "oppervlakte", "type": "number"},
+    {"name": "aantalBouwlagen", "type": "integer"},
+    {"name": "bagObject", "type": "string"},
+    {"name": "procedureType", "type": "string", "enum": ["regulier", "uitgebreid"]},
+    {"name": "activiteiten", "type": "string"}
+  ],
+  "roleTypes": ["behandelaar", "aanvrager", "gemachtigde", "adviseur"],
+  "processingDeadline": {"regulier": "P56D", "uitgebreid": "P182D"}
+}

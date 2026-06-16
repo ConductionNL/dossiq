@@ -14,6 +14,83 @@
 // marker formatting.)
 
 import { translate as t } from '@nextcloud/l10n'
+import { useObjectStore } from '../store/modules/object.js'
+import { useDeelzaakStore } from '../store/modules/deelzaak.js'
+import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
+
+// Guard so each lookup collection is fetched at most once per page load.
+const lookupFetchStarted = {}
+
+// Batch-fetch guard for sub-case counts: collect the UUIDs requested during a
+// render frame and flush them in a single round-trip on the next microtask,
+// so a 25-row case list fires ONE /api/deelzaken/counts request (REQ-DZS-005-C)
+// rather than 25. Each batch resolves into the deelzaak store's reactive
+// subCaseCounts map, re-rendering the badge cells once it lands.
+const pendingCountIds = new Set()
+let countFlushScheduled = false
+
+/**
+ * Queue a parent UUID for the next batch sub-case-count fetch and schedule
+ * the flush. No-ops when the count is already cached in the store.
+ *
+ * @param {object} store The deelzaak pinia store.
+ * @param {string} uuid The parent case UUID to count children for.
+ * @return {void}
+ */
+function queueSubCaseCount(store, uuid) {
+	if (uuid in store.subCaseCounts) {
+		return
+	}
+	pendingCountIds.add(uuid)
+	if (countFlushScheduled) {
+		return
+	}
+	countFlushScheduled = true
+	Promise.resolve().then(() => {
+		countFlushScheduled = false
+		const ids = [...pendingCountIds]
+		pendingCountIds.clear()
+		if (ids.length === 0) {
+			return
+		}
+		store.fetchSubCaseCounts(ids).catch(() => {})
+	})
+}
+
+/**
+ * Resolve a related object's UUID to its human label by reading the
+ * (reactive) objectStore collection for `type`. Fires a one-off
+ * fetchCollection when the collection is not loaded yet — the pinia
+ * state access is tracked by the rendering component, so the cell
+ * re-renders with the label once the collection arrives.
+ *
+ * @param {string} type Registered object type ('caseType' / 'statusType').
+ * @param {string} uuid The related object's UUID.
+ * @return {string} The label, or the raw UUID while unresolved.
+ */
+function lookupRelatedName(type, uuid) {
+	if (!uuid) return '-'
+	let store
+	try {
+		store = useObjectStore()
+	} catch {
+		return uuid
+	}
+	const collection = store.collections[type]
+	if (!collection && !lookupFetchStarted[type]) {
+		// Only fetch once the type is registered (initializeStores done).
+		if (store.objectTypeRegistry && store.objectTypeRegistry[type]) {
+			lookupFetchStarted[type] = true
+			store.fetchCollection(type, { _limit: 500 }).catch(() => {
+				lookupFetchStarted[type] = false
+			})
+		}
+	}
+	const hit = (collection || []).find(
+		(o) => o.id === uuid || (o['@self'] && o['@self'].id === uuid),
+	)
+	return hit ? (hit.title || hit.name || uuid) : uuid
+}
 
 const VOORSTEL_STATUS_LABELS = {
 	concept: 'Concept',
@@ -121,5 +198,52 @@ export default {
 		if (!updated) return '-'
 		const days = Math.floor((Date.now() - new Date(updated).getTime()) / 86400000)
 		return `${days}d`
+	},
+
+	/**
+	 * Human label for a case's `caseType` UUID reference.
+	 *
+	 * @param {string} value The caseType UUID.
+	 * @return {string}
+	 */
+	caseTypeName: (value) => lookupRelatedName('caseType', value),
+
+	/**
+	 * Human label for a case's `status` UUID reference (statusType).
+	 *
+	 * @param {string} value The statusType UUID.
+	 * @return {string}
+	 */
+	statusTypeName: (value) => lookupRelatedName('statusType', value),
+
+	/**
+	 * Sub-case count badge for a case row in the case list. Returns "N
+	 * deelzaken" for cases with one or more sub-cases and an empty string
+	 * (no badge) otherwise. The count is read from the reactive deelzaak
+	 * store; on the first render for an uncounted case it queues a batched
+	 * /api/deelzaken/counts fetch and re-renders once the count lands.
+	 *
+	 * @param {*} value Unused (the column key is the case UUID via `row`).
+	 * @param {object} row The case object.
+	 * @return {string} Badge label, or '' when the case has no sub-cases.
+	 * @spec openspec/changes/deelzaak-support/tasks.md#T10
+	 */
+	subCaseCount: (value, row) => {
+		const uuid = (row && (row.id || (row['@self'] && row['@self'].id))) || value
+		if (!uuid) {
+			return ''
+		}
+		let store
+		try {
+			store = useDeelzaakStore()
+		} catch {
+			return ''
+		}
+		// Sub-cases themselves never carry sub-cases (zrc-013c) — skip the count.
+		if (row && row.parentCase) {
+			return ''
+		}
+		queueSubCaseCount(store, uuid)
+		return subCaseCountBadge(store.subCaseCounts[uuid] || 0)
 	},
 }

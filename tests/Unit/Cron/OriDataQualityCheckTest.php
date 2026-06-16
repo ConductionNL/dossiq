@@ -35,37 +35,45 @@ use Psr\Log\LoggerInterface;
 interface QualityObjectServiceStub
 {
     /**
-     * Find objects matching params.
+     * Slug-aware search bridge (real ObjectService::searchObjectsBySlug()).
      *
-     * @param string $register The register slug
-     * @param string $schema   The schema slug
-     * @param array  $params   Query parameters
+     * @param string              $registerSlug The register slug
+     * @param string              $schemaSlug   The schema slug
+     * @param array<string,mixed> $filters      Query parameters
      *
-     * @return array
+     * @return array<int,mixed>|int
      */
-    public function findObjects(string $register, string $schema, array $params): array;
+    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters=[]): array | int;
 
     /**
-     * Find a single object by ID or slug.
+     * Search objects (real ObjectService::searchObjects()).
      *
-     * @param string $register The register slug
-     * @param string $schema   The schema slug
-     * @param string $id       The object ID or slug
+     * @param array<string,mixed> $query Query with @self block and field filters.
      *
-     * @return array|null
+     * @return array<int,mixed>|int
      */
-    public function findObject(string $register, string $schema, string $id): ?array;
+    public function searchObjects(array $query=[]): array | int;
+
+    /**
+     * Find a single object by ID (real ObjectService::find()).
+     *
+     * @param int|string $id     The object ID or slug
+     * @param mixed      ...$args Remaining find() args (extend/files/register/schema).
+     *
+     * @return mixed
+     */
+    public function find(int | string $id, ...$args): mixed;
 
     /**
      * Save an object.
      *
+     * @param array  $object   The object data
      * @param string $register The register slug
      * @param string $schema   The schema slug
-     * @param array  $object   The object data
      *
      * @return array
      */
-    public function saveObject(string $register, string $schema, array $object): array;
+    public function saveObject(array $object, string $register, string $schema): array;
 }//end interface
 
 /**
@@ -192,8 +200,8 @@ class OriDataQualityCheckTest extends TestCase
             ->willReturn(['openregister', 'procest']);
 
         $objectService = $this->createMock(QualityObjectServiceStub::class);
-        $objectService->method('findObjects')->willReturn([]);
-        $objectService->method('findObject')->willReturn(null);
+        $objectService->method('searchObjectsBySlug')->willReturn([]);
+        $objectService->method('find')->willReturn(null);
         $objectService->method('saveObject')->willReturn([]);
 
         $this->settingsService->method('getObjectService')->willReturn($objectService);

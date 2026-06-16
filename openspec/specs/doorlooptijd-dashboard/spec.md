@@ -1,3 +1,6 @@
+---
+status: done
+---
 # Doorlooptijd Dashboard Specification
 
 ## Purpose
@@ -13,14 +16,12 @@ The doorlooptijd (processing time) dashboard provides SLA adherence analytics fo
 - **Cases**: OpenRegister schema `case` — fields: `startDate`, `endDate`, `deadline`, `plannedEndDate`, `status`, `caseType`
 - **Case Types**: OpenRegister schema `caseType` — field: `processingDeadline` (ISO 8601 duration, e.g., `P30D`)
 - **Status Types**: OpenRegister schema `statusType` — field: `isFinal` (boolean)
-
 ## Requirements
-
 ### Requirement: SLA compliance rate widget [V1]
 
-@e2e exclude SLA compliance calculation requires completed cases with processingDeadline set; V1 data-dependent computation scenarios not testable without pre-seeded case data.
-
 The doorlooptijd dashboard SHALL display an overall SLA compliance rate as a prominent KPI, showing the percentage of completed cases that finished within their case type's `processingDeadline`.
+
+@e2e exclude SLA compliance calculation requires completed cases with processingDeadline set; V1 data-dependent computation scenarios not testable without pre-seeded case data.
 
 #### Scenario: Overall compliance rate calculation
 - **WHEN** the user views the doorlooptijd dashboard
@@ -42,9 +43,9 @@ The doorlooptijd dashboard SHALL display an overall SLA compliance rate as a pro
 
 ### Requirement: SLA compliance breakdown by case type [V1]
 
-@e2e exclude Compliance breakdown by case type requires completed cases with specific case types and processingDeadline; V1 data-dependent chart/table scenarios not testable without pre-seeded data.
-
 The doorlooptijd dashboard SHALL display a breakdown of SLA compliance per case type, allowing users to identify which case types have the best and worst compliance.
+
+@e2e exclude Compliance breakdown by case type requires completed cases with specific case types and processingDeadline; V1 data-dependent chart/table scenarios not testable without pre-seeded data.
 
 #### Scenario: Compliance by case type with donut chart
 - **WHEN** the user views the doorlooptijd dashboard
@@ -65,9 +66,9 @@ The doorlooptijd dashboard SHALL display a breakdown of SLA compliance per case 
 
 ### Requirement: Processing time distribution chart [V1]
 
-@e2e exclude Processing time histogram requires completed cases with varying durations; V1 data-dependent chart scenarios not testable without pre-seeded cases.
-
 The doorlooptijd dashboard SHALL display a histogram showing the distribution of actual processing times for completed cases.
+
+@e2e exclude Processing time histogram requires completed cases with varying durations; V1 data-dependent chart scenarios not testable without pre-seeded cases.
 
 #### Scenario: Distribution histogram with SLA line
 - **WHEN** the user views the doorlooptijd dashboard
@@ -83,9 +84,9 @@ The doorlooptijd dashboard SHALL display a histogram showing the distribution of
 
 ### Requirement: Monthly SLA trend chart [V1]
 
-@e2e exclude Monthly SLA trend requires 12 months of completed case data; V1 data-dependent line chart scenarios not testable without time-series data.
-
 The doorlooptijd dashboard SHALL display a line chart showing the monthly SLA compliance rate over the selected period, enabling trend analysis.
+
+@e2e exclude Monthly SLA trend requires 12 months of completed case data; V1 data-dependent line chart scenarios not testable without time-series data.
 
 #### Scenario: 12-month trend line
 - **WHEN** the user views the doorlooptijd dashboard with default date range (last 12 months)
@@ -105,9 +106,9 @@ The doorlooptijd dashboard SHALL display a line chart showing the monthly SLA co
 
 ### Requirement: At-risk cases panel [V1]
 
-@e2e exclude At-risk cases panel requires open cases within 25% of deadline; V1 data-dependent panel scenarios not testable without time-controlled case data.
-
 The doorlooptijd dashboard SHALL display a panel listing open cases that are at risk of exceeding their SLA deadline, defined as having less than 25% of the allowed processing time remaining.
+
+@e2e exclude At-risk cases panel requires open cases within 25% of deadline; V1 data-dependent panel scenarios not testable without time-controlled case data.
 
 #### Scenario: At-risk case identification
 - **WHEN** a case has `startDate` of 25 days ago
@@ -133,9 +134,9 @@ The doorlooptijd dashboard SHALL display a panel listing open cases that are at 
 
 ### Requirement: Average processing time per case type table [V1]
 
-@e2e exclude Average processing time table requires completed cases with specific case types; V1 data-dependent table scenarios not testable without pre-seeded data.
-
 The doorlooptijd dashboard SHALL display a summary table comparing actual average processing time against the SLA target for each case type.
+
+@e2e exclude Average processing time table requires completed cases with specific case types; V1 data-dependent table scenarios not testable without pre-seeded data.
 
 #### Scenario: Performance table with status indicators
 - **WHEN** the user views the doorlooptijd dashboard
@@ -151,9 +152,9 @@ The doorlooptijd dashboard SHALL display a summary table comparing actual averag
 
 ### Requirement: Date range filter [V1]
 
-@e2e exclude Date range filter interactions require data to filter; V1 scenarios tested structurally as the filter controls render even with no data.
-
 The doorlooptijd dashboard SHALL provide a date range filter that controls which completed cases are included in all analytics.
+
+@e2e exclude Date range filter interactions require data to filter; V1 scenarios tested structurally as the filter controls render even with no data.
 
 #### Scenario: Default date range
 - **WHEN** the user first visits the doorlooptijd dashboard
@@ -171,13 +172,45 @@ The doorlooptijd dashboard SHALL provide a date range filter that controls which
 
 ### Requirement: Navigation from main dashboard [V1]
 
-@e2e exclude Navigation from the Procest in-app dashboard requires the dashboard to render its widget grid; the dashboard is marked fixme in pages.spec.ts due to a CI rendering issue.
-
 The main dashboard SHALL provide navigation to the doorlooptijd analytics view.
+
+@e2e exclude Navigation from the Procest in-app dashboard requires the dashboard to render its widget grid; the dashboard is marked fixme in pages.spec.ts due to a CI rendering issue.
 
 #### Scenario: Link from main dashboard
 - **WHEN** the user views the main Procest dashboard
 - **THEN** the system MUST display a navigation element (tab or link) to access the doorlooptijd dashboard
+
+### Requirement: Doorlooptijd page render [MVP]
+
+The doorlooptijd page SHALL mount and render its page shell on navigation
+(`DoorlooptijdDashboard.vue`, route `/doorlooptijd`), independently of whether
+case data is present. The dashboard SHALL be composed of focused sub-components
+under `src/views/doorlooptijd/components/` — a KPI strip (`DeadlineKpiRow`), the
+chart cluster (`ComplianceCharts`: SLA-by-case-type donut, processing-time
+histogram, monthly compliance trend, weekly throughput), the at-risk deadline
+list (`DeadlineCaseTable`), and the per-case-type breakdown table
+(`CaseTypeBreakdown`) — each receiving already-aggregated data as props from the
+page-level container, with the chart/table data-shaping logic extracted to a
+pure helper module (`chartShaping.js`). Decomposition MUST NOT change the
+rendered behaviour, the data fetched, or the displayed strings.
+
+#### Scenario: Doorlooptijd page renders heading
+- **GIVEN** an authenticated user on the Procest app
+- **WHEN** they navigate to the doorlooptijd page
+- **THEN** the main content MUST render a "Processing Time Analytics" page heading
+- **AND** the page MUST NOT show an Internal Server Error
+
+#### Scenario: Dashboard is composed of focused sub-components
+
+@e2e exclude Structural decomposition guarantee — verified by the chartShaping Vitest suite (data-shaping parity) and by component review, not by browser e2e, since the rendered output is identical to the monolith and carries no new user-observable surface.
+
+- **GIVEN** the doorlooptijd page has mounted with case data present
+- **WHEN** the dashboard renders
+- **THEN** the page-level container MUST delegate the KPI strip, charts,
+  at-risk list, and per-case-type breakdown to dedicated sub-components,
+  passing each its already-aggregated data as props
+- **AND** the rendered output (KPI values, chart series, table rows, status
+  badges, empty states) MUST be identical to the pre-decomposition monolith
 
 ### Requirement: Empty state [V1]
 
@@ -195,3 +228,4 @@ The doorlooptijd dashboard SHALL handle the case when no data is available grace
 
 - **WHEN** all case types have no `processingDeadline` configured
 - **THEN** the system MUST display a message: "No SLA targets configured. Set processing deadlines on case types in Settings to enable compliance tracking."
+

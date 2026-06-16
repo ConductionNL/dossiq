@@ -1,64 +1,18 @@
 <template>
 	<NcDialog
 		:open="open"
-		:name="t('procest', 'Share case')"
+		:name="t('procest', 'Share case with partner')"
 		size="normal"
 		@update:open="$emit('update:open', $event)">
 		<div class="create-share-dialog">
-			<!-- Share type tabs -->
-			<div class="create-share-dialog__tabs">
-				<button
-					:class="{ active: shareType === 'token' }"
-					@click="shareType = 'token'">
-					{{ t('procest', 'Share link') }}
-				</button>
-				<button
-					:class="{ active: shareType === 'partner' }"
-					@click="shareType = 'partner'">
-					{{ t('procest', 'Partner organization') }}
-				</button>
-			</div>
-
-			<!-- Token share form -->
-			<div v-if="shareType === 'token'" class="create-share-dialog__form">
-				<div class="form-group">
-					<label>{{ t('procest', 'Label') }}</label>
-					<NcTextField
-						:value="form.label"
-						:placeholder="t('procest', 'e.g., For external review')"
-						@update:value="v => form.label = v" />
-				</div>
-
-				<div class="form-group">
-					<label>{{ t('procest', 'Permission level') }}</label>
-					<NcSelect
-						v-model="form.permissionLevel"
-						:options="permissionOptions"
-						:aria-label-combobox="t('procest', 'Permission level')"
-						label="label"
-						track-by="value" />
-				</div>
-
-				<div class="form-group">
-					<label>{{ t('procest', 'Expiration date') }}</label>
-					<NcDateTimePicker
-						v-model="form.expiresAt"
-						:placeholder="t('procest', 'No expiration')"
-						type="datetime" />
-				</div>
-
-				<div class="form-group">
-					<label>{{ t('procest', 'Password protection') }}</label>
-					<NcTextField
-						:value="form.password"
-						type="password"
-						:placeholder="t('procest', 'Optional password')"
-						@update:value="v => form.password = v" />
-				</div>
-			</div>
-
-			<!-- Partner share form -->
-			<div v-if="shareType === 'partner'" class="create-share-dialog__form">
+			<!--
+				Partner-organisation handover only. Public "track your case"
+				token links are minted through OpenRegister's shares
+				integration leaf (ADR-022), NOT this dialog — the bespoke
+				token "Share link" path was removed by
+				migrate-public-share-to-shares-leaf.
+			-->
+			<div class="create-share-dialog__form">
 				<div class="form-group">
 					<label>{{ t('procest', 'Partner organization') }}</label>
 					<NcSelect
@@ -80,17 +34,6 @@
 						track-by="value" />
 				</div>
 			</div>
-
-			<!-- Generated link display -->
-			<div v-if="generatedLink" class="create-share-dialog__link">
-				<label>{{ t('procest', 'Share link') }}</label>
-				<div class="create-share-dialog__link-row">
-					<NcTextField :value="generatedLink" readonly />
-					<NcButton @click="copyLink">
-						{{ t('procest', 'Copy') }}
-					</NcButton>
-				</div>
-			</div>
 		</div>
 
 		<template #actions>
@@ -108,16 +51,14 @@
 </template>
 
 <script>
-import { NcDialog, NcButton, NcTextField, NcSelect, NcDateTimePicker } from '@nextcloud/vue'
+import { NcDialog, NcButton, NcSelect } from '@nextcloud/vue'
 
 export default {
 	name: 'CreateShareDialog',
 	components: {
 		NcDialog,
 		NcButton,
-		NcTextField,
 		NcSelect,
-		NcDateTimePicker,
 	},
 	props: {
 		open: {
@@ -136,14 +77,9 @@ export default {
 	emits: ['update:open', 'created'],
 	data() {
 		return {
-			shareType: 'token',
 			saving: false,
-			generatedLink: '',
 			form: {
-				label: '',
 				permissionLevel: { value: 'bekijken', label: t('procest', 'View only') },
-				expiresAt: null,
-				password: '',
 				partnerId: null,
 			},
 			permissionOptions: [
@@ -154,37 +90,23 @@ export default {
 		}
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * Emit a partner-organisation share payload. Public token links are
+		 * handled by the OR shares leaf, not here.
+		 *
+		 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P2.2
+		 */
 		async createShare() {
 			this.saving = true
 			try {
-				const payload = {
+				this.$emit('created', {
 					caseId: this.caseId,
-					shareType: this.shareType,
+					shareType: 'partner',
 					permissionLevel: this.form.permissionLevel?.value || 'bekijken',
-					label: this.form.label,
-				}
-
-				if (this.shareType === 'token') {
-					if (this.form.expiresAt) {
-						payload.expiresAt = new Date(this.form.expiresAt).toISOString()
-					}
-					if (this.form.password) {
-						payload.password = this.form.password
-					}
-				} else {
-					payload.partnerId = this.form.partnerId?.id
-				}
-
-				this.$emit('created', payload)
+					partnerId: this.form.partnerId?.id,
+				})
 			} finally {
 				this.saving = false
-			}
-		},
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
-		async copyLink() {
-			if (this.generatedLink) {
-				await navigator.clipboard.writeText(this.generatedLink)
 			}
 		},
 	},
@@ -192,29 +114,6 @@ export default {
 </script>
 
 <style scoped>
-.create-share-dialog__tabs {
-	display: flex;
-	gap: 4px;
-	margin-bottom: 16px;
-	border-bottom: 1px solid var(--color-border);
-	padding-bottom: 8px;
-}
-
-.create-share-dialog__tabs button {
-	padding: 8px 16px;
-	border: none;
-	background: none;
-	cursor: pointer;
-	border-radius: var(--border-radius) var(--border-radius) 0 0;
-	color: var(--color-text-maxcontrast);
-}
-
-.create-share-dialog__tabs button.active {
-	background: var(--color-primary-element-light);
-	color: var(--color-primary-element);
-	font-weight: bold;
-}
-
 .create-share-dialog__form .form-group {
 	margin-bottom: 12px;
 }
@@ -224,18 +123,5 @@ export default {
 	margin-bottom: 4px;
 	font-weight: bold;
 	font-size: 13px;
-}
-
-.create-share-dialog__link {
-	margin-top: 16px;
-	padding: 12px;
-	background: var(--color-background-dark);
-	border-radius: var(--border-radius-large);
-}
-
-.create-share-dialog__link-row {
-	display: flex;
-	gap: 8px;
-	align-items: center;
 }
 </style>

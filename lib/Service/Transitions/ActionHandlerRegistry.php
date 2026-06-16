@@ -46,12 +46,14 @@ class ActionHandlerRegistry
     /**
      * Constructor — wires the built-in handlers.
      *
-     * @param SendEmailHandler     $sendEmail     Built-in email handler
-     * @param CreateTaskHandler    $createTask    Built-in task handler
-     * @param CreateSubCaseHandler $createSubCase Built-in sub-case handler
-     * @param WebhookHandler       $webhook       Built-in webhook handler
-     * @param SetFieldHandler      $setField      Built-in field-set handler
-     * @param NotifyHandler        $notify        Built-in notification handler
+     * @param SendEmailHandler              $sendEmail              Built-in email handler
+     * @param CreateTaskHandler             $createTask             Built-in task handler
+     * @param CreateSubCaseHandler          $createSubCase          Built-in sub-case handler
+     * @param WebhookHandler                $webhook                Built-in webhook handler
+     * @param SetFieldHandler               $setField               Built-in field-set handler
+     * @param NotifyHandler                 $notify                 Built-in notification handler
+     * @param BesluitvormingActivateHandler $besluitvormingActivate Parafering-chain activation handler
+     * @param BesluitvormingPublishHandler  $besluitvormingPublish  DROP/LVBB publication handler
      */
     public function __construct(
         SendEmailHandler $sendEmail,
@@ -60,14 +62,18 @@ class ActionHandlerRegistry
         WebhookHandler $webhook,
         SetFieldHandler $setField,
         NotifyHandler $notify,
+        BesluitvormingActivateHandler $besluitvormingActivate,
+        BesluitvormingPublishHandler $besluitvormingPublish,
     ) {
         $this->handlers = [
-            'sendEmail'     => $sendEmail,
-            'createTask'    => $createTask,
-            'createSubCase' => $createSubCase,
-            'webhook'       => $webhook,
-            'setField'      => $setField,
-            'notify'        => $notify,
+            'sendEmail'              => $sendEmail,
+            'createTask'             => $createTask,
+            'createSubCase'          => $createSubCase,
+            'webhook'                => $webhook,
+            'setField'               => $setField,
+            'notify'                 => $notify,
+            'besluitvormingActivate' => $besluitvormingActivate,
+            'besluitvormingPublish'  => $besluitvormingPublish,
         ];
     }//end __construct()
 

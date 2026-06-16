@@ -27,8 +27,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCP\App\IAppManager;
-use OCP\ICache;
-use OCP\ICacheFactory;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -41,42 +39,12 @@ use Psr\Log\LoggerInterface;
 class CaseSharingService
 {
     /**
-     * Maximum failed password attempts before lockout.
-     */
-    private const MAX_FAILED_ATTEMPTS = 5;
-
-    /**
-     * Lockout duration in minutes after max failed attempts.
-     */
-    private const LOCKOUT_MINUTES = 15;
-
-    /**
-     * Default fields excluded from shared views for data minimization.
-     */
-    private const DEFAULT_EXCLUDED_FIELDS = [
-        'interneAantekening',
-        'risicoScore',
-        'kosteninschatting',
-        'assignee',
-        'activity',
-        'statusHistory',
-    ];
-
-    /**
-     * APCu-backed distributed cache for atomic brute-force counters.
-     *
-     * @var ICache
-     */
-    private ICache $cache;
-
-    /**
      * Constructor for the CaseSharingService.
      *
      * @param SettingsService    $settingsService The settings service
      * @param IAppManager        $appManager      The app manager
      * @param ContainerInterface $container       The DI container
      * @param LoggerInterface    $logger          The logger
-     * @param ICacheFactory      $cacheFactory    The cache factory
      *
      * @return void
      */
@@ -85,9 +53,7 @@ class CaseSharingService
         private IAppManager $appManager,
         private ContainerInterface $container,
         private LoggerInterface $logger,
-        ICacheFactory $cacheFactory,
     ) {
-        $this->cache = $cacheFactory->createDistributed('procest_share_brute');
     }//end __construct()
 
     /**
@@ -188,99 +154,194 @@ class CaseSharingService
     }//end canUserAccessCase()
 
     /**
-     * Generate a cryptographically secure share token.
+     * Resolve OpenRegister's CaseTokenService — the public "track your
+     * case" token-link surface of the shares integration leaf (ADR-022).
      *
-     * Generates a 128-bit (16 byte) random token encoded as 32 hex characters.
+     * The leaf owns token generation (256-bit non-guessable handle),
+     * expiry, revocation, and the RBAC-respecting public resolve path;
+     * procest mints no share tokens of its own.
      *
-     * @return string The generated token (32 hex characters)
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     * @return object|null The OR CaseTokenService, or null when OR is
+     *                     unavailable / pre-foundation build.
+     *
+     * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P1.2
      */
-    public function generateToken(): string
+    private function getCaseTokenService(): ?object
     {
-        return bin2hex(random_bytes(16));
-    }//end generateToken()
+        if ($this->appManager->isInstalled('openregister') === false) {
+            return null;
+        }
+
+        try {
+            $service = $this->container->get('OCA\OpenRegister\Service\CaseTokenService');
+            if (method_exists($service, 'mint') === false) {
+                return null;
+            }
+
+            return $service;
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'CaseSharingService: OR CaseTokenService unavailable (shares leaf not present)',
+                ['exception' => $e->getMessage()]
+            );
+            return null;
+        }
+    }//end getCaseTokenService()
 
     /**
-     * Create a token-based case share.
+     * Create a public "track your case" token link through OpenRegister's
+     * shares integration leaf.
      *
-     * @param string      $caseId          The UUID of the case to share
-     * @param string      $permissionLevel The permission level slug
-     * @param string      $label           Human-readable label for the share
-     * @param string      $createdBy       User ID of the creator
-     * @param string|null $expiresAt       ISO 8601 expiration datetime
-     * @param string|null $password        Plain text password (will be hashed)
-     * @param array       $fieldExclusions Additional field exclusions
+     * The leaf mints a 256-bit token bound to the case object. The token
+     * resolves anonymously to a PUBLIC-SAFE view of the case via OR's
+     * `#[PublicPage]` resolve endpoint — only the fields the public group
+     * may read are returned (the `publicatiedatum<=$now` + public-group
+     * predicate), so procest no longer hand-maintains a token store,
+     * field-exclusion list, password gate, or brute-force lockout. RBAC
+     * is enforced by the OR public read path, not by procest.
      *
-     * @return array The created share data
+     * @param string      $caseId    The UUID of the case to share
+     * @param string      $label     Human-readable label for the link
+     * @param string      $createdBy User ID of the creator (audit log)
+     * @param string|null $expiresAt ISO 8601 expiration datetime, or null
+     *                              for a non-expiring link
      *
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList) — all params needed for share creation
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     * @return array The minted token metadata + public resolve URL, or an
+     *               error array when the leaf is unavailable.
+     *
+     * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P1.2
      */
     public function createTokenShare(
         string $caseId,
-        string $permissionLevel,
         string $label,
         string $createdBy,
         ?string $expiresAt=null,
-        ?string $password=null,
-        array $fieldExclusions=[],
     ): array {
-        $objectService = $this->getObjectService();
-        if ($objectService === null) {
-            return ['error' => 'OpenRegister is not available'];
+        $tokenService = $this->getCaseTokenService();
+        if ($tokenService === null) {
+            return ['error' => 'OpenRegister shares leaf is not available'];
         }
-
-        // M2: Generate plaintext token but store only its SHA-256 hash in the DB.
-        // The plaintext is returned once to the caller and NEVER stored.
-        $plainToken = $this->generateToken();
-        $tokenHash  = hash('sha256', $plainToken);
 
         $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_share_schema');
+        $schema   = $this->settingsService->getConfigValue('case_schema');
 
-        $shareData = [
-            'token'           => $tokenHash,
-            'caseId'          => $caseId,
-            'shareType'       => 'token',
-            'permissionLevel' => $permissionLevel,
-            'label'           => $label,
-            'createdBy'       => $createdBy,
-            'fieldExclusions' => json_encode(
-                array_merge(self::DEFAULT_EXCLUDED_FIELDS, $fieldExclusions)
-            ),
-            'failedAttempts'  => 0,
-        ];
-
+        $ttlSeconds = null;
         if ($expiresAt !== null) {
-            $shareData['expiresAt'] = $expiresAt;
+            $expiryTs = strtotime((string) $expiresAt);
+            if ($expiryTs !== false) {
+                $ttlSeconds = max(1, ($expiryTs - time()));
+            }
         }
 
-        if ($password !== null) {
-            $shareData['password'] = password_hash($password, PASSWORD_BCRYPT);
+        try {
+            // Mint through the leaf — it owns token generation, expiry and
+            // the public resolve URL. The minter (createdBy) is recorded by
+            // the leaf via the current user session.
+            $minted = $tokenService->mint(
+                objectUuid: $caseId,
+                registerId: (empty($register) === false ? (int) $register : null),
+                schemaId: (empty($schema) === false ? (int) $schema : null),
+                label: ($label !== '' ? $label : null),
+                ttlSeconds: $ttlSeconds
+            );
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'CaseSharingService: leaf mint failed',
+                ['caseId' => $caseId, 'exception' => $e->getMessage()]
+            );
+            return ['error' => 'Could not create share link'];
         }
-
-        $result = $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $shareData,
-        );
 
         $this->logger->info(
-            'Procest: Token share created',
+            'Procest: Public case-token link minted via OR shares leaf',
             [
-                'caseId'  => $caseId,
-                'shareId' => $result->getUuid(),
-                'label'   => $label,
+                'caseId'    => $caseId,
+                'createdBy' => $createdBy,
+                'label'     => $label,
             ]
         );
 
-        // M2: Return the plaintext token in the response — the only time it is available.
-        $resultData          = $result->jsonSerialize();
-        $resultData['token'] = $plainToken;
-        return $resultData;
+        return $minted;
     }//end createTokenShare()
+
+    /**
+     * Resolve the case (object) a leaf-minted token belongs to.
+     *
+     * Used by the controller to enforce the per-case owner/handler guard
+     * before revoking a public token (ADR-005): the controller looks up
+     * which case the token addresses, then checks the caller may access
+     * that case. Returns null when the token cannot be matched to any
+     * case the candidate caseId owns.
+     *
+     * @param string $tokenId   The leaf token id (numeric) or opaque token.
+     * @param string $caseId    The candidate case UUID.
+     *
+     * @return bool True when the token is one of the case's minted tokens.
+     *
+     * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P1.3
+     */
+    public function tokenBelongsToCase(string $tokenId, string $caseId): bool
+    {
+        $tokenService = $this->getCaseTokenService();
+        if ($tokenService === null || method_exists($tokenService, 'listForObject') === false) {
+            return false;
+        }
+
+        try {
+            $tokens = $tokenService->listForObject($caseId);
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'CaseSharingService: listForObject failed',
+                ['caseId' => $caseId, 'exception' => $e->getMessage()]
+            );
+            return false;
+        }
+
+        foreach ((array) $tokens as $token) {
+            $candidateId    = (string) ($token['id'] ?? '');
+            $candidateToken = (string) ($token['token'] ?? '');
+            if ($tokenId !== '' && ($tokenId === $candidateId || $tokenId === $candidateToken)) {
+                return true;
+            }
+        }
+
+        return false;
+    }//end tokenBelongsToCase()
+
+    /**
+     * Revoke a public "track your case" token link through the OR shares
+     * leaf. The caller MUST have already authorised the revoke against the
+     * owning case (see {@see tokenBelongsToCase()} + canUserAccessCase()).
+     *
+     * @param string $tokenId The token id (or the opaque token) minted by
+     *                        the leaf.
+     *
+     * @return bool True when the leaf accepted the revoke.
+     *
+     * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P1.3
+     */
+    public function revokeTokenShare(string $tokenId): bool
+    {
+        $tokenService = $this->getCaseTokenService();
+        if ($tokenService === null || method_exists($tokenService, 'revoke') === false) {
+            return false;
+        }
+
+        try {
+            $tokenService->revoke($tokenId);
+            $this->logger->info(
+                'Procest: Public case-token link revoked via OR shares leaf',
+                ['tokenId' => $tokenId]
+            );
+            return true;
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'CaseSharingService: leaf revoke failed',
+                ['tokenId' => $tokenId, 'exception' => $e->getMessage()]
+            );
+            return false;
+        }
+    }//end revokeTokenShare()
 
     /**
      * Create a partner organization-based case share.
@@ -308,21 +369,22 @@ class CaseSharingService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('case_share_schema');
 
+        // Partner-organisation handover is zaak-domain logic (org-to-org case
+        // hand-off), NOT public token sharing — it stays in-app per ADR-022.
+        // It carries no public token: the bespoke token mechanism moved to the
+        // OR shares leaf (createTokenShare) and is the only public surface.
         $shareData = [
-            'token'           => $this->generateToken(),
             'caseId'          => $caseId,
             'shareType'       => 'partner',
             'partnerId'       => $partnerId,
             'permissionLevel' => $permissionLevel,
             'createdBy'       => $createdBy,
-            'fieldExclusions' => json_encode(self::DEFAULT_EXCLUDED_FIELDS),
-            'failedAttempts'  => 0,
         ];
 
         $result = $objectService->saveObject(
-            (int) $register,
-            (int) $schema,
-            $shareData,
+            object: $shareData,
+            register: (int) $register,
+            schema: (int) $schema,
         );
 
         $this->logger->info(
@@ -390,120 +452,6 @@ class CaseSharingService
     }//end getCaseIdForShare()
 
     /**
-     * Validate a token submission against the stored hash with brute-force protection.
-     *
-     * Looks up the share by SHA-256 hash of the supplied token, then:
-     *  - checks expiry
-     *  - enforces lockout if failedAttempts >= MAX_FAILED_ATTEMPTS
-     *  - verifies the password when the share is password-protected
-     *  - uses APCu atomic increment to record failed attempts without a read-modify-write race
-     *
-     * @param string      $token    The plaintext token supplied by the user
-     * @param string|null $password Optional plaintext password
-     *
-     * @return array{valid: bool, share?: array, error?: string, requiresPassword?: bool}
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function validateToken(string $token, ?string $password=null): array
-    {
-        $objectService = $this->getObjectService();
-        if ($objectService === null) {
-            return ['valid' => false, 'error' => 'Service unavailable'];
-        }
-
-        $register    = $this->settingsService->getConfigValue('register');
-        $shareSchema = $this->settingsService->getConfigValue('case_share_schema');
-
-        if (empty($register) === true || empty($shareSchema) === true) {
-            return ['valid' => false, 'error' => 'Service unavailable'];
-        }
-
-        // M2: Look up share by hash of the submitted token, never by plaintext.
-        $tokenHash = hash('sha256', $token);
-
-        try {
-            $results = $objectService->findAll(
-                [
-                    'filters' => [
-                        'register' => (int) $register,
-                        'schema'   => (int) $shareSchema,
-                        'token'    => $tokenHash,
-                    ],
-                ]
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error('CaseSharingService: validateToken findAll failed', ['error' => $e->getMessage()]);
-            return ['valid' => false, 'error' => 'Service unavailable'];
-        }
-
-        if (is_array($results) === false || count($results) === 0) {
-            return ['valid' => false, 'error' => 'Token not found'];
-        }
-
-        $shareObj = reset($results);
-        if (is_array($shareObj) === true) {
-            $share = $shareObj;
-        } else {
-            $share = $shareObj->jsonSerialize();
-        }
-
-        $shareId = (string) ($share['id'] ?? ($share['uuid'] ?? ''));
-
-        // Expiry check.
-        $expiresAt = $share['expiresAt'] ?? null;
-        if ($expiresAt !== null && strtotime((string) $expiresAt) < time()) {
-            return ['valid' => false, 'error' => 'Token verlopen'];
-        }
-
-        // H3: Read the APCu counter (authoritative for lockout) then fall back to the
-        // DB field for requests that survive an APCu flush or failover.
-        $apcuKey   = 'share_failed_'.$shareId;
-        $apcuCount = (int) $this->cache->get($apcuKey);
-        $dbCount   = (int) ($share['failedAttempts'] ?? 0);
-        $maxCount  = max($apcuCount, $dbCount);
-
-        if ($maxCount >= self::MAX_FAILED_ATTEMPTS) {
-            // Check lockout expiry stored in APCu.
-            $lockoutKey  = 'share_lockout_'.$shareId;
-            $lockedUntil = (int) $this->cache->get($lockoutKey);
-            if ($lockedUntil > time()) {
-                return ['valid' => false, 'error' => 'Account tijdelijk geblokkeerd na te veel pogingen'];
-            }
-
-            // Lockout TTL expired — reset the counter.
-            $this->cache->remove($apcuKey);
-            $this->cache->remove($lockoutKey);
-        }
-
-        // Password verification when the share requires it.
-        $storedPassword = $share['password'] ?? null;
-        if ($storedPassword !== null) {
-            if ($password === null || password_verify($password, (string) $storedPassword) === false) {
-                // H3: Atomic increment via APCu — no read-modify-write race.
-                $newCount = (int) $this->cache->get($apcuKey) + 1;
-                $this->cache->set($apcuKey, $newCount, self::LOCKOUT_MINUTES * 60 * 2);
-
-                if ($newCount >= self::MAX_FAILED_ATTEMPTS) {
-                    $this->cache->set('share_lockout_'.$shareId, time() + (self::LOCKOUT_MINUTES * 60), self::LOCKOUT_MINUTES * 60);
-                    $this->logger->warning(
-                        'CaseSharingService: share locked out after too many failed attempts',
-                        ['shareId' => $shareId]
-                    );
-                }
-
-                return ['valid' => false, 'error' => 'Onjuist wachtwoord', 'requiresPassword' => true];
-            }
-        }
-
-        // Successful validation — reset the APCu counter.
-        $this->cache->remove($apcuKey);
-        $this->cache->remove('share_lockout_'.$shareId);
-
-        return ['valid' => true, 'share' => $share];
-    }//end validateToken()
-
-    /**
      * Revoke a case share by marking it as revoked in OpenRegister.
      *
      * @param string $shareId The UUID of the share to revoke
@@ -542,7 +490,7 @@ class CaseSharingService
         $shareData['revokedBy'] = $userId;
         $shareData['revokedAt'] = (new \DateTime())->format('c');
 
-        $result = $objectService->saveObject((int) $register, (int) $shareSchema, $shareData);
+        $result = $objectService->saveObject(object: $shareData, register: (int) $register, schema: (int) $shareSchema);
 
         $this->logger->info(
             'Procest: Case share revoked',
@@ -555,45 +503,6 @@ class CaseSharingService
 
         return $result->jsonSerialize();
     }//end revokeShare()
-
-    /**
-     * Filter case data according to the share's permission level and field exclusions.
-     *
-     * @param array<string, mixed> $shareData Share configuration (permissionLevel, fieldExclusions, shareType)
-     * @param array<string, mixed> $caseData  Full case data to be filtered
-     *
-     * @return array<string, mixed> Filtered case data safe to expose to the share recipient
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function getFilteredCaseData(array $shareData, array $caseData): array
-    {
-        // Decode field exclusions stored as JSON string or array.
-        $exclusions = $shareData['fieldExclusions'] ?? [];
-        if (is_string($exclusions) === true) {
-            $decoded = json_decode($exclusions, true);
-            if (is_array($decoded) === true) {
-                $exclusions = $decoded;
-            } else {
-                $exclusions = [];
-            }
-        }
-
-        if (is_array($exclusions) === false) {
-            $exclusions = [];
-        }
-
-        // Merge the configured exclusions with the default set.
-        $allExclusions = array_unique(array_merge(self::DEFAULT_EXCLUDED_FIELDS, (array) $exclusions));
-
-        // Remove excluded fields from the case data.
-        $filtered = $caseData;
-        foreach ($allExclusions as $field) {
-            unset($filtered[(string) $field]);
-        }
-
-        return $filtered;
-    }//end getFilteredCaseData()
 
     /**
      * Resolve the ObjectService from the DI container.

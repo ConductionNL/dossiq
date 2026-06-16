@@ -30,9 +30,9 @@ ADR-022, procest-adopt-or-abstractions):
 
 ### REQ-LOC-01: Case Detail Map Tab
 
-**Feature tier**: V1
-
 The case detail view MUST display the case location on an interactive map when geometry data is available.
+
+**Feature tier**: V1
 
 #### Scenario LOC-01a: Show location on case detail
 
@@ -63,9 +63,9 @@ The case detail view MUST display the case location on an interactive map when g
 
 ### REQ-LOC-02: Location Picker
 
-**Feature tier**: V1
-
 The system MUST provide a location picker for setting or updating the case geometry.
+
+**Feature tier**: V1
 
 #### Scenario LOC-02a: Pick location by clicking map
 
@@ -106,9 +106,9 @@ The system MUST provide a location picker for setting or updating the case geome
 
 ### REQ-LOC-03: Address Display and Reverse Geocoding
 
-**Feature tier**: V1
-
 The system MUST display a human-readable address for case locations using PDOK reverse geocoding.
+
+**Feature tier**: V1
 
 #### Scenario LOC-03a: Reverse geocode point location
 
@@ -130,9 +130,9 @@ The system MUST display a human-readable address for case locations using PDOK r
 
 ### REQ-LOC-04: Case Creation Location
 
-**Feature tier**: V1
-
 The case creation form MUST allow optional location selection.
+
+**Feature tier**: V1
 
 #### Scenario LOC-04a: Set location during creation
 

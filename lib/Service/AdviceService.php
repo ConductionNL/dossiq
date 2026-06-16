@@ -36,7 +36,9 @@ namespace OCA\Procest\Service;
 
 use DateTime;
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\IUserSession;
+use OCP\IGroupManager;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -47,6 +49,9 @@ use Throwable;
  */
 class AdviceService
 {
+
+    use SearchesObjects;
+
 
     /**
      * Valid advice statuses.
@@ -62,14 +67,18 @@ class AdviceService
      *
      * @param SettingsService      $settingsService     The settings service
      * @param IUserSession         $userSession         The current user session
+     * @param IGroupManager        $groupManager        Group manager (Wilco #6 IDOR fix)
      * @param INotificationManager $notificationManager The notification manager
      * @param LoggerInterface      $logger              The logger
+     * @param AdviceDelegationService $adviceDelegation Advice delegation to decidesk (ADR-019)
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly IUserSession $userSession,
+        private readonly IGroupManager $groupManager,
         private readonly INotificationManager $notificationManager,
         private readonly LoggerInterface $logger,
+        private readonly AdviceDelegationService $adviceDelegation,
     ) {
     }//end __construct()
 
@@ -125,7 +134,7 @@ class AdviceService
         }
 
         try {
-            $advice = $objectService->saveObject($register, $schema, $update, $adviceId);
+            $advice = $objectService->saveObject(object: $update, register: $register, schema: $schema, uuid: (string) $adviceId);
         } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: failed to transition advice status: '.$e->getMessage(),
@@ -220,12 +229,11 @@ class AdviceService
         }
 
         try {
-            $results = $objectService->findObjects(
-                $register,
-                $schema,
-                ['case' => $caseId],
-                [],
-                200,
+            return $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['case' => $caseId, '_limit' => 200],
             );
         } catch (Throwable $e) {
             $this->logger->error(
@@ -234,12 +242,6 @@ class AdviceService
             );
             return [];
         }
-
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
     }//end getAdviceForCase()
 
     /**
@@ -264,12 +266,11 @@ class AdviceService
         }
 
         try {
-            $results = $objectService->findObjects(
-                $register,
-                $schema,
-                ['status' => 'aangevraagd'],
-                [],
-                500,
+            return $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['status' => 'aangevraagd', '_limit' => 500],
             );
         } catch (Throwable $e) {
             $this->logger->error(
@@ -278,12 +279,6 @@ class AdviceService
             );
             return [];
         }
-
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
     }//end getOpenAdvice()
 
     /**
@@ -416,6 +411,196 @@ class AdviceService
         return $user->getUID();
     }//end getUserId()
 
+
+    /**
+     * Submit advice (mark as received with optional adviesText).
+     *
+     * @param string               $adviceId The advice request UUID
+     * @param array<string, mixed> $payload  {adviesText, adviesDocument}
+     *
+     * @return array<string, mixed> The updated advice request
+     *
+     * @throws \RuntimeException When OpenRegister unavailable or transition invalid.
+     *
+     * @spec openspec/changes/vth-module/tasks.md#task-6
+     */
+    public function submitAdvice(string $adviceId, array $payload): array
+    {
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            throw new RuntimeException('OpenRegister is not available');
+        }
+
+        $register = $this->settingsService->getConfigValue('register');
+        $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
+        if (empty($register) === true || empty($schema) === true) {
+            throw new RuntimeException('Advice schema is not configured');
+        }
+
+        // Wilco #6 / procest#17 IDOR fix (2026-06-06): the caller must be
+        // the assigned `adviseur` (or an admin) — previously any authed
+        // user could submit advice on any UUID, including ones the
+        // adviseur hadn't yet seen. Read the current record and gate
+        // before applying the update.
+        $this->assertAdviceCallerIsAuthorized(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            adviceId: $adviceId,
+            action: 'submit',
+        );
+
+        $update = [
+            'status'     => 'received',
+            'receivedAt' => date('c'),
+        ];
+
+        $adviesText = (string) ($payload['adviesText'] ?? '');
+        if ($adviesText !== '') {
+            $update['adviesText'] = $adviesText;
+        }
+
+        $adviesDocument = (string) ($payload['adviesDocument'] ?? '');
+        if ($adviesDocument !== '') {
+            $update['adviesDocument'] = $adviesDocument;
+        }
+
+        try {
+            // Pre-existing positional-arg drift fixed (CLAUDE.md mandate):
+            // saveObject is (object, register, schema, uuid) — the previous
+            // ($register, $schema, $update, $adviceId) order wrote the wrong
+            // fields. Use named args to match every other call in this service.
+            $result = $objectService->saveObject(
+                object: $update,
+                register: $register,
+                schema: $schema,
+                uuid: (string) $adviceId
+            );
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Procest: failed to submit advice: '.$e->getMessage(),
+                ['app' => Application::APP_ID]
+            );
+            throw new RuntimeException('Could not submit advice');
+        }
+
+        return $this->normalizeResult(result: $result);
+    }//end submitAdvice()
+
+    /**
+     * Cancel an advice request.
+     *
+     * @param string $adviceId The advice request UUID
+     *
+     * @return array<string, mixed> The updated advice request
+     *
+     * @throws \RuntimeException When OpenRegister unavailable or advice not found.
+     *
+     * @spec openspec/changes/vth-module/tasks.md#task-6
+     */
+    public function cancelAdvice(string $adviceId): array
+    {
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            throw new RuntimeException('OpenRegister is not available');
+        }
+
+        $register = $this->settingsService->getConfigValue('register');
+        $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
+        if (empty($register) === true || empty($schema) === true) {
+            throw new RuntimeException('Advice schema is not configured');
+        }
+
+        // Wilco #6 / procest#17 IDOR fix (2026-06-06): only the requester
+        // (or an admin) may cancel — previously any authed user could
+        // cancel any advice by UUID.
+        $this->assertAdviceCallerIsAuthorized(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            adviceId: $adviceId,
+            action: 'cancel',
+        );
+
+        try {
+            // Pre-existing positional-arg drift fixed (CLAUDE.md mandate):
+            // saveObject is (object, register, schema, uuid).
+            $result = $objectService->saveObject(
+                object: ['status' => 'cancelled'],
+                register: $register,
+                schema: $schema,
+                uuid: (string) $adviceId
+            );
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Procest: failed to cancel advice: '.$e->getMessage(),
+                ['app' => Application::APP_ID]
+            );
+            throw new RuntimeException('Could not cancel advice request');
+        }
+
+        return $this->normalizeResult(result: $result);
+    }//end cancelAdvice()
+
+    /**
+     * Authorization gate for advice mutations (Wilco #6 / procest#17 IDOR fix).
+     *
+     * - submit: only the assigned `adviseur` (or an admin) may submit.
+     * - cancel: only the `requestedBy` (or an admin) may cancel.
+     *
+     * The current user is obtained from IUserSession + IGroupManager
+     * (already injected on this service). The advice record is fetched
+     * from OR via the same objectService used by the calling method.
+     *
+     * @param object $objectService The OR object service
+     * @param string $register      The register slug
+     * @param string $schema        The advies_aanvraag schema slug
+     * @param string $adviceId      The advice UUID
+     * @param string $action        Either 'submit' or 'cancel'
+     *
+     * @return void
+     *
+     * @throws RuntimeException When the caller is not authorised, the
+     *                          record is missing, or OR is unavailable.
+     */
+    private function assertAdviceCallerIsAuthorized(
+        object $objectService,
+        string $register,
+        string $schema,
+        string $adviceId,
+        string $action,
+    ): void {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            throw new RuntimeException('Not authenticated');
+        }
+
+        $uid = $user->getUID();
+        if ($this->groupManager->isAdmin($uid) === true) {
+            return;
+        }
+
+        try {
+            $record = $objectService->find($adviceId, $register, $schema);
+        } catch (Throwable $e) {
+            $this->logger->warning(
+                'Procest: advice lookup failed during IDOR gate: '.$e->getMessage(),
+                ['app' => Application::APP_ID]
+            );
+            // Collapse not-found and access-denied to the same "not
+            // accessible" error to avoid an existence-probing oracle
+            // (same pattern as docudesk#100 Wilco #6 fix).
+            throw new RuntimeException('Advice request not accessible');
+        }
+
+        $data = $this->normalizeResult(result: $record);
+        $field = ($action === 'submit') ? 'adviseur' : 'requestedBy';
+        if (($data[$field] ?? '') !== $uid) {
+            throw new RuntimeException('Advice request not accessible');
+        }
+
+    }//end assertAdviceCallerIsAuthorized()
+
     /**
      * Send a Nextcloud notification to a user.
      *
@@ -453,4 +638,110 @@ class AdviceService
             );
         }
     }//end sendUserNotification()
+
+    /**
+     * Create an advice request for a VTH case.
+     *
+     * Stores the adviceRequest in the `adviceRequest` schema and sends a
+     * notification to the adviseur. Corresponds to tasks.md#task-6.
+     *
+     * @param string               $caseId      UUID of the case
+     * @param array<string, mixed> $data        Advice request data (adviseur, deadline, vraag, etc.)
+     * @param string               $requestedBy User UID of the requester
+     *
+     * @return array<string, mixed> Saved adviceRequest object
+     *
+     * @throws RuntimeException If OpenRegister is unavailable or decidesk fails closed
+     *
+     * @spec openspec/changes/vth-module/tasks.md#task-6
+     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
+     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
+     */
+    public function requestAdvice(string $caseId, array $data, string $requestedBy): array
+    {
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            throw new RuntimeException('OpenRegister is not available');
+        }
+
+        $register = $this->settingsService->getConfigValue('register');
+
+        $payload = [
+            'caseRef'     => $caseId,
+            'requestedBy' => $requestedBy,
+            'adviseur'    => $data['adviseur'] ?? '',
+            'deadline'    => $data['deadline'] ?? null,
+            'status'      => 'open',
+            'vraag'       => $data['vraag'] ?? '',
+            'adviesText'  => '',
+            'addedToFile' => false,
+        ];
+
+        $saved = $objectService->saveObject(
+            register: $register,
+            schema: 'adviceRequest',
+            object: $payload
+        );
+
+        $adviceId = is_array($saved) === true ? (string) ($saved['id'] ?? ($saved['uuid'] ?? '')) : '';
+
+        // REQ-PDRD-001 / REQ-PDRD-002: the advice is *made* in decidesk. Raise a
+        // decidesk `advice` Decision for this request and persist its ref. Fail
+        // CLOSED — never author an advice outcome locally as a fallback.
+        try {
+            $decisionRef = $this->adviceDelegation->raiseAdviceDecision(
+                subjectSchema: 'adviesAanvraag',
+                subjectId: $adviceId !== '' ? $adviceId : $caseId,
+                payload: [
+                    'subjectRegister'   => $register,
+                    'externalReference' => $caseId,
+                    'subjectLabel'      => (string) ($data['vraag'] ?? 'Adviesaanvraag'),
+                    'question'          => (string) ($data['vraag'] ?? ''),
+                    'adviseur'          => (string) ($payload['adviseur'] ?? ''),
+                ],
+            );
+
+            if ($adviceId !== '') {
+                $objectService->saveObject(
+                    object: array_merge(is_array($saved) === true ? $saved : [], ['decisionRef' => $decisionRef]),
+                    register: $register,
+                    schema: 'adviceRequest',
+                    uuid: $adviceId,
+                );
+            }
+        } catch (RuntimeException $e) {
+            $this->logger->error(
+                'Procest: requestAdvice: decidesk advice Decision raise failed — failing closed: '.$e->getMessage(),
+                ['app' => Application::APP_ID]
+            );
+            // REQ-PDRD-002: fail closed; surface the error.
+            throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
+        }
+
+        $adviseur = $payload['adviseur'];
+        if ($adviseur !== '') {
+            $notificationObjectId = $caseId;
+            if (is_array($saved) === true) {
+                $notificationObjectId = $saved['id'] ?? $caseId;
+            }
+
+            $this->sendUserNotification(
+                userId: $adviseur,
+                objectId: $notificationObjectId,
+                subject: 'advice_requested',
+                message: 'Adviesaanvraag voor zaak '.$caseId
+            );
+        }
+
+        $this->logger->info(
+            'Advice request created for case '.$caseId.' by '.$requestedBy,
+            ['app' => Application::APP_ID]
+        );
+
+        if (is_array($saved) === true) {
+            return $saved;
+        }
+
+        return [];
+    }//end requestAdvice()
 }//end class

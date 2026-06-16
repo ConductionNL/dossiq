@@ -1,0 +1,22 @@
+{
+  "description": "LHS 4x4 matrix seed data for procest vth-module (Gedrag A-D x Gevolg 1-4)",
+  "version": "1.0",
+  "cells": [
+    {"gedragRow": "A", "gevolgColumn": "1", "interventieStep": "Aanspreken / informeren", "description": "Informeer de overtreder over de regels en geef gelegenheid tot herstel."},
+    {"gedragRow": "A", "gevolgColumn": "2", "interventieStep": "Waarschuwen", "description": "Stuur een schriftelijke waarschuwing met hersteltermijn."},
+    {"gedragRow": "A", "gevolgColumn": "3", "interventieStep": "Bestuurlijke waarschuwing", "description": "Formele bestuurlijke waarschuwing; overtreder krijgt hersteltermijn."},
+    {"gedragRow": "A", "gevolgColumn": "4", "interventieStep": "Last onder dwangsom", "description": "Opleggen last onder dwangsom."},
+    {"gedragRow": "B", "gevolgColumn": "1", "interventieStep": "Waarschuwen", "description": "Schriftelijke waarschuwing met korte hersteltermijn."},
+    {"gedragRow": "B", "gevolgColumn": "2", "interventieStep": "Bestuurlijke waarschuwing", "description": "Bestuurlijke waarschuwing met hersteltermijn."},
+    {"gedragRow": "B", "gevolgColumn": "3", "interventieStep": "Last onder dwangsom", "description": "Last onder dwangsom opleggen."},
+    {"gedragRow": "B", "gevolgColumn": "4", "interventieStep": "Last onder dwangsom + Proces-verbaal", "description": "Bestuurlijk én strafrechtelijk optreden."},
+    {"gedragRow": "C", "gevolgColumn": "1", "interventieStep": "Bestuurlijke waarschuwing", "description": "Bestuurlijke waarschuwing."},
+    {"gedragRow": "C", "gevolgColumn": "2", "interventieStep": "Last onder dwangsom", "description": "Last onder dwangsom."},
+    {"gedragRow": "C", "gevolgColumn": "3", "interventieStep": "Bestuursdwang + Proces-verbaal", "description": "Bestuursdwang toepassen en aangifte doen bij OM."},
+    {"gedragRow": "C", "gevolgColumn": "4", "interventieStep": "Bestuursdwang + Proces-verbaal", "description": "Zwaarste bestuurlijke inzet gecombineerd met strafrechtelijk optreden."},
+    {"gedragRow": "D", "gevolgColumn": "1", "interventieStep": "Last onder dwangsom", "description": "Last onder dwangsom."},
+    {"gedragRow": "D", "gevolgColumn": "2", "interventieStep": "Bestuursdwang + Proces-verbaal", "description": "Bestuursdwang en strafrechtelijk optreden."},
+    {"gedragRow": "D", "gevolgColumn": "3", "interventieStep": "Bestuursdwang + Proces-verbaal", "description": "Maximale bestuurlijke en strafrechtelijke inzet."},
+    {"gedragRow": "D", "gevolgColumn": "4", "interventieStep": "Bestuursdwang + Proces-verbaal", "description": "Maximale inzet bestuur en OM voor crimineel gedrag met onomkeerbare gevolgen."}
+  ]
+}

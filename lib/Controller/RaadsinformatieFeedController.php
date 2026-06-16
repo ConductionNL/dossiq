@@ -17,6 +17,9 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/open-raadsinformatie/tasks.md#task-7
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -25,6 +28,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -51,23 +55,14 @@ use Psr\Log\LoggerInterface;
 class RaadsinformatieFeedController extends Controller
 {
 
+    use SearchesObjects;
+
     /**
      * Maximum number of entries returned per feed.
      *
      * @var int
      */
     private const FEED_LIMIT = 50;
-
-    /**
-     * Mapping from the feed {type} slug to the ORI schema name.
-     *
-     * @var array<string,string>
-     */
-    private const FEED_SCHEMA_MAP = [
-        'vergaderingen' => 'vergadering',
-        'agendapunten'  => 'agendapunt',
-        'documenten'    => 'raadsdocument',
-    ];
 
     /**
      * Constructor for RaadsinformatieFeedController.
@@ -198,10 +193,11 @@ class RaadsinformatieFeedController extends Controller
         }
 
         try {
-            return $objectService->findObjects(
+            return $this->searchObjectsAsArrays(
+                objectService: $objectService,
                 register: 'ori',
                 schema: $schema,
-                params: $params
+                filters: $params
             );
         } catch (\Throwable $e) {
             $this->logger->warning(

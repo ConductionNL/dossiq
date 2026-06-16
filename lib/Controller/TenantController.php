@@ -31,6 +31,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\TenantService;
+use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -74,7 +75,7 @@ class TenantController extends Controller
 
       * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
       */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function provision(string $tenantId): JSONResponse
     {
         if ($this->isPlatformAdmin() === false) {
@@ -99,7 +100,7 @@ class TenantController extends Controller
 
       * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
       */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function usage(string $tenantId): JSONResponse
     {
         if ($this->isPlatformAdmin() === false) {

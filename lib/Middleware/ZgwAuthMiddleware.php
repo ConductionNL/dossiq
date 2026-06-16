@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Middleware;
 
 use OCA\Procest\Controller\ZgwController;
+use OCA\Procest\Service\ZgwJwtValidator;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
@@ -106,11 +107,11 @@ class ZgwAuthMiddleware extends Middleware
     ];
 
     /**
-     * The OpenRegister AuthorizationService (loaded dynamically).
+     * The ZGW JWT validator.
      *
-     * @var object|null
+     * @var ZgwJwtValidator
      */
-    private $authorizationService = null;
+    private ZgwJwtValidator $jwtValidator;
 
     /**
      * The OpenRegister ConsumerMapper (loaded dynamically).
@@ -122,15 +123,18 @@ class ZgwAuthMiddleware extends Middleware
     /**
      * Constructor.
      *
-     * @param IRequest        $request The incoming request
-     * @param LoggerInterface $logger  The logger
+     * @param IRequest        $request      The incoming request
+     * @param ZgwJwtValidator $jwtValidator The ZGW JWT validator
+     * @param LoggerInterface $logger       The logger
      *
      * @return void
      */
     public function __construct(
         private readonly IRequest $request,
+        ZgwJwtValidator $jwtValidator,
         private readonly LoggerInterface $logger,
     ) {
+        $this->jwtValidator = $jwtValidator;
         $this->loadOpenRegisterServices();
     }//end __construct()
 
@@ -142,11 +146,8 @@ class ZgwAuthMiddleware extends Middleware
     private function loadOpenRegisterServices(): void
     {
         try {
-            $container = \OC::$server;
-            $this->authorizationService = $container->get(
-                'OCA\OpenRegister\Service\AuthorizationService'
-            );
-            $this->consumerMapper       = $container->get(
+            $container            = \OC::$server;
+            $this->consumerMapper = $container->get(
                 'OCA\OpenRegister\Db\ConsumerMapper'
             );
         } catch (\Throwable $e) {
@@ -194,11 +195,13 @@ class ZgwAuthMiddleware extends Middleware
             );
         }
 
-        // Validate JWT signature via OpenRegister's AuthorizationService.
+        // Validate JWT signature via the procest-owned ZgwJwtValidator.
         // M3: Log detailed message server-side; surface only a generic message to caller.
+        // Catch \Throwable: a misconfigured dependency raises \Error (not \Exception),
+        // which previously escaped as a 500 instead of a clean 403.
         try {
-            $this->authorizationService->authorizeJwt(authorization: $authorization);
-        } catch (\Exception $e) {
+            $this->jwtValidator->validate(authorization: $authorization);
+        } catch (\Throwable $e) {
             $this->logger->warning(
                 'ZGW auth failed: '.$e->getMessage()
             );
@@ -235,11 +238,13 @@ class ZgwAuthMiddleware extends Middleware
      * @param string                       $methodName The method name
      * @param \Exception                   $exception  The exception
      *
-     * @return JSONResponse|null
+     * @return JSONResponse
+     *
+     * @throws \Exception Re-throws any non-ZGW-auth exception for the next middleware.
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $controller/$methodName required by Middleware interface
      */
-    public function afterException($controller, $methodName, \Exception $exception): ?JSONResponse
+    public function afterException($controller, $methodName, \Exception $exception): JSONResponse
     {
         if ($exception instanceof ZgwAuthException) {
             return new JSONResponse(
@@ -254,7 +259,15 @@ class ZgwAuthMiddleware extends Middleware
             );
         }
 
-        return null;
+        // Per the Nextcloud middleware contract, an afterException() handler
+        // MUST return a Response or re-throw — it must never return null.
+        // MiddlewareDispatcher::afterException() does `return $mw->afterException(...)`
+        // against a non-nullable Response type, so a null return raises an
+        // uncaught TypeError ("null returned") that becomes a hard 500 on ANY
+        // unowned exception (this masked every non-ZGW controller error,
+        // e.g. the POST /transition endpoint). Re-throw so the dispatcher
+        // offers the exception to the next middleware / NC's core handler.
+        throw $exception;
     }//end afterException()
 
     /**

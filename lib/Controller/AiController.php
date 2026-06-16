@@ -30,9 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
-use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\AiService;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -357,7 +357,7 @@ class AiController extends Controller
 
       * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
       */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function getSettings(): JSONResponse
     {
         $settings = $this->aiService->getAiSettings();
@@ -372,7 +372,7 @@ class AiController extends Controller
 
       * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
       */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function updateSettings(): JSONResponse
     {
         $data   = $this->request->getParams();
@@ -388,7 +388,7 @@ class AiController extends Controller
 
       * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
       */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function healthCheck(): JSONResponse
     {
         $result = $this->aiService->testHealth();

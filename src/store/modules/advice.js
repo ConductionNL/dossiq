@@ -99,7 +99,7 @@ export const useAdviceStore = defineStore('advice', {
 			try {
 				const objectStore = useObjectStore()
 				const response = await objectStore.fetchCollection('adviesAanvraag', {
-					filters: { case: caseId },
+					'_filters[case]': caseId,
 					limit: 100,
 				})
 				this.requests = response?.results || response || []

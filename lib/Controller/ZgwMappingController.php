@@ -31,6 +31,7 @@ use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Repair\LoadDefaultZgwMappings;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\ZgwMappingService;
+use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
@@ -71,7 +72,7 @@ class ZgwMappingController extends Controller
 
       * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
       */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function index(): JSONResponse
     {
         return new JSONResponse(
@@ -91,7 +92,7 @@ class ZgwMappingController extends Controller
 
       * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
       */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function show(string $resourceKey): JSONResponse
     {
         $mapping = $this->zgwMappingService->getMapping($resourceKey);
@@ -122,7 +123,7 @@ class ZgwMappingController extends Controller
 
       * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
       */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function update(string $resourceKey): JSONResponse
     {
         $params = $this->request->getParams();
@@ -149,7 +150,7 @@ class ZgwMappingController extends Controller
 
       * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
       */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function destroy(string $resourceKey): JSONResponse
     {
         $this->zgwMappingService->deleteMapping($resourceKey);
@@ -170,7 +171,7 @@ class ZgwMappingController extends Controller
 
       * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
       */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function reset(string $resourceKey): JSONResponse
     {
         $registerId = $this->settingsService->getConfigValue(key: 'register', default: '');

@@ -29,10 +29,13 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\AdviceService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -146,14 +149,94 @@ class AdviceController extends Controller
     }//end dispatchReminder()
 
     /**
+     * Create an advice request for a specific case.
+     *
+     * @param string $id UUID of the case
+     *
+     * @return JSONResponse Created advice request or error
+     *
+     * @NoAdminRequired
+     *
+     * @spec openspec/changes/vth-module/tasks.md#task-6
+     */
+    #[NoAdminRequired]
+    public function createForCase(string $id): JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            throw new OCSForbiddenException('Not authenticated');
+        }
+
+        $data            = $this->readJsonBody();
+        $data['caseRef'] = $id;
+        $data['requestedBy'] = $user->getUID();
+        $data['status']      = 'open';
+
+        try {
+            $advice = $this->adviceService->requestAdvice(caseId: $id, data: $data, requestedBy: $user->getUID());
+            return new JSONResponse(data: $advice, statusCode: Http::STATUS_CREATED);
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Failed to create advice request for case '.$id.': '.$e->getMessage(),
+                ['app' => Application::APP_ID]
+            );
+            return new JSONResponse(
+                ['error' => 'Could not create advice request: '.$e->getMessage()],
+                Http::STATUS_INTERNAL_SERVER_ERROR,
+            );
+        }
+    }//end createForCase()
+
+    /**
+     * Get all advice requests for a specific case.
+     *
+     * @param string $id UUID of the case
+     *
+     * @return JSONResponse List of advice requests
+     *
+     * @NoAdminRequired
+     *
+     * @spec openspec/changes/vth-module/tasks.md#task-7
+     */
+    #[NoAdminRequired]
+    public function getForCase(string $id): JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            throw new OCSForbiddenException('Not authenticated');
+        }
+
+        $advice = $this->adviceService->getAdviceForCase(caseId: $id);
+        return new JSONResponse(data: $advice, statusCode: Http::STATUS_OK);
+    }//end getForCase()
+
+    /**
      * Decode a JSON request body safely.
      *
      * @return array<string, mixed> Decoded payload or empty array
      */
     private function readJsonBody(): array
     {
-        $content = $this->request->getContent();
-        if ($content === '' || $content === false) {
+        // Prefer the request object's getContent() when reachable — test
+        // stubs expose a public getContent(); the concrete OC request hides
+        // it, so we fall through to php://input there.
+        $content = '';
+        if (method_exists($this->request, 'getContent') === true) {
+            try {
+                $raw = $this->request->getContent();
+                if (is_string($raw) === true) {
+                    $content = $raw;
+                }
+            } catch (\Throwable $e) {
+                $content = '';
+            }
+        }
+
+        if ($content === '') {
+            $content = (string) file_get_contents('php://input');
+        }
+
+        if ($content === '') {
             return [];
         }
 

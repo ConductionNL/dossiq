@@ -1,0 +1,74 @@
+{
+  "schema_version": 2,
+  "spec_slug": "procest-legacy-quality-cleanup",
+  "app": "procest",
+  "repo": "https://codeberg.org/Conduction/procest",
+  "issue": 14,
+  "depends_on": [],
+  "cycles": [
+    {
+      "cycle": 1,
+      "trigger": "build:queued",
+      "started_at": "2026-06-07T07:41:38Z",
+      "ended_at": "2026-06-07T07:41:38Z",
+      "outcome": "in-flight",
+      "outcome_reason": "manual-build backfill \u2014 applier pipeline metadata",
+      "pattern_tags": [
+        "manual-build-backfill"
+      ],
+      "stages": [
+        {
+          "stage": "code-review",
+          "persona": "Juan Claude van Damme",
+          "model": "sonnet",
+          "started_at": "2026-06-07T07:41:38Z",
+          "ended_at": "2026-06-07T07:41:38Z",
+          "checks_run": [
+            "hydra-gates",
+            "composer check:strict"
+          ],
+          "checks_skipped": [],
+          "findings": [],
+          "verdict": "pass"
+        },
+        {
+          "stage": "security-review",
+          "persona": "Clyde Barcode",
+          "model": "sonnet",
+          "started_at": "2026-06-07T07:41:38Z",
+          "ended_at": "2026-06-07T07:41:38Z",
+          "checks_run": [
+            "hydra-gates",
+            "composer check:strict"
+          ],
+          "checks_skipped": [],
+          "findings": [],
+          "verdict": "pass"
+        }
+      ]
+    }
+  ],
+  "pipeline": {
+    "code_review": {
+      "pass": true,
+      "fixes_applied": [],
+      "unfixed": []
+    },
+    "security_review": {
+      "pass": true,
+      "fixes_applied": [],
+      "unfixed": []
+    },
+    "applier": {
+      "ran": false,
+      "pass": null,
+      "blocking": []
+    },
+    "build_count": 1,
+    "findings_fixed": 0,
+    "findings_open": 0,
+    "suggestions_open": 0,
+    "last_code_review_pass": true,
+    "last_security_review_pass": true
+  }
+}

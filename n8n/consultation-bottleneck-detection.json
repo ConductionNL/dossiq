@@ -1,0 +1,126 @@
+{
+  "name": "Procest — Consultation Bottleneck Detection",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "hours", "hoursInterval": 24 }
+          ]
+        }
+      },
+      "id": "daily-trigger",
+      "name": "Daily at 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/consultations/analytics",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "OCS-APIRequest", "value": "true" },
+            { "name": "Accept", "value": "application/json" }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "groupBy", "value": "adviesinstantieId" },
+            { "name": "window", "value": "P30D" }
+          ]
+        }
+      },
+      "id": "fetch-analytics",
+      "name": "GET /consultations/analytics (last 30d)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Bottleneck rule (spec): coordinator MUST be alerted when an advisory body's\n// 30-day overdue rate exceeds 20% (#bottleneck-detection scenario).\n//\n// Analytics payload contract: {\n//   bodies: [\n//     { adviesinstantieId, naam, totalLast30Days, overdueLast30Days,\n//       avgDoorlooptijdDagen, avgDoorlooptijdDagenPrev30 }\n//   ]\n// }\nconst payload = $input.first().json || {};\nconst bodies = payload.bodies || [];\nconst alerts = [];\nfor (const b of bodies) {\n  const total = Number(b.totalLast30Days || 0);\n  if (total === 0) continue;\n  const overdueRate = Number(b.overdueLast30Days || 0) / total;\n  if (overdueRate > 0.20) {\n    alerts.push({\n      adviesinstantieId: b.adviesinstantieId,\n      naam: b.naam,\n      overdueCount: b.overdueLast30Days,\n      overdueRate: Math.round(overdueRate * 100),\n      avgDoorlooptijd: b.avgDoorlooptijdDagen,\n      avgDoorlooptijdVorig: b.avgDoorlooptijdDagenPrev30,\n      message: `${b.naam}: ${b.overdueLast30Days} verlopen adviezen, gemiddelde doorlooptijd ${b.avgDoorlooptijdDagen} dagen (was ${b.avgDoorlooptijdDagenPrev30}).`\n    });\n  }\n}\nreturn alerts.length ? alerts.map(a => ({ json: a })) : [{ json: { _empty: true } }];"
+      },
+      "id": "rule",
+      "name": "Apply >20% rule",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "has-alerts",
+              "leftValue": "={{ $json._empty }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "notEquals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-alert",
+      "name": "Any bottlenecks?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.PROCEST_BASE_URL || 'http://nextcloud' }}/index.php/apps/procest/api/notifications/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "OCS-APIRequest", "value": "true" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipientGroup\": \"consultation-coordinators\",\n  \"template\": \"consultation-bottleneck-alert\",\n  \"priority\": \"warning\",\n  \"context\": {\n    \"adviesinstantieId\": $json.adviesinstantieId,\n    \"naam\": $json.naam,\n    \"overdueCount\": $json.overdueCount,\n    \"overdueRatePct\": $json.overdueRate,\n    \"avgDoorlooptijd\": $json.avgDoorlooptijd,\n    \"avgDoorlooptijdVorig\": $json.avgDoorlooptijdVorig,\n    \"message\": $json.message\n  }\n}"
+      },
+      "id": "alert",
+      "name": "Notify coordinator group",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1080, 220]
+    }
+  ],
+  "connections": {
+    "Daily at 08:00": {
+      "main": [[{ "node": "GET /consultations/analytics (last 30d)", "type": "main", "index": 0 }]]
+    },
+    "GET /consultations/analytics (last 30d)": {
+      "main": [[{ "node": "Apply >20% rule", "type": "main", "index": 0 }]]
+    },
+    "Apply >20% rule": {
+      "main": [[{ "node": "Any bottlenecks?", "type": "main", "index": 0 }]]
+    },
+    "Any bottlenecks?": {
+      "main": [
+        [{ "node": "Notify coordinator group", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "owner": "procest",
+    "spec": "openspec/changes/consultation-management/specs/consultation-management/spec.md#bottleneck-detection",
+    "purpose": "Daily 08:00 bottleneck scan per advisory body using a 30-day analytics window. Emits a coordinator-group notification when overdue rate > 20% (spec rule)."
+  }
+}

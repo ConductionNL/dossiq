@@ -6,6 +6,27 @@
 import { parseDuration, formatDuration } from './durationHelpers.js'
 
 /**
+ * Parse a case field that the schema stores as a JSON-encoded array
+ * (statusHistory, activity). Tolerates raw arrays (legacy writers),
+ * JSON strings, and null/invalid values.
+ *
+ * @param {string|Array|null} value The raw field value from the case object
+ * @return {Array} The parsed array, or [] when absent/invalid
+ */
+export function parseJsonArray(value) {
+	if (Array.isArray(value)) return value
+	if (typeof value === 'string' && value.length > 0) {
+		try {
+			const parsed = JSON.parse(value)
+			return Array.isArray(parsed) ? parsed : []
+		} catch {
+			return []
+		}
+	}
+	return []
+}
+
+/**
  * Calculate a deadline date by adding an ISO 8601 duration to a start date.
  *
  * @param {string|Date} startDate Start date (ISO string or Date)

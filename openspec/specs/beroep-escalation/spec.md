@@ -1,8 +1,10 @@
 ## Purpose
 
+Provides a pre-seeded "Beroep" (appeal) case type and the workflow to escalate a completed bezwaar case to the administrative court (bestuursrechter, Awb hoofdstuk 8), including court-proceedings status types, document tracking, and hoger-beroep awareness.
+
 @e2e exclude Beroep case type is V1 seed data imported via repair step; covered by PHPUnit, not Playwright.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Beroep Case Type Pre-Seeded Configuration
 

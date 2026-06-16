@@ -94,6 +94,8 @@ export default {
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius-large);
 	padding: 16px;
+	height: 100%;
+	box-sizing: border-box;
 }
 
 .overdue-panel__header {

@@ -538,3 +538,177 @@ export function formatRelativeTime(dateString) {
 	if (diffDays < 7) return t('procest', '{days} days ago', { days: diffDays })
 	return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
+
+/**
+ * Aggregate open cases by case-type title for the "Cases by Type" bar chart.
+ * Cases whose caseType cannot be resolved are grouped under "Unknown".
+ *
+ * @param {object[]} openCases Cases with non-final status
+ * @param {object[]} caseTypes All case types (for name resolution)
+ * @return {Array<{ type: string, count: number }>} Sorted by count descending
+ *
+ * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-003
+ */
+export function aggregateByType(openCases, caseTypes) {
+	const typeMap = new Map()
+	for (const ct of caseTypes) {
+		typeMap.set(ct.id, ct.title || ct.name || t('procest', 'Unknown'))
+	}
+
+	const counts = new Map()
+	for (const c of openCases) {
+		const name = typeMap.get(c.caseType) || t('procest', 'Unknown')
+		counts.set(name, (counts.get(name) || 0) + 1)
+	}
+
+	return Array.from(counts.entries())
+		.map(([type, count]) => ({ type, count }))
+		.sort((a, b) => b.count - a.count)
+}
+
+/**
+ * Default Woo (Wet open overheid) severity thresholds in days. A Woo response
+ * is statutorily due within 4 weeks (28 days) with a single 2-week extension;
+ * the panel surfaces urgency relative to the remaining days on the deadline.
+ *
+ * @type {number}
+ */
+export const WOO_CRITICAL_DAYS = 7
+
+/**
+ * @type {number}
+ */
+export const WOO_WARNING_DAYS = 14
+
+/**
+ * Get open Woo cases with statutory-deadline countdown and traffic-light
+ * severity. Woo cases are identified by a case-insensitive substring match on
+ * the resolved case-type title containing "woo" (DD-03). Cases without a
+ * deadline are excluded — there is nothing to count down against.
+ *
+ * Severity mapping:
+ *   - overdue   : daysRemaining < 0 (red / --color-error)
+ *   - critical  : 0 <= daysRemaining <= 7 (orange)
+ *   - warning   : 7 < daysRemaining <= 14 (yellow)
+ *   - ok        : daysRemaining > 14 (green / --color-success)
+ *
+ * @param {object[]} openCases Cases with non-final status
+ * @param {object[]} caseTypes All case types (for Woo detection + name)
+ * @return {Array<{ id, identifier, title, initiator, deadline, daysRemaining, isOverdue, severity }>}
+ *   Sorted overdue first (most overdue), then by ascending daysRemaining.
+ *
+ * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-004
+ */
+export function getWooCases(openCases, caseTypes) {
+	const typeTitleMap = new Map()
+	for (const ct of caseTypes) {
+		typeTitleMap.set(ct.id, ct.title || ct.name || '')
+	}
+
+	const result = []
+
+	for (const c of openCases) {
+		if (!c.deadline) continue
+
+		const typeTitle = (typeTitleMap.get(c.caseType) || '').toLowerCase()
+		if (!typeTitle.includes('woo')) continue
+
+		const daysRemaining = getDaysRemaining(c.deadline)
+		const isOverdue = daysRemaining < 0
+
+		let severity
+		if (isOverdue) {
+			severity = 'overdue'
+		} else if (daysRemaining <= WOO_CRITICAL_DAYS) {
+			severity = 'critical'
+		} else if (daysRemaining <= WOO_WARNING_DAYS) {
+			severity = 'warning'
+		} else {
+			severity = 'ok'
+		}
+
+		result.push({
+			id: c.id,
+			identifier: c.identifier || '—',
+			title: c.title || '—',
+			initiator: c.initiator || c.assignee || '—',
+			deadline: c.deadline,
+			daysRemaining,
+			isOverdue,
+			severity,
+		})
+	}
+
+	// Overdue first (most overdue at top), then ascending daysRemaining.
+	result.sort((a, b) => {
+		if (a.isOverdue && b.isOverdue) return a.daysRemaining - b.daysRemaining
+		if (a.isOverdue) return -1
+		if (b.isOverdue) return 1
+		return a.daysRemaining - b.daysRemaining
+	})
+
+	return result
+}
+
+/**
+ * Group completed cases into weekly throughput buckets (cases closed per ISO
+ * week) for the trailing `weeks` window ending at the most recent completion.
+ * Used by the Process Analytics throughput line chart (REQ-DASH-V1-005c).
+ *
+ * @param {object[]} completedCases Cases with an `endDate`
+ * @param {number} weeks Number of trailing weeks to include
+ * @return {Array<{ weekLabel: string, count: number }>} Oldest week first
+ *
+ * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-005
+ */
+export function computeWeeklyThroughput(completedCases, weeks = 12) {
+	// Build a Monday-anchored week key for an ISO-week approximation.
+	const weekStart = (d) => {
+		const date = new Date(d)
+		date.setHours(0, 0, 0, 0)
+		const day = date.getDay() // 0 = Sunday
+		const diff = (day === 0 ? 6 : day - 1) // days since Monday
+		date.setDate(date.getDate() - diff)
+		return date
+	}
+
+	const isoWeekLabel = (monday) => {
+		// ISO-8601 week number: the Thursday of the current week decides the year,
+		// and week 1 is the week containing the first Thursday of that year.
+		const target = new Date(monday)
+		target.setHours(0, 0, 0, 0)
+		target.setDate(target.getDate() + 3) // shift to this week's Thursday
+		const isoYear = target.getFullYear()
+		const firstThursday = new Date(isoYear, 0, 4)
+		const weekNo = 1 + Math.round((target - weekStart(firstThursday)) / (7 * 86400000))
+		return `W${weekNo} ${isoYear}`
+	}
+
+	const completed = completedCases.filter(c => c.endDate)
+	if (completed.length === 0) return []
+
+	// Determine the anchor (most recent completion) and build the trailing window.
+	const latest = completed.reduce((max, c) => {
+		const d = new Date(c.endDate)
+		return d > max ? d : max
+	}, new Date(0))
+
+	const anchorMonday = weekStart(latest)
+	const buckets = []
+	const keyToIndex = new Map()
+	for (let i = weeks - 1; i >= 0; i--) {
+		const monday = new Date(anchorMonday)
+		monday.setDate(monday.getDate() - (i * 7))
+		const key = monday.toISOString().slice(0, 10)
+		keyToIndex.set(key, buckets.length)
+		buckets.push({ weekLabel: isoWeekLabel(monday), count: 0 })
+	}
+
+	for (const c of completed) {
+		const key = weekStart(c.endDate).toISOString().slice(0, 10)
+		const idx = keyToIndex.get(key)
+		if (idx !== undefined) buckets[idx].count += 1
+	}
+
+	return buckets
+}

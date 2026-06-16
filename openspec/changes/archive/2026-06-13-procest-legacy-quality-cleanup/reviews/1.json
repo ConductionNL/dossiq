@@ -1,0 +1,32 @@
+{
+  "round": 1,
+  "timestamp": "2026-06-07T07:52:28.830881+00:00",
+  "pr": 65,
+  "commit": "0a1bed8",
+  "code_review": {
+    "pass": null,
+    "turns": 0,
+    "cost_usd": 0,
+    "cost_eur": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "cache_read": 0,
+      "cache_create": 0
+    },
+    "findings": []
+  },
+  "security_review": {
+    "pass": null,
+    "turns": 0,
+    "cost_usd": 0,
+    "cost_eur": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "cache_read": 0,
+      "cache_create": 0
+    },
+    "findings": []
+  }
+}

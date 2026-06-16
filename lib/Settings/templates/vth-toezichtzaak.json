@@ -1,0 +1,17 @@
+{
+  "slug": "vth-toezichtzaak",
+  "title": "VTH Toezichtzaak",
+  "version": "1.0.0",
+  "description": "Template voor toezichtzaken inclusief inspectiefasen (VTH module)",
+  "statusTypes": ["Gepland", "In uitvoering", "Rapport", "Opvolging", "Afgehandeld"],
+  "inspectionPhases": [
+    {"name": "Fase 1 - Fundering", "order": 1},
+    {"name": "Fase 2 - Ruwbouw", "order": 2},
+    {"name": "Fase 3 - Oplevering", "order": 3}
+  ],
+  "roleTypes": ["inspecteur", "contactpersoon", "opdrachtgever"],
+  "propertyDefinitions": [
+    {"name": "inspectionPhase", "type": "string"},
+    {"name": "locatie", "type": "string"}
+  ]
+}

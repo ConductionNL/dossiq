@@ -8,19 +8,21 @@
 		</div>
 
 		<!-- Filter tabs -->
-		<div class="my-work__tabs" role="tablist" :aria-label="t('procest', 'Filter by type')">
-			<button
-				v-for="tab in tabs"
-				:key="tab.key"
-				role="tab"
-				:aria-selected="activeTab === tab.key"
-				class="my-work__tab"
-				:class="{ 'my-work__tab--active': activeTab === tab.key }"
-				@click="activeTab = tab.key"
-				@keydown.enter="activeTab = tab.key"
-				@keydown.space.prevent="activeTab = tab.key">
-				{{ tab.label }} ({{ tab.count }})
-			</button>
+		<div class="my-work__tabs">
+			<div class="my-work__tablist" role="tablist" :aria-label="t('procest', 'Filter by type')">
+				<button
+					v-for="tab in tabs"
+					:key="tab.key"
+					role="tab"
+					:aria-selected="activeTab === tab.key"
+					class="my-work__tab"
+					:class="{ 'my-work__tab--active': activeTab === tab.key }"
+					@click="activeTab = tab.key"
+					@keydown.enter="activeTab = tab.key"
+					@keydown.space.prevent="activeTab = tab.key">
+					{{ tab.label }} ({{ tab.count }})
+				</button>
+			</div>
 
 			<label class="my-work__completed-toggle">
 				<input
@@ -30,9 +32,19 @@
 				{{ t('procest', 'Show completed') }}
 			</label>
 
-			<router-link :to="{ name: 'Tasks' }" class="my-work__all-tasks-link">
+			<label v-if="hasSubstitutedWork" class="my-work__completed-toggle" data-testid="substituted-toggle">
+				<input
+					v-model="showSubstituted"
+					type="checkbox">
+				{{ t('procest', 'Show substituted work') }}
+			</label>
+		</div>
+
+		<!-- All tasks link -->
+		<div class="my-work__all-tasks">
+			<NcButton type="tertiary" @click="$router.push({ name: 'Tasks' })">
 				{{ t('procest', 'All tasks') }}
-			</router-link>
+			</NcButton>
 		</div>
 
 		<!-- Loading state -->
@@ -74,7 +86,7 @@
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row my-work__row--overdue"
 					tabindex="0"
-					role="listitem"
+					role="button"
 					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}, ${item.daysText}`"
 					@click="onItemClick(item)"
 					@keydown.enter="onItemClick(item)"
@@ -84,6 +96,7 @@
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="substitutedFor(item)" class="my-work__substituted-badge" data-testid="substituted-badge">{{ t('procest', 'waargenomen voor {name}', { name: substitutedFor(item) }) }}</span>
 						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
@@ -107,7 +120,7 @@
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row"
 					tabindex="0"
-					role="listitem"
+					role="button"
 					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}, ${item.daysText}`"
 					@click="onItemClick(item)"
 					@keydown.enter="onItemClick(item)"
@@ -117,6 +130,7 @@
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="substitutedFor(item)" class="my-work__substituted-badge" data-testid="substituted-badge">{{ t('procest', 'waargenomen voor {name}', { name: substitutedFor(item) }) }}</span>
 						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
@@ -140,7 +154,7 @@
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row"
 					tabindex="0"
-					role="listitem"
+					role="button"
 					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}, ${item.daysText}`"
 					@click="onItemClick(item)"
 					@keydown.enter="onItemClick(item)"
@@ -150,6 +164,7 @@
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="substitutedFor(item)" class="my-work__substituted-badge" data-testid="substituted-badge">{{ t('procest', 'waargenomen voor {name}', { name: substitutedFor(item) }) }}</span>
 						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
@@ -173,7 +188,7 @@
 					:key="`${item.type}-${item.id}`"
 					class="my-work__row"
 					tabindex="0"
-					role="listitem"
+					role="button"
 					:aria-label="`${item.type === 'case' ? t('procest', 'Case') : t('procest', 'Task')}: ${item.title}`"
 					@click="onItemClick(item)"
 					@keydown.enter="onItemClick(item)"
@@ -183,6 +198,7 @@
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="substitutedFor(item)" class="my-work__substituted-badge" data-testid="substituted-badge">{{ t('procest', 'waargenomen voor {name}', { name: substitutedFor(item) }) }}</span>
 						<span v-if="item.type === 'case' && getCaseTypeName(item.caseType)" class="my-work__reference my-work__case-type">{{ getCaseTypeName(item.caseType) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
@@ -211,6 +227,7 @@
 					</span>
 					<div class="my-work__info">
 						<span class="my-work__item-title">{{ item.title }}</span>
+						<span v-if="substitutedFor(item)" class="my-work__substituted-badge" data-testid="substituted-badge">{{ t('procest', 'waargenomen voor {name}', { name: substitutedFor(item) }) }}</span>
 						<span v-if="item.reference" class="my-work__reference">{{ item.reference }}</span>
 					</div>
 					<div class="my-work__deadline">
@@ -223,19 +240,22 @@
 </template>
 
 <script>
-import { NcLoadingIcon, NcEmptyContent } from '@nextcloud/vue'
+import { NcLoadingIcon, NcEmptyContent, NcButton } from '@conduction/nextcloud-vue'
 import AccountCheck from 'vue-material-design-icons/AccountCheck.vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
 import ParafeerInbox from './voorstellen/components/ParafeerInbox.vue'
 import { useObjectStore } from '../store/modules/object.js'
 import { getGroupedMyWorkItems } from '../utils/dashboardHelpers.js'
 import { fetchTasksForCases } from '../services/taskApi.js'
+import { fetchSubstitutedWork } from '../services/substitutionApi.js'
+import { buildSubstitutedMap, mergeSubstitutedCases, substitutedFor as resolveSubstitutedFor, applySubstitutedFilter } from '../utils/substitutionHelpers.js'
 
 export default {
 	name: 'MyWork',
 	components: {
 		NcLoadingIcon,
 		NcEmptyContent,
+		NcButton,
 		AccountCheck,
 		CheckCircle,
 		ParafeerInbox,
@@ -245,11 +265,15 @@ export default {
 			loading: true,
 			activeTab: 'all',
 			showCompleted: false,
+			showSubstituted: true,
 			cases: [],
 			normalizedTasks: [],
 			completedCases: [],
 			completedTasks: [],
 			caseTypeMap: {},
+			// Map of "type:id" -> absentee name for items routed via substitution.
+			substitutedById: {},
+			hasSubstitutedWork: false,
 		}
 	},
 	computed: {
@@ -295,13 +319,21 @@ export default {
 		},
 		/** @spec openspec/changes/my-work/tasks.md */
 		filteredGroups() {
-			if (this.activeTab === 'all') return this.grouped
+			const subFilter = (arr) => applySubstitutedFilter(arr, this.substitutedById, this.showSubstituted)
+			if (this.activeTab === 'all') {
+				return {
+					overdue: subFilter(this.grouped.overdue),
+					dueThisWeek: subFilter(this.grouped.dueThisWeek),
+					upcoming: subFilter(this.grouped.upcoming),
+					noDeadline: subFilter(this.grouped.noDeadline),
+				}
+			}
 			const filterType = this.activeTab === 'cases' ? 'case' : 'task'
 			return {
-				overdue: this.grouped.overdue.filter(i => i.type === filterType),
-				dueThisWeek: this.grouped.dueThisWeek.filter(i => i.type === filterType),
-				upcoming: this.grouped.upcoming.filter(i => i.type === filterType),
-				noDeadline: this.grouped.noDeadline.filter(i => i.type === filterType),
+				overdue: subFilter(this.grouped.overdue.filter(i => i.type === filterType)),
+				dueThisWeek: subFilter(this.grouped.dueThisWeek.filter(i => i.type === filterType)),
+				upcoming: subFilter(this.grouped.upcoming.filter(i => i.type === filterType)),
+				noDeadline: subFilter(this.grouped.noDeadline.filter(i => i.type === filterType)),
 			}
 		},
 		/** @spec openspec/changes/my-work/tasks.md */
@@ -367,11 +399,46 @@ export default {
 					console.warn('Failed to fetch CalDAV tasks, showing cases only:', err)
 					this.normalizedTasks = []
 				}
+
+				// Substitution integration: append the absent handlers' work that
+				// is routed to the current user as their waarnemer. The backend
+				// filters through the substitute's own OR RBAC, so anything here
+				// is already readable to the user.
+				await this.fetchSubstitutedWork()
 			} catch (err) {
 				console.error('Failed to fetch my work data:', err)
 			} finally {
 				this.loading = false
 			}
+		},
+		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
+		async fetchSubstitutedWork() {
+			try {
+				const work = await fetchSubstitutedWork()
+				const subCases = Array.isArray(work.cases) ? work.cases : []
+				const subTasks = Array.isArray(work.tasks) ? work.tasks : []
+				this.hasSubstitutedWork = (subCases.length > 0 || subTasks.length > 0)
+
+				this.substitutedById = buildSubstitutedMap(subCases, subTasks)
+				this.cases = mergeSubstitutedCases(this.cases, subCases)
+
+				// Fetch CalDAV tasks for the substituted cases so they surface.
+				try {
+					const fetched = await fetchTasksForCases(subCases)
+					this.normalizedTasks = [...this.normalizedTasks, ...fetched]
+				} catch (err) {
+					console.warn('Failed to fetch substituted CalDAV tasks:', err)
+				}
+			} catch (err) {
+				// Substitution is additive; never break My Work on failure.
+				console.warn('Failed to fetch substituted work:', err)
+				this.substitutedById = {}
+				this.hasSubstitutedWork = false
+			}
+		},
+		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
+		substitutedFor(item) {
+			return resolveSubstitutedFor(this.substitutedById, item)
 		},
 		/** @spec openspec/changes/my-work/tasks.md */
 		async onToggleCompleted() {
@@ -470,6 +537,12 @@ export default {
 	padding-bottom: 8px;
 }
 
+.my-work__tablist {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+}
+
 .my-work__tab {
 	padding: 6px 14px;
 	border: none;
@@ -501,23 +574,6 @@ export default {
 	cursor: pointer;
 	white-space: nowrap;
 	color: var(--color-text-maxcontrast);
-}
-
-.my-work__all-tasks-link {
-	margin-left: 8px;
-	padding: 6px 14px;
-	font-size: 14px;
-	border-radius: var(--border-radius-pill);
-	color: var(--color-primary-element);
-	text-decoration: none;
-	white-space: nowrap;
-	border: 1px solid var(--color-primary-element);
-	transition: background 0.15s ease, color 0.15s ease;
-}
-
-.my-work__all-tasks-link:hover {
-	background: var(--color-primary-element-light);
-	color: var(--color-primary-element-light-text);
 }
 
 /* Sections */
@@ -639,6 +695,21 @@ export default {
 	font-size: 11px;
 	color: var(--color-text-maxcontrast);
 	font-style: italic;
+}
+
+.my-work__substituted-badge {
+	font-size: 11px;
+	color: var(--color-primary-element);
+	font-weight: 600;
+	background: var(--color-primary-element-light);
+	border-radius: var(--border-radius-pill);
+	padding: 1px 8px;
+	width: fit-content;
+}
+
+/* All tasks link */
+.my-work__all-tasks {
+	margin-bottom: 16px;
 }
 
 /* Focus outline for keyboard navigation */

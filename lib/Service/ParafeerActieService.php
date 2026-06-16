@@ -31,6 +31,7 @@ namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Event\ParafeerTransitionEvent;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -54,6 +55,9 @@ use Psr\Log\LoggerInterface;
  */
 class ParafeerActieService
 {
+
+    use SearchesObjects;
+
     /**
      * Action: actor advised on an advies step.
      */
@@ -122,6 +126,7 @@ class ParafeerActieService
      * @param IRootFolder                   $rootFolder                    The Nextcloud root folder (for PDF signing).
      * @param LoggerInterface               $logger                        The logger.
      * @param IEventDispatcher              $eventDispatcher               The event dispatcher (parafering transition events).
+     * @param ParaferingApprovalBridge      $approvalBridge                Bridge to OpenRegister approval-workflow (ADR-022).
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -129,6 +134,7 @@ class ParafeerActieService
         private readonly IRootFolder $rootFolder,
         private readonly LoggerInterface $logger,
         private readonly IEventDispatcher $eventDispatcher,
+        private readonly ParaferingApprovalBridge $approvalBridge,
     ) {
     }//end __construct()
 
@@ -296,7 +302,25 @@ class ParafeerActieService
             }
 
             // Persist the parafeeractie.
-            $savedActie = $objectService->saveObject($register, $actieSchema, $actieData);
+            $savedActie = $objectService->saveObject(object: $actieData, register: $register, schema: $actieSchema);
+
+            // Per ADR-022: delegate the step transition to OpenRegister's
+            // approval-workflow when this voorstel is backed by an OR
+            // ApprovalChain. OpenRegister enforces the step role, advances the
+            // next step, records the decision, and dispatches the approval
+            // events that ParaferingNotificationService observes. The legacy
+            // in-array currentStep/status update below remains the
+            // consumer-facing projection during the migration window.
+            $this->delegateToApprovalWorkflow(
+                voorstel: $voorstel,
+                voorstelId: $voorstelId,
+                action: $action,
+                comment: $comment,
+                advice: $advice,
+                onBehalfOf: $onBehalfOf,
+                mandate: $mandate,
+                currentUser: $currentUser,
+            );
 
             // Emit the parafering transition event for the audit listener.
             [$transitionType, $actorRoleForAudit] = $this->transitionForAction(action: $action);
@@ -389,6 +413,95 @@ class ParafeerActieService
     }//end recordAction()
 
     /**
+     * Delegate a parafering step decision to OpenRegister's approval-workflow.
+     *
+     * Maps the procest action onto OR's approve/reject endpoints and encodes
+     * app-specific semantics (actorType, onBehalfOf mandate, advisory text,
+     * skip reason) into the OR step comment as JSON `_meta`. Only runs when the
+     * voorstel carries an `approvalChainUuid` and OR's approval-workflow is
+     * available; otherwise it is a no-op and the legacy in-array path governs.
+     *
+     * Best-effort: a failed OR transition is logged and does NOT abort the
+     * consumer-facing action during the migration window.
+     *
+     * @param array<string, mixed> $voorstel    The voorstel array (provides approvalChainUuid).
+     * @param string               $voorstelId  The voorstel UUID.
+     * @param string               $action      The procest action (parafered/advised/accorded/returned/skipped).
+     * @param string               $comment     The human-readable comment/reden.
+     * @param string               $advice      The advisory text (advies steps).
+     * @param string|null          $onBehalfOf  The principal UID when acting as delegate.
+     * @param string|null          $mandate     The mandate reference.
+     * @param IUser                $currentUser The authenticated actor.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P1.2
+     */
+    private function delegateToApprovalWorkflow(
+        array $voorstel,
+        string $voorstelId,
+        string $action,
+        string $comment,
+        string $advice,
+        ?string $onBehalfOf,
+        ?string $mandate,
+        IUser $currentUser
+    ): void {
+        $chainUuid = (string) ($voorstel['approvalChainUuid'] ?? '');
+        if ($chainUuid === '' || $this->approvalBridge->isAvailable() === false) {
+            return;
+        }
+
+        // The OR object UUID for the step lookup is the voorstel UUID.
+        $objectUuid = (string) ($voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId);
+        $userId     = $currentUser->getUID();
+
+        $actorType = 'user';
+        if ($onBehalfOf !== null) {
+            $actorType = 'delegate';
+        }
+
+        $meta = [
+            'action'     => $action,
+            'actorType'  => $actorType,
+            'onBehalfOf' => $onBehalfOf,
+            'mandate'    => $mandate,
+        ];
+
+        $text = $comment;
+        if ($action === self::ACTION_ADVISED) {
+            $meta['advice'] = $advice;
+            if ($text === '') {
+                $text = $advice;
+            }
+        }
+
+        try {
+            if ($action === self::ACTION_RETURNED) {
+                $this->approvalBridge->rejectCurrentStep(
+                    voorstelUuid: $objectUuid,
+                    userId: $userId,
+                    text: $text,
+                    meta: $meta,
+                );
+                return;
+            }
+
+            $this->approvalBridge->approveCurrentStep(
+                voorstelUuid: $objectUuid,
+                userId: $userId,
+                text: $text,
+                meta: $meta,
+            );
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'Procest: approval-workflow delegation failed; legacy path governs',
+                ['voorstel' => $voorstelId, 'action' => $action, 'exception' => $e->getMessage()]
+            );
+        }//end try
+    }//end delegateToApprovalWorkflow()
+
+    /**
      * List all parafeeracties for a voorstel, sorted by createdAt ascending.
      *
      * @param string $voorstelId The voorstel UUID.
@@ -406,12 +519,11 @@ class ParafeerActieService
                 return [];
             }
 
-            $results = $objectService->findObjects(
-                $register,
-                $actieSchema,
-                ['voorstel' => $voorstelId],
-                [],
-                500,
+            $results = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $actieSchema,
+                filters: ['voorstel' => $voorstelId, '_limit' => 500],
             );
 
             $rows = [];
@@ -717,7 +829,7 @@ class ParafeerActieService
             'returnedFromStep' => $currentStep,
         ];
 
-        $objectService->saveObject($register, $voorstelSchema, $updateData, $voorstelId);
+        $objectService->saveObject(object: $updateData, register: $register, schema: $voorstelSchema, uuid: (string) $voorstelId);
 
         $steller = (string) ($voorstel['steller'] ?? '');
         if ($steller !== '') {
@@ -796,7 +908,7 @@ class ParafeerActieService
             ];
         }
 
-        $updated = $objectService->saveObject($register, $voorstelSchema, $updateData, $voorstelId);
+        $updated = $objectService->saveObject(object: $updateData, register: $register, schema: $voorstelSchema, uuid: (string) $voorstelId);
 
         return $this->toArray(value: $updated);
     }//end advanceVoorstel()

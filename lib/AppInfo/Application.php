@@ -26,13 +26,14 @@ namespace OCA\Procest\AppInfo;
 
 use OCA\OpenRegister\Event\DeepLinkRegistrationEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
-use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Procest\BackgroundJob\VergaderingDeadlineJob;
-use OCA\Procest\Cron\OriDataQualityCheck;
+use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
+use OCA\Procest\Service\Beschikking\MockArchivalAdapter;
+use OCA\Procest\Service\Beschikking\MockSigningAdapter;
+use OCA\Procest\Service\Beschikking\MockTemplateEngineAdapter;
+use OCA\Procest\Service\Beschikking\SigningAdapterInterface;
+use OCA\Procest\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Procest\Dashboard\CasesOverviewWidget;
 use OCA\Procest\Dashboard\DeadlineAlertsWidget;
 use OCA\Procest\Dashboard\MyTasksWidget;
@@ -41,18 +42,30 @@ use OCA\Procest\Dashboard\StalledCasesWidget;
 use OCA\Procest\Dashboard\TaskRemindersWidget;
 use OCA\Procest\Dashboard\StartCaseWidget;
 use OCA\Procest\Listener\BezwaarAdviceRequestedListener;
+use OCA\Procest\Listener\VergunningaanvraagCreatedListener;
 use OCA\Procest\Listener\BezwaarDecisionListener;
 use OCA\Procest\Listener\BezwaarHearingScheduledListener;
 use OCA\Procest\Listener\BezwaarLifecycleListener;
+use OCA\Procest\Listener\DecisionConcludedListener;
 use OCA\Procest\Event\ParafeerTransitionEvent;
 use OCA\Procest\Listener\DeepLinkRegistrationListener;
+use OCA\Procest\Listener\ApprovalStepNotificationListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
+use OCA\Procest\Listener\LegesCaseCreatedListener;
+use OCA\Procest\Listener\LegesCaseWithdrawnListener;
 use OCA\Procest\Listener\ParaferingAuditListener;
 use OCA\Procest\Listener\RoleMutationListener;
 use OCA\Procest\Mcp\ProcestToolProvider;
+use OCA\Procest\Middleware\MandateValidationMiddleware;
+use OCA\Procest\Middleware\QuotaEnforcementMiddleware;
+use OCA\Procest\Middleware\SupplierAuthMiddleware;
+use OCA\Procest\Middleware\TenantClaimValidationMiddleware;
+use OCA\Procest\Middleware\TenantContextMiddleware;
+use OCA\Procest\Middleware\TenantIsolationMiddleware;
 use OCA\Procest\Middleware\TenantMiddleware;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
-use OCA\Procest\Validator\ParaferingAuditAppendOnlyValidator;
+use OCA\Procest\Service\TenantJwtService;
+use OCP\IConfig;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -60,6 +73,8 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
  * Main application class for the Procest case management app.
+ *
+ * @spec openspec/changes/beschikking-generatie/tasks.md
  */
 class Application extends App implements IBootstrap
 {
@@ -81,6 +96,8 @@ class Application extends App implements IBootstrap
      * @param IRegistrationContext $context The registration context
      *
      * @return void
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md
      */
     public function register(IRegistrationContext $context): void
     {
@@ -118,13 +135,134 @@ class Application extends App implements IBootstrap
             listener: RoleMutationListener::class
         );
 
+        // DSO: listen for new vergunningaanvraag objects from OpenRegister.
+        $context->registerEventListener(
+            event: ObjectCreatedEvent::class,
+            listener: VergunningaanvraagCreatedListener::class
+        );
+
         $this->registerBezwaarListeners(context: $context);
+        $this->registerLegesListeners(context: $context);
+        $this->registerTermijnListeners(context: $context);
+        $this->registerDecisionListeners(context: $context);
+
+        // DSO Omgevingsloket: create Procest zaak when a vergunningaanvraag is written.
+        $context->registerEventListener(
+            event: ObjectCreatedEvent::class,
+            listener: VergunningaanvraagCreatedListener::class
+        );
 
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
         $context->registerMiddleware(class: TenantMiddleware::class);
+        // SaaS chain (member 04): resolve tenant binding then set Postgres
+        // search_path. Order matters — Context runs before Isolation.
+        $context->registerMiddleware(class: TenantContextMiddleware::class);
+        $context->registerMiddleware(class: TenantIsolationMiddleware::class);
+        // SaaS chain (member 05): JWT tenant-claim validation against the
+        // request-bound tenant. Forged / cross-tenant JWT → 403.
+        $context->registerMiddleware(class: TenantClaimValidationMiddleware::class);
+        // SaaS chain (member 06): mandate-matrix authorisation gate. Maps the
+        // HTTP verb (and URL hints like /transition) to a matrix action key
+        // and blocks the request on deny.
+        $context->registerMiddleware(class: MandateValidationMiddleware::class);
+        // SaaS chain (member 09): per-request quota enforcement (case creation +
+        // API calls). Runs last in the SaaS chain.
+        $context->registerMiddleware(class: QuotaEnforcementMiddleware::class);
+        // Supplier portal (leverancier-zaakportaal member 04): validate the
+        // portal bearer token + rate-limit before any supplier-scoped controller
+        // body runs, injecting the SERVER-TRUSTED supplierRef/role into the
+        // request. Fail-closed: unauthenticated portal traffic → 401.
+        $context->registerMiddleware(class: SupplierAuthMiddleware::class);
+        // SaaS chain (member 05): factory the TenantJwtService with the secret
+        // from app config (procest.jwt_signing_secret). Generates a
+        // per-instance random fallback when unset (dev-friendly; production
+        // must set the secret via occ config:app:set procest jwt_signing_secret).
+        $context->registerService(
+                TenantJwtService::class,
+                function (\Psr\Container\ContainerInterface $c): TenantJwtService {
+                    $config = $c->get(IConfig::class);
+                    $secret = (string) $config->getAppValue(self::APP_ID, 'jwt_signing_secret', '');
+                    if ($secret === '' || strlen($secret) < 16) {
+                        $secret = (string) $config->getSystemValue('secret', str_pad(self::APP_ID, 32, '_'));
+                    }
 
-        $context->registerJob(class: OriDataQualityCheck::class);
-        $context->registerJob(class: VergaderingDeadlineJob::class);
+                    return new TenantJwtService(signingSecret: $secret);
+                }
+                );
+
+        // Background jobs are declared in appinfo/info.xml under
+        // <background-jobs>; Nextcloud auto-registers them with the IJobList.
+        // IRegistrationContext has no registerJob() method.
+        //
+        // Beschikking cross-app integration adapters. These resolve to mock
+        // implementations until the real OpenConnector (TSP signing),
+        // Docudesk (template render), and OpenRegister (archief ingest)
+        // endpoints land in their own repos (tasks T23-T26).
+        $context->registerServiceAlias(TemplateEngineAdapterInterface::class, MockTemplateEngineAdapter::class);
+        $context->registerServiceAlias(SigningAdapterInterface::class, MockSigningAdapter::class);
+        $context->registerServiceAlias(ArchivalAdapterInterface::class, MockArchivalAdapter::class);
+
+        // Dormant external auth-broker adapters (lib/Service/Auth/).
+        // Default to the Log* implementations which throw + log so a
+        // misconfigured environment surfaces "broker not configured"
+        // immediately. Activation: configure openconnector's
+        // eHerkenning/DigiD broker entry + private key + certificate,
+        // flip the matching feature_flag app-config key, and swap these
+        // bindings to the active SamlAdapter implementation in a
+        // follow-up change.
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\Auth\EHerkenningSamlAdapterInterface::class,
+            \OCA\Procest\Service\Auth\LogEHerkenningSamlAdapter::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\Auth\DigidSamlAdapterInterface::class,
+            \OCA\Procest\Service\Auth\LogDigidSamlAdapter::class
+        );
+
+        // Wave-4 external-API ports (low-volume families). All dormant
+        // log-only by default; flip the matching openconnector
+        // source-slug feature flag and override the alias in a
+        // downstream Application::register() to activate.
+        //
+        // - KvK Handelsregister
+        // (leverancier-zaakportaal eHerkenning kvkNummer enrichment,
+        // bedrijfszaak intake, brp-kvk-register-sets seed).
+        // - BRP / Haal Centraal
+        // (citizen zaak intake DigiD BSN → persoon envelope,
+        // briefcode resolution, register-set seed).
+        // - TMLO / MDTO metadata builder + e-Depot submission
+        // (archief-edepot-handover-03 metadata bundling +
+        // archief-edepot-handover-05 SIP submission).
+        // - external-ZGW client
+        // (cross-municipality zaak hand-off via Zaken-API +
+        // Documenten-API).
+        // - ZTC / Catalogi-API client
+        // (zaaktype URL resolution before hand-off +
+        // regional Catalogi-API zaaktype import).
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\External\Kvk\KvkHandelsregisterAdapterInterface::class,
+            \OCA\Procest\Service\External\Kvk\LogKvkHandelsregisterAdapter::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\External\Brp\BrpHaalCentraalAdapterInterface::class,
+            \OCA\Procest\Service\External\Brp\LogBrpHaalCentraalAdapter::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\External\Tmlo\TmloMetadataBuilderAdapterInterface::class,
+            \OCA\Procest\Service\External\Tmlo\LogTmloMetadataBuilderAdapter::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\External\Tmlo\EDepotSubmissionAdapterInterface::class,
+            \OCA\Procest\Service\External\Tmlo\LogEDepotSubmissionAdapter::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\External\Zgw\ZgwExternalAdapterInterface::class,
+            \OCA\Procest\Service\External\Zgw\LogZgwExternalAdapter::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\External\Ztc\ZtcCatalogiAdapterInterface::class,
+            \OCA\Procest\Service\External\Ztc\LogZtcCatalogiAdapter::class
+        );
 
         $this->registerWidgetsAndProviders(context: $context);
     }//end register()
@@ -150,26 +288,29 @@ class Application extends App implements IBootstrap
             listener: BezwaarLifecycleListener::class
         );
 
-        // Parafering audit trail: one listener writes append-only audit entries
-        // for every parafeerroute transition (spec parafering-audit-trail).
+        // Parafering audit trail: one listener emits an OR audit-trail entry
+        // (hash-chained, natively immutable) for every parafeerroute transition.
+        // Per ADR-022 + consume-or-audit-trail-fleet-wide (migrate-parafering-to-or-audit),
+        // there is no parallel paraferingAuditEntry write path and no in-app
+        // append-only validator — OR's audit trail rejects PUT/DELETE natively.
         $context->registerEventListener(
             event: ParafeerTransitionEvent::class,
             listener: ParaferingAuditListener::class
         );
 
-        // Parafering audit trail: append-only validator blocks UPDATE/DELETE
-        // on paraferingAuditEntry objects via OR's pre-save hooks.
+        // Parafering notifications now observe OpenRegister's approval-workflow
+        // step events (ADR-022 / migrate-parafering-to-or-approval-workflow):
+        // when a step is approved the next parafeerder is notified; when a step
+        // is rejected (terugsturen) the steller is notified. The OpenRegister
+        // event classes are registered by FQN string so procest carries no
+        // hard compile-time dependency on the optional OpenRegister app.
         $context->registerEventListener(
-            event: ObjectCreatingEvent::class,
-            listener: ParaferingAuditAppendOnlyValidator::class
+            event: 'OCA\OpenRegister\Event\ApprovalStepApprovedEvent',
+            listener: ApprovalStepNotificationListener::class
         );
         $context->registerEventListener(
-            event: ObjectUpdatingEvent::class,
-            listener: ParaferingAuditAppendOnlyValidator::class
-        );
-        $context->registerEventListener(
-            event: ObjectDeletingEvent::class,
-            listener: ParaferingAuditAppendOnlyValidator::class
+            event: 'OCA\OpenRegister\Event\ApprovalStepRejectedEvent',
+            listener: ApprovalStepNotificationListener::class
         );
 
         // Bezwaar-advisory-committee auto-assignment when a bezwaar enters
@@ -197,6 +338,84 @@ class Application extends App implements IBootstrap
             listener: BezwaarDecisionListener::class
         );
     }//end registerBezwaarListeners()
+
+    /**
+     * Register leges-heffingen lifecycle listeners.
+     *
+     * On case creation, an automatic leges calculation is triggered for cases
+     * whose case type is coupled to a tariff; on case withdrawal, the refund
+     * workflow is triggered. Both listeners are pure observers that defer to
+     * the leges services and never own calculation/refund logic (ADR-022).
+     *
+     * @param IRegistrationContext $context The registration context
+     *
+     * @return void
+     */
+    private function registerLegesListeners(IRegistrationContext $context): void
+    {
+        $context->registerEventListener(
+            event: ObjectCreatedEvent::class,
+            listener: LegesCaseCreatedListener::class
+        );
+        $context->registerEventListener(
+            event: ObjectUpdatedEvent::class,
+            listener: LegesCaseWithdrawnListener::class
+        );
+    }//end registerLegesListeners()
+
+    /**
+     * Register termijnbewaking (AWB deadline engine) listeners.
+     *
+     * On case creation, an AWB TermijnInstance is automatically bound to
+     * the case using the active TermijnDefinitie for the zaaktype. The
+     * listener is a pure observer (ADR-022); all logic lives in
+     * {@see \OCA\Procest\Service\TermijnService}.
+     *
+     * @param IRegistrationContext $context Registration context.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+     */
+    private function registerTermijnListeners(IRegistrationContext $context): void
+    {
+        $context->registerEventListener(
+            event: ObjectCreatedEvent::class,
+            listener: \OCA\Procest\Listener\TermijnCaseCreatedListener::class
+        );
+    }//end registerTermijnListeners()
+
+    /**
+     * Register the decidesk decision-outcome listener.
+     *
+     * Procest delegates contract / besluit / bezwaar / advice DECISIONS to
+     * decidesk by dispatching `DecisionRequestedEvent`; the terminal outcome
+     * arrives back as decidesk's `DecisionConcludedEvent`. This listener
+     * materialises the ZGW `Besluit` from that outcome (filtered to this app via
+     * `getSourceApp()`). The event class is registered by FQN string and only
+     * when decidesk is installed, so procest carries no hard compile-time
+     * dependency on the optional decidesk app.
+     *
+     * @param IRegistrationContext $context Registration context.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+     */
+    private function registerDecisionListeners(IRegistrationContext $context): void
+    {
+        if (class_exists('\\OCA\\Decidesk\\Event\\DecisionConcludedEvent') === false) {
+            return;
+        }
+
+        // FQN string (not ::class) so there is no hard compile-time dependency
+        // on the optional decidesk app — mirrors the OpenRegister approval-event
+        // registration above.
+        $context->registerEventListener(
+            event: 'OCA\Decidesk\Event\DecisionConcludedEvent',
+            listener: DecisionConcludedListener::class
+        );
+    }//end registerDecisionListeners()
 
     /**
      * Register dashboard widgets and the MCP tool provider.
@@ -236,6 +455,8 @@ class Application extends App implements IBootstrap
      * @return void
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     *
+     * @spec openspec/changes/beschikking-generatie/tasks.md
      */
     public function boot(IBootContext $context): void
     {

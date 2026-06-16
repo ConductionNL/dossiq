@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -38,6 +39,9 @@ use RuntimeException;
  */
 class VergaderingCaseService
 {
+
+    use SearchesObjects;
+
 
     /**
      * Valid case statuses for vergadering-backed cases.
@@ -244,10 +248,11 @@ class VergaderingCaseService
         $advanced = 0;
 
         try {
-            $geplandCases = $objectService->findObjects(
+            $geplandCases = $this->searchObjectsAsArrays(
+                objectService: $objectService,
                 register: $register,
                 schema: $caseSchema,
-                params: [
+                filters: [
                     'status'   => 'gepland',
                     'deadline' => $today,
                     '_limit'   => 200,

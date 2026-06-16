@@ -163,7 +163,7 @@ class ChecklistService
             $run['inspection'] = $inspectionId;
         }
 
-        $persisted = $this->toArray(value: $objectService->saveObject($register, $runSchema, $run));
+        $persisted = $this->toArray(value: $objectService->saveObject(object: $run, register: $register, schema: $runSchema));
 
         $this->logger->info(
             'Procest: created checklist run {runId} for template {templateId} v{version}',
@@ -229,7 +229,9 @@ class ChecklistService
                 $this->validateResponse(item: $item, payload: $response);
             }
 
-            $validResponses[] = $response;
+            // Photos live in the OR photos leaf (ADR-022); persist only the
+            // leaf references, never an inline photo blob.
+            $validResponses[] = $this->stripInlinePhotoBlobs(response: $response);
         }
 
         $aggregate = $this->aggregateResult(responses: $validResponses, snapshot: $snapshot);
@@ -249,7 +251,7 @@ class ChecklistService
             $run['followUpType'] = $followUp;
         }
 
-        $persisted = $this->toArray(value: $objectService->saveObject($register, $runSchema, $run));
+        $persisted = $this->toArray(value: $objectService->saveObject(object: $run, register: $register, schema: $runSchema));
 
         try {
             $this->dispatchFollowUps(run: $persisted);
@@ -366,15 +368,13 @@ class ChecklistService
         }
 
         if ($type === 'foto') {
-            $photos = $payload['photos'] ?? [];
-            if (is_array($photos) === false || count($photos) < 1) {
+            if ($this->photoCount(response: $payload) < 1) {
                 throw new RuntimeException('PHOTO_REQUIRED');
             }
         }
 
         $fotoGate = (string) ($item['fotoRequired'] ?? 'nooit');
-        $photos   = $payload['photos'] ?? [];
-        $hasPhoto = is_array($photos) === true && count($photos) >= 1;
+        $hasPhoto = $this->photoCount(response: $payload) >= 1;
         $value    = (string) ($payload['value'] ?? '');
 
         if ($fotoGate === 'altijd' && $hasPhoto === false) {
@@ -385,6 +385,61 @@ class ChecklistService
             throw new RuntimeException('PHOTO_REQUIRED');
         }
     }//end validateResponse()
+
+    /**
+     * Count the photos attached to a checklist response.
+     *
+     * Inspection photos are stored through OpenRegister's `photos` integration
+     * leaf (files attached to the run/case object) per ADR-022 — the leaf owns
+     * storage, procest owns the photo-gate rule. The gate therefore counts the
+     * leaf-provided photo references (`photoRefs` — file ids / album entries
+     * surfaced by the photos leaf) rather than an inline `photos[]` blob
+     * payload. A legacy inline `photos[]` array is still counted as a
+     * backwards-compat fallback for runs captured before the migration, but
+     * `stripInlinePhotoBlobs()` ensures new submissions never persist one.
+     *
+     * @param array<string, mixed> $response A single checklist response payload.
+     *
+     * @return int Number of photos attached via the photos leaf (or legacy inline).
+     *
+     * @spec openspec/changes/migrate-inspection-forms-to-forms-leaf/specs/inspection-forms-via-forms-leaf/spec.md
+     */
+    private function photoCount(array $response): int
+    {
+        $refs = $response['photoRefs'] ?? [];
+        if (is_array($refs) === true && count($refs) > 0) {
+            return count($refs);
+        }
+
+        // Backwards-compat: legacy runs captured an inline `photos[]` blob.
+        $inline = $response['photos'] ?? [];
+        if (is_array($inline) === true) {
+            return count($inline);
+        }
+
+        return 0;
+    }//end photoCount()
+
+    /**
+     * Strip inline photo blob payloads from a response, retaining only the
+     * photos-leaf references.
+     *
+     * Per `inspection-forms-via-forms-leaf`, new submissions SHALL NOT persist
+     * an inline `photos[]` payload into the checklist item — photos live in the
+     * photos leaf and the response carries only their `photoRefs`. Any inline
+     * `photos[]` is dropped on write while the leaf reference list is kept.
+     *
+     * @param array<string, mixed> $response A single checklist response payload.
+     *
+     * @return array<string, mixed> The response without an inline photo blob.
+     *
+     * @spec openspec/changes/migrate-inspection-forms-to-forms-leaf/specs/inspection-forms-via-forms-leaf/spec.md
+     */
+    private function stripInlinePhotoBlobs(array $response): array
+    {
+        unset($response['photos']);
+        return $response;
+    }//end stripInlinePhotoBlobs()
 
     /**
      * Dispatch follow-up actions for failed items per REQ-IC-7.
@@ -472,7 +527,7 @@ class ChecklistService
 
             if ($taskSchema !== '') {
                 try {
-                    $persisted = $this->toArray(value: $objectService->saveObject($register, $taskSchema, $task));
+                    $persisted = $this->toArray(value: $objectService->saveObject(object: $task, register: $register, schema: $taskSchema));
                     $created[] = $persisted;
                 } catch (Throwable $e) {
                     $this->logger->debug(
@@ -526,7 +581,7 @@ class ChecklistService
         ];
 
         try {
-            $objectService->saveObject($register, $schema, $payload);
+            $objectService->saveObject(object: $payload, register: $register, schema: $schema);
         } catch (Throwable $e) {
             $this->logger->debug(
                 'Procest: handhavingsactie save failed for run '.$runId.': '.$e->getMessage(),
@@ -617,8 +672,7 @@ class ChecklistService
         }
 
         if ($type === 'foto') {
-            $photos = $response['photos'] ?? [];
-            if (is_array($photos) === false || count($photos) < 1) {
+            if ($this->photoCount(response: $response) < 1) {
                 return 'fail';
             }
 

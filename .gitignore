@@ -51,3 +51,6 @@ Thumbs.db
 
 # Repo-specific
 tests/e2e/.auth/
+/coverage-vitest/
+/coverage/
+composer.phar

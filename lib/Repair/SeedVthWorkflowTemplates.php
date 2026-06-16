@@ -40,6 +40,7 @@ namespace OCA\Procest\Repair;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCA\Procest\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -49,9 +50,14 @@ use Psr\Log\LoggerInterface;
  * Repair step that seeds six canonical VTH workflow templates.
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — needs OpenRegister + WorkflowDefinitionService.
+ *
+ * @spec openspec/changes/retrofit-2026-05-25-vth-workflow-templates/tasks.md#task-1
  */
 class SeedVthWorkflowTemplates implements IRepairStep
 {
+
+    use SearchesObjects;
+
     /**
      * Catalog directory relative to lib/.
      */
@@ -83,6 +89,8 @@ class SeedVthWorkflowTemplates implements IRepairStep
      * Get the name of this repair step.
      *
      * @return string
+     *
+     * @spec openspec/changes/retrofit-2026-05-25-vth-workflow-templates/tasks.md#task-1
      */
     public function getName(): string
     {
@@ -362,12 +370,11 @@ class SeedVthWorkflowTemplates implements IRepairStep
         // `slug` (used by VTH seeds via base-register-seed-data).
         foreach (['identifier', 'slug'] as $field) {
             try {
-                $rows = $objectService->findObjects(
-                    $register,
-                    $caseTypeSchema,
-                    [$field => $slug],
-                    [],
-                    5,
+                $rows = $this->searchObjectsAsArrays(
+                    objectService: $objectService,
+                    register: $register,
+                    schema: $caseTypeSchema,
+                    filters: [$field => $slug, '_limit' => 5],
                 );
             } catch (\Throwable $e) {
                 $this->logger->debug(
@@ -415,15 +422,15 @@ class SeedVthWorkflowTemplates implements IRepairStep
         }
 
         try {
-            $rows = $objectService->findObjects(
-                $register,
-                $schema,
-                [
+            $rows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: [
                     'caseType' => $caseTypeId,
                     'title'    => $title,
+                    '_limit'   => 1,
                 ],
-                [],
-                1,
             );
         } catch (\Throwable $e) {
             $this->logger->debug(
@@ -464,12 +471,11 @@ class SeedVthWorkflowTemplates implements IRepairStep
         }
 
         try {
-            $rows = $objectService->findObjects(
-                $register,
-                $statusSchema,
-                ['caseType' => $caseTypeId],
-                [],
-                500,
+            $rows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $statusSchema,
+                filters: ['caseType' => $caseTypeId, '_limit' => 500],
             );
         } catch (\Throwable $e) {
             $this->logger->error(
@@ -570,13 +576,12 @@ class SeedVthWorkflowTemplates implements IRepairStep
                 return null;
             }
 
-            if ($fromName === '*') {
-                $fromId = '*';
-            } else if ($fromName === '' || isset($statusMap[$fromName]) === false) {
-                return null;
-            }
+            $fromId = '*';
+            if ($fromName !== '*') {
+                if ($fromName === '' || isset($statusMap[$fromName]) === false) {
+                    return null;
+                }
 
-            if ($fromName !== '*' && $fromName !== '' && isset($statusMap[$fromName]) === true) {
                 $fromId = $statusMap[$fromName];
             }
 
@@ -628,7 +633,7 @@ class SeedVthWorkflowTemplates implements IRepairStep
     /**
      * Extract the first row id from an OpenRegister result set.
      *
-     * @param mixed $rows Raw result from findObjects
+     * @param mixed $rows Raw result from searchObjectsAsArrays()
      *
      * @return string The first id or empty string
      */

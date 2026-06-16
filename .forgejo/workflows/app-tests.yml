@@ -1,0 +1,47 @@
+# app-tests.yml — procest caller for the reusable feature-test workflow.
+#
+# Runs the PHASE-5 testing layers on every PR to the protected branches.
+# l10n-check HARD-GATES; e2e/newman are scaffolded and opt-in (run-e2e /
+# run-newman) until the NC service container is wired (see tests.yml TODOs).
+# Additive — sits alongside the existing release/quality workflows.
+#
+# unit-gating: true — procest's tests/Unit suite is GREEN. The former ~45-red
+# team-chain debt (28 errors + 20 failures: DsoController ctor drift,
+# VergunningaanvraagCreatedListener ObjectEntity normalisation, and stale
+# in-memory ObjectService fakes missing the searchObjects/searchObjectsBySlug
+# bridge that the SearchesObjects trait now uses) was triaged and fixed.
+# Verified green both ways: the standalone CI run (`./vendor/bin/phpunit
+# --configuration phpunit-unit.xml --no-coverage`, 980 tests, 2 OR-dependent
+# listener tests skip when OpenRegister classes are absent) and the in-container
+# run (`docker exec -u 33 -w /var/www/html/custom_apps/procest nextcloud
+#  ./vendor/bin/phpunit --configuration phpunit-unit.xml --no-coverage`, 980/980,
+# also green under --order-by=random). The suite now HARD-GATES every PR.
+
+name: app-tests
+
+on:
+  pull_request:
+    branches:
+      - development
+      - main
+      - beta
+  workflow_dispatch:
+    inputs:
+      run-e2e:
+        type: boolean
+        default: false
+      run-newman:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    uses: ./.forgejo/workflows/tests.yml
+    with:
+      app-id: procest
+      unit-gating: true
+      run-e2e: ${{ github.event.inputs.run-e2e == 'true' }}
+      run-newman: ${{ github.event.inputs.run-newman == 'true' }}

@@ -4,6 +4,8 @@
 **Branch:** `feature/91/gis-integration`
 **PR:** #96
 
+> **User guide:** see [`docs/gis-integration.md`](../gis-integration.md) for the Dutch-language end-user, admin and manager documentation.
+
 ## Overview
 
 Adds geographic information system (GIS) capabilities to Procest, allowing caseworkers to view cases on a map, pick locations for new cases, and overlay municipal WMS/WFS data layers. Integrates with PDOK (Dutch national geo-data infrastructure) and supports custom WMS/WFS layers.

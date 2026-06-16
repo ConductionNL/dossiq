@@ -1,8 +1,10 @@
 ## Purpose
 
+Schedules and manages hoorzittingen (hearings) within the bezwaar process per the AWB hoorrecht (art. 7:2 e.v.), including invitations, minutes, hearing waiver (afzien van hoorrecht), and participant access rights.
+
 @e2e exclude Bezwaar hearing management is V1; hearing schema and scheduling are not yet built in the Playwright-testable UI.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Hearing Session Management
 

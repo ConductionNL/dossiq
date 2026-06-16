@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
 use OCP\IAppConfig;
@@ -41,6 +42,8 @@ use Psr\Log\LoggerInterface;
  */
 class CaseEmailService
 {
+
+    use SearchesObjects;
 
     /**
      * Regex pattern for extracting case number from email subject.
@@ -394,19 +397,12 @@ class CaseEmailService
             return [];
         }
 
-        $results = $objectService->findObjects(
-            $register,
-            $schema,
-            ['caseType' => $caseTypeId],
-            [],
-            100,
+        return $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: ['caseType' => $caseTypeId, '_limit' => 100],
         );
-
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
     }//end getTemplatesForCaseType()
 
     /**
@@ -564,9 +560,7 @@ class CaseEmailService
 
         if (empty($register) === false && empty($schema) === false) {
             $objectService->saveObject(
-                    $register,
-                    $schema,
-                    [
+                    object: [
                         'case'      => $caseId,
                         'direction' => 'outbound',
                         'from'      => $this->appConfig->getValueString(Application::APP_ID, 'email_from_address', ''),
@@ -575,7 +569,9 @@ class CaseEmailService
                         'body'      => $body,
                         'messageId' => $messageId,
                         'sentAt'    => date('Y-m-d\TH:i:s'),
-                    ]
+                    ],
+                    register: $register,
+                    schema: $schema,
                     );
         }
 
@@ -612,9 +608,7 @@ class CaseEmailService
 
         if (empty($register) === false && empty($schema) === false) {
             $objectService->saveObject(
-                    $register,
-                    $schema,
-                    [
+                    object: [
                         'case'       => $caseId,
                         'direction'  => 'inbound',
                         'from'       => $from,
@@ -624,7 +618,9 @@ class CaseEmailService
                         'messageId'  => $messageId,
                         'inReplyTo'  => $inReplyTo,
                         'receivedAt' => date('Y-m-d\TH:i:s'),
-                    ]
+                    ],
+                    register: $register,
+                    schema: $schema,
                     );
         }
 
@@ -648,12 +644,11 @@ class CaseEmailService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('case_schema');
 
-        $results = $objectService->findObjects(
-            $register,
-            $schema,
-            ['identifier' => $identifier],
-            [],
-            1,
+        $results = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            filters: ['identifier' => $identifier, '_limit' => 1],
         );
 
         if (is_array($results) === true && count($results) > 0) {

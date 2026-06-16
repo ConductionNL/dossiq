@@ -1,0 +1,111 @@
+{
+	"menu": [
+		{
+			"id": "Subsidies",
+			"label": "Subsidies",
+			"icon": "icon-category-office",
+			"route": "Subsidies",
+			"order": 95
+		},
+		{
+			"id": "Subsidieregelingen",
+			"label": "Subsidieregelingen",
+			"icon": "icon-settings",
+			"route": "Subsidieregelingen",
+			"order": 96
+		}
+	],
+	"pages": [
+		{
+			"id": "Subsidies",
+			"route": "/subsidies",
+			"type": "index",
+			"title": "Subsidies",
+			"config": {
+				"register": "procest",
+				"schema": "subsidieAanvraag",
+				"columns": [
+					"aanvraagnummer",
+					"subsidieregeling",
+					"aangevraagdBedrag",
+					"behandelaar",
+					"projectStartdatum",
+					"status"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
+			}
+		},
+		{
+			"id": "SubsidieDetail",
+			"route": "/subsidies/:id",
+			"type": "detail",
+			"title": "Subsidie",
+			"config": {
+				"register": "procest",
+				"schema": "subsidieAanvraag",
+				"sidebarTabs": [
+					{
+						"id": "beschikking",
+						"label": "Beschikking",
+						"icon": "icon-toggle",
+						"component": "CaseDecisionsTab",
+						"order": 20
+					},
+					{
+						"id": "documents",
+						"label": "Bewijsstukken",
+						"icon": "icon-files",
+						"component": "CaseDocumentsTab",
+						"order": 30
+					}
+				]
+			}
+		},
+		{
+			"id": "Subsidieregelingen",
+			"route": "/subsidieregelingen",
+			"type": "index",
+			"title": "Subsidieregelingen",
+			"config": {
+				"register": "procest",
+				"schema": "subsidieRegeling",
+				"columns": [
+					"regelingNaam",
+					"juridischeGrondslag",
+					"plafond",
+					"tussenrapportageFrequentie",
+					"looptijdStart",
+					"looptijdEind"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
+			}
+		},
+		{
+			"id": "Terugvorderingen",
+			"route": "/terugvorderingen",
+			"type": "index",
+			"title": "Terugvorderingen",
+			"config": {
+				"register": "procest",
+				"schema": "terugvordering",
+				"columns": [
+					"terugvorderingsnummer",
+					"bedrag",
+					"betaaldBedrag",
+					"betaaltermijnEinde",
+					"status"
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				}
+			}
+		}
+	]
+}

@@ -16,6 +16,7 @@
 <script>
 import { NcSelect } from '@nextcloud/vue'
 import { useObjectStore } from '../../../store/modules/object.js'
+import { parseJsonArray } from '../../../utils/caseHelpers.js'
 
 export default {
 	name: 'QuickStatusDropdown',
@@ -64,14 +65,17 @@ export default {
 			const now = new Date().toISOString()
 			const currentUser = OC?.currentUser || 'unknown'
 
-			const statusHistory = [...(this.caseObj.statusHistory || [])]
+			// statusHistory/activity are JSON-encoded strings per the case
+			// schema (procest_register.json); parse tolerantly, append,
+			// re-encode.
+			const statusHistory = parseJsonArray(this.caseObj.statusHistory)
 			statusHistory.push({
 				status: newStatus.id,
 				date: now,
 				changedBy: currentUser,
 			})
 
-			const activity = [...(this.caseObj.activity || [])]
+			const activity = parseJsonArray(this.caseObj.activity)
 			activity.push({
 				date: now,
 				type: 'status_change',
@@ -82,8 +86,8 @@ export default {
 			const updateData = {
 				...this.caseObj,
 				status: newStatus.id,
-				statusHistory,
-				activity,
+				statusHistory: JSON.stringify(statusHistory),
+				activity: JSON.stringify(activity),
 			}
 
 			if (newStatus.isFinal) {

@@ -1,5 +1,5 @@
 ---
-status: implemented
+status: done
 retrofit_extensions:
   - REQ-101
   - REQ-102
@@ -152,9 +152,9 @@ refactor is tracked separately and will:
 
 ### REQ-CM-01: Case Creation
 
-**Feature tier**: MVP (base), V1 (sub-case creation)
-
 The system MUST support creating new cases. Each case MUST be linked to a published, valid case type. The case type controls initial defaults and behavioral constraints. When creating a sub-case, the `parentCase` field MUST be set and the case type MUST be restricted to the parent case type's `subCaseTypes`.
+
+**Feature tier**: MVP (base), V1 (sub-case creation)
 
 #### Scenario CM-01a: Create a case with case type selection
 
@@ -229,9 +229,9 @@ The system MUST support creating new cases. Each case MUST be linked to a publis
 
 ### REQ-CM-02: Case Update
 
-**Feature tier**: MVP
-
 The system MUST support updating case properties. Changes MUST be recorded in the audit trail.
+
+**Feature tier**: MVP
 
 #### Scenario CM-02a: Update case description
 
@@ -258,9 +258,9 @@ The system MUST support updating case properties. Changes MUST be recorded in th
 
 ### REQ-CM-03: Case Deletion
 
-**Feature tier**: MVP
-
 The system MUST support deleting cases. Deletion SHOULD be restricted to cases without a final status.
+
+**Feature tier**: MVP
 
 #### Scenario CM-03a: Delete a case in initial status
 
@@ -280,9 +280,9 @@ The system MUST support deleting cases. Deletion SHOULD be restricted to cases w
 
 ### REQ-CM-04: Case List View
 
-**Feature tier**: MVP (base), V1 (sub-case count)
-
 The system MUST provide a list view of all cases with search, sort, filter, and pagination capabilities. Cases with sub-cases MUST display a sub-case count indicator. See wireframe 3.2 (Case List View) in DESIGN-REFERENCES.md.
+
+**Feature tier**: MVP (base), V1 (sub-case count)
 
 #### Scenario CM-04a: Default case list
 
@@ -355,9 +355,9 @@ The system MUST provide a list view of all cases with search, sort, filter, and 
 
 ### REQ-CM-05: Quick Status Change from List
 
-**Feature tier**: MVP
-
 The system MUST support changing a case's status directly from the case list view without opening the detail page. See wireframe 3.2 in DESIGN-REFERENCES.md.
+
+**Feature tier**: MVP
 
 #### Scenario CM-05a: Quick status change via dropdown
 
@@ -387,9 +387,9 @@ The system MUST support changing a case's status directly from the case list vie
 
 ### REQ-CM-06: Case Detail View
 
-**Feature tier**: MVP (base), V1 (sub-cases section, breadcrumb)
-
 The system MUST provide a comprehensive detail view for each case. See wireframe 3.3 (Case Detail View) in DESIGN-REFERENCES.md. The detail view MUST include: status timeline, case info panel, deadline and timing panel, participants panel, custom properties panel, required documents checklist, tasks section, decisions section, activity timeline, and sub-cases section. For parent cases, it MUST also show a sub-cases section with progress roll-up. For sub-cases, it MUST show a breadcrumb link to the parent case.
+
+**Feature tier**: MVP (base), V1 (sub-cases section, breadcrumb)
 
 #### Scenario CM-06a: Case info panel
 
@@ -455,9 +455,9 @@ The system MUST provide a comprehensive detail view for each case. See wireframe
 
 ### REQ-CM-07: Status Timeline Visualization
 
-**Feature tier**: MVP
-
 The case detail view MUST display a visual status timeline showing all statuses defined by the case type. Passed statuses are filled, the current status is highlighted, and future statuses are greyed out. See wireframe 3.3 in DESIGN-REFERENCES.md.
+
+**Feature tier**: MVP
 
 #### Scenario CM-07a: Status timeline with current status
 
@@ -488,9 +488,9 @@ The case detail view MUST display a visual status timeline showing all statuses 
 
 ### REQ-CM-08: Participants Panel
 
-**Feature tier**: MVP (handler assignment), V1 (full role types)
-
 The case detail view MUST display assigned participants with their roles. See wireframe 3.3 in DESIGN-REFERENCES.md.
+
+**Feature tier**: MVP (handler assignment), V1 (full role types)
 
 #### Scenario CM-08a: Display participants
 
@@ -511,9 +511,9 @@ The case detail view MUST display assigned participants with their roles. See wi
 
 ### REQ-CM-09: Custom Properties Panel
 
-**Feature tier**: V1
-
 The case detail view MUST display custom properties defined by the case type. See wireframe 3.3 in DESIGN-REFERENCES.md.
+
+**Feature tier**: V1
 
 #### Scenario CM-09a: Display custom properties
 
@@ -535,9 +535,9 @@ The case detail view MUST display custom properties defined by the case type. Se
 
 ### REQ-CM-10: Required Documents Checklist
 
-**Feature tier**: V1
-
 The case detail view MUST display a checklist of required documents defined by the case type, showing which are present and which are missing. See wireframe 3.3 in DESIGN-REFERENCES.md.
+
+**Feature tier**: V1
 
 #### Scenario CM-10a: Document checklist with mixed completion
 
@@ -571,9 +571,9 @@ The case detail view MUST display a checklist of required documents defined by t
 
 ### REQ-CM-11: Tasks Section
 
-**Feature tier**: MVP
-
 The case detail view MUST display tasks linked to the case. See wireframe 3.3 in DESIGN-REFERENCES.md.
+
+**Feature tier**: MVP
 
 #### Scenario CM-11a: Display tasks with completion count
 
@@ -596,9 +596,9 @@ The case detail view MUST display tasks linked to the case. See wireframe 3.3 in
 
 ### REQ-CM-12: Decisions Section
 
-**Feature tier**: V1
-
 The case detail view MUST display decisions linked to the case.
+
+**Feature tier**: V1
 
 #### Scenario CM-12a: Display decisions
 
@@ -618,9 +618,9 @@ The case detail view MUST display decisions linked to the case.
 
 ### REQ-CM-13: Activity Timeline
 
-**Feature tier**: MVP
-
 The case detail view MUST display an activity timeline showing all events related to the case in chronological order (newest first). See wireframe 3.3 in DESIGN-REFERENCES.md.
+
+**Feature tier**: MVP
 
 #### Scenario CM-13a: Activity timeline entries
 
@@ -646,9 +646,9 @@ The case detail view MUST display an activity timeline showing all events relate
 
 ### REQ-CM-14: Status Change
 
-**Feature tier**: MVP
-
 The system MUST support changing a case's status. Status changes MUST respect case type constraints: only statuses defined by the case type are allowed, required properties MUST be satisfied, and required documents MUST be present.
+
+**Feature tier**: MVP
 
 #### Scenario CM-14a: Valid status change
 
@@ -704,9 +704,9 @@ The system MUST support changing a case's status. Status changes MUST respect ca
 
 ### REQ-CM-15: Case Result Recording
 
-**Feature tier**: MVP (basic result), V1 (result types from case type)
-
 The system MUST support recording a result when closing a case.
+
+**Feature tier**: MVP (basic result), V1 (result types from case type)
 
 #### Scenario CM-15a: Record result from case type's allowed results (V1)
 
@@ -734,9 +734,9 @@ The system MUST support recording a result when closing a case.
 
 ### REQ-CM-16: Case Deadline Extension
 
-**Feature tier**: MVP
-
 The system MUST support extending a case's deadline when the case type allows it.
+
+**Feature tier**: MVP
 
 #### Scenario CM-16a: Extend deadline when allowed
 
@@ -765,9 +765,9 @@ The system MUST support extending a case's deadline when the case type allows it
 
 ### REQ-CM-17: Case Suspension
 
-**Feature tier**: V1
+The system SHOULD support suspending a case when the case type allows it. When suspension is supported, suspension MUST pause the deadline countdown.
 
-The system SHOULD support suspending a case when the case type allows it. Suspension pauses the deadline countdown.
+**Feature tier**: V1
 
 #### Scenario CM-17a: Suspend a case
 
@@ -796,9 +796,9 @@ The system SHOULD support suspending a case when the case type allows it. Suspen
 
 ### REQ-CM-18: Sub-Cases
 
-**Feature tier**: V1
+The system SHOULD support parent/child case hierarchies. A sub-case MUST be a full case linked to a parent case.
 
-The system SHOULD support parent/child case hierarchies. A sub-case is a full case linked to a parent case.
+**Feature tier**: V1
 
 #### Scenario CM-18a: Create a sub-case
 
@@ -832,9 +832,9 @@ The system SHOULD support parent/child case hierarchies. A sub-case is a full ca
 
 ### REQ-CM-19: Confidentiality Levels
 
-**Feature tier**: V1
+The system SHOULD support confidentiality levels on cases, defaulting from the case type. Cases MUST default their confidentiality from the case type.
 
-The system SHOULD support confidentiality levels on cases, defaulting from the case type.
+**Feature tier**: V1
 
 #### Scenario CM-19a: Inherit confidentiality from case type
 
@@ -860,9 +860,9 @@ The system SHOULD support confidentiality levels on cases, defaulting from the c
 
 ### REQ-CM-20: Case Validation Rules
 
-**Feature tier**: MVP
-
 The system MUST enforce validation rules when creating or modifying cases.
+
+**Feature tier**: MVP
 
 #### Scenario CM-20a: Title is required
 
@@ -898,9 +898,9 @@ The system MUST enforce validation rules when creating or modifying cases.
 
 ### REQ-CM-21: Case Deadline Countdown Display
 
-**Feature tier**: MVP
-
 The system MUST display deadline countdowns on cases across all views (list, detail, My Work). See wireframes 3.2 and 3.3 in DESIGN-REFERENCES.md.
+
+**Feature tier**: MVP
 
 #### Scenario CM-21a: Days remaining display
 
@@ -934,9 +934,9 @@ The system MUST display deadline countdowns on cases across all views (list, det
 
 ### REQ-CM-22: Audit Trail
 
-**Feature tier**: MVP
-
 The system MUST maintain a complete audit trail for all case modifications. The audit trail is published via Nextcloud's Activity system (`OCP\Activity\IManager`).
+
+**Feature tier**: MVP
 
 #### Scenario CM-22a: Status change audit entry
 
@@ -1034,6 +1034,42 @@ The `OCA\Procest\Controller\EmailController` SHALL expose the HTTP surface: `POS
 - **THEN** the Share SHALL be updated to status `expired`
 
 <!-- END retrofit-2026-05-24-case-management -->
+
+## Case List Page Render (UI surface)
+
+### REQ-CM-UI-01: The Cases index page SHALL render its list shell on navigation
+
+The Cases index page (`CnIndexPage`, route `/cases`) SHALL mount and render its
+stable list shell — the Cards/Table view toggle, the "Add Case" create button,
+the per-row "Actions" control, and an empty-state message when no cases are
+visible — independently of whether the OpenRegister `case` collection returns
+rows. Data-dependent list behaviours (filtering, sorting, pagination, row badges
+in REQ-CM-04) remain covered by their own scenarios; this scenario asserts only
+the browser-verifiable rendered shell.
+
+#### Scenario: Cases index page renders list shell
+- **GIVEN** an authenticated user on the Procest app
+- **WHEN** they navigate to the Cases page
+- **THEN** the Cards/Table view-mode toggle MUST be visible
+- **AND** an "Add" create button MUST be visible
+- **AND** an "Actions" control MUST be present
+- **AND** the page MUST NOT show an Internal Server Error
+
+### REQ-CM-UI-02: The Voorstellen page SHALL render its shell on navigation
+
+The Voorstellen page (route `/voorstellen`, the consolidated B&W-voorstel surface
+folded into the case lifecycle per ADR-022) SHALL mount and render its page shell —
+the page heading and a create entry point — independently of whether any voorstel
+cases exist. Voorstel lifecycle transitions and per-row data remain covered by the
+case lifecycle scenarios; this scenario asserts only the browser-verifiable
+rendered shell.
+
+#### Scenario: Voorstellen page renders heading and create control
+- **GIVEN** an authenticated user on the Procest app
+- **WHEN** they navigate to the Voorstellen page
+- **THEN** the main content MUST render a page heading
+- **AND** a create / "Nieuw voorstel" entry point MUST be present
+- **AND** the page MUST NOT show an Internal Server Error
 
 ---
 

@@ -1,5 +1,5 @@
 ---
-status: implemented
+status: done
 ---
 
 # Task Management Specification
@@ -74,17 +74,17 @@ Stored as an OpenRegister object in the `procest` register under the `task` sche
 | `low` | 4 (lowest) | Grey badge |
 
 ---
-
 ## Requirements
 
 ### REQ-TASK-001: Task CRUD
+
+The system MUST support task create, read, update, and delete operations linked to cases.
 
 @e2e exclude Task CRUD requires existing cases to link tasks to; data-dependent create/read/update/delete flows not testable without pre-seeded cases.
 
 The system MUST support creating, reading, updating, and deleting tasks linked to cases. All task objects are stored in OpenRegister under the `procest` register, `task` schema.
 
 **Tier**: MVP
-
 
 #### Scenario: Create a task linked to a case
 
@@ -137,12 +137,13 @@ The system MUST support creating, reading, updating, and deleting tasks linked t
 
 ### REQ-TASK-002: Task Status Lifecycle
 
+The system MUST enforce the CMMN PlanItem task status lifecycle.
+
 @e2e exclude Task lifecycle transitions require existing tasks with specific statuses; data-dependent state machine tests covered by taskLifecycle.js unit tests.
 
 The system MUST enforce the CMMN PlanItem lifecycle for task status transitions, as implemented in `src/utils/taskLifecycle.js`. Invalid transitions MUST be rejected.
 
 **Tier**: MVP
-
 
 #### Scenario: Start a task (available to active)
 
@@ -188,12 +189,13 @@ The system MUST enforce the CMMN PlanItem lifecycle for task status transitions,
 
 ### REQ-TASK-003: Task Assignment
 
+The system MUST support assigning tasks to Nextcloud users.
+
 @e2e exclude Task assignment requires existing tasks; data-dependent assignment flows not testable without pre-seeded tasks.
 
 The system MUST support assigning tasks to Nextcloud users by their user UID. Unassigned tasks are allowed.
 
 **Tier**: MVP
-
 
 #### Scenario: Assign a task to a user
 
@@ -240,7 +242,6 @@ The system MUST support assigning tasks to Nextcloud users by their user UID. Un
 The system MUST provide a list view for tasks with search, sorting, and filtering capabilities. The list view MUST support both a global task list (all tasks) and a case-scoped task list (tasks for a specific case). (Note 2026-06-01: rendered by the CnAppRoot manifest shell; no `src/views/tasks/TaskList.vue` SPA view file exists.)
 
 **Tier**: MVP
-
 
 #### Scenario: View the global task list
 
@@ -289,12 +290,13 @@ The system MUST provide a list view for tasks with search, sorting, and filterin
 
 ### REQ-TASK-005: Task Due Dates and Priorities
 
+The system MUST support task due dates and priority levels.
+
 @e2e exclude Due date/priority display and overdue highlighting require existing tasks with specific dates; data-dependent visual tests covered by taskHelpers.js unit tests.
 
 The system MUST support due dates and priority levels on tasks. Overdue tasks MUST be visually highlighted, as implemented in `src/utils/taskHelpers.js`.
 
 **Tier**: MVP
-
 
 #### Scenario: Set a due date on a task
 
@@ -335,12 +337,13 @@ The system MUST support due dates and priority levels on tasks. Overdue tasks MU
 
 ### REQ-TASK-006: Task Card Display
 
+Task cards MUST display key task information consistently.
+
 @e2e exclude Task card anatomy requires existing tasks to render; data-dependent card display not testable without pre-seeded tasks.
 
 Task cards MUST display key information following a consistent card anatomy across all views.
 
 **Tier**: MVP (list), V1 (kanban cards)
-
 
 #### Scenario: Task card anatomy in list view
 
@@ -378,12 +381,13 @@ Task cards MUST display key information following a consistent card anatomy acro
 
 ### REQ-TASK-007: Kanban Board View
 
+The system MUST provide a kanban board view for tasks.
+
 @e2e exclude Kanban board is V1; drag-and-drop canvas interactions are not testable in the current Playwright-testable build.
 
 The system MUST provide a kanban board view for tasks, with columns corresponding to CMMN task statuses. The board MUST support drag-and-drop to change task status.
 
 **Tier**: V1
-
 
 #### Scenario: View tasks as kanban board
 
@@ -427,12 +431,13 @@ The system MUST provide a kanban board view for tasks, with columns correspondin
 
 ### REQ-TASK-008: Task Completion
 
+The system MUST set the completedDate and enforce lifecycle rules when a task is completed.
+
 @e2e exclude Task completion requires an active task to complete; data-dependent lifecycle flow not testable without pre-seeded tasks.
 
 When a task is completed, the system MUST automatically set the `completedDate` and enforce lifecycle rules.
 
 **Tier**: MVP
-
 
 #### Scenario: Complete a task and record completion date
 
@@ -459,12 +464,13 @@ When a task is completed, the system MUST automatically set the `completedDate` 
 
 ### REQ-TASK-009: Task Checklist (Sub-Items)
 
+The system SHALL support checklists within tasks.
+
 @e2e exclude Task checklists are V1; sub-item UI is not yet built in the current Playwright-testable build.
 
 The system SHALL support checklists within tasks for detailed work breakdown. Checklist items are lightweight items stored as part of the task object (not separate OpenRegister objects).
 
 **Tier**: V1
-
 
 #### Scenario: Add checklist items to a task
 
@@ -493,12 +499,13 @@ The system SHALL support checklists within tasks for detailed work breakdown. Ch
 
 ### REQ-TASK-010: Task Dependencies
 
+The system SHALL support declaring dependencies between tasks.
+
 @e2e exclude Task dependencies are V1; dependency UI is not yet built in the current Playwright-testable build.
 
 The system SHALL support declaring dependencies between tasks ("blocked by" relationships). Dependencies are advisory: they provide visual indicators but do not strictly prevent work.
 
 **Tier**: V1
-
 
 #### Scenario: Declare a task dependency
 
@@ -525,12 +532,13 @@ The system SHALL support declaring dependencies between tasks ("blocked by" rela
 
 ### REQ-TASK-011: Task Templates per Case Type
 
+The system SHALL support defining task templates on case types.
+
 @e2e exclude Task templates are V1; template definition UI on case types is not yet built in the current Playwright-testable build.
 
 The system SHALL support defining task templates on case types. When a case of that type is created, the user can choose to instantiate the template tasks.
 
 **Tier**: V1
-
 
 #### Scenario: Define task template on case type
 
@@ -563,12 +571,13 @@ The system SHALL support defining task templates on case types. When a case of t
 
 ### REQ-TASK-012: Automated Task Creation on Case Status Change
 
+The system SHALL support automatically creating tasks on case status change.
+
 @e2e exclude Automated task creation is Enterprise tier; n8n webhook automation is a backend integration not testable via Playwright.
 
 The system SHALL support automatically creating tasks when a case transitions to a specific status. This can be implemented via n8n workflows that listen for case status change events.
 
 **Tier**: Enterprise
-
 
 #### Scenario: Auto-create tasks on status change
 
@@ -596,12 +605,13 @@ The system SHALL support automatically creating tasks when a case transitions to
 
 ### REQ-TASK-013: Overdue Task Management
 
+The system MUST provide clear visual indicators for overdue tasks.
+
 @e2e exclude Overdue task indicators require tasks with past due dates; data-dependent visual tests covered by taskHelpers.js unit tests.
 
 The system MUST provide clear visual indicators for overdue tasks and support filtering/sorting by overdue status, as implemented in the My Work view.
 
 **Tier**: MVP
-
 
 #### Scenario: Overdue task in My Work view
 
@@ -627,6 +637,52 @@ The system MUST provide clear visual indicators for overdue tasks and support fi
 - AND the task MUST NOT appear in the overdue section of My Work
 
 ---
+
+### Requirement: Task list MUST be reached via Mijn werk, not a sibling top-level menu
+
+The global task list view (`/tasks`) MUST be discoverable through the "Mijn
+werk" top-level menu rather than as a sibling top-level menu entry. This
+matches the proposed IA placement `Mijn werk › Taken` and removes the
+duplicate framing where Tasks and My Work compete as separate "what's on my
+plate" entries.
+
+#### Scenario: Tasks does not appear as a top-level menu item
+
+- GIVEN a behandelaar opens the Procest app
+- WHEN the left navigation renders
+- THEN the top-level menu MUST NOT include an entry labelled "Tasks" /
+  "Taken" with a top-level icon
+- AND the manifest `menu[]` array MUST NOT contain an entry with
+  `id: "Tasks"` outside of the `section: "settings"` group
+
+#### Scenario: Task list is reachable from Mijn werk
+
+- GIVEN a behandelaar is on `/my-work`
+- WHEN they look for the global task list
+- THEN the `MyWork` view MUST surface an explicit affordance (tab, link, or
+  button) labelled "Taken" / "Tasks" that navigates to `/tasks`
+- AND the affordance MUST be discoverable above the fold
+
+#### Scenario: Existing /tasks deep links continue to resolve
+
+- GIVEN a stored bookmark or external link points to `/tasks`
+- WHEN a user opens that URL
+- THEN the route MUST still resolve to the existing `Tasks` index page (the
+  manifest `pages[]` entry with `id: "Tasks"` is preserved)
+- AND no 404 or redirect MUST occur
+
+<!--
+  Note (2026-06-13, archive sweep): the original delta carried a
+  `## REMOVED Requirements` block for "Tasks MUST appear as a top-level
+  navigation entry". The canonical `openspec/specs/task-management/spec.md`
+  never expressed that as a formal `### Requirement:` — it was only an
+  implicit assumption in the manifest `menu[]` order. There is no formal
+  requirement to remove, so the REMOVED block was dropped to let the change
+  archive cleanly; the new ADDED requirement above fully supersedes the old
+  navigation placement. The manifest `menu[]` Tasks entry was already removed
+  in the implementation (tasks 1.x) and the `/tasks` page route is preserved
+  for deep links.
+-->
 
 ## Accessibility
 
@@ -667,7 +723,7 @@ All task management interfaces MUST comply with WCAG AA:
 - **Task CRUD**: Via the shared object store (`src/store/modules/object.js`) for OpenRegister-based tasks.
 - **My Work integration**: `src/views/MyWork.vue` includes tasks in the unified view with overdue highlighting, priority indicators, grouped sections (REQ-TASK-013).
 - **Dashboard widgets**: `lib/Dashboard/MyTasksWidget.php` and `src/views/widgets/MyTasksWidget.vue` -- Nextcloud dashboard widget showing assigned tasks. `src/views/dashboard/MyWorkPreview.vue` shows task summary on app dashboard.
-- **Navigation**: The global task list (`/tasks`) is reached via **Mijn werk** (the "Alle taken" affordance in `MyWork.vue`); there is no top-level "Tasks" menu entry. The manifest `pages[]` entry for `Tasks` is preserved so that `/tasks` deep links and `CaseTasksTab` navigation continue to resolve.
+- **Navigation**: The global task list is reached via Mijn werk, not as a sibling top-level menu entry. The `Tasks` entry has been removed from `src/manifest.json` `menu[]`; the `pages[]` entry for `id: "Tasks"` is preserved so that `/tasks` continues to resolve for deep links and `CaseTasksTab` navigation. `src/views/MyWork.vue` surfaces an explicit "All tasks" (`Alle taken`) button that navigates to `/tasks`.
 - **Router**: `src/router/index.js` includes routes for `/tasks`, `/tasks/new`, and `/tasks/:id`.
 - **Overdue highlighting**: Implemented in `MyWork.vue` with red indicators and "X days overdue" text (REQ-TASK-005, REQ-TASK-013).
 - **Priority badges**: Priority indicators shown in My Work view for high and urgent priorities.

@@ -1,0 +1,176 @@
+{
+	"info": {
+		"_postman_id": "c0ntract-09-4b1f-aa12-procestlev09001",
+		"name": "Procest Leverancier-zaakportaal Contract API (member 09)",
+		"description": "API/contract coverage for the leverancier-zaakportaal contract backend (chain member 09). Exercises the REST surface that ContractController exposes — GET /contracts/list, GET /contracts/{id}, POST /contracts/{id}/request-renewal — against a live procest instance.\n\nThese are env-independent contract assertions (no supplier fixtures required):\n  - GET /contracts/list without supplierRef returns 400,\n  - GET /contracts/list with a supplierRef returns 200 + {items,total} (empty when no contracts exist),\n  - GET /contracts/{id} without supplierRef returns 400; an unknown/foreign id fails closed with 403 (no IDOR),\n  - POST request-renewal without supplierRef returns 400,\n  - POST request-renewal with an insufficient role returns 403,\n  - POST request-renewal with a contracts role but a foreign id returns 403 (cross-supplier denied).\n\nAuth is HTTP Basic + OCS-APIRequest. Defaults to admin:admin against http://localhost:8080.\n\nTraces openspec/changes/leverancier-zaakportaal-09-contract-backend/specs/supplier-portal/spec.md",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{"key": "username", "value": "{{admin_user}}", "type": "string"},
+			{"key": "password", "value": "{{admin_pass}}", "type": "string"}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"if (!pm.collectionVariables.get('run_id')) {",
+					"  pm.collectionVariables.set('run_id', 'CON-' + Date.now().toString(36).toUpperCase());",
+					"}"
+				]
+			}
+		}
+	],
+	"item": [
+		{
+			"name": "ContractController — GET /contracts/list without supplierRef returns 400",
+			"request": {
+				"method": "GET",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/leverancier-portaal/contracts/list",
+					"host": ["{{base_url}}"],
+					"path": ["api", "leverancier-portaal", "contracts", "list"]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('400 Bad Request', function () { pm.response.to.have.status(400) })",
+					"pm.test('error mentions supplierRef', function () { pm.expect(pm.response.json().error || '').to.match(/supplierRef/i) })"
+				]}}
+			]
+		},
+		{
+			"name": "ContractController — GET /contracts/list with supplierRef returns 200 + items/total",
+			"request": {
+				"method": "GET",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/leverancier-portaal/contracts/list?supplierRef=newman-supplier-{{run_id}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "leverancier-portaal", "contracts", "list"],
+					"query": [{"key": "supplierRef", "value": "newman-supplier-{{run_id}}"}]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('200 OK', function () { pm.response.to.have.status(200) })",
+					"var b = pm.response.json()",
+					"pm.test('has items array + numeric total', function () { pm.expect(b.items).to.be.an('array'); pm.expect(b.total).to.be.a('number') })",
+					"pm.test('unknown supplier yields empty set', function () { pm.expect(b.total).to.eql(0) })"
+				]}}
+			]
+		},
+		{
+			"name": "ContractController — GET /contracts/{id} without supplierRef returns 400",
+			"request": {
+				"method": "GET",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/leverancier-portaal/contracts/some-id",
+					"host": ["{{base_url}}"],
+					"path": ["api", "leverancier-portaal", "contracts", "some-id"]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('400 Bad Request', function () { pm.response.to.have.status(400) })"
+				]}}
+			]
+		},
+		{
+			"name": "ContractController — GET /contracts/{id} foreign id fails closed with 403 (no IDOR)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/leverancier-portaal/contracts/foreign-contract-{{run_id}}?supplierRef=newman-supplier-{{run_id}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "leverancier-portaal", "contracts", "foreign-contract-{{run_id}}"],
+					"query": [{"key": "supplierRef", "value": "newman-supplier-{{run_id}}"}]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('403 Forbidden (fail closed)', function () { pm.response.to.have.status(403) })"
+				]}}
+			]
+		},
+		{
+			"name": "ContractController — POST request-renewal without supplierRef returns 400",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {"mode": "raw", "raw": "{}"},
+				"url": {
+					"raw": "{{base_url}}/api/leverancier-portaal/contracts/some-id/request-renewal",
+					"host": ["{{base_url}}"],
+					"path": ["api", "leverancier-portaal", "contracts", "some-id", "request-renewal"]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('400 Bad Request', function () { pm.response.to.have.status(400) })"
+				]}}
+			]
+		},
+		{
+			"name": "ContractController — POST request-renewal with insufficient role returns 403",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {"mode": "raw", "raw": "{\n  \"supplierRef\": \"newman-supplier-{{run_id}}\",\n  \"role\": \"read_only\"\n}"},
+				"url": {
+					"raw": "{{base_url}}/api/leverancier-portaal/contracts/some-id/request-renewal",
+					"host": ["{{base_url}}"],
+					"path": ["api", "leverancier-portaal", "contracts", "some-id", "request-renewal"]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('403 Forbidden (insufficient role)', function () { pm.response.to.have.status(403) })",
+					"pm.test('error mentions role', function () { pm.expect(pm.response.json().error || '').to.match(/role/i) })"
+				]}}
+			]
+		},
+		{
+			"name": "ContractController — POST request-renewal contracts role + foreign id returns 403 (cross-supplier)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "OCS-APIRequest", "value": "true"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {"mode": "raw", "raw": "{\n  \"supplierRef\": \"newman-supplier-{{run_id}}\",\n  \"role\": \"contracts\"\n}"},
+				"url": {
+					"raw": "{{base_url}}/api/leverancier-portaal/contracts/foreign-contract-{{run_id}}/request-renewal",
+					"host": ["{{base_url}}"],
+					"path": ["api", "leverancier-portaal", "contracts", "foreign-contract-{{run_id}}", "request-renewal"]
+				}
+			},
+			"event": [
+				{"listen": "test", "script": {"type": "text/javascript", "exec": [
+					"pm.test('403 Forbidden (cross-supplier denied)', function () { pm.response.to.have.status(403) })"
+				]}}
+			]
+		}
+	]
+}

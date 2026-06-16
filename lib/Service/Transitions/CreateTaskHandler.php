@@ -80,7 +80,7 @@ class CreateTaskHandler implements ActionHandlerInterface
                 'assignee' => (string) ($actionConfig['assignee'] ?? ''),
             ];
 
-            $created = $objectService->saveObject($register, $taskSchema, $task);
+            $created = $objectService->saveObject(object: $task, register: $register, schema: $taskSchema);
             $taskId  = '';
             if (is_array($created) === true) {
                 $taskId = (string) ($created['id'] ?? '');

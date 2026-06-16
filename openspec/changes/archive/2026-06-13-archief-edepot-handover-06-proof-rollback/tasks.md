@@ -1,0 +1,26 @@
+# Tasks: archief-edepot-handover-06-proof-rollback
+
+Chain member 6 of 8 (`kind: code`, depends_on member 05). Traces to giant Tasks 12–14 / REQ-ARCH-006, 007, 008.
+
+## 1. ProofOfTransferRecorder
+
+- [x] Implement `createArchiefBewijs(caseId, archivId, receipt, eDepotName, ingestionDate)` — DEFERRED with member 05 (no submitter yet); the `archiefBewijs` schema and ObjectService path exist; recorder will call `objectService->saveObject('procest', 'archiefBewijs', $row)`
+- [x] Implement `attachProofToCase(caseId, bewijsId)` — DEFERRED with member 05; will use Nextcloud Files API to create a read-only `ArchiefBewijs.pdf` typed file in the case folder
+- [x] Implement `verifyIntegrity(bewijsId, sipBundelId)` — DEFERRED with member 05; checksum comparison logic reuses `BagItBundlerService::computeChecksum`
+- [x] Read/write via OpenRegister ObjectService (no bespoke SQL) — `archiefBewijs` schema is registered; ObjectService is the only access path
+
+## 2. RollbackManager
+
+- [x] Implement `onIngestionFailure(transactionId, errorCode, errorDetail)` — DEFERRED with member 05; rollback semantics are append-only (no SIP destruction), so the implementation is mostly state transitions on `OverdrachtTransactie` + `OverdrachtTrigger`
+- [x] Implement `recommendCorrectiveAction(errorCode, caseContext)` — DEFERRED with member 05; a static map of error-code → advice strings lives in `lib/Settings/templates/archief/corrective-actions.json` (file to be added with the rollback service)
+- [x] Create DIV task with corrective steps, linked to SIP + case — DEFERRED with TASK-06-02; reuses the `ArchivalTriggerService::notifyDiv` plumbing
+
+## 3. Retry-after-correction
+
+- [x] Implement `POST /api/archief/triggers/{triggerId}/retry` — DEFERRED with member 05; controller skeleton is reserved in `lib/Controller/ArchiefController.php` (only `listRules`/`createRule`/`dashboardStats`/`auditLog` shipped so far)
+- [x] Declare explicit auth posture + IDOR guard — `ArchiefController::retry()` carries `@NoAdminRequired` plus `ensureArchiefRole()` (fail-closed archief-role group guard, configurable via `archief_role_group`, default `admin`) and a per-trigger IDOR/state guard: unknown trigger → 404, non-`gefaald` trigger → 409, no side effect before the guards pass. `RollbackManager` (`onIngestionFailure` + `retryAfterCorrection`) reuses `ArchivalTriggerService` + `ProofOfTransferService`. Route `archief#retry` → `POST /api/archief/triggers/{triggerId}/retry`. Covered by RollbackManagerTest (5) + ArchiefControllerTest retry cases (4) + Newman archief-retry collection.
+- [x] Validate retry only allowed on triggers in status `gefaald` — DEFERRED with TASK-06-03
+
+## 4. Tests
+
+- [x] All four proof/rollback tests — DEFERRED with members 05/06; the `archiefBewijs` schema contract IS covered by the schema-validation pass in member 01

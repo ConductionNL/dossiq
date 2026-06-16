@@ -55,6 +55,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service\Bezwaar;
 
 use DateTimeImmutable;
+use OCA\Procest\Service\BezwaarDecisionDelegationService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\StatusTransitionService;
 use OCP\IUserSession;
@@ -127,21 +128,26 @@ class DecisionService
     /**
      * Constructor.
      *
-     * @param SettingsService         $settingsService Schema/register bridge.
-     * @param IUserSession            $userSession     Acting identity source.
-     * @param StatusTransitionService $transitions     Engine used by
-     *                                                 applyToBezwaar() to
-     *                                                 transition the
-     *                                                 linked bezwaar
-     *                                                 without bespoke
-     *                                                 transition logic.
-     * @param LoggerInterface         $logger          Logger.
+     * @param SettingsService                  $settingsService    Schema/register bridge.
+     * @param IUserSession                     $userSession        Acting identity source.
+     * @param StatusTransitionService          $transitions        Engine used by
+     *                                                             applyToBezwaar()
+     *                                                             to transition
+     *                                                             the linked
+     *                                                             bezwaar
+     *                                                             without
+     *                                                             bespoke
+     *                                                             transition
+     *                                                             logic.
+     * @param LoggerInterface                  $logger             Logger.
+     * @param BezwaarDecisionDelegationService $decisionDelegation Decision delegation to decidesk (event dispatch).
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly IUserSession $userSession,
         private readonly StatusTransitionService $transitions,
         private readonly LoggerInterface $logger,
+        private readonly BezwaarDecisionDelegationService $decisionDelegation,
     ) {
     }//end __construct()
 
@@ -221,9 +227,9 @@ class DecisionService
 
         try {
             return $objectService->saveObject(
-                $register,
-                $decisionSchema,
-                $record
+                object: $record,
+                register: $register,
+                schema: $decisionSchema
             );
         } catch (Throwable $e) {
             $this->logger->error(
@@ -234,21 +240,29 @@ class DecisionService
     }//end draft()
 
     /**
-     * Publish a draft bezwaarDecision.
+     * Publish a draft bezwaarDecision by delegating the *deciding* to decidesk.
      *
-     * Runs the full validity matrix (REQ-BD-3, REQ-BD-5, REQ-BD-6,
-     * REQ-BD-7), sets publishedAt + notifiedRecipients, computes the
-     * proceskosten total when applicable, and hands the case off to
-     * the status-transition-engine via applyToBezwaar().
+     * Runs the full Awb validity matrix (REQ-BD-3, REQ-BD-5, REQ-BD-6,
+     * REQ-BD-7) as procest domain validation (REQ-PDRD-004), then raises a
+     * decidesk `bezwaar-decision` Decision by dispatching a `DecisionRequestedEvent`
+     * (REQ-PDRD-001) and persists the returned `decisionRef` on the record.
+     * procest no longer authors the besluit locally: there is no
+     * `status:'published'` local decision state — the besluit is materialised
+     * from the decidesk `DecisionConcludedEvent` by
+     * {@see \OCA\Procest\Listener\DecisionConcludedListener} (REQ-PDRD-003,
+     * REQ-PDRD-007). FAILS CLOSED when decidesk is unavailable (REQ-PDRD-002):
+     * no local decided state is set as a fallback.
      *
      * @param string $decisionId UUID of the bezwaarDecision.
      *
-     * @return array<string, mixed> The published decision record.
+     * @return array<string, mixed> The decision record annotated with the decidesk decisionRef.
      *
-     * @throws RuntimeException When validation fails or persistence
-     *                          errors occur.
+     * @throws RuntimeException When validation fails, the decidesk leaf is
+     *                          unavailable (fail closed), or persistence errors.
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
+     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
+     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-procest
      */
     public function publish(string $decisionId): array
     {
@@ -272,16 +286,53 @@ class DecisionService
             throw new RuntimeException('BezwaarDecision not found');
         }
 
+        // REQ-PDRD-004: the Awb validity matrix (7:11 disposition set, 7:12
+        // motivering, proceskosten, replacement/appeal guards) stays in procest
+        // and runs BEFORE the Decision is raised, so no Decision can ever be
+        // raised on an Awb-invalid payload.
         $this->assertPublishable(decision: $current);
 
+        $bezwaarId = (string) ($current['bezwaar'] ?? '');
+
+        // REQ-PDRD-001 / REQ-PDRD-002: delegate the deciding to decidesk via the
+        // decidesk DecisionRequestedEvent. Fail closed — never author the besluit
+        // locally as a fallback. The decisionRef returned is persisted on the
+        // record so the outcome can be materialised later from the concluded event.
+        $bezwaarRef = $decisionId;
+        if ($bezwaarId !== '') {
+            $bezwaarRef = $bezwaarId;
+        }
+
+        try {
+            $decisionRef = $this->decisionDelegation->raiseBezwaarDecision(
+                bezwaarId: $bezwaarRef,
+                payload: [
+                    'subjectRegister'     => $register,
+                    'subjectSchema'       => $decisionSchema,
+                    'subjectId'           => $decisionId,
+                    'subjectLabel'        => (string) ($current['title'] ?? ($current['onderwerp'] ?? '')),
+                    'dispositionType'     => (string) ($current['dispositionType'] ?? ''),
+                    'reasoning'           => (string) ($current['reasoning'] ?? ''),
+                    'legalBasis'          => (string) ($current['legalBasis'] ?? ''),
+                    'replacementDecision' => (string) ($current['replacementDecision'] ?? ''),
+                ],
+            );
+        } catch (RuntimeException $e) {
+            // REQ-PDRD-002: surface the fail-closed error; do NOT set any local
+            // decided state as a fallback.
+            $this->logger->error(
+                'Procest bezwaar-decision: decidesk Decision raise failed — failing closed: '
+                .$e->getMessage()
+            );
+            throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
+        }//end try
+
+        // Persist the decisionRef + notification audit list ONLY — no local
+        // "published" decision state; the besluit is the decidesk outcome.
         $patch = [
-            'status'             => 'published',
-            'publishedAt'        => (new DateTimeImmutable())->format(
-                DateTimeImmutable::ATOM
-            ),
-            'notifiedRecipients' => $this->collectRecipients(
-                decision: $current
-            ),
+            'decisionRef'        => $decisionRef,
+            'status'             => 'awaiting-decidesk',
+            'notifiedRecipients' => $this->collectRecipients(decision: $current),
         ];
 
         $totalAmount = $this->computeProceskostenTotal(decision: $current);
@@ -293,42 +344,38 @@ class DecisionService
 
         try {
             $saved = $objectService->saveObject(
-                $register,
-                $decisionSchema,
-                $patch,
-                $decisionId
+                object: $patch,
+                register: $register,
+                schema: $decisionSchema,
+                uuid: (string) $decisionId
             );
         } catch (Throwable $e) {
             $this->logger->error(
-                'Procest bezwaar-decision: failed to publish: '
+                'Procest bezwaar-decision: failed to persist decisionRef: '
                 .$e->getMessage()
             );
-            throw new RuntimeException('Could not publish bezwaarDecision');
-        }
-
-        $bezwaarId = (string) ($current['bezwaar'] ?? '');
-        if ($bezwaarId !== '') {
-            $this->applyToBezwaar(
-                bezwaarId: $bezwaarId,
-                decisionId: $decisionId
-            );
+            throw new RuntimeException('Could not record bezwaarDecision delegation');
         }
 
         return $saved;
     }//end publish()
 
     /**
-     * Apply a published decision back to its bezwaar by triggering the
-     * configured status transition. Never carries out a bespoke
-     * transition itself — the engine owns guards + side effects.
+     * Apply the bezwaar status transition once decidesk has concluded.
+     *
+     * The ZGW `Besluit` is materialised from the decidesk outcome by
+     * {@see \OCA\Procest\Listener\DecisionConcludedListener} when decidesk
+     * dispatches a `DecisionConcludedEvent` — there is no procest-local poll of
+     * the decidesk outcome here. This method only triggers the configured
+     * status transition on the linked bezwaar; the status engine still owns
+     * guards + side effects, and the besluit is never authored locally.
      *
      * @param string $bezwaarId  UUID of the source bezwaar.
-     * @param string $decisionId UUID of the bezwaarDecision triggering
-     *                           the transition.
+     * @param string $decisionId UUID of the bezwaarDecision being applied.
      *
      * @return void
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     *
+     * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
      */
     public function applyToBezwaar(string $bezwaarId, string $decisionId): void
     {
@@ -337,12 +384,8 @@ class DecisionService
             return;
         }
 
-        $register      = $this->settingsService->getConfigValue(
-            key: 'register'
-        );
-        $bezwaarSchema = $this->settingsService->getConfigValue(
-            key: 'bezwaar_schema'
-        );
+        $register      = $this->settingsService->getConfigValue(key: 'register');
+        $bezwaarSchema = $this->settingsService->getConfigValue(key: 'bezwaar_schema');
         if ($register === '' || $bezwaarSchema === '') {
             return;
         }

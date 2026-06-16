@@ -1,0 +1,142 @@
+{
+  "components": {
+    "registers": {
+      "procest": {
+        "schemas": [
+          "mandateringsBesluit",
+          "mandaat",
+          "organisatieRol",
+          "medewerkerRolToewijzing",
+          "mandaatGebruik",
+          "mandaatEscalatie"
+        ]
+      }
+    },
+    "schemas": {
+      "mandateringsBesluit": {
+        "slug": "mandateringsBesluit",
+        "icon": "Gavel",
+        "version": "1.0.0",
+        "x-schema-org-type": "schema:DigitalDocument",
+        "title": "Mandaterings Besluit",
+        "description": "Mandateringsbesluit (decision of the bestuursorgaan) — collection of Mandaat rows valid from inWerkingtreding until vervalDatum.",
+        "type": "object",
+        "required": ["besluitNummer", "besluitNaam", "status"],
+        "properties": {
+          "besluitNummer":     {"type": "string", "facetable": true, "maxLength": 64},
+          "besluitNaam":       {"type": "string", "maxLength": 255},
+          "status":            {"type": "string", "enum": ["concept", "vastgesteld", "vervallen"], "default": "concept", "facetable": true},
+          "inWerkingtreding":  {"type": "string", "format": "date"},
+          "vervalDatum":       {"type": "string", "format": "date"},
+          "wettelijkeGrondslag": {"type": "string", "maxLength": 255},
+          "decideskUuid":      {"type": "string", "description": "Source besluit id in Decidesk"},
+          "vorigBesluit":      {"type": "string", "description": "Prior MandateringsBesluit (for vervangt-by chain)"}
+        }
+      },
+      "mandaat": {
+        "slug": "mandaat",
+        "icon": "ScriptText",
+        "version": "1.0.0",
+        "title": "Mandaat",
+        "description": "Individual mandate granting authority to a role.",
+        "type": "object",
+        "required": ["mandaatNummer", "mandateringsBesluit", "gemandateerdeRol", "bevoegdheidType"],
+        "properties": {
+          "mandaatNummer":         {"type": "string", "facetable": true, "maxLength": 64},
+          "mandateringsBesluit":   {"type": "string"},
+          "omschrijving":          {"type": "string"},
+          "bevoegdheidType":       {"type": "string", "enum": ["mandaat", "volmacht", "machtiging"], "default": "mandaat", "facetable": true},
+          "gemandateerdeRol":      {"type": "string", "description": "OrganisatieRol id"},
+          "wettelijkeGrondslag":   {"type": "string", "maxLength": 255},
+          "voorwaarden": {
+            "type": "object",
+            "description": "Conditions including plafond (cents), subdelegatie flag, decisionTypes scope",
+            "properties": {
+              "plafondCents":       {"type": "integer", "description": "Plafond in EUR cents"},
+              "subdelegatie":       {"type": "boolean", "default": false},
+              "decisionTypes":      {"type": "array", "items": {"type": "string"}},
+              "caseTypes":          {"type": "array", "items": {"type": "string"}}
+            }
+          },
+          "validFrom":             {"type": "string", "format": "date"},
+          "validUntil":            {"type": "string", "format": "date"},
+          "status":                {"type": "string", "enum": ["concept", "active", "vervallen"], "default": "concept", "facetable": true}
+        }
+      },
+      "organisatieRol": {
+        "slug": "organisatieRol",
+        "icon": "AccountGroup",
+        "version": "1.0.0",
+        "title": "Organisatie Rol",
+        "description": "Hierarchical role within the organisation.",
+        "type": "object",
+        "required": ["rolNaam"],
+        "properties": {
+          "rolNaam":         {"type": "string", "facetable": true, "maxLength": 255},
+          "rolType":         {"type": "string", "enum": ["bestuurlijk", "ambtelijk", "extern"], "default": "ambtelijk"},
+          "parentRolId":     {"type": "string", "description": "Hierarchical parent OrganisatieRol id"},
+          "afdeling":        {"type": "string", "facetable": true, "maxLength": 255},
+          "team":            {"type": "string", "maxLength": 255},
+          "mandaatNiveau":   {"type": "integer", "description": "Numeric tier — used for next-higher resolution"}
+        }
+      },
+      "medewerkerRolToewijzing": {
+        "slug": "medewerkerRolToewijzing",
+        "icon": "AccountArrowRight",
+        "version": "1.0.0",
+        "title": "Medewerker Rol Toewijzing",
+        "description": "Assignment of a user (Nextcloud user id) to an OrganisatieRol over a validity window.",
+        "type": "object",
+        "required": ["userId", "rolId", "toewijzingType", "validFrom"],
+        "properties": {
+          "userId":         {"type": "string", "facetable": true},
+          "rolId":          {"type": "string", "facetable": true},
+          "toewijzingType":{"type": "string", "enum": ["primair", "waarnemer", "tijdelijk"], "default": "primair"},
+          "validFrom":     {"type": "string", "format": "date"},
+          "validUntil":    {"type": "string", "format": "date"},
+          "waarnemerVoor": {"type": "string", "description": "When toewijzingType=waarnemer, the userId being substituted for"}
+        }
+      },
+      "mandaatGebruik": {
+        "slug": "mandaatGebruik",
+        "icon": "ListBoxOutline",
+        "version": "1.0.0",
+        "title": "Mandaat Gebruik",
+        "description": "Immutable audit log of a mandate use (when a user executed a decision under a mandate).",
+        "type": "object",
+        "required": ["zaakId", "mandaatId", "userId", "tijdstip"],
+        "properties": {
+          "zaakId":               {"type": "string", "facetable": true},
+          "decisionId":           {"type": "string"},
+          "mandaatId":            {"type": "string"},
+          "userId":               {"type": "string"},
+          "tijdstip":             {"type": "string", "format": "date-time"},
+          "rolOpMomentVanBesluit":{"type": "object", "description": "Snapshot of the user's role at decision time"},
+          "gebruikteVoorwaarden": {"type": "object", "description": "Snapshot of the mandaat voorwaarden used"},
+          "mandaatVersieId":      {"type": "string", "description": "Version of the mandaat actually applied"}
+        }
+      },
+      "mandaatEscalatie": {
+        "slug": "mandaatEscalatie",
+        "icon": "ArrowUpBoldCircle",
+        "version": "1.0.0",
+        "title": "Mandaat Escalatie",
+        "description": "Open escalation to a higher mandate holder.",
+        "type": "object",
+        "required": ["zaakId", "initiatorId", "escalatieReden", "status"],
+        "properties": {
+          "zaakId":          {"type": "string", "facetable": true},
+          "decisionType":    {"type": "string", "facetable": true},
+          "initiatorId":     {"type": "string"},
+          "escalatieReden":  {"type": "string", "enum": ["niet_bevoegd", "plafond_overschreden", "subdelegatie_niet_toegestaan", "belangenconflict", "manueel"], "facetable": true},
+          "targetMandaatId": {"type": "string"},
+          "targetUserId":    {"type": "string"},
+          "status":          {"type": "string", "enum": ["open", "goedgekeurd", "afgewezen"], "default": "open", "facetable": true},
+          "afgewezenReden":  {"type": "string"},
+          "createdAt":       {"type": "string", "format": "date-time"},
+          "resolvedAt":      {"type": "string", "format": "date-time"}
+        }
+      }
+    }
+  }
+}
