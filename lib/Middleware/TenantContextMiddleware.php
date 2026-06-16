@@ -54,8 +54,10 @@ class TenantContextMiddleware extends Middleware
      */
     private const EXEMPT_CONTROLLERS = [
         'OCA\Procest\Controller\SettingsController',
-        'OCA\Procest\Controller\HealthController',
-        'OCA\Procest\Controller\MetricsController',
+        // Health + metrics are served by the OpenRegister AppHost engine
+        // (ADR-040); the dispatched controller is the generic class.
+        'OCA\OpenRegister\AppHost\Controller\GenericHealthController',
+        'OCA\OpenRegister\AppHost\Controller\GenericMetricsController',
         'OCA\Procest\Controller\TenantController',
         'OCA\Procest\Controller\TenantSaasController',
         'OCA\Procest\Controller\DashboardController',

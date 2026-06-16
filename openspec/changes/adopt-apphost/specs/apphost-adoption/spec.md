@@ -63,7 +63,9 @@ The engine date tokens used by procest's descriptors — `{"lt": "now"}` on `uit
 
 ### Requirement: Boilerplate Replacement With Endpoint Parity
 
-Procest SHALL delete its hand-written Health, Metrics, Dashboard, Preferences, and Settings controllers, `SettingsService`, `AdminSettings`/`SettingsSection`, and `DeepLinkRegistrationListener`, wiring the AppHost generics via `Bootstrap::register()` and `Routes::standard($extra)` — with route names, URLs, verbs, response shapes, and stored preference keys unchanged, and all domain routes/registrations preserved.
+Procest SHALL adopt the AppHost generics via `Bootstrap::register()` and `Routes::standard($extra)` for every plumbing concern that is mechanically equivalent to the engine — deleting its hand-written `HealthController`, `MetricsController`, `PreferencesController`, and `DeepLinkRegistrationListener`, and serving the SPA page + catch-all through `GenericDashboardController` — with route names, URLs, verbs, response shapes, and stored preference keys unchanged, and all domain routes/registrations preserved.
+
+Procest's Settings cluster — `SettingsController`, `SettingsService`, `AdminSettings`, `SettingsSection`, and the `InitializeSettings` repair step — SHALL be RETAINED as bespoke (re-aliased to the concrete procest classes after `Bootstrap::register()`) because it is entangled beyond the generic contract: the `/api/settings` response envelope (`{config, openRegisters, isAdmin}`) differs from the generic flat shape and is consumed across the procest frontend; `SettingsService` is injected at ~180 sites and provides domain helpers (`getObjectService`, `getKccConfigValue`, `getConfigValue`, secret redaction, the `register.d/*.json` fragment merge, and `reconcileSchemaConfig`) the generic does not; and `InitializeSettings` depends on that reconcile to provision the schema-config keys the WorkflowBoard needs. The procest `DashboardController` SHALL extend `GenericDashboardController`, inheriting the SPA page/catch-all and retaining only its two PWA-asset endpoints (`serviceWorker`, `webManifest`).
 
 #### Scenario: Dashboard shell served by the generic controller
 
@@ -71,16 +73,23 @@ Procest SHALL delete its hand-written Health, Metrics, Dashboard, Preferences, a
 - **WHEN** the user opens `/apps/procest/` or any deep link covered by the catch-all route
 - **THEN** the procest SPA MUST load and render exactly as before adoption, including the chunk-loading order from `templates/index.php`
 
-#### Scenario: Preferences and settings endpoints unchanged
+#### Scenario: Preferences endpoint served by the generic controller
 
 - **GIVEN** a user with a preference previously stored via the old `PreferencesController`
-- **WHEN** `GET /apps/procest/api/preferences/{key}` and `GET /apps/procest/api/settings` are called
-- **THEN** the stored value MUST resolve under the same key namespace and the settings response shape MUST match the pre-adoption contract
+- **WHEN** `GET /apps/procest/api/preferences/{key}` is called
+- **THEN** the stored value MUST resolve under the same `pref_` key namespace, served by `GenericPreferencesController`
+- @e2e exclude API-only endpoint — covered by the OR AppHost Newman contract collection
+
+#### Scenario: Settings endpoint contract retained bespoke
+
+- **GIVEN** the procest frontend reading `GET /apps/procest/api/settings`
+- **WHEN** the endpoint is called
+- **THEN** the response MUST keep the pre-adoption `{config, openRegisters, isAdmin}` envelope served by the retained procest `SettingsController` + `SettingsService` — the engine generics MUST NOT be substituted, since their flat shape would break the frontend
 - @e2e exclude API-only endpoint — covered by the OR AppHost Newman contract collection
 
 #### Scenario: Repair step still imports the register on enable
 
 - **GIVEN** a fresh instance with openregister enabled
 - **WHEN** `occ app:enable procest` runs
-- **THEN** the `InitializeSettings` stub (extending `GenericInitializeSettings`) MUST import `procest_register.json` plus all `register.d/*.json` fragments through ConfigurationService, exactly as the deleted local repair step did
+- **THEN** the retained procest `InitializeSettings` repair step MUST import `procest_register.json` plus all `register.d/*.json` fragments through ConfigurationService AND run `reconcileSchemaConfig()`, exactly as before adoption — the generic `GenericInitializeSettings` stub MUST NOT replace it, since it does not perform the register.d merge or the schema reconcile
 - @e2e exclude install-time occ behaviour — covered by PHPUnit + the install smoke check, not browser UI
