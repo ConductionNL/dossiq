@@ -297,11 +297,10 @@
         "x-schema-org-type": "schema:Role",
         "x-zgw-equivalent": "RolType",
         "title": "Role Type",
-        "description": "Participant role type definition for a case type",
+        "description": "Participant role type definition; optionally scoped to a case type (generic roles like applicant/handler apply across case types)",
         "type": "object",
         "required": [
-          "name",
-          "caseType"
+          "name"
         ],
         "properties": {
           "name": {
