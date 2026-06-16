@@ -216,6 +216,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the parent case type"
           },
           "order": {
@@ -262,6 +263,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the parent case type"
           },
           "archivalPeriod": {
@@ -316,6 +318,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the parent case type"
           },
           "ncGroupId": {
@@ -355,6 +358,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the parent case type"
           },
           "propertyType": {
@@ -412,6 +416,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the parent case type"
           },
           "isDraft": {
@@ -490,6 +495,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the parent case type"
           },
           "isDraft": {
@@ -590,6 +596,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the case type",
             "title": "Case type",
             "facetable": true
@@ -2021,6 +2028,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the case type this route is associated with",
             "facetable": true
           },
@@ -4705,6 +4713,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the case type this checklist belongs to"
           },
           "version": {
@@ -4928,6 +4937,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Optional case-type binding; null means any case type"
           },
           "version": {
@@ -7781,7 +7791,7 @@
           "slug": "omgevingsvergunning-ontvangen"
         },
         "name": "Ontvangen",
-        "caseType": "omgevingsvergunning",
+        "caseType": "@ref:omgevingsvergunning",
         "description": "Aanvraag is ontvangen en geregistreerd",
         "order": 1,
         "isFinal": false
@@ -7793,7 +7803,7 @@
           "slug": "omgevingsvergunning-in-behandeling"
         },
         "name": "In behandeling",
-        "caseType": "omgevingsvergunning",
+        "caseType": "@ref:omgevingsvergunning",
         "description": "Aanvraag wordt inhoudelijk getoetst",
         "order": 2,
         "isFinal": false
@@ -7805,7 +7815,7 @@
           "slug": "omgevingsvergunning-besluitvorming"
         },
         "name": "Besluitvorming",
-        "caseType": "omgevingsvergunning",
+        "caseType": "@ref:omgevingsvergunning",
         "description": "Besluit wordt voorbereid en genomen",
         "order": 3,
         "isFinal": false
@@ -7817,7 +7827,7 @@
           "slug": "omgevingsvergunning-afgehandeld"
         },
         "name": "Afgehandeld",
-        "caseType": "omgevingsvergunning",
+        "caseType": "@ref:omgevingsvergunning",
         "description": "Zaak is afgehandeld en gearchiveerd",
         "order": 4,
         "isFinal": true
@@ -7829,7 +7839,7 @@
           "slug": "subsidieaanvraag-ontvangen"
         },
         "name": "Ontvangen",
-        "caseType": "subsidieaanvraag",
+        "caseType": "@ref:subsidieaanvraag",
         "description": "Subsidieaanvraag is ontvangen",
         "order": 1,
         "isFinal": false
@@ -7841,7 +7851,7 @@
           "slug": "subsidieaanvraag-beoordeling"
         },
         "name": "Beoordeling",
-        "caseType": "subsidieaanvraag",
+        "caseType": "@ref:subsidieaanvraag",
         "description": "Aanvraag wordt getoetst aan subsidiekader",
         "order": 2,
         "isFinal": false
@@ -7853,7 +7863,7 @@
           "slug": "subsidieaanvraag-besluitvorming"
         },
         "name": "Besluitvorming",
-        "caseType": "subsidieaanvraag",
+        "caseType": "@ref:subsidieaanvraag",
         "description": "Subsidiebesluit wordt voorbereid en genomen",
         "order": 3,
         "isFinal": false
@@ -7865,7 +7875,7 @@
           "slug": "subsidieaanvraag-afgehandeld"
         },
         "name": "Afgehandeld",
-        "caseType": "subsidieaanvraag",
+        "caseType": "@ref:subsidieaanvraag",
         "description": "Subsidie is verleend, geweigerd of ingetrokken",
         "order": 4,
         "isFinal": true
@@ -7877,7 +7887,7 @@
           "slug": "klacht-ontvangen"
         },
         "name": "Ontvangen",
-        "caseType": "klacht-behandeling",
+        "caseType": "@ref:klacht-behandeling",
         "description": "Klacht is ontvangen en geregistreerd",
         "order": 1,
         "isFinal": false
@@ -7889,7 +7899,7 @@
           "slug": "klacht-onderzoek"
         },
         "name": "Onderzoek",
-        "caseType": "klacht-behandeling",
+        "caseType": "@ref:klacht-behandeling",
         "description": "Klacht wordt onderzocht (hoor en wederhoor)",
         "order": 2,
         "isFinal": false
@@ -7901,7 +7911,7 @@
           "slug": "klacht-afgehandeld"
         },
         "name": "Afgehandeld",
-        "caseType": "klacht-behandeling",
+        "caseType": "@ref:klacht-behandeling",
         "description": "Klacht is afgehandeld met formeel antwoord",
         "order": 3,
         "isFinal": true
@@ -7913,7 +7923,7 @@
           "slug": "melding-ontvangen"
         },
         "name": "Ontvangen",
-        "caseType": "melding-openbare-ruimte",
+        "caseType": "@ref:melding-openbare-ruimte",
         "description": "Melding is ontvangen en doorgezet",
         "order": 1,
         "isFinal": false
@@ -7925,7 +7935,7 @@
           "slug": "melding-in-behandeling"
         },
         "name": "In behandeling",
-        "caseType": "melding-openbare-ruimte",
+        "caseType": "@ref:melding-openbare-ruimte",
         "description": "Melding wordt afgehandeld door beheerdienst",
         "order": 2,
         "isFinal": false
@@ -7937,7 +7947,7 @@
           "slug": "melding-afgehandeld"
         },
         "name": "Afgehandeld",
-        "caseType": "melding-openbare-ruimte",
+        "caseType": "@ref:melding-openbare-ruimte",
         "description": "Melding is opgelost en afgesloten",
         "order": 3,
         "isFinal": true
@@ -7985,7 +7995,7 @@
           "slug": "omgevingsvergunning-verleend"
         },
         "name": "Vergunning verleend",
-        "caseType": "omgevingsvergunning",
+        "caseType": "@ref:omgevingsvergunning",
         "description": "Omgevingsvergunning is verleend",
         "archivalAction": "bewaren",
         "archivalPeriod": "P20Y"
@@ -7997,7 +8007,7 @@
           "slug": "omgevingsvergunning-geweigerd"
         },
         "name": "Vergunning geweigerd",
-        "caseType": "omgevingsvergunning",
+        "caseType": "@ref:omgevingsvergunning",
         "description": "Omgevingsvergunning is geweigerd",
         "archivalAction": "vernietigen",
         "archivalPeriod": "P10Y"
@@ -8009,7 +8019,7 @@
           "slug": "omgevingsvergunning-ingetrokken"
         },
         "name": "Ingetrokken",
-        "caseType": "omgevingsvergunning",
+        "caseType": "@ref:omgevingsvergunning",
         "description": "Aanvraag is door de aanvrager ingetrokken",
         "archivalAction": "vernietigen",
         "archivalPeriod": "P5Y"
@@ -8021,7 +8031,7 @@
           "slug": "subsidie-toegekend"
         },
         "name": "Subsidie toegekend",
-        "caseType": "subsidieaanvraag",
+        "caseType": "@ref:subsidieaanvraag",
         "description": "Subsidie is toegekend",
         "archivalAction": "bewaren",
         "archivalPeriod": "P10Y"
@@ -8033,7 +8043,7 @@
           "slug": "subsidie-afgewezen"
         },
         "name": "Subsidie afgewezen",
-        "caseType": "subsidieaanvraag",
+        "caseType": "@ref:subsidieaanvraag",
         "description": "Subsidieaanvraag is afgewezen",
         "archivalAction": "vernietigen",
         "archivalPeriod": "P5Y"
@@ -8045,7 +8055,7 @@
           "slug": "klacht-gegrond"
         },
         "name": "Klacht gegrond",
-        "caseType": "klacht-behandeling",
+        "caseType": "@ref:klacht-behandeling",
         "description": "Klacht is gegrond verklaard",
         "archivalAction": "bewaren",
         "archivalPeriod": "P10Y"
@@ -8057,7 +8067,7 @@
           "slug": "klacht-ongegrond"
         },
         "name": "Klacht ongegrond",
-        "caseType": "klacht-behandeling",
+        "caseType": "@ref:klacht-behandeling",
         "description": "Klacht is ongegrond verklaard",
         "archivalAction": "vernietigen",
         "archivalPeriod": "P5Y"
@@ -8069,7 +8079,7 @@
           "slug": "melding-afgehandeld-result"
         },
         "name": "Afgehandeld",
-        "caseType": "melding-openbare-ruimte",
+        "caseType": "@ref:melding-openbare-ruimte",
         "description": "Melding is afgehandeld",
         "archivalAction": "vernietigen",
         "archivalPeriod": "P1Y"
