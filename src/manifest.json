@@ -3018,5 +3018,92 @@
 			"title": "Substitutions & reassignment",
 			"component": "SubstitutionAdminView"
 		}
+	],
+	"observability": {
+		"_note": "Declarative observability via OpenRegister's AppHost engine (ADR-040). Reproduces the output of the now-deleted hand-written HealthController + MetricsController. The /api/health and /api/metrics routes are aliased to AppHost\\Controller\\GenericHealth#index / GenericMetrics#index, so the engine reads this block at request time. Parity: metric names (with the engine-added procest_ prefix), types, HELP texts and label keys (incl. the caseType JSON field surfacing as the case_type label) match the pre-adoption contract; the implicit procest_info / procest_up gauges are emitted by the engine. The APCu controller-local cache is replaced by the engine's per-metric cacheTtl via the distributed cache (same 30s/60s TTLs, shared across workers).",
+		"health": {
+			"statusCodePolicy": "adr006",
+			"checks": [
+				{ "id": "database", "type": "database", "severity": "critical" },
+				{ "id": "openregister", "type": "appEnabled", "app": "openregister", "severity": "critical" },
+				{ "id": "filesystem", "type": "filesystem", "severity": "degraded" }
+			]
+		},
+		"metrics": [
+			{
+				"name": "cases_total",
+				"type": "gauge",
+				"help": "Total cases by status and case_type",
+				"cacheTtl": 30,
+				"source": {
+					"kind": "objectCount",
+					"register": "procest",
+					"schema": "case",
+					"groupBy": ["status", "caseType"]
+				}
+			},
+			{
+				"name": "cases_overdue_total",
+				"type": "gauge",
+				"help": "Cases past their deadline",
+				"cacheTtl": 60,
+				"source": {
+					"kind": "objectCount",
+					"register": "procest",
+					"schema": "case",
+					"filter": { "uiterlijkeEinddatumAfdoening": { "lt": "now" } }
+				}
+			},
+			{
+				"name": "cases_created_today",
+				"type": "gauge",
+				"help": "Cases created today",
+				"cacheTtl": 30,
+				"source": {
+					"kind": "objectCount",
+					"register": "procest",
+					"schema": "case",
+					"filter": { "startDate": { "gte": "today" } }
+				}
+			},
+			{
+				"name": "tasks_total",
+				"type": "gauge",
+				"help": "Total tasks by status",
+				"cacheTtl": 30,
+				"source": {
+					"kind": "objectCount",
+					"register": "procest",
+					"schema": "task",
+					"groupBy": ["status"]
+				}
+			},
+			{
+				"name": "tasks_overdue_total",
+				"type": "gauge",
+				"help": "Tasks past their deadline",
+				"cacheTtl": 60,
+				"source": {
+					"kind": "objectCount",
+					"register": "procest",
+					"schema": "task",
+					"filter": { "deadline": { "lt": "now" } }
+				}
+			}
+		]
+	},
+	"deepLinks": [
+		{
+			"registerSlug": "procest",
+			"schemaSlug": "case",
+			"urlTemplate": "/apps/procest/cases/{uuid}",
+			"displayName": "Case"
+		},
+		{
+			"registerSlug": "procest",
+			"schemaSlug": "task",
+			"urlTemplate": "/apps/procest/tasks/{uuid}",
+			"displayName": "Task"
+		}
 	]
 }

@@ -609,6 +609,35 @@ When Procest exposes a ZGW-compatible API (future work), the mapping is:
 
 Field-level mappings are documented per entity in section 3.2 above.
 
+## 5a. Observability (Health & Metrics)
+
+Procest's `GET /apps/procest/api/health` and `GET /apps/procest/api/metrics`
+endpoints run declaratively on **OpenRegister's AppHost observability engine**
+(ADR-040). The hand-written `HealthController` and `MetricsController` were
+deleted; the endpoints are aliased to the engine's `GenericHealth#index` /
+`GenericMetrics#index` controllers and driven by the `observability` block of
+`src/manifest.json`. URLs, route names, metric names/types/HELP texts/labels
+and the ADR-006 200/503 contract are unchanged.
+
+- **Health checks**: `database` (critical), `openregister` (critical), `filesystem`
+  (degraded), under `statusCodePolicy: adr006`. The health JSON now also carries
+  an `app` field (engine-added).
+- **Metrics**: `procest_cases_total{status,case_type}`, `procest_cases_overdue_total`,
+  `procest_cases_created_today`, `procest_tasks_total{status}`,
+  `procest_tasks_overdue_total` — all declared as portable `objectCount`
+  descriptors on register `procest`, schemas `case` / `task`. The implicit
+  `procest_info` / `procest_up` gauges are emitted by the engine. Per-metric
+  `cacheTtl` (30s / 60s) via the distributed cache replaces the previous
+  controller-local APCu cache (same TTLs, now shared across PHP workers).
+
+**Operator note**: the schema resolution is now anchored on the OpenRegister
+schema slugs (`case`, `task`) rather than a SQL title match. The metric values
+are equivalent to the previous exact `s.title = 'Case'` / `'Task'` query; if any
+historic deployment ran the earlier `title LIKE '%aak%'` / `'%taak%'` variant,
+the `procest_cases_*` / `procest_tasks_*` series will correct to count the real
+case/task objects. Dashboards/alerts keyed on those series should be reviewed
+after the upgrade.
+
 ## 6. Open Research Questions
 
 1. ~~**Nextcloud Deck reuse**~~: **RESOLVED**: Deck is not suitable. No PHP API, model doesn't fit case lifecycle.

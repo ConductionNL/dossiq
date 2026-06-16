@@ -134,6 +134,19 @@ if (class_exists('\\OCA\\Decidesk\\Event\\DecisionConcludedEvent') === false) {
     include_once __DIR__.'/Stubs/Decidesk/Event/DecisionConcludedEvent.php';
 }
 
+// OpenRegister AppHost stubs (ADR-040) — loaded when the openregister runtime
+// is absent so Application::register() (Bootstrap::register) and procest's
+// DashboardController (extends GenericDashboardController) resolve in bare CI
+// containers + standalone static analysis. The stubs self-skip when the real
+// classes are present (openregister installed).
+if (class_exists('\\OCA\\OpenRegister\\AppHost\\Bootstrap') === false) {
+    include_once __DIR__.'/Stubs/AppHost/Bootstrap.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\AppHost\\Controller\\GenericDashboardController') === false) {
+    include_once __DIR__.'/Stubs/AppHost/Controller/GenericDashboardController.php';
+}
+
 if (defined('OC_CONSOLE') === false && class_exists('\OC_App') === true) {
     \OC_App::loadApps();
     \OC_App::loadApp('procest');
