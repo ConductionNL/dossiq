@@ -22,17 +22,14 @@
 
 declare(strict_types=1);
 
-return [
-    'routes' => [
-        // Dashboard + Settings.
-        ['name' => 'dashboard#page', 'url' => '/', 'verb' => 'GET'],
-        ['name' => 'settings#index', 'url' => '/api/settings', 'verb' => 'GET'],
-        ['name' => 'settings#create', 'url' => '/api/settings', 'verb' => 'POST'],
-        ['name' => 'settings#load',  'url' => '/api/settings/load', 'verb' => 'POST'],
-        // Generic per-user preferences (used by shared nextcloud-vue widgets, e.g. CnSupportDialog).
-        ['name' => 'preferences#getPreference', 'url' => '/api/preferences/{key}', 'verb' => 'GET'],
-        ['name' => 'preferences#setPreference', 'url' => '/api/preferences/{key}', 'verb' => 'PUT'],
-
+// The mechanical boilerplate routes — dashboard#page (`/`), the SPA catch-all
+// (`/{path}`), settings#index/create/load, preferences#getPreference/setPreference,
+// metrics#index and health#index — are now provided by the OpenRegister AppHost
+// canonical route table (ADR-040). URLs, verbs and route names are unchanged.
+// The procest-bespoke dashboard PWA assets (dashboard#serviceWorker /
+// dashboard#webManifest) and every domain route below are passed through as
+// `$extra`; they are inserted before the catch-all so they keep priority.
+return \OCA\OpenRegister\AppHost\Routes::standard([
         // AI-Assisted Processing (specific endpoints precede wildcard routes).
         ['name' => 'ai#classify',        'url' => '/api/ai/classify',        'verb' => 'POST'],
         ['name' => 'ai#extract',         'url' => '/api/ai/extract',         'verb' => 'POST'],
@@ -264,9 +261,6 @@ return [
         ['name' => 'stuf#zaken',    'url' => '/api/stuf/zaken',    'verb' => 'POST'],
         ['name' => 'stuf#personen', 'url' => '/api/stuf/personen', 'verb' => 'POST'],
 
-        // Prometheus metrics endpoint.
-        ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
-
         // Doorlooptijd (throughput-time) dashboard metrics.
         ['name' => 'doorlooptijd#metrics', 'url' => '/api/doorlooptijd/metrics', 'verb' => 'GET'],
 
@@ -281,8 +275,6 @@ return [
         ['name' => 'caseRelation#list',    'url' => '/api/cases/{caseId}/relations',                          'verb' => 'GET'],
         ['name' => 'caseRelation#create',  'url' => '/api/cases/{caseId}/relations',                          'verb' => 'POST'],
         ['name' => 'caseRelation#destroy', 'url' => '/api/cases/{caseId}/relations/{targetId}/{aardRelatie}', 'verb' => 'DELETE'],
-        // Health check endpoint.
-        ['name' => 'health#index', 'url' => '/api/health', 'verb' => 'GET'],
         // Dashboard KPI aggregation endpoint.
         ['name' => 'kpi#index', 'url' => '/api/dashboard/kpis', 'verb' => 'GET'],
 
@@ -641,9 +633,7 @@ return [
         ['name' => 'raadsinformatieFeed#agendapunten',  'url' => '/feed/ori/agendapunten.rss',  'verb' => 'GET'],
         ['name' => 'raadsinformatieFeed#documenten',    'url' => '/feed/ori/documenten.rss',    'verb' => 'GET'],
 
-        // SPA catch-all — serves the Vue app for any frontend route (history mode).
-        // 'postfix' keeps the route name unique; without it this entry replaces
-        // the '/' route above (same name) and the app root 404s.
-        ['name' => 'dashboard#page', 'postfix' => 'catchall', 'url' => '/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+'], 'defaults' => ['path' => '']],
-    ],
-];
+        // NOTE: dashboard#page (`/`) and the SPA catch-all (`/{path}`,
+        // dashboard#catchAll) are supplied by Routes::standard(); both resolve to
+        // procest's DashboardController, which extends GenericDashboardController.
+]);

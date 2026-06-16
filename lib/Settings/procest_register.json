@@ -216,6 +216,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the parent case type"
           },
           "order": {
@@ -262,6 +263,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the parent case type"
           },
           "archivalPeriod": {
@@ -295,11 +297,10 @@
         "x-schema-org-type": "schema:Role",
         "x-zgw-equivalent": "RolType",
         "title": "Role Type",
-        "description": "Participant role type definition for a case type",
+        "description": "Participant role type definition; optionally scoped to a case type (generic roles like applicant/handler apply across case types)",
         "type": "object",
         "required": [
-          "name",
-          "caseType"
+          "name"
         ],
         "properties": {
           "name": {
@@ -316,6 +317,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the parent case type"
           },
           "ncGroupId": {
@@ -355,6 +357,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the parent case type"
           },
           "propertyType": {
@@ -412,6 +415,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the parent case type"
           },
           "isDraft": {
@@ -490,6 +494,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the parent case type"
           },
           "isDraft": {
@@ -590,6 +595,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the case type",
             "title": "Case type",
             "facetable": true
@@ -2021,6 +2027,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the case type this route is associated with",
             "facetable": true
           },
@@ -4705,6 +4712,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Reference to the case type this checklist belongs to"
           },
           "version": {
@@ -4928,6 +4936,7 @@
           "caseType": {
             "type": "string",
             "format": "uuid",
+            "$ref": "caseType",
             "description": "Optional case-type binding; null means any case type"
           },
           "version": {
@@ -6645,7 +6654,8 @@
         "properties": {
           "supplierRef": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "$ref": "supplier"
           },
           "userRef": {
             "type": "string",
@@ -6711,7 +6721,8 @@
         "properties": {
           "supplierRef": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "$ref": "supplier"
           },
           "caseRef": {
             "type": "string",
@@ -6767,7 +6778,8 @@
         "properties": {
           "supplierRef": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "$ref": "supplier"
           },
           "caseRef": {
             "type": "string",
@@ -6820,7 +6832,8 @@
         "properties": {
           "supplierRef": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "$ref": "supplier"
           },
           "caseRef": {
             "type": "string",
@@ -6883,7 +6896,8 @@
         "properties": {
           "supplierRef": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "$ref": "supplier"
           },
           "caseRef": {
             "type": "string",
@@ -6931,7 +6945,8 @@
         "properties": {
           "supplierRef": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "$ref": "supplier"
           },
           "period": {
             "type": "string",
@@ -7781,7 +7796,7 @@
           "slug": "omgevingsvergunning-ontvangen"
         },
         "name": "Ontvangen",
-        "caseType": "omgevingsvergunning",
+        "caseType": "@ref:omgevingsvergunning",
         "description": "Aanvraag is ontvangen en geregistreerd",
         "order": 1,
         "isFinal": false
@@ -7793,7 +7808,7 @@
           "slug": "omgevingsvergunning-in-behandeling"
         },
         "name": "In behandeling",
-        "caseType": "omgevingsvergunning",
+        "caseType": "@ref:omgevingsvergunning",
         "description": "Aanvraag wordt inhoudelijk getoetst",
         "order": 2,
         "isFinal": false
@@ -7805,7 +7820,7 @@
           "slug": "omgevingsvergunning-besluitvorming"
         },
         "name": "Besluitvorming",
-        "caseType": "omgevingsvergunning",
+        "caseType": "@ref:omgevingsvergunning",
         "description": "Besluit wordt voorbereid en genomen",
         "order": 3,
         "isFinal": false
@@ -7817,7 +7832,7 @@
           "slug": "omgevingsvergunning-afgehandeld"
         },
         "name": "Afgehandeld",
-        "caseType": "omgevingsvergunning",
+        "caseType": "@ref:omgevingsvergunning",
         "description": "Zaak is afgehandeld en gearchiveerd",
         "order": 4,
         "isFinal": true
@@ -7829,7 +7844,7 @@
           "slug": "subsidieaanvraag-ontvangen"
         },
         "name": "Ontvangen",
-        "caseType": "subsidieaanvraag",
+        "caseType": "@ref:subsidieaanvraag",
         "description": "Subsidieaanvraag is ontvangen",
         "order": 1,
         "isFinal": false
@@ -7841,7 +7856,7 @@
           "slug": "subsidieaanvraag-beoordeling"
         },
         "name": "Beoordeling",
-        "caseType": "subsidieaanvraag",
+        "caseType": "@ref:subsidieaanvraag",
         "description": "Aanvraag wordt getoetst aan subsidiekader",
         "order": 2,
         "isFinal": false
@@ -7853,7 +7868,7 @@
           "slug": "subsidieaanvraag-besluitvorming"
         },
         "name": "Besluitvorming",
-        "caseType": "subsidieaanvraag",
+        "caseType": "@ref:subsidieaanvraag",
         "description": "Subsidiebesluit wordt voorbereid en genomen",
         "order": 3,
         "isFinal": false
@@ -7865,7 +7880,7 @@
           "slug": "subsidieaanvraag-afgehandeld"
         },
         "name": "Afgehandeld",
-        "caseType": "subsidieaanvraag",
+        "caseType": "@ref:subsidieaanvraag",
         "description": "Subsidie is verleend, geweigerd of ingetrokken",
         "order": 4,
         "isFinal": true
@@ -7877,7 +7892,7 @@
           "slug": "klacht-ontvangen"
         },
         "name": "Ontvangen",
-        "caseType": "klacht-behandeling",
+        "caseType": "@ref:klacht-behandeling",
         "description": "Klacht is ontvangen en geregistreerd",
         "order": 1,
         "isFinal": false
@@ -7889,7 +7904,7 @@
           "slug": "klacht-onderzoek"
         },
         "name": "Onderzoek",
-        "caseType": "klacht-behandeling",
+        "caseType": "@ref:klacht-behandeling",
         "description": "Klacht wordt onderzocht (hoor en wederhoor)",
         "order": 2,
         "isFinal": false
@@ -7901,7 +7916,7 @@
           "slug": "klacht-afgehandeld"
         },
         "name": "Afgehandeld",
-        "caseType": "klacht-behandeling",
+        "caseType": "@ref:klacht-behandeling",
         "description": "Klacht is afgehandeld met formeel antwoord",
         "order": 3,
         "isFinal": true
@@ -7913,7 +7928,7 @@
           "slug": "melding-ontvangen"
         },
         "name": "Ontvangen",
-        "caseType": "melding-openbare-ruimte",
+        "caseType": "@ref:melding-openbare-ruimte",
         "description": "Melding is ontvangen en doorgezet",
         "order": 1,
         "isFinal": false
@@ -7925,7 +7940,7 @@
           "slug": "melding-in-behandeling"
         },
         "name": "In behandeling",
-        "caseType": "melding-openbare-ruimte",
+        "caseType": "@ref:melding-openbare-ruimte",
         "description": "Melding wordt afgehandeld door beheerdienst",
         "order": 2,
         "isFinal": false
@@ -7937,7 +7952,7 @@
           "slug": "melding-afgehandeld"
         },
         "name": "Afgehandeld",
-        "caseType": "melding-openbare-ruimte",
+        "caseType": "@ref:melding-openbare-ruimte",
         "description": "Melding is opgelost en afgesloten",
         "order": 3,
         "isFinal": true
@@ -7985,7 +8000,7 @@
           "slug": "omgevingsvergunning-verleend"
         },
         "name": "Vergunning verleend",
-        "caseType": "omgevingsvergunning",
+        "caseType": "@ref:omgevingsvergunning",
         "description": "Omgevingsvergunning is verleend",
         "archivalAction": "bewaren",
         "archivalPeriod": "P20Y"
@@ -7997,7 +8012,7 @@
           "slug": "omgevingsvergunning-geweigerd"
         },
         "name": "Vergunning geweigerd",
-        "caseType": "omgevingsvergunning",
+        "caseType": "@ref:omgevingsvergunning",
         "description": "Omgevingsvergunning is geweigerd",
         "archivalAction": "vernietigen",
         "archivalPeriod": "P10Y"
@@ -8009,7 +8024,7 @@
           "slug": "omgevingsvergunning-ingetrokken"
         },
         "name": "Ingetrokken",
-        "caseType": "omgevingsvergunning",
+        "caseType": "@ref:omgevingsvergunning",
         "description": "Aanvraag is door de aanvrager ingetrokken",
         "archivalAction": "vernietigen",
         "archivalPeriod": "P5Y"
@@ -8021,7 +8036,7 @@
           "slug": "subsidie-toegekend"
         },
         "name": "Subsidie toegekend",
-        "caseType": "subsidieaanvraag",
+        "caseType": "@ref:subsidieaanvraag",
         "description": "Subsidie is toegekend",
         "archivalAction": "bewaren",
         "archivalPeriod": "P10Y"
@@ -8033,7 +8048,7 @@
           "slug": "subsidie-afgewezen"
         },
         "name": "Subsidie afgewezen",
-        "caseType": "subsidieaanvraag",
+        "caseType": "@ref:subsidieaanvraag",
         "description": "Subsidieaanvraag is afgewezen",
         "archivalAction": "vernietigen",
         "archivalPeriod": "P5Y"
@@ -8045,7 +8060,7 @@
           "slug": "klacht-gegrond"
         },
         "name": "Klacht gegrond",
-        "caseType": "klacht-behandeling",
+        "caseType": "@ref:klacht-behandeling",
         "description": "Klacht is gegrond verklaard",
         "archivalAction": "bewaren",
         "archivalPeriod": "P10Y"
@@ -8057,7 +8072,7 @@
           "slug": "klacht-ongegrond"
         },
         "name": "Klacht ongegrond",
-        "caseType": "klacht-behandeling",
+        "caseType": "@ref:klacht-behandeling",
         "description": "Klacht is ongegrond verklaard",
         "archivalAction": "vernietigen",
         "archivalPeriod": "P5Y"
@@ -8069,7 +8084,7 @@
           "slug": "melding-afgehandeld-result"
         },
         "name": "Afgehandeld",
-        "caseType": "melding-openbare-ruimte",
+        "caseType": "@ref:melding-openbare-ruimte",
         "description": "Melding is afgehandeld",
         "archivalAction": "vernietigen",
         "archivalPeriod": "P1Y"
@@ -8515,7 +8530,7 @@
           "schema": "supplierUser",
           "slug": "supplier-user-acme-admin"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "email": "admin@acmebouw.example.nl",
         "role": "admin",
         "status": "active",
@@ -8527,7 +8542,7 @@
           "schema": "supplierUser",
           "slug": "supplier-user-acme-finance"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "email": "finance@acmebouw.example.nl",
         "role": "finance",
         "status": "active",
@@ -8539,7 +8554,7 @@
           "schema": "supplierUser",
           "slug": "supplier-user-orange-contracts"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "email": "contracts@orangeit.example.nl",
         "role": "contracts",
         "status": "active",
@@ -8551,7 +8566,7 @@
           "schema": "supplierUser",
           "slug": "supplier-user-orange-sales"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "email": "sales@orangeit.example.nl",
         "role": "sales",
         "status": "active",
@@ -8563,7 +8578,7 @@
           "schema": "supplierUser",
           "slug": "supplier-user-blokker-readonly"
         },
-        "supplierRef": "supplier-blokker-schoonmaak",
+        "supplierRef": "@ref:supplier-blokker-schoonmaak",
         "email": "viewer@blokker.example.nl",
         "role": "read_only",
         "status": "revoked",
@@ -8575,7 +8590,7 @@
           "schema": "supplierTender",
           "slug": "tender-acme-onderhoud-2026"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "title": "Onderhoud gemeentehuis 2026",
         "status": "submitted",
         "submittedDate": "2026-03-01",
@@ -8587,7 +8602,7 @@
           "schema": "supplierTender",
           "slug": "tender-orange-software-eval"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "title": "Softwarelicentie 2026",
         "status": "evaluating",
         "submittedDate": "2026-02-15",
@@ -8599,7 +8614,7 @@
           "schema": "supplierTender",
           "slug": "tender-acme-awarded"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "title": "Renovatie schoolgebouw",
         "status": "awarded",
         "submittedDate": "2025-12-01",
@@ -8612,7 +8627,7 @@
           "schema": "supplierTender",
           "slug": "tender-blokker-rejected"
         },
-        "supplierRef": "supplier-blokker-schoonmaak",
+        "supplierRef": "@ref:supplier-blokker-schoonmaak",
         "title": "Schoonmaak buurthuis",
         "status": "rejected",
         "submittedDate": "2025-11-15",
@@ -8626,7 +8641,7 @@
           "schema": "supplierTender",
           "slug": "tender-orange-withdrawn"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "title": "Datacenter migratie",
         "status": "withdrawn",
         "submittedDate": "2025-10-01",
@@ -8638,7 +8653,7 @@
           "schema": "supplierContract",
           "slug": "contract-acme-renovatie"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "number": "C-2026-001",
         "subject": "Renovatie schoolgebouw",
         "startDate": "2026-02-01",
@@ -8653,7 +8668,7 @@
           "schema": "supplierContract",
           "slug": "contract-orange-licenties"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "number": "C-2025-027",
         "subject": "Softwarelicenties 2025-2026",
         "startDate": "2025-04-01",
@@ -8669,7 +8684,7 @@
           "schema": "supplierContract",
           "slug": "contract-orange-cloud"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "number": "C-2025-028",
         "subject": "Cloudhosting",
         "startDate": "2025-06-01",
@@ -8684,7 +8699,7 @@
           "schema": "supplierContract",
           "slug": "contract-blokker-historie"
         },
-        "supplierRef": "supplier-blokker-schoonmaak",
+        "supplierRef": "@ref:supplier-blokker-schoonmaak",
         "number": "C-2024-011",
         "subject": "Schoonmaak 2024-2025",
         "startDate": "2024-01-01",
@@ -8699,7 +8714,7 @@
           "schema": "supplierInvoice",
           "slug": "inv-acme-001"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "number": "INV-2026-001",
         "invoiceDate": "2026-02-15",
         "amount": 50000,
@@ -8713,7 +8728,7 @@
           "schema": "supplierInvoice",
           "slug": "inv-acme-002"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "number": "INV-2026-002",
         "invoiceDate": "2026-03-15",
         "amount": 75000,
@@ -8727,7 +8742,7 @@
           "schema": "supplierInvoice",
           "slug": "inv-orange-001"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "number": "OR-2026-001",
         "invoiceDate": "2026-04-01",
         "amount": 30000,
@@ -8742,7 +8757,7 @@
           "schema": "supplierInvoice",
           "slug": "inv-orange-disputed"
         },
-        "supplierRef": "supplier-orange-it-bv",
+        "supplierRef": "@ref:supplier-orange-it-bv",
         "number": "OR-2026-002",
         "invoiceDate": "2026-04-15",
         "amount": 12000,
@@ -8757,7 +8772,7 @@
           "schema": "supplierInvoice",
           "slug": "inv-blokker-overdue"
         },
-        "supplierRef": "supplier-blokker-schoonmaak",
+        "supplierRef": "@ref:supplier-blokker-schoonmaak",
         "number": "BL-2025-099",
         "invoiceDate": "2025-12-15",
         "amount": 8000,
@@ -8771,7 +8786,7 @@
           "schema": "supplierMessage",
           "slug": "msg-acme-welcome"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "direction": "outbound",
         "subject": "Welkom in het leveranciersportaal",
         "body": "Beste ACME Bouw, uw toegang tot het leveranciersportaal is geactiveerd.",
@@ -8784,7 +8799,7 @@
           "schema": "supplierMessage",
           "slug": "msg-acme-question"
         },
-        "supplierRef": "supplier-acme-bouw-bv",
+        "supplierRef": "@ref:supplier-acme-bouw-bv",
         "direction": "inbound",
         "subject": "Vraag over INV-2026-002",
         "body": "Goedendag, kunt u een verwachte betaaldatum delen voor factuur INV-2026-002?",

@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\AppInfo;
 
-use OCA\OpenRegister\Event\DeepLinkRegistrationEvent;
+use OCA\OpenRegister\AppHost\Bootstrap;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
@@ -48,7 +48,6 @@ use OCA\Procest\Listener\BezwaarHearingScheduledListener;
 use OCA\Procest\Listener\BezwaarLifecycleListener;
 use OCA\Procest\Listener\DecisionConcludedListener;
 use OCA\Procest\Event\ParafeerTransitionEvent;
-use OCA\Procest\Listener\DeepLinkRegistrationListener;
 use OCA\Procest\Listener\ApprovalStepNotificationListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
 use OCA\Procest\Listener\LegesCaseCreatedListener;
@@ -101,9 +100,68 @@ class Application extends App implements IBootstrap
      */
     public function register(IRegistrationContext $context): void
     {
-        $context->registerEventListener(
-            event: DeepLinkRegistrationEvent::class,
-            listener: DeepLinkRegistrationListener::class
+        // OpenRegister AppHost engine (ADR-040). Aliases the mechanical
+        // plumbing classes to the shared generics and registers the
+        // manifest-driven deep-link listener + the observability (health /
+        // metrics) controllers. The dashboard widgets and the MCP provider are
+        // passed through here so they no longer need bespoke registration.
+        //
+        // NOTE: procest's Settings stack (SettingsController + SettingsService +
+        // AdminSettings + SettingsSection + InitializeSettings) and the PWA
+        // DashboardController are KEPT bespoke and re-aliased back to the
+        // concrete procest classes immediately below — they are entangled with
+        // the frontend `/api/settings` contract (`{config, openRegisters,
+        // isAdmin}`, ~180 SettingsService injection sites, the register.d
+        // fragment merge, secret redaction, KCC defaults and the schema-config
+        // reconcile that the engine generics do not provide). Only the
+        // genuinely-mechanical halves (Health, Metrics, Preferences, DeepLink,
+        // SPA page/catch-all) are adopted.
+        Bootstrap::register(
+            $context,
+            self::APP_ID,
+            [
+                'namespace'        => 'OCA\\Procest',
+                'sectionName'      => 'Procest',
+                'dashboardWidgets' => [
+                    CasesOverviewWidget::class,
+                    MyTasksWidget::class,
+                    OverdueCasesWidget::class,
+                    DeadlineAlertsWidget::class,
+                    TaskRemindersWidget::class,
+                    StalledCasesWidget::class,
+                    StartCaseWidget::class,
+                ],
+                'mcpProvider'      => ProcestToolProvider::class,
+            ]
+        );
+
+        // Re-assert the procest-bespoke plumbing classes the engine just
+        // aliased to generics. Concrete-to-self aliases make Nextcloud resolve
+        // these by reflection (auto-wiring their real constructors) so the
+        // bespoke behaviour wins over the Bootstrap factory closures.
+        $context->registerServiceAlias(
+            \OCA\Procest\Controller\DashboardController::class,
+            \OCA\Procest\Controller\DashboardController::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Controller\SettingsController::class,
+            \OCA\Procest\Controller\SettingsController::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Service\SettingsService::class,
+            \OCA\Procest\Service\SettingsService::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Repair\InitializeSettings::class,
+            \OCA\Procest\Repair\InitializeSettings::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Settings\AdminSettings::class,
+            \OCA\Procest\Settings\AdminSettings::class
+        );
+        $context->registerServiceAlias(
+            \OCA\Procest\Sections\SettingsSection::class,
+            \OCA\Procest\Sections\SettingsSection::class
         );
 
         $context->registerEventListener(
@@ -263,8 +321,6 @@ class Application extends App implements IBootstrap
             \OCA\Procest\Service\External\Ztc\ZtcCatalogiAdapterInterface::class,
             \OCA\Procest\Service\External\Ztc\LogZtcCatalogiAdapter::class
         );
-
-        $this->registerWidgetsAndProviders(context: $context);
     }//end register()
 
     /**
@@ -416,36 +472,6 @@ class Application extends App implements IBootstrap
             listener: DecisionConcludedListener::class
         );
     }//end registerDecisionListeners()
-
-    /**
-     * Register dashboard widgets and the MCP tool provider.
-     *
-     * @param IRegistrationContext $context The registration context
-     *
-     * @return void
-     */
-    private function registerWidgetsAndProviders(IRegistrationContext $context): void
-    {
-        // Dashboard widgets.
-        $context->registerDashboardWidget(CasesOverviewWidget::class);
-        $context->registerDashboardWidget(MyTasksWidget::class);
-        $context->registerDashboardWidget(OverdueCasesWidget::class);
-        $context->registerDashboardWidget(DeadlineAlertsWidget::class);
-        $context->registerDashboardWidget(TaskRemindersWidget::class);
-        $context->registerDashboardWidget(StalledCasesWidget::class);
-        $context->registerDashboardWidget(StartCaseWidget::class);
-
-        // Register ProcestToolProvider as the MCP tool provider for the AI Chat
-        // Companion. The alias key 'OCA\OpenRegister\Mcp\IMcpToolProvider::procest'
-        // is the format that OR's McpToolsService enumerates to discover per-app
-        // providers (hydra ADR-034 / ADR-035, design D3). The interface ships in
-        // openregister PR #1466 (ai-chat-companion-orchestrator); until it merges
-        // procest implements the stub at tests/Stubs/Mcp/IMcpToolProvider.php.
-        $context->registerServiceAlias(
-            'OCA\\OpenRegister\\Mcp\\IMcpToolProvider::procest',
-            ProcestToolProvider::class
-        );
-    }//end registerWidgetsAndProviders()
 
     /**
      * Boot the application.
