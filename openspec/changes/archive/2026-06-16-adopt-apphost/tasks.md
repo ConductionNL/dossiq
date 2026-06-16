@@ -1,5 +1,30 @@
 # Tasks: Procest Adopts OpenRegister AppHost
 
+> **Implementation note (2026-06-16, build/adopt-apphost-2026-06-16).**
+> Adopted the genuinely-mechanical halves: observability (Health+Metrics via
+> the manifest `observability` block + Generic controllers), `PreferencesController`
+> (byte-equivalent → deleted), `DeepLinkRegistrationListener` (→ manifest
+> `deepLinks` block), and the SPA page/catch-all (procest `DashboardController`
+> now extends `GenericDashboardController`, keeping only its two PWA endpoints).
+> Wired via `Bootstrap::register()` + `Routes::standard($extra)`.
+>
+> **KEPT bespoke (re-aliased to concrete procest classes after Bootstrap):**
+> `SettingsController` + `SettingsService` + `AdminSettings` + `SettingsSection`
+> + `InitializeSettings`. They are entangled beyond the generic contract —
+> (a) the `/api/settings` response envelope is `{config, openRegisters, isAdmin}`
+> (the procest frontend reads `data.config` / `data.openRegisters`), which differs
+> from the generic flat `{register, openregisters, isAdmin}` shape and would break
+> the frontend; (b) `SettingsService` is injected at ~180 sites and provides domain
+> helpers (`getObjectService`, `getKccConfigValue`, `getConfigValue`, secret
+> redaction, the `register.d/*.json` fragment merge, `reconcileSchemaConfig`) absent
+> from the generic; (c) `InitializeSettings` depends on `reconcileSchemaConfig()` to
+> provision the schema-config keys the WorkflowBoard needs. The spec
+> (`specs/apphost-adoption/spec.md`, Requirement "Boilerplate Replacement With
+> Endpoint Parity") was amended to record this split.
+>
+> Tasks 2.4/2.5 (replace SettingsService / shrink InitializeSettings) are therefore
+> intentionally NOT done — see the bespoke-retention rationale above.
+
 ## 0. Baseline
 
 - [ ] 0.1 Capture baseline on a seeded dev instance: `curl /apps/procest/api/health` JSON + `curl /apps/procest/api/metrics` Prometheus text; store as fixtures for the parity diff
