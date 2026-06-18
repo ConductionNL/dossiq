@@ -1,7 +1,11 @@
+---
+status: done
+---
+
 # procest-config-to-settings Specification
 
 ## Purpose
-TBD - created by archiving change procest-config-to-settings. Update Purpose after archive.
+Groups all of procest's configuration and admin navigation leaves under a single Settings menu node so they no longer clutter the top level of the primary navigation. Operational surfaces such as live fee calculations and the Termijnbewaking KPI dashboard stay in the working navigation, and the relocation touches only the menu structure — every relocated page remains reachable by its existing route, with no new pages, schemas, or business logic introduced.
 ## Requirements
 ### Requirement: REQ-PCTS-001 — Configuration Surfaces Live Under A Single Settings Group
 

@@ -1,7 +1,11 @@
+---
+status: done
+---
+
 # mobiel-inspectie-offline Specification
 
 ## Purpose
-TBD - created by archiving change mobiel-inspectie-offline. Update Purpose after archive.
+Lets field inspectors work fully offline: they synchronize the day's cases, checklists, historical documents, and map tiles to local storage, then complete checklists, capture GPS-tagged photos (client-side compressed with EXIF), record voice memos for later transcription, and draw map annotations without network connectivity. Changes are queued locally and automatically replayed in order with exponential backoff on reconnection, concurrent edits and lost permissions are surfaced as conflicts the inspector resolves, and all resolution decisions are recorded in an immutable, AVG-compliant audit trail.
 ## Requirements
 ### Requirement: Offline Daily Planning Synchronization
 

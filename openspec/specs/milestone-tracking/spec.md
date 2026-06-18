@@ -1,6 +1,6 @@
 ---
 retrofit: true
-status: partial
+status: done
 note: >-
   Demoted done->partial (2026-06-14, honest-status sweep): backend is built but
   the entire milestone Vue UI (progress indicator, config tab, dashboard widgets)

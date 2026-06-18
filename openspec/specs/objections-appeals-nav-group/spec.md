@@ -1,7 +1,11 @@
+---
+status: done
+---
+
 # objections-appeals-nav-group Specification
 
 ## Purpose
-TBD - created by archiving change procest-objections-appeals-group. Update Purpose after archive.
+Presents the objections-and-appeals (bezwaar & beroep) domain as a single top-level navigation group instead of six scattered flat entries, with its five transactional surfaces rendered as children in a coherent workflow order. Every grouped page stays routable at its existing route, and the change is a pure information-architecture edit limited to src/menu-layout.json and src/manifest.json ordering, touching no schema, controller, route, or decision flow.
 ## Requirements
 ### Requirement: REQ-POAG-001 — The Objections-And-Appeals Domain Is One Top-Level Nav Group
 

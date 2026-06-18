@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # termijn-escalation Specification
 
 ## Purpose
-TBD - created by archiving change termijnbewaking-dwangsom-engine-04-daily-scan-escalation. Update Purpose after archive.
+Runs a daily termijn-scan that sends escalating notifications as deadlines approach at the 14-, 7-, and 2-day thresholds, widening the audience from handler to teamleader to afdelingsmanager. It marks passed deadlines as overschreden and detects expired hersteltermijnen, advising the handler on the AWB 4:5 next step without auto-continuing the termijn.
 ## Requirements
 ### Requirement: Pro-actieve notificaties bij naderende deadlines (REQ-TERM-004)
 

@@ -1,5 +1,5 @@
 ---
-status: specified
+status: done
 status-note: "Synced 2026-06-14 from archived consolidation change add-procest-procurement-suite (kind:config). SPEC-COMPLETE; cross-app contract. The posting/spend side depends on [future] financeq (repo does not yet exist); mydash owns the analytics surface (ADR-024 §10) and consumes procest via runtime OR GraphQL — no install-time dependency."
 ---
 

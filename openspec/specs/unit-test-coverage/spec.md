@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # unit-test-coverage Specification
 
 ## Purpose
-TBD - created by archiving change unit-test-coverage-75. Update Purpose after archive.
+Ensures the Procest backend is covered by automated tests: every PHP service and controller class has a matching PHPUnit test exercising construction, main methods, and error handling, and a Newman/Postman collection validates the end-to-end ZGW API workflow. A coverage threshold of at least 75% of source files having a corresponding test guards against untested code reaching production.
 ## Requirements
 ### Requirement: Service unit test coverage
 Every PHP service class in lib/Service/ SHALL have a corresponding PHPUnit test file in tests/Unit/Service/ with at least 3 test methods covering constructor instantiation, main public methods, and error handling.

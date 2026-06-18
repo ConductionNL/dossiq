@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 # Case Map Overview Specification
 
 ## Purpose

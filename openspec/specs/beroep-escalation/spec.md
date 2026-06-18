@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 ## Purpose
 
 Provides a pre-seeded "Beroep" (appeal) case type and the workflow to escalate a completed bezwaar case to the administrative court (bestuursrechter, Awb hoofdstuk 8), including court-proceedings status types, document tracking, and hoger-beroep awareness.

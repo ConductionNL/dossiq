@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # mandaat-matrix Specification
 
 ## Purpose
-TBD - created by archiving change mandaat-matrix-01-schema-foundation. Update Purpose after archive.
+Provides a mandate matrix that decides, in real time, whether a user is authorized to take a given case decision, resolving their current role, evaluating the applicable mandate's conditions (including spending plafonds, waarnemer substitution, subdelegation rules, and conflict of interest) via an ABAC policy engine. Insufficient authority is blocked and escalated to the next-higher mandaathouder for approval or rejection, every authorized decision is captured in an immutable write-once MandaatGebruik audit log against the effective-dated mandate version, and the capability includes decidesk import of mandate besluiten, an admin panel, and a user-facing bevoegdheden view.
 ## Requirements
 ### Requirement: Mandate-Matrix Schemas Are Registered
 

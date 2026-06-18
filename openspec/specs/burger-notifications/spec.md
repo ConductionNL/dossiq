@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # burger-notifications Specification
 
 ## Purpose
-TBD - created by archiving change termijnbewaking-dwangsom-engine-08-burger-notifications. Update Purpose after archive.
+Sends proactive, Dutch-language notifications to the burger at key lifecycle moments of a case: receipt confirmation with the statutory deadline, ingebrekestelling receipt explaining the dwangsom tariff, and payment confirmation. Each notification is rendered from a template and delivered via the procest notification-router (Nextcloud, email, and portal), queued asynchronously so an SMTP failure never blocks the underlying lifecycle operation.
 ## Requirements
 ### Requirement: Burger-notificatie van termijn-events (REQ-TERM-008)
 

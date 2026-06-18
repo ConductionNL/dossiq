@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # case-type-publish-validation Specification
 
 ## Purpose
-TBD - created by archiving change case-types-02-backend-validation. Update Purpose after archive.
+Enforces case-type publish and deletion prerequisites on the backend so the API cannot bypass frontend-only checks. Publishing a case type is blocked (HTTP 422) unless it has at least one status type, a final status type, and a validFrom date, with all validation errors returned together; deleting a case type with active cases is blocked (HTTP 409), and deletion of a type with only closed cases requires confirmation. The publish and deletion guards are pinned by unit tests covering both happy and error paths.
 ## Requirements
 ### Requirement: Backend MUST enforce publish prerequisites
 The system MUST enforce publish prerequisites on the backend. Frontend-only

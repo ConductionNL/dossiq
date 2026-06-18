@@ -1,5 +1,5 @@
 ---
-status: partial
+status: done
 ---
 # kcc-werkplek-zaaksysteem-bridge Specification
 

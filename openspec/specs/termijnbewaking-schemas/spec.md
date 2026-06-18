@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # termijnbewaking-schemas Specification
 
 ## Purpose
-TBD - created by archiving change termijnbewaking-dwangsom-engine-01-schemas-and-seed. Update Purpose after archive.
+Declares the six OpenRegister schemas for the termijn/dwangsom engine — TermijnDefinitie, TermijnInstance, TermijnGebeurtenis, Ingebrekestelling, DwangsomBerekening, and DwangsomUitbetaling — with their documented properties, enums, and relations so every consumer reads the same canonical shape. It also seeds three demo TermijnDefinities (Omgevingsvergunning-regulier, Wmo-aanvraag, and Woo-verzoek) via the register repair step so the engine has working configuration out of the box.
 ## Requirements
 ### Requirement: Termijn and dwangsom register schemas (REQ-TERM-SCHEMA-001)
 

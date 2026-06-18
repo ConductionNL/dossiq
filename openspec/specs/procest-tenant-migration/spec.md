@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 # procest-tenant-migration Specification
 
 ## Purpose

@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 ## Purpose
 
 Provide deelzaak (sub-case) support in Procest: creating sub-cases from a parent case, listing them on the parent detail, parent breadcrumb navigation, progress roll-up, case-list count badges, and deletion protection. Maps to the ZGW `hoofdzaak` / `deelzaken` relations on the Zaak resource.

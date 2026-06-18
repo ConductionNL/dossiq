@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # bezwaar-beroep-workflow Specification
 
 ## Purpose
-TBD - created by archiving change bezwaar-beroep-workflow. Update Purpose after archive.
+Manages the full objection (bezwaar) and appeal (beroep) lifecycle for municipal decisions in line with the Dutch General Administrative Law Act (AWB), driven entirely by configurable workflow templates rather than bespoke services. Seeds AWB-compliant case types, enforces the mandated status order with admissibility, hearing, and committee-advice gates, tracks the statutory 6-week deadline with extension (verdaging) and suspension (opschorting) support, schedules hearings via Nextcloud Calendar, links each case to the contested primary decision, and compiles a court-ready dossier across the primary-decision, objection, and appeal cases.
 ## Requirements
 ### Requirement: REQ-BBW-001 Bezwaar caseType seed SHALL be installed with AWB-compliant process configuration
 

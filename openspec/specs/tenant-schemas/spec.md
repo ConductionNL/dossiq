@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # tenant-schemas Specification
 
 ## Purpose
-TBD - created by archiving change tenant-zaaksysteem-saas-01-schemas-and-seed. Update Purpose after archive.
+Declares the seven OpenRegister schemas that model multi-tenant zaaksysteem data — Tenant, TenantConfiguration, TenantQuota, TenantUser, TenantMandate, TenantBillingEvent, and TenantOnboardingTask — with their documented properties, enums, and relations registered through the procest register template. It seeds tier quota-limit templates and a default-tenant onboarding template via the register repair step and ensures OpenRegister queries are tenant-scoped at materialisation so a query carrying a tenant context returns only that tenant's rows.
 ## Requirements
 ### Requirement: Multi-tenant register schemas (REQ-001-A-SCHEMA)
 

@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # termijn-reporting Specification
 
 ## Purpose
-TBD - created by archiving change termijnbewaking-dwangsom-engine-09-reporting-dashboard. Update Purpose after archive.
+Produces termijn and dwangsom reporting for management and audit, including a quarterly KPI report per zaaktype and an annual dwangsom audit report for the jaarrekening, both exportable as CSV/JSON. It also exposes an aggregated dashboard KPI endpoint returning within-termijn percentage, average duration, overrun count, and dwangsom totals, cached and refreshed at least hourly.
 ## Requirements
 ### Requirement: Reporting voor management en accountant (REQ-TERM-009)
 

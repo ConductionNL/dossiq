@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # tenant-quotas Specification
 
 ## Purpose
-TBD - created by archiving change tenant-zaaksysteem-saas-09-quotas-enforcement. Update Purpose after archive.
+Initialises per-tenant quotas from tier templates and applies tier changes within one minute. It enforces quotas atomically per request with warn, throttle, and block modes, emitting soft-limit warnings at 80% and returning HTTP 429 with a quota-exceeded billing event and upgrade prompt at the limit, and resets monthly usage on a daily background job for quotas whose reset time has passed.
 ## Requirements
 ### Requirement: Tier-based quota initialisation (REQ-005-A, REQ-005-E)
 

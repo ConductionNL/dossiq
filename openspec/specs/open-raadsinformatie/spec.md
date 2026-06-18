@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # open-raadsinformatie Specification
 
 ## Purpose
-TBD - created by archiving change open-raadsinformatie. Update Purpose after archive.
+Provides a pre-configured "Open Raadsinformatie" (ORI) register that publishes Dutch municipal council information — meetings, agenda items, documents, votes, council members, and factions — as publicly accessible, searchable open data. It models the full ORI entity set with validation and relationships, ships realistic demo data, and supports importing council data from source systems such as iBabs and NotuBiz via OpenConnector to meet Wet open overheid transparency requirements.
 ## Requirements
 ### Requirement: ORI register MUST be provisionable with all entity schemas
 

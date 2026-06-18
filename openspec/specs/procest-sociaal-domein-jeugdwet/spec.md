@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # procest-sociaal-domein-jeugdwet Specification
 
 ## Purpose
-TBD - created by archiving change sociaal-domein-zaaktypes. Update Purpose after archive.
+Provides the Jeugdwet (`jeugdwet-melding`) zaaktype for municipal youth-care casework, with a family-centered status lifecycle, gezinsplan drafting and consent workflow, and Multi-Disciplinary Overleg coordination. Because every case concerns minors, it enforces mandatory AVG classification, jeugdteam-scoped access with logged child-safety overrides, automatic anonymization of unconsented minutes, 20-year statutory retention, comprehensive audit logging, and subject-access-request support for both the child and parents.
 ## Requirements
 ### Requirement: Jeugdwet zaaktype definition and family-centered status lifecycle
 The system MUST support a `jeugdwet-melding` zaaktype backed entirely by OpenRegister with a family-centered status flow declared as `x-openregister-lifecycle` (`melding` → `gezinsplan-opstellen` → `gezinsplan-gereed` → `ondersteuning-gestart` → `ondersteuning-loopt` → `evaluatie` → `afgesloten`, with a `verlenging-aangevraagd` branch). The `JeugdwetZaak` entity carries `zaaktype` (fixed `jeugdwet-melding`), `gezinId`, `jeugdigeBsn`, `jeugdigeLeeftijd`, `verzoekKanaal`, `verzoekDatum`, `verwijzer`, `ondersteuningsvraag`, `wijkteam`, `behandelaarId`, `status`, `avgClassificatie` (required), `gezinsplanId` (optional), `mdoOverlegIds` (optional array), `ondertoezichtstellingActief` (optional), and `verlengingHistorie` (optional array).

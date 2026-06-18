@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # tenant-mandate Specification
 
 ## Purpose
-TBD - created by archiving change tenant-zaaksysteem-saas-06-mandate-validation. Update Purpose after archive.
+Checks a user's tenant role against the tenant's mandaat-matrix for each mandate-requiring action, allowing authorised actions and blocking unauthorised ones with HTTP 403 and a reason. Every decision is recorded in the audit trail, and the check fails closed by denying the action when the matrix cannot be resolved or the mandate service errors.
 ## Requirements
 ### Requirement: Mandate matrix validation per action (REQ-002-D, REQ-006-D)
 

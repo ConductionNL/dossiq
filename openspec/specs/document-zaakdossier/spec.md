@@ -1,7 +1,11 @@
+---
+status: done
+---
+
 # document-zaakdossier Specification
 
 ## Purpose
-TBD - created by archiving change document-zaakdossier. Update Purpose after archive.
+Manages the document dossier of a zaak using ZGW-compliant informatieobject and zaakinformatieobject records, so a document can be linked to multiple cases without duplication and follows a forward-only concept → definitief → gearchiveerd lifecycle. Access to every document is gated by its vertrouwelijkheidaanduiding at the service layer, and the dossier view groups documents by type with upload (metadata dialog), version history, full-text search, bulk ZIP export with manifest, and a range-capable ZGW DRC download endpoint. A repair step back-fills ZGW metadata for pre-existing linked files.
 ## Requirements
 ### Requirement: REQ-ZAK-001 Zaak objects MUST support linked documents via ZGW informatieobject and zaakinformatieobject
 

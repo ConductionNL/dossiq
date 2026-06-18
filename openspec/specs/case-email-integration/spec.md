@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 # case-email-integration Specification
 
 **Status:** partial — all self-contained additive work built and unit-verified (emailTemplate schema + 3 Dutch seeds, EmailTemplateService/Controller/routes, InboundEmailJob + EmailPdfRetryJob, EmailArchivalService, EmailSettings admin surface, EmailTemplateAdmin editor). Residual: pre-existing EmailComposer/EmailThread Vue from `retrofit-2026-05-24-case-management` not yet removed (leaf-first cleanup deferred); live end-to-end verification of NC Mail draft-open, IMAP auto-link, and Docudesk PDF archival deferred pending those cross-app dependencies.

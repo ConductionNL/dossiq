@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # vth-dso-integration Specification
 
 ## Purpose
-TBD - created by archiving change vth-workflow-configuration-08-dso-integration. Update Purpose after archive.
+Integrates DSO (Digitaal Stelsel Omgevingswet) permit requests with VTH case handling by auto-creating cases from a DSO verzoek, mapping STAM 2.0 fields, and flagging cases for manual initiator linking when a BRP lookup fails. Dispatches status-change events on case transitions so OpenConnector can push status back to DSO-LV, and tracks DSO case deadlines daily with warnings before flagging overdue cases.
 ## Requirements
 ### Requirement: DSO verzoek intake and case creation
 

@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # tenant-billing Specification
 
 ## Purpose
-TBD - created by archiving change tenant-zaaksysteem-saas-10-billing-shillinq. Update Purpose after archive.
+Emits immutable billing events across the case lifecycle, including refunds that net prior charges, and exports pending events to Shillinq daily grouped by tenant and month with retry and deferral on failure. It keeps exports idempotent by only touching events without an invoiceRef and presents a tenant billing dashboard with current-month, year-to-date, forecast, invoice history, and quota status.
 ## Requirements
 ### Requirement: Billing event emission on case lifecycle (REQ-007-A)
 

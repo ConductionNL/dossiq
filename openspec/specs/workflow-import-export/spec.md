@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 ## Purpose
 
 @e2e exclude Workflow import/export is V1; file download/upload flows require OS-level file dialogs, not testable in headless Playwright.

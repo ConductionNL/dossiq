@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # vth-testing Specification
 
 ## Purpose
-TBD - created by archiving change vth-workflow-configuration-10-testing. Update Purpose after archive.
+Provides test coverage for the VTH capability, including unit tests for leges calculation, beschikking handling, LHSO lookups, DSO mapping, and mobile photo/GPS/validation logic. Adds integration tests for the three VTH workflow transition paths with guard validation and notifications, plus an end-to-end test of the DSO verzoek → case creation → status-pushback flow.
 ## Requirements
 ### Requirement: VTH service unit tests
 

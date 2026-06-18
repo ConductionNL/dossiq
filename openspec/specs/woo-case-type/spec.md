@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # woo-case-type Specification
 
 ## Purpose
-TBD - created by archiving change woo-case-type. Update Purpose after archive.
+Provides a pre-configured WOO-verzoek zaaktype template that municipalities activate from a template library and customize, defining the eight statutory processing stages, a WOO-specific intake form, and 28-day deadline tracking with statutory extension. It supports document collection and inventory, per-document disclosure assessment with mandatory weigeringsgronden, Docudesk redaction, formal besluit recording, publication to a reading room and PLOOI, bezwaar-period tracking, and WOO reporting.
 ## Requirements
 ### Requirement: WOO zaaktype template activation
 The system MUST provide a pre-configured zaaktype template for WOO verzoeken that can be activated from a template library and customized per municipality.

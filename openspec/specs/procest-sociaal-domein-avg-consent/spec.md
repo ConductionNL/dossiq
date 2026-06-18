@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # procest-sociaal-domein-avg-consent Specification
 
 ## Purpose
-TBD - created by archiving change sociaal-domein-zaaktypes. Update Purpose after archive.
+Enforces AVG/GDPR-compliant handling of special-category personal data in sociaal-domein cases (WMO, Jeugdwet, Participatiewet). Every case must declare its data-category classification at creation, access is restricted to the case's wijkteam with data-driven guards, exports without recorded consent are automatically anonymized, and all reads are immutably audit-logged. It also tracks revocable citizen consent, statutory retention with archivaris-reviewed destruction, subject-access-requests, and data-breach incident reporting.
 ## Requirements
 ### Requirement: Mandatory AvgClassificatie block at zaak creation
 Every sociaal-domein zaak MUST declare its special-category data scope via an embedded `AvgClassificatie` value-type before creation is allowed. The value-type carries `categorieen` (array of `medisch`/`gezinssituatie`/`financieel`/`justitieel`/`etnisch`/`religieus`/`politieke-overtuiging`), `bijzonderePersoonsgegevens` (auto-flag), `rechtvaardiging` (AVG 9.2 exemption code), `rechtvaardigingToelichting`, `bewaarTermijnJaren` (WMO 15 / Jeugdwet 20 / Participatiewet 10), `vernietigingDatum` (auto-calculated), `toegangsBeperking`, `anonimiseringBijDelen`, and `exportBeperking`.

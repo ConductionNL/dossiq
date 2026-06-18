@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # procest-sociaal-domein-participatiewet Specification
 
 ## Purpose
-TBD - created by archiving change sociaal-domein-zaaktypes. Update Purpose after archive.
+Provides the Participatiewet (`bijstandsaanvraag`) zaaktype for municipal social-assistance casework, enforcing a mandatory vermogens- and inkomenstoets before any benefit decision and auto-creating a re-integration trajectory when an applicant qualifies. It manages an income-focused status lifecycle, work-and-income-team access control, mandatory AVG financial classification, anonymized financial exports, audit logging, counter-services (tegenprestatie) decisions with periodic exemption review, and 10-year statutory retention with destruction proposals.
 ## Requirements
 ### Requirement: Participatiewet zaaktype definition and income-focused status lifecycle
 The system MUST support a `bijstandsaanvraag` zaaktype backed entirely by OpenRegister, requiring financial testing before benefit approval. The `ParticipatiewetZaak` entity carries `zaaktype` (fixed `bijstandsaanvraag`), `bsn`, `aanvraagSoort` (`algemene-bijstand`/`inburgering-gerelateerde-bijstand`/`bijstand-werkloze-uitkeringontvangers`/`noodvoorziening`), `aanvraagDatum`, `ingangsdatumGewenst`, `leeftijdsgroep`, `huishoudensSituatie`, `vermogensToets` (object), `inkomensToets` (object), `reIntegratieTrajectId` (optional), `behandelaarId`, `status`, and `avgClassificatie` (required). The lifecycle (`aanvraag-ontvangen` → `toetsing-loopt` → `toetsing-afgerond` → `beschikking-voorbereiding` → `beschikking-gereed` → `bijstand-actief` → `re-integratie-loopt` → `afgesloten`) MUST be declared as `x-openregister-lifecycle`.
