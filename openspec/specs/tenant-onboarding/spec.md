@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # tenant-onboarding Specification
 
 ## Purpose
-TBD - created by archiving change tenant-zaaksysteem-saas-07-onboarding-workflow. Update Purpose after archive.
+Initialises a 7-step onboarding checklist for each new tenant and renders a progress dashboard showing per-step status and the next recommended step. It integrates Decidesk for contract e-signature via a signature-verified webhook and validates mandatory prerequisites before activating a tenant, transitioning it from onboarding to active and triggering quota initialisation on go-live.
 ## Requirements
 ### Requirement: Onboarding checklist and progress dashboard (REQ-003-A, REQ-003-D)
 

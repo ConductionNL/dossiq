@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # leges-heffingen Specification
 
 ## Purpose
-TBD - created by archiving change leges-heffingen. Update Purpose after archive.
+Automates municipal leges (administrative fees) from verordening to invoice: it imports an annual legesverordening from a decidesk raadsbesluit, calculates the correct tariff automatically on case creation (fixed, staffel, and variant tariffs fixed at the case start date), and applies adopted discounts and exemptions. Calculated leges create an invoice in shillinq accounts-receivable with payment synchronisation, support phase-based refunds on withdrawn applications and income-verified minima exemptions, and keep a full audit trail per calculation plus a concept-to-vastgesteld verordening review workflow.
 ## Requirements
 ### Requirement: REQ-LEGES-001 Import a tariff verordening from a raadsbesluit
 

@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 ## Purpose
 
 The parafering dashboard provides the secretariaat and case handlers with an overview of active voorstellen and their parafering status, a personal parafering inbox, reminder actions for overdue steps, and sidebar navigation to the dashboard at `/voorstellen`.

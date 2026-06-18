@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # vth-leges-config-ui Specification
 
 ## Purpose
-TBD - created by archiving change vth-workflow-configuration-04-leges-config-ui. Update Purpose after archive.
+Provides an administrator UI to view and edit leges rule sets — base fee, modifiers, exemptions, verrekening, and teruggaaf — with input validation that rejects negative amounts and duplicate modifiers. Versions rule sets on save so existing cases keep their original rule version, with new rules taking effect for new cases from the next day.
 ## Requirements
 ### Requirement: Leges rule configuration UI
 

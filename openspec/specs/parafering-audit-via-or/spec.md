@@ -1,7 +1,11 @@
+---
+status: done
+---
+
 # parafering-audit-via-or Specification
 
 ## Purpose
-TBD - created by archiving change migrate-parafering-to-or-audit. Update Purpose after archive.
+Routes every parafering (sign-off route) transition through OpenRegister's immutable audit trail instead of a dedicated procest audit schema. Each transition emits an OR audit entry tagged `procest.parafering.{transition}` carrying full route, actor, state-change, and delegation context, so the complete approval history is discoverable and hash-chain-verifiable via the OR audit API. Existing legacy records remain readable, and OR's native immutability removes the need for an app-specific append-only validator.
 ## Requirements
 ### Requirement: Parafeer Transition Emits OR Audit Event
 

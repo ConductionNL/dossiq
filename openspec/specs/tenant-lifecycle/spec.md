@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # tenant-lifecycle Specification
 
 ## Purpose
-TBD - created by archiving change tenant-zaaksysteem-saas-11-suspension-termination. Update Purpose after archive.
+Suspends, reactivates, and terminates tenants while gating access and synchronising billing with Shillinq. Suspension blocks new cases and pauses billing events while keeping existing cases visible; reactivation restores service and resumes billing; termination finalises billing, revokes API access, and archives tenant data for a retention period before deletion with an immutable deletion-confirmation log entry.
 ## Requirements
 ### Requirement: Tenant suspension and reactivation (REQ-008-A)
 

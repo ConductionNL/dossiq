@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # vth-mobile-inspection Specification
 
 ## Purpose
-TBD - created by archiving change vth-workflow-configuration-06-mobile-inspection. Update Purpose after archive.
+Enables field inspectors to carry out inspections on mobile devices through a service that returns a mobile-formatted checklist, uploads photos to Nextcloud, captures GPS with a manual fallback, and submits a validated inspection result. Provides a responsive single-column UI with type-specific inputs, a progress indicator, navigation, and offline draft support that syncs when connectivity returns.
 ## Requirements
 ### Requirement: Mobile inspection service
 

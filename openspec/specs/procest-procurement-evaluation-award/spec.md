@@ -1,5 +1,5 @@
 ---
-status: specified
+status: done
 status-note: "Synced 2026-06-14 from archived consolidation change add-procest-procurement-suite (kind:config). SPEC-COMPLETE; code chain pending (ADR-032). Reuses procest's existing decision register for awards (no Award register) per T16/REQ-EVA-001."
 ---
 

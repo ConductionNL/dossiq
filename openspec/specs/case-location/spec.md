@@ -1,4 +1,5 @@
 ---
+status: done
 retrofit_extensions:
   - REQ-LOC-05
   - REQ-LOC-06

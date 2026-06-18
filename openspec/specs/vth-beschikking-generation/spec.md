@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # vth-beschikking-generation Specification
 
 ## Purpose
-TBD - created by archiving change vth-workflow-configuration-05-beschikking-generation. Update Purpose after archive.
+Generates a beschikking (permit decision) document from a versioned template by substituting case merge fields such as applicant, location, activities, and conditions, rendering a PDF, and attaching it to the case. Generation is blocked when required fields are missing and always uses the current template version, and an admin UI lets staff create, edit, and test-generate templates with a merge-field picker and validity dates.
 ## Requirements
 ### Requirement: Template-based beschikking generation
 

@@ -1,7 +1,11 @@
+---
+status: done
+---
+
 # nav-dedup-and-grouping Specification
 
 ## Purpose
-TBD - created by archiving change procest-nav-dedup-and-grouping. Update Purpose after archive.
+Cleans up the procest left navigation so no group and its child share the same label, relabelling the duplicate "Cases" and "Analytics" leaves and retiring the duplicate substitution entry while keeping every page routable. It introduces a "Work" group for the operational work-queue surfaces and completes the Cases and Analytics groups with their dossier and reporting surfaces, implemented purely through src/manifest.json and src/menu-layout.json with no backend, schema, or engine changes.
 ## Requirements
 ### Requirement: REQ-PNDG-001 — The system SHALL render each navigation label at most once per group
 

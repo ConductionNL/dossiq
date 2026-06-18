@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 ## Purpose
 
 Provide VTH enforcement (handhaving) support in Procest based on the Landelijke Handhavingsstrategie (LHS): a configurable ernst x gedrag interventie matrix, an enforcement-action schema with dwangsom tracking and status lifecycle, a guided enforcement wizard, and a case-dashboard enforcement panel.

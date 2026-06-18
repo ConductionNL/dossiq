@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # bezwaar-rest-api Specification
 
 ## Purpose
-TBD - created by archiving change termijnbewaking-dwangsom-engine-10-bezwaar-rest-api. Update Purpose after archive.
+Handles objections (bezwaar) against a dwangsom decision and exposes the authorization-checked REST API for the termijn, ingebrekestelling, dwangsom, and reporting operations. Filing a bezwaar freezes dwangsom accrual and suspends payment, and resolving it adjusts the amount and resumes payment, notifying the burger at each step. Every endpoint declares an explicit auth posture, enforces per-object/role checks, and validates input with appropriate HTTP error codes.
 ## Requirements
 ### Requirement: Bezwaar-handling tegen dwangsom-beschikking (REQ-TERM-010)
 

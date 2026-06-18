@@ -1,5 +1,5 @@
 ---
-status: draft
+status: done
 base_spec: procest-case-management
 retrofit_extensions:
   - REQ-001

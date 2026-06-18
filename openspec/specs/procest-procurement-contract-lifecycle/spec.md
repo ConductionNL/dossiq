@@ -1,5 +1,5 @@
 ---
-status: specified
+status: done
 status-note: "Synced 2026-06-14 from archived consolidation change add-procest-procurement-suite (kind:config). SPEC-COMPLETE; code chain pending (ADR-032). Note: a Supplier Contract schema already exists on development (leverancier-zaakportaal) — the CLM code chain MUST reconcile the canonical Contract additively against it, not create a parallel register."
 ---
 

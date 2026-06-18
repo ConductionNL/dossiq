@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # tenant-auth Specification
 
 ## Purpose
-TBD - created by archiving change tenant-zaaksysteem-saas-05-auth-jwt-tenant-claim. Update Purpose after archive.
+Injects the tenant context into a signed JWT at login, including via eHerkenning SAML, and validates the token signature and tenant claim before any claim is trusted. It rejects forged or cross-tenant tokens with HTTP 401/403, logs the attempts, and alerts the security team after repeated cross-tenant failures, ensuring each request is bound to its own tenant for downstream isolation.
 ## Requirements
 ### Requirement: JWT tenant claim injection (REQ-006-B)
 

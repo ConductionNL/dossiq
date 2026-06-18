@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # besluitvorming-workflow Specification
 
 ## Purpose
-TBD - created by archiving change besluitvorming-workflow. Update Purpose after archive.
+Provides end-to-end decision-making workflows for municipal College-besluit, Raadsbesluit, and Mandaatbesluit cases, shipping pre-configured case-type and workflow templates that run from drafting through parafering, agenda compilation, decision recording, publication, and archival. Drives a sequential signing (parafering) chain, auto-transitions cases to agenda-ready status once all signatures are collected, records formal decisions with voting results and attending members, validates mandate authority, and dispatches publication payloads to DROP/LVBB before archiving the complete dossier.
 ## Requirements
 ### Requirement: REQ-BVW-001 Zaaktype templates MUST be pre-configured for the three core besluitvorming types
 

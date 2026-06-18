@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # subsidieverlening-keten Specification
 
 ## Purpose
-TBD - created by archiving change subsidieverlening-keten. Update Purpose after archive.
+Provides the end-to-end subsidy grant chain: multi-year beschikkingen with conditional voorschot schedules, AWB deadline (termijn) binding per lifecycle phase, verplichtingen tracking with evidence linking, interim reports (tussenrapportage) as typed sub-cases, and final settlement (vaststelling) with automatic terugvordering on overpayment. It also covers the open-data subsidieregister feed, bewijsstukken management with retention and archival handover, cofinanciering and EU state-aid checks, amendment (wijzigingsbeschikking) workflows, and management reporting.
 ## Requirements
 ### Requirement: REQ-SUB-001 Multi-year beschikking with voorschot-schema
 

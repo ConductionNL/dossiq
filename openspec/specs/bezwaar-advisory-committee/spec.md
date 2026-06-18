@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 ## Purpose
 
 Records advisory reports from the bezwaarschriftencommissie (objection advisory committee, AWB art. 7:13) on bezwaar cases, and tracks committee composition to safeguard independence and surface conflicts of interest.

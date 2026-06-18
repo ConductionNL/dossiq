@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # vth-lhso-classification Specification
 
 ## Purpose
-TBD - created by archiving change vth-workflow-configuration-07-lhso-classification. Update Purpose after archive.
+Provides an LHSO lookup service and endpoints that return the full 16-cell matrix and a single intervention suggestion for a validated gedrag×gevolgen pair, rejecting out-of-range inputs. Surfaces a classification panel in the Handhavingszaak detail that shows the suggested intervention and requires an override reason when the handler chooses a different intervention.
 ## Requirements
 ### Requirement: LHSO lookup service and endpoints
 

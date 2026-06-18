@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # kcc-klantcontact-integratie Specification
 
 ## Purpose
-TBD - created by archiving change kcc-klantcontact-integratie. Update Purpose after archive.
+Provides a customer-contact-centre (KCC) integration that surfaces caller context within one second of an inbound call (CTI popup with BRP identity, open cases, and contact history) and records every interaction as a structured ContactMoment. Omnichannel intake (phone, email, web form, chat, social media) feeds a routing engine that assigns each contact to the right team and suggests the best agent by workload, skill, and history, with callback scheduling and SLA tracking, status feedback to the originating agent, a volume/SLA reporting dashboard, an admin UI for routing rules, and NEN 7510/AVG-compliant data protection.
 ## Requirements
 ### Requirement: CTI Popup shows caller context within 1 second
 Inbound phone calls MUST trigger immediate agent display of caller identity, open cases, and contact history without blocking the call.

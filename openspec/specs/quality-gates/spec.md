@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # quality-gates Specification
 
 ## Purpose
-TBD - created by archiving change procest-legacy-quality-cleanup. Update Purpose after archive.
+Defines the unified strict quality gate for procest: a single `composer check:strict` command that runs lint, PHPCS, PHPMD, Psalm, and PHPStan in sequence and fails on any violation, run on every pull request to `development`, `main`, or `beta`. It requires PHPMD to run with no baseline, keeps any PHPStan baseline minimal and documented, and pins the CI workflow to a served Codeberg runner so the gate is actually scheduled.
 ## Requirements
 ### Requirement: Unified strict quality gate
 

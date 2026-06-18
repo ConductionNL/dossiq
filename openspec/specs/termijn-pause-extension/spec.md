@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # termijn-pause-extension Specification
 
 ## Purpose
-TBD - created by archiving change termijnbewaking-dwangsom-engine-03-pause-extension. Update Purpose after archive.
+Manages hersteltermijn pauses and statutory extensions on a running TermijnInstance, pausing the deadline when an aanvraag is incomplete (AWB 4:5/4:15) and adding back only the unconsumed pause days on resume. It allows exactly one motivated extension (AWB 4:14), blocking a second unless an exceptional grond is supplied with supervisor approval, and records each change as a termijn event.
 ## Requirements
 ### Requirement: Pauze wegens onvolledige aanvraag (REQ-TERM-002)
 

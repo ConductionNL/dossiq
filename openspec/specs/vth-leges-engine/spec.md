@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # vth-leges-engine Specification
 
 ## Purpose
-TBD - created by archiving change vth-workflow-configuration-03-leges-engine. Update Purpose after archive.
+Calculates leges fees for a case from the active seeded rule set, returning the base fee, applied modifiers, and total. Supports offsetting prior fees (verrekening), refunds (teruggaaf), and additional billing (navordering), and exposes authenticated leges endpoints that log every transaction in an audit trail.
 ## Requirements
 ### Requirement: Leges fee calculation
 

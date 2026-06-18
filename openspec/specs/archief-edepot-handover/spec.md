@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # archief-edepot-handover Specification
 
 ## Purpose
-TBD - created by archiving change archief-edepot-handover-01-schema-config. Update Purpose after archive.
+Automates the lawful transfer of closed cases to an e-Depot, from retention-rule detection through MDTO/TMLO metadata bundling, PDF/A document export, BagIt packaging, submission, and proof-of-transfer capture. Runs a nightly job that assigns each closed case its statutory retention period, blocks or suspends transfer when rules are missing or a legal procedure is active, and lets DIV staff manage retention rules, run concurrent batch transfers, monitor a dashboard, and retry failed handovers. Records every archival milestone to an append-only audit log and produces audit-grade annual inspection exports.
 ## Requirements
 ### Requirement: procest-archief register declares six archival schemas
 The app MUST register a `procest-archief` register hosting six OpenRegister schemas — `BewaarTermijnRegel`, `OverdrachtTrigger`, `SipBundel`, `OverdrachtTransactie`, `ArchiefBewijs`, `OverdrachtAuditLog` — each with the documented fields and relations, importable idempotently on install.

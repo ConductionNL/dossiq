@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # vth-config-foundation Specification
 
 ## Purpose
-TBD - created by archiving change vth-workflow-configuration-01-config-foundation. Update Purpose after archive.
+Establishes the foundational VTH configuration data through idempotent repair steps: declarative workflow templates for the three VTH case kinds (Omgevingsvergunning, Toezichtzaak, Handhavingszaak), the complete 16-cell LHSO intervention matrix, and nine realistic Dutch seed cases. A master repair step loads workflow templates, leges rule sets, beschikking templates, inspection checklists, the LHSO matrix, and seed cases in dependency order without creating duplicates on repeated runs.
 ## Requirements
 ### Requirement: VTH workflow template declarations
 

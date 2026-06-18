@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 ## Purpose
 
 @e2e exclude Role-based step routing is V1; role-filtered task generation is backend logic covered by PHPUnit.
