@@ -136,32 +136,69 @@ class Application extends App implements IBootstrap
         );
 
         // Re-assert the procest-bespoke plumbing classes the engine just
-        // aliased to generics. Concrete-to-self aliases make Nextcloud resolve
-        // these by reflection (auto-wiring their real constructors) so the
-        // bespoke behaviour wins over the Bootstrap factory closures.
-        $context->registerServiceAlias(
+        // registered to generics. A concrete-to-self alias
+        // (registerServiceAlias(X, X)) infinitely recurses on NC's container
+        // (the alias resolves itself), so each bespoke class is re-registered
+        // with an explicit factory that constructs the REAL procest class —
+        // overriding the Bootstrap generic factory for the same key.
+        $context->registerService(
             \OCA\Procest\Controller\DashboardController::class,
-            \OCA\Procest\Controller\DashboardController::class
+            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Controller\DashboardController {
+                return new \OCA\Procest\Controller\DashboardController(
+                    request: $c->get('OCP\\IRequest')
+                );
+            }
         );
-        $context->registerServiceAlias(
+        $context->registerService(
             \OCA\Procest\Controller\SettingsController::class,
-            \OCA\Procest\Controller\SettingsController::class
+            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Controller\SettingsController {
+                return new \OCA\Procest\Controller\SettingsController(
+                    request: $c->get('OCP\\IRequest'),
+                    container: $c,
+                    appManager: $c->get('OCP\\App\\IAppManager'),
+                    settingsService: $c->get(\OCA\Procest\Service\SettingsService::class),
+                    groupManager: $c->get('OCP\\IGroupManager'),
+                    userSession: $c->get('OCP\\IUserSession')
+                );
+            }
         );
-        $context->registerServiceAlias(
+        $context->registerService(
             \OCA\Procest\Service\SettingsService::class,
-            \OCA\Procest\Service\SettingsService::class
+            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Service\SettingsService {
+                return new \OCA\Procest\Service\SettingsService(
+                    appConfig: $c->get('OCP\\IAppConfig'),
+                    appManager: $c->get('OCP\\App\\IAppManager'),
+                    container: $c,
+                    logger: $c->get('Psr\\Log\\LoggerInterface')
+                );
+            }
         );
-        $context->registerServiceAlias(
+        $context->registerService(
             \OCA\Procest\Repair\InitializeSettings::class,
-            \OCA\Procest\Repair\InitializeSettings::class
+            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Repair\InitializeSettings {
+                return new \OCA\Procest\Repair\InitializeSettings(
+                    settingsService: $c->get(\OCA\Procest\Service\SettingsService::class),
+                    logger: $c->get('Psr\\Log\\LoggerInterface')
+                );
+            }
         );
-        $context->registerServiceAlias(
+        $context->registerService(
             \OCA\Procest\Settings\AdminSettings::class,
-            \OCA\Procest\Settings\AdminSettings::class
+            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Settings\AdminSettings {
+                return new \OCA\Procest\Settings\AdminSettings(
+                    appManager: $c->get('OCP\\App\\IAppManager'),
+                    initialState: $c->get('OCP\\AppFramework\\Services\\IInitialState')
+                );
+            }
         );
-        $context->registerServiceAlias(
+        $context->registerService(
             \OCA\Procest\Sections\SettingsSection::class,
-            \OCA\Procest\Sections\SettingsSection::class
+            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Sections\SettingsSection {
+                return new \OCA\Procest\Sections\SettingsSection(
+                    l: $c->get('OCP\\IL10N'),
+                    urlGenerator: $c->get('OCP\\IURLGenerator')
+                );
+            }
         );
 
         $context->registerEventListener(
