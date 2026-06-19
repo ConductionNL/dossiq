@@ -65,11 +65,6 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'kccContact#show',    'url' => '/api/kcc/contact-moments/{id}', 'verb' => 'GET'],
         ['name' => 'kccContact#update',  'url' => '/api/kcc/contact-moments/{id}', 'verb' => 'PUT'],
 
-        // Open Raadsinformatie (ORI) Atom feeds — public, no auth required.
-        ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen', 'verb' => 'GET'],
-        ['name' => 'raadsinformatieFeed#agendapunten',  'url' => '/feed/ori/agendapunten',  'verb' => 'GET'],
-        ['name' => 'raadsinformatieFeed#documenten',    'url' => '/feed/ori/documenten',    'verb' => 'GET'],
-
         // Subsidieverlening-keten (subsidieverlening-keten spec) — AWB titel 4.2.
         // Static/verb routes precede the {id} wildcard routes; the public
         // subsidieregister feed precedes the authenticated /api/subsidies list.
@@ -414,8 +409,6 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
         // ── VTH Module ─────────────────────────────────────────────────────
-        // DSO/Omgevingsloket intake — public webhook, no auth, signature-validated.
-        ['name' => 'dSOIntake#intake', 'url' => '/api/vth/dso/intake', 'verb' => 'POST'],
         // VTH zaaktype template management (admin only).
         ['name' => 'vTHTemplate#index',    'url' => '/api/vth/templates',             'verb' => 'GET'],
         ['name' => 'vTHTemplate#activate', 'url' => '/api/vth/templates/{slug}/activate', 'verb' => 'POST'],
@@ -430,8 +423,6 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         // Per-case advice request creation.
         ['name' => 'advice#createForCase', 'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'POST'],
         ['name' => 'advice#getForCase',    'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'GET'],
-        // LHS matrix cell lookup.
-        ['name' => 'lhs#lookup', 'url' => '/api/vth/lhs/lookup', 'verb' => 'GET'],
 
         // ── Berichtenbox (government inbox integration) ─────────────────
         ['name' => 'berichtenbox#send',     'url' => '/api/berichtenbox/send',                 'verb' => 'POST'],
