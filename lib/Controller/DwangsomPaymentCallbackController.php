@@ -52,11 +52,11 @@ class DwangsomPaymentCallbackController extends Controller
     /**
      * Constructor.
      *
-     * @param string                     $appName    App id.
-     * @param IRequest                   $request    Request.
-     * @param DwangsomUitbetalingService $service    Uitbetaling service.
-     * @param IAppConfig                 $appConfig  App config (for secret).
-     * @param LoggerInterface            $logger     Logger.
+     * @param string                     $appName   App id.
+     * @param IRequest                   $request   Request.
+     * @param DwangsomUitbetalingService $service   Uitbetaling service.
+     * @param IAppConfig                 $appConfig App config (for secret).
+     * @param LoggerInterface            $logger    Logger.
      */
     public function __construct(
         string $appName,
@@ -111,8 +111,8 @@ class DwangsomPaymentCallbackController extends Controller
             );
         }
 
-        $betaaldatum  = $this->parseDate((string) ($body['werkelijkeBetaaldatum'] ?? ''));
-        $bankRef      = (string) ($body['betalingsreferentie'] ?? '');
+        $betaaldatum = $this->parseDate((string) ($body['werkelijkeBetaaldatum'] ?? ''));
+        $bankRef     = (string) ($body['betalingsreferentie'] ?? '');
 
         try {
             $updated = $this->service->handleCallback($referentie, $status, $betaaldatum, $bankRef);
@@ -176,6 +176,7 @@ class DwangsomPaymentCallbackController extends Controller
         if ($value === '') {
             return null;
         }
+
         try {
             return new DateTimeImmutable($value);
         } catch (\Throwable $e) {

@@ -50,17 +50,17 @@ class TermijnDailyScanService
     /**
      * Constructor.
      *
-     * @param SettingsService           $settingsService    Settings service.
-     * @param TermijnService            $termijnService     TermijnService.
-     * @param TermijnEscalationService  $escalationService  Escalation service.
-     * @param LoggerInterface           $logger             Logger.
+     * @param SettingsService          $settingsService   Settings service.
+     * @param TermijnService           $termijnService    TermijnService.
+     * @param TermijnEscalationService $escalationService Escalation service.
+     * @param LoggerInterface          $logger            Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly TermijnService $termijnService,
         private readonly TermijnEscalationService $escalationService,
         private readonly LoggerInterface $logger,
-        private readonly ?DwangsomCalculationService $dwangsomService = null,
+        private readonly ?DwangsomCalculationService $dwangsomService=null,
     ) {
     }//end __construct()
 
@@ -73,9 +73,9 @@ class TermijnDailyScanService
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
      */
-    public function run(?DateTimeImmutable $now = null): array
+    public function run(?DateTimeImmutable $now=null): array
     {
-        $now = ($now ?? new DateTimeImmutable());
+        $now    = ($now ?? new DateTimeImmutable());
         $counts = [
             'scanned'      => 0,
             'overschreden' => 0,
@@ -155,10 +155,12 @@ class TermijnDailyScanService
             if (is_array($row) === false) {
                 continue;
             }
+
             $id = (string) ($row['id'] ?? '');
             if ($id === '') {
                 continue;
             }
+
             try {
                 $this->dwangsomService->calculateDaily($id);
                 $accrued++;
@@ -166,6 +168,7 @@ class TermijnDailyScanService
                 $this->logger->warning('Dwangsom accrual row failed', ['id' => $id, 'error' => $e->getMessage()]);
             }
         }
+
         return $accrued;
     }//end accrueLopendDwangsomBerekeningen()
 
@@ -201,6 +204,7 @@ class TermijnDailyScanService
                     tijdstip: $now,
                 );
             }
+
             return;
         }
 

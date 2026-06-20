@@ -156,9 +156,11 @@ class AgendaService
         if (is_object($obj) === true && method_exists($obj, 'jsonSerialize') === true) {
             return $obj->jsonSerialize();
         }
+
         if (is_array($obj) === true) {
             return $obj;
         }
+
         return (array) $obj;
     }//end loadCase()
 
@@ -176,6 +178,7 @@ class AgendaService
             $decoded = json_decode((string) $items, associative: true);
             $items   = is_array($decoded) === true ? $decoded : [];
         }
+
         if (is_array($items) === false) {
             return [];
         }
@@ -186,6 +189,7 @@ class AgendaService
                 $clean[] = $item;
             }
         }
+
         return $clean;
     }//end extractItems()
 
@@ -208,7 +212,7 @@ class AgendaService
         $schema   = $this->settingsService->getConfigValue('case_schema');
 
         $case['agendaItems'] = $items;
-        $caseId              = (string) ($case['id'] ?? ($case['@self']['id'] ?? ''));
+        $caseId = (string) ($case['id'] ?? ($case['@self']['id'] ?? ''));
 
         $objectService->saveObject(
             object: $case,

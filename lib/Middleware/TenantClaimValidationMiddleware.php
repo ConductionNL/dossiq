@@ -69,11 +69,11 @@ class TenantClaimValidationMiddleware extends Middleware
     /**
      * Constructor.
      *
-     * @param IRequest         $request   Request.
-     * @param TenantContext    $context   Bound tenant context.
-     * @param TenantJwtService $jwt       JWT service.
+     * @param IRequest         $request      Request.
+     * @param TenantContext    $context      Bound tenant context.
+     * @param TenantJwtService $jwt          JWT service.
      * @param ICacheFactory    $cacheFactory Cache factory.
-     * @param LoggerInterface  $logger    Logger.
+     * @param LoggerInterface  $logger       Logger.
      */
     public function __construct(
         private readonly IRequest $request,
@@ -163,11 +163,11 @@ class TenantClaimValidationMiddleware extends Middleware
         $this->logger->warning(
             'Procest SECURITY: cross-tenant JWT claim mismatch',
             [
-                'ip'                  => $this->request->getRemoteAddress(),
-                'timestamp'           => (new \DateTimeImmutable('now'))->format(DATE_ATOM),
-                'attemptedTenantId'   => $attempted,
-                'requestedTenantId'   => $requested,
-                'user'                => (string) ($claims['sub'] ?? ''),
+                'ip'                => $this->request->getRemoteAddress(),
+                'timestamp'         => (new \DateTimeImmutable('now'))->format(DATE_ATOM),
+                'attemptedTenantId' => $attempted,
+                'requestedTenantId' => $requested,
+                'user'              => (string) ($claims['sub'] ?? ''),
             ]
         );
     }//end logSecurityIncident()

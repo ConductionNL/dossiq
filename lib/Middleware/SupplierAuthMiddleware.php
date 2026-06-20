@@ -69,7 +69,7 @@ class SupplierAuthMiddleware extends Middleware
         private readonly LoggerInterface $logger,
     ) {
         $this->rateCache = $cacheFactory->createLocal('procest_supplier_rate');
-    }
+    }//end __construct()
 
     /**
      * @param \OCP\AppFramework\Controller $controller Controller.
@@ -96,7 +96,7 @@ class SupplierAuthMiddleware extends Middleware
         $this->request->setParameter('_supplierRef', $supplier['supplierRef']);
         $this->request->setParameter('_supplierUserId', $supplier['supplierUserId']);
         $this->request->setParameter('_supplierRole', $supplier['role']);
-    }
+    }//end beforeController()
 
     /**
      * @param \OCP\AppFramework\Controller $controller Controller.
@@ -118,7 +118,7 @@ class SupplierAuthMiddleware extends Middleware
         }
 
         throw $exception;
-    }
+    }//end afterException()
 
     /**
      * Bump the per-IP counter; return false when the limit is breached.
@@ -138,5 +138,5 @@ class SupplierAuthMiddleware extends Middleware
         } catch (\Throwable $e) {
             return true;
         }
-    }
-}
+    }//end bumpAndCheckRateLimit()
+}//end class

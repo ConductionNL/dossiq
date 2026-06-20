@@ -55,9 +55,9 @@ class ZipManifestBuilder
     /**
      * Constructor.
      *
-     * @param ZgwDocumentService            $documentService Binary file storage service.
-     * @param InformatieobjectAccessGuard   $accessGuard     Confidentiality guard.
-     * @param LoggerInterface               $logger          Logger.
+     * @param ZgwDocumentService          $documentService Binary file storage service.
+     * @param InformatieobjectAccessGuard $accessGuard     Confidentiality guard.
+     * @param LoggerInterface             $logger          Logger.
      */
     public function __construct(
         private readonly ZgwDocumentService $documentService,
@@ -102,8 +102,8 @@ class ZipManifestBuilder
     /**
      * Filter a document list to those the user is cleared to read.
      *
-     * @param IUser|null                        $user      The caller, or null (treated as no extra filtering).
-     * @param array<int, array<string, mixed>>  $documents Candidate documents.
+     * @param IUser|null                       $user      The caller, or null (treated as no extra filtering).
+     * @param array<int, array<string, mixed>> $documents Candidate documents.
      *
      * @return array<int, array<string, mixed>> The clearance-filtered list.
      *
@@ -125,10 +125,10 @@ class ZipManifestBuilder
      * read. The archive contains one sub-folder per informatieobjecttype (when
      * $subfolderPerType is true) plus a `manifest.csv` at the root.
      *
-     * @param string                            $targetPath       Filesystem path to write the ZIP to.
-     * @param IUser|null                        $user             The caller (for clearance filtering).
-     * @param array<int, array<string, mixed>>  $documents        Candidate documents.
-     * @param bool                              $subfolderPerType Organise into per-type sub-folders.
+     * @param string                           $targetPath       Filesystem path to write the ZIP to.
+     * @param IUser|null                       $user             The caller (for clearance filtering).
+     * @param array<int, array<string, mixed>> $documents        Candidate documents.
+     * @param bool                             $subfolderPerType Organise into per-type sub-folders.
      *
      * @return array<string, mixed> Result with `path`, `included` count and `excluded` count.
      *
@@ -222,8 +222,8 @@ class ZipManifestBuilder
     /**
      * Sanitise a path segment for safe inclusion in a ZIP entry name.
      *
-     * @param string $segment    The raw segment.
-     * @param bool   $keepDots   Whether to preserve dots (for filenames with extensions).
+     * @param string $segment  The raw segment.
+     * @param bool   $keepDots Whether to preserve dots (for filenames with extensions).
      *
      * @return string The sanitised segment.
      */

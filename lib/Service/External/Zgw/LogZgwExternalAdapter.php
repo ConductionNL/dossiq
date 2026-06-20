@@ -62,9 +62,9 @@ class LogZgwExternalAdapter implements ZgwExternalAdapterInterface
      *
      * @return ZgwPushResult The dispatch outcome.
      */
-    public function submitZaak(array $zaakEnvelope, array $context = []): ZgwPushResult
+    public function submitZaak(array $zaakEnvelope, array $context=[]): ZgwPushResult
     {
-        $sanitised = $this->redactBsnFromRollen($zaakEnvelope);
+        $sanitised     = $this->redactBsnFromRollen($zaakEnvelope);
         $correlationId = (string) ($context['correlationId'] ?? 'zgw-zaak-'.bin2hex(random_bytes(6)));
 
         $this->logger->info(
@@ -101,12 +101,13 @@ class LogZgwExternalAdapter implements ZgwExternalAdapterInterface
      *
      * @return ZgwPushResult The dispatch outcome.
      */
-    public function submitDocument(array $documentEnvelope, array $context = []): ZgwPushResult
+    public function submitDocument(array $documentEnvelope, array $context=[]): ZgwPushResult
     {
         $sanitised = $documentEnvelope;
         if (isset($sanitised['inhoud']) === true) {
             $sanitised['inhoud'] = '[REDACTED-body-bytes='.strlen((string) $sanitised['inhoud']).']';
         }
+
         $correlationId = (string) ($context['correlationId'] ?? 'zgw-doc-'.bin2hex(random_bytes(6)));
 
         $this->logger->info(
@@ -156,6 +157,7 @@ class LogZgwExternalAdapter implements ZgwExternalAdapterInterface
             if (is_array($rol) === false) {
                 continue;
             }
+
             if (isset($rol['betrokkeneIdentificatie']['inpBsn']) === true) {
                 $zaakEnvelope['rollen'][$idx]['betrokkeneIdentificatie']['inpBsn'] = '[REDACTED]';
             }

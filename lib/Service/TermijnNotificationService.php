@@ -49,16 +49,16 @@ class TermijnNotificationService
     /**
      * Constructor.
      *
-     * @param TermijnService                $termijnService Termijn service.
-     * @param BerichtenboxRoutingService    $router         Router (procest notification-router).
-     * @param LoggerInterface               $logger         Logger.
-     * @param IJobList|null                 $jobList        Optional job list for async dispatch.
+     * @param TermijnService             $termijnService Termijn service.
+     * @param BerichtenboxRoutingService $router         Router (procest notification-router).
+     * @param LoggerInterface            $logger         Logger.
+     * @param IJobList|null              $jobList        Optional job list for async dispatch.
      */
     public function __construct(
         private readonly TermijnService $termijnService,
         private readonly BerichtenboxRoutingService $router,
         private readonly LoggerInterface $logger,
-        private readonly ?IJobList $jobList = null,
+        private readonly ?IJobList $jobList=null,
     ) {
     }//end __construct()
 
@@ -82,21 +82,25 @@ class TermijnNotificationService
         string $type,
         string $termijnInstanceId,
         string $recipientUserId,
-        array $context = []
+        array $context=[]
     ): bool {
         if ($this->jobList === null) {
             return false;
         }
+
         if (in_array($type, self::TEMPLATES, true) === false) {
             throw new \InvalidArgumentException('Unknown template: '.$type);
         }
 
-        $this->jobList->add(TermijnNotificationDispatchJob::class, [
-            'type'              => $type,
-            'termijnInstanceId' => $termijnInstanceId,
-            'recipientUserId'   => $recipientUserId,
-            'context'           => $context,
-        ]);
+        $this->jobList->add(
+                TermijnNotificationDispatchJob::class,
+                [
+                    'type'              => $type,
+                    'termijnInstanceId' => $termijnInstanceId,
+                    'recipientUserId'   => $recipientUserId,
+                    'context'           => $context,
+                ]
+                );
         $this->logger->info(
             'TermijnNotification queued',
             ['type' => $type, 'recipient' => $recipientUserId, 'instance' => $termijnInstanceId]
@@ -107,10 +111,10 @@ class TermijnNotificationService
     /**
      * Send a templated termijnbewaking notification.
      *
-     * @param string               $type            Template type.
+     * @param string               $type              Template type.
      * @param string               $termijnInstanceId Instance id.
-     * @param string               $recipientUserId Recipient user id.
-     * @param array<string, mixed> $context         Extra context (zaak ref, dates, amounts).
+     * @param string               $recipientUserId   Recipient user id.
+     * @param array<string, mixed> $context           Extra context (zaak ref, dates, amounts).
      *
      * @return array<string, mixed>  Dispatched payload (with rendered subject + body).
      *
@@ -120,7 +124,7 @@ class TermijnNotificationService
         string $type,
         string $termijnInstanceId,
         string $recipientUserId,
-        array $context = []
+        array $context=[]
     ): array {
         if (in_array($type, self::TEMPLATES, true) === false) {
             throw new \InvalidArgumentException('Unknown template: '.$type);
@@ -193,7 +197,7 @@ class TermijnNotificationService
                     ."De dwangsom van EUR ".$bedragEur." voor zaak ".$zaak." is overgemaakt.\n"
                     ."Onder betalingsreferentie ".$ref.".";
                 break;
-        }
+        }//end switch
 
         return ['subject' => $subject, 'body' => $body, 'locale' => $locale];
     }//end renderTemplate()

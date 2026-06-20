@@ -44,10 +44,10 @@ class ArchivalSubmissionRetryJob extends TimedJob
     /**
      * Constructor.
      *
-     * @param ITimeFactory                   $time           Time factory.
-     * @param ArchivalSubmissionRetryService $retryService   Retry orchestrator.
-     * @param IAppManager                    $appManager     App manager.
-     * @param LoggerInterface                $logger         Logger.
+     * @param ITimeFactory                   $time         Time factory.
+     * @param ArchivalSubmissionRetryService $retryService Retry orchestrator.
+     * @param IAppManager                    $appManager   App manager.
+     * @param LoggerInterface                $logger       Logger.
      */
     public function __construct(
         ITimeFactory $time,

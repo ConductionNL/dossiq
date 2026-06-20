@@ -138,7 +138,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep
                     ],
                 );
             },
-            'advies_aanvraag_schema' => function (array $obj): string {
+            'advies_aanvraag_schema'  => function (array $obj): string {
                 return $this->adviceDelegation->raiseAdviceDecision(
                     subjectSchema: 'adviesAanvraag',
                     subjectId: (string) ($obj['uuid'] ?? ($obj['id'] ?? '')),
@@ -149,7 +149,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep
                     ],
                 );
             },
-            'consultation_schema' => function (array $obj): string {
+            'consultation_schema'     => function (array $obj): string {
                 return $this->adviceDelegation->raiseAdviceDecision(
                     subjectSchema: 'consultation',
                     subjectId: (string) ($obj['uuid'] ?? ($obj['id'] ?? '')),
@@ -160,7 +160,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep
                     ],
                 );
             },
-            'voorstel_schema' => function (array $obj): string {
+            'voorstel_schema'         => function (array $obj): string {
                 return $this->adviceDelegation->raiseVoorstelBesluit(
                     voorstelId: (string) ($obj['uuid'] ?? ($obj['id'] ?? '')),
                     payload: [

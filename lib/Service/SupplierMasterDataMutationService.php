@@ -39,9 +39,9 @@ class SupplierMasterDataMutationService
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
-        private readonly ?KvkHandelsregisterAdapterInterface $kvkAdapter = null,
+        private readonly ?KvkHandelsregisterAdapterInterface $kvkAdapter=null,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Validate a KvK number against the Handelsregister.
@@ -66,7 +66,7 @@ class SupplierMasterDataMutationService
      *
      * @spec openspec/changes/leverancier-zaakportaal-12-master-data-mutations/tasks.md
      */
-    public function validateKvk(string $kvkNumber, string $caseId = ''): array
+    public function validateKvk(string $kvkNumber, string $caseId=''): array
     {
         $normalised = preg_replace('/\D/', '', $kvkNumber) ?? '';
         if (strlen($normalised) !== 8) {
@@ -84,12 +84,14 @@ class SupplierMasterDataMutationService
         }
 
         try {
-            /** @var KvkLookupResult $result */
+            /*
+             * @var KvkLookupResult $result
+             */
             $result = $this->kvkAdapter->lookup(
                 $normalised,
                 [
-                    'lookupReason'  => 'master-data-mutation',
-                    'caseId'        => $caseId,
+                    'lookupReason' => 'master-data-mutation',
+                    'caseId'       => $caseId,
                 ]
             );
         } catch (Throwable $e) {
@@ -102,7 +104,7 @@ class SupplierMasterDataMutationService
                 'reason' => 'KvK Handelsregister lookup mislukt',
                 'status' => 'LOOKUP_ERROR',
             ];
-        }
+        }//end try
 
         switch ($result->lookupStatus) {
             case 'FOUND':
@@ -115,10 +117,10 @@ class SupplierMasterDataMutationService
                 ];
             case 'NOT_FOUND':
                 return [
-                    'ok'     => false,
-                    'reason' => 'KvK-nummer niet gevonden in Handelsregister',
-                    'status' => 'NOT_FOUND',
-                    'dormant'=> $result->dormant,
+                    'ok'      => false,
+                    'reason'  => 'KvK-nummer niet gevonden in Handelsregister',
+                    'status'  => 'NOT_FOUND',
+                    'dormant' => $result->dormant,
                 ];
             case 'LOOKUP_DEFERRED':
             default:
@@ -130,22 +132,22 @@ class SupplierMasterDataMutationService
                     'dormant' => $result->dormant,
                     'extras'  => $result->extras,
                 ];
-        }
-    }
+        }//end switch
+    }//end validateKvk()
 
     /**
      * Apply an address update immediately.
      *
-     * @param string             $supplierRef Supplier UUID.
-     * @param array<string,mixed> $newAddress New address payload.
-     * @param string             $actor       NC user / supplier user id.
+     * @param string              $supplierRef Supplier UUID.
+     * @param array<string,mixed> $newAddress  New address payload.
+     * @param string              $actor       NC user / supplier user id.
      *
      * @return array<string,mixed>|null Persisted supplier row.
      */
     public function updateAddress(string $supplierRef, array $newAddress, string $actor): ?array
     {
         return $this->applyImmediate($supplierRef, ['address' => $newAddress], $actor, 'address');
-    }
+    }//end updateAddress()
 
     /**
      * Apply a contact-person update immediately.
@@ -159,7 +161,7 @@ class SupplierMasterDataMutationService
     public function updateContactPerson(string $supplierRef, string $newContact, string $actor): ?array
     {
         return $this->applyImmediate($supplierRef, ['contactPerson' => $newContact], $actor, 'contactPerson');
-    }
+    }//end updateContactPerson()
 
     /**
      * Request an IBAN change. Creates a 4-eyes Procest case and does NOT apply.
@@ -201,33 +203,35 @@ class SupplierMasterDataMutationService
             return ['ok' => false, 'reason' => 'Case create failed'];
         }
 
-        $this->auditTrail->emit([
-            'action'   => 'supplier.iban_change_requested',
-            'actor'    => $actor,
-            'resource' => 'supplier:'.$supplierRef,
-            'tenantId' => $supplierRef,
-        ]);
+        $this->auditTrail->emit(
+                [
+                    'action'   => 'supplier.iban_change_requested',
+                    'actor'    => $actor,
+                    'resource' => 'supplier:'.$supplierRef,
+                    'tenantId' => $supplierRef,
+                ]
+                );
 
         return ['ok' => true, 'caseRef' => (string) ($row['uuid'] ?? $row['id'] ?? '')];
-    }
+    }//end requestIbanChange()
 
     /**
      * Submit a master-data change for verification (accreditations, certificates).
      *
-     * @param string $supplierRef Supplier UUID.
-     * @param string $dataType    Data type ('accreditation', 'sbi', 'kvk', ...).
+     * @param string             $supplierRef Supplier UUID.
+     * @param string             $dataType    Data type ('accreditation', 'sbi', 'kvk', ...).
      * @param array<int, string> $attachments Attachment refs.
-     * @param string $actor       Actor id.
-     * @param string $kvkNumber   Optional KvK number — when the verification is a
-     *                            KvK registration check (dataType 'kvk' or a number
-     *                            is supplied) it is validated against the
-     *                            Handelsregister before the case is opened.
+     * @param string             $actor       Actor id.
+     * @param string             $kvkNumber   Optional KvK number — when the verification is
+     *                                        a KvK registration check (dataType 'kvk' or a
+     *                                        number is supplied) it is validated against the
+     *                                        Handelsregister before the case is opened.
      *
      * @return array{ok:bool, caseRef?:string, reason?:string}
      *
      * @spec openspec/changes/procest-security-hardening/specs/security-hardening/spec.md
      */
-    public function submitForVerification(string $supplierRef, string $dataType, array $attachments, string $actor, string $kvkNumber = ''): array
+    public function submitForVerification(string $supplierRef, string $dataType, array $attachments, string $actor, string $kvkNumber=''): array
     {
         // Fail closed: a KvK verification with a malformed / unverifiable KvK
         // number must not open a verification case. validateKvk() runs the
@@ -266,14 +270,16 @@ class SupplierMasterDataMutationService
             return ['ok' => false];
         }
 
-        $this->auditTrail->emit([
-            'action'   => 'supplier.verification_submitted',
-            'actor'    => $actor,
-            'resource' => 'supplier:'.$supplierRef,
-            'tenantId' => $supplierRef,
-        ]);
+        $this->auditTrail->emit(
+                [
+                    'action'   => 'supplier.verification_submitted',
+                    'actor'    => $actor,
+                    'resource' => 'supplier:'.$supplierRef,
+                    'tenantId' => $supplierRef,
+                ]
+                );
         return ['ok' => true, 'caseRef' => (string) ($row['uuid'] ?? $row['id'] ?? '')];
-    }
+    }//end submitForVerification()
 
     /**
      * IBAN format check — uppercase letters/digits, length 15-34, mod-97 check.
@@ -303,13 +309,13 @@ class SupplierMasterDataMutationService
         }
 
         return $remainder === 1;
-    }
+    }//end isValidIban()
 
     /**
-     * @param string             $supplierRef Supplier UUID.
-     * @param array<string,mixed> $delta      Fields to merge.
-     * @param string             $actor       Actor id.
-     * @param string             $auditTag    Audit-log subtype.
+     * @param string              $supplierRef Supplier UUID.
+     * @param array<string,mixed> $delta       Fields to merge.
+     * @param string              $actor       Actor id.
+     * @param string              $auditTag    Audit-log subtype.
      *
      * @return array<string,mixed>|null
      */
@@ -338,17 +344,19 @@ class SupplierMasterDataMutationService
                 schema: 'supplier',
                 uuid: $supplierRef,
             );
-            $this->auditTrail->emit([
-                'action'   => 'supplier.'.$auditTag.'_update',
-                'actor'    => $actor,
-                'resource' => 'supplier:'.$supplierRef,
-                'tenantId' => $supplierRef,
-            ]);
+            $this->auditTrail->emit(
+                    [
+                        'action'   => 'supplier.'.$auditTag.'_update',
+                        'actor'    => $actor,
+                        'resource' => 'supplier:'.$supplierRef,
+                        'tenantId' => $supplierRef,
+                    ]
+                    );
             return $persisted;
         } catch (Throwable $e) {
             return null;
         }
-    }
+    }//end applyImmediate()
 
     /**
      * @return mixed|null
@@ -365,5 +373,5 @@ class SupplierMasterDataMutationService
         } catch (Throwable $e) {
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

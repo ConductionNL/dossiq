@@ -145,13 +145,15 @@ class VthSeedDataRepairStep implements IRepairStep
             output: $output
         );
 
-        $output->info(sprintf(
+        $output->info(
+                sprintf(
             'VTH seed complete: %d case-types (%d skipped), %d checklists (%d skipped).',
             $caseSummary['seeded'],
             $caseSummary['skipped'],
             $checklistSummary['seeded'],
             $checklistSummary['skipped']
-        ));
+        )
+                );
     }//end run()
 
     /**
@@ -244,7 +246,7 @@ class VthSeedDataRepairStep implements IRepairStep
                     ['slug' => $slug, 'exception' => $e->getMessage()]
                 );
             }
-        }
+        }//end foreach
 
         return ['seeded' => $seeded, 'skipped' => $skipped];
     }//end seedCaseTypes()
@@ -313,7 +315,7 @@ class VthSeedDataRepairStep implements IRepairStep
                     ['slug' => $slug, 'exception' => $e->getMessage()]
                 );
             }
-        }
+        }//end foreach
 
         return ['seeded' => $seeded, 'skipped' => $skipped];
     }//end seedInspectionChecklists()

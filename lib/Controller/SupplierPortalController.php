@@ -73,15 +73,15 @@ class SupplierPortalController extends Controller
     /**
      * Constructor.
      *
-     * @param IRequest                     $request          The request.
-     * @param SupplierScopeService         $scope            Scope + masking.
-     * @param SupplierDashboardService     $dashboard        Dashboard aggregator.
-     * @param TenderViewModelService       $tenderViewModel  Tender badge + cache helpers.
-     * @param TenderVisibilityService      $tenderVisibility Tender visibility flags.
-     * @param LeverancierViewModelService  $viewModel        Invoice/contract view-model helpers.
-     * @param SupplierMessageService       $messages         Threaded messaging.
-     * @param SupplierKpiAggregationService $kpi             KPI aggregation.
-     * @param SupplierSessionService       $session          Server-trusted supplier session resolver.
+     * @param IRequest                      $request          The request.
+     * @param SupplierScopeService          $scope            Scope + masking.
+     * @param SupplierDashboardService      $dashboard        Dashboard aggregator.
+     * @param TenderViewModelService        $tenderViewModel  Tender badge + cache helpers.
+     * @param TenderVisibilityService       $tenderVisibility Tender visibility flags.
+     * @param LeverancierViewModelService   $viewModel        Invoice/contract view-model helpers.
+     * @param SupplierMessageService        $messages         Threaded messaging.
+     * @param SupplierKpiAggregationService $kpi              KPI aggregation.
+     * @param SupplierSessionService        $session          Server-trusted supplier session resolver.
      */
     public function __construct(
         IRequest $request,
@@ -158,14 +158,17 @@ class SupplierPortalController extends Controller
             return $err;
         }
 
-        $status     = (string) $this->request->getParam('status', '');
-        $filters    = $status !== '' ? ['status' => $status] : [];
-        $tenders    = $this->scope->listSupplierObjects($supplierRef, 'supplierTender', $filters);
-        $rows       = array_map(function (array $t): array {
-            $t['badgeColor']  = $this->tenderViewModel->badgeColor((string) ($t['status'] ?? ''));
-            $t['visibility']  = $this->tenderViewModel->visibilityFlags($t);
-            return $t;
-        }, $tenders);
+        $status  = (string) $this->request->getParam('status', '');
+        $filters = $status !== '' ? ['status' => $status] : [];
+        $tenders = $this->scope->listSupplierObjects($supplierRef, 'supplierTender', $filters);
+        $rows    = array_map(
+                function (array $t): array {
+                    $t['badgeColor'] = $this->tenderViewModel->badgeColor((string) ($t['status'] ?? ''));
+                    $t['visibility'] = $this->tenderViewModel->visibilityFlags($t);
+                    return $t;
+                },
+                $tenders
+                );
 
         $resp = new JSONResponse(['items' => $rows, 'total' => count($rows)]);
         $resp->addHeader('Cache-Control', $this->tenderViewModel->cacheControlHeader());
@@ -195,10 +198,10 @@ class SupplierPortalController extends Controller
         $tenders = $this->scope->listSupplierObjects($supplierRef, 'supplierTender');
         foreach ($tenders as $t) {
             if ((string) ($t['id'] ?? $t['uuid'] ?? '') === $id) {
-                $t['badgeColor'] = $this->tenderViewModel->badgeColor((string) ($t['status'] ?? ''));
-                $t['visibility']    = $this->tenderViewModel->visibilityFlags($t);
-                $t['appealDeadline']= $this->tenderVisibility->getAppealDeadline($t);
-                $t['canAppeal']     = $this->tenderVisibility->canAppeal($t);
+                $t['badgeColor']     = $this->tenderViewModel->badgeColor((string) ($t['status'] ?? ''));
+                $t['visibility']     = $this->tenderViewModel->visibilityFlags($t);
+                $t['appealDeadline'] = $this->tenderVisibility->getAppealDeadline($t);
+                $t['canAppeal']      = $this->tenderVisibility->canAppeal($t);
                 return new JSONResponse($t);
             }
         }
@@ -226,11 +229,14 @@ class SupplierPortalController extends Controller
 
         $invoices = $this->scope->listSupplierObjects($supplierRef, 'supplierInvoice');
         $nowTs    = time();
-        $rows     = array_map(function (array $inv) use ($nowTs): array {
-            $inv['badgeColor']    = $this->viewModel->invoiceBadgeColor((string) ($inv['status'] ?? ''));
-            $inv['overdue90Plus'] = $this->viewModel->isOverdue90Plus($inv, $nowTs);
-            return $inv;
-        }, $invoices);
+        $rows     = array_map(
+                function (array $inv) use ($nowTs): array {
+                    $inv['badgeColor']    = $this->viewModel->invoiceBadgeColor((string) ($inv['status'] ?? ''));
+                    $inv['overdue90Plus'] = $this->viewModel->isOverdue90Plus($inv, $nowTs);
+                    return $inv;
+                },
+                $invoices
+                );
 
         return new JSONResponse(['items' => $rows, 'total' => count($rows)]);
     }//end invoices()

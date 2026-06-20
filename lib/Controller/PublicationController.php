@@ -125,6 +125,7 @@ class PublicationController extends Controller
                 Http::STATUS_BAD_REQUEST
             );
         }
+
         return null;
     }//end requireAuthenticated()
 }//end class

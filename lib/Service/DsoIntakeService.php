@@ -218,7 +218,7 @@ class DsoIntakeService
             },
             $activiteiten,
         );
-        $activityStr = implode(', ', array_filter($activityNames));
+        $activityStr   = implode(', ', array_filter($activityNames));
 
         $deadline = self::DEADLINE_DURATIONS[$procedureType] ?? self::DEADLINE_DURATIONS['regulier'];
 

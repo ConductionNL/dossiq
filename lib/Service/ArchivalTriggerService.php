@@ -57,8 +57,8 @@ class ArchivalTriggerService
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
-        private readonly ?TmloMetadataBuilderAdapterInterface $tmloBuilder = null,
-        private readonly ?EDepotSubmissionAdapterInterface $edepotSubmitter = null,
+        private readonly ?TmloMetadataBuilderAdapterInterface $tmloBuilder=null,
+        private readonly ?EDepotSubmissionAdapterInterface $edepotSubmitter=null,
     ) {
     }//end __construct()
 
@@ -66,17 +66,17 @@ class ArchivalTriggerService
      * Build a TMLO/MDTO metadata bundle for a case via the dormant or active
      * adapter and persist the resulting status on the OverdrachtTrigger row.
      *
-     * @param string $caseId      Zaak id.
-     * @param string $mdtoVersion `mdto-1.1` or `tmlo-1.2.1`.
-     * @param array<string,mixed> $context Optional build context (sipBundelId,
-     *                                     archiefvormerId, correlationId).
+     * @param string              $caseId      Zaak id.
+     * @param string              $mdtoVersion `mdto-1.1` or `tmlo-1.2.1`.
+     * @param array<string,mixed> $context     Optional build context (sipBundelId,
+     *                                         archiefvormerId, correlationId).
      *
      * @return TmloBundleResult|null The build result, or null when no builder
      *                               adapter is bound.
      *
      * @spec openspec/changes/archief-edepot-handover-03-metadata-bundling/tasks.md
      */
-    public function buildTmloBundle(string $caseId, string $mdtoVersion = 'mdto-1.1', array $context = []): ?TmloBundleResult
+    public function buildTmloBundle(string $caseId, string $mdtoVersion='mdto-1.1', array $context=[]): ?TmloBundleResult
     {
         if ($this->tmloBuilder === null) {
             $this->logger->info(
@@ -122,7 +122,7 @@ class ArchivalTriggerService
      *
      * @spec openspec/changes/archief-edepot-handover-05-sip-submission/tasks.md
      */
-    public function submitToEdepot(string $sipBundelId, string $caseId = '', array $context = []): ?EDepotSubmissionResult
+    public function submitToEdepot(string $sipBundelId, string $caseId='', array $context=[]): ?EDepotSubmissionResult
     {
         if ($this->edepotSubmitter === null) {
             $this->logger->info(
@@ -176,6 +176,7 @@ class ArchivalTriggerService
                 $this->logger->warning('Archival trigger row failed', ['error' => $e->getMessage()]);
             }
         }
+
         return $counts;
     }//end detectReadyCases()
 
@@ -203,6 +204,7 @@ class ArchivalTriggerService
         } catch (\Throwable $e) {
             return null;
         }
+
         if (is_array($row) === false) {
             return null;
         }
@@ -229,7 +231,7 @@ class ArchivalTriggerService
      *
      * @spec openspec/changes/archief-edepot-handover-02-retention-trigger/tasks.md
      */
-    public function logEvent(?string $triggerId, ?string $zaakId, string $eventType, string $details = '', string $actor = 'system'): ?array
+    public function logEvent(?string $triggerId, ?string $zaakId, string $eventType, string $details='', string $actor='system'): ?array
     {
         $objectService = $this->settingsService->getObjectService();
         $register      = (string) $this->settingsService->getConfigValue('register');
@@ -268,30 +270,38 @@ class ArchivalTriggerService
         $caseId      = (string) ($case['id'] ?? '');
         $zaaktypeKey = (string) ($case['caseType'] ?? ($case['zaaktype'] ?? ''));
         $closedAt    = (string) ($case['closedAt'] ?? '');
-        $hasBezwaar  = (bool)   ($case['hasActiveBezwaar'] ?? false);
+        $hasBezwaar  = (bool) ($case['hasActiveBezwaar'] ?? false);
         if ($caseId === '' || $zaaktypeKey === '') {
             return;
         }
 
         $rule = $this->findRule($zaaktypeKey);
         if ($rule === null) {
-            $this->upsertTrigger($caseId, $zaaktypeKey, [
-                'afsluitingsDatum' => $closedAt,
-                'status'           => 'geblokkeerd-geen-regel',
-                'redenBlokkering'  => 'Geen BewaarTermijnRegel voor zaaktype "'.$zaaktypeKey.'"',
-            ]);
+            $this->upsertTrigger(
+                    $caseId,
+                    $zaaktypeKey,
+                    [
+                        'afsluitingsDatum' => $closedAt,
+                        'status'           => 'geblokkeerd-geen-regel',
+                        'redenBlokkering'  => 'Geen BewaarTermijnRegel voor zaaktype "'.$zaaktypeKey.'"',
+                    ]
+                    );
             $counts['blocked']++;
             $this->logEvent(null, $caseId, 'trigger-detected', 'blocked: no rule for zaaktype "'.$zaaktypeKey.'"');
             return;
         }
 
         if ($hasBezwaar === true) {
-            $this->upsertTrigger($caseId, $zaaktypeKey, [
-                'afsluitingsDatum'  => $closedAt,
-                'bewaartermijnJaren' => (int) ($rule['bewaartermijnJaren'] ?? 0),
-                'status'            => 'opgeschort-juridische-procedure',
-                'redenBlokkering'   => 'Actieve bezwaar/beroep procedure',
-            ]);
+            $this->upsertTrigger(
+                    $caseId,
+                    $zaaktypeKey,
+                    [
+                        'afsluitingsDatum'   => $closedAt,
+                        'bewaartermijnJaren' => (int) ($rule['bewaartermijnJaren'] ?? 0),
+                        'status'             => 'opgeschort-juridische-procedure',
+                        'redenBlokkering'    => 'Actieve bezwaar/beroep procedure',
+                    ]
+                    );
             $counts['suspended']++;
             $this->logEvent(null, $caseId, 'trigger-detected', 'suspended: active bezwaar');
             return;
@@ -299,21 +309,25 @@ class ArchivalTriggerService
 
         $bewaarJaren = (int) ($rule['bewaartermijnJaren'] ?? 0);
         $overdracht  = $this->computeOverdrachtDatum($closedAt, $bewaarJaren);
-        $this->upsertTrigger($caseId, $zaaktypeKey, [
-            'afsluitingsDatum'   => $closedAt,
-            'bewaartermijnJaren' => $bewaarJaren,
-            'overdrachtDatum'    => $overdracht,
-            'status'             => 'gereed-voor-overdracht',
-            'redenBlokkering'    => '',
-        ]);
+        $this->upsertTrigger(
+                $caseId,
+                $zaaktypeKey,
+                [
+                    'afsluitingsDatum'   => $closedAt,
+                    'bewaartermijnJaren' => $bewaarJaren,
+                    'overdrachtDatum'    => $overdracht,
+                    'status'             => 'gereed-voor-overdracht',
+                    'redenBlokkering'    => '',
+                ]
+                );
         $counts['ready']++;
         $this->logEvent(null, $caseId, 'trigger-detected', 'ready: overdrachtDatum '.$overdracht);
-    }
+    }//end processCase()
 
     /**
      * Find the active rule for a zaaktype.
      *
-     * @param string $zaaktypeKey Zaaktype key.
+     * @param  string $zaaktypeKey Zaaktype key.
      * @return array<string, mixed>|null
      */
     private function findRule(string $zaaktypeKey): ?array
@@ -324,25 +338,28 @@ class ArchivalTriggerService
         if ($objectService === null || $register === '' || $schema === '') {
             return null;
         }
+
         try {
             $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaaktypeKey' => $zaaktypeKey]);
         } catch (\Throwable $e) {
             return null;
         }
+
         foreach ((array) $rows as $row) {
             if (is_array($row) === true && (bool) ($row['isActive'] ?? false) === true) {
                 return $row;
             }
         }
+
         return null;
-    }
+    }//end findRule()
 
     /**
      * Upsert a trigger for a case (one trigger per zaakId).
      *
-     * @param string               $caseId      Case id.
-     * @param string               $zaaktypeKey Zaaktype key.
-     * @param array<string, mixed> $fields      Fields.
+     * @param  string               $caseId      Case id.
+     * @param  string               $zaaktypeKey Zaaktype key.
+     * @param  array<string, mixed> $fields      Fields.
      * @return void
      */
     private function upsertTrigger(string $caseId, string $zaaktypeKey, array $fields): void
@@ -360,9 +377,9 @@ class ArchivalTriggerService
             $existing = [];
         }
 
-        $row = is_array($existing) === true && count($existing) > 0 ? (array) $existing[0] : [];
-        $row['zaakId']      = $caseId;
-        $row['zaaktypeKey'] = $zaaktypeKey;
+        $row           = is_array($existing) === true && count($existing) > 0 ? (array) $existing[0] : [];
+        $row['zaakId'] = $caseId;
+        $row['zaaktypeKey']      = $zaaktypeKey;
         $row['aanmeldingsDatum'] = $row['aanmeldingsDatum'] ?? (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
         foreach ($fields as $k => $v) {
             $row[$k] = $v;
@@ -376,11 +393,11 @@ class ArchivalTriggerService
                 ['zaakId' => $caseId, 'error' => $e->getMessage()]
             );
         }
-    }
+    }//end upsertTrigger()
 
     /**
-     * @param string $closedAt    YYYY-MM-DD.
-     * @param int    $bewaarJaren Years (9999 = permanent).
+     * @param  string $closedAt    YYYY-MM-DD.
+     * @param  int    $bewaarJaren Years (9999 = permanent).
      * @return string
      */
     private function computeOverdrachtDatum(string $closedAt, int $bewaarJaren): string
@@ -388,10 +405,11 @@ class ArchivalTriggerService
         if ($closedAt === '' || $bewaarJaren <= 0 || $bewaarJaren >= 9999) {
             return '';
         }
+
         try {
             return (new DateTimeImmutable($closedAt))->modify('+'.$bewaarJaren.' years')->format('Y-m-d');
         } catch (\Throwable $e) {
             return '';
         }
-    }
+    }//end computeOverdrachtDatum()
 }//end class

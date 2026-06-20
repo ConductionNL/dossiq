@@ -53,7 +53,7 @@ class ResetMonthlyQuotasJob extends TimedJob
     ) {
         parent::__construct($time);
         $this->setInterval(self::INTERVAL_SECONDS);
-    }
+    }//end __construct()
 
     /**
      * @param mixed $argument Job argument (unused).
@@ -102,5 +102,5 @@ class ResetMonthlyQuotasJob extends TimedJob
         if ($resetCount > 0) {
             $this->logger->info('Procest: ResetMonthlyQuotasJob reset '.$resetCount.' quotas');
         }
-    }
-}
+    }//end run()
+}//end class

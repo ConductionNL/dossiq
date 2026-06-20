@@ -62,7 +62,7 @@ class LogEDepotSubmissionAdapter implements EDepotSubmissionAdapterInterface
      *
      * @return EDepotSubmissionResult The dispatch outcome.
      */
-    public function submit(string $sipBundelId, array $context = []): EDepotSubmissionResult
+    public function submit(string $sipBundelId, array $context=[]): EDepotSubmissionResult
     {
         $transactieId = 'edepot-log-'.bin2hex(random_bytes(10));
         $this->logger->info(

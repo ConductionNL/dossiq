@@ -57,10 +57,10 @@ class RollbackManager
     /**
      * Constructor.
      *
-     * @param SettingsService          $settingsService Settings + ObjectService resolver.
-     * @param ArchivalTriggerService   $triggerService  Status transitions, submitter, audit log.
-     * @param ProofOfTransferService   $proofService    Corrective-action map + proof capture.
-     * @param LoggerInterface          $logger          Logger.
+     * @param SettingsService        $settingsService Settings + ObjectService resolver.
+     * @param ArchivalTriggerService $triggerService  Status transitions, submitter, audit log.
+     * @param ProofOfTransferService $proofService    Corrective-action map + proof capture.
+     * @param LoggerInterface        $logger          Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -111,11 +111,12 @@ class RollbackManager
             } catch (\Throwable $e) {
                 $tx = null;
             }
+
             if (is_array($tx) === true) {
-                $zaakId        = (string) ($tx['zaakId'] ?? '');
-                $sipBundelId   = (string) ($tx['sipBundelId'] ?? '');
-                $tx['status']  = 'failed-final';
-                $tx['errorCode']     = $errorCode;
+                $zaakId          = (string) ($tx['zaakId'] ?? '');
+                $sipBundelId     = (string) ($tx['sipBundelId'] ?? '');
+                $tx['status']    = 'failed-final';
+                $tx['errorCode'] = $errorCode;
                 $tx['errorResponse'] = $errorDetail;
                 $tx['failedAt']      = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
                 try {
@@ -127,7 +128,7 @@ class RollbackManager
                     );
                 }
             }
-        }
+        }//end if
 
         // 2. Resolve + flip the trigger for the case to `gefaald` (SIP preserved).
         $triggerId = $this->resolveTriggerId($zaakId);
@@ -282,11 +283,13 @@ class RollbackManager
         if ($objectService === null || $register === '' || $schema === '' || $triggerId === '') {
             return null;
         }
+
         try {
             $row = $objectService->find($triggerId, register: $register, schema: $schema);
         } catch (\Throwable $e) {
             return null;
         }
+
         return is_array($row) === true ? $row : null;
     }//end findTrigger()
 
@@ -302,12 +305,14 @@ class RollbackManager
         if ($zaakId === '') {
             return '';
         }
+
         $objectService = $this->settingsService->getObjectService();
         $register      = (string) $this->settingsService->getConfigValue('register');
         $schema        = (string) $this->settingsService->getConfigValue('overdracht_trigger_schema');
         if ($objectService === null || $register === '' || $schema === '') {
             return '';
         }
+
         try {
             $rows = $this->searchObjectsAsArrays(
                 objectService: $objectService,
@@ -318,11 +323,13 @@ class RollbackManager
         } catch (\Throwable $e) {
             return '';
         }
+
         foreach ((array) $rows as $row) {
             if (is_array($row) === true && (string) ($row['id'] ?? '') !== '') {
                 return (string) $row['id'];
             }
         }
+
         return '';
     }//end resolveTriggerId()
 
@@ -366,6 +373,7 @@ class RollbackManager
                 ['zaakId' => $zaakId, 'error' => $e->getMessage()]
             );
         }
+
         return '';
     }//end rebuildSipBundel()
 

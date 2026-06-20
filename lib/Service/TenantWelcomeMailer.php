@@ -91,9 +91,9 @@ class TenantWelcomeMailer
     public function resolveAdminEmail(array $tenant): ?string
     {
         $candidates = [
-            $tenant['adminEmail']     ?? null,
-            $tenant['contactEmail']   ?? null,
-            $tenant['emailContact']   ?? null,
+            $tenant['adminEmail'] ?? null,
+            $tenant['contactEmail'] ?? null,
+            $tenant['emailContact'] ?? null,
         ];
         foreach ($candidates as $cand) {
             if (is_string($cand) === true && $cand !== '' && filter_var($cand, FILTER_VALIDATE_EMAIL) !== false) {
@@ -114,10 +114,10 @@ class TenantWelcomeMailer
      */
     public function renderBody(array $tenant): string
     {
-        $name        = (string) ($tenant['displayName'] ?? $tenant['legalName'] ?? 'gemeente');
-        $slug        = (string) ($tenant['slug'] ?? '');
-        $domain      = (string) ($tenant['domain'] ?? '');
-        $loginHint   = $domain !== '' ? ('https://'.$domain) : 'uw procest-instance';
+        $name      = (string) ($tenant['displayName'] ?? $tenant['legalName'] ?? 'gemeente');
+        $slug      = (string) ($tenant['slug'] ?? '');
+        $domain    = (string) ($tenant['domain'] ?? '');
+        $loginHint = $domain !== '' ? ('https://'.$domain) : 'uw procest-instance';
         return <<<TXT
 Beste beheerder,
 

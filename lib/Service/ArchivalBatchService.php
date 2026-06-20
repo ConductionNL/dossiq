@@ -88,12 +88,12 @@ class ArchivalBatchService
      */
     public function initiateBatch(
         array $caseIds,
-        int $rateLimit = 4,
-        string $eDepotId = '',
-        ?string $batchId = null,
+        int $rateLimit=4,
+        string $eDepotId='',
+        ?string $batchId=null,
     ): array {
         $batchId ??= 'batch-'.bin2hex(random_bytes(8));
-        $counts = [
+        $counts    = [
             'batchId'   => $batchId,
             'state'     => 'queued',
             'scheduled' => count($caseIds),
@@ -121,6 +121,7 @@ class ArchivalBatchService
                 // the batch terminates deterministically.
                 $i = 0;
             }
+
             $i++;
 
             try {
@@ -137,9 +138,9 @@ class ArchivalBatchService
             }
 
             $counts[$outcome]++;
-        }
+        }//end foreach
 
-        $finalState = ($counts['failed'] === 0) ? 'completed' : 'partially-failed';
+        $finalState      = ($counts['failed'] === 0) ? 'completed' : 'partially-failed';
         $counts['state'] = $finalState;
 
         $this->triggerService->logEvent(
@@ -167,7 +168,7 @@ class ArchivalBatchService
      *
      * @spec openspec/changes/archief-edepot-handover-07-batch-inspection/tasks.md
      */
-    public function processCaseInBatch(string $caseId, string $batchId = '', string $eDepotId = ''): string
+    public function processCaseInBatch(string $caseId, string $batchId='', string $eDepotId=''): string
     {
         if ($caseId === '') {
             return 'skipped';
@@ -229,6 +230,7 @@ class ArchivalBatchService
             'DEFERRED' => 'deferred',
             default    => 'succeeded',
         };
+
         // Correlate every per-case dispatch with the batch id so the
         // batch status / report endpoints can reconstruct caseIds from
         // the audit log alone.
@@ -262,7 +264,7 @@ class ArchivalBatchService
      *
      * @spec openspec/changes/archief-edepot-handover-07-batch-inspection/tasks.md
      */
-    public function generateInspectionExport(int $year, array $filters = []): array
+    public function generateInspectionExport(int $year, array $filters=[]): array
     {
         $payload = [
             'year'        => $year,
@@ -286,11 +288,12 @@ class ArchivalBatchService
 
         $yearPrefix = (string) $year;
         foreach ((array) $triggers as $row) {
-            $arr = (is_array($row) === true) ? $row : (method_exists($row, 'jsonSerialize') ? (array) $row->jsonSerialize() : []);
+            $arr      = (is_array($row) === true) ? $row : (method_exists($row, 'jsonSerialize') ? (array) $row->jsonSerialize() : []);
             $closedAt = (string) ($arr['afsluitingsDatum'] ?? '');
             if (str_starts_with($closedAt, $yearPrefix) === false) {
                 continue;
             }
+
             $payload['totals']['triggers']++;
             $payload['rows'][] = [
                 'triggerId'        => $arr['id'] ?? null,

@@ -80,11 +80,12 @@ class DwangsomUitbetalingService
         string $berekeningId,
         string $rekeninghouderNaam,
         string $iban,
-        ?DateTimeImmutable $ontvangstDatum = null
+        ?DateTimeImmutable $ontvangstDatum=null
     ): array {
         if ($this->isValidIban($iban) === false) {
             throw new RuntimeException('Invalid IBAN provided for dwangsom uitbetaling');
         }
+
         if (trim($rekeninghouderNaam) === '') {
             throw new RuntimeException('rekeninghouderNaam is required');
         }
@@ -102,6 +103,7 @@ class DwangsomUitbetalingService
         } catch (\Throwable $e) {
             throw new RuntimeException('DwangsomBerekening lookup failed: '.$e->getMessage());
         }
+
         if (is_array($berekening) === false) {
             throw new RuntimeException('DwangsomBerekening not found: '.$berekeningId);
         }
@@ -151,7 +153,7 @@ class DwangsomUitbetalingService
         string $referentie,
         string $status,
         ?DateTimeImmutable $werkelijkeBetaaldatum,
-        string $betalingsreferentie = ''
+        string $betalingsreferentie=''
     ): array {
         $objectService = $this->settingsService->getObjectService();
         $register      = (string) $this->settingsService->getConfigValue('register');
@@ -175,6 +177,7 @@ class DwangsomUitbetalingService
         if ($betalingsreferentie !== '') {
             $row['betalingsreferentie'] = $betalingsreferentie;
         }
+
         if ($werkelijkeBetaaldatum !== null) {
             $row['werkelijkeBetaaldatum'] = $werkelijkeBetaaldatum->format('Y-m-d');
         }

@@ -78,15 +78,15 @@ class SubstitutionService
      * overlapping full-scope substitution for the same absentee. A disjoint
      * scope for the same period is accepted.
      *
-     * @param string               $absentee   Handler being covered (user id).
-     * @param string               $substitute Waarnemer (user id).
-     * @param string               $startDate  Inclusive start (Y-m-d).
-     * @param string               $endDate    Inclusive end (Y-m-d), required.
-     * @param string               $scope      One of all|caseTypes|cases.
-     * @param array<int, string>   $scopeRefs  caseType/case UUIDs when narrowed.
-     * @param string               $reason     One of verlof|ziekte|anders.
-     * @param string               $createdBy  Creating user id (self or coordinator).
-     * @param string               $comment    Optional free-text comment.
+     * @param string             $absentee   Handler being covered (user id).
+     * @param string             $substitute Waarnemer (user id).
+     * @param string             $startDate  Inclusive start (Y-m-d).
+     * @param string             $endDate    Inclusive end (Y-m-d), required.
+     * @param string             $scope      One of all|caseTypes|cases.
+     * @param array<int, string> $scopeRefs  caseType/case UUIDs when narrowed.
+     * @param string             $reason     One of verlof|ziekte|anders.
+     * @param string             $createdBy  Creating user id (self or coordinator).
+     * @param string             $comment    Optional free-text comment.
      *
      * @return array<string, mixed> The created substitution object.
      *
@@ -215,8 +215,8 @@ class SubstitutionService
             return [];
         }
 
-        $ref     = ($date ?? new DateTimeImmutable('today'));
-        $refDay  = $ref->format('Y-m-d');
+        $ref      = ($date ?? new DateTimeImmutable('today'));
+        $refDay   = $ref->format('Y-m-d');
         $cacheKey = $userId.'|'.$refDay;
         if (isset($this->activeCache[$cacheKey]) === true) {
             return $this->activeCache[$cacheKey];
@@ -337,9 +337,9 @@ class SubstitutionService
                         continue;
                     }
 
-                    $seenCases[$id]      = true;
+                    $seenCases[$id]       = true;
                     $case['_substituted'] = ['absentee' => $absentee, 'substitutionId' => $subId];
-                    $result['cases'][]   = $case;
+                    $result['cases'][]    = $case;
                 }//end foreach
             }//end if
 

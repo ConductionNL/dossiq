@@ -70,12 +70,13 @@ class TermijnExtensionService
         string $termijnInstanceId,
         string $motivering,
         string $newEinddatum,
-        string $documentLink = '',
-        bool $supervisorOverride = false
+        string $documentLink='',
+        bool $supervisorOverride=false
     ): array {
         if (trim($motivering) === '') {
             throw new RuntimeException('Motivering is required for AWB 4:14 verlenging');
         }
+
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $newEinddatum) !== 1) {
             throw new RuntimeException('newEinddatum must be in YYYY-MM-DD format');
         }
@@ -149,7 +150,7 @@ class TermijnExtensionService
         try {
             $reflection = new \ReflectionClass($this->termijnService);
             if ($reflection->hasProperty('definitieCache') === true) {
-                $prop = $reflection->getProperty('definitieCache');
+                $prop  = $reflection->getProperty('definitieCache');
                 $cache = $prop->getValue($this->termijnService);
                 if (is_array($cache) === true) {
                     foreach ($cache as $row) {

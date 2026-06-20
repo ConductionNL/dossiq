@@ -57,12 +57,12 @@ class TermijnController extends Controller
     /**
      * Constructor.
      *
-     * @param string                  $appName    App id.
-     * @param IRequest                $request    Request.
-     * @param TermijnService          $termijn    Termijn service.
-     * @param TermijnPauseService     $pause      Pause service.
-     * @param TermijnExtensionService $extension  Extension service.
-     * @param LoggerInterface         $logger     Logger.
+     * @param string                  $appName   App id.
+     * @param IRequest                $request   Request.
+     * @param TermijnService          $termijn   Termijn service.
+     * @param TermijnPauseService     $pause     Pause service.
+     * @param TermijnExtensionService $extension Extension service.
+     * @param LoggerInterface         $logger    Logger.
      */
     public function __construct(
         string $appName,
@@ -95,6 +95,7 @@ class TermijnController extends Controller
         if ($user === null) {
             return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
         }
+
         return null;
     }//end ensureAuthenticated()
 
@@ -109,7 +110,10 @@ class TermijnController extends Controller
      */
     public function create(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $body     = $this->jsonBody();
         $zaakId   = (string) ($body['zaakId'] ?? '');
         $zaaktype = (string) ($body['zaaktype'] ?? '');
@@ -138,11 +142,15 @@ class TermijnController extends Controller
      */
     public function show(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $row = $this->termijn->getTermijnInstance($id);
         if ($row === null) {
             return $this->notFound('TermijnInstance not found: '.$id);
         }
+
         return new JSONResponse($row);
     }//end show()
 
@@ -159,7 +167,10 @@ class TermijnController extends Controller
      */
     public function pauze(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $body         = $this->jsonBody();
         $duurDagen    = (int) ($body['duurDagen'] ?? 0);
         $motivering   = (string) ($body['motivering'] ?? '');
@@ -186,7 +197,10 @@ class TermijnController extends Controller
      */
     public function hervat(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $body = $this->jsonBody();
         $when = (string) ($body['aanvullingDatum'] ?? '');
 
@@ -211,12 +225,15 @@ class TermijnController extends Controller
      */
     public function verleng(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
-        $body               = $this->jsonBody();
-        $motivering         = (string) ($body['motivering'] ?? '');
-        $newEinddatum       = (string) ($body['newEinddatum'] ?? '');
-        $documentLink       = (string) ($body['documentLink'] ?? '');
-        $supervisorOverride = (bool)   ($body['supervisorOverride'] ?? false);
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
+        $body         = $this->jsonBody();
+        $motivering   = (string) ($body['motivering'] ?? '');
+        $newEinddatum = (string) ($body['newEinddatum'] ?? '');
+        $documentLink = (string) ($body['documentLink'] ?? '');
+        $supervisorOverride = (bool) ($body['supervisorOverride'] ?? false);
 
         try {
             $row = $this->extension->requestExtension($id, $motivering, $newEinddatum, $documentLink, $supervisorOverride);
@@ -239,7 +256,10 @@ class TermijnController extends Controller
      */
     public function voltooi(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $body         = $this->jsonBody();
         $when         = (string) ($body['voltooiDatum'] ?? '');
         $documentLink = (string) ($body['documentLink'] ?? '');
@@ -253,6 +273,7 @@ class TermijnController extends Controller
             if ($row === null) {
                 return $this->notFound('TermijnInstance not found: '.$id);
             }
+
             return new JSONResponse($row);
         } catch (Throwable $e) {
             return $this->error($e, 'Voltooi failed');
@@ -266,37 +287,37 @@ class TermijnController extends Controller
     {
         // OCP\IRequest::getContent() is protected on the concrete OC
         // request; read raw payload from php://input instead.
-        $raw = (string) file_get_contents('php://input');
+        $raw  = (string) file_get_contents('php://input');
         $body = json_decode($raw, true);
         return is_array($body) === true ? $body : [];
-    }
+    }//end jsonBody()
 
     /**
-     * @param string $msg Message.
+     * @param  string $msg Message.
      * @return JSONResponse
      */
     private function badRequest(string $msg): JSONResponse
     {
         return new JSONResponse(['message' => $msg], Http::STATUS_BAD_REQUEST);
-    }
+    }//end badRequest()
 
     /**
-     * @param string $msg Message.
+     * @param  string $msg Message.
      * @return JSONResponse
      */
     private function notFound(string $msg): JSONResponse
     {
         return new JSONResponse(['message' => $msg], Http::STATUS_NOT_FOUND);
-    }
+    }//end notFound()
 
     /**
-     * @param Throwable $e   Exception.
-     * @param string    $log Log prefix.
+     * @param  Throwable $e   Exception.
+     * @param  string    $log Log prefix.
      * @return JSONResponse
      */
     private function error(Throwable $e, string $log): JSONResponse
     {
         $this->logger->info($log.': '.$e->getMessage());
         return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-    }
+    }//end error()
 }//end class

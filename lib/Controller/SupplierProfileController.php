@@ -63,11 +63,11 @@ class SupplierProfileController extends Controller
     /**
      * Constructor.
      *
-     * @param IRequest                            $request The request.
-     * @param SupplierMasterDataMutationService   $mutation Master-data mutation service.
-     * @param SupplierScopeService                $scope    Scope + masking helpers.
-     * @param IUserSession                        $userSession Current NC user session.
-     * @param SupplierSessionService              $session  Server-trusted supplier session resolver.
+     * @param IRequest                          $request     The request.
+     * @param SupplierMasterDataMutationService $mutation    Master-data mutation service.
+     * @param SupplierScopeService              $scope       Scope + masking helpers.
+     * @param IUserSession                      $userSession Current NC user session.
+     * @param SupplierSessionService            $session     Server-trusted supplier session resolver.
      */
     public function __construct(
         IRequest $request,
@@ -204,11 +204,13 @@ class SupplierProfileController extends Controller
             );
         }
 
-        return new JSONResponse([
-            'ok'      => true,
-            'caseRef' => $r['caseRef'] ?? '',
-            'message' => 'Wijziging ingediend',
-        ]);
+        return new JSONResponse(
+                [
+                    'ok'      => true,
+                    'caseRef' => $r['caseRef'] ?? '',
+                    'message' => 'Wijziging ingediend',
+                ]
+                );
     }//end requestIbanChange()
 
     /**

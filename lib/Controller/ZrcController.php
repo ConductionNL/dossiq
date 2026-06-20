@@ -86,8 +86,8 @@ class ZrcController extends ZgwController
     /**
      * Constructor.
      *
-     * @param string     $appName    The application name
-     * @param IRequest   $request    The incoming request
+     * @param string              $appName             The application name
+     * @param IRequest            $request             The incoming request
      * @param ZgwService          $zgwService          The shared ZGW service
      * @param IL10N               $l10n                The localization service
      * @param CaseRelationService $caseRelationService Typed peer-relation service
@@ -2511,7 +2511,6 @@ class ZrcController extends ZgwController
         return $response;
     }//end enrichZioJsonResponse()
 
-
     /**
      * Build the ZRC relevanteAndereZaken array for a single zaak from its
      * relatedCases field (outbound). Emits absolute zaak URLs and the
@@ -2564,7 +2563,6 @@ class ZrcController extends ZgwController
         return $out;
     }//end buildRelevanteAndereZaken()
 
-
     /**
      * Set relevanteAndereZaken on a single-zaak (show/update/patch) response.
      *
@@ -2584,7 +2582,6 @@ class ZrcController extends ZgwController
 
         return $response;
     }//end enrichZaakRelevanteAndereZaken()
-
 
     /**
      * Set relevanteAndereZaken on every result of a zaken list response.
@@ -2613,7 +2610,6 @@ class ZrcController extends ZgwController
 
         return $response;
     }//end enrichZakenListRelevanteAndereZaken()
-
 
     /**
      * Resolve an inbound relevanteAndereZaken array on a zaak write into local

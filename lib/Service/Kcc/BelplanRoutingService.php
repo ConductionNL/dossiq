@@ -53,8 +53,8 @@ class BelplanRoutingService
     /**
      * Match a phone number against a belplan's triggerNummer (E.164 or local).
      *
-     * @param string                              $phoneNumber The inbound number.
-     * @param array<int, array<string, mixed>>    $belplannen  The list of belplan records.
+     * @param string                           $phoneNumber The inbound number.
+     * @param array<int, array<string, mixed>> $belplannen  The list of belplan records.
      *
      * @return array<string, mixed>|null The matched belplan or null when none matches.
      *
@@ -68,13 +68,16 @@ class BelplanRoutingService
             if (is_array($bp) === false) {
                 continue;
             }
+
             if (($bp['isActive'] ?? true) === false) {
                 continue;
             }
+
             $trigger = $this->normalisePhone(phoneNumber: (string) ($bp['triggerNummer'] ?? ''));
             if ($trigger === '') {
                 continue;
             }
+
             if ($trigger === $normalised || str_ends_with($normalised, $trigger) === true) {
                 return $bp;
             }
@@ -86,8 +89,8 @@ class BelplanRoutingService
     /**
      * Resolve a vaardigheid (skill) for the chosen menu option.
      *
-     * @param array<string, mixed> $belplan         The belplan record.
-     * @param string|int           $menuSelection   The 1-based menu key OR option label.
+     * @param array<string, mixed> $belplan       The belplan record.
+     * @param string|int           $menuSelection The 1-based menu key OR option label.
      *
      * @return string The vaardigheid, or '' when not resolvable.
      *
@@ -106,6 +109,7 @@ class BelplanRoutingService
             if (isset($stappen[$idx]) === true && is_array($stappen[$idx]) === true) {
                 return (string) ($stappen[$idx]['vaardigheid'] ?? '');
             }
+
             return '';
         }
 
@@ -115,6 +119,7 @@ class BelplanRoutingService
             if (is_array($stap) === false) {
                 continue;
             }
+
             $label = mb_strtolower((string) ($stap['label'] ?? ''));
             if ($label === $needle) {
                 return (string) ($stap['vaardigheid'] ?? '');
@@ -135,10 +140,10 @@ class BelplanRoutingService
      *      callers past overflow thresholds → return a generalist routing
      *      decision flagged with escalatieAanbevolen=true.
      *
-     * @param string                              $vaardigheid The required skill.
-     * @param array<int, array<string, mixed>>    $pool        Specialist availability snapshot.
-     * @param int                                 $overflowWachttijd     Seconds threshold.
-     * @param int                                 $overflowWachtrijLengte Queue threshold.
+     * @param string                           $vaardigheid            The required skill.
+     * @param array<int, array<string, mixed>> $pool                   Specialist availability snapshot.
+     * @param int                              $overflowWachttijd      Seconds threshold.
+     * @param int                              $overflowWachtrijLengte Queue threshold.
      *
      * @return array{destinationSpecialistId: string|null, escalatieFlag: bool,
      *               estimatedWaitTime: int, vaardigheid: string,
@@ -205,6 +210,7 @@ class BelplanRoutingService
                 if ($qa !== $qb) {
                     return $qa <=> $qb;
                 }
+
                 $ta = (int) ($a['gemiddeldeBehandelduur'] ?? 0);
                 $tb = (int) ($b['gemiddeldeBehandelduur'] ?? 0);
                 return $ta <=> $tb;
@@ -253,10 +259,12 @@ class BelplanRoutingService
             if (is_array($sp) === false) {
                 continue;
             }
+
             $skills = $sp['expertises'] ?? ($sp['vaardigheden'] ?? []);
             if (is_array($skills) === false) {
                 continue;
             }
+
             foreach ($skills as $skill) {
                 if (mb_strtolower((string) $skill) === $needle) {
                     $candidates[] = $sp;
@@ -264,6 +272,7 @@ class BelplanRoutingService
                 }
             }
         }
+
         return $candidates;
     }//end filterCandidates()
 
@@ -283,6 +292,7 @@ class BelplanRoutingService
                 $min = $q;
             }
         }
+
         return $min === PHP_INT_MAX ? 0 : $min;
     }//end minQueueLength()
 
@@ -298,10 +308,12 @@ class BelplanRoutingService
         if (count($pool) === 0) {
             return 0;
         }
+
         $sum = 0;
         foreach ($pool as $sp) {
             $sum += (int) ($sp['gemiddeldeBehandelduur'] ?? 0);
         }
+
         return (int) round($sum / count($pool));
     }//end avgBehandelduur()
 }//end class

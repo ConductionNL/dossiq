@@ -63,7 +63,7 @@ class LogKvkHandelsregisterAdapter implements KvkHandelsregisterAdapterInterface
      *
      * @return KvkLookupResult The dispatch outcome.
      */
-    public function lookup(string $kvkNumber, array $context = []): KvkLookupResult
+    public function lookup(string $kvkNumber, array $context=[]): KvkLookupResult
     {
         $this->logger->info(
             'Procest KvK Handelsregister lookup deferred (no outbound connector bound)',

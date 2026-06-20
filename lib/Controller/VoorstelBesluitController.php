@@ -131,7 +131,7 @@ class VoorstelBesluitController extends Controller
                 ['error' => 'Besluitdienst niet beschikbaar: '.$e->getMessage()],
                 Http::STATUS_SERVICE_UNAVAILABLE,
             );
-        }
+        }//end try
 
         return new JSONResponse(
             ['voorstelId' => $voorstelId, 'decisionRef' => $decisionRef, 'status' => 'awaiting-decidesk'],
@@ -153,7 +153,7 @@ class VoorstelBesluitController extends Controller
             return null;
         }
 
-        $register      = $this->settingsService->getConfigValue(key: 'register');
+        $register       = $this->settingsService->getConfigValue(key: 'register');
         $voorstelSchema = $this->settingsService->getConfigValue(key: 'voorstel_schema');
         if ($register === '' || $voorstelSchema === '') {
             return null;
@@ -189,8 +189,8 @@ class VoorstelBesluitController extends Controller
             return true;
         }
 
-        $owner     = (string) ($voorstel['@self']['owner'] ?? '');
-        $assignee  = (string) ($voorstel['assignee'] ?? ($voorstel['behandelaar'] ?? ''));
+        $owner    = (string) ($voorstel['@self']['owner'] ?? '');
+        $assignee = (string) ($voorstel['assignee'] ?? ($voorstel['behandelaar'] ?? ''));
 
         return ($owner !== '' && $owner === $uid) || ($assignee !== '' && $assignee === $uid);
     }//end callerMayRegister()

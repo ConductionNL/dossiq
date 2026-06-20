@@ -40,7 +40,6 @@ use Psr\Log\LoggerInterface;
  */
 class EmailPdfRetryJob extends TimedJob
 {
-
     /**
      * Constructor.
      *
@@ -59,7 +58,6 @@ class EmailPdfRetryJob extends TimedJob
         // 15 minutes.
         $this->setInterval(seconds: 900);
     }//end __construct()
-
 
     /**
      * Run a retry pass.
@@ -100,6 +98,6 @@ class EmailPdfRetryJob extends TimedJob
                 'EmailPdfRetryJob failed',
                 ['error' => $e->getMessage(), 'app' => Application::APP_ID]
             );
-        }
+        }//end try
     }//end run()
 }//end class

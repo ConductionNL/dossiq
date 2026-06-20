@@ -50,12 +50,12 @@ class DwangsomController extends Controller
     /**
      * Constructor.
      *
-     * @param string                     $appName    App id.
-     * @param IRequest                   $request    Request.
-     * @param DwangsomCalculationService $calc       Calculation service.
-     * @param DwangsomBezwaarService     $bezwaar    Bezwaar service.
-     * @param SettingsService            $settings   Settings.
-     * @param LoggerInterface            $logger     Logger.
+     * @param string                     $appName  App id.
+     * @param IRequest                   $request  Request.
+     * @param DwangsomCalculationService $calc     Calculation service.
+     * @param DwangsomBezwaarService     $bezwaar  Bezwaar service.
+     * @param SettingsService            $settings Settings.
+     * @param LoggerInterface            $logger   Logger.
      */
     public function __construct(
         string $appName,
@@ -80,6 +80,7 @@ class DwangsomController extends Controller
         if ($user === null) {
             return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
         }
+
         return null;
     }//end ensureAuthenticated()
 
@@ -96,7 +97,10 @@ class DwangsomController extends Controller
      */
     public function show(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $objectService = $this->settings->getObjectService();
         $register      = (string) $this->settings->getConfigValue('register');
         $schema        = (string) $this->settings->getConfigValue('dwangsom_berekening_schema');
@@ -109,9 +113,11 @@ class DwangsomController extends Controller
         } catch (Throwable $e) {
             return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
         }
+
         if (is_array($row) === false) {
             return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
         }
+
         return new JSONResponse($row);
     }//end show()
 
@@ -128,11 +134,15 @@ class DwangsomController extends Controller
      */
     public function beschikking(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $row = $this->calc->stopForBeschikking($id);
         if ($row === null) {
             return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
         }
+
         return new JSONResponse($row);
     }//end beschikking()
 
@@ -149,7 +159,10 @@ class DwangsomController extends Controller
      */
     public function bezwaar(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $body       = $this->jsonBody();
         $grondslag  = (string) ($body['grondslag'] ?? 'AWB 7:1');
         $motivering = (string) ($body['motivering'] ?? '');
@@ -175,10 +188,13 @@ class DwangsomController extends Controller
      */
     public function bezwaarHeroverweging(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
-        $body        = $this->jsonBody();
-        $newBedrag   = (int) ($body['newBedragCents'] ?? -1);
-        $grondslag   = (string) ($body['grondslag'] ?? 'AWB 7:11');
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
+        $body      = $this->jsonBody();
+        $newBedrag = (int) ($body['newBedragCents'] ?? -1);
+        $grondslag = (string) ($body['grondslag'] ?? 'AWB 7:11');
         if ($newBedrag < 0) {
             return new JSONResponse(['message' => 'newBedragCents required and must be >= 0'], Http::STATUS_BAD_REQUEST);
         }
@@ -201,5 +217,5 @@ class DwangsomController extends Controller
         $raw  = (string) file_get_contents('php://input');
         $body = json_decode($raw, true);
         return is_array($body) === true ? $body : [];
-    }
+    }//end jsonBody()
 }//end class

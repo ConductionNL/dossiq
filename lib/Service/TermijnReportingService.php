@@ -61,14 +61,14 @@ class TermijnReportingService
     /**
      * Generate a quarterly KPI report.
      *
-     * @param string      $periode Period (YYYY-Qn, e.g. "2026-Q2").
+     * @param string      $periode  Period (YYYY-Qn, e.g. "2026-Q2").
      * @param string|null $afdeling Optional department filter.
      *
      * @return array<string, mixed>
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
-    public function generateQuarterlyReport(string $periode, ?string $afdeling = null): array
+    public function generateQuarterlyReport(string $periode, ?string $afdeling=null): array
     {
         $bounds = $this->resolveQuarter($periode);
         $rows   = $this->listInstances($bounds['from'], $bounds['until']);
@@ -79,6 +79,7 @@ class TermijnReportingService
             if ($afdeling !== null && (string) ($row['afdeling'] ?? '') !== $afdeling) {
                 continue;
             }
+
             $byType[$type] ??= [
                 'totaal'              => 0,
                 'binnenTermijn'       => 0,
@@ -94,9 +95,11 @@ class TermijnReportingService
             if ($status === 'voltooid') {
                 $byType[$type]['binnenTermijn']++;
             }
+
             if ($status === 'overschreden') {
                 $byType[$type]['overschrijdingen']++;
             }
+
             if ((int) ($row['aantalVerlengingen'] ?? 0) > 0) {
                 $byType[$type]['verlengingen']++;
             }
@@ -108,24 +111,22 @@ class TermijnReportingService
                 $eindD  = new DateTimeImmutable($eind);
                 $byType[$type]['doorlooptijdenDagen'][] = (int) $startD->diff($eindD)->days;
             }
-        }
+        }//end foreach
 
         // Reduce per-type aggregates.
         $perType = [];
         foreach ($byType as $type => $b) {
-            $totaal      = $b['totaal'];
-            $binnenPct   = $totaal > 0 ? round(($b['binnenTermijn'] / $totaal) * 100, 1) : 0.0;
-            $avgDur      = count($b['doorlooptijdenDagen']) > 0
-                ? round(array_sum($b['doorlooptijdenDagen']) / count($b['doorlooptijdenDagen']), 1)
-                : 0.0;
+            $totaal         = $b['totaal'];
+            $binnenPct      = $totaal > 0 ? round(($b['binnenTermijn'] / $totaal) * 100, 1) : 0.0;
+            $avgDur         = count($b['doorlooptijdenDagen']) > 0 ? round(array_sum($b['doorlooptijdenDagen']) / count($b['doorlooptijdenDagen']), 1) : 0.0;
             $perType[$type] = [
-                'totaal'              => $totaal,
-                'binnenTermijnPct'    => $binnenPct,
+                'totaal'                      => $totaal,
+                'binnenTermijnPct'            => $binnenPct,
                 'gemiddeldeDoorlooptijdDagen' => $avgDur,
-                'verlengingen'        => $b['verlengingen'],
-                'overschrijdingen'    => $b['overschrijdingen'],
-                'ingebrekestellingen' => $b['ingebrekestellingen'],
-                'dwangsomTotalCents'  => $b['dwangsomTotalCents'],
+                'verlengingen'                => $b['verlengingen'],
+                'overschrijdingen'            => $b['overschrijdingen'],
+                'ingebrekestellingen'         => $b['ingebrekestellingen'],
+                'dwangsomTotalCents'          => $b['dwangsomTotalCents'],
             ];
         }
 
@@ -175,12 +176,13 @@ class TermijnReportingService
             if (is_array($row) === false) {
                 continue;
             }
+
             $betaal = (string) ($row['werkelijkeBetaaldatum'] ?? '');
             if (str_starts_with($betaal, $jaarPrefix) === false) {
                 continue;
             }
 
-            $bedrag = (int) ($row['bedrag'] ?? 0);
+            $bedrag  = (int) ($row['bedrag'] ?? 0);
             $totaal += $bedrag;
 
             if (($row['betalingsreferentie'] ?? '') === '') {
@@ -188,20 +190,20 @@ class TermijnReportingService
             }
 
             $outRows[] = [
-                'referentie'             => (string) ($row['referentie'] ?? ''),
-                'bedragCents'            => $bedrag,
-                'werkelijkeBetaaldatum'  => $betaal,
-                'betalingsreferentie'    => (string) ($row['betalingsreferentie'] ?? ''),
-                'status'                 => (string) ($row['status'] ?? ''),
-                'wettelijkeGrondslag'    => (string) ($row['wettelijkeGrondslag'] ?? ''),
-                'iban'                   => (string) ($row['iban'] ?? ''),
+                'referentie'            => (string) ($row['referentie'] ?? ''),
+                'bedragCents'           => $bedrag,
+                'werkelijkeBetaaldatum' => $betaal,
+                'betalingsreferentie'   => (string) ($row['betalingsreferentie'] ?? ''),
+                'status'                => (string) ($row['status'] ?? ''),
+                'wettelijkeGrondslag'   => (string) ($row['wettelijkeGrondslag'] ?? ''),
+                'iban'                  => (string) ($row['iban'] ?? ''),
             ];
-        }
+        }//end foreach
 
         return [
-            'jaar'    => $jaar,
-            'rows'    => $outRows,
-            'summary' => ['count' => count($outRows), 'totalCents' => $totaal],
+            'jaar'     => $jaar,
+            'rows'     => $outRows,
+            'summary'  => ['count' => count($outRows), 'totalCents' => $totaal],
             'warnings' => $warnings,
         ];
     }//end generateDwangsomAuditReport()
@@ -215,43 +217,44 @@ class TermijnReportingService
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
-    public function getTermijnKpi(array $filters = []): array
+    public function getTermijnKpi(array $filters=[]): array
     {
         $rows = $this->listInstances('1970-01-01', '2999-12-31');
 
-        $total      = 0;
-        $within     = 0;
-        $overrun    = 0;
-        $durations  = [];
-        $dwTotal    = 0;
+        $total     = 0;
+        $within    = 0;
+        $overrun   = 0;
+        $durations = [];
+        $dwTotal   = 0;
         foreach ($rows as $row) {
             if (isset($filters['zaaktype']) === true && (string) ($row['zaaktype'] ?? '') !== $filters['zaaktype']) {
                 continue;
             }
+
             $total++;
             $status = (string) ($row['status'] ?? '');
             if ($status === 'voltooid') {
                 $within++;
             }
+
             if ($status === 'overschreden') {
                 $overrun++;
             }
+
             $start = (string) ($row['startDatum'] ?? '');
             $eind  = (string) ($row['einddatumActueel'] ?? '');
             if ($start !== '' && $eind !== '') {
                 $durations[] = (int) (new DateTimeImmutable(substr($start, 0, 10)))->diff(new DateTimeImmutable($eind))->days;
             }
-        }
+        }//end foreach
 
         return [
-            'totalZaken'         => $total,
+            'totalZaken'           => $total,
             'withinTermijnPercent' => $total > 0 ? round(($within / $total) * 100, 1) : 0.0,
-            'avgDurationDays'    => count($durations) > 0
-                ? round(array_sum($durations) / count($durations), 1)
-                : 0.0,
-            'overrunCount'       => $overrun,
-            'dwangsomTotalCents' => $dwTotal,
-            'lastUpdated'        => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+            'avgDurationDays'      => count($durations) > 0 ? round(array_sum($durations) / count($durations), 1) : 0.0,
+            'overrunCount'         => $overrun,
+            'dwangsomTotalCents'   => $dwTotal,
+            'lastUpdated'          => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
         ];
     }//end getTermijnKpi()
 
@@ -266,11 +269,19 @@ class TermijnReportingService
      */
     public function quarterlyReportAsCsv(array $report): string
     {
-        $header = ['zaaktype', 'totaal', 'binnenTermijnPct', 'gemiddeldeDoorlooptijdDagen',
-            'verlengingen', 'overschrijdingen', 'ingebrekestellingen', 'dwangsomTotalCents'];
+        $header = [
+            'zaaktype',
+            'totaal',
+            'binnenTermijnPct',
+            'gemiddeldeDoorlooptijdDagen',
+            'verlengingen',
+            'overschrijdingen',
+            'ingebrekestellingen',
+            'dwangsomTotalCents',
+        ];
         $lines  = [implode(',', $header)];
         foreach ((array) ($report['perType'] ?? []) as $type => $row) {
-            $line = [
+            $line    = [
                 $type,
                 (string) ($row['totaal'] ?? 0),
                 (string) ($row['binnenTermijnPct'] ?? 0),
@@ -282,11 +293,12 @@ class TermijnReportingService
             ];
             $lines[] = implode(',', $line);
         }
+
         return implode("\n", $lines);
     }//end quarterlyReportAsCsv()
 
     /**
-     * @param string $periode Period (YYYY-Qn).
+     * @param  string $periode Period (YYYY-Qn).
      * @return array{from:string,until:string}
      */
     private function resolveQuarter(string $periode): array
@@ -294,6 +306,7 @@ class TermijnReportingService
         if (preg_match('/^(\d{4})-Q([1-4])$/', $periode, $m) !== 1) {
             throw new RuntimeException('Invalid periode (expected YYYY-Qn): '.$periode);
         }
+
         $year    = (int) $m[1];
         $quarter = (int) $m[2];
         $startM  = (($quarter - 1) * 3) + 1;
@@ -302,11 +315,11 @@ class TermijnReportingService
         $lastDay = (int) (new DateTimeImmutable(sprintf('%04d-%02d-01', $year, $endM)))->format('t');
         $until   = sprintf('%04d-%02d-%02d', $year, $endM, $lastDay);
         return ['from' => $from, 'until' => $until];
-    }
+    }//end resolveQuarter()
 
     /**
-     * @param string $from  YYYY-MM-DD.
-     * @param string $until YYYY-MM-DD.
+     * @param  string $from  YYYY-MM-DD.
+     * @param  string $until YYYY-MM-DD.
      * @return array<int, array<string, mixed>>
      */
     private function listInstances(string $from, string $until): array
@@ -329,12 +342,15 @@ class TermijnReportingService
             if (is_array($row) === false) {
                 continue;
             }
+
             $start = substr((string) ($row['startDatum'] ?? ''), 0, 10);
             if ($start === '' || ($start >= $from && $start <= $until) === false) {
                 continue;
             }
+
             $out[] = $row;
         }
+
         return $out;
-    }
+    }//end listInstances()
 }//end class

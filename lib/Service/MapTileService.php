@@ -65,9 +65,9 @@ class MapTileService
     /**
      * Build a tile manifest covering a bounding box at the given zoom levels.
      *
-     * @param array{minLat: float, minLon: float, maxLat: float, maxLon: float} $bbox     Geographic bbox.
+     * @param array{minLat: float, minLon: float, maxLat: float, maxLon: float} $bbox       Geographic bbox.
      * @param array<int, int>                                                   $zoomLevels Zoom levels to cover.
-     * @param string|null                                                       $template Optional URL template (default: PDOK BRT).
+     * @param string|null                                                       $template   Optional URL template (default: PDOK BRT).
      *
      * @return array{tiles: array<int, array{z: int, x: int, y: int, url: string}>,
      *               total: int,
@@ -107,7 +107,7 @@ class MapTileService
             }
         }
 
-        $total = count($tiles);
+        $total   = count($tiles);
         $sizeKiB = $total * self::AVG_TILE_SIZE_KIB;
 
         return [
@@ -141,6 +141,7 @@ class MapTileService
             [$minX, $maxX, $minY, $maxY] = $this->tileBoundsForZoom(bbox: $bbox, zoom: (int) $z);
             $total += (($maxX - $minX) + 1) * (($maxY - $minY) + 1);
         }
+
         return [
             'total'            => $total,
             'estimatedSizeKiB' => $total * self::AVG_TILE_SIZE_KIB,
@@ -208,9 +209,11 @@ class MapTileService
         if ($minX > $maxX) {
             [$minX, $maxX] = [$maxX, $minX];
         }
+
         if ($minY > $maxY) {
             [$minY, $maxY] = [$maxY, $minY];
         }
+
         return [$minX, $maxX, $minY, $maxY];
     }//end tileBoundsForZoom()
 
@@ -259,12 +262,15 @@ class MapTileService
                 throw new \InvalidArgumentException('bbox.'.$key.' is required and numeric');
             }
         }
+
         if ($bbox['minLat'] < -85.0511 || $bbox['maxLat'] > 85.0511) {
             throw new \InvalidArgumentException('latitudes out of Web-Mercator range');
         }
+
         if ($bbox['minLat'] >= $bbox['maxLat']) {
             throw new \InvalidArgumentException('minLat must be < maxLat');
         }
+
         if ($bbox['minLon'] >= $bbox['maxLon']) {
             throw new \InvalidArgumentException('minLon must be < maxLon');
         }
@@ -284,6 +290,7 @@ class MapTileService
         if (count($zoomLevels) === 0) {
             throw new \InvalidArgumentException('zoomLevels must not be empty');
         }
+
         foreach ($zoomLevels as $z) {
             if (is_int($z) === false || $z < 0 || $z > self::MAX_ZOOM) {
                 throw new \InvalidArgumentException(

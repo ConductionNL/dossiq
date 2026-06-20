@@ -71,7 +71,6 @@ class CaseRelationService
     ) {
     }//end __construct()
 
-
     /**
      * List the typed peer relations stored on a case.
      *
@@ -94,7 +93,6 @@ class CaseRelationService
 
         return $this->decodeRelations(case: $case);
     }//end listRelations()
-
 
     /**
      * Add a typed peer relation symmetrically to both cases.
@@ -181,7 +179,6 @@ class CaseRelationService
         return ['ok' => true];
     }//end addRelation()
 
-
     /**
      * Remove a typed peer relation from BOTH cases.
      *
@@ -221,7 +218,6 @@ class CaseRelationService
 
         return ['ok' => true];
     }//end removeRelation()
-
 
     /**
      * Remove every counterpart entry pointing at a case that is being deleted.
@@ -279,7 +275,6 @@ class CaseRelationService
         return $updated;
     }//end cleanupForDeletedCase()
 
-
     /**
      * Restore symmetry after a direct write to `relatedCases` (e.g. ZGW inbound).
      *
@@ -327,7 +322,6 @@ class CaseRelationService
         }//end foreach
     }//end normalise()
 
-
     /**
      * Determine whether two cases are already linked through the deelzaak
      * (parent/child) hierarchy in either direction.
@@ -356,7 +350,6 @@ class CaseRelationService
         return false;
     }//end isHierarchyLinked()
 
-
     /**
      * Read the `parentCase` reference UUID out of a case array (scalar or
      * expanded-object shape).
@@ -379,7 +372,6 @@ class CaseRelationService
 
         return '';
     }//end parentRef()
-
 
     /**
      * Decode the JSON-encoded `relatedCases` field into a list of relation
@@ -426,7 +418,6 @@ class CaseRelationService
         return $entries;
     }//end decodeRelations()
 
-
     /**
      * Whether a `{caseId, aardRelatie}` pair already exists in a relation list.
      *
@@ -449,7 +440,6 @@ class CaseRelationService
         return false;
     }//end hasPair()
 
-
     /**
      * Return a copy of the relation list with the given pair removed.
      *
@@ -471,7 +461,6 @@ class CaseRelationService
             )
         );
     }//end removePair()
-
 
     /**
      * Fetch a single case object by UUID through the session's ObjectService.
@@ -521,7 +510,6 @@ class CaseRelationService
         return is_array($obj) === true ? $obj : null;
     }//end fetchCase()
 
-
     /**
      * Persist a relation list back onto a case, JSON-encoding the field
      * (the `relatedCases` field is a JSON-encoded string).
@@ -544,7 +532,7 @@ class CaseRelationService
             return;
         }
 
-        $payload                 = $case;
+        $payload = $case;
         $payload['relatedCases'] = json_encode(array_values($relations));
 
         try {

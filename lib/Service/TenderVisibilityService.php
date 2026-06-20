@@ -50,7 +50,7 @@ class TenderVisibilityService
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Get tender with derived fields. Returns null when the tender is
@@ -83,12 +83,12 @@ class TenderVisibilityService
         }
 
         $row['_derived'] = [
-            'appealDeadline' => $this->getAppealDeadline($row),
-            'canAppeal'      => $this->canAppeal($row),
+            'appealDeadline'         => $this->getAppealDeadline($row),
+            'canAppeal'              => $this->canAppeal($row),
             'evaluationDownloadable' => $this->isEvaluationReportDownloadable($row),
         ];
         return $row;
-    }
+    }//end getTenderStatus()
 
     /**
      * Compute the appeal deadline for a rejected tender. Returns null for
@@ -115,7 +115,7 @@ class TenderVisibilityService
         }
 
         return (new DateTimeImmutable('@'.$awardOrReject))->modify('+'.self::APPEAL_WINDOW_DAYS.' days')->format('Y-m-d');
-    }
+    }//end getAppealDeadline()
 
     /**
      * Whether the supplier can still appeal (rejected + within window).
@@ -133,7 +133,7 @@ class TenderVisibilityService
 
         $dt = strtotime($deadline);
         return $dt !== false && $dt >= time();
-    }
+    }//end canAppeal()
 
     /**
      * Whether the anonymised evaluation report can be downloaded.
@@ -150,7 +150,7 @@ class TenderVisibilityService
         }
 
         return (string) ($tender['evaluationReportRef'] ?? '') !== '';
-    }
+    }//end isEvaluationReportDownloadable()
 
     /**
      * @param string $tenderId    Tender UUID.
@@ -167,7 +167,7 @@ class TenderVisibilityService
 
         $this->logger->info('Procest: supplier downloaded evaluation report', ['supplierRef' => $supplierRef, 'tenderId' => $tenderId]);
         return (string) $tender['evaluationReportRef'];
-    }
+    }//end getEvaluationReport()
 
     /**
      * List tenders for the caller, optionally filtered by status.
@@ -189,7 +189,7 @@ class TenderVisibilityService
             schema: 'supplierTender',
             extraFilters: $extra
         );
-    }
+    }//end listTenders()
 
     /**
      * @return mixed|null
@@ -206,5 +206,5 @@ class TenderVisibilityService
         } catch (Throwable $e) {
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

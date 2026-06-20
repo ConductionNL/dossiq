@@ -418,10 +418,12 @@ class ZaakdossierController extends Controller
         // Allow restricting to a selected subset of ids.
         $selectedIds = (array) $this->request->getParam('ids', []);
         if (empty($selectedIds) === false) {
-            $documents = array_values(array_filter(
+            $documents = array_values(
+                    array_filter(
                 $documents,
                 static fn(array $doc) => in_array((string) ($doc['id'] ?? ''), array_map('strval', $selectedIds), true),
-            ));
+            )
+                    );
         }
 
         $tmpPath = (string) tempnam(sys_get_temp_dir(), 'procest-dossier-');

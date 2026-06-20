@@ -88,7 +88,7 @@ interface EDepotSubmissionAdapterInterface
      *                                back to the orchestrator for
      *                                proof / rollback.
      */
-    public function submit(string $sipBundelId, array $context = []): EDepotSubmissionResult;
+    public function submit(string $sipBundelId, array $context=[]): EDepotSubmissionResult;
 
     /**
      * Whether the adapter is dormant — i.e. wired but not contacting

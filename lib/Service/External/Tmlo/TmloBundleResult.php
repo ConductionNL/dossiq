@@ -65,7 +65,7 @@ final class TmloBundleResult
         public readonly string $metadataXml,
         public readonly string $metadataXsdVersion,
         public readonly bool $dormant,
-        public readonly array $extras = [],
+        public readonly array $extras=[],
     ) {
     }//end __construct()
 }//end class

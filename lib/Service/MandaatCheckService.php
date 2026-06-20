@@ -47,10 +47,10 @@ class MandaatCheckService
 {
     use SearchesObjects;
 
-    public const REDEN_NIET_BEVOEGD                = 'niet_bevoegd';
-    public const REDEN_PLAFOND_OVERSCHREDEN        = 'plafond_overschreden';
+    public const REDEN_NIET_BEVOEGD         = 'niet_bevoegd';
+    public const REDEN_PLAFOND_OVERSCHREDEN = 'plafond_overschreden';
     public const REDEN_SUBDELEGATIE_NIET_TOEGESTAAN = 'subdelegatie_niet_toegestaan';
-    public const REDEN_BELANGENCONFLICT            = 'belangenconflict';
+    public const REDEN_BELANGENCONFLICT = 'belangenconflict';
 
     /**
      * Constructor.
@@ -61,18 +61,18 @@ class MandaatCheckService
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
-        private readonly ?ConflictOfInterestService $conflictService = null,
+        private readonly ?ConflictOfInterestService $conflictService=null,
     ) {
     }//end __construct()
 
     /**
      * Decide whether the user is authorized for the (decisionType, case) pair.
      *
-     * @param string                 $userId           Nextcloud user id.
-     * @param string                 $decisionType     Decision type slug.
-     * @param string                 $caseId           Case id.
-     * @param array<string, mixed>   $caseProperties   Case properties for condition matching.
-     * @param DateTimeImmutable|null $decisionDate     Optional override (defaults to now).
+     * @param string                 $userId         Nextcloud user id.
+     * @param string                 $decisionType   Decision type slug.
+     * @param string                 $caseId         Case id.
+     * @param array<string, mixed>   $caseProperties Case properties for condition matching.
+     * @param DateTimeImmutable|null $decisionDate   Optional override (defaults to now).
      *
      * @return array{authorized:bool, mandaatId?:string, reden?:string, failedConditions?:array<int,string>}
      *
@@ -82,8 +82,8 @@ class MandaatCheckService
         string $userId,
         string $decisionType,
         string $caseId,
-        array $caseProperties = [],
-        ?DateTimeImmutable $decisionDate = null
+        array $caseProperties=[],
+        ?DateTimeImmutable $decisionDate=null
     ): array {
         $decisionDate = ($decisionDate ?? new DateTimeImmutable());
 
@@ -92,8 +92,8 @@ class MandaatCheckService
             $conflict = $this->conflictService->checkConflict($userId, $caseId, $caseProperties);
             if (($conflict['conflict'] ?? false) === true) {
                 return [
-                    'authorized' => false,
-                    'reden'      => self::REDEN_BELANGENCONFLICT,
+                    'authorized'     => false,
+                    'reden'          => self::REDEN_BELANGENCONFLICT,
                     'conflictReason' => (string) ($conflict['reason'] ?? ''),
                 ];
             }
@@ -104,13 +104,15 @@ class MandaatCheckService
             return ['authorized' => false, 'reden' => self::REDEN_NIET_BEVOEGD];
         }
 
-        $caseType  = (string) ($caseProperties['caseType'] ?? '');
-        $mandaten  = $this->getApplicableMandaten($decisionType, $caseType, $decisionDate);
+        $caseType = (string) ($caseProperties['caseType'] ?? '');
+        $mandaten = $this->getApplicableMandaten($decisionType, $caseType, $decisionDate);
 
-        $relevant = array_values(array_filter(
+        $relevant = array_values(
+                array_filter(
             $mandaten,
             static fn (array $m): bool => (string) ($m['gemandateerdeRol'] ?? '') === (string) $role['rolId']
-        ));
+        )
+                );
 
         if (count($relevant) === 0) {
             return ['authorized' => false, 'reden' => self::REDEN_NIET_BEVOEGD];
@@ -123,11 +125,12 @@ class MandaatCheckService
             $eval = $this->evaluateConditions($m, $caseProperties);
             if ($eval['passed'] === true) {
                 return [
-                    'authorized'   => true,
-                    'mandaatId'    => (string) ($m['id'] ?? ''),
-                    'reden'        => null,
+                    'authorized' => true,
+                    'mandaatId'  => (string) ($m['id'] ?? ''),
+                    'reden'      => null,
                 ];
             }
+
             $lastFailure = [
                 'reden'            => $eval['reden'],
                 'failedConditions' => $eval['failedConditions'],
@@ -135,9 +138,9 @@ class MandaatCheckService
         }
 
         return [
-            'authorized'      => false,
-            'reden'           => $lastFailure['reden'],
-            'failedConditions'=> $lastFailure['failedConditions'],
+            'authorized'       => false,
+            'reden'            => $lastFailure['reden'],
+            'failedConditions' => $lastFailure['failedConditions'],
         ];
     }//end isAuthorized()
 
@@ -153,7 +156,7 @@ class MandaatCheckService
      *
      * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
      */
-    public function getApplicableMandaten(string $decisionType, string $caseType, ?DateTimeImmutable $date = null): array
+    public function getApplicableMandaten(string $decisionType, string $caseType, ?DateTimeImmutable $date=null): array
     {
         $date          = ($date ?? new DateTimeImmutable());
         $dateStr       = $date->format('Y-m-d');
@@ -175,27 +178,30 @@ class MandaatCheckService
             if (is_array($row) === false) {
                 continue;
             }
-            $vf = (string) ($row['validFrom']  ?? '1970-01-01');
+
+            $vf = (string) ($row['validFrom'] ?? '1970-01-01');
             $vu = (string) ($row['validUntil'] ?? '');
             if ($vf > $dateStr) {
                 continue;
             }
+
             if ($vu !== '' && $vu < $dateStr) {
                 continue;
             }
 
-            $voorw = (array) ($row['voorwaarden'] ?? []);
+            $voorw    = (array) ($row['voorwaarden'] ?? []);
             $decTypes = (array) ($voorw['decisionTypes'] ?? []);
             if (count($decTypes) > 0 && in_array($decisionType, $decTypes, true) === false) {
                 continue;
             }
+
             $caseTypes = (array) ($voorw['caseTypes'] ?? []);
             if ($caseType !== '' && count($caseTypes) > 0 && in_array($caseType, $caseTypes, true) === false) {
                 continue;
             }
 
             $out[] = $row;
-        }
+        }//end foreach
 
         return $out;
     }//end getApplicableMandaten()
@@ -216,17 +222,19 @@ class MandaatCheckService
      *
      * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
      */
-    public function getApplicableForUser(string $userId, string $caseType = '', string $decisionType = ''): array
+    public function getApplicableForUser(string $userId, string $caseType='', string $decisionType=''): array
     {
         $date = new DateTimeImmutable();
         $role = $this->resolveUserRole($userId, $date);
         if ($role === null) {
             return [];
         }
+
         $rolId = (string) ($role['rolId'] ?? '');
         if ($rolId === '') {
             return [];
         }
+
         $rows = $this->getApplicableMandaten($decisionType, $caseType, $date);
 
         $out = [];
@@ -235,6 +243,7 @@ class MandaatCheckService
             if ($mandaatRolId !== '' && $mandaatRolId !== $rolId) {
                 continue;
             }
+
             $row['unilateral'] = ($mandaatRolId === $rolId);
             $out[] = $row;
         }
@@ -280,14 +289,17 @@ class MandaatCheckService
             if (is_array($row) === false) {
                 continue;
             }
-            $vf = (string) ($row['validFrom']  ?? '1970-01-01');
+
+            $vf = (string) ($row['validFrom'] ?? '1970-01-01');
             $vu = (string) ($row['validUntil'] ?? '');
             if ($vf > $dateStr) {
                 continue;
             }
+
             if ($vu !== '' && $vu < $dateStr) {
                 continue;
             }
+
             $active[] = $row;
         }
 
@@ -300,8 +312,7 @@ class MandaatCheckService
         usort(
             $active,
             static fn (array $a, array $b): int =>
-                ($order[(string) ($a['toewijzingType'] ?? 'primair')] ?? 99)
-                <=> ($order[(string) ($b['toewijzingType'] ?? 'primair')] ?? 99)
+                ($order[(string) ($a['toewijzingType'] ?? 'primair')] ?? 99) <=> ($order[(string) ($b['toewijzingType'] ?? 'primair')] ?? 99)
         );
 
         return $active[0];
@@ -319,7 +330,7 @@ class MandaatCheckService
      */
     public function evaluateConditions(array $mandaat, array $caseProperties): array
     {
-        $voorw = (array) ($mandaat['voorwaarden'] ?? []);
+        $voorw  = (array) ($mandaat['voorwaarden'] ?? []);
         $failed = [];
         $reden  = '';
 

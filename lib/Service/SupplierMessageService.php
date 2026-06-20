@@ -59,7 +59,7 @@ class SupplierMessageService
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Validate a single attachment.
@@ -81,7 +81,7 @@ class SupplierMessageService
         if (in_array($mime, self::ALLOWED_ATTACHMENT_MIME, true) === false) {
             throw new InvalidArgumentException('Unsupported attachment MIME: '.$mime);
         }
-    }
+    }//end validateAttachment()
 
     /**
      * Validate an attachment set (≤5 each ≤10MB).
@@ -101,16 +101,16 @@ class SupplierMessageService
         foreach ($attachments as $a) {
             $this->validateAttachment($a);
         }
-    }
+    }//end validateAttachmentSet()
 
     /**
      * Persist an inbound message (supplier → municipality).
      *
-     * @param string             $caseRef     Case ref.
-     * @param string             $supplierRef Supplier ref.
-     * @param string             $body        Body.
+     * @param string             $caseRef        Case ref.
+     * @param string             $supplierRef    Supplier ref.
+     * @param string             $body           Body.
      * @param array<int, string> $attachmentRefs Attachment refs.
-     * @param string             $sentBy      NC user id (or supplier email).
+     * @param string             $sentBy         NC user id (or supplier email).
      *
      * @return array<string,mixed>|null Persisted message row.
      */
@@ -121,16 +121,16 @@ class SupplierMessageService
         }
 
         return $this->persist(direction: 'inbound', caseRef: $caseRef, supplierRef: $supplierRef, body: $body, attachmentRefs: $attachmentRefs, sentBy: $sentBy);
-    }
+    }//end sendMessage()
 
     /**
      * Persist an outbound message (municipality → supplier).
      *
-     * @param string             $caseRef     Case ref.
-     * @param string             $supplierRef Supplier ref.
-     * @param string             $body        Body.
+     * @param string             $caseRef        Case ref.
+     * @param string             $supplierRef    Supplier ref.
+     * @param string             $body           Body.
      * @param array<int, string> $attachmentRefs Attachment refs.
-     * @param string             $sentBy      NC user id.
+     * @param string             $sentBy         NC user id.
      *
      * @return array<string,mixed>|null
      */
@@ -141,7 +141,7 @@ class SupplierMessageService
         }
 
         return $this->persist(direction: 'outbound', caseRef: $caseRef, supplierRef: $supplierRef, body: $body, attachmentRefs: $attachmentRefs, sentBy: $sentBy);
-    }
+    }//end addResponse()
 
     /**
      * Retrieve the chronological conversation history for a case scoped by supplier.
@@ -173,15 +173,15 @@ class SupplierMessageService
         $rows = is_array($rows) ? $rows : [];
         usort($rows, fn ($a, $b) => strcmp((string) ($a['sentAt'] ?? ''), (string) ($b['sentAt'] ?? '')));
         return $rows;
-    }
+    }//end getConversationHistory()
 
     /**
-     * @param string             $direction  inbound|outbound.
-     * @param string             $caseRef    Case ref.
-     * @param string             $supplierRef Supplier ref.
-     * @param string             $body       Body.
+     * @param string             $direction      inbound|outbound.
+     * @param string             $caseRef        Case ref.
+     * @param string             $supplierRef    Supplier ref.
+     * @param string             $body           Body.
      * @param array<int, string> $attachmentRefs Attachment refs.
-     * @param string             $sentBy     Sender id.
+     * @param string             $sentBy         Sender id.
      *
      * @return array<string,mixed>|null
      */
@@ -209,18 +209,20 @@ class SupplierMessageService
                 schema: 'supplierMessage',
                 uuid: null
             );
-            $this->auditTrail->emit([
-                'action'   => 'supplier_message.send',
-                'actor'    => $sentBy,
-                'resource' => 'case:'.$caseRef,
-                'tenantId' => $supplierRef,
-            ]);
+            $this->auditTrail->emit(
+                    [
+                        'action'   => 'supplier_message.send',
+                        'actor'    => $sentBy,
+                        'resource' => 'case:'.$caseRef,
+                        'tenantId' => $supplierRef,
+                    ]
+                    );
             return $persisted;
         } catch (Throwable $e) {
             $this->logger->error('Procest: supplier message persist failed', ['exception' => $e->getMessage()]);
             return null;
         }
-    }
+    }//end persist()
 
     /**
      * @return mixed|null
@@ -237,5 +239,5 @@ class SupplierMessageService
         } catch (Throwable $e) {
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

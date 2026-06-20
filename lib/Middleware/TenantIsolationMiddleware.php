@@ -87,9 +87,9 @@ class TenantIsolationMiddleware extends Middleware
      * Reset the search_path after each controller so leaked connections do not
      * carry a tenant search_path into the next request on the same DB handle.
      *
-     * @param \OCP\AppFramework\Controller $controller Controller.
-     * @param string                       $methodName Method name.
-     * @param \OCP\AppFramework\Http\Response $response Response.
+     * @param \OCP\AppFramework\Controller    $controller Controller.
+     * @param string                          $methodName Method name.
+     * @param \OCP\AppFramework\Http\Response $response   Response.
      *
      * @return \OCP\AppFramework\Http\Response
      */

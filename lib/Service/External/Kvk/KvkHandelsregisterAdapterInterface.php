@@ -86,7 +86,7 @@ interface KvkHandelsregisterAdapterInterface
      * @return KvkLookupResult The lookup outcome (status + entity
      *                         envelope + optional vestiging list).
      */
-    public function lookup(string $kvkNumber, array $context = []): KvkLookupResult;
+    public function lookup(string $kvkNumber, array $context=[]): KvkLookupResult;
 
     /**
      * Whether the adapter is dormant — i.e. wired but not contacting

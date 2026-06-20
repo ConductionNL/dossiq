@@ -54,7 +54,6 @@ class DoorlooptijdService
     ) {
     }//end __construct()
 
-
     /**
      * Compute the full metrics payload for the dashboard.
      *
@@ -66,12 +65,8 @@ class DoorlooptijdService
      */
     public function getMetrics(array $params): array
     {
-        $caseTypeFilter = isset($params['caseType']) === true && is_string($params['caseType']) === true
-            ? $params['caseType']
-            : null;
-        $period         = isset($params['period']) === true && is_string($params['period']) === true
-            ? $params['period']
-            : '12m';
+        $caseTypeFilter = isset($params['caseType']) === true && is_string($params['caseType']) === true ? $params['caseType'] : null;
+        $period         = isset($params['period']) === true && is_string($params['period']) === true ? $params['period'] : '12m';
         $atRiskDays     = isset($params['atRiskDays']) === true ? (int) $params['atRiskDays'] : 5;
         if ($atRiskDays < 0) {
             $atRiskDays = 0;
@@ -83,13 +78,12 @@ class DoorlooptijdService
         $enriched = $this->enrichCases(cases: $cases, caseTypes: $caseTypes);
 
         return [
-            'kpi'                => $this->computeKpi($enriched, $atRiskDays),
-            'compliance'         => $this->computeMonthlyCompliance($enriched, $period),
-            'caseTypeBreakdown'  => $this->computeCaseTypeBreakdown($enriched, $caseTypes),
-            'cases'              => $this->buildCaseList($enriched, $atRiskDays),
+            'kpi'               => $this->computeKpi($enriched, $atRiskDays),
+            'compliance'        => $this->computeMonthlyCompliance($enriched, $period),
+            'caseTypeBreakdown' => $this->computeCaseTypeBreakdown($enriched, $caseTypes),
+            'cases'             => $this->buildCaseList($enriched, $atRiskDays),
         ];
     }//end getMetrics()
-
 
     /**
      * Compute the four headline KPIs.
@@ -125,7 +119,7 @@ class DoorlooptijdService
         }//end foreach
 
         // Closed cases in the last 12 months.
-        $cutoff      = (new DateTimeImmutable('-12 months'))->format('Y-m-d');
+        $cutoff       = (new DateTimeImmutable('-12 months'))->format('Y-m-d');
         $closedOnTime = 0;
         $closedLate   = 0;
         foreach ($cases as $caseData) {
@@ -159,7 +153,6 @@ class DoorlooptijdService
         ];
     }//end computeKpi()
 
-
     /**
      * Monthly on-time / late counts over the requested period.
      *
@@ -177,7 +170,7 @@ class DoorlooptijdService
 
         $endDate = new DateTimeImmutable('first day of this month');
         for ($i = ($months - 1); $i >= 0; $i--) {
-            $month = $endDate->modify('-'.$i.' month')->format('Y-m');
+            $month           = $endDate->modify('-'.$i.' month')->format('Y-m');
             $buckets[$month] = ['onTime' => 0, 'late' => 0];
         }
 
@@ -213,7 +206,6 @@ class DoorlooptijdService
         return $out;
     }//end computeMonthlyCompliance()
 
-
     /**
      * Average closed-case throughput by case-type.
      *
@@ -241,7 +233,7 @@ class DoorlooptijdService
                 $accum[$caseTypeId] = ['sum' => 0, 'count' => 0];
             }
 
-            $accum[$caseTypeId]['sum']  += $caseData['_throughputDays'];
+            $accum[$caseTypeId]['sum'] += $caseData['_throughputDays'];
             $accum[$caseTypeId]['count']++;
         }
 
@@ -259,9 +251,7 @@ class DoorlooptijdService
                 continue;
             }
 
-            $title = isset($caseTypeIndex[$caseTypeId]['title']) === true
-                ? (string) $caseTypeIndex[$caseTypeId]['title']
-                : $caseTypeId;
+            $title = isset($caseTypeIndex[$caseTypeId]['title']) === true ? (string) $caseTypeIndex[$caseTypeId]['title'] : $caseTypeId;
             $out[] = [
                 'id'      => $caseTypeId,
                 'title'   => $title,
@@ -277,7 +267,6 @@ class DoorlooptijdService
 
         return $out;
     }//end computeCaseTypeBreakdown()
-
 
     /**
      * Build the sortable list of open cases with RAG status.
@@ -308,14 +297,14 @@ class DoorlooptijdService
             }
 
             $rows[] = [
-                'id'             => (string) ($caseData['id'] ?? ''),
-                'identifier'     => (string) ($caseData['identifier'] ?? ''),
-                'title'          => (string) ($caseData['title'] ?? ''),
-                'caseTypeTitle'  => (string) ($caseData['_caseTypeTitle'] ?? ''),
-                'startDate'      => $caseData['_startDate'],
-                'deadline'       => $caseData['_deadline'],
-                'daysRemaining'  => $daysRemaining,
-                'ragStatus'      => $ragStatus,
+                'id'            => (string) ($caseData['id'] ?? ''),
+                'identifier'    => (string) ($caseData['identifier'] ?? ''),
+                'title'         => (string) ($caseData['title'] ?? ''),
+                'caseTypeTitle' => (string) ($caseData['_caseTypeTitle'] ?? ''),
+                'startDate'     => $caseData['_startDate'],
+                'deadline'      => $caseData['_deadline'],
+                'daysRemaining' => $daysRemaining,
+                'ragStatus'     => $ragStatus,
             ];
         }//end foreach
 
@@ -331,7 +320,6 @@ class DoorlooptijdService
         return $rows;
     }//end buildCaseList()
 
-
     /**
      * Enrich each raw case with derived fields used by the metric helpers.
      *
@@ -342,8 +330,8 @@ class DoorlooptijdService
      */
     public function enrichCases(array $cases, array $caseTypes): array
     {
-        $today          = new DateTimeImmutable('today');
-        $caseTypeByKey  = [];
+        $today         = new DateTimeImmutable('today');
+        $caseTypeByKey = [];
         foreach ($caseTypes as $caseType) {
             $id   = (string) ($caseType['id'] ?? '');
             $slug = (string) ($caseType['slug'] ?? '');
@@ -378,8 +366,8 @@ class DoorlooptijdService
                 );
             }
 
-            $daysRemaining   = null;
-            $throughputDays  = null;
+            $daysRemaining  = null;
+            $throughputDays = null;
             if ($isOpen === true && $deadline !== null) {
                 $deadlineDate  = new DateTimeImmutable($deadline);
                 $daysRemaining = (int) $today->diff($deadlineDate)->format('%R%a');
@@ -406,7 +394,6 @@ class DoorlooptijdService
         return $enriched;
     }//end enrichCases()
 
-
     /**
      * Translate a period string into a month count (`12m` → 12, `6m` → 6).
      *
@@ -425,7 +412,6 @@ class DoorlooptijdService
 
         return 12;
     }//end parseMonths()
-
 
     /**
      * Compute a deadline from a start-date + ISO 8601 duration (e.g. `P8W`).
@@ -455,7 +441,6 @@ class DoorlooptijdService
         }
     }//end deriveDeadline()
 
-
     /**
      * Trim a date or datetime field to `Y-m-d`; return null for empty/invalid input.
      *
@@ -475,7 +460,6 @@ class DoorlooptijdService
             return null;
         }
     }//end normaliseDate()
-
 
     /**
      * Load every case record via OpenRegister.
@@ -509,7 +493,6 @@ class DoorlooptijdService
             filters: $filters,
         );
     }//end loadCases()
-
 
     /**
      * Load all caseType definitions so the service can resolve titles and

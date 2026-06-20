@@ -39,6 +39,7 @@ use OCP\AppFramework\Http\Response;
  */
 class RangeStreamResponse extends Response
 {
+
     /**
      * The (possibly sliced) body to emit.
      *

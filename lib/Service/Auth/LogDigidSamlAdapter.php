@@ -106,5 +106,4 @@ final class LogDigidSamlAdapter implements DigidSamlAdapterInterface
         $raw = $this->config->getValueString(self::APP_ID, self::FLAG_KEY, '0');
         return ($raw === '1' || strtolower($raw) === 'true');
     }//end isActive()
-
 }//end class

@@ -68,12 +68,12 @@ class BagItBundlerService
     {
         $files = [];
         $payloadTotalBytes = 0;
-        $payloadCount = 0;
+        $payloadCount      = 0;
 
         // Payload: metadata.xml.
         $metadataXml = (string) ($sipBundel['metadataXml'] ?? '');
         $files['data/metadata.xml'] = $metadataXml;
-        $payloadTotalBytes += strlen($metadataXml);
+        $payloadTotalBytes         += strlen($metadataXml);
         $payloadCount++;
 
         // Payload: documents (use document.content if present, else placeholder).
@@ -81,30 +81,32 @@ class BagItBundlerService
             if (is_array($doc) === false) {
                 continue;
             }
+
             $name    = (string) ($doc['name'] ?? ('document-'.$payloadCount));
             $content = (string) ($doc['content'] ?? '');
             $files['data/'.$name] = $content;
-            $payloadTotalBytes += strlen($content);
+            $payloadTotalBytes   += strlen($content);
             $payloadCount++;
         }
 
         // Manifest.
         $manifestLines = [];
-        $payloadFiles = [];
+        $payloadFiles  = [];
         foreach ($files as $relPath => $content) {
             if (str_starts_with($relPath, 'data/') === true) {
                 $sha = hash('sha256', $content);
-                $manifestLines[] = $sha.'  '.$relPath;
+                $manifestLines[]        = $sha.'  '.$relPath;
                 $payloadFiles[$relPath] = $sha;
             }
         }
+
         sort($manifestLines);
-        $manifest = implode("\n", $manifestLines)."\n";
+        $manifest         = implode("\n", $manifestLines)."\n";
         $manifestChecksum = hash('sha256', $manifest);
 
         // Tag files.
-        $files['bagit.txt'] = "BagIt-Version: 1.0\nTag-File-Character-Encoding: UTF-8\n";
-        $payloadOxum = $payloadTotalBytes.'.'.$payloadCount;
+        $files['bagit.txt']    = "BagIt-Version: 1.0\nTag-File-Character-Encoding: UTF-8\n";
+        $payloadOxum           = $payloadTotalBytes.'.'.$payloadCount;
         $files['bag-info.txt'] = "Source-Organization: Procest\n"
             ."Bagging-Date: ".(new DateTimeImmutable())->format('Y-m-d')."\n"
             ."Payload-Oxum: ".$payloadOxum."\n";

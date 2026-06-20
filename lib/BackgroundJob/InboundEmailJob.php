@@ -60,7 +60,6 @@ class InboundEmailJob extends TimedJob
      */
     private const DEFAULT_BATCH_SIZE = 50;
 
-
     /**
      * Constructor.
      *
@@ -91,7 +90,6 @@ class InboundEmailJob extends TimedJob
 
         $this->setInterval(seconds: $interval);
     }//end __construct()
-
 
     /**
      * Run a single poll batch.
@@ -149,9 +147,8 @@ class InboundEmailJob extends TimedJob
                 'InboundEmailJob failed',
                 ['error' => $e->getMessage(), 'app' => Application::APP_ID]
             );
-        }
+        }//end try
     }//end run()
-
 
     /**
      * Match a `[ZAAK-2026-000142]` style tag in the subject.
@@ -170,7 +167,6 @@ class InboundEmailJob extends TimedJob
 
         return null;
     }//end matchCaseFromSubject()
-
 
     /**
      * Fetch a batch of unread messages from the shared mailbox.
@@ -242,7 +238,6 @@ class InboundEmailJob extends TimedJob
         return $messages;
     }//end fetchUnreadBatch()
 
-
     /**
      * Check whether a mailMessageId is already linked to a case.
      *
@@ -278,11 +273,10 @@ class InboundEmailJob extends TimedJob
             }
         } catch (\Throwable $e) {
             $this->logger->debug('isAlreadyLinked check failed', ['error' => $e->getMessage()]);
-        }
+        }//end try
 
         return false;
     }//end isAlreadyLinked()
-
 
     /**
      * Best-effort mark the message as "processed" so the next poll skips it.

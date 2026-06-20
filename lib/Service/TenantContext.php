@@ -38,6 +38,7 @@ use RuntimeException;
  */
 class TenantContext
 {
+
     /**
      * Resolved tenant UUID.
      *

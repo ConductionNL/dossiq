@@ -50,9 +50,9 @@ class SubstitutionAuditService
     /**
      * Constructor.
      *
-     * @param SettingsService     $settingsService The settings/config bridge.
+     * @param SettingsService     $settingsService     The settings/config bridge.
      * @param SubstitutionService $substitutionService Capacity resolution.
-     * @param LoggerInterface     $logger          The logger.
+     * @param LoggerInterface     $logger              The logger.
      *
      * @return void
      */
@@ -72,7 +72,7 @@ class SubstitutionAuditService
      * to the case and the entry is returned. When the actor acts on their own
      * work (no covering substitution), nothing is written and null is returned.
      *
-     * @param string $caseId The case being mutated.
+     * @param string $caseId  The case being mutated.
      * @param string $actorId The acting user id.
      * @param string $action  A short action label (e.g. "task-completed").
      *
@@ -119,8 +119,8 @@ class SubstitutionAuditService
             'timestamp'       => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
         ];
 
-        $activity   = $this->decodeActivity($case['activity'] ?? null);
-        $activity[] = $entry;
+        $activity         = $this->decodeActivity($case['activity'] ?? null);
+        $activity[]       = $entry;
         $case['activity'] = json_encode($activity);
 
         try {
@@ -189,9 +189,9 @@ class SubstitutionAuditService
                     continue;
                 }
 
-                $entry['caseId'] = $caseId;
+                $entry['caseId']    = $caseId;
                 $entry['caseTitle'] = (string) ($case['title'] ?? '');
-                $actions[] = $entry;
+                $actions[]          = $entry;
             }
         }//end foreach
 

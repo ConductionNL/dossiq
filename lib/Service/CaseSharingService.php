@@ -204,7 +204,7 @@ class CaseSharingService
      * @param string      $label     Human-readable label for the link
      * @param string      $createdBy User ID of the creator (audit log)
      * @param string|null $expiresAt ISO 8601 expiration datetime, or null
-     *                              for a non-expiring link
+     *                               for a non-expiring link
      *
      * @return array The minted token metadata + public resolve URL, or an
      *               error array when the leaf is unavailable.
@@ -273,8 +273,8 @@ class CaseSharingService
      * that case. Returns null when the token cannot be matched to any
      * case the candidate caseId owns.
      *
-     * @param string $tokenId   The leaf token id (numeric) or opaque token.
-     * @param string $caseId    The candidate case UUID.
+     * @param string $tokenId The leaf token id (numeric) or opaque token.
+     * @param string $caseId  The candidate case UUID.
      *
      * @return bool True when the token is one of the case's minted tokens.
      *

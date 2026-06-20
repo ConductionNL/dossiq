@@ -42,7 +42,7 @@ class QuotaEnforcementMiddleware extends Middleware
         private readonly TenantQuotaService $quota,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     public function beforeController($controller, $methodName): void
     {
@@ -81,7 +81,7 @@ class QuotaEnforcementMiddleware extends Middleware
                 ['tenantId' => $tenantId, 'quotaType' => $quotaType]
             );
         }
-    }
+    }//end beforeController()
 
     public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response
     {
@@ -93,7 +93,7 @@ class QuotaEnforcementMiddleware extends Middleware
         }
 
         throw $exception;
-    }
+    }//end afterException()
 
     /**
      * Map request to a quota dimension.
@@ -114,5 +114,5 @@ class QuotaEnforcementMiddleware extends Middleware
         }
 
         return null;
-    }
-}
+    }//end resolveQuotaType()
+}//end class

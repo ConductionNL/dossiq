@@ -17,4 +17,4 @@ namespace OCA\Procest\Middleware;
 
 class SupplierUnauthorizedException extends \Exception
 {
-}
+}//end class

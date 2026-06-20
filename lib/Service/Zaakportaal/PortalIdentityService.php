@@ -68,19 +68,20 @@ class PortalIdentityService
     /**
      * Constructor.
      *
-     * @param SettingsService              $settingsService The settings service.
-     * @param IUserSession                 $userSession     The Nextcloud user session.
-     * @param DigidSamlAdapterInterface|null $digidAdapter  Optional DigiD broker
-     *                                                     adapter — dormant by default.
-     *                                                     Resolves the SAML
-     *                                                     callback into a
-     *                                                     {@see BrokerAssertionResult}
-     *                                                     carrying the BSN.
+     * @param SettingsService                $settingsService The settings service.
+     * @param IUserSession                   $userSession     The Nextcloud user session.
+     * @param DigidSamlAdapterInterface|null $digidAdapter    Optional DigiD broker
+     *                                                        adapter — dormant
+     *                                                        by default. Resolves
+     *                                                        the SAML callback
+     *                                                        into a {@see
+     *                                                        BrokerAssertionResult}
+     *                                                        carrying the BSN.
      */
     public function __construct(
         private SettingsService $settingsService,
         private IUserSession $userSession,
-        private readonly ?DigidSamlAdapterInterface $digidAdapter = null,
+        private readonly ?DigidSamlAdapterInterface $digidAdapter=null,
     ) {
     }//end __construct()
 

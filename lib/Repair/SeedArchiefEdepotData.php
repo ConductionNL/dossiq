@@ -58,7 +58,7 @@ class SeedArchiefEdepotData implements IRepairStep
     }//end getName()
 
     /**
-     * @param IOutput $output Output.
+     * @param  IOutput $output Output.
      * @return void
      *
      * @spec openspec/changes/archief-edepot-handover-01-schema-config/tasks.md
@@ -82,6 +82,7 @@ class SeedArchiefEdepotData implements IRepairStep
                 );
                 return;
             }
+
             $output->warning('Archief seed issue: '.((string) ($r['message'] ?? 'unknown error')));
         } catch (\Throwable $e) {
             $output->warning('Could not seed archief data: '.$e->getMessage());

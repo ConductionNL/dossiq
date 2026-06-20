@@ -49,9 +49,9 @@ class TenantAuthenticationService
     /**
      * Constructor.
      *
-     * @param IAppManager        $appManager  App manager (for OR availability check).
-     * @param ContainerInterface $container   DI container.
-     * @param LoggerInterface    $logger      Logger.
+     * @param IAppManager        $appManager App manager (for OR availability check).
+     * @param ContainerInterface $container  DI container.
+     * @param LoggerInterface    $logger     Logger.
      */
     public function __construct(
         private readonly IAppManager $appManager,
@@ -94,7 +94,7 @@ class TenantAuthenticationService
                 ['tenantId' => $tenantId, 'userId' => $userId, 'exception' => $e->getMessage()]
             );
             return ['allowed' => false, 'reason' => 'Mandate validation error'];
-        }
+        }//end try
     }//end validateMandateMatrix()
 
     /**
@@ -226,7 +226,7 @@ class TenantAuthenticationService
                 filters: ['tenantRef' => $tenantId, 'userRef' => $userId]
             );
             if (is_array($rows) === true && count($rows) > 0) {
-                $row = $rows[0];
+                $row  = $rows[0];
                 $role = (string) ($row['role'] ?? '');
                 return $role !== '' ? $role : null;
             }
@@ -240,7 +240,7 @@ class TenantAuthenticationService
                 ['tenantId' => $tenantId, 'userId' => $userId, 'exception' => $e->getMessage()]
             );
             throw $e;
-        }
+        }//end try
 
         return null;
     }//end resolveUserRole()

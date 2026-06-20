@@ -47,10 +47,10 @@ class ShillinqIntegrationService
     public function __construct(
         private readonly IClientService $httpClientService,
         private readonly LoggerInterface $logger,
-        private readonly string $shillinqBaseUrl = '',
-        private readonly string $shillinqApiKey  = '',
+        private readonly string $shillinqBaseUrl='',
+        private readonly string $shillinqApiKey='',
     ) {
-    }
+    }//end __construct()
 
     /**
      * Group events by tenant + month for invoicing.
@@ -78,7 +78,7 @@ class ShillinqIntegrationService
         }
 
         return $grouped;
-    }
+    }//end groupForInvoicing()
 
     /**
      * Build the Shillinq invoice payload from a group of events.
@@ -103,12 +103,12 @@ class ShillinqIntegrationService
         }
 
         return [
-            'tenant_id' => $tenantId,
-            'period'    => $month,
-            'currency'  => $lineItems[0]['currency'] ?? 'EUR',
-            'line_items'=> $lineItems,
+            'tenant_id'  => $tenantId,
+            'period'     => $month,
+            'currency'   => $lineItems[0]['currency'] ?? 'EUR',
+            'line_items' => $lineItems,
         ];
-    }
+    }//end buildInvoicePayload()
 
     /**
      * POST a built invoice payload to Shillinq with retry + backoff.
@@ -123,20 +123,23 @@ class ShillinqIntegrationService
             return ['success' => false, 'attempts' => 0, 'lastError' => 'Shillinq not configured'];
         }
 
-        $client = $this->httpClientService->newClient();
+        $client  = $this->httpClientService->newClient();
         $attempt = 0;
         $lastErr = '';
         while ($attempt < self::MAX_RETRIES) {
             $attempt++;
             try {
-                $resp = $client->post($this->shillinqBaseUrl.'/invoices', [
-                    'headers' => [
-                        'Authorization' => 'Bearer '.$this->shillinqApiKey,
-                        'Content-Type'  => 'application/json',
-                    ],
-                    'body'    => json_encode($payload),
-                    'timeout' => 30,
-                ]);
+                $resp = $client->post(
+                        $this->shillinqBaseUrl.'/invoices',
+                        [
+                            'headers' => [
+                                'Authorization' => 'Bearer '.$this->shillinqApiKey,
+                                'Content-Type'  => 'application/json',
+                            ],
+                            'body'    => json_encode($payload),
+                            'timeout' => 30,
+                        ]
+                        );
                 $body = (string) $resp->getBody();
                 $json = json_decode($body, true);
                 $ref  = (string) ($json['invoiceRef'] ?? $json['id'] ?? '');
@@ -148,10 +151,10 @@ class ShillinqIntegrationService
                 if ($attempt < self::MAX_RETRIES) {
                     sleep(self::BACKOFF_BASE_SECONDS ** $attempt);
                 }
-            }
-        }
+            }//end try
+        }//end while
 
         $this->logger->error('Procest: Shillinq export failed after retries', ['attempts' => $attempt, 'lastError' => $lastErr]);
         return ['success' => false, 'attempts' => $attempt, 'lastError' => $lastErr];
-    }
-}
+    }//end exportInvoice()
+}//end class

@@ -89,6 +89,7 @@ class ArchiefEdepotSeedDataService
                 $counts['skipped']++;
                 continue;
             }
+
             try {
                 $objectService->saveObject($register, $schema, $row);
                 $counts['regels']++;
@@ -101,9 +102,9 @@ class ArchiefEdepotSeedDataService
     }//end seed()
 
     /**
-     * @param object $objectService Object service.
-     * @param string $register      Register.
-     * @param string $schema        Schema.
+     * @param  object $objectService Object service.
+     * @param  string $register      Register.
+     * @param  string $schema        Schema.
      * @return array<int, string>
      */
     private function existingIds(object $objectService, string $register, string $schema): array
@@ -111,17 +112,20 @@ class ArchiefEdepotSeedDataService
         if (method_exists($objectService, 'findObjects') === false) {
             return [];
         }
+
         try {
             $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema);
         } catch (\Throwable $e) {
             return [];
         }
+
         $ids = [];
         foreach ((array) $rows as $row) {
             if (is_array($row) === true && isset($row['id']) === true) {
                 $ids[] = (string) $row['id'];
             }
         }
+
         return $ids;
-    }
+    }//end existingIds()
 }//end class

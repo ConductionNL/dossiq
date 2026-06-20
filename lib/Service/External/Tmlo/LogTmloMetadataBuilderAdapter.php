@@ -64,7 +64,7 @@ class LogTmloMetadataBuilderAdapter implements TmloMetadataBuilderAdapterInterfa
      *
      * @return TmloBundleResult The build outcome.
      */
-    public function buildBundle(string $caseId, string $mdtoVersion, array $context = []): TmloBundleResult
+    public function buildBundle(string $caseId, string $mdtoVersion, array $context=[]): TmloBundleResult
     {
         $this->logger->info(
             'Procest TMLO / MDTO buildBundle deferred (no outbound builder bound)',

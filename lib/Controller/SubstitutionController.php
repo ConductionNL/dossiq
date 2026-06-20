@@ -59,15 +59,15 @@ class SubstitutionController extends Controller
     /**
      * Constructor.
      *
-     * @param string                   $appName                  The app name.
-     * @param IRequest                 $request                  The request.
-     * @param SubstitutionService      $substitutionService      Substitution domain logic.
-     * @param SubstitutionAuditService $auditService             Capacity audit.
-     * @param CaseReassignmentService  $reassignmentService      Bulk reassignment.
-     * @param SettingsService          $settingsService          Settings/config bridge.
-     * @param IUserSession             $userSession              The user session.
-     * @param IGroupManager            $groupManager             Group manager (admin checks).
-     * @param LoggerInterface          $logger                   The logger.
+     * @param string                   $appName             The app name.
+     * @param IRequest                 $request             The request.
+     * @param SubstitutionService      $substitutionService Substitution domain logic.
+     * @param SubstitutionAuditService $auditService        Capacity audit.
+     * @param CaseReassignmentService  $reassignmentService Bulk reassignment.
+     * @param SettingsService          $settingsService     Settings/config bridge.
+     * @param IUserSession             $userSession         The user session.
+     * @param IGroupManager            $groupManager        Group manager (admin checks).
+     * @param LoggerInterface          $logger              The logger.
      *
      * @return void
      */

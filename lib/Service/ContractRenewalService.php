@@ -49,12 +49,12 @@ class ContractRenewalService
     /**
      * Constructor.
      *
-     * @param SupplierScopeService              $scopeService        Scope helper.
-     * @param TenantAuditTrailService           $auditTrail          Audit trail emitter.
-     * @param IAppManager                       $appManager          App manager.
-     * @param ContainerInterface                $container           Service container (resolves OR).
-     * @param LoggerInterface                   $logger              Logger.
-     * @param ContractDecisionDelegationService $decisionDelegation  Decision delegation to decidesk (ADR-019).
+     * @param SupplierScopeService              $scopeService       Scope helper.
+     * @param TenantAuditTrailService           $auditTrail         Audit trail emitter.
+     * @param IAppManager                       $appManager         App manager.
+     * @param ContainerInterface                $container          Service container (resolves OR).
+     * @param LoggerInterface                   $logger             Logger.
+     * @param ContractDecisionDelegationService $decisionDelegation Decision delegation to decidesk (ADR-019).
      */
     public function __construct(
         private readonly SupplierScopeService $scopeService,
@@ -306,7 +306,7 @@ class ContractRenewalService
             );
             // REQ-PDCD-002: fail closed; do not return a partial ok.
             return ['ok' => false, 'reason' => 'Decision service unavailable: '.$e->getMessage()];
-        }
+        }//end try
 
         $this->auditTrail->emit(
                 [

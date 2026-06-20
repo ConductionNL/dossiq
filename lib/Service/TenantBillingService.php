@@ -57,7 +57,7 @@ class TenantBillingService
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Emit a billing event. Insert-only — invoiceRef stays NULL until the
@@ -105,7 +105,7 @@ class TenantBillingService
             $this->logger->error('Procest: emitEvent failed', ['eventType' => $eventType, 'exception' => $e->getMessage()]);
             return null;
         }
-    }
+    }//end emitEvent()
 
     /**
      * Aggregate billing for a month.
@@ -125,7 +125,7 @@ class TenantBillingService
 
         $events = $this->fetchEventsForMonth($tenantId, $month);
         return $this->aggregate($events);
-    }
+    }//end getMonthBilling()
 
     /**
      * Compute the net effect across events (refunds reduce totals).
@@ -150,16 +150,16 @@ class TenantBillingService
 
             $byType[$type]['count']  += $quantity;
             $byType[$type]['amount'] += $amount;
-            $totalAmount             += $amount;
+            $totalAmount += $amount;
         }
 
         return ['eventCount' => count($events), 'totalAmount' => round($totalAmount, 2), 'byType' => $byType];
-    }
+    }//end aggregate()
 
     /**
      * Mark a batch of events as exported under a single invoice reference.
      *
-     * @param array<int, array<string,mixed>> $events    Event rows.
+     * @param array<int, array<string,mixed>> $events     Event rows.
      * @param string                          $invoiceRef Shillinq invoice ref.
      *
      * @return int Number of events updated.
@@ -194,7 +194,7 @@ class TenantBillingService
         }
 
         return $updated;
-    }
+    }//end markExported()
 
     /**
      * Fetch all events for a given month for a tenant.
@@ -225,7 +225,7 @@ class TenantBillingService
 
         $rows = is_array($rows) ? $rows : [];
         return array_values(array_filter($rows, fn ($r) => str_starts_with((string) ($r['occurredAt'] ?? ''), $month)));
-    }
+    }//end fetchEventsForMonth()
 
     /**
      * @return mixed|null
@@ -242,5 +242,5 @@ class TenantBillingService
         } catch (Throwable $e) {
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

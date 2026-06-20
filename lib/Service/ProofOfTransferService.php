@@ -41,9 +41,9 @@ class ProofOfTransferService
     /**
      * Constructor.
      *
-     * @param SettingsService          $settingsService Settings.
-     * @param ArchivalTriggerService   $triggerService  Trigger service (for audit log).
-     * @param LoggerInterface          $logger          Logger.
+     * @param SettingsService        $settingsService Settings.
+     * @param ArchivalTriggerService $triggerService  Trigger service (for audit log).
+     * @param LoggerInterface        $logger          Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -74,7 +74,7 @@ class ProofOfTransferService
         string $sipBundelId,
         string $receipt,
         array $checksums,
-        ?DateTimeImmutable $ingestionDate = null
+        ?DateTimeImmutable $ingestionDate=null
     ): array {
         $ingestionDate = ($ingestionDate ?? new DateTimeImmutable());
 
@@ -96,7 +96,7 @@ class ProofOfTransferService
         $bewijsId = (string) ($saved['id'] ?? '');
         if ($bewijsId !== '') {
             $verified = $this->verifyIntegrity($bewijsId, $sipBundelId);
-            $saved = $verified;
+            $saved    = $verified;
         }
 
         $this->triggerService->logEvent(null, $caseId, 'proof-captured', 'archivId='.$archivId);
@@ -129,20 +129,21 @@ class ProofOfTransferService
         if (is_array($bewijs) === false) {
             throw new RuntimeException('ArchiefBewijs not found: '.$bewijsId);
         }
+
         $sip = $objectService->find($sipBundelId, register: $register, schema: $sSchema);
         if (is_array($sip) === false) {
             throw new RuntimeException('SipBundel not found: '.$sipBundelId);
         }
 
-        $sipChecksum = (string) ($sip['manifestChecksum'] ?? '');
-        $confirmed   = (array)  ($bewijs['checksums'] ?? []);
+        $sipChecksum  = (string) ($sip['manifestChecksum'] ?? '');
+        $confirmed    = (array) ($bewijs['checksums'] ?? []);
         $confirmedSha = (string) ($confirmed['sha256'] ?? '');
 
-        $match = ($sipChecksum !== '' && $sipChecksum === $confirmedSha);
+        $match            = ($sipChecksum !== '' && $sipChecksum === $confirmedSha);
         $bewijs['status'] = $match === true ? 'verified' : 'alert-mismatch';
 
         try {
-            $saved = $objectService->saveObject($register, $bSchema, $bewijs);
+            $saved  = $objectService->saveObject($register, $bSchema, $bewijs);
             $bewijs = is_array($saved) === true ? $saved : $bewijs;
         } catch (\Throwable $e) {
             $this->logger->error('ArchiefBewijs persist failed', ['id' => $bewijsId, 'error' => $e->getMessage()]);
@@ -196,8 +197,8 @@ class ProofOfTransferService
     }//end recommendCorrectiveAction()
 
     /**
-     * @param string               $schemaConfigKey Schema config key.
-     * @param array<string, mixed> $object          Payload.
+     * @param  string               $schemaConfigKey Schema config key.
+     * @param  array<string, mixed> $object          Payload.
      * @return array<string, mixed>
      */
     private function save(string $schemaConfigKey, array $object): array
@@ -208,6 +209,7 @@ class ProofOfTransferService
         if ($objectService === null || $register === '' || $schema === '') {
             return $object;
         }
+
         try {
             $saved = $objectService->saveObject($register, $schema, $object);
             return is_array($saved) === true ? $saved : $object;
@@ -215,5 +217,5 @@ class ProofOfTransferService
             $this->logger->error('Archief persist failed', ['key' => $schemaConfigKey, 'error' => $e->getMessage()]);
             return $object;
         }
-    }
+    }//end save()
 }//end class

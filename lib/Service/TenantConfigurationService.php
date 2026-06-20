@@ -87,7 +87,7 @@ class TenantConfigurationService
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Get the full configuration row for a tenant.
@@ -115,12 +115,12 @@ class TenantConfigurationService
         } catch (Throwable $e) {
             return null;
         }
-    }
+    }//end getConfig()
 
     /**
      * Update branding for a tenant.
      *
-     * @param string             $tenantId Tenant UUID.
+     * @param string              $tenantId Tenant UUID.
      * @param array<string,mixed> $branding Branding payload.
      *
      * @return array<string,mixed>
@@ -131,13 +131,13 @@ class TenantConfigurationService
     {
         $sanitised = $this->sanitiseBranding($branding);
         return $this->mergeConfig($tenantId, ['branding' => $sanitised]);
-    }
+    }//end updateBranding()
 
     /**
      * Update locale-related fields.
      *
-     * @param string $tenantId   Tenant UUID.
-     * @param array{locale?:string, timezone?:string, dateFormat?:string, currency?:string} $payload Payload.
+     * @param string                                                                        $tenantId Tenant UUID.
+     * @param array{locale?:string, timezone?:string, dateFormat?:string, currency?:string} $payload  Payload.
      *
      * @return array<string,mixed>
      *
@@ -158,7 +158,7 @@ class TenantConfigurationService
         }
 
         return $this->mergeConfig($tenantId, $payload);
-    }
+    }//end updateLocale()
 
     /**
      * Set or unset a feature flag.
@@ -176,12 +176,12 @@ class TenantConfigurationService
         $features = array_values(array_unique(array_filter($features, fn ($f) => is_string($f) && $f !== '')));
         if ($enabled === true && in_array($flag, $features, true) === false) {
             $features[] = $flag;
-        } elseif ($enabled === false) {
+        } else if ($enabled === false) {
             $features = array_values(array_filter($features, fn ($f) => $f !== $flag));
         }
 
         return $this->mergeConfig($tenantId, ['features' => $features]);
-    }
+    }//end setFeatureFlag()
 
     /**
      * Build the theming-tokens CSS-variable map from the tenant branding.
@@ -211,7 +211,7 @@ class TenantConfigurationService
         }
 
         return $tokens;
-    }
+    }//end getThemingTokens()
 
     /**
      * Sanitise a branding payload — hex-color check, whitelist custom CSS.
@@ -261,7 +261,7 @@ class TenantConfigurationService
         }
 
         return $out;
-    }
+    }//end sanitiseBranding()
 
     /**
      * Whitelist-based CSS sanitiser. Strips any rule with a property not in
@@ -304,7 +304,7 @@ class TenantConfigurationService
         }
 
         return count($kept) > 0 ? (implode('; ', $kept).';') : '';
-    }
+    }//end sanitiseCustomCss()
 
     /**
      * Validate that an uploaded logo passes the MIME + size guard.
@@ -325,7 +325,7 @@ class TenantConfigurationService
         if ($bytes > self::LOGO_MAX_BYTES) {
             throw new InvalidArgumentException('Logo exceeds 5MB');
         }
-    }
+    }//end validateLogoUpload()
 
     /**
      * @param string $val 6-digit hex (with leading #).
@@ -335,10 +335,10 @@ class TenantConfigurationService
     public function isHexColor(string $val): bool
     {
         return preg_match('/^#[0-9a-fA-F]{6}$/', $val) === 1;
-    }
+    }//end isHexColor()
 
     /**
-     * @param string             $tenantId Tenant UUID.
+     * @param string              $tenantId Tenant UUID.
      * @param array<string,mixed> $delta    Fields to merge.
      *
      * @return array<string,mixed>
@@ -364,7 +364,7 @@ class TenantConfigurationService
             $this->logger->error('Procest: tenantConfiguration save failed', ['exception' => $e->getMessage()]);
             return $next;
         }
-    }
+    }//end mergeConfig()
 
     /**
      * @return mixed|null
@@ -381,5 +381,5 @@ class TenantConfigurationService
         } catch (Throwable $e) {
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

@@ -70,11 +70,11 @@ class TenantJwtService
     /**
      * Encode a tenant-aware JWT.
      *
-     * @param string             $subject  Subject (NC user ID).
-     * @param string             $tenantId Tenant UUID.
+     * @param string             $subject    Subject (NC user ID).
+     * @param string             $tenantId   Tenant UUID.
      * @param string             $tenantSlug Tenant slug.
-     * @param array<int, string> $roles    Roles inside the tenant.
-     * @param int|null           $ttl      Override default TTL (seconds).
+     * @param array<int, string> $roles      Roles inside the tenant.
+     * @param int|null           $ttl        Override default TTL (seconds).
      *
      * @return string Compact JWT string.
      */
@@ -85,13 +85,13 @@ class TenantJwtService
 
         $header = ['alg' => self::ALG, 'typ' => 'JWT'];
         $claims = [
-            'sub'          => $subject,
-            'tenant_id'    => $tenantId,
-            'tenant_slug'  => $tenantSlug,
-            'roles'        => array_values($roles),
-            'iat'          => $iat,
-            'exp'          => $exp,
-            'iss'          => 'procest',
+            'sub'         => $subject,
+            'tenant_id'   => $tenantId,
+            'tenant_slug' => $tenantSlug,
+            'roles'       => array_values($roles),
+            'iat'         => $iat,
+            'exp'         => $exp,
+            'iss'         => 'procest',
         ];
 
         $hPart = $this->b64UrlEncode((string) json_encode($header, JSON_UNESCAPED_SLASHES));

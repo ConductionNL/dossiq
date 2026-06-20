@@ -91,9 +91,11 @@ class DwangsomCalculationService
         if ($dayNumber <= 14) {
             return self::AWB_TIER_1_CENTS;
         }
+
         if ($dayNumber <= 28) {
             return self::AWB_TIER_2_CENTS;
         }
+
         return self::AWB_TIER_3_CENTS;
     }//end dailyTariffAwb()
 
@@ -141,12 +143,10 @@ class DwangsomCalculationService
         $plafond    = (int) ($row['plafondBerekend'] ?? self::AWB_PLAFOND_CENTS);
         $regime     = (string) ($row['regime'] ?? 'awb-default');
 
-        $nextDay   = ($currentDay + 1);
-        $tariff    = ($regime === 'afwijkend')
-            ? $this->resolveCustomDailyTariff($row)
-            : $this->dailyTariffAwb($nextDay);
+        $nextDay = ($currentDay + 1);
+        $tariff  = ($regime === 'afwijkend') ? $this->resolveCustomDailyTariff($row) : $this->dailyTariffAwb($nextDay);
 
-        $newCumul = ($cumulative + $tariff);
+        $newCumul   = ($cumulative + $tariff);
         $plafondHit = false;
         if ($newCumul >= $plafond) {
             $newCumul   = $plafond;
@@ -238,6 +238,7 @@ class DwangsomCalculationService
         } catch (\Throwable $e) {
             return self::AWB_TIER_1_CENTS;
         }
+
         if (is_array($instance) === false) {
             return self::AWB_TIER_1_CENTS;
         }
@@ -252,6 +253,7 @@ class DwangsomCalculationService
         } catch (\Throwable $e) {
             return self::AWB_TIER_1_CENTS;
         }
+
         if (is_array($def) === false) {
             return self::AWB_TIER_1_CENTS;
         }

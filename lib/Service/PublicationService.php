@@ -108,9 +108,7 @@ class PublicationService
             throw new \RuntimeException('Case not found: '.$caseId);
         }
 
-        $case = is_array($obj) === true
-            ? $obj
-            : (method_exists($obj, 'jsonSerialize') === true ? $obj->jsonSerialize() : (array) $obj);
+        $case = is_array($obj) === true ? $obj : (method_exists($obj, 'jsonSerialize') === true ? $obj->jsonSerialize() : (array) $obj);
 
         $publications = $this->extractPublications($case);
 
@@ -126,10 +124,11 @@ class PublicationService
                     'publishedAt' => $publishedAt,
                     'notes'       => $notes,
                 ];
-                $upserted = true;
+                $upserted         = true;
                 break;
             }
         }
+
         if ($upserted === false) {
             $publications[] = [
                 'channel'     => $channel,
@@ -169,6 +168,7 @@ class PublicationService
             $decoded = json_decode((string) $pubs, associative: true);
             $pubs    = is_array($decoded) === true ? $decoded : [];
         }
+
         if (is_array($pubs) === false) {
             return [];
         }
@@ -179,6 +179,7 @@ class PublicationService
                 $clean[] = $pub;
             }
         }
+
         return $clean;
     }//end extractPublications()
 }//end class

@@ -45,13 +45,13 @@ class TenantQuotaService
      * @var array<string, array<string, array{limit:int|null, enforcement:string}>>
      */
     public const TIER_DEFAULTS = [
-        'basic' => [
+        'basic'      => [
             'cases_per_month'    => ['limit' => 100,  'enforcement' => 'warn'],
             'storage_gb'         => ['limit' => 10,   'enforcement' => 'warn'],
             'active_users'       => ['limit' => 5,    'enforcement' => 'block'],
             'api_calls_per_hour' => ['limit' => 1000, 'enforcement' => 'throttle'],
         ],
-        'standard' => [
+        'standard'   => [
             'cases_per_month'    => ['limit' => 1000,  'enforcement' => 'warn'],
             'storage_gb'         => ['limit' => 100,   'enforcement' => 'warn'],
             'active_users'       => ['limit' => 50,    'enforcement' => 'block'],
@@ -78,7 +78,7 @@ class TenantQuotaService
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Initialise the four canonical quotas for a tenant from the tier template.
@@ -106,13 +106,13 @@ class TenantQuotaService
             try {
                 $row = $os->saveObject(
                     object: [
-                        'tenantRef'              => $tenantId,
-                        'quotaType'              => $quotaType,
-                        'limit'                  => $cfg['limit'],
-                        'currentUsage'           => 0,
-                        'softLimitWarningPercent'=> 80,
-                        'enforcement'            => $cfg['enforcement'],
-                        'resetAt'                => $this->nextResetAt($quotaType),
+                        'tenantRef'               => $tenantId,
+                        'quotaType'               => $quotaType,
+                        'limit'                   => $cfg['limit'],
+                        'currentUsage'            => 0,
+                        'softLimitWarningPercent' => 80,
+                        'enforcement'             => $cfg['enforcement'],
+                        'resetAt'                 => $this->nextResetAt($quotaType),
                     ],
                     register: TenantSaasService::REGISTER,
                     schema: 'tenantQuota',
@@ -123,11 +123,11 @@ class TenantQuotaService
                 }
             } catch (Throwable $e) {
                 $this->logger->error('Procest: quota initialise write failed', ['exception' => $e->getMessage()]);
-            }
-        }
+            }//end try
+        }//end foreach
 
         return $rows;
-    }
+    }//end initialize()
 
     /**
      * Get the quota row for (tenant, type).
@@ -156,7 +156,7 @@ class TenantQuotaService
         } catch (Throwable $e) {
             return null;
         }
-    }
+    }//end getQuota()
 
     /**
      * Decide what to do for the next request — given the current quota row
@@ -178,11 +178,11 @@ class TenantQuotaService
             return ['decision' => self::DECISION_ALLOW, 'soft' => false, 'reason' => 'unlimited'];
         }
 
-        $limitInt    = (int) $limit;
-        $next        = ($current + $increment);
-        $softLimit   = (int) floor($limitInt * ($warningPct / 100));
-        $softHit     = $next >= $softLimit;
-        $hardHit     = $next > $limitInt;
+        $limitInt  = (int) $limit;
+        $next      = ($current + $increment);
+        $softLimit = (int) floor($limitInt * ($warningPct / 100));
+        $softHit   = $next >= $softLimit;
+        $hardHit   = $next > $limitInt;
 
         if ($hardHit === false) {
             return ['decision' => self::DECISION_ALLOW, 'soft' => $softHit, 'reason' => $softHit ? 'soft_limit' : 'within_limit'];
@@ -198,7 +198,7 @@ class TenantQuotaService
         }
 
         return ['decision' => self::DECISION_WARN, 'soft' => true, 'reason' => 'warn_limit_exceeded'];
-    }
+    }//end decide()
 
     /**
      * Atomic check + increment.
@@ -225,7 +225,7 @@ class TenantQuotaService
         $this->persistQuota($quota);
         $decision['currentUsage'] = $quota['currentUsage'];
         return $decision;
-    }
+    }//end consume()
 
     /**
      * Set a new limit value.
@@ -246,7 +246,7 @@ class TenantQuotaService
         $quota['limit'] = $limit;
         $this->persistQuota($quota);
         return $quota;
-    }
+    }//end setLimit()
 
     /**
      * Reset due quotas. Used by the monthly background job.
@@ -267,7 +267,7 @@ class TenantQuotaService
         $quota['resetAt']      = $this->nextResetAt((string) ($quota['quotaType'] ?? 'cases_per_month'));
         $this->persistQuota($quota);
         return $quota;
-    }
+    }//end resetIfDue()
 
     /**
      * Compute the next reset timestamp for a quota type.
@@ -284,7 +284,7 @@ class TenantQuotaService
 
         // cases_per_month + others reset on the first of next month.
         return (new DateTimeImmutable('first day of next month'))->format(DATE_ATOM);
-    }
+    }//end nextResetAt()
 
     /**
      * @param array<string,mixed> $quota Quota row.
@@ -309,7 +309,7 @@ class TenantQuotaService
         } catch (Throwable $e) {
             $this->logger->error('Procest: persistQuota failed', ['exception' => $e->getMessage()]);
         }
-    }
+    }//end persistQuota()
 
     /**
      * @return mixed|null
@@ -326,5 +326,5 @@ class TenantQuotaService
         } catch (Throwable $e) {
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

@@ -150,7 +150,7 @@ class TenantSchemaProvisioner
                     $e
                 );
             }
-        }
+        }//end foreach
 
         $this->logger->info(
             'Procest: cloned application tables into tenant schema',
@@ -194,8 +194,8 @@ class TenantSchemaProvisioner
         try {
             $qb = $this->db->getQueryBuilder();
             $qb->select('schema_name')
-               ->from('information_schema.schemata')
-               ->where($qb->expr()->eq('schema_name', $qb->createNamedParameter($name)));
+                ->from('information_schema.schemata')
+                ->where($qb->expr()->eq('schema_name', $qb->createNamedParameter($name)));
             $result = $qb->executeQuery();
             $row    = $result->fetchOne();
             $result->closeCursor();
@@ -236,8 +236,8 @@ class TenantSchemaProvisioner
         try {
             $qb = $this->db->getQueryBuilder();
             $qb->select('table_name')
-               ->from('information_schema.tables')
-               ->where($qb->expr()->eq('table_schema', $qb->createNamedParameter('public')));
+                ->from('information_schema.tables')
+                ->where($qb->expr()->eq('table_schema', $qb->createNamedParameter('public')));
             $result = $qb->executeQuery();
             $rows   = $result->fetchAll(\PDO::FETCH_ASSOC);
             $result->closeCursor();
@@ -257,7 +257,7 @@ class TenantSchemaProvisioner
         } catch (Throwable $e) {
             $this->logger->info('Procest: listApplicationTables failed', ['exception' => $e->getMessage()]);
             return [];
-        }
+        }//end try
     }//end listApplicationTables()
 
     /**

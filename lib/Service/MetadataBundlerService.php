@@ -42,9 +42,15 @@ use RuntimeException;
 class MetadataBundlerService
 {
     private const MDTO_REQUIRED_ELEMENTS = [
-        'identificatie', 'aggregatieniveau', 'naam', 'classificatie',
-        'dekkingInTijd', 'beperkingGebruik', 'bewaartermijn',
-        'eventGeschiedenis', 'author',
+        'identificatie',
+        'aggregatieniveau',
+        'naam',
+        'classificatie',
+        'dekkingInTijd',
+        'beperkingGebruik',
+        'bewaartermijn',
+        'eventGeschiedenis',
+        'author',
     ];
 
     /**
@@ -62,9 +68,9 @@ class MetadataBundlerService
     /**
      * Build a bundle for a case.
      *
-     * @param array<string, mixed>             $case        Case row.
-     * @param array<string, mixed>             $rule        Retention rule.
-     * @param array<int, array<string, mixed>> $documents   Document rows.
+     * @param array<string, mixed>             $case      Case row.
+     * @param array<string, mixed>             $rule      Retention rule.
+     * @param array<int, array<string, mixed>> $documents Document rows.
      *
      * @return array{metadataXml:string, metadataXsdVersion:string, documents:array<int, array<string, mixed>>}
      *
@@ -116,9 +122,9 @@ class MetadataBundlerService
     /**
      * Persist a SipBundel row.
      *
-     * @param string               $caseId      Case id.
-     * @param string               $metadataXml XML.
-     * @param array<int, array<string, mixed>> $documents Documents.
+     * @param string                           $caseId      Case id.
+     * @param string                           $metadataXml XML.
+     * @param array<int, array<string, mixed>> $documents   Documents.
      *
      * @return array<string, mixed>
      *
@@ -145,6 +151,7 @@ class MetadataBundlerService
         if ($objectService === null || $register === '' || $schema === '') {
             return $row;
         }
+
         try {
             $saved = $objectService->saveObject($register, $schema, $row);
             return is_array($saved) === true ? $saved : $row;
@@ -155,9 +162,9 @@ class MetadataBundlerService
     }//end createSipBundel()
 
     /**
-     * @param array<string, mixed>             $case      Case.
-     * @param array<string, mixed>             $rule      Rule.
-     * @param array<int, array<string, mixed>> $documents Documents.
+     * @param  array<string, mixed>             $case      Case.
+     * @param  array<string, mixed>             $rule      Rule.
+     * @param  array<int, array<string, mixed>> $documents Documents.
      * @return string
      */
     private function renderMdtoXml(array $case, array $rule, array $documents): string
@@ -172,9 +179,9 @@ class MetadataBundlerService
 
         $docElements = '';
         foreach ($documents as $doc) {
-            $docName = htmlspecialchars((string) ($doc['name'] ?? 'document'), ENT_XML1);
-            $docType = htmlspecialchars((string) ($doc['documentType'] ?? 'onbekend'), ENT_XML1);
-            $docMime = htmlspecialchars((string) ($doc['mimeType'] ?? 'application/octet-stream'), ENT_XML1);
+            $docName      = htmlspecialchars((string) ($doc['name'] ?? 'document'), ENT_XML1);
+            $docType      = htmlspecialchars((string) ($doc['documentType'] ?? 'onbekend'), ENT_XML1);
+            $docMime      = htmlspecialchars((string) ($doc['mimeType'] ?? 'application/octet-stream'), ENT_XML1);
             $docElements .= "    <mdto:document><mdto:naam>{$docName}</mdto:naam><mdto:type>{$docType}</mdto:type><mdto:mimeType>{$docMime}</mdto:mimeType></mdto:document>\n";
         }
 
@@ -197,5 +204,5 @@ class MetadataBundlerService
 {$docElements}  </mdto:documents>
 </mdto:MDTO>
 XML;
-    }
+    }//end renderMdtoXml()
 }//end class

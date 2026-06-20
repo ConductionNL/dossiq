@@ -55,11 +55,11 @@ class MandaatGebruikService
     /**
      * Log a mandate use.
      *
-     * @param string               $zaakId           Case id.
-     * @param string               $decisionId       Decision id.
-     * @param string               $mandaatId        Mandate id.
-     * @param string               $userId           User id.
-     * @param array<string, mixed> $roleSnapshot     Role snapshot at decision time.
+     * @param string               $zaakId            Case id.
+     * @param string               $decisionId        Decision id.
+     * @param string               $mandaatId         Mandate id.
+     * @param string               $userId            User id.
+     * @param array<string, mixed> $roleSnapshot      Role snapshot at decision time.
      * @param array<string, mixed> $conditionsApplied Voorwaarden snapshot.
      *
      * @return array<string, mixed>
@@ -71,8 +71,8 @@ class MandaatGebruikService
         string $decisionId,
         string $mandaatId,
         string $userId,
-        array $roleSnapshot = [],
-        array $conditionsApplied = []
+        array $roleSnapshot=[],
+        array $conditionsApplied=[]
     ): array {
         $objectService = $this->settingsService->getObjectService();
         $register      = (string) $this->settingsService->getConfigValue('register');
@@ -118,6 +118,7 @@ class MandaatGebruikService
         if ($objectService === null || $register === '' || $schema === '') {
             return [];
         }
+
         try {
             $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaakId' => $zaakId]);
             return is_array($rows) === true ? $rows : [];
@@ -137,7 +138,7 @@ class MandaatGebruikService
      *
      * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
      */
-    public function getDecisionByMandaat(string $mandaatId, ?DateTimeImmutable $from = null, ?DateTimeImmutable $until = null): array
+    public function getDecisionByMandaat(string $mandaatId, ?DateTimeImmutable $from=null, ?DateTimeImmutable $until=null): array
     {
         $objectService = $this->settingsService->getObjectService();
         $register      = (string) $this->settingsService->getConfigValue('register');
@@ -145,6 +146,7 @@ class MandaatGebruikService
         if ($objectService === null || $register === '' || $schema === '') {
             return [];
         }
+
         try {
             $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['mandaatId' => $mandaatId]);
         } catch (\Throwable $e) {
@@ -160,15 +162,19 @@ class MandaatGebruikService
             if (is_array($row) === false) {
                 continue;
             }
+
             $when = substr((string) ($row['tijdstip'] ?? ''), 0, 10);
             if ($from !== null && $when < $from->format('Y-m-d')) {
                 continue;
             }
+
             if ($until !== null && $when > $until->format('Y-m-d')) {
                 continue;
             }
+
             $out[] = $row;
         }
+
         return $out;
     }//end getDecisionByMandaat()
 }//end class

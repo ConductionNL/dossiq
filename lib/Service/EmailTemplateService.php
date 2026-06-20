@@ -66,7 +66,6 @@ class EmailTemplateService
         ],
     ];
 
-
     /**
      * Constructor.
      *
@@ -78,7 +77,6 @@ class EmailTemplateService
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
-
 
     /**
      * Persist a new template (version 1).
@@ -104,7 +102,6 @@ class EmailTemplateService
         return $this->saveTemplate(payload: $payload);
     }//end createTemplate()
 
-
     /**
      * Bump-version update.
      *
@@ -128,7 +125,7 @@ class EmailTemplateService
         $currentVersion = (int) ($existing['version'] ?? 1);
 
         // Mark the prior version inactive so the active filter only sees the new copy.
-        $previous            = $existing;
+        $previous = $existing;
         $previous['isActive'] = false;
         try {
             $this->saveTemplate(payload: $previous);
@@ -140,18 +137,17 @@ class EmailTemplateService
         }
 
         $payload = [
-            'caseType' => $existing['caseType'] ?? '',
-            'name'     => (string) ($data['name'] ?? ($existing['name'] ?? '')),
-            'subject'  => (string) ($data['subject'] ?? ($existing['subject'] ?? '')),
-            'body'     => (string) ($data['body'] ?? ($existing['body'] ?? '')),
-            'version'  => ($currentVersion + 1),
-            'isActive' => true,
+            'caseType'        => $existing['caseType'] ?? '',
+            'name'            => (string) ($data['name'] ?? ($existing['name'] ?? '')),
+            'subject'         => (string) ($data['subject'] ?? ($existing['subject'] ?? '')),
+            'body'            => (string) ($data['body'] ?? ($existing['body'] ?? '')),
+            'version'         => ($currentVersion + 1),
+            'isActive'        => true,
             'previousVersion' => $existing['id'] ?? null,
         ];
 
         return $this->saveTemplate(payload: $payload);
     }//end updateTemplate()
-
 
     /**
      * List active templates for a caseType.
@@ -185,12 +181,13 @@ class EmailTemplateService
             ],
         );
 
-        return array_values(array_filter(
+        return array_values(
+                array_filter(
             $rows,
             static fn (array $row): bool => ($row['isActive'] ?? true) === true
-        ));
+        )
+                );
     }//end listTemplates()
-
 
     /**
      * Variable catalog grouped by source.
@@ -210,7 +207,7 @@ class EmailTemplateService
     public function getAvailableVariables(string $caseTypeId): array
     {
         return [
-            'case' => [
+            'case'     => [
                 'zaakNummer',
                 'titel',
                 'startDatum',
@@ -219,7 +216,7 @@ class EmailTemplateService
                 'status',
                 'behandelaar',
             ],
-            'contact' => [
+            'contact'  => [
                 'contactNaam',
                 'contactEmail',
                 'contactTelefoon',
@@ -230,7 +227,6 @@ class EmailTemplateService
             ],
         ];
     }//end getAvailableVariables()
-
 
     /**
      * Prefill a draft from a template against a case.
@@ -264,15 +260,19 @@ class EmailTemplateService
             throw new \RuntimeException('Case is in a final state — drafting is disabled');
         }
 
-        $vars        = $this->buildVariableMap(case: $case);
-        $rawSubject  = (string) ($template['subject'] ?? '');
-        $rawBody     = (string) ($template['body'] ?? '');
-        $subject     = $this->resolve(text: $rawSubject, vars: $vars);
-        $body        = $this->resolve(text: $rawBody, vars: $vars);
-        $unresolved  = array_values(array_unique(array_merge(
+        $vars       = $this->buildVariableMap(case: $case);
+        $rawSubject = (string) ($template['subject'] ?? '');
+        $rawBody    = (string) ($template['body'] ?? '');
+        $subject    = $this->resolve(text: $rawSubject, vars: $vars);
+        $body       = $this->resolve(text: $rawBody, vars: $vars);
+        $unresolved = array_values(
+                array_unique(
+                array_merge(
             $this->collectUnresolved(text: $rawSubject, vars: $vars),
             $this->collectUnresolved(text: $rawBody, vars: $vars)
-        )));
+                )
+                )
+                );
 
         return [
             'subject'    => $subject,
@@ -282,7 +282,6 @@ class EmailTemplateService
             'templateId' => $templateId,
         ];
     }//end prefillDraft()
-
 
     /**
      * Seed the three Dutch defaults for a caseType (idempotent by slug).
@@ -295,7 +294,7 @@ class EmailTemplateService
      */
     public function seedDefaultTemplates(string $caseTypeId): int
     {
-        $existing = $this->listTemplates(caseTypeId: $caseTypeId);
+        $existing      = $this->listTemplates(caseTypeId: $caseTypeId);
         $existingNames = array_column($existing, 'name');
 
         $created = 0;
@@ -305,11 +304,14 @@ class EmailTemplateService
             }
 
             try {
-                $this->createTemplate(caseTypeId: $caseTypeId, data: [
-                    'name'    => $default['name'],
-                    'subject' => $default['subject'],
-                    'body'    => $default['body'],
-                ]);
+                $this->createTemplate(
+                        caseTypeId: $caseTypeId,
+                        data: [
+                            'name'    => $default['name'],
+                            'subject' => $default['subject'],
+                            'body'    => $default['body'],
+                        ]
+                        );
                 $created++;
             } catch (\Throwable $e) {
                 $this->logger->warning(
@@ -317,11 +319,10 @@ class EmailTemplateService
                     ['caseType' => $caseTypeId, 'template' => $default['name'], 'error' => $e->getMessage()]
                 );
             }
-        }
+        }//end foreach
 
         return $created;
     }//end seedDefaultTemplates()
-
 
     /**
      * Resolve `{{name}}` placeholders against the variable map.
@@ -344,7 +345,6 @@ class EmailTemplateService
             $text,
         );
     }//end resolve()
-
 
     /**
      * Collect placeholder names left unresolved after a render pass.
@@ -371,7 +371,6 @@ class EmailTemplateService
 
         return $unresolved;
     }//end collectUnresolved()
-
 
     /**
      * Persist (insert OR update) a template payload via OR.
@@ -405,7 +404,6 @@ class EmailTemplateService
 
         return is_array($saved) === true ? $saved : $payload;
     }//end saveTemplate()
-
 
     /**
      * Load a template by id/slug.
@@ -443,7 +441,6 @@ class EmailTemplateService
 
         return is_array($obj) === true ? $obj : null;
     }//end loadTemplate()
-
 
     /**
      * Load a case (with the derived `_isFinal` flag merged in).
@@ -486,7 +483,6 @@ class EmailTemplateService
         $obj['_isFinal'] = (empty($obj['endDate']) === false);
         return $obj;
     }//end loadCase()
-
 
     /**
      * Build the variable map for a single case.

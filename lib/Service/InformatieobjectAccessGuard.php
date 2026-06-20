@@ -216,8 +216,8 @@ class InformatieobjectAccessGuard
     /**
      * Remove informatieobjecten the user is not cleared to see.
      *
-     * @param IUser                              $user             The requesting user.
-     * @param array<int, array<string, mixed>>   $informatieobjecten The candidate records.
+     * @param IUser                            $user               The requesting user.
+     * @param array<int, array<string, mixed>> $informatieobjecten The candidate records.
      *
      * @return array<int, array<string, mixed>> Records the user may read (re-indexed).
      *
@@ -249,7 +249,7 @@ class InformatieobjectAccessGuard
      * informatieobjecttype to a MORE restrictive level but never to a LESS
      * restrictive one.
      *
-     * @param string $defaultLevel  The informatieobjecttype default classification.
+     * @param string $defaultLevel   The informatieobjecttype default classification.
      * @param string $requestedLevel The level the user requested.
      *
      * @return bool True when the requested level is allowed (equal or more restrictive).

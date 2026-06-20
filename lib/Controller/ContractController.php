@@ -225,11 +225,13 @@ class ContractController extends Controller
         }
 
         // REQ-PDCD-001: return decisionRef so the caller can track the decidesk Decision.
-        return new JSONResponse([
-            'ok'          => true,
-            'caseRef'     => (string) ($result['caseRef'] ?? ''),
-            'decisionRef' => (string) ($result['decisionRef'] ?? ''),
-        ]);
+        return new JSONResponse(
+                [
+                    'ok'          => true,
+                    'caseRef'     => (string) ($result['caseRef'] ?? ''),
+                    'decisionRef' => (string) ($result['decisionRef'] ?? ''),
+                ]
+                );
     }//end requestRenewal()
 
     /**

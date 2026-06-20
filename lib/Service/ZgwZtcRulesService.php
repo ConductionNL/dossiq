@@ -999,6 +999,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $errors[] = "Cannot validate publish: OpenRegister object service unavailable";
             return $errors;
         }
+
         if ($caseTypeId === '') {
             $errors[] = "Cannot validate publish: case type id is empty";
             return $errors;
@@ -1029,6 +1030,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
                     break;
                 }
             }
+
             if ($hasFinal === false) {
                 $errors[] = "At least one status type must be marked as final";
             }
@@ -1044,7 +1046,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
         } catch (\Throwable $e) {
             $caseTypes = [];
         }
-        $caseType = (count($caseTypes) > 0 && is_array($caseTypes[0]) === true) ? $caseTypes[0] : [];
+
+        $caseType  = (count($caseTypes) > 0 && is_array($caseTypes[0]) === true) ? $caseTypes[0] : [];
         $validFrom = (string) ($caseType['validFrom'] ?? '');
         if ($validFrom === '') {
             $errors[] = "'Valid from' date must be set before publishing";
@@ -1120,6 +1123,7 @@ class ZgwZtcRulesService extends ZgwRulesBase
             if (is_array($case) === false) {
                 continue;
             }
+
             $caseStatus = (string) ($case['status'] ?? '');
             if ($caseStatus !== '' && in_array($caseStatus, $finalSlugs, true) === true) {
                 $closedCount++;
@@ -1130,16 +1134,16 @@ class ZgwZtcRulesService extends ZgwRulesBase
 
         if ($activeCount > 0) {
             return [
-                'blocked' => true,
+                'blocked'              => true,
                 'requiresConfirmation' => false,
-                'message' => "Cannot delete case type: $activeCount active case(s) still use this type. Close or reassign all cases first.",
+                'message'              => "Cannot delete case type: $activeCount active case(s) still use this type. Close or reassign all cases first.",
             ];
         }
 
         return [
-            'blocked' => false,
+            'blocked'              => false,
             'requiresConfirmation' => true,
-            'message' => "Deleting will affect $closedCount closed case(s). Confirm to proceed.",
+            'message'              => "Deleting will affect $closedCount closed case(s). Confirm to proceed.",
         ];
     }//end validateDeletion()
 }//end class

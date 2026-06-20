@@ -29,7 +29,7 @@ class SupplierDashboardService
         private readonly ContractRenewalService $contractRenewal,
         private readonly LeverancierViewModelService $viewModel,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Build the dashboard summary for a supplier.
@@ -59,7 +59,7 @@ class SupplierDashboardService
                 'period' => (new \DateTimeImmutable('@'.$nowTs))->format('Y-m'),
             ],
         ];
-    }
+    }//end buildSummary()
 
     /**
      * Tender card.
@@ -75,14 +75,20 @@ class SupplierDashboardService
         $rejected   = 0;
         foreach ($tenders as $t) {
             switch ((string) ($t['status'] ?? '')) {
-                case 'awarded':    $awarded++; break;
-                case 'evaluating': $evaluating++; break;
-                case 'rejected':   $rejected++; break;
+                case 'awarded':    $awarded++;
+
+                    break;
+                case 'evaluating': $evaluating++;
+
+                    break;
+                case 'rejected':   $rejected++;
+
+                    break;
             }
         }
 
         return ['count' => count($tenders), 'awarded' => $awarded, 'evaluating' => $evaluating, 'rejected' => $rejected];
-    }
+    }//end summariseTenders()
 
     /**
      * Invoice card.
@@ -112,7 +118,7 @@ class SupplierDashboardService
             'disputed'      => $disputed,
             'ageAnalysis'   => $this->invoiceForecast->getAgeAnalysis($invoices, $nowTs),
         ];
-    }
+    }//end summariseInvoices()
 
     /**
      * Contract card.
@@ -137,5 +143,5 @@ class SupplierDashboardService
         }
 
         return ['count' => count($contracts), 'expiringSoon' => $expiring, 'autoRenewing' => $autoRenewing];
-    }
-}
+    }//end summariseContracts()
+}//end class

@@ -44,7 +44,7 @@ class TenantOnboardingController extends Controller
         private readonly IUserSession $userSession,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
-    }
+    }//end __construct()
 
     /**
      * GET /api/saas/tenants/{tenantId}/onboarding/progress
@@ -62,7 +62,7 @@ class TenantOnboardingController extends Controller
                 'progress' => $this->onboarding->getProgress($tenantId),
             ]
         );
-    }
+    }//end progress()
 
     /**
      * POST /api/saas/tenants/{tenantId}/onboarding/{step}/complete
@@ -95,7 +95,7 @@ class TenantOnboardingController extends Controller
         }
 
         return new JSONResponse(['success' => true, 'task' => $task]);
-    }
+    }//end complete()
 
     /**
      * POST /api/saas/tenants/{tenantId}/onboarding/activate
@@ -110,7 +110,7 @@ class TenantOnboardingController extends Controller
         $result = $this->onboarding->activate($tenantId);
         $code   = ($result['activated'] === true) ? Http::STATUS_OK : Http::STATUS_CONFLICT;
         return new JSONResponse(['success' => $result['activated'], 'result' => $result], $code);
-    }
+    }//end activate()
 
     /**
      * POST /api/saas/tenants/{tenantId}/onboarding/initialise
@@ -124,5 +124,5 @@ class TenantOnboardingController extends Controller
     {
         $rows = $this->onboarding->createOnboarding($tenantId);
         return new JSONResponse(['success' => true, 'tasks' => $rows]);
-    }
-}
+    }//end initialise()
+}//end class

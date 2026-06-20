@@ -164,9 +164,9 @@ class MandateValidationMiddleware extends Middleware
     /**
      * Audit-log a mandate decision (allow + deny).
      *
-     * @param string             $tenantId Tenant UUID.
-     * @param string             $userId   NC user ID.
-     * @param string             $action   Action.
+     * @param string                            $tenantId Tenant UUID.
+     * @param string                            $userId   NC user ID.
+     * @param string                            $action   Action.
      * @param array{allowed:bool,reason:string} $decision Decision.
      *
      * @return void

@@ -65,14 +65,14 @@ class LogBrpHaalCentraalAdapter implements BrpHaalCentraalAdapterInterface
      *
      * @return BrpLookupResult The dispatch outcome.
      */
-    public function lookup(string $bsn, array $context = []): BrpLookupResult
+    public function lookup(string $bsn, array $context=[]): BrpLookupResult
     {
         $this->logger->info(
             'Procest BRP / Haal Centraal lookup deferred (no outbound connector bound)',
             [
-                'bsn'             => '[REDACTED]',
+                'bsn'              => '[REDACTED]',
                 'bsn_length_check' => (strlen($bsn) === 9),
-                'context'         => $context,
+                'context'          => $context,
             ]
         );
 

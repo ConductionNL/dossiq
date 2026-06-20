@@ -17,4 +17,4 @@ namespace OCA\Procest\Middleware;
 
 class SupplierRateLimitException extends \Exception
 {
-}
+}//end class

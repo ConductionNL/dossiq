@@ -65,12 +65,12 @@ class AdviceService
     /**
      * Constructor.
      *
-     * @param SettingsService      $settingsService     The settings service
-     * @param IUserSession         $userSession         The current user session
-     * @param IGroupManager        $groupManager        Group manager (Wilco #6 IDOR fix)
-     * @param INotificationManager $notificationManager The notification manager
-     * @param LoggerInterface      $logger              The logger
-     * @param AdviceDelegationService $adviceDelegation Advice delegation to decidesk (ADR-019)
+     * @param SettingsService         $settingsService     The settings service
+     * @param IUserSession            $userSession         The current user session
+     * @param IGroupManager           $groupManager        Group manager (Wilco #6 IDOR fix)
+     * @param INotificationManager    $notificationManager The notification manager
+     * @param LoggerInterface         $logger              The logger
+     * @param AdviceDelegationService $adviceDelegation    Advice delegation to decidesk (ADR-019)
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -411,7 +411,6 @@ class AdviceService
         return $user->getUID();
     }//end getUserId()
 
-
     /**
      * Submit advice (mark as received with optional adviesText).
      *
@@ -593,7 +592,7 @@ class AdviceService
             throw new RuntimeException('Advice request not accessible');
         }
 
-        $data = $this->normalizeResult(result: $record);
+        $data  = $this->normalizeResult(result: $record);
         $field = ($action === 'submit') ? 'adviseur' : 'requestedBy';
         if (($data[$field] ?? '') !== $uid) {
             throw new RuntimeException('Advice request not accessible');
@@ -716,7 +715,7 @@ class AdviceService
             );
             // REQ-PDRD-002: fail closed; surface the error.
             throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
-        }
+        }//end try
 
         $adviseur = $payload['adviseur'];
         if ($adviseur !== '') {

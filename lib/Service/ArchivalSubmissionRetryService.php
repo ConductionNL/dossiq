@@ -101,7 +101,7 @@ class ArchivalSubmissionRetryService
      *
      * @spec openspec/changes/archief-edepot-handover-05-sip-submission/tasks.md
      */
-    public function processRetryQueue(?int $now = null): array
+    public function processRetryQueue(?int $now=null): array
     {
         $counts = [
             'scanned'         => 0,
@@ -138,6 +138,7 @@ class ArchivalSubmissionRetryService
             if (is_array($row) === false) {
                 continue;
             }
+
             $counts['scanned']++;
 
             $attempt     = max(1, (int) ($row['attemptNumber'] ?? 1));
@@ -165,14 +166,14 @@ class ArchivalSubmissionRetryService
                     ['retryCount' => $attempt, 'previousTransactieId' => (string) ($row['id'] ?? '')]
                 );
                 $newRow = [
-                    'sipBundelId'           => $sipBundelId,
-                    'zaakId'                => $caseId,
-                    'attemptNumber'         => ($attempt + 1),
-                    'status'                => ($result !== null && $result->submissionStatus !== 'FAILED') ? 'pending' : 'failed',
-                    'timestamp'             => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
-                    'previousTransactieId'  => (string) ($row['id'] ?? ''),
-                    'archiefId'             => $result !== null ? $result->archiefId : '',
-                    'submissionStatus'      => $result !== null ? $result->submissionStatus : 'FAILED',
+                    'sipBundelId'          => $sipBundelId,
+                    'zaakId'               => $caseId,
+                    'attemptNumber'        => ($attempt + 1),
+                    'status'               => ($result !== null && $result->submissionStatus !== 'FAILED') ? 'pending' : 'failed',
+                    'timestamp'            => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+                    'previousTransactieId' => (string) ($row['id'] ?? ''),
+                    'archiefId'            => $result !== null ? $result->archiefId : '',
+                    'submissionStatus'     => $result !== null ? $result->submissionStatus : 'FAILED',
                 ];
                 $objectService->saveObject($register, $schema, $newRow);
                 $counts['retried']++;
@@ -188,8 +189,8 @@ class ArchivalSubmissionRetryService
                     'ArchivalSubmissionRetryService: retry failed',
                     ['error' => $e->getMessage(), 'sipBundelId' => $sipBundelId]
                 );
-            }
-        }
+            }//end try
+        }//end foreach
 
         return $counts;
     }//end processRetryQueue()
@@ -230,6 +231,7 @@ class ArchivalSubmissionRetryService
         if ($timestamp === '') {
             return null;
         }
+
         try {
             return (new DateTimeImmutable($timestamp))->getTimestamp();
         } catch (\Throwable $e) {

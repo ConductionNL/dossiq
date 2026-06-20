@@ -48,7 +48,9 @@ class TermijnService
 {
     use SearchesObjects;
 
-    /** @var array<string, array<string, mixed>> */
+    /**
+     * @var array<string, array<string, mixed>>
+     */
     private array $definitieCache = [];
 
     /**
@@ -81,10 +83,10 @@ class TermijnService
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
      */
-    public function createTermijnInstance(string $zaakId, string $zaaktype, ?DateTimeImmutable $startDate = null): array
+    public function createTermijnInstance(string $zaakId, string $zaaktype, ?DateTimeImmutable $startDate=null): array
     {
-        $startDate  = ($startDate ?? new DateTimeImmutable());
-        $definitie  = $this->getTermijnDefinitie($zaaktype);
+        $startDate = ($startDate ?? new DateTimeImmutable());
+        $definitie = $this->getTermijnDefinitie($zaaktype);
         if ($definitie === null) {
             throw new RuntimeException(
                 'No active TermijnDefinitie configured for zaaktype "'.$zaaktype.'" (REQ-TERM-001-A)'
@@ -95,14 +97,14 @@ class TermijnService
         $einddatum    = $startDate->modify('+'.$durationDays.' days')->format('Y-m-d');
 
         $instance = [
-            'zaak'                   => $zaakId,
-            'termijnDefinitie'       => (string) ($definitie['id'] ?? ''),
-            'startDatum'             => $startDate->format('Y-m-d\TH:i:sP'),
-            'einddatumBerekend'      => $einddatum,
-            'einddatumActueel'       => $einddatum,
-            'status'                 => 'lopend',
-            'aantalVerlengingen'     => 0,
-            'notificatiesVerstuurd'  => [],
+            'zaak'                  => $zaakId,
+            'termijnDefinitie'      => (string) ($definitie['id'] ?? ''),
+            'startDatum'            => $startDate->format('Y-m-d\TH:i:sP'),
+            'einddatumBerekend'     => $einddatum,
+            'einddatumActueel'      => $einddatum,
+            'status'                => 'lopend',
+            'aantalVerlengingen'    => 0,
+            'notificatiesVerstuurd' => [],
         ];
 
         $saved = $this->save('termijn_instance_schema', $instance);
@@ -268,7 +270,7 @@ class TermijnService
                 continue;
             }
 
-            $validFrom  = (string) ($row['validFrom']  ?? '1970-01-01');
+            $validFrom  = (string) ($row['validFrom'] ?? '1970-01-01');
             $validUntil = (string) ($row['validUntil'] ?? '');
             if ($validFrom <= $today && ($validUntil === '' || $validUntil >= $today)) {
                 $active[] = $row;
@@ -302,8 +304,8 @@ class TermijnService
      */
     public function markTermijnCompleted(
         string $termijnInstanceId,
-        ?DateTimeImmutable $voltooiDatum = null,
-        string $documentLink = ''
+        ?DateTimeImmutable $voltooiDatum=null,
+        string $documentLink=''
     ): ?array {
         $voltooiDatum = ($voltooiDatum ?? new DateTimeImmutable());
 
@@ -349,9 +351,9 @@ class TermijnService
         string $grondslag,
         string $motivering,
         int $dagenImpact,
-        ?DateTimeImmutable $tijdstip = null,
-        string $documentLink = '',
-        string $actor = 'system',
+        ?DateTimeImmutable $tijdstip=null,
+        string $documentLink='',
+        string $actor='system',
     ): ?array {
         $tijdstip = ($tijdstip ?? new DateTimeImmutable());
         $event    = [

@@ -93,29 +93,34 @@ class MandaatImportService
             if ($rolNaam === '') {
                 throw new RuntimeException('Row '.($idx + 1).' missing rolNaam');
             }
+
             if (isset($roleIndex[$rolNaam]) === false) {
                 throw new RuntimeException('Unknown OrganisatieRol "'.$rolNaam.'" at row '.($idx + 1));
             }
+
             $resolved[] = $row + ['gemandateerdeRol' => $roleIndex[$rolNaam]];
         }
 
         // Create the besluit (concept).
-        $besluit = $this->save('mandaterings_besluit_schema', [
-            'besluitNummer' => $besluitNummer,
-            'besluitNaam'   => $besluitNaam,
-            'status'        => 'concept',
-            'decideskUuid'  => $decideskUuid,
-        ]);
+        $besluit = $this->save(
+                'mandaterings_besluit_schema',
+                [
+                    'besluitNummer' => $besluitNummer,
+                    'besluitNaam'   => $besluitNaam,
+                    'status'        => 'concept',
+                    'decideskUuid'  => $decideskUuid,
+                ]
+                );
 
         // Find the prior besluit version (by besluitNummer) for diff.
-        $prior = $this->findPriorBesluit($besluitNummer);
+        $prior         = $this->findPriorBesluit($besluitNummer);
         $priorMandaten = ($prior !== null) ? $this->findMandatenForBesluit((string) ($prior['id'] ?? '')) : [];
 
         // Create one mandaat per CSV row.
-        $newCount = 0;
-        $changedCount = 0;
+        $newCount       = 0;
+        $changedCount   = 0;
         $unchangedCount = 0;
-        $diff = [];
+        $diff           = [];
         foreach ($resolved as $row) {
             $payload = [
                 'mandaatNummer'       => (string) $row['mandaatNummer'],
@@ -124,8 +129,8 @@ class MandaatImportService
                 'gemandateerdeRol'    => (string) $row['gemandateerdeRol'],
                 'wettelijkeGrondslag' => (string) ($row['wettelijkeGrondslag'] ?? ''),
                 'voorwaarden'         => [
-                    'plafondCents' => (int) ($row['plafondCents'] ?? 0),
-                    'subdelegatie' => $this->parseBool((string) ($row['subdelegatie'] ?? 'false')),
+                    'plafondCents'  => (int) ($row['plafondCents'] ?? 0),
+                    'subdelegatie'  => $this->parseBool((string) ($row['subdelegatie'] ?? 'false')),
                     'decisionTypes' => $this->parseList((string) ($row['decisionTypes'] ?? '')),
                 ],
                 'status'              => 'concept',
@@ -147,17 +152,18 @@ class MandaatImportService
                 continue;
             }
 
-            $changed = false;
+            $changed       = false;
             $changedFields = [];
             foreach (['omschrijving', 'gemandateerdeRol', 'wettelijkeGrondslag'] as $f) {
                 if ((string) ($existing[$f] ?? '') !== (string) ($payload[$f] ?? '')) {
-                    $changed = true;
+                    $changed         = true;
                     $changedFields[] = $f;
                 }
             }
+
             $exPlafond = (int) (($existing['voorwaarden'] ?? [])['plafondCents'] ?? 0);
             if ($exPlafond !== (int) $payload['voorwaarden']['plafondCents']) {
-                $changed = true;
+                $changed         = true;
                 $changedFields[] = 'plafondCents';
             }
 
@@ -168,10 +174,10 @@ class MandaatImportService
                 $unchangedCount++;
                 $diff[] = ['mandaatNummer' => (string) $row['mandaatNummer'], 'change' => 'UNCHANGED'];
             }
-        }
+        }//end foreach
 
         // REMOVED = in prior, not in new.
-        $newNumbers = array_map(static fn (array $r): string => (string) ($r['mandaatNummer'] ?? ''), $resolved);
+        $newNumbers   = array_map(static fn (array $r): string => (string) ($r['mandaatNummer'] ?? ''), $resolved);
         $removedCount = 0;
         foreach ($priorMandaten as $pm) {
             $num = (string) ($pm['mandaatNummer'] ?? '');
@@ -216,12 +222,13 @@ class MandaatImportService
         if (is_array($besluit) === false) {
             throw new RuntimeException('Besluit not found: '.$besluitId);
         }
+
         if (($besluit['status'] ?? '') !== 'concept') {
             throw new RuntimeException('Besluit is not in concept status');
         }
 
         $now = (new DateTimeImmutable())->format('Y-m-d');
-        $besluit['status'] = 'vastgesteld';
+        $besluit['status']           = 'vastgesteld';
         $besluit['inWerkingtreding'] = ($besluit['inWerkingtreding'] ?? $now);
         $besluit = $objectService->saveObject($register, $bSchema, $besluit);
 
@@ -231,21 +238,24 @@ class MandaatImportService
         } catch (\Throwable $e) {
             $mandaten = [];
         }
+
         foreach ((array) $mandaten as $m) {
             if (is_array($m) === false) {
                 continue;
             }
+
             $m['status'] = 'active';
             if (isset($m['validFrom']) === false || $m['validFrom'] === '') {
                 $m['validFrom'] = $now;
             }
+
             $objectService->saveObject($register, $mSchema, $m);
         }
 
         // Expire prior besluit.
         $prior = $this->findPriorBesluit((string) $besluit['besluitNummer'], excludeId: $besluitId);
         if ($prior !== null) {
-            $prior['status'] = 'vervallen';
+            $prior['status']      = 'vervallen';
             $prior['vervalDatum'] = $now;
             $objectService->saveObject($register, $bSchema, $prior);
         }
@@ -266,6 +276,7 @@ class MandaatImportService
         if ($lines === false || count($lines) < 2) {
             return [];
         }
+
         $header = str_getcsv($lines[0]);
         if (is_array($header) === false) {
             return [];
@@ -282,15 +293,17 @@ class MandaatImportService
             if ($line === '') {
                 continue;
             }
+
             $values = str_getcsv($line);
             if (is_array($values) === false) {
                 continue;
             }
+
             $rows[] = array_combine($header, array_pad($values, count($header), ''));
         }
 
         return $rows;
-    }
+    }//end parseCsv()
 
     /**
      * @return array<string, string> rolNaam → rolId
@@ -303,6 +316,7 @@ class MandaatImportService
         if ($objectService === null || $register === '' || $schema === '') {
             return [];
         }
+
         try {
             $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
         } catch (\Throwable $e) {
@@ -314,20 +328,22 @@ class MandaatImportService
             if (is_array($row) === false) {
                 continue;
             }
+
             $rolNaam = (string) ($row['rolNaam'] ?? '');
             if ($rolNaam !== '') {
                 $out[$rolNaam] = (string) ($row['id'] ?? '');
             }
         }
+
         return $out;
-    }
+    }//end loadRoleIndex()
 
     /**
-     * @param string      $besluitNummer Number.
-     * @param string|null $excludeId     Optional id to exclude.
+     * @param  string      $besluitNummer Number.
+     * @param  string|null $excludeId     Optional id to exclude.
      * @return array<string, mixed>|null
      */
-    private function findPriorBesluit(string $besluitNummer, ?string $excludeId = null): ?array
+    private function findPriorBesluit(string $besluitNummer, ?string $excludeId=null): ?array
     {
         $objectService = $this->settingsService->getObjectService();
         $register      = (string) $this->settingsService->getConfigValue('register');
@@ -335,6 +351,7 @@ class MandaatImportService
         if ($objectService === null || $register === '' || $schema === '') {
             return null;
         }
+
         try {
             $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['besluitNummer' => $besluitNummer]);
         } catch (\Throwable $e) {
@@ -345,18 +362,21 @@ class MandaatImportService
             if (is_array($row) === false) {
                 continue;
             }
+
             if ($excludeId !== null && (string) ($row['id'] ?? '') === $excludeId) {
                 continue;
             }
+
             if (($row['status'] ?? '') === 'vastgesteld') {
                 return $row;
             }
         }
+
         return null;
-    }
+    }//end findPriorBesluit()
 
     /**
-     * @param string $besluitId Besluit id.
+     * @param  string $besluitId Besluit id.
      * @return array<int, array<string, mixed>>
      */
     private function findMandatenForBesluit(string $besluitId): array
@@ -367,16 +387,17 @@ class MandaatImportService
         if ($objectService === null || $register === '' || $schema === '') {
             return [];
         }
+
         try {
             return (array) $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['mandateringsBesluit' => $besluitId]);
         } catch (\Throwable $e) {
             return [];
         }
-    }
+    }//end findMandatenForBesluit()
 
     /**
-     * @param string               $schemaConfigKey Config key.
-     * @param array<string, mixed> $object          Payload.
+     * @param  string               $schemaConfigKey Config key.
+     * @param  array<string, mixed> $object          Payload.
      * @return array<string, mixed>
      */
     private function save(string $schemaConfigKey, array $object): array
@@ -387,6 +408,7 @@ class MandaatImportService
         if ($objectService === null || $register === '' || $schema === '') {
             return $object;
         }
+
         try {
             $saved = $objectService->saveObject($register, $schema, $object);
             return is_array($saved) === true ? $saved : $object;
@@ -394,20 +416,20 @@ class MandaatImportService
             $this->logger->error('Mandaat import persist failed', ['key' => $schemaConfigKey, 'error' => $e->getMessage()]);
             return $object;
         }
-    }
+    }//end save()
 
     /**
-     * @param string $value Boolean text.
+     * @param  string $value Boolean text.
      * @return bool
      */
     private function parseBool(string $value): bool
     {
         $value = strtolower(trim($value));
         return in_array($value, ['1', 'true', 'ja', 'yes', 'y'], true);
-    }
+    }//end parseBool()
 
     /**
-     * @param string $value Comma-separated list.
+     * @param  string $value Comma-separated list.
      * @return array<int, string>
      */
     private function parseList(string $value): array
@@ -416,6 +438,7 @@ class MandaatImportService
         if ($value === '') {
             return [];
         }
+
         return array_values(array_filter(array_map('trim', explode(';', $value))));
-    }
+    }//end parseList()
 }//end class

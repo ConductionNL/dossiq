@@ -56,7 +56,7 @@ class TenantOnboardingService
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Fork the default 7-step template into the tenant's onboarding list.
@@ -94,7 +94,7 @@ class TenantOnboardingService
         }
 
         return $created;
-    }
+    }//end createOnboarding()
 
     /**
      * Get the per-step progress and overall completion fraction.
@@ -138,7 +138,7 @@ class TenantOnboardingService
             'total'     => $total,
             'fraction'  => round($fraction, 2),
         ];
-    }
+    }//end getProgress()
 
     /**
      * Mark a step as completed.
@@ -174,8 +174,8 @@ class TenantOnboardingService
                 return null;
             }
 
-            $task                = $rows[0];
-            $task['status']      = 'completed';
+            $task           = $rows[0];
+            $task['status'] = 'completed';
             $task['completedBy'] = $completedBy;
             $task['completedAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
 
@@ -190,8 +190,8 @@ class TenantOnboardingService
         } catch (Throwable $e) {
             $this->logger->error('Procest: markStepComplete failed', ['exception' => $e->getMessage()]);
             return null;
-        }
-    }
+        }//end try
+    }//end markStepComplete()
 
     /**
      * Validate that the tenant is ready to go live.
@@ -223,7 +223,7 @@ class TenantOnboardingService
         }
 
         return ['ready' => count($missing) === 0, 'missing' => $missing];
-    }
+    }//end validateGoLive()
 
     /**
      * Trigger the activation flow when go-live validates.
@@ -247,13 +247,13 @@ class TenantOnboardingService
         }
 
         return ['activated' => true];
-    }
+    }//end activate()
 
     /**
      * Count rows in a schema with a filter.
      *
-     * @param mixed $os Object service.
-     * @param string $schema Schema slug.
+     * @param mixed               $os      Object service.
+     * @param string              $schema  Schema slug.
      * @param array<string,mixed> $filters Filters.
      *
      * @return int
@@ -272,7 +272,7 @@ class TenantOnboardingService
         } catch (Throwable $e) {
             return 0;
         }
-    }
+    }//end countSchemaRows()
 
     /**
      * @return mixed|null
@@ -289,5 +289,5 @@ class TenantOnboardingService
         } catch (Throwable $e) {
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

@@ -88,6 +88,7 @@ class DwangsomBezwaarService
         } catch (\Throwable $e) {
             throw new RuntimeException('DwangsomBerekening lookup failed: '.$e->getMessage());
         }
+
         if (is_array($berekening) === false) {
             throw new RuntimeException('DwangsomBerekening not found: '.$berekeningId);
         }
@@ -105,10 +106,12 @@ class DwangsomBezwaarService
         } catch (\Throwable $e) {
             $uitbetalingen = [];
         }
+
         foreach ((array) $uitbetalingen as $u) {
             if (is_array($u) === false) {
                 continue;
             }
+
             $u['status'] = 'on-hold-bezwaar';
             try {
                 $objectService->saveObject($register, $uSchema, $u);
@@ -136,9 +139,9 @@ class DwangsomBezwaarService
     /**
      * Resolve a bezwaar with a corrected amount.
      *
-     * @param string $berekeningId  Berekening id.
+     * @param string $berekeningId   Berekening id.
      * @param int    $newBedragCents Corrected amount in EUR cents.
-     * @param string $grondslag     Legal basis.
+     * @param string $grondslag      Legal basis.
      *
      * @return array<string, mixed>
      *
@@ -165,6 +168,7 @@ class DwangsomBezwaarService
         } catch (\Throwable $e) {
             throw new RuntimeException('DwangsomBerekening lookup failed: '.$e->getMessage());
         }
+
         if (is_array($berekening) === false) {
             throw new RuntimeException('DwangsomBerekening not found: '.$berekeningId);
         }
@@ -182,10 +186,12 @@ class DwangsomBezwaarService
         } catch (\Throwable $e) {
             $uitbetalingen = [];
         }
+
         foreach ((array) $uitbetalingen as $u) {
             if (is_array($u) === false) {
                 continue;
             }
+
             $u['bedrag'] = $newBedragCents;
             $u['status'] = 'voorbereid';
             try {

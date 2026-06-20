@@ -42,7 +42,7 @@ class TenantAuditTrailService
     public function __construct(
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Emit an audit-trail entry. Pure function over the input — returns the
@@ -65,20 +65,20 @@ class TenantAuditTrailService
     public function emit(array $payload): array
     {
         $entry = [
-            'ts'        => (new DateTimeImmutable('now'))->format(DATE_ATOM),
-            'action'    => (string) ($payload['action'] ?? ''),
-            'actor'     => (string) ($payload['actor'] ?? ''),
-            'role'      => (string) ($payload['role'] ?? ''),
-            'resource'  => (string) ($payload['resource'] ?? ''),
-            'tenantId'  => (string) ($payload['tenantId'] ?? ''),
-            'ip'        => (string) ($payload['ip'] ?? ''),
-            'ua'        => (string) ($payload['ua'] ?? ''),
-            'bio'       => $this->sanitiseBio((array) ($payload['bio'] ?? [])),
+            'ts'       => (new DateTimeImmutable('now'))->format(DATE_ATOM),
+            'action'   => (string) ($payload['action'] ?? ''),
+            'actor'    => (string) ($payload['actor'] ?? ''),
+            'role'     => (string) ($payload['role'] ?? ''),
+            'resource' => (string) ($payload['resource'] ?? ''),
+            'tenantId' => (string) ($payload['tenantId'] ?? ''),
+            'ip'       => (string) ($payload['ip'] ?? ''),
+            'ua'       => (string) ($payload['ua'] ?? ''),
+            'bio'      => $this->sanitiseBio((array) ($payload['bio'] ?? [])),
         ];
 
         $this->logger->info('Procest AUDIT', $entry);
         return $entry;
-    }
+    }//end emit()
 
     /**
      * Whitelist enterprise BIO context fields. Drops anything we don't
@@ -98,7 +98,7 @@ class TenantAuditTrailService
         }
 
         return $out;
-    }
+    }//end sanitiseBio()
 
     /**
      * Compile a static security-hardening checklist used by the chain-member-12
@@ -118,5 +118,5 @@ class TenantAuditTrailService
             ['key' => 'composer_audit', 'description' => 'composer audit passes with zero high-severity CVEs', 'evidence' => 'hydra-gate-composer-audit (Hydra gate 4)'],
             ['key' => 'isolation_pen_test', 'description' => 'Cross-tenant pen-test asserts schema isolation under DDL + DQL', 'evidence' => 'TenantIsolationTest (deferred to live-OR fixture)'],
         ];
-    }
-}
+    }//end hardeningChecklist()
+}//end class
