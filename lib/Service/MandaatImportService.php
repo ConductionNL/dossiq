@@ -80,7 +80,7 @@ class MandaatImportService
         string $decideskUuid,
         string $csvContents
     ): array {
-        $rows = $this->parseCsv($csvContents);
+        $rows = $this->parseCsv(csv: $csvContents);
         if (count($rows) === 0) {
             throw new RuntimeException('CSV is empty or missing data rows');
         }
@@ -103,18 +103,22 @@ class MandaatImportService
 
         // Create the besluit (concept).
         $besluit = $this->save(
-                'mandaterings_besluit_schema',
-                [
-                    'besluitNummer' => $besluitNummer,
-                    'besluitNaam'   => $besluitNaam,
-                    'status'        => 'concept',
-                    'decideskUuid'  => $decideskUuid,
-                ]
-                );
+            schemaConfigKey: 'mandaterings_besluit_schema',
+            object: [
+                'besluitNummer' => $besluitNummer,
+                'besluitNaam'   => $besluitNaam,
+                'status'        => 'concept',
+                'decideskUuid'  => $decideskUuid,
+            ]
+        );
 
         // Find the prior besluit version (by besluitNummer) for diff.
-        $prior         = $this->findPriorBesluit($besluitNummer);
-        $priorMandaten = ($prior !== null) ? $this->findMandatenForBesluit((string) ($prior['id'] ?? '')) : [];
+        $prior = $this->findPriorBesluit(besluitNummer: $besluitNummer);
+        if ($prior !== null) {
+            $priorMandaten = $this->findMandatenForBesluit(besluitId: (string) ($prior['id'] ?? ''));
+        } else {
+            $priorMandaten = [];
+        }
 
         // Create one mandaat per CSV row.
         $newCount       = 0;
@@ -130,13 +134,13 @@ class MandaatImportService
                 'wettelijkeGrondslag' => (string) ($row['wettelijkeGrondslag'] ?? ''),
                 'voorwaarden'         => [
                     'plafondCents'  => (int) ($row['plafondCents'] ?? 0),
-                    'subdelegatie'  => $this->parseBool((string) ($row['subdelegatie'] ?? 'false')),
-                    'decisionTypes' => $this->parseList((string) ($row['decisionTypes'] ?? '')),
+                    'subdelegatie'  => $this->parseBool(value: (string) ($row['subdelegatie'] ?? 'false')),
+                    'decisionTypes' => $this->parseList(value: (string) ($row['decisionTypes'] ?? '')),
                 ],
                 'status'              => 'concept',
             ];
 
-            $this->save('mandaat_schema', $payload);
+            $this->save(schemaConfigKey: 'mandaat_schema', object: $payload);
 
             $existing = null;
             foreach ($priorMandaten as $pm) {
@@ -234,7 +238,12 @@ class MandaatImportService
 
         // Flip mandaten to active.
         try {
-            $mandaten = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $mSchema, filters: ['mandateringsBesluit' => $besluitId]);
+            $mandaten = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $mSchema,
+                filters: ['mandateringsBesluit' => $besluitId]
+            );
         } catch (\Throwable $e) {
             $mandaten = [];
         }
@@ -253,7 +262,7 @@ class MandaatImportService
         }
 
         // Expire prior besluit.
-        $prior = $this->findPriorBesluit((string) $besluit['besluitNummer'], excludeId: $besluitId);
+        $prior = $this->findPriorBesluit(besluitNummer: (string) $besluit['besluitNummer'], excludeId: $besluitId);
         if ($prior !== null) {
             $prior['status']      = 'vervallen';
             $prior['vervalDatum'] = $now;
@@ -306,6 +315,8 @@ class MandaatImportService
     }//end parseCsv()
 
     /**
+     * Build a rolNaam to rolId index from OrganisatieRol objects.
+     *
      * @return array<string, string> rolNaam → rolId
      */
     private function loadRoleIndex(): array
@@ -339,8 +350,11 @@ class MandaatImportService
     }//end loadRoleIndex()
 
     /**
-     * @param  string      $besluitNummer Number.
-     * @param  string|null $excludeId     Optional id to exclude.
+     * Find the prior vastgesteld besluit for a besluit number.
+     *
+     * @param string      $besluitNummer Number.
+     * @param string|null $excludeId     Optional id to exclude.
+     *
      * @return array<string, mixed>|null
      */
     private function findPriorBesluit(string $besluitNummer, ?string $excludeId=null): ?array
@@ -353,7 +367,12 @@ class MandaatImportService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['besluitNummer' => $besluitNummer]);
+            $rows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['besluitNummer' => $besluitNummer]
+            );
         } catch (\Throwable $e) {
             return null;
         }
@@ -376,7 +395,10 @@ class MandaatImportService
     }//end findPriorBesluit()
 
     /**
-     * @param  string $besluitId Besluit id.
+     * Find the mandaten linked to a besluit.
+     *
+     * @param string $besluitId Besluit id.
+     *
      * @return array<int, array<string, mixed>>
      */
     private function findMandatenForBesluit(string $besluitId): array
@@ -389,15 +411,23 @@ class MandaatImportService
         }
 
         try {
-            return (array) $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['mandateringsBesluit' => $besluitId]);
+            return (array) $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['mandateringsBesluit' => $besluitId]
+            );
         } catch (\Throwable $e) {
             return [];
         }
     }//end findMandatenForBesluit()
 
     /**
-     * @param  string               $schemaConfigKey Config key.
-     * @param  array<string, mixed> $object          Payload.
+     * Persist a single object for the configured schema.
+     *
+     * @param string               $schemaConfigKey Config key.
+     * @param array<string, mixed> $object          Payload.
+     *
      * @return array<string, mixed>
      */
     private function save(string $schemaConfigKey, array $object): array
@@ -411,7 +441,11 @@ class MandaatImportService
 
         try {
             $saved = $objectService->saveObject($register, $schema, $object);
-            return is_array($saved) === true ? $saved : $object;
+            if (is_array($saved) === true) {
+                return $saved;
+            }
+
+            return $object;
         } catch (\Throwable $e) {
             $this->logger->error('Mandaat import persist failed', ['key' => $schemaConfigKey, 'error' => $e->getMessage()]);
             return $object;
@@ -419,7 +453,10 @@ class MandaatImportService
     }//end save()
 
     /**
-     * @param  string $value Boolean text.
+     * Parse a boolean from CSV text.
+     *
+     * @param string $value Boolean text.
+     *
      * @return bool
      */
     private function parseBool(string $value): bool
@@ -429,7 +466,10 @@ class MandaatImportService
     }//end parseBool()
 
     /**
-     * @param  string $value Comma-separated list.
+     * Parse a semicolon-separated list from CSV text.
+     *
+     * @param string $value Comma-separated list.
+     *
      * @return array<int, string>
      */
     private function parseList(string $value): array

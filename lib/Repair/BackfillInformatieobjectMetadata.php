@@ -170,7 +170,10 @@ class BackfillInformatieobjectMetadata implements IRepairStep
     {
         $content = (string) $file->getContent();
         $owner   = $file->getOwner();
-        $author  = $owner !== null ? $owner->getDisplayName() : '';
+        $author  = '';
+        if ($owner !== null) {
+            $author = $owner->getDisplayName();
+        }
 
         $informatieobject = [
             'titel'                       => $file->getName(),
@@ -192,7 +195,10 @@ class BackfillInformatieobjectMetadata implements IRepairStep
         ];
 
         $saved  = $objectService->saveObject(object: $informatieobject, register: $register, schema: $schema);
-        $infoId = is_object($saved) === true ? $saved->getUuid() : '';
+        $infoId = '';
+        if (is_object($saved) === true) {
+            $infoId = $saved->getUuid();
+        }
 
         $joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
         if ($joinSchema !== '' && $infoId !== '') {

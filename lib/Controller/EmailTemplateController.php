@@ -217,7 +217,11 @@ class EmailTemplateController extends Controller
         foreach (self::IMAP_KEYS as $key) {
             $raw = $this->appConfig->getValueString(Application::APP_ID, $key, '');
             if (in_array($key, self::SENSITIVE_KEYS, true) === true) {
-                $values[$key] = $raw === '' ? '' : '***';
+                if ($raw === '') {
+                    $values[$key] = '';
+                } else {
+                    $values[$key] = '***';
+                }
             } else {
                 $values[$key] = $raw;
             }

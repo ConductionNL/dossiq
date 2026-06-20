@@ -163,14 +163,24 @@ class AdvisoryBodyService
             $result = $objectService->saveObject($register, $schema, $data);
         }
 
-        $savedId = is_object($result) === true ? $result->getUuid() : ($id !== '' ? $id : '');
+        if (is_object($result) === true) {
+            $savedId = $result->getUuid();
+        } else if ($id !== '') {
+            $savedId = $id;
+        } else {
+            $savedId = '';
+        }
 
         $this->logger->info(
             'Advisory body saved: '.$savedId,
             ['app' => Application::APP_ID],
         );
 
-        return is_array($result) === true ? $result : ['id' => $savedId];
+        if (is_array($result) === true) {
+            return $result;
+        }
+
+        return ['id' => $savedId];
     }//end save()
 
     /**

@@ -80,7 +80,10 @@ class EmailArchivalService
         }
 
         $size = (int) ($metadata['sizeBytes'] ?? 0);
-        $mode = ($size > self::SYNC_SIZE_THRESHOLD_BYTES) ? 'async' : 'sync';
+        $mode = 'sync';
+        if ($size > self::SYNC_SIZE_THRESHOLD_BYTES) {
+            $mode = 'async';
+        }
 
         $archivalId = uniqid(prefix: 'archival-', more_entropy: true);
 
@@ -212,6 +215,8 @@ class EmailArchivalService
      * Persist the archival object.
      *
      * @param array<string, mixed> $payload Document payload.
+     *
+     * @return void
      */
     private function persistDocument(array $payload): void
     {
@@ -323,6 +328,8 @@ class EmailArchivalService
      * @param string               $caseId    Case UUID.
      * @param string               $eventType Audit event name.
      * @param array<string, mixed> $payload   Event metadata.
+     *
+     * @return void
      */
     private function appendCaseAudit(string $caseId, string $eventType, array $payload): void
     {

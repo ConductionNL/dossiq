@@ -136,7 +136,7 @@ class PortalIdentityService
         };
 
         try {
-            $this->assertTrustLevel($trustLevel);
+            $this->assertTrustLevel(trustLevel: $trustLevel);
         } catch (OCSBadRequestException $e) {
             return [
                 'ok'     => false,
@@ -148,8 +148,8 @@ class PortalIdentityService
         $bsn = (string) $assertion->bsn;
         return [
             'ok'          => true,
-            'subjectRef'  => $this->deriveSubjectRef($bsn),
-            'maskedBsn'   => $this->maskBsn($bsn),
+            'subjectRef'  => $this->deriveSubjectRef(rawIdentifier: $bsn),
+            'maskedBsn'   => $this->maskBsn(bsn: $bsn),
             'level'       => $assertion->level,
             'dialect'     => $assertion->dialect,
             'assertionId' => $assertion->assertionId,

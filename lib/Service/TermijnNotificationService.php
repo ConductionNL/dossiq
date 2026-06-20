@@ -131,7 +131,7 @@ class TermijnNotificationService
         }
 
         $instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
-        $payload  = $this->renderTemplate($type, $instance ?? [], $context);
+        $payload  = $this->renderTemplate(type: $type, instance: $instance ?? [], context: $context);
 
         $payload['recipient']       = $recipientUserId;
         $payload['termijnInstance'] = $termijnInstanceId;

@@ -125,14 +125,16 @@ class SubstitutionService
             throw new InvalidArgumentException('Invalid reason; expected verlof, ziekte or anders');
         }
 
-        $start = $this->parseDate($startDate);
-        $end   = $this->parseDate($endDate);
+        $start = $this->parseDate(value: $startDate);
+        $end   = $this->parseDate(value: $endDate);
         if ($start === null) {
             throw new InvalidArgumentException('A valid startDate (YYYY-MM-DD) is required');
         }
 
         if ($end === null) {
-            throw new InvalidArgumentException('A valid endDate (YYYY-MM-DD) is required; open-ended absences must be re-issued or converted to a bulk reassignment');
+            throw new InvalidArgumentException(
+                'A valid endDate (YYYY-MM-DD) is required; open-ended absences must be re-issued or converted to a bulk reassignment'
+            );
         }
 
         if ($end < $start) {
@@ -150,6 +152,12 @@ class SubstitutionService
             end: $end
         );
 
+        if ($createdBy !== '') {
+            $createdByValue = $createdBy;
+        } else {
+            $createdByValue = $absentee;
+        }
+
         $row = [
             'absentee'   => $absentee,
             'substitute' => $substitute,
@@ -160,14 +168,18 @@ class SubstitutionService
             'reason'     => $reason,
             'comment'    => $comment,
             'status'     => 'active',
-            'createdBy'  => ($createdBy !== '' ? $createdBy : $absentee),
+            'createdBy'  => $createdByValue,
         ];
 
         [$objectService, $register, $schema] = $this->context();
         $saved = $objectService->saveObject($register, $schema, $row);
         $this->activeCache = [];
 
-        return is_array($saved) === true ? $saved : $row;
+        if (is_array($saved) === true) {
+            return $saved;
+        }
+
+        return $row;
     }//end create()
 
     /**
@@ -191,7 +203,11 @@ class SubstitutionService
         $saved = $objectService->updateObject($register, $schema, $id, $existing);
         $this->activeCache = [];
 
-        return is_array($saved) === true ? $saved : $existing;
+        if (is_array($saved) === true) {
+            return $saved;
+        }
+
+        return $existing;
     }//end revoke()
 
     /**
@@ -222,7 +238,7 @@ class SubstitutionService
             return $this->activeCache[$cacheKey];
         }
 
-        [$objectService, $register, $schema] = $this->context(false);
+        [$objectService, $register, $schema] = $this->context(strict: false);
         if ($objectService === null) {
             return [];
         }
@@ -247,7 +263,12 @@ class SubstitutionService
             // Lazy expiry: past endDate -> ended, excluded.
             if ($end !== '' && $refDay > $end) {
                 if ($status === 'active') {
-                    $this->markEnded($objectService, $register, $schema, $row);
+                    $this->markEnded(
+                        objectService: $objectService,
+                        register: $register,
+                        schema: $schema,
+                        row: $row
+                    );
                 }
 
                 continue;
@@ -294,14 +315,14 @@ class SubstitutionService
             return $result;
         }
 
-        [$objectService, $register] = $this->context(false);
+        [$objectService, $register] = $this->context(strict: false);
         if ($objectService === null) {
             return $result;
         }
 
         $caseSchema = (string) $this->settingsService->getConfigValue('case_schema');
         $taskSchema = (string) $this->settingsService->getConfigValue('task_schema');
-        $finalIds   = $this->finalStatusIds($objectService, $register);
+        $finalIds   = $this->finalStatusIds(objectService: $objectService, register: $register);
 
         $seenCases = [];
         $seenTasks = [];
@@ -324,7 +345,7 @@ class SubstitutionService
                     filters: ['assignee' => $absentee]
                 );
                 foreach ($cases as $case) {
-                    if ($this->caseInScope($case, $scope, $scopeRefs) === false) {
+                    if ($this->caseInScope(case: $case, scope: $scope, scopeRefs: $scopeRefs) === false) {
                         continue;
                     }
 
@@ -413,7 +434,7 @@ class SubstitutionService
             $scope     = (string) ($sub['scope'] ?? 'all');
             $scopeRefs = array_map('strval', (array) ($sub['scopeRefs'] ?? []));
             $probe     = ['caseType' => $caseType, 'id' => $caseId];
-            if ($this->caseInScope($probe, $scope, $scopeRefs) === true) {
+            if ($this->caseInScope(case: $probe, scope: $scope, scopeRefs: $scopeRefs) === true) {
                 return $sub;
             }
         }
@@ -473,7 +494,7 @@ class SubstitutionService
             return;
         }
 
-        [$objectService, $register, $schema] = $this->context(false);
+        [$objectService, $register, $schema] = $this->context(strict: false);
         if ($objectService === null) {
             return;
         }
@@ -494,8 +515,8 @@ class SubstitutionService
                 continue;
             }
 
-            $existingStart = $this->parseDate((string) ($row['startDate'] ?? ''));
-            $existingEnd   = $this->parseDate((string) ($row['endDate'] ?? ''));
+            $existingStart = $this->parseDate(value: (string) ($row['startDate'] ?? ''));
+            $existingEnd   = $this->parseDate(value: (string) ($row['endDate'] ?? ''));
             if ($existingStart === null || $existingEnd === null) {
                 continue;
             }
@@ -504,7 +525,8 @@ class SubstitutionService
             if ($start <= $existingEnd && $existingStart <= $end) {
                 $conflictId = (string) ($row['id'] ?? ($row['uuid'] ?? '?'));
                 throw new InvalidArgumentException(
-                    'An active full-scope substitution already covers this handler for an overlapping period (conflicting substitution: '.$conflictId.')'
+                    'An active full-scope substitution already covers this handler for an '
+                    .'overlapping period (conflicting substitution: '.$conflictId.')'
                 );
             }
         }//end foreach

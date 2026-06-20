@@ -50,10 +50,11 @@ class TermijnDailyScanService
     /**
      * Constructor.
      *
-     * @param SettingsService          $settingsService   Settings service.
-     * @param TermijnService           $termijnService    TermijnService.
-     * @param TermijnEscalationService $escalationService Escalation service.
-     * @param LoggerInterface          $logger            Logger.
+     * @param SettingsService                 $settingsService   Settings service.
+     * @param TermijnService                  $termijnService    TermijnService.
+     * @param TermijnEscalationService        $escalationService Escalation service.
+     * @param LoggerInterface                 $logger            Logger.
+     * @param DwangsomCalculationService|null $dwangsomService   Dwangsom calculation service.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -109,7 +110,7 @@ class TermijnDailyScanService
 
             $counts['scanned']++;
             try {
-                $this->processInstance($row, $now, $counts);
+                $this->processInstance(row: $row, now: $now, counts: $counts);
             } catch (\Throwable $e) {
                 $counts['errors']++;
                 $this->logger->warning(
@@ -145,7 +146,12 @@ class TermijnDailyScanService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['status' => 'lopend']);
+            $rows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['status' => 'lopend']
+            );
         } catch (\Throwable $e) {
             return 0;
         }
@@ -216,7 +222,11 @@ class TermijnDailyScanService
         $deadlineDate = new DateTimeImmutable($deadline);
         $today        = new DateTimeImmutable($now->format('Y-m-d'));
         $diff         = (int) $today->diff($deadlineDate)->days;
-        $daysLeft     = ($today > $deadlineDate ? (-1 * $diff) : $diff);
+        if ($today > $deadlineDate) {
+            $daysLeft = (-1 * $diff);
+        } else {
+            $daysLeft = $diff;
+        }
 
         // Overschrijding.
         if ($daysLeft <= 0 && $status !== 'overschreden') {

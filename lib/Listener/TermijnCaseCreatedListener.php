@@ -70,12 +70,12 @@ class TermijnCaseCreatedListener implements IEventListener
             return;
         }
 
-        $payload = $this->extractObject($event);
+        $payload = $this->extractObject(event: $event);
         if ($payload === null) {
             return;
         }
 
-        if ($this->resolveSchemaSlug($payload) !== 'case') {
+        if ($this->resolveSchemaSlug(payload: $payload) !== 'case') {
             return;
         }
 

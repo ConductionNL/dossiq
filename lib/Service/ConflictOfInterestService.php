@@ -137,7 +137,7 @@ class ConflictOfInterestService
         // BRP adapter fallback — dormant by default; an active binding looks
         // up the user's relationship to the applicant via Haal Centraal
         // `relaties` envelope and short-circuits with `belangenconflict`.
-        $brpRelation = $this->lookupRelationViaBrp($userBsn, $applicantBsn, $zaakId);
+        $brpRelation = $this->lookupRelationViaBrp(userBsn: $userBsn, applicantBsn: $applicantBsn, zaakId: $zaakId);
         if ($brpRelation !== null && $brpRelation !== '') {
             return ['conflict' => true, 'reason' => $brpRelation];
         }

@@ -134,7 +134,7 @@ class TenantProvisioningService
                 ['tenantId' => $tenantId, 'schemaName' => $schemaName, 'steps' => $steps, 'exception' => $e->getMessage()]
             );
 
-            $this->rollback($schemaName, $steps);
+            $this->rollback(schemaName: $schemaName, steps: $steps);
 
             throw new RuntimeException(
                 'Provisioning failed at step '.($steps[count($steps) - 1] ?? 'createSchema').': '.$e->getMessage(),

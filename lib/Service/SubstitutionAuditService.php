@@ -100,11 +100,16 @@ class SubstitutionAuditService
             return null;
         }
 
+        $caseType = null;
+        if (isset($case['caseType']) === true) {
+            $caseType = (string) $case['caseType'];
+        }
+
         $sub = $this->substitutionService->resolveActingCapacity(
             actorId: $actorId,
             absentee: $absentee,
             caseId: $caseId,
-            caseType: (isset($case['caseType']) === true ? (string) $case['caseType'] : null)
+            caseType: $caseType
         );
         if ($sub === null) {
             return null;
@@ -119,7 +124,7 @@ class SubstitutionAuditService
             'timestamp'       => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
         ];
 
-        $activity         = $this->decodeActivity($case['activity'] ?? null);
+        $activity         = $this->decodeActivity(raw: ($case['activity'] ?? null));
         $activity[]       = $entry;
         $case['activity'] = json_encode($activity);
 
@@ -180,7 +185,7 @@ class SubstitutionAuditService
         $actions = [];
         foreach ($cases as $case) {
             $caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
-            foreach ($this->decodeActivity($case['activity'] ?? null) as $entry) {
+            foreach ($this->decodeActivity(raw: ($case['activity'] ?? null)) as $entry) {
                 if (is_array($entry) === false) {
                     continue;
                 }

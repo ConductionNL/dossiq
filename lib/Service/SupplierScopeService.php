@@ -44,6 +44,14 @@ class SupplierScopeService
      */
     public const SUPPLIER_SCHEMAS = ['supplierTender', 'supplierContract', 'supplierInvoice', 'supplierMessage', 'supplierKpi', 'supplierUser'];
 
+    /**
+     * Constructor.
+     *
+     * @param IAppManager        $appManager App manager.
+     * @param ContainerInterface $container  Service container.
+     * @param TenantJwtService   $jwt        Tenant JWT service.
+     * @param LoggerInterface    $logger     Logger.
+     */
     public function __construct(
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
@@ -116,7 +124,11 @@ class SupplierScopeService
                 offset: 0,
                 filters: array_merge(['supplierRef' => $supplierRef], $extraFilters)
             );
-            return is_array($rows) ? array_values($rows) : [];
+            if (is_array($rows) === true) {
+                return array_values($rows);
+            }
+
+            return [];
         } catch (Throwable $e) {
             return [];
         }
@@ -146,15 +158,15 @@ class SupplierScopeService
     public function maskSensitive(array $row): array
     {
         if (isset($row['iban']) === true) {
-            $row['iban'] = $this->maskIban((string) $row['iban']);
+            $row['iban'] = $this->maskIban(iban: (string) $row['iban']);
         }
 
         if (isset($row['email']) === true) {
-            $row['email'] = $this->maskEmail((string) $row['email']);
+            $row['email'] = $this->maskEmail(email: (string) $row['email']);
         }
 
         if (isset($row['phone']) === true) {
-            $row['phone'] = $this->maskPhone((string) $row['phone']);
+            $row['phone'] = $this->maskPhone(phone: (string) $row['phone']);
         }
 
         return $row;
@@ -212,7 +224,9 @@ class SupplierScopeService
     }//end maskPhone()
 
     /**
-     * @return mixed|null
+     * Resolve the OpenRegister ObjectService when available.
+     *
+     * @return mixed|null The ObjectService instance, or null when unavailable.
      */
     private function getObjectService()
     {

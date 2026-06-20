@@ -130,9 +130,9 @@ class InformatieobjectAccessGuard
             $defaultLevel = self::FALLBACK_CLEARANCE;
         }
 
-        $clearance = $this->ordinalOf($defaultLevel);
+        $clearance = $this->ordinalOf(level: $defaultLevel);
 
-        $groupMap = $this->parseGroupMap($this->settingsService->getConfigValue('dossier_clearance_group_map', ''));
+        $groupMap = $this->parseGroupMap(raw: $this->settingsService->getConfigValue('dossier_clearance_group_map', ''));
         if (empty($groupMap) === true) {
             return $clearance;
         }
@@ -143,7 +143,7 @@ class InformatieobjectAccessGuard
                 continue;
             }
 
-            $ordinal = $this->ordinalOf($groupMap[$groupId]);
+            $ordinal = $this->ordinalOf(level: $groupMap[$groupId]);
             if ($ordinal > $clearance) {
                 $clearance = $ordinal;
             }
@@ -164,8 +164,8 @@ class InformatieobjectAccessGuard
      */
     public function canRead(IUser $user, array $informatieobject): bool
     {
-        $docOrdinal  = $this->ordinalOf((string) ($informatieobject['vertrouwelijkheidaanduiding'] ?? ''));
-        $userOrdinal = $this->getUserClearanceOrdinal($user);
+        $docOrdinal  = $this->ordinalOf(level: (string) ($informatieobject['vertrouwelijkheidaanduiding'] ?? ''));
+        $userOrdinal = $this->getUserClearanceOrdinal(user: $user);
 
         return $userOrdinal >= $docOrdinal;
     }//end canRead()
@@ -207,8 +207,8 @@ class InformatieobjectAccessGuard
      */
     public function canPublish(array $informatieobject): bool
     {
-        $docOrdinal       = $this->ordinalOf((string) ($informatieobject['vertrouwelijkheidaanduiding'] ?? ''));
-        $thresholdOrdinal = $this->ordinalOf(self::PUBLISH_THRESHOLD);
+        $docOrdinal       = $this->ordinalOf(level: (string) ($informatieobject['vertrouwelijkheidaanduiding'] ?? ''));
+        $thresholdOrdinal = $this->ordinalOf(level: self::PUBLISH_THRESHOLD);
 
         return $docOrdinal < $thresholdOrdinal;
     }//end canPublish()
@@ -225,7 +225,7 @@ class InformatieobjectAccessGuard
      */
     public function filterDossierForUser(IUser $user, array $informatieobjecten): array
     {
-        $userOrdinal = $this->getUserClearanceOrdinal($user);
+        $userOrdinal = $this->getUserClearanceOrdinal(user: $user);
 
         $allowed = [];
         foreach ($informatieobjecten as $record) {
@@ -233,7 +233,7 @@ class InformatieobjectAccessGuard
                 continue;
             }
 
-            $docOrdinal = $this->ordinalOf((string) ($record['vertrouwelijkheidaanduiding'] ?? ''));
+            $docOrdinal = $this->ordinalOf(level: (string) ($record['vertrouwelijkheidaanduiding'] ?? ''));
             if ($userOrdinal >= $docOrdinal) {
                 $allowed[] = $record;
             }
@@ -262,7 +262,7 @@ class InformatieobjectAccessGuard
             return true;
         }
 
-        return $this->ordinalOf($requestedLevel) >= $this->ordinalOf($defaultLevel);
+        return $this->ordinalOf(level: $requestedLevel) >= $this->ordinalOf(level: $defaultLevel);
     }//end isClassificationAllowed()
 
     /**

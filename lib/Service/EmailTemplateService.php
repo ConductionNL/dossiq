@@ -50,19 +50,22 @@ class EmailTemplateService
             'slug'    => 'ontvangstbevestiging',
             'name'    => 'Ontvangstbevestiging',
             'subject' => 'Bevestiging ontvangst zaak {{zaakNummer}}',
-            'body'    => 'Geachte {{contactNaam}},\n\nWij hebben uw aanvraag {{zaakNummer}} ontvangen op {{startDatum}}.\n\nMet vriendelijke groet,\n{{behandelaar}}',
+            'body'    => 'Geachte {{contactNaam}},\n\nWij hebben uw aanvraag {{zaakNummer}} ontvangen op {{startDatum}}.'
+                .'\n\nMet vriendelijke groet,\n{{behandelaar}}',
         ],
         [
             'slug'    => 'informatieverzoek',
             'name'    => 'Informatieverzoek',
             'subject' => 'Aanvullende informatie nodig voor zaak {{zaakNummer}}',
-            'body'    => 'Geachte {{contactNaam}},\n\nVoor de behandeling van zaak {{zaakNummer}} hebben wij aanvullende informatie nodig.\n\nMet vriendelijke groet,\n{{behandelaar}}',
+            'body'    => 'Geachte {{contactNaam}},\n\nVoor de behandeling van zaak {{zaakNummer}} hebben wij aanvullende informatie nodig.'
+                .'\n\nMet vriendelijke groet,\n{{behandelaar}}',
         ],
         [
             'slug'    => 'besluit',
             'name'    => 'Besluit',
             'subject' => 'Besluit zaak {{zaakNummer}}',
-            'body'    => 'Geachte {{contactNaam}},\n\nWij hebben besloten in uw zaak {{zaakNummer}}. Het besluit is op {{einddatum}} genomen.\n\nMet vriendelijke groet,\n{{behandelaar}}',
+            'body'    => 'Geachte {{contactNaam}},\n\nWij hebben besloten in uw zaak {{zaakNummer}}. Het besluit is op {{einddatum}} genomen.'
+                .'\n\nMet vriendelijke groet,\n{{behandelaar}}',
         ],
     ];
 
@@ -340,7 +343,11 @@ class EmailTemplateService
             '/{{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*}}/',
             static function (array $match) use ($vars): string {
                 $name = $match[1];
-                return isset($vars[$name]) === true ? $vars[$name] : $match[0];
+                if (isset($vars[$name]) === true) {
+                    return $vars[$name];
+                }
+
+                return $match[0];
             },
             $text,
         );
@@ -402,7 +409,11 @@ class EmailTemplateService
             $saved = $saved->jsonSerialize();
         }
 
-        return is_array($saved) === true ? $saved : $payload;
+        if (is_array($saved) === true) {
+            return $saved;
+        }
+
+        return $payload;
     }//end saveTemplate()
 
     /**
@@ -439,7 +450,11 @@ class EmailTemplateService
             $obj = $obj->jsonSerialize();
         }
 
-        return is_array($obj) === true ? $obj : null;
+        if (is_array($obj) === true) {
+            return $obj;
+        }
+
+        return null;
     }//end loadTemplate()
 
     /**

@@ -3,7 +3,7 @@
 /**
  * Procest Supplier Auth Service
  *
- * eHerkenning-based authentication for the leverancier portal — validates
+ * EHerkenning-based authentication for the leverancier portal — validates
  * the KvK claim from the broker, resolves / creates the SupplierUser, and
  * issues a short-lived session token via the chain-member-05 TenantJwtService.
  *
@@ -58,6 +58,15 @@ class SupplierAuthService
      */
     private const BLOCKING_STATUSES = ['inactive', 'blacklisted'];
 
+    /**
+     * Constructor.
+     *
+     * @param IAppManager                          $appManager         App manager (for OR availability check).
+     * @param ContainerInterface                   $container          DI container (graceful OR resolution).
+     * @param TenantJwtService                     $jwt                JWT session-token issuer.
+     * @param LoggerInterface                      $logger             Logger.
+     * @param EHerkenningSamlAdapterInterface|null $eherkenningAdapter Optional broker SAML adapter.
+     */
     public function __construct(
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
@@ -84,7 +93,7 @@ class SupplierAuthService
             throw new InvalidArgumentException('Empty eHerkenning code');
         }
 
-        return $this->decodeBrokerCode($code);
+        return $this->decodeBrokerCode(code: $code);
     }//end authenticateViaEHerkenning()
 
     /**
@@ -100,7 +109,7 @@ class SupplierAuthService
             return ['ok' => false, 'reason' => 'KvK-nummer heeft een ongeldig formaat'];
         }
 
-        $supplier = $this->findSupplierByKvk($kvkNumber);
+        $supplier = $this->findSupplierByKvk(kvkNumber: $kvkNumber);
         if ($supplier === null) {
             return ['ok' => false, 'reason' => 'Onbekende leverancier (KvK-nummer niet geregistreerd)'];
         }
@@ -149,15 +158,21 @@ class SupplierAuthService
                 }
 
                 $uuid = (string) ($row['uuid'] ?? $row['id'] ?? '');
+                if ($uuid !== '') {
+                    $uuidArg = $uuid;
+                } else {
+                    $uuidArg = null;
+                }
+
                 return $os->saveObject(
                     object: $row,
                     register: TenantSaasService::REGISTER,
                     schema: 'supplierUser',
-                    uuid: $uuid !== '' ? $uuid : null
+                    uuid: $uuidArg
                 );
-            }
+            }//end if
         } catch (Throwable $e) {
-            // fall through to create.
+            // Fall through to create.
         }//end try
 
         try {
@@ -270,7 +285,7 @@ class SupplierAuthService
         }
 
         $kvkNumber  = (string) $assertion->kvkNummer;
-        $validation = $this->validateKvKClaim($kvkNumber);
+        $validation = $this->validateKvKClaim(kvkNumber: $kvkNumber);
         if (($validation['ok'] ?? false) !== true) {
             return [
                 'ok'        => false,
@@ -290,12 +305,17 @@ class SupplierAuthService
             'kvkNumber'        => $kvkNumber,
         ];
 
-        $supplierUser   = $this->createOrLinkSupplierUser($supplierRef, $claim);
+        $supplierUser   = $this->createOrLinkSupplierUser(supplierRef: $supplierRef, claim: $claim);
         $supplierUserId = (string) ($supplierUser['uuid'] ?? $supplierUser['id'] ?? $assertion->assertionId);
 
         $financialReauth = ($assertion->level < 3);
 
-        $session = $this->issueSessionToken($supplierUserId, $supplier, $claim, $financialReauth);
+        $session = $this->issueSessionToken(
+            supplierUserId: $supplierUserId,
+            supplier: $supplier,
+            claim: $claim,
+            financialReauth: $financialReauth
+        );
 
         return [
             'ok'                      => true,
@@ -344,13 +364,19 @@ class SupplierAuthService
                 offset: 0,
                 filters: ['kvkNumber' => $kvkNumber]
             );
-            return (is_array($rows) === true && count($rows) > 0) ? $rows[0] : null;
+            if (is_array($rows) === true && count($rows) > 0) {
+                return $rows[0];
+            }
+
+            return null;
         } catch (Throwable $e) {
             return null;
         }
     }//end findSupplierByKvk()
 
     /**
+     * Resolve OR's ObjectService when installed.
+     *
      * @return mixed|null
      */
     private function getObjectService()

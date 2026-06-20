@@ -38,6 +38,13 @@ use OCP\IUserSession;
  */
 class TenantOnboardingController extends Controller
 {
+    /**
+     * Constructor.
+     *
+     * @param IRequest                $request     Request.
+     * @param TenantOnboardingService $onboarding  Onboarding service.
+     * @param IUserSession            $userSession User session.
+     */
     public function __construct(
         IRequest $request,
         private readonly TenantOnboardingService $onboarding,
@@ -108,7 +115,11 @@ class TenantOnboardingController extends Controller
     public function activate(string $tenantId): JSONResponse
     {
         $result = $this->onboarding->activate($tenantId);
-        $code   = ($result['activated'] === true) ? Http::STATUS_OK : Http::STATUS_CONFLICT;
+        $code   = Http::STATUS_CONFLICT;
+        if ($result['activated'] === true) {
+            $code = Http::STATUS_OK;
+        }
+
         return new JSONResponse(['success' => $result['activated'], 'result' => $result], $code);
     }//end activate()
 

@@ -65,9 +65,24 @@ class DoorlooptijdService
      */
     public function getMetrics(array $params): array
     {
-        $caseTypeFilter = isset($params['caseType']) === true && is_string($params['caseType']) === true ? $params['caseType'] : null;
-        $period         = isset($params['period']) === true && is_string($params['period']) === true ? $params['period'] : '12m';
-        $atRiskDays     = isset($params['atRiskDays']) === true ? (int) $params['atRiskDays'] : 5;
+        if (isset($params['caseType']) === true && is_string($params['caseType']) === true) {
+            $caseTypeFilter = $params['caseType'];
+        } else {
+            $caseTypeFilter = null;
+        }
+
+        if (isset($params['period']) === true && is_string($params['period']) === true) {
+            $period = $params['period'];
+        } else {
+            $period = '12m';
+        }
+
+        if (isset($params['atRiskDays']) === true) {
+            $atRiskDays = (int) $params['atRiskDays'];
+        } else {
+            $atRiskDays = 5;
+        }
+
         if ($atRiskDays < 0) {
             $atRiskDays = 0;
         }
@@ -78,10 +93,10 @@ class DoorlooptijdService
         $enriched = $this->enrichCases(cases: $cases, caseTypes: $caseTypes);
 
         return [
-            'kpi'               => $this->computeKpi($enriched, $atRiskDays),
-            'compliance'        => $this->computeMonthlyCompliance($enriched, $period),
-            'caseTypeBreakdown' => $this->computeCaseTypeBreakdown($enriched, $caseTypes),
-            'cases'             => $this->buildCaseList($enriched, $atRiskDays),
+            'kpi'               => $this->computeKpi(cases: $enriched, atRiskDays: $atRiskDays),
+            'compliance'        => $this->computeMonthlyCompliance(cases: $enriched, period: $period),
+            'caseTypeBreakdown' => $this->computeCaseTypeBreakdown(cases: $enriched, caseTypes: $caseTypes),
+            'cases'             => $this->buildCaseList(cases: $enriched, atRiskDays: $atRiskDays),
         ];
     }//end getMetrics()
 
@@ -142,8 +157,12 @@ class DoorlooptijdService
             }
         }//end foreach
 
-        $totalClosed   = ($closedOnTime + $closedLate);
-        $onTimePercent = $totalClosed === 0 ? 100 : (int) round(($closedOnTime / $totalClosed) * 100);
+        $totalClosed = ($closedOnTime + $closedLate);
+        if ($totalClosed === 0) {
+            $onTimePercent = 100;
+        } else {
+            $onTimePercent = (int) round(($closedOnTime / $totalClosed) * 100);
+        }
 
         return [
             'open'          => $open,
@@ -165,7 +184,7 @@ class DoorlooptijdService
      */
     public function computeMonthlyCompliance(array $cases, string $period): array
     {
-        $months  = $this->parseMonths($period);
+        $months  = $this->parseMonths(period: $period);
         $buckets = [];
 
         $endDate = new DateTimeImmutable('first day of this month');
@@ -193,9 +212,14 @@ class DoorlooptijdService
 
         $out = [];
         foreach ($buckets as $month => $counts) {
-            $total   = ($counts['onTime'] + $counts['late']);
-            $percent = $total === 0 ? 100 : (int) round(($counts['onTime'] / $total) * 100);
-            $out[]   = [
+            $total = ($counts['onTime'] + $counts['late']);
+            if ($total === 0) {
+                $percent = 100;
+            } else {
+                $percent = (int) round(($counts['onTime'] / $total) * 100);
+            }
+
+            $out[] = [
                 'month'   => $month,
                 'onTime'  => $counts['onTime'],
                 'late'    => $counts['late'],
@@ -251,7 +275,12 @@ class DoorlooptijdService
                 continue;
             }
 
-            $title = isset($caseTypeIndex[$caseTypeId]['title']) === true ? (string) $caseTypeIndex[$caseTypeId]['title'] : $caseTypeId;
+            if (isset($caseTypeIndex[$caseTypeId]['title']) === true) {
+                $title = (string) $caseTypeIndex[$caseTypeId]['title'];
+            } else {
+                $title = $caseTypeId;
+            }
+
             $out[] = [
                 'id'      => $caseTypeId,
                 'title'   => $title,
@@ -346,8 +375,8 @@ class DoorlooptijdService
 
         $enriched = [];
         foreach ($cases as $caseData) {
-            $endDate   = $this->normaliseDate($caseData['endDate'] ?? null);
-            $startDate = $this->normaliseDate($caseData['startDate'] ?? null);
+            $endDate   = $this->normaliseDate(value: $caseData['endDate'] ?? null);
+            $startDate = $this->normaliseDate(value: $caseData['startDate'] ?? null);
             $isOpen    = ($endDate === null);
 
             $caseType      = null;
@@ -358,7 +387,7 @@ class DoorlooptijdService
                 $caseTypeTitle = (string) ($caseType['title'] ?? '');
             }
 
-            $deadline = $this->normaliseDate($caseData['deadline'] ?? null);
+            $deadline = $this->normaliseDate(value: $caseData['deadline'] ?? null);
             if ($deadline === null && $startDate !== null && $caseType !== null) {
                 $deadline = $this->deriveDeadline(
                     startDate: $startDate,

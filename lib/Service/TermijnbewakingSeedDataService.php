@@ -82,7 +82,7 @@ class TermijnbewakingSeedDataService
             return ['success' => false, 'message' => 'Invalid seed JSON'];
         }
 
-        $existingIds = $this->existingDefinitionIds($objectService, $register, $schema);
+        $existingIds = $this->existingDefinitionIds(objectService: $objectService, register: $register, schema: $schema);
         $counts      = ['definities' => 0, 'skipped' => 0];
 
         foreach (($data['termijnDefinities'] ?? []) as $row) {

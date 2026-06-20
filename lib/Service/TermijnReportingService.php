@@ -70,8 +70,8 @@ class TermijnReportingService
      */
     public function generateQuarterlyReport(string $periode, ?string $afdeling=null): array
     {
-        $bounds = $this->resolveQuarter($periode);
-        $rows   = $this->listInstances($bounds['from'], $bounds['until']);
+        $bounds = $this->resolveQuarter(periode: $periode);
+        $rows   = $this->listInstances(from: $bounds['from'], until: $bounds['until']);
 
         $byType = [];
         foreach ($rows as $row) {
@@ -116,9 +116,20 @@ class TermijnReportingService
         // Reduce per-type aggregates.
         $perType = [];
         foreach ($byType as $type => $b) {
-            $totaal         = $b['totaal'];
-            $binnenPct      = $totaal > 0 ? round(($b['binnenTermijn'] / $totaal) * 100, 1) : 0.0;
-            $avgDur         = count($b['doorlooptijdenDagen']) > 0 ? round(array_sum($b['doorlooptijdenDagen']) / count($b['doorlooptijdenDagen']), 1) : 0.0;
+            $totaal = $b['totaal'];
+            if ($totaal > 0) {
+                $binnenPct = round(($b['binnenTermijn'] / $totaal) * 100, 1);
+            } else {
+                $binnenPct = 0.0;
+            }
+
+            $aantalDoorlooptijden = count($b['doorlooptijdenDagen']);
+            if ($aantalDoorlooptijden > 0) {
+                $avgDur = round(array_sum($b['doorlooptijdenDagen']) / $aantalDoorlooptijden, 1);
+            } else {
+                $avgDur = 0.0;
+            }
+
             $perType[$type] = [
                 'totaal'                      => $totaal,
                 'binnenTermijnPct'            => $binnenPct,
@@ -128,7 +139,7 @@ class TermijnReportingService
                 'ingebrekestellingen'         => $b['ingebrekestellingen'],
                 'dwangsomTotalCents'          => $b['dwangsomTotalCents'],
             ];
-        }
+        }//end foreach
 
         return [
             'periode'  => $periode,
@@ -219,7 +230,7 @@ class TermijnReportingService
      */
     public function getTermijnKpi(array $filters=[]): array
     {
-        $rows = $this->listInstances('1970-01-01', '2999-12-31');
+        $rows = $this->listInstances(from: '1970-01-01', until: '2999-12-31');
 
         $total     = 0;
         $within    = 0;
@@ -248,10 +259,23 @@ class TermijnReportingService
             }
         }//end foreach
 
+        if ($total > 0) {
+            $withinTermijnPercent = round(($within / $total) * 100, 1);
+        } else {
+            $withinTermijnPercent = 0.0;
+        }
+
+        $aantalDuraties = count($durations);
+        if ($aantalDuraties > 0) {
+            $avgDurationDays = round(array_sum($durations) / $aantalDuraties, 1);
+        } else {
+            $avgDurationDays = 0.0;
+        }
+
         return [
             'totalZaken'           => $total,
-            'withinTermijnPercent' => $total > 0 ? round(($within / $total) * 100, 1) : 0.0,
-            'avgDurationDays'      => count($durations) > 0 ? round(array_sum($durations) / count($durations), 1) : 0.0,
+            'withinTermijnPercent' => $withinTermijnPercent,
+            'avgDurationDays'      => $avgDurationDays,
             'overrunCount'         => $overrun,
             'dwangsomTotalCents'   => $dwTotal,
             'lastUpdated'          => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
@@ -298,7 +322,10 @@ class TermijnReportingService
     }//end quarterlyReportAsCsv()
 
     /**
-     * @param  string $periode Period (YYYY-Qn).
+     * Resolve a quarter spec (YYYY-Qn) to its from/until date bounds.
+     *
+     * @param string $periode Period (YYYY-Qn).
+     *
      * @return array{from:string,until:string}
      */
     private function resolveQuarter(string $periode): array
@@ -318,8 +345,11 @@ class TermijnReportingService
     }//end resolveQuarter()
 
     /**
-     * @param  string $from  YYYY-MM-DD.
-     * @param  string $until YYYY-MM-DD.
+     * List termijn instances whose start date falls within the given bounds.
+     *
+     * @param string $from  YYYY-MM-DD.
+     * @param string $until YYYY-MM-DD.
+     *
      * @return array<int, array<string, mixed>>
      */
     private function listInstances(string $from, string $until): array

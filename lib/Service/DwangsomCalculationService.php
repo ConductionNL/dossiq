@@ -144,7 +144,11 @@ class DwangsomCalculationService
         $regime     = (string) ($row['regime'] ?? 'awb-default');
 
         $nextDay = ($currentDay + 1);
-        $tariff  = ($regime === 'afwijkend') ? $this->resolveCustomDailyTariff($row) : $this->dailyTariffAwb($nextDay);
+        if ($regime === 'afwijkend') {
+            $tariff = $this->resolveCustomDailyTariff(berekening: $row);
+        } else {
+            $tariff = $this->dailyTariffAwb(dayNumber: $nextDay);
+        }
 
         $newCumul   = ($cumulative + $tariff);
         $plafondHit = false;
@@ -160,7 +164,11 @@ class DwangsomCalculationService
 
         try {
             $saved = $objectService->saveObject($register, $schema, $row);
-            return is_array($saved) === true ? $saved : $row;
+            if (is_array($saved) === true) {
+                return $saved;
+            }
+
+            return $row;
         } catch (\Throwable $e) {
             $this->logger->error(
                 'DwangsomCalculation persist failed',
@@ -205,7 +213,11 @@ class DwangsomCalculationService
 
         try {
             $saved = $objectService->saveObject($register, $schema, $row);
-            return is_array($saved) === true ? $saved : $row;
+            if (is_array($saved) === true) {
+                return $saved;
+            }
+
+            return $row;
         } catch (\Throwable $e) {
             return $row;
         }

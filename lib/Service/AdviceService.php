@@ -592,8 +592,13 @@ class AdviceService
             throw new RuntimeException('Advice request not accessible');
         }
 
-        $data  = $this->normalizeResult(result: $record);
-        $field = ($action === 'submit') ? 'adviseur' : 'requestedBy';
+        $data = $this->normalizeResult(result: $record);
+        if ($action === 'submit') {
+            $field = 'adviseur';
+        } else {
+            $field = 'requestedBy';
+        }
+
         if (($data[$field] ?? '') !== $uid) {
             throw new RuntimeException('Advice request not accessible');
         }
@@ -682,15 +687,23 @@ class AdviceService
             object: $payload
         );
 
-        $adviceId = is_array($saved) === true ? (string) ($saved['id'] ?? ($saved['uuid'] ?? '')) : '';
+        $adviceId = '';
+        if (is_array($saved) === true) {
+            $adviceId = (string) ($saved['id'] ?? ($saved['uuid'] ?? ''));
+        }
 
         // REQ-PDRD-001 / REQ-PDRD-002: the advice is *made* in decidesk. Raise a
         // decidesk `advice` Decision for this request and persist its ref. Fail
         // CLOSED — never author an advice outcome locally as a fallback.
+        $subjectId = $caseId;
+        if ($adviceId !== '') {
+            $subjectId = $adviceId;
+        }
+
         try {
             $decisionRef = $this->adviceDelegation->raiseAdviceDecision(
                 subjectSchema: 'adviesAanvraag',
-                subjectId: $adviceId !== '' ? $adviceId : $caseId,
+                subjectId: $subjectId,
                 payload: [
                     'subjectRegister'   => $register,
                     'externalReference' => $caseId,
@@ -701,8 +714,13 @@ class AdviceService
             );
 
             if ($adviceId !== '') {
+                $savedBase = [];
+                if (is_array($saved) === true) {
+                    $savedBase = $saved;
+                }
+
                 $objectService->saveObject(
-                    object: array_merge(is_array($saved) === true ? $saved : [], ['decisionRef' => $decisionRef]),
+                    object: array_merge($savedBase, ['decisionRef' => $decisionRef]),
                     register: $register,
                     schema: 'adviceRequest',
                     uuid: $adviceId,

@@ -101,12 +101,12 @@ class SubstitutionController extends Controller
         try {
             $user = $this->requireUser();
         } catch (OCSForbiddenException $e) {
-            return $this->forbidden($e->getMessage());
+            return $this->forbidden(message: $e->getMessage());
         }
 
         $userId = $user->getUID();
         $rows   = $this->allSubstitutions();
-        if ($this->isCoordinator($userId) === false) {
+        if ($this->isCoordinator(userId: $userId) === false) {
             $rows = array_values(
                 array_filter(
                     $rows,
@@ -139,11 +139,11 @@ class SubstitutionController extends Controller
             $absentee = (string) $this->request->getParam('absentee', $actorId);
 
             // Per-object guard: own absence, or coordinator acting for another.
-            if ($absentee !== $actorId && $this->isCoordinator($actorId) === false) {
+            if ($absentee !== $actorId && $this->isCoordinator(userId: $actorId) === false) {
                 throw new OCSForbiddenException('You may only register a substitution for yourself');
             }
         } catch (OCSForbiddenException $e) {
-            return $this->forbidden($e->getMessage());
+            return $this->forbidden(message: $e->getMessage());
         }
 
         try {
@@ -184,18 +184,18 @@ class SubstitutionController extends Controller
         try {
             $actorId = $this->requireUser()->getUID();
         } catch (OCSForbiddenException $e) {
-            return $this->forbidden($e->getMessage());
+            return $this->forbidden(message: $e->getMessage());
         }
 
-        $row = $this->findSubstitution($id);
+        $row = $this->findSubstitution(id: $id);
         if ($row === null) {
             return new JSONResponse(['error' => 'Substitution not found'], Http::STATUS_NOT_FOUND);
         }
 
         $isOwner = (string) ($row['absentee'] ?? '') === $actorId
             || (string) ($row['createdBy'] ?? '') === $actorId;
-        if ($isOwner === false && $this->isCoordinator($actorId) === false) {
-            return $this->forbidden('You may only revoke your own substitution');
+        if ($isOwner === false && $this->isCoordinator(userId: $actorId) === false) {
+            return $this->forbidden(message: 'You may only revoke your own substitution');
         }
 
         $updated = $this->substitutionService->revoke($id);
@@ -215,7 +215,7 @@ class SubstitutionController extends Controller
         try {
             $user = $this->requireUser();
         } catch (OCSForbiddenException $e) {
-            return $this->forbidden($e->getMessage());
+            return $this->forbidden(message: $e->getMessage());
         }
 
         // Resolution runs in the calling user's RBAC context, so items the
@@ -241,10 +241,10 @@ class SubstitutionController extends Controller
         try {
             $actorId = $this->requireUser()->getUID();
         } catch (OCSForbiddenException $e) {
-            return $this->forbidden($e->getMessage());
+            return $this->forbidden(message: $e->getMessage());
         }
 
-        $row = $this->findSubstitution($id);
+        $row = $this->findSubstitution(id: $id);
         if ($row === null) {
             return new JSONResponse(['error' => 'Substitution not found'], Http::STATUS_NOT_FOUND);
         }
@@ -258,7 +258,7 @@ class SubstitutionController extends Controller
             ],
             true
         );
-        if ($involved === false && $this->isCoordinator($actorId) === false) {
+        if ($involved === false && $this->isCoordinator(userId: $actorId) === false) {
             return $this->forbidden();
         }
 
@@ -310,13 +310,18 @@ class SubstitutionController extends Controller
         }
 
         $user = $this->userSession->getUser();
+        if ($user !== null) {
+            $actorId = $user->getUID();
+        } else {
+            $actorId = '';
+        }
 
         try {
             $result = $this->reassignmentService->execute(
                 fromUser: (string) $this->request->getParam('fromUser', ''),
                 toUser: (string) $this->request->getParam('toUser', ''),
                 filter: $this->reassignmentFilter(),
-                actorId: ($user !== null ? $user->getUID() : '')
+                actorId: $actorId
             );
             return new JSONResponse($result);
         } catch (\InvalidArgumentException $e) {
@@ -393,8 +398,8 @@ class SubstitutionController extends Controller
             return $this->forbidden();
         }
 
-        if ($this->isCoordinator($user->getUID()) === false) {
-            return $this->forbidden('This action requires the coordinator role');
+        if ($this->isCoordinator(userId: $user->getUID()) === false) {
+            return $this->forbidden(message: 'This action requires the coordinator role');
         }
 
         return null;

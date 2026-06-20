@@ -7,8 +7,13 @@
  * on-time percentage, dispute rate, compliance score, and a municipal
  * benchmark over all suppliers in the same period.
  *
- * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @category Service
+ * @package  OCA\Procest\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
@@ -87,14 +92,18 @@ class SupplierKpiAggregationService
             }
 
             $paid++;
-            $due    = strtotime((string) ($inv['dueDate'] ?? ''));
-            $paid_d = strtotime((string) ($inv['actualPaymentDate'] ?? ''));
-            if ($due !== false && $paid_d !== false && $paid_d <= $due) {
+            $due      = strtotime((string) ($inv['dueDate'] ?? ''));
+            $paidDate = strtotime((string) ($inv['actualPaymentDate'] ?? ''));
+            if ($due !== false && $paidDate !== false && $paidDate <= $due) {
                 $onTime++;
             }
         }
 
-        return $paid === 0 ? 0.0 : round(($onTime / $paid) * 100, 2);
+        if ($paid === 0) {
+            return 0.0;
+        }
+
+        return round(($onTime / $paid) * 100, 2);
     }//end calculateOnTimePercentage()
 
     /**
@@ -153,10 +162,10 @@ class SupplierKpiAggregationService
      */
     public function aggregateKpis(array $invoices): array
     {
-        $payDays     = $this->calculatePaymentDaysMetric($invoices);
-        $onTime      = $this->calculateOnTimePercentage($invoices);
-        $disputeRate = $this->calculateDisputeRate($invoices);
-        $compliance  = $this->calculateComplianceScore($onTime, $disputeRate);
+        $payDays     = $this->calculatePaymentDaysMetric(invoices: $invoices);
+        $onTime      = $this->calculateOnTimePercentage(invoices: $invoices);
+        $disputeRate = $this->calculateDisputeRate(invoices: $invoices);
+        $compliance  = $this->calculateComplianceScore(onTimePct: $onTime, disputeRate: $disputeRate);
         return [
             'avgPaymentDays'   => $payDays,
             'onTimePercentage' => $onTime,
@@ -187,7 +196,11 @@ class SupplierKpiAggregationService
 
         $out = [];
         foreach ($bench as $k => $vals) {
-            $out[$k] = count($vals) > 0 ? round(array_sum($vals) / count($vals), 2) : 0.0;
+            if (count($vals) > 0) {
+                $out[$k] = round(array_sum($vals) / count($vals), 2);
+            } else {
+                $out[$k] = 0.0;
+            }
         }
 
         return $out;
@@ -205,16 +218,22 @@ class SupplierKpiAggregationService
         $headers = ['period', 'supplierRef', 'avgPaymentDays', 'onTimePercentage', 'disputeRate', 'complianceScore', 'sufficientData'];
         $lines   = [implode(',', $headers)];
         foreach ($rows as $r) {
+            if (($r['sufficientData'] ?? false) === true) {
+                $sufficient = 'true';
+            } else {
+                $sufficient = 'false';
+            }
+
             $lines[] = implode(
                     ',',
                     [
                         (string) ($r['period'] ?? ''),
                         (string) ($r['supplierRef'] ?? ''),
-                        $this->fmtFloat($r['avgPaymentDays'] ?? null),
-                        $this->fmtFloat($r['onTimePercentage'] ?? null),
-                        $this->fmtFloat($r['disputeRate'] ?? null),
-                        $this->fmtFloat($r['complianceScore'] ?? null),
-                        (($r['sufficientData'] ?? false) === true) ? 'true' : 'false',
+                        $this->fmtFloat(val: $r['avgPaymentDays'] ?? null),
+                        $this->fmtFloat(val: $r['onTimePercentage'] ?? null),
+                        $this->fmtFloat(val: $r['disputeRate'] ?? null),
+                        $this->fmtFloat(val: $r['complianceScore'] ?? null),
+                        $sufficient,
                     ]
                     );
         }

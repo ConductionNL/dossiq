@@ -91,15 +91,20 @@ class IngebrekestellingService
         $isValid = ($status === 'overschreden' && $deadline !== '' && $deadline < $receipt);
 
         $row = [
-            'termijnInstance'  => $termijnInstanceId,
-            'ontvangstDatum'   => $receipt,
-            'kanaal'           => $kanaal,
-            'gevalideerd'      => $isValid,
-            'geldigheidStatus' => ($isValid === true ? 'geldig' : 'premaat'),
-            'documentLink'     => $documentLink,
+            'termijnInstance' => $termijnInstanceId,
+            'ontvangstDatum'  => $receipt,
+            'kanaal'          => $kanaal,
+            'gevalideerd'     => $isValid,
+            'documentLink'    => $documentLink,
         ];
 
-        $saved     = $this->saveSchema('ingebrekestelling_schema', $row);
+        if ($isValid === true) {
+            $row['geldigheidStatus'] = 'geldig';
+        } else {
+            $row['geldigheidStatus'] = 'premaat';
+        }
+
+        $saved     = $this->saveSchema(schemaConfigKey: 'ingebrekestelling_schema', object: $row);
         $row['id'] = (string) ($saved['id'] ?? '');
 
         if ($isValid === false) {
@@ -127,12 +132,18 @@ class IngebrekestellingService
             ['relevantIngbrekes' => (string) $row['id']]
         );
 
-        $regime  = $this->resolveRegime($instance);
+        $regime  = $this->resolveRegime(instance: $instance);
         $startAt = $ontvangstDatum->modify('+'.((int) $regime['grace']).' days')->format('Y-m-d');
 
+        if ($regime['custom'] === true) {
+            $regimeLabel = 'afwijkend';
+        } else {
+            $regimeLabel = 'awb-default';
+        }
+
         $berekening = $this->saveSchema(
-                'dwangsom_berekening_schema',
-                [
+                schemaConfigKey: 'dwangsom_berekening_schema',
+                object: [
                     'ingebrekestelling' => (string) $row['id'],
                     'termijnInstance'   => $termijnInstanceId,
                     'startDatum'        => $startAt,
@@ -142,7 +153,7 @@ class IngebrekestellingService
                     'plafondBerekend'   => (int) $regime['plafond'],
                     'plafondBereikt'    => false,
                     'status'            => 'lopend',
-                    'regime'            => ($regime['custom'] === true ? 'afwijkend' : 'awb-default'),
+                    'regime'            => $regimeLabel,
                 ]
                 );
 
@@ -233,7 +244,11 @@ class IngebrekestellingService
 
         try {
             $saved = $objectService->saveObject($register, $schema, $object);
-            return is_array($saved) === true ? $saved : $object;
+            if (is_array($saved) === true) {
+                return $saved;
+            }
+
+            return $object;
         } catch (\Throwable $e) {
             $this->logger->error(
                 'IngebrekestellingService persist failed',

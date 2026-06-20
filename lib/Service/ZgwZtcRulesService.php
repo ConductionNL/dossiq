@@ -1010,10 +1010,10 @@ class ZgwZtcRulesService extends ZgwRulesBase
 
         try {
             $statusTypes = $this->searchObjectsAsArrays(
-                $this->objectService,
-                $register,
-                $statusSchema,
-                ['caseType' => $caseTypeId],
+                objectService: $this->objectService,
+                register: $register,
+                schema: $statusSchema,
+                filters: ['caseType' => $caseTypeId],
             );
         } catch (\Throwable $e) {
             $errors[] = "Could not load status types for case type";
@@ -1038,16 +1038,21 @@ class ZgwZtcRulesService extends ZgwRulesBase
 
         try {
             $caseTypes = $this->searchObjectsAsArrays(
-                $this->objectService,
-                $register,
-                $caseSchema,
-                ['id' => $caseTypeId],
+                objectService: $this->objectService,
+                register: $register,
+                schema: $caseSchema,
+                filters: ['id' => $caseTypeId],
             );
         } catch (\Throwable $e) {
             $caseTypes = [];
         }
 
-        $caseType  = (count($caseTypes) > 0 && is_array($caseTypes[0]) === true) ? $caseTypes[0] : [];
+        if (count($caseTypes) > 0 && is_array($caseTypes[0]) === true) {
+            $caseType = $caseTypes[0];
+        } else {
+            $caseType = [];
+        }
+
         $validFrom = (string) ($caseType['validFrom'] ?? '');
         if ($validFrom === '') {
             $errors[] = "'Valid from' date must be set before publishing";
@@ -1085,10 +1090,10 @@ class ZgwZtcRulesService extends ZgwRulesBase
 
         try {
             $cases = $this->searchObjectsAsArrays(
-                $this->objectService,
-                $register,
-                $caseSchema,
-                ['caseType' => $caseTypeId],
+                objectService: $this->objectService,
+                register: $register,
+                schema: $caseSchema,
+                filters: ['caseType' => $caseTypeId],
             );
         } catch (\Throwable $e) {
             return $default;
@@ -1101,10 +1106,10 @@ class ZgwZtcRulesService extends ZgwRulesBase
         $statusSchema = (string) $this->settingsService->getConfigValue(key: 'status_type_schema');
         try {
             $finalStatusTypes = $this->searchObjectsAsArrays(
-                $this->objectService,
-                $register,
-                $statusSchema,
-                ['caseType' => $caseTypeId, 'isFinal' => true],
+                objectService: $this->objectService,
+                register: $register,
+                schema: $statusSchema,
+                filters: ['caseType' => $caseTypeId, 'isFinal' => true],
             );
         } catch (\Throwable $e) {
             $finalStatusTypes = [];
@@ -1136,7 +1141,8 @@ class ZgwZtcRulesService extends ZgwRulesBase
             return [
                 'blocked'              => true,
                 'requiresConfirmation' => false,
-                'message'              => "Cannot delete case type: $activeCount active case(s) still use this type. Close or reassign all cases first.",
+                'message'              => "Cannot delete case type: $activeCount active case(s) still use this type. "
+                    ."Close or reassign all cases first.",
             ];
         }
 

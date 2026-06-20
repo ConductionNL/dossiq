@@ -293,7 +293,11 @@ class BelplanRoutingService
             }
         }
 
-        return $min === PHP_INT_MAX ? 0 : $min;
+        if ($min === PHP_INT_MAX) {
+            return 0;
+        }
+
+        return $min;
     }//end minQueueLength()
 
     /**

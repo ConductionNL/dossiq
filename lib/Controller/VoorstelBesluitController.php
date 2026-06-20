@@ -169,7 +169,11 @@ class VoorstelBesluitController extends Controller
             return null;
         }
 
-        return is_array($voorstel) === true ? $voorstel : null;
+        if (is_array($voorstel) === true) {
+            return $voorstel;
+        }
+
+        return null;
     }//end loadVoorstel()
 
     /**
@@ -208,6 +212,10 @@ class VoorstelBesluitController extends Controller
         }
 
         $decoded = json_decode((string) $content, true);
-        return is_array($decoded) === true ? $decoded : [];
+        if (is_array($decoded) === true) {
+            return $decoded;
+        }
+
+        return [];
     }//end getRequestBody()
 }//end class

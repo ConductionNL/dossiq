@@ -1,14 +1,19 @@
 <?php
 
 /**
- * Procest Supplier Master Data Mutation Service
+ * Procest Supplier Master Data Mutation Service.
  *
  * Self-service mutations on supplier master data. Address + contact apply
  * immediately; IBAN goes through a 4-eyes Procest workflow; accreditations
  * go through a verification workflow.
  *
- * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @category Service
+ * @package  OCA\Procest\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
@@ -33,6 +38,16 @@ class SupplierMasterDataMutationService
 {
     use SearchesObjects;
 
+    /**
+     * Constructor.
+     *
+     * @param SupplierScopeService                    $scopeService Supplier scope service.
+     * @param TenantAuditTrailService                 $auditTrail   Audit trail service.
+     * @param IAppManager                             $appManager   App manager.
+     * @param ContainerInterface                      $container    Service container.
+     * @param LoggerInterface                         $logger       Logger.
+     * @param KvkHandelsregisterAdapterInterface|null $kvkAdapter   Optional KvK adapter.
+     */
     public function __construct(
         private readonly SupplierScopeService $scopeService,
         private readonly TenantAuditTrailService $auditTrail,
@@ -87,6 +102,7 @@ class SupplierMasterDataMutationService
             /*
              * @var KvkLookupResult $result
              */
+
             $result = $this->kvkAdapter->lookup(
                 $normalised,
                 [
@@ -146,7 +162,12 @@ class SupplierMasterDataMutationService
      */
     public function updateAddress(string $supplierRef, array $newAddress, string $actor): ?array
     {
-        return $this->applyImmediate($supplierRef, ['address' => $newAddress], $actor, 'address');
+        return $this->applyImmediate(
+            supplierRef: $supplierRef,
+            delta: ['address' => $newAddress],
+            actor: $actor,
+            auditTag: 'address'
+        );
     }//end updateAddress()
 
     /**
@@ -160,7 +181,12 @@ class SupplierMasterDataMutationService
      */
     public function updateContactPerson(string $supplierRef, string $newContact, string $actor): ?array
     {
-        return $this->applyImmediate($supplierRef, ['contactPerson' => $newContact], $actor, 'contactPerson');
+        return $this->applyImmediate(
+            supplierRef: $supplierRef,
+            delta: ['contactPerson' => $newContact],
+            actor: $actor,
+            auditTag: 'contactPerson'
+        );
     }//end updateContactPerson()
 
     /**
@@ -174,7 +200,7 @@ class SupplierMasterDataMutationService
      */
     public function requestIbanChange(string $supplierRef, string $newIban, string $actor): array
     {
-        if ($this->isValidIban($newIban) === false) {
+        if ($this->isValidIban(iban: $newIban) === false) {
             return ['ok' => false, 'reason' => 'Invalid IBAN'];
         }
 
@@ -238,7 +264,7 @@ class SupplierMasterDataMutationService
         // format check (and, when an adapter is bound, the Handelsregister
         // lookup) and returns ok=false on rejection.
         if ($dataType === 'kvk' || $kvkNumber !== '') {
-            $kvkResult = $this->validateKvk($kvkNumber);
+            $kvkResult = $this->validateKvk(kvkNumber: $kvkNumber);
             if (($kvkResult['ok'] ?? false) === false) {
                 return ['ok' => false, 'reason' => (string) ($kvkResult['reason'] ?? 'KvK-validatie mislukt')];
             }
@@ -299,10 +325,14 @@ class SupplierMasterDataMutationService
         $rearranged = substr($iban, 4).substr($iban, 0, 4);
         $numeric    = '';
         foreach (str_split($rearranged) as $ch) {
-            $numeric .= ctype_alpha($ch) ? (string) (ord($ch) - 55) : $ch;
+            if (ctype_alpha($ch) === true) {
+                $numeric .= (string) (ord($ch) - 55);
+            } else {
+                $numeric .= $ch;
+            }
         }
 
-        // mod-97 over a (possibly long) numeric string.
+        // Mod-97 over a (possibly long) numeric string.
         $remainder = 0;
         foreach (str_split($numeric) as $d) {
             $remainder = ((($remainder * 10) + (int) $d) % 97);
@@ -312,6 +342,8 @@ class SupplierMasterDataMutationService
     }//end isValidIban()
 
     /**
+     * Merge a delta into the supplier row and persist it immediately.
+     *
      * @param string              $supplierRef Supplier UUID.
      * @param array<string,mixed> $delta       Fields to merge.
      * @param string              $actor       Actor id.
@@ -359,6 +391,8 @@ class SupplierMasterDataMutationService
     }//end applyImmediate()
 
     /**
+     * Resolve the OpenRegister object service, or null when unavailable.
+     *
      * @return mixed|null
      */
     private function getObjectService()

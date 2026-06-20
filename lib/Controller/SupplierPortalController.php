@@ -132,7 +132,7 @@ class SupplierPortalController extends Controller
      */
     public function dashboard(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -153,13 +153,18 @@ class SupplierPortalController extends Controller
      */
     public function tenders(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
 
-        $status  = (string) $this->request->getParam('status', '');
-        $filters = $status !== '' ? ['status' => $status] : [];
+        $status = (string) $this->request->getParam('status', '');
+        if ($status !== '') {
+            $filters = ['status' => $status];
+        } else {
+            $filters = [];
+        }
+
         $tenders = $this->scope->listSupplierObjects($supplierRef, 'supplierTender', $filters);
         $rows    = array_map(
                 function (array $t): array {
@@ -190,7 +195,7 @@ class SupplierPortalController extends Controller
      */
     public function tenderDetail(string $id): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -222,7 +227,7 @@ class SupplierPortalController extends Controller
      */
     public function invoices(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -254,7 +259,7 @@ class SupplierPortalController extends Controller
      */
     public function contracts(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -276,7 +281,7 @@ class SupplierPortalController extends Controller
      */
     public function kpi(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -298,7 +303,7 @@ class SupplierPortalController extends Controller
      */
     public function messages(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -325,7 +330,7 @@ class SupplierPortalController extends Controller
      */
     public function sendMessage(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }

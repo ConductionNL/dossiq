@@ -232,7 +232,11 @@ class DsoIntakeService
             $description .= ' (DSO: '.$dsoZaaknummer.')';
         }
 
-        $locatieStr = is_array($locatie) ? json_encode($locatie) : (string) $locatie;
+        if (is_array($locatie) === true) {
+            $locatieStr = json_encode($locatie);
+        } else {
+            $locatieStr = (string) $locatie;
+        }
 
         return [
             'title'         => $title,

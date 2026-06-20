@@ -86,6 +86,8 @@ class TenantClaimValidationMiddleware extends Middleware
     }//end __construct()
 
     /**
+     * Validate that the JWT tenant claim matches the bound request tenant.
+     *
      * @param \OCP\AppFramework\Controller $controller Controller.
      * @param string                       $methodName Method name.
      *
@@ -117,7 +119,7 @@ class TenantClaimValidationMiddleware extends Middleware
         $requestTenantId = $this->context->getTenantId();
 
         if ($jwtTenantId !== '' && $jwtTenantId !== $requestTenantId) {
-            $this->logSecurityIncident($jwtTenantId, $requestTenantId, $claims);
+            $this->logSecurityIncident(attempted: $jwtTenantId, requested: $requestTenantId, claims: $claims);
             $this->bumpFailureCounter();
             throw new TenantClaimMismatchException(
                 'JWT tenant_id does not match request tenant',

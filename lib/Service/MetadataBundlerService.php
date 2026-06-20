@@ -79,7 +79,7 @@ class MetadataBundlerService
     public function buildBundle(array $case, array $rule, array $documents): array
     {
         $mdtoVersion = (string) ($rule['mdtoVersion'] ?? '1.1');
-        $xml         = $this->renderMdtoXml($case, $rule, $documents);
+        $xml         = $this->renderMdtoXml(case: $case, rule: $rule, documents: $documents);
 
         return [
             'metadataXml'        => $xml,
@@ -132,7 +132,7 @@ class MetadataBundlerService
      */
     public function createSipBundel(string $caseId, string $metadataXml, array $documents): array
     {
-        $valid = $this->validateXsd($metadataXml);
+        $valid = $this->validateXsd(xmlContent: $metadataXml);
 
         $row = [
             'zaakId'             => $caseId,
@@ -154,7 +154,11 @@ class MetadataBundlerService
 
         try {
             $saved = $objectService->saveObject($register, $schema, $row);
-            return is_array($saved) === true ? $saved : $row;
+            if (is_array($saved) === true) {
+                return $saved;
+            }
+
+            return $row;
         } catch (\Throwable $e) {
             $this->logger->error('SipBundel persist failed', ['caseId' => $caseId, 'error' => $e->getMessage()]);
             return $row;
@@ -162,9 +166,12 @@ class MetadataBundlerService
     }//end createSipBundel()
 
     /**
-     * @param  array<string, mixed>             $case      Case.
-     * @param  array<string, mixed>             $rule      Rule.
-     * @param  array<int, array<string, mixed>> $documents Documents.
+     * Render the MDTO XML metadata document for a case.
+     *
+     * @param array<string, mixed>             $case      Case.
+     * @param array<string, mixed>             $rule      Rule.
+     * @param array<int, array<string, mixed>> $documents Documents.
+     *
      * @return string
      */
     private function renderMdtoXml(array $case, array $rule, array $documents): string
@@ -182,7 +189,9 @@ class MetadataBundlerService
             $docName      = htmlspecialchars((string) ($doc['name'] ?? 'document'), ENT_XML1);
             $docType      = htmlspecialchars((string) ($doc['documentType'] ?? 'onbekend'), ENT_XML1);
             $docMime      = htmlspecialchars((string) ($doc['mimeType'] ?? 'application/octet-stream'), ENT_XML1);
-            $docElements .= "    <mdto:document><mdto:naam>{$docName}</mdto:naam><mdto:type>{$docType}</mdto:type><mdto:mimeType>{$docMime}</mdto:mimeType></mdto:document>\n";
+            $docElements .= "    <mdto:document><mdto:naam>{$docName}</mdto:naam>"
+                ."<mdto:type>{$docType}</mdto:type>"
+                ."<mdto:mimeType>{$docMime}</mdto:mimeType></mdto:document>\n";
         }
 
         return <<<XML

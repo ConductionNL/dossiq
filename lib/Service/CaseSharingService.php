@@ -233,15 +233,30 @@ class CaseSharingService
             }
         }
 
+        $registerId = null;
+        if (empty($register) === false) {
+            $registerId = (int) $register;
+        }
+
+        $schemaId = null;
+        if (empty($schema) === false) {
+            $schemaId = (int) $schema;
+        }
+
+        $mintLabel = null;
+        if ($label !== '') {
+            $mintLabel = $label;
+        }
+
         try {
             // Mint through the leaf — it owns token generation, expiry and
             // the public resolve URL. The minter (createdBy) is recorded by
             // the leaf via the current user session.
             $minted = $tokenService->mint(
                 objectUuid: $caseId,
-                registerId: (empty($register) === false ? (int) $register : null),
-                schemaId: (empty($schema) === false ? (int) $schema : null),
-                label: ($label !== '' ? $label : null),
+                registerId: $registerId,
+                schemaId: $schemaId,
+                label: $mintLabel,
                 ttlSeconds: $ttlSeconds
             );
         } catch (\Throwable $e) {

@@ -47,10 +47,11 @@ class TermijnReportingController extends Controller
     /**
      * Constructor.
      *
-     * @param string                  $appName App id.
-     * @param IRequest                $request Request.
-     * @param TermijnReportingService $service Reporting service.
-     * @param LoggerInterface         $logger  Logger.
+     * @param string                  $appName     App id.
+     * @param IRequest                $request     Request.
+     * @param TermijnReportingService $service     Reporting service.
+     * @param IUserSession            $userSession User session.
+     * @param LoggerInterface         $logger      Logger.
      */
     public function __construct(
         string $appName,
@@ -59,7 +60,7 @@ class TermijnReportingController extends Controller
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -104,10 +105,10 @@ class TermijnReportingController extends Controller
     /**
      * Quarterly KPI report.
      *
-     * @NoAdminRequired
-     *
      * @param string      $periode  Period (YYYY-Qn).
      * @param string|null $afdeling Optional department filter.
+     *
+     * @NoAdminRequired
      *
      * @return JSONResponse
      *
@@ -138,9 +139,9 @@ class TermijnReportingController extends Controller
     /**
      * Annual dwangsom audit report.
      *
-     * @NoAdminRequired
-     *
      * @param int $jaar Year.
+     *
+     * @NoAdminRequired
      *
      * @return JSONResponse
      *

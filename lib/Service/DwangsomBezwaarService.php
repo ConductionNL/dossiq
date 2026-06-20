@@ -102,7 +102,12 @@ class DwangsomBezwaarService
 
         // Move all linked uitbetalingen to on-hold-bezwaar.
         try {
-            $uitbetalingen = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $uSchema, filters: ['dwangsomBerekening' => $berekeningId]);
+            $uitbetalingen = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $uSchema,
+                filters: ['dwangsomBerekening' => $berekeningId]
+            );
         } catch (\Throwable $e) {
             $uitbetalingen = [];
         }
@@ -133,7 +138,11 @@ class DwangsomBezwaarService
         }
 
         $this->logger->info('Dwangsom bezwaar registered', ['berekening' => $berekeningId]);
-        return is_array($berekening) === true ? $berekening : [];
+        if (is_array($berekening) === true) {
+            return $berekening;
+        }
+
+        return [];
     }//end registerBezwaar()
 
     /**
@@ -182,7 +191,12 @@ class DwangsomBezwaarService
         }
 
         try {
-            $uitbetalingen = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $uSchema, filters: ['dwangsomBerekening' => $berekeningId]);
+            $uitbetalingen = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $uSchema,
+                filters: ['dwangsomBerekening' => $berekeningId]
+            );
         } catch (\Throwable $e) {
             $uitbetalingen = [];
         }
@@ -213,6 +227,10 @@ class DwangsomBezwaarService
         }
 
         $this->logger->info('Dwangsom bezwaar resolved', ['berekening' => $berekeningId, 'newBedrag' => $newBedragCents]);
-        return is_array($berekening) === true ? $berekening : [];
+        if (is_array($berekening) === true) {
+            return $berekening;
+        }
+
+        return [];
     }//end resolveBezwaar()
 }//end class

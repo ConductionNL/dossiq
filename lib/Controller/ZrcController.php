@@ -129,7 +129,7 @@ class ZrcController extends ZgwController
         // Zrc-006a: Filter zaken results based on consumer's vertrouwelijkheidaanduiding.
         if ($resource === 'zaken' && $response->getStatus() === Http::STATUS_OK) {
             $response = $this->filterZakenByAuthorisation(response: $response);
-            // related-case-linking: populate relevanteAndereZaken per result.
+            // Related-case-linking: populate relevanteAndereZaken per result.
             $response = $this->enrichZakenListRelevanteAndereZaken(response: $response);
         }
 
@@ -259,7 +259,7 @@ class ZrcController extends ZgwController
 
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
 
-            // related-case-linking: route inbound relevanteAndereZaken through
+            // Related-case-linking: route inbound relevanteAndereZaken through
             // the guarded, symmetric case-relation service. A relation URL that
             // does not resolve to a local case is rejected with the standard ZGW
             // validation error shape.
@@ -357,7 +357,7 @@ class ZrcController extends ZgwController
 
         $response = $this->zgwService->handleShow($this->request, self::ZGW_API, $resource, $uuid);
 
-        // related-case-linking: populate relevanteAndereZaken from relatedCases.
+        // Related-case-linking: populate relevanteAndereZaken from relatedCases.
         if ($resource === 'zaken' && $response->getStatus() === Http::STATUS_OK) {
             $response = $this->enrichZaakRelevanteAndereZaken(response: $response);
         }
@@ -424,7 +424,7 @@ class ZrcController extends ZgwController
             $response = $this->enrichZioJsonResponse(response: $response);
         }
 
-        // related-case-linking: route inbound relevanteAndereZaken (PUT) through
+        // Related-case-linking: route inbound relevanteAndereZaken (PUT) through
         // the guarded, symmetric case-relation service and re-emit on success.
         if ($resource === 'zaken' && $response->getStatus() === Http::STATUS_OK) {
             $relError = $this->applyInboundRelevanteAndereZaken(
@@ -500,7 +500,7 @@ class ZrcController extends ZgwController
             $response = $this->enrichZioJsonResponse(response: $response);
         }
 
-        // related-case-linking: route inbound relevanteAndereZaken (PATCH) through
+        // Related-case-linking: route inbound relevanteAndereZaken (PATCH) through
         // the guarded, symmetric case-relation service and re-emit on success.
         if ($resource === 'zaken' && $response->getStatus() === Http::STATUS_OK) {
             $relError = $this->applyInboundRelevanteAndereZaken(
@@ -1313,7 +1313,7 @@ class ZrcController extends ZgwController
             }//end try
         }//end if
 
-        // related-case-linking: strip this case's entries from every counterpart
+        // Related-case-linking: strip this case's entries from every counterpart
         // case's relatedCases BEFORE deletion so no dangling peer references
         // survive (mirrors the deelzaak orphan cleanup). Run while the case is
         // still readable so its own relation list can be dereferenced.

@@ -121,8 +121,8 @@ class TenantSaasService
             throw new InvalidArgumentException('Invalid tier: '.$tier);
         }
 
-        $slug = $this->slugify($name);
-        if ($this->slugExists($slug) === true) {
+        $slug = $this->slugify(name: $name);
+        if ($this->slugExists(slug: $slug) === true) {
             throw new InvalidArgumentException('Slug already exists: '.$slug);
         }
 
@@ -137,7 +137,7 @@ class TenantSaasService
             'createdAt'     => (new \DateTimeImmutable('now'))->format(DATE_ATOM),
         ];
 
-        return $this->saveTenant($tenant, uuid: null);
+        return $this->saveTenant(tenant: $tenant, uuid: null);
     }//end create()
 
     /**
@@ -156,7 +156,11 @@ class TenantSaasService
 
         try {
             $row = $this->findObjectAsArray(objectService: $os, register: self::REGISTER, schema: self::SCHEMA_TENANT, id: $tenantId);
-            return is_array($row) ? $row : null;
+            if (is_array($row) === true) {
+                return $row;
+            }
+
+            return null;
         } catch (Throwable $e) {
             $this->logger->info('Procest: TenantSaasService::getById miss', ['tenantId' => $tenantId, 'exception' => $e->getMessage()]);
             return null;
@@ -192,7 +196,11 @@ class TenantSaasService
                 offset: $offset,
                 filters: $filters,
             );
-            return is_array($rows) ? array_values($rows) : [];
+            if (is_array($rows) === true) {
+                return array_values($rows);
+            }
+
+            return [];
         } catch (Throwable $e) {
             $this->logger->error('Procest: TenantSaasService::listActive failed', ['exception' => $e->getMessage()]);
             return [];
@@ -212,13 +220,13 @@ class TenantSaasService
      */
     public function updateStatus(string $tenantId, string $newStatus): array
     {
-        $row = $this->getById($tenantId);
+        $row = $this->getById(tenantId: $tenantId);
         if ($row === null) {
             throw new InvalidArgumentException('Tenant not found: '.$tenantId);
         }
 
         $current = (string) ($row['status'] ?? '');
-        $this->assertLegalTransition($current, $newStatus);
+        $this->assertLegalTransition(current: $current, target: $newStatus);
 
         $row['status'] = $newStatus;
         if ($newStatus === 'active' && empty($row['activatedAt']) === true) {
@@ -229,7 +237,7 @@ class TenantSaasService
             $row['terminatedAt'] = (new \DateTimeImmutable('now'))->format(DATE_ATOM);
         }
 
-        return $this->saveTenant($row, uuid: $tenantId);
+        return $this->saveTenant(tenant: $row, uuid: $tenantId);
     }//end updateStatus()
 
     /**
@@ -374,7 +382,11 @@ class TenantSaasService
                 schema: self::SCHEMA_TENANT,
                 uuid: $uuid,
             );
-            return is_array($row) ? $row : $tenant;
+            if (is_array($row) === true) {
+                return $row;
+            }
+
+            return $tenant;
         } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: TenantSaasService::saveTenant failed',

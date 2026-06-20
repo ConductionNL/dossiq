@@ -125,7 +125,7 @@ class ArchivalBatchService
             $i++;
 
             try {
-                $outcome = $this->processCaseInBatch((string) $caseId, $batchId, $eDepotId);
+                $outcome = $this->processCaseInBatch(caseId: (string) $caseId, batchId: $batchId, eDepotId: $eDepotId);
             } catch (\Throwable $e) {
                 $counts['failed']++;
                 $this->triggerService->logEvent(
@@ -140,7 +140,12 @@ class ArchivalBatchService
             $counts[$outcome]++;
         }//end foreach
 
-        $finalState      = ($counts['failed'] === 0) ? 'completed' : 'partially-failed';
+        if ($counts['failed'] === 0) {
+            $finalState = 'completed';
+        } else {
+            $finalState = 'partially-failed';
+        }
+
         $counts['state'] = $finalState;
 
         $this->triggerService->logEvent(
@@ -188,7 +193,14 @@ class ArchivalBatchService
         try {
             $rows = $objectService->searchObjectsBySlug('procest', 'sipBundel', ['zaakId' => $caseId]);
             foreach ((array) $rows as $row) {
-                $arr = (is_array($row) === true) ? $row : (method_exists($row, 'jsonSerialize') ? (array) $row->jsonSerialize() : []);
+                if (is_array($row) === true) {
+                    $arr = $row;
+                } else if (method_exists($row, 'jsonSerialize') === true) {
+                    $arr = (array) $row->jsonSerialize();
+                } else {
+                    $arr = [];
+                }
+
                 if (isset($arr['id']) === true) {
                     $sipBundelId = (string) $arr['id'];
                     break;
@@ -288,7 +300,14 @@ class ArchivalBatchService
 
         $yearPrefix = (string) $year;
         foreach ((array) $triggers as $row) {
-            $arr      = (is_array($row) === true) ? $row : (method_exists($row, 'jsonSerialize') ? (array) $row->jsonSerialize() : []);
+            if (is_array($row) === true) {
+                $arr = $row;
+            } else if (method_exists($row, 'jsonSerialize') === true) {
+                $arr = (array) $row->jsonSerialize();
+            } else {
+                $arr = [];
+            }
+
             $closedAt = (string) ($arr['afsluitingsDatum'] ?? '');
             if (str_starts_with($closedAt, $yearPrefix) === false) {
                 continue;
@@ -303,7 +322,7 @@ class ArchivalBatchService
                 'afsluitingsDatum' => $closedAt,
                 'overdrachtDatum'  => $arr['overdrachtDatum'] ?? null,
             ];
-        }
+        }//end foreach
 
         return $payload;
     }//end generateInspectionExport()

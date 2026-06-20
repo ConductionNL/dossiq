@@ -239,7 +239,10 @@ class SentimentService
     private function scorePolarity(string $text): float
     {
         $lower  = mb_strtolower($text);
-        $tokens = preg_split('/[^a-zA-Zàáäâèéëêìíïîòóöôùúüû]+/u', $lower) ?: [];
+        $tokens = preg_split('/[^a-zA-Zàáäâèéëêìíïîòóöôùúüû]+/u', $lower);
+        if ($tokens === false) {
+            $tokens = [];
+        }
 
         $score = 0.0;
         foreach ($tokens as $token) {

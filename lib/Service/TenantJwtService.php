@@ -94,9 +94,9 @@ class TenantJwtService
             'iss'         => 'procest',
         ];
 
-        $hPart = $this->b64UrlEncode((string) json_encode($header, JSON_UNESCAPED_SLASHES));
-        $cPart = $this->b64UrlEncode((string) json_encode($claims, JSON_UNESCAPED_SLASHES));
-        $sig   = $this->b64UrlEncode($this->signRaw($hPart.'.'.$cPart));
+        $hPart = $this->b64UrlEncode(bytes: (string) json_encode($header, JSON_UNESCAPED_SLASHES));
+        $cPart = $this->b64UrlEncode(bytes: (string) json_encode($claims, JSON_UNESCAPED_SLASHES));
+        $sig   = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart.'.'.$cPart));
         return $hPart.'.'.$cPart.'.'.$sig;
     }//end createToken()
 
@@ -151,12 +151,12 @@ class TenantJwtService
 
         [$hPart, $cPart, $sPart] = $parts;
 
-        $expected = $this->b64UrlEncode($this->signRaw($hPart.'.'.$cPart));
+        $expected = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart.'.'.$cPart));
         if (hash_equals($expected, $sPart) === false) {
             throw new RuntimeException('Invalid JWT signature');
         }
 
-        $claims = json_decode($this->b64UrlDecode($cPart), true);
+        $claims = json_decode($this->b64UrlDecode(encoded: $cPart), true);
         if (is_array($claims) === false) {
             throw new RuntimeException('Malformed JWT claims');
         }

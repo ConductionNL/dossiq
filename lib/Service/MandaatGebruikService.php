@@ -94,7 +94,11 @@ class MandaatGebruikService
 
         try {
             $saved = $objectService->saveObject($register, $schema, $row);
-            return is_array($saved) === true ? $saved : $row;
+            if (is_array($saved) === true) {
+                return $saved;
+            }
+
+            return $row;
         } catch (\Throwable $e) {
             $this->logger->error('MandaatGebruik log failed', ['zaakId' => $zaakId, 'error' => $e->getMessage()]);
             return $row;
@@ -121,7 +125,11 @@ class MandaatGebruikService
 
         try {
             $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaakId' => $zaakId]);
-            return is_array($rows) === true ? $rows : [];
+            if (is_array($rows) === true) {
+                return $rows;
+            }
+
+            return [];
         } catch (\Throwable $e) {
             return [];
         }
@@ -148,13 +156,22 @@ class MandaatGebruikService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['mandaatId' => $mandaatId]);
+            $rows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['mandaatId' => $mandaatId]
+            );
         } catch (\Throwable $e) {
             return [];
         }
 
         if ($from === null && $until === null) {
-            return is_array($rows) === true ? $rows : [];
+            if (is_array($rows) === true) {
+                return $rows;
+            }
+
+            return [];
         }
 
         $out = [];

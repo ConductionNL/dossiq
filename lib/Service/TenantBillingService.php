@@ -52,6 +52,13 @@ class TenantBillingService
         'case_refund',
     ];
 
+    /**
+     * Constructor.
+     *
+     * @param IAppManager        $appManager App manager.
+     * @param ContainerInterface $container  Service container.
+     * @param LoggerInterface    $logger     Logger.
+     */
     public function __construct(
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
@@ -123,8 +130,8 @@ class TenantBillingService
             throw new InvalidArgumentException('Month must be YYYY-MM: '.$month);
         }
 
-        $events = $this->fetchEventsForMonth($tenantId, $month);
-        return $this->aggregate($events);
+        $events = $this->fetchEventsForMonth(tenantId: $tenantId, month: $month);
+        return $this->aggregate(events: $events);
     }//end getMonthBilling()
 
     /**
@@ -181,17 +188,23 @@ class TenantBillingService
             $event['invoiceRef'] = $invoiceRef;
             try {
                 $uuid = (string) ($event['uuid'] ?? $event['id'] ?? '');
+                if ($uuid !== '') {
+                    $uuidArg = $uuid;
+                } else {
+                    $uuidArg = null;
+                }
+
                 $os->saveObject(
                     object: $event,
                     register: TenantSaasService::REGISTER,
                     schema: 'tenantBillingEvent',
-                    uuid: $uuid !== '' ? $uuid : null,
+                    uuid: $uuidArg,
                 );
                 $updated++;
             } catch (Throwable $e) {
                 $this->logger->error('Procest: markExported write failed', ['exception' => $e->getMessage()]);
             }
-        }
+        }//end foreach
 
         return $updated;
     }//end markExported()
@@ -223,12 +236,17 @@ class TenantBillingService
             return [];
         }
 
-        $rows = is_array($rows) ? $rows : [];
+        if (is_array($rows) === false) {
+            $rows = [];
+        }
+
         return array_values(array_filter($rows, fn ($r) => str_starts_with((string) ($r['occurredAt'] ?? ''), $month)));
     }//end fetchEventsForMonth()
 
     /**
-     * @return mixed|null
+     * Resolve the OpenRegister ObjectService when available.
+     *
+     * @return mixed|null The ObjectService instance, or null when unavailable.
      */
     private function getObjectService()
     {

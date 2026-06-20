@@ -80,13 +80,19 @@ class LogKvkHandelsregisterAdapter implements KvkHandelsregisterAdapterInterface
             dormant: true,
             extras: [
                 'reason' => 'no-outbound-connector-bound',
-                'note'   => 'Bind openconnector source slug `kvk-handelsregister` (KvK Handelsregister API v1, per-tenant API key) and override KvkHandelsregisterAdapterInterface in Application::register() to enable real lookup.',
+                'note'   => 'Bind openconnector source slug `kvk-handelsregister` (KvK Handelsregister API v1, '
+                    .'per-tenant API key) and override KvkHandelsregisterAdapterInterface in '
+                    .'Application::register() to enable real lookup.',
             ],
         );
     }//end lookup()
 
     /**
+     * Report whether this adapter is dormant.
+     *
      * @inheritDoc
+     *
+     * @return bool
      */
     public function isDormant(): bool
     {

@@ -221,16 +221,43 @@ class InboundEmailJob extends TimedJob
                     continue;
                 }
 
+                if (isset($headers->fromaddress) === true) {
+                    $from = (string) $headers->fromaddress;
+                } else {
+                    $from = '';
+                }
+
+                if (isset($headers->toaddress) === true) {
+                    $to = (string) $headers->toaddress;
+                } else {
+                    $to = '';
+                }
+
+                if (isset($headers->date) === true) {
+                    $sentAt = (string) $headers->date;
+                } else {
+                    $sentAt = '';
+                }
+
+                // phpcs:ignore Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps -- imap_headerinfo() returns a stdClass whose property name is fixed by the PHP IMAP extension.
+                if (isset($headers->Size) === true) {
+                    // phpcs:ignore Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps -- imap_headerinfo() returns a stdClass whose property name is fixed by the PHP IMAP extension.
+                    $sizeBytes = (int) $headers->Size;
+                } else {
+                    $sizeBytes = 0;
+                }
+
                 $messages[] = [
+                    // phpcs:ignore Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps -- imap_headerinfo() returns a stdClass whose property name is fixed by the PHP IMAP extension.
                     'mailMessageId' => (string) ($headers->message_id ?? ''),
                     'subject'       => (string) ($headers->subject ?? ''),
-                    'from'          => isset($headers->fromaddress) === true ? (string) $headers->fromaddress : '',
-                    'to'            => isset($headers->toaddress) === true ? (string) $headers->toaddress : '',
-                    'sentAt'        => isset($headers->date) === true ? (string) $headers->date : '',
+                    'from'          => $from,
+                    'to'            => $to,
+                    'sentAt'        => $sentAt,
                     'imapUid'       => (int) $id,
-                    'sizeBytes'     => isset($headers->Size) === true ? (int) $headers->Size : 0,
+                    'sizeBytes'     => $sizeBytes,
                 ];
-            }
+            }//end foreach
         } finally {
             @imap_close($connection);
         }//end try
@@ -285,6 +312,8 @@ class InboundEmailJob extends TimedJob
      * already-linked check above is still authoritative.
      *
      * @param string $messageId Message ID.
+     *
+     * @return void
      */
     private function markProcessed(string $messageId): void
     {

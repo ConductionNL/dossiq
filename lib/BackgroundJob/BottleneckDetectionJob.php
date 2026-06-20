@@ -94,7 +94,7 @@ class BottleneckDetectionJob extends TimedJob
         }
 
         foreach ($stalled as $row) {
-            $this->notifyStall($row);
+            $this->notifyStall(row: $row);
         }
 
         $this->logger->info(

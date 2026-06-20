@@ -6,8 +6,9 @@
  * Computes the expected payment date for a supplier invoice and produces
  * an age analysis with 30/60/90-day buckets.
  *
- * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
@@ -37,6 +38,12 @@ class InvoicePaymentForecastService
      */
     public const DEFAULT_PAYMENT_TERMS_DAYS = 30;
 
+    /**
+     * Constructor.
+     *
+     * @param SupplierScopeService $scopeService Supplier scope service.
+     * @param LoggerInterface      $logger       Logger.
+     */
     public function __construct(
         private readonly SupplierScopeService $scopeService,
         private readonly LoggerInterface $logger,
@@ -109,7 +116,11 @@ class InvoicePaymentForecastService
         }//end foreach
 
         foreach ($buckets as $k => $b) {
-            $buckets[$k]['percentage'] = $totalAmount > 0 ? round(($b['amount'] / $totalAmount) * 100, 2) : 0.0;
+            if ($totalAmount > 0) {
+                $buckets[$k]['percentage'] = round(($b['amount'] / $totalAmount) * 100, 2);
+            } else {
+                $buckets[$k]['percentage'] = 0.0;
+            }
         }
 
         return $buckets;

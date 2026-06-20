@@ -90,13 +90,19 @@ class LogTmloMetadataBuilderAdapter implements TmloMetadataBuilderAdapterInterfa
             dormant: true,
             extras: [
                 'reason' => 'no-outbound-builder-bound',
-                'note'   => 'Bind openconnector source slug `mdto-tmlo-builder` (pin KNVI/Nationaal Archief XSD catalogue + per-tenant archiefvormerId + classificatieScheme) and override TmloMetadataBuilderAdapterInterface in Application::register() to enable XSD-valid bundle production.',
+                'note'   => 'Bind openconnector source slug `mdto-tmlo-builder` (pin KNVI/Nationaal Archief XSD '
+                    .'catalogue + per-tenant archiefvormerId + classificatieScheme) and override '
+                    .'TmloMetadataBuilderAdapterInterface in Application::register() to enable XSD-valid bundle production.',
             ],
         );
     }//end buildBundle()
 
     /**
+     * Report whether this adapter is dormant.
+     *
      * @inheritDoc
+     *
+     * @return bool
      */
     public function isDormant(): bool
     {

@@ -44,6 +44,14 @@ class ShillinqIntegrationService
      */
     public const BACKOFF_BASE_SECONDS = 2;
 
+    /**
+     * Constructor.
+     *
+     * @param IClientService  $httpClientService The HTTP client service.
+     * @param LoggerInterface $logger            The logger.
+     * @param string          $shillinqBaseUrl   The Shillinq base URL.
+     * @param string          $shillinqApiKey    The Shillinq API key.
+     */
     public function __construct(
         private readonly IClientService $httpClientService,
         private readonly LoggerInterface $logger,

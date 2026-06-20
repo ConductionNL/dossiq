@@ -73,6 +73,13 @@ class TenantQuotaService
     public const DECISION_BLOCK    = 'block';
     public const DECISION_WARN     = 'warn';
 
+    /**
+     * Constructor.
+     *
+     * @param IAppManager        $appManager App manager.
+     * @param ContainerInterface $container  Service container.
+     * @param LoggerInterface    $logger     Logger.
+     */
     public function __construct(
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
@@ -112,7 +119,7 @@ class TenantQuotaService
                         'currentUsage'            => 0,
                         'softLimitWarningPercent' => 80,
                         'enforcement'             => $cfg['enforcement'],
-                        'resetAt'                 => $this->nextResetAt($quotaType),
+                        'resetAt'                 => $this->nextResetAt(quotaType: $quotaType),
                     ],
                     register: TenantSaasService::REGISTER,
                     schema: 'tenantQuota',
@@ -152,7 +159,11 @@ class TenantQuotaService
                 offset: 0,
                 filters: ['tenantRef' => $tenantId, 'quotaType' => $quotaType]
             );
-            return (is_array($rows) === true && count($rows) > 0) ? $rows[0] : null;
+            if (is_array($rows) === true && count($rows) > 0) {
+                return $rows[0];
+            }
+
+            return null;
         } catch (Throwable $e) {
             return null;
         }
@@ -185,7 +196,13 @@ class TenantQuotaService
         $hardHit   = $next > $limitInt;
 
         if ($hardHit === false) {
-            return ['decision' => self::DECISION_ALLOW, 'soft' => $softHit, 'reason' => $softHit ? 'soft_limit' : 'within_limit'];
+            if ($softHit === true) {
+                $reason = 'soft_limit';
+            } else {
+                $reason = 'within_limit';
+            }
+
+            return ['decision' => self::DECISION_ALLOW, 'soft' => $softHit, 'reason' => $reason];
         }
 
         // Hard limit reached.
@@ -211,18 +228,18 @@ class TenantQuotaService
      */
     public function consume(string $tenantId, string $quotaType, int $amount=1): array
     {
-        $quota = $this->getQuota($tenantId, $quotaType);
+        $quota = $this->getQuota(tenantId: $tenantId, quotaType: $quotaType);
         if ($quota === null) {
             return ['decision' => self::DECISION_ALLOW, 'soft' => false, 'reason' => 'no_quota_row'];
         }
 
-        $decision = $this->decide($quota, $amount);
+        $decision = $this->decide(quota: $quota, increment: $amount);
         if (in_array($decision['decision'], [self::DECISION_BLOCK, self::DECISION_THROTTLE], true) === true) {
             return $decision;
         }
 
         $quota['currentUsage'] = (int) ($quota['currentUsage'] ?? 0) + $amount;
-        $this->persistQuota($quota);
+        $this->persistQuota(quota: $quota);
         $decision['currentUsage'] = $quota['currentUsage'];
         return $decision;
     }//end consume()
@@ -238,13 +255,13 @@ class TenantQuotaService
      */
     public function setLimit(string $tenantId, string $quotaType, ?int $limit): ?array
     {
-        $quota = $this->getQuota($tenantId, $quotaType);
+        $quota = $this->getQuota(tenantId: $tenantId, quotaType: $quotaType);
         if ($quota === null) {
             return null;
         }
 
         $quota['limit'] = $limit;
-        $this->persistQuota($quota);
+        $this->persistQuota(quota: $quota);
         return $quota;
     }//end setLimit()
 
@@ -264,8 +281,8 @@ class TenantQuotaService
         }
 
         $quota['currentUsage'] = 0;
-        $quota['resetAt']      = $this->nextResetAt((string) ($quota['quotaType'] ?? 'cases_per_month'));
-        $this->persistQuota($quota);
+        $quota['resetAt']      = $this->nextResetAt(quotaType: (string) ($quota['quotaType'] ?? 'cases_per_month'));
+        $this->persistQuota(quota: $quota);
         return $quota;
     }//end resetIfDue()
 
@@ -282,11 +299,13 @@ class TenantQuotaService
             return (new DateTimeImmutable('+1 hour'))->format(DATE_ATOM);
         }
 
-        // cases_per_month + others reset on the first of next month.
+        // The cases_per_month type and others reset on the first of next month.
         return (new DateTimeImmutable('first day of next month'))->format(DATE_ATOM);
     }//end nextResetAt()
 
     /**
+     * Persist a quota row back to OpenRegister.
+     *
      * @param array<string,mixed> $quota Quota row.
      *
      * @return void
@@ -300,11 +319,17 @@ class TenantQuotaService
 
         try {
             $uuid = (string) ($quota['uuid'] ?? $quota['id'] ?? '');
+            if ($uuid !== '') {
+                $uuidArg = $uuid;
+            } else {
+                $uuidArg = null;
+            }
+
             $os->saveObject(
                 object: $quota,
                 register: TenantSaasService::REGISTER,
                 schema: 'tenantQuota',
-                uuid: $uuid !== '' ? $uuid : null
+                uuid: $uuidArg
             );
         } catch (Throwable $e) {
             $this->logger->error('Procest: persistQuota failed', ['exception' => $e->getMessage()]);
@@ -312,6 +337,8 @@ class TenantQuotaService
     }//end persistQuota()
 
     /**
+     * Resolve the OpenRegister ObjectService when available.
+     *
      * @return mixed|null
      */
     private function getObjectService()

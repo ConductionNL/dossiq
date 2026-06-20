@@ -82,13 +82,19 @@ class LogBrpHaalCentraalAdapter implements BrpHaalCentraalAdapterInterface
             dormant: true,
             extras: [
                 'reason' => 'no-outbound-connector-bound',
-                'note'   => 'Bind openconnector source slug `brp-haalcentraal` (PKIoverheid Services-server cert + Logius/RvIG autorisatieprofiel + Haal Centraal BRP Personen API endpoint) and override BrpHaalCentraalAdapterInterface in Application::register() to enable real lookup. NEVER log BSN values.',
+                'note'   => 'Bind openconnector source slug `brp-haalcentraal` (PKIoverheid Services-server cert '
+                    .'+ Logius/RvIG autorisatieprofiel + Haal Centraal BRP Personen API endpoint) and override '
+                    .'BrpHaalCentraalAdapterInterface in Application::register() to enable real lookup. NEVER log BSN values.',
             ],
         );
     }//end lookup()
 
     /**
+     * Report whether this adapter is dormant.
+     *
      * @inheritDoc
+     *
+     * @return bool
      */
     public function isDormant(): bool
     {

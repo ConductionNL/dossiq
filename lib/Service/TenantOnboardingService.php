@@ -50,6 +50,14 @@ class TenantOnboardingService
         'go_live',
     ];
 
+    /**
+     * Constructor.
+     *
+     * @param TenantSaasService  $tenantSaasService Tenant SaaS service.
+     * @param IAppManager        $appManager        App manager.
+     * @param ContainerInterface $container         Service container.
+     * @param LoggerInterface    $logger            Logger.
+     */
     public function __construct(
         private readonly TenantSaasService $tenantSaasService,
         private readonly IAppManager $appManager,
@@ -122,7 +130,10 @@ class TenantOnboardingService
             $rows = [];
         }
 
-        $rows      = is_array($rows) ? $rows : [];
+        if (is_array($rows) === false) {
+            $rows = [];
+        }
+
         $completed = 0;
         foreach ($rows as $r) {
             if ((string) ($r['status'] ?? '') === 'completed') {
@@ -130,8 +141,13 @@ class TenantOnboardingService
             }
         }
 
-        $total    = max(count(self::STEPS), count($rows));
-        $fraction = $total === 0 ? 0.0 : ($completed / $total);
+        $total = max(count(self::STEPS), count($rows));
+        if ($total === 0) {
+            $fraction = 0.0;
+        } else {
+            $fraction = ($completed / $total);
+        }
+
         return [
             'steps'     => array_values($rows),
             'completed' => $completed,
@@ -180,13 +196,23 @@ class TenantOnboardingService
             $task['completedAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
 
             $uuid = (string) ($task['uuid'] ?? $task['id'] ?? '');
-            $row  = $os->saveObject(
+            if ($uuid !== '') {
+                $uuidArg = $uuid;
+            } else {
+                $uuidArg = null;
+            }
+
+            $row = $os->saveObject(
                 object: $task,
                 register: TenantSaasService::REGISTER,
                 schema: 'tenantOnboardingTask',
-                uuid: $uuid !== '' ? $uuid : null
+                uuid: $uuidArg
             );
-            return is_array($row) ? $row : $task;
+            if (is_array($row) === true) {
+                return $row;
+            }
+
+            return $task;
         } catch (Throwable $e) {
             $this->logger->error('Procest: markStepComplete failed', ['exception' => $e->getMessage()]);
             return null;
@@ -210,15 +236,20 @@ class TenantOnboardingService
         }
 
         $missing = [];
-        if ($this->countSchemaRows($os, 'caseType', ['tenantRef' => $tenantId]) === 0) {
+        if ($this->countSchemaRows(os: $os, schema: 'caseType', filters: ['tenantRef' => $tenantId]) === 0) {
             $missing[] = 'zaaktype';
         }
 
-        if ($this->countSchemaRows($os, 'tenantMandate', ['tenantRef' => $tenantId]) === 0) {
+        if ($this->countSchemaRows(os: $os, schema: 'tenantMandate', filters: ['tenantRef' => $tenantId]) === 0) {
             $missing[] = 'mandate';
         }
 
-        if ($this->countSchemaRows($os, 'tenantUser', ['tenantRef' => $tenantId, 'role' => 'tenant_admin']) === 0) {
+        if ($this->countSchemaRows(
+            os: $os,
+            schema: 'tenantUser',
+            filters: ['tenantRef' => $tenantId, 'role' => 'tenant_admin']
+        ) === 0
+        ) {
             $missing[] = 'tenant_admin';
         }
 
@@ -234,7 +265,7 @@ class TenantOnboardingService
      */
     public function activate(string $tenantId): array
     {
-        $check = $this->validateGoLive($tenantId);
+        $check = $this->validateGoLive(tenantId: $tenantId);
         if ($check['ready'] === false) {
             return ['activated' => false, 'missing' => $check['missing']];
         }
@@ -268,13 +299,19 @@ class TenantOnboardingService
                 offset: 0,
                 filters: $filters
             );
-            return is_array($rows) ? count($rows) : 0;
+            if (is_array($rows) === true) {
+                return count($rows);
+            }
+
+            return 0;
         } catch (Throwable $e) {
             return 0;
         }
     }//end countSchemaRows()
 
     /**
+     * Resolve the OpenRegister object service, or null when unavailable.
+     *
      * @return mixed|null
      */
     private function getObjectService()

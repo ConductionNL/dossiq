@@ -234,7 +234,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep
                     $linked++;
                     $output->info('Linked '.$schema.' '.$objUuid.' → decidesk Decision '.$newRef);
                 } catch (RuntimeException $e) {
-                    // decidesk leaf unavailable — warn + skip; never fail the migration.
+                    // Decidesk leaf unavailable — warn + skip; never fail the migration.
                     $output->warning('Could not link '.$schema.' '.$objUuid.': '.$e->getMessage().' — skipping.');
                     $this->logger->warning(
                         'LinkInFlightRemainingDecisionsRepair: could not link object',

@@ -133,12 +133,12 @@ class ZaakdossierController extends Controller
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $metadata = $this->decodeMetadata($this->request->getParam('metadata', '{}'));
+        $metadata = $this->decodeMetadata(raw: $this->request->getParam('metadata', '{}'));
         if (($metadata['auteur'] ?? '') === '') {
             $metadata['auteur'] = $user->getDisplayName();
         }
 
-        $files = $this->normaliseUploadedFiles($this->request->getUploadedFile('files'));
+        $files = $this->normaliseUploadedFiles(uploaded: $this->request->getUploadedFile('files'));
         if (empty($files) === true) {
             return new JSONResponse(['error' => 'No files uploaded'], Http::STATUS_BAD_REQUEST);
         }
@@ -152,8 +152,12 @@ class ZaakdossierController extends Controller
                     throw new \RuntimeException('Executable files are not permitted: '.$name);
                 }
 
-                $content = $tmpName !== '' ? (string) file_get_contents($tmpName) : '';
-                $meta    = $metadata;
+                $content = '';
+                if ($tmpName !== '') {
+                    $content = (string) file_get_contents($tmpName);
+                }
+
+                $meta = $metadata;
                 if (isset($file['type']) === true && $file['type'] !== '') {
                     $meta['formaat'] = $file['type'];
                 }

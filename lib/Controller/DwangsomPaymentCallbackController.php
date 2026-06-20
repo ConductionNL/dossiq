@@ -65,7 +65,7 @@ class DwangsomPaymentCallbackController extends Controller
         private readonly IAppConfig $appConfig,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -86,7 +86,7 @@ class DwangsomPaymentCallbackController extends Controller
         // while staying within public API surface.
         $rawBody = (string) file_get_contents('php://input');
 
-        if ($this->validateSignature($rawBody) === false) {
+        if ($this->validateSignature(rawBody: $rawBody) === false) {
             $this->logger->warning('Dwangsom callback: invalid signature');
             // Inline 401 — gate-9 flags STATUS_UNAUTHORIZED/STATUS_FORBIDDEN
             // as evidence of an auth body inside a PublicPage method; the
@@ -111,7 +111,7 @@ class DwangsomPaymentCallbackController extends Controller
             );
         }
 
-        $betaaldatum = $this->parseDate((string) ($body['werkelijkeBetaaldatum'] ?? ''));
+        $betaaldatum = $this->parseDate(value: (string) ($body['werkelijkeBetaaldatum'] ?? ''));
         $bankRef     = (string) ($body['betalingsreferentie'] ?? '');
 
         try {

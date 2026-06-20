@@ -67,7 +67,7 @@ class MandaatEscalatieService
      */
     public function createEscalatie(string $zaakId, string $decisionType, string $initiatorId, string $escalatieReden): array
     {
-        $path = $this->resolveEscalatiePath($decisionType, $escalatieReden);
+        $path = $this->resolveEscalatiePath(decisionType: $decisionType, escalatieReden: $escalatieReden);
         $row  = [
             'zaakId'          => $zaakId,
             'decisionType'    => $decisionType,
@@ -79,7 +79,7 @@ class MandaatEscalatieService
             'createdAt'       => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
         ];
 
-        $saved = $this->save('mandaat_escalatie_schema', $row);
+        $saved = $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $row);
         $this->logger->info(
                 'Mandaat escalation created',
                 [
@@ -117,7 +117,12 @@ class MandaatEscalatieService
         }
 
         try {
-            $mandaten = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $mSchema, filters: ['status' => 'active']);
+            $mandaten = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $mSchema,
+                filters: ['status' => 'active']
+            );
         } catch (\Throwable $e) {
             return ['mandaatId' => '', 'userId' => ''];
         }
@@ -150,7 +155,12 @@ class MandaatEscalatieService
             }
 
             try {
-                $assigns = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $assignSchema, filters: ['rolId' => $rolId]);
+                $assigns = $this->searchObjectsAsArrays(
+                    objectService: $objectService,
+                    register: $register,
+                    schema: $assignSchema,
+                    filters: ['rolId' => $rolId]
+                );
             } catch (\Throwable $e) {
                 continue;
             }
@@ -199,7 +209,7 @@ class MandaatEscalatieService
      */
     public function approveEscalatie(string $escalatieId, string $mandaathouderUserId): array
     {
-        $escalatie = $this->findEscalatie($escalatieId);
+        $escalatie = $this->findEscalatie(escalatieId: $escalatieId);
         if ($escalatie === null) {
             throw new RuntimeException('Escalation not found: '.$escalatieId);
         }
@@ -214,7 +224,7 @@ class MandaatEscalatieService
 
         $escalatie['status']     = 'goedgekeurd';
         $escalatie['resolvedAt'] = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
-        return $this->save('mandaat_escalatie_schema', $escalatie);
+        return $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $escalatie);
     }//end approveEscalatie()
 
     /**
@@ -231,7 +241,7 @@ class MandaatEscalatieService
      */
     public function rejectEscalatie(string $escalatieId, string $reason): array
     {
-        $escalatie = $this->findEscalatie($escalatieId);
+        $escalatie = $this->findEscalatie(escalatieId: $escalatieId);
         if ($escalatie === null) {
             throw new RuntimeException('Escalation not found: '.$escalatieId);
         }
@@ -243,7 +253,7 @@ class MandaatEscalatieService
         $escalatie['status']         = 'afgewezen';
         $escalatie['afgewezenReden'] = $reason;
         $escalatie['resolvedAt']     = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
-        return $this->save('mandaat_escalatie_schema', $escalatie);
+        return $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $escalatie);
     }//end rejectEscalatie()
 
     /**
@@ -266,7 +276,12 @@ class MandaatEscalatieService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['status' => 'open', 'targetUserId' => $oldUserId]);
+            $rows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['status' => 'open', 'targetUserId' => $oldUserId]
+            );
         } catch (\Throwable $e) {
             return 0;
         }
@@ -290,7 +305,10 @@ class MandaatEscalatieService
     }//end autoRerouteOnPersonnelChange()
 
     /**
-     * @param  string $escalatieId Id.
+     * Fetch a single escalation row by id.
+     *
+     * @param string $escalatieId Id.
+     *
      * @return array<string, mixed>|null
      */
     private function findEscalatie(string $escalatieId): ?array
@@ -304,15 +322,22 @@ class MandaatEscalatieService
 
         try {
             $row = $objectService->find($escalatieId, register: $register, schema: $schema);
-            return is_array($row) === true ? $row : null;
+            if (is_array($row) === true) {
+                return $row;
+            }
+
+            return null;
         } catch (\Throwable $e) {
             return null;
         }
     }//end findEscalatie()
 
     /**
-     * @param  string               $schemaConfigKey Config key.
-     * @param  array<string, mixed> $object          Payload.
+     * Persist a payload to the configured schema.
+     *
+     * @param string               $schemaConfigKey Config key.
+     * @param array<string, mixed> $object          Payload.
+     *
      * @return array<string, mixed>
      */
     private function save(string $schemaConfigKey, array $object): array
@@ -326,7 +351,11 @@ class MandaatEscalatieService
 
         try {
             $saved = $objectService->saveObject($register, $schema, $object);
-            return is_array($saved) === true ? $saved : $object;
+            if (is_array($saved) === true) {
+                return $saved;
+            }
+
+            return $object;
         } catch (\Throwable $e) {
             $this->logger->error('Mandaat persist failed', ['key' => $schemaConfigKey, 'error' => $e->getMessage()]);
             return $object;

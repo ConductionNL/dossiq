@@ -9,8 +9,9 @@
  * side so an automated test can prove the contract without spinning up
  * a Vue runtime.
  *
- * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
@@ -166,10 +167,18 @@ class LeverancierViewModelService
         }
 
         if ($lowerBetter === true) {
-            return $diff < 0 ? 'better' : 'worse';
+            if ($diff < 0) {
+                return 'better';
+            }
+
+            return 'worse';
         }
 
-        return $diff > 0 ? 'better' : 'worse';
+        if ($diff > 0) {
+            return 'better';
+        }
+
+        return 'worse';
     }//end benchmarkComparison()
 
     /**

@@ -50,12 +50,13 @@ class DwangsomController extends Controller
     /**
      * Constructor.
      *
-     * @param string                     $appName  App id.
-     * @param IRequest                   $request  Request.
-     * @param DwangsomCalculationService $calc     Calculation service.
-     * @param DwangsomBezwaarService     $bezwaar  Bezwaar service.
-     * @param SettingsService            $settings Settings.
-     * @param LoggerInterface            $logger   Logger.
+     * @param string                     $appName     App id.
+     * @param IRequest                   $request     Request.
+     * @param DwangsomCalculationService $calc        Calculation service.
+     * @param DwangsomBezwaarService     $bezwaar     Bezwaar service.
+     * @param SettingsService            $settings    Settings.
+     * @param IUserSession               $userSession User session.
+     * @param LoggerInterface            $logger      Logger.
      */
     public function __construct(
         string $appName,
@@ -66,7 +67,7 @@ class DwangsomController extends Controller
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -87,11 +88,11 @@ class DwangsomController extends Controller
     /**
      * Get a DwangsomBerekening by id.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
@@ -124,11 +125,11 @@ class DwangsomController extends Controller
     /**
      * Stop the berekening because a beschikking was filed.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
@@ -149,11 +150,11 @@ class DwangsomController extends Controller
     /**
      * Register a bezwaar.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
@@ -178,11 +179,11 @@ class DwangsomController extends Controller
     /**
      * Resolve a bezwaar with a corrected amount.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
@@ -208,6 +209,8 @@ class DwangsomController extends Controller
     }//end bezwaarHeroverweging()
 
     /**
+     * Decode the JSON request body into an associative array.
+     *
      * @return array<string, mixed>
      */
     private function jsonBody(): array
@@ -216,6 +219,10 @@ class DwangsomController extends Controller
         // request; read raw payload from php://input instead.
         $raw  = (string) file_get_contents('php://input');
         $body = json_decode($raw, true);
-        return is_array($body) === true ? $body : [];
+        if (is_array($body) === true) {
+            return $body;
+        }
+
+        return [];
     }//end jsonBody()
 }//end class

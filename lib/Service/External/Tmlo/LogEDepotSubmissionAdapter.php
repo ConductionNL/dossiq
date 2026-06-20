@@ -82,13 +82,19 @@ class LogEDepotSubmissionAdapter implements EDepotSubmissionAdapterInterface
             dormant: true,
             extras: [
                 'reason' => 'no-outbound-connector-bound',
-                'note'   => 'Bind openconnector source slug `archief-edepot` (per-tenant HTTPS/SFTP/S3 credentials + archief-id mapping rule) and override EDepotSubmissionAdapterInterface in Application::register() to enable real submission.',
+                'note'   => 'Bind openconnector source slug `archief-edepot` (per-tenant HTTPS/SFTP/S3 credentials '
+                    .'+ archief-id mapping rule) and override EDepotSubmissionAdapterInterface in '
+                    .'Application::register() to enable real submission.',
             ],
         );
     }//end submit()
 
     /**
+     * Report whether this adapter is dormant.
+     *
      * @inheritDoc
+     *
+     * @return bool
      */
     public function isDormant(): bool
     {

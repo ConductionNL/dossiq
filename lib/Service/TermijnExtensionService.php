@@ -92,12 +92,18 @@ class TermijnExtensionService
         }
 
         $consumed = (int) ($instance['aantalVerlengingen'] ?? 0);
-        $maxExt   = $this->resolveMaxExtensions($instance);
+        $maxExt   = $this->resolveMaxExtensions(instance: $instance);
         if ($supervisorOverride === false && $consumed >= $maxExt) {
             throw new RuntimeException('AWB 4:14 lid 3: maximum aantal verlengingen al verbruikt ('.$maxExt.')');
         }
 
-        $currentDate = new DateTimeImmutable($current !== '' ? $current : 'now');
+        if ($current !== '') {
+            $currentInput = $current;
+        } else {
+            $currentInput = 'now';
+        }
+
+        $currentDate = new DateTimeImmutable($currentInput);
         $newDate     = new DateTimeImmutable($newEinddatum);
         $dagenImpact = (int) $currentDate->diff($newDate)->days;
 
@@ -110,14 +116,22 @@ class TermijnExtensionService
             ]
         );
 
+        if ($supervisorOverride === true) {
+            $grondslag = 'AWB 4:14 lid 3 (supervisor)';
+            $actor     = 'supervisor';
+        } else {
+            $grondslag = 'AWB 4:14 lid 1';
+            $actor     = 'system';
+        }
+
         $this->termijnService->recordEvent(
             termijnInstanceId: $termijnInstanceId,
             type: 'verleng',
-            grondslag: ($supervisorOverride === true ? 'AWB 4:14 lid 3 (supervisor)' : 'AWB 4:14 lid 1'),
+            grondslag: $grondslag,
             motivering: $motivering,
             dagenImpact: $dagenImpact,
             documentLink: $documentLink,
-            actor: ($supervisorOverride === true ? 'supervisor' : 'system'),
+            actor: $actor,
         );
 
         return $updated ?? $instance;

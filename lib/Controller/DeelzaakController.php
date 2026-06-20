@@ -125,7 +125,11 @@ class DeelzaakController extends Controller
         if (is_array($raw) === true) {
             $ids = $raw;
         } else {
-            $ids = $raw === '' ? [] : explode(',', (string) $raw);
+            if ($raw === '') {
+                $ids = [];
+            } else {
+                $ids = explode(',', (string) $raw);
+            }
         }
 
         $ids = array_values(array_filter(array_map('trim', $ids), static fn ($value): bool => $value !== ''));

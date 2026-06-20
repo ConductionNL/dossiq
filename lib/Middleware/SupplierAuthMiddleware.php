@@ -62,6 +62,14 @@ class SupplierAuthMiddleware extends Middleware
      */
     private ICache $rateCache;
 
+    /**
+     * Constructor.
+     *
+     * @param IRequest             $request      The current request.
+     * @param SupplierScopeService $scope        Supplier scope resolver.
+     * @param ICacheFactory        $cacheFactory Cache factory for rate-limit counters.
+     * @param LoggerInterface      $logger       Logger.
+     */
     public function __construct(
         private readonly IRequest $request,
         private readonly SupplierScopeService $scope,
@@ -72,6 +80,8 @@ class SupplierAuthMiddleware extends Middleware
     }//end __construct()
 
     /**
+     * Enforce supplier authentication and rate limiting before the controller runs.
+     *
      * @param \OCP\AppFramework\Controller $controller Controller.
      * @param string                       $methodName Method name.
      *
@@ -84,7 +94,7 @@ class SupplierAuthMiddleware extends Middleware
         }
 
         // Rate limit first — refuse traffic before doing any auth lookup.
-        if ($this->bumpAndCheckRateLimit($this->request->getRemoteAddress()) === false) {
+        if ($this->bumpAndCheckRateLimit(ip: $this->request->getRemoteAddress()) === false) {
             throw new SupplierRateLimitException('Rate limit exceeded', 429);
         }
 
@@ -99,6 +109,8 @@ class SupplierAuthMiddleware extends Middleware
     }//end beforeController()
 
     /**
+     * Convert supplier auth exceptions into JSON responses.
+     *
      * @param \OCP\AppFramework\Controller $controller Controller.
      * @param string                       $methodName Method name.
      * @param \Exception                   $exception  Exception.

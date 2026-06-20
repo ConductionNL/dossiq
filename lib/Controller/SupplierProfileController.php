@@ -87,7 +87,11 @@ class SupplierProfileController extends Controller
     private function actorId(): string
     {
         $user = $this->userSession->getUser();
-        return $user === null ? 'system' : $user->getUID();
+        if ($user === null) {
+            return 'system';
+        }
+
+        return $user->getUID();
     }//end actorId()
 
     /**
@@ -124,7 +128,7 @@ class SupplierProfileController extends Controller
      */
     public function updateAddress(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -155,7 +159,7 @@ class SupplierProfileController extends Controller
      */
     public function updateContact(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -186,7 +190,7 @@ class SupplierProfileController extends Controller
      */
     public function requestIbanChange(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -226,7 +230,7 @@ class SupplierProfileController extends Controller
      */
     public function submitAccreditation(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }

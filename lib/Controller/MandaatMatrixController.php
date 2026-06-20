@@ -72,7 +72,7 @@ class MandaatMatrixController extends Controller
         private readonly MandaatImportService $import,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -110,7 +110,7 @@ class MandaatMatrixController extends Controller
         $caseId       = (string) ($body['caseId'] ?? '');
         $caseProps    = (array) ($body['caseProperties'] ?? []);
         if ($decisionType === '' || $caseId === '') {
-            return $this->badRequest('decisionType and caseId are required');
+            return $this->badRequest(msg: 'decisionType and caseId are required');
         }
 
         $userId = $this->currentUserId();
@@ -139,7 +139,7 @@ class MandaatMatrixController extends Controller
         $decideskUuid  = (string) ($body['decideskUuid'] ?? '');
         $csv           = (string) ($body['csv'] ?? '');
         if ($besluitNummer === '' || $besluitNaam === '' || $csv === '') {
-            return $this->badRequest('besluitNummer, besluitNaam and csv are required');
+            return $this->badRequest(msg: 'besluitNummer, besluitNaam and csv are required');
         }
 
         try {
@@ -153,11 +153,11 @@ class MandaatMatrixController extends Controller
     /**
      * Approve a previously-imported (concept) besluit.
      *
-     * @NoAdminRequired
-     *
      * @param string $importId Besluit id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
      */
@@ -178,11 +178,11 @@ class MandaatMatrixController extends Controller
     /**
      * Approve an open escalation.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Escalation id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
      */
@@ -200,11 +200,11 @@ class MandaatMatrixController extends Controller
     /**
      * Reject an open escalation.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Escalation id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
      */
@@ -217,7 +217,7 @@ class MandaatMatrixController extends Controller
         $body   = $this->jsonBody();
         $reason = (string) ($body['reason'] ?? '');
         if ($reason === '') {
-            return $this->badRequest('reason is required');
+            return $this->badRequest(msg: 'reason is required');
         }
 
         try {
@@ -231,11 +231,11 @@ class MandaatMatrixController extends Controller
     /**
      * Get the decision audit trail for a case.
      *
-     * @NoAdminRequired
-     *
      * @param string $caseId Case id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
      */
@@ -251,11 +251,11 @@ class MandaatMatrixController extends Controller
     /**
      * Applicable mandates for the case, filtered to the current user's roles.
      *
-     * @NoAdminRequired
-     *
      * @param string $caseId Case id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
      */
@@ -282,15 +282,23 @@ class MandaatMatrixController extends Controller
     }//end applicable()
 
     /**
+     * Resolve the current user id, or empty string when unauthenticated.
+     *
      * @return string
      */
     private function currentUserId(): string
     {
         $user = $this->userSession->getUser();
-        return $user !== null ? (string) $user->getUID() : '';
+        if ($user !== null) {
+            return (string) $user->getUID();
+        }
+
+        return '';
     }//end currentUserId()
 
     /**
+     * Read and decode the JSON request body into an array.
+     *
      * @return array<string, mixed>
      */
     private function jsonBody(): array
@@ -299,11 +307,18 @@ class MandaatMatrixController extends Controller
         // request; read raw payload from php://input instead.
         $raw  = (string) file_get_contents('php://input');
         $body = json_decode($raw, true);
-        return is_array($body) === true ? $body : [];
+        if (is_array($body) === true) {
+            return $body;
+        }
+
+        return [];
     }//end jsonBody()
 
     /**
-     * @param  string $msg Message.
+     * Build a 400 Bad Request JSON response.
+     *
+     * @param string $msg Message.
+     *
      * @return JSONResponse
      */
     private function badRequest(string $msg): JSONResponse

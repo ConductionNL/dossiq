@@ -293,8 +293,14 @@ class ContractRenewalService
 
             // Persist the decisionRef on the case so the outcome can be
             // consumed later via BesluitMaterialisationService.
+            if (is_array($row) === true) {
+                $rowData = $row;
+            } else {
+                $rowData = [];
+            }
+
             $os->saveObject(
-                object: array_merge(is_array($row) === true ? $row : [], ['decisionRef' => $decisionRef]),
+                object: array_merge($rowData, ['decisionRef' => $decisionRef]),
                 register: TenantSaasService::REGISTER,
                 schema: 'case',
                 uuid: $caseRef,

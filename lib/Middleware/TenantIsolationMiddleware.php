@@ -80,7 +80,7 @@ class TenantIsolationMiddleware extends Middleware
             return;
         }
 
-        $this->applySearchPath($schemaName);
+        $this->applySearchPath(schemaName: $schemaName);
     }//end beforeController()
 
     /**

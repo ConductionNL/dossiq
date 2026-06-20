@@ -87,12 +87,23 @@ class CaseReassignmentService
         [$objectService, $register] = $this->context();
         $caseSchema = (string) $this->settingsService->getConfigValue('case_schema');
         $taskSchema = (string) $this->settingsService->getConfigValue('task_schema');
-        $caseType   = isset($filter['caseType']) === true ? (string) $filter['caseType'] : '';
-        $finalIds   = $this->finalStatusIds($objectService, $register);
+        if (isset($filter['caseType']) === true) {
+            $caseType = (string) $filter['caseType'];
+        } else {
+            $caseType = '';
+        }
+
+        $finalIds = $this->finalStatusIds(objectService: $objectService, register: $register);
 
         $cases = [];
         if ($caseSchema !== '') {
-            foreach ($this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $caseSchema, filters: ['assignee' => $fromUser]) as $case) {
+            $caseResults = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $caseSchema,
+                filters: ['assignee' => $fromUser]
+            );
+            foreach ($caseResults as $case) {
                 if (in_array((string) ($case['status'] ?? ''), $finalIds, true) === true) {
                     continue;
                 }
@@ -112,7 +123,13 @@ class CaseReassignmentService
                 $caseIds[(string) ($c['id'] ?? ($c['uuid'] ?? ''))] = true;
             }
 
-            foreach ($this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $taskSchema, filters: ['assignee' => $fromUser]) as $task) {
+            $taskResults = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $taskSchema,
+                filters: ['assignee' => $fromUser]
+            );
+            foreach ($taskResults as $task) {
                 if (in_array((string) ($task['status'] ?? ''), ['completed', 'terminated', 'disabled'], true) === true) {
                     continue;
                 }
@@ -173,8 +190,8 @@ class CaseReassignmentService
         $succeeded = 0;
 
         foreach ($preview['cases'] as $case) {
-            $id         = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
-            $ok         = $this->reassignItem(
+            $id        = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
+            $ok        = $this->reassignItem(
                 objectService: $objectService,
                 register: $register,
                 schema: $caseSchema,
@@ -186,13 +203,15 @@ class CaseReassignmentService
                 batchId: $batchId,
                 now: $now
             );
-            $results[]  = ['type' => 'case', 'id' => $id, 'title' => (string) ($case['title'] ?? ''), 'success' => $ok];
-            $succeeded += ($ok === true ? 1 : 0);
+            $results[] = ['type' => 'case', 'id' => $id, 'title' => (string) ($case['title'] ?? ''), 'success' => $ok];
+            if ($ok === true) {
+                $succeeded += 1;
+            }
         }
 
         foreach ($preview['tasks'] as $task) {
-            $id         = (string) ($task['id'] ?? ($task['uuid'] ?? ''));
-            $ok         = $this->reassignItem(
+            $id        = (string) ($task['id'] ?? ($task['uuid'] ?? ''));
+            $ok        = $this->reassignItem(
                 objectService: $objectService,
                 register: $register,
                 schema: $taskSchema,
@@ -204,8 +223,10 @@ class CaseReassignmentService
                 batchId: $batchId,
                 now: $now
             );
-            $results[]  = ['type' => 'task', 'id' => $id, 'title' => (string) ($task['title'] ?? ''), 'success' => $ok];
-            $succeeded += ($ok === true ? 1 : 0);
+            $results[] = ['type' => 'task', 'id' => $id, 'title' => (string) ($task['title'] ?? ''), 'success' => $ok];
+            if ($ok === true) {
+                $succeeded += 1;
+            }
         }
 
         $failed = (count($results) - $succeeded);
@@ -315,7 +336,10 @@ class CaseReassignmentService
                 );
             $this->notificationManager->notify($notification);
         } catch (\Throwable $e) {
-            $this->logger->warning('Reassignment digest notification failed', ['toUser' => $toUser, 'batchId' => $batchId, 'error' => $e->getMessage()]);
+            $this->logger->warning(
+                'Reassignment digest notification failed',
+                ['toUser' => $toUser, 'batchId' => $batchId, 'error' => $e->getMessage()]
+            );
         }
     }//end notifyDigest()
 

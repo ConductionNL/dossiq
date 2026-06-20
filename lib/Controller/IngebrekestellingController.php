@@ -45,11 +45,12 @@ class IngebrekestellingController extends Controller
     /**
      * Constructor.
      *
-     * @param string                   $appName  App id.
-     * @param IRequest                 $request  Request.
-     * @param IngebrekestellingService $service  Service.
-     * @param SettingsService          $settings Settings.
-     * @param LoggerInterface          $logger   Logger.
+     * @param string                   $appName     App id.
+     * @param IRequest                 $request     Request.
+     * @param IngebrekestellingService $service     Service.
+     * @param SettingsService          $settings    Settings.
+     * @param IUserSession             $userSession User session.
+     * @param LoggerInterface          $logger      Logger.
      */
     public function __construct(
         string $appName,
@@ -59,7 +60,7 @@ class IngebrekestellingController extends Controller
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -97,7 +98,9 @@ class IngebrekestellingController extends Controller
         // Read the raw payload directly from php://input instead.
         $raw  = (string) file_get_contents('php://input');
         $body = json_decode($raw, true);
-        $body = is_array($body) === true ? $body : [];
+        if (is_array($body) === false) {
+            $body = [];
+        }
 
         $instanceId   = (string) ($body['termijnInstanceId'] ?? '');
         $kanaal       = (string) ($body['kanaal'] ?? '');
@@ -127,9 +130,9 @@ class IngebrekestellingController extends Controller
     /**
      * Get an ingebrekestelling by id.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Id.
+     *
+     * @NoAdminRequired
      *
      * @return JSONResponse
      *

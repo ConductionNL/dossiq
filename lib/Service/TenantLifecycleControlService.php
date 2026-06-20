@@ -35,6 +35,15 @@ use Throwable;
  */
 class TenantLifecycleControlService
 {
+    /**
+     * Constructor.
+     *
+     * @param TenantSaasService         $tenantSaasService Tenant SaaS service.
+     * @param TenantBillingService      $billingService    Billing service.
+     * @param TenantSchemaProvisioner   $schemaProvisioner Schema provisioner.
+     * @param TenantProvisioningService $provisioning      Provisioning service.
+     * @param LoggerInterface           $logger            Logger.
+     */
     public function __construct(
         private readonly TenantSaasService $tenantSaasService,
         private readonly TenantBillingService $billingService,
@@ -87,7 +96,7 @@ class TenantLifecycleControlService
      */
     public function terminate(string $tenantId, string $reason, int $retentionYears=1): array
     {
-        $unsettled = $this->countUnsettledEvents($tenantId);
+        $unsettled = $this->countUnsettledEvents(tenantId: $tenantId);
         if ($unsettled > 0) {
             $this->logger->warning(
                 'Procest: terminating tenant with unsettled billing events — Shillinq export must run first',

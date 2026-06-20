@@ -80,7 +80,7 @@ class ArchiefEdepotSeedDataService
             return ['success' => false, 'message' => 'Invalid seed JSON'];
         }
 
-        $existing = $this->existingIds($objectService, $register, $schema);
+        $existing = $this->existingIds(objectService: $objectService, register: $register, schema: $schema);
         $counts   = ['regels' => 0, 'skipped' => 0];
 
         foreach (($data['bewaarTermijnRegels'] ?? []) as $row) {
@@ -102,9 +102,12 @@ class ArchiefEdepotSeedDataService
     }//end seed()
 
     /**
-     * @param  object $objectService Object service.
-     * @param  string $register      Register.
-     * @param  string $schema        Schema.
+     * Collect the ids of objects already present in the register/schema.
+     *
+     * @param object $objectService Object service.
+     * @param string $register      Register.
+     * @param string $schema        Schema.
+     *
      * @return array<int, string>
      */
     private function existingIds(object $objectService, string $register, string $schema): array

@@ -89,7 +89,9 @@ class PdokService
     private ?array $lastWarning = null;
 
     /**
-     * @var IClient HTTP client created lazily.
+     * HTTP client created lazily.
+     *
+     * @var IClient
      */
     private ?IClient $client = null;
 
@@ -136,7 +138,7 @@ class PdokService
         try {
             $response = $this->locatieserver->suggest($query, $filters, $rows);
         } catch (Throwable $e) {
-            return $this->handleDegradedMode($e, 'pdok.unavailable');
+            return $this->handleDegradedMode(error: $e, messageKey: 'pdok.unavailable');
         }
 
         $docs = (array) ($response['response']['docs'] ?? []);
@@ -166,12 +168,16 @@ class PdokService
         try {
             $response = $this->locatieserver->lookup($id);
         } catch (Throwable $e) {
-            $this->handleDegradedMode($e, 'pdok.unavailable');
+            $this->handleDegradedMode(error: $e, messageKey: 'pdok.unavailable');
             return null;
         }
 
         $docs = (array) ($response['response']['docs'] ?? []);
-        return is_array($docs[0] ?? null) ? $docs[0] : null;
+        if (is_array($docs[0] ?? null) === true) {
+            return $docs[0];
+        }
+
+        return null;
     }//end lookupAddress()
 
     /**
@@ -188,13 +194,16 @@ class PdokService
     {
         $this->lastWarning = null;
         if ($this->appManager->isInstalled(self::OPENCONNECTOR_APP) === false) {
-            $this->recordWarning('pdok.openconnector_missing', 404);
+            $this->recordWarning(messageKey: 'pdok.openconnector_missing', status: 404);
             return [];
         }
 
-        $url = $this->urlGenerator->getAbsoluteURL(
-            $this->urlGenerator->linkToRoute('openconnector.pdok.parcel') ?: self::SHIM_BASE_PATH.'/parcel'
-        );
+        $route = $this->urlGenerator->linkToRoute('openconnector.pdok.parcel');
+        if ($route === '' || $route === null) {
+            $route = self::SHIM_BASE_PATH.'/parcel';
+        }
+
+        $url = $this->urlGenerator->getAbsoluteURL($route);
 
         try {
             $response = $this->getClient()->post(
@@ -213,7 +222,7 @@ class PdokService
 
             return (array) ($data['features'] ?? $data['parcels'] ?? []);
         } catch (Throwable $e) {
-            $this->handleDegradedMode($e, 'pdok.parcel.unavailable');
+            $this->handleDegradedMode(error: $e, messageKey: 'pdok.parcel.unavailable');
             return [];
         }
     }//end searchParcel()
@@ -306,7 +315,7 @@ class PdokService
             default => $messageKey,
         };
 
-        $this->recordWarning($effectiveKey, $status);
+        $this->recordWarning(messageKey: $effectiveKey, status: $status);
         $this->logger->info(
             'Procest PdokService degraded',
             ['messageKey' => $effectiveKey, 'status' => $status, 'error' => $msg]

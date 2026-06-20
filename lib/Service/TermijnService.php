@@ -49,6 +49,8 @@ class TermijnService
     use SearchesObjects;
 
     /**
+     * Per-request TermijnDefinitie cache keyed by zaaktype.
+     *
      * @var array<string, array<string, mixed>>
      */
     private array $definitieCache = [];
@@ -86,7 +88,7 @@ class TermijnService
     public function createTermijnInstance(string $zaakId, string $zaaktype, ?DateTimeImmutable $startDate=null): array
     {
         $startDate = ($startDate ?? new DateTimeImmutable());
-        $definitie = $this->getTermijnDefinitie($zaaktype);
+        $definitie = $this->getTermijnDefinitie(zaaktype: $zaaktype);
         if ($definitie === null) {
             throw new RuntimeException(
                 'No active TermijnDefinitie configured for zaaktype "'.$zaaktype.'" (REQ-TERM-001-A)'
@@ -107,7 +109,7 @@ class TermijnService
             'notificatiesVerstuurd' => [],
         ];
 
-        $saved = $this->save('termijn_instance_schema', $instance);
+        $saved = $this->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
         if ($saved === null) {
             throw new RuntimeException(
                 'Failed to persist TermijnInstance for zaak "'.$zaakId.'" (persistence unavailable)'
@@ -150,7 +152,11 @@ class TermijnService
 
         try {
             $row = $objectService->find($termijnInstanceId, register: $register, schema: $schema);
-            return is_array($row) === true ? $row : null;
+            if (is_array($row) === true) {
+                return $row;
+            }
+
+            return null;
         } catch (\Throwable $e) {
             $this->logger->warning(
                 'TermijnService.getTermijnInstance failed',
@@ -188,7 +194,10 @@ class TermijnService
             return null;
         }
 
-        $rows = is_array($rows) === true ? $rows : [];
+        if (is_array($rows) === false) {
+            $rows = [];
+        }
+
         if (count($rows) === 0) {
             return null;
         }
@@ -214,14 +223,14 @@ class TermijnService
      */
     public function updateTermijnInstance(string $termijnInstanceId, array $patch): ?array
     {
-        $current = $this->getTermijnInstance($termijnInstanceId);
+        $current = $this->getTermijnInstance(termijnInstanceId: $termijnInstanceId);
         if ($current === null) {
             return null;
         }
 
         $merged       = array_merge($current, $patch);
         $merged['id'] = $termijnInstanceId;
-        return $this->save('termijn_instance_schema', $merged);
+        return $this->save(schemaConfigKey: 'termijn_instance_schema', object: $merged);
     }//end updateTermijnInstance()
 
     /**
@@ -254,7 +263,12 @@ class TermijnService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaaktype' => $zaaktype]);
+            $rows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['zaaktype' => $zaaktype]
+            );
         } catch (\Throwable $e) {
             $this->logger->warning(
                 'TermijnService.getTermijnDefinitie lookup failed',
@@ -310,8 +324,8 @@ class TermijnService
         $voltooiDatum = ($voltooiDatum ?? new DateTimeImmutable());
 
         $updated = $this->updateTermijnInstance(
-            $termijnInstanceId,
-            ['status' => 'voltooid', 'voltooiDatum' => $voltooiDatum->format('Y-m-d')]
+            termijnInstanceId: $termijnInstanceId,
+            patch: ['status' => 'voltooid', 'voltooiDatum' => $voltooiDatum->format('Y-m-d')]
         );
 
         if ($updated !== null) {
@@ -369,7 +383,7 @@ class TermijnService
             $event['documentLink'] = $documentLink;
         }
 
-        return $this->save('termijn_gebeurtenis_schema', $event);
+        return $this->save(schemaConfigKey: 'termijn_gebeurtenis_schema', object: $event);
     }//end recordEvent()
 
     /**
@@ -395,7 +409,11 @@ class TermijnService
 
         try {
             $saved = $objectService->saveObject($register, $schema, $object);
-            return is_array($saved) === true ? $saved : null;
+            if (is_array($saved) === true) {
+                return $saved;
+            }
+
+            return null;
         } catch (\Throwable $e) {
             $this->logger->error(
                 'TermijnService persist failed',

@@ -44,6 +44,14 @@ class TenderVisibilityService
      */
     public const APPEAL_WINDOW_DAYS = 20;
 
+    /**
+     * Constructor.
+     *
+     * @param SupplierScopeService $scopeService Supplier scope service.
+     * @param IAppManager          $appManager   Nextcloud app manager.
+     * @param ContainerInterface   $container    Service container.
+     * @param LoggerInterface      $logger       Logger.
+     */
     public function __construct(
         private readonly SupplierScopeService $scopeService,
         private readonly IAppManager $appManager,
@@ -83,9 +91,9 @@ class TenderVisibilityService
         }
 
         $row['_derived'] = [
-            'appealDeadline'         => $this->getAppealDeadline($row),
-            'canAppeal'              => $this->canAppeal($row),
-            'evaluationDownloadable' => $this->isEvaluationReportDownloadable($row),
+            'appealDeadline'         => $this->getAppealDeadline(tender: $row),
+            'canAppeal'              => $this->canAppeal(tender: $row),
+            'evaluationDownloadable' => $this->isEvaluationReportDownloadable(tender: $row),
         ];
         return $row;
     }//end getTenderStatus()
@@ -126,7 +134,7 @@ class TenderVisibilityService
      */
     public function canAppeal(array $tender): bool
     {
-        $deadline = $this->getAppealDeadline($tender);
+        $deadline = $this->getAppealDeadline(tender: $tender);
         if ($deadline === null) {
             return false;
         }
@@ -153,6 +161,8 @@ class TenderVisibilityService
     }//end isEvaluationReportDownloadable()
 
     /**
+     * Resolve the downloadable evaluation report ref for a tender.
+     *
      * @param string $tenderId    Tender UUID.
      * @param string $supplierRef Caller's supplier.
      *
@@ -160,8 +170,8 @@ class TenderVisibilityService
      */
     public function getEvaluationReport(string $tenderId, string $supplierRef): ?string
     {
-        $tender = $this->getTenderStatus($tenderId, $supplierRef);
-        if ($tender === null || $this->isEvaluationReportDownloadable($tender) === false) {
+        $tender = $this->getTenderStatus(tenderId: $tenderId, supplierRef: $supplierRef);
+        if ($tender === null || $this->isEvaluationReportDownloadable(tender: $tender) === false) {
             return null;
         }
 
@@ -192,6 +202,8 @@ class TenderVisibilityService
     }//end listTenders()
 
     /**
+     * Resolve the OpenRegister ObjectService when available.
+     *
      * @return mixed|null
      */
     private function getObjectService()

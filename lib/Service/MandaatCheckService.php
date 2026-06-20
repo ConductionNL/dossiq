@@ -55,8 +55,9 @@ class MandaatCheckService
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Settings.
-     * @param LoggerInterface $logger          Logger.
+     * @param SettingsService                $settingsService Settings.
+     * @param LoggerInterface                $logger          Logger.
+     * @param ConflictOfInterestService|null $conflictService Optional conflict-of-interest service.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -99,13 +100,13 @@ class MandaatCheckService
             }
         }
 
-        $role = $this->resolveUserRole($userId, $decisionDate);
+        $role = $this->resolveUserRole(userId: $userId, date: $decisionDate);
         if ($role === null) {
             return ['authorized' => false, 'reden' => self::REDEN_NIET_BEVOEGD];
         }
 
         $caseType = (string) ($caseProperties['caseType'] ?? '');
-        $mandaten = $this->getApplicableMandaten($decisionType, $caseType, $decisionDate);
+        $mandaten = $this->getApplicableMandaten(decisionType: $decisionType, caseType: $caseType, date: $decisionDate);
 
         $relevant = array_values(
                 array_filter(
@@ -122,7 +123,7 @@ class MandaatCheckService
         // failure reason when none pass.
         $lastFailure = ['reden' => self::REDEN_NIET_BEVOEGD, 'failedConditions' => []];
         foreach ($relevant as $m) {
-            $eval = $this->evaluateConditions($m, $caseProperties);
+            $eval = $this->evaluateConditions(mandaat: $m, caseProperties: $caseProperties);
             if ($eval['passed'] === true) {
                 return [
                     'authorized' => true,
@@ -168,7 +169,12 @@ class MandaatCheckService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['status' => 'active']);
+            $rows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['status' => 'active']
+            );
         } catch (\Throwable $e) {
             return [];
         }
@@ -225,7 +231,7 @@ class MandaatCheckService
     public function getApplicableForUser(string $userId, string $caseType='', string $decisionType=''): array
     {
         $date = new DateTimeImmutable();
-        $role = $this->resolveUserRole($userId, $date);
+        $role = $this->resolveUserRole(userId: $userId, date: $date);
         if ($role === null) {
             return [];
         }
@@ -235,7 +241,7 @@ class MandaatCheckService
             return [];
         }
 
-        $rows = $this->getApplicableMandaten($decisionType, $caseType, $date);
+        $rows = $this->getApplicableMandaten(decisionType: $decisionType, caseType: $caseType, date: $date);
 
         $out = [];
         foreach ($rows as $row) {
@@ -349,12 +355,20 @@ class MandaatCheckService
             $allowed = (bool) ($voorw['subdelegatie'] ?? false);
             if ($allowed === false) {
                 $failed[] = 'subdelegatie';
-                $reden    = $reden === '' ? self::REDEN_SUBDELEGATIE_NIET_TOEGESTAAN : $reden;
+                if ($reden === '') {
+                    $reden = self::REDEN_SUBDELEGATIE_NIET_TOEGESTAAN;
+                }
             }
         }
 
         if (count($failed) > 0) {
-            return ['passed' => false, 'reden' => ($reden !== '' ? $reden : self::REDEN_NIET_BEVOEGD), 'failedConditions' => $failed];
+            if ($reden !== '') {
+                $effectiveReden = $reden;
+            } else {
+                $effectiveReden = self::REDEN_NIET_BEVOEGD;
+            }
+
+            return ['passed' => false, 'reden' => $effectiveReden, 'failedConditions' => $failed];
         }
 
         return ['passed' => true, 'reden' => '', 'failedConditions' => []];

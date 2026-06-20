@@ -97,7 +97,7 @@ class TenantSchemaProvisioner
      */
     public function createSchema(string $name): void
     {
-        $this->assertSafeIdentifier($name);
+        $this->assertSafeIdentifier(name: $name);
 
         try {
             // The identifier is whitelisted (assertSafeIdentifier); double-quoting
@@ -123,17 +123,17 @@ class TenantSchemaProvisioner
      */
     public function cloneApplicationTables(string $schemaName): array
     {
-        $this->assertSafeIdentifier($schemaName);
+        $this->assertSafeIdentifier(name: $schemaName);
 
         $sourceTables = $this->listApplicationTables();
         $cloned       = [];
 
         foreach ($sourceTables as $sourceTable) {
-            if ($this->isSharedTable($sourceTable) === true) {
+            if ($this->isSharedTable(tableName: $sourceTable) === true) {
                 continue;
             }
 
-            $tableName = $this->extractTableName($sourceTable);
+            $tableName = $this->extractTableName(fullName: $sourceTable);
             try {
                 $sql = sprintf(
                     'CREATE TABLE "%s"."%s" (LIKE "%s" INCLUDING ALL)',
@@ -171,7 +171,7 @@ class TenantSchemaProvisioner
      */
     public function dropSchema(string $name): void
     {
-        $this->assertSafeIdentifier($name);
+        $this->assertSafeIdentifier(name: $name);
 
         try {
             $sql = 'DROP SCHEMA IF EXISTS "'.$name.'" CASCADE';
@@ -190,7 +190,7 @@ class TenantSchemaProvisioner
      */
     public function schemaExists(string $name): bool
     {
-        $this->assertSafeIdentifier($name);
+        $this->assertSafeIdentifier(name: $name);
         try {
             $qb = $this->db->getQueryBuilder();
             $qb->select('schema_name')

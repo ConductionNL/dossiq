@@ -131,19 +131,37 @@ class RollbackManager
         }//end if
 
         // 2. Resolve + flip the trigger for the case to `gefaald` (SIP preserved).
-        $triggerId = $this->resolveTriggerId($zaakId);
+        $triggerId = $this->resolveTriggerId(zaakId: $zaakId);
         if ($triggerId !== '') {
             $this->triggerService->updateTriggerStatus($triggerId, 'gefaald');
         }
 
         // 3. DIV task: corrective action mapped from the error code.
         $correctiveAction = $this->proofService->recommendCorrectiveAction($errorCode);
-        $this->createDivTask($triggerId, $zaakId, $errorCode, $errorDetail, $correctiveAction);
+        $this->createDivTask(
+            triggerId: $triggerId,
+            zaakId: $zaakId,
+            errorCode: $errorCode,
+            errorDetail: $errorDetail,
+            correctiveAction: $correctiveAction
+        );
+
+        if ($triggerId !== '') {
+            $logTriggerId = $triggerId;
+        } else {
+            $logTriggerId = null;
+        }
+
+        if ($zaakId !== '') {
+            $logZaakId = $zaakId;
+        } else {
+            $logZaakId = null;
+        }
 
         // 4. Append the canonical rollback audit entry (case preserved, SIP kept).
         $this->triggerService->logEvent(
-            $triggerId !== '' ? $triggerId : null,
-            $zaakId !== '' ? $zaakId : null,
+            $logTriggerId,
+            $logZaakId,
             'submission-failed-rollback',
             'transactionId='.$transactionId
                 .' errorCode='.$errorCode
@@ -198,7 +216,7 @@ class RollbackManager
             'message'          => $msg,
         ];
 
-        $trigger = $this->findTrigger($triggerId);
+        $trigger = $this->findTrigger(triggerId: $triggerId);
         if ($trigger === null) {
             return $fail('trigger not found', 'unknown');
         }
@@ -211,7 +229,7 @@ class RollbackManager
         $zaakId = (string) ($trigger['zaakId'] ?? '');
 
         // Build a fresh SIP from the CURRENT case state, then re-submit.
-        $sipBundelId = $this->rebuildSipBundel($zaakId);
+        $sipBundelId = $this->rebuildSipBundel(zaakId: $zaakId);
 
         $this->triggerService->updateTriggerStatus($triggerId, 'in-overdracht');
 
@@ -221,16 +239,29 @@ class RollbackManager
             ['retryCount' => 1, 'reason' => 'retry-after-correction', 'triggerId' => $triggerId]
         );
 
-        $submissionStatus = $result !== null ? $result->submissionStatus : 'FAILED';
-        $newTransactionId = $result !== null ? $result->overdrachtTransactieId : '';
-        $archiefId        = $result !== null ? $result->archiefId : '';
-        $succeeded        = ($result !== null && $submissionStatus !== 'FAILED');
+        if ($result !== null) {
+            $submissionStatus = $result->submissionStatus;
+            $newTransactionId = $result->overdrachtTransactieId;
+            $archiefId        = $result->archiefId;
+        } else {
+            $submissionStatus = 'FAILED';
+            $newTransactionId = '';
+            $archiefId        = '';
+        }
+
+        $succeeded = ($result !== null && $submissionStatus !== 'FAILED');
+
+        if ($zaakId !== '') {
+            $logZaakId = $zaakId;
+        } else {
+            $logZaakId = null;
+        }
 
         // Retain BOTH transactions: log the retry submission distinctly so the
         // old failed transaction and the new one both live in the audit log.
         $this->triggerService->logEvent(
             $triggerId,
-            $zaakId !== '' ? $zaakId : null,
+            $logZaakId,
             'retry-after-correction',
             'sipBundelId='.$sipBundelId
                 .' newTransactionId='.$newTransactionId
@@ -239,13 +270,20 @@ class RollbackManager
 
         if ($succeeded === true) {
             $this->triggerService->updateTriggerStatus($triggerId, 'geslaagd');
+
+            if ($result !== null) {
+                $proofStatus = $submissionStatus;
+            } else {
+                $proofStatus = '';
+            }
+
             // Capture proof for the corrected handover.
             $this->proofService->createArchiefBewijs(
                 $zaakId,
                 $archiefId,
                 'edepot-retry',
                 $sipBundelId,
-                $result !== null ? $submissionStatus : '',
+                $proofStatus,
                 []
             );
             $finalStatus = 'geslaagd';
@@ -253,6 +291,12 @@ class RollbackManager
             // Stay failed: a failed retry leaves the trigger recoverable again.
             $this->triggerService->updateTriggerStatus($triggerId, 'gefaald');
             $finalStatus = 'gefaald';
+        }//end if
+
+        if ($succeeded === true) {
+            $message = 'retry submitted';
+        } else {
+            $message = 'retry submission failed';
         }
 
         return [
@@ -262,7 +306,7 @@ class RollbackManager
             'status'           => $finalStatus,
             'submissionStatus' => $submissionStatus,
             'newTransactionId' => $newTransactionId,
-            'message'          => $succeeded === true ? 'retry submitted' : 'retry submission failed',
+            'message'          => $message,
         ];
     }//end retryAfterCorrection()
 
@@ -290,7 +334,11 @@ class RollbackManager
             return null;
         }
 
-        return is_array($row) === true ? $row : null;
+        if (is_array($row) === true) {
+            return $row;
+        }
+
+        return null;
     }//end findTrigger()
 
     /**
@@ -397,9 +445,21 @@ class RollbackManager
         string $errorDetail,
         string $correctiveAction
     ): void {
+        if ($triggerId !== '') {
+            $logTriggerId = $triggerId;
+        } else {
+            $logTriggerId = null;
+        }
+
+        if ($zaakId !== '') {
+            $logZaakId = $zaakId;
+        } else {
+            $logZaakId = null;
+        }
+
         $this->triggerService->logEvent(
-            $triggerId !== '' ? $triggerId : null,
-            $zaakId !== '' ? $zaakId : null,
+            $logTriggerId,
+            $logZaakId,
             'div-task-created',
             'errorCode='.$errorCode
                 .' detail='.$errorDetail

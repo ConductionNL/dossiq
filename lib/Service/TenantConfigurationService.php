@@ -82,6 +82,13 @@ class TenantConfigurationService
         '--nc-border-radius',
     ];
 
+    /**
+     * Constructor.
+     *
+     * @param IAppManager        $appManager App manager.
+     * @param ContainerInterface $container  Service container.
+     * @param LoggerInterface    $logger     Logger.
+     */
     public function __construct(
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
@@ -111,7 +118,11 @@ class TenantConfigurationService
                 offset: 0,
                 filters: ['tenantRef' => $tenantId]
             );
-            return (is_array($rows) === true && count($rows) > 0) ? $rows[0] : null;
+            if (is_array($rows) === true && count($rows) > 0) {
+                return $rows[0];
+            }
+
+            return null;
         } catch (Throwable $e) {
             return null;
         }
@@ -129,8 +140,8 @@ class TenantConfigurationService
      */
     public function updateBranding(string $tenantId, array $branding): array
     {
-        $sanitised = $this->sanitiseBranding($branding);
-        return $this->mergeConfig($tenantId, ['branding' => $sanitised]);
+        $sanitised = $this->sanitiseBranding(branding: $branding);
+        return $this->mergeConfig(tenantId: $tenantId, delta: ['branding' => $sanitised]);
     }//end updateBranding()
 
     /**
@@ -157,7 +168,7 @@ class TenantConfigurationService
             throw new InvalidArgumentException('Invalid currency code: '.$payload['currency']);
         }
 
-        return $this->mergeConfig($tenantId, $payload);
+        return $this->mergeConfig(tenantId: $tenantId, delta: $payload);
     }//end updateLocale()
 
     /**
@@ -171,7 +182,7 @@ class TenantConfigurationService
      */
     public function setFeatureFlag(string $tenantId, string $flag, bool $enabled): array
     {
-        $current  = $this->getConfig($tenantId) ?? ['tenantRef' => $tenantId, 'features' => []];
+        $current  = $this->getConfig(tenantId: $tenantId) ?? ['tenantRef' => $tenantId, 'features' => []];
         $features = (array) ($current['features'] ?? []);
         $features = array_values(array_unique(array_filter($features, fn ($f) => is_string($f) && $f !== '')));
         if ($enabled === true && in_array($flag, $features, true) === false) {
@@ -180,7 +191,7 @@ class TenantConfigurationService
             $features = array_values(array_filter($features, fn ($f) => $f !== $flag));
         }
 
-        return $this->mergeConfig($tenantId, ['features' => $features]);
+        return $this->mergeConfig(tenantId: $tenantId, delta: ['features' => $features]);
     }//end setFeatureFlag()
 
     /**
@@ -194,12 +205,12 @@ class TenantConfigurationService
     {
         $branding = (array) ($config['branding'] ?? []);
         $tokens   = [];
-        if (isset($branding['primaryColor']) === true && $this->isHexColor((string) $branding['primaryColor']) === true) {
+        if (isset($branding['primaryColor']) === true && $this->isHexColor(val: (string) $branding['primaryColor']) === true) {
             $tokens['--nc-color-primary']         = (string) $branding['primaryColor'];
             $tokens['--nc-color-primary-element'] = (string) $branding['primaryColor'];
         }
 
-        if (isset($branding['secondaryColor']) === true && $this->isHexColor((string) $branding['secondaryColor']) === true) {
+        if (isset($branding['secondaryColor']) === true && $this->isHexColor(val: (string) $branding['secondaryColor']) === true) {
             $tokens['--procest-color-secondary'] = (string) $branding['secondaryColor'];
         }
 
@@ -235,7 +246,7 @@ class TenantConfigurationService
             $logoMime  = (string) ($branding['logoMimeType'] ?? '');
             $logoBytes = (int) ($branding['logoBytes'] ?? 0);
             if ($logoMime !== '' || $logoBytes > 0) {
-                $this->validateLogoUpload($logoMime, $logoBytes);
+                $this->validateLogoUpload(mimeType: $logoMime, bytes: $logoBytes);
             }
 
             $out['logo'] = (string) $branding['logo'];
@@ -244,7 +255,7 @@ class TenantConfigurationService
         foreach (['primaryColor', 'secondaryColor'] as $colorField) {
             if (isset($branding[$colorField]) === true) {
                 $val = (string) $branding[$colorField];
-                if ($this->isHexColor($val) === false) {
+                if ($this->isHexColor(val: $val) === false) {
                     throw new InvalidArgumentException('Invalid hex color for '.$colorField.': '.$val);
                 }
 
@@ -257,7 +268,7 @@ class TenantConfigurationService
         }
 
         if (isset($branding['customCSS']) === true) {
-            $out['customCSS'] = $this->sanitiseCustomCss((string) $branding['customCSS']);
+            $out['customCSS'] = $this->sanitiseCustomCss(css: (string) $branding['customCSS']);
         }
 
         return $out;
@@ -281,8 +292,12 @@ class TenantConfigurationService
             }
         }
 
-        $lines = preg_split('/[\n;]/', $css) ?: [];
-        $kept  = [];
+        $lines = preg_split('/[\n;]/', $css);
+        if ($lines === false) {
+            $lines = [];
+        }
+
+        $kept = [];
         foreach ($lines as $line) {
             $trim = trim($line);
             if ($trim === '') {
@@ -303,7 +318,11 @@ class TenantConfigurationService
             $kept[] = $prop.': '.$val;
         }
 
-        return count($kept) > 0 ? (implode('; ', $kept).';') : '';
+        if (count($kept) > 0) {
+            return implode('; ', $kept).';';
+        }
+
+        return '';
     }//end sanitiseCustomCss()
 
     /**
@@ -328,6 +347,8 @@ class TenantConfigurationService
     }//end validateLogoUpload()
 
     /**
+     * Check whether a string is a 6-digit hex color.
+     *
      * @param string $val 6-digit hex (with leading #).
      *
      * @return bool
@@ -338,6 +359,8 @@ class TenantConfigurationService
     }//end isHexColor()
 
     /**
+     * Merge a delta into the tenant configuration row and persist it.
+     *
      * @param string              $tenantId Tenant UUID.
      * @param array<string,mixed> $delta    Fields to merge.
      *
@@ -350,15 +373,21 @@ class TenantConfigurationService
             return ['tenantRef' => $tenantId] + $delta;
         }
 
-        $current = ($this->getConfig($tenantId) ?? ['tenantRef' => $tenantId]);
+        $current = ($this->getConfig(tenantId: $tenantId) ?? ['tenantRef' => $tenantId]);
         $next    = array_merge($current, $delta);
         try {
             $uuid = (string) ($current['uuid'] ?? $current['id'] ?? '');
+            if ($uuid !== '') {
+                $uuidArg = $uuid;
+            } else {
+                $uuidArg = null;
+            }
+
             return $os->saveObject(
                 object: $next,
                 register: TenantSaasService::REGISTER,
                 schema: 'tenantConfiguration',
-                uuid: $uuid !== '' ? $uuid : null
+                uuid: $uuidArg
             );
         } catch (Throwable $e) {
             $this->logger->error('Procest: tenantConfiguration save failed', ['exception' => $e->getMessage()]);
@@ -367,6 +396,8 @@ class TenantConfigurationService
     }//end mergeConfig()
 
     /**
+     * Resolve the OpenRegister ObjectService when available.
+     *
      * @return mixed|null
      */
     private function getObjectService()

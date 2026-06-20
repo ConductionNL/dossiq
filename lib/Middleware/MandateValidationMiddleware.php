@@ -76,6 +76,8 @@ class MandateValidationMiddleware extends Middleware
     }//end __construct()
 
     /**
+     * Enforce the mandate matrix for the bound tenant before the controller runs.
+     *
      * @param \OCP\AppFramework\Controller $controller Controller.
      * @param string                       $methodName Method name.
      *
@@ -109,7 +111,7 @@ class MandateValidationMiddleware extends Middleware
             action: $action
         );
 
-        $this->logDecision($tenantId, $userId, $action, $decision);
+        $this->logDecision(tenantId: $tenantId, userId: $userId, action: $action, decision: $decision);
 
         if ($decision['allowed'] === false) {
             throw new MandateDeniedException(

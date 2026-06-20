@@ -126,7 +126,7 @@ class VthSeedDataRepairStep implements IRepairStep
             return;
         }
 
-        $data = $this->loadSeed($output);
+        $data = $this->loadSeed(output: $output);
         if ($data === null) {
             return;
         }
@@ -232,7 +232,7 @@ class VthSeedDataRepairStep implements IRepairStep
                 // SeedVthWorkflowTemplates which creates the canonical
                 // workflow shape. This keeps the two repair steps from
                 // double-writing the same children.
-                $row = $this->stripChildren($caseType);
+                $row = $this->stripChildren(caseType: $caseType);
                 $objectService->saveObject(
                     register: $register,
                     schema: $caseTypeSchema,

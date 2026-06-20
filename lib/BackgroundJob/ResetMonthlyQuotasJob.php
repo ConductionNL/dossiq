@@ -44,6 +44,15 @@ class ResetMonthlyQuotasJob extends TimedJob
      */
     private const INTERVAL_SECONDS = 86400;
 
+    /**
+     * Constructor.
+     *
+     * @param ITimeFactory       $time         Time factory.
+     * @param TenantQuotaService $quotaService Tenant quota service.
+     * @param IAppManager        $appManager   App manager.
+     * @param ContainerInterface $container    Service container.
+     * @param LoggerInterface    $logger       Logger.
+     */
     public function __construct(
         ITimeFactory $time,
         private readonly TenantQuotaService $quotaService,
@@ -51,11 +60,13 @@ class ResetMonthlyQuotasJob extends TimedJob
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($time);
-        $this->setInterval(self::INTERVAL_SECONDS);
+        parent::__construct(time: $time);
+        $this->setInterval(seconds: self::INTERVAL_SECONDS);
     }//end __construct()
 
     /**
+     * Reset monthly quotas for all tenants when their period is due.
+     *
      * @param mixed $argument Job argument (unused).
      *
      * @return void

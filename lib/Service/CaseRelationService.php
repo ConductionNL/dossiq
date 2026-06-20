@@ -367,7 +367,11 @@ class CaseRelationService
 
         if (is_array($parent) === true) {
             $ref = ($parent['id'] ?? ($parent['uuid'] ?? ''));
-            return is_string($ref) === true ? $ref : '';
+            if (is_string($ref) === true) {
+                return $ref;
+            }
+
+            return '';
         }
 
         return '';
@@ -388,7 +392,10 @@ class CaseRelationService
             $list = $raw;
         } else if (is_string($raw) === true && $raw !== '') {
             $decoded = json_decode($raw, true);
-            $list    = is_array($decoded) === true ? $decoded : [];
+            $list    = [];
+            if (is_array($decoded) === true) {
+                $list = $decoded;
+            }
         } else {
             return [];
         }
@@ -507,7 +514,11 @@ class CaseRelationService
             $obj = $obj->jsonSerialize();
         }
 
-        return is_array($obj) === true ? $obj : null;
+        if (is_array($obj) === true) {
+            return $obj;
+        }
+
+        return null;
     }//end fetchCase()
 
     /**
