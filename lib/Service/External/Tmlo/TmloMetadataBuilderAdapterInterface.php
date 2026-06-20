@@ -92,7 +92,7 @@ interface TmloMetadataBuilderAdapterInterface
      *                          echoes the XSD the builder validated
      *                          against.
      */
-    public function buildBundle(string $caseId, string $mdtoVersion, array $context = []): TmloBundleResult;
+    public function buildBundle(string $caseId, string $mdtoVersion, array $context=[]): TmloBundleResult;
 
     /**
      * Whether the adapter is dormant — i.e. wired but not running an

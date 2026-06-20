@@ -3,7 +3,7 @@
 /**
  * Procest Supplier Auth Service
  *
- * eHerkenning-based authentication for the leverancier portal — validates
+ * EHerkenning-based authentication for the leverancier portal — validates
  * the KvK claim from the broker, resolves / creates the SupplierUser, and
  * issues a short-lived session token via the chain-member-05 TenantJwtService.
  *
@@ -58,14 +58,23 @@ class SupplierAuthService
      */
     private const BLOCKING_STATUSES = ['inactive', 'blacklisted'];
 
+    /**
+     * Constructor.
+     *
+     * @param IAppManager                          $appManager         App manager (for OR availability check).
+     * @param ContainerInterface                   $container          DI container (graceful OR resolution).
+     * @param TenantJwtService                     $jwt                JWT session-token issuer.
+     * @param LoggerInterface                      $logger             Logger.
+     * @param EHerkenningSamlAdapterInterface|null $eherkenningAdapter Optional broker SAML adapter.
+     */
     public function __construct(
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
         private readonly TenantJwtService $jwt,
         private readonly LoggerInterface $logger,
-        private readonly ?EHerkenningSamlAdapterInterface $eherkenningAdapter = null,
+        private readonly ?EHerkenningSamlAdapterInterface $eherkenningAdapter=null,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Decode an eHerkenning code via the broker. In production this calls
@@ -84,8 +93,8 @@ class SupplierAuthService
             throw new InvalidArgumentException('Empty eHerkenning code');
         }
 
-        return $this->decodeBrokerCode($code);
-    }
+        return $this->decodeBrokerCode(code: $code);
+    }//end authenticateViaEHerkenning()
 
     /**
      * Validate the KvK claim against a known Supplier row.
@@ -100,7 +109,7 @@ class SupplierAuthService
             return ['ok' => false, 'reason' => 'KvK-nummer heeft een ongeldig formaat'];
         }
 
-        $supplier = $this->findSupplierByKvk($kvkNumber);
+        $supplier = $this->findSupplierByKvk(kvkNumber: $kvkNumber);
         if ($supplier === null) {
             return ['ok' => false, 'reason' => 'Onbekende leverancier (KvK-nummer niet geregistreerd)'];
         }
@@ -111,12 +120,12 @@ class SupplierAuthService
         }
 
         return ['ok' => true, 'supplier' => $supplier];
-    }
+    }//end validateKvKClaim()
 
     /**
      * Create or link a SupplierUser row for an authenticated eHerkenning identity.
      *
-     * @param string             $supplierRef Supplier UUID.
+     * @param string              $supplierRef Supplier UUID.
      * @param array<string,mixed> $claim       Decoded eHerkenning claim.
      *
      * @return array<string,mixed>|null Persisted SupplierUser.
@@ -142,36 +151,42 @@ class SupplierAuthService
                 filters: ['supplierRef' => $supplierRef, 'email' => $email]
             );
             if (is_array($existing) === true && count($existing) > 0) {
-                $row                = $existing[0];
+                $row = $existing[0];
                 $row['lastLoginAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
                 if (($row['status'] ?? '') !== 'active') {
                     $row['status'] = 'active';
                 }
 
                 $uuid = (string) ($row['uuid'] ?? $row['id'] ?? '');
+                if ($uuid !== '') {
+                    $uuidArg = $uuid;
+                } else {
+                    $uuidArg = null;
+                }
+
                 return $os->saveObject(
                     object: $row,
                     register: TenantSaasService::REGISTER,
                     schema: 'supplierUser',
-                    uuid: $uuid !== '' ? $uuid : null
+                    uuid: $uuidArg
                 );
-            }
+            }//end if
         } catch (Throwable $e) {
-            // fall through to create.
-        }
+            // Fall through to create.
+        }//end try
 
         try {
             return $os->saveObject(
                 object: [
-                    'supplierRef'     => $supplierRef,
-                    'email'           => $email,
-                    'userRef'         => (string) ($claim['subject'] ?? ''),
-                    'role'            => 'read_only',
-                    'status'          => 'active',
-                    'eherkenningLevel'=> (string) ($claim['eherkenningLevel'] ?? '3'),
-                    'addedBy'         => 'eherkenning',
-                    'addedAt'         => (new DateTimeImmutable('now'))->format(DATE_ATOM),
-                    'lastLoginAt'     => (new DateTimeImmutable('now'))->format(DATE_ATOM),
+                    'supplierRef'      => $supplierRef,
+                    'email'            => $email,
+                    'userRef'          => (string) ($claim['subject'] ?? ''),
+                    'role'             => 'read_only',
+                    'status'           => 'active',
+                    'eherkenningLevel' => (string) ($claim['eherkenningLevel'] ?? '3'),
+                    'addedBy'          => 'eherkenning',
+                    'addedAt'          => (new DateTimeImmutable('now'))->format(DATE_ATOM),
+                    'lastLoginAt'      => (new DateTimeImmutable('now'))->format(DATE_ATOM),
                 ],
                 register: TenantSaasService::REGISTER,
                 schema: 'supplierUser',
@@ -180,16 +195,16 @@ class SupplierAuthService
         } catch (Throwable $e) {
             $this->logger->error('Procest: createOrLinkSupplierUser failed', ['exception' => $e->getMessage()]);
             return null;
-        }
-    }
+        }//end try
+    }//end createOrLinkSupplierUser()
 
     /**
      * Issue a portal session token (JWT) with supplier-scoped claims.
      *
-     * @param string             $supplierUserId SupplierUser UUID.
-     * @param array<string,mixed> $supplier       Supplier row.
-     * @param array<string,mixed> $claim          eHerkenning claim.
-     * @param bool               $financialReauth Whether financial re-auth is required.
+     * @param string              $supplierUserId  SupplierUser UUID.
+     * @param array<string,mixed> $supplier        Supplier row.
+     * @param array<string,mixed> $claim           eHerkenning claim.
+     * @param bool                $financialReauth Whether financial re-auth is required.
      *
      * @return array{token:string, expiresIn:int, financialReauthRequired:bool}
      */
@@ -209,7 +224,7 @@ class SupplierAuthService
         );
 
         return ['token' => $token, 'expiresIn' => self::SESSION_TTL, 'financialReauthRequired' => $financialReauth];
-    }
+    }//end issueSessionToken()
 
     /**
      * Check whether a session needs silent refresh.
@@ -221,7 +236,7 @@ class SupplierAuthService
     public function needsRefresh(int $expSeconds): bool
     {
         return ($expSeconds - time()) <= self::SESSION_REFRESH_WINDOW;
-    }
+    }//end needsRefresh()
 
     /**
      * Build a complete portal session from a raw eHerkenning SAML response.
@@ -269,17 +284,17 @@ class SupplierAuthService
             ];
         }
 
-        $kvkNumber = (string) $assertion->kvkNummer;
-        $validation = $this->validateKvKClaim($kvkNumber);
+        $kvkNumber  = (string) $assertion->kvkNummer;
+        $validation = $this->validateKvKClaim(kvkNumber: $kvkNumber);
         if (($validation['ok'] ?? false) !== true) {
             return [
-                'ok'     => false,
-                'reason' => (string) ($validation['reason'] ?? 'Onbekende fout'),
+                'ok'        => false,
+                'reason'    => (string) ($validation['reason'] ?? 'Onbekende fout'),
                 'assertion' => $assertion->toArray(),
             ];
         }
 
-        $supplier = (array) $validation['supplier'];
+        $supplier    = (array) $validation['supplier'];
         $supplierRef = (string) ($supplier['uuid'] ?? $supplier['id'] ?? '');
 
         $claim = [
@@ -290,12 +305,17 @@ class SupplierAuthService
             'kvkNumber'        => $kvkNumber,
         ];
 
-        $supplierUser = $this->createOrLinkSupplierUser($supplierRef, $claim);
+        $supplierUser   = $this->createOrLinkSupplierUser(supplierRef: $supplierRef, claim: $claim);
         $supplierUserId = (string) ($supplierUser['uuid'] ?? $supplierUser['id'] ?? $assertion->assertionId);
 
         $financialReauth = ($assertion->level < 3);
 
-        $session = $this->issueSessionToken($supplierUserId, $supplier, $claim, $financialReauth);
+        $session = $this->issueSessionToken(
+            supplierUserId: $supplierUserId,
+            supplier: $supplier,
+            claim: $claim,
+            financialReauth: $financialReauth
+        );
 
         return [
             'ok'                      => true,
@@ -320,7 +340,7 @@ class SupplierAuthService
     protected function decodeBrokerCode(string $code): array
     {
         throw new RuntimeException('eHerkenning broker not configured — wire via OpenConnector');
-    }
+    }//end decodeBrokerCode()
 
     /**
      * Find supplier row by KvK number.
@@ -344,13 +364,19 @@ class SupplierAuthService
                 offset: 0,
                 filters: ['kvkNumber' => $kvkNumber]
             );
-            return (is_array($rows) === true && count($rows) > 0) ? $rows[0] : null;
+            if (is_array($rows) === true && count($rows) > 0) {
+                return $rows[0];
+            }
+
+            return null;
         } catch (Throwable $e) {
             return null;
         }
-    }
+    }//end findSupplierByKvk()
 
     /**
+     * Resolve OR's ObjectService when installed.
+     *
      * @return mixed|null
      */
     private function getObjectService()
@@ -365,5 +391,5 @@ class SupplierAuthService
         } catch (Throwable $e) {
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

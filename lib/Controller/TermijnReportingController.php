@@ -47,10 +47,11 @@ class TermijnReportingController extends Controller
     /**
      * Constructor.
      *
-     * @param string                  $appName  App id.
-     * @param IRequest                $request  Request.
-     * @param TermijnReportingService $service  Reporting service.
-     * @param LoggerInterface         $logger   Logger.
+     * @param string                  $appName     App id.
+     * @param IRequest                $request     Request.
+     * @param TermijnReportingService $service     Reporting service.
+     * @param IUserSession            $userSession User session.
+     * @param LoggerInterface         $logger      Logger.
      */
     public function __construct(
         string $appName,
@@ -59,7 +60,7 @@ class TermijnReportingController extends Controller
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -73,6 +74,7 @@ class TermijnReportingController extends Controller
         if ($user === null) {
             return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
         }
+
         return null;
     }//end ensureAuthenticated()
 
@@ -87,7 +89,10 @@ class TermijnReportingController extends Controller
      */
     public function dashboard(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         try {
             $row = $this->service->getTermijnKpi();
             return new JSONResponse($row);
@@ -100,21 +105,25 @@ class TermijnReportingController extends Controller
     /**
      * Quarterly KPI report.
      *
-     * @NoAdminRequired
-     *
      * @param string      $periode  Period (YYYY-Qn).
      * @param string|null $afdeling Optional department filter.
+     *
+     * @NoAdminRequired
      *
      * @return JSONResponse
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
-    public function kwartaalrapport(string $periode = '', ?string $afdeling = null): JSONResponse
+    public function kwartaalrapport(string $periode='', ?string $afdeling=null): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         if ($periode === '') {
             $periode = (string) $this->request->getParam('periode', '');
         }
+
         if ($periode === '') {
             return new JSONResponse(['message' => 'periode is required'], Http::STATUS_BAD_REQUEST);
         }
@@ -130,20 +139,24 @@ class TermijnReportingController extends Controller
     /**
      * Annual dwangsom audit report.
      *
-     * @NoAdminRequired
-     *
      * @param int $jaar Year.
+     *
+     * @NoAdminRequired
      *
      * @return JSONResponse
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
-    public function jaarrekening(int $jaar = 0): JSONResponse
+    public function jaarrekening(int $jaar=0): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         if ($jaar === 0) {
             $jaar = (int) $this->request->getParam('jaar', '0');
         }
+
         if ($jaar < 2020 || $jaar > 2100) {
             return new JSONResponse(['message' => 'jaar is required and must be between 2020 and 2100'], Http::STATUS_BAD_REQUEST);
         }

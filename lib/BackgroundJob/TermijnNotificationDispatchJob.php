@@ -47,9 +47,9 @@ class TermijnNotificationDispatchJob extends QueuedJob
     /**
      * Constructor.
      *
-     * @param ITimeFactory              $time                 Time factory.
+     * @param ITimeFactory               $time                Time factory.
      * @param TermijnNotificationService $notificationService Notification service.
-     * @param LoggerInterface           $logger               Logger.
+     * @param LoggerInterface            $logger              Logger.
      */
     public function __construct(
         ITimeFactory $time,
@@ -74,10 +74,10 @@ class TermijnNotificationDispatchJob extends QueuedJob
             return;
         }
 
-        $type              = (string) ($argument['type'] ?? '');
+        $type = (string) ($argument['type'] ?? '');
         $termijnInstanceId = (string) ($argument['termijnInstanceId'] ?? '');
         $recipientUserId   = (string) ($argument['recipientUserId'] ?? '');
-        $context           = (array)  ($argument['context'] ?? []);
+        $context           = (array) ($argument['context'] ?? []);
 
         if ($type === '' || $termijnInstanceId === '' || $recipientUserId === '') {
             $this->logger->warning('TermijnNotificationDispatchJob: missing required argument keys', $argument);

@@ -108,14 +108,22 @@ class PublicationService
             throw new \RuntimeException('Case not found: '.$caseId);
         }
 
-        $case = is_array($obj) === true
-            ? $obj
-            : (method_exists($obj, 'jsonSerialize') === true ? $obj->jsonSerialize() : (array) $obj);
+        if (is_array($obj) === true) {
+            $case = $obj;
+        } else if (method_exists($obj, 'jsonSerialize') === true) {
+            $case = $obj->jsonSerialize();
+        } else {
+            $case = (array) $obj;
+        }
 
-        $publications = $this->extractPublications($case);
+        $publications = $this->extractPublications(case: $case);
 
         $publishedAt = (string) ($payload['publishedAt'] ?? date(format: 'c'));
-        $notes       = isset($payload['notes']) === true ? (string) $payload['notes'] : null;
+        if (isset($payload['notes']) === true) {
+            $notes = (string) $payload['notes'];
+        } else {
+            $notes = null;
+        }
 
         // Upsert by channel — same channel publishing twice updates the timestamp.
         $upserted = false;
@@ -126,10 +134,11 @@ class PublicationService
                     'publishedAt' => $publishedAt,
                     'notes'       => $notes,
                 ];
-                $upserted = true;
+                $upserted         = true;
                 break;
             }
         }
+
         if ($upserted === false) {
             $publications[] = [
                 'channel'     => $channel,
@@ -167,8 +176,13 @@ class PublicationService
         $pubs = $case['publications'] ?? [];
         if (is_string($pubs) === true) {
             $decoded = json_decode((string) $pubs, associative: true);
-            $pubs    = is_array($decoded) === true ? $decoded : [];
+            if (is_array($decoded) === true) {
+                $pubs = $decoded;
+            } else {
+                $pubs = [];
+            }
         }
+
         if (is_array($pubs) === false) {
             return [];
         }
@@ -179,6 +193,7 @@ class PublicationService
                 $clean[] = $pub;
             }
         }
+
         return $clean;
     }//end extractPublications()
 }//end class

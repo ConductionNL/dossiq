@@ -36,14 +36,30 @@ use Psr\Log\LoggerInterface;
  */
 class QuotaEnforcementMiddleware extends Middleware
 {
+    /**
+     * Constructor.
+     *
+     * @param IRequest           $request The current request.
+     * @param TenantContext      $context Tenant context.
+     * @param TenantQuotaService $quota   Tenant quota service.
+     * @param LoggerInterface    $logger  Logger.
+     */
     public function __construct(
         private readonly IRequest $request,
         private readonly TenantContext $context,
         private readonly TenantQuotaService $quota,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
+    /**
+     * Enforce tenant quotas before the controller runs.
+     *
+     * @param \OCP\AppFramework\Controller $controller Controller.
+     * @param string                       $methodName Method name.
+     *
+     * @return void
+     */
     public function beforeController($controller, $methodName): void
     {
         if ($this->context->isBound() === false) {
@@ -81,8 +97,19 @@ class QuotaEnforcementMiddleware extends Middleware
                 ['tenantId' => $tenantId, 'quotaType' => $quotaType]
             );
         }
-    }
+    }//end beforeController()
 
+    /**
+     * Convert a quota-exceeded exception into a JSON response.
+     *
+     * @param \OCP\AppFramework\Controller $controller Controller.
+     * @param string                       $methodName Method name.
+     * @param \Exception                   $exception  Exception.
+     *
+     * @return \OCP\AppFramework\Http\Response
+     *
+     * @throws \Exception
+     */
     public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response
     {
         if ($exception instanceof QuotaExceededException) {
@@ -93,7 +120,7 @@ class QuotaEnforcementMiddleware extends Middleware
         }
 
         throw $exception;
-    }
+    }//end afterException()
 
     /**
      * Map request to a quota dimension.
@@ -114,5 +141,5 @@ class QuotaEnforcementMiddleware extends Middleware
         }
 
         return null;
-    }
-}
+    }//end resolveQuotaType()
+}//end class

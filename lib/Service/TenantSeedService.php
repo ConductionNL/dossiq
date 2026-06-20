@@ -59,7 +59,7 @@ class TenantSeedService
      */
     public function seedZaaktypeTemplates(string $schemaName, string $tier): array
     {
-        $templates = $this->resolveTemplatesForTier($tier);
+        $templates = $this->resolveTemplatesForTier(tier: $tier);
         $this->logger->info(
             'Procest: seeding zaaktype templates into tenant schema',
             ['schemaName' => $schemaName, 'tier' => $tier, 'count' => count($templates)]

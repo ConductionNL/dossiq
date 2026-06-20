@@ -97,7 +97,7 @@ interface BrpHaalCentraalAdapterInterface
      * @return BrpLookupResult The lookup outcome (status + persoon
      *                         envelope minus BSN).
      */
-    public function lookup(string $bsn, array $context = []): BrpLookupResult;
+    public function lookup(string $bsn, array $context=[]): BrpLookupResult;
 
     /**
      * Whether the adapter is dormant — i.e. wired but not contacting

@@ -45,11 +45,12 @@ class IngebrekestellingController extends Controller
     /**
      * Constructor.
      *
-     * @param string                  $appName  App id.
-     * @param IRequest                $request  Request.
-     * @param IngebrekestellingService $service Service.
-     * @param SettingsService         $settings Settings.
-     * @param LoggerInterface         $logger   Logger.
+     * @param string                   $appName     App id.
+     * @param IRequest                 $request     Request.
+     * @param IngebrekestellingService $service     Service.
+     * @param SettingsService          $settings    Settings.
+     * @param IUserSession             $userSession User session.
+     * @param LoggerInterface          $logger      Logger.
      */
     public function __construct(
         string $appName,
@@ -59,7 +60,7 @@ class IngebrekestellingController extends Controller
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -73,6 +74,7 @@ class IngebrekestellingController extends Controller
         if ($user === null) {
             return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
         }
+
         return null;
     }//end ensureAuthenticated()
 
@@ -87,13 +89,18 @@ class IngebrekestellingController extends Controller
      */
     public function register(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         // OCP\IRequest::getContent() is marked protected on the concrete
         // OC request — calling it across class scopes throws Error at runtime.
         // Read the raw payload directly from php://input instead.
         $raw  = (string) file_get_contents('php://input');
         $body = json_decode($raw, true);
-        $body = is_array($body) === true ? $body : [];
+        if (is_array($body) === false) {
+            $body = [];
+        }
 
         $instanceId   = (string) ($body['termijnInstanceId'] ?? '');
         $kanaal       = (string) ($body['kanaal'] ?? '');
@@ -123,9 +130,9 @@ class IngebrekestellingController extends Controller
     /**
      * Get an ingebrekestelling by id.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Id.
+     *
+     * @NoAdminRequired
      *
      * @return JSONResponse
      *
@@ -133,7 +140,10 @@ class IngebrekestellingController extends Controller
      */
     public function show(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $objectService = $this->settings->getObjectService();
         $register      = (string) $this->settings->getConfigValue('register');
         $schema        = (string) $this->settings->getConfigValue('ingebrekestelling_schema');
@@ -146,9 +156,11 @@ class IngebrekestellingController extends Controller
         } catch (Throwable $e) {
             return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
         }
+
         if (is_array($row) === false) {
             return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
         }
+
         return new JSONResponse($row);
     }//end show()
 }//end class

@@ -47,11 +47,11 @@ class BottleneckDetectionJob extends TimedJob
     /**
      * Constructor.
      *
-     * @param ITimeFactory          $time                The time factory.
-     * @param MilestoneService      $milestoneService    The milestone service.
-     * @param IAppManager           $appManager          The app manager.
-     * @param INotificationManager  $notificationManager The notification manager.
-     * @param LoggerInterface       $logger              The logger.
+     * @param ITimeFactory         $time                The time factory.
+     * @param MilestoneService     $milestoneService    The milestone service.
+     * @param IAppManager          $appManager          The app manager.
+     * @param INotificationManager $notificationManager The notification manager.
+     * @param LoggerInterface      $logger              The logger.
      */
     public function __construct(
         ITimeFactory $time,
@@ -94,7 +94,7 @@ class BottleneckDetectionJob extends TimedJob
         }
 
         foreach ($stalled as $row) {
-            $this->notifyStall($row);
+            $this->notifyStall(row: $row);
         }
 
         $this->logger->info(
@@ -148,6 +148,6 @@ class BottleneckDetectionJob extends TimedJob
                 'BottleneckDetectionJob: failed to notify '.$assignee.': '.$e->getMessage(),
                 ['app' => Application::APP_ID],
             );
-        }
+        }//end try
     }//end notifyStall()
 }//end class

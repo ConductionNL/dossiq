@@ -50,9 +50,9 @@ class SubstitutionAuditService
     /**
      * Constructor.
      *
-     * @param SettingsService     $settingsService The settings/config bridge.
+     * @param SettingsService     $settingsService     The settings/config bridge.
      * @param SubstitutionService $substitutionService Capacity resolution.
-     * @param LoggerInterface     $logger          The logger.
+     * @param LoggerInterface     $logger              The logger.
      *
      * @return void
      */
@@ -72,7 +72,7 @@ class SubstitutionAuditService
      * to the case and the entry is returned. When the actor acts on their own
      * work (no covering substitution), nothing is written and null is returned.
      *
-     * @param string $caseId The case being mutated.
+     * @param string $caseId  The case being mutated.
      * @param string $actorId The acting user id.
      * @param string $action  A short action label (e.g. "task-completed").
      *
@@ -100,11 +100,16 @@ class SubstitutionAuditService
             return null;
         }
 
+        $caseType = null;
+        if (isset($case['caseType']) === true) {
+            $caseType = (string) $case['caseType'];
+        }
+
         $sub = $this->substitutionService->resolveActingCapacity(
             actorId: $actorId,
             absentee: $absentee,
             caseId: $caseId,
-            caseType: (isset($case['caseType']) === true ? (string) $case['caseType'] : null)
+            caseType: $caseType
         );
         if ($sub === null) {
             return null;
@@ -119,8 +124,8 @@ class SubstitutionAuditService
             'timestamp'       => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
         ];
 
-        $activity   = $this->decodeActivity($case['activity'] ?? null);
-        $activity[] = $entry;
+        $activity         = $this->decodeActivity(raw: ($case['activity'] ?? null));
+        $activity[]       = $entry;
         $case['activity'] = json_encode($activity);
 
         try {
@@ -180,7 +185,7 @@ class SubstitutionAuditService
         $actions = [];
         foreach ($cases as $case) {
             $caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
-            foreach ($this->decodeActivity($case['activity'] ?? null) as $entry) {
+            foreach ($this->decodeActivity(raw: ($case['activity'] ?? null)) as $entry) {
                 if (is_array($entry) === false) {
                     continue;
                 }
@@ -189,9 +194,9 @@ class SubstitutionAuditService
                     continue;
                 }
 
-                $entry['caseId'] = $caseId;
+                $entry['caseId']    = $caseId;
                 $entry['caseTitle'] = (string) ($case['title'] ?? '');
-                $actions[] = $entry;
+                $actions[]          = $entry;
             }
         }//end foreach
 

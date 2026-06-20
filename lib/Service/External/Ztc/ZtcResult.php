@@ -56,7 +56,7 @@ final class ZtcResult
         public readonly string $outcome,
         public readonly string $url,
         public readonly bool $dormant,
-        public readonly array $extras = [],
+        public readonly array $extras=[],
     ) {
     }//end __construct()
 }//end class

@@ -69,11 +69,11 @@ class TenantClaimValidationMiddleware extends Middleware
     /**
      * Constructor.
      *
-     * @param IRequest         $request   Request.
-     * @param TenantContext    $context   Bound tenant context.
-     * @param TenantJwtService $jwt       JWT service.
+     * @param IRequest         $request      Request.
+     * @param TenantContext    $context      Bound tenant context.
+     * @param TenantJwtService $jwt          JWT service.
      * @param ICacheFactory    $cacheFactory Cache factory.
-     * @param LoggerInterface  $logger    Logger.
+     * @param LoggerInterface  $logger       Logger.
      */
     public function __construct(
         private readonly IRequest $request,
@@ -86,6 +86,8 @@ class TenantClaimValidationMiddleware extends Middleware
     }//end __construct()
 
     /**
+     * Validate that the JWT tenant claim matches the bound request tenant.
+     *
      * @param \OCP\AppFramework\Controller $controller Controller.
      * @param string                       $methodName Method name.
      *
@@ -117,7 +119,7 @@ class TenantClaimValidationMiddleware extends Middleware
         $requestTenantId = $this->context->getTenantId();
 
         if ($jwtTenantId !== '' && $jwtTenantId !== $requestTenantId) {
-            $this->logSecurityIncident($jwtTenantId, $requestTenantId, $claims);
+            $this->logSecurityIncident(attempted: $jwtTenantId, requested: $requestTenantId, claims: $claims);
             $this->bumpFailureCounter();
             throw new TenantClaimMismatchException(
                 'JWT tenant_id does not match request tenant',
@@ -163,11 +165,11 @@ class TenantClaimValidationMiddleware extends Middleware
         $this->logger->warning(
             'Procest SECURITY: cross-tenant JWT claim mismatch',
             [
-                'ip'                  => $this->request->getRemoteAddress(),
-                'timestamp'           => (new \DateTimeImmutable('now'))->format(DATE_ATOM),
-                'attemptedTenantId'   => $attempted,
-                'requestedTenantId'   => $requested,
-                'user'                => (string) ($claims['sub'] ?? ''),
+                'ip'                => $this->request->getRemoteAddress(),
+                'timestamp'         => (new \DateTimeImmutable('now'))->format(DATE_ATOM),
+                'attemptedTenantId' => $attempted,
+                'requestedTenantId' => $requested,
+                'user'              => (string) ($claims['sub'] ?? ''),
             ]
         );
     }//end logSecurityIncident()

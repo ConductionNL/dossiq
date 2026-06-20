@@ -290,7 +290,7 @@ class AppointmentService
                     'No external appointment backend configured. Configure JCC or Qmatic, '
                     .'or schedule internal appointments through the OpenRegister calendar leaf.'
                 );
-        }
+        }//end switch
     }//end getBackend()
 
     /**

@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
 class ZipManifestBuilder
 {
     /**
-     * manifest.csv column order.
+     * Manifest.csv column order.
      */
     public const MANIFEST_COLUMNS = [
         'bestandsnaam',
@@ -55,9 +55,9 @@ class ZipManifestBuilder
     /**
      * Constructor.
      *
-     * @param ZgwDocumentService            $documentService Binary file storage service.
-     * @param InformatieobjectAccessGuard   $accessGuard     Confidentiality guard.
-     * @param LoggerInterface               $logger          Logger.
+     * @param ZgwDocumentService          $documentService Binary file storage service.
+     * @param InformatieobjectAccessGuard $accessGuard     Confidentiality guard.
+     * @param LoggerInterface             $logger          Logger.
      */
     public function __construct(
         private readonly ZgwDocumentService $documentService,
@@ -102,8 +102,8 @@ class ZipManifestBuilder
     /**
      * Filter a document list to those the user is cleared to read.
      *
-     * @param IUser|null                        $user      The caller, or null (treated as no extra filtering).
-     * @param array<int, array<string, mixed>>  $documents Candidate documents.
+     * @param IUser|null                       $user      The caller, or null (treated as no extra filtering).
+     * @param array<int, array<string, mixed>> $documents Candidate documents.
      *
      * @return array<int, array<string, mixed>> The clearance-filtered list.
      *
@@ -125,10 +125,10 @@ class ZipManifestBuilder
      * read. The archive contains one sub-folder per informatieobjecttype (when
      * $subfolderPerType is true) plus a `manifest.csv` at the root.
      *
-     * @param string                            $targetPath       Filesystem path to write the ZIP to.
-     * @param IUser|null                        $user             The caller (for clearance filtering).
-     * @param array<int, array<string, mixed>>  $documents        Candidate documents.
-     * @param bool                              $subfolderPerType Organise into per-type sub-folders.
+     * @param string                           $targetPath       Filesystem path to write the ZIP to.
+     * @param IUser|null                       $user             The caller (for clearance filtering).
+     * @param array<int, array<string, mixed>> $documents        Candidate documents.
+     * @param bool                             $subfolderPerType Organise into per-type sub-folders.
      *
      * @return array<string, mixed> Result with `path`, `included` count and `excluded` count.
      *
@@ -147,8 +147,8 @@ class ZipManifestBuilder
             throw new \RuntimeException('Could not create ZIP archive at '.$targetPath);
         }
 
-        // manifest.csv at the archive root.
-        $zip->addFromString('manifest.csv', $this->buildManifest($included));
+        // Manifest.csv at the archive root.
+        $zip->addFromString('manifest.csv', $this->buildManifest(documents: $included));
 
         $usedNames = [];
         foreach ($included as $doc) {
@@ -201,17 +201,23 @@ class ZipManifestBuilder
         $prefix = '';
         if ($subfolderPerType === true) {
             $type   = (string) ($doc['informatieobjecttype'] ?? 'onbekend');
-            $prefix = $this->sanitizeSegment($type).'/';
+            $prefix = $this->sanitizeSegment(segment: $type).'/';
         }
 
-        $entry = $prefix.$this->sanitizeSegment($fileName, true);
+        $entry = $prefix.$this->sanitizeSegment(segment: $fileName, keepDots: true);
 
         if (isset($usedNames[$entry]) === true) {
             $usedNames[$entry]++;
-            $dot       = strrpos($fileName, '.');
-            $base      = $dot === false ? $fileName : substr($fileName, 0, $dot);
-            $extension = $dot === false ? '' : substr($fileName, $dot);
-            $entry     = $prefix.$this->sanitizeSegment($base, true).'_'.$usedNames[$entry].$extension;
+            $dot = strrpos($fileName, '.');
+            if ($dot === false) {
+                $base      = $fileName;
+                $extension = '';
+            } else {
+                $base      = substr($fileName, 0, $dot);
+                $extension = substr($fileName, $dot);
+            }
+
+            $entry = $prefix.$this->sanitizeSegment(segment: $base, keepDots: true).'_'.$usedNames[$entry].$extension;
         } else {
             $usedNames[$entry] = 0;
         }
@@ -222,8 +228,8 @@ class ZipManifestBuilder
     /**
      * Sanitise a path segment for safe inclusion in a ZIP entry name.
      *
-     * @param string $segment    The raw segment.
-     * @param bool   $keepDots   Whether to preserve dots (for filenames with extensions).
+     * @param string $segment  The raw segment.
+     * @param bool   $keepDots Whether to preserve dots (for filenames with extensions).
      *
      * @return string The sanitised segment.
      */

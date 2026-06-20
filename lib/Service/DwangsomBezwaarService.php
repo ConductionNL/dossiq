@@ -88,6 +88,7 @@ class DwangsomBezwaarService
         } catch (\Throwable $e) {
             throw new RuntimeException('DwangsomBerekening lookup failed: '.$e->getMessage());
         }
+
         if (is_array($berekening) === false) {
             throw new RuntimeException('DwangsomBerekening not found: '.$berekeningId);
         }
@@ -101,14 +102,21 @@ class DwangsomBezwaarService
 
         // Move all linked uitbetalingen to on-hold-bezwaar.
         try {
-            $uitbetalingen = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $uSchema, filters: ['dwangsomBerekening' => $berekeningId]);
+            $uitbetalingen = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $uSchema,
+                filters: ['dwangsomBerekening' => $berekeningId]
+            );
         } catch (\Throwable $e) {
             $uitbetalingen = [];
         }
+
         foreach ((array) $uitbetalingen as $u) {
             if (is_array($u) === false) {
                 continue;
             }
+
             $u['status'] = 'on-hold-bezwaar';
             try {
                 $objectService->saveObject($register, $uSchema, $u);
@@ -130,15 +138,19 @@ class DwangsomBezwaarService
         }
 
         $this->logger->info('Dwangsom bezwaar registered', ['berekening' => $berekeningId]);
-        return is_array($berekening) === true ? $berekening : [];
+        if (is_array($berekening) === true) {
+            return $berekening;
+        }
+
+        return [];
     }//end registerBezwaar()
 
     /**
      * Resolve a bezwaar with a corrected amount.
      *
-     * @param string $berekeningId  Berekening id.
+     * @param string $berekeningId   Berekening id.
      * @param int    $newBedragCents Corrected amount in EUR cents.
-     * @param string $grondslag     Legal basis.
+     * @param string $grondslag      Legal basis.
      *
      * @return array<string, mixed>
      *
@@ -165,6 +177,7 @@ class DwangsomBezwaarService
         } catch (\Throwable $e) {
             throw new RuntimeException('DwangsomBerekening lookup failed: '.$e->getMessage());
         }
+
         if (is_array($berekening) === false) {
             throw new RuntimeException('DwangsomBerekening not found: '.$berekeningId);
         }
@@ -178,14 +191,21 @@ class DwangsomBezwaarService
         }
 
         try {
-            $uitbetalingen = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $uSchema, filters: ['dwangsomBerekening' => $berekeningId]);
+            $uitbetalingen = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $uSchema,
+                filters: ['dwangsomBerekening' => $berekeningId]
+            );
         } catch (\Throwable $e) {
             $uitbetalingen = [];
         }
+
         foreach ((array) $uitbetalingen as $u) {
             if (is_array($u) === false) {
                 continue;
             }
+
             $u['bedrag'] = $newBedragCents;
             $u['status'] = 'voorbereid';
             try {
@@ -207,6 +227,10 @@ class DwangsomBezwaarService
         }
 
         $this->logger->info('Dwangsom bezwaar resolved', ['berekening' => $berekeningId, 'newBedrag' => $newBedragCents]);
-        return is_array($berekening) === true ? $berekening : [];
+        if (is_array($berekening) === true) {
+            return $berekening;
+        }
+
+        return [];
     }//end resolveBezwaar()
 }//end class

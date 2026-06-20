@@ -52,12 +52,19 @@ class TenantBillingService
         'case_refund',
     ];
 
+    /**
+     * Constructor.
+     *
+     * @param IAppManager        $appManager App manager.
+     * @param ContainerInterface $container  Service container.
+     * @param LoggerInterface    $logger     Logger.
+     */
     public function __construct(
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Emit a billing event. Insert-only — invoiceRef stays NULL until the
@@ -105,7 +112,7 @@ class TenantBillingService
             $this->logger->error('Procest: emitEvent failed', ['eventType' => $eventType, 'exception' => $e->getMessage()]);
             return null;
         }
-    }
+    }//end emitEvent()
 
     /**
      * Aggregate billing for a month.
@@ -123,9 +130,9 @@ class TenantBillingService
             throw new InvalidArgumentException('Month must be YYYY-MM: '.$month);
         }
 
-        $events = $this->fetchEventsForMonth($tenantId, $month);
-        return $this->aggregate($events);
-    }
+        $events = $this->fetchEventsForMonth(tenantId: $tenantId, month: $month);
+        return $this->aggregate(events: $events);
+    }//end getMonthBilling()
 
     /**
      * Compute the net effect across events (refunds reduce totals).
@@ -150,16 +157,16 @@ class TenantBillingService
 
             $byType[$type]['count']  += $quantity;
             $byType[$type]['amount'] += $amount;
-            $totalAmount             += $amount;
+            $totalAmount += $amount;
         }
 
         return ['eventCount' => count($events), 'totalAmount' => round($totalAmount, 2), 'byType' => $byType];
-    }
+    }//end aggregate()
 
     /**
      * Mark a batch of events as exported under a single invoice reference.
      *
-     * @param array<int, array<string,mixed>> $events    Event rows.
+     * @param array<int, array<string,mixed>> $events     Event rows.
      * @param string                          $invoiceRef Shillinq invoice ref.
      *
      * @return int Number of events updated.
@@ -181,20 +188,26 @@ class TenantBillingService
             $event['invoiceRef'] = $invoiceRef;
             try {
                 $uuid = (string) ($event['uuid'] ?? $event['id'] ?? '');
+                if ($uuid !== '') {
+                    $uuidArg = $uuid;
+                } else {
+                    $uuidArg = null;
+                }
+
                 $os->saveObject(
                     object: $event,
                     register: TenantSaasService::REGISTER,
                     schema: 'tenantBillingEvent',
-                    uuid: $uuid !== '' ? $uuid : null,
+                    uuid: $uuidArg,
                 );
                 $updated++;
             } catch (Throwable $e) {
                 $this->logger->error('Procest: markExported write failed', ['exception' => $e->getMessage()]);
             }
-        }
+        }//end foreach
 
         return $updated;
-    }
+    }//end markExported()
 
     /**
      * Fetch all events for a given month for a tenant.
@@ -223,12 +236,17 @@ class TenantBillingService
             return [];
         }
 
-        $rows = is_array($rows) ? $rows : [];
+        if (is_array($rows) === false) {
+            $rows = [];
+        }
+
         return array_values(array_filter($rows, fn ($r) => str_starts_with((string) ($r['occurredAt'] ?? ''), $month)));
-    }
+    }//end fetchEventsForMonth()
 
     /**
-     * @return mixed|null
+     * Resolve the OpenRegister ObjectService when available.
+     *
+     * @return mixed|null The ObjectService instance, or null when unavailable.
      */
     private function getObjectService()
     {
@@ -242,5 +260,5 @@ class TenantBillingService
         } catch (Throwable $e) {
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

@@ -555,6 +555,10 @@ class ConsultationController extends Controller
         }
 
         $decoded = json_decode((string) $content, true);
-        return is_array($decoded) === true ? $decoded : [];
+        if (is_array($decoded) === true) {
+            return $decoded;
+        }
+
+        return [];
     }//end getRequestBody()
 }//end class

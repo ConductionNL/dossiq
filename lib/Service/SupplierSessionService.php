@@ -101,7 +101,7 @@ class SupplierSessionService
     {
         $supplier = $this->currentSupplier();
         if ($supplier === null) {
-            throw new SupplierUnauthorizedException('Bearer token required', 401);
+            throw new SupplierUnauthorizedException(message: 'Bearer token required', code: 401);
         }
 
         return (string) $supplier['supplierRef'];
@@ -121,10 +121,14 @@ class SupplierSessionService
     {
         $supplier = $this->currentSupplier();
         if ($supplier === null) {
-            throw new SupplierUnauthorizedException('Bearer token required', 401);
+            throw new SupplierUnauthorizedException(message: 'Bearer token required', code: 401);
         }
 
         $role = (string) ($supplier['role'] ?? 'read_only');
-        return $role !== '' ? $role : 'read_only';
+        if ($role === '') {
+            $role = 'read_only';
+        }
+
+        return $role;
     }//end requireSupplierRole()
 }//end class

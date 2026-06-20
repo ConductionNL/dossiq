@@ -109,9 +109,9 @@ class SentimentService
     /**
      * Analyse a transcript for sentiment + trigger words.
      *
-     * @param string                       $text         The transcript text (Dutch).
-     * @param array<int, string>|null      $triggerWords Optional override list; defaults to
-     *                                                   DEFAULT_TRIGGER_WORDS.
+     * @param string                  $text         The transcript text (Dutch).
+     * @param array<int, string>|null $triggerWords Optional override list; defaults to
+     *                                              DEFAULT_TRIGGER_WORDS.
      *
      * @return array{score: float, label: string, triggers: array<int, string>,
      *               escalatieAanbevolen: bool, escalatieLevel: string}
@@ -186,9 +186,11 @@ class SentimentService
         if ($score < -0.6) {
             return 'rood';
         }
+
         if ($score < -0.3) {
             return 'oranje';
         }
+
         if ($score <= 0.0) {
             return 'geel';
         }
@@ -214,6 +216,7 @@ class SentimentService
             if ($needle === '') {
                 continue;
             }
+
             // Word-boundary match: surrounded by non-word characters or string
             // boundaries. preg_quote escapes the needle so callers can safely
             // configure phrases with punctuation.
@@ -236,13 +239,16 @@ class SentimentService
     private function scorePolarity(string $text): float
     {
         $lower  = mb_strtolower($text);
-        $tokens = preg_split('/[^a-zA-Zàáäâèéëêìíïîòóöôùúüû]+/u', $lower) ?: [];
+        $tokens = preg_split('/[^a-zA-Zàáäâèéëêìíïîòóöôùúüû]+/u', $lower);
+        if ($tokens === false) {
+            $tokens = [];
+        }
 
         $score = 0.0;
         foreach ($tokens as $token) {
             if (isset(self::NEGATIVE_WEIGHTS[$token]) === true) {
                 $score += self::NEGATIVE_WEIGHTS[$token];
-            } elseif (isset(self::POSITIVE_WEIGHTS[$token]) === true) {
+            } else if (isset(self::POSITIVE_WEIGHTS[$token]) === true) {
                 $score += self::POSITIVE_WEIGHTS[$token];
             }
         }
@@ -251,6 +257,7 @@ class SentimentService
         if ($score > 1.0) {
             return 1.0;
         }
+
         if ($score < -1.0) {
             return -1.0;
         }
@@ -270,12 +277,15 @@ class SentimentService
         if ($score >= 0.3) {
             return 'positief';
         }
+
         if ($score > -0.3) {
             return 'neutraal';
         }
+
         if ($score > -0.6) {
             return 'negatief';
         }
+
         return 'boos';
     }//end labelForScore()
 }//end class

@@ -60,7 +60,6 @@ class InboundEmailJob extends TimedJob
      */
     private const DEFAULT_BATCH_SIZE = 50;
 
-
     /**
      * Constructor.
      *
@@ -91,7 +90,6 @@ class InboundEmailJob extends TimedJob
 
         $this->setInterval(seconds: $interval);
     }//end __construct()
-
 
     /**
      * Run a single poll batch.
@@ -149,9 +147,8 @@ class InboundEmailJob extends TimedJob
                 'InboundEmailJob failed',
                 ['error' => $e->getMessage(), 'app' => Application::APP_ID]
             );
-        }
+        }//end try
     }//end run()
-
 
     /**
      * Match a `[ZAAK-2026-000142]` style tag in the subject.
@@ -170,7 +167,6 @@ class InboundEmailJob extends TimedJob
 
         return null;
     }//end matchCaseFromSubject()
-
 
     /**
      * Fetch a batch of unread messages from the shared mailbox.
@@ -225,23 +221,49 @@ class InboundEmailJob extends TimedJob
                     continue;
                 }
 
+                if (isset($headers->fromaddress) === true) {
+                    $from = (string) $headers->fromaddress;
+                } else {
+                    $from = '';
+                }
+
+                if (isset($headers->toaddress) === true) {
+                    $to = (string) $headers->toaddress;
+                } else {
+                    $to = '';
+                }
+
+                if (isset($headers->date) === true) {
+                    $sentAt = (string) $headers->date;
+                } else {
+                    $sentAt = '';
+                }
+
+                // phpcs:ignore Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps -- imap_headerinfo() returns a stdClass whose property name is fixed by the PHP IMAP extension.
+                if (isset($headers->Size) === true) {
+                    // phpcs:ignore Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps -- imap_headerinfo() returns a stdClass whose property name is fixed by the PHP IMAP extension.
+                    $sizeBytes = (int) $headers->Size;
+                } else {
+                    $sizeBytes = 0;
+                }
+
                 $messages[] = [
+                    // phpcs:ignore Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps -- imap_headerinfo() returns a stdClass whose property name is fixed by the PHP IMAP extension.
                     'mailMessageId' => (string) ($headers->message_id ?? ''),
                     'subject'       => (string) ($headers->subject ?? ''),
-                    'from'          => isset($headers->fromaddress) === true ? (string) $headers->fromaddress : '',
-                    'to'            => isset($headers->toaddress) === true ? (string) $headers->toaddress : '',
-                    'sentAt'        => isset($headers->date) === true ? (string) $headers->date : '',
+                    'from'          => $from,
+                    'to'            => $to,
+                    'sentAt'        => $sentAt,
                     'imapUid'       => (int) $id,
-                    'sizeBytes'     => isset($headers->Size) === true ? (int) $headers->Size : 0,
+                    'sizeBytes'     => $sizeBytes,
                 ];
-            }
+            }//end foreach
         } finally {
             @imap_close($connection);
         }//end try
 
         return $messages;
     }//end fetchUnreadBatch()
-
 
     /**
      * Check whether a mailMessageId is already linked to a case.
@@ -278,11 +300,10 @@ class InboundEmailJob extends TimedJob
             }
         } catch (\Throwable $e) {
             $this->logger->debug('isAlreadyLinked check failed', ['error' => $e->getMessage()]);
-        }
+        }//end try
 
         return false;
     }//end isAlreadyLinked()
-
 
     /**
      * Best-effort mark the message as "processed" so the next poll skips it.
@@ -291,6 +312,8 @@ class InboundEmailJob extends TimedJob
      * already-linked check above is still authoritative.
      *
      * @param string $messageId Message ID.
+     *
+     * @return void
      */
     private function markProcessed(string $messageId): void
     {

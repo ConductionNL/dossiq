@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  */
 class ConflictOfInterestService
 {
+
     /**
      * Manually-registered conflicts keyed by zaakId.
      *
@@ -59,16 +60,17 @@ class ConflictOfInterestService
     /**
      * Constructor.
      *
-     * @param LoggerInterface                      $logger      Logger.
-     * @param BrpHaalCentraalAdapterInterface|null $brpAdapter  Optional BRP Haal
-     *                                                          Centraal adapter
-     *                                                          for relationship
-     *                                                          enrichment.
-     *                                                          Dormant by default.
+     * @param LoggerInterface                      $logger     Logger.
+     * @param BrpHaalCentraalAdapterInterface|null $brpAdapter Optional BRP Haal
+     *                                                         Centraal adapter
+     *                                                         for relationship
+     *                                                         enrichment.
+     *                                                         Dormant by
+     *                                                         default.
      */
     public function __construct(
         private readonly LoggerInterface $logger,
-        private readonly ?BrpHaalCentraalAdapterInterface $brpAdapter = null,
+        private readonly ?BrpHaalCentraalAdapterInterface $brpAdapter=null,
     ) {
     }//end __construct()
 
@@ -92,15 +94,15 @@ class ConflictOfInterestService
     /**
      * Check whether the user has a belangenconflict with the case applicant.
      *
-     * @param string               $userId        User id.
-     * @param string               $zaakId        Case id.
+     * @param string               $userId         User id.
+     * @param string               $zaakId         Case id.
      * @param array<string, mixed> $caseProperties Case properties (must contain applicantBsn + userBsn for auto-detection).
      *
      * @return array{conflict:bool, reason?:string}
      *
      * @spec openspec/changes/mandaat-matrix-06-temporal-and-conflict/tasks.md
      */
-    public function checkConflict(string $userId, string $zaakId, array $caseProperties = []): array
+    public function checkConflict(string $userId, string $zaakId, array $caseProperties=[]): array
     {
         $this->logger->debug('Conflict-of-interest probe', ['userId' => $userId, 'zaakId' => $zaakId]);
 
@@ -135,7 +137,7 @@ class ConflictOfInterestService
         // BRP adapter fallback — dormant by default; an active binding looks
         // up the user's relationship to the applicant via Haal Centraal
         // `relaties` envelope and short-circuits with `belangenconflict`.
-        $brpRelation = $this->lookupRelationViaBrp($userBsn, $applicantBsn, $zaakId);
+        $brpRelation = $this->lookupRelationViaBrp(userBsn: $userBsn, applicantBsn: $applicantBsn, zaakId: $zaakId);
         if ($brpRelation !== null && $brpRelation !== '') {
             return ['conflict' => true, 'reason' => $brpRelation];
         }
@@ -173,9 +175,9 @@ class ConflictOfInterestService
             $result = $this->brpAdapter->lookup(
                 $userBsn,
                 [
-                    'lookupReason'        => 'belangenconflict-detection',
-                    'caseId'              => $zaakId,
-                    'comparisonBsnHash'   => substr(hash('sha256', $applicantBsn), 0, 16),
+                    'lookupReason'      => 'belangenconflict-detection',
+                    'caseId'            => $zaakId,
+                    'comparisonBsnHash' => substr(hash('sha256', $applicantBsn), 0, 16),
                 ]
             );
         } catch (\Throwable $e) {
@@ -195,10 +197,12 @@ class ConflictOfInterestService
             if (is_array($relation) === false) {
                 continue;
             }
+
             $relatedBsn = (string) ($relation['burgerservicenummer'] ?? '');
             if ($relatedBsn === '' || $relatedBsn !== $applicantBsn) {
                 continue;
             }
+
             $label = (string) ($relation['relatie'] ?? $relation['type'] ?? '');
             if ($label !== '') {
                 return $label;

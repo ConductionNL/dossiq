@@ -95,7 +95,7 @@ interface ZgwExternalAdapterInterface
      * @return ZgwPushResult The dispatch outcome (status +
      *                       receiver-side zaak URL).
      */
-    public function submitZaak(array $zaakEnvelope, array $context = []): ZgwPushResult;
+    public function submitZaak(array $zaakEnvelope, array $context=[]): ZgwPushResult;
 
     /**
      * Push a Document envelope to a neighbouring ZGW Documenten-API.
@@ -112,7 +112,7 @@ interface ZgwExternalAdapterInterface
      * @return ZgwPushResult The dispatch outcome (status +
      *                       receiver-side document URL).
      */
-    public function submitDocument(array $documentEnvelope, array $context = []): ZgwPushResult;
+    public function submitDocument(array $documentEnvelope, array $context=[]): ZgwPushResult;
 
     /**
      * Whether the adapter is dormant — i.e. wired but not contacting

@@ -121,7 +121,11 @@ class DSOIntakeController extends Controller
             );
         }
 
-        $payload = $rawBody !== '' ? json_decode(json: (string) $rawBody, associative: true) : null;
+        $payload = null;
+        if ($rawBody !== '') {
+            $payload = json_decode(json: (string) $rawBody, associative: true);
+        }
+
         if (is_array($payload) === false) {
             // Fall back to parsed request params (e.g. Content-Type: application/json).
             $payload = $this->request->getParams();
@@ -170,10 +174,15 @@ class DSOIntakeController extends Controller
         // Read the configured secret from app config (canonical Nextcloud
         // pattern); fall back to the DSO_WEBHOOK_SECRET environment variable
         // for parity with OpenConnector-fronted deployments.
+        $envSecret = getenv('DSO_WEBHOOK_SECRET');
+        if ($envSecret === false) {
+            $envSecret = '';
+        }
+
         $configuredSecret = $this->appConfig->getValueString(
             Application::APP_ID,
             self::DSO_SECRET_KEY,
-            (string) (getenv('DSO_WEBHOOK_SECRET') ?: '')
+            (string) $envSecret
         );
 
         if ($configuredSecret === '') {

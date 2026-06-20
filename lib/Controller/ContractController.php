@@ -116,7 +116,7 @@ class ContractController extends Controller
     #[NoAdminRequired]
     public function index(): JSONResponse
     {
-        $supplierRef = $this->resolveSupplierRef($err);
+        $supplierRef = $this->resolveSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -149,7 +149,7 @@ class ContractController extends Controller
     #[NoAdminRequired]
     public function show(string $id): JSONResponse
     {
-        $supplierRef = $this->resolveSupplierRef($err);
+        $supplierRef = $this->resolveSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -188,7 +188,7 @@ class ContractController extends Controller
     #[NoAdminRequired]
     public function requestRenewal(string $id): JSONResponse
     {
-        $supplierRef = $this->resolveSupplierRef($err);
+        $supplierRef = $this->resolveSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -225,11 +225,13 @@ class ContractController extends Controller
         }
 
         // REQ-PDCD-001: return decisionRef so the caller can track the decidesk Decision.
-        return new JSONResponse([
-            'ok'          => true,
-            'caseRef'     => (string) ($result['caseRef'] ?? ''),
-            'decisionRef' => (string) ($result['decisionRef'] ?? ''),
-        ]);
+        return new JSONResponse(
+                [
+                    'ok'          => true,
+                    'caseRef'     => (string) ($result['caseRef'] ?? ''),
+                    'decisionRef' => (string) ($result['decisionRef'] ?? ''),
+                ]
+                );
     }//end requestRenewal()
 
     /**

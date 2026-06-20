@@ -57,12 +57,13 @@ class TermijnController extends Controller
     /**
      * Constructor.
      *
-     * @param string                  $appName    App id.
-     * @param IRequest                $request    Request.
-     * @param TermijnService          $termijn    Termijn service.
-     * @param TermijnPauseService     $pause      Pause service.
-     * @param TermijnExtensionService $extension  Extension service.
-     * @param LoggerInterface         $logger     Logger.
+     * @param string                  $appName     App id.
+     * @param IRequest                $request     Request.
+     * @param TermijnService          $termijn     Termijn service.
+     * @param TermijnPauseService     $pause       Pause service.
+     * @param TermijnExtensionService $extension   Extension service.
+     * @param IUserSession            $userSession User session.
+     * @param LoggerInterface         $logger      Logger.
      */
     public function __construct(
         string $appName,
@@ -73,7 +74,7 @@ class TermijnController extends Controller
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -95,6 +96,7 @@ class TermijnController extends Controller
         if ($user === null) {
             return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
         }
+
         return null;
     }//end ensureAuthenticated()
 
@@ -109,57 +111,67 @@ class TermijnController extends Controller
      */
     public function create(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $body     = $this->jsonBody();
         $zaakId   = (string) ($body['zaakId'] ?? '');
         $zaaktype = (string) ($body['zaaktype'] ?? '');
         if ($zaakId === '' || $zaaktype === '') {
-            return $this->badRequest('zaakId and zaaktype are required');
+            return $this->badRequest(msg: 'zaakId and zaaktype are required');
         }
 
         try {
             $row = $this->termijn->createTermijnInstance($zaakId, $zaaktype);
             return new JSONResponse($row, Http::STATUS_CREATED);
         } catch (Throwable $e) {
-            return $this->error($e, 'Termijn create failed');
+            return $this->error(e: $e, log: 'Termijn create failed');
         }
     }//end create()
 
     /**
      * Get a TermijnInstance by id.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Instance id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function show(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $row = $this->termijn->getTermijnInstance($id);
         if ($row === null) {
-            return $this->notFound('TermijnInstance not found: '.$id);
+            return $this->notFound(msg: 'TermijnInstance not found: '.$id);
         }
+
         return new JSONResponse($row);
     }//end show()
 
     /**
      * Pause a TermijnInstance.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Instance id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function pauze(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $body         = $this->jsonBody();
         $duurDagen    = (int) ($body['duurDagen'] ?? 0);
         $motivering   = (string) ($body['motivering'] ?? '');
@@ -169,134 +181,169 @@ class TermijnController extends Controller
             $row = $this->pause->registerPauze($id, $duurDagen, $motivering, $documentLink);
             return new JSONResponse($row);
         } catch (Throwable $e) {
-            return $this->error($e, 'Pauze failed');
+            return $this->error(e: $e, log: 'Pauze failed');
         }
     }//end pauze()
 
     /**
      * Resume after pauze.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Instance id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function hervat(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $body = $this->jsonBody();
         $when = (string) ($body['aanvullingDatum'] ?? '');
+        if ($when !== '') {
+            $resumeAt = new DateTimeImmutable($when);
+        } else {
+            $resumeAt = null;
+        }
 
         try {
-            $row = $this->pause->resumeAfterPauze($id, $when !== '' ? new DateTimeImmutable($when) : null);
+            $row = $this->pause->resumeAfterPauze($id, $resumeAt);
             return new JSONResponse($row);
         } catch (Throwable $e) {
-            return $this->error($e, 'Hervat failed');
+            return $this->error(e: $e, log: 'Hervat failed');
         }
     }//end hervat()
 
     /**
      * Request a verlenging.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Instance id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function verleng(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
-        $body               = $this->jsonBody();
-        $motivering         = (string) ($body['motivering'] ?? '');
-        $newEinddatum       = (string) ($body['newEinddatum'] ?? '');
-        $documentLink       = (string) ($body['documentLink'] ?? '');
-        $supervisorOverride = (bool)   ($body['supervisorOverride'] ?? false);
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
+        $body         = $this->jsonBody();
+        $motivering   = (string) ($body['motivering'] ?? '');
+        $newEinddatum = (string) ($body['newEinddatum'] ?? '');
+        $documentLink = (string) ($body['documentLink'] ?? '');
+        $supervisorOverride = (bool) ($body['supervisorOverride'] ?? false);
 
         try {
             $row = $this->extension->requestExtension($id, $motivering, $newEinddatum, $documentLink, $supervisorOverride);
             return new JSONResponse($row);
         } catch (Throwable $e) {
-            return $this->error($e, 'Verleng failed');
+            return $this->error(e: $e, log: 'Verleng failed');
         }
     }//end verleng()
 
     /**
      * Mark a TermijnInstance as voltooid.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Instance id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function voltooi(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $body         = $this->jsonBody();
         $when         = (string) ($body['voltooiDatum'] ?? '');
         $documentLink = (string) ($body['documentLink'] ?? '');
+        if ($when !== '') {
+            $completedAt = new DateTimeImmutable($when);
+        } else {
+            $completedAt = null;
+        }
 
         try {
             $row = $this->termijn->markTermijnCompleted(
                 $id,
-                $when !== '' ? new DateTimeImmutable($when) : null,
+                $completedAt,
                 $documentLink
             );
             if ($row === null) {
-                return $this->notFound('TermijnInstance not found: '.$id);
+                return $this->notFound(msg: 'TermijnInstance not found: '.$id);
             }
+
             return new JSONResponse($row);
         } catch (Throwable $e) {
-            return $this->error($e, 'Voltooi failed');
+            return $this->error(e: $e, log: 'Voltooi failed');
         }
     }//end voltooi()
 
     /**
+     * Decode the JSON request body into an array.
+     *
      * @return array<string, mixed>
      */
     private function jsonBody(): array
     {
         // OCP\IRequest::getContent() is protected on the concrete OC
         // request; read raw payload from php://input instead.
-        $raw = (string) file_get_contents('php://input');
+        $raw  = (string) file_get_contents('php://input');
         $body = json_decode($raw, true);
-        return is_array($body) === true ? $body : [];
-    }
+        if (is_array($body) === true) {
+            return $body;
+        }
+
+        return [];
+    }//end jsonBody()
 
     /**
+     * Build a 400 Bad Request response.
+     *
      * @param string $msg Message.
+     *
      * @return JSONResponse
      */
     private function badRequest(string $msg): JSONResponse
     {
         return new JSONResponse(['message' => $msg], Http::STATUS_BAD_REQUEST);
-    }
+    }//end badRequest()
 
     /**
+     * Build a 404 Not Found response.
+     *
      * @param string $msg Message.
+     *
      * @return JSONResponse
      */
     private function notFound(string $msg): JSONResponse
     {
         return new JSONResponse(['message' => $msg], Http::STATUS_NOT_FOUND);
-    }
+    }//end notFound()
 
     /**
+     * Build a 400 response from a caught exception.
+     *
      * @param Throwable $e   Exception.
      * @param string    $log Log prefix.
+     *
      * @return JSONResponse
      */
     private function error(Throwable $e, string $log): JSONResponse
     {
         $this->logger->info($log.': '.$e->getMessage());
         return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-    }
+    }//end error()
 }//end class

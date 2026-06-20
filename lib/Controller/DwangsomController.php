@@ -50,12 +50,13 @@ class DwangsomController extends Controller
     /**
      * Constructor.
      *
-     * @param string                     $appName    App id.
-     * @param IRequest                   $request    Request.
-     * @param DwangsomCalculationService $calc       Calculation service.
-     * @param DwangsomBezwaarService     $bezwaar    Bezwaar service.
-     * @param SettingsService            $settings   Settings.
-     * @param LoggerInterface            $logger     Logger.
+     * @param string                     $appName     App id.
+     * @param IRequest                   $request     Request.
+     * @param DwangsomCalculationService $calc        Calculation service.
+     * @param DwangsomBezwaarService     $bezwaar     Bezwaar service.
+     * @param SettingsService            $settings    Settings.
+     * @param IUserSession               $userSession User session.
+     * @param LoggerInterface            $logger      Logger.
      */
     public function __construct(
         string $appName,
@@ -66,7 +67,7 @@ class DwangsomController extends Controller
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -80,23 +81,27 @@ class DwangsomController extends Controller
         if ($user === null) {
             return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
         }
+
         return null;
     }//end ensureAuthenticated()
 
     /**
      * Get a DwangsomBerekening by id.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function show(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $objectService = $this->settings->getObjectService();
         $register      = (string) $this->settings->getConfigValue('register');
         $schema        = (string) $this->settings->getConfigValue('dwangsom_berekening_schema');
@@ -109,47 +114,56 @@ class DwangsomController extends Controller
         } catch (Throwable $e) {
             return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
         }
+
         if (is_array($row) === false) {
             return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
         }
+
         return new JSONResponse($row);
     }//end show()
 
     /**
      * Stop the berekening because a beschikking was filed.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function beschikking(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $row = $this->calc->stopForBeschikking($id);
         if ($row === null) {
             return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
         }
+
         return new JSONResponse($row);
     }//end beschikking()
 
     /**
      * Register a bezwaar.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function bezwaar(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $body       = $this->jsonBody();
         $grondslag  = (string) ($body['grondslag'] ?? 'AWB 7:1');
         $motivering = (string) ($body['motivering'] ?? '');
@@ -165,20 +179,23 @@ class DwangsomController extends Controller
     /**
      * Resolve a bezwaar with a corrected amount.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
     public function bezwaarHeroverweging(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
-        $body        = $this->jsonBody();
-        $newBedrag   = (int) ($body['newBedragCents'] ?? -1);
-        $grondslag   = (string) ($body['grondslag'] ?? 'AWB 7:11');
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
+        $body      = $this->jsonBody();
+        $newBedrag = (int) ($body['newBedragCents'] ?? -1);
+        $grondslag = (string) ($body['grondslag'] ?? 'AWB 7:11');
         if ($newBedrag < 0) {
             return new JSONResponse(['message' => 'newBedragCents required and must be >= 0'], Http::STATUS_BAD_REQUEST);
         }
@@ -192,6 +209,8 @@ class DwangsomController extends Controller
     }//end bezwaarHeroverweging()
 
     /**
+     * Decode the JSON request body into an associative array.
+     *
      * @return array<string, mixed>
      */
     private function jsonBody(): array
@@ -200,6 +219,10 @@ class DwangsomController extends Controller
         // request; read raw payload from php://input instead.
         $raw  = (string) file_get_contents('php://input');
         $body = json_decode($raw, true);
-        return is_array($body) === true ? $body : [];
-    }
+        if (is_array($body) === true) {
+            return $body;
+        }
+
+        return [];
+    }//end jsonBody()
 }//end class

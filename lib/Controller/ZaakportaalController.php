@@ -86,9 +86,9 @@ class ZaakportaalController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
-
      *
-     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11     */
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11
+     */
     public function cases(): JSONResponse
     {
         try {
@@ -112,9 +112,9 @@ class ZaakportaalController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
-
      *
-     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11     */
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11
+     */
     public function caseDetail(string $id): JSONResponse
     {
         try {
@@ -136,9 +136,9 @@ class ZaakportaalController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
-
      *
-     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11     */
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11
+     */
     public function messages(): JSONResponse
     {
         $caseId = (string) $this->request->getParam('caseId', '');
@@ -161,9 +161,9 @@ class ZaakportaalController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
-
      *
-     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11     */
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11
+     */
     public function sendMessage(): JSONResponse
     {
         try {
@@ -185,9 +185,9 @@ class ZaakportaalController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
-
      *
-     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11     */
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11
+     */
     public function objectionDeadline(): JSONResponse
     {
         try {
@@ -209,9 +209,9 @@ class ZaakportaalController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
-
      *
-     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11     */
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11
+     */
     public function submitObjection(): JSONResponse
     {
         try {
@@ -233,9 +233,9 @@ class ZaakportaalController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
-
      *
-     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11     */
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11
+     */
     public function submitComplaint(): JSONResponse
     {
         try {
@@ -257,9 +257,9 @@ class ZaakportaalController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
-
      *
-     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11     */
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11
+     */
     public function requests(): JSONResponse
     {
         try {
@@ -280,9 +280,9 @@ class ZaakportaalController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
-
      *
-     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11     */
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11
+     */
     public function getPreferences(): JSONResponse
     {
         try {
@@ -303,9 +303,9 @@ class ZaakportaalController extends Controller
      * @NoAdminRequired
      *
      * @psalm-suppress PossiblyUnusedMethod
-
      *
-     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11     */
+     * @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-11
+     */
     public function updatePreferences(): JSONResponse
     {
         try {

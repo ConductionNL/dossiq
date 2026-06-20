@@ -102,7 +102,12 @@ class SentimentAnalysisJob extends TimedJob
         $triggerWords = $this->triggerWords();
 
         try {
-            $contacts = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $contactmomentSchema, filters: ['_limit' => 200]);
+            $contacts = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $contactmomentSchema,
+                filters: ['_limit' => 200],
+            );
         } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: sentiment job could not load contactmomenten: '.$e->getMessage(),
@@ -153,7 +158,12 @@ class SentimentAnalysisJob extends TimedJob
         }
 
         // Skip when a sentiment record already exists for this contact.
-        $existing = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $sentimentSchema, filters: ['contactmomentId' => $contactId, '_limit' => 1]);
+        $existing = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $sentimentSchema,
+            filters: ['contactmomentId' => $contactId, '_limit' => 1],
+        );
         if (empty((array) $existing) === false) {
             return;
         }

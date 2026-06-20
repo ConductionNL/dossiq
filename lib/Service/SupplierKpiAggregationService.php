@@ -7,8 +7,13 @@
  * on-time percentage, dispute rate, compliance score, and a municipal
  * benchmark over all suppliers in the same period.
  *
- * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @category Service
+ * @package  OCA\Procest\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
@@ -68,7 +73,7 @@ class SupplierKpiAggregationService
         }
 
         return round(array_sum($deltas) / count($deltas), 2);
-    }
+    }//end calculatePaymentDaysMetric()
 
     /**
      * On-time percentage — paid by dueDate / total.
@@ -79,23 +84,27 @@ class SupplierKpiAggregationService
      */
     public function calculateOnTimePercentage(array $invoices): float
     {
-        $paid    = 0;
-        $onTime  = 0;
+        $paid   = 0;
+        $onTime = 0;
         foreach ($invoices as $inv) {
             if ((string) ($inv['status'] ?? '') !== 'paid') {
                 continue;
             }
 
             $paid++;
-            $due  = strtotime((string) ($inv['dueDate'] ?? ''));
-            $paid_d = strtotime((string) ($inv['actualPaymentDate'] ?? ''));
-            if ($due !== false && $paid_d !== false && $paid_d <= $due) {
+            $due      = strtotime((string) ($inv['dueDate'] ?? ''));
+            $paidDate = strtotime((string) ($inv['actualPaymentDate'] ?? ''));
+            if ($due !== false && $paidDate !== false && $paidDate <= $due) {
                 $onTime++;
             }
         }
 
-        return $paid === 0 ? 0.0 : round(($onTime / $paid) * 100, 2);
-    }
+        if ($paid === 0) {
+            return 0.0;
+        }
+
+        return round(($onTime / $paid) * 100, 2);
+    }//end calculateOnTimePercentage()
 
     /**
      * Dispute rate — disputed / total.
@@ -118,13 +127,13 @@ class SupplierKpiAggregationService
         }
 
         return round(($disputed / count($invoices)) * 100, 2);
-    }
+    }//end calculateDisputeRate()
 
     /**
      * Weighted compliance score: 40% on-time, 30% dispute-free, 30% complete.
      *
-     * @param float $onTimePct      On-time percentage.
-     * @param float $disputeRate    Dispute rate.
+     * @param float $onTimePct       On-time percentage.
+     * @param float $disputeRate     Dispute rate.
      * @param float $completenessPct Field completeness percentage.
      *
      * @return float
@@ -135,7 +144,7 @@ class SupplierKpiAggregationService
             (0.4 * $onTimePct) + (0.3 * (100 - $disputeRate)) + (0.3 * $completenessPct),
             2
         );
-    }
+    }//end calculateComplianceScore()
 
     /**
      * Aggregate all four KPIs + sufficientData flag.
@@ -153,10 +162,10 @@ class SupplierKpiAggregationService
      */
     public function aggregateKpis(array $invoices): array
     {
-        $payDays    = $this->calculatePaymentDaysMetric($invoices);
-        $onTime     = $this->calculateOnTimePercentage($invoices);
-        $disputeRate= $this->calculateDisputeRate($invoices);
-        $compliance = $this->calculateComplianceScore($onTime, $disputeRate);
+        $payDays     = $this->calculatePaymentDaysMetric(invoices: $invoices);
+        $onTime      = $this->calculateOnTimePercentage(invoices: $invoices);
+        $disputeRate = $this->calculateDisputeRate(invoices: $invoices);
+        $compliance  = $this->calculateComplianceScore(onTimePct: $onTime, disputeRate: $disputeRate);
         return [
             'avgPaymentDays'   => $payDays,
             'onTimePercentage' => $onTime,
@@ -165,7 +174,7 @@ class SupplierKpiAggregationService
             'sufficientData'   => count($invoices) >= self::MIN_INVOICES_FOR_TREND,
             'invoiceCount'     => count($invoices),
         ];
-    }
+    }//end aggregateKpis()
 
     /**
      * Compute the municipal benchmark (mean of mean) across suppliers.
@@ -187,11 +196,15 @@ class SupplierKpiAggregationService
 
         $out = [];
         foreach ($bench as $k => $vals) {
-            $out[$k] = count($vals) > 0 ? round(array_sum($vals) / count($vals), 2) : 0.0;
+            if (count($vals) > 0) {
+                $out[$k] = round(array_sum($vals) / count($vals), 2);
+            } else {
+                $out[$k] = 0.0;
+            }
         }
 
         return $out;
-    }
+    }//end computeBenchmark()
 
     /**
      * Build a CSV export of supplier KPIs.
@@ -205,19 +218,28 @@ class SupplierKpiAggregationService
         $headers = ['period', 'supplierRef', 'avgPaymentDays', 'onTimePercentage', 'disputeRate', 'complianceScore', 'sufficientData'];
         $lines   = [implode(',', $headers)];
         foreach ($rows as $r) {
-            $lines[] = implode(',', [
-                (string) ($r['period']           ?? ''),
-                (string) ($r['supplierRef']      ?? ''),
-                $this->fmtFloat($r['avgPaymentDays']   ?? null),
-                $this->fmtFloat($r['onTimePercentage'] ?? null),
-                $this->fmtFloat($r['disputeRate']      ?? null),
-                $this->fmtFloat($r['complianceScore']  ?? null),
-                (($r['sufficientData'] ?? false) === true) ? 'true' : 'false',
-            ]);
+            if (($r['sufficientData'] ?? false) === true) {
+                $sufficient = 'true';
+            } else {
+                $sufficient = 'false';
+            }
+
+            $lines[] = implode(
+                    ',',
+                    [
+                        (string) ($r['period'] ?? ''),
+                        (string) ($r['supplierRef'] ?? ''),
+                        $this->fmtFloat(val: $r['avgPaymentDays'] ?? null),
+                        $this->fmtFloat(val: $r['onTimePercentage'] ?? null),
+                        $this->fmtFloat(val: $r['disputeRate'] ?? null),
+                        $this->fmtFloat(val: $r['complianceScore'] ?? null),
+                        $sufficient,
+                    ]
+                    );
         }
 
         return implode("\n", $lines)."\n";
-    }
+    }//end buildCsvExport()
 
     /**
      * Format a float to 1 decimal (or empty for null).
@@ -233,5 +255,5 @@ class SupplierKpiAggregationService
         }
 
         return number_format((float) $val, 1, '.', '');
-    }
-}
+    }//end fmtFloat()
+}//end class

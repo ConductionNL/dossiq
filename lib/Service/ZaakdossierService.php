@@ -63,9 +63,10 @@ class ZaakdossierService
     /**
      * Constructor.
      *
-     * @param SettingsService    $settingsService Settings service (config + ObjectService).
-     * @param ZgwDocumentService $documentService Binary file storage service.
-     * @param LoggerInterface    $logger          Logger.
+     * @param SettingsService             $settingsService Settings service (config + ObjectService).
+     * @param ZgwDocumentService          $documentService Binary file storage service.
+     * @param InformatieobjectAccessGuard $accessGuard     Classification access guard.
+     * @param LoggerInterface             $logger          Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -107,7 +108,7 @@ class ZaakdossierService
             throw new \RuntimeException('informatieobjecttype is required');
         }
 
-        $defaultClassification = $this->resolveDefaultClassification($type);
+        $defaultClassification = $this->resolveDefaultClassification(type: $type);
         $classification        = (string) ($metadata['vertrouwelijkheidaanduiding'] ?? '');
         if ($classification === '') {
             $classification = $defaultClassification;
@@ -124,27 +125,31 @@ class ZaakdossierService
         $hash = hash('sha256', $content);
 
         $informatieobject = [
-            'titel'                        => (string) ($metadata['titel'] ?? $fileName),
-            'bestandsnaam'                 => $fileName,
-            'bestandsomvang'               => strlen($content),
-            'formaat'                      => (string) ($metadata['formaat'] ?? 'application/octet-stream'),
-            'vertrouwelijkheidaanduiding'  => $classification,
-            'auteur'                       => (string) ($metadata['auteur'] ?? ''),
-            'status'                       => 'concept',
-            'informatieobjecttype'         => $type,
-            'creatiedatum'                 => (string) ($metadata['creatiedatum'] ?? date('Y-m-d')),
-            'bronorganisatie'              => (string) ($metadata['bronorganisatie'] ?? ''),
-            'taal'                         => (string) ($metadata['taal'] ?? 'nld'),
-            'beschrijving'                 => (string) ($metadata['beschrijving'] ?? ''),
-            'integriteit'                  => [
+            'titel'                       => (string) ($metadata['titel'] ?? $fileName),
+            'bestandsnaam'                => $fileName,
+            'bestandsomvang'              => strlen($content),
+            'formaat'                     => (string) ($metadata['formaat'] ?? 'application/octet-stream'),
+            'vertrouwelijkheidaanduiding' => $classification,
+            'auteur'                      => (string) ($metadata['auteur'] ?? ''),
+            'status'                      => 'concept',
+            'informatieobjecttype'        => $type,
+            'creatiedatum'                => (string) ($metadata['creatiedatum'] ?? date('Y-m-d')),
+            'bronorganisatie'             => (string) ($metadata['bronorganisatie'] ?? ''),
+            'taal'                        => (string) ($metadata['taal'] ?? 'nld'),
+            'beschrijving'                => (string) ($metadata['beschrijving'] ?? ''),
+            'integriteit'                 => [
                 'algoritme' => 'sha256',
                 'waarde'    => $hash,
                 'datum'     => $now,
             ],
         ];
 
-        $saved  = $objectService->saveObject(object: $informatieobject, register: $register, schema: $infoSchema);
-        $infoId = is_object($saved) === true ? $saved->getUuid() : ((string) ($informatieobject['id'] ?? ''));
+        $saved = $objectService->saveObject(object: $informatieobject, register: $register, schema: $infoSchema);
+        if (is_object($saved) === true) {
+            $infoId = $saved->getUuid();
+        } else {
+            $infoId = (string) ($informatieobject['id'] ?? '');
+        }
 
         // Persist the binary content under the informatieobject UUID folder.
         $this->documentService->storeRaw(uuid: $infoId, fileName: $fileName, content: $content);
@@ -298,9 +303,15 @@ class ZaakdossierService
             ['app' => Application::APP_ID],
         );
 
+        if (isset($updateData['vergrendeldOp']) === true) {
+            $vergrendeldOp = ['vergrendeldOp' => $updateData['vergrendeldOp']];
+        } else {
+            $vergrendeldOp = [];
+        }
+
         return array_merge(
             ['id' => $infoObjectId, 'status' => $newStatus],
-            (isset($updateData['vergrendeldOp']) === true ? ['vergrendeldOp' => $updateData['vergrendeldOp']] : []),
+            $vergrendeldOp,
         );
     }//end transitionStatus()
 
@@ -371,7 +382,7 @@ class ZaakdossierService
             }
         }
 
-        return $this->groupByType($documents);
+        return $this->groupByType(documents: $documents);
     }//end getDossierForCase()
 
     /**
@@ -567,8 +578,12 @@ class ZaakdossierService
             'registratiedatum'    => date('Y-m-d\TH:i:s\Z'),
         ];
 
-        $saved  = $objectService->saveObject(object: $join, register: $register, schema: $joinSchema);
-        $joinId = is_object($saved) === true ? $saved->getUuid() : '';
+        $saved = $objectService->saveObject(object: $join, register: $register, schema: $joinSchema);
+        if (is_object($saved) === true) {
+            $joinId = $saved->getUuid();
+        } else {
+            $joinId = '';
+        }
 
         return [
             'id'               => $joinId,

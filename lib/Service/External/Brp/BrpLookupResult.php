@@ -61,7 +61,7 @@ final class BrpLookupResult
         public readonly string $lookupStatus,
         public readonly array $persoon,
         public readonly bool $dormant,
-        public readonly array $extras = [],
+        public readonly array $extras=[],
     ) {
     }//end __construct()
 }//end class

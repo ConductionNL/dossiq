@@ -70,11 +70,11 @@ class TenantJwtService
     /**
      * Encode a tenant-aware JWT.
      *
-     * @param string             $subject  Subject (NC user ID).
-     * @param string             $tenantId Tenant UUID.
+     * @param string             $subject    Subject (NC user ID).
+     * @param string             $tenantId   Tenant UUID.
      * @param string             $tenantSlug Tenant slug.
-     * @param array<int, string> $roles    Roles inside the tenant.
-     * @param int|null           $ttl      Override default TTL (seconds).
+     * @param array<int, string> $roles      Roles inside the tenant.
+     * @param int|null           $ttl        Override default TTL (seconds).
      *
      * @return string Compact JWT string.
      */
@@ -85,18 +85,18 @@ class TenantJwtService
 
         $header = ['alg' => self::ALG, 'typ' => 'JWT'];
         $claims = [
-            'sub'          => $subject,
-            'tenant_id'    => $tenantId,
-            'tenant_slug'  => $tenantSlug,
-            'roles'        => array_values($roles),
-            'iat'          => $iat,
-            'exp'          => $exp,
-            'iss'          => 'procest',
+            'sub'         => $subject,
+            'tenant_id'   => $tenantId,
+            'tenant_slug' => $tenantSlug,
+            'roles'       => array_values($roles),
+            'iat'         => $iat,
+            'exp'         => $exp,
+            'iss'         => 'procest',
         ];
 
-        $hPart = $this->b64UrlEncode((string) json_encode($header, JSON_UNESCAPED_SLASHES));
-        $cPart = $this->b64UrlEncode((string) json_encode($claims, JSON_UNESCAPED_SLASHES));
-        $sig   = $this->b64UrlEncode($this->signRaw($hPart.'.'.$cPart));
+        $hPart = $this->b64UrlEncode(bytes: (string) json_encode($header, JSON_UNESCAPED_SLASHES));
+        $cPart = $this->b64UrlEncode(bytes: (string) json_encode($claims, JSON_UNESCAPED_SLASHES));
+        $sig   = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart.'.'.$cPart));
         return $hPart.'.'.$cPart.'.'.$sig;
     }//end createToken()
 
@@ -151,12 +151,12 @@ class TenantJwtService
 
         [$hPart, $cPart, $sPart] = $parts;
 
-        $expected = $this->b64UrlEncode($this->signRaw($hPart.'.'.$cPart));
+        $expected = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart.'.'.$cPart));
         if (hash_equals($expected, $sPart) === false) {
             throw new RuntimeException('Invalid JWT signature');
         }
 
-        $claims = json_decode($this->b64UrlDecode($cPart), true);
+        $claims = json_decode($this->b64UrlDecode(encoded: $cPart), true);
         if (is_array($claims) === false) {
             throw new RuntimeException('Malformed JWT claims');
         }

@@ -70,12 +70,12 @@ class TermijnCaseCreatedListener implements IEventListener
             return;
         }
 
-        $payload = $this->extractObject($event);
+        $payload = $this->extractObject(event: $event);
         if ($payload === null) {
             return;
         }
 
-        if ($this->resolveSchemaSlug($payload) !== 'case') {
+        if ($this->resolveSchemaSlug(payload: $payload) !== 'case') {
             return;
         }
 
@@ -137,6 +137,7 @@ class TermijnCaseCreatedListener implements IEventListener
             if (isset($self['schemaSlug']) === true) {
                 return (string) $self['schemaSlug'];
             }
+
             if (isset($self['schema']) === true && is_string($self['schema']) === true) {
                 return $self['schema'];
             }
@@ -145,6 +146,7 @@ class TermijnCaseCreatedListener implements IEventListener
         if (isset($payload['_schemaSlug']) === true) {
             return (string) $payload['_schemaSlug'];
         }
+
         if (isset($payload['schemaSlug']) === true) {
             return (string) $payload['schemaSlug'];
         }

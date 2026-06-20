@@ -42,8 +42,8 @@ use RuntimeException;
  */
 class IngebrekestellingService
 {
-    public const TARIFF_AWB_PLAFOND   = 144200;
-    public const TARIFF_AWB_GRACE     = 14;
+    public const TARIFF_AWB_PLAFOND = 144200;
+    public const TARIFF_AWB_GRACE   = 14;
 
     /**
      * Constructor.
@@ -62,10 +62,10 @@ class IngebrekestellingService
     /**
      * Register an ingebrekestelling against a TermijnInstance.
      *
-     * @param string                 $termijnInstanceId TermijnInstance id.
-     * @param DateTimeImmutable      $ontvangstDatum    Receipt date.
-     * @param string                 $kanaal            Receipt channel.
-     * @param string                 $documentLink      Document link.
+     * @param string            $termijnInstanceId TermijnInstance id.
+     * @param DateTimeImmutable $ontvangstDatum    Receipt date.
+     * @param string            $kanaal            Receipt channel.
+     * @param string            $documentLink      Document link.
      *
      * @return array<string, mixed> The ingebrekestelling row (with possibly null/created berekening).
      *
@@ -77,7 +77,7 @@ class IngebrekestellingService
         string $termijnInstanceId,
         DateTimeImmutable $ontvangstDatum,
         string $kanaal,
-        string $documentLink = ''
+        string $documentLink=''
     ): array {
         $instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
         if ($instance === null) {
@@ -91,15 +91,20 @@ class IngebrekestellingService
         $isValid = ($status === 'overschreden' && $deadline !== '' && $deadline < $receipt);
 
         $row = [
-            'termijnInstance'   => $termijnInstanceId,
-            'ontvangstDatum'    => $receipt,
-            'kanaal'            => $kanaal,
-            'gevalideerd'       => $isValid,
-            'geldigheidStatus'  => ($isValid === true ? 'geldig' : 'premaat'),
-            'documentLink'      => $documentLink,
+            'termijnInstance' => $termijnInstanceId,
+            'ontvangstDatum'  => $receipt,
+            'kanaal'          => $kanaal,
+            'gevalideerd'     => $isValid,
+            'documentLink'    => $documentLink,
         ];
 
-        $saved = $this->saveSchema('ingebrekestelling_schema', $row);
+        if ($isValid === true) {
+            $row['geldigheidStatus'] = 'geldig';
+        } else {
+            $row['geldigheidStatus'] = 'premaat';
+        }
+
+        $saved     = $this->saveSchema(schemaConfigKey: 'ingebrekestelling_schema', object: $row);
         $row['id'] = (string) ($saved['id'] ?? '');
 
         if ($isValid === false) {
@@ -127,21 +132,30 @@ class IngebrekestellingService
             ['relevantIngbrekes' => (string) $row['id']]
         );
 
-        $regime  = $this->resolveRegime($instance);
+        $regime  = $this->resolveRegime(instance: $instance);
         $startAt = $ontvangstDatum->modify('+'.((int) $regime['grace']).' days')->format('Y-m-d');
 
-        $berekening = $this->saveSchema('dwangsom_berekening_schema', [
-            'ingebrekestelling' => (string) $row['id'],
-            'termijnInstance'   => $termijnInstanceId,
-            'startDatum'        => $startAt,
-            'huidigeDag'        => 0,
-            'dagtarief'         => 0,
-            'cumulatievBedrag'  => 0,
-            'plafondBerekend'   => (int) $regime['plafond'],
-            'plafondBereikt'    => false,
-            'status'            => 'lopend',
-            'regime'            => ($regime['custom'] === true ? 'afwijkend' : 'awb-default'),
-        ]);
+        if ($regime['custom'] === true) {
+            $regimeLabel = 'afwijkend';
+        } else {
+            $regimeLabel = 'awb-default';
+        }
+
+        $berekening = $this->saveSchema(
+                schemaConfigKey: 'dwangsom_berekening_schema',
+                object: [
+                    'ingebrekestelling' => (string) $row['id'],
+                    'termijnInstance'   => $termijnInstanceId,
+                    'startDatum'        => $startAt,
+                    'huidigeDag'        => 0,
+                    'dagtarief'         => 0,
+                    'cumulatievBedrag'  => 0,
+                    'plafondBerekend'   => (int) $regime['plafond'],
+                    'plafondBereikt'    => false,
+                    'status'            => 'lopend',
+                    'regime'            => $regimeLabel,
+                ]
+                );
 
         $this->termijnService->recordEvent(
             termijnInstanceId: $termijnInstanceId,
@@ -205,7 +219,7 @@ class IngebrekestellingService
 
         return [
             'plafond'     => (int) ($regime['plafond'] ?? self::TARIFF_AWB_PLAFOND),
-            'grace'       => (int) ($regime['grace']   ?? self::TARIFF_AWB_GRACE),
+            'grace'       => (int) ($regime['grace'] ?? self::TARIFF_AWB_GRACE),
             'dailyTariff' => (int) ($regime['dailyTariff'] ?? 0),
             'custom'      => true,
         ];
@@ -230,7 +244,11 @@ class IngebrekestellingService
 
         try {
             $saved = $objectService->saveObject($register, $schema, $object);
-            return is_array($saved) === true ? $saved : $object;
+            if (is_array($saved) === true) {
+                return $saved;
+            }
+
+            return $object;
         } catch (\Throwable $e) {
             $this->logger->error(
                 'IngebrekestellingService persist failed',

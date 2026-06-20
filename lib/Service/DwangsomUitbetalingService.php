@@ -80,11 +80,12 @@ class DwangsomUitbetalingService
         string $berekeningId,
         string $rekeninghouderNaam,
         string $iban,
-        ?DateTimeImmutable $ontvangstDatum = null
+        ?DateTimeImmutable $ontvangstDatum=null
     ): array {
-        if ($this->isValidIban($iban) === false) {
+        if ($this->isValidIban(iban: $iban) === false) {
             throw new RuntimeException('Invalid IBAN provided for dwangsom uitbetaling');
         }
+
         if (trim($rekeninghouderNaam) === '') {
             throw new RuntimeException('rekeninghouderNaam is required');
         }
@@ -102,6 +103,7 @@ class DwangsomUitbetalingService
         } catch (\Throwable $e) {
             throw new RuntimeException('DwangsomBerekening lookup failed: '.$e->getMessage());
         }
+
         if (is_array($berekening) === false) {
             throw new RuntimeException('DwangsomBerekening not found: '.$berekeningId);
         }
@@ -119,7 +121,7 @@ class DwangsomUitbetalingService
             'bedrag'               => $definitief,
             'rekeninghouderNaam'   => $rekeninghouderNaam,
             'iban'                 => strtoupper(str_replace(' ', '', $iban)),
-            'referentie'           => $this->buildReferentie($berekeningId),
+            'referentie'           => $this->buildReferentie(berekeningId: $berekeningId),
             'wettelijkeGrondslag'  => 'AWB 4:17',
             'betaaldatumUiterlijk' => $uiterlijk,
             'status'               => 'voorbereid',
@@ -127,7 +129,11 @@ class DwangsomUitbetalingService
 
         try {
             $saved = $objectService->saveObject($register, $uSchema, $row);
-            return is_array($saved) === true ? $saved : $row;
+            if (is_array($saved) === true) {
+                return $saved;
+            }
+
+            return $row;
         } catch (\Throwable $e) {
             throw new RuntimeException('DwangsomUitbetaling persist failed: '.$e->getMessage());
         }
@@ -151,7 +157,7 @@ class DwangsomUitbetalingService
         string $referentie,
         string $status,
         ?DateTimeImmutable $werkelijkeBetaaldatum,
-        string $betalingsreferentie = ''
+        string $betalingsreferentie=''
     ): array {
         $objectService = $this->settingsService->getObjectService();
         $register      = (string) $this->settingsService->getConfigValue('register');
@@ -161,12 +167,22 @@ class DwangsomUitbetalingService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $uSchema, filters: ['referentie' => $referentie]);
+            $rows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $uSchema,
+                filters: ['referentie' => $referentie],
+            );
         } catch (\Throwable $e) {
             throw new RuntimeException('DwangsomUitbetaling lookup failed: '.$e->getMessage());
         }
 
-        $row = (is_array($rows) === true && count($rows) > 0) ? $rows[0] : null;
+        if (is_array($rows) === true && count($rows) > 0) {
+            $row = $rows[0];
+        } else {
+            $row = null;
+        }
+
         if (is_array($row) === false) {
             throw new RuntimeException('No DwangsomUitbetaling found for referentie '.$referentie);
         }
@@ -175,13 +191,18 @@ class DwangsomUitbetalingService
         if ($betalingsreferentie !== '') {
             $row['betalingsreferentie'] = $betalingsreferentie;
         }
+
         if ($werkelijkeBetaaldatum !== null) {
             $row['werkelijkeBetaaldatum'] = $werkelijkeBetaaldatum->format('Y-m-d');
         }
 
         try {
             $saved = $objectService->saveObject($register, $uSchema, $row);
-            return is_array($saved) === true ? $saved : $row;
+            if (is_array($saved) === true) {
+                return $saved;
+            }
+
+            return $row;
         } catch (\Throwable $e) {
             throw new RuntimeException('DwangsomUitbetaling persist failed: '.$e->getMessage());
         }
@@ -206,10 +227,14 @@ class DwangsomUitbetalingService
         $rearranged = substr($iban, 4).substr($iban, 0, 4);
         $expanded   = '';
         foreach (str_split($rearranged) as $ch) {
-            $expanded .= ctype_alpha($ch) === true ? (string) (ord($ch) - 55) : $ch;
+            if (ctype_alpha($ch) === true) {
+                $expanded .= (string) (ord($ch) - 55);
+            } else {
+                $expanded .= $ch;
+            }
         }
 
-        // mod-97 over a string (PHP int can't hold this directly).
+        // Mod-97 over a string (PHP int can't hold this directly).
         $remainder = '';
         foreach (str_split($expanded) as $digit) {
             $remainder = (string) (((int) ($remainder.$digit)) % 97);

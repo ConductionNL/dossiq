@@ -74,4 +74,4 @@ interface DigidSamlAdapterInterface
      * @return bool True when `digid.feature_flag` is `1`.
      */
     public function isActive(): bool;
-}
+}//end interface

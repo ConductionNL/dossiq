@@ -127,15 +127,14 @@ class ZgwBusinessRulesService
             // CT-02b — publish guard: when a caseType transitions from draft to
             // published (isDraft toggled false), require status types + final
             // status + validFrom before allowing the save.
-            if (
-                $resource === 'zaaktypen'
+            if ($resource === 'zaaktypen'
                 && ($action === 'update' || $action === 'patch')
                 && isset($body['isDraft']) === true
                 && (bool) $body['isDraft'] === false
                 && is_array($existingObject) === true
                 && (bool) ($existingObject['isDraft'] ?? false) === true
             ) {
-                $register = (string) ($mappingConfig['sourceRegister'] ?? '');
+                $register   = (string) ($mappingConfig['sourceRegister'] ?? '');
                 $caseTypeId = (string) ($existingObject['id'] ?? '');
                 if ($register !== '' && $caseTypeId !== '') {
                     $publishErrors = $this->ztcRules->validatePublish($register, $caseTypeId);
@@ -154,14 +153,13 @@ class ZgwBusinessRulesService
             // CT-01d — destroy guard: block deletion of a caseType that still
             // has active (non-final) cases. Allow closed-only with the caller's
             // explicit confirmation flag.
-            if (
-                $resource === 'zaaktypen'
+            if ($resource === 'zaaktypen'
                 && $action === 'destroy'
                 && is_array($existingObject) === true
             ) {
-                $register = (string) ($mappingConfig['sourceRegister'] ?? '');
+                $register   = (string) ($mappingConfig['sourceRegister'] ?? '');
                 $caseTypeId = (string) ($existingObject['id'] ?? '');
-                $confirmed = (bool) ($body['_confirm'] ?? false);
+                $confirmed  = (bool) ($body['_confirm'] ?? false);
                 if ($register !== '' && $caseTypeId !== '') {
                     $delGuard = $this->ztcRules->validateDeletion($register, $caseTypeId);
                     if ($delGuard['blocked'] === true) {
@@ -173,6 +171,7 @@ class ZgwBusinessRulesService
                             'enrichedBody' => $body,
                         ];
                     }
+
                     if ($delGuard['requiresConfirmation'] === true && $confirmed === false) {
                         return [
                             'valid'        => false,
@@ -182,8 +181,8 @@ class ZgwBusinessRulesService
                             'enrichedBody' => $body,
                         ];
                     }
-                }
-            }
+                }//end if
+            }//end if
         }//end if
 
         // ---- ZRC cross-cutting concern: closed zaak protection (zrc-007) ----

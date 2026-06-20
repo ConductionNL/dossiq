@@ -63,11 +63,11 @@ class SupplierProfileController extends Controller
     /**
      * Constructor.
      *
-     * @param IRequest                            $request The request.
-     * @param SupplierMasterDataMutationService   $mutation Master-data mutation service.
-     * @param SupplierScopeService                $scope    Scope + masking helpers.
-     * @param IUserSession                        $userSession Current NC user session.
-     * @param SupplierSessionService              $session  Server-trusted supplier session resolver.
+     * @param IRequest                          $request     The request.
+     * @param SupplierMasterDataMutationService $mutation    Master-data mutation service.
+     * @param SupplierScopeService              $scope       Scope + masking helpers.
+     * @param IUserSession                      $userSession Current NC user session.
+     * @param SupplierSessionService            $session     Server-trusted supplier session resolver.
      */
     public function __construct(
         IRequest $request,
@@ -87,7 +87,11 @@ class SupplierProfileController extends Controller
     private function actorId(): string
     {
         $user = $this->userSession->getUser();
-        return $user === null ? 'system' : $user->getUID();
+        if ($user === null) {
+            return 'system';
+        }
+
+        return $user->getUID();
     }//end actorId()
 
     /**
@@ -124,7 +128,7 @@ class SupplierProfileController extends Controller
      */
     public function updateAddress(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -155,7 +159,7 @@ class SupplierProfileController extends Controller
      */
     public function updateContact(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -186,7 +190,7 @@ class SupplierProfileController extends Controller
      */
     public function requestIbanChange(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }
@@ -204,11 +208,13 @@ class SupplierProfileController extends Controller
             );
         }
 
-        return new JSONResponse([
-            'ok'      => true,
-            'caseRef' => $r['caseRef'] ?? '',
-            'message' => 'Wijziging ingediend',
-        ]);
+        return new JSONResponse(
+                [
+                    'ok'      => true,
+                    'caseRef' => $r['caseRef'] ?? '',
+                    'message' => 'Wijziging ingediend',
+                ]
+                );
     }//end requestIbanChange()
 
     /**
@@ -224,7 +230,7 @@ class SupplierProfileController extends Controller
      */
     public function submitAccreditation(): JSONResponse
     {
-        $supplierRef = $this->requireSupplierRef($err);
+        $supplierRef = $this->requireSupplierRef(error: $err);
         if ($err !== null) {
             return $err;
         }

@@ -6,8 +6,9 @@
  * Aggregates the four dashboard cards (tenders, invoices, contracts, KPI)
  * for the supplier portal landing page.
  *
- * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
@@ -23,13 +24,21 @@ namespace OCA\Procest\Service;
  */
 class SupplierDashboardService
 {
+    /**
+     * Constructor.
+     *
+     * @param SupplierScopeService          $scopeService    Supplier scope service.
+     * @param InvoicePaymentForecastService $invoiceForecast Invoice forecast service.
+     * @param ContractRenewalService        $contractRenewal Contract renewal service.
+     * @param LeverancierViewModelService   $viewModel       View model service.
+     */
     public function __construct(
         private readonly SupplierScopeService $scopeService,
         private readonly InvoicePaymentForecastService $invoiceForecast,
         private readonly ContractRenewalService $contractRenewal,
         private readonly LeverancierViewModelService $viewModel,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Build the dashboard summary for a supplier.
@@ -51,15 +60,15 @@ class SupplierDashboardService
         $contracts = $this->scopeService->listSupplierObjects($supplierRef, 'supplierContract');
 
         return [
-            'tenders'   => $this->summariseTenders($tenders),
-            'invoices'  => $this->summariseInvoices($invoices, $nowTs),
-            'contracts' => $this->summariseContracts($contracts, $nowTs),
+            'tenders'   => $this->summariseTenders(tenders: $tenders),
+            'invoices'  => $this->summariseInvoices(invoices: $invoices, nowTs: $nowTs),
+            'contracts' => $this->summariseContracts(contracts: $contracts, nowTs: $nowTs),
             'kpi'       => [
                 'ready'  => count($invoices) >= 3,
                 'period' => (new \DateTimeImmutable('@'.$nowTs))->format('Y-m'),
             ],
         ];
-    }
+    }//end buildSummary()
 
     /**
      * Tender card.
@@ -75,14 +84,20 @@ class SupplierDashboardService
         $rejected   = 0;
         foreach ($tenders as $t) {
             switch ((string) ($t['status'] ?? '')) {
-                case 'awarded':    $awarded++; break;
-                case 'evaluating': $evaluating++; break;
-                case 'rejected':   $rejected++; break;
+                case 'awarded':    $awarded++;
+
+                    break;
+                case 'evaluating': $evaluating++;
+
+                    break;
+                case 'rejected':   $rejected++;
+
+                    break;
             }
         }
 
         return ['count' => count($tenders), 'awarded' => $awarded, 'evaluating' => $evaluating, 'rejected' => $rejected];
-    }
+    }//end summariseTenders()
 
     /**
      * Invoice card.
@@ -112,7 +127,7 @@ class SupplierDashboardService
             'disputed'      => $disputed,
             'ageAnalysis'   => $this->invoiceForecast->getAgeAnalysis($invoices, $nowTs),
         ];
-    }
+    }//end summariseInvoices()
 
     /**
      * Contract card.
@@ -137,5 +152,5 @@ class SupplierDashboardService
         }
 
         return ['count' => count($contracts), 'expiringSoon' => $expiring, 'autoRenewing' => $autoRenewing];
-    }
-}
+    }//end summariseContracts()
+}//end class

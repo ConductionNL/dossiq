@@ -46,12 +46,12 @@ class TranscriptionService
     /**
      * Recognised transcriptionStatus values.
      */
-    public const STATUS_PENDING    = 'pending';
-    public const STATUS_QUEUED     = 'queued';
-    public const STATUS_RUNNING    = 'running';
-    public const STATUS_DONE       = 'done';
-    public const STATUS_FAILED     = 'failed';
-    public const STATUS_FALLBACK   = 'manual';
+    public const STATUS_PENDING  = 'pending';
+    public const STATUS_QUEUED   = 'queued';
+    public const STATUS_RUNNING  = 'running';
+    public const STATUS_DONE     = 'done';
+    public const STATUS_FAILED   = 'failed';
+    public const STATUS_FALLBACK = 'manual';
 
     /**
      * Maximum allowed voice-memo duration in seconds (spec: 5 min).
@@ -66,9 +66,9 @@ class TranscriptionService
     /**
      * Constructor.
      *
-     * @param SettingsService            $settingsService Settings + register/schema resolver.
-     * @param LoggerInterface            $logger          Logger.
-     * @param TranscriberInterface|null  $transcriber     Optional concrete transcriber; pass null
+     * @param SettingsService           $settingsService Settings + register/schema resolver.
+     * @param LoggerInterface           $logger          Logger.
+     * @param TranscriberInterface|null $transcriber     Optional concrete transcriber; pass null
      *                                                   to defer to a manual transcription flow.
      */
     public function __construct(
@@ -114,7 +114,7 @@ class TranscriptionService
             return $evidence;
         }
 
-        $evidence['transcriptionStatus']  = self::STATUS_QUEUED;
+        $evidence['transcriptionStatus']   = self::STATUS_QUEUED;
         $evidence['transcriptionQueuedAt'] = date(format: 'c');
         $evidence['transcriptionAttempts'] = (int) ($evidence['transcriptionAttempts'] ?? 0);
 
@@ -146,7 +146,7 @@ class TranscriptionService
             return $this->persist(evidence: $evidence);
         }
 
-        $evidence['transcriptionStatus']  = self::STATUS_RUNNING;
+        $evidence['transcriptionStatus']   = self::STATUS_RUNNING;
         $evidence['transcriptionAttempts'] = ((int) ($evidence['transcriptionAttempts'] ?? 0)) + 1;
 
         try {
@@ -165,11 +165,12 @@ class TranscriptionService
                     .self::MAX_RETRIES
                     .' attempts; manual transcription required.';
             } else {
-                $evidence['transcriptionStatus'] = self::STATUS_QUEUED;
+                $evidence['transcriptionStatus']    = self::STATUS_QUEUED;
                 $evidence['transcriptionLastError'] = $e->getMessage();
             }
+
             return $this->persist(evidence: $evidence);
-        }
+        }//end try
 
         $evidence['transcription']            = $text;
         $evidence['transcriptionStatus']      = self::STATUS_DONE;
@@ -213,6 +214,7 @@ class TranscriptionService
         if ($objectService === null) {
             return $evidence;
         }
+
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('field_evidence_schema');
         if ($register === '' || $schema === '') {

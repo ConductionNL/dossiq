@@ -50,6 +50,8 @@ class SeedArchiefEdepotData implements IRepairStep
     }//end __construct()
 
     /**
+     * Return the human-readable name of this repair step.
+     *
      * @return string
      */
     public function getName(): string
@@ -58,7 +60,10 @@ class SeedArchiefEdepotData implements IRepairStep
     }//end getName()
 
     /**
+     * Seed the VNG default retention rules for the Procest archief.
+     *
      * @param IOutput $output Output.
+     *
      * @return void
      *
      * @spec openspec/changes/archief-edepot-handover-01-schema-config/tasks.md
@@ -82,6 +87,7 @@ class SeedArchiefEdepotData implements IRepairStep
                 );
                 return;
             }
+
             $output->warning('Archief seed issue: '.((string) ($r['message'] ?? 'unknown error')));
         } catch (\Throwable $e) {
             $output->warning('Could not seed archief data: '.$e->getMessage());

@@ -161,7 +161,12 @@ class TenantSaasController extends Controller
         try {
             $row = $this->tenantSaasService->updateStatus(tenantId: $tenantId, newStatus: $status);
         } catch (InvalidArgumentException $e) {
-            $code = (str_contains($e->getMessage(), 'not found') === true) ? Http::STATUS_NOT_FOUND : Http::STATUS_CONFLICT;
+            if (str_contains($e->getMessage(), 'not found') === true) {
+                $code = Http::STATUS_NOT_FOUND;
+            } else {
+                $code = Http::STATUS_CONFLICT;
+            }
+
             return new JSONResponse(['success' => false, 'error' => $e->getMessage()], $code);
         } catch (RuntimeException $e) {
             return new JSONResponse(['success' => false, 'error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);

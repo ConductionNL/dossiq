@@ -97,7 +97,7 @@ class TenantSchemaProvisioner
      */
     public function createSchema(string $name): void
     {
-        $this->assertSafeIdentifier($name);
+        $this->assertSafeIdentifier(name: $name);
 
         try {
             // The identifier is whitelisted (assertSafeIdentifier); double-quoting
@@ -123,17 +123,17 @@ class TenantSchemaProvisioner
      */
     public function cloneApplicationTables(string $schemaName): array
     {
-        $this->assertSafeIdentifier($schemaName);
+        $this->assertSafeIdentifier(name: $schemaName);
 
         $sourceTables = $this->listApplicationTables();
         $cloned       = [];
 
         foreach ($sourceTables as $sourceTable) {
-            if ($this->isSharedTable($sourceTable) === true) {
+            if ($this->isSharedTable(tableName: $sourceTable) === true) {
                 continue;
             }
 
-            $tableName = $this->extractTableName($sourceTable);
+            $tableName = $this->extractTableName(fullName: $sourceTable);
             try {
                 $sql = sprintf(
                     'CREATE TABLE "%s"."%s" (LIKE "%s" INCLUDING ALL)',
@@ -150,7 +150,7 @@ class TenantSchemaProvisioner
                     $e
                 );
             }
-        }
+        }//end foreach
 
         $this->logger->info(
             'Procest: cloned application tables into tenant schema',
@@ -171,7 +171,7 @@ class TenantSchemaProvisioner
      */
     public function dropSchema(string $name): void
     {
-        $this->assertSafeIdentifier($name);
+        $this->assertSafeIdentifier(name: $name);
 
         try {
             $sql = 'DROP SCHEMA IF EXISTS "'.$name.'" CASCADE';
@@ -190,12 +190,12 @@ class TenantSchemaProvisioner
      */
     public function schemaExists(string $name): bool
     {
-        $this->assertSafeIdentifier($name);
+        $this->assertSafeIdentifier(name: $name);
         try {
             $qb = $this->db->getQueryBuilder();
             $qb->select('schema_name')
-               ->from('information_schema.schemata')
-               ->where($qb->expr()->eq('schema_name', $qb->createNamedParameter($name)));
+                ->from('information_schema.schemata')
+                ->where($qb->expr()->eq('schema_name', $qb->createNamedParameter($name)));
             $result = $qb->executeQuery();
             $row    = $result->fetchOne();
             $result->closeCursor();
@@ -236,8 +236,8 @@ class TenantSchemaProvisioner
         try {
             $qb = $this->db->getQueryBuilder();
             $qb->select('table_name')
-               ->from('information_schema.tables')
-               ->where($qb->expr()->eq('table_schema', $qb->createNamedParameter('public')));
+                ->from('information_schema.tables')
+                ->where($qb->expr()->eq('table_schema', $qb->createNamedParameter('public')));
             $result = $qb->executeQuery();
             $rows   = $result->fetchAll(\PDO::FETCH_ASSOC);
             $result->closeCursor();
@@ -257,7 +257,7 @@ class TenantSchemaProvisioner
         } catch (Throwable $e) {
             $this->logger->info('Procest: listApplicationTables failed', ['exception' => $e->getMessage()]);
             return [];
-        }
+        }//end try
     }//end listApplicationTables()
 
     /**

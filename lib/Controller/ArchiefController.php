@@ -54,10 +54,14 @@ class ArchiefController extends Controller
     /**
      * Constructor.
      *
-     * @param string          $appName  App id.
-     * @param IRequest        $request  Request.
-     * @param SettingsService $settings Settings.
-     * @param LoggerInterface $logger   Logger.
+     * @param string               $appName         App id.
+     * @param IRequest             $request         Request.
+     * @param SettingsService      $settings        Settings.
+     * @param IUserSession         $userSession     User session.
+     * @param LoggerInterface      $logger          Logger.
+     * @param ArchivalBatchService $batchService    Batch service.
+     * @param RollbackManager      $rollbackManager Rollback manager.
+     * @param IGroupManager        $groupManager    Group manager.
      */
     public function __construct(
         string $appName,
@@ -69,7 +73,7 @@ class ArchiefController extends Controller
         private readonly RollbackManager $rollbackManager,
         private readonly IGroupManager $groupManager,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -89,11 +93,13 @@ class ArchiefController extends Controller
         if ($user === null) {
             return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
         }
+
         $uid   = $user->getUID();
         $group = (string) $this->settings->getConfigValue('archief_role_group');
         if ($group === '') {
             $group = 'admin';
         }
+
         $authorised = $this->groupManager->isAdmin($uid)
             || $this->groupManager->isInGroup($uid, $group);
         if ($authorised === false) {
@@ -102,6 +108,7 @@ class ArchiefController extends Controller
                 Http::STATUS_FORBIDDEN
             );
         }
+
         return null;
     }//end ensureArchiefRole()
 
@@ -117,11 +124,11 @@ class ArchiefController extends Controller
      * trigger returns 404 and any other status returns 409. Retry on an
      * arbitrary or out-of-state trigger is rejected (fail closed).
      *
-     * @NoAdminRequired
-     *
      * @param string $triggerId Trigger id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/archief-edepot-handover-06-proof-rollback/tasks.md
      */
@@ -130,6 +137,7 @@ class ArchiefController extends Controller
         if (($denied = $this->ensureArchiefRole()) !== null) {
             return $denied;
         }
+
         if ($triggerId === '') {
             return new JSONResponse(['message' => 'triggerId is required'], Http::STATUS_BAD_REQUEST);
         }
@@ -141,6 +149,7 @@ class ArchiefController extends Controller
         if ($trigger === null) {
             return new JSONResponse(['message' => 'trigger not found'], Http::STATUS_NOT_FOUND);
         }
+
         if ((string) ($trigger['status'] ?? '') !== 'gefaald') {
             return new JSONResponse(
                 ['message' => 'retry only allowed on triggers in status gefaald'],
@@ -155,7 +164,12 @@ class ArchiefController extends Controller
             return new JSONResponse(['message' => 'Retry failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
         }
 
-        $status = $result['ok'] === true ? Http::STATUS_ACCEPTED : Http::STATUS_OK;
+        if ($result['ok'] === true) {
+            $status = Http::STATUS_ACCEPTED;
+        } else {
+            $status = Http::STATUS_OK;
+        }
+
         return new JSONResponse($result, $status);
     }//end retry()
 
@@ -170,6 +184,7 @@ class ArchiefController extends Controller
         if ($user === null) {
             return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
         }
+
         return null;
     }//end ensureAuthenticated()
 
@@ -184,8 +199,11 @@ class ArchiefController extends Controller
      */
     public function listRules(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
-        return new JSONResponse($this->fetchAll('bewaar_termijn_regel_schema'));
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
+        return new JSONResponse($this->fetchAll(schemaConfigKey: 'bewaar_termijn_regel_schema'));
     }//end listRules()
 
     /**
@@ -199,27 +217,35 @@ class ArchiefController extends Controller
      */
     public function createRule(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $body = $this->jsonBody();
         if ((string) ($body['zaaktypeKey'] ?? '') === '') {
             return new JSONResponse(['message' => 'zaaktypeKey is required'], Http::STATUS_BAD_REQUEST);
         }
+
         $jaren = (int) ($body['bewaartermijnJaren'] ?? 0);
         if ($jaren < 1) {
             return new JSONResponse(['message' => 'bewaartermijnJaren must be >= 1 or 9999 (permanent)'], Http::STATUS_BAD_REQUEST);
         }
+
         $body['isActive'] = $body['isActive'] ?? true;
-        return new JSONResponse($this->saveOne('bewaar_termijn_regel_schema', $body), Http::STATUS_CREATED);
+        return new JSONResponse(
+            $this->saveOne(schemaConfigKey: 'bewaar_termijn_regel_schema', object: $body),
+            Http::STATUS_CREATED
+        );
     }//end createRule()
 
     /**
      * Update a retention rule.
      *
-     * @NoAdminRequired
-     *
      * @param string $ruleId Rule id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md
      */
@@ -228,7 +254,8 @@ class ArchiefController extends Controller
         if (($denied = $this->ensureAuthenticated()) !== null) {
             return $denied;
         }
-        $body = $this->jsonBody();
+
+        $body       = $this->jsonBody();
         $body['id'] = $ruleId;
         if (isset($body['bewaartermijnJaren']) === true) {
             $jaren = (int) $body['bewaartermijnJaren'];
@@ -236,20 +263,22 @@ class ArchiefController extends Controller
                 return new JSONResponse(['message' => 'bewaartermijnJaren must be >= 1 or 9999 (permanent)'], Http::STATUS_BAD_REQUEST);
             }
         }
+
         if (isset($body['zaaktypeKey']) === true && (string) $body['zaaktypeKey'] === '') {
             return new JSONResponse(['message' => 'zaaktypeKey cannot be empty'], Http::STATUS_BAD_REQUEST);
         }
-        return new JSONResponse($this->saveOne('bewaar_termijn_regel_schema', $body));
+
+        return new JSONResponse($this->saveOne(schemaConfigKey: 'bewaar_termijn_regel_schema', object: $body));
     }//end updateRule()
 
     /**
      * Delete a retention rule.
      *
-     * @NoAdminRequired
-     *
      * @param string $ruleId Rule id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/archief-edepot-handover-08-admin-ui-docs/tasks.md
      */
@@ -258,12 +287,14 @@ class ArchiefController extends Controller
         if (($denied = $this->ensureAuthenticated()) !== null) {
             return $denied;
         }
+
         $objectService = $this->settings->getObjectService();
         $register      = (string) $this->settings->getConfigValue('register');
         $schema        = (string) $this->settings->getConfigValue('bewaar_termijn_regel_schema');
         if ($objectService === null || $register === '' || $schema === '') {
             return new JSONResponse(['message' => 'OpenRegister unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
         }
+
         try {
             if (method_exists($objectService, 'deleteObject') === true) {
                 $objectService->deleteObject($register, $schema, $ruleId);
@@ -272,6 +303,7 @@ class ArchiefController extends Controller
             $this->logger->warning('Archief deleteRule failed', ['ruleId' => $ruleId, 'error' => $e->getMessage()]);
             return new JSONResponse(['message' => 'Delete failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
         }
+
         return new JSONResponse(['success' => true]);
     }//end deleteRule()
 
@@ -286,17 +318,32 @@ class ArchiefController extends Controller
      */
     public function dashboardStats(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
-        $triggers = $this->fetchAll('overdracht_trigger_schema');
-        $stats = ['ready' => 0, 'inProgress' => 0, 'failed' => 0, 'completed' => 0, 'totalTransferred' => 0];
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
+        $triggers = $this->fetchAll(schemaConfigKey: 'overdracht_trigger_schema');
+        $stats    = ['ready' => 0, 'inProgress' => 0, 'failed' => 0, 'completed' => 0, 'totalTransferred' => 0];
         foreach ($triggers as $t) {
             $s = (string) ($t['status'] ?? '');
-            $stats['totalTransferred'] += ($s === 'geslaagd' ? 1 : 0);
-            $stats['completed']       += ($s === 'geslaagd' ? 1 : 0);
-            $stats['ready']           += ($s === 'gereed-voor-overdracht' ? 1 : 0);
-            $stats['inProgress']      += (in_array($s, ['in-bundling', 'in-overdracht'], true) ? 1 : 0);
-            $stats['failed']          += ($s === 'gefaald' ? 1 : 0);
+            if ($s === 'geslaagd') {
+                $stats['totalTransferred']++;
+                $stats['completed']++;
+            }
+
+            if ($s === 'gereed-voor-overdracht') {
+                $stats['ready']++;
+            }
+
+            if (in_array($s, ['in-bundling', 'in-overdracht'], true) === true) {
+                $stats['inProgress']++;
+            }
+
+            if ($s === 'gefaald') {
+                $stats['failed']++;
+            }
         }
+
         return new JSONResponse($stats);
     }//end dashboardStats()
 
@@ -311,12 +358,16 @@ class ArchiefController extends Controller
      */
     public function auditLog(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $zaakId = (string) $this->request->getParam('zaakId', '');
-        $rows = $this->fetchAll('overdracht_audit_log_schema');
+        $rows   = $this->fetchAll(schemaConfigKey: 'overdracht_audit_log_schema');
         if ($zaakId !== '') {
             $rows = array_values(array_filter($rows, static fn (array $r): bool => (string) ($r['zaakId'] ?? '') === $zaakId));
         }
+
         // Reverse-chronological.
         usort($rows, static fn (array $a, array $b): int => strcmp((string) ($b['timestamp'] ?? ''), (string) ($a['timestamp'] ?? '')));
         return new JSONResponse($rows);
@@ -341,24 +392,33 @@ class ArchiefController extends Controller
         if (($denied = $this->ensureAuthenticated()) !== null) {
             return $denied;
         }
+
         $body    = $this->jsonBody();
         $caseIds = (array) ($body['caseIds'] ?? []);
         if ($caseIds === []) {
             return new JSONResponse(['message' => 'caseIds is required'], Http::STATUS_BAD_REQUEST);
         }
-        $caseIds = array_values(array_map('strval', $caseIds));
+
+        $caseIds   = array_values(array_map('strval', $caseIds));
         $rateLimit = (int) ($body['rateLimit'] ?? 4);
         if ($rateLimit < 1) {
             $rateLimit = 4;
         }
+
         $eDepotId = (string) ($body['eDepotId'] ?? '');
-        $batchId  = isset($body['batchId']) === true ? (string) $body['batchId'] : null;
+        if (isset($body['batchId']) === true) {
+            $batchId = (string) $body['batchId'];
+        } else {
+            $batchId = null;
+        }
+
         try {
             $summary = $this->batchService->initiateBatch($caseIds, $rateLimit, $eDepotId, $batchId);
         } catch (Throwable $e) {
             $this->logger->warning('Archief batchInitiate failed', ['error' => $e->getMessage()]);
             return new JSONResponse(['message' => 'Batch initiation failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
         }
+
         return new JSONResponse($summary, Http::STATUS_ACCEPTED);
     }//end batchInitiate()
 
@@ -370,11 +430,11 @@ class ArchiefController extends Controller
      * carries `batchId=<jobId>`. The audit log is the source of truth per
      * the spec; this endpoint is a thin filtered projection.
      *
-     * @NoAdminRequired
-     *
      * @param string $jobId Batch id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/archief-edepot-handover-07-batch-inspection/tasks.md
      */
@@ -383,14 +443,17 @@ class ArchiefController extends Controller
         if (($denied = $this->ensureAuthenticated()) !== null) {
             return $denied;
         }
+
         if ($jobId === '') {
             return new JSONResponse(['message' => 'jobId is required'], Http::STATUS_BAD_REQUEST);
         }
-        $events = $this->batchAuditEvents($jobId);
-        $summary = $this->summariseBatchEvents($jobId, $events);
+
+        $events  = $this->batchAuditEvents(jobId: $jobId);
+        $summary = $this->summariseBatchEvents(jobId: $jobId, events: $events);
         if ($summary['events'] === 0) {
             return new JSONResponse(['message' => 'batch not found'], Http::STATUS_NOT_FOUND);
         }
+
         return new JSONResponse($summary);
     }//end batchStatus()
 
@@ -401,11 +464,11 @@ class ArchiefController extends Controller
      * stream it directly into a download. A ZIP wrapper remains a deferred
      * follow-up — the payload already carries every row a ZIP would.
      *
-     * @NoAdminRequired
-     *
      * @param string $jobId Batch id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/archief-edepot-handover-07-batch-inspection/tasks.md
      */
@@ -414,28 +477,33 @@ class ArchiefController extends Controller
         if (($denied = $this->ensureAuthenticated()) !== null) {
             return $denied;
         }
+
         if ($jobId === '') {
             return new JSONResponse(['message' => 'jobId is required'], Http::STATUS_BAD_REQUEST);
         }
-        $events  = $this->batchAuditEvents($jobId);
-        $summary = $this->summariseBatchEvents($jobId, $events);
+
+        $events  = $this->batchAuditEvents(jobId: $jobId);
+        $summary = $this->summariseBatchEvents(jobId: $jobId, events: $events);
         if ($summary['events'] === 0) {
             return new JSONResponse(['message' => 'batch not found'], Http::STATUS_NOT_FOUND);
         }
+
         // Attach bewijzen rows correlated by zaakId.
-        $bewijzen   = $this->fetchAll('archief_bewijs_schema');
-        $caseIds    = $summary['caseIds'];
-        $caseIdMap  = array_flip($caseIds);
-        $report     = [
-            'batchId'    => $jobId,
-            'state'      => $summary['state'],
-            'counters'   => $summary['counters'],
-            'cases'      => $caseIds,
-            'events'     => $events,
-            'bewijzen'   => array_values(array_filter(
+        $bewijzen  = $this->fetchAll(schemaConfigKey: 'archief_bewijs_schema');
+        $caseIds   = $summary['caseIds'];
+        $caseIdMap = array_flip($caseIds);
+        $report    = [
+            'batchId'     => $jobId,
+            'state'       => $summary['state'],
+            'counters'    => $summary['counters'],
+            'cases'       => $caseIds,
+            'events'      => $events,
+            'bewijzen'    => array_values(
+                    array_filter(
                 $bewijzen,
                 static fn (array $row): bool => isset($caseIdMap[(string) ($row['zaakId'] ?? '')])
-            )),
+            )
+                    ),
             'generatedAt' => (new \DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
         ];
         return new JSONResponse($report);
@@ -459,10 +527,12 @@ class ArchiefController extends Controller
         if (($denied = $this->ensureAuthenticated()) !== null) {
             return $denied;
         }
+
         $year = (int) $this->request->getParam('year', 0);
         if ($year < 1970 || $year > 9999) {
             return new JSONResponse(['message' => 'year is required (YYYY)'], Http::STATUS_BAD_REQUEST);
         }
+
         $filters = [];
         foreach (['zaaktypeKey', 'archiefId'] as $key) {
             $val = (string) $this->request->getParam($key, '');
@@ -470,12 +540,14 @@ class ArchiefController extends Controller
                 $filters[$key] = $val;
             }
         }
+
         try {
             $payload = $this->batchService->generateInspectionExport($year, $filters);
         } catch (Throwable $e) {
             $this->logger->warning('Archief inspectionExport failed', ['error' => $e->getMessage()]);
             return new JSONResponse(['message' => 'Export failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
         }
+
         return new JSONResponse($payload);
     }//end inspectionExport()
 
@@ -488,21 +560,23 @@ class ArchiefController extends Controller
      */
     private function batchAuditEvents(string $jobId): array
     {
-        $rows  = $this->fetchAll('overdracht_audit_log_schema');
+        $rows  = $this->fetchAll(schemaConfigKey: 'overdracht_audit_log_schema');
         $token = 'batchId='.$jobId;
-        $hits  = array_values(array_filter(
+        $hits  = array_values(
+                array_filter(
             $rows,
             static fn (array $row): bool => str_contains((string) ($row['details'] ?? ''), $token)
-        ));
+        )
+                );
         usort($hits, static fn (array $a, array $b): int => strcmp((string) ($a['timestamp'] ?? ''), (string) ($b['timestamp'] ?? '')));
         return $hits;
-    }
+    }//end batchAuditEvents()
 
     /**
      * Reconstruct batch summary from audit events.
      *
-     * @param string                            $jobId  Batch id.
-     * @param array<int, array<string, mixed>>  $events Audit rows.
+     * @param string                           $jobId  Batch id.
+     * @param array<int, array<string, mixed>> $events Audit rows.
      *
      * @return array{
      *     batchId: string,
@@ -525,20 +599,24 @@ class ArchiefController extends Controller
             if ($zaakId !== '' && in_array($zaakId, $caseIds, true) === false) {
                 $caseIds[] = $zaakId;
             }
+
             if ($type === 'batch-initiated' && $state === 'unknown') {
                 $state = 'processing';
             }
+
             if ($type === 'batch-completed') {
                 foreach (['succeeded', 'failed', 'deferred', 'skipped'] as $bucket) {
                     if (preg_match('/'.$bucket.'=(\d+)/', $details, $m) === 1) {
                         $counters[$bucket] = (int) $m[1];
                     }
                 }
+
                 if (preg_match('/state=([a-z\-]+)/', $details, $m) === 1) {
                     $state = $m[1];
                 }
             }
-        }
+        }//end foreach
+
         return [
             'batchId'  => $jobId,
             'state'    => $state,
@@ -547,10 +625,13 @@ class ArchiefController extends Controller
             'events'   => count($events),
             'timeline' => $events,
         ];
-    }
+    }//end summariseBatchEvents()
 
     /**
+     * Fetch all objects for the configured schema as arrays.
+     *
      * @param string $schemaConfigKey Schema config key.
+     *
      * @return array<int, array<string, mixed>>
      */
     private function fetchAll(string $schemaConfigKey): array
@@ -561,17 +642,25 @@ class ArchiefController extends Controller
         if ($objectService === null || $register === '' || $schema === '') {
             return [];
         }
+
         try {
             $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
-            return is_array($rows) === true ? $rows : [];
+            if (is_array($rows) === true) {
+                return $rows;
+            }
+
+            return [];
         } catch (Throwable $e) {
             return [];
         }
-    }
+    }//end fetchAll()
 
     /**
+     * Save a single object for the configured schema.
+     *
      * @param string               $schemaConfigKey Schema config key.
      * @param array<string, mixed> $object          Payload.
+     *
      * @return array<string, mixed>
      */
     private function saveOne(string $schemaConfigKey, array $object): array
@@ -582,15 +671,22 @@ class ArchiefController extends Controller
         if ($objectService === null || $register === '' || $schema === '') {
             return $object;
         }
+
         try {
             $saved = $objectService->saveObject($register, $schema, $object);
-            return is_array($saved) === true ? $saved : $object;
+            if (is_array($saved) === true) {
+                return $saved;
+            }
+
+            return $object;
         } catch (Throwable $e) {
             return $object;
         }
-    }
+    }//end saveOne()
 
     /**
+     * Decode the JSON request body into an array.
+     *
      * @return array<string, mixed>
      */
     private function jsonBody(): array
@@ -599,6 +695,10 @@ class ArchiefController extends Controller
         // request; read raw payload from php://input instead.
         $raw  = (string) file_get_contents('php://input');
         $body = json_decode($raw, true);
-        return is_array($body) === true ? $body : [];
-    }
+        if (is_array($body) === true) {
+            return $body;
+        }
+
+        return [];
+    }//end jsonBody()
 }//end class

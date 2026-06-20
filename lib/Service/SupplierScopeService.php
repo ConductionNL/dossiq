@@ -44,13 +44,21 @@ class SupplierScopeService
      */
     public const SUPPLIER_SCHEMAS = ['supplierTender', 'supplierContract', 'supplierInvoice', 'supplierMessage', 'supplierKpi', 'supplierUser'];
 
+    /**
+     * Constructor.
+     *
+     * @param IAppManager        $appManager App manager.
+     * @param ContainerInterface $container  Service container.
+     * @param TenantJwtService   $jwt        Tenant JWT service.
+     * @param LoggerInterface    $logger     Logger.
+     */
     public function __construct(
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
         private readonly TenantJwtService $jwt,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Resolve the current supplier from a bearer token.
@@ -86,13 +94,13 @@ class SupplierScopeService
             'supplierUserId' => (string) ($claims['sub'] ?? ''),
             'role'           => $role,
         ];
-    }
+    }//end resolveFromBearer()
 
     /**
      * List supplier-scoped objects for a given schema.
      *
-     * @param string $supplierRef Supplier UUID.
-     * @param string $schema      Schema slug.
+     * @param string               $supplierRef  Supplier UUID.
+     * @param string               $schema       Schema slug.
      * @param array<string, mixed> $extraFilters Additional filters.
      *
      * @return array<int, array<string,mixed>>
@@ -116,11 +124,15 @@ class SupplierScopeService
                 offset: 0,
                 filters: array_merge(['supplierRef' => $supplierRef], $extraFilters)
             );
-            return is_array($rows) ? array_values($rows) : [];
+            if (is_array($rows) === true) {
+                return array_values($rows);
+            }
+
+            return [];
         } catch (Throwable $e) {
             return [];
         }
-    }
+    }//end listSupplierObjects()
 
     /**
      * Validate cross-supplier access — returns true when allowed.
@@ -134,7 +146,7 @@ class SupplierScopeService
     {
         $own = (string) ($resource['supplierRef'] ?? '');
         return $own === $supplierRef && $own !== '';
-    }
+    }//end validateSupplierAccess()
 
     /**
      * Mask a row's sensitive fields for audit logs.
@@ -146,19 +158,19 @@ class SupplierScopeService
     public function maskSensitive(array $row): array
     {
         if (isset($row['iban']) === true) {
-            $row['iban'] = $this->maskIban((string) $row['iban']);
+            $row['iban'] = $this->maskIban(iban: (string) $row['iban']);
         }
 
         if (isset($row['email']) === true) {
-            $row['email'] = $this->maskEmail((string) $row['email']);
+            $row['email'] = $this->maskEmail(email: (string) $row['email']);
         }
 
         if (isset($row['phone']) === true) {
-            $row['phone'] = $this->maskPhone((string) $row['phone']);
+            $row['phone'] = $this->maskPhone(phone: (string) $row['phone']);
         }
 
         return $row;
-    }
+    }//end maskSensitive()
 
     /**
      * Mask IBAN — show last 4 only.
@@ -175,7 +187,7 @@ class SupplierScopeService
         }
 
         return str_repeat('*', strlen($iban) - 4).substr($iban, -4);
-    }
+    }//end maskIban()
 
     /**
      * Mask email — keep domain only.
@@ -192,7 +204,7 @@ class SupplierScopeService
         }
 
         return '***@'.$parts[1];
-    }
+    }//end maskEmail()
 
     /**
      * Mask phone — keep last 3 digits.
@@ -209,10 +221,12 @@ class SupplierScopeService
         }
 
         return str_repeat('*', strlen($digits) - 3).substr($digits, -3);
-    }
+    }//end maskPhone()
 
     /**
-     * @return mixed|null
+     * Resolve the OpenRegister ObjectService when available.
+     *
+     * @return mixed|null The ObjectService instance, or null when unavailable.
      */
     private function getObjectService()
     {
@@ -226,5 +240,5 @@ class SupplierScopeService
         } catch (Throwable $e) {
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

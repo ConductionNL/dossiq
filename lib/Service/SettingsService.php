@@ -524,7 +524,6 @@ class SettingsService
         }
     }//end getObjectService()
 
-
     /**
      * Lazily resolve OpenRegister's ApprovalService for parafering chain delegation.
      *
@@ -560,7 +559,6 @@ class SettingsService
             return null;
         }
     }//end getApprovalService()
-
 
     /**
      * Lazily resolve an OpenRegister DI class by fully-qualified name.
@@ -1130,4 +1128,4 @@ class SettingsService
 
         return true;
     }//end isList()
-    }//end class
+}//end class

@@ -53,11 +53,11 @@ class ArchivalTriggerScanJob extends TimedJob
     /**
      * Constructor.
      *
-     * @param ITimeFactory           $time             Time factory.
-     * @param ArchivalTriggerService $archivalService  Detection service.
-     * @param SettingsService        $settingsService  Settings + ObjectService resolver.
-     * @param IAppManager            $appManager       App manager.
-     * @param LoggerInterface        $logger           Logger.
+     * @param ITimeFactory           $time            Time factory.
+     * @param ArchivalTriggerService $archivalService Detection service.
+     * @param SettingsService        $settingsService Settings + ObjectService resolver.
+     * @param IAppManager            $appManager      App manager.
+     * @param LoggerInterface        $logger          Logger.
      */
     public function __construct(
         ITimeFactory $time,

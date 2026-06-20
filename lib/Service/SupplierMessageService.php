@@ -5,12 +5,19 @@
  *
  * Write-once per-case messaging between municipality + supplier.
  *
- * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @category Service
+ * @package  OCA\Procest\Service
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
- * SPDX-License-Identifier: EUPL-1.2
- * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @link https://conduction.nl
  *
  * @spec openspec/changes/leverancier-zaakportaal-11-messaging/tasks.md
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
  */
 
 declare(strict_types=1);
@@ -52,6 +59,15 @@ class SupplierMessageService
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     ];
 
+    /**
+     * Constructor.
+     *
+     * @param SupplierScopeService    $scopeService Supplier scope service.
+     * @param TenantAuditTrailService $auditTrail   Tenant audit trail service.
+     * @param IAppManager             $appManager   Nextcloud app manager.
+     * @param ContainerInterface      $container    Service container.
+     * @param LoggerInterface         $logger       Logger.
+     */
     public function __construct(
         private readonly SupplierScopeService $scopeService,
         private readonly TenantAuditTrailService $auditTrail,
@@ -59,7 +75,7 @@ class SupplierMessageService
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Validate a single attachment.
@@ -81,7 +97,7 @@ class SupplierMessageService
         if (in_array($mime, self::ALLOWED_ATTACHMENT_MIME, true) === false) {
             throw new InvalidArgumentException('Unsupported attachment MIME: '.$mime);
         }
-    }
+    }//end validateAttachment()
 
     /**
      * Validate an attachment set (≤5 each ≤10MB).
@@ -99,18 +115,18 @@ class SupplierMessageService
         }
 
         foreach ($attachments as $a) {
-            $this->validateAttachment($a);
+            $this->validateAttachment(attachment: $a);
         }
-    }
+    }//end validateAttachmentSet()
 
     /**
      * Persist an inbound message (supplier → municipality).
      *
-     * @param string             $caseRef     Case ref.
-     * @param string             $supplierRef Supplier ref.
-     * @param string             $body        Body.
+     * @param string             $caseRef        Case ref.
+     * @param string             $supplierRef    Supplier ref.
+     * @param string             $body           Body.
      * @param array<int, string> $attachmentRefs Attachment refs.
-     * @param string             $sentBy      NC user id (or supplier email).
+     * @param string             $sentBy         NC user id (or supplier email).
      *
      * @return array<string,mixed>|null Persisted message row.
      */
@@ -120,17 +136,24 @@ class SupplierMessageService
             throw new InvalidArgumentException('Message body required');
         }
 
-        return $this->persist(direction: 'inbound', caseRef: $caseRef, supplierRef: $supplierRef, body: $body, attachmentRefs: $attachmentRefs, sentBy: $sentBy);
-    }
+        return $this->persist(
+            direction: 'inbound',
+            caseRef: $caseRef,
+            supplierRef: $supplierRef,
+            body: $body,
+            attachmentRefs: $attachmentRefs,
+            sentBy: $sentBy
+        );
+    }//end sendMessage()
 
     /**
      * Persist an outbound message (municipality → supplier).
      *
-     * @param string             $caseRef     Case ref.
-     * @param string             $supplierRef Supplier ref.
-     * @param string             $body        Body.
+     * @param string             $caseRef        Case ref.
+     * @param string             $supplierRef    Supplier ref.
+     * @param string             $body           Body.
      * @param array<int, string> $attachmentRefs Attachment refs.
-     * @param string             $sentBy      NC user id.
+     * @param string             $sentBy         NC user id.
      *
      * @return array<string,mixed>|null
      */
@@ -140,8 +163,15 @@ class SupplierMessageService
             throw new InvalidArgumentException('Response body required');
         }
 
-        return $this->persist(direction: 'outbound', caseRef: $caseRef, supplierRef: $supplierRef, body: $body, attachmentRefs: $attachmentRefs, sentBy: $sentBy);
-    }
+        return $this->persist(
+            direction: 'outbound',
+            caseRef: $caseRef,
+            supplierRef: $supplierRef,
+            body: $body,
+            attachmentRefs: $attachmentRefs,
+            sentBy: $sentBy
+        );
+    }//end addResponse()
 
     /**
      * Retrieve the chronological conversation history for a case scoped by supplier.
@@ -170,18 +200,23 @@ class SupplierMessageService
             return [];
         }
 
-        $rows = is_array($rows) ? $rows : [];
+        if (is_array($rows) === false) {
+            $rows = [];
+        }
+
         usort($rows, fn ($a, $b) => strcmp((string) ($a['sentAt'] ?? ''), (string) ($b['sentAt'] ?? '')));
         return $rows;
-    }
+    }//end getConversationHistory()
 
     /**
-     * @param string             $direction  inbound|outbound.
-     * @param string             $caseRef    Case ref.
-     * @param string             $supplierRef Supplier ref.
-     * @param string             $body       Body.
+     * Persist a message row to the supplierMessage register.
+     *
+     * @param string             $direction      inbound|outbound.
+     * @param string             $caseRef        Case ref.
+     * @param string             $supplierRef    Supplier ref.
+     * @param string             $body           Body.
      * @param array<int, string> $attachmentRefs Attachment refs.
-     * @param string             $sentBy     Sender id.
+     * @param string             $sentBy         Sender id.
      *
      * @return array<string,mixed>|null
      */
@@ -209,20 +244,24 @@ class SupplierMessageService
                 schema: 'supplierMessage',
                 uuid: null
             );
-            $this->auditTrail->emit([
-                'action'   => 'supplier_message.send',
-                'actor'    => $sentBy,
-                'resource' => 'case:'.$caseRef,
-                'tenantId' => $supplierRef,
-            ]);
+            $this->auditTrail->emit(
+                    [
+                        'action'   => 'supplier_message.send',
+                        'actor'    => $sentBy,
+                        'resource' => 'case:'.$caseRef,
+                        'tenantId' => $supplierRef,
+                    ]
+                    );
             return $persisted;
         } catch (Throwable $e) {
             $this->logger->error('Procest: supplier message persist failed', ['exception' => $e->getMessage()]);
             return null;
         }
-    }
+    }//end persist()
 
     /**
+     * Resolve the OpenRegister ObjectService when available.
+     *
      * @return mixed|null
      */
     private function getObjectService()
@@ -237,5 +276,5 @@ class SupplierMessageService
         } catch (Throwable $e) {
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

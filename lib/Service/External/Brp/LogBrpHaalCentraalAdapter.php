@@ -65,14 +65,14 @@ class LogBrpHaalCentraalAdapter implements BrpHaalCentraalAdapterInterface
      *
      * @return BrpLookupResult The dispatch outcome.
      */
-    public function lookup(string $bsn, array $context = []): BrpLookupResult
+    public function lookup(string $bsn, array $context=[]): BrpLookupResult
     {
         $this->logger->info(
             'Procest BRP / Haal Centraal lookup deferred (no outbound connector bound)',
             [
-                'bsn'             => '[REDACTED]',
+                'bsn'              => '[REDACTED]',
                 'bsn_length_check' => (strlen($bsn) === 9),
-                'context'         => $context,
+                'context'          => $context,
             ]
         );
 
@@ -82,13 +82,19 @@ class LogBrpHaalCentraalAdapter implements BrpHaalCentraalAdapterInterface
             dormant: true,
             extras: [
                 'reason' => 'no-outbound-connector-bound',
-                'note'   => 'Bind openconnector source slug `brp-haalcentraal` (PKIoverheid Services-server cert + Logius/RvIG autorisatieprofiel + Haal Centraal BRP Personen API endpoint) and override BrpHaalCentraalAdapterInterface in Application::register() to enable real lookup. NEVER log BSN values.',
+                'note'   => 'Bind openconnector source slug `brp-haalcentraal` (PKIoverheid Services-server cert '
+                    .'+ Logius/RvIG autorisatieprofiel + Haal Centraal BRP Personen API endpoint) and override '
+                    .'BrpHaalCentraalAdapterInterface in Application::register() to enable real lookup. NEVER log BSN values.',
             ],
         );
     }//end lookup()
 
     /**
+     * Report whether this adapter is dormant.
+     *
      * @inheritDoc
+     *
+     * @return bool
      */
     public function isDormant(): bool
     {

@@ -62,7 +62,7 @@ final class KvkLookupResult
         public readonly string $kvkNumber,
         public readonly array $entity,
         public readonly bool $dormant,
-        public readonly array $extras = [],
+        public readonly array $extras=[],
     ) {
     }//end __construct()
 }//end class

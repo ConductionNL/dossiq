@@ -190,13 +190,13 @@ class PortalCaseService
         }
 
         return [
-            'zaakId'          => (string) ($case['id'] ?? ($case['@self']['id'] ?? '')),
-            'zaakKenmerk'     => (string) ($case['identifier'] ?? ''),
-            'zaaktype'        => (string) ($case['caseType'] ?? ''),
-            'onderwerp'       => (string) ($case['title'] ?? ''),
-            'huidigeStatus'   => (string) ($case['status'] ?? ''),
-            'tijdlijn'        => $this->normaliseTimeline(history: $case['statusHistory'] ?? []),
-            'termijnen'       => [
+            'zaakId'           => (string) ($case['id'] ?? ($case['@self']['id'] ?? '')),
+            'zaakKenmerk'      => (string) ($case['identifier'] ?? ''),
+            'zaaktype'         => (string) ($case['caseType'] ?? ''),
+            'onderwerp'        => (string) ($case['title'] ?? ''),
+            'huidigeStatus'    => (string) ($case['status'] ?? ''),
+            'tijdlijn'         => $this->normaliseTimeline(history: $case['statusHistory'] ?? []),
+            'termijnen'        => [
                 'afhandelTermijnEinde' => $deadline,
                 'termijnOverschreden'  => $overschreden,
                 'dagenResterend'       => $remaining,
@@ -229,7 +229,7 @@ class PortalCaseService
             return [];
         }
 
-        $roles = [];
+        $roles    = [];
         $rawRoles = ($case['portaalRollen'] ?? ($case['rollen'] ?? []));
         if (is_array($rawRoles) === true) {
             $roles = array_values(array_map('strval', $rawRoles));
