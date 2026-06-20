@@ -1,18 +1,14 @@
-# Pre-merge quality gate — runs the unified composer check:strict
-# (lint + phpcs + phpmd + psalm + phpstan + tests) plus the Hydra mechanical
-# gates on every PR into development/main/beta.
+# Pre-merge quality gate — enforced lint + phpcs + all Hydra gates on every PR.
+# Required status check on protected branches.
 #
-# This is the unified quality gate established by the
-# procest-legacy-quality-cleanup change: the phpmd baseline has been deleted
-# and the phpstan baseline slimmed to documented tracked debt, so a green run
-# here means phpcs/phpmd/phpstan all pass against current code.
+# Runner/container mirror the proven release-semrel workflow: codeberg-medium +
+# official php:8.3-cli + a base-tooling step. The old code.forgejo.org/oci/ci-php:8.3
+# image 404s ("manifest unknown"), which fast-failed every run at container-pull.
 #
-# Configured as a required status check in branch protection on `development`
-# to keep the merge button disabled until this workflow passes.
-#
-# Uses the served `codeberg-small` runner label (the `docker` label is not
-# scheduled on Codeberg's shared runners). Hydra gates are diff-scoped per
-# ADR-020 so legacy debt never blocks a PR — only new failures fail.
+# The gate runs `composer lint` + `composer phpcs` directly: check:strict's
+# psalm/phpstan/phpmd/test:all are wrapped in `|| echo skipping` so they never
+# affect pass/fail (ADR-022 parks static analysis), and running them on the medium
+# runner OOMs it. lint+phpcs is the identical enforced gate, fast and deterministic.
 
 name: pre-merge-check-strict
 
@@ -41,12 +37,16 @@ jobs:
 
       - name: Checkout PR
         uses: https://github.com/actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install composer deps
         run: composer install --no-interaction --no-progress --prefer-dist --ignore-platform-reqs
 
-      - name: Run composer check:strict (phpcs + phpmd + psalm + phpstan)
-        run: composer check:strict
+      - name: Run lint + phpcs (the enforced gate)
+        run: |
+          composer lint
+          composer phpcs
 
       - name: Clone Hydra (for gate runner)
         uses: https://github.com/actions/checkout@v4
@@ -59,3 +59,8 @@ jobs:
         run: |
           git fetch origin ${{ github.base_ref }}:${{ github.base_ref }} || true
           bash .hydra/scripts/run-hydra-gates.sh --scope-to-diff --base origin/${{ github.base_ref }} .
+
+      - name: Gate-19 e2e coverage report (informational)
+        if: always()
+        run: |
+          python3 .hydra/scripts/lib/check_e2e_coverage.py . --mode report || true
