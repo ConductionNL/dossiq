@@ -48,6 +48,12 @@
     "docsUrl": "openspec/specs/beroep-escalation/spec.md"
   },
   {
+    "slug": "beschikking-generatie",
+    "title": "beschikking-generatie",
+    "summary": "Composes a conceptbeschikking from a template + current zaakdata, drives the verleend/geweigerd outcome with prefilled motivation, renders a PDF, attaches it as a `bijlage`, and routes it to the addressee. Procest owns composition + workflow; PDF rendering, archival, and Berichtenbox delivery are integrated via adapter interfaces backed by docudesk/openregister/openconnector.",
+    "docsUrl": "openspec/specs/beschikking-generatie/spec.md"
+  },
+  {
     "slug": "besluitvorming-workflow",
     "title": "besluitvorming-workflow",
     "summary": "Provides end-to-end decision-making workflows for municipal College-besluit, Raadsbesluit, and Mandaatbesluit cases, shipping pre-configured case-type and workflow templates that run from drafting through parafering, agenda compilation, decision recording, publication, and archival. Drives a sequential signing (parafering) chain, auto-transitions cases to agenda-ready status once all signatures are collected, records formal decisions with voting results and attending members, validates mandate authority, and dispatches publication payloads to DROP/LVBB before archiving the complete dossier.",
