@@ -1,33 +1,8 @@
 <template>
-	<div class="procest-admin">
-		<!-- Version Information -->
-		<CnVersionInfoCard
-			:app-name="'Procest'"
-			:app-version="appVersion"
-			:is-up-to-date="true"
-			:show-update-button="true"
-			:title="t('procest', 'Version Information')"
-			:description="t('procest', 'Information about the current Procest installation')">
-			<template #actions>
-				<NcButton type="primary"
-					:disabled="reimporting"
-					@click="reimport">
-					<template #icon>
-						<NcLoadingIcon v-if="reimporting" :size="20" />
-						<Refresh v-else :size="20" />
-					</template>
-					{{ reimporting ? t('procest', 'Importing...') : t('procest', 'Re-import configuration') }}
-				</NcButton>
-			</template>
-			<template #footer>
-				<div class="cn-support-info">
-					<h4>{{ t('procest', 'Support') }}</h4>
-					<p>{{ t('procest', 'For support, contact us at') }} <a href="mailto:support@conduction.nl">support@conduction.nl</a></p>
-					<p>{{ t('procest', 'For a Service Level Agreement (SLA), contact') }} <a href="mailto:sales@conduction.nl">sales@conduction.nl</a></p>
-				</div>
-			</template>
-		</CnVersionInfoCard>
-
+	<CnAdminSettingsShell
+		app-id="procest"
+		app-name="Procest"
+		@reimported="onReimported">
 		<Settings />
 
 		<CnSettingsSection
@@ -113,20 +88,11 @@
 			:loading="!storesReady">
 			<KccIntegrationSettings v-if="storesReady" />
 		</CnSettingsSection>
-
-		<!-- Re-import Status -->
-		<div v-if="message" class="actions-section">
-			<NcNoteCard :type="messageType">
-				{{ message }}
-			</NcNoteCard>
-		</div>
-	</div>
+	</CnAdminSettingsShell>
 </template>
 
 <script>
-import { CnSettingsSection, CnVersionInfoCard } from '@conduction/nextcloud-vue'
-import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
-import Refresh from 'vue-material-design-icons/Refresh.vue'
+import { CnAdminSettingsShell, CnSettingsSection } from '@conduction/nextcloud-vue'
 import Settings from './Settings.vue'
 import CaseTypeAdmin from './CaseTypeAdmin.vue'
 import ZgwMappingSettings from './ZgwMappingSettings.vue'
@@ -140,19 +106,13 @@ import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
 import EmailSettings from './EmailSettings.vue'
 import KccIntegrationSettings from './KccIntegrationSettings.vue'
-import { generateUrl } from '@nextcloud/router'
-import { loadState } from '@nextcloud/initial-state'
 import { initializeStores } from '../../store/store.js'
 
 export default {
 	name: 'AdminRoot',
 	components: {
+		CnAdminSettingsShell,
 		CnSettingsSection,
-		CnVersionInfoCard,
-		NcButton,
-		NcLoadingIcon,
-		NcNoteCard,
-		Refresh,
 		Settings,
 		CaseTypeAdmin,
 		ZgwMappingSettings,
@@ -170,10 +130,6 @@ export default {
 	data() {
 		return {
 			storesReady: false,
-			appVersion: loadState('procest', 'version', 'Unknown'),
-			reimporting: false,
-			message: '',
-			messageType: 'success',
 		}
 	},
 	/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
@@ -182,43 +138,16 @@ export default {
 		this.storesReady = true
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
-		async reimport() {
-			this.reimporting = true
-			this.message = ''
-
-			try {
-				const response = await fetch(generateUrl('/apps/procest/api/settings/load'), {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						requesttoken: OC.requestToken,
-						'OCS-APIREQUEST': 'true',
-					},
-				})
-
-				const data = await response.json()
-
-				if (data.success) {
-					this.message = t('procest', 'Configuration re-imported successfully')
-					this.messageType = 'success'
-				} else {
-					this.message = data.message || t('procest', 'Re-import failed')
-					this.messageType = 'error'
-				}
-			} catch (error) {
-				this.message = error.message || t('procest', 'Re-import failed')
-				this.messageType = 'error'
-			} finally {
-				this.reimporting = false
-			}
+		/**
+		 * Refresh the app stores after the shell re-imports the OpenRegister configuration.
+		 *
+		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
+		 */
+		async onReimported() {
+			this.storesReady = false
+			await initializeStores()
+			this.storesReady = true
 		},
 	},
 }
 </script>
-
-<style scoped>
-.procest-admin {
-	max-width: 900px;
-}
-</style>
