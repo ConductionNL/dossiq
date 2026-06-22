@@ -37,6 +37,10 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'ai#summarize',       'url' => '/api/ai/summarize',       'verb' => 'POST'],
         ['name' => 'ai#suggestRouting',  'url' => '/api/ai/suggest-routing', 'verb' => 'POST'],
         ['name' => 'ai#suggestNext',     'url' => '/api/ai/suggest-next',    'verb' => 'POST'],
+        // First-time setup wizard (ADR-042)
+        ['name' => 'setup#status',       'url' => '/api/setup/status',              'verb' => 'GET'],
+        ['name' => 'setup#saveConfig',   'url' => '/api/setup/config',              'verb' => 'POST'],
+        ['name' => 'setup#runAction',    'url' => '/api/setup/action/{actionId}',   'verb' => 'POST'],
         ['name' => 'ai#recordAction',    'url' => '/api/ai/record-action',   'verb' => 'POST'],
         ['name' => 'ai#auditIndex',      'url' => '/api/ai/audit',           'verb' => 'GET'],
         ['name' => 'ai#getSettings',     'url' => '/api/ai/settings',        'verb' => 'GET'],

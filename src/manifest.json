@@ -4,6 +4,17 @@
 	"dependencies": [
 		"openregister"
 	],
+	"setup": {
+		"enabled": true,
+		"version": 1,
+		"completionConfigKey": "setup_completed_version",
+		"steps": [
+			{ "id": "welcome", "type": "info", "title": "Welkom bij Procest", "body": "Laten we Procest klaarzetten. Initialiseer eerst het register; laad daarna optioneel de Bezwaar & Beroep voorbeelddata." },
+			{ "id": "register-check", "type": "run-action", "title": "Register en schema's initialiseren", "action": "init-register", "required": true },
+			{ "id": "seed", "type": "run-action", "title": "Bezwaar & Beroep voorbeelddata laden", "action": "seed", "required": false },
+			{ "id": "done", "type": "summary", "title": "Klaar", "healthCheck": true }
+		]
+	},
 	"menu": [
 		{
 			"id": "Dashboard",
@@ -333,8 +344,7 @@
 			"config": {
 				"dateRange": {
 					"enabled": true,
-					"showHeaderPicker": true,
-					"control": "pills",
+					"showHeaderPicker": false,
 					"persistKey": "procest-dashboard-range",
 					"default": { "preset": "month" },
 					"presets": [
@@ -419,7 +429,8 @@
 						"gridY": 0,
 						"gridWidth": 3,
 						"gridHeight": 2,
-						"showTitle": false
+						"showTitle": false,
+						"dateChip": true
 					},
 					{
 						"id": "2",
@@ -428,7 +439,8 @@
 						"gridY": 0,
 						"gridWidth": 3,
 						"gridHeight": 2,
-						"showTitle": false
+						"showTitle": false,
+						"dateChip": true
 					},
 					{
 						"id": "3",
@@ -437,7 +449,8 @@
 						"gridY": 0,
 						"gridWidth": 3,
 						"gridHeight": 2,
-						"showTitle": false
+						"showTitle": false,
+						"dateChip": true
 					},
 					{
 						"id": "4",
@@ -446,7 +459,8 @@
 						"gridY": 0,
 						"gridWidth": 3,
 						"gridHeight": 2,
-						"showTitle": false
+						"showTitle": false,
+						"dateChip": true
 					},
 					{
 						"id": "5",

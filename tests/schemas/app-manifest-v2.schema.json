@@ -3,7 +3,7 @@
   "$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
   "title": "Conduction App Manifest v2",
   "description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-  "version": "2.10.0",
+  "version": "2.11.0",
   "type": "object",
   "required": [
     "$schema",
@@ -30,6 +30,51 @@
         "type": "string"
       },
       "description": "Nextcloud app IDs that MUST be installed and enabled for this app to function. CnAppRoot checks each via useAppStatus(appId). Sentinels (@resolve:*) are NOT allowed here — resolved at build time against known app IDs."
+    },
+    "setup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["steps"],
+      "description": "First-time setup wizard (ADR-042). Rendered by CnSetupWizard; required steps gate the app via CnAppRoot's setup phase. Steps run privileged server-side actions via /api/setup/action — the wizard never writes OpenRegister objects from the browser.",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true, "description": "Whether the setup wizard is active for this app." },
+        "version": { "type": "integer", "default": 1, "description": "Setup contract version; bump to re-trigger setup after a breaking change." },
+        "completionConfigKey": { "type": "string", "description": "App-config key storing the completed setup version." },
+        "steps": {
+          "type": "array",
+          "description": "Ordered setup steps rendered by CnSetupWizard.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "type"],
+            "properties": {
+              "id": { "type": "string", "description": "Unique step id; also the #step-<id> slot name." },
+              "type": { "type": "string", "enum": ["info", "config-fields", "choice", "run-action", "summary", "component"], "description": "Built-in step renderer." },
+              "title": { "type": "string" },
+              "body": { "type": "string", "description": "info: explanatory copy." },
+              "required": { "type": "boolean", "default": false, "description": "When true the step gates the app until done." },
+              "schema": { "description": "config-fields: a JSON Schema ref (string) or inline object rendered via fieldsFromSchema." },
+              "configKey": { "type": "string", "description": "choice: app-config key the selection is written to." },
+              "configKeys": { "type": "array", "items": { "type": "string" }, "description": "config-fields: app-config keys the fields write." },
+              "options": {
+                "type": "array",
+                "description": "choice: selectable options.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["value", "label"],
+                  "properties": { "value": {}, "label": { "type": "string" } }
+                }
+              },
+              "optionsSource": { "type": "string", "description": "choice: endpoint/registry to load options from (alternative to static options)." },
+              "multiple": { "type": "boolean", "default": false, "description": "choice: allow multi-select." },
+              "action": { "type": "string", "description": "run-action: actionId POSTed to /api/setup/action/{action}." },
+              "healthCheck": { "type": "boolean", "default": false, "description": "summary: render a health recap." },
+              "component": { "type": "string", "description": "component: app-registered component name (or use the #step-<id> slot)." }
+            }
+          }
+        }
+      }
     },
     "nav": {
       "type": "object",
