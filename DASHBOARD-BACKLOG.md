@@ -60,14 +60,21 @@ Remaining (judgment): a few leaves without a section that are arguably config
 whether they are operational or settings, and whether `SettingsGroup` should
 become a real nested parent rather than a flat `section` foldout.
 
-## 5. Bezwaren/Beroepen as case types — ⚠️ DEFERRED (needs data re-model)
-The bezwaar/beroep caseTypes already exist (seeded), BUT "Bezwaren"/"Beroepen"
-nav leaves currently list their **own** schema objects (`bezwaar` 116 / `beroep`
-122), not `case` objects with caseType=bezwaar/beroep. Deleting the nav leaves
-now would hide that data with no replacement. Proper change = migrate/relate the
-bezwaar/beroep records to `case` objects under the bezwaar/beroep caseTypes (or
-add quickFilters to the Cases view scoped to those caseType UUIDs) before
-removing the leaves. Raise as an OpenSpec change with a migration step.
+## 5. Bezwaren/Beroepen as case types — ✅ DONE
+Re-modelled Bezwaar & Beroep as first-class **caseTypes** and re-pointed the
+"Bezwaren"/"Beroepen" nav to filtered **Cases** views (register `procest`,
+schema `case`, `filter: { caseType: <fixed-uuid> }`, action → CaseDetail). The
+`bezwaar` (116) / `beroep` (122) schemas stay as the AWB lifecycle detail
+records linked to a case (BezwaarDetail/BeroepDetail pages kept).
+PORTABILITY: filtering cases by caseType uses the plain `?caseType=<uuid>` param
+(NOT `_filters[caseType]` — that's ignored; verified empirically), so the filter
+needs the UUID. To keep the manifest portable across instances, the seed
+(`lib/Settings/bezwaar_seed_data.json`) now assigns **fixed UUIDs** to the two
+caseTypes (`…be2a` Bezwaar, `…be30` Beroep) — OR honors a provided id/uuid on
+create, and the seeder passes the full object through, so every fresh seed gets
+the same UUIDs the manifest references. This instance had 0 bezwaar/beroep
+records and no caseTypes; created the two caseTypes with the fixed UUIDs + one
+sample case each (BZW-2026-001 / BRP-2026-001) for verification.
 
 ## 6. Language consistency (Dutch canonical) — ◑ NAV DONE / dashboard+l10n remaining
 Done: translated all English **nav menu labels** (literal strings) to Dutch —

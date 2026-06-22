@@ -816,7 +816,10 @@
 			"title": "Bezwaren",
 			"config": {
 				"register": "procest",
-				"schema": "bezwaar",
+				"schema": "case",
+				"filter": {
+					"caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+				},
 				"showViewAction": false,
 				"actions": [
 					{
@@ -824,17 +827,20 @@
 						"label": "View",
 						"icon": "icon-info",
 						"handler": "navigate",
-						"route": "BezwaarDetail",
+						"route": "CaseDetail",
 						"type": "handler"
 					}
 				],
 				"columns": [
-					"case",
-					"status",
-					"ontvangstdatum",
-					"decisionDeadline",
-					"awbReference",
-					"dwangsom"
+					"identifier",
+					"title",
+					{
+						"key": "status",
+						"label": "Status",
+						"formatter": "statusTypeName"
+					},
+					"assignee",
+					"deadline"
 				],
 				"sidebar": {
 					"enabled": true,
@@ -2871,16 +2877,20 @@
 			"title": "Beroepen",
 			"config": {
 				"register": "procest",
-				"schema": "beroep",
+				"schema": "case",
+				"filter": {
+					"caseType": "b3c1a000-0000-4000-a000-00000000be30"
+				},
 				"columns": [
-					"case",
-					"sourceBezwaar",
-					"courtReference",
-					"competentCourt",
-					"appellantFilingDate",
-					"filingDeadline",
-					"judgmentOutcome",
-					"cascadeAction"
+					"identifier",
+					"title",
+					{
+						"key": "status",
+						"label": "Status",
+						"formatter": "statusTypeName"
+					},
+					"assignee",
+					"deadline"
 				],
 				"showViewAction": false,
 				"actions": [
@@ -2889,7 +2899,7 @@
 						"label": "View",
 						"icon": "icon-info",
 						"handler": "navigate",
-						"route": "BeroepDetail",
+						"route": "CaseDetail",
 						"type": "handler"
 					}
 				],
