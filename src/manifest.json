@@ -14,47 +14,47 @@
 		},
 		{
 			"id": "MyWork",
-			"label": "My Work",
+			"label": "Mijn werk",
 			"icon": "icon-checkmark",
 			"route": "MyWork",
 			"order": 20
 		},
 		{
 			"id": "WorkGroup",
-			"label": "Work",
+			"label": "Werk",
 			"icon": "icon-toggle",
 			"order": 20
 		},
 		{
 			"id": "CasesGroup",
-			"label": "Cases",
+			"label": "Zaken",
 			"icon": "icon-folder",
 			"order": 30
 		},
 		{
 			"id": "Cases",
-			"label": "All cases",
+			"label": "Alle zaken",
 			"icon": "icon-folder",
 			"route": "Cases",
 			"order": 40
 		},
 		{
 			"id": "Werkvoorraad",
-			"label": "Work Queue",
+			"label": "Werkvoorraad",
 			"icon": "icon-group",
 			"route": "Werkvoorraad",
 			"order": 30
 		},
 		{
 			"id": "WorkflowBoard",
-			"label": "Workflow Board",
+			"label": "Werkstroombord",
 			"icon": "icon-category-workflow",
 			"route": "WorkflowBoard",
 			"order": 35
 		},
 		{
 			"id": "Transfers",
-			"label": "Transfers",
+			"label": "Overdrachten",
 			"icon": "icon-shared",
 			"route": "Transfers",
 			"order": 80
@@ -95,7 +95,7 @@
 		},
 		{
 			"id": "AnalyticsGroup",
-			"label": "Analytics",
+			"label": "Rapportages",
 			"icon": "icon-category-monitoring",
 			"order": 55
 		},
@@ -108,7 +108,7 @@
 		},
 		{
 			"id": "CaseMap",
-			"label": "Map",
+			"label": "Kaart",
 			"icon": "icon-address",
 			"route": "CaseMap",
 			"order": 60
@@ -128,7 +128,7 @@
 		},
 		{
 			"id": "Advice",
-			"label": "Advice",
+			"label": "Advies",
 			"icon": "icon-comment",
 			"route": "Advice",
 			"order": 75
@@ -147,13 +147,13 @@
 		},
 		{
 			"id": "SettingsGroup",
-			"label": "Settings",
+			"label": "Instellingen",
 			"icon": "icon-settings",
 			"order": 200
 		},
 		{
 			"id": "Documentation",
-			"label": "Documentation",
+			"label": "Documentatie",
 			"icon": "icon-info",
 			"href": "https://procest.conduction.nl",
 			"section": "footer",
@@ -161,7 +161,7 @@
 		},
 		{
 			"id": "CaseTypesMenu",
-			"label": "Case Types",
+			"label": "Zaaktypen",
 			"icon": "icon-category-customization",
 			"route": "Settings",
 			"section": "settings",
@@ -176,7 +176,7 @@
 		},
 		{
 			"id": "PartnersMenu",
-			"label": "Partner organisations",
+			"label": "Partnerorganisaties",
 			"icon": "icon-group",
 			"route": "Partners",
 			"section": "settings",
@@ -184,7 +184,7 @@
 		},
 		{
 			"id": "TenantsMenu",
-			"label": "Tenants",
+			"label": "Organisaties",
 			"icon": "icon-group",
 			"route": "Tenants",
 			"section": "settings",
@@ -210,7 +210,7 @@
 		},
 		{
 			"id": "WorkflowDefinitionsMenu",
-			"label": "Workflow definitions",
+			"label": "Werkstroomdefinities",
 			"icon": "icon-category-workflow",
 			"route": "WorkflowDefinitions",
 			"section": "settings",
@@ -226,7 +226,7 @@
 		},
 		{
 			"id": "StatusRecordsMenu",
-			"label": "Status history",
+			"label": "Statusgeschiedenis",
 			"icon": "icon-history",
 			"route": "StatusRecords",
 			"section": "settings",
@@ -244,7 +244,7 @@
 		},
 		{
 			"id": "LhsRecommendationsMenu",
-			"label": "LHS Recommendations",
+			"label": "LHS-aanbevelingen",
 			"icon": "icon-comment",
 			"route": "LhsRecommendations",
 			"section": "settings",
@@ -252,7 +252,7 @@
 		},
 		{
 			"id": "LocationsMenu",
-			"label": "Case locations",
+			"label": "Zaaklocaties",
 			"icon": "icon-address",
 			"route": "Locations",
 			"section": "settings",
@@ -283,7 +283,7 @@
 		},
 		{
 			"id": "TenantOnboardingMenu",
-			"label": "Tenant onboarding",
+			"label": "Organisatie-onboarding",
 			"icon": "icon-user",
 			"route": "TenantOnboardingDashboard",
 			"section": "settings",
@@ -291,7 +291,7 @@
 		},
 		{
 			"id": "SubstitutionMenu",
-			"label": "Substitution",
+			"label": "Vervanging",
 			"icon": "icon-user",
 			"route": "SubstitutionSettings",
 			"section": "settings",
@@ -299,7 +299,7 @@
 		},
 		{
 			"id": "SubstitutionAdminMenu",
-			"label": "Substitutions & reassignment",
+			"label": "Vervangingen & hertoewijzing",
 			"icon": "icon-group",
 			"route": "SubstitutionAdmin",
 			"section": "settings",
@@ -308,7 +308,7 @@
 		},
 		{
 			"id": "SettingsMenu",
-			"label": "Settings",
+			"label": "Instellingen",
 			"icon": "icon-settings",
 			"route": "Settings",
 			"section": "settings",
@@ -316,7 +316,7 @@
 		},
 		{
 			"id": "FeaturesRoadmapMenu",
-			"label": "Features & roadmap",
+			"label": "Functies & roadmap",
 			"icon": "icon-toggle",
 			"route": "FeaturesRoadmap",
 			"section": "footer",
