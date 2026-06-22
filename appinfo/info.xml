@@ -96,6 +96,7 @@ Vrij en open source onder de AGPL-licentie.
         <command>OCA\Procest\Command\ArchiefDetectReadyCommand</command>
         <command>OCA\Procest\Command\ArchiefRetrySubmissionsCommand</command>
         <command>OCA\Procest\Command\MigrateTenantsCommand</command>
+        <command>OCA\Procest\Command\SeedBezwaarBeroepCommand</command>
     </commands>
 
     <repair-steps>
