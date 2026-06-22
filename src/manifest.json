@@ -400,7 +400,7 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 3,
-						"gridHeight": 2,
+						"gridHeight": 3,
 						"showTitle": false
 					},
 					{
@@ -409,7 +409,7 @@
 						"gridX": 3,
 						"gridY": 0,
 						"gridWidth": 3,
-						"gridHeight": 2,
+						"gridHeight": 3,
 						"showTitle": false
 					},
 					{
@@ -418,7 +418,7 @@
 						"gridX": 6,
 						"gridY": 0,
 						"gridWidth": 3,
-						"gridHeight": 2,
+						"gridHeight": 3,
 						"showTitle": false
 					},
 					{
@@ -427,14 +427,14 @@
 						"gridX": 9,
 						"gridY": 0,
 						"gridWidth": 3,
-						"gridHeight": 2,
+						"gridHeight": 3,
 						"showTitle": false
 					},
 					{
 						"id": "5",
 						"widgetId": "cases-by-status",
 						"gridX": 0,
-						"gridY": 2,
+						"gridY": 3,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"showTitle": false
@@ -443,7 +443,7 @@
 						"id": "6",
 						"widgetId": "cases-by-type",
 						"gridX": 6,
-						"gridY": 2,
+						"gridY": 3,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"showTitle": false
@@ -452,7 +452,7 @@
 						"id": "7",
 						"widgetId": "open-cases",
 						"gridX": 0,
-						"gridY": 6,
+						"gridY": 7,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
@@ -461,7 +461,7 @@
 						"id": "8",
 						"widgetId": "overdue-cases",
 						"gridX": 4,
-						"gridY": 6,
+						"gridY": 7,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
@@ -470,7 +470,7 @@
 						"id": "9",
 						"widgetId": "my-tasks",
 						"gridX": 8,
-						"gridY": 6,
+						"gridY": 7,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
@@ -479,7 +479,7 @@
 						"id": "10",
 						"widgetId": "deadline-alerts",
 						"gridX": 0,
-						"gridY": 10,
+						"gridY": 11,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
@@ -488,7 +488,7 @@
 						"id": "11",
 						"widgetId": "task-reminders",
 						"gridX": 4,
-						"gridY": 10,
+						"gridY": 11,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
@@ -497,7 +497,7 @@
 						"id": "12",
 						"widgetId": "stalled-cases",
 						"gridX": 8,
-						"gridY": 10,
+						"gridY": 11,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true

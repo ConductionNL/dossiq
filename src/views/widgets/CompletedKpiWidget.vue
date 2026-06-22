@@ -1,29 +1,35 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <template>
-	<CnStatsBlock
-		:title="t('procest', 'Completed This Month')"
-		:count="count"
-		:count-label="countLabel"
-		:icon="CheckCircle"
-		variant="success"
-		horizontal
-		show-zero-count
-		:loading="loading"
-		:route="{ path: '/cases' }" />
+	<div class="kpi-widget">
+		<KpiRangePills :value="range" @input="onRange" />
+		<CnStatsBlock
+			:title="t('procest', 'Completed')"
+			:count="count"
+			:count-label="countLabel"
+			:icon="CheckCircle"
+			variant="success"
+			horizontal
+			show-zero-count
+			:loading="loading"
+			:route="{ path: '/cases' }" />
+	</div>
 </template>
 
 <script>
 import { CnStatsBlock } from '@conduction/nextcloud-vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
-import { getCases, getStatusTypes, splitCases } from '../../services/dashboardData.js'
+import { getCases, getStatusTypes } from '../../services/dashboardData.js'
 import { computeKpis } from '../../utils/dashboardHelpers.js'
+import { isInRange } from '../../utils/dateRange.js'
+import KpiRangePills from '../../components/KpiRangePills.vue'
 import dashboardRefreshMixin from './dashboardRefreshMixin.js'
 
 export default {
 	name: 'CompletedKpiWidget',
 	components: {
 		CnStatsBlock,
+		KpiRangePills,
 	},
 	mixins: [dashboardRefreshMixin],
 	data() {
@@ -31,6 +37,7 @@ export default {
 			CheckCircle,
 			count: 0,
 			avgDays: null,
+			range: 'month',
 			loading: true,
 		}
 	},
@@ -43,14 +50,28 @@ export default {
 	},
 	methods: {
 		/**
-		 * Count cases completed this month + average processing time.
+		 * Switch the date range and recompute (data is cached, so no refetch).
+		 *
+		 * @param {string} range New range id.
+		 */
+		onRange(range) {
+			this.range = range
+			this.load()
+		},
+		/**
+		 * Count cases closed within the selected range + average processing time.
 		 */
 		async load() {
 			this.loading = true
 			try {
 				const [cases, statusTypes] = await Promise.all([getCases(), getStatusTypes()])
-				const { openCases, completedThisMonth } = splitCases(cases, statusTypes)
-				const kpis = computeKpis(openCases, completedThisMonth, [])
+				const finalIds = new Set(
+					statusTypes.filter(st => st.isFinal).map(st => st.id),
+				)
+				const completed = cases.filter(
+					c => finalIds.has(c.status) && isInRange(c.endDate, this.range),
+				)
+				const kpis = computeKpis([], completed, [])
 				this.count = kpis.completedCount
 				this.avgDays = kpis.avgDays
 			} catch (err) {
