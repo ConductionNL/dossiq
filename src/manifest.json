@@ -331,26 +331,44 @@
 			"title": "Dashboard",
 			"actionsComponent": "DashboardHeaderActions",
 			"config": {
+				"dateRange": {
+					"enabled": true,
+					"showHeaderPicker": true,
+					"control": "pills",
+					"persistKey": "procest-dashboard-range",
+					"default": { "preset": "month" },
+					"presets": [
+						{ "id": "week", "label": "Week", "days": 7 },
+						{ "id": "month", "label": "Maand", "days": 30 },
+						{ "id": "quarter", "label": "Kwartaal", "days": 90 },
+						{ "id": "year", "label": "Jaar", "days": 365 },
+						{ "id": "all", "label": "Alles", "days": null }
+					]
+				},
 				"widgets": [
 					{
 						"id": "kpi-open-cases",
-						"type": "custom",
-						"title": "Open Cases"
+						"type": "stat",
+						"title": "Nieuwe zaken",
+						"content": { "label": "Nieuwe zaken", "route": { "name": "Cases" }, "icon": "FolderOutline", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-overdue",
-						"type": "custom",
-						"title": "Overdue"
+						"type": "stat",
+						"title": "Te laat",
+						"content": { "label": "Te laat", "route": { "name": "Cases" }, "icon": "AlertCircleOutline", "valueColor": "#e9322d", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "deadline": { "lt": "@today" }, "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-completed",
-						"type": "custom",
-						"title": "Completed This Month"
+						"type": "stat",
+						"title": "Afgerond",
+						"content": { "label": "Afgerond", "route": { "name": "Cases" }, "icon": "CheckCircleOutline", "valueColor": "#46ba61", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "endDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-my-tasks",
-						"type": "custom",
-						"title": "My Tasks"
+						"type": "stat",
+						"title": "Mijn taken",
+						"content": { "label": "Mijn taken", "route": { "name": "MyWork" }, "icon": "ClipboardCheckOutline", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "task", "metric": "count", "filter": { "assignee": "@me", "dueDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "cases-by-status",
@@ -400,7 +418,7 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 3,
-						"gridHeight": 3,
+						"gridHeight": 2,
 						"showTitle": false
 					},
 					{
@@ -409,7 +427,7 @@
 						"gridX": 3,
 						"gridY": 0,
 						"gridWidth": 3,
-						"gridHeight": 3,
+						"gridHeight": 2,
 						"showTitle": false
 					},
 					{
@@ -418,7 +436,7 @@
 						"gridX": 6,
 						"gridY": 0,
 						"gridWidth": 3,
-						"gridHeight": 3,
+						"gridHeight": 2,
 						"showTitle": false
 					},
 					{
@@ -427,14 +445,14 @@
 						"gridX": 9,
 						"gridY": 0,
 						"gridWidth": 3,
-						"gridHeight": 3,
+						"gridHeight": 2,
 						"showTitle": false
 					},
 					{
 						"id": "5",
 						"widgetId": "cases-by-status",
 						"gridX": 0,
-						"gridY": 3,
+						"gridY": 2,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"showTitle": false
@@ -443,7 +461,7 @@
 						"id": "6",
 						"widgetId": "cases-by-type",
 						"gridX": 6,
-						"gridY": 3,
+						"gridY": 2,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"showTitle": false
@@ -452,7 +470,7 @@
 						"id": "7",
 						"widgetId": "open-cases",
 						"gridX": 0,
-						"gridY": 7,
+						"gridY": 6,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
@@ -461,7 +479,7 @@
 						"id": "8",
 						"widgetId": "overdue-cases",
 						"gridX": 4,
-						"gridY": 7,
+						"gridY": 6,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
@@ -470,7 +488,7 @@
 						"id": "9",
 						"widgetId": "my-tasks",
 						"gridX": 8,
-						"gridY": 7,
+						"gridY": 6,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
@@ -479,7 +497,7 @@
 						"id": "10",
 						"widgetId": "deadline-alerts",
 						"gridX": 0,
-						"gridY": 11,
+						"gridY": 10,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
@@ -488,7 +506,7 @@
 						"id": "11",
 						"widgetId": "task-reminders",
 						"gridX": 4,
-						"gridY": 11,
+						"gridY": 10,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
@@ -497,7 +515,7 @@
 						"id": "12",
 						"widgetId": "stalled-cases",
 						"gridX": 8,
-						"gridY": 11,
+						"gridY": 10,
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
@@ -506,10 +524,6 @@
 				"documentationUrl": "https://procest.conduction.nl"
 			},
 			"slots": {
-				"widget-kpi-open-cases": "kpiOpenCases",
-				"widget-kpi-overdue": "kpiOverdue",
-				"widget-kpi-completed": "kpiCompleted",
-				"widget-kpi-my-tasks": "kpiMyTasks",
 				"widget-cases-by-status": "statusChart",
 				"widget-cases-by-type": "casesByType",
 				"widget-open-cases": "casesOverview",

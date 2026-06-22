@@ -26,16 +26,29 @@ Remaining: capture these as a repeatable seed script/JSON (e.g.
 `tests/fixtures/dashboard-seed.json` + an `occ` or API seeder) so the data is
 reproducible after a `clean-env`.
 
-## 3. Dashboard should have no custom widgets — ⚠️ DEFERRED (conflict)
-Direct conflict with the just-shipped per-card KPI date-range pills, which are
-implemented as custom widget components (`src/views/widgets/*KpiWidget.vue`).
-The 12 dashboard widgets *could* in principle map to nc-vue standard widget
-types (CnStatsBlockWidget / chart / object-list), but the standard KPI widget
-does not currently support an embedded per-card range-pill control. Decision
-needed: either (a) keep KPI widgets custom (for the pills) and migrate only the
-6 list widgets + 2 charts, or (b) extend the nc-vue standard KPI widget to host
-the range pills, then migrate. Do NOT blanket-delete custom widgets — it would
-remove the pills feature. Raise as an OpenSpec change.
+## 3. KPI cards → native nc-vue widgets — ✅ DONE
+Migrated the 4 custom KPI widgets to declarative nc-vue `type:"stat"`
+(`CnStatWidget`) tiles + a shared dashboard `config.dateRange` pills control
+(Week/Maand/Kwartaal/Jaar/Alles). Required upgrading `@conduction/nextcloud-vue`
+108→125 (the version that added "publish date-range window to workspace context
+so pills re-scope KPI tiles"; shillinq @111 still hand-rolls this). Counts are
+now server-side via OpenRegister's `/value` aggregation, filtered by
+`@workspace.dateFrom?`/`@workspace.dateTo?` tokens (+ `@me`, `@today`). Deleted
+the 4 `*KpiWidget.vue`, `KpiRangePills.vue`, `utils/dateRange.js`,
+`dateRange.spec.js` and the registry entries.
+GOTCHA: `stats-block` (`CnStatsBlockWidget`) does NOT inject the workspace
+context — it sent the raw `@workspace.*` token unresolved (all zeros). Use
+`type:"stat"` (`CnStatWidget`) for date-range-filtered KPIs (it has the
+`cnWorkspaceContext` inject + resolveFilterTokens/dropOptionalUnresolved), as
+pipelinq does.
+Trade-off (accepted): one SHARED dashboard range (header pills) instead of the
+previous per-card independent pills. Semantics shifted slightly to be
+declaratively expressible: Open→"Nieuwe zaken" (created in range), "Te laat"
+(deadline<today AND created in range), "Afgerond" (closed in range), "Mijn
+taken" (assignee=@me, due in range). Live-verified: counts resolve and re-scope
+(Maand→Jaar: 5→12 / 2→6).
+FOLLOW-UP: the 6 list widgets + 2 chart widgets are still custom; they could
+move to CnObjectListWidget / CnChartWidget in a later pass.
 
 ## 4. Move Settings entries into the Settings menu — ◑ MOSTLY ALREADY DONE
 The config leaves already carry `"section": "settings"` and a top-level
