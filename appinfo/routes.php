@@ -259,6 +259,11 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         // Inbound SOAP endpoints accept raw XML POST.
         ['name' => 'stuf#zaken',    'url' => '/api/stuf/zaken',    'verb' => 'POST'],
         ['name' => 'stuf#personen', 'url' => '/api/stuf/personen', 'verb' => 'POST'],
+        // Outbound StUF-ZKN gateway (admin REST) + async confirmation receiver.
+        ['name' => 'stuf#endpoints', 'url' => '/api/stuf/endpoints', 'verb' => 'GET'],
+        ['name' => 'stuf#messages',  'url' => '/api/stuf/messages',  'verb' => 'GET'],
+        ['name' => 'stuf#outbound',  'url' => '/api/stuf/outbound',  'verb' => 'POST'],
+        ['name' => 'stuf#inkomend',  'url' => '/api/stuf/inkomend',  'verb' => 'POST'],
 
         // Doorlooptijd (throughput-time) dashboard metrics.
         ['name' => 'doorlooptijd#metrics', 'url' => '/api/doorlooptijd/metrics', 'verb' => 'GET'],
