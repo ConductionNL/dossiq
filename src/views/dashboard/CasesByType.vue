@@ -40,10 +40,10 @@
 				v-for="(item, index) in typeData"
 				:key="item.type"
 				class="type-chart__row"
-				:title="t('procest', 'Filter cases by type: {type}', { type: item.type || t('procest', 'Unknown') })"
+				:title="t('procest', 'Filter cases by type: {type}', { type: item.label || t('procest', 'Unknown') })"
 				@click="onBarClick(item)">
 				<span class="type-chart__label">
-					{{ item.type || t('procest', 'Unknown') }}
+					{{ item.label || t('procest', 'Unknown') }}
 				</span>
 				<div class="type-chart__bar-container">
 					<div
@@ -75,9 +75,11 @@ export default {
 	},
 	props: {
 		/**
-		 * Array of `{ type: string, count: number }` rows pre-sorted by count
-		 * descending. Defaults to an empty array so the widget renders an
-		 * empty state during initial load.
+		 * Array of `{ type: string, label: string, count: number }` rows
+		 * pre-sorted by count descending. `type` is the caseType id (used for
+		 * the deep-link filter); `label` is the human-readable title shown on
+		 * the bar. Defaults to an empty array so the widget renders an empty
+		 * state during initial load.
 		 */
 		typeData: { type: Array, default: () => [] },
 		/** Loading flag — renders skeleton bars while true. */
