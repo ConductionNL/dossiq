@@ -151,6 +151,8 @@ class StufController extends Controller
      * @return JSONResponse
      *
      * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-free-message-templates
+     *
+     * @contract exclude SOAP vrijBericht proxy needs a seeded endpoint + vault + live peer; covered by PHPUnit + env-gated live-e2e/Newman.
      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function outbound(): JSONResponse
@@ -202,6 +204,8 @@ class StufController extends Controller
      * @return DataResponse
      *
      * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-async-confirmation
+     *
+     * @contract exclude WSSE SOAP webhook needs a signed XML body + seeded endpoint/vault; covered by PHPUnit + env-gated live-e2e/Newman.
      */
     #[PublicPage]
     #[NoCSRFRequired]

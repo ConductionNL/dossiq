@@ -195,6 +195,8 @@ class StufMessageHandler
      * @param string $referentienummer The referentienummer.
      *
      * @return array|null The message row, or null.
+     *
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md
      */
     public function findOutboundByReferentienummer(string $referentienummer): ?array
     {

@@ -165,6 +165,8 @@ class ContactBetrokkeneMapper
      * @param array $contact The Contact.
      *
      * @return string|null
+     *
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md
      */
     public function bsnFromContact(array $contact): ?string
     {

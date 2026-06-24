@@ -8,6 +8,8 @@
   - CnSettingsSection, so it carries no NcSettingsSection wrapper of its own.
   -
   - @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-rest-surface
+  -
+  - @visual exclude Admin-only read-only panel rendered inside AdminRoot's settings section; its table only shows StUF endpoints + circuit-breaker health fetched from the backend, which requires a seeded zaaksysteem endpoint and the OpenRegister register installed. Without a live endpoint the view is its empty state, so a screenshot baseline would capture nothing meaningful. Covered by the env-gated live-e2e job; the render logic (healthClass/healthLabel) is unit-testable JS, not a stable pixel surface.
 -->
 <template>
 	<div class="stuf-endpoints">
@@ -69,6 +71,11 @@ export default {
 		this.reload()
 	},
 	methods: {
+		/**
+		 * Reload the StUF endpoint list + circuit-breaker health from the backend.
+		 *
+		 * @spec exclude presentational reload helper — no business logic
+		 */
 		async reload() {
 			try {
 				const data = await listEndpoints()
@@ -79,10 +86,22 @@ export default {
 				showError(this.loadError)
 			}
 		},
+		/**
+		 * Map an endpoint's breaker health state to its CSS modifier class.
+		 *
+		 * @param {object} row The endpoint row.
+		 * @spec exclude presentational CSS-class mapping — no business logic
+		 */
 		healthClass(row) {
 			const state = row && row.health && row.health.state ? row.health.state : 'ok'
 			return 'stuf-endpoints__health--' + state
 		},
+		/**
+		 * Map an endpoint's breaker health state to a human label.
+		 *
+		 * @param {object} row The endpoint row.
+		 * @spec exclude presentational label mapping — no business logic
+		 */
 		healthLabel(row) {
 			const state = row && row.health && row.health.state ? row.health.state : 'ok'
 			if (state === 'circuit_open') {

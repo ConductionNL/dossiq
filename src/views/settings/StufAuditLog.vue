@@ -9,6 +9,8 @@
   - AdminRoot's CnSettingsSection, so it carries no NcSettingsSection wrapper.
   -
   - @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
+  -
+  - @visual exclude Admin-only read-only audit inspector rendered inside AdminRoot's settings section; it lists StUF SOAP envelope rows fetched from /api/stuf/messages, which only exist after real outbound/inbound traffic against a seeded zaaksysteem. Without that traffic the view is its empty state, so a screenshot baseline would capture nothing meaningful. Covered by the env-gated live-e2e job; the cell formatting (statusClass/pretty/berichtSoortOptions) is unit-testable JS, not a stable pixel surface.
 -->
 <template>
 	<div class="stuf-audit-log">
@@ -142,9 +144,19 @@ export default {
 		}
 	},
 	computed: {
+		/**
+		 * The StUF berichtsoort filter options.
+		 *
+		 * @spec exclude presentational filter-option list — static enum, no business logic
+		 */
 		berichtSoortOptions() {
 			return ['Lk01', 'Lk02', 'Lk03', 'Bv01', 'Lv01', 'La01', 'Du01', 'Fo02']
 		},
+		/**
+		 * The StUF message-status filter options.
+		 *
+		 * @spec exclude presentational filter-option list — static enum, no business logic
+		 */
 		statusOptions() {
 			return ['verzonden', 'bevestigd', 'fout', 'wacht_op_retry']
 		},
@@ -193,15 +205,33 @@ export default {
 				this.loading = false
 			}
 		},
+		/**
+		 * Open the envelope-inspector dialog for a row.
+		 *
+		 * @param {object} row The audit-log row.
+		 * @spec exclude presentational dialog open — no business logic
+		 */
 		inspect(row) {
 			this.inspectRow = row
 		},
 		hasRetries(row) {
 			return Array.isArray(row.retries) && row.retries.length > 0
 		},
+		/**
+		 * Map a message status to its CSS modifier class.
+		 *
+		 * @param {string} status The message status.
+		 * @spec exclude presentational CSS-class mapping — no business logic
+		 */
 		statusClass(status) {
 			return 'stuf-audit-log__status--' + (status || 'unknown')
 		},
+		/**
+		 * Pretty-print a value as indented JSON for display.
+		 *
+		 * @param {*} value The value to render.
+		 * @spec exclude presentational JSON formatter — no business logic
+		 */
 		pretty(value) {
 			try {
 				return JSON.stringify(value, null, 2)
@@ -209,6 +239,11 @@ export default {
 				return String(value)
 			}
 		},
+		/**
+		 * Export the current audit-log rows as a CSV download.
+		 *
+		 * @spec exclude presentational client-side CSV export — no business logic
+		 */
 		exportCsv() {
 			const headers = ['verzondenOp', 'richting', 'berichtSoort', 'functie', 'status', 'httpStatus', 'duurMs', 'referentienummer', 'zaakIdentificatie']
 			const lines = [headers.join(',')]

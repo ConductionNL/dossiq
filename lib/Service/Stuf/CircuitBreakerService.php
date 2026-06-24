@@ -180,6 +180,8 @@ class CircuitBreakerService
      * @param string $endpointId The endpoint id.
      *
      * @return array{state:string,failureCount:int,openedAt:int}
+     *
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md
      */
     public function snapshot(string $endpointId): array
     {

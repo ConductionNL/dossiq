@@ -83,6 +83,8 @@ class StufRegisterAccess
      * @param array<string,scalar> $filters The filter map merged into OR `findAll`.
      *
      * @return array|null The object as plain array, or null.
+     *
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md
      */
     public function findOne(string $schema, array $filters): ?array
     {
@@ -98,6 +100,8 @@ class StufRegisterAccess
      * @param int                  $limit   The page size.
      *
      * @return array<int,array<string,mixed>>
+     *
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md
      */
     public function findAll(string $schema, array $filters=[], int $limit=100): array
     {
