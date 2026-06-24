@@ -15,6 +15,26 @@
 			{ "id": "done", "type": "summary", "title": "Klaar", "healthCheck": true }
 		]
 	},
+	"walkthrough": {
+		"enabled": true,
+		"version": 1,
+		"completionConfigKey": "walkthrough_completed_version",
+		"tours": [
+			{
+				"id": "procest:getting-started",
+				"title": "Getting started",
+				"trigger": "first-visit",
+				"minAppVersion": "0.2.17",
+				"steps": [
+					{ "id": "welcome", "sinceVersion": "0.2.17", "placement": "center", "title": "Welcome to Procest", "body": "Let's take a quick spin through case handling — we'll register a case together so you can see how the pieces fit. You'll add the record yourself.", "target": { "kind": "page", "ref": "Dashboard" }, "advanceOn": { "type": "manual" } },
+					{ "id": "go-cases", "sinceVersion": "0.2.17", "placement": "right", "body": "Cases are the heart of your work. Open Cases from the menu to see everything in progress.", "task": "Click Cases in the menu", "target": { "kind": "nav-item", "ref": "Cases" }, "advanceOn": { "type": "route-match", "route": "Cases" } },
+					{ "id": "create-case", "sinceVersion": "0.2.17", "placement": "bottom", "allowManualNext": true, "body": "Register your first case — give it a title and pick a case type, then save. You can add tasks, decisions and documents later.", "task": "Click New and save a case", "target": { "kind": "element", "ref": "index-add" }, "advanceOn": { "type": "object-created", "register": "procest", "schema": "case", "capture": { "caseId": ":id" } } },
+					{ "id": "go-tasks", "sinceVersion": "0.2.17", "placement": "right", "body": "Your work lives here. Open My Work to see the tasks and cases assigned to you.", "task": "Click My Work in the menu", "target": { "kind": "nav-item", "ref": "MyWork" }, "advanceOn": { "type": "route-match", "route": "MyWork" } },
+					{ "id": "done", "sinceVersion": "0.2.17", "placement": "center", "title": "You're all set", "body": "Nicely done — your first case is on the board. Head back to the Dashboard to track progress, and reopen this tour anytime from the … menu.", "target": { "kind": "page", "ref": "Dashboard" }, "advanceOn": { "type": "manual" } }
+				]
+			}
+		]
+	},
 	"menu": [
 		{
 			"id": "Dashboard",
