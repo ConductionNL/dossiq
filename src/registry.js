@@ -24,6 +24,7 @@
 //   a pass-through.
 
 import { leafTab } from './integrations/leafTabs.js'
+import BezwaarBeroepOverview from './components/bezwaar/BezwaarBeroepOverview.vue'
 import MyWorkView from './views/MyWork.vue'
 import WerkvoorraadView from './views/Werkvoorraad.vue'
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
@@ -139,6 +140,14 @@ const HEADER_ACTIONS_META = {
  * @type {Record<string, { kind: string, component: object }>}
  */
 const registry = {
+	// --- Bezwaar & Beroep cards-collapse landing page (bezwaar-beroep-cards-collapse). ---
+	// @spec openspec/changes/bezwaar-beroep-cards-collapse/specs/navigation/spec.md
+	BezwaarBeroepOverview: {
+		kind: 'page',
+		component: BezwaarBeroepOverview,
+		_note: 'Card-grid landing page replacing the BezwaarBeroepGroup four-leaf nav (ADR-044 cards-collapse). Four former leaves stay routable as deep links.',
+	},
+
 	// --- Genuine exceptions: no abstract manifest analogue. ---
 	MyWorkView: {
 		kind: 'page',
