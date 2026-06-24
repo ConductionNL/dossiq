@@ -360,25 +360,25 @@
 						"id": "kpi-open-cases",
 						"type": "stat",
 						"title": "Nieuwe zaken",
-						"content": { "label": "Nieuwe zaken", "route": { "name": "Cases" }, "icon": "FolderOutline", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"content": { "label": "Nieuwe zaken", "route": { "name": "Cases", "query": { "startDate[gte]": "@monthStart" } }, "icon": "FolderOutline", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-overdue",
 						"type": "stat",
 						"title": "Te laat",
-						"content": { "label": "Te laat", "route": { "name": "Cases" }, "icon": "AlertCircleOutline", "valueColor": "#e9322d", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "deadline": { "lt": "@today" }, "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"content": { "label": "Te laat", "route": { "name": "Cases", "query": { "deadline[lt]": "@today" } }, "icon": "AlertCircleOutline", "valueColor": "#e9322d", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "deadline": { "lt": "@today" }, "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-completed",
 						"type": "stat",
 						"title": "Afgerond",
-						"content": { "label": "Afgerond", "route": { "name": "Cases" }, "icon": "CheckCircleOutline", "valueColor": "#46ba61", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "endDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"content": { "label": "Afgerond", "route": { "name": "Cases", "query": { "endDate[gte]": "@yearStart" } }, "icon": "CheckCircleOutline", "valueColor": "#46ba61", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "endDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-my-tasks",
 						"type": "stat",
 						"title": "Mijn taken",
-						"content": { "label": "Mijn taken", "route": { "name": "MyWork" }, "icon": "ClipboardCheckOutline", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "task", "metric": "count", "filter": { "assignee": "@me", "dueDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"content": { "label": "Mijn taken", "route": { "name": "Tasks", "query": { "assignee": "@me" } }, "icon": "ClipboardCheckOutline", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "task", "metric": "count", "filter": { "assignee": "@me", "dueDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "cases-by-status",

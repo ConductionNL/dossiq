@@ -63,11 +63,14 @@ export function computeKpis(openCases, completedCases, myTasks) {
 
 /**
  * Aggregate open cases by status name for the status chart.
- * Same-named statuses across case types are merged.
+ * Same-named statuses across case types are merged into one bar; every
+ * underlying statusType id that contributes to a bar is collected in
+ * `statusIds` so a bar click can deep-link to `/cases?status[]=<id>&…` (an IN
+ * match across all case types that share the status name).
  *
  * @param {object[]} openCases Cases with non-final status
  * @param {object[]} statusTypes All status types
- * @return {Array<{ name: string, count: number }>} Sorted by status type order
+ * @return {Array<{ name: string, count: number, statusIds: string[] }>} Sorted by status type order
  */
 /**
  * @param openCases
@@ -76,6 +79,7 @@ export function computeKpis(openCases, completedCases, myTasks) {
  */
 export function aggregateByStatus(openCases, statusTypes) {
 	const statusMap = new Map()
+	const idsMap = new Map()
 	const orderMap = new Map()
 
 	for (const st of statusTypes) {
@@ -92,10 +96,18 @@ export function aggregateByStatus(openCases, statusTypes) {
 	for (const c of openCases) {
 		const name = statusIdToName.get(c.status) || c.status || t('procest', 'Unknown')
 		statusMap.set(name, (statusMap.get(name) || 0) + 1)
+		if (c.status) {
+			if (!idsMap.has(name)) idsMap.set(name, new Set())
+			idsMap.get(name).add(c.status)
+		}
 	}
 
 	return Array.from(statusMap.entries())
-		.map(([name, count]) => ({ name, count }))
+		.map(([name, count]) => ({
+			name,
+			count,
+			statusIds: Array.from(idsMap.get(name) || []),
+		}))
 		.sort((a, b) => (orderMap.get(a.name) ?? 999) - (orderMap.get(b.name) ?? 999))
 }
 
@@ -540,29 +552,37 @@ export function formatRelativeTime(dateString) {
 }
 
 /**
- * Aggregate open cases by case-type title for the "Cases by Type" bar chart.
- * Cases whose caseType cannot be resolved are grouped under "Unknown".
+ * Aggregate open cases by case type for the "Cases by Type" bar chart.
+ * Grouped by the caseType id (the value a case object stores) so a bar click
+ * can deep-link to `/cases?caseType=<id>` and have the index pre-filter match.
+ * The human-readable title is carried alongside as `label` for display. Cases
+ * whose caseType cannot be resolved are grouped under an empty id / "Unknown".
  *
  * @param {object[]} openCases Cases with non-final status
- * @param {object[]} caseTypes All case types (for name resolution)
- * @return {Array<{ type: string, count: number }>} Sorted by count descending
+ * @param {object[]} caseTypes All case types (for label resolution)
+ * @return {Array<{ type: string, label: string, count: number }>} `type` = caseType id
+ *   (the case's stored value), `label` = title. Sorted by count descending.
  *
  * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-003
  */
 export function aggregateByType(openCases, caseTypes) {
-	const typeMap = new Map()
+	const labelMap = new Map()
 	for (const ct of caseTypes) {
-		typeMap.set(ct.id, ct.title || ct.name || t('procest', 'Unknown'))
+		labelMap.set(ct.id, ct.title || ct.name || t('procest', 'Unknown'))
 	}
 
 	const counts = new Map()
 	for (const c of openCases) {
-		const name = typeMap.get(c.caseType) || t('procest', 'Unknown')
-		counts.set(name, (counts.get(name) || 0) + 1)
+		const id = c.caseType || ''
+		counts.set(id, (counts.get(id) || 0) + 1)
 	}
 
 	return Array.from(counts.entries())
-		.map(([type, count]) => ({ type, count }))
+		.map(([type, count]) => ({
+			type,
+			label: labelMap.get(type) || t('procest', 'Unknown'),
+			count,
+		}))
 		.sort((a, b) => b.count - a.count)
 }
 
