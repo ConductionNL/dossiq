@@ -10,10 +10,6 @@
 		"WorkflowBoard": "WorkGroup",
 		"Transfers": "WorkGroup",
 		"Cases": "CasesGroup",
-		"Bezwaren": "BezwaarBeroepGroup",
-		"Beroepen": "BezwaarBeroepGroup",
-		"BezwaarDecisions": "BezwaarBeroepGroup",
-		"BezwaarAdviceRequests": "BezwaarBeroepGroup",
 		"Analytics": "AnalyticsGroup",
 		"TermijnDashboardMenu": "AnalyticsGroup",
 		"StatusRecordsMenu": "AnalyticsGroup",
@@ -29,7 +25,11 @@
 		"MijnNotificaties": "PortaalGroup"
 	},
 	"removals": [
-		"SubstitutionMenu"
+		"SubstitutionMenu",
+		"Bezwaren",
+		"Beroepen",
+		"BezwaarDecisions",
+		"BezwaarAdviceRequests"
 	],
 	"settingsSection": [
 		"CaseTypesMenu",
