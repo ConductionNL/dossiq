@@ -88,6 +88,20 @@
 			:loading="!storesReady">
 			<KccIntegrationSettings v-if="storesReady" />
 		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('procest', 'StUF-ZKN Endpoints')"
+			:description="t('procest', 'Outbound StUF-ZKN/BG zaaksysteem endpoints per gemeente, with per-endpoint circuit-breaker health. Endpoints, WSSE credentials and mTLS certificates are managed by the platform operator.')"
+			:loading="!storesReady">
+			<StufEndpoints v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			:name="t('procest', 'StUF-ZKN Audit Log')"
+			:description="t('procest', 'Per-call audit log for outbound and inbound StUF SOAP envelopes (full XML, HTTP status, duration, retry history).')"
+			:loading="!storesReady">
+			<StufAuditLog v-if="storesReady" />
+		</CnSettingsSection>
 	</CnAdminSettingsShell>
 </template>
 
@@ -106,6 +120,8 @@ import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
 import EmailSettings from './EmailSettings.vue'
 import KccIntegrationSettings from './KccIntegrationSettings.vue'
+import StufEndpoints from './StufEndpoints.vue'
+import StufAuditLog from './StufAuditLog.vue'
 import { initializeStores } from '../../store/store.js'
 
 export default {
@@ -126,6 +142,8 @@ export default {
 		ConsultationSettingsTab,
 		EmailSettings,
 		KccIntegrationSettings,
+		StufEndpoints,
+		StufAuditLog,
 	},
 	data() {
 		return {

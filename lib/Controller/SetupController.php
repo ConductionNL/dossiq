@@ -50,11 +50,15 @@ use OCP\IRequest;
 class SetupController extends Controller
 {
     /**
-     * @var int Setup contract version; matches manifest.setup.version.
+     * Setup contract version; matches manifest.setup.version.
+     *
+     * @var int
      */
     private const SETUP_VERSION = 1;
 
     /**
+     * Construct the setup controller.
+     *
      * @param string          $appName         The app id.
      * @param IRequest        $request         The request.
      * @param IAppConfig      $appConfig       App-config reader/writer.
@@ -68,7 +72,7 @@ class SetupController extends Controller
         private readonly SettingsService $settingsService,
         private readonly SeedDataService $seedDataService,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -118,10 +122,16 @@ class SetupController extends Controller
                 continue;
             }
 
+            if (is_scalar($value) === true) {
+                $stored = (string) $value;
+            } else {
+                $stored = json_encode($value);
+            }
+
             $this->appConfig->setValueString(
                 'procest',
                 (string) $key,
-                is_scalar($value) ? (string) $value : json_encode($value),
+                $stored,
             );
         }
 
