@@ -3,7 +3,7 @@
   "info": {
     "title": "Procest Case Management Register",
     "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, automaticAction, and their instance counterparts.",
-    "version": "0.9.0"
+    "version": "0.10.0"
   },
   "x-openregister": {
     "type": "application",
@@ -17,7 +17,7 @@
       "caseType": {
         "slug": "caseType",
         "icon": "BriefcaseVariantOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:Project",
         "x-zgw-equivalent": "ZaakType",
         "title": "Case Type",
@@ -65,6 +65,13 @@
           "processingDeadline": {
             "type": "string",
             "description": "ISO 8601 duration for the processing deadline (e.g. P30D)"
+          },
+          "initialStatus": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "statusType",
+            "title": "Initial status",
+            "description": "Reference to the statusType a new case of this type starts in (typically the lowest-order status). Read by the case schema's x-openregister-lifecycle to set status declaratively on create."
           },
           "confidentiality": {
             "type": "string",
@@ -557,13 +564,15 @@
           }
         },
         "icon": "BriefcaseOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org-type": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "title": "Case",
         "description": "A case instance in the case management system",
         "type": "object",
         "configuration": {
+          "objectNameField": "title",
+          "objectDescriptionField": "description",
           "linkedTypes": [
             "mail",
             "calendar",
@@ -571,7 +580,59 @@
             "photos",
             "maps",
             "shares"
-          ]
+          ],
+          "x-openregister-references": {
+            "caseType": {
+              "schema": "caseType",
+              "mode": "relatedObject",
+              "field": "caseType"
+            }
+          },
+          "x-openregister-calculations": {
+            "startDate": {
+              "type": "date",
+              "materialise": true,
+              "expression": {
+                "formatDate": [
+                  {
+                    "coalesce": [
+                      { "prop": "startDate" },
+                      { "now": [] }
+                    ]
+                  },
+                  "Y-m-d"
+                ]
+              }
+            },
+            "deadline": {
+              "type": "date",
+              "materialise": true,
+              "expression": {
+                "dateAdd": {
+                  "date": { "prop": "startDate" },
+                  "duration": { "prop": "@ref.caseType.processingDeadline" }
+                }
+              }
+            },
+            "identifier": {
+              "type": "string",
+              "materialise": true,
+              "expression": {
+                "concat": [
+                  { "year": { "prop": "startDate" } },
+                  "-",
+                  { "sequence": { "scope": "yearly", "pad": 4 } }
+                ]
+              }
+            }
+          },
+          "x-openregister-lifecycle": {
+            "field": "status",
+            "initial": {
+              "from": "caseType",
+              "field": "initialStatus"
+            }
+          }
         },
         "required": [
           "title",
@@ -590,7 +651,8 @@
           },
           "identifier": {
             "type": "string",
-            "description": "Auto-generated case identifier (e.g. 2026-0042)"
+            "readOnly": true,
+            "description": "Auto-generated case identifier (e.g. 2026-0042). Filled declaratively by OpenRegister (x-openregister-calculations.identifier)."
           },
           "caseType": {
             "type": "string",
@@ -603,7 +665,9 @@
           "status": {
             "type": "string",
             "format": "uuid",
-            "description": "Reference to the current status type",
+            "$ref": "statusType",
+            "readOnly": true,
+            "description": "Reference to the current status type. Set declaratively to the case type's initial status by OpenRegister (x-openregister-lifecycle).",
             "title": "Status",
             "facetable": true
           },
@@ -634,7 +698,8 @@
           "deadline": {
             "type": "string",
             "format": "date",
-            "description": "Processing deadline"
+            "readOnly": true,
+            "description": "Processing deadline. Computed declaratively by OpenRegister as startDate + the case type's processingDeadline (x-openregister-calculations.deadline)."
           },
           "confidentiality": {
             "type": "string",
@@ -654,6 +719,7 @@
           },
           "assignee": {
             "type": "string",
+            "referenceType": "nextcloud-user",
             "description": "Nextcloud user ID of the primary handler",
             "title": "Assignee",
             "facetable": true
@@ -691,6 +757,8 @@
           "parentCase": {
             "type": "string",
             "format": "uuid",
+            "$ref": "case",
+            "title": "Parent case",
             "description": "Reference to parent case (for sub-cases)",
             "visible": true
           },
@@ -7719,6 +7787,7 @@
         "trigger": "Aanvraag van burger of bedrijf via DSO of intake",
         "subject": "Omgevingsvergunning",
         "processingDeadline": "P56D",
+        "initialStatus": "@ref:omgevingsvergunning-ontvangen",
         "extensionAllowed": true,
         "extensionPeriod": "P42D",
         "suspensionAllowed": true,
@@ -7740,6 +7809,7 @@
         "trigger": "Subsidieaanvraag van burger, vereniging, stichting of bedrijf",
         "subject": "Subsidie",
         "processingDeadline": "P42D",
+        "initialStatus": "@ref:subsidieaanvraag-ontvangen",
         "extensionAllowed": true,
         "extensionPeriod": "P28D",
         "suspensionAllowed": false,
@@ -7761,6 +7831,7 @@
         "trigger": "Klacht ingediend door burger of bedrijf",
         "subject": "Klacht",
         "processingDeadline": "P42D",
+        "initialStatus": "@ref:klacht-ontvangen",
         "extensionAllowed": true,
         "extensionPeriod": "P28D",
         "suspensionAllowed": false,
@@ -7782,6 +7853,7 @@
         "trigger": "Melding via formulier, app of telefoon",
         "subject": "Openbare ruimte",
         "processingDeadline": "P14D",
+        "initialStatus": "@ref:melding-ontvangen",
         "extensionAllowed": false,
         "suspensionAllowed": false,
         "internalOrExternal": "intern",
