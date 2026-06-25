@@ -63,7 +63,7 @@ Procest currently has no:
    - `openregister` for RBAC guards, audit-trail, retention scheduling, lifecycle
    - `openconnector` for iWMO/iJW berichtenverkeer with zorgaanbieders; CJG, GGD, UWV, SVB data exchange
    - `docudesk` for beschikking (decision letter) generation from Wmo/Jeugdwet/Participatiewet templates
-   - `mydash` for wijkteam-dashboard (caseload, doorlooptijden, termijn-overwacht)
+   - `launchpad` for wijkteam-dashboard (caseload, doorlooptijden, termijn-overwacht)
 
 ## Impact
 

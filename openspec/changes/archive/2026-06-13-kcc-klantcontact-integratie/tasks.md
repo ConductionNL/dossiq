@@ -17,7 +17,7 @@
 
 - [x] TASK-KCC-05: `CallbackService` — scheduling, validation, retry logic (exponential backoff, max 3 attempts via `SlaCalculator`), lifecycle transitions (`applyAttempt`/`cancel`). Unit tests in `CallbackServiceTest`.
 
-- [DEFERRED] TASK-KCC-06: `ChannelMetricsService` aggregation/forecast — DEFERRED: requires a populated live dataset and the MyDash dashboard host to verify aggregation windows; scaffolding belongs with the dashboard task (TASK-KCC-13/20).
+- [DEFERRED] TASK-KCC-06: `ChannelMetricsService` aggregation/forecast — DEFERRED: requires a populated live dataset and the LaunchPad dashboard host to verify aggregation windows; scaffolding belongs with the dashboard task (TASK-KCC-13/20).
 
 - [DEFERRED] TASK-KCC-07: `CtiIntegrationBridge` — DEFERRED: requires a live OpenConnector CTI bridge + provider signature/secret; ADR-005 forbids shipping an unsigned public webhook. Tracked for the OpenConnector integration milestone.
 

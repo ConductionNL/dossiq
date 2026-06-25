@@ -2,7 +2,7 @@
 
 ## Summary
 
-Add a "Start Case" Nextcloud Dashboard widget to Procest that lets users quickly create a new case directly from the Nextcloud dashboard or MyDash — without navigating into the Procest app first.
+Add a "Start Case" Nextcloud Dashboard widget to Procest that lets users quickly create a new case directly from the Nextcloud dashboard or LaunchPad — without navigating into the Procest app first.
 
 ## Motivation
 
@@ -51,7 +51,7 @@ Option (a) is preferred for speed; option (b) is the safe fallback.
 ## Cross-Project Dependencies
 
 - **OpenRegister**: Case types and cases stored as OpenRegister objects (existing)
-- **MyDash** (optional): Widget appears automatically when MyDash discovers registered Nextcloud widgets
+- **LaunchPad** (optional): Widget appears automatically when LaunchPad discovers registered Nextcloud widgets
 
 ## Rollback Strategy
 

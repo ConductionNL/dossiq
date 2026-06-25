@@ -184,7 +184,7 @@ THEN system:
 - Sends notification to klachtenfunctionaris: "Nieuwe klacht ontvangen op zaak {{relatedCaseId}}: {{reason}}"
 - Triggers automatic ontvangstbevestiging brief via docudesk (printed or emailed)
 - Sets SLA tracker: 6-week deadline with warnings at 4 weeks, 2 weeks, 1 week remaining
-- Logs to mydash KCC dashboard: "Klacht registratie (+1 complaint; average satisfaction trending down)"
+- Logs to launchpad KCC dashboard: "Klacht registratie (+1 complaint; average satisfaction trending down)"
 
 ---
 

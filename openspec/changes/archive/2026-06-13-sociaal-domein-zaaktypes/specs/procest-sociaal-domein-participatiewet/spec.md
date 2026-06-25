@@ -158,7 +158,7 @@ The implementation chain MUST load three realistic Participatiewet seed cases (O
 
 - **docudesk:** Beschikking template for bijstand (decision letter including vermogens/inkomens test results and appeal information)
 - **openconnector:** UWV data-exchange (sickness-benefit transition), employer wage-subsidy reporting, training-provider outcome tracking
-- **mydash:** Work-and-income team dashboard (caseload, re-integratie milestones, overschredenTermijnen)
+- **launchpad:** Work-and-income team dashboard (caseload, re-integratie milestones, overschredenTermijnen)
 - **openregister:** Retention scheduling, RBAC (werk-en-inkomentteam only), audit-trail for financial-data access
 
 ## Design notes

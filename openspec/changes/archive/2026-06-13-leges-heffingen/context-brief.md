@@ -119,7 +119,7 @@ De `leges-heffingen` capability brengt een eersteklas leges-berekeningsengine in
 - **openregister abac-policy-engine** — autorisatie wie tariefverordeningen mag importeren, wie restituties mag goedkeuren, wie minima-vrijstellingen mag toepassen
 - **pipelinq** — voor inkomensverificatie via gemeentelijke minima-registratie of BRP/inkomensverklaring
 - **openconnector** — koppelingen naar Belastingdienst (inkomensverklaring), BRP (leeftijd-check), GBA-V
-- **mydash** — leges-dashboards met opbrengsten per tariefnummer, restitutiepercentages, openstaande facturen
+- **launchpad** — leges-dashboards met opbrengsten per tariefnummer, restitutiepercentages, openstaande facturen
 - **docudesk** — automatisch genereren van factuur-PDF en restitutiebesluit-brief als output van de berekening
 
 ## Target users
