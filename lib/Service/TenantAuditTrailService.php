@@ -39,46 +39,46 @@ use Psr\Log\LoggerInterface;
  */
 class TenantAuditTrailService
 {
+    /**
+     * Constructor.
+     *
+     * @param LoggerInterface $logger Logger (audit sink).
+     */
     public function __construct(
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Emit an audit-trail entry. Pure function over the input — returns the
      * entry array as well as logging it, so callers can serialise it into
      * the response or a downstream sink.
      *
-     * @param array{
-     *   action: string,
-     *   actor: string,
-     *   role?: string,
-     *   resource?: string,
-     *   tenantId: string,
-     *   ip?: string,
-     *   ua?: string,
-     *   bio?: array<string, mixed>,
-     * } $payload Audit payload.
+     * Payload keys: action (string), actor (string), role (?string),
+     * resource (?string), tenantId (string), ip (?string), ua (?string),
+     * bio (?array<string, mixed>).
+     *
+     * @param array<string, mixed> $payload Audit payload.
      *
      * @return array<string,mixed> Normalised entry.
      */
     public function emit(array $payload): array
     {
         $entry = [
-            'ts'        => (new DateTimeImmutable('now'))->format(DATE_ATOM),
-            'action'    => (string) ($payload['action'] ?? ''),
-            'actor'     => (string) ($payload['actor'] ?? ''),
-            'role'      => (string) ($payload['role'] ?? ''),
-            'resource'  => (string) ($payload['resource'] ?? ''),
-            'tenantId'  => (string) ($payload['tenantId'] ?? ''),
-            'ip'        => (string) ($payload['ip'] ?? ''),
-            'ua'        => (string) ($payload['ua'] ?? ''),
-            'bio'       => $this->sanitiseBio((array) ($payload['bio'] ?? [])),
+            'ts'       => (new DateTimeImmutable('now'))->format(DATE_ATOM),
+            'action'   => (string) ($payload['action'] ?? ''),
+            'actor'    => (string) ($payload['actor'] ?? ''),
+            'role'     => (string) ($payload['role'] ?? ''),
+            'resource' => (string) ($payload['resource'] ?? ''),
+            'tenantId' => (string) ($payload['tenantId'] ?? ''),
+            'ip'       => (string) ($payload['ip'] ?? ''),
+            'ua'       => (string) ($payload['ua'] ?? ''),
+            'bio'      => $this->sanitiseBio(bio: (array) ($payload['bio'] ?? [])),
         ];
 
         $this->logger->info('Procest AUDIT', $entry);
         return $entry;
-    }
+    }//end emit()
 
     /**
      * Whitelist enterprise BIO context fields. Drops anything we don't
@@ -98,7 +98,7 @@ class TenantAuditTrailService
         }
 
         return $out;
-    }
+    }//end sanitiseBio()
 
     /**
      * Compile a static security-hardening checklist used by the chain-member-12
@@ -110,13 +110,41 @@ class TenantAuditTrailService
     public function hardeningChecklist(): array
     {
         return [
-            ['key' => 'tenant_scoped_queries', 'description' => 'Every query carries the request-scoped tenant filter', 'evidence' => 'TenantIsolationMiddleware sets the Postgres search_path; TenantContext carries the active tenant'],
-            ['key' => 'claim_validation', 'description' => 'JWT tenant_id claim is cross-checked against the request tenant', 'evidence' => 'TenantClaimValidationMiddleware'],
-            ['key' => 'audit_logged_mutations', 'description' => 'All mandate, status, and provisioning mutations emit an audit entry', 'evidence' => 'TenantAuditTrailService::emit + MandateValidationMiddleware decision log'],
-            ['key' => 'no_hardcoded_secrets', 'description' => 'JWT signing secret + Shillinq credentials resolved from app config', 'evidence' => 'Application.php registerService factory for TenantJwtService'],
-            ['key' => 'no_tenant_info_leak', 'description' => 'Cross-tenant queries return 404 (not 403) to prevent existence leak', 'evidence' => 'TenantIsolationMiddleware search_path scoping + controller-level 404 responses'],
-            ['key' => 'composer_audit', 'description' => 'composer audit passes with zero high-severity CVEs', 'evidence' => 'hydra-gate-composer-audit (Hydra gate 4)'],
-            ['key' => 'isolation_pen_test', 'description' => 'Cross-tenant pen-test asserts schema isolation under DDL + DQL', 'evidence' => 'TenantIsolationTest (deferred to live-OR fixture)'],
+            [
+                'key'         => 'tenant_scoped_queries',
+                'description' => 'Every query carries the request-scoped tenant filter',
+                'evidence'    => 'TenantIsolationMiddleware sets the Postgres search_path; TenantContext carries the active tenant',
+            ],
+            [
+                'key'         => 'claim_validation',
+                'description' => 'JWT tenant_id claim is cross-checked against the request tenant',
+                'evidence'    => 'TenantClaimValidationMiddleware',
+            ],
+            [
+                'key'         => 'audit_logged_mutations',
+                'description' => 'All mandate, status, and provisioning mutations emit an audit entry',
+                'evidence'    => 'TenantAuditTrailService::emit + MandateValidationMiddleware decision log',
+            ],
+            [
+                'key'         => 'no_hardcoded_secrets',
+                'description' => 'JWT signing secret + Shillinq credentials resolved from app config',
+                'evidence'    => 'Application.php registerService factory for TenantJwtService',
+            ],
+            [
+                'key'         => 'no_tenant_info_leak',
+                'description' => 'Cross-tenant queries return 404 (not 403) to prevent existence leak',
+                'evidence'    => 'TenantIsolationMiddleware search_path scoping + controller-level 404 responses',
+            ],
+            [
+                'key'         => 'composer_audit',
+                'description' => 'composer audit passes with zero high-severity CVEs',
+                'evidence'    => 'hydra-gate-composer-audit (Hydra gate 4)',
+            ],
+            [
+                'key'         => 'isolation_pen_test',
+                'description' => 'Cross-tenant pen-test asserts schema isolation under DDL + DQL',
+                'evidence'    => 'TenantIsolationTest (deferred to live-OR fixture)',
+            ],
         ];
-    }
-}
+    }//end hardeningChecklist()
+}//end class

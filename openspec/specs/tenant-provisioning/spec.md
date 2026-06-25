@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # tenant-provisioning Specification
 
 ## Purpose
-TBD - created by archiving change tenant-zaaksysteem-saas-03-schema-provisioning. Update Purpose after archive.
+Provisions a dedicated PostgreSQL schema per tenant, cloning the application tables into it while leaving shared tables in the public schema, then seeds default zaaktype and mandaat-matrix templates and roles and emails the tenant admin a welcome link. Provisioning rolls back cleanly on failure, dropping any partial schema, and supports a database-per-tenant isolation mode for enterprise tenants with vault-stored credentials and per-tenant data-residency rules.
 ## Requirements
 ### Requirement: Schema-per-tenant provisioning (REQ-001-B)
 

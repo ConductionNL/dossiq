@@ -89,27 +89,28 @@ interface ZtcCatalogiAdapterInterface
      *
      * @return ZtcResult The lookup outcome (status + canonical URL).
      */
-    public function resolveZaakType(string $zaaktypeIdentificatie, string $receiverSourceSlug, array $context = []): ZtcResult;
+    public function resolveZaakType(string $zaaktypeIdentificatie, string $receiverSourceSlug, array $context=[]): ZtcResult;
 
     /**
      * Import a `ZaakType` envelope from a neighbouring Catalogi-API
      * into the tenant's own ZTC.
      *
-     * @param string              $zaaktypeUrl  Canonical receiver-side
-     *                                          URL (output of
-     *                                          resolveZaakType() or
-     *                                          operator paste).
-     * @param array<string,mixed> $context      Optional context —
-     *                                          targetCatalogusUrl
-     *                                          (the tenant's own
-     *                                          catalogus the import
-     *                                          targets),
-     *                                          correlationId.
+     * @param string              $zaaktypeUrl Canonical receiver-side
+     *                                         URL (output of
+     *                                         resolveZaakType() or
+     *                                         operator paste).
+     * @param array<string,mixed> $context     Optional context
+     *                                         —
+     *                                         targetCatalogusUrl
+     *                                         (the tenant's own
+     *                                         catalogus the
+     *                                         import targets),
+     *                                         correlationId.
      *
      * @return ZtcResult The import outcome (status +
      *                   `localZaakTypeUrl`).
      */
-    public function importZaakType(string $zaaktypeUrl, array $context = []): ZtcResult;
+    public function importZaakType(string $zaaktypeUrl, array $context=[]): ZtcResult;
 
     /**
      * Whether the adapter is dormant — i.e. wired but not contacting

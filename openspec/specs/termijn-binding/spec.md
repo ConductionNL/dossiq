@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # termijn-binding Specification
 
 ## Purpose
-TBD - created by archiving change termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle. Update Purpose after archive.
+Binds every zaak to a matching TermijnDefinitie and auto-creates its TermijnInstance on case creation, calculating the legal deadline from the configured duration and recording a start event. Case creation is blocked when no definition exists for the zaaktype, and definition versioning never retroactively changes deadlines on existing instances.
 ## Requirements
 ### Requirement: Termijn-binding per zaaktype (REQ-TERM-001)
 

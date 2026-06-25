@@ -86,7 +86,12 @@ class DashboardController extends GenericDashboardController
         $body     = (string) @file_get_contents(self::PUBLIC_DIR.'/service-worker.js');
         $response = new DataDownloadResponse($body, 'service-worker.js', 'application/javascript');
         $response->addHeader('Service-Worker-Allowed', '/');
-        $response->setStatus($body === '' ? Http::STATUS_NOT_FOUND : Http::STATUS_OK);
+        $status = Http::STATUS_OK;
+        if ($body === '') {
+            $status = Http::STATUS_NOT_FOUND;
+        }
+
+        $response->setStatus($status);
         return $response;
     }//end serviceWorker()
 
@@ -103,7 +108,12 @@ class DashboardController extends GenericDashboardController
     {
         $body     = (string) @file_get_contents(self::PUBLIC_DIR.'/manifest.webmanifest');
         $response = new DataDownloadResponse($body, 'manifest.webmanifest', 'application/manifest+json');
-        $response->setStatus($body === '' ? Http::STATUS_NOT_FOUND : Http::STATUS_OK);
+        $status   = Http::STATUS_OK;
+        if ($body === '') {
+            $status = Http::STATUS_NOT_FOUND;
+        }
+
+        $response->setStatus($status);
         return $response;
     }//end webManifest()
 }//end class

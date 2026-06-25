@@ -1,7 +1,11 @@
+---
+status: done
+---
+
 # remaining-decision-delegation Specification
 
 ## Purpose
-TBD - created by archiving change procest-delegate-remaining-decisions-to-decidesk. Update Purpose after archive.
+Delegates procest's remaining decision and advice flows — beslissing-op-bezwaar, BAC/advies/consultatie, and voorstel-besluit registration — to decidesk Decisions via the OpenRegister integration registry, so decidesk makes the decision while procest stops running local decision state machines. Delegation fails closed when decidesk is unavailable, the resulting ZGW Besluit is materialized as a projection of the decidesk outcome, and procest retains its Awb and IDOR domain validation, ZGW case management, and an idempotent repair step that links in-flight cases forward without data loss.
 ## Requirements
 ### Requirement: REQ-PDRD-001 — Remaining Decision/Advice Flows Are Raised As decidesk Decisions
 

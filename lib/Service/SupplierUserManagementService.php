@@ -64,13 +64,21 @@ class SupplierUserManagementService
      */
     public const INVITE_TTL_DAYS = 7;
 
+    /**
+     * Constructor.
+     *
+     * @param IAppManager             $appManager App manager (for OR availability check).
+     * @param ContainerInterface      $container  DI container (graceful OR resolution).
+     * @param TenantAuditTrailService $auditTrail Audit trail emitter.
+     * @param LoggerInterface         $logger     Logger.
+     */
     public function __construct(
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
         private readonly TenantAuditTrailService $auditTrail,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Invite a new supplier user.
@@ -88,7 +96,7 @@ class SupplierUserManagementService
             throw new InvalidArgumentException('Invalid email');
         }
 
-        $this->assertValidRole($role);
+        $this->assertValidRole(role: $role);
 
         $os = $this->getObjectService();
         if ($os === null) {
@@ -98,39 +106,41 @@ class SupplierUserManagementService
         try {
             $row = $os->saveObject(
                 object: [
-                    'supplierRef'    => $supplierRef,
-                    'email'          => $email,
-                    'role'           => $role,
-                    'status'         => 'invited',
-                    'activationToken'=> bin2hex(random_bytes(32)),
-                    'addedBy'        => $invitedBy,
-                    'addedAt'        => (new DateTimeImmutable('now'))->format(DATE_ATOM),
+                    'supplierRef'     => $supplierRef,
+                    'email'           => $email,
+                    'role'            => $role,
+                    'status'          => 'invited',
+                    'activationToken' => bin2hex(random_bytes(32)),
+                    'addedBy'         => $invitedBy,
+                    'addedAt'         => (new DateTimeImmutable('now'))->format(DATE_ATOM),
                 ],
                 register: TenantSaasService::REGISTER,
                 schema: 'supplierUser',
                 uuid: null,
             );
-            $this->auditTrail->emit([
-                'action'   => 'supplier_user.invite',
-                'actor'    => $invitedBy,
-                'role'     => $role,
-                'resource' => 'supplierUser:'.($row['uuid'] ?? ''),
-                'tenantId' => $supplierRef,
-            ]);
+            $this->auditTrail->emit(
+                    [
+                        'action'   => 'supplier_user.invite',
+                        'actor'    => $invitedBy,
+                        'role'     => $role,
+                        'resource' => 'supplierUser:'.($row['uuid'] ?? ''),
+                        'tenantId' => $supplierRef,
+                    ]
+                    );
             return $row;
         } catch (Throwable $e) {
             $this->logger->error('Procest: inviteSupplierUser failed', ['exception' => $e->getMessage()]);
             return null;
-        }
-    }
+        }//end try
+    }//end inviteSupplierUser()
 
     /**
      * Activate a pending invite. Validates the token's expiry + that the
      * eHerkenning KvK matches the supplier.
      *
-     * @param string $token       Activation token.
-     * @param string $kvkClaim    KvK number from the eHerkenning callback.
-     * @param int    $maxAgeDays  Maximum token age (default 7).
+     * @param string $token      Activation token.
+     * @param string $kvkClaim   KvK number from the eHerkenning callback.
+     * @param int    $maxAgeDays Maximum token age (default 7).
      *
      * @return array{ok: bool, supplierUser?: array<string,mixed>, reason?: string}
      */
@@ -158,11 +168,11 @@ class SupplierUserManagementService
         }
 
         $user = $rows[0];
-        if ($this->isInviteExpired((string) ($user['addedAt'] ?? ''), $maxAgeDays) === true) {
+        if ($this->isInviteExpired(addedAt: (string) ($user['addedAt'] ?? ''), maxAgeDays: $maxAgeDays) === true) {
             return ['ok' => false, 'reason' => 'Activation token expired'];
         }
 
-        $supplier = $this->findSupplier((string) ($user['supplierRef'] ?? ''));
+        $supplier = $this->findSupplier(supplierRef: (string) ($user['supplierRef'] ?? ''));
         if ($supplier === null) {
             return ['ok' => false, 'reason' => 'Supplier not found'];
         }
@@ -177,23 +187,31 @@ class SupplierUserManagementService
 
         try {
             $uuid = (string) ($user['uuid'] ?? $user['id'] ?? '');
+            if ($uuid !== '') {
+                $uuidArg = $uuid;
+            } else {
+                $uuidArg = null;
+            }
+
             $persisted = $os->saveObject(
                 object: $user,
                 register: TenantSaasService::REGISTER,
                 schema: 'supplierUser',
-                uuid: $uuid !== '' ? $uuid : null
+                uuid: $uuidArg
             );
-            $this->auditTrail->emit([
-                'action'   => 'supplier_user.activate',
-                'actor'    => (string) ($user['email'] ?? ''),
-                'resource' => 'supplierUser:'.($persisted['uuid'] ?? ''),
-                'tenantId' => (string) ($user['supplierRef'] ?? ''),
-            ]);
+            $this->auditTrail->emit(
+                    [
+                        'action'   => 'supplier_user.activate',
+                        'actor'    => (string) ($user['email'] ?? ''),
+                        'resource' => 'supplierUser:'.($persisted['uuid'] ?? ''),
+                        'tenantId' => (string) ($user['supplierRef'] ?? ''),
+                    ]
+                    );
             return ['ok' => true, 'supplierUser' => $persisted];
         } catch (Throwable $e) {
             return ['ok' => false, 'reason' => 'Persist failed'];
-        }
-    }
+        }//end try
+    }//end activate()
 
     /**
      * Update a supplier user's role.
@@ -208,7 +226,7 @@ class SupplierUserManagementService
      */
     public function updateRole(string $userId, string $newRole, string $actor): ?array
     {
-        $this->assertValidRole($newRole);
+        $this->assertValidRole(role: $newRole);
         $os = $this->getObjectService();
         if ($os === null) {
             return null;
@@ -241,13 +259,15 @@ class SupplierUserManagementService
                 schema: 'supplierUser',
                 uuid: $userId
             );
-            $this->auditTrail->emit([
-                'action'   => 'supplier_user.role_change',
-                'actor'    => $actor,
-                'role'     => $oldRole.'->'.$newRole,
-                'resource' => 'supplierUser:'.$userId,
-                'tenantId' => (string) ($user['supplierRef'] ?? ''),
-            ]);
+            $this->auditTrail->emit(
+                    [
+                        'action'   => 'supplier_user.role_change',
+                        'actor'    => $actor,
+                        'role'     => $oldRole.'->'.$newRole,
+                        'resource' => 'supplierUser:'.$userId,
+                        'tenantId' => (string) ($user['supplierRef'] ?? ''),
+                    ]
+                    );
             return $persisted;
         } catch (Throwable $e) {
             // Fail CLOSED: a persist failure must not be reported as success.
@@ -258,8 +278,8 @@ class SupplierUserManagementService
                 ['userId' => $userId, 'newRole' => $newRole, 'exception' => $e->getMessage()]
             );
             throw $e;
-        }
-    }
+        }//end try
+    }//end updateRole()
 
     /**
      * Revoke a supplier user.
@@ -277,7 +297,12 @@ class SupplierUserManagementService
         }
 
         try {
-            $user           = $this->findObjectAsArray(objectService: $os, register: TenantSaasService::REGISTER, schema: 'supplierUser', id: $userId);
+            $user           = $this->findObjectAsArray(
+                objectService: $os,
+                register: TenantSaasService::REGISTER,
+                schema: 'supplierUser',
+                id: $userId
+            );
             $user['status'] = 'revoked';
             $os->saveObject(
                 object: $user,
@@ -285,17 +310,19 @@ class SupplierUserManagementService
                 schema: 'supplierUser',
                 uuid: $userId
             );
-            $this->auditTrail->emit([
-                'action'   => 'supplier_user.revoke',
-                'actor'    => $actor,
-                'resource' => 'supplierUser:'.$userId,
-                'tenantId' => (string) ($user['supplierRef'] ?? ''),
-            ]);
+            $this->auditTrail->emit(
+                    [
+                        'action'   => 'supplier_user.revoke',
+                        'actor'    => $actor,
+                        'resource' => 'supplierUser:'.$userId,
+                        'tenantId' => (string) ($user['supplierRef'] ?? ''),
+                    ]
+                    );
             return true;
         } catch (Throwable $e) {
             return false;
-        }
-    }
+        }//end try
+    }//end revoke()
 
     /**
      * Resolve the visible tabs for a role.
@@ -307,7 +334,7 @@ class SupplierUserManagementService
     public function getTabsForRole(string $role): array
     {
         return (self::ROLE_TAB_MATRIX[$role] ?? []);
-    }
+    }//end getTabsForRole()
 
     /**
      * Whether a role is allowed to access a tab.
@@ -319,8 +346,8 @@ class SupplierUserManagementService
      */
     public function canAccessTab(string $role, string $tab): bool
     {
-        return in_array($tab, $this->getTabsForRole($role), true);
-    }
+        return in_array($tab, $this->getTabsForRole(role: $role), true);
+    }//end canAccessTab()
 
     /**
      * Throw on unknown role.
@@ -336,7 +363,7 @@ class SupplierUserManagementService
         if (in_array($role, self::ALLOWED_ROLES, true) === false) {
             throw new InvalidArgumentException('Unknown supplier role: '.$role);
         }
-    }
+    }//end assertValidRole()
 
     /**
      * Whether an invite token has expired.
@@ -354,9 +381,11 @@ class SupplierUserManagementService
         }
 
         return ($t + ($maxAgeDays * 86400)) < time();
-    }
+    }//end isInviteExpired()
 
     /**
+     * Resolve a supplier row by UUID.
+     *
      * @param string $supplierRef Supplier UUID.
      *
      * @return array<string,mixed>|null
@@ -370,13 +399,19 @@ class SupplierUserManagementService
 
         try {
             $row = $this->findObjectAsArray(objectService: $os, register: TenantSaasService::REGISTER, schema: 'supplier', id: $supplierRef);
-            return is_array($row) ? $row : null;
+            if (is_array($row) === true) {
+                return $row;
+            }
+
+            return null;
         } catch (Throwable $e) {
             return null;
         }
-    }
+    }//end findSupplier()
 
     /**
+     * Resolve OR's ObjectService when installed.
+     *
      * @return mixed|null
      */
     private function getObjectService()
@@ -391,5 +426,5 @@ class SupplierUserManagementService
         } catch (Throwable $e) {
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

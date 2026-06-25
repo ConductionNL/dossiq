@@ -52,11 +52,11 @@ class DwangsomPaymentCallbackController extends Controller
     /**
      * Constructor.
      *
-     * @param string                     $appName    App id.
-     * @param IRequest                   $request    Request.
-     * @param DwangsomUitbetalingService $service    Uitbetaling service.
-     * @param IAppConfig                 $appConfig  App config (for secret).
-     * @param LoggerInterface            $logger     Logger.
+     * @param string                     $appName   App id.
+     * @param IRequest                   $request   Request.
+     * @param DwangsomUitbetalingService $service   Uitbetaling service.
+     * @param IAppConfig                 $appConfig App config (for secret).
+     * @param LoggerInterface            $logger    Logger.
      */
     public function __construct(
         string $appName,
@@ -65,7 +65,7 @@ class DwangsomPaymentCallbackController extends Controller
         private readonly IAppConfig $appConfig,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -86,7 +86,7 @@ class DwangsomPaymentCallbackController extends Controller
         // while staying within public API surface.
         $rawBody = (string) file_get_contents('php://input');
 
-        if ($this->validateSignature($rawBody) === false) {
+        if ($this->validateSignature(rawBody: $rawBody) === false) {
             $this->logger->warning('Dwangsom callback: invalid signature');
             // Inline 401 — gate-9 flags STATUS_UNAUTHORIZED/STATUS_FORBIDDEN
             // as evidence of an auth body inside a PublicPage method; the
@@ -111,8 +111,8 @@ class DwangsomPaymentCallbackController extends Controller
             );
         }
 
-        $betaaldatum  = $this->parseDate((string) ($body['werkelijkeBetaaldatum'] ?? ''));
-        $bankRef      = (string) ($body['betalingsreferentie'] ?? '');
+        $betaaldatum = $this->parseDate(value: (string) ($body['werkelijkeBetaaldatum'] ?? ''));
+        $bankRef     = (string) ($body['betalingsreferentie'] ?? '');
 
         try {
             $updated = $this->service->handleCallback($referentie, $status, $betaaldatum, $bankRef);
@@ -176,6 +176,7 @@ class DwangsomPaymentCallbackController extends Controller
         if ($value === '') {
             return null;
         }
+
         try {
             return new DateTimeImmutable($value);
         } catch (\Throwable $e) {

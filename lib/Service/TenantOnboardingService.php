@@ -50,13 +50,21 @@ class TenantOnboardingService
         'go_live',
     ];
 
+    /**
+     * Constructor.
+     *
+     * @param TenantSaasService  $tenantSaasService Tenant SaaS service.
+     * @param IAppManager        $appManager        App manager.
+     * @param ContainerInterface $container         Service container.
+     * @param LoggerInterface    $logger            Logger.
+     */
     public function __construct(
         private readonly TenantSaasService $tenantSaasService,
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Fork the default 7-step template into the tenant's onboarding list.
@@ -94,7 +102,7 @@ class TenantOnboardingService
         }
 
         return $created;
-    }
+    }//end createOnboarding()
 
     /**
      * Get the per-step progress and overall completion fraction.
@@ -122,7 +130,10 @@ class TenantOnboardingService
             $rows = [];
         }
 
-        $rows      = is_array($rows) ? $rows : [];
+        if (is_array($rows) === false) {
+            $rows = [];
+        }
+
         $completed = 0;
         foreach ($rows as $r) {
             if ((string) ($r['status'] ?? '') === 'completed') {
@@ -130,15 +141,20 @@ class TenantOnboardingService
             }
         }
 
-        $total    = max(count(self::STEPS), count($rows));
-        $fraction = $total === 0 ? 0.0 : ($completed / $total);
+        $total = max(count(self::STEPS), count($rows));
+        if ($total === 0) {
+            $fraction = 0.0;
+        } else {
+            $fraction = ($completed / $total);
+        }
+
         return [
             'steps'     => array_values($rows),
             'completed' => $completed,
             'total'     => $total,
             'fraction'  => round($fraction, 2),
         ];
-    }
+    }//end getProgress()
 
     /**
      * Mark a step as completed.
@@ -174,24 +190,34 @@ class TenantOnboardingService
                 return null;
             }
 
-            $task                = $rows[0];
-            $task['status']      = 'completed';
+            $task           = $rows[0];
+            $task['status'] = 'completed';
             $task['completedBy'] = $completedBy;
             $task['completedAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
 
             $uuid = (string) ($task['uuid'] ?? $task['id'] ?? '');
-            $row  = $os->saveObject(
+            if ($uuid !== '') {
+                $uuidArg = $uuid;
+            } else {
+                $uuidArg = null;
+            }
+
+            $row = $os->saveObject(
                 object: $task,
                 register: TenantSaasService::REGISTER,
                 schema: 'tenantOnboardingTask',
-                uuid: $uuid !== '' ? $uuid : null
+                uuid: $uuidArg
             );
-            return is_array($row) ? $row : $task;
+            if (is_array($row) === true) {
+                return $row;
+            }
+
+            return $task;
         } catch (Throwable $e) {
             $this->logger->error('Procest: markStepComplete failed', ['exception' => $e->getMessage()]);
             return null;
-        }
-    }
+        }//end try
+    }//end markStepComplete()
 
     /**
      * Validate that the tenant is ready to go live.
@@ -210,20 +236,25 @@ class TenantOnboardingService
         }
 
         $missing = [];
-        if ($this->countSchemaRows($os, 'caseType', ['tenantRef' => $tenantId]) === 0) {
+        if ($this->countSchemaRows(os: $os, schema: 'caseType', filters: ['tenantRef' => $tenantId]) === 0) {
             $missing[] = 'zaaktype';
         }
 
-        if ($this->countSchemaRows($os, 'tenantMandate', ['tenantRef' => $tenantId]) === 0) {
+        if ($this->countSchemaRows(os: $os, schema: 'tenantMandate', filters: ['tenantRef' => $tenantId]) === 0) {
             $missing[] = 'mandate';
         }
 
-        if ($this->countSchemaRows($os, 'tenantUser', ['tenantRef' => $tenantId, 'role' => 'tenant_admin']) === 0) {
+        if ($this->countSchemaRows(
+            os: $os,
+            schema: 'tenantUser',
+            filters: ['tenantRef' => $tenantId, 'role' => 'tenant_admin']
+        ) === 0
+        ) {
             $missing[] = 'tenant_admin';
         }
 
         return ['ready' => count($missing) === 0, 'missing' => $missing];
-    }
+    }//end validateGoLive()
 
     /**
      * Trigger the activation flow when go-live validates.
@@ -234,7 +265,7 @@ class TenantOnboardingService
      */
     public function activate(string $tenantId): array
     {
-        $check = $this->validateGoLive($tenantId);
+        $check = $this->validateGoLive(tenantId: $tenantId);
         if ($check['ready'] === false) {
             return ['activated' => false, 'missing' => $check['missing']];
         }
@@ -247,13 +278,13 @@ class TenantOnboardingService
         }
 
         return ['activated' => true];
-    }
+    }//end activate()
 
     /**
      * Count rows in a schema with a filter.
      *
-     * @param mixed $os Object service.
-     * @param string $schema Schema slug.
+     * @param mixed               $os      Object service.
+     * @param string              $schema  Schema slug.
      * @param array<string,mixed> $filters Filters.
      *
      * @return int
@@ -268,13 +299,19 @@ class TenantOnboardingService
                 offset: 0,
                 filters: $filters
             );
-            return is_array($rows) ? count($rows) : 0;
+            if (is_array($rows) === true) {
+                return count($rows);
+            }
+
+            return 0;
         } catch (Throwable $e) {
             return 0;
         }
-    }
+    }//end countSchemaRows()
 
     /**
+     * Resolve the OpenRegister object service, or null when unavailable.
+     *
      * @return mixed|null
      */
     private function getObjectService()
@@ -289,5 +326,5 @@ class TenantOnboardingService
         } catch (Throwable $e) {
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

@@ -218,7 +218,7 @@ class DsoIntakeService
             },
             $activiteiten,
         );
-        $activityStr = implode(', ', array_filter($activityNames));
+        $activityStr   = implode(', ', array_filter($activityNames));
 
         $deadline = self::DEADLINE_DURATIONS[$procedureType] ?? self::DEADLINE_DURATIONS['regulier'];
 
@@ -232,7 +232,11 @@ class DsoIntakeService
             $description .= ' (DSO: '.$dsoZaaknummer.')';
         }
 
-        $locatieStr = is_array($locatie) ? json_encode($locatie) : (string) $locatie;
+        if (is_array($locatie) === true) {
+            $locatieStr = json_encode($locatie);
+        } else {
+            $locatieStr = (string) $locatie;
+        }
 
         return [
             'title'         => $title,

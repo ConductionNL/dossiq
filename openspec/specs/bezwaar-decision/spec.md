@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 ## Purpose
 
 Records the beslissing op bezwaar (decision on objection) as a formal decision object linked to the bezwaar case, enforcing the AWB heroverweging, motivering, and rechtsmiddelenclausule obligations (art. 7:11, 7:12) and notifying the bezwaarmaker.

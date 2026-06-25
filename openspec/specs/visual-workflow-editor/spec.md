@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 ## Purpose
 
 @e2e exclude Visual workflow editor is V1; drag-and-drop canvas interactions require a built workflow editor component not yet integrated into the admin settings.

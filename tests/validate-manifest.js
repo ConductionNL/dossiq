@@ -3,7 +3,7 @@
 // Copyright (C) 2026 Conduction B.V.
 //
 // validate-manifest.js — schema-validates src/manifest.json against the
-// @conduction/nextcloud-vue v1.x app-manifest schema using Ajv.
+// @conduction/nextcloud-vue v2 app-manifest schema using Ajv.
 //
 // Usage:
 //   node tests/validate-manifest.js
@@ -12,10 +12,17 @@
 //   0 — manifest validates against the schema with zero errors
 //   1 — manifest fails validation (or schema/manifest cannot be loaded)
 //
+// src/manifest.json declares the v2 schema ($schema → app-manifest-v2.schema.json),
+// so we validate against v2. The canonical v2 schema is vendored under
+// tests/schemas/ so the gate is self-contained (CI does not depend on a fresh
+// node_modules copy, and the published @conduction/nextcloud-vue v2 schema can
+// lag the canonical hydra one — e.g. the metric `cacheTtl` property).
+//
 // Schema lookup order (first hit wins):
 //   1. Env var APP_MANIFEST_SCHEMA — explicit absolute path to a schema JSON
-//   2. node_modules/@conduction/nextcloud-vue/src/schemas/app-manifest.schema.json
-//   3. ../nextcloud-vue/src/schemas/app-manifest.schema.json (sibling worktree)
+//   2. tests/schemas/app-manifest-v2.schema.json (vendored canonical v2)
+//   3. node_modules/@conduction/nextcloud-vue/src/schemas/app-manifest-v2.schema.json
+//   4. ../nextcloud-vue/src/schemas/app-manifest-v2.schema.json (sibling worktree)
 
 'use strict'
 
@@ -28,8 +35,9 @@ const MANIFEST_PATH = path.join(REPO_ROOT, 'src', 'manifest.json')
 
 const SCHEMA_CANDIDATES = [
 	process.env.APP_MANIFEST_SCHEMA,
-	path.join(REPO_ROOT, 'node_modules', '@conduction', 'nextcloud-vue', 'src', 'schemas', 'app-manifest.schema.json'),
-	path.join(REPO_ROOT, '..', 'nextcloud-vue', 'src', 'schemas', 'app-manifest.schema.json'),
+	path.join(REPO_ROOT, 'tests', 'schemas', 'app-manifest-v2.schema.json'),
+	path.join(REPO_ROOT, 'node_modules', '@conduction', 'nextcloud-vue', 'src', 'schemas', 'app-manifest-v2.schema.json'),
+	path.join(REPO_ROOT, '..', 'nextcloud-vue', 'src', 'schemas', 'app-manifest-v2.schema.json'),
 ].filter(Boolean)
 
 function findSchemaPath() {

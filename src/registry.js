@@ -24,6 +24,7 @@
 //   a pass-through.
 
 import { leafTab } from './integrations/leafTabs.js'
+import BezwaarBeroepOverview from './components/bezwaar/BezwaarBeroepOverview.vue'
 import MyWorkView from './views/MyWork.vue'
 import WerkvoorraadView from './views/Werkvoorraad.vue'
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
@@ -94,10 +95,6 @@ import StalledCasesWidget from './views/widgets/StalledCasesWidget.vue'
 // actions — pipelinq-style dashboard top row. All share cached fetchers
 // in services/dashboardData.js so the page loads with one fetch per
 // dataset instead of one per widget.
-import OpenCasesKpiWidget from './views/widgets/OpenCasesKpiWidget.vue'
-import OverdueKpiWidget from './views/widgets/OverdueKpiWidget.vue'
-import CompletedKpiWidget from './views/widgets/CompletedKpiWidget.vue'
-import MyTasksKpiWidget from './views/widgets/MyTasksKpiWidget.vue'
 import StatusChartWidget from './views/widgets/StatusChartWidget.vue'
 import CasesByTypeWidget from './views/widgets/CasesByTypeWidget.vue'
 import DashboardHeaderActions from './views/dashboard/DashboardHeaderActions.vue'
@@ -117,13 +114,6 @@ import MessageThread from './views/leverancier/MessageThread.vue'
  * registry validator in CnAppRoot. Sizes mirror the manifest layout.
  * `allowedSlots` uses the v2 slot literals.
  */
-const KPI_WIDGET_META = {
-	defaultSize: { w: 3, h: 2 },
-	minSize: { w: 2, h: 2 },
-	maxSize: { w: 6, h: 4 },
-	allowedSlots: ['body'],
-	propsSchema: null,
-}
 const PANEL_WIDGET_META = {
 	defaultSize: { w: 6, h: 4 },
 	minSize: { w: 3, h: 2 },
@@ -150,6 +140,14 @@ const HEADER_ACTIONS_META = {
  * @type {Record<string, { kind: string, component: object }>}
  */
 const registry = {
+	// --- Bezwaar & Beroep cards-collapse landing page (bezwaar-beroep-cards-collapse). ---
+	// @spec openspec/changes/bezwaar-beroep-cards-collapse/specs/navigation/spec.md
+	BezwaarBeroepOverview: {
+		kind: 'page',
+		component: BezwaarBeroepOverview,
+		_note: 'Card-grid landing page replacing the BezwaarBeroepGroup four-leaf nav (ADR-044 cards-collapse). Four former leaves stay routable as deep links.',
+	},
+
 	// --- Genuine exceptions: no abstract manifest analogue. ---
 	MyWorkView: {
 		kind: 'page',
@@ -433,30 +431,6 @@ const registry = {
 		component: StalledCasesWidget,
 		...PANEL_WIDGET_META,
 		_note: 'Cases without recent activity.',
-	},
-	kpiOpenCases: {
-		kind: 'widget',
-		component: OpenCasesKpiWidget,
-		...KPI_WIDGET_META,
-		_note: 'KPI card — open (non-final) case count, links to /cases.',
-	},
-	kpiOverdue: {
-		kind: 'widget',
-		component: OverdueKpiWidget,
-		...KPI_WIDGET_META,
-		_note: 'KPI card — open cases past their deadline (error variant when > 0).',
-	},
-	kpiCompleted: {
-		kind: 'widget',
-		component: CompletedKpiWidget,
-		...KPI_WIDGET_META,
-		_note: 'KPI card — cases completed this month + avg processing days.',
-	},
-	kpiMyTasks: {
-		kind: 'widget',
-		component: MyTasksKpiWidget,
-		...KPI_WIDGET_META,
-		_note: 'KPI card — active/available tasks assigned to the current user.',
 	},
 	statusChart: {
 		kind: 'widget',

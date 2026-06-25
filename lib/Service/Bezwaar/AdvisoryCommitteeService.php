@@ -99,14 +99,14 @@ class AdvisoryCommitteeService
     /**
      * Constructor.
      *
-     * @param SettingsService         $settingsService Schema/register bridge
-     * @param IUserSession            $userSession     Acting identity source
-     * @param StatusTransitionService $transitions     Optional integration with
-     *                                                 the case-level status FSM
-     *                                                 (used when the lifecycle
-     *                                                 advances the parent case)
-     * @param LoggerInterface         $logger             Logger
-     * @param AdviceDelegationService $adviceDelegation   Advice delegation to decidesk (ADR-019)
+     * @param SettingsService         $settingsService  Schema/register bridge
+     * @param IUserSession            $userSession      Acting identity source
+     * @param StatusTransitionService $transitions      Optional integration with
+     *                                                  the case-level status FSM
+     *                                                  (used when the lifecycle
+     *                                                  advances the parent case)
+     * @param LoggerInterface         $logger           Logger
+     * @param AdviceDelegationService $adviceDelegation Advice delegation to decidesk (ADR-019)
      */
     public function __construct(
         private readonly SettingsService $settingsService,

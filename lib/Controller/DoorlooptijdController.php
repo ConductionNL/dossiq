@@ -40,7 +40,6 @@ use OCP\IUserSession;
  */
 class DoorlooptijdController extends Controller
 {
-
     /**
      * Constructor.
      *
@@ -55,7 +54,6 @@ class DoorlooptijdController extends Controller
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
-
 
     /**
      * Return the metrics payload.
@@ -72,9 +70,9 @@ class DoorlooptijdController extends Controller
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $caseType   = $this->request->getParam('caseType');
-        $period     = $this->request->getParam('period', '12m');
-        $atRiskRaw  = $this->request->getParam('atRiskDays', 5);
+        $caseType  = $this->request->getParam('caseType');
+        $period    = $this->request->getParam('period', '12m');
+        $atRiskRaw = $this->request->getParam('atRiskDays', 5);
 
         if ($caseType !== null && is_string($caseType) === false) {
             return new JSONResponse(['message' => 'caseType must be a string'], Http::STATUS_BAD_REQUEST);

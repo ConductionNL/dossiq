@@ -1,4 +1,5 @@
 ---
+status: done
 retrofit_extensions:
   - REQ-001
   - REQ-002

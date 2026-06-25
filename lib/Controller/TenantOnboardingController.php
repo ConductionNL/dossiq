@@ -38,13 +38,20 @@ use OCP\IUserSession;
  */
 class TenantOnboardingController extends Controller
 {
+    /**
+     * Constructor.
+     *
+     * @param IRequest                $request     Request.
+     * @param TenantOnboardingService $onboarding  Onboarding service.
+     * @param IUserSession            $userSession User session.
+     */
     public function __construct(
         IRequest $request,
         private readonly TenantOnboardingService $onboarding,
         private readonly IUserSession $userSession,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
-    }
+    }//end __construct()
 
     /**
      * GET /api/saas/tenants/{tenantId}/onboarding/progress
@@ -62,7 +69,7 @@ class TenantOnboardingController extends Controller
                 'progress' => $this->onboarding->getProgress($tenantId),
             ]
         );
-    }
+    }//end progress()
 
     /**
      * POST /api/saas/tenants/{tenantId}/onboarding/{step}/complete
@@ -95,7 +102,7 @@ class TenantOnboardingController extends Controller
         }
 
         return new JSONResponse(['success' => true, 'task' => $task]);
-    }
+    }//end complete()
 
     /**
      * POST /api/saas/tenants/{tenantId}/onboarding/activate
@@ -108,9 +115,13 @@ class TenantOnboardingController extends Controller
     public function activate(string $tenantId): JSONResponse
     {
         $result = $this->onboarding->activate($tenantId);
-        $code   = ($result['activated'] === true) ? Http::STATUS_OK : Http::STATUS_CONFLICT;
+        $code   = Http::STATUS_CONFLICT;
+        if ($result['activated'] === true) {
+            $code = Http::STATUS_OK;
+        }
+
         return new JSONResponse(['success' => $result['activated'], 'result' => $result], $code);
-    }
+    }//end activate()
 
     /**
      * POST /api/saas/tenants/{tenantId}/onboarding/initialise
@@ -124,5 +135,5 @@ class TenantOnboardingController extends Controller
     {
         $rows = $this->onboarding->createOnboarding($tenantId);
         return new JSONResponse(['success' => true, 'tasks' => $rows]);
-    }
-}
+    }//end initialise()
+}//end class

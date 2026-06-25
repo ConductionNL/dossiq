@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # termijn-verification-admin Specification
 
 ## Purpose
-TBD - created by archiving change termijnbewaking-dwangsom-engine-11-tests-admin-docs. Update Purpose after archive.
+Verifies the full termijn/dwangsom lifecycle end-to-end across the five canonical case paths and provides an admin UI to view, create, edit, and version TermijnDefinities so that changes affect only new cases. It also ships Dutch administrator and user documentation covering configuration, the daily-scan cronjob, AWB deadlines, pause and extension handling, and reporting.
 ## Requirements
 ### Requirement: End-to-end termijn workflow verification (REQ-TERM-E2E-001)
 

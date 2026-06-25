@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 ## Purpose
 
 @e2e exclude Status transition guard engine is V1; guard evaluation logic is covered by unit tests, not browser E2E.

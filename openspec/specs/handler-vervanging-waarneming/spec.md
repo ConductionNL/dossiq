@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 # handler-vervanging-waarneming Specification
 
 ## Purpose

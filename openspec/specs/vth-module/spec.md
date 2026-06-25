@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # vth-module Specification
 
 ## Purpose
-TBD - created by archiving change vth-module. Update Purpose after archive.
+Provides the VTH (Vergunningen, Toezicht en Handhaving) capability for permit, supervision, and enforcement processes, including DSO/Omgevingsloket intake, completeness checks (ontvankelijkheidstoets), inspection checklists, enforcement strategies (LHS), supervision planning, advice management, and Omgevingswet procedure deadlines. Ships pre-configured VTH case type templates and supports decision publication (bekendmaking), mobile inspection workflows, and configurable DSO intake field mapping.
 ## Requirements
 ### Requirement: REQ-VTH-01 — DSO/Omgevingsloket Integration
 

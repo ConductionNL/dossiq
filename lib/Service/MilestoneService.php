@@ -339,7 +339,7 @@ class MilestoneService
         foreach ($cases as $case) {
             $caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
             $status = strtolower((string) ($case['status'] ?? ''));
-            if ($caseId === '' || $this->isClosedStatus($status) === true) {
+            if ($caseId === '' || $this->isClosedStatus(status: $status) === true) {
                 continue;
             }
 
@@ -348,7 +348,7 @@ class MilestoneService
                 continue;
             }
 
-            $startDate = $this->parseCaseStart($case);
+            $startDate = $this->parseCaseStart(case: $case);
             if ($startDate === null) {
                 continue;
             }

@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # ingebrekestelling Specification
 
 ## Purpose
-TBD - created by archiving change termijnbewaking-dwangsom-engine-05-ingebrekestelling. Update Purpose after archive.
+Registers and validates a formal ingebrekestelling (AWB 4:17), accepting it only when the termijn is genuinely overschreden and rejecting premature notices. A valid registration auto-creates the grace-period DwangsomBerekening starting 14 days after receipt; only the first valid notice forms the dwangsom basis, so later notices are recorded for the audit trail without spawning a second berekening.
 ## Requirements
 ### Requirement: Ingebrekestelling-registratie en validatie (REQ-TERM-005)
 

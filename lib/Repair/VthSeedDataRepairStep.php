@@ -126,7 +126,7 @@ class VthSeedDataRepairStep implements IRepairStep
             return;
         }
 
-        $data = $this->loadSeed($output);
+        $data = $this->loadSeed(output: $output);
         if ($data === null) {
             return;
         }
@@ -145,13 +145,15 @@ class VthSeedDataRepairStep implements IRepairStep
             output: $output
         );
 
-        $output->info(sprintf(
+        $output->info(
+                sprintf(
             'VTH seed complete: %d case-types (%d skipped), %d checklists (%d skipped).',
             $caseSummary['seeded'],
             $caseSummary['skipped'],
             $checklistSummary['seeded'],
             $checklistSummary['skipped']
-        ));
+        )
+                );
     }//end run()
 
     /**
@@ -230,7 +232,7 @@ class VthSeedDataRepairStep implements IRepairStep
                 // SeedVthWorkflowTemplates which creates the canonical
                 // workflow shape. This keeps the two repair steps from
                 // double-writing the same children.
-                $row = $this->stripChildren($caseType);
+                $row = $this->stripChildren(caseType: $caseType);
                 $objectService->saveObject(
                     register: $register,
                     schema: $caseTypeSchema,
@@ -244,7 +246,7 @@ class VthSeedDataRepairStep implements IRepairStep
                     ['slug' => $slug, 'exception' => $e->getMessage()]
                 );
             }
-        }
+        }//end foreach
 
         return ['seeded' => $seeded, 'skipped' => $skipped];
     }//end seedCaseTypes()
@@ -313,7 +315,7 @@ class VthSeedDataRepairStep implements IRepairStep
                     ['slug' => $slug, 'exception' => $e->getMessage()]
                 );
             }
-        }
+        }//end foreach
 
         return ['seeded' => $seeded, 'skipped' => $skipped];
     }//end seedInspectionChecklists()

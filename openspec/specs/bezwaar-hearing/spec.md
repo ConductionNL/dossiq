@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 ## Purpose
 
 Schedules and manages hoorzittingen (hearings) within the bezwaar process per the AWB hoorrecht (art. 7:2 e.v.), including invitations, minutes, hearing waiver (afzien van hoorrecht), and participant access rights.

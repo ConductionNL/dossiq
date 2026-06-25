@@ -56,7 +56,7 @@ class TenantWelcomeMailer
      */
     public function sendWelcomeEmail(array $tenant): bool
     {
-        $to = $this->resolveAdminEmail($tenant);
+        $to = $this->resolveAdminEmail(tenant: $tenant);
         if ($to === null) {
             $this->logger->info(
                 'Procest: no admin email on tenant — skipping welcome email',
@@ -69,7 +69,7 @@ class TenantWelcomeMailer
             $msg = $this->mailer->createMessage();
             $msg->setTo([$to]);
             $msg->setSubject('Welkom bij Procest — uw werkomgeving is klaar');
-            $msg->setPlainBody($this->renderBody($tenant));
+            $msg->setPlainBody($this->renderBody(tenant: $tenant));
             $this->mailer->send($msg);
             return true;
         } catch (Throwable $e) {
@@ -91,9 +91,9 @@ class TenantWelcomeMailer
     public function resolveAdminEmail(array $tenant): ?string
     {
         $candidates = [
-            $tenant['adminEmail']     ?? null,
-            $tenant['contactEmail']   ?? null,
-            $tenant['emailContact']   ?? null,
+            $tenant['adminEmail'] ?? null,
+            $tenant['contactEmail'] ?? null,
+            $tenant['emailContact'] ?? null,
         ];
         foreach ($candidates as $cand) {
             if (is_string($cand) === true && $cand !== '' && filter_var($cand, FILTER_VALIDATE_EMAIL) !== false) {
@@ -114,10 +114,14 @@ class TenantWelcomeMailer
      */
     public function renderBody(array $tenant): string
     {
-        $name        = (string) ($tenant['displayName'] ?? $tenant['legalName'] ?? 'gemeente');
-        $slug        = (string) ($tenant['slug'] ?? '');
-        $domain      = (string) ($tenant['domain'] ?? '');
-        $loginHint   = $domain !== '' ? ('https://'.$domain) : 'uw procest-instance';
+        $name      = (string) ($tenant['displayName'] ?? $tenant['legalName'] ?? 'gemeente');
+        $slug      = (string) ($tenant['slug'] ?? '');
+        $domain    = (string) ($tenant['domain'] ?? '');
+        $loginHint = 'uw procest-instance';
+        if ($domain !== '') {
+            $loginHint = 'https://'.$domain;
+        }
+
         return <<<TXT
 Beste beheerder,
 

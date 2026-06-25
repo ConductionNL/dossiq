@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # tenant-crud-lifecycle Specification
 
 ## Purpose
-TBD - created by archiving change tenant-zaaksysteem-saas-02-tenant-crud-lifecycle. Update Purpose after archive.
+Manages tenant records with an auto-generated unique slug, an initial onboarding status, and an isolation mode derived from the tier, rejecting duplicate slugs. It exposes admin-only CRUD and status-filterable list endpoints and enforces a lifecycle state machine on tenant status so only legal transitions are persisted.
 ## Requirements
 ### Requirement: Tenant creation with unique slug (REQ-001-A)
 

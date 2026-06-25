@@ -101,7 +101,7 @@ class ArchivalSubmissionRetryService
      *
      * @spec openspec/changes/archief-edepot-handover-05-sip-submission/tasks.md
      */
-    public function processRetryQueue(?int $now = null): array
+    public function processRetryQueue(?int $now=null): array
     {
         $counts = [
             'scanned'         => 0,
@@ -138,6 +138,7 @@ class ArchivalSubmissionRetryService
             if (is_array($row) === false) {
                 continue;
             }
+
             $counts['scanned']++;
 
             $attempt     = max(1, (int) ($row['attemptNumber'] ?? 1));
@@ -146,13 +147,13 @@ class ArchivalSubmissionRetryService
             $lastTs      = (string) ($row['timestamp'] ?? '');
 
             if ($attempt >= self::ESCALATION_THRESHOLD) {
-                $this->escalate($row);
+                $this->escalate(row: $row);
                 $counts['escalated']++;
                 continue;
             }
 
             $waitSeconds = self::BACKOFF_SECONDS[$attempt] ?? 28800;
-            $lastEpoch   = $this->parseEpoch($lastTs);
+            $lastEpoch   = $this->parseEpoch(timestamp: $lastTs);
             if ($lastEpoch !== null && ($epoch - $lastEpoch) < $waitSeconds) {
                 $counts['skipped_backoff']++;
                 continue;
@@ -164,21 +165,41 @@ class ArchivalSubmissionRetryService
                     $caseId,
                     ['retryCount' => $attempt, 'previousTransactieId' => (string) ($row['id'] ?? '')]
                 );
+                if ($result !== null && $result->submissionStatus !== 'FAILED') {
+                    $newStatus = 'pending';
+                } else {
+                    $newStatus = 'failed';
+                }
+
+                if ($result !== null) {
+                    $newArchiefId        = $result->archiefId;
+                    $newSubmissionStatus = $result->submissionStatus;
+                } else {
+                    $newArchiefId        = '';
+                    $newSubmissionStatus = 'FAILED';
+                }
+
                 $newRow = [
-                    'sipBundelId'           => $sipBundelId,
-                    'zaakId'                => $caseId,
-                    'attemptNumber'         => ($attempt + 1),
-                    'status'                => ($result !== null && $result->submissionStatus !== 'FAILED') ? 'pending' : 'failed',
-                    'timestamp'             => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
-                    'previousTransactieId'  => (string) ($row['id'] ?? ''),
-                    'archiefId'             => $result !== null ? $result->archiefId : '',
-                    'submissionStatus'      => $result !== null ? $result->submissionStatus : 'FAILED',
+                    'sipBundelId'          => $sipBundelId,
+                    'zaakId'               => $caseId,
+                    'attemptNumber'        => ($attempt + 1),
+                    'status'               => $newStatus,
+                    'timestamp'            => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+                    'previousTransactieId' => (string) ($row['id'] ?? ''),
+                    'archiefId'            => $newArchiefId,
+                    'submissionStatus'     => $newSubmissionStatus,
                 ];
                 $objectService->saveObject($register, $schema, $newRow);
                 $counts['retried']++;
+                if ($caseId !== '') {
+                    $logCaseId = $caseId;
+                } else {
+                    $logCaseId = null;
+                }
+
                 $this->triggerService->logEvent(
                     null,
-                    $caseId !== '' ? $caseId : null,
+                    $logCaseId,
                     'submission-retry',
                     'attempt='.($attempt + 1).' sipBundelId='.$sipBundelId.' status='.$newRow['submissionStatus']
                 );
@@ -188,8 +209,8 @@ class ArchivalSubmissionRetryService
                     'ArchivalSubmissionRetryService: retry failed',
                     ['error' => $e->getMessage(), 'sipBundelId' => $sipBundelId]
                 );
-            }
-        }
+            }//end try
+        }//end foreach
 
         return $counts;
     }//end processRetryQueue()
@@ -206,9 +227,15 @@ class ArchivalSubmissionRetryService
         $sipBundelId = (string) ($row['sipBundelId'] ?? '');
         $caseId      = (string) ($row['zaakId'] ?? '');
         $attempt     = (int) ($row['attemptNumber'] ?? 0);
+        if ($caseId !== '') {
+            $logCaseId = $caseId;
+        } else {
+            $logCaseId = null;
+        }
+
         $this->triggerService->logEvent(
             null,
-            $caseId !== '' ? $caseId : null,
+            $logCaseId,
             'submission-escalated',
             'attempts='.$attempt.' sipBundelId='.$sipBundelId.' — manual DIV intervention required'
         );
@@ -230,6 +257,7 @@ class ArchivalSubmissionRetryService
         if ($timestamp === '') {
             return null;
         }
+
         try {
             return (new DateTimeImmutable($timestamp))->getTimestamp();
         } catch (\Throwable $e) {

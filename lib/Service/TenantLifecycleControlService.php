@@ -35,6 +35,15 @@ use Throwable;
  */
 class TenantLifecycleControlService
 {
+    /**
+     * Constructor.
+     *
+     * @param TenantSaasService         $tenantSaasService Tenant SaaS service.
+     * @param TenantBillingService      $billingService    Billing service.
+     * @param TenantSchemaProvisioner   $schemaProvisioner Schema provisioner.
+     * @param TenantProvisioningService $provisioning      Provisioning service.
+     * @param LoggerInterface           $logger            Logger.
+     */
     public function __construct(
         private readonly TenantSaasService $tenantSaasService,
         private readonly TenantBillingService $billingService,
@@ -42,7 +51,7 @@ class TenantLifecycleControlService
         private readonly TenantProvisioningService $provisioning,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Suspend a tenant.
@@ -60,7 +69,7 @@ class TenantLifecycleControlService
             ['tenantId' => $tenantId, 'reason' => $reason]
         );
         return $row;
-    }
+    }//end suspend()
 
     /**
      * Reactivate a previously suspended tenant.
@@ -74,7 +83,7 @@ class TenantLifecycleControlService
         $row = $this->tenantSaasService->updateStatus(tenantId: $tenantId, newStatus: 'active');
         $this->logger->info('Procest: tenant reactivated', ['tenantId' => $tenantId]);
         return $row;
-    }
+    }//end reactivate()
 
     /**
      * Terminate a tenant. Settles outstanding billing before flipping status.
@@ -87,7 +96,7 @@ class TenantLifecycleControlService
      */
     public function terminate(string $tenantId, string $reason, int $retentionYears=1): array
     {
-        $unsettled = $this->countUnsettledEvents($tenantId);
+        $unsettled = $this->countUnsettledEvents(tenantId: $tenantId);
         if ($unsettled > 0) {
             $this->logger->warning(
                 'Procest: terminating tenant with unsettled billing events — Shillinq export must run first',
@@ -101,19 +110,19 @@ class TenantLifecycleControlService
             ['tenantId' => $tenantId, 'reason' => $reason, 'retentionYears' => $retentionYears]
         );
         return [
-            'tenant'           => $row,
-            'unsettledEvents'  => $unsettled,
-            'retentionYears'   => $retentionYears,
+            'tenant'          => $row,
+            'unsettledEvents' => $unsettled,
+            'retentionYears'  => $retentionYears,
         ];
-    }
+    }//end terminate()
 
     /**
      * Archive the tenant schema after the retention window has passed.
      * Logs an immutable deletion-confirmation entry.
      *
-     * @param string $tenantId         Tenant UUID.
-     * @param string $slug             Tenant slug.
-     * @param string $uuid             Tenant UUID (used for schema-name build).
+     * @param string $tenantId Tenant UUID.
+     * @param string $slug     Tenant slug.
+     * @param string $uuid     Tenant UUID (used for schema-name build).
      *
      * @return array{deletionAt: string, schemaName: string}
      */
@@ -138,7 +147,7 @@ class TenantLifecycleControlService
         );
 
         return ['deletionAt' => $deletionAt, 'schemaName' => $schemaName];
-    }
+    }//end archiveAndDelete()
 
     /**
      * Count events with invoiceRef === null (unsettled).
@@ -153,7 +162,7 @@ class TenantLifecycleControlService
             tenantId: $tenantId,
             month: (new DateTimeImmutable('now'))->format('Y-m'),
         );
-        $count = 0;
+        $count  = 0;
         foreach ($events as $e) {
             if (($e['invoiceRef'] ?? null) === null) {
                 $count++;
@@ -161,5 +170,5 @@ class TenantLifecycleControlService
         }
 
         return $count;
-    }
-}
+    }//end countUnsettledEvents()
+}//end class

@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # result-type-management Specification
 
 ## Purpose
-TBD - created by archiving change case-types-03-result-role-tabs. Update Purpose after archive.
+Provides admin tabs for managing the result types and role types attached to a case type. Result types define the allowed case outcomes with Archiefwet/Selectielijst-compliant archival rules, while role types restrict which participant roles are available when assigning case participants; both render in the case type detail view scoped to the current case type.
 ## Requirements
 ### Requirement: Result Type Management Tab
 The system SHALL provide an admin tab for managing result types on a case type.

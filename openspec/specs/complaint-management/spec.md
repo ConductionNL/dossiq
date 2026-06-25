@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # complaint-management Specification
 
 ## Purpose
-TBD - created by archiving change complaint-management. Update Purpose after archive.
+Manages citizen complaints as first-class entities with their own schema, sequential numbering, and the Awb chapter 9 lifecycle with enforced deadlines and extension (verdaging). Supports multi-channel intake, hearings (hoorgesprek) including calendar and video integration, escalation to formal cases, disposition tracking, complainant communication, and configurable per-tenant categories. Provides list, detail, and dashboard views plus frequency analysis that flags recurring patterns and systemic issues for management attention.
 ## Requirements
 ### Requirement: Complaints MUST be first-class entities with dedicated schema
 The system SHALL treat complaints as first-class entities with their own OpenRegister schema and lifecycle, distinct from a regular zaak but sharing the case infrastructure.

@@ -224,6 +224,7 @@ class KccRoutingController extends Controller
         if ($this->userSession->getUser() === null) {
             return $this->unauthorized();
         }
+
         return null;
     }//end requireAuthenticated()
 

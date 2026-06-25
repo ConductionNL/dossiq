@@ -37,6 +37,10 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'ai#summarize',       'url' => '/api/ai/summarize',       'verb' => 'POST'],
         ['name' => 'ai#suggestRouting',  'url' => '/api/ai/suggest-routing', 'verb' => 'POST'],
         ['name' => 'ai#suggestNext',     'url' => '/api/ai/suggest-next',    'verb' => 'POST'],
+        // First-time setup wizard (ADR-042)
+        ['name' => 'setup#status',       'url' => '/api/setup/status',              'verb' => 'GET'],
+        ['name' => 'setup#saveConfig',   'url' => '/api/setup/config',              'verb' => 'POST'],
+        ['name' => 'setup#runAction',    'url' => '/api/setup/action/{actionId}',   'verb' => 'POST'],
         ['name' => 'ai#recordAction',    'url' => '/api/ai/record-action',   'verb' => 'POST'],
         ['name' => 'ai#auditIndex',      'url' => '/api/ai/audit',           'verb' => 'GET'],
         ['name' => 'ai#getSettings',     'url' => '/api/ai/settings',        'verb' => 'GET'],
@@ -64,11 +68,6 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'kccContact#related', 'url' => '/api/kcc/contact-moments/{id}/related', 'verb' => 'GET'],
         ['name' => 'kccContact#show',    'url' => '/api/kcc/contact-moments/{id}', 'verb' => 'GET'],
         ['name' => 'kccContact#update',  'url' => '/api/kcc/contact-moments/{id}', 'verb' => 'PUT'],
-
-        // Open Raadsinformatie (ORI) Atom feeds — public, no auth required.
-        ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen', 'verb' => 'GET'],
-        ['name' => 'raadsinformatieFeed#agendapunten',  'url' => '/feed/ori/agendapunten',  'verb' => 'GET'],
-        ['name' => 'raadsinformatieFeed#documenten',    'url' => '/feed/ori/documenten',    'verb' => 'GET'],
 
         // Subsidieverlening-keten (subsidieverlening-keten spec) — AWB titel 4.2.
         // Static/verb routes precede the {id} wildcard routes; the public
@@ -260,6 +259,11 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         // Inbound SOAP endpoints accept raw XML POST.
         ['name' => 'stuf#zaken',    'url' => '/api/stuf/zaken',    'verb' => 'POST'],
         ['name' => 'stuf#personen', 'url' => '/api/stuf/personen', 'verb' => 'POST'],
+        // Outbound StUF-ZKN gateway (admin REST) + async confirmation receiver.
+        ['name' => 'stuf#endpoints', 'url' => '/api/stuf/endpoints', 'verb' => 'GET'],
+        ['name' => 'stuf#messages',  'url' => '/api/stuf/messages',  'verb' => 'GET'],
+        ['name' => 'stuf#outbound',  'url' => '/api/stuf/outbound',  'verb' => 'POST'],
+        ['name' => 'stuf#inkomend',  'url' => '/api/stuf/inkomend',  'verb' => 'POST'],
 
         // Doorlooptijd (throughput-time) dashboard metrics.
         ['name' => 'doorlooptijd#metrics', 'url' => '/api/doorlooptijd/metrics', 'verb' => 'GET'],
@@ -414,8 +418,6 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
         // ── VTH Module ─────────────────────────────────────────────────────
-        // DSO/Omgevingsloket intake — public webhook, no auth, signature-validated.
-        ['name' => 'dSOIntake#intake', 'url' => '/api/vth/dso/intake', 'verb' => 'POST'],
         // VTH zaaktype template management (admin only).
         ['name' => 'vTHTemplate#index',    'url' => '/api/vth/templates',             'verb' => 'GET'],
         ['name' => 'vTHTemplate#activate', 'url' => '/api/vth/templates/{slug}/activate', 'verb' => 'POST'],
@@ -430,8 +432,6 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         // Per-case advice request creation.
         ['name' => 'advice#createForCase', 'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'POST'],
         ['name' => 'advice#getForCase',    'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'GET'],
-        // LHS matrix cell lookup.
-        ['name' => 'lhs#lookup', 'url' => '/api/vth/lhs/lookup', 'verb' => 'GET'],
 
         // ── Berichtenbox (government inbox integration) ─────────────────
         ['name' => 'berichtenbox#send',     'url' => '/api/berichtenbox/send',                 'verb' => 'POST'],

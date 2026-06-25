@@ -6,8 +6,9 @@
  * Computes the expected payment date for a supplier invoice and produces
  * an age analysis with 30/60/90-day buckets.
  *
- * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
@@ -37,16 +38,22 @@ class InvoicePaymentForecastService
      */
     public const DEFAULT_PAYMENT_TERMS_DAYS = 30;
 
+    /**
+     * Constructor.
+     *
+     * @param SupplierScopeService $scopeService Supplier scope service.
+     * @param LoggerInterface      $logger       Logger.
+     */
     public function __construct(
         private readonly SupplierScopeService $scopeService,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Compute the expected payment date.
      *
-     * @param array<string,mixed> $invoice           Invoice row.
+     * @param array<string,mixed> $invoice            Invoice row.
      * @param int|null            $mandateRoutingDays Days the mandate routing adds (null → fallback).
      * @param int|null            $paymentTermsDays   Days for payment terms (null → DEFAULT_PAYMENT_TERMS_DAYS).
      *
@@ -63,7 +70,7 @@ class InvoicePaymentForecastService
         $terms   = ($paymentTermsDays ?? self::DEFAULT_PAYMENT_TERMS_DAYS);
         $sum     = ($routing + $terms);
         return (new DateTimeImmutable('@'.$invoiceDate))->modify('+'.$sum.' days')->format('Y-m-d');
-    }
+    }//end calculateExpectedPaymentDate()
 
     /**
      * Bucket open invoices by age. Returns counts + amount totals + percentages.
@@ -75,7 +82,7 @@ class InvoicePaymentForecastService
      */
     public function getAgeAnalysis(array $invoices, int $nowTs): array
     {
-        $buckets = [
+        $buckets     = [
             '0-30'  => ['count' => 0, 'amount' => 0.0],
             '31-60' => ['count' => 0, 'amount' => 0.0],
             '61-90' => ['count' => 0, 'amount' => 0.0],
@@ -97,30 +104,34 @@ class InvoicePaymentForecastService
             $bucket = '0-30';
             if ($age > 90) {
                 $bucket = '90+';
-            } elseif ($age > 60) {
+            } else if ($age > 60) {
                 $bucket = '61-90';
-            } elseif ($age > 30) {
+            } else if ($age > 30) {
                 $bucket = '31-60';
             }
 
             $buckets[$bucket]['count']++;
             $buckets[$bucket]['amount'] += $amount;
-            $totalAmount                += $amount;
-        }
+            $totalAmount += $amount;
+        }//end foreach
 
         foreach ($buckets as $k => $b) {
-            $buckets[$k]['percentage'] = $totalAmount > 0 ? round(($b['amount'] / $totalAmount) * 100, 2) : 0.0;
+            if ($totalAmount > 0) {
+                $buckets[$k]['percentage'] = round(($b['amount'] / $totalAmount) * 100, 2);
+            } else {
+                $buckets[$k]['percentage'] = 0.0;
+            }
         }
 
         return $buckets;
-    }
+    }//end getAgeAnalysis()
 
     /**
      * Filter invoices that have been overdue for more than the threshold.
      *
-     * @param array<int, array<string,mixed>> $invoices  Invoices.
+     * @param array<int, array<string,mixed>> $invoices      Invoices.
      * @param int                             $thresholdDays Threshold.
-     * @param int                             $nowTs     Reference timestamp.
+     * @param int                             $nowTs         Reference timestamp.
      *
      * @return array<int, array<string,mixed>>
      */
@@ -144,7 +155,7 @@ class InvoicePaymentForecastService
         }
 
         return $out;
-    }
+    }//end filterOverdueByThreshold()
 
     /**
      * Audit an invoice dispute write.
@@ -160,5 +171,5 @@ class InvoicePaymentForecastService
         $invoice['status']        = 'disputed';
         $invoice['disputeReason'] = $reason;
         return $invoice;
-    }
-}
+    }//end buildDisputeUpdate()
+}//end class

@@ -68,15 +68,15 @@ class AgendaService
      */
     public function addToAgenda(string $caseId, array $item): array
     {
-        $case = $this->loadCase($caseId);
+        $case = $this->loadCase(caseId: $caseId);
 
-        $items = $this->extractItems($case);
+        $items = $this->extractItems(case: $case);
 
         $item['createdAt'] = $item['createdAt'] ?? date(format: 'c');
         $item['itemId']    = $item['itemId'] ?? uniqid(prefix: 'agenda_', more_entropy: true);
         $items[]           = $item;
 
-        return $this->persistItems($case, $items);
+        return $this->persistItems(case: $case, items: $items);
     }//end addToAgenda()
 
     /**
@@ -91,14 +91,14 @@ class AgendaService
      */
     public function updateAgendaItem(string $caseId, array $patch): array
     {
-        $case = $this->loadCase($caseId);
+        $case = $this->loadCase(caseId: $caseId);
 
         $itemId = (string) ($patch['itemId'] ?? '');
         if ($itemId === '') {
             throw new \InvalidArgumentException('itemId is required');
         }
 
-        $items = $this->extractItems($case);
+        $items = $this->extractItems(case: $case);
         $found = false;
         foreach ($items as $i => $existing) {
             if ((string) ($existing['itemId'] ?? '') === $itemId) {
@@ -112,7 +112,7 @@ class AgendaService
             throw new \RuntimeException('Agenda item not found: '.$itemId);
         }
 
-        return $this->persistItems($case, $items);
+        return $this->persistItems(case: $case, items: $items);
     }//end updateAgendaItem()
 
     /**
@@ -156,9 +156,11 @@ class AgendaService
         if (is_object($obj) === true && method_exists($obj, 'jsonSerialize') === true) {
             return $obj->jsonSerialize();
         }
+
         if (is_array($obj) === true) {
             return $obj;
         }
+
         return (array) $obj;
     }//end loadCase()
 
@@ -174,8 +176,13 @@ class AgendaService
         $items = $case['agendaItems'] ?? [];
         if (is_string($items) === true) {
             $decoded = json_decode((string) $items, associative: true);
-            $items   = is_array($decoded) === true ? $decoded : [];
+            if (is_array($decoded) === true) {
+                $items = $decoded;
+            } else {
+                $items = [];
+            }
         }
+
         if (is_array($items) === false) {
             return [];
         }
@@ -186,6 +193,7 @@ class AgendaService
                 $clean[] = $item;
             }
         }
+
         return $clean;
     }//end extractItems()
 
@@ -208,7 +216,7 @@ class AgendaService
         $schema   = $this->settingsService->getConfigValue('case_schema');
 
         $case['agendaItems'] = $items;
-        $caseId              = (string) ($case['id'] ?? ($case['@self']['id'] ?? ''));
+        $caseId = (string) ($case['id'] ?? ($case['@self']['id'] ?? ''));
 
         $objectService->saveObject(
             object: $case,

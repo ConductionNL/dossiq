@@ -44,13 +44,21 @@ class TenderVisibilityService
      */
     public const APPEAL_WINDOW_DAYS = 20;
 
+    /**
+     * Constructor.
+     *
+     * @param SupplierScopeService $scopeService Supplier scope service.
+     * @param IAppManager          $appManager   Nextcloud app manager.
+     * @param ContainerInterface   $container    Service container.
+     * @param LoggerInterface      $logger       Logger.
+     */
     public function __construct(
         private readonly SupplierScopeService $scopeService,
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
     ) {
-    }
+    }//end __construct()
 
     /**
      * Get tender with derived fields. Returns null when the tender is
@@ -83,12 +91,12 @@ class TenderVisibilityService
         }
 
         $row['_derived'] = [
-            'appealDeadline' => $this->getAppealDeadline($row),
-            'canAppeal'      => $this->canAppeal($row),
-            'evaluationDownloadable' => $this->isEvaluationReportDownloadable($row),
+            'appealDeadline'         => $this->getAppealDeadline(tender: $row),
+            'canAppeal'              => $this->canAppeal(tender: $row),
+            'evaluationDownloadable' => $this->isEvaluationReportDownloadable(tender: $row),
         ];
         return $row;
-    }
+    }//end getTenderStatus()
 
     /**
      * Compute the appeal deadline for a rejected tender. Returns null for
@@ -115,7 +123,7 @@ class TenderVisibilityService
         }
 
         return (new DateTimeImmutable('@'.$awardOrReject))->modify('+'.self::APPEAL_WINDOW_DAYS.' days')->format('Y-m-d');
-    }
+    }//end getAppealDeadline()
 
     /**
      * Whether the supplier can still appeal (rejected + within window).
@@ -126,14 +134,14 @@ class TenderVisibilityService
      */
     public function canAppeal(array $tender): bool
     {
-        $deadline = $this->getAppealDeadline($tender);
+        $deadline = $this->getAppealDeadline(tender: $tender);
         if ($deadline === null) {
             return false;
         }
 
         $dt = strtotime($deadline);
         return $dt !== false && $dt >= time();
-    }
+    }//end canAppeal()
 
     /**
      * Whether the anonymised evaluation report can be downloaded.
@@ -150,9 +158,11 @@ class TenderVisibilityService
         }
 
         return (string) ($tender['evaluationReportRef'] ?? '') !== '';
-    }
+    }//end isEvaluationReportDownloadable()
 
     /**
+     * Resolve the downloadable evaluation report ref for a tender.
+     *
      * @param string $tenderId    Tender UUID.
      * @param string $supplierRef Caller's supplier.
      *
@@ -160,14 +170,14 @@ class TenderVisibilityService
      */
     public function getEvaluationReport(string $tenderId, string $supplierRef): ?string
     {
-        $tender = $this->getTenderStatus($tenderId, $supplierRef);
-        if ($tender === null || $this->isEvaluationReportDownloadable($tender) === false) {
+        $tender = $this->getTenderStatus(tenderId: $tenderId, supplierRef: $supplierRef);
+        if ($tender === null || $this->isEvaluationReportDownloadable(tender: $tender) === false) {
             return null;
         }
 
         $this->logger->info('Procest: supplier downloaded evaluation report', ['supplierRef' => $supplierRef, 'tenderId' => $tenderId]);
         return (string) $tender['evaluationReportRef'];
-    }
+    }//end getEvaluationReport()
 
     /**
      * List tenders for the caller, optionally filtered by status.
@@ -189,9 +199,11 @@ class TenderVisibilityService
             schema: 'supplierTender',
             extraFilters: $extra
         );
-    }
+    }//end listTenders()
 
     /**
+     * Resolve the OpenRegister ObjectService when available.
+     *
      * @return mixed|null
      */
     private function getObjectService()
@@ -206,5 +218,5 @@ class TenderVisibilityService
         } catch (Throwable $e) {
             return null;
         }
-    }
-}
+    }//end getObjectService()
+}//end class

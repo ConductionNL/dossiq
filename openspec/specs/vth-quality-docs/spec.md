@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # vth-quality-docs Specification
 
 ## Purpose
-TBD - created by archiving change vth-workflow-configuration-11-quality-docs. Update Purpose after archive.
+Verifies that the VTH services do not duplicate existing functionality and documents all reused components in a "Reuse Analysis". Requires VTH classes and public methods to carry `@spec` traceability tags and follow the 3-layer architecture with no custom mappers for domain data, and documents the VTH configuration architecture — workflow template structure, leges calculation, DSO integration, and mobile inspection — for future developers.
 ## Requirements
 ### Requirement: VTH deduplication and reuse documentation
 

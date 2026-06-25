@@ -49,12 +49,12 @@ class ContractRenewalService
     /**
      * Constructor.
      *
-     * @param SupplierScopeService              $scopeService        Scope helper.
-     * @param TenantAuditTrailService           $auditTrail          Audit trail emitter.
-     * @param IAppManager                       $appManager          App manager.
-     * @param ContainerInterface                $container           Service container (resolves OR).
-     * @param LoggerInterface                   $logger              Logger.
-     * @param ContractDecisionDelegationService $decisionDelegation  Decision delegation to decidesk (ADR-019).
+     * @param SupplierScopeService              $scopeService       Scope helper.
+     * @param TenantAuditTrailService           $auditTrail         Audit trail emitter.
+     * @param IAppManager                       $appManager         App manager.
+     * @param ContainerInterface                $container          Service container (resolves OR).
+     * @param LoggerInterface                   $logger             Logger.
+     * @param ContractDecisionDelegationService $decisionDelegation Decision delegation to decidesk (ADR-019).
      */
     public function __construct(
         private readonly SupplierScopeService $scopeService,
@@ -293,8 +293,14 @@ class ContractRenewalService
 
             // Persist the decisionRef on the case so the outcome can be
             // consumed later via BesluitMaterialisationService.
+            if (is_array($row) === true) {
+                $rowData = $row;
+            } else {
+                $rowData = [];
+            }
+
             $os->saveObject(
-                object: array_merge(is_array($row) === true ? $row : [], ['decisionRef' => $decisionRef]),
+                object: array_merge($rowData, ['decisionRef' => $decisionRef]),
                 register: TenantSaasService::REGISTER,
                 schema: 'case',
                 uuid: $caseRef,
@@ -306,7 +312,7 @@ class ContractRenewalService
             );
             // REQ-PDCD-002: fail closed; do not return a partial ok.
             return ['ok' => false, 'reason' => 'Decision service unavailable: '.$e->getMessage()];
-        }
+        }//end try
 
         $this->auditTrail->emit(
                 [

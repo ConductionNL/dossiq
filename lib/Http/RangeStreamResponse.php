@@ -39,6 +39,7 @@ use OCP\AppFramework\Http\Response;
  */
 class RangeStreamResponse extends Response
 {
+
     /**
      * The (possibly sliced) body to emit.
      *
@@ -59,25 +60,25 @@ class RangeStreamResponse extends Response
         parent::__construct();
 
         $total = strlen($content);
-        $this->addHeader('Accept-Ranges', 'bytes');
-        $this->addHeader('Content-Type', $contentType);
-        $this->addHeader('Content-Disposition', 'attachment; filename="'.rawurlencode($fileName).'"');
+        $this->addHeader(name: 'Accept-Ranges', value: 'bytes');
+        $this->addHeader(name: 'Content-Type', value: $contentType);
+        $this->addHeader(name: 'Content-Disposition', value: 'attachment; filename="'.rawurlencode($fileName).'"');
 
         $range = $this->parseRange(rangeHeader: $rangeHeader, total: $total);
 
         if ($range === null) {
             $this->body = $content;
-            $this->addHeader('Content-Length', (string) $total);
-            $this->setStatus(Http::STATUS_OK);
+            $this->addHeader(name: 'Content-Length', value: (string) $total);
+            $this->setStatus(status: Http::STATUS_OK);
             return;
         }
 
         [$start, $end] = $range;
         $length        = (($end - $start) + 1);
         $this->body    = substr($content, $start, $length);
-        $this->addHeader('Content-Range', 'bytes '.$start.'-'.$end.'/'.$total);
-        $this->addHeader('Content-Length', (string) $length);
-        $this->setStatus(Http::STATUS_PARTIAL_CONTENT);
+        $this->addHeader(name: 'Content-Range', value: 'bytes '.$start.'-'.$end.'/'.$total);
+        $this->addHeader(name: 'Content-Length', value: (string) $length);
+        $this->setStatus(status: Http::STATUS_PARTIAL_CONTENT);
     }//end __construct()
 
     /**
@@ -129,7 +130,11 @@ class RangeStreamResponse extends Response
             $end   = ($total - 1);
         } else {
             $start = (int) $startRaw;
-            $end   = $endRaw === '' ? ($total - 1) : (int) $endRaw;
+            if ($endRaw === '') {
+                $end = ($total - 1);
+            } else {
+                $end = (int) $endRaw;
+            }
         }
 
         if ($start > $end || $start >= $total) {

@@ -63,11 +63,11 @@ class TenantProvisioningService
     /**
      * Constructor.
      *
-     * @param TenantSaasService        $tenantSaasService    Tenant SaaS service (read tenant row).
-     * @param TenantSchemaProvisioner  $schemaProvisioner    Schema-create + clone + drop.
-     * @param TenantSeedService        $seedService          Templates/roles seeding.
-     * @param TenantWelcomeMailer      $welcomeMailer        Welcome email dispatch.
-     * @param LoggerInterface          $logger               Logger.
+     * @param TenantSaasService       $tenantSaasService Tenant SaaS service (read tenant row).
+     * @param TenantSchemaProvisioner $schemaProvisioner Schema-create + clone + drop.
+     * @param TenantSeedService       $seedService       Templates/roles seeding.
+     * @param TenantWelcomeMailer     $welcomeMailer     Welcome email dispatch.
+     * @param LoggerInterface         $logger            Logger.
      */
     public function __construct(
         private readonly TenantSaasService $tenantSaasService,
@@ -106,7 +106,7 @@ class TenantProvisioningService
             uuid: (string) ($tenant['uuid'] ?? $tenant['id'] ?? $tenantId),
             slug: (string) ($tenant['slug'] ?? '')
         );
-        $tier = (string) ($tenant['tier'] ?? 'basic');
+        $tier       = (string) ($tenant['tier'] ?? 'basic');
 
         $steps = [];
 
@@ -134,14 +134,14 @@ class TenantProvisioningService
                 ['tenantId' => $tenantId, 'schemaName' => $schemaName, 'steps' => $steps, 'exception' => $e->getMessage()]
             );
 
-            $this->rollback($schemaName, $steps);
+            $this->rollback(schemaName: $schemaName, steps: $steps);
 
             throw new RuntimeException(
                 'Provisioning failed at step '.($steps[count($steps) - 1] ?? 'createSchema').': '.$e->getMessage(),
                 0,
                 $e
             );
-        }
+        }//end try
 
         return [
             'tenantId'    => $tenantId,
@@ -194,8 +194,8 @@ class TenantProvisioningService
     /**
      * Roll back partial provisioning — drops the schema if it was created.
      *
-     * @param string                $schemaName Schema name.
-     * @param array<int, string>    $steps      Steps performed (used to decide what to undo).
+     * @param string             $schemaName Schema name.
+     * @param array<int, string> $steps      Steps performed (used to decide what to undo).
      *
      * @return void
      */

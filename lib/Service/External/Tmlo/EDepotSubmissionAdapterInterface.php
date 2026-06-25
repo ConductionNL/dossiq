@@ -47,7 +47,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service\External\Tmlo;
 
 /**
- * e-Depot submission port.
+ * E-Depot submission port.
  *
  * Implementations MUST be side-effect-free when the dormant flag is
  * set; a dormant adapter records the submit intent and returns a
@@ -88,7 +88,7 @@ interface EDepotSubmissionAdapterInterface
      *                                back to the orchestrator for
      *                                proof / rollback.
      */
-    public function submit(string $sipBundelId, array $context = []): EDepotSubmissionResult;
+    public function submit(string $sipBundelId, array $context=[]): EDepotSubmissionResult;
 
     /**
      * Whether the adapter is dormant — i.e. wired but not contacting

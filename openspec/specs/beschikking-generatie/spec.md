@@ -1,6 +1,7 @@
 ---
 status: done
-note: Implemented and archived 2026-06-13 (change beschikking-generatie). BeschikkingService/BeschikkingGenerationService/BeschikkingController + adapter interfaces (template/signing/archival) + Vue dialogs shipped. Three cross-app integrations remain deferred ([~]): Berichtenbox routing (openconnector), archival ingestion (openregister), PDF/A-3 template engine (docudesk) — each consumed via an adapter interface in procest.
+note: >-
+  Implemented and archived 2026-06-13 (change beschikking-generatie). BeschikkingService/BeschikkingGenerationService/BeschikkingController + adapter interfaces (template/signing/archival) + Vue dialogs shipped. Three cross-app integrations remain deferred ([~]): Berichtenbox routing (openconnector), archival ingestion (openregister), PDF/A-3 template engine (docudesk) — each consumed via an adapter interface in procest.
 ---
 
 # beschikking-generatie Specification

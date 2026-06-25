@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # workflow-definition-engine Specification
 
 ## Purpose
-TBD - created by archiving change workflow-engine-enhancement. Update Purpose after archive.
+Provides a configurable workflow engine where functional administrators define case lifecycles as OpenRegister objects, with process steps, guarded status transitions (checklist, required field, required document, role), and automatic actions (email, task, sub-case, webhook, set-field, notify). It supports workflow versioning that pins running cases to their bound version, workflow inheritance, JSON export/import, REST endpoints for CRUD and transition execution, and visual editing without developer involvement.
 ## Requirements
 ### Requirement: Workflow Definition Model
 

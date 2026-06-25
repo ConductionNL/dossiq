@@ -75,4 +75,4 @@ interface EHerkenningSamlAdapterInterface
      * @return bool True when `eherkenning.feature_flag` is `1`.
      */
     public function isActive(): bool;
-}
+}//end interface

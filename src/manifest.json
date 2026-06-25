@@ -4,6 +4,17 @@
 	"dependencies": [
 		"openregister"
 	],
+	"setup": {
+		"enabled": true,
+		"version": 1,
+		"completionConfigKey": "setup_completed_version",
+		"steps": [
+			{ "id": "welcome", "type": "info", "title": "Welkom bij Procest", "body": "Laten we Procest klaarzetten. Initialiseer eerst het register; laad daarna optioneel de Bezwaar & Beroep voorbeelddata." },
+			{ "id": "register-check", "type": "run-action", "title": "Register en schema's initialiseren", "action": "init-register", "required": true },
+			{ "id": "seed", "type": "run-action", "title": "Bezwaar & Beroep voorbeelddata laden", "action": "seed", "required": false },
+			{ "id": "done", "type": "summary", "title": "Klaar", "healthCheck": true }
+		]
+	},
 	"menu": [
 		{
 			"id": "Dashboard",
@@ -14,47 +25,47 @@
 		},
 		{
 			"id": "MyWork",
-			"label": "My Work",
+			"label": "Mijn werk",
 			"icon": "icon-checkmark",
 			"route": "MyWork",
 			"order": 20
 		},
 		{
 			"id": "WorkGroup",
-			"label": "Work",
+			"label": "Werk",
 			"icon": "icon-toggle",
 			"order": 20
 		},
 		{
 			"id": "CasesGroup",
-			"label": "Cases",
+			"label": "Zaken",
 			"icon": "icon-folder",
 			"order": 30
 		},
 		{
 			"id": "Cases",
-			"label": "All cases",
+			"label": "Alle zaken",
 			"icon": "icon-folder",
 			"route": "Cases",
 			"order": 40
 		},
 		{
 			"id": "Werkvoorraad",
-			"label": "Work Queue",
+			"label": "Werkvoorraad",
 			"icon": "icon-group",
 			"route": "Werkvoorraad",
 			"order": 30
 		},
 		{
 			"id": "WorkflowBoard",
-			"label": "Workflow Board",
+			"label": "Werkstroombord",
 			"icon": "icon-category-workflow",
 			"route": "WorkflowBoard",
 			"order": 35
 		},
 		{
 			"id": "Transfers",
-			"label": "Transfers",
+			"label": "Overdrachten",
 			"icon": "icon-shared",
 			"route": "Transfers",
 			"order": 80
@@ -95,7 +106,7 @@
 		},
 		{
 			"id": "AnalyticsGroup",
-			"label": "Analytics",
+			"label": "Rapportages",
 			"icon": "icon-category-monitoring",
 			"order": 55
 		},
@@ -108,7 +119,7 @@
 		},
 		{
 			"id": "CaseMap",
-			"label": "Map",
+			"label": "Kaart",
 			"icon": "icon-address",
 			"route": "CaseMap",
 			"order": 60
@@ -128,7 +139,7 @@
 		},
 		{
 			"id": "Advice",
-			"label": "Advice",
+			"label": "Advies",
 			"icon": "icon-comment",
 			"route": "Advice",
 			"order": 75
@@ -147,13 +158,13 @@
 		},
 		{
 			"id": "SettingsGroup",
-			"label": "Settings",
+			"label": "Instellingen",
 			"icon": "icon-settings",
 			"order": 200
 		},
 		{
 			"id": "Documentation",
-			"label": "Documentation",
+			"label": "Documentatie",
 			"icon": "icon-info",
 			"href": "https://procest.conduction.nl",
 			"section": "footer",
@@ -161,7 +172,7 @@
 		},
 		{
 			"id": "CaseTypesMenu",
-			"label": "Case Types",
+			"label": "Zaaktypen",
 			"icon": "icon-category-customization",
 			"route": "Settings",
 			"section": "settings",
@@ -176,7 +187,7 @@
 		},
 		{
 			"id": "PartnersMenu",
-			"label": "Partner organisations",
+			"label": "Partnerorganisaties",
 			"icon": "icon-group",
 			"route": "Partners",
 			"section": "settings",
@@ -184,7 +195,7 @@
 		},
 		{
 			"id": "TenantsMenu",
-			"label": "Tenants",
+			"label": "Organisaties",
 			"icon": "icon-group",
 			"route": "Tenants",
 			"section": "settings",
@@ -210,7 +221,7 @@
 		},
 		{
 			"id": "WorkflowDefinitionsMenu",
-			"label": "Workflow definitions",
+			"label": "Werkstroomdefinities",
 			"icon": "icon-category-workflow",
 			"route": "WorkflowDefinitions",
 			"section": "settings",
@@ -226,7 +237,7 @@
 		},
 		{
 			"id": "StatusRecordsMenu",
-			"label": "Status history",
+			"label": "Statusgeschiedenis",
 			"icon": "icon-history",
 			"route": "StatusRecords",
 			"section": "settings",
@@ -244,7 +255,7 @@
 		},
 		{
 			"id": "LhsRecommendationsMenu",
-			"label": "LHS Recommendations",
+			"label": "LHS-aanbevelingen",
 			"icon": "icon-comment",
 			"route": "LhsRecommendations",
 			"section": "settings",
@@ -252,7 +263,7 @@
 		},
 		{
 			"id": "LocationsMenu",
-			"label": "Case locations",
+			"label": "Zaaklocaties",
 			"icon": "icon-address",
 			"route": "Locations",
 			"section": "settings",
@@ -283,7 +294,7 @@
 		},
 		{
 			"id": "TenantOnboardingMenu",
-			"label": "Tenant onboarding",
+			"label": "Organisatie-onboarding",
 			"icon": "icon-user",
 			"route": "TenantOnboardingDashboard",
 			"section": "settings",
@@ -291,7 +302,7 @@
 		},
 		{
 			"id": "SubstitutionMenu",
-			"label": "Substitution",
+			"label": "Vervanging",
 			"icon": "icon-user",
 			"route": "SubstitutionSettings",
 			"section": "settings",
@@ -299,7 +310,7 @@
 		},
 		{
 			"id": "SubstitutionAdminMenu",
-			"label": "Substitutions & reassignment",
+			"label": "Vervangingen & hertoewijzing",
 			"icon": "icon-group",
 			"route": "SubstitutionAdmin",
 			"section": "settings",
@@ -308,7 +319,7 @@
 		},
 		{
 			"id": "SettingsMenu",
-			"label": "Settings",
+			"label": "Instellingen",
 			"icon": "icon-settings",
 			"route": "Settings",
 			"section": "settings",
@@ -316,7 +327,7 @@
 		},
 		{
 			"id": "FeaturesRoadmapMenu",
-			"label": "Features & roadmap",
+			"label": "Functies & roadmap",
 			"icon": "icon-toggle",
 			"route": "FeaturesRoadmap",
 			"section": "footer",
@@ -331,26 +342,43 @@
 			"title": "Dashboard",
 			"actionsComponent": "DashboardHeaderActions",
 			"config": {
+				"dateRange": {
+					"enabled": true,
+					"showHeaderPicker": false,
+					"persistKey": "procest-dashboard-range",
+					"default": { "preset": "month" },
+					"presets": [
+						{ "id": "week", "label": "Week", "days": 7 },
+						{ "id": "month", "label": "Maand", "days": 30 },
+						{ "id": "quarter", "label": "Kwartaal", "days": 90 },
+						{ "id": "year", "label": "Jaar", "days": 365 },
+						{ "id": "all", "label": "Alles", "days": null }
+					]
+				},
 				"widgets": [
 					{
 						"id": "kpi-open-cases",
-						"type": "custom",
-						"title": "Open Cases"
+						"type": "stat",
+						"title": "Nieuwe zaken",
+						"content": { "label": "Nieuwe zaken", "route": { "name": "Cases" }, "icon": "FolderOutline", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-overdue",
-						"type": "custom",
-						"title": "Overdue"
+						"type": "stat",
+						"title": "Te laat",
+						"content": { "label": "Te laat", "route": { "name": "Cases" }, "icon": "AlertCircleOutline", "valueColor": "#e9322d", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "deadline": { "lt": "@today" }, "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-completed",
-						"type": "custom",
-						"title": "Completed This Month"
+						"type": "stat",
+						"title": "Afgerond",
+						"content": { "label": "Afgerond", "route": { "name": "Cases" }, "icon": "CheckCircleOutline", "valueColor": "#46ba61", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "endDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-my-tasks",
-						"type": "custom",
-						"title": "My Tasks"
+						"type": "stat",
+						"title": "Mijn taken",
+						"content": { "label": "Mijn taken", "route": { "name": "MyWork" }, "icon": "ClipboardCheckOutline", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "task", "metric": "count", "filter": { "assignee": "@me", "dueDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "cases-by-status",
@@ -401,7 +429,8 @@
 						"gridY": 0,
 						"gridWidth": 3,
 						"gridHeight": 2,
-						"showTitle": false
+						"showTitle": false,
+						"dateChip": true
 					},
 					{
 						"id": "2",
@@ -410,7 +439,8 @@
 						"gridY": 0,
 						"gridWidth": 3,
 						"gridHeight": 2,
-						"showTitle": false
+						"showTitle": false,
+						"dateChip": true
 					},
 					{
 						"id": "3",
@@ -419,7 +449,8 @@
 						"gridY": 0,
 						"gridWidth": 3,
 						"gridHeight": 2,
-						"showTitle": false
+						"showTitle": false,
+						"dateChip": true
 					},
 					{
 						"id": "4",
@@ -428,7 +459,8 @@
 						"gridY": 0,
 						"gridWidth": 3,
 						"gridHeight": 2,
-						"showTitle": false
+						"showTitle": false,
+						"dateChip": true
 					},
 					{
 						"id": "5",
@@ -506,10 +538,6 @@
 				"documentationUrl": "https://procest.conduction.nl"
 			},
 			"slots": {
-				"widget-kpi-open-cases": "kpiOpenCases",
-				"widget-kpi-overdue": "kpiOverdue",
-				"widget-kpi-completed": "kpiCompleted",
-				"widget-kpi-my-tasks": "kpiMyTasks",
 				"widget-cases-by-status": "statusChart",
 				"widget-cases-by-type": "casesByType",
 				"widget-open-cases": "casesOverview",
@@ -780,6 +808,7 @@
 			"route": "/cases/:id/deelzaken",
 			"type": "custom",
 			"title": "Sub-cases",
+			"_note": "Bespoke parent-scoped sub-case (deelzaak) list: header carries a back-to-parent button, a parent breadcrumb link and a roll-up summary line, and rows deep-link into DeelzaakDetail under the same parent route. A standard list/index type can't express the parent-route binding (/cases/:id/deelzaken) plus the parent-context header and roll-up text.",
 			"slots": {
 				"main": "DeelzaakList"
 			}
@@ -789,6 +818,7 @@
 			"route": "/cases/:parentId/deelzaken/:id",
 			"type": "custom",
 			"title": "Sub-case",
+			"_note": "Sub-case detail that shares the `case` schema with CaseDetail but adds a mandatory always-visible parent breadcrumb (parent → current) and a link out to the canonical CaseDetail edit view. The standard detail type renders a single object with no parent-context breadcrumb or cross-route hand-off, so the parent-aware framing requires a bespoke page.",
 			"slots": {
 				"main": "DeelzaakDetail"
 			}
@@ -800,7 +830,10 @@
 			"title": "Bezwaren",
 			"config": {
 				"register": "procest",
-				"schema": "bezwaar",
+				"schema": "case",
+				"filter": {
+					"caseType": "b3c1a000-0000-4000-a000-00000000be2a"
+				},
 				"showViewAction": false,
 				"actions": [
 					{
@@ -808,17 +841,20 @@
 						"label": "View",
 						"icon": "icon-info",
 						"handler": "navigate",
-						"route": "BezwaarDetail",
+						"route": "CaseDetail",
 						"type": "handler"
 					}
 				],
 				"columns": [
-					"case",
-					"status",
-					"ontvangstdatum",
-					"decisionDeadline",
-					"awbReference",
-					"dwangsom"
+					"identifier",
+					"title",
+					{
+						"key": "status",
+						"label": "Status",
+						"formatter": "statusTypeName"
+					},
+					"assignee",
+					"deadline"
 				],
 				"sidebar": {
 					"enabled": true,
@@ -1133,6 +1169,7 @@
 			"type": "custom",
 			"title": "Case map",
 			"component": "CasesOnMapView",
+			"_note": "Full-screen split view: a filter sidebar (case type + status) beside a CnMapWidget rendering RBAC-scoped case markers with clustering and auto-fit. Markers and overview are sourced from OpenRegister's maps-overview leaf (ADR-022, OR #154). No standard page type offers the sidebar-plus-map layout or the maps-overview declaration/points fetch lifecycle.",
 			"config": {
 				"register": "procest",
 				"schema": "case"
@@ -2854,16 +2891,20 @@
 			"title": "Beroepen",
 			"config": {
 				"register": "procest",
-				"schema": "beroep",
+				"schema": "case",
+				"filter": {
+					"caseType": "b3c1a000-0000-4000-a000-00000000be30"
+				},
 				"columns": [
-					"case",
-					"sourceBezwaar",
-					"courtReference",
-					"competentCourt",
-					"appellantFilingDate",
-					"filingDeadline",
-					"judgmentOutcome",
-					"cascadeAction"
+					"identifier",
+					"title",
+					{
+						"key": "status",
+						"label": "Status",
+						"formatter": "statusTypeName"
+					},
+					"assignee",
+					"deadline"
 				],
 				"showViewAction": false,
 				"actions": [
@@ -2872,7 +2913,7 @@
 						"label": "View",
 						"icon": "icon-info",
 						"handler": "navigate",
-						"route": "BeroepDetail",
+						"route": "CaseDetail",
 						"type": "handler"
 					}
 				],
@@ -2988,35 +3029,40 @@
 			"route": "/termijn-dashboard",
 			"type": "custom",
 			"title": "Termijn dashboard",
-			"component": "TermijnDashboard"
+			"component": "TermijnDashboard",
+			"_note": "AWB termijnbewaking (statutory-deadline) monitor: a zaaktype filter drives a server-computed KPI bundle (total cases in period, within-term %, breached, at-risk) rendered as colour-coded compliance cards. The figures come from a dedicated deadline-aggregation endpoint, not a register query, so the standard dashboard/object-stats type can't supply or shape this data."
 		},
 		{
 			"id": "ArchiefDashboard",
 			"route": "/archief-dashboard",
 			"type": "custom",
 			"title": "Archief dashboard",
-			"component": "ArchiefDashboard"
+			"component": "ArchiefDashboard",
+			"_note": "Archief e-Depot handover console: KPI cards (ready/in-progress/failed) plus trigger and batch tables and quick actions, backed by the bespoke `archief#dashboardStats` and `archief#auditLog` endpoints. The standard dashboard type renders register-derived stats only and cannot drive the e-Depot batch/trigger operational tables or handover actions."
 		},
 		{
 			"id": "TenantOnboardingDashboard",
 			"route": "/tenant-onboarding",
 			"type": "custom",
 			"title": "Tenant onboarding",
-			"component": "TenantOnboardingDashboard"
+			"component": "TenantOnboardingDashboard",
+			"_note": "Tenant onboarding wizard view: a per-tenant 7-step progress bar plus a go-live readiness check and an activate-tenant action, rendering TenantOnboardingService progress and validateGoLive() output. This is a stateful procedure/checklist surface driven by a service, not an object listing, so no standard page type can express the step progress and go-live gating."
 		},
 		{
 			"id": "SubstitutionSettings",
 			"route": "/substitution",
 			"type": "custom",
 			"title": "Substitution",
-			"component": "SubstitutionSettingsView"
+			"component": "SubstitutionSettingsView",
+			"_note": "Self-service vervanging (substitution) page: an explanatory intro about scope/permissions, a register-substitution action opening the isolated SubstitutionFormModal, and a table of the current user's own active/past substitutions filtered to where they are the absentee (enforced server-side). The standard list type can't carry the explanatory framing or the self-scoped register/revoke flow."
 		},
 		{
 			"id": "SubstitutionAdmin",
 			"route": "/substitution-admin",
 			"type": "custom",
 			"title": "Substitutions & reassignment",
-			"component": "SubstitutionAdminView"
+			"component": "SubstitutionAdminView",
+			"_note": "Coordinator substitution console: a filterable list of all substitutions plus register-on-behalf, revoke, inspect-capacity-stamped-actions, and bulk-reassignment actions (the latter two open dedicated modals). Coordinator role is enforced server-side. The standard list type cannot host the on-behalf-of register flow, the action-list inspection, or the bulk-reassign operation over the listed objects."
 		}
 	],
 	"observability": {

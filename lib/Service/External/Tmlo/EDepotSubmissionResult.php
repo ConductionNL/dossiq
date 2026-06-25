@@ -39,16 +39,20 @@ final class EDepotSubmissionResult
     /**
      * Construct the result value-object.
      *
-     * @param string              $submissionStatus      ACCEPTED /
-     *                                                   REJECTED /
-     *                                                   SUBMISSION_DEFERRED /
-     *                                                   RETRY_SCHEDULED /
-     *                                                   SUBMISSION_ERROR.
-     * @param string              $sipBundelId           Echoed input.
-     * @param string              $archiefId             e-Depot-side
-     *                                                   archief identifier
-     *                                                   (empty for non-
-     *                                                   ACCEPTED).
+     * @param string              $submissionStatus       ACCEPTED /
+     *                                                    REJECTED /
+     *                                                    SUBMISSION_DEFERRED
+     *                                                    /
+     *                                                    RETRY_SCHEDULED
+     *                                                    /
+     *                                                    SUBMISSION_ERROR.
+     * @param string              $sipBundelId            Echoed input.
+     * @param string              $archiefId              e-Depot-side
+     *                                                    archief
+     *                                                    identifier
+     *                                                    (empty for
+     *                                                    non-
+     *                                                    ACCEPTED).
      * @param string              $overdrachtTransactieId Synthetic
      *                                                    audit-trail id —
      *                                                    always present so
@@ -56,14 +60,14 @@ final class EDepotSubmissionResult
      *                                                    record stays
      *                                                    correlatable even
      *                                                    on dormant runs.
-     * @param bool                $dormant               TRUE when the
-     *                                                   adapter was
-     *                                                   dormant.
-     * @param array<string,mixed> $extras                Provider-specific
-     *                                                   extras —
-     *                                                   transportMode,
-     *                                                   rejectionReason,
-     *                                                   nextRetryAt.
+     * @param bool                $dormant                TRUE when the
+     *                                                    adapter was
+     *                                                    dormant.
+     * @param array<string,mixed> $extras                 Provider-specific
+     *                                                    extras —
+     *                                                    transportMode,
+     *                                                    rejectionReason,
+     *                                                    nextRetryAt.
      */
     public function __construct(
         public readonly string $submissionStatus,
@@ -71,7 +75,7 @@ final class EDepotSubmissionResult
         public readonly string $archiefId,
         public readonly string $overdrachtTransactieId,
         public readonly bool $dormant,
-        public readonly array $extras = [],
+        public readonly array $extras=[],
     ) {
     }//end __construct()
 }//end class

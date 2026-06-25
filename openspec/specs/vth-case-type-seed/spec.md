@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 ## Purpose
 
 @e2e exclude Seed data imported via repair step; data presence is covered by PHPUnit repair-step tests.

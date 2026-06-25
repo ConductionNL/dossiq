@@ -168,7 +168,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep
                     $newDecisionRef = $this->delegationService->raiseContractDecision(
                         caseRef: $caseUuid,
                         contractRef: (string) ($case['contractRef'] ?? ''),
-                        decisionType: $this->mapCaseTypeToDecisionType($caseTypeSlug),
+                        decisionType: $this->mapCaseTypeToDecisionType(caseTypeSlug: $caseTypeSlug),
                         subject: [
                             'subjectRegister' => TenantSaasService::REGISTER,
                             'subjectSchema'   => 'case',
@@ -188,7 +188,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep
                     $linked++;
                     $output->info('Linked case '.$caseUuid.' → decidesk Decision '.$newDecisionRef);
                 } catch (RuntimeException $e) {
-                    // decidesk leaf unavailable — warn + skip this case; do NOT fail the migration.
+                    // Decidesk leaf unavailable — warn + skip this case; do NOT fail the migration.
                     $output->warning('Could not link case '.$caseUuid.': '.$e->getMessage().' — skipping.');
                     $this->logger->warning(
                         'LinkInFlightContractDecisionsRepair: could not link case',

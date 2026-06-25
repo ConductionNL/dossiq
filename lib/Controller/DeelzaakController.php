@@ -40,7 +40,6 @@ use OCP\IUserSession;
  */
 class DeelzaakController extends Controller
 {
-
     /**
      * Constructor.
      *
@@ -55,7 +54,6 @@ class DeelzaakController extends Controller
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
-
 
     /**
      * List sub-cases of a parent.
@@ -74,11 +72,12 @@ class DeelzaakController extends Controller
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        return new JSONResponse([
-            'results' => $this->deelzaakService->listSubCases(parentCaseUuid: $caseId),
-        ]);
+        return new JSONResponse(
+                [
+                    'results' => $this->deelzaakService->listSubCases(parentCaseUuid: $caseId),
+                ]
+                );
     }//end list()
-
 
     /**
      * Return the parent case object.
@@ -105,7 +104,6 @@ class DeelzaakController extends Controller
         return new JSONResponse($parent);
     }//end parent()
 
-
     /**
      * Batch sub-case counts for a list page.
      *
@@ -127,7 +125,11 @@ class DeelzaakController extends Controller
         if (is_array($raw) === true) {
             $ids = $raw;
         } else {
-            $ids = $raw === '' ? [] : explode(',', (string) $raw);
+            if ($raw === '') {
+                $ids = [];
+            } else {
+                $ids = explode(',', (string) $raw);
+            }
         }
 
         $ids = array_values(array_filter(array_map('trim', $ids), static fn ($value): bool => $value !== ''));
@@ -137,7 +139,6 @@ class DeelzaakController extends Controller
 
         return new JSONResponse(['counts' => $this->deelzaakService->getSubCaseCounts(parentUuids: $ids)]);
     }//end counts()
-
 
     /**
      * Pre-flight validate a sub-case creation request.
@@ -159,9 +160,12 @@ class DeelzaakController extends Controller
         $parent = (string) $this->request->getParam('parentCaseUuid', '');
         $child  = (string) $this->request->getParam('childCaseTypeId', '');
         if ($parent === '' || $child === '') {
-            return new JSONResponse([
-                'message' => 'parentCaseUuid and childCaseTypeId are required',
-            ], Http::STATUS_BAD_REQUEST);
+            return new JSONResponse(
+                    [
+                        'message' => 'parentCaseUuid and childCaseTypeId are required',
+                    ],
+                    Http::STATUS_BAD_REQUEST
+                    );
         }
 
         $result = $this->deelzaakService->validateCreate(
@@ -175,7 +179,6 @@ class DeelzaakController extends Controller
 
         return new JSONResponse($result);
     }//end validate()
-
 
     /**
      * Unlink every sub-case from the given parent.
@@ -197,8 +200,10 @@ class DeelzaakController extends Controller
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        return new JSONResponse([
-            'unlinked' => $this->deelzaakService->unlinkSubCases(parentCaseUuid: $caseId),
-        ]);
+        return new JSONResponse(
+                [
+                    'unlinked' => $this->deelzaakService->unlinkSubCases(parentCaseUuid: $caseId),
+                ]
+                );
     }//end unlink()
 }//end class

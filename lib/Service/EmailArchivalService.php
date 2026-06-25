@@ -45,7 +45,6 @@ class EmailArchivalService
      */
     public const SYNC_SIZE_THRESHOLD_BYTES = (5 * 1024 * 1024);
 
-
     /**
      * Constructor.
      *
@@ -57,7 +56,6 @@ class EmailArchivalService
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
-
 
     /**
      * Record the archival of a single linked email.
@@ -82,7 +80,10 @@ class EmailArchivalService
         }
 
         $size = (int) ($metadata['sizeBytes'] ?? 0);
-        $mode = ($size > self::SYNC_SIZE_THRESHOLD_BYTES) ? 'async' : 'sync';
+        $mode = 'sync';
+        if ($size > self::SYNC_SIZE_THRESHOLD_BYTES) {
+            $mode = 'async';
+        }
 
         $archivalId = uniqid(prefix: 'archival-', more_entropy: true);
 
@@ -101,11 +102,15 @@ class EmailArchivalService
         ];
 
         $this->persistDocument(payload: $documentRecord);
-        $this->appendCaseAudit(caseId: $caseId, eventType: 'email_linked', payload: [
-            'mailMessageId' => $documentRecord['mailMessageId'],
-            'subject'       => $documentRecord['subject'],
-            'mode'          => $mode,
-        ]);
+        $this->appendCaseAudit(
+                caseId: $caseId,
+                eventType: 'email_linked',
+                payload: [
+                    'mailMessageId' => $documentRecord['mailMessageId'],
+                    'subject'       => $documentRecord['subject'],
+                    'mode'          => $mode,
+                ]
+                );
 
         return [
             'archivalId' => $archivalId,
@@ -114,12 +119,11 @@ class EmailArchivalService
         ];
     }//end archiveLinkedEmail()
 
-
     /**
      * Mark a previous archival attempt as completed.
      *
-     * @param string $archivalId  Archival identifier.
-     * @param string $pdfFileRef  File reference inside Nextcloud Files.
+     * @param string $archivalId Archival identifier.
+     * @param string $pdfFileRef File reference inside Nextcloud Files.
      *
      * @return bool
      *
@@ -127,12 +131,14 @@ class EmailArchivalService
      */
     public function markComplete(string $archivalId, string $pdfFileRef): bool
     {
-        return $this->updateArchival(archivalId: $archivalId, fields: [
-            'pdfStatus'  => 'completed',
-            'pdfFileRef' => $pdfFileRef,
-        ]);
+        return $this->updateArchival(
+                archivalId: $archivalId,
+                fields: [
+                    'pdfStatus'  => 'completed',
+                    'pdfFileRef' => $pdfFileRef,
+                ]
+                );
     }//end markComplete()
-
 
     /**
      * Mark an archival attempt as failed and increment retry counter.
@@ -149,14 +155,16 @@ class EmailArchivalService
         $existing = $this->loadArchival(archivalId: $archivalId);
         $attempts = (int) ($existing['pdfAttempts'] ?? 0);
 
-        return $this->updateArchival(archivalId: $archivalId, fields: [
-            'pdfStatus'     => 'failed',
-            'pdfLastError'  => $errorMessage,
-            'pdfAttempts'   => ($attempts + 1),
-            'pdfFailedAt'   => date(DATE_ATOM),
-        ]);
+        return $this->updateArchival(
+                archivalId: $archivalId,
+                fields: [
+                    'pdfStatus'    => 'failed',
+                    'pdfLastError' => $errorMessage,
+                    'pdfAttempts'  => ($attempts + 1),
+                    'pdfFailedAt'  => date(DATE_ATOM),
+                ]
+                );
     }//end markFailed()
-
 
     /**
      * Find all archival records still in `failed` state.
@@ -195,17 +203,20 @@ class EmailArchivalService
         );
 
         // Cap further by retry-count so we never thrash on a permanently failed row.
-        return array_values(array_filter(
+        return array_values(
+                array_filter(
             $rows,
             static fn (array $row): bool => ((int) ($row['pdfAttempts'] ?? 0) < 3)
-        ));
+        )
+                );
     }//end listFailedArchivals()
-
 
     /**
      * Persist the archival object.
      *
      * @param array<string, mixed> $payload Document payload.
+     *
+     * @return void
      */
     private function persistDocument(array $payload): void
     {
@@ -238,7 +249,6 @@ class EmailArchivalService
         }
     }//end persistDocument()
 
-
     /**
      * Load an archival record by archivalId.
      *
@@ -268,7 +278,6 @@ class EmailArchivalService
 
         return $rows[0] ?? null;
     }//end loadArchival()
-
 
     /**
      * Update fields on an existing archival record.
@@ -313,13 +322,14 @@ class EmailArchivalService
         }
     }//end updateArchival()
 
-
     /**
      * Append an audit event to the case audit trail (OR-managed).
      *
      * @param string               $caseId    Case UUID.
      * @param string               $eventType Audit event name.
      * @param array<string, mixed> $payload   Event metadata.
+     *
+     * @return void
      */
     private function appendCaseAudit(string $caseId, string $eventType, array $payload): void
     {
@@ -349,6 +359,6 @@ class EmailArchivalService
                 'Audit append failed (non-fatal)',
                 ['caseId' => $caseId, 'eventType' => $eventType, 'error' => $e->getMessage()]
             );
-        }
+        }//end try
     }//end appendCaseAudit()
 }//end class

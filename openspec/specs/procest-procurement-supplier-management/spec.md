@@ -1,5 +1,5 @@
 ---
-status: specified
+status: done
 status-note: "Synced 2026-06-14 from archived consolidation change add-procest-procurement-suite (kind:config). Capability is SPEC-COMPLETE; register patches + manifest wiring land via per-spec code chains (ADR-032). A supplier-facing slice already exists on development via the leverancier-zaakportaal chain (live capability supplier-portal; Supplier/Supplier Tender/Supplier Contract schemas in lib/Settings/procest_register.json) — the SUP code chain MUST extend that Supplier schema additively, not create a parallel one."
 ---
 

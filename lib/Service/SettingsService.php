@@ -480,13 +480,20 @@ class SettingsService
     /**
      * Check if OpenRegister is installed and enabled.
      *
+     * The isEnabledForUser() check resolves against the current user session
+     * and returns false in session-less contexts (occ commands, repair steps,
+     * background jobs) even when OpenRegister is enabled globally — which
+     * silently skipped the bezwaar/beroep seed during install/repair. Fall back
+     * to the session-less isInstalled() check so CLI/background callers see it.
+     *
      * @return bool
      *
      * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
      */
     public function isOpenRegisterAvailable(): bool
     {
-        return $this->appManager->isEnabledForUser(self::OPENREGISTER_APP_ID);
+        return $this->appManager->isEnabledForUser(self::OPENREGISTER_APP_ID) === true
+            || $this->appManager->isInstalled(self::OPENREGISTER_APP_ID) === true;
     }//end isOpenRegisterAvailable()
 
     /**
@@ -524,7 +531,6 @@ class SettingsService
         }
     }//end getObjectService()
 
-
     /**
      * Lazily resolve OpenRegister's ApprovalService for parafering chain delegation.
      *
@@ -560,7 +566,6 @@ class SettingsService
             return null;
         }
     }//end getApprovalService()
-
 
     /**
      * Lazily resolve an OpenRegister DI class by fully-qualified name.
@@ -1130,4 +1135,4 @@ class SettingsService
 
         return true;
     }//end isList()
-    }//end class
+}//end class

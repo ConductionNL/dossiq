@@ -68,19 +68,20 @@ class PortalIdentityService
     /**
      * Constructor.
      *
-     * @param SettingsService              $settingsService The settings service.
-     * @param IUserSession                 $userSession     The Nextcloud user session.
-     * @param DigidSamlAdapterInterface|null $digidAdapter  Optional DigiD broker
-     *                                                     adapter — dormant by default.
-     *                                                     Resolves the SAML
-     *                                                     callback into a
-     *                                                     {@see BrokerAssertionResult}
-     *                                                     carrying the BSN.
+     * @param SettingsService                $settingsService The settings service.
+     * @param IUserSession                   $userSession     The Nextcloud user session.
+     * @param DigidSamlAdapterInterface|null $digidAdapter    Optional DigiD broker
+     *                                                        adapter — dormant
+     *                                                        by default. Resolves
+     *                                                        the SAML callback
+     *                                                        into a {@see
+     *                                                        BrokerAssertionResult}
+     *                                                        carrying the BSN.
      */
     public function __construct(
         private SettingsService $settingsService,
         private IUserSession $userSession,
-        private readonly ?DigidSamlAdapterInterface $digidAdapter = null,
+        private readonly ?DigidSamlAdapterInterface $digidAdapter=null,
     ) {
     }//end __construct()
 
@@ -135,7 +136,7 @@ class PortalIdentityService
         };
 
         try {
-            $this->assertTrustLevel($trustLevel);
+            $this->assertTrustLevel(trustLevel: $trustLevel);
         } catch (OCSBadRequestException $e) {
             return [
                 'ok'     => false,
@@ -147,8 +148,8 @@ class PortalIdentityService
         $bsn = (string) $assertion->bsn;
         return [
             'ok'          => true,
-            'subjectRef'  => $this->deriveSubjectRef($bsn),
-            'maskedBsn'   => $this->maskBsn($bsn),
+            'subjectRef'  => $this->deriveSubjectRef(rawIdentifier: $bsn),
+            'maskedBsn'   => $this->maskBsn(bsn: $bsn),
             'level'       => $assertion->level,
             'dialect'     => $assertion->dialect,
             'assertionId' => $assertion->assertionId,

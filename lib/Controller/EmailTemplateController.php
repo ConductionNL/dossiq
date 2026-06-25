@@ -70,7 +70,6 @@ class EmailTemplateController extends Controller
      */
     private const SENSITIVE_KEYS = ['email_imap_password'];
 
-
     /**
      * Constructor.
      *
@@ -90,7 +89,6 @@ class EmailTemplateController extends Controller
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
 
-
     /**
      * List templates for a caseType.
      *
@@ -108,11 +106,12 @@ class EmailTemplateController extends Controller
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        return new JSONResponse([
-            'results' => $this->templateService->listTemplates(caseTypeId: $caseTypeId),
-        ]);
+        return new JSONResponse(
+                [
+                    'results' => $this->templateService->listTemplates(caseTypeId: $caseTypeId),
+                ]
+                );
     }//end listTemplates()
-
 
     /**
      * Create a new template (version 1).
@@ -144,7 +143,6 @@ class EmailTemplateController extends Controller
         }
     }//end createTemplate()
 
-
     /**
      * Update a template (bumps version).
      *
@@ -175,7 +173,6 @@ class EmailTemplateController extends Controller
         }
     }//end updateTemplate()
 
-
     /**
      * Render a draft from a template against a case.
      *
@@ -201,7 +198,6 @@ class EmailTemplateController extends Controller
         }
     }//end prefillDraft()
 
-
     /**
      * Read the masked IMAP / poller settings.
      *
@@ -221,7 +217,11 @@ class EmailTemplateController extends Controller
         foreach (self::IMAP_KEYS as $key) {
             $raw = $this->appConfig->getValueString(Application::APP_ID, $key, '');
             if (in_array($key, self::SENSITIVE_KEYS, true) === true) {
-                $values[$key] = $raw === '' ? '' : '***';
+                if ($raw === '') {
+                    $values[$key] = '';
+                } else {
+                    $values[$key] = '***';
+                }
             } else {
                 $values[$key] = $raw;
             }
@@ -229,7 +229,6 @@ class EmailTemplateController extends Controller
 
         return new JSONResponse($values);
     }//end getSettings()
-
 
     /**
      * Persist IMAP / poller settings.
@@ -271,11 +270,10 @@ class EmailTemplateController extends Controller
                 false,
                 $sensitive,
             );
-        }
+        }//end foreach
 
         return new JSONResponse(['saved' => true]);
     }//end saveSettings()
-
 
     /**
      * Smoke-test the configured IMAP connection.
@@ -303,9 +301,9 @@ class EmailTemplateController extends Controller
 
         // Best-effort TCP connect; if `imap_open()` is available we still
         // prefer that, but never throw on missing extensions.
-        $errno   = 0;
-        $errstr  = '';
-        $handle  = @fsockopen($host, $port, $errno, $errstr, 5);
+        $errno  = 0;
+        $errstr = '';
+        $handle = @fsockopen($host, $port, $errno, $errstr, 5);
         if ($handle === false) {
             return new JSONResponse(['ok' => false, 'error' => 'connection_failed', 'detail' => $errstr]);
         }
@@ -313,7 +311,6 @@ class EmailTemplateController extends Controller
         fclose($handle);
         return new JSONResponse(['ok' => true]);
     }//end testImap()
-
 
     /**
      * Variable catalog for the template editor.

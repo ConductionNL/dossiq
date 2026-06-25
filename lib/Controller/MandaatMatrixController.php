@@ -53,14 +53,14 @@ class MandaatMatrixController extends Controller
     /**
      * Constructor.
      *
-     * @param string                  $appName       App id.
-     * @param IRequest                $request       Request.
-     * @param IUserSession            $userSession   User session (for current user id).
-     * @param MandaatCheckService     $check         Check service.
-     * @param MandaatEscalatieService $escalatie     Escalation service.
-     * @param MandaatGebruikService   $gebruik       Audit log service.
-     * @param MandaatImportService    $import        Import service.
-     * @param LoggerInterface         $logger        Logger.
+     * @param string                  $appName     App id.
+     * @param IRequest                $request     Request.
+     * @param IUserSession            $userSession User session (for current user id).
+     * @param MandaatCheckService     $check       Check service.
+     * @param MandaatEscalatieService $escalatie   Escalation service.
+     * @param MandaatGebruikService   $gebruik     Audit log service.
+     * @param MandaatImportService    $import      Import service.
+     * @param LoggerInterface         $logger      Logger.
      */
     public function __construct(
         string $appName,
@@ -72,7 +72,7 @@ class MandaatMatrixController extends Controller
         private readonly MandaatImportService $import,
         private readonly LoggerInterface $logger,
     ) {
-        parent::__construct($appName, $request);
+        parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
@@ -86,6 +86,7 @@ class MandaatMatrixController extends Controller
         if ($user === null) {
             return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
         }
+
         return null;
     }//end ensureAuthenticated()
 
@@ -100,17 +101,20 @@ class MandaatMatrixController extends Controller
      */
     public function probe(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $body         = $this->jsonBody();
         $decisionType = (string) ($body['decisionType'] ?? '');
         $caseId       = (string) ($body['caseId'] ?? '');
-        $caseProps    = (array)  ($body['caseProperties'] ?? []);
+        $caseProps    = (array) ($body['caseProperties'] ?? []);
         if ($decisionType === '' || $caseId === '') {
-            return $this->badRequest('decisionType and caseId are required');
+            return $this->badRequest(msg: 'decisionType and caseId are required');
         }
 
         $userId = $this->currentUserId();
-        $r = $this->check->isAuthorized($userId, $decisionType, $caseId, $caseProps);
+        $r      = $this->check->isAuthorized($userId, $decisionType, $caseId, $caseProps);
         return new JSONResponse($r);
     }//end probe()
 
@@ -125,14 +129,17 @@ class MandaatMatrixController extends Controller
      */
     public function importPreview(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $body          = $this->jsonBody();
         $besluitNummer = (string) ($body['besluitNummer'] ?? '');
         $besluitNaam   = (string) ($body['besluitNaam'] ?? '');
         $decideskUuid  = (string) ($body['decideskUuid'] ?? '');
         $csv           = (string) ($body['csv'] ?? '');
         if ($besluitNummer === '' || $besluitNaam === '' || $csv === '') {
-            return $this->badRequest('besluitNummer, besluitNaam and csv are required');
+            return $this->badRequest(msg: 'besluitNummer, besluitNaam and csv are required');
         }
 
         try {
@@ -146,17 +153,20 @@ class MandaatMatrixController extends Controller
     /**
      * Approve a previously-imported (concept) besluit.
      *
-     * @NoAdminRequired
-     *
      * @param string $importId Besluit id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
      */
     public function importApprove(string $importId): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         try {
             $r = $this->import->approveImport($importId);
             return new JSONResponse($r);
@@ -168,11 +178,11 @@ class MandaatMatrixController extends Controller
     /**
      * Approve an open escalation.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Escalation id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
      */
@@ -190,22 +200,26 @@ class MandaatMatrixController extends Controller
     /**
      * Reject an open escalation.
      *
-     * @NoAdminRequired
-     *
      * @param string $id Escalation id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
      */
     public function escalateReject(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         $body   = $this->jsonBody();
         $reason = (string) ($body['reason'] ?? '');
         if ($reason === '') {
-            return $this->badRequest('reason is required');
+            return $this->badRequest(msg: 'reason is required');
         }
+
         try {
             $r = $this->escalatie->rejectEscalatie($id, $reason);
             return new JSONResponse($r);
@@ -217,28 +231,31 @@ class MandaatMatrixController extends Controller
     /**
      * Get the decision audit trail for a case.
      *
-     * @NoAdminRequired
-     *
      * @param string $caseId Case id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
      */
     public function auditTrail(string $caseId): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) { return $denied; }
+        if (($denied = $this->ensureAuthenticated()) !== null) {
+            return $denied;
+        }
+
         return new JSONResponse($this->gebruik->getDecisionAuditTrail($caseId));
     }//end auditTrail()
 
     /**
      * Applicable mandates for the case, filtered to the current user's roles.
      *
-     * @NoAdminRequired
-     *
      * @param string $caseId Case id.
      *
      * @return JSONResponse
+     *
+     * @NoAdminRequired
      *
      * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
      */
@@ -247,8 +264,9 @@ class MandaatMatrixController extends Controller
         if (($denied = $this->ensureAuthenticated()) !== null) {
             return $denied;
         }
-        $userId   = $this->currentUserId();
-        $caseType = (string) $this->request->getParam('caseType', '');
+
+        $userId       = $this->currentUserId();
+        $caseType     = (string) $this->request->getParam('caseType', '');
         $decisionType = (string) $this->request->getParam('decisionType', '');
         try {
             $rows = $this->check->getApplicableForUser($userId, $caseType, $decisionType);
@@ -259,36 +277,52 @@ class MandaatMatrixController extends Controller
             );
             $rows = [];
         }
+
         return new JSONResponse($rows);
     }//end applicable()
 
     /**
+     * Resolve the current user id, or empty string when unauthenticated.
+     *
      * @return string
      */
     private function currentUserId(): string
     {
         $user = $this->userSession->getUser();
-        return $user !== null ? (string) $user->getUID() : '';
-    }
+        if ($user !== null) {
+            return (string) $user->getUID();
+        }
+
+        return '';
+    }//end currentUserId()
 
     /**
+     * Read and decode the JSON request body into an array.
+     *
      * @return array<string, mixed>
      */
     private function jsonBody(): array
     {
         // OCP\IRequest::getContent() is protected on the concrete OC
         // request; read raw payload from php://input instead.
-        $raw = (string) file_get_contents('php://input');
+        $raw  = (string) file_get_contents('php://input');
         $body = json_decode($raw, true);
-        return is_array($body) === true ? $body : [];
-    }
+        if (is_array($body) === true) {
+            return $body;
+        }
+
+        return [];
+    }//end jsonBody()
 
     /**
+     * Build a 400 Bad Request JSON response.
+     *
      * @param string $msg Message.
+     *
      * @return JSONResponse
      */
     private function badRequest(string $msg): JSONResponse
     {
         return new JSONResponse(['message' => $msg], Http::STATUS_BAD_REQUEST);
-    }
+    }//end badRequest()
 }//end class

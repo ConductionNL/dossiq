@@ -41,9 +41,9 @@ class ProofOfTransferService
     /**
      * Constructor.
      *
-     * @param SettingsService          $settingsService Settings.
-     * @param ArchivalTriggerService   $triggerService  Trigger service (for audit log).
-     * @param LoggerInterface          $logger          Logger.
+     * @param SettingsService        $settingsService Settings.
+     * @param ArchivalTriggerService $triggerService  Trigger service (for audit log).
+     * @param LoggerInterface        $logger          Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -74,7 +74,7 @@ class ProofOfTransferService
         string $sipBundelId,
         string $receipt,
         array $checksums,
-        ?DateTimeImmutable $ingestionDate = null
+        ?DateTimeImmutable $ingestionDate=null
     ): array {
         $ingestionDate = ($ingestionDate ?? new DateTimeImmutable());
 
@@ -90,13 +90,13 @@ class ProofOfTransferService
             'createdAt'            => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
         ];
 
-        $saved = $this->save('archief_bewijs_schema', $row);
+        $saved = $this->save(schemaConfigKey: 'archief_bewijs_schema', object: $row);
 
         // Verify integrity in-place; flips status to verified / alert-mismatch.
         $bewijsId = (string) ($saved['id'] ?? '');
         if ($bewijsId !== '') {
-            $verified = $this->verifyIntegrity($bewijsId, $sipBundelId);
-            $saved = $verified;
+            $verified = $this->verifyIntegrity(bewijsId: $bewijsId, sipBundelId: $sipBundelId);
+            $saved    = $verified;
         }
 
         $this->triggerService->logEvent(null, $caseId, 'proof-captured', 'archivId='.$archivId);
@@ -129,30 +129,45 @@ class ProofOfTransferService
         if (is_array($bewijs) === false) {
             throw new RuntimeException('ArchiefBewijs not found: '.$bewijsId);
         }
+
         $sip = $objectService->find($sipBundelId, register: $register, schema: $sSchema);
         if (is_array($sip) === false) {
             throw new RuntimeException('SipBundel not found: '.$sipBundelId);
         }
 
-        $sipChecksum = (string) ($sip['manifestChecksum'] ?? '');
-        $confirmed   = (array)  ($bewijs['checksums'] ?? []);
+        $sipChecksum  = (string) ($sip['manifestChecksum'] ?? '');
+        $confirmed    = (array) ($bewijs['checksums'] ?? []);
         $confirmedSha = (string) ($confirmed['sha256'] ?? '');
 
         $match = ($sipChecksum !== '' && $sipChecksum === $confirmedSha);
-        $bewijs['status'] = $match === true ? 'verified' : 'alert-mismatch';
+        if ($match === true) {
+            $bewijs['status'] = 'verified';
+        } else {
+            $bewijs['status'] = 'alert-mismatch';
+        }
 
         try {
             $saved = $objectService->saveObject($register, $bSchema, $bewijs);
-            $bewijs = is_array($saved) === true ? $saved : $bewijs;
+            if (is_array($saved) === true) {
+                $bewijs = $saved;
+            }
         } catch (\Throwable $e) {
             $this->logger->error('ArchiefBewijs persist failed', ['id' => $bewijsId, 'error' => $e->getMessage()]);
+        }
+
+        if ($match === true) {
+            $eventType   = 'proof-verified';
+            $eventDetail = 'checksum match';
+        } else {
+            $eventType   = 'submission-failed-rollback';
+            $eventDetail = 'checksum mismatch: SIP='.$sipChecksum.' depot='.$confirmedSha;
         }
 
         $this->triggerService->logEvent(
             null,
             (string) ($bewijs['zaakId'] ?? ''),
-            $match === true ? 'proof-verified' : 'submission-failed-rollback',
-            $match === true ? 'checksum match' : 'checksum mismatch: SIP='.$sipChecksum.' depot='.$confirmedSha
+            $eventType,
+            $eventDetail
         );
 
         return $bewijs;
@@ -196,8 +211,11 @@ class ProofOfTransferService
     }//end recommendCorrectiveAction()
 
     /**
+     * Persist an object to its configured register + schema.
+     *
      * @param string               $schemaConfigKey Schema config key.
      * @param array<string, mixed> $object          Payload.
+     *
      * @return array<string, mixed>
      */
     private function save(string $schemaConfigKey, array $object): array
@@ -208,12 +226,17 @@ class ProofOfTransferService
         if ($objectService === null || $register === '' || $schema === '') {
             return $object;
         }
+
         try {
             $saved = $objectService->saveObject($register, $schema, $object);
-            return is_array($saved) === true ? $saved : $object;
+            if (is_array($saved) === true) {
+                return $saved;
+            }
+
+            return $object;
         } catch (\Throwable $e) {
             $this->logger->error('Archief persist failed', ['key' => $schemaConfigKey, 'error' => $e->getMessage()]);
             return $object;
         }
-    }
+    }//end save()
 }//end class

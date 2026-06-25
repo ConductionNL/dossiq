@@ -60,7 +60,7 @@ class TenderViewModelService
     public function badgeColor(string $status): string
     {
         return self::STATUS_BADGE_COLORS[$status] ?? 'gray';
-    }
+    }//end badgeColor()
 
     /**
      * Return the sections the detail page should render for a tender row.
@@ -71,7 +71,7 @@ class TenderViewModelService
      */
     public function visibilityFlags(array $tender): array
     {
-        $status = (string) ($tender['status'] ?? '');
+        $status  = (string) ($tender['status'] ?? '');
         $hasEval = (string) ($tender['evaluationReportRef'] ?? '') !== '';
 
         return [
@@ -80,7 +80,7 @@ class TenderViewModelService
             'showWithdrawal'         => $status === 'withdrawn',
             'showEvaluationDownload' => in_array($status, ['awarded', 'rejected'], true) && $hasEval,
         ];
-    }
+    }//end visibilityFlags()
 
     /**
      * Cache-Control hint.
@@ -90,5 +90,5 @@ class TenderViewModelService
     public function cacheControlHeader(): string
     {
         return 'private, max-age='.self::CACHE_TTL_SECONDS;
-    }
-}
+    }//end cacheControlHeader()
+}//end class

@@ -79,7 +79,6 @@ class CaseRelationController extends Controller
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
 
-
     /**
      * List the typed peer relations of a case.
      *
@@ -100,11 +99,12 @@ class CaseRelationController extends Controller
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        return new JSONResponse([
-            'results' => $this->caseRelationService->listRelations(caseId: $caseId),
-        ]);
+        return new JSONResponse(
+                [
+                    'results' => $this->caseRelationService->listRelations(caseId: $caseId),
+                ]
+                );
     }//end list()
-
 
     /**
      * Create a typed peer relation between two cases.
@@ -156,7 +156,6 @@ class CaseRelationController extends Controller
 
         return new JSONResponse($result, Http::STATUS_CREATED);
     }//end create()
-
 
     /**
      * Remove a typed peer relation between two cases (two-sided).

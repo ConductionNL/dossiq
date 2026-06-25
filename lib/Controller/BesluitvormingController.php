@@ -122,6 +122,7 @@ class BesluitvormingController extends Controller
                 Http::STATUS_BAD_REQUEST
             );
         }
+
         return null;
     }//end requireAuthenticatedAdmin()
 }//end class

@@ -89,23 +89,25 @@ class PdokService
     private ?array $lastWarning = null;
 
     /**
-     * @var IClient HTTP client created lazily.
+     * HTTP client created lazily.
+     *
+     * @var IClient
      */
     private ?IClient $client = null;
 
     /**
      * Constructor.
      *
-     * @param IClientService            $clientService     HTTP client factory.
-     * @param IAppManager               $appManager        For openconnector
-     *                                                     installed-check.
-     * @param IAppConfig                $appConfig         App-config accessor.
-     * @param IURLGenerator             $urlGenerator      Builds the absolute
-     *                                                     openconnector URL.
-     * @param PdokLocatieserverService  $locatieserver     Existing in-app PDOK
-     *                                                     ingress (cache +
-     *                                                     outage tracking).
-     * @param LoggerInterface           $logger            Structured logger.
+     * @param IClientService           $clientService HTTP client factory.
+     * @param IAppManager              $appManager    For openconnector
+     *                                                installed-check.
+     * @param IAppConfig               $appConfig     App-config accessor.
+     * @param IURLGenerator            $urlGenerator  Builds the absolute
+     *                                                openconnector URL.
+     * @param PdokLocatieserverService $locatieserver Existing in-app PDOK
+     *                                                ingress (cache +
+     *                                                outage tracking).
+     * @param LoggerInterface          $logger        Structured logger.
      */
     public function __construct(
         private readonly IClientService $clientService,
@@ -126,7 +128,7 @@ class PdokService
      *
      * @return array<int, array<string,mixed>> Normalised suggestion list.
      */
-    public function searchAddress(string $query, array $filters = [], int $rows = 10): array
+    public function searchAddress(string $query, array $filters=[], int $rows=10): array
     {
         $this->lastWarning = null;
         if (strlen(trim($query)) < 3) {
@@ -136,14 +138,16 @@ class PdokService
         try {
             $response = $this->locatieserver->suggest($query, $filters, $rows);
         } catch (Throwable $e) {
-            return $this->handleDegradedMode($e, 'pdok.unavailable');
+            return $this->handleDegradedMode(error: $e, messageKey: 'pdok.unavailable');
         }
 
         $docs = (array) ($response['response']['docs'] ?? []);
-        return array_values(array_filter(
+        return array_values(
+                array_filter(
             $docs,
             static fn ($doc): bool => is_array($doc),
-        ));
+        )
+                );
     }//end searchAddress()
 
     /**
@@ -164,12 +168,16 @@ class PdokService
         try {
             $response = $this->locatieserver->lookup($id);
         } catch (Throwable $e) {
-            $this->handleDegradedMode($e, 'pdok.unavailable');
+            $this->handleDegradedMode(error: $e, messageKey: 'pdok.unavailable');
             return null;
         }
 
         $docs = (array) ($response['response']['docs'] ?? []);
-        return is_array($docs[0] ?? null) ? $docs[0] : null;
+        if (is_array($docs[0] ?? null) === true) {
+            return $docs[0];
+        }
+
+        return null;
     }//end lookupAddress()
 
     /**
@@ -186,29 +194,35 @@ class PdokService
     {
         $this->lastWarning = null;
         if ($this->appManager->isInstalled(self::OPENCONNECTOR_APP) === false) {
-            $this->recordWarning('pdok.openconnector_missing', 404);
+            $this->recordWarning(messageKey: 'pdok.openconnector_missing', status: 404);
             return [];
         }
 
-        $url = $this->urlGenerator->getAbsoluteURL(
-            $this->urlGenerator->linkToRoute('openconnector.pdok.parcel')
-            ?: self::SHIM_BASE_PATH.'/parcel'
-        );
+        $route = $this->urlGenerator->linkToRoute('openconnector.pdok.parcel');
+        if ($route === '' || $route === null) {
+            $route = self::SHIM_BASE_PATH.'/parcel';
+        }
+
+        $url = $this->urlGenerator->getAbsoluteURL($route);
 
         try {
-            $response = $this->getClient()->post($url, [
-                'timeout' => 10,
-                'json'    => $criteria,
-                'headers' => ['Accept' => 'application/json'],
-            ]);
-            $body = (string) $response->getBody();
-            $data = json_decode($body, true);
+            $response = $this->getClient()->post(
+                    $url,
+                    [
+                        'timeout' => 10,
+                        'json'    => $criteria,
+                        'headers' => ['Accept' => 'application/json'],
+                    ]
+                    );
+            $body     = (string) $response->getBody();
+            $data     = json_decode($body, true);
             if (is_array($data) === false) {
                 return [];
             }
+
             return (array) ($data['features'] ?? $data['parcels'] ?? []);
         } catch (Throwable $e) {
-            $this->handleDegradedMode($e, 'pdok.parcel.unavailable');
+            $this->handleDegradedMode(error: $e, messageKey: 'pdok.parcel.unavailable');
             return [];
         }
     }//end searchParcel()
@@ -258,6 +272,7 @@ class PdokService
         } catch (Throwable $e) {
             $raw = '0';
         }
+
         return ($raw === '1' || strtolower($raw) === 'true');
     }//end isFlagActive()
 
@@ -271,6 +286,7 @@ class PdokService
         if ($this->client === null) {
             $this->client = $this->clientService->newClient();
         }
+
         return $this->client;
     }//end getClient()
 
@@ -299,7 +315,7 @@ class PdokService
             default => $messageKey,
         };
 
-        $this->recordWarning($effectiveKey, $status);
+        $this->recordWarning(messageKey: $effectiveKey, status: $status);
         $this->logger->info(
             'Procest PdokService degraded',
             ['messageKey' => $effectiveKey, 'status' => $status, 'error' => $msg]

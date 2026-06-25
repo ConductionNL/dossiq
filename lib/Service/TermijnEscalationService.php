@@ -135,13 +135,13 @@ class TermijnEscalationService
         }
 
         $payload = [
-            'threshold'    => $threshold,
-            'template'     => $config['template'],
-            'priority'     => $config['priority'],
-            'recipients'   => $config['recipients'],
-            'instanceId'   => $instanceId,
-            'zaakId'       => (string) ($instance['zaak'] ?? ''),
-            'deadline'     => (string) ($instance['einddatumActueel'] ?? ''),
+            'threshold'  => $threshold,
+            'template'   => $config['template'],
+            'priority'   => $config['priority'],
+            'recipients' => $config['recipients'],
+            'instanceId' => $instanceId,
+            'zaakId'     => (string) ($instance['zaak'] ?? ''),
+            'deadline'   => (string) ($instance['einddatumActueel'] ?? ''),
         ];
 
         $this->logger->info('Procest termijn escalation dispatched', $payload);

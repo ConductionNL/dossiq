@@ -220,6 +220,7 @@ class WorkflowEngineService
                 $list[] = $guard;
             }
         }
+
         return $list;
     }//end extractGuards()
 }//end class

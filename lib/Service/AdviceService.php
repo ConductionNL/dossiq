@@ -65,12 +65,12 @@ class AdviceService
     /**
      * Constructor.
      *
-     * @param SettingsService      $settingsService     The settings service
-     * @param IUserSession         $userSession         The current user session
-     * @param IGroupManager        $groupManager        Group manager (Wilco #6 IDOR fix)
-     * @param INotificationManager $notificationManager The notification manager
-     * @param LoggerInterface      $logger              The logger
-     * @param AdviceDelegationService $adviceDelegation Advice delegation to decidesk (ADR-019)
+     * @param SettingsService         $settingsService     The settings service
+     * @param IUserSession            $userSession         The current user session
+     * @param IGroupManager           $groupManager        Group manager (Wilco #6 IDOR fix)
+     * @param INotificationManager    $notificationManager The notification manager
+     * @param LoggerInterface         $logger              The logger
+     * @param AdviceDelegationService $adviceDelegation    Advice delegation to decidesk (ADR-019)
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -411,7 +411,6 @@ class AdviceService
         return $user->getUID();
     }//end getUserId()
 
-
     /**
      * Submit advice (mark as received with optional adviesText).
      *
@@ -594,7 +593,12 @@ class AdviceService
         }
 
         $data = $this->normalizeResult(result: $record);
-        $field = ($action === 'submit') ? 'adviseur' : 'requestedBy';
+        if ($action === 'submit') {
+            $field = 'adviseur';
+        } else {
+            $field = 'requestedBy';
+        }
+
         if (($data[$field] ?? '') !== $uid) {
             throw new RuntimeException('Advice request not accessible');
         }
@@ -683,15 +687,23 @@ class AdviceService
             object: $payload
         );
 
-        $adviceId = is_array($saved) === true ? (string) ($saved['id'] ?? ($saved['uuid'] ?? '')) : '';
+        $adviceId = '';
+        if (is_array($saved) === true) {
+            $adviceId = (string) ($saved['id'] ?? ($saved['uuid'] ?? ''));
+        }
 
         // REQ-PDRD-001 / REQ-PDRD-002: the advice is *made* in decidesk. Raise a
         // decidesk `advice` Decision for this request and persist its ref. Fail
         // CLOSED — never author an advice outcome locally as a fallback.
+        $subjectId = $caseId;
+        if ($adviceId !== '') {
+            $subjectId = $adviceId;
+        }
+
         try {
             $decisionRef = $this->adviceDelegation->raiseAdviceDecision(
                 subjectSchema: 'adviesAanvraag',
-                subjectId: $adviceId !== '' ? $adviceId : $caseId,
+                subjectId: $subjectId,
                 payload: [
                     'subjectRegister'   => $register,
                     'externalReference' => $caseId,
@@ -702,8 +714,13 @@ class AdviceService
             );
 
             if ($adviceId !== '') {
+                $savedBase = [];
+                if (is_array($saved) === true) {
+                    $savedBase = $saved;
+                }
+
                 $objectService->saveObject(
-                    object: array_merge(is_array($saved) === true ? $saved : [], ['decisionRef' => $decisionRef]),
+                    object: array_merge($savedBase, ['decisionRef' => $decisionRef]),
                     register: $register,
                     schema: 'adviceRequest',
                     uuid: $adviceId,
@@ -716,7 +733,7 @@ class AdviceService
             );
             // REQ-PDRD-002: fail closed; surface the error.
             throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
-        }
+        }//end try
 
         $adviseur = $payload['adviseur'];
         if ($adviseur !== '') {

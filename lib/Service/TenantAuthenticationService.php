@@ -49,9 +49,9 @@ class TenantAuthenticationService
     /**
      * Constructor.
      *
-     * @param IAppManager        $appManager  App manager (for OR availability check).
-     * @param ContainerInterface $container   DI container.
-     * @param LoggerInterface    $logger      Logger.
+     * @param IAppManager        $appManager App manager (for OR availability check).
+     * @param ContainerInterface $container  DI container.
+     * @param LoggerInterface    $logger     Logger.
      */
     public function __construct(
         private readonly IAppManager $appManager,
@@ -72,12 +72,12 @@ class TenantAuthenticationService
     public function validateMandateMatrix(string $tenantId, string $userId, string $action): array
     {
         try {
-            $matrix = $this->loadActiveMatrix($tenantId);
+            $matrix = $this->loadActiveMatrix(tenantId: $tenantId);
             if ($matrix === null) {
                 return ['allowed' => false, 'reason' => 'No active mandate matrix for tenant'];
             }
 
-            $role = $this->resolveUserRole($tenantId, $userId);
+            $role = $this->resolveUserRole(tenantId: $tenantId, userId: $userId);
             if ($role === null) {
                 return ['allowed' => false, 'reason' => 'User has no role inside tenant'];
             }
@@ -94,7 +94,7 @@ class TenantAuthenticationService
                 ['tenantId' => $tenantId, 'userId' => $userId, 'exception' => $e->getMessage()]
             );
             return ['allowed' => false, 'reason' => 'Mandate validation error'];
-        }
+        }//end try
     }//end validateMandateMatrix()
 
     /**
@@ -188,7 +188,11 @@ class TenantAuthenticationService
 
         if (is_string($matrixField) === true) {
             $decoded = json_decode($matrixField, true);
-            return is_array($decoded) === true ? $decoded : self::DEFAULT_DENY_MATRIX;
+            if (is_array($decoded) === true) {
+                return $decoded;
+            }
+
+            return self::DEFAULT_DENY_MATRIX;
         }
 
         // Fallback: a default role-action matrix when the active mandate row
@@ -226,9 +230,13 @@ class TenantAuthenticationService
                 filters: ['tenantRef' => $tenantId, 'userRef' => $userId]
             );
             if (is_array($rows) === true && count($rows) > 0) {
-                $row = $rows[0];
+                $row  = $rows[0];
                 $role = (string) ($row['role'] ?? '');
-                return $role !== '' ? $role : null;
+                if ($role !== '') {
+                    return $role;
+                }
+
+                return null;
             }
         } catch (Throwable $e) {
             // Fail CLOSED: a backend error is NOT "no role". Surfacing it as a
@@ -240,7 +248,7 @@ class TenantAuthenticationService
                 ['tenantId' => $tenantId, 'userId' => $userId, 'exception' => $e->getMessage()]
             );
             throw $e;
-        }
+        }//end try
 
         return null;
     }//end resolveUserRole()

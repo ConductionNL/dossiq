@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # financial-integration Specification
 
 ## Purpose
-TBD - created by archiving change termijnbewaking-dwangsom-engine-07-financial-integration. Update Purpose after archive.
+Prepares an ERP-ready dwangsom payment signal once an amount is locked and processes the financial system's payment-confirmation callback via openconnector. The payment signal carries the full metadata (bedrag, rekeninghouder, IBAN, referentie, legal basis, payment deadline) and is blocked when the IBAN is missing or malformed; the signed callback is validated, looked up by referentie, updates the payment status to betaald, and triggers a burger notification, rejecting unknown references with HTTP 404.
 ## Requirements
 ### Requirement: Uitbetaling-signaal aan financieel systeem (REQ-TERM-007)
 

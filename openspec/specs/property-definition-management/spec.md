@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # property-definition-management Specification
 
 ## Purpose
-TBD - created by archiving change case-types-04-property-doc-decision-tabs. Update Purpose after archive.
+Provides admin tabs for managing the property definitions, document types, and decision types attached to a case type, completing the seven-tab case-type detail view. Property definitions declare domain-specific required fields with format validation, document types define a required-document checklist with direction and confidentiality classification, and decision types define the formal decision categories that can be recorded on cases.
 ## Requirements
 ### Requirement: Property Definition Management Tab
 The system SHALL provide an admin tab for managing custom property definitions on a

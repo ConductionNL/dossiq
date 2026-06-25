@@ -50,17 +50,18 @@ class TermijnDailyScanService
     /**
      * Constructor.
      *
-     * @param SettingsService           $settingsService    Settings service.
-     * @param TermijnService            $termijnService     TermijnService.
-     * @param TermijnEscalationService  $escalationService  Escalation service.
-     * @param LoggerInterface           $logger             Logger.
+     * @param SettingsService                 $settingsService   Settings service.
+     * @param TermijnService                  $termijnService    TermijnService.
+     * @param TermijnEscalationService        $escalationService Escalation service.
+     * @param LoggerInterface                 $logger            Logger.
+     * @param DwangsomCalculationService|null $dwangsomService   Dwangsom calculation service.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly TermijnService $termijnService,
         private readonly TermijnEscalationService $escalationService,
         private readonly LoggerInterface $logger,
-        private readonly ?DwangsomCalculationService $dwangsomService = null,
+        private readonly ?DwangsomCalculationService $dwangsomService=null,
     ) {
     }//end __construct()
 
@@ -73,9 +74,9 @@ class TermijnDailyScanService
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
      */
-    public function run(?DateTimeImmutable $now = null): array
+    public function run(?DateTimeImmutable $now=null): array
     {
-        $now = ($now ?? new DateTimeImmutable());
+        $now    = ($now ?? new DateTimeImmutable());
         $counts = [
             'scanned'      => 0,
             'overschreden' => 0,
@@ -109,7 +110,7 @@ class TermijnDailyScanService
 
             $counts['scanned']++;
             try {
-                $this->processInstance($row, $now, $counts);
+                $this->processInstance(row: $row, now: $now, counts: $counts);
             } catch (\Throwable $e) {
                 $counts['errors']++;
                 $this->logger->warning(
@@ -145,7 +146,12 @@ class TermijnDailyScanService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['status' => 'lopend']);
+            $rows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['status' => 'lopend']
+            );
         } catch (\Throwable $e) {
             return 0;
         }
@@ -155,10 +161,12 @@ class TermijnDailyScanService
             if (is_array($row) === false) {
                 continue;
             }
+
             $id = (string) ($row['id'] ?? '');
             if ($id === '') {
                 continue;
             }
+
             try {
                 $this->dwangsomService->calculateDaily($id);
                 $accrued++;
@@ -166,6 +174,7 @@ class TermijnDailyScanService
                 $this->logger->warning('Dwangsom accrual row failed', ['id' => $id, 'error' => $e->getMessage()]);
             }
         }
+
         return $accrued;
     }//end accrueLopendDwangsomBerekeningen()
 
@@ -201,6 +210,7 @@ class TermijnDailyScanService
                     tijdstip: $now,
                 );
             }
+
             return;
         }
 
@@ -212,7 +222,11 @@ class TermijnDailyScanService
         $deadlineDate = new DateTimeImmutable($deadline);
         $today        = new DateTimeImmutable($now->format('Y-m-d'));
         $diff         = (int) $today->diff($deadlineDate)->days;
-        $daysLeft     = ($today > $deadlineDate ? (-1 * $diff) : $diff);
+        if ($today > $deadlineDate) {
+            $daysLeft = (-1 * $diff);
+        } else {
+            $daysLeft = $diff;
+        }
 
         // Overschrijding.
         if ($daysLeft <= 0 && $status !== 'overschreden') {

@@ -4,21 +4,21 @@
 			"id": "Inspecties",
 			"route": "/inspecties",
 			"type": "custom",
-			"title": "Field inspections",
+			"title": "Veldinspecties",
 			"component": "InspectieList"
 		},
 		{
 			"id": "InspectieDetail",
 			"route": "/inspecties/:id",
 			"type": "custom",
-			"title": "Inspection",
+			"title": "Inspectie",
 			"component": "InspectieDetail"
 		}
 	],
 	"menu": [
 		{
 			"id": "Inspecties",
-			"label": "Field inspections",
+			"label": "Veldinspecties",
 			"icon": "icon-category-monitoring",
 			"route": "Inspecties",
 			"order": 95

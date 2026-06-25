@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from archived implemented changes. Member
 # supplier-portal Specification
 
 ## Purpose
-TBD - created by archiving change leverancier-zaakportaal-01-schema-foundation. Update Purpose after archive.
+Provides a self-service portal where suppliers authenticate via eHerkenning and view their own tenders, contracts, invoices, KPIs, and case messages, scoped strictly to their organisation. It registers the supplier OpenRegister schemas and case types, enforces supplier-scoped access with audit logging and PII masking, and supports sensitive mutations such as IBAN changes through re-authentication and 4-eyes Procest workflows. It also surfaces expected payment dates, invoice age analysis, contract expiry warnings, renewal requests, and nightly-aggregated supplier KPIs with municipal benchmarks.
 ## Requirements
 ### Requirement: Supplier-Portal Schemas Are Registered
 

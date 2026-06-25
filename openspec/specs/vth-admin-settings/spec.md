@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # vth-admin-settings Specification
 
 ## Purpose
-TBD - created by archiving change vth-workflow-configuration-09-admin-settings. Update Purpose after archive.
+Provides administrators a single VTH configuration page with tabs for Workflows, Leges Rules, Beschikking Templates, Inspection Checklists, and DSO Settings. Administrators can manage the three VTH workflows, build versioned inspection checklists with reorderable typed items and a mobile preview, and configure validated DSO integration settings persisted via the SettingsService.
 ## Requirements
 ### Requirement: VTH configuration settings page
 

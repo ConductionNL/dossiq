@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 # parafering-via-or-approval Specification
 
 ## Purpose

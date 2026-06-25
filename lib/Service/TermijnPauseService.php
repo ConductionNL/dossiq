@@ -73,7 +73,7 @@ class TermijnPauseService
         string $termijnInstanceId,
         int $duurDagen,
         string $motivering,
-        string $documentLink = ''
+        string $documentLink=''
     ): array {
         if ($duurDagen <= 0) {
             throw new RuntimeException('Pause duration must be positive (AWB 4:5)');
@@ -133,7 +133,7 @@ class TermijnPauseService
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
      */
-    public function resumeAfterPauze(string $termijnInstanceId, ?DateTimeImmutable $aanvullingDatum = null): array
+    public function resumeAfterPauze(string $termijnInstanceId, ?DateTimeImmutable $aanvullingDatum=null): array
     {
         $aanvullingDatum = ($aanvullingDatum ?? new DateTimeImmutable());
 
@@ -141,6 +141,7 @@ class TermijnPauseService
         if ($instance === null) {
             throw new RuntimeException('TermijnInstance not found: '.$termijnInstanceId);
         }
+
         if (($instance['status'] ?? '') !== 'gepauzeerd') {
             throw new RuntimeException('TermijnInstance not in gepauzeerd state: '.$termijnInstanceId);
         }

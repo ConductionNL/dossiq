@@ -33,6 +33,8 @@ use Psr\Log\LoggerInterface;
  * Service for seeding bezwaar/beroep case types and related configuration.
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — needs OpenRegister service access
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class SeedDataService
 {
@@ -204,7 +206,16 @@ class SeedDataService
             return $counts;
         }
 
-        $caseTypeId = $this->getObjectId(object: $caseType);
+        // Prefer the deterministic id from the seed data: OpenRegister's
+        // saveObject() return is not always hydrated with the new id (getId()
+        // and getUuid() can both be empty), which left child status/role types
+        // with an empty caseType and failed their uuid-format validation. The
+        // seed assigns fixed UUIDs to the case types, so use those.
+        $caseTypeId = (string) ($caseTypeData['id'] ?? $caseTypeData['uuid'] ?? '');
+        if ($caseTypeId === '') {
+            $caseTypeId = $this->getObjectId(object: $caseType);
+        }
+
         $counts['caseTypes']++;
 
         $this->logger->info(
@@ -212,11 +223,15 @@ class SeedDataService
             ['identifier' => $identifier, 'id' => $caseTypeId]
         );
 
-        // Create status types and build a name-to-ID map.
+        // Create status types and build a name-to-ID map. Assign a fixed UUID
+        // up front so the id is known regardless of saveObject's return shape
+        // (used for the workflow step references below).
         $statusNameToId = [];
         foreach ($statusTypesData as $statusData) {
             $statusData['caseType'] = $caseTypeId;
-            $statusObj = $this->createObject(
+            $statusId         = (string) ($statusData['id'] ?? $this->generateUUID());
+            $statusData['id'] = $statusId;
+            $statusObj        = $this->createObject(
                 objectService: $objectService,
                 registerId: $registerId,
                 schemaId: $statusTypeSchema,
@@ -224,7 +239,6 @@ class SeedDataService
             );
 
             if ($statusObj !== null) {
-                $statusId = $this->getObjectId(object: $statusObj);
                 $statusNameToId[$statusData['name']] = $statusId;
                 $counts['statusTypes']++;
             }
@@ -235,7 +249,9 @@ class SeedDataService
         if ($roleTypeSchema !== '') {
             foreach ($roleTypesData as $roleData) {
                 $roleData['caseType'] = $caseTypeId;
-                $roleObj = $this->createObject(
+                $roleId         = (string) ($roleData['id'] ?? $this->generateUUID());
+                $roleData['id'] = $roleId;
+                $roleObj        = $this->createObject(
                     objectService: $objectService,
                     registerId: $registerId,
                     schemaId: $roleTypeSchema,
@@ -243,7 +259,6 @@ class SeedDataService
                 );
 
                 if ($roleObj !== null) {
-                    $roleId = $this->getObjectId(object: $roleObj);
                     $roleNameToId[$roleData['name']] = $roleId;
                     $counts['roleTypes']++;
                 }
@@ -472,20 +487,28 @@ class SeedDataService
     }//end getConfigValue()
 
     /**
-     * Get the ID from an OpenRegister object.
+     * Extract the id/uuid from a saved OpenRegister object.
      *
-     * @param object $object The OpenRegister object
+     * @param object $object The saved object.
      *
-     * @return string The object ID
+     * @return string The uuid (preferred) or numeric id, or '' when neither resolves.
      */
     private function getObjectId(object $object): string
     {
-        if (method_exists($object, 'getId') === true) {
-            return (string) $object->getId();
+        // Prefer the UUID: seeded cross-references (statusType.caseType,
+        // workflow step ids) are uuid-format properties, and OpenRegister's
+        // saved entity exposes the UUID via getUuid() while getId() can be the
+        // (empty/internal) numeric id — checking getId() first yielded '' and
+        // broke every child reference.
+        if (method_exists($object, 'getUuid') === true) {
+            $uuid = (string) $object->getUuid();
+            if ($uuid !== '') {
+                return $uuid;
+            }
         }
 
-        if (method_exists($object, 'getUuid') === true) {
-            return (string) $object->getUuid();
+        if (method_exists($object, 'getId') === true) {
+            return (string) $object->getId();
         }
 
         return '';

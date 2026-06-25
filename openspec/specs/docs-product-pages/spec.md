@@ -1,3 +1,7 @@
+---
+status: done
+---
+
 **Capability**: docs-product-pages
 **Status**: in-progress
 **OpenSpec changes**: docs-product-pages-conformance (2026-05-13)

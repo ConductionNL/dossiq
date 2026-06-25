@@ -56,9 +56,9 @@ class MandaatEscalatieService
     /**
      * Create a new escalation.
      *
-     * @param string $zaakId       Case id.
-     * @param string $decisionType Decision type.
-     * @param string $initiatorId  Initiating user id.
+     * @param string $zaakId         Case id.
+     * @param string $decisionType   Decision type.
+     * @param string $initiatorId    Initiating user id.
      * @param string $escalatieReden Escalation reason.
      *
      * @return array<string, mixed>
@@ -67,8 +67,8 @@ class MandaatEscalatieService
      */
     public function createEscalatie(string $zaakId, string $decisionType, string $initiatorId, string $escalatieReden): array
     {
-        $path     = $this->resolveEscalatiePath($decisionType, $escalatieReden);
-        $row = [
+        $path = $this->resolveEscalatiePath(decisionType: $decisionType, escalatieReden: $escalatieReden);
+        $row  = [
             'zaakId'          => $zaakId,
             'decisionType'    => $decisionType,
             'initiatorId'     => $initiatorId,
@@ -79,12 +79,15 @@ class MandaatEscalatieService
             'createdAt'       => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
         ];
 
-        $saved = $this->save('mandaat_escalatie_schema', $row);
-        $this->logger->info('Mandaat escalation created', [
-            'zaakId' => $zaakId,
-            'reden' => $escalatieReden,
-            'target' => $row['targetUserId'],
-        ]);
+        $saved = $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $row);
+        $this->logger->info(
+                'Mandaat escalation created',
+                [
+                    'zaakId' => $zaakId,
+                    'reden'  => $escalatieReden,
+                    'target' => $row['targetUserId'],
+                ]
+                );
         return $saved;
     }//end createEscalatie()
 
@@ -97,13 +100,13 @@ class MandaatEscalatieService
      *
      * @param string $decisionType   Decision type.
      * @param string $escalatieReden Reason (currently unused — surface for
-     *                              future reason-specific routing).
+     *                               future reason-specific routing).
      *
      * @return array{mandaatId:string, userId:string}
      *
      * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
      */
-    public function resolveEscalatiePath(string $decisionType, string $escalatieReden = ''): array
+    public function resolveEscalatiePath(string $decisionType, string $escalatieReden=''): array
     {
         $objectService = $this->settingsService->getObjectService();
         $register      = (string) $this->settingsService->getConfigValue('register');
@@ -114,7 +117,12 @@ class MandaatEscalatieService
         }
 
         try {
-            $mandaten = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $mSchema, filters: ['status' => 'active']);
+            $mandaten = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $mSchema,
+                filters: ['status' => 'active']
+            );
         } catch (\Throwable $e) {
             return ['mandaatId' => '', 'userId' => ''];
         }
@@ -124,10 +132,12 @@ class MandaatEscalatieService
             if (is_array($m) === false) {
                 continue;
             }
+
             $decTypes = (array) (($m['voorwaarden'] ?? [])['decisionTypes'] ?? []);
             if (count($decTypes) > 0 && in_array($decisionType, $decTypes, true) === false) {
                 continue;
             }
+
             $matching[] = $m;
         }
 
@@ -135,8 +145,7 @@ class MandaatEscalatieService
         usort(
             $matching,
             static fn (array $a, array $b): int =>
-                ((int) (($b['voorwaarden'] ?? [])['plafondCents'] ?? 0))
-                <=> ((int) (($a['voorwaarden'] ?? [])['plafondCents'] ?? 0))
+                ((int) (($b['voorwaarden'] ?? [])['plafondCents'] ?? 0)) <=> ((int) (($a['voorwaarden'] ?? [])['plafondCents'] ?? 0))
         );
 
         foreach ($matching as $m) {
@@ -146,7 +155,12 @@ class MandaatEscalatieService
             }
 
             try {
-                $assigns = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $assignSchema, filters: ['rolId' => $rolId]);
+                $assigns = $this->searchObjectsAsArrays(
+                    objectService: $objectService,
+                    register: $register,
+                    schema: $assignSchema,
+                    filters: ['rolId' => $rolId]
+                );
             } catch (\Throwable $e) {
                 continue;
             }
@@ -161,6 +175,7 @@ class MandaatEscalatieService
                         'tijdelijk' => 2,
                         default      => 99,
                     };
+
                     return $rank($a) <=> $rank($b);
                 }
             );
@@ -169,12 +184,13 @@ class MandaatEscalatieService
                 if (is_array($a) === false) {
                     continue;
                 }
+
                 $userId = (string) ($a['userId'] ?? '');
                 if ($userId !== '') {
                     return ['mandaatId' => (string) ($m['id'] ?? ''), 'userId' => $userId];
                 }
             }
-        }
+        }//end foreach
 
         return ['mandaatId' => '', 'userId' => ''];
     }//end resolveEscalatiePath()
@@ -182,8 +198,8 @@ class MandaatEscalatieService
     /**
      * Approve an open escalation.
      *
-     * @param string $escalatieId            Escalation id.
-     * @param string $mandaathouderUserId    Approving user id (must match targetUserId).
+     * @param string $escalatieId         Escalation id.
+     * @param string $mandaathouderUserId Approving user id (must match targetUserId).
      *
      * @return array<string, mixed>
      *
@@ -193,20 +209,22 @@ class MandaatEscalatieService
      */
     public function approveEscalatie(string $escalatieId, string $mandaathouderUserId): array
     {
-        $escalatie = $this->findEscalatie($escalatieId);
+        $escalatie = $this->findEscalatie(escalatieId: $escalatieId);
         if ($escalatie === null) {
             throw new RuntimeException('Escalation not found: '.$escalatieId);
         }
+
         if ((string) ($escalatie['targetUserId'] ?? '') !== $mandaathouderUserId) {
             throw new RuntimeException('Caller is not the resolved mandate holder');
         }
+
         if (($escalatie['status'] ?? '') !== 'open') {
             throw new RuntimeException('Escalation not in open status');
         }
 
         $escalatie['status']     = 'goedgekeurd';
         $escalatie['resolvedAt'] = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
-        return $this->save('mandaat_escalatie_schema', $escalatie);
+        return $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $escalatie);
     }//end approveEscalatie()
 
     /**
@@ -223,10 +241,11 @@ class MandaatEscalatieService
      */
     public function rejectEscalatie(string $escalatieId, string $reason): array
     {
-        $escalatie = $this->findEscalatie($escalatieId);
+        $escalatie = $this->findEscalatie(escalatieId: $escalatieId);
         if ($escalatie === null) {
             throw new RuntimeException('Escalation not found: '.$escalatieId);
         }
+
         if (($escalatie['status'] ?? '') !== 'open') {
             throw new RuntimeException('Escalation not in open status');
         }
@@ -234,7 +253,7 @@ class MandaatEscalatieService
         $escalatie['status']         = 'afgewezen';
         $escalatie['afgewezenReden'] = $reason;
         $escalatie['resolvedAt']     = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
-        return $this->save('mandaat_escalatie_schema', $escalatie);
+        return $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $escalatie);
     }//end rejectEscalatie()
 
     /**
@@ -257,7 +276,12 @@ class MandaatEscalatieService
         }
 
         try {
-            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['status' => 'open', 'targetUserId' => $oldUserId]);
+            $rows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['status' => 'open', 'targetUserId' => $oldUserId]
+            );
         } catch (\Throwable $e) {
             return 0;
         }
@@ -267,6 +291,7 @@ class MandaatEscalatieService
             if (is_array($row) === false) {
                 continue;
             }
+
             $row['targetUserId'] = $newUserId;
             try {
                 $objectService->saveObject($register, $schema, $row);
@@ -280,7 +305,10 @@ class MandaatEscalatieService
     }//end autoRerouteOnPersonnelChange()
 
     /**
+     * Fetch a single escalation row by id.
+     *
      * @param string $escalatieId Id.
+     *
      * @return array<string, mixed>|null
      */
     private function findEscalatie(string $escalatieId): ?array
@@ -291,17 +319,25 @@ class MandaatEscalatieService
         if ($objectService === null || $register === '' || $schema === '') {
             return null;
         }
+
         try {
             $row = $objectService->find($escalatieId, register: $register, schema: $schema);
-            return is_array($row) === true ? $row : null;
+            if (is_array($row) === true) {
+                return $row;
+            }
+
+            return null;
         } catch (\Throwable $e) {
             return null;
         }
-    }
+    }//end findEscalatie()
 
     /**
+     * Persist a payload to the configured schema.
+     *
      * @param string               $schemaConfigKey Config key.
      * @param array<string, mixed> $object          Payload.
+     *
      * @return array<string, mixed>
      */
     private function save(string $schemaConfigKey, array $object): array
@@ -312,12 +348,17 @@ class MandaatEscalatieService
         if ($objectService === null || $register === '' || $schema === '') {
             return $object;
         }
+
         try {
             $saved = $objectService->saveObject($register, $schema, $object);
-            return is_array($saved) === true ? $saved : $object;
+            if (is_array($saved) === true) {
+                return $saved;
+            }
+
+            return $object;
         } catch (\Throwable $e) {
             $this->logger->error('Mandaat persist failed', ['key' => $schemaConfigKey, 'error' => $e->getMessage()]);
             return $object;
         }
-    }
+    }//end save()
 }//end class

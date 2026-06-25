@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # tenant-compliance Specification
 
 ## Purpose
-TBD - created by archiving change tenant-zaaksysteem-saas-12-isolation-tests-compliance. Update Purpose after archive.
+Verifies and documents multi-tenant correctness through a mandatory CI suite that proves no cross-tenant data leakage across overlapping IDs, cross-tenant queries, injected tenant filters, and JWT token swaps. It includes an end-to-end onboarding test and a consolidated OpenAPI 3.0 specification for all tenant endpoints, and maintains tenant-stamped audit trails, BIO 2.0 enterprise context, and AVG deletion confirmation for regulatory compliance.
 ## Requirements
 ### Requirement: Cross-tenant isolation test suite (REQ-002-VERIFY)
 

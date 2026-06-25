@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # dwangsom-calculation Specification
 
 ## Purpose
-TBD - created by archiving change termijnbewaking-dwangsom-engine-06-dwangsom-calculation. Update Purpose after archive.
+Calculates the statutory dwangsom (AWB 4:17) due when a decision is not taken in time, applying the daily staffel (€23/€35/€45 per tier) after a 14-day grace period and capping the cumulative amount at the €1.442 plafond without retroactive recalculation. When a beschikking is registered, accrual stops, the final amount is locked, the termijn is marked voltooid, and a payment preparation is triggered.
 ## Requirements
 ### Requirement: Dwangsom-staffel berekening volgens AWB 4:17 (REQ-TERM-006)
 

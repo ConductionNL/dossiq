@@ -9,8 +9,9 @@
  * side so an automated test can prove the contract without spinning up
  * a Vue runtime.
  *
- * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @author    Conduction B.V. <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
@@ -86,7 +87,7 @@ class LeverancierViewModelService
     public function invoiceBadgeColor(string $status): string
     {
         return self::INVOICE_BADGE_COLORS[$status] ?? 'gray';
-    }
+    }//end invoiceBadgeColor()
 
     /**
      * Whether an invoice is 90+ days overdue.
@@ -110,7 +111,7 @@ class LeverancierViewModelService
 
         $age = (int) floor(($nowTs - $due) / 86400);
         return $age > 90;
-    }
+    }//end isOverdue90Plus()
 
     /**
      * Show "Verlenging aanvragen" button? Only when renewalOption='manual_request'
@@ -134,7 +135,7 @@ class LeverancierViewModelService
 
         $days = (int) floor(($end - $nowTs) / 86400);
         return $days >= 0 && $days <= 90;
-    }
+    }//end showRenewalButton()
 
     /**
      * Renewal-option human label.
@@ -146,14 +147,14 @@ class LeverancierViewModelService
     public function renewalOptionLabel(string $option): string
     {
         return self::RENEWAL_OPTION_LABELS[$option] ?? $option;
-    }
+    }//end renewalOptionLabel()
 
     /**
      * Compare own metric to benchmark — return indicator key.
      *
-     * @param float  $own        Own metric value.
-     * @param float  $bench      Benchmark value.
-     * @param string $metric     Metric key (drives the "lower-is-better" sign).
+     * @param float  $own    Own metric value.
+     * @param float  $bench  Benchmark value.
+     * @param string $metric Metric key (drives the "lower-is-better" sign).
      *
      * @return string Indicator key ('better' | 'same' | 'worse').
      */
@@ -166,11 +167,19 @@ class LeverancierViewModelService
         }
 
         if ($lowerBetter === true) {
-            return $diff < 0 ? 'better' : 'worse';
+            if ($diff < 0) {
+                return 'better';
+            }
+
+            return 'worse';
         }
 
-        return $diff > 0 ? 'better' : 'worse';
-    }
+        if ($diff > 0) {
+            return 'better';
+        }
+
+        return 'worse';
+    }//end benchmarkComparison()
 
     /**
      * Whether a chart data point should be plotted (skip insufficientData months).
@@ -182,5 +191,5 @@ class LeverancierViewModelService
     public function shouldPlotPoint(array $kpiRow): bool
     {
         return (bool) ($kpiRow['sufficientData'] ?? false);
-    }
-}
+    }//end shouldPlotPoint()
+}//end class

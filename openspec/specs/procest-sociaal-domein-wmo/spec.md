@@ -5,7 +5,7 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # procest-sociaal-domein-wmo Specification
 
 ## Purpose
-TBD - created by archiving change sociaal-domein-zaaktypes. Update Purpose after archive.
+Provides the WMO (`wmo-melding`) zaaktype for municipal social-support casework, driving the onderzoek → indicatiestelling → beschikking assessment flow with statutory deadline tracking and auto-generated beschikking letters. It enforces mandatory AVG classification, wijkteam-only access control, wettelijke termijn monitoring, re-evaluation scheduling, anonymized exports to external providers, 15-year statutory retention, and comprehensive audit logging of access to medical data.
 ## Requirements
 ### Requirement: WMO zaaktype definition and status lifecycle
 The system MUST support a `wmo-melding` zaaktype backed entirely by OpenRegister with mandatory status transitions and wettelijke termijn tracking. The `WmoZaak` entity carries the fields `zaaktype` (fixed `wmo-melding`), `bsn`, `naam`, `aanvraagSoort` (`huishoudelijke-hulp`/`dagbesteding`/`begeleiding`/`hulpmiddelen`/`respijtzorg`/`other`), `aanvraagDatum`, `meldingKanaal`, `ondersteuningsvraag`, `wijkteam`, `behandelaarId`, `tweedeBehandelaarId` (optional), `status`, `avgClassificatie` (required), `doorlooptijdWettelijk`, `indicatiestellingId` (optional), and `huishoudensSamenstelling` (optional). The status lifecycle (`melding` → `onderzoek-loopt` → `beschikking-voorbereiding` → `beschikking-verleend` → `uitvoering` → `evaluatie` → `afgesloten`) MUST be declared as `x-openregister-lifecycle` in the register schema patch, not as a custom workflow engine.

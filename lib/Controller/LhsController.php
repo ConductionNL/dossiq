@@ -57,11 +57,11 @@ class LhsController extends Controller
      * @param string                   $appName          App name
      * @param IRequest                 $request          Request
      * @param LhsRecommendationService $lhsService       LHS engine
+     * @param LhsLookupService         $lhsLookupService LHS simple lookup service
      * @param SettingsService          $settingsService  Settings bridge
      * @param IUserSession             $userSession      User session
      * @param IGroupManager            $groupManager     Group manager
      * @param LoggerInterface          $logger           Logger
-     * @param LhsLookupService         $lhsLookupService LHS simple lookup service
      */
     public function __construct(
         string $appName,
