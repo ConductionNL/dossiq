@@ -678,6 +678,14 @@
 						"order": 30
 					},
 					{
+						"id": "besluitvorming",
+						"label": "Besluitvorming",
+						"icon": "icon-comment",
+						"component": "BesluitvormingLeafTab",
+						"order": 35,
+						"_note": "decidesk-owned decision-making leaf (decidesk-decisions): proposals, advice and decisions linked to this case. Replaces the standalone Besluitvorming nav (ADR-019/ADR-022)."
+					},
+					{
 						"id": "dossier",
 						"label": "Dossier",
 						"icon": "icon-files",

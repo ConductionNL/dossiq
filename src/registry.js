@@ -50,6 +50,10 @@ import CasesOnMapView from './views/CasesOnMapView.vue'
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
+// "Besluitvorming" decision-making is owned by decidesk and surfaced here as
+// an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
+// @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
+import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
 
 // Deelzaak (sub-case) full-page views — wired via manifest routes
 // /cases/:id/deelzaken (list) and /cases/:parentId/deelzaken/:id (detail).
@@ -298,6 +302,22 @@ const registry = {
 		kind: 'page',
 		component: AdviesPanel,
 		_note: 'Advice/advies panel used in CaseDetail and BezwaarDetail sidebar tabs',
+	},
+
+	// --- Besluitvorming (decision-making) sidebar tab — decidesk leaf. ---
+	// "decidesk owns it; procest shows a leaf" (ADR-019 / ADR-022). The
+	// decidesk `decidesk-decisions` integration leaf (registered cross-app on
+	// the shared OR integration registry by decidesk's global init script)
+	// surfaces proposals/advice/decisions linked to this case via decidesk's
+	// subjectId back-reference. The wrapper resolves the registered provider's
+	// tab at render time and forwards the case `{ register, schema, objectId }`
+	// context that CnObjectSidebar injects. Retires procest's former standalone
+	// Voorstellen/Advies/Agenda nav (those pages stay routable for deep links).
+	// @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
+	BesluitvormingLeafTab: {
+		kind: 'page',
+		component: BesluitvormingLeafTab,
+		_note: 'decidesk decisions integration leaf (decidesk-decisions) surfaced on the case detail; replaces the standalone Besluitvorming nav (ADR-019/ADR-022).',
 	},
 
 	// --- Related-case linking sidebar tab. ---
