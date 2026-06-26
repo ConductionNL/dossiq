@@ -248,6 +248,77 @@
           }
         ]
       }
+    },
+    {
+      "id": "b3c1a000-0000-4000-a000-0000000005ab",
+      "uuid": "b3c1a000-0000-4000-a000-0000000005ab",
+      "identifier": "subsidie",
+      "title": "Subsidie",
+      "description": "Subsidieaanvraag- en verstrekkingsproces conform Awb titel 4.2 en de gemeentelijke subsidieverordening",
+      "purpose": "Behandeling van subsidieaanvragen van ontvangst tot beschikking",
+      "trigger": "Subsidieaanvraag van een aanvrager onder een subsidieregeling",
+      "subject": "Aanvraag tot subsidieverstrekking",
+      "processingDeadline": "P13W",
+      "extensionAllowed": true,
+      "extensionPeriod": "P8W",
+      "suspensionAllowed": true,
+      "internalOrExternal": "extern",
+      "publicationRequired": false,
+      "isDraft": false,
+      "confidentiality": "zaakvertrouwelijk",
+      "initialStatus": "b3c1a000-0000-4000-a000-00005ab50001",
+      "statusTypes": [
+        { "id": "b3c1a000-0000-4000-a000-00005ab50001", "name": "Ontvangen", "description": "Subsidieaanvraag is ontvangen en geregistreerd", "order": 1, "isFinal": false },
+        { "name": "In behandeling", "description": "Aanvraag wordt inhoudelijk beoordeeld (volledigheid, regeling, begroting)", "order": 2, "isFinal": false },
+        { "name": "Beschikt", "description": "Subsidie is verleend bij beschikking (Awb art. 4:29 e.v.)", "order": 3, "isFinal": true },
+        { "name": "Afgewezen", "description": "Subsidieaanvraag is afgewezen", "order": 4, "isFinal": true },
+        { "name": "Ingetrokken", "description": "Aanvraag is ingetrokken door de aanvrager", "order": 90, "isFinal": true }
+      ],
+      "roleTypes": [
+        { "name": "Aanvrager", "description": "De partij die de subsidie aanvraagt", "genericRole": "initiator" },
+        { "name": "Behandelaar subsidie", "description": "Ambtenaar die de subsidieaanvraag behandelt", "genericRole": "handler" },
+        { "name": "Budgethouder", "description": "Verantwoordelijke voor het subsidieplafond en de beschikking", "genericRole": "decision_maker" }
+      ],
+      "workflowTemplate": {
+        "title": "Subsidie Standaard Workflow",
+        "description": "Workflow voor het behandelen van subsidieaanvragen van ontvangst tot beschikking",
+        "version": 1,
+        "isActive": true,
+        "isDraft": false,
+        "steps": [
+          { "title": "Registreer aanvraag", "statusName": "Ontvangen", "order": 1, "isRequired": true, "description": "Registreer de subsidieaanvraag en koppel de subsidieregeling" },
+          { "title": "Bevestig ontvangst", "statusName": "Ontvangen", "order": 2, "isRequired": true, "description": "Stuur een ontvangstbevestiging naar de aanvrager" },
+          { "title": "Toets volledigheid", "statusName": "In behandeling", "order": 1, "isRequired": true, "description": "Controleer of de aanvraag alle vereiste gegevens en bijlagen bevat" },
+          { "title": "Toets aan regeling en plafond", "statusName": "In behandeling", "order": 2, "isRequired": true, "description": "Beoordeel de aanvraag aan de subsidieregeling en het beschikbare plafond" },
+          { "title": "Stel beschikking op", "statusName": "Beschikt", "order": 1, "isRequired": true, "description": "Stel de verleningsbeschikking op met het toegekende bedrag" }
+        ],
+        "transitions": [
+          {
+            "fromStatusName": "Ontvangen",
+            "toStatusName": "In behandeling",
+            "label": "In behandeling nemen",
+            "guards": [{ "type": "roleGuard", "config": { "roleName": "Behandelaar subsidie" } }]
+          },
+          {
+            "fromStatusName": "In behandeling",
+            "toStatusName": "Beschikt",
+            "label": "Subsidie beschikken",
+            "guards": [{ "type": "requiredField", "config": { "field": "beschiktBedrag" } }]
+          },
+          {
+            "fromStatusName": "In behandeling",
+            "toStatusName": "Afgewezen",
+            "label": "Afwijzen",
+            "guards": []
+          },
+          {
+            "fromStatusName": "*",
+            "toStatusName": "Ingetrokken",
+            "label": "Intrekken",
+            "guards": []
+          }
+        ]
+      }
     }
   ]
 }

@@ -57,9 +57,14 @@ webpackConfig.entry = {
 	},
 }
 
-// Use local source when available (monorepo dev), otherwise fall back to npm package
+// Use local source when available (monorepo dev), otherwise fall back to npm
+// package. The USE_LOCAL_LIB env var lets CI/release builds force the published
+// @conduction/nextcloud-vue (npm) even when a stale sibling worktree is present
+// next to this repo: `USE_LOCAL_LIB=false` disables the sibling-source alias.
 const localLib = path.resolve(__dirname, '../nextcloud-vue/src')
-const useLocalLib = fs.existsSync(localLib)
+const useLocalLib = process.env.USE_LOCAL_LIB === 'false'
+	? false
+	: fs.existsSync(localLib)
 
 webpackConfig.resolve = {
 	extensions: ['.vue', '.js'],

@@ -35,12 +35,13 @@ use Psr\Log\LoggerInterface;
 /**
  * Minimal OpenRegister SchemaMapper shape used by reconcileSchemaConfig().
  *
- * Declared as an interface so the named-arg `find($slug, [], null, false, false)`
- * call resolves against a createMock() instance.
+ * Declared as an interface so the `find($slug, [], false, false)` call resolves
+ * against a createMock() instance. Mirrors the canonical OpenRegister
+ * SchemaMapper::find($id, $_extend, $_rbac, $_multitenancy) signature (4 args).
  */
 interface ReconcileSchemaMapperStub
 {
-    public function find(string $slug, array $extend, $register, bool $rbac, bool $multitenancy): object;
+    public function find(string $slug, array $extend, bool $rbac, bool $multitenancy): object;
 }//end interface
 
 /**

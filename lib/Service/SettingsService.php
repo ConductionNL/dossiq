@@ -439,6 +439,23 @@ class SettingsService
     ];
 
     /**
+     * Declarative `x-openregister-*` annotation blocks (declared inside a
+     * schema's `configuration` in procest_register.json) that Procest
+     * reconciles directly onto the live OpenRegister schema configuration.
+     *
+     * OpenRegister's app-config import does not reliably round-trip these
+     * schema-level annotation blocks on an already-imported instance, so
+     * {@see self::reconcileSchemaDeclarativeConfig()} merges them back in.
+     */
+    private const SCHEMA_ANNOTATION_KEYS = [
+        'x-openregister-calculations',
+        'x-openregister-references',
+        'x-openregister-lifecycle',
+        'x-openregister-aggregations',
+        'x-openregister-object-source',
+    ];
+
+    /**
      * Default values for KCC-werkplek bridge behaviour settings.
      *
      * Used by getKccConfigValue() so that an unset app-config key resolves to
@@ -884,6 +901,172 @@ class SettingsService
     }//end reconcileSchemaConfig()
 
     /**
+     * Reconcile each schema's declarative `x-openregister-*` annotation blocks
+     * (calculations, references, lifecycle, …) from procest_register.json onto
+     * the LIVE OpenRegister schema's `configuration` column.
+     *
+     * OpenRegister's app-config import maps a schema's `properties` but does not
+     * reliably round-trip the schema-level `configuration` annotation blocks on
+     * an already-imported instance (the per-schema version gate plus the import
+     * pipeline can drop the nested `x-openregister-*` keys). The status engine,
+     * the declarative calculation engine and the reference resolver all read
+     * those blocks from `Schema::getConfiguration()`, so a dropped block silently
+     * disables auto-deadline / auto-identifier / initial-status on create.
+     *
+     * This method closes that gap declaratively: for every schema defined in the
+     * (fragment-merged) register JSON it reads the annotation keys listed in
+     * {@see self::SCHEMA_ANNOTATION_KEYS} and writes them onto the live schema's
+     * configuration via the SchemaMapper, MERGING (never replacing) so existing
+     * keys such as `objectNameField` are preserved. Fully idempotent: a schema
+     * whose live configuration already matches is left untouched.
+     *
+     * @return int The number of schemas whose configuration was (re)written.
+     *
+     * @spec openspec/specs/status-transition-engine/spec.md
+     */
+    public function reconcileSchemaDeclarativeConfig(): int
+    {
+        if ($this->isOpenRegisterAvailable() === false) {
+            return 0;
+        }
+
+        try {
+            $schemaMapper = $this->container->get('OCA\OpenRegister\Db\SchemaMapper');
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Procest: Could not access OpenRegister SchemaMapper for declarative reconcile',
+                ['exception' => $e->getMessage()]
+            );
+            return 0;
+        }
+
+        $configPath = __DIR__.'/../Settings/procest_register.json';
+        if (file_exists($configPath) === false) {
+            return 0;
+        }
+
+        $configData = json_decode((string) file_get_contents($configPath), true);
+        if (json_last_error() !== JSON_ERROR_NONE || is_array($configData) === false) {
+            return 0;
+        }
+
+        // Fold modular register fragments on top so a schema's annotation
+        // blocks declared in a register.d fragment are reconciled too.
+        [$configData] = self::mergeRegisterFragments(
+            base: $configData,
+            fragmentDir: __DIR__.'/../Settings/register.d'
+        );
+
+        $schemas = ($configData['components']['schemas'] ?? []);
+        if (is_array($schemas) === false) {
+            return 0;
+        }
+
+        $written = 0;
+        foreach ($schemas as $key => $schemaDef) {
+            if (is_array($schemaDef) === false) {
+                continue;
+            }
+
+            $fallbackSlug = '';
+            if (is_string($key) === true) {
+                $fallbackSlug = $key;
+            }
+
+            $slug        = ($schemaDef['slug'] ?? $fallbackSlug);
+            $declaredCfg = ($schemaDef['configuration'] ?? []);
+            if ($slug === '' || is_array($declaredCfg) === false) {
+                continue;
+            }
+
+            // Collect only the declarative annotation blocks we own.
+            $annotations = [];
+            foreach (self::SCHEMA_ANNOTATION_KEYS as $annotationKey) {
+                if (array_key_exists($annotationKey, $declaredCfg) === true) {
+                    $annotations[$annotationKey] = $declaredCfg[$annotationKey];
+                }
+            }
+
+            if ($annotations === []) {
+                continue;
+            }
+
+            $written += $this->reconcileSingleSchemaDeclarativeConfig(
+                schemaMapper: $schemaMapper,
+                slug: (string) $slug,
+                annotations: $annotations
+            );
+        }//end foreach
+
+        $this->logger->info(
+            'Procest: Reconciled declarative schema configuration from register JSON',
+            ['written' => $written]
+        );
+
+        return $written;
+    }//end reconcileSchemaDeclarativeConfig()
+
+    /**
+     * Merge one schema's declarative annotation blocks onto its live
+     * OpenRegister configuration. Idempotent — returns 0 when the live
+     * configuration already carries identical blocks.
+     *
+     * @param object               $schemaMapper The OpenRegister SchemaMapper.
+     * @param string               $slug         The schema slug (e.g. 'case').
+     * @param array<string, mixed> $annotations  The annotation blocks to merge.
+     *
+     * @return int 1 when the configuration was (re)written, 0 otherwise.
+     *
+     * @spec openspec/specs/status-transition-engine/spec.md
+     */
+    private function reconcileSingleSchemaDeclarativeConfig(
+        object $schemaMapper,
+        string $slug,
+        array $annotations
+    ): int {
+        try {
+            // Find by slug with signature find($id, $_extend, $_rbac, $_multitenancy):
+            // bypass RBAC + tenancy — the repair runs in a system context with no
+            // active organisation.
+            $schema = $schemaMapper->find($slug, [], false, false);
+        } catch (\Throwable $e) {
+            // Slug not present in this OpenRegister instance — skip it.
+            return 0;
+        }
+
+        $current = ($schema->getConfiguration() ?? []);
+        if (is_array($current) === false) {
+            $current = [];
+        }
+
+        $merged  = $current;
+        $changed = false;
+        foreach ($annotations as $annotationKey => $annotationValue) {
+            if (($current[$annotationKey] ?? null) !== $annotationValue) {
+                $merged[$annotationKey] = $annotationValue;
+                $changed = true;
+            }
+        }
+
+        if ($changed === false) {
+            return 0;
+        }
+
+        try {
+            $schema->setConfiguration($merged);
+            $schemaMapper->update($schema);
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Procest: Failed to reconcile declarative configuration for schema '.$slug,
+                ['exception' => $e->getMessage()]
+            );
+            return 0;
+        }
+
+        return 1;
+    }//end reconcileSingleSchemaDeclarativeConfig()
+
+    /**
      * Resolve one schema slug to its live ID and persist its appconfig key.
      *
      * Idempotent: returns 0 (and writes nothing) when the slug does not resolve
@@ -903,7 +1086,8 @@ class SettingsService
             // Slug-aware lookup with RBAC + multi-tenancy disabled: the repair
             // step runs in a system context that has no active organisation,
             // and the schema set is app-owned config, not tenant data.
-            $schema   = $schemaMapper->find($slug, [], null, false, false);
+            // Signature is find($id, $_extend, $_rbac, $_multitenancy).
+            $schema   = $schemaMapper->find($slug, [], false, false);
             $schemaId = (string) $schema->getId();
         } catch (\Throwable $e) {
             // Slug not present in this OpenRegister instance — skip it.

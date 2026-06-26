@@ -32,7 +32,7 @@
 		},
 		{
 			"id": "WorkGroup",
-			"label": "Werk",
+			"label": "Werkvoorraad",
 			"icon": "icon-toggle",
 			"order": 20
 		},
@@ -51,7 +51,7 @@
 		},
 		{
 			"id": "Werkvoorraad",
-			"label": "Werkvoorraad",
+			"label": "Alle zaken in behandeling",
 			"icon": "icon-group",
 			"route": "Werkvoorraad",
 			"order": 30
@@ -183,7 +183,7 @@
 			"label": "Legesberekeningen",
 			"icon": "icon-category-monitoring",
 			"route": "Legesberekeningen",
-			"order": 50
+			"order": 76
 		},
 		{
 			"id": "PartnersMenu",
@@ -676,6 +676,14 @@
 						"icon": "icon-toggle",
 						"component": "CaseDecisionsTab",
 						"order": 30
+					},
+					{
+						"id": "besluitvorming",
+						"label": "Besluitvorming",
+						"icon": "icon-comment",
+						"component": "BesluitvormingLeafTab",
+						"order": 35,
+						"_note": "decidesk-owned decision-making leaf (decidesk-decisions): proposals, advice and decisions linked to this case. Replaces the standalone Besluitvorming nav (ADR-019/ADR-022)."
 					},
 					{
 						"id": "dossier",
