@@ -11,78 +11,109 @@
                 "required": ["zaaktype", "bsn", "wijkteam", "avgClassificatie"],
                 "properties": {
                     "zaaktype": {
+                        "title": "Case Type",
                         "type": "string",
                         "enum": ["wmo-melding"],
                         "default": "wmo-melding",
                         "description": "Vaste zaaktype-identifier voor WMO-melding"
                     },
                     "zaakNumber": {
+                        "title": "Case Number",
                         "type": "string",
                         "description": "Zaakidentifier in formaat zaak-{jaar}-wmo-{5-cijferig}"
                     },
                     "bsn": {
+                        "title": "BSN",
                         "type": "string",
                         "description": "BSN van de aanvrager (bijzonder persoonsgegeven; gemaskeerd bij export zonder toestemming)"
                     },
                     "naam": {
+                        "title": "Name",
                         "type": "string",
                         "description": "Naam van de aanvrager"
                     },
                     "aanvraagSoort": {
+                        "title": "Application Type",
                         "type": "string",
                         "enum": ["huishoudelijke-hulp", "dagbesteding", "begeleiding", "hulpmiddelen", "respijtzorg", "other"],
                         "description": "Soort gevraagde ondersteuning"
                     },
                     "aanvraagDatum": {
+                        "title": "Application Date",
                         "type": "string",
                         "format": "date",
                         "description": "Datum van melding/aanvraag"
                     },
                     "meldingKanaal": {
+                        "title": "Notification Channel",
                         "type": "string",
                         "description": "Kanaal waarlangs de melding binnenkwam (telefonisch, balie, online, ...)"
                     },
                     "ondersteuningsvraag": {
+                        "title": "Support Request",
                         "type": "string",
                         "description": "Inhoudelijke ondersteuningsvraag (alleen-wijkteam zichtbaar)"
                     },
                     "huishoudensSamenstelling": {
+                        "title": "Household Composition",
                         "type": "string",
                         "description": "Optionele beschrijving van de huishoudenssamenstelling"
                     },
                     "wijkteam": {
+                        "title": "Neighborhood Team",
                         "type": "string",
                         "description": "Toegewezen wijkteam; data-driven toegangsgrond"
                     },
                     "behandelaarId": {
+                        "title": "Case Handler ID",
                         "type": "string",
                         "description": "Nextcloud user id van de behandelend consulent"
                     },
                     "tweedeBehandelaarId": {
+                        "title": "Second Case Handler ID",
                         "type": "string",
                         "description": "Optionele tweede behandelaar; override op wijkteam-toegang"
                     },
                     "status": {
+                        "title": "Status",
                         "type": "string",
                         "enum": ["melding", "onderzoek-loopt", "beschikking-voorbereiding", "beschikking-verleend", "uitvoering", "evaluatie", "afgesloten"],
                         "default": "melding",
                         "description": "Status-lifecycle (ADR-031: declaratief, geen custom workflow engine)"
                     },
                     "doorlooptijdWettelijk": {
+                        "title": "Legal Processing Time",
                         "type": "object",
                         "description": "Wettelijke doorlooptijden (onderzoek 6 weken + beschikking 2 weken = 8 weken)",
                         "properties": {
-                            "onderzoekWeken": {"type": "integer", "default": 6},
-                            "beschikkingWeken": {"type": "integer", "default": 2},
-                            "totaalWeken": {"type": "integer", "default": 8}
+                            "onderzoekWeken": {
+                                "title": "Investigation Weeks",
+                                "description": "Number of weeks allocated for investigation.",
+                                "type": "integer",
+                                "default": 6
+                            },
+                            "beschikkingWeken": {
+                                "title": "Decision Weeks",
+                                "description": "Number of weeks allocated for issuing the decision.",
+                                "type": "integer",
+                                "default": 2
+                            },
+                            "totaalWeken": {
+                                "title": "Total Weeks",
+                                "description": "Total number of weeks for the legal processing time.",
+                                "type": "integer",
+                                "default": 8
+                            }
                         }
                     },
                     "onderzoekTermijnOverschredenSinds": {
+                        "title": "Investigation Deadline Exceeded Since",
                         "type": "string",
                         "format": "date",
                         "description": "Gezet door de batch-job wanneer de onderzoekstermijn is overschreden"
                     },
                     "indicatiestellingId": {
+                        "title": "Indication ID",
                         "type": "string",
                         "description": "Referentie naar de bijbehorende Indicatiestelling"
                     },
@@ -101,43 +132,71 @@
                 "required": ["zaakId", "indicatieSteller"],
                 "properties": {
                     "zaakId": {
+                        "title": "Case ID",
                         "type": "string",
                         "description": "Referentie naar de WmoZaak"
                     },
                     "indicatieSteller": {
+                        "title": "Assessor",
                         "type": "string",
                         "description": "Nextcloud user id van de consulent die de indicatie stelt"
                     },
                     "datumOnderzoek": {
+                        "title": "Investigation Date",
                         "type": "string",
                         "format": "date",
                         "description": "Datum van het onderzoek (moet binnen 6 weken na aanvraagDatum liggen)"
                     },
                     "vorm": {
+                        "title": "Type",
                         "type": "string",
                         "enum": ["huisbezoek", "telefonisch", "dossieronderzoek"],
                         "description": "Vorm van het onderzoek"
                     },
                     "onderzoekVerslag": {
+                        "title": "Investigation Report",
                         "type": "string",
                         "description": "Optionele Nextcloud file-referentie naar het onderzoeksverslag"
                     },
                     "geadviseerdeOndersteuning": {
+                        "title": "Recommended Support",
                         "type": "object",
                         "description": "Geadviseerde ondersteuning (soort, omvang, duur)",
                         "properties": {
-                            "soort": {"type": "string"},
-                            "omvangPerWeek": {"type": "number"},
-                            "eenheid": {"type": "string"},
-                            "duurMaanden": {"type": "integer"},
-                            "leverancierKeuzeBurger": {"type": "boolean"}
+                            "soort": {
+                                "title": "Type",
+                                "description": "Type of recommended support.",
+                                "type": "string"
+                            },
+                            "omvangPerWeek": {
+                                "title": "Volume Per Week",
+                                "description": "Volume of support per week.",
+                                "type": "number"
+                            },
+                            "eenheid": {
+                                "title": "Unit",
+                                "description": "Unit of measurement for the volume per week.",
+                                "type": "string"
+                            },
+                            "duurMaanden": {
+                                "title": "Duration in Months",
+                                "description": "Duration of the recommended support in months.",
+                                "type": "integer"
+                            },
+                            "leverancierKeuzeBurger": {
+                                "title": "Citizen Provider Choice",
+                                "description": "Whether the citizen may choose their own support provider.",
+                                "type": "boolean"
+                            }
                         }
                     },
                     "beschikkingId": {
+                        "title": "Decision ID",
                         "type": "string",
                         "description": "Optionele referentie naar de gegenereerde beschikking"
                     },
                     "evaluatieDatum": {
+                        "title": "Evaluation Date",
                         "type": "string",
                         "format": "date",
                         "description": "Geplande evaluatiedatum"
@@ -154,76 +213,93 @@
                 "required": ["zaaktype", "jeugdigeBsn", "wijkteam", "avgClassificatie"],
                 "properties": {
                     "zaaktype": {
+                        "title": "Case Type",
                         "type": "string",
                         "enum": ["jeugdwet-melding"],
                         "default": "jeugdwet-melding",
                         "description": "Vaste zaaktype-identifier voor Jeugdwet-melding"
                     },
                     "zaakNumber": {
+                        "title": "Case Number",
                         "type": "string",
                         "description": "Zaakidentifier in formaat zaak-{jaar}-jeugd-{5-cijferig}"
                     },
                     "gezinId": {
+                        "title": "Family ID",
                         "type": "string",
                         "description": "Identifier van het gezinssysteem (gezinsgerichte eenheid)"
                     },
                     "jeugdigeBsn": {
+                        "title": "Youth BSN",
                         "type": "string",
                         "description": "BSN van de jeugdige (bijzonder persoonsgegeven)"
                     },
                     "jeugdigeLeeftijd": {
+                        "title": "Youth Age",
                         "type": "integer",
                         "description": "Leeftijd van de jeugdige; vanaf 16 is de jeugdige zelfstandig toestemmingspartij"
                     },
                     "verzoekKanaal": {
+                        "title": "Request Channel",
                         "type": "string",
                         "description": "Kanaal van het verzoek (huisarts, school, zelfmelding, ...)"
                     },
                     "verzoekDatum": {
+                        "title": "Request Date",
                         "type": "string",
                         "format": "date",
                         "description": "Datum van het verzoek"
                     },
                     "verwijzer": {
+                        "title": "Referrer",
                         "type": "string",
                         "description": "Verwijzende partij (huisarts, jeugdarts, gecertificeerde instelling, ...)"
                     },
                     "ondersteuningsvraag": {
+                        "title": "Support Request",
                         "type": "string",
                         "description": "Inhoudelijke ondersteuningsvraag (alleen-jeugdteam zichtbaar)"
                     },
                     "wijkteam": {
+                        "title": "Neighborhood Team",
                         "type": "string",
                         "description": "Toegewezen jeugdteam; data-driven toegangsgrond"
                     },
                     "behandelaarId": {
+                        "title": "Case Handler ID",
                         "type": "string",
                         "description": "Nextcloud user id van de behandelend jeugdconsulent"
                     },
                     "tweedeBehandelaarId": {
+                        "title": "Second Case Handler ID",
                         "type": "string",
                         "description": "Optionele tweede behandelaar; override op wijkteam-toegang"
                     },
                     "status": {
+                        "title": "Status",
                         "type": "string",
                         "enum": ["melding", "gezinsplan-opstellen", "gezinsplan-gereed", "ondersteuning-gestart", "ondersteuning-loopt", "evaluatie", "verlenging-aangevraagd", "afgesloten"],
                         "default": "melding",
                         "description": "Gezinsgerichte status-lifecycle (ADR-031: declaratief)"
                     },
                     "gezinsplanId": {
+                        "title": "Family Plan ID",
                         "type": "string",
                         "description": "Referentie naar het actuele Gezinsplan"
                     },
                     "mdoOverlegIds": {
+                        "title": "MDO Meeting IDs",
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "Referenties naar MdoOverleg-records"
                     },
                     "ondertoezichtstellingActief": {
+                        "title": "Supervision Order Active",
                         "type": "boolean",
                         "description": "Of een ondertoezichtstelling (OTS) actief is"
                     },
                     "verlengingHistorie": {
+                        "title": "Extension History",
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "Historie van eerdere gezinsplannen (verlengingen)"
@@ -243,52 +319,83 @@
                 "required": ["zaakId", "opgesteldDoor"],
                 "properties": {
                     "zaakId": {
+                        "title": "Case ID",
                         "type": "string",
                         "description": "Referentie naar de JeugdwetZaak"
                     },
                     "opgesteldDoor": {
+                        "title": "Prepared By",
                         "type": "string",
                         "description": "Nextcloud user id van de opsteller"
                     },
                     "opgesteldDatum": {
+                        "title": "Preparation Date",
                         "type": "string",
                         "format": "date",
                         "description": "Datum van opstellen"
                     },
                     "gezinsleden": {
+                        "title": "Family Members",
                         "type": "array",
                         "description": "Gezinsleden met akkoord-tracking",
                         "items": {
                             "type": "object",
                             "properties": {
-                                "rol": {"type": "string"},
-                                "bsn": {"type": "string"},
-                                "akkoord": {"type": "boolean", "default": false},
-                                "akkoordDatum": {"type": "string", "format": "date"},
-                                "leeftijdToestemmingsvereiste": {"type": "boolean", "description": "True wanneer dit lid (16+) zelfstandig moet tekenen"}
+                                "rol": {
+                                    "title": "Role",
+                                    "description": "Role of this family member in the family plan.",
+                                    "type": "string"
+                                },
+                                "bsn": {
+                                    "title": "BSN",
+                                    "description": "BSN of the family member.",
+                                    "type": "string"
+                                },
+                                "akkoord": {
+                                    "title": "Agreement",
+                                    "description": "Whether this family member has agreed to the family plan.",
+                                    "type": "boolean",
+                                    "default": false
+                                },
+                                "akkoordDatum": {
+                                    "title": "Agreement Date",
+                                    "description": "Date on which the family member agreed.",
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                "leeftijdToestemmingsvereiste": {
+                                    "title": "Age Consent Requirement",
+                                    "type": "boolean",
+                                    "description": "True wanneer dit lid (16+) zelfstandig moet tekenen"
+                                }
                             }
                         }
                     },
                     "doelen": {
+                        "title": "Goals",
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "Doelen van het gezinsplan"
                     },
                     "inzetTrajecten": {
+                        "title": "Deployed Trajectories",
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "Ingezette hulptrajecten"
                     },
                     "evaluatieMomenten": {
+                        "title": "Evaluation Moments",
                         "type": "array",
                         "items": {"type": "string", "format": "date"},
                         "description": "Geplande evaluatiemomenten"
                     },
                     "verlengingMogelijk": {
+                        "title": "Extension Possible",
                         "type": "boolean",
                         "description": "Of verlenging mogelijk is"
                     },
                     "verlengingVan": {
+                        "title": "Extension Of",
                         "type": "string",
                         "description": "Referentie naar het vorige gezinsplan bij verlenging"
                     }
@@ -304,41 +411,64 @@
                 "required": ["zaakIds", "overlegDatum"],
                 "properties": {
                     "zaakIds": {
+                        "title": "Case IDs",
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "Betrokken zaak-referenties"
                     },
                     "overlegDatum": {
+                        "title": "Meeting Date",
                         "type": "string",
                         "format": "date",
                         "description": "Datum van het overleg"
                     },
                     "deelnemers": {
+                        "title": "Participants",
                         "type": "array",
                         "description": "Deelnemers met toestemmingsregistratie",
                         "items": {
                             "type": "object",
                             "properties": {
-                                "naam": {"type": "string"},
-                                "organisatie": {"type": "string"},
-                                "extern": {"type": "boolean"},
-                                "toestemmingDeelnameDoorClient": {"type": "boolean"}
+                                "naam": {
+                                    "title": "Name",
+                                    "description": "Name of the participant.",
+                                    "type": "string"
+                                },
+                                "organisatie": {
+                                    "title": "Organization",
+                                    "description": "Organization the participant represents.",
+                                    "type": "string"
+                                },
+                                "extern": {
+                                    "title": "External",
+                                    "description": "Whether the participant is external to the municipality.",
+                                    "type": "boolean"
+                                },
+                                "toestemmingDeelnameDoorClient": {
+                                    "title": "Client Consent for Participation",
+                                    "description": "Whether the client has consented to this participant's attendance.",
+                                    "type": "boolean"
+                                }
                             }
                         }
                     },
                     "agenda": {
+                        "title": "Agenda",
                         "type": "string",
                         "description": "Agenda van het overleg"
                     },
                     "verslag": {
+                        "title": "Report",
                         "type": "string",
                         "description": "Verslag (geanonimiseerd indien toestemming ontbreekt)"
                     },
                     "toestemmingenGeregistreerd": {
+                        "title": "Consents Registered",
                         "type": "boolean",
                         "description": "Of alle vereiste toestemmingen geregistreerd zijn"
                     },
                     "gedeeldeGegevens": {
+                        "title": "Shared Data",
                         "type": "string",
                         "enum": ["alle-gegevens", "alleen-anonimiseerde-samenvatting"],
                         "description": "Welke gegevens gedeeld zijn"
@@ -355,81 +485,130 @@
                 "required": ["zaaktype", "bsn", "avgClassificatie"],
                 "properties": {
                     "zaaktype": {
+                        "title": "Case Type",
                         "type": "string",
                         "enum": ["bijstandsaanvraag"],
                         "default": "bijstandsaanvraag",
                         "description": "Vaste zaaktype-identifier voor bijstandsaanvraag"
                     },
                     "zaakNumber": {
+                        "title": "Case Number",
                         "type": "string",
                         "description": "Zaakidentifier in formaat zaak-{jaar}-pw-{5-cijferig}"
                     },
                     "bsn": {
+                        "title": "BSN",
                         "type": "string",
                         "description": "BSN van de aanvrager (bijzonder persoonsgegeven)"
                     },
                     "aanvraagSoort": {
+                        "title": "Application Type",
                         "type": "string",
                         "enum": ["algemene-bijstand", "inburgering-gerelateerde-bijstand", "bijstand-werkloze-uitkeringontvangers", "noodvoorziening"],
                         "description": "Soort bijstandsaanvraag"
                     },
                     "aanvraagDatum": {
+                        "title": "Application Date",
                         "type": "string",
                         "format": "date",
                         "description": "Datum van aanvraag"
                     },
                     "ingangsdatumGewenst": {
+                        "title": "Desired Effective Date",
                         "type": "string",
                         "format": "date",
                         "description": "Gewenste ingangsdatum van de bijstand"
                     },
                     "leeftijdsgroep": {
+                        "title": "Age Group",
                         "type": "string",
                         "description": "Leeftijdsgroep van de aanvrager"
                     },
                     "huishoudensSituatie": {
+                        "title": "Household Situation",
                         "type": "string",
                         "description": "Huishoudenssituatie (alleenstaand, alleenstaand-met-kinderen, gehuwd, ...)"
                     },
                     "vermogensToets": {
+                        "title": "Means Test",
                         "type": "object",
                         "description": "Vermogenstoets (art. 34)",
                         "properties": {
-                            "uitgevoerd": {"type": "boolean", "default": false},
-                            "vermogen": {"type": "number"},
-                            "vermogensvrijstelling": {"type": "number"},
-                            "bovenVermogensvrijstelling": {"type": "boolean"}
+                            "uitgevoerd": {
+                                "title": "Executed",
+                                "description": "Whether the means test has been executed.",
+                                "type": "boolean",
+                                "default": false
+                            },
+                            "vermogen": {
+                                "title": "Assets",
+                                "description": "Total assets of the applicant.",
+                                "type": "number"
+                            },
+                            "vermogensvrijstelling": {
+                                "title": "Asset Exemption",
+                                "description": "Exemption threshold for assets.",
+                                "type": "number"
+                            },
+                            "bovenVermogensvrijstelling": {
+                                "title": "Exceeds Asset Exemption",
+                                "description": "Whether the applicant's assets exceed the exemption threshold.",
+                                "type": "boolean"
+                            }
                         }
                     },
                     "inkomensToets": {
+                        "title": "Income Test",
                         "type": "object",
                         "description": "Inkomenstoets (art. 31-33)",
                         "properties": {
-                            "uitgevoerd": {"type": "boolean", "default": false},
-                            "inkomen": {"type": "number"},
-                            "bijstandsnorm": {"type": "number"},
-                            "rechtOpBijstand": {"type": "boolean"}
+                            "uitgevoerd": {
+                                "title": "Executed",
+                                "description": "Whether the income test has been executed.",
+                                "type": "boolean",
+                                "default": false
+                            },
+                            "inkomen": {
+                                "title": "Income",
+                                "description": "Monthly income of the applicant.",
+                                "type": "number"
+                            },
+                            "bijstandsnorm": {
+                                "title": "Social Assistance Standard",
+                                "description": "Applicable social assistance standard amount.",
+                                "type": "number"
+                            },
+                            "rechtOpBijstand": {
+                                "title": "Entitled to Social Assistance",
+                                "description": "Whether the applicant is entitled to social assistance.",
+                                "type": "boolean"
+                            }
                         }
                     },
                     "reIntegratieTrajectId": {
+                        "title": "Re-integration Trajectory ID",
                         "type": "string",
                         "description": "Referentie naar het ReIntegratieTraject"
                     },
                     "behandelaarId": {
+                        "title": "Case Handler ID",
                         "type": "string",
                         "description": "Nextcloud user id van de klantmanager"
                     },
                     "wijkteam": {
+                        "title": "Neighborhood Team",
                         "type": "string",
                         "description": "Werk-en-inkomenteam; data-driven toegangsgrond"
                     },
                     "status": {
+                        "title": "Status",
                         "type": "string",
                         "enum": ["aanvraag-ontvangen", "toetsing-loopt", "toetsing-afgerond", "beschikking-voorbereiding", "beschikking-gereed", "bijstand-actief", "re-integratie-loopt", "afgesloten"],
                         "default": "aanvraag-ontvangen",
                         "description": "Inkomensgerichte status-lifecycle (ADR-031: declaratief)"
                     },
                     "afwijzingsvoorstel": {
+                        "title": "Rejection Proposal",
                         "type": "boolean",
                         "description": "True bij vermogen boven vrijstelling (auto-afwijzing)"
                     },
@@ -448,62 +627,107 @@
                 "required": ["zaakId", "klantmanagerId"],
                 "properties": {
                     "zaakId": {
+                        "title": "Case ID",
                         "type": "string",
                         "description": "Referentie naar de ParticipatiewetZaak"
                     },
                     "klantmanagerId": {
+                        "title": "Client Manager ID",
                         "type": "string",
                         "description": "Nextcloud user id van de klantmanager"
                     },
                     "startDatum": {
+                        "title": "Start Date",
                         "type": "string",
                         "format": "date",
                         "description": "Startdatum van het traject"
                     },
                     "trajectSoort": {
+                        "title": "Trajectory Type",
                         "type": "string",
                         "description": "Soort traject (werkfit-maken, naar-werk, scholing, ...)"
                     },
                     "afstandTotArbeidsmarkt": {
+                        "title": "Distance to Labour Market",
                         "type": "string",
                         "enum": ["klein", "gemiddeld", "groot", "zeer-groot"],
                         "description": "Ingeschatte afstand tot de arbeidsmarkt"
                     },
                     "instrumenten": {
+                        "title": "Instruments",
                         "type": "array",
                         "description": "Ingezette instrumenten",
                         "items": {
                             "type": "object",
                             "properties": {
-                                "soort": {"type": "string"},
-                                "omschrijving": {"type": "string"},
-                                "startDatum": {"type": "string", "format": "date"},
-                                "eindDatum": {"type": "string", "format": "date"},
-                                "budget": {"type": "number"}
+                                "soort": {
+                                    "title": "Type",
+                                    "description": "Type of instrument deployed.",
+                                    "type": "string"
+                                },
+                                "omschrijving": {
+                                    "title": "Description",
+                                    "description": "Description of the instrument.",
+                                    "type": "string"
+                                },
+                                "startDatum": {
+                                    "title": "Start Date",
+                                    "description": "Start date of this instrument.",
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                "eindDatum": {
+                                    "title": "End Date",
+                                    "description": "End date of this instrument.",
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                "budget": {
+                                    "title": "Budget",
+                                    "description": "Budget allocated for this instrument.",
+                                    "type": "number"
+                                }
                             }
                         }
                     },
                     "samenwerkendePartijen": {
+                        "title": "Collaborating Parties",
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "Samenwerkende partijen (UWV, werkbedrijf, werkgever, opleider, ...)"
                     },
                     "evaluatieMomenten": {
+                        "title": "Evaluation Moments",
                         "type": "array",
                         "items": {"type": "string", "format": "date"},
                         "description": "Geplande evaluatiemomenten"
                     },
                     "tegenprestatieVerplicht": {
+                        "title": "Reciprocal Obligation Required",
                         "type": "boolean",
                         "description": "Of een tegenprestatie verplicht is"
                     },
                     "vrijstellingArbeidsverplichting": {
+                        "title": "Work Obligation Exemption",
                         "type": "object",
                         "description": "Optionele vrijstelling van de arbeidsverplichting",
                         "properties": {
-                            "actief": {"type": "boolean"},
-                            "reden": {"type": "string"},
-                            "herbeoordelingDatum": {"type": "string", "format": "date"}
+                            "actief": {
+                                "title": "Active",
+                                "description": "Whether the work obligation exemption is active.",
+                                "type": "boolean"
+                            },
+                            "reden": {
+                                "title": "Reason",
+                                "description": "Reason for the work obligation exemption.",
+                                "type": "string"
+                            },
+                            "herbeoordelingDatum": {
+                                "title": "Reassessment Date",
+                                "description": "Date on which the exemption is to be reassessed.",
+                                "type": "string",
+                                "format": "date"
+                            }
                         }
                     }
                 }
@@ -518,60 +742,73 @@
                 "required": ["zaakId", "verleendDoorBsn"],
                 "properties": {
                     "zaakId": {
+                        "title": "Case ID",
                         "type": "string",
                         "description": "Referentie naar de betrokken zaak"
                     },
                     "verleendDoorBsn": {
+                        "title": "Granted By BSN",
                         "type": "string",
                         "description": "BSN van de toestemming-verlenende burger/ouder"
                     },
                     "verleendDoorNaam": {
+                        "title": "Granted By Name",
                         "type": "string",
                         "description": "Naam van de toestemming-verlener"
                     },
                     "verleendDatum": {
+                        "title": "Consent Date",
                         "type": "string",
                         "format": "date",
                         "description": "Datum van verlening"
                     },
                     "geldigTot": {
+                        "title": "Expires On",
                         "type": "string",
                         "format": "date",
                         "description": "Optionele vervaldatum van de toestemming"
                     },
                     "intrekkingMogelijk": {
+                        "title": "Revocable",
                         "type": "boolean",
                         "default": true,
                         "description": "Of de toestemming herroepbaar is"
                     },
                     "ingetrokken": {
+                        "title": "Revoked",
                         "type": "boolean",
                         "default": false,
                         "description": "Of de toestemming is ingetrokken"
                     },
                     "scope": {
+                        "title": "Scope",
                         "type": "string",
                         "description": "Reikwijdte van de toestemming"
                     },
                     "tePartijen": {
+                        "title": "Recipients",
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "Ontvangende partijen"
                     },
                     "tegegevens": {
+                        "title": "Data Fields",
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "Specifieke gegevens(velden) waarvoor toestemming geldt"
                     },
                     "tedoel": {
+                        "title": "Processing Purpose",
                         "type": "string",
                         "description": "Doel van de gegevensdeling"
                     },
                     "vastgelegdViaKanaal": {
+                        "title": "Recorded Via Channel",
                         "type": "string",
                         "description": "Kanaal waarlangs toestemming is vastgelegd (schriftelijk, mondeling-genotuleerd, digitaal, ...)"
                     },
                     "bewijsBestandId": {
+                        "title": "Evidence File ID",
                         "type": "string",
                         "description": "Optionele Nextcloud file-referentie naar het bewijs"
                     }
@@ -587,6 +824,7 @@
                 "required": ["categorieen", "rechtvaardiging", "bewaarTermijnJaren"],
                 "properties": {
                     "categorieen": {
+                        "title": "Data Categories",
                         "type": "array",
                         "items": {
                             "type": "string",
@@ -595,36 +833,44 @@
                         "description": "AVG art. 9 gegevenscategorieën die in deze zaak worden verwerkt"
                     },
                     "bijzonderePersoonsgegevens": {
+                        "title": "Special Personal Data",
                         "type": "boolean",
                         "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
                     },
                     "rechtvaardiging": {
+                        "title": "Legal Basis",
                         "type": "string",
                         "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
                     },
                     "rechtvaardigingToelichting": {
+                        "title": "Legal Basis Explanation",
                         "type": "string",
                         "description": "Plain-Dutch toelichting voor de FG-audit"
                     },
                     "bewaarTermijnJaren": {
+                        "title": "Retention Period Years",
                         "type": "integer",
                         "description": "Wettelijke bewaartermijn (WMO 15 / Jeugdwet 20 / Participatiewet 10 jaar, selectielijst gemeenten 2020)"
                     },
                     "vernietigingDatum": {
+                        "title": "Destruction Date",
                         "type": "string",
                         "format": "date",
                         "description": "Auto-berekend: sluitingsdatum + bewaarTermijnJaren"
                     },
                     "toegangsBeperking": {
+                        "title": "Access Restriction",
                         "type": "string",
                         "description": "Toegangsbeperking, hardcoded in query-guards (bijv. alleen-behandelaar-en-wijkteam)"
                     },
                     "anonimiseringBijDelen": {
+                        "title": "Anonymize When Sharing",
                         "type": "boolean",
                         "default": true,
                         "description": "Auto-anonimiseren bij export tenzij toestemming"
                     },
                     "exportBeperking": {
+                        "title": "Export Restriction",
                         "type": "string",
                         "description": "Exportbeperking (bijv. geen-bulk-export)"
                     }
@@ -640,41 +886,50 @@
                 "required": ["zaakId", "actie", "tijdstip"],
                 "properties": {
                     "zaakId": {
+                        "title": "Case ID",
                         "type": "string",
                         "description": "Referentie naar de geraadpleegde zaak"
                     },
                     "medewerkerId": {
+                        "title": "Employee ID",
                         "type": "string",
                         "description": "Nextcloud user id van de raadpleger (null bij externe partij)"
                     },
                     "organisatie": {
+                        "title": "Organization",
                         "type": "string",
                         "description": "Organisatie van de raadpleger (gemeente of externe partij)"
                     },
                     "actie": {
+                        "title": "Action",
                         "type": "string",
                         "enum": ["read", "export", "share", "delete"],
                         "description": "Soort actie"
                     },
                     "tijdstip": {
+                        "title": "Timestamp",
                         "type": "string",
                         "format": "date-time",
                         "description": "Tijdstip van de actie"
                     },
                     "ipAdres": {
+                        "title": "IP Address",
                         "type": "string",
                         "description": "IP-adres van de raadpleger"
                     },
                     "geraadpleegdeVelden": {
+                        "title": "Consulted Fields",
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "Velden die zijn geraadpleegd"
                     },
                     "autorisatieGrond": {
+                        "title": "Authorization Basis",
                         "type": "string",
                         "description": "Grond voor toegang (roltoewijzing, toestemming, fg-audit-override, openconnector-sharing, ...)"
                     },
                     "resultaat": {
+                        "title": "Result",
                         "type": "string",
                         "enum": ["succes", "geweigerd-geen-toegang", "fg-audit-mode-metadata-only", "geanonimiseerd"],
                         "description": "Resultaat van de toegangspoging"
@@ -691,33 +946,40 @@
                 "required": ["incidentDatum", "oorzaak"],
                 "properties": {
                     "incidentDatum": {
+                        "title": "Incident Date",
                         "type": "string",
                         "format": "date-time",
                         "description": "Datum/tijd van het incident"
                     },
                     "oorzaak": {
+                        "title": "Cause",
                         "type": "string",
                         "description": "Oorzaak van het incident"
                     },
                     "gegevensImpact": {
+                        "title": "Data Impact",
                         "type": "string",
                         "description": "Impact op de gegevens (scope, aantal betrokkenen, encryptiestatus)"
                     },
                     "meldingAp": {
+                        "title": "AP Notification Required",
                         "type": "boolean",
                         "default": false,
                         "description": "Of melding aan de Autoriteit Persoonsgegevens vereist is"
                     },
                     "meldingDatum": {
+                        "title": "Notification Date",
                         "type": "string",
                         "format": "date-time",
                         "description": "Datum/tijd van de AP-melding"
                     },
                     "meldingReferentie": {
+                        "title": "Notification Reference",
                         "type": "string",
                         "description": "Referentienummer van de AP-melding"
                     },
                     "remediatingActions": {
+                        "title": "Remediating Actions",
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "Genomen herstelmaatregelen"

@@ -22,24 +22,24 @@
                 "type": "object",
                 "required": ["kanaal", "richting", "identificatieMethode", "kccMedewerkerId", "aard", "samenvatting"],
                 "properties": {
-                    "kanaal": {"type": "string", "enum": ["telefoon", "email", "webformulier", "chat", "social_media", "balie"], "description": "Communication channel"},
-                    "richting": {"type": "string", "enum": ["inkomend", "uitgaand"], "description": "Direction of the contact"},
-                    "startTijd": {"type": "string", "format": "date-time", "description": "Start time of the contact"},
-                    "eindTijd": {"type": "string", "format": "date-time", "description": "End time of the contact"},
-                    "duurSeconden": {"type": "integer", "description": "Calculated duration in seconds"},
-                    "bellerIdentificatie": {"type": "string", "description": "Phone number, email or social handle of the caller"},
-                    "geidentificeerdeBurgerId": {"type": "string", "description": "Opaque reference to the identified burger (NC contact / external person id); null when unidentified"},
-                    "identificatieMethode": {"type": "string", "enum": ["digid", "bsn_verificatie", "identificatievragen", "niet_geidentificeerd"], "description": "How the caller was identified"},
-                    "identificatieScore": {"type": "number", "description": "Identification confidence score (0.0-1.0)"},
-                    "kccMedewerkerId": {"type": "string", "description": "Nextcloud UID of the handling KCC-medewerker"},
-                    "gerelateerdeZaken": {"type": "array", "items": {"type": "string"}, "description": "Case ids this contact relates to"},
-                    "nieuweZaakIds": {"type": "array", "items": {"type": "string"}, "description": "Case ids created during this contact"},
-                    "aard": {"type": "string", "enum": ["informatieverzoek", "statusverzoek", "klacht", "melding", "nieuwe_aanvraag", "doorverbinding"], "description": "Nature of the contact"},
-                    "samenvatting": {"type": "string", "description": "Summary of the contact"},
-                    "volgensIntent": {"type": "string", "description": "Detected dialogue intent"},
-                    "firstTimeFix": {"type": "boolean", "default": false, "description": "Whether the issue was resolved in one contact"},
-                    "transcriptie": {"type": "string", "description": "Optional voice-to-text transcription"},
-                    "transferNaar": {"type": "string", "description": "Specialist user id or wachtrij name if transferred"}
+                    "kanaal": {"type": "string", "title": "Channel", "enum": ["telefoon", "email", "webformulier", "chat", "social_media", "balie"], "description": "Communication channel"},
+                    "richting": {"type": "string", "title": "Direction", "enum": ["inkomend", "uitgaand"], "description": "Direction of the contact"},
+                    "startTijd": {"type": "string", "title": "Start Time", "format": "date-time", "description": "Start time of the contact"},
+                    "eindTijd": {"type": "string", "title": "End Time", "format": "date-time", "description": "End time of the contact"},
+                    "duurSeconden": {"type": "integer", "title": "Duration Seconds", "description": "Calculated duration in seconds"},
+                    "bellerIdentificatie": {"type": "string", "title": "Caller Identification", "description": "Phone number, email or social handle of the caller"},
+                    "geidentificeerdeBurgerId": {"type": "string", "title": "Identified Citizen ID", "description": "Opaque reference to the identified burger (NC contact / external person id); null when unidentified"},
+                    "identificatieMethode": {"type": "string", "title": "Identification Method", "enum": ["digid", "bsn_verificatie", "identificatievragen", "niet_geidentificeerd"], "description": "How the caller was identified"},
+                    "identificatieScore": {"type": "number", "title": "Identification Score", "description": "Identification confidence score (0.0-1.0)"},
+                    "kccMedewerkerId": {"type": "string", "title": "KCC Employee ID", "description": "Nextcloud UID of the handling KCC-medewerker"},
+                    "gerelateerdeZaken": {"type": "array", "title": "Related Cases", "items": {"type": "string"}, "description": "Case ids this contact relates to"},
+                    "nieuweZaakIds": {"type": "array", "title": "New Case IDs", "items": {"type": "string"}, "description": "Case ids created during this contact"},
+                    "aard": {"type": "string", "title": "Nature", "enum": ["informatieverzoek", "statusverzoek", "klacht", "melding", "nieuwe_aanvraag", "doorverbinding"], "description": "Nature of the contact"},
+                    "samenvatting": {"type": "string", "title": "Summary", "description": "Summary of the contact"},
+                    "volgensIntent": {"type": "string", "title": "Intent Compliant", "description": "Detected dialogue intent"},
+                    "firstTimeFix": {"type": "boolean", "title": "First Time Fix", "default": false, "description": "Whether the issue was resolved in one contact"},
+                    "transcriptie": {"type": "string", "title": "Transcription", "description": "Optional voice-to-text transcription"},
+                    "transferNaar": {"type": "string", "title": "Transfer To", "description": "Specialist user id or wachtrij name if transferred"}
                 }
             },
             "kccQuickAction": {
@@ -51,14 +51,14 @@
                 "type": "object",
                 "required": ["naam", "actieType"],
                 "properties": {
-                    "naam": {"type": "string", "description": "Display name of the quick action"},
-                    "actieType": {"type": "string", "enum": ["status_geven", "nieuwe_zaak", "klacht_registreren", "doorverbinden", "bel_terug_inplannen", "email_sturen", "kopie_document_sturen"], "description": "Action type"},
-                    "vereisteContext": {"type": "array", "items": {"type": "string"}, "description": "Required context conditions (has_open_case, is_geidentificeerd, ...)"},
-                    "targetZaaktype": {"type": "string", "description": "Target case type slug for nieuwe-zaak actions"},
-                    "template": {"type": "string", "description": "Email template reference for email actions"},
-                    "permissies": {"type": "array", "items": {"type": "string"}, "description": "KCC roles allowed to run this action"},
-                    "volgorde": {"type": "integer", "default": 0, "description": "Display order"},
-                    "isActive": {"type": "boolean", "default": true, "description": "Whether the action is active"}
+                    "naam": {"type": "string", "title": "Name", "description": "Display name of the quick action"},
+                    "actieType": {"type": "string", "title": "Action Type", "enum": ["status_geven", "nieuwe_zaak", "klacht_registreren", "doorverbinden", "bel_terug_inplannen", "email_sturen", "kopie_document_sturen"], "description": "Action type"},
+                    "vereisteContext": {"type": "array", "title": "Required Context", "items": {"type": "string"}, "description": "Required context conditions (has_open_case, is_geidentificeerd, ...)"},
+                    "targetZaaktype": {"type": "string", "title": "Target Case Type", "description": "Target case type slug for nieuwe-zaak actions"},
+                    "template": {"type": "string", "title": "Template", "description": "Email template reference for email actions"},
+                    "permissies": {"type": "array", "title": "Permissions", "items": {"type": "string"}, "description": "KCC roles allowed to run this action"},
+                    "volgorde": {"type": "integer", "title": "Order", "default": 0, "description": "Display order"},
+                    "isActive": {"type": "boolean", "title": "Is Active", "default": true, "description": "Whether the action is active"}
                 }
             },
             "belplan": {
@@ -70,13 +70,13 @@
                 "type": "object",
                 "required": ["naam"],
                 "properties": {
-                    "naam": {"type": "string", "description": "Name of the belplan"},
-                    "triggerNummer": {"type": "array", "items": {"type": "string"}, "description": "Phone number(s) this plan applies to"},
-                    "routeringStappen": {"type": "array", "items": {"type": "object"}, "description": "Ordered routing steps (keuzemenu, vaardigheid_match, wachtrij_overflow)"},
-                    "openingstijden": {"type": "string", "description": "Opening hours (e.g. Mo-Fr 08:00-17:00), null for 24/7"},
-                    "terugvalActie": {"type": "string", "enum": ["voicemail", "sms_callback", "email_callback"], "default": "voicemail", "description": "Fallback action outside opening hours"},
-                    "prioriteit": {"type": "integer", "default": 0, "description": "Matching priority, higher wins"},
-                    "isActive": {"type": "boolean", "default": true, "description": "Whether the belplan is active"}
+                    "naam": {"type": "string", "title": "Name", "description": "Name of the belplan"},
+                    "triggerNummer": {"type": "array", "title": "Trigger Number", "items": {"type": "string"}, "description": "Phone number(s) this plan applies to"},
+                    "routeringStappen": {"type": "array", "title": "Routing Steps", "items": {"type": "object"}, "description": "Ordered routing steps (keuzemenu, vaardigheid_match, wachtrij_overflow)"},
+                    "openingstijden": {"type": "string", "title": "Opening Hours", "description": "Opening hours (e.g. Mo-Fr 08:00-17:00), null for 24/7"},
+                    "terugvalActie": {"type": "string", "title": "Fallback Action", "enum": ["voicemail", "sms_callback", "email_callback"], "default": "voicemail", "description": "Fallback action outside opening hours"},
+                    "prioriteit": {"type": "integer", "title": "Priority", "default": 0, "description": "Matching priority, higher wins"},
+                    "isActive": {"type": "boolean", "title": "Is Active", "default": true, "description": "Whether the belplan is active"}
                 }
             },
             "specialistBeschikbaarheid": {
@@ -88,13 +88,13 @@
                 "type": "object",
                 "required": ["medewerkerId", "status"],
                 "properties": {
-                    "medewerkerId": {"type": "string", "description": "Nextcloud UID of the specialist"},
-                    "expertises": {"type": "array", "items": {"type": "string"}, "description": "Vaardigheid / zaaktype codes the specialist handles"},
-                    "status": {"type": "string", "enum": ["beschikbaar", "in_gesprek", "wrap_up", "afwezig", "niet_storen"], "description": "Current availability status"},
-                    "huidigeWachtrijLengte": {"type": "integer", "default": 0, "description": "Number of calls currently queued"},
-                    "gemiddeldeBehandelduur": {"type": "integer", "default": 0, "description": "Rolling average handling time in seconds"},
-                    "gespreksInProgress": {"type": "integer", "default": 0, "description": "Number of active calls"},
-                    "laatsteUpdate": {"type": "string", "format": "date-time", "description": "Timestamp of the last status update"}
+                    "medewerkerId": {"type": "string", "title": "Employee ID", "description": "Nextcloud UID of the specialist"},
+                    "expertises": {"type": "array", "title": "Expertises", "items": {"type": "string"}, "description": "Vaardigheid / zaaktype codes the specialist handles"},
+                    "status": {"type": "string", "title": "Status", "enum": ["beschikbaar", "in_gesprek", "wrap_up", "afwezig", "niet_storen"], "description": "Current availability status"},
+                    "huidigeWachtrijLengte": {"type": "integer", "title": "Current Queue Length", "default": 0, "description": "Number of calls currently queued"},
+                    "gemiddeldeBehandelduur": {"type": "integer", "title": "Average Handling Duration", "default": 0, "description": "Rolling average handling time in seconds"},
+                    "gespreksInProgress": {"type": "integer", "title": "Conversations In Progress", "default": 0, "description": "Number of active calls"},
+                    "laatsteUpdate": {"type": "string", "title": "Last Update", "format": "date-time", "description": "Timestamp of the last status update"}
                 }
             },
             "doorverbinding": {
@@ -106,17 +106,17 @@
                 "type": "object",
                 "required": ["contactmomentId", "vanMedewerkerId"],
                 "properties": {
-                    "contactmomentId": {"type": "string", "description": "Reference to the originating contactmoment"},
-                    "vanMedewerkerId": {"type": "string", "description": "Nextcloud UID of the transferring medewerker"},
-                    "naarMedewerkerId": {"type": "string", "description": "Nextcloud UID of the receiving specialist, null when to a wachtrij"},
-                    "naarWachtrij": {"type": "string", "description": "Target wachtrij name, null when to a specialist"},
-                    "doorverbindingsReden": {"type": "string", "description": "Reason for the transfer"},
-                    "contextOverdracht": {"type": "string", "description": "Append-only handover notes"},
-                    "contextSnapshot": {"type": "string", "description": "Immutable JSON snapshot captured at transfer time"},
-                    "geaccepteerd": {"type": "boolean", "description": "Whether the specialist accepted, null until answered"},
-                    "acceptatieTijd": {"type": "string", "format": "date-time", "description": "When the specialist answered"},
-                    "afgekeurdReden": {"type": "string", "description": "Reason for rejection, null when accepted"},
-                    "warmTransferStarted": {"type": "string", "format": "date-time", "description": "When the transfer was initiated"}
+                    "contactmomentId": {"type": "string", "title": "Contact Moment ID", "description": "Reference to the originating contactmoment"},
+                    "vanMedewerkerId": {"type": "string", "title": "From Employee ID", "description": "Nextcloud UID of the transferring medewerker"},
+                    "naarMedewerkerId": {"type": "string", "title": "To Employee ID", "description": "Nextcloud UID of the receiving specialist, null when to a wachtrij"},
+                    "naarWachtrij": {"type": "string", "title": "To Queue", "description": "Target wachtrij name, null when to a specialist"},
+                    "doorverbindingsReden": {"type": "string", "title": "Transfer Reason", "description": "Reason for the transfer"},
+                    "contextOverdracht": {"type": "string", "title": "Context Transfer", "description": "Append-only handover notes"},
+                    "contextSnapshot": {"type": "string", "title": "Context Snapshot", "description": "Immutable JSON snapshot captured at transfer time"},
+                    "geaccepteerd": {"type": "boolean", "title": "Accepted", "description": "Whether the specialist accepted, null until answered"},
+                    "acceptatieTijd": {"type": "string", "title": "Acceptance Time", "format": "date-time", "description": "When the specialist answered"},
+                    "afgekeurdReden": {"type": "string", "title": "Rejection Reason", "description": "Reason for rejection, null when accepted"},
+                    "warmTransferStarted": {"type": "string", "title": "Warm Transfer Started", "format": "date-time", "description": "When the transfer was initiated"}
                 }
             },
             "klantSentiment": {
@@ -128,14 +128,14 @@
                 "type": "object",
                 "required": ["contactmomentId", "sentimentLabel"],
                 "properties": {
-                    "contactmomentId": {"type": "string", "description": "Reference to the analysed contactmoment"},
-                    "sentimentScore": {"type": "number", "description": "Sentiment score from -1.0 (very negative) to +1.0 (very positive)"},
-                    "sentimentLabel": {"type": "string", "enum": ["positief", "neutraal", "negatief", "boos"], "description": "Sentiment label"},
-                    "triggerWoorden": {"type": "array", "items": {"type": "string"}, "description": "Detected trigger words"},
-                    "transcriptieSnippet": {"type": "string", "description": "Quote from the transcription with the trigger words"},
-                    "escalatieAanbevolen": {"type": "boolean", "default": false, "description": "Whether escalation is recommended"},
-                    "escalatieLevel": {"type": "string", "enum": ["geen", "geel", "oranje", "rood"], "default": "geen", "description": "Recommended escalation level"},
-                    "createdAt": {"type": "string", "format": "date-time", "description": "Creation timestamp"}
+                    "contactmomentId": {"type": "string", "title": "Contact Moment ID", "description": "Reference to the analysed contactmoment"},
+                    "sentimentScore": {"type": "number", "title": "Sentiment Score", "description": "Sentiment score from -1.0 (very negative) to +1.0 (very positive)"},
+                    "sentimentLabel": {"type": "string", "title": "Sentiment Label", "enum": ["positief", "neutraal", "negatief", "boos"], "description": "Sentiment label"},
+                    "triggerWoorden": {"type": "array", "title": "Trigger Words", "items": {"type": "string"}, "description": "Detected trigger words"},
+                    "transcriptieSnippet": {"type": "string", "title": "Transcription Snippet", "description": "Quote from the transcription with the trigger words"},
+                    "escalatieAanbevolen": {"type": "boolean", "title": "Escalation Recommended", "default": false, "description": "Whether escalation is recommended"},
+                    "escalatieLevel": {"type": "string", "title": "Escalation Level", "enum": ["geen", "geel", "oranje", "rood"], "default": "geen", "description": "Recommended escalation level"},
+                    "createdAt": {"type": "string", "title": "Created At", "format": "date-time", "description": "Creation timestamp"}
                 }
             }
         },
