@@ -4,67 +4,82 @@
             "customerContact": {
                 "properties": {
                     "direction": {
+                        "title": "Direction",
                         "type": "string",
                         "enum": ["inbound", "outbound"],
                         "description": "Direction of the contact moment (KCC)"
                     },
                     "customerRef": {
+                        "title": "Customer Reference",
                         "type": "string",
                         "description": "BSN, KvK number or external reference of the customer (may be empty for anonymous callers)"
                     },
                     "customerName": {
+                        "title": "Customer Name",
                         "type": "string",
                         "description": "Display name of the customer"
                     },
                     "customerPhone": {
+                        "title": "Customer Phone",
                         "type": "string",
                         "description": "Phone number of the customer"
                     },
                     "customerEmail": {
+                        "title": "Customer Email",
                         "type": "string",
                         "description": "Email address of the customer"
                     },
                     "startedAt": {
+                        "title": "Started At",
                         "type": "string",
                         "format": "date-time",
                         "description": "When the contact started"
                     },
                     "endedAt": {
+                        "title": "Ended At",
                         "type": "string",
                         "format": "date-time",
                         "description": "When the contact ended"
                     },
                     "durationSeconds": {
+                        "title": "Duration Seconds",
                         "type": "integer",
                         "description": "Duration of the contact in seconds"
                     },
                     "summary": {
+                        "title": "Summary",
                         "type": "string",
                         "description": "Short summary of the contact"
                     },
                     "outcome": {
+                        "title": "Outcome",
                         "type": "string",
                         "enum": ["open", "resolved", "transferred", "callback_scheduled", "escalated"],
                         "description": "Outcome of the contact moment"
                     },
                     "kccAgentRef": {
+                        "title": "KCC Agent Reference",
                         "type": "string",
                         "description": "Nextcloud user id of the KCC agent that handled the contact"
                     },
                     "assignedTeam": {
+                        "title": "Assigned Team",
                         "type": "string",
                         "description": "Team the contact was routed to"
                     },
                     "assignedDomain": {
+                        "title": "Assigned Domain",
                         "type": "string",
                         "description": "Domain the contact was routed to"
                     },
                     "tags": {
+                        "title": "Tags",
                         "type": "array",
                         "items": { "type": "string" },
                         "description": "Free-form tags"
                     },
                     "linkedContactMoment": {
+                        "title": "Linked Contact Moment",
                         "type": "string",
                         "description": "Reference to a related contact moment (e.g. outbound callback linked to inbound)"
                     }
@@ -80,40 +95,53 @@
                 "required": ["name"],
                 "properties": {
                     "name": {
+                        "title": "Name",
                         "type": "string",
                         "description": "Human readable rule name"
                     },
                     "priority": {
+                        "title": "Priority",
                         "type": "integer",
                         "description": "Evaluation priority; lower numbers are evaluated first"
                     },
                     "matchConditions": {
+                        "title": "Match Conditions",
                         "type": "array",
                         "description": "Conditions that must all match for the rule to fire",
                         "items": {
                             "type": "object",
                             "properties": {
                                 "type": {
+                                    "title": "Condition Type",
                                     "type": "string",
-                                    "enum": ["keyword", "regex", "channel", "customer_type", "time_of_day", "day_of_week"]
+                                    "enum": ["keyword", "regex", "channel", "customer_type", "time_of_day", "day_of_week"],
+                                    "description": "Type of match condition, e.g. keyword, regex, channel"
                                 },
-                                "value": { "type": "string" }
+                                "value": {
+                                    "title": "Condition Value",
+                                    "type": "string",
+                                    "description": "Value to match against for this condition"
+                                }
                             }
                         }
                     },
                     "assignedDomain": {
+                        "title": "Assigned Domain",
                         "type": "string",
                         "description": "Destination domain (burgerzaken, openbare_werken, wmo, ...)"
                     },
                     "assignedTeam": {
+                        "title": "Assigned Team",
                         "type": "string",
                         "description": "Destination team"
                     },
                     "escalationTeam": {
+                        "title": "Escalation Team",
                         "type": "string",
                         "description": "Fallback team when no agent is available in the primary team"
                     },
                     "enabled": {
+                        "title": "Enabled",
                         "type": "boolean",
                         "default": true,
                         "description": "Whether the rule is active"
@@ -130,35 +158,42 @@
                 "required": ["userRef"],
                 "properties": {
                     "userRef": {
+                        "title": "User Reference",
                         "type": "string",
                         "description": "Nextcloud user id of the agent"
                     },
                     "availableForChannels": {
+                        "title": "Available For Channels",
                         "type": "array",
                         "items": { "type": "string" },
                         "description": "Channels the agent can handle (phone, email, chat, ...)"
                     },
                     "currentStatus": {
+                        "title": "Current Status",
                         "type": "string",
                         "enum": ["available", "busy", "break", "after_call_wrap", "offline"],
                         "default": "offline",
                         "description": "Current presence status"
                     },
                     "skills": {
+                        "title": "Skills",
                         "type": "array",
                         "items": { "type": "string" },
                         "description": "Skill / expertise tags"
                     },
                     "currentWorkload": {
+                        "title": "Current Workload",
                         "type": "integer",
                         "default": 0,
                         "description": "Number of open contacts assigned to the agent"
                     },
                     "lastContactCustomerRef": {
+                        "title": "Last Contact Customer Reference",
                         "type": "string",
                         "description": "Customer reference of the most recent contact handled (continuity hint)"
                     },
                     "team": {
+                        "title": "Team",
                         "type": "string",
                         "description": "Primary team of the agent"
                     }
@@ -174,38 +209,46 @@
                 "required": ["customerPhone"],
                 "properties": {
                     "contactMomentRef": {
+                        "title": "Contact Moment Reference",
                         "type": "string",
                         "description": "Reference to the originating contact moment"
                     },
                     "customerPhone": {
+                        "title": "Customer Phone",
                         "type": "string",
                         "description": "Phone number to call back"
                     },
                     "preferredAgent": {
+                        "title": "Preferred Agent",
                         "type": "string",
                         "description": "Nextcloud user id of the preferred agent"
                     },
                     "reason": {
+                        "title": "Reason",
                         "type": "string",
                         "description": "Reason for the callback"
                     },
                     "scheduledFor": {
+                        "title": "Scheduled For",
                         "type": "string",
                         "format": "date-time",
                         "description": "When the callback is scheduled"
                     },
                     "status": {
+                        "title": "Status",
                         "type": "string",
                         "enum": ["scheduled", "attempted", "completed", "failed", "cancelled"],
                         "default": "scheduled",
                         "description": "Lifecycle status"
                     },
                     "attemptCount": {
+                        "title": "Attempt Count",
                         "type": "integer",
                         "default": 0,
                         "description": "Number of attempts made"
                     },
                     "nextAttemptAt": {
+                        "title": "Next Attempt At",
                         "type": "string",
                         "format": "date-time",
                         "description": "When the next retry should occur"

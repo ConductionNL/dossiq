@@ -111,9 +111,21 @@
                         "items": {
                             "type": "object",
                             "properties": {
-                                "min": { "type": "integer" },
-                                "max": { "type": "integer" },
-                                "bedrag": { "type": "integer" }
+                                "min": {
+                                    "title": "Minimum",
+                                    "type": "integer",
+                                    "description": "Lower bound of this tariff tier (eurocents or unit)"
+                                },
+                                "max": {
+                                    "title": "Maximum",
+                                    "type": "integer",
+                                    "description": "Upper bound of this tariff tier (eurocents or unit)"
+                                },
+                                "bedrag": {
+                                    "title": "Amount",
+                                    "type": "integer",
+                                    "description": "Fixed amount for this tier in eurocents"
+                                }
                             }
                         }
                     },
@@ -208,7 +220,8 @@
                     "kortingsType": {
                         "type": "string",
                         "enum": ["percentage", "vast_bedrag", "volledige_vrijstelling"],
-                        "title": "Kortingstype"
+                        "title": "Kortingstype",
+                        "description": "Type of discount: percentage, fixed amount, or full exemption"
                     },
                     "kortingsWaarde": {
                         "type": "number",
@@ -233,12 +246,14 @@
                     "geldigVanaf": {
                         "type": "string",
                         "format": "date",
-                        "title": "Geldig vanaf"
+                        "title": "Geldig vanaf",
+                        "description": "Start date from which this discount is valid"
                     },
                     "geldigTotEnMet": {
                         "type": "string",
                         "format": "date",
-                        "title": "Geldig tot en met"
+                        "title": "Geldig tot en met",
+                        "description": "End date until which this discount is valid (null = open-ended)"
                     }
                 }
             },
@@ -322,6 +337,7 @@
                         "type": "string",
                         "enum": ["berekend", "pending_minima_check", "gefactureerd", "betaald", "gerestitueerd", "kwijtgescholden"],
                         "title": "Status",
+                        "description": "Lifecycle status of this leges calculation",
                         "facetable": true
                     }
                 }
@@ -345,7 +361,8 @@
                     "restitutieReden": {
                         "type": "string",
                         "enum": ["aanvraag_ingetrokken", "dubbel_betaald", "coulance", "bezwaar_gegrond"],
-                        "title": "Restitutiereden"
+                        "title": "Restitutiereden",
+                        "description": "Reason for the refund decision"
                     },
                     "fase": {
                         "type": "string",
@@ -375,7 +392,8 @@
                     "besluitDatum": {
                         "type": "string",
                         "format": "date",
-                        "title": "Besluitdatum"
+                        "title": "Besluitdatum",
+                        "description": "Date on which the refund decision was made"
                     }
                 }
             }

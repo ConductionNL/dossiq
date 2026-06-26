@@ -23,8 +23,8 @@
           "endDate":    {"type": "string", "title": "End date", "format": "date", "description": "Last day of the absence period (inclusive); required"},
           "scope":      {"type": "string", "title": "Scope", "enum": ["all", "caseTypes", "cases"], "default": "all", "facetable": true, "description": "What workload is covered"},
           "scopeRefs":  {"type": "array", "title": "Scope references", "items": {"type": "string"}, "description": "caseType or case UUIDs when scope is narrowed"},
-          "reason":     {"type": "string", "title": "Reason", "enum": ["verlof", "ziekte", "anders"], "default": "verlof", "facetable": true},
-          "comment":    {"type": "string", "title": "Comment", "maxLength": 1024},
+          "reason":     {"type": "string", "title": "Reason", "enum": ["verlof", "ziekte", "anders"], "default": "verlof", "facetable": true, "description": "Reason for the absence period"},
+          "comment":    {"type": "string", "title": "Comment", "maxLength": 1024, "description": "Additional comment or note about this substitution"},
           "status":     {"type": "string", "title": "Status", "enum": ["active", "ended", "revoked"], "default": "active", "facetable": true, "description": "ended is set lazily on resolution past endDate"},
           "createdBy":  {"type": "string", "title": "Created by", "description": "User id that created the record (self-service or coordinator)", "maxLength": 255}
         },
