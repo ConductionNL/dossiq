@@ -134,7 +134,7 @@ Alle leges-data wordt opgeslagen als OpenRegister-objecten (entiteiten):
 - **OpenConnector** — BRP-koppeling voor leeftijd-check, mogelijke inkomensverklaring-integratie
 - **OpenRegister ABAC policy engine** — autorisatie wie verordeningen mag importeren, wie restituties mag goedkeuren
 - **Docudesk** (optioneel) — factuur-PDF generatie (fallback naar Nextcloud file-render)
-- **Mydash** — reporting dashboard leges-opbrengsten per tariefnummer
+- **LaunchPad** — reporting dashboard leges-opbrengsten per tariefnummer
 
 ## Out of Scope
 

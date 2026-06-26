@@ -434,7 +434,7 @@
   {
     "slug": "procest-procurement-spend-analytics-integration",
     "title": "procest-procurement-spend-analytics-integration",
-    "summary": "Define the cross-app spend-analytics contract: procest emits procurement CloudEvents and exposes its registers via OR GraphQL; mydash consumes them at runtime to render spend analytics. Commitment side from procest, posting side from [future] financeq. RBAC stays OR-canonical; procest ships no analytics manifest entry (mydash owns the surface).",
+    "summary": "Define the cross-app spend-analytics contract: procest emits procurement CloudEvents and exposes its registers via OR GraphQL; launchpad consumes them at runtime to render spend analytics. Commitment side from procest, posting side from [future] financeq. RBAC stays OR-canonical; procest ships no analytics manifest entry (launchpad owns the surface).",
     "docsUrl": "openspec/specs/procest-procurement-spend-analytics-integration/spec.md"
   },
   {

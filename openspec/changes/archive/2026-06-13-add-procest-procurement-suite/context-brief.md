@@ -74,9 +74,9 @@ state machines, no custom audit tables.
    - `docudesk` for contract documents, signed PDFs, attachments.
    - `openregister` for RBAC, audit, retention, lifecycle,
      aggregations, scheduled workflows.
-   - `mydash` for the analytics surface — procest emits events, mydash
+   - `launchpad` for the analytics surface — procest emits events, launchpad
      reads via runtime GraphQL (per ADR-024 §10 and
-     `feedback_mydash-no-or-dependency.md`).
+     `feedback_launchpad-no-or-dependency.md`).
    - `financeq` — `[future]` reference only; the repo does not yet
      exist. Spend / cost integration is documented as a placeholder.
 
@@ -159,7 +159,7 @@ Three principles flow from this framing:
    profile" pattern reuses the same RBAC model `case-management`
    already uses.
 3. **No CoA / GL in procest.** Spend, cost, GL postings, invoices —
-   procest emits domain events; consumers (mydash via GraphQL,
+   procest emits domain events; consumers (launchpad via GraphQL,
    `[future]` financeq via OpenConnector source) compute the money
    side. Procest never owns a chart-of-accounts or a posting table.
 
@@ -199,7 +199,7 @@ Three principles flow from this framing:
                          ▼
                 ┌─────────────────────────┐
                 │ PSA spend-analytics     │
-                │ events → mydash         │
+                │ events → launchpad         │
                 │ (cross-app contract)    │
                 └─────────────────────────┘
 ```
@@ -311,11 +311,11 @@ them as fresh issues:
   the OpenConnector source plugs in); PPP declares the *publication
   workflow* (what gets published when, what re-publication means
   domain-wise).
-- **PSA is light by design.** Procest does not own analytics; mydash
+- **PSA is light by design.** Procest does not own analytics; launchpad
   does. PSA is a cross-app contract spec — it nails down the event
   shape procest emits (CloudEvents per `events + webhooks`) and the
-  RBAC scope on the GraphQL query mydash will use. The actual widget
-  declarations belong to mydash's own fleet rollout.
+  RBAC scope on the GraphQL query launchpad will use. The actual widget
+  declarations belong to launchpad's own fleet rollout.
 - **No `procest-procurement-purchase-order` spec.** Purchase orders
   (PO/Bestelling) are a procest case-type seed once CLM ships — they
   are a "contract child" lifecycle, not a separate capability. If
@@ -342,7 +342,7 @@ them as fresh issues:
 - ADR-031 — schema-declarative business logic (every lifecycle/aggregation/notification declared in the register, not coded as a service).
 - ADR-032 — spec sizing + chained-spec routing (this change is `kind: config`; per-spec code chains will follow).
 - Procest `case-management`, `case-types`, `workflow-engine-abstraction`, `roles-decisions`, `deelzaak-support`, `besluitvorming-workflow` — existing capabilities every new spec builds on.
-- `feedback_mydash-no-or-dependency.md` — PSA contract shape.
+- `feedback_launchpad-no-or-dependency.md` — PSA contract shape.
 - Intelligence-DB cleanup checklist in "Source draft reconciliation" above.
 
 
@@ -426,8 +426,8 @@ code chains (one per spec) opened after this change archives.
   cross-app contract spec.
   - files: `specs/procest-procurement-spend-analytics-integration/spec.md`
   - acceptance: 5 REQ-PSA-* requirements, CloudEvent schemas for every
-    domain event emitted, mydash GraphQL query shape declared, ADR-024
-    §10 (no OR dep on mydash) re-cited.
+    domain event emitted, launchpad GraphQL query shape declared, ADR-024
+    §10 (no OR dep on launchpad) re-cited.
 
 ## Reviewer verification (this change — pre-merge)
 

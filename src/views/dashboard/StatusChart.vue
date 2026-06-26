@@ -26,10 +26,12 @@
 		</template>
 
 		<template v-else>
-			<div
+			<button
 				v-for="(item, index) in statusData"
 				:key="item.name"
-				class="status-chart__row">
+				class="status-chart__row"
+				:title="t('procest', 'Filter cases by status: {status}', { status: item.name })"
+				@click="onBarClick(item)">
 				<span class="status-chart__label">{{ item.name }}</span>
 				<div class="status-chart__bar-container">
 					<div
@@ -37,7 +39,7 @@
 						:style="{ width: barWidth(item.count), backgroundColor: barColor(index) }" />
 				</div>
 				<span class="status-chart__count">{{ item.count }}</span>
-			</div>
+			</button>
 		</template>
 	</div>
 </template>
@@ -64,7 +66,7 @@ export default {
 		loading: { type: Boolean, default: false },
 		error: { type: String, default: null },
 	},
-	emits: ['retry'],
+	emits: ['retry', 'bar-click'],
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
 		maxCount() {
@@ -86,6 +88,17 @@ export default {
 		 */
 		barColor(index) {
 			return BAR_COLORS[index % BAR_COLORS.length]
+		},
+		/**
+		 * Emit a `bar-click` with the clicked status row so a wrapper can
+		 * deep-link to the cases index pre-filtered by that status. Mirrors
+		 * the CasesByType bar-click pattern.
+		 *
+		 * @param {{ name: string, count: number, statusIds: string[] }} item The clicked row.
+		 * @return {void}
+		 */
+		onBarClick(item) {
+			this.$emit('bar-click', item)
 		},
 	},
 }
@@ -114,6 +127,25 @@ export default {
 	align-items: center;
 	gap: 8px;
 	margin-bottom: 8px;
+	width: 100%;
+	background: transparent;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	text-align: left;
+	font: inherit;
+	color: inherit;
+}
+
+.status-chart__row:hover .status-chart__bar,
+.status-chart__row:focus-visible .status-chart__bar {
+	filter: brightness(1.1);
+}
+
+.status-chart__row:focus-visible {
+	outline: 2px solid var(--color-primary-element);
+	outline-offset: 2px;
+	border-radius: var(--border-radius);
 }
 
 .status-chart__label {

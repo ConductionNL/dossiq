@@ -123,7 +123,7 @@ De `kcc-werkplek-zaaksysteem-bridge` capability brengt de KCC-werkplek van pipel
 - **openconnector** — DigiD/eHerkenning authenticatie, BRP-koppeling voor burger-identificatie, telefonie-koppeling (SIP-trunks, callbacks)
 - **docudesk** — automatisch genereren van bevestigingsbrieven (klacht-ontvangst, callback-bevestiging, status-rapport per post als burger dat verkiest)
 - **shillinq** — telefonische betalingen aan de balie of via KCC (bv. leges direct telefonisch afrekenen)
-- **mydash** — KCC-dashboards (gemiddelde behandeltijd, first-time-fix percentage, top-10 contactredenen, sentiment-trend, callback-SLA)
+- **launchpad** — KCC-dashboards (gemiddelde behandeltijd, first-time-fix percentage, top-10 contactredenen, sentiment-trend, callback-SLA)
 - **leges-heffingen** — KCC-medewerker kan tijdens contact een leges-betaalverzoek versturen of een restitutie initiëren
 - **mandaat-matrix** — bepaalt welke acties (bv. klacht-gegrond verklaren, restitutie toekennen) een KCC-medewerker mag uitvoeren of moet doorzetten
 

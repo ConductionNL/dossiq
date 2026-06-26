@@ -184,7 +184,7 @@ After this change archives, implementation lands in the following waves:
    - Support toestemming-revocation: set ingetrokken=true, future exports auto-anonymize
 
 ### Wave 3 (UI enhancement, optional)
-1. **Wijkteam dashboard (mydash widget)**
+1. **Wijkteam dashboard (launchpad widget)**
    - Display caseload by zaaktype (WmoZaak count, JeugdwetZaak count, ParticipatiewetZaak count)
    - Display doorlooptijden per zaaktype (avg time from melding to beschikking, etc.)
    - Display overschredenTermijnen (cases where wettelijke deadline has been exceeded)
@@ -208,7 +208,7 @@ After this change archives, implementation lands in the following waves:
 
 - All four register-patch chains (T1–T3 of Wave 1) should include seed data loaded via openregister-import (CSV or JSON fixtures) so testers can immediately explore the new zaaktypes.
 - Access-guard + audit + retention + anonymization chains (Wave 2) are interdependent (all must coordinate on the same auditLog structure), so they should be planned as a single "Wave 2 integration" PR that coordinates across all four chains.
-- The cross-app integration (openconnector, docudesk, mydash) can be phased: Wave 2.4 lands first (destruction workflow, since it's critical for data-protection compliance), then Wave 3 UX can follow in parallel without blocking the core functionality.
+- The cross-app integration (openconnector, docudesk, launchpad) can be phased: Wave 2.4 lands first (destruction workflow, since it's critical for data-protection compliance), then Wave 3 UX can follow in parallel without blocking the core functionality.
 - Consider pilot rollout with a single gemeente before full deployment, given the complexity of AVG/access control. Piloting with a "test" wijkteam early in Wave 2 allows access-guard and audit-logging to be validated before production rollout.
 
 

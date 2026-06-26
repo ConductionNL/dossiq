@@ -61,7 +61,7 @@ Procest today handles VTH + bezwaar-beroep well. This change extends procest to 
          │   (retention, RBAC)   │
          │ - docudesk            │
          │   (beschikking docs)  │
-         │ - mydash              │
+         │ - launchpad              │
          │   (wijkteam dashboard)│
          └───────────────────────┘
 ```
@@ -252,7 +252,7 @@ Each seed object includes realistic dates, BSN pseudonyms, wijkteam assignments,
    - Audit-log instrumentation on all read-actions
    - Retention-calculation + vernietigingsvoorstel-generation batch job
 4. **Wave 3 (UI, optional):**
-   - Wijkteam dashboard in mydash (caseload, doorlooptijden per zaaktype)
+   - Wijkteam dashboard in launchpad (caseload, doorlooptijden per zaaktype)
    - Beschikking-generation templates in docudesk for Wmo/Jeugdwet/Participatiewet
    - openconnector sources for iWMO/iJW berichtenverkeer
 

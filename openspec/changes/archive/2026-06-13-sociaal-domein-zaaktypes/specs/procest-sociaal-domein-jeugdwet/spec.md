@@ -165,7 +165,7 @@ The implementation chain MUST load three realistic Jeugdwet seed cases (OpenRegi
 
 - **docudesk:** Gezinsplan template (family-friendly printable), beschikking template (formal decision letter)
 - **openconnector:** iJW berichtenverkeer with jeugdzorg providers; CJG coordination; GGD referrals
-- **mydash:** Jeugdteam dashboard (caseload, evaluation-due dates, extension-pending counts)
+- **launchpad:** Jeugdteam dashboard (caseload, evaluation-due dates, extension-pending counts)
 - **openregister:** Toestemming-driven RBAC for external read-access, retention scheduling, audit-trail immutability
 
 ## Design notes
