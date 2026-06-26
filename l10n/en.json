@@ -2581,7 +2581,8 @@
         "Beheer bezwaren, beroepen, beslissingen en BAC-adviezen vanuit één overzicht.": "Beheer bezwaren, beroepen, beslissingen en BAC-adviezen vanuit één overzicht.",
         "Bezwaar & Beroep": "Bezwaar & Beroep",
         "Besluitvorming unavailable": "Besluitvorming unavailable",
-        "The decidesk app provides decision-making for this case. Install or enable decidesk to manage proposals, advice and decisions here.": "The decidesk app provides decision-making for this case. Install or enable decidesk to manage proposals, advice and decisions here."
+        "The decidesk app provides decision-making for this case. Install or enable decidesk to manage proposals, advice and decisions here.": "The decidesk app provides decision-making for this case. Install or enable decidesk to manage proposals, advice and decisions here.",
+        "Filter cases by status: {status}": "Filter cases by status: {status}"
     },
     "plurals": ""
 }
