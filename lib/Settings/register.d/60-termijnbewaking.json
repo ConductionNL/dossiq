@@ -29,55 +29,66 @@
         "properties": {
           "zaaktype": {
             "type": "string",
+            "title": "Case Type",
             "description": "Zaaktype slug this definition binds to (e.g. omgevingsvergunning-regulier)",
             "facetable": true,
             "maxLength": 255
           },
           "wettelijkeGrondslag": {
             "type": "string",
+            "title": "Legal Basis",
             "description": "Legal basis citation (e.g. 'AWB 4:13', 'Wabo 3.9')",
             "maxLength": 255
           },
           "standaardDuurDagen": {
             "type": "integer",
+            "title": "Standard Duration Days",
             "description": "Standard duration in days",
             "minimum": 0
           },
           "standaardDuurWeken": {
             "type": "integer",
+            "title": "Standard Duration Weeks",
             "description": "Standard duration in weeks (alternative representation)",
             "minimum": 0
           },
           "verlengingsRuimte": {
             "type": "integer",
+            "title": "Extension Allowance Days",
             "description": "Maximum days a single AWB 4:14 verlenging may add",
             "minimum": 0
           },
           "aantalVerlengingen": {
             "type": "integer",
+            "title": "Maximum Extensions",
             "description": "Maximum number of verlengingen allowed",
             "minimum": 0,
             "default": 1
           },
           "pauzeeVerlengingsDuren": {
             "type": "array",
+            "title": "Pause Extension Durations",
             "description": "Allowed pause durations in days (e.g. AWB 4:5 hersteltermijn)",
             "items": { "type": "integer" }
           },
           "afwijkendDwangsomRegime": {
             "type": "object",
+            "title": "Custom Penalty Regime",
             "description": "Custom dwangsom regime overriding the AWB-default (€23/€35/€45 tiers, €1442 plafond)",
             "properties": {
               "dailyTariff": {
                 "type": "integer",
+                "title": "Daily Tariff",
                 "description": "Flat daily tariff in EUR cents (e.g. 1500 = €15)"
               },
               "plafond": {
                 "type": "integer",
+                "title": "Penalty Ceiling",
                 "description": "Maximum total in EUR cents (e.g. 50000 = €500)"
               },
               "grace": {
                 "type": "integer",
+                "title": "Grace Period Days",
                 "description": "Grace period in days before accrual starts (default 14)"
               }
             }
@@ -85,12 +96,14 @@
           "validFrom": {
             "type": "string",
             "format": "date",
+            "title": "Valid From",
             "description": "Definition takes effect on this date",
             "facetable": true
           },
           "validUntil": {
             "type": "string",
             "format": "date",
+            "title": "Valid Until",
             "description": "Definition stops applying on this date; null = current version"
           }
         }
@@ -114,26 +127,31 @@
         "properties": {
           "zaak": {
             "type": "string",
+            "title": "Case Reference",
             "description": "Reference to the procest case (case id)",
             "facetable": true
           },
           "termijnDefinitie": {
             "type": "string",
+            "title": "Deadline Definition Reference",
             "description": "Reference to the TermijnDefinitie this instance materialised from"
           },
           "startDatum": {
             "type": "string",
             "format": "date-time",
+            "title": "Start Date",
             "description": "When the deadline started running"
           },
           "einddatumBerekend": {
             "type": "string",
             "format": "date",
+            "title": "Calculated End Date",
             "description": "Original computed deadline (never mutated; used for audit)"
           },
           "einddatumActueel": {
             "type": "string",
             "format": "date",
+            "title": "Effective End Date",
             "description": "Effective deadline after pauses and extensions"
           },
           "status": {
@@ -147,25 +165,30 @@
               "ingetrokken"
             ],
             "default": "lopend",
+            "title": "Status",
             "description": "Current lifecycle status",
             "facetable": true
           },
           "aantalVerlengingen": {
             "type": "integer",
             "default": 0,
+            "title": "Maximum Extensions",
             "description": "Number of verlengingen consumed"
           },
           "pauzeDeadline": {
             "type": "string",
             "format": "date",
+            "title": "Pause Deadline",
             "description": "Outstanding pause deadline for the daily scan to watch"
           },
           "relevantIngbrekes": {
             "type": "string",
+            "title": "Relevant Default Notice",
             "description": "Reference to the first valid Ingebrekestelling (one-dwangsom guard)"
           },
           "notificatiesVerstuurd": {
             "type": "array",
+            "title": "Notifications Sent",
             "description": "Threshold bucket numbers already notified (14/7/2/0) to prevent duplicate escalation",
             "items": { "type": "integer" }
           }
@@ -187,6 +210,7 @@
         "properties": {
           "termijnInstance": {
             "type": "string",
+            "title": "Deadline Instance Reference",
             "description": "TermijnInstance reference",
             "facetable": true
           },
@@ -205,32 +229,39 @@
               "bezwaar-ingediend",
               "bezwaar-opgelost"
             ],
+            "title": "Event Type",
             "description": "Event kind",
             "facetable": true
           },
           "tijdstip": {
             "type": "string",
             "format": "date-time",
+            "title": "Timestamp",
             "description": "When the event happened"
           },
           "actor": {
             "type": "string",
+            "title": "Actor Reference",
             "description": "User id or system process that triggered the event"
           },
           "grondslag": {
             "type": "string",
+            "title": "Legal Basis",
             "description": "Legal basis citation (e.g. 'AWB 4:13', 'AWB 4:14 lid 1')"
           },
           "motivering": {
             "type": "string",
+            "title": "Explanation",
             "description": "Human-readable reason"
           },
           "dagenImpact": {
             "type": "integer",
+            "title": "Days Impact",
             "description": "Net effect on einddatumActueel in days (e.g. +14 for pauze, +28 for verleng)"
           },
           "documentLink": {
             "type": "string",
+            "title": "Document Link",
             "description": "Reference to the supporting document (e.g. Verlengingsbrief)"
           }
         }
@@ -251,37 +282,44 @@
         "properties": {
           "termijnInstance": {
             "type": "string",
+            "title": "Deadline Instance Reference",
             "description": "TermijnInstance the notice relates to",
             "facetable": true
           },
           "ontvangstDatum": {
             "type": "string",
             "format": "date",
+            "title": "Receipt Date",
             "description": "Date the notice arrived"
           },
           "kanaal": {
             "type": "string",
             "enum": ["post", "email", "portaal", "balie", "telefoon"],
+            "title": "Channel",
             "description": "Receipt channel"
           },
           "gevalideerd": {
             "type": "boolean",
             "default": false,
+            "title": "Validated",
             "description": "Whether the notice was validated against the lapsed deadline"
           },
           "geldigheidStatus": {
             "type": "string",
             "enum": ["onbekend", "geldig", "premaat", "ongeldig"],
             "default": "onbekend",
+            "title": "Validity Status",
             "description": "Validity classification"
           },
           "beschikkingGeregistreerdDatum": {
             "type": "string",
             "format": "date",
+            "title": "Decision Registration Date",
             "description": "Date the beschikking was filed (closes the grace period if before)"
           },
           "documentLink": {
             "type": "string",
+            "title": "Document Link",
             "description": "Reference to the scanned notice PDF"
           }
         }
@@ -301,40 +339,48 @@
         "properties": {
           "ingebrekestelling": {
             "type": "string",
+            "title": "Default Notice Reference",
             "description": "Ingebrekestelling that started the calculation",
             "facetable": true
           },
           "termijnInstance": {
             "type": "string",
+            "title": "Deadline Instance Reference",
             "description": "Convenience back-reference to the termijn"
           },
           "startDatum": {
             "type": "string",
             "format": "date",
+            "title": "Start Date",
             "description": "First accrual day (= ontvangstDatum + 14d grace, unless regime overrides)"
           },
           "huidigeDag": {
             "type": "integer",
             "default": 0,
+            "title": "Current Day",
             "description": "Days accrued so far"
           },
           "dagtarief": {
             "type": "integer",
             "default": 0,
+            "title": "Daily Tariff",
             "description": "Today's tariff in EUR cents"
           },
           "cumulatievBedrag": {
             "type": "integer",
             "default": 0,
+            "title": "Cumulative Amount",
             "description": "Total accrued so far in EUR cents"
           },
           "plafondBerekend": {
             "type": "integer",
+            "title": "Calculated Ceiling",
             "description": "Plafond ceiling in EUR cents (e.g. 144200 = €1442)"
           },
           "plafondBereikt": {
             "type": "boolean",
             "default": false,
+            "title": "Ceiling Reached",
             "description": "True when the plafond has been hit; no further accrual"
           },
           "status": {
@@ -346,16 +392,20 @@
               "bezwaar-bevroren"
             ],
             "default": "lopend",
+            "title": "Status",
+            "description": "Current calculation lifecycle status",
             "facetable": true
           },
           "definitievBedrag": {
             "type": "integer",
+            "title": "Final Amount",
             "description": "Locked final amount in EUR cents once stopped"
           },
           "regime": {
             "type": "string",
             "enum": ["awb-default", "afwijkend"],
             "default": "awb-default",
+            "title": "Tariff Regime",
             "description": "Active tariff regime"
           }
         }
@@ -376,29 +426,36 @@
         "properties": {
           "dwangsomBerekening": {
             "type": "string",
+            "title": "Penalty Calculation Reference",
             "description": "Berekening reference",
             "facetable": true
           },
           "bedrag": {
             "type": "integer",
+            "title": "Amount",
             "description": "Payable amount in EUR cents"
           },
           "rekeninghouderNaam": {
             "type": "string",
+            "title": "Account Holder Name",
+            "description": "Full name of the bank account holder receiving the payment",
             "maxLength": 255
           },
           "iban": {
             "type": "string",
+            "title": "IBAN",
             "description": "IBAN of the burger",
             "maxLength": 34
           },
           "referentie": {
             "type": "string",
+            "title": "Payment Reference",
             "description": "Unique payment reference",
             "maxLength": 255
           },
           "wettelijkeGrondslag": {
             "type": "string",
+            "title": "Legal Basis",
             "description": "Legal basis (defaults to 'AWB 4:17')",
             "default": "AWB 4:17",
             "maxLength": 255
@@ -406,6 +463,7 @@
           "betaaldatumUiterlijk": {
             "type": "string",
             "format": "date",
+            "title": "Payment Deadline",
             "description": "Deadline by which payment must occur (= ontvangstDatum + 28d)"
           },
           "status": {
@@ -418,15 +476,20 @@
               "on-hold-bezwaar"
             ],
             "default": "voorbereid",
+            "title": "Status",
+            "description": "Current payment processing status",
             "facetable": true
           },
           "betalingsreferentie": {
             "type": "string",
+            "title": "Bank Confirmation Reference",
             "description": "ERP/bank confirmation reference"
           },
           "werkelijkeBetaaldatum": {
             "type": "string",
-            "format": "date"
+            "format": "date",
+            "title": "Actual Payment Date",
+            "description": "Date on which the payment was actually made"
           }
         }
       }

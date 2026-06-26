@@ -5,46 +5,54 @@
         "properties": {
           "vergunningaanvraagRef": {
             "type": "string",
+            "title": "Permit Application Reference",
             "description": "Reference to the DSO vergunningaanvraag object in OpenRegister",
             "visible": false
           },
           "procedureType": {
             "type": "string",
+            "title": "Procedure Type",
             "enum": ["reguliere", "uitgebreide"],
             "description": "DSO procedure type: reguliere (8 wk) or uitgebreide (26 wk)",
             "visible": false
           },
           "deadlineDatum": {
             "type": "string",
+            "title": "Deadline Date",
             "format": "date",
             "description": "Computed DSO statutory deadline (working days from indieningsdatum)",
             "visible": false
           },
           "bevoegdGezag": {
             "type": "string",
+            "title": "Competent Authority",
             "description": "OIN or organization name of the bevoegd gezag",
             "visible": false
           },
           "samenwerkverzoeken": {
             "type": "array",
+            "title": "Collaboration Requests",
             "items": { "type": "string" },
             "description": "UUIDs of linked samenwerkverzoek objects",
             "visible": false
           },
           "dsoStatus": {
             "type": "string",
+            "title": "DSO Status",
             "enum": ["ingediend", "in_behandeling", "verleend", "geweigerd", "ingetrokken"],
             "description": "DSO-LV status value mirrored from the vergunningaanvraag",
             "visible": false
           },
           "besluitdatum": {
             "type": "string",
+            "title": "Decision Date",
             "format": "date",
             "description": "Date the decision was made (set when dsoStatus = verleend/geweigerd)",
             "visible": false
           },
           "dsoToelichting": {
             "type": "string",
+            "title": "DSO Explanation",
             "description": "Decision motivation or rejection reasoning for DSO transparency",
             "visible": false
           }
@@ -66,42 +74,51 @@
         "properties": {
           "initiatorBevoegdGezag": {
             "type": "string",
+            "title": "Initiating Competent Authority",
             "description": "OIN or organization name of the initiating bevoegd gezag"
           },
           "aangezochtBevoegdGezag": {
             "type": "string",
+            "title": "Requested Competent Authority",
             "description": "OIN or organization name of the receiving bevoegd gezag"
           },
           "vergunningaanvraagRef": {
             "type": "string",
+            "title": "Permit Application Reference",
             "description": "Reference to the linked vergunningaanvraag object"
           },
           "rationale": {
             "type": "string",
+            "title": "Rationale",
             "description": "Reason for requesting collaboration"
           },
           "status": {
             "type": "string",
+            "title": "Status",
             "enum": ["aangevraagd", "geaccepteerd", "geweigerd", "afgerond"],
             "description": "Current status of the samenwerkverzoek",
             "facetable": true
           },
           "advies": {
             "type": "string",
+            "title": "Advice",
             "description": "Advice given by the aangezochte bevoegd gezag"
           },
           "aangevraagdOp": {
             "type": "string",
+            "title": "Requested On",
             "format": "date-time",
             "description": "Timestamp when the samenwerkverzoek was initiated"
           },
           "gereageerdOp": {
             "type": "string",
+            "title": "Responded On",
             "format": "date-time",
             "description": "Timestamp when the aangezochte bevoegd gezag responded"
           },
           "zaakId": {
             "type": "string",
+            "title": "Case ID",
             "format": "uuid",
             "description": "UUID of the linked Procest zaak"
           }
