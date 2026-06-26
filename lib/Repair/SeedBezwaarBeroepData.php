@@ -61,7 +61,7 @@ class SeedBezwaarBeroepData implements IRepairStep
      */
     public function getName(): string
     {
-        return 'Seed Bezwaar and Beroep case types for Procest';
+        return 'Seed Bezwaar, Beroep and Subsidie case types for Procest';
     }//end getName()
 
     /**

@@ -2577,7 +2577,9 @@
         "StUF envelope": "StUF envelope",
         "StUF-ZKN Audit Log": "StUF-ZKN Audit Log",
         "StUF-ZKN Endpoints": "StUF-ZKN Endpoints",
-        "This case has not been shared with a partner yet.": "This case has not been shared with a partner yet."
+        "This case has not been shared with a partner yet.": "This case has not been shared with a partner yet.",
+        "Beheer bezwaren, beroepen, beslissingen en BAC-adviezen vanuit één overzicht.": "Beheer bezwaren, beroepen, beslissingen en BAC-adviezen vanuit één overzicht.",
+        "Bezwaar & Beroep": "Bezwaar & Beroep"
     },
     "plurals": ""
 }

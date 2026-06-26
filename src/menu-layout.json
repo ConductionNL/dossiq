@@ -17,8 +17,6 @@
 		"Voorstellen": "BesluitvormingGroup",
 		"Advice": "BesluitvormingGroup",
 		"BesluitvormingAgenda": "BesluitvormingGroup",
-		"Subsidies": "SubsidiesGroup",
-		"Subsidieregelingen": "SubsidiesGroup",
 		"ArchiefDashboardMenu": "CasesGroup",
 		"LeverancierDashboard": "PortaalGroup",
 		"MijnZaken": "PortaalGroup",
@@ -29,11 +27,14 @@
 		"Bezwaren",
 		"Beroepen",
 		"BezwaarDecisions",
-		"BezwaarAdviceRequests"
+		"BezwaarAdviceRequests",
+		"Subsidies"
 	],
 	"settingsSection": [
 		"CaseTypesMenu",
 		"LegesVerordeningen",
+		"LegesberekeningenMenu",
+		"Subsidieregelingen",
 		"PartnersMenu",
 		"TenantsMenu",
 		"ParafeerroutesMenu",

@@ -32,7 +32,7 @@
 		},
 		{
 			"id": "WorkGroup",
-			"label": "Werk",
+			"label": "Werkvoorraad",
 			"icon": "icon-toggle",
 			"order": 20
 		},
@@ -51,7 +51,7 @@
 		},
 		{
 			"id": "Werkvoorraad",
-			"label": "Werkvoorraad",
+			"label": "Alle zaken in behandeling",
 			"icon": "icon-group",
 			"route": "Werkvoorraad",
 			"order": 30
@@ -183,7 +183,7 @@
 			"label": "Legesberekeningen",
 			"icon": "icon-category-monitoring",
 			"route": "Legesberekeningen",
-			"order": 50
+			"order": 76
 		},
 		{
 			"id": "PartnersMenu",
