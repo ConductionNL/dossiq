@@ -219,9 +219,17 @@ class DecisionConcludedListener implements IEventListener
     /**
      * Project the decidesk event getters into the materialiser's outcome shape.
      *
+     * The $event parameter is typed as the base Event class because the concrete
+     * OCA\Decidesk\Event\DecisionConcludedEvent is an optional runtime dependency.
+     * All calls on $event here are guarded at the call-site (callers check
+     * method_exists) or use duck-typing that is safe at runtime. Psalm cannot
+     * infer the concrete type, so we suppress UndefinedMethod for this method.
+     *
      * @param Event $event The decidesk DecisionConcludedEvent.
      *
      * @return array<string,mixed> Normalised projection: status, outcome, decidedAt, signer, method, signers, signingReference.
+     *
+     * @psalm-suppress UndefinedMethod
      */
     private function projectOutcome(Event $event): array
     {

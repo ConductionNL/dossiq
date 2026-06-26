@@ -60,22 +60,95 @@ if (function_exists('easter_date') === false) {
     }//end easter_date()
 }//end if
 
-// Register OCP and NCU namespaces from the nextcloud/ocp stub package so that
-// PHPUnit can mock OCP interfaces without a full Nextcloud installation.
-$loaders = spl_autoload_functions();
-foreach ($loaders as $loader) {
-    if (is_array($loader) && $loader[0] instanceof \Composer\Autoload\ClassLoader) {
-        $loader[0]->addPsr4('OCP\\', __DIR__.'/../vendor/nextcloud/ocp/OCP/');
-        $loader[0]->addPsr4('NCU\\', __DIR__.'/../vendor/nextcloud/ocp/NCU/');
-        break;
-    }
+// Pre-load ALL OCP\ / NCU\ classes from the real Nextcloud lib/public tree
+// BEFORE lib/base.php runs. This ensures every OCP interface/class is already
+// in PHP's class cache before any installed-app vendor autoloader (e.g.
+// openregister, which loads its old nextcloud/ocp v31 stub from inside
+// Application::register()) can supply a stale version.
+//
+// Background: NC 34 uses #[\Override] in OC\Settings\Manager, OC\URLGenerator,
+// OC\Activity\Manager, OC\Notification\Manager, etc. These reference interface
+// methods added in NC 33 (getAdminDelegatedSettings, bulkPublish,
+// linkToRemote, …). Some Conduction apps ship nextcloud/ocp v31 stubs (missing
+// those methods) and load their own vendor autoloader with $loader->register(true)
+// during Application::register(), placing the old classmap at the FRONT of the
+// SPL queue. PHP 8.4 validates #[\Override] at class-compile time and throws a
+// fatal error when the interface resolved is the stale stub.
+//
+// The files are loaded in multiple passes (up to 10) so that inter-interface
+// dependencies are resolved automatically: if pass N fails to load a file
+// because its dependency is not yet loaded, pass N+1 retries after the
+// dependency has been loaded by an earlier successful entry. The try/catch
+// swallows only genuine non-fixable errors; once a class is cached the pass
+// exits early.
+// NC ships Psr\Http\Client\ClientInterface (and other PSR packages) via its
+// 3rdparty/ directory, registered through 3rdparty/autoload.php. Some OCP
+// interfaces extend PSR interfaces (e.g. OCP\Http\Client\IClient extends
+// Psr\Http\Client\ClientInterface). Without 3rdparty registered first, those
+// OCP interfaces cannot be included in the multi-pass pre-load below, which
+// leaves them uncached and lets openregister's stale classmap loader supply an
+// older stub version that omits recently-added methods.
+if (file_exists(__DIR__.'/../../../3rdparty/autoload.php') === true) {
+    require_once __DIR__.'/../../../3rdparty/autoload.php';
 }
 
-// Load a real Nextcloud server first when one is present (CI). This must happen
-// BEFORE the stub files below — base.php declares the real `OC`, the Doctrine
-// DBAL classes, etc., and the stubs self-skip via class_exists()/interface_exists()
-// guards when those already exist. Loading the stubs first would declare a stub
-// `OC` and then crash with "Cannot declare class OC" the moment base.php runs.
+$ncLibPublicDir = realpath(__DIR__.'/../../../lib/public');
+if ($ncLibPublicDir !== false && is_dir($ncLibPublicDir) === true) {
+    $ncClassmapFile = __DIR__.'/../../../lib/composer/composer/autoload_classmap.php';
+    if (file_exists($ncClassmapFile) === true) {
+        /** @var array<string,string> $ncFullClassmap */
+        $ncFullClassmap = require $ncClassmapFile;
+
+        // Filter to OCP\ and NCU\ entries only.
+        $ocpClassmap = array_filter(
+            $ncFullClassmap,
+            static function (string $class): bool {
+                return strncmp($class, 'OCP\\', 4) === 0 || strncmp($class, 'NCU\\', 4) === 0;
+            },
+            ARRAY_FILTER_USE_KEY
+        );
+
+        // Multi-pass load: retry on dependency errors until stable.
+        $pending = $ocpClassmap;
+        for ($pass = 0; $pass < 10 && count($pending) > 0; $pass++) {
+            $stillPending = [];
+            foreach ($pending as $class => $file) {
+                if (class_exists($class, false) === true
+                    || interface_exists($class, false) === true
+                    || trait_exists($class, false) === true
+                    || (function_exists('enum_exists') === true && enum_exists($class, false) === true)
+                ) {
+                    // Already cached by an earlier pass or autoloader.
+                    continue;
+                }
+
+                if (file_exists($file) === false) {
+                    continue;
+                }
+
+                // Use plain `include` (not `include_once`) so that if the
+                // first pass fails mid-file (because a dependency was not yet
+                // loaded), a subsequent pass can retry the same file. PHP's
+                // `include_once` marks the file as "included" even after a
+                // partial-failure, preventing any later retry.
+                try {
+                    @include $file;
+                } catch (\Throwable $e) {
+                    // Dependency not yet loaded — defer to next pass.
+                    $stillPending[$class] = $file;
+                }
+            }//end foreach
+
+            $pending = $stillPending;
+        }//end for
+
+        unset($ocpClassmap, $ncFullClassmap, $pending, $stillPending);
+    }//end if
+}//end if
+
+// Load a real Nextcloud server when one is present (CI/dev container). This
+// must happen BEFORE the stub OCP PSR-4 registration below so that NC's
+// classmap autoloader takes priority for any remaining OCP classes.
 if (defined('OC_CONSOLE') === false) {
     if (file_exists(__DIR__.'/../../../lib/base.php') === true) {
         include_once __DIR__.'/../../../lib/base.php';
@@ -83,6 +156,23 @@ if (defined('OC_CONSOLE') === false) {
 
     if (file_exists(__DIR__.'/../../../tests/autoload.php') === true) {
         include_once __DIR__.'/../../../tests/autoload.php';
+    }
+}
+
+// Register OCP and NCU namespaces from the nextcloud/ocp stub package so that
+// PHPUnit can mock OCP interfaces without a full Nextcloud installation.
+// When a real Nextcloud is present (base.php was loaded above), the NC classmap
+// loader already owns the OCP\ namespace, so we skip the stub registration to
+// avoid overriding real OCP classes with an older stub version.
+$ncBaseLoaded = file_exists(__DIR__.'/../../../lib/base.php');
+if ($ncBaseLoaded === false) {
+    $loaders = spl_autoload_functions();
+    foreach ($loaders as $loader) {
+        if (is_array($loader) && $loader[0] instanceof \Composer\Autoload\ClassLoader) {
+            $loader[0]->addPsr4('OCP\\', __DIR__.'/../vendor/nextcloud/ocp/OCP/');
+            $loader[0]->addPsr4('NCU\\', __DIR__.'/../vendor/nextcloud/ocp/NCU/');
+            break;
+        }
     }
 }
 

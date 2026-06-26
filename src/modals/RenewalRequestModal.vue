@@ -138,15 +138,26 @@ export default {
 
 <style scoped>
 .lz-renewal-form { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
 .lz-renewal-intro { margin: 0 0 8px 0; color: var(--color-text-maxcontrast, #555); font-size: 14px; }
+
 .lz-form-group { display: flex; flex-direction: column; gap: 4px; }
+
 .lz-form-group label { font-weight: 600; font-size: 14px; }
+
 .lz-form-group label.required::after { content: ' *'; color: var(--color-error, #c00); }
+
 .lz-input { padding: 8px 10px; border: 1px solid var(--color-border-dark, #aaa); border-radius: 4px; font-family: inherit; }
+
 .lz-textarea { resize: vertical; min-height: 80px; }
+
 .lz-error { margin: 4px 0 0 0; color: var(--color-error, #c00); font-size: 12px; }
+
 .lz-form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
 .lz-button { padding: 8px 16px; border: 1px solid var(--color-border-dark, #aaa); border-radius: 4px; background: var(--color-main-background, #fff); cursor: pointer; }
+
 .lz-button--primary { background: var(--color-primary-element, #0082c9); color: #fff; border-color: var(--color-primary-element, #0082c9); }
+
 .lz-button--primary:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>

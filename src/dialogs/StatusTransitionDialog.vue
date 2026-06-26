@@ -108,10 +108,12 @@ export default {
 	flex-direction: column;
 	gap: 12px;
 }
+
 .dso-transition-form__actions {
 	display: flex;
 	gap: 8px;
 }
+
 .form-error {
 	color: var(--color-error);
 }

@@ -176,6 +176,8 @@ class InboundEmailJob extends TimedJob
      * returns an empty batch — never throws.
      *
      * @return array<int, array<string, mixed>>
+     *
+     * @psalm-suppress UnusedFunctionCall
      */
     private function fetchUnreadBatch(): array
     {
