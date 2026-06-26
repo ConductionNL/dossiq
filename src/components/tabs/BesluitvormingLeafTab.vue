@@ -94,6 +94,7 @@ export default {
 		 * leaf bundle is not loaded on the page.
 		 *
 		 * @return {object|undefined} The decidesk leaf tab Vue component.
+		 * @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 		 */
 		leafComponent() {
 			const reg = window.OCA?.OpenRegister?.integrations
@@ -109,6 +110,7 @@ export default {
 		 * single `integrationContext` object over discrete props.
 		 *
 		 * @return {{register: string, schema: string, objectId: string}}
+		 * @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 		 */
 		integrationContext() {
 			return {
@@ -118,10 +120,22 @@ export default {
 			}
 		},
 
+		/**
+		 * Empty-state title shown when the decidesk leaf is not loaded.
+		 *
+		 * @return {string} Translated unavailable-state heading.
+		 * @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
+		 */
 		unavailableTitle() {
 			return t('procest', 'Besluitvorming unavailable')
 		},
 
+		/**
+		 * Empty-state help text pointing the user at decidesk.
+		 *
+		 * @return {string} Translated unavailable-state description.
+		 * @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
+		 */
 		unavailableDescription() {
 			return t('procest', 'The decidesk app provides decision-making for this case. Install or enable decidesk to manage proposals, advice and decisions here.')
 		},

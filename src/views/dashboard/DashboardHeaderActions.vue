@@ -56,6 +56,8 @@ export default {
 		 * schema-driven CnFormDialog on arrival. This keeps a single, generic
 		 * create path — identifier, deadline and status are filled
 		 * declaratively by OpenRegister, so there is no bespoke create form.
+		 *
+		 * @spec openspec/changes/case-dashboard-view/tasks.md
 		 */
 		newCase() {
 			if (this.$router) {
