@@ -246,19 +246,35 @@ class DecisionConcludedListener implements IEventListener
 
         // The decision method is recorded as "signature" when the outcome was
         // signed, otherwise the decisionType carries the method provenance.
+        // The $event is duck-typed (OCA\Decidesk\Event\DecisionConcludedEvent) —
+        // Psalm cannot infer the concrete type here because decidesk is optional.
+        /** @psalm-suppress UndefinedMethod */
         $method = (string) $event->getDecisionType();
+        /** @psalm-suppress UndefinedMethod */
         if ($event->isSigned() === true) {
             $method = 'signature';
         }
 
+        // Extract duck-typed event fields into local variables so Psalm suppression
+        // can target individual statements (suppression inside array literals is
+        // not supported by Psalm).
+        /** @psalm-suppress UndefinedMethod */
+        $outcomeStatus = (string) $event->getStatus();
+        /** @psalm-suppress UndefinedMethod */
+        $outcomeOutcome = (string) $event->getOutcome();
+        /** @psalm-suppress UndefinedMethod */
+        $outcomeDecidedAt = (string) ($event->getDecidedAt() ?? '');
+        /** @psalm-suppress UndefinedMethod */
+        $outcomeSigningRef = (string) ($event->getSigningReference() ?? '');
+
         return [
-            'status'           => (string) $event->getStatus(),
-            'outcome'          => (string) $event->getOutcome(),
-            'decidedAt'        => (string) ($event->getDecidedAt() ?? ''),
+            'status'           => $outcomeStatus,
+            'outcome'          => $outcomeOutcome,
+            'decidedAt'        => $outcomeDecidedAt,
             'signer'           => $signer,
             'method'           => $method,
             'signers'          => $signers,
-            'signingReference' => (string) ($event->getSigningReference() ?? ''),
+            'signingReference' => $outcomeSigningRef,
         ];
     }//end projectOutcome()
 }//end class

@@ -35,7 +35,8 @@ use OCP\AppFramework\Http\Response;
 /**
  * Range-aware download response.
  *
- * @template-extends Response<int, array<string, mixed>>
+ * @template-extends Response<Http::STATUS_OK|Http::STATUS_PARTIAL_CONTENT|Http::STATUS_NOT_FOUND|Http::STATUS_REQUEST_RANGE_NOT_SATISFIABLE, array<string, mixed>>
+ * @psalm-suppress InvalidTemplateParam
  */
 class RangeStreamResponse extends Response
 {

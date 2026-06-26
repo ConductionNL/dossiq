@@ -142,7 +142,7 @@ class ApprovalStepNotificationListener implements IEventListener
         $onderwerp  = (string) ($voorstel['onderwerp'] ?? '');
 
         $role = '';
-        if (method_exists($nextStep, 'getRole') === true) {
+        if (is_callable([$nextStep, 'getRole']) === true) {
             $role = (string) ($nextStep->getRole() ?? '');
         }
 
@@ -184,7 +184,7 @@ class ApprovalStepNotificationListener implements IEventListener
         $comment = '';
         if (method_exists($event, 'getStep') === true) {
             $step = $event->getStep();
-            if (is_object($step) === true && method_exists($step, 'getComment') === true) {
+            if (is_object($step) === true && is_callable([$step, 'getComment']) === true) {
                 $comment = $this->extractCommentText(comment: (string) ($step->getComment() ?? ''));
             }
         }

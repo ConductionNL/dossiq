@@ -177,7 +177,7 @@ class TenantMigrationServiceTest extends TestCase
         $this->assertSame('Gemeente Baarn', $org->getName());
         $this->assertSame('active', $org->getStatus());
         $this->assertSame(['tenant_gemeente-baarn'], $org->getGroups());
-        $this->assertTrue($org->getActive());
+        $this->assertTrue($org->isActive());
         $this->assertSame((100 * 1024 * 1024), $org->getStorageQuota());
 
         $this->assertSame('tenant-uuid-1', $summary['mappings'][0]['tenant']);

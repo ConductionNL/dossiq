@@ -77,7 +77,7 @@ class BesluitvormingPublishHandler implements ActionHandlerInterface
                 return ActionResult::failure(error: 'no_case_id');
             }
 
-            $result = $this->publicationService->dispatch($caseId);
+            $result = $this->publicationService->publish($caseId, ['channel' => 'website']);
             if (($result['ok'] ?? false) === true) {
                 return ActionResult::success(data: $result);
             }

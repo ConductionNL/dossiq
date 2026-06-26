@@ -127,7 +127,7 @@ class ArchivalBatchService
             try {
                 $outcome = $this->processCaseInBatch(caseId: (string) $caseId, batchId: $batchId, eDepotId: $eDepotId);
             } catch (\Throwable $e) {
-                $counts['failed']++;
+                $counts['failed'] = (int) ($counts['failed'] ?? 0) + 1;
                 $this->triggerService->logEvent(
                     null,
                     (string) $caseId,
@@ -137,7 +137,7 @@ class ArchivalBatchService
                 continue;
             }
 
-            $counts[$outcome]++;
+            $counts[$outcome] = (int) ($counts[$outcome] ?? 0) + 1;
         }//end foreach
 
         if ($counts['failed'] === 0) {

@@ -259,6 +259,7 @@ class InboundEmailJob extends TimedJob
                 ];
             }//end foreach
         } finally {
+            /** @psalm-suppress UnusedFunctionCall */
             @imap_close($connection);
         }//end try
 
