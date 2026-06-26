@@ -57,10 +57,12 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 import DeelzaakList from './views/cases/DeelzaakList.vue'
 import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 
-// --- Mobiel-inspectie offline PWA views (mobiel-inspectie-offline). ---
-// @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
-import InspectieList from './views/inspectie/InspectieList.vue'
-import InspectieDetail from './views/inspectie/InspectieDetail.vue'
+// Mobiel-inspectie offline views retired — "Veldinspecties" now surfaces the
+// generic `field-inspection` OpenRegister integration leaf (a nc-vue builtin),
+// registered with procest's offline schema mapping in src/main.js. The custom
+// InspectieList/InspectieDetail views + their offline glue (offlineDb.js,
+// syncReplayService.js) are deleted; the leaf owns the planning list, checklist
+// completion, mutation queue and reconnect-replay.
 
 // --- Case-email sidebar tab (leaf-first per ADR-022). ---
 // @spec openspec/changes/case-email-integration/tasks.md#T12
@@ -164,9 +166,8 @@ export default {
 	DeelzaakList, // sub-case list for a parent case
 	DeelzaakDetail, // sub-case detail with parent breadcrumb
 
-	// --- Mobiel-inspectie offline PWA (daily planning + offline checklists). ---
-	InspectieList, // offline daily planning + sync indicator
-	InspectieDetail, // offline checklist completion (atomic local store + queue)
+	// --- Mobiel-inspectie retired — see import-section comment; "Veldinspecties"
+	//     is now a dashboard page surfacing the `field-inspection` leaf. ---
 
 	// --- Case-email sidebar tab (display via leaf, compose via NC Mail draft). ---
 	CaseEmailTab,

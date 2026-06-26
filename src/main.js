@@ -10,6 +10,8 @@ import {
 	buildManifest,
 	CnPageRenderer,
 	defaultPageTypes,
+	fieldInspectionIntegration,
+	registerIntegration,
 	registerIcons,
 	registerTranslations,
 } from '@conduction/nextcloud-vue'
@@ -60,6 +62,40 @@ function tryLoadTranslations() {
 		// no-op
 	}
 }
+
+// Surface the generic `field-inspection` OpenRegister integration leaf with
+// procest's own offline schema mapping. The leaf (a nc-vue builtin, registered
+// live by OpenRegister's `integration-global` bundle) owns the offline planning
+// list, checklist completion, mutation queue and reconnect-replay; procest only
+// supplies its `offlineConfig` so the generic core points at procest's schemas.
+//
+// Bootstrap-order safety: procest's bundle may load before OpenRegister's, so
+// install a minimal `_queue` stub that buffers the registration and replays it
+// once OR's registry attaches. Registering procest's mapping FIRST means the
+// AD-13 first-wins collision policy keeps procest's `offlineConfig` even when
+// OR later registers the leaf with its canonical defaults. The mapping mirrors
+// `DailySyncService` exactly (fieldInspection / inspectionChecklist /
+// checklistResult, filtered by inspectorRef + scheduledAt).
+//
+// @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
+registerIntegration({
+	...fieldInspectionIntegration,
+	offlineConfig: {
+		// Schema holding today's planned inspections.
+		plannedSchema: 'fieldInspection',
+		// Schema holding the checklist templates referenced by planned items.
+		referenceSchema: 'inspectionChecklist',
+		// Property on a planned item that references its checklist template.
+		templateRefField: 'checklistTemplateRef',
+		// Schema the completed checklist result is written back to.
+		resultSchema: 'checklistResult',
+		// Planning filter: assignee uid property + the scheduled-date field.
+		assigneeField: 'inspectorRef',
+		dateField: 'scheduledAt',
+		// Property on a planned item used as its display title.
+		titleField: 'caseRef',
+	},
+})
 
 // Apply ADR-037 manifest fragments before routes/app consume the manifest.
 const fragmentCtx = require.context('./manifest.d/', false, /\.json$/)

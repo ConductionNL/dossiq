@@ -3,16 +3,33 @@
 		{
 			"id": "Inspecties",
 			"route": "/inspecties",
-			"type": "custom",
+			"type": "dashboard",
 			"title": "Veldinspecties",
-			"component": "InspectieList"
-		},
-		{
-			"id": "InspectieDetail",
-			"route": "/inspecties/:id",
-			"type": "custom",
-			"title": "Inspectie",
-			"component": "InspectieDetail"
+			"config": {
+				"surface": "app-dashboard",
+				"widgets": [
+					{
+						"id": "field-inspection-leaf",
+						"type": "integration",
+						"integrationId": "field-inspection",
+						"title": "Veldinspecties",
+						"props": {
+							"register": "procest"
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "1",
+						"widgetId": "field-inspection-leaf",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 8,
+						"showTitle": false
+					}
+				]
+			}
 		}
 	],
 	"menu": [
