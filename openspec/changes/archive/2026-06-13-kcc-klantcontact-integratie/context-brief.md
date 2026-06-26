@@ -121,7 +121,7 @@ AND voorspelt het op basis van trend de werklast voor komende week (capaciteitsp
 - **OpenConnector**: integratie met CTI-systemen, email-servers (Microsoft Graph, IMAP), chat-platforms (Teams, WhatsApp Business)
 - **Procest**: zaak-creatie vanuit contactmoment, statusupdates terug naar KCC
 - **OpenCatalogi**: KvK/BRP-bevraging voor caller-identification
-- **MyDash**: KCC-volume-rapportage als dashboard-widgets
+- **LaunchPad**: KCC-volume-rapportage als dashboard-widgets
 - **NLDesign**: agent-werkplek UI
 - **Docudesk**: brief-/email-templates voor outbound communicatie
 

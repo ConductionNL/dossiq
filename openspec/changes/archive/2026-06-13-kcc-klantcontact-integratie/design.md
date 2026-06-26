@@ -140,7 +140,7 @@ channelVolumeMetric: [
 - **OpenConnector** — CTI bridge (TAPI, WebRTC fallback), email polling (IMAP, Microsoft Graph), chat (Teams, WhatsApp Business).
 - **OpenCatalogi** — BRP/KvK lookup on phone number / email for caller ID matching.
 - **Procest** — case creation from routed ContactMoment, bidirectional status sync.
-- **MyDash** — dashboard widgets for KCC volume/SLA metrics.
+- **LaunchPad** — dashboard widgets for KCC volume/SLA metrics.
 - **Docudesk** — callback confirmations, outbound contact templates.
 - **Nextcloud Calendar** — callback scheduling (calendar invitations to agents).
 

@@ -324,7 +324,7 @@ Het portaal MOET voldoen aan WCAG 2.2 AA en gebruikmaken van het NL Design Syste
 - **opencatalogi** — catalogus van beschikbare subsidieregelingen, dienstencatalogus per zaaktype.
 - **docudesk** — ontvangstbevestigingen, bevestigingsbrieven, intake-formulieren voor klachten/bezwaren.
 - **nldesign-app** — NL Design System componenten en huisstijl van de gemeente.
-- **mydash** — dashboard voor portaalgebruik (aantal logins, ingediende verzoeken, doorlooptijd berichten) voor de gemeentelijke dienstverleningsorganisatie.
+- **launchpad** — dashboard voor portaalgebruik (aantal logins, ingediende verzoeken, doorlooptijd berichten) voor de gemeentelijke dienstverleningsorganisatie.
 
 ## Target users
 
@@ -346,7 +346,7 @@ Het portaal MOET voldoen aan WCAG 2.2 AA en gebruikmaken van het NL Design Syste
 - **Logius (DigiD/eHerkenning/MijnOverheid leverancier)** — stelt koppelvlakken beschikbaar via openconnector.
 - **CISO / informatiebeveiligingsfunctionaris** — bewaakt sessie-management, encryptie, audit-trail en datalek-detectie.
 - **Communicatieafdeling gemeente** — beheert tekst en tone-of-voice van portaalcomponenten (notificaties, intake-formulieren, ontvangstbevestigingen).
-- **Dienstverleningsmanager / hoofd burgerzaken** — gebruikt mydash-dashboards om dienstverlening te sturen op portaalgebruik en doorlooptijden.
+- **Dienstverleningsmanager / hoofd burgerzaken** — gebruikt launchpad-dashboards om dienstverlening te sturen op portaalgebruik en doorlooptijden.
 - **Onafhankelijke beoordelaar toegankelijkheid** — voert WCAG 2.2 AA audits uit en publiceert toegankelijkheidsverklaringen op toegankelijkheidsregister.nl.
 - **Logius-toezicht (Dienst Toetsing Aansluitvoorwaarden)** — controleert of de DigiD-aansluiting voldoet aan alle technische en organisatorische eisen.
 - **Belastingdienst / Toeslagen** — bij subsidieregelingen die raken aan inkomenstoetsing (cross-domein, via openconnector).

@@ -9,7 +9,8 @@
 		:status-data="statusData"
 		:loading="loading"
 		:error="error"
-		@retry="load" />
+		@retry="load"
+		@bar-click="onBarClick" />
 </template>
 
 <script>
@@ -48,6 +49,22 @@ export default {
 			} finally {
 				this.loading = false
 			}
+		},
+		/**
+		 * Navigate (same tab) to the cases index pre-filtered by the clicked
+		 * status. A status bar can span several statusType ids (same-named
+		 * statuses across case types are merged), so the deep-link uses an
+		 * array `status` query → `status[]=a&status[]=b` IN match. Falls back
+		 * to an unfiltered /cases when no ids resolved.
+		 *
+		 * @param {{ name: string, count: number, statusIds: string[] }} item The clicked status row.
+		 * @return {void}
+		 */
+		onBarClick(item) {
+			if (!this.$router || !item) return
+			const ids = Array.isArray(item.statusIds) ? item.statusIds : []
+			const query = ids.length ? { status: ids } : {}
+			this.$router.push({ name: 'Cases', query }).catch(() => {})
 		},
 	},
 }

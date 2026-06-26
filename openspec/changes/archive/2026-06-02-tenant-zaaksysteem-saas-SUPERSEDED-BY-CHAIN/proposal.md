@@ -71,7 +71,7 @@ Target market: 150+ Dutch municipalities with budgets under €50k/year for case
 - Identity provider administration (eHerkenning/Azure AD federation setup is tenant responsibility, we integrate endpoints)
 - Custom per-tenant applications or extensions (covered by future app-marketplace feature)
 - Multi-language UI translation (NL only in Phase 1)
-- Advanced analytics/reporting (covered by future MyDash integration)
+- Advanced analytics/reporting (covered by future LaunchPad integration)
 
 ## Dependencies
 

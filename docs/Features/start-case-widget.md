@@ -2,7 +2,7 @@
 
 ## Summary
 
-Dashboard widget for starting new cases directly from the Nextcloud dashboard or MyDash, without navigating into the Procest app first.
+Dashboard widget for starting new cases directly from the Nextcloud dashboard or LaunchPad, without navigating into the Procest app first.
 
 ## Overview
 
@@ -17,7 +17,7 @@ In government case management (zaakgericht werken), fast intake is critical. Cit
 - **Empty state**: When no case types are configured, shows a helpful message directing admins to Procest settings
 - **Loading state**: Shows loading indicator while fetching case types
 - **i18n support**: All widget text available in Dutch and English
-- **MyDash compatible**: Widget appears automatically when MyDash discovers registered Nextcloud widgets
+- **LaunchPad compatible**: Widget appears automatically when LaunchPad discovers registered Nextcloud widgets
 
 ## Technical Details
 

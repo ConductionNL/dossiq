@@ -75,8 +75,8 @@ code chains (one per spec) opened after this change archives.
   cross-app contract spec.
   - files: `specs/procest-procurement-spend-analytics-integration/spec.md`
   - acceptance: 5 REQ-PSA-* requirements, CloudEvent schemas for every
-    domain event emitted, mydash GraphQL query shape declared, ADR-024
-    §10 (no OR dep on mydash) re-cited.
+    domain event emitted, launchpad GraphQL query shape declared, ADR-024
+    §10 (no OR dep on launchpad) re-cited.
 
 ## Reviewer verification (this change — pre-merge)
 
@@ -133,7 +133,7 @@ code chains (one per spec) opened after this change archives.
     EVA-007, PCC-007, PPP-006 each declare `src/manifest.json` navigation
     entries with generic `@conduction/nextcloud-vue` renderers (ADR-024
     Tier-4). PSA-005 is the inverse manifest requirement (procest MUST NOT
-    ship a spend-analytics entry; mydash owns the surface) — the correct
+    ship a spend-analytics entry; launchpad owns the surface) — the correct
     ADR-024 §10 manifest posture for the cross-app contract spec.
 
 - [x] **T15** — Reviewer confirms every spec includes at least one

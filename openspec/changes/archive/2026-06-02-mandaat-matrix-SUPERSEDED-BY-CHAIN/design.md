@@ -200,7 +200,7 @@ Case Decision Action
 - **Procest ↔ OpenRegister ABAC Policy Engine** — Mandate conditions (plafond, subdelegatie) evaluated by policy engine; Procest provides fact set
 - **Procest ↔ Decidesk** — MandateringsBesluit sourced from decidesk; import via REST + document attachment
 - **Procest ↔ OpenConnector** — HR sync (role assignments) via webhook on AFAS/ADP changes
-- **Procest ↔ MyDash** — Mandate analytics exposed via REST for dashboards
+- **Procest ↔ LaunchPad** — Mandate analytics exposed via REST for dashboards
 - **Case Decision Point** — Every zaak decision action checks authorization before proceeding
 
 ## Standards Alignment

@@ -148,7 +148,7 @@ If a breach occurs it MUST be documented as an `AvgIncident` and, where required
 - **openregister:** RBAC, immutable auditTrail, retention scheduling, `pii-detection-masking`
 - **openconnector:** consumes toestemming + AvgClassificatie to decide whether to anonymize outbound data
 - **FG panel:** queries audit logs, generates SAR reports, assesses incidents
-- **mydash:** wijkteam dashboard filters cases by wijkteam membership (data-driven access)
+- **launchpad:** wijkteam dashboard filters cases by wijkteam membership (data-driven access)
 - **procest notifications:** destruction-deadline reminders, toestemming-revocation alerts, breach alerts
 
 ## Regulatory references

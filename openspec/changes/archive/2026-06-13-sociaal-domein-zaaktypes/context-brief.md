@@ -13,7 +13,7 @@ Het doel is dat een gemeente met deze spec haar volledige sociaal-domein-uitvoer
 
 Naast de drie hoofdwetten worden raakvlakken meegenomen die in de dagelijkse uitvoering onlosmakelijk verbonden zijn met sociaal-domein-zaken: schuldhulpverlening (Wgs), inburgering (Wi2021), leerplicht/RMC, en doelgroepenvervoer. Deze zijn niet als eigen zaaktype-hoofdcategorieën opgenomen maar als specialisaties van bestaande WMO/Participatiewet/Jeugdwet-zaaktypes, om consistentie en uitlegbaarheid te behouden. Voor regiogemeenten (centrumgemeente-rol bij beschermd wonen, maatschappelijke opvang) is ondersteuning voor regio-gedeelde dossiers expliciet opgenomen, met heldere afspraken over verantwoordelijkheid voor classificatie, bewaartermijnen en datalek-meldplicht.
 
-Een belangrijke ontwerpkeuze in deze spec is dat het sociaal domein zoveel mogelijk hetzelfde technische framework gebruikt als de andere zaaktypes in procest (statusengine, taken, documenten, audit), maar dat aanvullende AVG- en toegangscontroles afdwingbaar worden gemaakt door middel van een verplicht classificatieblok en hardgecodeerde guards in de queries. Daardoor kunnen bestaande procest-functies (notificaties, rapportages, mydash) zonder fork worden hergebruikt, terwijl niet-bevoegde medewerkers nooit per ongeluk inhoudelijke data te zien krijgen.
+Een belangrijke ontwerpkeuze in deze spec is dat het sociaal domein zoveel mogelijk hetzelfde technische framework gebruikt als de andere zaaktypes in procest (statusengine, taken, documenten, audit), maar dat aanvullende AVG- en toegangscontroles afdwingbaar worden gemaakt door middel van een verplicht classificatieblok en hardgecodeerde guards in de queries. Daardoor kunnen bestaande procest-functies (notificaties, rapportages, launchpad) zonder fork worden hergebruikt, terwijl niet-bevoegde medewerkers nooit per ongeluk inhoudelijke data te zien krijgen.
 
 ## Data Model
 
@@ -368,7 +368,7 @@ Iedere lees-actie op een sociaal-domein-zaak met bijzondere persoonsgegevens MOE
 - **openconnector** — iWMO/iJW-berichtenverkeer met zorgaanbieders; CJG-koppeling; GGD-systeemkoppeling; BSN-validatie via BRP.
 - **docudesk** — beschikking-templates voor WMO/Jeugdwet/Participatiewet (zie ook brief 2 beschikking-generatie); standaardbrieven voor vraagverhelderende gesprekken en evaluaties.
 - **opencatalogi** — publicatie van zaaktype-catalogus voor het sociaal domein conform GEMMA.
-- **mydash** — dashboard voor wijkteam-managers met doorlooptijden, caseload-verdeling en wettelijke termijnoverschrijdingen.
+- **launchpad** — dashboard voor wijkteam-managers met doorlooptijden, caseload-verdeling en wettelijke termijnoverschrijdingen.
 
 ## Target users
 
@@ -378,7 +378,7 @@ Iedere lees-actie op een sociaal-domein-zaak met bijzondere persoonsgegevens MOE
 - **Klantmanager Werk & Inkomen** — verwerkt bijstandsaanvragen, voert toetsen uit, begeleidt re-integratie.
 
 **Secundair:**
-- **Wijkteam-manager** — bewaakt caseload en wettelijke termijnen via mydash-dashboard.
+- **Wijkteam-manager** — bewaakt caseload en wettelijke termijnen via launchpad-dashboard.
 - **Functionaris Gegevensbescherming (FG)** — controleert AVG-naleving, verzorgt rechten-verzoeken van burgers.
 - **Beleidsmedewerker sociaal domein** — analyseert geanonimiseerde data voor beleidsvorming.
 - **Archivaris** — beoordeelt vernietigingsvoorstellen en bewaartermijn-uitzonderingen.

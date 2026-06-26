@@ -143,7 +143,7 @@ The implementation chain MUST load three realistic WMO seed cases (OpenRegister-
 
 - **docudesk:** Beschikking template for WMO (letter format per gemeente, auto-filled from Indicatiestelling data)
 - **openconnector:** iWMO berichtenverkeer with zorgaanbieders (notify provider when beschikking issued, receive status updates)
-- **mydash:** Wijkteam dashboard widget showing WMO zaak counts, doorlooptijden, overschredenTermijnen per caseworker
+- **launchpad:** Wijkteam dashboard widget showing WMO zaak counts, doorlooptijden, overschredenTermijnen per caseworker
 - **openregister:** Retention scheduling, RBAC guards (wijkteam override), audit-trail immutability
 
 ## Design notes
