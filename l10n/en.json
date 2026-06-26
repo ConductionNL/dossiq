@@ -2579,7 +2579,9 @@
         "StUF-ZKN Endpoints": "StUF-ZKN Endpoints",
         "This case has not been shared with a partner yet.": "This case has not been shared with a partner yet.",
         "Beheer bezwaren, beroepen, beslissingen en BAC-adviezen vanuit één overzicht.": "Beheer bezwaren, beroepen, beslissingen en BAC-adviezen vanuit één overzicht.",
-        "Bezwaar & Beroep": "Bezwaar & Beroep"
+        "Bezwaar & Beroep": "Bezwaar & Beroep",
+        "Besluitvorming unavailable": "Besluitvorming unavailable",
+        "The decidesk app provides decision-making for this case. Install or enable decidesk to manage proposals, advice and decisions here.": "The decidesk app provides decision-making for this case. Install or enable decidesk to manage proposals, advice and decisions here."
     },
     "plurals": ""
 }
