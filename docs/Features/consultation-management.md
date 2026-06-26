@@ -10,7 +10,7 @@ A consultation is a mini-case linked to a parent case, with its own lifecycle, a
 
 | Schema | Purpose |
 |---|---|
-| `consultation` | The consultation request entity (ADV-{year}-{seq}) |
+| `consultation` | The consultation request entity (`ADV-{year}-{seq}`) |
 | `adviceResponse` | Structured advice response with formal conclusion |
 | `advisoryBody` | Registry of departments and external advisory bodies |
 

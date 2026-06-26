@@ -27,16 +27,19 @@
         "properties": {
           "zaakId": {
             "type": "string",
+            "title": "Case ID",
             "description": "Back-reference to the procest case this beschikking belongs to",
             "facetable": true
           },
           "zaaktype": {
             "type": "string",
+            "title": "Case Type",
             "description": "Case type slug (e.g. wmo-melding, omgevingsvergunning)",
             "facetable": true
           },
           "beschikkingType": {
             "type": "string",
+            "title": "Decision Type",
             "enum": [
               "toekenning",
               "afwijzing",
@@ -48,20 +51,24 @@
           },
           "kenmerk": {
             "type": "string",
+            "title": "Reference Mark",
             "maxLength": 255,
             "description": "User-visible decision number (e.g. Z/2026/04832/B01)"
           },
           "templateId": {
             "type": "string",
+            "title": "Template ID",
             "description": "BeschikkingTemplate identifier (Docudesk-bound)"
           },
           "ontwerpVersie": {
             "type": "integer",
+            "title": "Draft Version",
             "default": 1,
             "description": "Auto-increment as the draft is re-rendered or field-edited"
           },
           "huidigeStatus": {
             "type": "string",
+            "title": "Current Status",
             "enum": [
               "ontwerp",
               "akkoord-mandaat",
@@ -76,109 +83,122 @@
           },
           "bekendmakingDatum": {
             "type": "string",
+            "title": "Announcement Date",
             "format": "date",
             "description": "Date the beschikking becomes legally effective (Awb 3:41)"
           },
           "bezwaarTermijnEindDatum": {
             "type": "string",
+            "title": "Objection Period End Date",
             "format": "date",
             "description": "End of the 6-week bezwaartermijn (Awb 6:7), computed on verzending"
           },
           "herinneringDatum": {
             "type": "string",
+            "title": "Reminder Date",
             "format": "date",
             "description": "Reminder date, one week before bezwaarTermijnEindDatum"
           },
           "legesbedrag": {
             "type": "number",
+            "title": "Levy Amount",
             "default": 0,
             "description": "Leges amount associated with the decision"
           },
           "motivering": {
             "type": "string",
+            "title": "Motivation",
             "description": "Reasoning underpinning the decision",
             "x-translatable": false
           },
           "rechtsmiddelenClausule": {
             "type": "string",
+            "title": "Legal Remedies Clause",
             "description": "Standard rechtsmiddelen (appeal-rights) clause text"
           },
           "samengesteldeInhoud": {
             "type": "object",
+            "title": "Composed Content",
             "description": "Rendered PDF/A-3 composition metadata",
             "properties": {
-              "format": { "type": "string", "default": "pdf-a3" },
-              "bestandId": { "type": "string", "description": "Nextcloud file id of the rendered PDF" },
-              "checksumSha256": { "type": "string" },
-              "paginas": { "type": "integer" }
+              "format": { "type": "string", "title": "Format", "description": "File format of the rendered document, e.g. pdf-a3", "default": "pdf-a3" },
+              "bestandId": { "type": "string", "title": "File ID", "description": "Nextcloud file id of the rendered PDF" },
+              "checksumSha256": { "type": "string", "title": "SHA-256 Checksum", "description": "SHA-256 hash of the rendered file for integrity verification" },
+              "paginas": { "type": "integer", "title": "Page Count", "description": "Number of pages in the rendered document" }
             }
           },
           "geadresseerde": {
             "type": "object",
+            "title": "Addressee",
             "description": "Addressee (a citizen or a business). BSN/OIN are special-category identifiers and are masked when logged.",
             "properties": {
-              "type": { "type": "string", "enum": ["burger", "bedrijf"] },
-              "bsn": { "type": "string", "description": "Burger identifier (special category, masked in logs)" },
-              "oin": { "type": "string", "description": "Business identifier" },
-              "naam": { "type": "string" },
-              "berichtenboxKanaal": { "type": "string", "enum": ["mijnoverheid", "eherkenning", "print-post"] },
-              "berichtenboxBevestigd": { "type": "boolean", "default": false }
+              "type": { "type": "string", "title": "Addressee Type", "description": "Whether the addressee is a citizen (burger) or a business (bedrijf)", "enum": ["burger", "bedrijf"] },
+              "bsn": { "type": "string", "title": "BSN", "description": "Burger identifier (special category, masked in logs)" },
+              "oin": { "type": "string", "title": "OIN", "description": "Business identifier" },
+              "naam": { "type": "string", "title": "Name", "description": "Display name of the addressee" },
+              "berichtenboxKanaal": { "type": "string", "title": "Message Box Channel", "description": "Delivery channel for berichtenbox dispatch", "enum": ["mijnoverheid", "eherkenning", "print-post"] },
+              "berichtenboxBevestigd": { "type": "boolean", "title": "Message Box Confirmed", "description": "Whether the addressee's berichtenbox address has been confirmed", "default": false }
             }
           },
           "beslissing": {
             "type": "object",
+            "title": "Decision",
             "description": "Decision content",
             "properties": {
-              "soort": { "type": "string" },
-              "onderwerp": { "type": "string" },
-              "omvang": { "type": "string" },
-              "ingangsdatum": { "type": "string", "format": "date" },
-              "einddatum": { "type": "string", "format": "date" }
+              "soort": { "type": "string", "title": "Decision Sort", "description": "Type of the decision, e.g. toekenning or afwijzing" },
+              "onderwerp": { "type": "string", "title": "Decision Subject", "description": "Subject of the decision" },
+              "omvang": { "type": "string", "title": "Scope", "description": "Extent or scope of the decision, e.g. number of hours per week" },
+              "ingangsdatum": { "type": "string", "title": "Start Date", "description": "Date from which the decision takes effect", "format": "date" },
+              "einddatum": { "type": "string", "title": "End Date", "description": "Date on which the decision expires", "format": "date" }
             }
           },
           "mandaatGegeven": {
             "type": "object",
+            "title": "Mandate Granted",
             "description": "Point-in-time mandaat record captured at the akkoord step (ADR design D3)",
             "properties": {
-              "mandaatregelingId": { "type": "string" },
-              "mandaatNiveau": { "type": "string" },
-              "akkoordDoor": { "type": "string", "description": "Nextcloud UID of the approver" },
-              "akkoordDatum": { "type": "string", "format": "date-time" }
+              "mandaatregelingId": { "type": "string", "title": "Mandate Regulation ID", "description": "Reference to the mandaatRegeling in effect at the time of approval" },
+              "mandaatNiveau": { "type": "string", "title": "Mandate Level", "description": "Authorization level used (e.g. consulent, afdelingsmanager)" },
+              "akkoordDoor": { "type": "string", "title": "Approved By", "description": "Nextcloud UID of the approver" },
+              "akkoordDatum": { "type": "string", "title": "Approval Date", "description": "Timestamp at which the mandate approval was recorded", "format": "date-time" }
             }
           },
           "handtekening": {
             "type": "object",
+            "title": "Signature",
             "description": "eIDAS-qualified electronic signature metadata; durably retained for future validation",
             "properties": {
-              "tspProvider": { "type": "string" },
-              "tspProviderEidasId": { "type": "string" },
-              "ondertekenaar": { "type": "string" },
-              "ondertekeningTijdstip": { "type": "string", "format": "date-time" },
-              "soort": { "type": "string" },
-              "certificaatSerienummer": { "type": "string" },
-              "validatieRapportId": { "type": "string" }
+              "tspProvider": { "type": "string", "title": "TSP Provider", "description": "Name of the Trust Service Provider that issued the signature" },
+              "tspProviderEidasId": { "type": "string", "title": "TSP Provider eIDAS ID", "description": "eIDAS identifier of the TSP provider" },
+              "ondertekenaar": { "type": "string", "title": "Signatory", "description": "Nextcloud UID of the person who signed the document" },
+              "ondertekeningTijdstip": { "type": "string", "title": "Signing Timestamp", "description": "Date and time at which the document was signed", "format": "date-time" },
+              "soort": { "type": "string", "title": "Signature Type", "description": "Type of electronic signature, e.g. gekwalificeerde-elektronische-handtekening" },
+              "certificaatSerienummer": { "type": "string", "title": "Certificate Serial Number", "description": "Serial number of the signing certificate" },
+              "validatieRapportId": { "type": "string", "title": "Validation Report ID", "description": "Reference to the signature validation report" }
             }
           },
           "verzending": {
             "type": "object",
+            "title": "Dispatch",
             "description": "Berichtenbox delivery record",
             "properties": {
-              "kanaal": { "type": "string" },
-              "verzondenOp": { "type": "string", "format": "date-time" },
-              "verzondenDoor": { "type": "string" },
-              "berichtId": { "type": "string" },
-              "ontvangstBevestigingOp": { "type": "string", "format": "date-time" },
-              "leesBevestigingOp": { "type": "string", "format": "date-time" }
+              "kanaal": { "type": "string", "title": "Dispatch Channel", "description": "Channel used for dispatch, e.g. berichtenbox-mijnoverheid" },
+              "verzondenOp": { "type": "string", "title": "Sent On", "description": "Timestamp at which the beschikking was sent", "format": "date-time" },
+              "verzondenDoor": { "type": "string", "title": "Sent By", "description": "Actor who sent the beschikking (user id or 'systeem')" },
+              "berichtId": { "type": "string", "title": "Message ID", "description": "Berichtenbox message identifier" },
+              "ontvangstBevestigingOp": { "type": "string", "title": "Receipt Confirmation On", "description": "Timestamp at which receipt was confirmed", "format": "date-time" },
+              "leesBevestigingOp": { "type": "string", "title": "Read Confirmation On", "description": "Timestamp at which the message was read by the recipient", "format": "date-time" }
             }
           },
           "archief": {
             "type": "object",
+            "title": "Archive",
             "description": "Archival record (TMLO/MDTO) populated by the ArchivalJob",
             "properties": {
-              "gearchiveerdOp": { "type": "string", "format": "date-time" },
-              "archiefId": { "type": "string" },
-              "tmloMetadata": { "type": "object", "description": "TMLO-1.2 or MDTO metadata block" },
-              "vernietigingsdatum": { "type": "string", "format": "date" }
+              "gearchiveerdOp": { "type": "string", "title": "Archived On", "description": "Timestamp at which the beschikking was archived", "format": "date-time" },
+              "archiefId": { "type": "string", "title": "Archive ID", "description": "Identifier assigned by the archival system" },
+              "tmloMetadata": { "type": "object", "title": "TMLO Metadata", "description": "TMLO-1.2 or MDTO metadata block" },
+              "vernietigingsdatum": { "type": "string", "title": "Destruction Date", "description": "Date on which the archived record is scheduled for destruction", "format": "date" }
             }
           }
         }
@@ -198,24 +218,28 @@
         "properties": {
           "beschikkingId": {
             "type": "string",
+            "title": "Decision ID",
             "description": "The beschikking this transition belongs to",
             "facetable": true
           },
           "overgang": {
             "type": "object",
+            "title": "Transition",
             "description": "Transition details",
             "properties": {
-              "van": { "type": "string", "description": "Source status" },
-              "naar": { "type": "string", "description": "Target status" },
-              "tijdstip": { "type": "string", "format": "date-time" },
-              "actor": { "type": "string", "description": "Nextcloud UID or 'systeem'" },
-              "actorType": { "type": "string", "enum": ["medewerker", "systeem"] },
-              "trigger": { "type": "string", "enum": ["handmatig", "automatisch"] },
+              "van": { "type": "string", "title": "From Status", "description": "Source status" },
+              "naar": { "type": "string", "title": "To Status", "description": "Target status" },
+              "tijdstip": { "type": "string", "title": "Timestamp", "description": "Date and time of the state transition", "format": "date-time" },
+              "actor": { "type": "string", "title": "Actor", "description": "Nextcloud UID or 'systeem'" },
+              "actorType": { "type": "string", "title": "Actor Type", "description": "Whether the actor is a medewerker or the system", "enum": ["medewerker", "systeem"] },
+              "trigger": { "type": "string", "title": "Trigger", "description": "Whether the transition was initiated manually or automatically", "enum": ["handmatig", "automatisch"] },
               "bewijsMateriaal": {
                 "type": "object",
+                "title": "Evidence Material",
+                "description": "Supporting evidence for this transition, such as a mandate or signature report",
                 "properties": {
-                  "soort": { "type": "string" },
-                  "rapportId": { "type": "string" }
+                  "soort": { "type": "string", "title": "Evidence Type", "description": "Type of evidence, e.g. mandaat or tsp-rapport" },
+                  "rapportId": { "type": "string", "title": "Report ID", "description": "Reference to the evidence report" }
                 }
               }
             }
@@ -237,27 +261,31 @@
         "properties": {
           "beschikkingId": {
             "type": "string",
+            "title": "Decision ID",
             "description": "The beschikking this trigger belongs to",
             "facetable": true
           },
-          "bekendmakingDatum": { "type": "string", "format": "date" },
-          "bezwaarTermijnEindDatum": { "type": "string", "format": "date" },
-          "herinneringDatum": { "type": "string", "format": "date" },
+          "bekendmakingDatum": { "type": "string", "title": "Announcement Date", "description": "Date the beschikking was publicly announced", "format": "date" },
+          "bezwaarTermijnEindDatum": { "type": "string", "title": "Objection Period End Date", "description": "End date of the 6-week bezwaartermijn", "format": "date" },
+          "herinneringDatum": { "type": "string", "title": "Reminder Date", "description": "Reminder date, one week before the bezwaarTermijnEindDatum", "format": "date" },
           "bezwaarOntvangen": {
             "type": "boolean",
+            "title": "Objection Received",
             "default": false,
             "description": "Whether a bezwaarschrift has been received",
             "facetable": true
           },
-          "bezwaarZaakId": { "type": "string", "description": "Linked bezwaar case, if any" },
+          "bezwaarZaakId": { "type": "string", "title": "Objection Case ID", "description": "Linked bezwaar case, if any" },
           "archiefTriggerActief": {
             "type": "boolean",
+            "title": "Archive Trigger Active",
             "default": true,
             "description": "Whether the archival trigger is still active",
             "facetable": true
           },
           "archiefDatum": {
             "type": "string",
+            "title": "Archive Date",
             "format": "date",
             "description": "Date on which archival becomes due"
           }
@@ -276,21 +304,22 @@
           "mandaatGroepen"
         ],
         "properties": {
-          "naam": { "type": "string", "maxLength": 255 },
-          "verleendDoor": { "type": "string" },
-          "verleendDatum": { "type": "string", "format": "date" },
-          "intrekkingsDatum": { "type": "string", "format": "date" },
-          "ondermandaatToegestaan": { "type": "boolean", "default": false },
+          "naam": { "type": "string", "title": "Name", "description": "Human-readable name of the mandate regulation", "maxLength": 255 },
+          "verleendDoor": { "type": "string", "title": "Granted By", "description": "Body that granted the mandate, e.g. college-bw" },
+          "verleendDatum": { "type": "string", "title": "Grant Date", "description": "Date on which the mandate was granted", "format": "date" },
+          "intrekkingsDatum": { "type": "string", "title": "Revocation Date", "description": "Date on which the mandate was revoked, if applicable", "format": "date" },
+          "ondermandaatToegestaan": { "type": "boolean", "title": "Sub-mandate Permitted", "description": "Whether delegation to a lower level is permitted", "default": false },
           "mandaatGroepen": {
             "type": "array",
+            "title": "Mandate Groups",
             "description": "Authorization groups within this regeling",
             "items": {
               "type": "object",
               "properties": {
-                "niveau": { "type": "string", "description": "Approval level (e.g. consulent, afdelingsmanager, directeur)" },
-                "tot_bedrag": { "type": "number", "description": "Upper bedrag limit; null means unlimited" },
-                "zaaktypes": { "type": "array", "items": { "type": "string" } },
-                "beschikkingTypes": { "type": "array", "items": { "type": "string" } }
+                "niveau": { "type": "string", "title": "Level", "description": "Approval level (e.g. consulent, afdelingsmanager, directeur)" },
+                "tot_bedrag": { "type": "number", "title": "Up To Amount", "description": "Upper bedrag limit; null means unlimited" },
+                "zaaktypes": { "type": "array", "title": "Case Types", "description": "Case types for which this authorization level applies", "items": { "type": "string" } },
+                "beschikkingTypes": { "type": "array", "title": "Decision Types", "description": "Decision types for which this authorization level applies", "items": { "type": "string" } }
               }
             }
           }

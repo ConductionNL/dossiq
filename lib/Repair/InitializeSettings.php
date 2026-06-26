@@ -33,6 +33,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Repair step that initializes Procest configuration via ConfigurationService.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class InitializeSettings implements IRepairStep
 {
@@ -54,6 +56,8 @@ class InitializeSettings implements IRepairStep
      * Get the name of this repair step.
      *
      * @return string
+     *
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function getName(): string
     {
@@ -97,6 +101,17 @@ class InitializeSettings implements IRepairStep
             // no-op (or partially succeeds).
             $reconciled = $this->settingsService->reconcileSchemaConfig();
             $output->info('Procest schema config keys reconciled ('.$reconciled.' written)');
+
+            // Reconcile the declarative `x-openregister-*` annotation blocks
+            // (calculations / references / lifecycle) onto the live schema
+            // configuration. OpenRegister's import maps schema properties but
+            // does not reliably round-trip these schema-level annotation blocks
+            // on an already-imported instance, which would silently disable
+            // auto-deadline / auto-identifier / initial-status on create.
+            $declarativeReconciled = $this->settingsService->reconcileSchemaDeclarativeConfig();
+            $output->info(
+                'Procest declarative schema configuration reconciled ('.$declarativeReconciled.' written)'
+            );
 
             if ($result['success'] === true) {
                 $version = ($result['version'] ?? 'unknown');

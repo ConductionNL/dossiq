@@ -2,12 +2,14 @@
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <!--
 	Dashboard header buttons (New Case + Refresh), wired as the Dashboard
-	page's actionsComponent in the manifest. Reuses the existing
-	CaseCreateDialog; after creation the user lands on the new case.
+	page's actionsComponent in the manifest. "New Case" routes to the generic
+	Cases index page with a `?action=create` deep-link, which opens the
+	schema-driven CnFormDialog there — the single, generic create path for
+	cases (no bespoke create dialog).
 -->
 <template>
 	<div class="dashboard-header-actions">
-		<NcButton type="primary" @click="showCaseDialog = true">
+		<NcButton type="primary" @click="newCase">
 			<template #icon>
 				<Plus :size="20" />
 			</template>
@@ -20,11 +22,6 @@
 				<Refresh :size="20" :class="{ 'icon-spinning': refreshing }" />
 			</template>
 		</NcButton>
-
-		<CaseCreateDialog
-			v-if="showCaseDialog"
-			@created="onCaseCreated"
-			@close="showCaseDialog = false" />
 	</div>
 </template>
 
@@ -32,7 +29,6 @@
 import { NcButton } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
-import CaseCreateDialog from '../cases/CaseCreateDialog.vue'
 import {
 	refreshDashboardData,
 	getCases,
@@ -47,15 +43,28 @@ export default {
 		NcButton,
 		Plus,
 		Refresh,
-		CaseCreateDialog,
 	},
 	data() {
 		return {
-			showCaseDialog: false,
 			refreshing: false,
 		}
 	},
 	methods: {
+		/**
+		 * Open the generic case-create form. Routes to the Cases index page
+		 * with a `?action=create` deep-link; CnIndexPage opens its built-in
+		 * schema-driven CnFormDialog on arrival. This keeps a single, generic
+		 * create path — identifier, deadline and status are filled
+		 * declaratively by OpenRegister, so there is no bespoke create form.
+		 *
+		 * @spec openspec/changes/case-dashboard-view/tasks.md
+		 */
+		newCase() {
+			if (this.$router) {
+				this.$router.push({ name: 'Cases', query: { action: 'create' } })
+					.catch(() => {})
+			}
+		},
 		/**
 		 * Drop cached datasets and bump the refresh signal so every mounted
 		 * widget re-runs its load(). Await the shared fetchers so the
@@ -74,18 +83,6 @@ export default {
 				])
 			} finally {
 				this.refreshing = false
-			}
-		},
-		/**
-		 * Navigate to the freshly created case and refresh the widgets.
-		 *
-		 * @param {string|number} caseId Id of the created case.
-		 */
-		onCaseCreated(caseId) {
-			this.showCaseDialog = false
-			refreshDashboardData()
-			if (this.$router && caseId) {
-				this.$router.push({ path: `/cases/${caseId}` })
 			}
 		},
 	},

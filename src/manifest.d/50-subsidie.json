@@ -1,11 +1,15 @@
 {
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"change": "subsidies-as-casetype",
+		"adr": "ADR-044 unified-case — subsidy applications fold into the unified case model as the 'subsidie' caseType (seeded in lib/Settings/bezwaar_seed_data.json, uuid b3c1a000-0000-4000-a000-0000000005ab). The bespoke subsidieAanvraag index is replaced by a Cases index pre-filtered to that caseType. subsidieAanvraag remains a SUPPORTING schema linked to the case (case.$ref via subsidieAanvraag.case) carrying the subsidy-specific detail (regeling, requested/granted amount, begroting, beschikking); the case carries the common workflow/status. subsidieRegeling stays a config register surfaced under settings. The SubsidieDetail route + subsidieAanvraag schema stay registered for deep links to the linked detail data.",
+		"data-model-decision": "Option (b) — linked detail schema. subsidieAanvraag already declares a `case` property ($ref:case, onDelete:SET_NULL), so subsidy cases use the generic `case` workflow while subsidy-specific fields live on the linked subsidieAanvraag record. The `case` schema is NOT bloated with subsidy-only properties."
+	},
 	"menu": [
 		{
-			"id": "Subsidies",
-			"label": "Subsidies",
-			"icon": "icon-category-office",
-			"route": "Subsidies",
-			"order": 95
+			"id": "SubsidiesGroup",
+			"route": "Subsidies"
 		},
 		{
 			"id": "Subsidieregelingen",
@@ -23,19 +27,37 @@
 			"title": "Subsidies",
 			"config": {
 				"register": "procest",
-				"schema": "subsidieAanvraag",
+				"schema": "case",
+				"filter": {
+					"caseType": "b3c1a000-0000-4000-a000-0000000005ab"
+				},
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "CaseDetail",
+						"type": "handler"
+					}
+				],
 				"columns": [
-					"aanvraagnummer",
-					"subsidieregeling",
-					"aangevraagdBedrag",
-					"behandelaar",
-					"projectStartdatum",
-					"status"
+					"identifier",
+					"title",
+					{
+						"key": "status",
+						"label": "Status",
+						"formatter": "statusTypeName"
+					},
+					"assignee",
+					"deadline"
 				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
-				}
+				},
+				"documentationUrl": "https://procest.conduction.nl"
 			}
 		},
 		{
