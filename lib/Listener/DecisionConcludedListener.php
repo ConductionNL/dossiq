@@ -219,9 +219,17 @@ class DecisionConcludedListener implements IEventListener
     /**
      * Project the decidesk event getters into the materialiser's outcome shape.
      *
+     * The $event parameter is typed as the base Event class because the concrete
+     * OCA\Decidesk\Event\DecisionConcludedEvent is an optional runtime dependency.
+     * All calls on $event here are guarded at the call-site (callers check
+     * method_exists) or use duck-typing that is safe at runtime. Psalm cannot
+     * infer the concrete type, so we suppress UndefinedMethod for this method.
+     *
      * @param Event $event The decidesk DecisionConcludedEvent.
      *
      * @return array<string,mixed> Normalised projection: status, outcome, decidedAt, signer, method, signers, signingReference.
+     *
+     * @psalm-suppress UndefinedMethod
      */
     private function projectOutcome(Event $event): array
     {
@@ -246,35 +254,19 @@ class DecisionConcludedListener implements IEventListener
 
         // The decision method is recorded as "signature" when the outcome was
         // signed, otherwise the decisionType carries the method provenance.
-        // The $event is duck-typed (OCA\Decidesk\Event\DecisionConcludedEvent) —
-        // Psalm cannot infer the concrete type here because decidesk is optional.
-        /** @psalm-suppress UndefinedMethod */
         $method = (string) $event->getDecisionType();
-        /** @psalm-suppress UndefinedMethod */
         if ($event->isSigned() === true) {
             $method = 'signature';
         }
 
-        // Extract duck-typed event fields into local variables so Psalm suppression
-        // can target individual statements (suppression inside array literals is
-        // not supported by Psalm).
-        /** @psalm-suppress UndefinedMethod */
-        $outcomeStatus = (string) $event->getStatus();
-        /** @psalm-suppress UndefinedMethod */
-        $outcomeOutcome = (string) $event->getOutcome();
-        /** @psalm-suppress UndefinedMethod */
-        $outcomeDecidedAt = (string) ($event->getDecidedAt() ?? '');
-        /** @psalm-suppress UndefinedMethod */
-        $outcomeSigningRef = (string) ($event->getSigningReference() ?? '');
-
         return [
-            'status'           => $outcomeStatus,
-            'outcome'          => $outcomeOutcome,
-            'decidedAt'        => $outcomeDecidedAt,
+            'status'           => (string) $event->getStatus(),
+            'outcome'          => (string) $event->getOutcome(),
+            'decidedAt'        => (string) ($event->getDecidedAt() ?? ''),
             'signer'           => $signer,
             'method'           => $method,
             'signers'          => $signers,
-            'signingReference' => $outcomeSigningRef,
+            'signingReference' => (string) ($event->getSigningReference() ?? ''),
         ];
     }//end projectOutcome()
 }//end class

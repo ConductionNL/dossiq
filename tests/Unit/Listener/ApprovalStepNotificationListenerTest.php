@@ -16,6 +16,9 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
  * @version GIT: <git-id>
  *
  * @link https://procest.nl
@@ -25,10 +28,6 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Listener;
 
-use OCA\OpenRegister\Db\ApprovalChain;
-use OCA\OpenRegister\Db\ApprovalStep;
-use OCA\OpenRegister\Event\ApprovalStepApprovedEvent;
-use OCA\OpenRegister\Event\ApprovalStepRejectedEvent;
 use OCA\Procest\Listener\ApprovalStepNotificationListener;
 use OCA\Procest\Service\ParaferingNotificationService;
 use OCA\Procest\Service\SettingsService;
@@ -85,6 +84,48 @@ class ApprovalStepNotificationListenerTest extends TestCase
         $this->settings      = $this->createMock(SettingsService::class);
         $this->groupManager  = $this->createMock(IGroupManager::class);
         $this->logger        = $this->createMock(LoggerInterface::class);
+
+        // Ensure OR event stubs exist for the CI env (no OpenRegister present).
+        // The listener matches events by class name string, so we define stubs
+        // with the exact FQN that the listener's EVENT_APPROVED / EVENT_REJECTED
+        // constants reference. In the deployed env these classes are provided by
+        // OpenRegister itself and the isinstance/class_exists guards are no-ops.
+        $approvedFqn = 'OCA\OpenRegister\Event\ApprovalStepApprovedEvent';
+        if (class_exists($approvedFqn) === false) {
+            // phpcs:disable
+            eval(
+                'namespace OCA\OpenRegister\Event;'
+                . ' class ApprovalStepApprovedEvent extends \OCP\EventDispatcher\Event {'
+                . '   public ?object $next = null;'
+                . '   public string $objectUuid = "";'
+                . '   public function setNext(?object $n): void { $this->next = $n; }'
+                . '   public function getNextStep(): ?object { return $this->next; }'
+                . '   public function setObjectUuid(string $u): void { $this->objectUuid = $u; }'
+                . '   public function getObjectUuid(): string { return $this->objectUuid; }'
+                . ' }'
+            );
+            // phpcs:enable
+        }
+
+        $rejectedFqn = 'OCA\OpenRegister\Event\ApprovalStepRejectedEvent';
+        if (class_exists($rejectedFqn) === false) {
+            // phpcs:disable
+            eval(
+                'namespace OCA\OpenRegister\Event;'
+                . ' class ApprovalStepRejectedEvent extends \OCP\EventDispatcher\Event {'
+                . '   public string $objectUuid = "";'
+                . '   public string $userId = "";'
+                . '   public ?object $step = null;'
+                . '   public function setObjectUuid(string $u): void { $this->objectUuid = $u; }'
+                . '   public function getObjectUuid(): string { return $this->objectUuid; }'
+                . '   public function setUserId(string $u): void { $this->userId = $u; }'
+                . '   public function getUserId(): string { return $this->userId; }'
+                . '   public function setStep(?object $s): void { $this->step = $s; }'
+                . '   public function getStep(): ?object { return $this->step; }'
+                . ' }'
+            );
+            // phpcs:enable
+        }
     }//end setUp()
 
     /**
@@ -145,19 +186,20 @@ class ApprovalStepNotificationListenerTest extends TestCase
             ->method('notifyStepActivated')
             ->with('hoofd1', 'Omgevingsvergunning', 'voorstel-abc', 'afdelingshoofd');
 
-        $nextStep = new ApprovalStep();
-        $nextStep->setRole('afdelingshoofd');
+        $nextStep = new class {
+            /**
+             * @return string Next step role.
+             */
+            public function getRole(): string
+            {
+                return 'afdelingshoofd';
+            }
+        };
 
-        $currentStep = new ApprovalStep();
-        $currentStep->setObjectUuid('voorstel-abc');
-
-        $event = new ApprovalStepApprovedEvent(
-            new ApprovalChain(),
-            $currentStep,
-            'approver1',
-            'goedgekeurd',
-            $nextStep,
-        );
+        $fqn   = 'OCA\OpenRegister\Event\ApprovalStepApprovedEvent';
+        $event = new $fqn();
+        $event->setObjectUuid('voorstel-abc');
+        $event->setNext($nextStep);
 
         $listener = new ApprovalStepNotificationListener(
             $this->notifications,
@@ -210,20 +252,23 @@ class ApprovalStepNotificationListenerTest extends TestCase
                 'Financiele paragraaf ontbreekt'
             );
 
-        $step = new ApprovalStep();
-        $step->setObjectUuid('voorstel-xyz');
-        $step->setComment(
-            (string) json_encode(
-                ['text' => 'Financiele paragraaf ontbreekt', '_meta' => ['action' => 'returned']]
-            )
-        );
+        $step = new class {
+            /**
+             * @return string JSON metadata-in-comment payload.
+             */
+            public function getComment(): string
+            {
+                return json_encode(
+                    ['text' => 'Financiele paragraaf ontbreekt', '_meta' => ['action' => 'returned']]
+                );
+            }
+        };
 
-        $event = new ApprovalStepRejectedEvent(
-            new ApprovalChain(),
-            $step,
-            'beoordelaar',
-            'teruggestuurd',
-        );
+        $fqn   = 'OCA\OpenRegister\Event\ApprovalStepRejectedEvent';
+        $event = new $fqn();
+        $event->setObjectUuid('voorstel-xyz');
+        $event->setUserId('beoordelaar');
+        $event->setStep($step);
 
         $listener = new ApprovalStepNotificationListener(
             $this->notifications,

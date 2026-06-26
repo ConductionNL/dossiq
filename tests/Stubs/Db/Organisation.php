@@ -113,6 +113,11 @@ class Organisation
         return $this->active;
     }
 
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
     public function setActive(mixed $active): void
     {
         $this->active = (bool) $active;
