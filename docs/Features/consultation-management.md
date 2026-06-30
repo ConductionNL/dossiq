@@ -80,7 +80,7 @@ Webhook contract for the email fanout (called by Procest on consultation create 
 
 `ConsultationService::getBlockingConsultations(zaakId)` returns mandatory consultations not yet in `advies_uitgebracht` or `afgesloten`. The MilestoneController uses this to block case progression:
 
-> "Verplicht advies '{subject}' is nog niet ontvangen"
+> "Verplicht advies '`{subject}`' is nog niet ontvangen"
 
 ## Existing Features
 
