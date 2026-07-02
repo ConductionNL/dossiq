@@ -1243,36 +1243,49 @@
 				"register": "procest",
 				"schema": "task",
 				"_note": "ACTION-ITEM archetype — a work item belonging to a case (task.case), with assignee/dueDate/priority/status and an inline checklist[]. No comms linkedTypes, so no email/calendar. Overview data+metadata carries the who/when/status; a Checklist tab surfaces the checklist[] sub-items (the one array worth its own view); audit-trail records status transitions (activate/complete/terminate).",
-				"documentationUrl": "https://procest.conduction.nl",
-				"widgets": [
-					{
-						"id": "task-data",
-						"type": "data",
-						"title": "Taak",
-						"content": {
-							"columns": 2
-						}
-					}
-				],
-				"layout": [
-					{
-						"id": "1",
-						"widgetId": "task-data",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 6,
-						"showTitle": false
-					}
-				]
+				"documentationUrl": "https://procest.conduction.nl"
 			},
 			"widgets": [
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "metadata",
+					"slot": "sidebar",
+					"tabGroup": "overview",
+					"gridX": 0,
+					"gridY": 1,
+					"gridWidth": 1,
+					"gridHeight": 1
+				},
+				{
+					"widgetKey": "data",
+					"slot": "sidebar",
+					"tabGroup": "checklist",
+					"gridX": 0,
+					"gridY": 2,
+					"gridWidth": 1,
+					"gridHeight": 1,
+					"props": {
+						"config": {
+							"fields": [
+								"checklist"
+							]
+						}
+					}
+				},
 				{
 					"widgetKey": "audit-trail",
 					"slot": "sidebar",
 					"tabGroup": "audit",
 					"gridX": 0,
-					"gridY": 0,
+					"gridY": 3,
 					"gridWidth": 1,
 					"gridHeight": 1
 				}
