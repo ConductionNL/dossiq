@@ -18,14 +18,14 @@
 	"menu": [
 		{
 			"id": "MijnZaken",
-			"label": "Mijn gemeente",
+			"label": "My municipality",
 			"icon": "icon-category-organization",
 			"route": "MijnZaken",
 			"order": 90
 		},
 		{
 			"id": "MijnNotificaties",
-			"label": "Notificaties",
+			"label": "Notifications",
 			"icon": "icon-sound",
 			"route": "MijnNotificaties",
 			"order": 91

@@ -27,6 +27,7 @@
 
 <script>
 import { NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
+import { generateUrl } from '@nextcloud/router'
 import { useObjectStore } from '../../store/modules/object.js'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
 
@@ -106,7 +107,7 @@ export default {
 					startDate: today,
 				})
 				if (newCase?.id) {
-					window.location.href = `/index.php/apps/procest/#/cases/${newCase.id}`
+					window.location.href = generateUrl(`/apps/procest/cases/${newCase.id}`)
 				}
 			} catch (err) {
 				console.error('[StartCaseWidget] Failed to create case:', err)

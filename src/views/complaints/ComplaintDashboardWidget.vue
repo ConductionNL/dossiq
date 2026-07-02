@@ -54,7 +54,7 @@ export default {
 		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-07
 		 */
 		moreUrl() {
-			return OC.generateUrl('/apps/procest/#/complaints')
+			return OC.generateUrl('/apps/procest/complaints')
 		},
 	},
 
@@ -102,7 +102,7 @@ export default {
 		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-07
 		 */
 		itemUrl(id) {
-			return OC.generateUrl('/apps/procest/#/complaints/' + id)
+			return OC.generateUrl('/apps/procest/complaints/' + id)
 		},
 	},
 }
