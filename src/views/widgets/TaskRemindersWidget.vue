@@ -16,7 +16,7 @@
 
 <script>
 import { NcDashboardWidget, NcEmptyContent } from '@nextcloud/vue'
-import { imagePath } from '@nextcloud/router'
+import { generateUrl, imagePath } from '@nextcloud/router'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { getTaskDueReminders } from '../../utils/dashboardHelpers.js'
@@ -59,7 +59,7 @@ export default {
 				mainText: item.title,
 				subText: t('procest', '{days} days overdue', { days: item.daysOverdue }),
 				avatarUrl: imagePath('procest', 'app-dark.svg'),
-				targetUrl: `/index.php/apps/procest/#/tasks/${item.id}`,
+				targetUrl: generateUrl(`/apps/procest/tasks/${item.id}`),
 			}))
 			const dueSoonItems = this.reminders.dueSoon.map((item) => ({
 				id: item.id,
@@ -68,7 +68,7 @@ export default {
 					? t('procest', 'Due today')
 					: t('procest', '{days} days remaining', { days: item.daysRemaining }),
 				avatarUrl: imagePath('procest', 'app-dark.svg'),
-				targetUrl: `/index.php/apps/procest/#/tasks/${item.id}`,
+				targetUrl: generateUrl(`/apps/procest/tasks/${item.id}`),
 			}))
 			return [...overdueItems, ...dueSoonItems].slice(0, 5)
 		},
@@ -93,13 +93,14 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
 		 */
 		onShow(item) {
-			window.location.href = `/index.php/apps/procest/#/tasks/${item.id}`
+			window.location.href = generateUrl(`/apps/procest/tasks/${item.id}`)
 		},
 		/**
 		 * Intercept a plain row click so it navigates in the SAME tab.
 		 * NcDashboardWidget renders item.targetUrl as a target="_blank" link
 		 * (kept for accessibility / ctrl-click); this capture handler rewrites
-		 * a plain left-click into a same-path hash change (no reload, same tab).
+		 * a plain left-click into a same-tab navigation to the history-mode
+		 * task route so the in-app router resolves the detail page.
 		 *
 		 * @param {MouseEvent} e The captured click event.
 		 * @return {void}
@@ -107,7 +108,7 @@ export default {
 		onRowNav(e) {
 			const a = e.target.closest('a[href]')
 			const href = a && a.getAttribute('href')
-			if (href && href.includes('/apps/procest/#/')) {
+			if (href && href.includes('/apps/procest/')) {
 				e.preventDefault()
 				window.location.href = href
 			}

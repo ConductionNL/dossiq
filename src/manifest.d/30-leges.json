@@ -12,7 +12,7 @@
 	"menu": [
 		{
 			"id": "LegesVerordeningen",
-			"label": "Legesverordeningen",
+			"label": "Fee regulations",
 			"icon": "icon-category-monitoring",
 			"route": "LegesVerordeningen",
 			"order": 75

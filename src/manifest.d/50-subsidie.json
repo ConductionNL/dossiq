@@ -13,7 +13,7 @@
 		},
 		{
 			"id": "Subsidieregelingen",
-			"label": "Subsidieregelingen",
+			"label": "Subsidy schemes",
 			"icon": "icon-settings",
 			"route": "Subsidieregelingen",
 			"order": 96

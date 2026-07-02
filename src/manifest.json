@@ -45,121 +45,121 @@
 		},
 		{
 			"id": "MyWork",
-			"label": "Mijn werk",
+			"label": "My work",
 			"icon": "icon-checkmark",
 			"route": "MyWork",
 			"order": 20
 		},
 		{
 			"id": "WorkGroup",
-			"label": "Werkvoorraad",
+			"label": "Work queue",
 			"icon": "icon-toggle",
 			"order": 20
 		},
 		{
 			"id": "CasesGroup",
-			"label": "Zaken",
+			"label": "Cases",
 			"icon": "icon-folder",
 			"order": 30
 		},
 		{
 			"id": "Cases",
-			"label": "Alle zaken",
+			"label": "All cases",
 			"icon": "icon-folder",
 			"route": "Cases",
 			"order": 40
 		},
 		{
 			"id": "Werkvoorraad",
-			"label": "Alle zaken in behandeling",
+			"label": "All cases in progress",
 			"icon": "icon-group",
 			"route": "Werkvoorraad",
 			"order": 30
 		},
 		{
 			"id": "WorkflowBoard",
-			"label": "Werkstroombord",
+			"label": "Workflow board",
 			"icon": "icon-category-workflow",
 			"route": "WorkflowBoard",
 			"order": 35
 		},
 		{
 			"id": "Transfers",
-			"label": "Overdrachten",
+			"label": "Transfers",
 			"icon": "icon-shared",
 			"route": "Transfers",
 			"order": 80
 		},
 		{
 			"id": "BezwaarBeroepGroup",
-			"label": "Bezwaar & Beroep",
+			"label": "Objections & Appeals",
 			"icon": "icon-toggle-filelist",
 			"order": 45
 		},
 		{
 			"id": "Bezwaren",
-			"label": "Bezwaren",
+			"label": "Objections",
 			"icon": "icon-toggle-filelist",
 			"route": "Bezwaren",
 			"order": 45
 		},
 		{
 			"id": "Beroepen",
-			"label": "Beroepen",
+			"label": "Appeals",
 			"icon": "icon-toggle-filelist",
 			"route": "Beroepen",
 			"order": 46
 		},
 		{
 			"id": "BezwaarDecisions",
-			"label": "Beslissingen op bezwaar",
+			"label": "Objection decisions",
 			"icon": "icon-toggle",
 			"route": "BezwaarDecisions",
 			"order": 47
 		},
 		{
 			"id": "BezwaarAdviceRequests",
-			"label": "BAC-adviezen",
+			"label": "Committee advice",
 			"icon": "icon-comment",
 			"route": "BezwaarAdviceRequests",
 			"order": 48
 		},
 		{
 			"id": "AnalyticsGroup",
-			"label": "Rapportages",
+			"label": "Reports",
 			"icon": "icon-category-monitoring",
 			"order": 55
 		},
 		{
 			"id": "Analytics",
-			"label": "Doorlooptijd",
+			"label": "Processing time",
 			"icon": "icon-category-monitoring",
 			"route": "Doorlooptijd",
 			"order": 55
 		},
 		{
 			"id": "CaseMap",
-			"label": "Kaart",
+			"label": "Map",
 			"icon": "icon-address",
 			"route": "CaseMap",
 			"order": 60
 		},
 		{
 			"id": "BesluitvormingGroup",
-			"label": "Besluitvorming",
+			"label": "Decision-making",
 			"icon": "icon-comment",
 			"order": 70
 		},
 		{
 			"id": "Voorstellen",
-			"label": "Voorstellen",
+			"label": "Proposals",
 			"icon": "icon-comment",
 			"route": "Voorstellen",
 			"order": 70
 		},
 		{
 			"id": "Advice",
-			"label": "Advies",
+			"label": "Advice",
 			"icon": "icon-comment",
 			"route": "Advice",
 			"order": 75
@@ -172,19 +172,19 @@
 		},
 		{
 			"id": "PortaalGroup",
-			"label": "Portaal",
+			"label": "Portal",
 			"icon": "icon-user",
 			"order": 87
 		},
 		{
 			"id": "SettingsGroup",
-			"label": "Instellingen",
+			"label": "Settings",
 			"icon": "icon-settings",
 			"order": 200
 		},
 		{
 			"id": "Documentation",
-			"label": "Documentatie",
+			"label": "Documentation",
 			"icon": "icon-info",
 			"href": "https://procest.conduction.nl",
 			"section": "footer",
@@ -192,7 +192,7 @@
 		},
 		{
 			"id": "CaseTypesMenu",
-			"label": "Zaaktypen",
+			"label": "Case types",
 			"icon": "icon-category-customization",
 			"route": "Settings",
 			"section": "settings",
@@ -200,14 +200,14 @@
 		},
 		{
 			"id": "LegesberekeningenMenu",
-			"label": "Legesberekeningen",
+			"label": "Fee calculations",
 			"icon": "icon-category-monitoring",
 			"route": "Legesberekeningen",
 			"order": 76
 		},
 		{
 			"id": "PartnersMenu",
-			"label": "Partnerorganisaties",
+			"label": "Partner organisations",
 			"icon": "icon-group",
 			"route": "Partners",
 			"section": "settings",
@@ -215,7 +215,7 @@
 		},
 		{
 			"id": "TenantsMenu",
-			"label": "Organisaties",
+			"label": "Organisations",
 			"icon": "icon-group",
 			"route": "Tenants",
 			"section": "settings",
@@ -224,7 +224,7 @@
 		},
 		{
 			"id": "ParafeerroutesMenu",
-			"label": "Parafeerroutes",
+			"label": "Approval routes",
 			"icon": "icon-category-workflow",
 			"route": "Parafeerroutes",
 			"section": "settings",
@@ -232,7 +232,7 @@
 		},
 		{
 			"id": "WmsLayersMenu",
-			"label": "Kaartlagen",
+			"label": "Map layers",
 			"icon": "icon-category-files",
 			"route": "WmsLayers",
 			"section": "settings",
@@ -241,7 +241,7 @@
 		},
 		{
 			"id": "WorkflowDefinitionsMenu",
-			"label": "Werkstroomdefinities",
+			"label": "Workflow definitions",
 			"icon": "icon-category-workflow",
 			"route": "WorkflowDefinitions",
 			"section": "settings",
@@ -249,7 +249,7 @@
 		},
 		{
 			"id": "AutomaticActionsMenu",
-			"label": "Automatische acties",
+			"label": "Automatic actions",
 			"icon": "icon-category-workflow",
 			"route": "AutomaticActions",
 			"section": "settings",
@@ -257,7 +257,7 @@
 		},
 		{
 			"id": "StatusRecordsMenu",
-			"label": "Statusgeschiedenis",
+			"label": "Status history",
 			"icon": "icon-history",
 			"route": "StatusRecords",
 			"section": "settings",
@@ -266,7 +266,7 @@
 		},
 		{
 			"id": "LhsMatricesMenu",
-			"label": "Handhavingsstrategie",
+			"label": "Enforcement strategy",
 			"icon": "icon-category-customization",
 			"route": "LhsMatrices",
 			"section": "settings",
@@ -275,7 +275,7 @@
 		},
 		{
 			"id": "LhsRecommendationsMenu",
-			"label": "LHS-aanbevelingen",
+			"label": "LHS recommendations",
 			"icon": "icon-comment",
 			"route": "LhsRecommendations",
 			"section": "settings",
@@ -283,7 +283,7 @@
 		},
 		{
 			"id": "LocationsMenu",
-			"label": "Zaaklocaties",
+			"label": "Case locations",
 			"icon": "icon-address",
 			"route": "Locations",
 			"section": "settings",
@@ -292,21 +292,21 @@
 		},
 		{
 			"id": "BezwaarCommitteesMenu",
-			"label": "Bezwaaradviescommissies",
+			"label": "Objection advisory committees",
 			"icon": "icon-group",
 			"route": "BezwaarCommittees",
 			"order": 49
 		},
 		{
 			"id": "TermijnDashboardMenu",
-			"label": "Termijnbewaking",
+			"label": "Deadline monitoring",
 			"icon": "icon-history",
 			"route": "TermijnDashboard",
 			"order": 71
 		},
 		{
 			"id": "ArchiefDashboardMenu",
-			"label": "Archief",
+			"label": "Archive",
 			"icon": "icon-folder",
 			"route": "ArchiefDashboard",
 			"section": "settings",
@@ -314,7 +314,7 @@
 		},
 		{
 			"id": "TenantOnboardingMenu",
-			"label": "Organisatie-onboarding",
+			"label": "Organisation onboarding",
 			"icon": "icon-user",
 			"route": "TenantOnboardingDashboard",
 			"section": "settings",
@@ -322,7 +322,7 @@
 		},
 		{
 			"id": "SubstitutionMenu",
-			"label": "Vervanging",
+			"label": "Substitution",
 			"icon": "icon-user",
 			"route": "SubstitutionSettings",
 			"section": "settings",
@@ -330,7 +330,7 @@
 		},
 		{
 			"id": "SubstitutionAdminMenu",
-			"label": "Vervangingen & hertoewijzing",
+			"label": "Substitutions & reassignment",
 			"icon": "icon-group",
 			"route": "SubstitutionAdmin",
 			"section": "settings",
@@ -339,7 +339,7 @@
 		},
 		{
 			"id": "SettingsMenu",
-			"label": "Instellingen",
+			"label": "Settings",
 			"icon": "icon-settings",
 			"route": "Settings",
 			"section": "settings",
@@ -347,7 +347,7 @@
 		},
 		{
 			"id": "FeaturesRoadmapMenu",
-			"label": "Functies & roadmap",
+			"label": "Features & roadmap",
 			"icon": "icon-toggle",
 			"route": "FeaturesRoadmap",
 			"section": "footer",
@@ -362,6 +362,7 @@
 			"title": "Dashboard",
 			"actionsComponent": "DashboardHeaderActions",
 			"config": {
+				"description": "Cases, deadlines and your workload at a glance",
 				"dateRange": {
 					"enabled": true,
 					"showHeaderPicker": false,
@@ -369,36 +370,36 @@
 					"default": { "preset": "month" },
 					"presets": [
 						{ "id": "week", "label": "Week", "days": 7 },
-						{ "id": "month", "label": "Maand", "days": 30 },
-						{ "id": "quarter", "label": "Kwartaal", "days": 90 },
-						{ "id": "year", "label": "Jaar", "days": 365 },
-						{ "id": "all", "label": "Alles", "days": null }
+						{ "id": "month", "label": "Month", "days": 30 },
+						{ "id": "quarter", "label": "Quarter", "days": 90 },
+						{ "id": "year", "label": "Year", "days": 365 },
+						{ "id": "all", "label": "All", "days": null }
 					]
 				},
 				"widgets": [
 					{
 						"id": "kpi-open-cases",
 						"type": "stat",
-						"title": "Nieuwe zaken",
-						"content": { "label": "Nieuwe zaken", "route": { "name": "Cases", "query": { "startDate[gte]": "@monthStart" } }, "icon": "FolderOutline", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"title": "New cases",
+						"content": { "label": "New cases", "caption": "newly opened", "route": { "name": "Cases", "query": { "startDate[gte]": "@monthStart" } }, "icon": "FileDocument", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-overdue",
 						"type": "stat",
-						"title": "Te laat",
-						"content": { "label": "Te laat", "route": { "name": "Cases", "query": { "deadline[lt]": "@today" } }, "icon": "AlertCircleOutline", "valueColor": "#e9322d", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "deadline": { "lt": "@today" }, "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"title": "Overdue",
+						"content": { "label": "Overdue", "caption": "past deadline", "route": { "name": "Cases", "query": { "deadline[lt]": "@today" } }, "icon": "Bell", "valueColor": "#e9322d", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "deadline": { "lt": "@today" }, "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-completed",
 						"type": "stat",
-						"title": "Afgerond",
-						"content": { "label": "Afgerond", "route": { "name": "Cases", "query": { "endDate[gte]": "@yearStart" } }, "icon": "CheckCircleOutline", "valueColor": "#46ba61", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "endDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"title": "Completed",
+						"content": { "label": "Completed", "caption": "closed this year", "route": { "name": "Cases", "query": { "endDate[gte]": "@yearStart" } }, "icon": "Trophy", "valueColor": "#46ba61", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "endDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-my-tasks",
 						"type": "stat",
-						"title": "Mijn taken",
-						"content": { "label": "Mijn taken", "route": { "name": "Tasks", "query": { "assignee": "@me" } }, "icon": "ClipboardCheckOutline", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "task", "metric": "count", "filter": { "assignee": "@me", "dueDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"title": "My Tasks",
+						"content": { "label": "My Tasks", "caption": "assigned to me", "route": { "name": "Tasks", "query": { "assignee": "@me" } }, "icon": "ClipboardList", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "task", "metric": "count", "filter": { "assignee": "@me", "dueDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "cases-by-status",

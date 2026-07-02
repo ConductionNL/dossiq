@@ -60,7 +60,7 @@
 	"menu": [
 		{
 			"id": "LeverancierDashboard",
-			"label": "Leveranciersportaal",
+			"label": "Supplier portal",
 			"icon": "icon-category-organization",
 			"route": "LeverancierDashboard",
 			"order": 88
