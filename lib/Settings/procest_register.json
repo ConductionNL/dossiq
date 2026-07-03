@@ -7534,6 +7534,7 @@
         "icon": "Factory",
         "version": "1.0.0",
         "x-schema-org-type": "schema:Organization",
+        "x-schema-org": "schema:Organization",
         "title": "Supplier",
         "description": "Leverancier / vendor — represents a single supplier organisation that interacts with the municipality through the supplier portal.",
         "type": "object",
@@ -7596,6 +7597,12 @@
             "description": "Certificates / accreditations held",
             "title": "Accreditations"
           }
+        },
+        "configuration": {
+          "implements": [
+            "https://openregister.app/ns#Vendor",
+            "https://schema.org/Organization"
+          ]
         }
       },
       "supplierUser": {
