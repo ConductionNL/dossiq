@@ -113,6 +113,12 @@ import KpiView from './views/leverancier/KpiView.vue'
 import ProfileForm from './views/leverancier/ProfileForm.vue'
 import MessageThread from './views/leverancier/MessageThread.vue'
 
+// Shared detail-page widgets registered under the manifest widget keys so
+// CnWidgetGrid / CnDetailPage resolve them (ADR-036 registry). `audit-trail`
+// is a thin adapter over the library's CnAuditTrailCard that reads the current
+// object from whichever render path is active (see AuditTrailWidget.vue).
+import AuditTrailWidget from './components/widgets/AuditTrailWidget.vue'
+
 /*
  * Grid metadata required for every kind:"widget" entry by the ADR-036
  * registry validator in CnAppRoot. Sizes mirror the manifest layout.
@@ -144,6 +150,14 @@ const HEADER_ACTIONS_META = {
  * @type {Record<string, { kind: string, component: object }>}
  */
 const registry = {
+	// --- Shared library widgets registered under manifest widget keys (ADR-036). ---
+	'audit-trail': {
+		kind: 'widget',
+		component: AuditTrailWidget,
+		...PANEL_WIDGET_META,
+		allowedSlots: ['body', 'sidebar'],
+		_note: 'Object change-log card — self-fetches from the detail object context (register/schema/objectId).',
+	},
 	// --- Bezwaar & Beroep cards-collapse landing page (bezwaar-beroep-cards-collapse). ---
 	// @spec openspec/changes/bezwaar-beroep-cards-collapse/specs/navigation/spec.md
 	BezwaarBeroepOverview: {
