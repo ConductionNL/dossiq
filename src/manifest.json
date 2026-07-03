@@ -381,25 +381,25 @@
 						"id": "kpi-open-cases",
 						"type": "stat",
 						"title": "New cases",
-						"content": { "label": "New cases", "caption": "newly opened", "route": { "name": "Cases", "query": { "startDate[gte]": "@monthStart" } }, "icon": "FileDocument", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"content": { "label": "New cases", "caption": "newly opened", "route": { "name": "Cases", "query": { "startDate[gte]": "@monthStart" } }, "icon": "FolderOutline", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-overdue",
 						"type": "stat",
 						"title": "Overdue",
-						"content": { "label": "Overdue", "caption": "past deadline", "route": { "name": "Cases", "query": { "deadline[lt]": "@today" } }, "icon": "Bell", "valueColor": "#e9322d", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "deadline": { "lt": "@today" }, "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"content": { "label": "Overdue", "caption": "past deadline", "route": { "name": "Cases", "query": { "deadline[lt]": "@today" } }, "icon": "AlertCircleOutline", "valueColor": "#e9322d", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "deadline": { "lt": "@today" }, "startDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-completed",
 						"type": "stat",
 						"title": "Completed",
-						"content": { "label": "Completed", "caption": "closed this year", "route": { "name": "Cases", "query": { "endDate[gte]": "@yearStart" } }, "icon": "Trophy", "valueColor": "#46ba61", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "endDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"content": { "label": "Completed", "caption": "closed this year", "route": { "name": "Cases", "query": { "endDate[gte]": "@yearStart" } }, "icon": "CheckCircleOutline", "valueColor": "#46ba61", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "case", "metric": "count", "filter": { "endDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "kpi-my-tasks",
 						"type": "stat",
 						"title": "My Tasks",
-						"content": { "label": "My Tasks", "caption": "assigned to me", "route": { "name": "Tasks", "query": { "assignee": "@me" } }, "icon": "ClipboardList", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "task", "metric": "count", "filter": { "assignee": "@me", "dueDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
+						"content": { "label": "My Tasks", "caption": "assigned to me", "route": { "name": "Tasks", "query": { "assignee": "@me" } }, "icon": "ClipboardCheckOutline", "valueColor": "#0082c9", "format": { "style": "decimal", "decimals": 0 }, "source": { "register": "procest", "schema": "task", "metric": "count", "filter": { "assignee": "@me", "dueDate": { "gte": "@workspace.dateFrom?", "lte": "@workspace.dateTo?" } } } }
 					},
 					{
 						"id": "cases-by-status",
