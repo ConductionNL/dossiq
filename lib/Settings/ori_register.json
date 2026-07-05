@@ -34,6 +34,7 @@
     "schemas": {
       "vergadering": {
         "slug": "vergadering",
+        "x-schema-org": "schema:Event",
         "title": "Vergadering",
         "version": "1.0.0",
         "published": "2025-01-01T00:00:00+00:00",
@@ -179,6 +180,7 @@
       },
       "raadsdocument": {
         "slug": "raadsdocument",
+        "x-schema-org": "schema:DigitalDocument",
         "title": "Raadsdocument",
         "version": "1.0.0",
         "published": "2025-01-01T00:00:00+00:00",
@@ -253,6 +255,7 @@
       },
       "stemming": {
         "slug": "stemming",
+        "x-schema-org": "schema:VoteAction",
         "title": "Stemming",
         "version": "1.0.0",
         "published": "2025-01-01T00:00:00+00:00",
@@ -354,6 +357,7 @@
       },
       "raadslid": {
         "slug": "raadslid",
+        "x-schema-org": "schema:Person",
         "title": "Raadslid",
         "version": "1.0.0",
         "published": "2025-01-01T00:00:00+00:00",
@@ -407,6 +411,7 @@
       },
       "fractie": {
         "slug": "fractie",
+        "x-schema-org": "schema:Organization",
         "title": "Fractie",
         "version": "1.0.0",
         "published": "2025-01-01T00:00:00+00:00",
