@@ -94,9 +94,16 @@ export function aggregateByStatus(openCases, statusTypes) {
 	}
 
 	for (const c of openCases) {
-		const name = statusIdToName.get(c.status) || c.status || t('procest', 'Unknown')
+		// A case's `status` is a statusType id. Only ids that resolve to a known
+		// statusType get their real name; anything else (null, or a stale/junk
+		// value that no longer references a statusType) is bucketed under
+		// "Unknown" rather than leaking the raw value into the chart — this
+		// mirrors aggregateByType's resolution. Only resolved ids feed statusIds,
+		// so an "Unknown" bar click never deep-links on a junk/absent id.
+		const resolvedName = statusIdToName.get(c.status)
+		const name = resolvedName || t('procest', 'Unknown')
 		statusMap.set(name, (statusMap.get(name) || 0) + 1)
-		if (c.status) {
+		if (resolvedName) {
 			if (!idsMap.has(name)) idsMap.set(name, new Set())
 			idsMap.get(name).add(c.status)
 		}
