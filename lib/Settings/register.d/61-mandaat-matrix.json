@@ -17,7 +17,7 @@
         "slug": "mandateringsBesluit",
         "icon": "Gavel",
         "version": "1.0.0",
-        "x-schema-org-type": "schema:DigitalDocument",
+        "x-schema-org": "schema:DigitalDocument",
         "title": "Mandaterings Besluit",
         "description": "Mandateringsbesluit (decision of the bestuursorgaan) — collection of Mandaat rows valid from inWerkingtreding until vervalDatum.",
         "type": "object",
