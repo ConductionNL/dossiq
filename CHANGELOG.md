@@ -2,6 +2,22 @@
 
 All notable changes to Procest are documented in this file.
 
+## [0.2.38] - 2026-07-06
+
+### Added
+
+- `external-integrations-test-environments`: external-integration seams wired to real TEST environments behind a per-integration config tier, defaulting to `log` (no external call happens unknowingly).
+  - `IntegrationMode` config-tier resolver (`integration.<name>.mode`, fail-closed to `log`); `Application.php` factory bindings replace the hardcoded Log/Mock aliases for BRP, KvK, DigiD, eHerkenning.
+  - `HaalCentraalBrpAdapter` (Haal Centraal BRP Personen bevragen; `mock`=ghcr.io/brp-api/personen-mock offline, `test`=proefomgeving; X-API-KEY; BSN never logged) and `KvkApiAdapter` (KvK Zoeken; `test`=api.kvk.nl/test with the documented public test key). Both fail-soft.
+  - `SimulatorDigidSamlAdapter` + `SimulatorEHerkenningSamlAdapter` (maykinmedia mock-login pattern, `simulator:true` assertions, no real SAML) via `integration.digid.mode=simulator`; permanently capped at beta.
+  - DSO config-ready seam (`DsoLvAuthService::getBaseUrl()` reads `integration.dso.baseUrl`, warn-and-empty when unset).
+  - Offline contract lane (`tests/Unit/Service/External/BrpKvkContractTest.php`) against REAL recorded mock/test-API responses (`tests/fixtures/contracts/`), aligned with the brp-kvk-register-sets seeds; `IntegrationTierTest` for the tier + adapter + simulator contracts.
+  - Features-overlay promotion (brp/kvk/digid → beta with reasons; dso reason added); `docs/admin/integrations.md` (config tiers, key documentation, access-request register).
+
+### Deviations / blocked (out of session scope)
+
+- Formal aansluittrajecten — BRP proefomgeving key, DSO pre-prod (PKIoverheid cert), Logius DigiD preproductie (real SAML), NA e-Depot — are customer-side and were NOT started; config seams are ready to flip on grant. e-Depot MDTO validation + Preservica rehearsal are deferred to `migrate-archival-to-or` (OR archival pipeline).
+
 ## [0.2.37] - 2026-07-06
 
 ### Added

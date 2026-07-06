@@ -51,6 +51,14 @@ When creating a zaak (case), the initiator ("indiener") must be linked to a real
 - **Backend**: Case schema in `procest_register.json` -- add `initiatorType`, `initiatorSourceId`, `initiatorDisplayName` fields
 - **Dependencies**: OpenRegister (register schemas and seed data), Nextcloud Contacts API (DAV/CardDAV search)
 
+## Interlock (added by `external-integrations-test-environments`, 2026-07-06)
+
+The live BRP/KvK adapters this change's Risks flag as "would require Haal Centraal and KVK API
+credentials" ARE now implemented by `external-integrations-test-environments`
+(`HaalCentraalBrpAdapter`, `KvkApiAdapter`, config-tier binding). The seed persons/companies here
+double as that change's contract fixtures — the same objects
+(`tests/fixtures/contracts/{brp,kvk}/`). Do not add live-adapter work here; extend it there.
+
 ## Risks
 
 - BRP and KVK schemas are simplified test versions based on API field naming conventions, not actual registry connections. Real BRP/KVK integration would require Haal Centraal and KVK API credentials and compliance.

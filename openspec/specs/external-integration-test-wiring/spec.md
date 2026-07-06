@@ -1,20 +1,19 @@
----
-status: proposed
----
+# external-integration-test-wiring Specification
 
-# Spec: external-integration-test-wiring
-
-**Status:** proposed
+**Status:** done
 **Scope:** procest external-integration seams (BRP, KvK, DSO, DigiD/eHerkenning, e-Depot)
 **Depends on:** `pluggable-integration-registry` (seam mechanics, sequencing per DC02); `migrate-archival-to-or` (e-Depot seam moves to OR transports); `brp-kvk-register-sets` (register-side seed data — extended, not duplicated)
+**OpenSpec changes**: [external-integrations-test-environments](../../changes/archive/2026-07-06-external-integrations-test-environments/) _(archived 2026-07-06)_
 
 ## Purpose
+
+@e2e exclude Backend integration-wiring capability (config-tier adapter selection, HTTP adapters, contract lanes, features-overlay promotion) — proven by PHPUnit (IntegrationTierTest, BrpKvkContractTest) and the offline/recorded contract fixtures; the only UI angle (DigiD simulator login label) belongs to the zaakportaal-mijngemeente beta surface which has no procest login page yet. Mirrors the stuf-zkn-outbound (Newman/PHPUnit, no Playwright) precedent.
 
 Procest's external integrations run against real, named test environments behind configuration,
 with contract tests per automatable tier and explicit promotion criteria — ending the state where
 every integration terminates in a permanently-bound Mock/Log adapter.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Integration adapters MUST be selected by configuration, defaulting to no external calls
 

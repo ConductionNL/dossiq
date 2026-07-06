@@ -55,6 +55,17 @@ class DsoLvAuthService
     private const CONFIG_KEY_AUTH_TOKEN = 'dso_lv_auth_token';
 
     /**
+     * App config key for the DSO base URL (config-ready seam,
+     * external-integrations-test-environments). The pre-productie
+     * (oefenomgeving) endpoint is
+     * `https://service.pre.omgevingswet.overheid.nl`; it is
+     * certificate-bound (PKIoverheid OIN/HRN) and reached only after the
+     * DSO aansluittraject grants a client_id + test key, so it stays
+     * UNSET by default and callers keep their compiled-in default.
+     */
+    private const CONFIG_KEY_BASE_URL = 'integration.dso.baseUrl';
+
+    /**
      * Constructor.
      *
      * @param IAppConfig      $appConfig The application config
@@ -114,4 +125,35 @@ class DsoLvAuthService
             default: ''
         ) !== '';
     }//end isAuthConfigured()
+
+    /**
+     * Return the configured DSO base URL, or the supplied default.
+     *
+     * Config-ready seam: when the DSO aansluittraject grants pre-prod
+     * access (client_id + test key + PKIoverheid cert), an operator sets
+     * `integration.dso.baseUrl` to `https://service.pre.omgevingswet.overheid.nl`
+     * without a code change. Unset by default — DSO calls keep their
+     * compiled-in endpoint and no external pre-prod call happens
+     * unknowingly.
+     *
+     * @param string $default Fallback base URL when unconfigured.
+     *
+     * @return string The configured base URL, or $default.
+     *
+     * @spec openspec/specs/external-integration-test-wiring/spec.md
+     */
+    public function getBaseUrl(string $default=''): string
+    {
+        $configured = $this->appConfig->getValueString(
+            app: Application::APP_ID,
+            key: self::CONFIG_KEY_BASE_URL,
+            default: ''
+        );
+
+        if ($configured !== '') {
+            return $configured;
+        }
+
+        return $default;
+    }//end getBaseUrl()
 }//end class
