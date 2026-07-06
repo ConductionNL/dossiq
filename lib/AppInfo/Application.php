@@ -408,14 +408,10 @@ class Application extends App implements IBootstrap
                 return $c->get(\OCA\Procest\Service\External\Brp\LogBrpHaalCentraalAdapter::class);
             }
         );
-        $context->registerServiceAlias(
-            \OCA\Procest\Service\External\Tmlo\TmloMetadataBuilderAdapterInterface::class,
-            \OCA\Procest\Service\External\Tmlo\LogTmloMetadataBuilderAdapter::class
-        );
-        $context->registerServiceAlias(
-            \OCA\Procest\Service\External\Tmlo\EDepotSubmissionAdapterInterface::class,
-            \OCA\Procest\Service\External\Tmlo\LogEDepotSubmissionAdapter::class
-        );
+        // TMLO metadata building + e-Depot submission adapter seams retired
+        // (migrate-archival-to-or, ADR-022): OpenRegister's TmloService builds
+        // TMLO/MDTO metadata from schema config and its Edepot/Transport seam owns
+        // submission. Procest contributes the mapping declaratively (tmloDefaults).
         $context->registerServiceAlias(
             \OCA\Procest\Service\External\Zgw\ZgwExternalAdapterInterface::class,
             \OCA\Procest\Service\External\Zgw\LogZgwExternalAdapter::class

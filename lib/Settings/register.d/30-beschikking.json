@@ -193,7 +193,7 @@
           "archief": {
             "type": "object",
             "title": "Archive",
-            "description": "Archival record (TMLO/MDTO) populated by the ArchivalJob",
+            "description": "Archival record (TMLO/MDTO) populated when the beschikking is archived via the OpenRegister archival pipeline",
             "properties": {
               "gearchiveerdOp": { "type": "string", "title": "Archived On", "description": "Timestamp at which the beschikking was archived", "format": "date-time" },
               "archiefId": { "type": "string", "title": "Archive ID", "description": "Identifier assigned by the archival system" },

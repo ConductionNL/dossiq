@@ -23,9 +23,10 @@ import WerkvoorraadView from './views/Werkvoorraad.vue'
 // CaseMapView removed — superseded by manifest `type: 'map'` CnMapPage
 // (see openspec/changes/case-map-overview/design.md).
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
-// --- Termijnbewaking + Archief + Tenant dashboards (chain-builds 06/2026). ---
+// --- Termijnbewaking + Tenant dashboards (chain-builds 06/2026). ---
+// Archief dashboard retired (migrate-archival-to-or, ADR-022): the archivist
+// views are owned by OpenRegister.
 import TermijnDashboard from './views/dashboard/TermijnDashboard.vue'
-import ArchiefDashboard from './views/dashboard/ArchiefDashboard.vue'
 import TenantOnboardingDashboard from './views/dashboard/TenantOnboardingDashboard.vue'
 // VoorstellenView removed — the Voorstellen list page is now a declarative
 // `type:"index"` on the `voorstel` schema (formatter columns + status badge,
@@ -134,7 +135,6 @@ export default {
 	DoorlooptijdView, // SLA dashboard — charts via OR analytics-series leaf + lib CnChartWidget (ADR-022)
 	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
 	TermijnDashboard, // AWB termijnbewaking + dwangsom KPI dashboard
-	ArchiefDashboard, // e-Depot handover dashboard (stats + triggers + audit)
 	TenantOnboardingDashboard, // SaaS tenant onboarding (7-step + go-live)
 
 	// --- Migration cost: deferred to a follow-up. ---

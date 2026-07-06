@@ -562,20 +562,12 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'complaint#createCategory',     'url' => '/api/complaint-categories',                  'verb' => 'POST'],
         ['name' => 'complaint#updateCategory',     'url' => '/api/complaint-categories/{id}',             'verb' => 'PUT'],
 
-        // ── Archief / e-Depot handover ─────────────────────────────────────
-        ['name' => 'archief#listRules',       'url' => '/api/archief/rules',                'verb' => 'GET'],
-        ['name' => 'archief#createRule',      'url' => '/api/archief/rules',                'verb' => 'POST'],
-        ['name' => 'archief#updateRule',      'url' => '/api/archief/rules/{ruleId}',       'verb' => 'PUT'],
-        ['name' => 'archief#deleteRule',      'url' => '/api/archief/rules/{ruleId}',       'verb' => 'DELETE'],
-        ['name' => 'archief#dashboardStats',  'url' => '/api/archief/dashboard/stats',      'verb' => 'GET'],
-        ['name' => 'archief#auditLog',        'url' => '/api/archief/audit-log',            'verb' => 'GET'],
-        ['name' => 'archief#batchInitiate',   'url' => '/api/archief/batch/initiate',       'verb' => 'POST'],
-        ['name' => 'archief#inspectionExport','url' => '/api/archief/inspection-export',    'verb' => 'GET'],
-        ['name' => 'archief#retry',           'url' => '/api/archief/triggers/{triggerId}/retry', 'verb' => 'POST'],
-        // Wildcard routes registered AFTER literal sub-paths so /batch/initiate doesn't get
-        // captured as jobId=initiate (same pattern as complaint#show vs deadline-alerts).
-        ['name' => 'archief#batchStatus',     'url' => '/api/archief/batch/{jobId}',        'verb' => 'GET'],
-        ['name' => 'archief#batchReport',     'url' => '/api/archief/batch/{jobId}/report', 'verb' => 'GET'],
+        // Archief / e-Depot handover is owned by OpenRegister (migrate-archival-to-or,
+        // ADR-022): retention, transfer, proof and destruction run through OR's
+        // /api/archival, /api/transfers, /api/settings/edepot surfaces. Procest
+        // contributes retention config declaratively (x-openregister-archival on the
+        // case schema) and places legal holds via BezwaarLegalHoldListener; it exposes
+        // no archief endpoints of its own.
 
         // ── Mandaat-matrix authorization engine ────────────────────────────
         ['name' => 'mandaatMatrix#probe',           'url' => '/api/mandate/authorize',                    'verb' => 'POST'],

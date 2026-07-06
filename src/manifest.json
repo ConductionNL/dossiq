@@ -270,14 +270,6 @@
 			"order": 71
 		},
 		{
-			"id": "ArchiefDashboardMenu",
-			"label": "Archive",
-			"icon": "icon-folder",
-			"route": "ArchiefDashboard",
-			"section": "settings",
-			"order": 91
-		},
-		{
 			"id": "TenantOnboardingMenu",
 			"label": "Organisation onboarding",
 			"icon": "icon-user",
@@ -2673,14 +2665,6 @@
 			"title": "Termijn dashboard",
 			"component": "TermijnDashboard",
 			"_note": "AWB termijnbewaking (statutory-deadline) monitor: a zaaktype filter drives a server-computed KPI bundle (total cases in period, within-term %, breached, at-risk) rendered as colour-coded compliance cards. The figures come from a dedicated deadline-aggregation endpoint, not a register query, so the standard dashboard/object-stats type can't supply or shape this data."
-		},
-		{
-			"id": "ArchiefDashboard",
-			"route": "/archief-dashboard",
-			"type": "custom",
-			"title": "Archief dashboard",
-			"component": "ArchiefDashboard",
-			"_note": "Archief e-Depot handover console: KPI cards (ready/in-progress/failed) plus trigger and batch tables and quick actions, backed by the bespoke `archief#dashboardStats` and `archief#auditLog` endpoints. The standard dashboard type renders register-derived stats only and cannot drive the e-Depot batch/trigger operational tables or handover actions."
 		},
 		{
 			"id": "TenantOnboardingDashboard",

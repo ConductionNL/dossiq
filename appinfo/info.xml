@@ -82,14 +82,11 @@ Vrij en open source onder de EUPL-1.2-licentie.
         <job>OCA\Procest\BackgroundJob\VergaderingDeadlineJob</job>
         <job>OCA\Procest\BackgroundJob\WOODeadlineCheckJob</job>
         <job>OCA\Procest\BackgroundJob\BezwaarTermijnJob</job>
-        <job>OCA\Procest\BackgroundJob\ArchivalJob</job>
         <job>OCA\Procest\BackgroundJob\DsoDeadlineJob</job>
         <job>OCA\Procest\BackgroundJob\ResetMonthlyQuotasJob</job>
         <job>OCA\Procest\BackgroundJob\DailyTermijnScanJob</job>
         <job>OCA\Procest\BackgroundJob\InboundEmailJob</job>
         <job>OCA\Procest\BackgroundJob\EmailPdfRetryJob</job>
-        <job>OCA\Procest\BackgroundJob\ArchivalTriggerScanJob</job>
-        <job>OCA\Procest\BackgroundJob\ArchivalSubmissionRetryJob</job>
         <job>OCA\Procest\BackgroundJob\SentimentAnalysisJob</job>
         <job>OCA\Procest\BackgroundJob\SpecialistBeschikbaarheidRefreshJob</job>
         <job>OCA\Procest\BackgroundJob\BottleneckDetectionJob</job>
@@ -121,8 +118,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
     </repair-steps>
 
     <commands>
-        <command>OCA\Procest\Command\ArchiefDetectReadyCommand</command>
-        <command>OCA\Procest\Command\ArchiefRetrySubmissionsCommand</command>
         <command>OCA\Procest\Command\MigrateTenantsCommand</command>
         <command>OCA\Procest\Command\SeedBezwaarBeroepCommand</command>
     </commands>

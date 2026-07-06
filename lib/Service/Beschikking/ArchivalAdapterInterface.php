@@ -3,10 +3,11 @@
 /**
  * Procest Beschikking Archival Adapter Interface.
  *
- * Contract for the OpenRegister archief-ingest integration. The real adapter
- * (delivered in the openregister repo, change task T25) stores the PDF/A-3
- * with TMLO/MDTO metadata and computes a vernietigingsdatum; the MockAdapter
- * returns a deterministic stub so the ArchivalJob is testable in isolation.
+ * Contract for recording a beschikking in durable archival storage. The
+ * OpenRegisterArchivalAdapter implementation records the beschikking on
+ * OpenRegister's declarative archival pipeline (x-openregister-archival on the
+ * case schema) and returns the Archiefwet vernietigingsdatum derived from the
+ * declared bewaartermijn (migrate-archival-to-or, ADR-022).
  *
  * @category Interface
  * @package  OCA\Procest\Service\Beschikking
