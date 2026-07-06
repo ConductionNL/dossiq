@@ -334,9 +334,12 @@
 			"route": "/",
 			"type": "dashboard",
 			"title": "Dashboard",
-			"actionsComponent": "DashboardHeaderActions",
 			"config": {
 				"description": "Cases, deadlines and your workload at a glance",
+				"headerActions": [
+					{ "id": "new-case", "type": "open-form", "label": "New Case", "icon": "Plus", "register": "procest", "schema": "case", "onSuccessRoute": "CaseDetail" },
+					{ "id": "dashboard-refresh", "type": "refresh", "label": "Refresh" }
+				],
 				"dateRange": {
 					"enabled": true,
 					"showHeaderPicker": false,
@@ -377,43 +380,141 @@
 					},
 					{
 						"id": "cases-by-status",
-						"type": "custom",
-						"title": "Cases by Status"
+						"type": "chart",
+						"title": "Cases by Status",
+						"content": {
+							"chartKind": "bar",
+							"dataSource": {
+								"register": "procest",
+								"schema": "case",
+								"filter": { "isFinalStatus": false },
+								"aggregate": { "groupBy": "status", "metric": "count", "labelResolve": { "schema": "statusType", "labelField": "name" } },
+								"drilldown": { "route": "Cases", "filterParam": "status" }
+							}
+						}
 					},
 					{
 						"id": "cases-by-type",
-						"type": "custom",
-						"title": "Cases by Type"
+						"type": "chart",
+						"title": "Cases by Type",
+						"content": {
+							"chartKind": "bar",
+							"dataSource": {
+								"register": "procest",
+								"schema": "case",
+								"filter": { "isFinalStatus": false },
+								"aggregate": { "groupBy": "caseType", "metric": "count", "labelResolve": { "schema": "caseType", "labelField": "name" } },
+								"drilldown": { "route": "Cases", "filterParam": "caseType" }
+							}
+						}
 					},
 					{
 						"id": "open-cases",
-						"type": "custom",
-						"title": "Open Cases"
+						"type": "object-table",
+						"title": "Open Cases",
+						"content": {
+							"source": { "register": "procest", "schema": "case", "order": { "startDate": "desc" }, "limit": 7 },
+							"columns": [
+								{ "key": "title", "cellClass": "cn-cell--strong" },
+								{ "key": "identifier", "cellClass": "cn-cell--muted cn-cell--end" }
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": { "name": "Cases" },
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "No cases found"
+						}
 					},
 					{
 						"id": "overdue-cases",
-						"type": "custom",
-						"title": "Overdue"
+						"type": "object-table",
+						"title": "Overdue",
+						"content": {
+							"source": { "register": "procest", "schema": "case", "filter": { "isFinalStatus": false, "deadline": { "lt": "@today" } }, "extend": ["calculations"], "order": { "deadline": "asc" }, "limit": 7 },
+							"columns": [
+								{ "key": "title", "cellClass": "cn-cell--strong" },
+								{ "key": "daysOverdue", "formatter": "conditionalPhrase", "formatterOptions": { "positive": "{n} days overdue" }, "cellClass": "cn-cell--muted cn-cell--end" }
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": { "name": "Cases" },
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "No open cases"
+						}
 					},
 					{
 						"id": "my-tasks",
-						"type": "custom",
-						"title": "My Tasks"
+						"type": "object-table",
+						"title": "My Tasks",
+						"content": {
+							"source": { "register": "procest", "schema": "task", "filter": { "assignee": "@me", "isTerminalStatus": false }, "extend": ["calculations"], "order": { "dueDate": "asc" }, "limit": 7 },
+							"columns": [
+								{ "key": "title", "cellClass": "cn-cell--strong" },
+								{ "key": "daysUntilDue", "formatter": "conditionalPhrase", "formatterOptions": { "negative": "{n} days overdue", "zero": "Due today", "positive": "{n} days remaining" }, "cellClass": "cn-cell--muted cn-cell--end" }
+							],
+							"rowRoute": "TaskDetail",
+							"viewAllRoute": { "name": "Tasks" },
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "No tasks found"
+						}
 					},
 					{
 						"id": "deadline-alerts",
-						"type": "custom",
-						"title": "Deadline Alerts"
+						"type": "object-table",
+						"title": "Deadline Alerts",
+						"content": {
+							"source": { "register": "procest", "schema": "case", "filter": { "isFinalStatus": false, "deadline": { "lte": "@today+3d" } }, "extend": ["calculations"], "order": { "deadline": "asc" }, "limit": 5 },
+							"columns": [
+								{ "key": "title", "cellClass": "cn-cell--strong" },
+								{ "key": "daysUntilDeadline", "formatter": "conditionalPhrase", "formatterOptions": { "negative": "{n} days overdue", "zero": "Due today", "positive": "{n} days remaining" }, "cellClass": "cn-cell--muted cn-cell--end" }
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": { "name": "Cases" },
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "No deadline alerts"
+						}
 					},
 					{
 						"id": "task-reminders",
-						"type": "custom",
-						"title": "Task Due Reminders"
+						"type": "object-table",
+						"title": "Task Due Reminders",
+						"content": {
+							"source": { "register": "procest", "schema": "task", "filter": { "assignee": "@me", "isTerminalStatus": false, "dueDate": { "lte": "@today+3d" } }, "extend": ["calculations"], "order": { "dueDate": "asc" }, "limit": 5 },
+							"columns": [
+								{ "key": "title", "cellClass": "cn-cell--strong" },
+								{ "key": "daysUntilDue", "formatter": "conditionalPhrase", "formatterOptions": { "negative": "{n} days overdue", "zero": "Due today", "positive": "{n} days remaining" }, "cellClass": "cn-cell--muted cn-cell--end" }
+							],
+							"rowRoute": "TaskDetail",
+							"viewAllRoute": { "name": "Tasks" },
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "No task reminders"
+						}
 					},
 					{
 						"id": "stalled-cases",
-						"type": "custom",
-						"title": "Stalled Cases"
+						"type": "object-table",
+						"title": "Stalled Cases",
+						"content": {
+							"source": { "register": "procest", "schema": "case", "filter": { "isFinalStatus": false }, "extend": ["calculations"], "order": { "@self.updated": "asc" }, "limit": 5 },
+							"columns": [
+								{ "key": "title", "cellClass": "cn-cell--strong" },
+								{ "key": "daysSinceActivity", "formatter": "conditionalPhrase", "formatterOptions": { "positive": "{n} days inactive" }, "cellClass": "cn-cell--muted cn-cell--end" }
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": { "name": "Cases" },
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "All cases active"
+						}
 					}
 				],
 				"layout": [
@@ -531,16 +632,6 @@
 					}
 				],
 				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"slots": {
-				"widget-cases-by-status": "statusChart",
-				"widget-cases-by-type": "casesByType",
-				"widget-open-cases": "casesOverview",
-				"widget-overdue-cases": "overdueCases",
-				"widget-my-tasks": "myTasks",
-				"widget-deadline-alerts": "deadlineAlerts",
-				"widget-task-reminders": "taskReminders",
-				"widget-stalled-cases": "stalledCases"
 			}
 		},
 		{
