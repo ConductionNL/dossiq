@@ -3,7 +3,7 @@
   "info": {
     "title": "Procest Case Management Register",
     "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, automaticAction, and their instance counterparts.",
-    "version": "0.10.0"
+    "version": "0.11.0"
   },
   "x-openregister": {
     "type": "application",
@@ -637,7 +637,7 @@
           }
         },
         "icon": "BriefcaseOutline",
-        "version": "1.2.0",
+        "version": "1.3.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "x-openregister-quality": {
@@ -687,6 +687,11 @@
               "schema": "caseType",
               "mode": "relatedObject",
               "field": "caseType"
+            },
+            "statusType": {
+              "schema": "statusType",
+              "mode": "relatedObject",
+              "field": "status"
             }
           },
           "x-openregister-calculations": {
@@ -724,6 +729,79 @@
                   "-",
                   { "sequence": { "scope": "yearly", "pad": 4 } }
                 ]
+              }
+            },
+            "isFinalStatus": {
+              "type": "boolean",
+              "materialise": true,
+              "description": "True when the linked statusType is terminal (statusType.isFinal). Materialised: cross-object @ref lookups are only resolved by OpenRegister's save-time listener, so the value is stored and server-side filterable (isFinalStatus=false = open cases). Recomputed on every case save; after editing a statusType's isFinal flag, run occ openregister:rematerialise-calculations.",
+              "expression": {
+                "eq": [
+                  { "prop": "@ref.statusType.isFinal" },
+                  true
+                ]
+              }
+            },
+            "daysUntilDeadline": {
+              "type": "integer",
+              "materialise": false,
+              "description": "Signed whole days from today until the deadline (negative = overdue, null = no deadline). Virtual (materialise:false): time-dependent, so it is computed at read time when the request passes _extend=calculations; a materialised value would go stale daily. Both operands are floored to date granularity to match day-based deadline semantics.",
+              "expression": {
+                "dateDiff": {
+                  "from": { "formatDate": [ { "now": [] }, "Y-m-d" ] },
+                  "to": { "formatDate": [ { "prop": "deadline" }, "Y-m-d" ] },
+                  "unit": "days"
+                }
+              }
+            },
+            "daysOverdue": {
+              "type": "integer",
+              "materialise": false,
+              "description": "Whole days past the deadline; null when there is no deadline or the case is not overdue (deadline today = not overdue). Virtual (materialise:false, read via _extend=calculations). The dateDiff is inlined twice because read-time virtual calculations cannot reference sibling calculations (OpenRegister evaluates each against the original payload).",
+              "expression": {
+                "if": [
+                  {
+                    "gt": [
+                      {
+                        "dateDiff": {
+                          "from": { "formatDate": [ { "prop": "deadline" }, "Y-m-d" ] },
+                          "to": { "formatDate": [ { "now": [] }, "Y-m-d" ] },
+                          "unit": "days"
+                        }
+                      },
+                      0
+                    ]
+                  },
+                  {
+                    "dateDiff": {
+                      "from": { "formatDate": [ { "prop": "deadline" }, "Y-m-d" ] },
+                      "to": { "formatDate": [ { "now": [] }, "Y-m-d" ] },
+                      "unit": "days"
+                    }
+                  }
+                ]
+              }
+            },
+            "daysSinceActivity": {
+              "type": "integer",
+              "materialise": false,
+              "description": "Whole days since the object was last modified (falls back to creation date). v1 sources @self.updated — the case.activity log is a JSON-encoded string and OpenRegister's calculation engine has no JSON/array operators to read it. Virtual (materialise:false): a save-time value would always be 0 at the moment of saving; computed fresh at read time via _extend=calculations.",
+              "expression": {
+                "dateDiff": {
+                  "from": {
+                    "formatDate": [
+                      {
+                        "coalesce": [
+                          { "prop": "@self.updated" },
+                          { "prop": "@self.created" }
+                        ]
+                      },
+                      "Y-m-d"
+                    ]
+                  },
+                  "to": { "formatDate": [ { "now": [] }, "Y-m-d" ] },
+                  "unit": "days"
+                }
               }
             }
           },
@@ -774,6 +852,15 @@
             "description": "Reference to the current status type. Set declaratively to the case type's initial status by OpenRegister (x-openregister-lifecycle).",
             "title": "Status",
             "facetable": true
+          },
+          "isFinalStatus": {
+            "type": "boolean",
+            "readOnly": true,
+            "default": false,
+            "description": "Whether the case sits at a terminal status. Computed declaratively by OpenRegister from the linked statusType's isFinal flag (x-openregister-calculations.isFinalStatus); filter isFinalStatus=false for open cases.",
+            "title": "Is Final Status",
+            "facetable": true,
+            "visible": false
           },
           "result": {
             "type": "string",
@@ -1053,7 +1140,7 @@
           }
         },
         "icon": "CheckboxMarkedOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Action",
         "x-zgw-equivalent": "Taak",
         "title": "Task",
@@ -1089,6 +1176,15 @@
             "description": "Task status (CMMN HumanTask lifecycle)",
             "title": "Status",
             "facetable": true
+          },
+          "isTerminalStatus": {
+            "type": "boolean",
+            "readOnly": true,
+            "default": false,
+            "description": "Whether the task sits at a terminal status (completed/terminated/disabled). Computed declaratively by OpenRegister (x-openregister-calculations.isTerminalStatus); filter isTerminalStatus=false for open tasks.",
+            "title": "Is Terminal Status",
+            "facetable": true,
+            "visible": false
           },
           "case": {
             "type": "string",
@@ -1144,6 +1240,60 @@
           }
         },
         "configuration": {
+          "x-openregister-calculations": {
+            "isTerminalStatus": {
+              "type": "boolean",
+              "materialise": true,
+              "description": "True when the task status is terminal (completed/terminated/disabled — mirrors x-openregister-lifecycle.final). Materialised on every save so task lists can filter isTerminalStatus=false server-side for open tasks.",
+              "expression": {
+                "or": [
+                  { "eq": [ { "prop": "status" }, "completed" ] },
+                  { "eq": [ { "prop": "status" }, "terminated" ] },
+                  { "eq": [ { "prop": "status" }, "disabled" ] }
+                ]
+              }
+            },
+            "daysUntilDue": {
+              "type": "integer",
+              "materialise": false,
+              "description": "Signed whole days from today until dueDate (negative = overdue, null = no dueDate). Virtual (materialise:false): time-dependent, computed at read time when the request passes _extend=calculations. Both operands are floored to date granularity (dueDate is date-time) to match day-based reminder semantics.",
+              "expression": {
+                "dateDiff": {
+                  "from": { "formatDate": [ { "now": [] }, "Y-m-d" ] },
+                  "to": { "formatDate": [ { "prop": "dueDate" }, "Y-m-d" ] },
+                  "unit": "days"
+                }
+              }
+            },
+            "daysOverdue": {
+              "type": "integer",
+              "materialise": false,
+              "description": "Whole days past dueDate; null when there is no dueDate or the task is not overdue (due today = not overdue). Virtual (materialise:false, read via _extend=calculations). The dateDiff is inlined twice because read-time virtual calculations cannot reference sibling calculations (OpenRegister evaluates each against the original payload).",
+              "expression": {
+                "if": [
+                  {
+                    "gt": [
+                      {
+                        "dateDiff": {
+                          "from": { "formatDate": [ { "prop": "dueDate" }, "Y-m-d" ] },
+                          "to": { "formatDate": [ { "now": [] }, "Y-m-d" ] },
+                          "unit": "days"
+                        }
+                      },
+                      0
+                    ]
+                  },
+                  {
+                    "dateDiff": {
+                      "from": { "formatDate": [ { "prop": "dueDate" }, "Y-m-d" ] },
+                      "to": { "formatDate": [ { "now": [] }, "Y-m-d" ] },
+                      "unit": "days"
+                    }
+                  }
+                ]
+              }
+            }
+          },
           "x-openregister-lifecycle": {
             "field": "status",
             "initial": "available",
