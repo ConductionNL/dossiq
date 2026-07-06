@@ -29,7 +29,7 @@ use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
-use OCA\Procest\Service\Beschikking\MockArchivalAdapter;
+use OCA\Procest\Service\Beschikking\OpenRegisterArchivalAdapter;
 use OCA\Procest\Service\Beschikking\MockSigningAdapter;
 use OCA\Procest\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Procest\Service\Beschikking\SigningAdapterInterface;
@@ -45,6 +45,7 @@ use OCA\Procest\Listener\BezwaarAdviceRequestedListener;
 use OCA\Procest\Listener\VergunningaanvraagCreatedListener;
 use OCA\Procest\Listener\BezwaarDecisionListener;
 use OCA\Procest\Listener\BezwaarHearingScheduledListener;
+use OCA\Procest\Listener\BezwaarLegalHoldListener;
 use OCA\Procest\Listener\BezwaarLifecycleListener;
 use OCA\Procest\Listener\DecisionConcludedListener;
 use OCA\Procest\Event\ParafeerTransitionEvent;
@@ -295,7 +296,12 @@ class Application extends App implements IBootstrap
         // endpoints land in their own repos (tasks T23-T26).
         $context->registerServiceAlias(TemplateEngineAdapterInterface::class, MockTemplateEngineAdapter::class);
         $context->registerServiceAlias(SigningAdapterInterface::class, MockSigningAdapter::class);
-        $context->registerServiceAlias(ArchivalAdapterInterface::class, MockArchivalAdapter::class);
+        // Beschikking archival is repointed onto OpenRegister's declarative
+        // archival pipeline (ADR-022 / migrate-archival-to-or): retention/
+        // destruction are governed by x-openregister-archival on the case
+        // schema; this adapter records the archival marker + Archiefwet
+        // vernietigingsdatum. The former app-local MockArchivalAdapter is retired.
+        $context->registerServiceAlias(ArchivalAdapterInterface::class, OpenRegisterArchivalAdapter::class);
 
         // External auth-broker adapters (lib/Service/Auth/), selected by the
         // `integration.digid.mode` config tier (external-integrations-test-environments).
@@ -439,6 +445,17 @@ class Application extends App implements IBootstrap
         $context->registerEventListener(
             event: ObjectUpdatedEvent::class,
             listener: BezwaarLifecycleListener::class
+        );
+
+        // Bezwaar/beroep legal hold: when an Awb proceeding (objection) is
+        // registered the linked case gets an OpenRegister legal hold; when the
+        // proceeding reaches its final outcome (bezwaarDecision / appealDecision)
+        // the hold is released. Hold storage + enforcement are OpenRegister's
+        // (ADR-022 / migrate-archival-to-or) — this replaces the retired
+        // ArchivalTriggerService `opgeschort-juridische-procedure` status.
+        $context->registerEventListener(
+            event: ObjectCreatedEvent::class,
+            listener: BezwaarLegalHoldListener::class
         );
 
         // Parafering audit trail: one listener emits an OR audit-trail entry

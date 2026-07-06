@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
-use OCA\Procest\Service\Beschikking\MockArchivalAdapter;
+use OCA\Procest\Service\Beschikking\OpenRegisterArchivalAdapter;
 use OCA\Procest\Service\Beschikking\MockSigningAdapter;
 use OCA\Procest\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Procest\Service\BerichtenboxRoutingService;
@@ -35,6 +35,7 @@ use OCA\Procest\Service\BeschikkingService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\StateMachineService;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -179,7 +180,7 @@ class BeschikkingServiceTest extends TestCase
             $routing,
             new MockTemplateEngineAdapter(),
             new MockSigningAdapter(),
-            new MockArchivalAdapter(),
+            new OpenRegisterArchivalAdapter($this->createMock(ContainerInterface::class), $logger),
             $logger,
         );
 
