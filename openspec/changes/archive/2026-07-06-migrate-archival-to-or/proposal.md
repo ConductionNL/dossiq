@@ -40,6 +40,19 @@ Running both stacks means duplicate retention rules, duplicate SIP builders, dup
 trails, and a procest e-Depot pipeline that OR's archivist views and destruction workflow cannot
 see. ADR-022 forbids exactly this.
 
+## What Changes
+
+- Retention terms + TMLO/MDTO mapping become declarative config on the `case` schema
+  (`x-openregister-archival` + `configuration.tmloDefaults`; register `tmloEnabled`).
+- Bezwaar/beroep suspension becomes an OpenRegister legal hold placed/released by a new
+  `BezwaarLegalHoldListener`; beschikking archival is repointed onto an OR-backed adapter.
+- A fail-closed, idempotent repair step (`MigrateArchivalToOpenRegister`) migrates in-flight state
+  (enables TMLO, places holds for suspended cases, exports proof records to the zaakdossier).
+- The app-local archival chain is retired: 8 services, 6 `External/Tmlo` adapter files,
+  `ArchiefController` + its routes, 2 console commands, 3 background jobs, the seed repair step, the
+  6 `62-archief-edepot.json` schemas, and the 4 Archief Vue views + their wiring, plus the
+  corresponding unit tests.
+
 ## Per-service decision (duplicate vs domain-specific)
 
 | Procest asset | Decision | Evidence |
