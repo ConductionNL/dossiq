@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <template>
 	<CnAppRoot
+		:ai-companion="true"
 		:manifest="manifest"
 		:custom-components="customComponents"
 		:registry="registry"
