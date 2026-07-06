@@ -91,12 +91,6 @@
 			"order": 80
 		},
 		{
-			"id": "BezwaarBeroepGroup",
-			"label": "Objections & Appeals",
-			"icon": "icon-toggle-filelist",
-			"order": 45
-		},
-		{
 			"id": "Bezwaren",
 			"label": "Objections",
 			"icon": "icon-toggle-filelist",
@@ -109,20 +103,6 @@
 			"icon": "icon-toggle-filelist",
 			"route": "Beroepen",
 			"order": 46
-		},
-		{
-			"id": "BezwaarDecisions",
-			"label": "Objection decisions",
-			"icon": "icon-toggle",
-			"route": "BezwaarDecisions",
-			"order": 47
-		},
-		{
-			"id": "BezwaarAdviceRequests",
-			"label": "Committee advice",
-			"icon": "icon-comment",
-			"route": "BezwaarAdviceRequests",
-			"order": 48
 		},
 		{
 			"id": "AnalyticsGroup",
@@ -163,12 +143,6 @@
 			"icon": "icon-comment",
 			"route": "Advice",
 			"order": 75
-		},
-		{
-			"id": "SubsidiesGroup",
-			"label": "Subsidies",
-			"icon": "icon-category-office",
-			"order": 83
 		},
 		{
 			"id": "PortaalGroup",
@@ -254,15 +228,6 @@
 			"route": "AutomaticActions",
 			"section": "settings",
 			"order": 96
-		},
-		{
-			"id": "StatusRecordsMenu",
-			"label": "Status history",
-			"icon": "icon-history",
-			"route": "StatusRecords",
-			"section": "settings",
-			"order": 98,
-			"permission": "admin"
 		},
 		{
 			"id": "LhsMatricesMenu",
@@ -635,6 +600,12 @@
 			"config": {
 				"register": "procest",
 				"schema": "case",
+				"viewModes": ["table", "cards", "map"],
+				"mapConfig": {
+					"geoField": "geometry",
+					"popupField": "title",
+					"center": [52.1326, 5.2913]
+				},
 				"showViewAction": false,
 				"actions": [
 					{
@@ -809,7 +780,7 @@
 					{
 						"id": "case-audit",
 						"type": "audit-trail",
-						"title": "Audit trail"
+						"title": "Change history"
 					}
 				],
 				"layout": [
@@ -968,40 +939,6 @@
 					"enabled": true,
 					"showMetadata": true
 				}
-			}
-		},
-		{
-			"id": "BezwaarDecisions",
-			"route": "/bezwaar-decisions",
-			"type": "index",
-			"title": "Beslissingen op bezwaar",
-			"config": {
-				"register": "procest",
-				"schema": "bezwaarDecision",
-				"columns": [
-					"bezwaar",
-					"dispositionType",
-					"decisionDate",
-					"effectiveDate",
-					"status",
-					"publishedAt"
-				],
-				"showViewAction": false,
-				"actions": [
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "icon-info",
-						"handler": "navigate",
-						"route": "BezwaarDecisionDetail",
-						"type": "handler"
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
 			}
 		},
 		{
@@ -2234,53 +2171,6 @@
 			}
 		},
 		{
-			"id": "StatusRecords",
-			"route": "/settings/status-records",
-			"type": "index",
-			"title": "Status history",
-			"config": {
-				"register": "procest",
-				"schema": "statusRecord",
-				"columns": [
-					{
-						"key": "case"
-					},
-					{
-						"key": "fromStatus"
-					},
-					{
-						"key": "statusType",
-						"label": "toStatus"
-					},
-					{
-						"key": "transitionLabel"
-					},
-					{
-						"key": "noWorkflowTemplate"
-					},
-					{
-						"key": "createdAt"
-					}
-				],
-				"showViewAction": false,
-				"actions": [
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "icon-info",
-						"handler": "navigate",
-						"route": "StatusRecordDetail",
-						"type": "handler"
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
-			}
-		},
-		{
 			"id": "StatusRecordDetail",
 			"route": "/settings/status-records/:id",
 			"type": "detail",
@@ -2635,40 +2525,6 @@
 					"enabled": true,
 					"showMetadata": true
 				}
-			}
-		},
-		{
-			"id": "BezwaarAdviceRequests",
-			"route": "/bezwaar-advice-requests",
-			"type": "index",
-			"title": "BAC-adviezen",
-			"config": {
-				"register": "procest",
-				"schema": "bacAdviceRequest",
-				"columns": [
-					"bezwaar",
-					"commissie",
-					"status",
-					"assignedAt",
-					"deadline",
-					"conclusion"
-				],
-				"showViewAction": false,
-				"actions": [
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "icon-info",
-						"handler": "navigate",
-						"route": "BezwaarAdviceRequestDetail",
-						"type": "handler"
-					}
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
 			}
 		},
 		{

@@ -8,6 +8,7 @@ import { translate as t, translatePlural as n, loadTranslations } from '@nextclo
 import { generateUrl } from '@nextcloud/router'
 import {
 	buildManifest,
+	useAppManifest,
 	CnPageRenderer,
 	defaultPageTypes,
 	fieldInspectionIntegration,
@@ -115,7 +116,17 @@ registerIntegration({
 // Apply ADR-037 manifest fragments before routes/app consume the manifest.
 const fragmentCtx = require.context('./manifest.d/', false, /\.json$/)
 const fragments = fragmentCtx.keys().sort().map((key) => fragmentCtx(key))
-const manifest = buildManifest(bundledManifest, fragments, menuLayout)
+const builtManifest = buildManifest(bundledManifest, fragments, menuLayout)
+
+// Adopt the backend `/api/manifest` delta (case-type-navigation): the
+// ManifestController resolves the live `caseType` objects and returns a keyed
+// menu delta that ADDS one child per case type under `CasesGroup` (ADR-036
+// keyed `children[]` merge). `useAppManifest` returns a REACTIVE ref — the
+// render function below reads `resolvedManifest.value`, so the navigation
+// updates in place once the backend delta lands, without a page reload.
+// The built manifest is the synchronous fallback: apps work fully before (and
+// without) the backend endpoint responding.
+const { manifest: resolvedManifest } = useAppManifest('procest', builtManifest, { mergeStrategy: 'delta' })
 
 // Shallow-clone CnPageRenderer because the lib's barrel exports are
 // non-extensible (webpack ESM module records). Vue 2's `Vue.extend()`
@@ -146,10 +157,13 @@ function routesFromManifest(manifest) {
 	return routes
 }
 
+// Routes are built from the built manifest only. The backend delta merely adds
+// menu CHILDREN that point at the existing `Cases` route (via `query.caseType`);
+// it introduces no new pages, so the route table needs no reactive rebuild.
 const router = new VueRouter({
 	mode: 'history',
 	base: generateUrl('/apps/procest'),
-	routes: routesFromManifest(manifest),
+	routes: routesFromManifest(builtManifest),
 })
 
 tryLoadTranslations()
@@ -176,9 +190,11 @@ Vue.prototype.$mapFormatters = mapFormattersProp
 new Vue({
 	pinia,
 	router,
+	// Reading `resolvedManifest.value` inside render makes the root re-render
+	// (and re-pass `manifest` to App) when the backend delta resolves.
 	render: (h) => h(App, {
 		props: {
-			manifest,
+			manifest: resolvedManifest.value,
 			customComponents: customComponentsProp,
 			registry: registryProp,
 			pageTypes: pageTypesProp,
