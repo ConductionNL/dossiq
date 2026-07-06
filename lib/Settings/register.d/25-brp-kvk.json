@@ -1,0 +1,352 @@
+{
+    "components": {
+        "registers": {
+            "procest": {
+                "schemas": [
+                    "brpPerson",
+                    "kvkCompany"
+                ]
+            }
+        },
+        "schemas": {
+            "brpPerson": {
+                "slug": "brpPerson",
+                "icon": "AccountOutline",
+                "version": "1.0.0",
+                "x-schema-org": "schema:Person",
+                "x-zgw-equivalent": "Rol betrokkene natuurlijk_persoon",
+                "title": "BRP person (test register set)",
+                "description": "Simplified BRP person register set following Haal Centraal BRP Personen bevragen field naming. NOT a registry connection: seeded exclusively with official fictitious personas from the BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock), which double as the BRP contract-lane fixtures. Live BRP adapters are owned by external-integrations-test-environments.",
+                "type": "object",
+                "required": [
+                    "burgerservicenummer",
+                    "naam"
+                ],
+                "properties": {
+                    "burgerservicenummer": {
+                        "type": "string",
+                        "format": "bsn",
+                        "title": "Burgerservicenummer",
+                        "description": "BSN of the person (11-proef validated by OpenRegister's registered bsn format — no procest-side validator, ADR-011)."
+                    },
+                    "naam": {
+                        "type": "object",
+                        "title": "Naam",
+                        "description": "Name block per Haal Centraal naming (voornamen, voorvoegsel, geslachtsnaam).",
+                        "properties": {
+                            "voornamen": {
+                                "type": "string",
+                                "title": "Voornamen",
+                                "description": "Given names of the person."
+                            },
+                            "voorvoegsel": {
+                                "type": "string",
+                                "title": "Voorvoegsel",
+                                "description": "Surname prefix (tussenvoegsel), e.g. 'de' or 'van'."
+                            },
+                            "geslachtsnaam": {
+                                "type": "string",
+                                "title": "Geslachtsnaam",
+                                "description": "Family name of the person."
+                            }
+                        }
+                    },
+                    "geboorte": {
+                        "type": "object",
+                        "title": "Geboorte",
+                        "description": "Birth block per Haal Centraal naming.",
+                        "properties": {
+                            "datum": {
+                                "type": "string",
+                                "format": "date",
+                                "title": "Geboortedatum",
+                                "description": "Date of birth (ISO 8601)."
+                            }
+                        }
+                    },
+                    "verblijfplaats": {
+                        "type": "object",
+                        "title": "Verblijfplaats",
+                        "description": "Residence block per Haal Centraal naming (straat, huisnummer, postcode, woonplaats).",
+                        "properties": {
+                            "straat": {
+                                "type": "string",
+                                "title": "Straat",
+                                "description": "Street name of the residence."
+                            },
+                            "huisnummer": {
+                                "type": "integer",
+                                "title": "Huisnummer",
+                                "description": "House number of the residence."
+                            },
+                            "postcode": {
+                                "type": "string",
+                                "title": "Postcode",
+                                "description": "Postal code of the residence."
+                            },
+                            "woonplaats": {
+                                "type": "string",
+                                "title": "Woonplaats",
+                                "description": "City/town of the residence."
+                            }
+                        }
+                    },
+                    "displayName": {
+                        "type": "string",
+                        "title": "Display name",
+                        "description": "Precomputed display name (voornamen + voorvoegsel + geslachtsnaam) for list rendering and initiator search."
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Description",
+                        "description": "Provenance marker: identifies the row as official fictitious test data and names its fixture source."
+                    }
+                },
+                "configuration": {
+                    "objectNameField": "displayName",
+                    "objectDescriptionField": "description"
+                }
+            },
+            "kvkCompany": {
+                "slug": "kvkCompany",
+                "icon": "Domain",
+                "version": "1.0.0",
+                "x-schema-org": "schema:Organization",
+                "x-zgw-equivalent": "Rol betrokkene niet_natuurlijk_persoon",
+                "title": "KvK company (test register set)",
+                "description": "Simplified KvK company register set following KvK Zoeken API field naming. NOT a registry connection: seeded exclusively with the KvK-published fictitious test companies (developers.kvk.nl test environment), which double as the KvK contract-lane fixtures. Live KvK adapters are owned by external-integrations-test-environments.",
+                "type": "object",
+                "required": [
+                    "kvkNummer",
+                    "handelsnaam"
+                ],
+                "properties": {
+                    "kvkNummer": {
+                        "type": "string",
+                        "pattern": "^[0-9]{8}$",
+                        "title": "KvK-nummer",
+                        "description": "Eight-digit KvK registration number of the company."
+                    },
+                    "handelsnaam": {
+                        "type": "string",
+                        "title": "Handelsnaam",
+                        "description": "Trade name of the company as returned by the KvK Zoeken API."
+                    },
+                    "rechtsvorm": {
+                        "type": "string",
+                        "title": "Rechtsvorm",
+                        "description": "Legal form of the company (per the developers.kvk.nl test-data table)."
+                    },
+                    "adres": {
+                        "type": "object",
+                        "title": "Adres",
+                        "description": "Address block per KvK Zoeken naming (straatnaam, huisnummer, postcode, plaats). Fields are optional — some fixtures carry only a partial or foreign address.",
+                        "properties": {
+                            "straatnaam": {
+                                "type": "string",
+                                "title": "Straatnaam",
+                                "description": "Street name of the bezoekadres."
+                            },
+                            "huisnummer": {
+                                "type": "integer",
+                                "title": "Huisnummer",
+                                "description": "House number of the bezoekadres."
+                            },
+                            "postcode": {
+                                "type": "string",
+                                "title": "Postcode",
+                                "description": "Postal code of the bezoekadres."
+                            },
+                            "plaats": {
+                                "type": "string",
+                                "title": "Plaats",
+                                "description": "City/town of the bezoekadres (or the country for foreign fixtures)."
+                            }
+                        }
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Description",
+                        "description": "Provenance marker: identifies the row as official fictitious test data and names its fixture source."
+                    }
+                },
+                "configuration": {
+                    "objectNameField": "handelsnaam",
+                    "objectDescriptionField": "description"
+                }
+            }
+        },
+        "objects": [
+            {
+                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999990627" },
+                "burgerservicenummer": "999990627",
+                "naam": { "voornamen": "Stephan", "voorvoegsel": "", "geslachtsnaam": "Janssen" },
+                "geboorte": { "datum": "1975-04-06" },
+                "verblijfplaats": { "straat": "Mandelaplein", "huisnummer": 2, "postcode": "2572HT", "woonplaats": "'s-Gravenhage" },
+                "displayName": "Stephan Janssen",
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+            },
+            {
+                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999992570" },
+                "burgerservicenummer": "999992570",
+                "naam": { "voornamen": "Albert", "voorvoegsel": "", "geslachtsnaam": "Vogel" },
+                "geboorte": { "datum": "1958-07-19" },
+                "verblijfplaats": { "straat": "Poolsestraat", "huisnummer": 36, "postcode": "3028EN", "woonplaats": "Rotterdam" },
+                "displayName": "Albert Vogel",
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+            },
+            {
+                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999995091" },
+                "burgerservicenummer": "999995091",
+                "naam": { "voornamen": "Thanatos", "voorvoegsel": "", "geslachtsnaam": "Olympos" },
+                "geboorte": { "datum": "1988-04-01" },
+                "verblijfplaats": { "straat": "'t Haantje", "huisnummer": 86, "postcode": "8646TK", "woonplaats": "Noord-Sleen" },
+                "displayName": "Thanatos Olympos",
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+            },
+            {
+                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999996277" },
+                "burgerservicenummer": "999996277",
+                "naam": { "voornamen": "Christina Annabel", "voorvoegsel": "", "geslachtsnaam": "Christiaansen" },
+                "geboorte": { "datum": "1970-07-17" },
+                "verblijfplaats": { "straat": "Franciscus Romanusweg", "huisnummer": 60, "postcode": "6221AH", "woonplaats": "Maastricht" },
+                "displayName": "Christina Annabel Christiaansen",
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+            },
+            {
+                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-900194054" },
+                "burgerservicenummer": "900194054",
+                "naam": { "voornamen": "Tina-Antïna", "voorvoegsel": "de", "geslachtsnaam": "Bruin" },
+                "geboorte": { "datum": "1990-12-11" },
+                "verblijfplaats": { "straat": "Croeselaan", "huisnummer": 15, "postcode": "3521BJ", "woonplaats": "Utrecht" },
+                "displayName": "Tina-Antïna de Bruin",
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+            },
+            {
+                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999997609" },
+                "burgerservicenummer": "999997609",
+                "naam": { "voornamen": "Eleonora", "voorvoegsel": "de", "geslachtsnaam": "Crooy" },
+                "geboorte": { "datum": "1969-12-27" },
+                "verblijfplaats": { "straat": "Loosduinse Hoofdstraat", "huisnummer": 189, "postcode": "2552AB", "woonplaats": "'s-Gravenhage" },
+                "displayName": "Eleonora de Crooy",
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+            },
+            {
+                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999993355" },
+                "burgerservicenummer": "999993355",
+                "naam": { "voornamen": "Jan-Kees", "voorvoegsel": "", "geslachtsnaam": "Brouwers" },
+                "geboorte": { "datum": "1978-03-31" },
+                "verblijfplaats": { "straat": "Belcampostraat", "huisnummer": 10, "postcode": "3544NG", "woonplaats": "Utrecht" },
+                "displayName": "Jan-Kees Brouwers",
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+            },
+            {
+                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999990949" },
+                "burgerservicenummer": "999990949",
+                "naam": { "voornamen": "Marianne", "voorvoegsel": "de", "geslachtsnaam": "Jong" },
+                "geboorte": { "datum": "1952-04-22" },
+                "verblijfplaats": { "straat": "Mississippidreef", "huisnummer": 151, "postcode": "3565CE", "woonplaats": "Utrecht" },
+                "displayName": "Marianne de Jong",
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+            },
+            {
+                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999990792" },
+                "burgerservicenummer": "999990792",
+                "naam": { "voornamen": "Jan", "voorvoegsel": "de", "geslachtsnaam": "Cuykelaer" },
+                "geboorte": { "datum": "1977-12-10" },
+                "verblijfplaats": { "straat": "Thorbeckelaan", "huisnummer": 731, "postcode": "2564CJ", "woonplaats": "'s-Gravenhage" },
+                "displayName": "Jan de Cuykelaer",
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+            },
+            {
+                "@self": { "register": "procest", "schema": "brpPerson", "slug": "brp-999999655" },
+                "burgerservicenummer": "999999655",
+                "naam": { "voornamen": "Astrid", "voorvoegsel": "", "geslachtsnaam": "Abels" },
+                "geboorte": { "datum": "1974-12-16" },
+                "verblijfplaats": { "straat": "Turfmarkt", "huisnummer": 39, "postcode": "2511CA", "woonplaats": "'s-Gravenhage" },
+                "displayName": "Astrid Abels",
+                "description": "Officiële fictieve testpersoon uit de BRP personen-mock test-data.json (ghcr.io/brp-api/personen-mock) — geen echte persoon."
+            },
+            {
+                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-69599084" },
+                "kvkNummer": "69599084",
+                "handelsnaam": "Test EMZ Dagobert",
+                "rechtsvorm": "Eenmanszaak",
+                "adres": { "straatnaam": "Abebe Bikilalaan", "plaats": "Amsterdam" },
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+            },
+            {
+                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-68750110" },
+                "kvkNummer": "68750110",
+                "handelsnaam": "Test BV Donald",
+                "rechtsvorm": "BV",
+                "adres": { "straatnaam": "Hizzaarderlaan", "plaats": "Lollum" },
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+            },
+            {
+                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-69599068" },
+                "kvkNummer": "69599068",
+                "handelsnaam": "Test Stichting Bolderbast",
+                "rechtsvorm": "Stichting",
+                "adres": { "straatnaam": "Oosterwal", "plaats": "Lochem" },
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+            },
+            {
+                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-55344526" },
+                "kvkNummer": "55344526",
+                "handelsnaam": "Regional Stimflex Coöperatie",
+                "rechtsvorm": "Coöperatie",
+                "adres": { "plaats": "Spanje" },
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+            },
+            {
+                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-68727720" },
+                "kvkNummer": "68727720",
+                "handelsnaam": "Test NV Katrien - Handelsnaam",
+                "rechtsvorm": "NV",
+                "adres": { "straatnaam": "Rietdekkershof", "plaats": "Veendam" },
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+            },
+            {
+                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-90004760" },
+                "kvkNummer": "90004760",
+                "handelsnaam": "Local Funzoom N.V. - Statutory Naam",
+                "rechtsvorm": "NV",
+                "adres": { "straatnaam": "Klepelstraat 1581346628486 9010", "plaats": "Denekamp" },
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+            },
+            {
+                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-90001354" },
+                "kvkNummer": "90001354",
+                "handelsnaam": "Grand Joyflex B.V.",
+                "rechtsvorm": "BV",
+                "adres": { "plaats": "Sterksel" },
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+            },
+            {
+                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-90000102" },
+                "kvkNummer": "90000102",
+                "handelsnaam": "Stichting Free opentrans - Eigenaar",
+                "rechtsvorm": "Stichting",
+                "adres": { "straatnaam": "Rijnsburgerweg", "plaats": "Leiden" },
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+            },
+            {
+                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-69599076" },
+                "kvkNummer": "69599076",
+                "handelsnaam": "Test VOF Guus",
+                "rechtsvorm": "VoF",
+                "adres": { "straatnaam": "Benny Goodmanstraat", "plaats": "Almere" },
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+            },
+            {
+                "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-90001745" },
+                "kvkNummer": "90001745",
+                "handelsnaam": "Free Movelax",
+                "rechtsvorm": "Maatschap",
+                "adres": { "straatnaam": "Burg G van Andellaan", "plaats": "Zuidland" },
+                "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
+            }
+        ]
+    }
+}

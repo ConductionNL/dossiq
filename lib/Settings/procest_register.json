@@ -3,7 +3,7 @@
   "info": {
     "title": "Procest Case Management Register",
     "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, automaticAction, and their instance counterparts.",
-    "version": "0.10.0"
+    "version": "0.11.0"
   },
   "x-openregister": {
     "type": "application",
@@ -634,18 +634,76 @@
               "nl": "Zaak \"{{title}}\" aan je toegewezen",
               "en": "Case \"{{title}}\" assigned to you"
             }
+          },
+          "caseHandoffIntake": {
+            "trigger": {
+              "type": "created",
+              "filter": {
+                "field": "handoffSource",
+                "operator": "notIn",
+                "values": [""]
+              }
+            },
+            "enabled": true,
+            "channels": [
+              "nc-notification"
+            ],
+            "recipients": [
+              {
+                "kind": "field",
+                "field": "assignee"
+              }
+            ],
+            "subject": {
+              "nl": "Nieuwe zaak \"{{title}}\" ontvangen via overdracht",
+              "en": "New case \"{{title}}\" received via handoff"
+            }
           }
         },
         "icon": "BriefcaseOutline",
-        "version": "1.1.0",
+        "version": "1.5.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
+        "x-openregister-quality": {
+          "field": "qualityScore",
+          "statusField": "qualityStatus",
+          "rules": [
+            { "type": "required", "field": "title", "weight": 1 },
+            { "type": "required", "field": "caseType", "weight": 1 },
+            { "type": "required", "field": "identifier", "weight": 1 },
+            { "type": "freshness", "field": "startDate", "halfLifeDays": 365, "weight": 1 }
+          ],
+          "thresholds": { "good": 0.8, "fair": 0.5 }
+        },
+        "x-openregister-dedup": {
+          "blockingKeys": ["caseType"],
+          "matchRules": [
+            { "field": "identifier", "method": "exact", "weight": 0.4 },
+            { "field": "vergunningaanvraagRef", "method": "exact", "weight": 0.3 },
+            { "field": "title", "method": "normalized", "weight": 0.2 },
+            { "field": "title", "method": "levenshtein", "weight": 0.1 }
+          ],
+          "threshold": 0.7
+        },
         "title": "Case",
         "description": "A case instance in the case management system",
         "type": "object",
         "configuration": {
           "objectNameField": "title",
           "objectDescriptionField": "description",
+          "implements": [
+            "https://openregister.app/ns#Case"
+          ],
+          "handoffContract": {
+            "https://openregister.app/ns#Case": {
+              "title": "title",
+              "summary": "description",
+              "channel": "intakeChannel",
+              "source": "handoffSource",
+              "requester": "requester",
+              "priority": "priority"
+            }
+          },
           "linkedTypes": [
             "mail",
             "calendar",
@@ -654,11 +712,23 @@
             "maps",
             "shares"
           ],
+          "x-openregister-processing": {
+            "logReads": true,
+            "attribution": {
+              "default": "zaakafhandeling"
+            },
+            "subjectIdFields": {}
+          },
           "x-openregister-references": {
             "caseType": {
               "schema": "caseType",
               "mode": "relatedObject",
               "field": "caseType"
+            },
+            "statusType": {
+              "schema": "statusType",
+              "mode": "relatedObject",
+              "field": "status"
             }
           },
           "x-openregister-calculations": {
@@ -696,6 +766,79 @@
                   "-",
                   { "sequence": { "scope": "yearly", "pad": 4 } }
                 ]
+              }
+            },
+            "isFinalStatus": {
+              "type": "boolean",
+              "materialise": true,
+              "description": "True when the linked statusType is terminal (statusType.isFinal). Materialised: cross-object @ref lookups are only resolved by OpenRegister's save-time listener, so the value is stored and server-side filterable (isFinalStatus=false = open cases). Recomputed on every case save; after editing a statusType's isFinal flag, run occ openregister:rematerialise-calculations.",
+              "expression": {
+                "eq": [
+                  { "prop": "@ref.statusType.isFinal" },
+                  true
+                ]
+              }
+            },
+            "daysUntilDeadline": {
+              "type": "integer",
+              "materialise": false,
+              "description": "Signed whole days from today until the deadline (negative = overdue, null = no deadline). Virtual (materialise:false): time-dependent, so it is computed at read time when the request passes _extend=calculations; a materialised value would go stale daily. Both operands are floored to date granularity to match day-based deadline semantics.",
+              "expression": {
+                "dateDiff": {
+                  "from": { "formatDate": [ { "now": [] }, "Y-m-d" ] },
+                  "to": { "formatDate": [ { "prop": "deadline" }, "Y-m-d" ] },
+                  "unit": "days"
+                }
+              }
+            },
+            "daysOverdue": {
+              "type": "integer",
+              "materialise": false,
+              "description": "Whole days past the deadline; null when there is no deadline or the case is not overdue (deadline today = not overdue). Virtual (materialise:false, read via _extend=calculations). The dateDiff is inlined twice because read-time virtual calculations cannot reference sibling calculations (OpenRegister evaluates each against the original payload).",
+              "expression": {
+                "if": [
+                  {
+                    "gt": [
+                      {
+                        "dateDiff": {
+                          "from": { "formatDate": [ { "prop": "deadline" }, "Y-m-d" ] },
+                          "to": { "formatDate": [ { "now": [] }, "Y-m-d" ] },
+                          "unit": "days"
+                        }
+                      },
+                      0
+                    ]
+                  },
+                  {
+                    "dateDiff": {
+                      "from": { "formatDate": [ { "prop": "deadline" }, "Y-m-d" ] },
+                      "to": { "formatDate": [ { "now": [] }, "Y-m-d" ] },
+                      "unit": "days"
+                    }
+                  }
+                ]
+              }
+            },
+            "daysSinceActivity": {
+              "type": "integer",
+              "materialise": false,
+              "description": "Whole days since the object was last modified (falls back to creation date). v1 sources @self.updated — the case.activity log is a JSON-encoded string and OpenRegister's calculation engine has no JSON/array operators to read it. Virtual (materialise:false): a save-time value would always be 0 at the moment of saving; computed fresh at read time via _extend=calculations.",
+              "expression": {
+                "dateDiff": {
+                  "from": {
+                    "formatDate": [
+                      {
+                        "coalesce": [
+                          { "prop": "@self.updated" },
+                          { "prop": "@self.created" }
+                        ]
+                      },
+                      "Y-m-d"
+                    ]
+                  },
+                  "to": { "formatDate": [ { "now": [] }, "Y-m-d" ] },
+                  "unit": "days"
+                }
               }
             }
           },
@@ -746,6 +889,15 @@
             "description": "Reference to the current status type. Set declaratively to the case type's initial status by OpenRegister (x-openregister-lifecycle).",
             "title": "Status",
             "facetable": true
+          },
+          "isFinalStatus": {
+            "type": "boolean",
+            "readOnly": true,
+            "default": false,
+            "description": "Whether the case sits at a terminal status. Computed declaratively by OpenRegister from the linked statusType's isFinal flag (x-openregister-calculations.isFinalStatus); filter isFinalStatus=false for open cases.",
+            "title": "Is Final Status",
+            "facetable": true,
+            "visible": false
           },
           "result": {
             "type": "string",
@@ -983,6 +1135,50 @@
             "description": "JSON-encoded array of samenwerkverzoek UUIDs linked to this zaak",
             "visible": false,
             "title": "Collaboration Requests"
+          },
+          "qualityScore": {
+            "type": "number",
+            "title": "OR quality score",
+            "description": "Per-object quality score 0-1 materialised by OpenRegister from the x-openregister-quality annotation (completeness/format/freshness).",
+            "minimum": 0,
+            "maximum": 1,
+            "facetable": true
+          },
+          "qualityStatus": {
+            "type": "string",
+            "title": "OR quality status",
+            "description": "Status label materialised by OpenRegister from qualityScore (good/fair/poor).",
+            "enum": ["good", "fair", "poor"],
+            "facetable": true
+          },
+          "initiatorType": {
+            "type": "string",
+            "enum": ["person", "company", "contact"],
+            "title": "Initiator type",
+            "description": "Type of the case initiator (indiener): person (BRP natuurlijk persoon), company (KvK niet-natuurlijk persoon), or contact (Nextcloud contact). Display projection of the canonical ADR-048 requester semantic reference (semantic-case-intake) — optional, additive."
+          },
+          "initiatorSourceId": {
+            "type": "string",
+            "title": "Initiator source id",
+            "description": "Identifying number/reference of the initiator in its source: BSN (person), KvK-nummer (company), or contact URI (contact). Display projection — the canonical requester reference is owned by semantic-case-intake."
+          },
+          "initiatorDisplayName": {
+            "type": "string",
+            "title": "Initiator display name",
+            "description": "Human-readable name of the case initiator, denormalised at selection time for list and detail rendering."
+          },
+          "requester": {
+            "type": "string",
+            "format": "uuid",
+            "referenceSemanticType": "https://openregister.app/ns#Requester",
+            "title": "Requester",
+            "description": "Canonical ADR-048 semantic reference (UUID) to the party who requested this case, set when the case arrives via the ns#Case semantic handoff. The initiatorType/initiatorSourceId/initiatorDisplayName fields are the display projection of this reference — one write path."
+          },
+          "handoffSource": {
+            "type": "string",
+            "referenceSemanticType": "https://openregister.app/ns#Case",
+            "title": "Handoff source",
+            "description": "Provenance back-link (ADR-048/ADR-051) to the originating object that was handed off into this case (e.g. a Pipelinq request), carrying the contract `source` field. Empty for manually-created cases; the chain source→case is also navigable via OpenRegister's handoff provenance relations."
           }
         }
       },
@@ -1010,7 +1206,7 @@
           }
         },
         "icon": "CheckboxMarkedOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Action",
         "x-zgw-equivalent": "Taak",
         "title": "Task",
@@ -1046,6 +1242,15 @@
             "description": "Task status (CMMN HumanTask lifecycle)",
             "title": "Status",
             "facetable": true
+          },
+          "isTerminalStatus": {
+            "type": "boolean",
+            "readOnly": true,
+            "default": false,
+            "description": "Whether the task sits at a terminal status (completed/terminated/disabled). Computed declaratively by OpenRegister (x-openregister-calculations.isTerminalStatus); filter isTerminalStatus=false for open tasks.",
+            "title": "Is Terminal Status",
+            "facetable": true,
+            "visible": false
           },
           "case": {
             "type": "string",
@@ -1101,6 +1306,60 @@
           }
         },
         "configuration": {
+          "x-openregister-calculations": {
+            "isTerminalStatus": {
+              "type": "boolean",
+              "materialise": true,
+              "description": "True when the task status is terminal (completed/terminated/disabled — mirrors x-openregister-lifecycle.final). Materialised on every save so task lists can filter isTerminalStatus=false server-side for open tasks.",
+              "expression": {
+                "or": [
+                  { "eq": [ { "prop": "status" }, "completed" ] },
+                  { "eq": [ { "prop": "status" }, "terminated" ] },
+                  { "eq": [ { "prop": "status" }, "disabled" ] }
+                ]
+              }
+            },
+            "daysUntilDue": {
+              "type": "integer",
+              "materialise": false,
+              "description": "Signed whole days from today until dueDate (negative = overdue, null = no dueDate). Virtual (materialise:false): time-dependent, computed at read time when the request passes _extend=calculations. Both operands are floored to date granularity (dueDate is date-time) to match day-based reminder semantics.",
+              "expression": {
+                "dateDiff": {
+                  "from": { "formatDate": [ { "now": [] }, "Y-m-d" ] },
+                  "to": { "formatDate": [ { "prop": "dueDate" }, "Y-m-d" ] },
+                  "unit": "days"
+                }
+              }
+            },
+            "daysOverdue": {
+              "type": "integer",
+              "materialise": false,
+              "description": "Whole days past dueDate; null when there is no dueDate or the task is not overdue (due today = not overdue). Virtual (materialise:false, read via _extend=calculations). The dateDiff is inlined twice because read-time virtual calculations cannot reference sibling calculations (OpenRegister evaluates each against the original payload).",
+              "expression": {
+                "if": [
+                  {
+                    "gt": [
+                      {
+                        "dateDiff": {
+                          "from": { "formatDate": [ { "prop": "dueDate" }, "Y-m-d" ] },
+                          "to": { "formatDate": [ { "now": [] }, "Y-m-d" ] },
+                          "unit": "days"
+                        }
+                      },
+                      0
+                    ]
+                  },
+                  {
+                    "dateDiff": {
+                      "from": { "formatDate": [ { "prop": "dueDate" }, "Y-m-d" ] },
+                      "to": { "formatDate": [ { "now": [] }, "Y-m-d" ] },
+                      "unit": "days"
+                    }
+                  }
+                ]
+              }
+            }
+          },
           "x-openregister-lifecycle": {
             "field": "status",
             "initial": "available",
@@ -1147,12 +1406,23 @@
       "role": {
         "slug": "role",
         "icon": "AccountHardHat",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Role",
         "x-zgw-equivalent": "Rol",
         "title": "Role",
         "description": "A role assignment on a case",
         "type": "object",
+        "configuration": {
+          "x-openregister-processing": {
+            "logReads": true,
+            "attribution": {
+              "default": "zaakafhandeling"
+            },
+            "subjectIdFields": {
+              "contact": "participant"
+            }
+          }
+        },
         "required": [
           "name",
           "roleType",
@@ -1934,11 +2204,22 @@
       "customerContact": {
         "slug": "customerContact",
         "icon": "AccountVoice",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-zgw-equivalent": "KlantContact",
         "title": "Customer Contact",
         "description": "A customer contact moment for a case",
         "type": "object",
+        "configuration": {
+          "x-openregister-processing": {
+            "logReads": true,
+            "attribution": {
+              "default": "klantcontact-registratie"
+            },
+            "subjectIdFields": {
+              "contact": "customerRef"
+            }
+          }
+        },
         "required": [
           "case"
         ],
@@ -6356,8 +6637,27 @@
       "partnerOrganization": {
         "slug": "partnerOrganization",
         "icon": "AccountGroup",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Organization",
+        "x-openregister-quality": {
+          "field": "qualityScore",
+          "statusField": "qualityStatus",
+          "rules": [
+            { "type": "required", "field": "name", "weight": 1 },
+            { "type": "required", "field": "oin", "weight": 1 },
+            { "type": "format", "field": "contactEmail", "format": "email", "weight": 1 }
+          ],
+          "thresholds": { "good": 0.8, "fair": 0.5 }
+        },
+        "x-openregister-dedup": {
+          "blockingKeys": [],
+          "matchRules": [
+            { "field": "oin", "method": "exact", "weight": 0.5 },
+            { "field": "name", "method": "normalized", "weight": 0.3 },
+            { "field": "name", "method": "levenshtein", "weight": 0.2 }
+          ],
+          "threshold": 0.7
+        },
         "title": "Partner organization",
         "description": "External organisation (ketenpartner) participating in shared cases",
         "type": "object",
@@ -6403,6 +6703,21 @@
             "default": true,
             "description": "Whether the partner is active",
             "title": "Is Active"
+          },
+          "qualityScore": {
+            "type": "number",
+            "title": "OR quality score",
+            "description": "Per-object quality score 0-1 materialised by OpenRegister from the x-openregister-quality annotation (completeness/format/freshness).",
+            "minimum": 0,
+            "maximum": 1,
+            "facetable": true
+          },
+          "qualityStatus": {
+            "type": "string",
+            "title": "OR quality status",
+            "description": "Status label materialised by OpenRegister from qualityScore (good/fair/poor).",
+            "enum": ["good", "fair", "poor"],
+            "facetable": true
           }
         }
       },
@@ -7532,9 +7847,28 @@
       "supplier": {
         "slug": "supplier",
         "icon": "Factory",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Organization",
-        "x-schema-org": "schema:Organization",
+        "x-openregister-quality": {
+          "field": "qualityScore",
+          "statusField": "qualityStatus",
+          "rules": [
+            { "type": "required", "field": "legalName", "weight": 1 },
+            { "type": "required", "field": "kvkNumber", "weight": 1 },
+            { "type": "format", "field": "kvkNumber", "pattern": "^[0-9]{8}$", "weight": 1 }
+          ],
+          "thresholds": { "good": 0.8, "fair": 0.5 }
+        },
+        "x-openregister-dedup": {
+          "blockingKeys": [],
+          "matchRules": [
+            { "field": "kvkNumber", "method": "exact", "weight": 0.4 },
+            { "field": "iban", "method": "exact", "weight": 0.3 },
+            { "field": "legalName", "method": "normalized", "weight": 0.2 },
+            { "field": "legalName", "method": "levenshtein", "weight": 0.1 }
+          ],
+          "threshold": 0.7
+        },
         "title": "Supplier",
         "description": "Leverancier / vendor — represents a single supplier organisation that interacts with the municipality through the supplier portal.",
         "type": "object",
@@ -7596,6 +7930,21 @@
             },
             "description": "Certificates / accreditations held",
             "title": "Accreditations"
+          },
+          "qualityScore": {
+            "type": "number",
+            "title": "OR quality score",
+            "description": "Per-object quality score 0-1 materialised by OpenRegister from the x-openregister-quality annotation (completeness/format/freshness).",
+            "minimum": 0,
+            "maximum": 1,
+            "facetable": true
+          },
+          "qualityStatus": {
+            "type": "string",
+            "title": "OR quality status",
+            "description": "Status label materialised by OpenRegister from qualityScore (good/fair/poor).",
+            "enum": ["good", "fair", "poor"],
+            "facetable": true
           }
         },
         "configuration": {

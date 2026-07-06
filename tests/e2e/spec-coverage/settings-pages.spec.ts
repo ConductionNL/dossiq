@@ -60,7 +60,9 @@ const SETTINGS_PAGES: Array<{ label: string, addBtn: string, testId?: string }> 
 	{ label: 'Kaartlagen', addBtn: 'Add WMS/WFS Layer' },
 	{ label: 'Workflow definitions', addBtn: 'Add Workflow Template' },
 	{ label: 'Tenants', addBtn: 'Add Tenant' },
-	{ label: 'Status history', addBtn: 'Add Status Record' },
+	// The standalone "Status history" (StatusRecords) settings page was retired
+	// by retire-status-history-page — change history is now the CaseDetail
+	// audit-trail surface, not a page/menu item. Entry removed accordingly.
 	{ label: 'Case locations', addBtn: 'Add Case Location' },
 ]
 

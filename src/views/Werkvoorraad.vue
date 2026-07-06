@@ -107,7 +107,20 @@
 					<td class="werkvoorraad__cell-id">
 						{{ caseItem.identifier || '—' }}
 					</td>
-					<td>{{ caseItem.title }}</td>
+					<td>
+						{{ caseItem.title }}
+						<!-- Provenance affordance (semantic-case-intake): a case
+						     that arrived via the ns#Case handoff carries a
+						     handoffSource back-link — mark it so the behandelaar
+						     sees it came from another app. -->
+						<span
+							v-if="caseItem.handoffSource"
+							class="werkvoorraad__handoff-badge"
+							:title="t('procest', 'Received via handoff from another application')">
+							<TransitConnectionVariant :size="14" />
+							{{ t('procest', 'Handoff') }}
+						</span>
+					</td>
 					<td>{{ getCaseTypeName(caseItem.caseType) }}</td>
 					<td>
 						<span class="werkvoorraad__status-badge">
@@ -141,6 +154,7 @@ import { useObjectStore } from '../store/modules/object.js'
 import { isCaseOverdue, getDaysRemaining, formatDate } from '../utils/caseHelpers.js'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
 import BriefcaseCheckOutline from 'vue-material-design-icons/BriefcaseCheckOutline.vue'
+import TransitConnectionVariant from 'vue-material-design-icons/TransitConnectionVariant.vue'
 
 export default {
 	name: 'Werkvoorraad',
@@ -151,6 +165,7 @@ export default {
 		NcSelect,
 		Refresh,
 		BriefcaseCheckOutline,
+		TransitConnectionVariant,
 	},
 	data() {
 		return {
@@ -480,6 +495,19 @@ export default {
 	border-radius: var(--border-radius-pill);
 	background: var(--color-primary-element-light);
 	font-size: 12px;
+}
+
+.werkvoorraad__handoff-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	margin-inline-start: 6px;
+	padding: 1px 6px;
+	border-radius: var(--border-radius-pill);
+	background: var(--color-background-dark);
+	color: var(--color-text-maxcontrast);
+	font-size: 11px;
+	vertical-align: middle;
 }
 
 .werkvoorraad__unassigned {

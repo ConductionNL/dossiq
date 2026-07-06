@@ -190,18 +190,28 @@ Vue.prototype.$mapFormatters = mapFormattersProp
 new Vue({
 	pinia,
 	router,
-	// Reading `resolvedManifest.value` inside render makes the root re-render
-	// (and re-pass `manifest` to App) when the backend delta resolves.
-	render: (h) => h(App, {
-		props: {
-			manifest: resolvedManifest.value,
-			customComponents: customComponentsProp,
-			registry: registryProp,
-			pageTypes: pageTypesProp,
-			mapFormatters: mapFormattersProp,
-			formatters: formattersProp,
-		},
-	}),
+	// Expose the reactive manifest ref through setup() so the root render tracks
+	// it as a reactive dependency: when useAppManifest resolves the backend
+	// `/api/manifest` delta and reassigns `manifest.value`, the root re-renders
+	// and re-passes the merged manifest to App (→ CnAppRoot → CnAppNav), so the
+	// dynamic per-case-type children appear without a reload. A plain arrow
+	// render reading `resolvedManifest.value` does NOT establish this tracking
+	// reliably; a setup-returned ref does.
+	setup() {
+		return { resolvedManifest }
+	},
+	render(h) {
+		return h(App, {
+			props: {
+				manifest: this.resolvedManifest,
+				customComponents: customComponentsProp,
+				registry: registryProp,
+				pageTypes: pageTypesProp,
+				mapFormatters: mapFormattersProp,
+				formatters: formattersProp,
+			},
+		})
+	},
 }).$mount('#content')
 
 // Register the mobiel-inspectie-offline Service Worker (PWA offline shell).

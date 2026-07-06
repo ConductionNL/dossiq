@@ -16,7 +16,18 @@
             "contactmoment": {
                 "slug": "contactmoment",
                 "icon": "PhoneInTalk",
-                "version": "1.0.0",
+                "version": "1.1.0",
+                "configuration": {
+                    "x-openregister-processing": {
+                        "logReads": true,
+                        "attribution": {
+                            "default": "klantcontact-registratie"
+                        },
+                        "subjectIdFields": {
+                            "burger": "geidentificeerdeBurgerId"
+                        }
+                    }
+                },
                 "title": "Contactmoment",
                 "description": "A single inbound or outbound contact (telefoon, email, chat, webformulier, social media, balie) handled in the KCC-werkplek, logged against the case and the identified burger.",
                 "type": "object",

@@ -87,7 +87,8 @@
     "title_nl": "Archivering naar e-Depot",
     "summary": "You hand over cases to the e-Depot with MDTO metadata and proof of transfer.",
     "summary_nl": "Je draagt zaken over aan het e-Depot met MDTO-metadata en bewijs van overdracht.",
-    "status": "stable",
+    "status": "beta",
+    "reason": "e-Depot submission runs on a mock/log adapter (LogEDepotSubmissionAdapter); nothing is transmitted to a real e-Depot yet",
     "providedBy": "openregister",
     "docsUrl": "openspec/specs/archief-edepot-handover/spec.md"
   },
@@ -115,7 +116,8 @@
     "title_nl": "Multi-tenant SaaS",
     "summary": "You host many gemeenten apart, with quota, billing and onboarding per tenant.",
     "summary_nl": "Je host veel gemeenten apart, met quota, facturatie en onboarding per tenant.",
-    "status": "stable",
+    "status": "beta",
+    "reason": "tenant stack is app-local; not yet on the OpenRegister boundary",
     "docsUrl": "openspec/specs/multi-tenancy/spec.md"
   },
   {
@@ -152,6 +154,7 @@
     "summary": "You receive Omgevingswet intakes and track their deadlines.",
     "summary_nl": "Je ontvangt Omgevingswet-aanvragen en bewaakt hun termijnen.",
     "status": "beta",
+    "reason": "Config-ready seam (integration.dso.baseUrl + dso_lv_auth_token, warn-and-empty when unset); pre-productie (service.pre.omgevingswet.overheid.nl) needs the DSO aansluittraject + PKIoverheid cert — a customer-side track procest supports but cannot self-start.",
     "docsUrl": "openspec/specs/dso-omgevingsloket/spec.md"
   },
   {
@@ -197,6 +200,27 @@
     "title_nl": "DigiD en eHerkenning",
     "summary": "Citizens and companies sign in with DigiD and eHerkenning.",
     "summary_nl": "Inwoners en bedrijven loggen in met DigiD en eHerkenning.",
-    "status": "soon"
+    "status": "beta",
+    "reason": "Local login SIMULATOR only (maykinmedia pattern, no real SAML); capped at beta until validated against Logius preproductie with a PKIoverheid certificate. Default tier is log (no external call)."
+  },
+  {
+    "slug": "brp-integration",
+    "title": "BRP-koppeling (Haal Centraal)",
+    "title_nl": "BRP-koppeling (Haal Centraal)",
+    "summary": "You resolve a BSN to a person via the BRP Personen-API.",
+    "summary_nl": "Je zoekt een BSN op tot een persoon via de BRP Personen-API.",
+    "status": "beta",
+    "reason": "Live HaalCentraalBrpAdapter selected by config; contract-tested offline against the ghcr.io/brp-api/personen-mock koppelvlak. Stable pending the proefomgeving X-API-KEY end-to-end. Default tier is log (no external call).",
+    "docsUrl": "docs/admin/integrations.md"
+  },
+  {
+    "slug": "kvk-integration",
+    "title": "KvK-koppeling (Handelsregister)",
+    "title_nl": "KvK-koppeling (Handelsregister)",
+    "summary": "You resolve a KvK number to a company via the Handelsregister Zoeken API.",
+    "summary_nl": "Je zoekt een KvK-nummer op tot een bedrijf via de Handelsregister Zoeken-API.",
+    "status": "beta",
+    "reason": "Live KvkApiAdapter selected by config against api.kvk.nl/test (public test key); contract-tested against the pinned fictitious companies. Stable pending a production KvK contract. Default tier is log (no external call).",
+    "docsUrl": "docs/admin/integrations.md"
   }
 ]

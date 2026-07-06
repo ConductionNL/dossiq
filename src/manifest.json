@@ -303,6 +303,15 @@
 			"permission": "admin"
 		},
 		{
+			"id": "VerwerkingenOverviewMenu",
+			"label": "Processing activities (AVG)",
+			"icon": "icon-password",
+			"route": "VerwerkingenOverview",
+			"section": "settings",
+			"order": 95,
+			"permission": "admin"
+		},
+		{
 			"id": "SettingsMenu",
 			"label": "Settings",
 			"icon": "icon-settings",
@@ -740,6 +749,13 @@
 						"icon": "icon-address",
 						"component": "MapsLeafTab",
 						"order": 80
+					},
+					{
+						"id": "history",
+						"label": "Change history",
+						"icon": "History",
+						"order": 85,
+						"widgets": [{ "type": "audit-trail" }]
 					}
 				],
 				"documentationUrl": "https://procest.conduction.nl",
@@ -778,20 +794,24 @@
 						}
 					},
 					{
-						"id": "case-audit",
-						"type": "audit-trail",
-						"title": "Change history"
+						"id": "initiator",
+						"type": "custom",
+						"title": "Initiator",
+						"_note": "Initiator (indiener) display — brp-kvk-register-sets. Resolved via page slots (widget-initiator -> InitiatorSection registry key); the component self-fetches the case from the route id and renders nothing when no initiator is set."
 					}
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "case-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "case-locaties", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 6 },
-					{ "id": "3", "widgetId": "case-audit", "gridX": 0, "gridY": 10, "gridWidth": 12, "gridHeight": 4, "showTitle": false }
+					{ "id": "3", "widgetId": "initiator", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 2, "showTitle": true },
+					{ "id": "2", "widgetId": "case-locaties", "gridX": 0, "gridY": 6, "gridWidth": 12, "gridHeight": 6 }
 				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
 				}
+			},
+			"slots": {
+				"widget-initiator": "InitiatorSection"
 			}
 		},
 		{
@@ -2685,6 +2705,14 @@
 			"title": "Substitutions & reassignment",
 			"component": "SubstitutionAdminView",
 			"_note": "Coordinator substitution console: a filterable list of all substitutions plus register-on-behalf, revoke, inspect-capacity-stamped-actions, and bulk-reassignment actions (the latter two open dedicated modals). Coordinator role is enforced server-side. The standard list type cannot host the on-behalf-of register flow, the action-list inspection, or the bulk-reassign operation over the listed objects."
+		},
+		{
+			"id": "VerwerkingenOverview",
+			"route": "/verwerkingen",
+			"type": "custom",
+			"title": "Processing activities (AVG)",
+			"component": "VerwerkingenOverviewView",
+			"_note": "FG/admin window on OpenRegister's processing-activity register scoped to procest (avg-verwerkingenlogging thin consumer): catalogue review status, unclassified-processing counter (OR-PA-4 fallback), and the per-betrokkene inzageverzoek export entry point (OR-PA-7 via InzageExportModal). All data comes from OR's /api/avg endpoints; OR denies non-FG/non-admin callers fail-closed (OR-PA-8). No standard list type applies — the data source is OR's AVG API, not a procest register schema."
 		}
 	],
 	"observability": {

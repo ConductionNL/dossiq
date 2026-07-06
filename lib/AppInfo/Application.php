@@ -297,21 +297,39 @@ class Application extends App implements IBootstrap
         $context->registerServiceAlias(SigningAdapterInterface::class, MockSigningAdapter::class);
         $context->registerServiceAlias(ArchivalAdapterInterface::class, MockArchivalAdapter::class);
 
-        // Dormant external auth-broker adapters (lib/Service/Auth/).
-        // Default to the Log* implementations which throw + log so a
-        // misconfigured environment surfaces "broker not configured"
-        // immediately. Activation: configure openconnector's
-        // eHerkenning/DigiD broker entry + private key + certificate,
-        // flip the matching feature_flag app-config key, and swap these
-        // bindings to the active SamlAdapter implementation in a
-        // follow-up change.
-        $context->registerServiceAlias(
-            \OCA\Procest\Service\Auth\EHerkenningSamlAdapterInterface::class,
-            \OCA\Procest\Service\Auth\LogEHerkenningSamlAdapter::class
-        );
-        $context->registerServiceAlias(
+        // External auth-broker adapters (lib/Service/Auth/), selected by the
+        // `integration.digid.mode` config tier (external-integrations-test-environments).
+        // DEFAULT `log` = the dormant Log* implementations which throw + log
+        // so a misconfigured environment surfaces "broker not configured"
+        // immediately and NEVER makes an external call. `simulator` binds the
+        // maykinmedia-pattern local login simulator (no real SAML — capped at
+        // beta). `preprod`/`live` (certificate-bound Logius koppelvlak) are
+        // documented in docs/admin/integrations.md and bound in a follow-up
+        // once the aansluiting + PKIoverheid cert are granted; until then they
+        // fall through to the Log adapter (fail-closed).
+        $context->registerService(
             \OCA\Procest\Service\Auth\DigidSamlAdapterInterface::class,
-            \OCA\Procest\Service\Auth\LogDigidSamlAdapter::class
+            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Service\Auth\DigidSamlAdapterInterface {
+                $mode = $c->get(\OCA\Procest\Service\External\IntegrationMode::class)
+                    ->resolve('digid', [\OCA\Procest\Service\External\IntegrationMode::SIMULATOR]);
+                if ($mode === \OCA\Procest\Service\External\IntegrationMode::SIMULATOR) {
+                    return new \OCA\Procest\Service\Auth\SimulatorDigidSamlAdapter();
+                }
+
+                return $c->get(\OCA\Procest\Service\Auth\LogDigidSamlAdapter::class);
+            }
+        );
+        $context->registerService(
+            \OCA\Procest\Service\Auth\EHerkenningSamlAdapterInterface::class,
+            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Service\Auth\EHerkenningSamlAdapterInterface {
+                $mode = $c->get(\OCA\Procest\Service\External\IntegrationMode::class)
+                    ->resolve('digid', [\OCA\Procest\Service\External\IntegrationMode::SIMULATOR]);
+                if ($mode === \OCA\Procest\Service\External\IntegrationMode::SIMULATOR) {
+                    return new \OCA\Procest\Service\Auth\SimulatorEHerkenningSamlAdapter();
+                }
+
+                return $c->get(\OCA\Procest\Service\Auth\LogEHerkenningSamlAdapter::class);
+            }
         );
 
         // Wave-4 external-API ports (low-volume families). All dormant
@@ -334,13 +352,55 @@ class Application extends App implements IBootstrap
         // - ZTC / Catalogi-API client
         // (zaaktype URL resolution before hand-off +
         // regional Catalogi-API zaaktype import).
-        $context->registerServiceAlias(
+        // KvK + BRP: selected by the `integration.<name>.mode` config tier
+        // (external-integrations-test-environments). DEFAULT `log` = dormant
+        // (no external call). KvK `test`/`live` binds the KvkApiAdapter
+        // (test tier = api.kvk.nl/test, public key). BRP `mock`/`test` binds
+        // the HaalCentraalBrpAdapter (mock = ghcr.io/brp-api/personen-mock
+        // offline; test = proefomgeving once the X-API-KEY is granted).
+        $context->registerService(
             \OCA\Procest\Service\External\Kvk\KvkHandelsregisterAdapterInterface::class,
-            \OCA\Procest\Service\External\Kvk\LogKvkHandelsregisterAdapter::class
+            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Service\External\Kvk\KvkHandelsregisterAdapterInterface {
+                $modeService = $c->get(\OCA\Procest\Service\External\IntegrationMode::class);
+                $mode        = $modeService->resolve(
+                        'kvk',
+                        [
+                            \OCA\Procest\Service\External\IntegrationMode::TEST,
+                            \OCA\Procest\Service\External\IntegrationMode::LIVE,
+                        ]
+                        );
+                if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
+                    return new \OCA\Procest\Service\External\Kvk\KvkApiAdapter(
+                        clientService: $c->get('OCP\\Http\\Client\\IClientService'),
+                        mode: $modeService,
+                        logger: $c->get('Psr\\Log\\LoggerInterface'),
+                    );
+                }
+
+                return $c->get(\OCA\Procest\Service\External\Kvk\LogKvkHandelsregisterAdapter::class);
+            }
         );
-        $context->registerServiceAlias(
+        $context->registerService(
             \OCA\Procest\Service\External\Brp\BrpHaalCentraalAdapterInterface::class,
-            \OCA\Procest\Service\External\Brp\LogBrpHaalCentraalAdapter::class
+            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Service\External\Brp\BrpHaalCentraalAdapterInterface {
+                $modeService = $c->get(\OCA\Procest\Service\External\IntegrationMode::class);
+                $mode        = $modeService->resolve(
+                        'brp',
+                        [
+                            \OCA\Procest\Service\External\IntegrationMode::MOCK,
+                            \OCA\Procest\Service\External\IntegrationMode::TEST,
+                        ]
+                        );
+                if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
+                    return new \OCA\Procest\Service\External\Brp\HaalCentraalBrpAdapter(
+                        clientService: $c->get('OCP\\Http\\Client\\IClientService'),
+                        mode: $modeService,
+                        logger: $c->get('Psr\\Log\\LoggerInterface'),
+                    );
+                }
+
+                return $c->get(\OCA\Procest\Service\External\Brp\LogBrpHaalCentraalAdapter::class);
+            }
         );
         $context->registerServiceAlias(
             \OCA\Procest\Service\External\Tmlo\TmloMetadataBuilderAdapterInterface::class,
