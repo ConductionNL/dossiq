@@ -637,9 +637,30 @@
           }
         },
         "icon": "BriefcaseOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
+        "x-openregister-quality": {
+          "field": "qualityScore",
+          "statusField": "qualityStatus",
+          "rules": [
+            { "type": "required", "field": "title", "weight": 1 },
+            { "type": "required", "field": "caseType", "weight": 1 },
+            { "type": "required", "field": "identifier", "weight": 1 },
+            { "type": "freshness", "field": "startDate", "halfLifeDays": 365, "weight": 1 }
+          ],
+          "thresholds": { "good": 0.8, "fair": 0.5 }
+        },
+        "x-openregister-dedup": {
+          "blockingKeys": ["caseType"],
+          "matchRules": [
+            { "field": "identifier", "method": "exact", "weight": 0.4 },
+            { "field": "vergunningaanvraagRef", "method": "exact", "weight": 0.3 },
+            { "field": "title", "method": "normalized", "weight": 0.2 },
+            { "field": "title", "method": "levenshtein", "weight": 0.1 }
+          ],
+          "threshold": 0.7
+        },
         "title": "Case",
         "description": "A case instance in the case management system",
         "type": "object",
@@ -983,6 +1004,21 @@
             "description": "JSON-encoded array of samenwerkverzoek UUIDs linked to this zaak",
             "visible": false,
             "title": "Collaboration Requests"
+          },
+          "qualityScore": {
+            "type": "number",
+            "title": "OR quality score",
+            "description": "Per-object quality score 0-1 materialised by OpenRegister from the x-openregister-quality annotation (completeness/format/freshness).",
+            "minimum": 0,
+            "maximum": 1,
+            "facetable": true
+          },
+          "qualityStatus": {
+            "type": "string",
+            "title": "OR quality status",
+            "description": "Status label materialised by OpenRegister from qualityScore (good/fair/poor).",
+            "enum": ["good", "fair", "poor"],
+            "facetable": true
           }
         }
       },
@@ -6356,8 +6392,27 @@
       "partnerOrganization": {
         "slug": "partnerOrganization",
         "icon": "AccountGroup",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Organization",
+        "x-openregister-quality": {
+          "field": "qualityScore",
+          "statusField": "qualityStatus",
+          "rules": [
+            { "type": "required", "field": "name", "weight": 1 },
+            { "type": "required", "field": "oin", "weight": 1 },
+            { "type": "format", "field": "contactEmail", "format": "email", "weight": 1 }
+          ],
+          "thresholds": { "good": 0.8, "fair": 0.5 }
+        },
+        "x-openregister-dedup": {
+          "blockingKeys": [],
+          "matchRules": [
+            { "field": "oin", "method": "exact", "weight": 0.5 },
+            { "field": "name", "method": "normalized", "weight": 0.3 },
+            { "field": "name", "method": "levenshtein", "weight": 0.2 }
+          ],
+          "threshold": 0.7
+        },
         "title": "Partner organization",
         "description": "External organisation (ketenpartner) participating in shared cases",
         "type": "object",
@@ -6403,6 +6458,21 @@
             "default": true,
             "description": "Whether the partner is active",
             "title": "Is Active"
+          },
+          "qualityScore": {
+            "type": "number",
+            "title": "OR quality score",
+            "description": "Per-object quality score 0-1 materialised by OpenRegister from the x-openregister-quality annotation (completeness/format/freshness).",
+            "minimum": 0,
+            "maximum": 1,
+            "facetable": true
+          },
+          "qualityStatus": {
+            "type": "string",
+            "title": "OR quality status",
+            "description": "Status label materialised by OpenRegister from qualityScore (good/fair/poor).",
+            "enum": ["good", "fair", "poor"],
+            "facetable": true
           }
         }
       },
@@ -7532,9 +7602,28 @@
       "supplier": {
         "slug": "supplier",
         "icon": "Factory",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Organization",
-        "x-schema-org": "schema:Organization",
+        "x-openregister-quality": {
+          "field": "qualityScore",
+          "statusField": "qualityStatus",
+          "rules": [
+            { "type": "required", "field": "legalName", "weight": 1 },
+            { "type": "required", "field": "kvkNumber", "weight": 1 },
+            { "type": "format", "field": "kvkNumber", "pattern": "^[0-9]{8}$", "weight": 1 }
+          ],
+          "thresholds": { "good": 0.8, "fair": 0.5 }
+        },
+        "x-openregister-dedup": {
+          "blockingKeys": [],
+          "matchRules": [
+            { "field": "kvkNumber", "method": "exact", "weight": 0.4 },
+            { "field": "iban", "method": "exact", "weight": 0.3 },
+            { "field": "legalName", "method": "normalized", "weight": 0.2 },
+            { "field": "legalName", "method": "levenshtein", "weight": 0.1 }
+          ],
+          "threshold": 0.7
+        },
         "title": "Supplier",
         "description": "Leverancier / vendor — represents a single supplier organisation that interacts with the municipality through the supplier portal.",
         "type": "object",
@@ -7596,6 +7685,21 @@
             },
             "description": "Certificates / accreditations held",
             "title": "Accreditations"
+          },
+          "qualityScore": {
+            "type": "number",
+            "title": "OR quality score",
+            "description": "Per-object quality score 0-1 materialised by OpenRegister from the x-openregister-quality annotation (completeness/format/freshness).",
+            "minimum": 0,
+            "maximum": 1,
+            "facetable": true
+          },
+          "qualityStatus": {
+            "type": "string",
+            "title": "OR quality status",
+            "description": "Status label materialised by OpenRegister from qualityScore (good/fair/poor).",
+            "enum": ["good", "fair", "poor"],
+            "facetable": true
           }
         },
         "configuration": {

@@ -10,6 +10,8 @@ status: proposed
 
 ## Purpose
 
+@e2e exclude Annotations-only change: procest ships no MDM UI (the steward surface is OpenRegister's per ADR-045); the declared rules are proven by PHPUnit (tests/Unit/Settings/MdmAnnotationsTest.php); duplicate-candidate and merge behaviour executes inside OpenRegister and is e2e-tested there.
+
 Procest declares data-quality and duplicate-detection rules on the schemas where duplicates matter
 (case, supplier, partnerOrganization) so OpenRegister's generic MDM/governance surface governs
 procest master data. Procest implements no dedup, merge, scoring, or steward UI of its own.

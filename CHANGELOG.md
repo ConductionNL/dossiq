@@ -2,6 +2,20 @@
 
 All notable changes to Procest are documented in this file.
 
+## [0.2.35] - 2026-07-06
+
+### Added
+
+- `consume-or-mdm` (ADR-045 / ADR-022): procest now declares master-data-management rules for OpenRegister's MDM engine — no app-local MDM code or UI.
+  - `x-openregister-quality` + `x-openregister-dedup` annotations on the `case` (identifier / vergunningaanvraagRef exact match — DSO double-intake guard; title normalized+levenshtein; blocking per caseType), `supplier` (kvkNumber/iban exact, legalName fuzzy, kvkNumber `^[0-9]{8}$` format rule) and `partnerOrganization` (oin exact, name fuzzy, contactEmail format rule) schemas in `lib/Settings/procest_register.json` (in-place, not register.d, to avoid the union-merge pitfall).
+  - OR-materialised `qualityScore`/`qualityStatus` declared as facetable properties on all three schemas. Schema versions bumped.
+  - Explicit non-adoption of `x-openregister-survivorship` (no trust-tiered source records in procest); steward workflow documented in `docs/admin/master-data-stewardship.md`.
+  - Requires OpenRegister >= 0.2.16 (recorded in `appinfo/info.xml` dependencies comment).
+
+### Fixed
+
+- Removed a duplicate `x-schema-org` JSON key on the `supplier` schema (pre-existing).
+
 ## [0.2.34] - 2026-07-06
 
 ### Changed
