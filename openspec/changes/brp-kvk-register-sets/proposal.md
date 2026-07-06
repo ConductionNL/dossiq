@@ -1,3 +1,13 @@
+> **Interlock note (2026-07-05, added by `external-integrations-test-environments`):** this change
+> owns the register-side (schemas + fictitious seed data + initiator UI). The live BRP/KvK adapters
+> flagged under Risks below are owned by `external-integrations-test-environments` — do not add
+> real-API work here. Interlocks: (i) align the 10 seed persons/companies with the official fixture
+> sets (BRP `personen-mock` `test-data.json` personas; KvK's published fictitious companies, e.g.
+> KVK 69599084 / 68750110 / 69599068 / 55344526) so demo data and contract fixtures are the same
+> objects; (ii) initiator search falls back register → live adapter per that change's config tiers.
+> Also coordinate the initiator fields with `semantic-case-intake` (requester semantic reference is
+> canonical; initiator display fields are its projection — one write path).
+
 ## Why
 
 When creating a zaak (case), the initiator ("indiener") must be linked to a real person or organization. Currently, cases have no structured initiator data connected to base registries like BRP (Basisregistratie Personen) or KVK (Kamer van Koophandel). Users cannot search or select an initiator from authoritative sources during case creation. This is a core GEMMA Zaakafhandel requirement -- every zaak must have a "rol: initiator" linked to a betrokkene (involved party). Without BRP/KVK integration, Procest cannot demonstrate realistic case handling workflows.
