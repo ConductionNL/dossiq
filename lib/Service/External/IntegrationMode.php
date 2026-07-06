@@ -101,6 +101,8 @@ final class IntegrationMode
      * @param array<string> $allowed     The tiers this integration accepts.
      *
      * @return string One of the allowed tiers, or `log`.
+     *
+     * @spec openspec/specs/external-integration-test-wiring/spec.md
      */
     public function resolve(string $integration, array $allowed): string
     {
@@ -127,6 +129,8 @@ final class IntegrationMode
      * @param string $default     Fallback value.
      *
      * @return string
+     *
+     * @spec openspec/specs/external-integration-test-wiring/spec.md
      */
     public function setting(string $integration, string $key, string $default=''): string
     {

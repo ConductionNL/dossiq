@@ -53,6 +53,8 @@ final class SimulatorEHerkenningSamlAdapter implements EHerkenningSamlAdapterInt
      *
      * @throws RuntimeException When no usable KvK number is present.
      *
+     * @spec openspec/specs/external-integration-test-wiring/spec.md
+     *
      * @SuppressWarnings(PHPMD.StaticAccess) BrokerAssertionResult is intentionally built via its named constructor.
      */
     public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult

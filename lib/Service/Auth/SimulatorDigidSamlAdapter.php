@@ -56,6 +56,8 @@ final class SimulatorDigidSamlAdapter implements DigidSamlAdapterInterface
      *
      * @throws RuntimeException When no usable BSN is present in the simulator payload.
      *
+     * @spec openspec/specs/external-integration-test-wiring/spec.md
+     *
      * @SuppressWarnings(PHPMD.StaticAccess) BrokerAssertionResult is intentionally built via its named constructor.
      */
     public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult

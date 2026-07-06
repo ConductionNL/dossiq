@@ -81,6 +81,8 @@ class KvkApiAdapter implements KvkHandelsregisterAdapterInterface
      * @param array<string,mixed> $context   Lookup context.
      *
      * @return KvkLookupResult
+     *
+     * @spec openspec/specs/external-integration-test-wiring/spec.md
      */
     public function lookup(string $kvkNumber, array $context=[]): KvkLookupResult
     {

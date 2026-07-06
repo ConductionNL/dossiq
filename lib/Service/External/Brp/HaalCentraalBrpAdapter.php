@@ -79,6 +79,8 @@ class HaalCentraalBrpAdapter implements BrpHaalCentraalAdapterInterface
      * @param array<string,mixed> $context Lookup context.
      *
      * @return BrpLookupResult
+     *
+     * @spec openspec/specs/external-integration-test-wiring/spec.md
      */
     public function lookup(string $bsn, array $context=[]): BrpLookupResult
     {
