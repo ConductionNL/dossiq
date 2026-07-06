@@ -661,9 +661,19 @@
           }
         },
         "icon": "BriefcaseOutline",
-        "version": "1.5.0",
+        "version": "1.6.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
+        "x-openregister-archival": {
+          "retention": {
+            "default": "P10Y",
+            "rules": [
+              { "condition": "caseType == \"omgevingsvergunning-regulier\"", "retention": "P5Y", "reason": "VNG selectielijst 2020 — 4.3.1 (verleende vergunningen), bewaartermijn 5 jaar" },
+              { "condition": "caseType == \"wmo-melding\"", "retention": "P10Y", "reason": "VNG selectielijst 2020 — 5.2.1 (WMO-besluiten), bewaartermijn 10 jaar" },
+              { "condition": "caseType == \"subsidie-verlening\"", "retention": "P20Y", "reason": "VNG selectielijst 2020 — 7.1.1 (subsidiebeschikkingen), blijvend te bewaren; overbrenging na de wettelijke overbrengingstermijn van 20 jaar" }
+            ]
+          }
+        },
         "x-openregister-quality": {
           "field": "qualityScore",
           "statusField": "qualityStatus",
@@ -691,6 +701,10 @@
         "configuration": {
           "objectNameField": "title",
           "objectDescriptionField": "description",
+          "tmloDefaults": {
+            "archiefstatus": "actief",
+            "classificatie": "zaakdossier"
+          },
           "implements": [
             "https://openregister.app/ns#Case"
           ],
