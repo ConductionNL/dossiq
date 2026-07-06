@@ -1,158 +1,132 @@
 # Archief en e-Depot — beheerdersgids
 
-Procest draagt afgeronde zaken op een controleerbare manier over aan een gemeentelijk of regionaal e-Depot conform GiHandover/MDTO. Deze gids is geschreven voor de **DIV-beheerder** en de functioneel beheerder: bewaartermijnregels configureren, batchoverdrachten initiëren, bewijsstukken raadplegen en problemen oplossen.
+Sinds de migratie `migrate-archival-to-or` (ADR-022) **voert OpenRegister de
+archivering, vernietiging en e-Depot-overdracht uit**. Procest levert alleen nog
+de zaakgerichte domeinkennis *declaratief* aan en vertaalt Awb-gebeurtenissen
+(bezwaar/beroep) naar OpenRegister *legal holds*. Procest draait geen eigen
+archief-pipeline meer.
 
-> **Specs:** `openspec/changes/archief-edepot-handover-01-schema-config` t/m `archief-edepot-handover-08-admin-ui-docs`
-> **Entiteiten:** `BewaarTermijnRegel`, `OverdrachtTrigger`, `SipBundel`, `OverdrachtTransactie`, `ArchiefBewijs`, `OverdrachtAuditLog`
-> **Status:** in opbouw — admin-UI en dashboard komen in member-08.
+> **Spec:** `openspec/changes/migrate-archival-to-or/specs/archief-edepot-handover/spec.md`
+> **Eigenaar van de pipeline:** OpenRegister — `RetentionService`,
+> `Archival/*` (RetentionEvaluator, LegalHoldService, DestructionService),
+> `Edepot/*` (EdepotTransferService, SipPackageBuilder, MdtoXmlGenerator,
+> Transport/*), `TmloService`.
 
-## Wat doet de archief-pipeline?
+## Wat procest nog doet (en wat niet meer)
 
-1. Een zaak bereikt een eindstatus die in `BewaarTermijnRegel` een bewaartermijn raakt → er wordt een `OverdrachtTrigger` aangemaakt.
-2. Op de geconfigureerde overdrachtsdatum bundelt Procest metadata en documenten in een SIP-bundel (GiHandover BagIt + MDTO XML).
-3. De SIP wordt via `openconnector` naar het e-Depot gestuurd; de uitwisseling wordt vastgelegd in `OverdrachtTransactie`.
-4. Het e-Depot retourneert een acceptatie/proof; Procest slaat het bewijs op in `ArchiefBewijs` en logt elke stap in `OverdrachtAuditLog`.
+| Onderdeel | Voorheen (app-lokaal, verwijderd) | Nu |
+|-----------|-----------------------------------|-----|
+| Bewaartermijnregels | `BewaarTermijnRegel`-objecten + `ArchivalTriggerService` | Declaratief: `x-openregister-archival` op het `case`-schema |
+| Detectie afgeronde zaken | `ArchivalTriggerScanJob` daemon | OpenRegister `RetentionEvaluator` + `DestructionCheckJob` |
+| Bezwaar/beroep-opschorting | `OverdrachtTrigger` status `opgeschort-juridische-procedure` | OpenRegister legal hold (`LegalHoldService`), geplaatst door procest |
+| SIP-bundeling / BagIt / MDTO | `BagItBundlerService`, `MetadataBundlerService` | OpenRegister `SipPackageBuilder` + `MdtoXmlGenerator` |
+| Verzenden + retry naar e-Depot | `ArchivalBatchService`, `ArchivalSubmissionRetryService` | OpenRegister `EdepotTransferService` + durable retry |
+| Bewijs van overdracht | `ArchiefBewijs`-objecten, `ProofOfTransferService` | OpenRegister transfer-/proof-records |
+| TMLO/MDTO-metadata mapping | `TmloMetadataBuilderAdapter` | Schema-config `configuration.tmloDefaults` + `Register.configuration.tmloEnabled`, uitgevoerd door OR `TmloService` |
 
-## 1. Bewaartermijnregels configureren
+## 1. Bewaartermijnen — declaratief op het zaakschema
 
-Bewaartermijnregels koppelen een zaaktype aan een bewaarduur en een selectielijstcategorie.
+De bewaartermijnen staan in het `case`-schema onder `x-openregister-archival`
+(VNG-selectielijst 2020 als default set). Aanpassen doe je in **Beheer →
+OpenRegister → Registers → Procest → schema `case`**, of in
+`lib/Settings/procest_register.json`:
 
-### Eerste keer — VNG-defaults
+```json
+"x-openregister-archival": {
+  "retention": {
+    "default": "P10Y",
+    "rules": [
+      { "condition": "caseType == \"omgevingsvergunning-regulier\"", "retention": "P5Y",  "reason": "VNG 4.3.1" },
+      { "condition": "caseType == \"wmo-melding\"",                    "retention": "P10Y", "reason": "VNG 5.2.1" },
+      { "condition": "caseType == \"subsidie-verlening\"",             "retention": "P20Y", "reason": "VNG 7.1.1 — blijvend te bewaren, overbrenging na 20 jaar" }
+    ]
+  }
+}
+```
 
-Bij installatie zijn er drie voorbeeldregels geseed:
+- `default` en elke `retention` is een **ISO-8601-duur** (`P5Y`, `P10Y`, …).
+- `condition` gebruikt de grammatica `<veld> <op> <waarde>` van OpenRegister's
+  `RetentionConditionEvaluator` (velden op het zaak-object, bv. `caseType`).
+- Municipality-edits die vóór de migratie als `BewaarTermijnRegel`-objecten
+  bestonden, worden door de repair-stap bewaard; pas ze na verificatie hier aan.
 
-| Zaaktype | Bewaartermijn | Selectielijst |
-|----------|---------------|---------------|
-| `omgevingsvergunning` | 5 jaar | Selectielijst gemeenten 4.1.3 |
-| `wmo-aanvraag` | 10 jaar | — |
-| `subsidie-verlening` | permanent | — |
+OpenRegister berekent hieruit de `archiefactiedatum` en nomineert de zaak in
+zijn archivist-workflow (V-lijst / overbrenging). Zaaktypen zónder regel
+verschijnen in OpenRegister's archivist-view als *unconfigured* — procest houdt
+geen eigen `geblokkeerd-geen-regel`-administratie meer bij.
 
-Pas ze aan vóór livegang aan jullie eigen selectielijst.
+## 2. TMLO/MDTO-metadata
 
-### Regel toevoegen of wijzigen
+TMLO-auto-populatie staat aan via `Register.configuration.tmloEnabled = true`
+(gezet door de repair-stap `MigrateArchivalToOpenRegister`) en de defaults in
+`case.configuration.tmloDefaults`. OpenRegister's `TmloService` vult hiermee de
+`tmlo`-metadata en exporteert MDTO-XML tijdens overbrenging. Extra TMLO-defaults
+voeg je toe onder `tmloDefaults` op het schema.
 
-1. Open **Beheer → Procest → Archief → Bewaartermijnregels**.
-2. Klik **Regel toevoegen** of selecteer een bestaande regel.
-3. Vul in:
-    - **Zaaktype** — dropdown van gepubliceerde zaaktypen.
-    - **Bewaartermijn** — geheel getal in jaren of `permanent`.
-    - **Selectielijst-categorie** — vrije tekst, bv. `Selectielijst gemeenten 4.1.3`.
-    - **Trigger** — vanaf welk moment de bewaartermijn loopt (`zaakAfgesloten`, `besluitOnherroepelijk`, `eindBezwaarTermijn`).
-    - **Verlengingsgrond** — optioneel, voor zaken die wettelijk langer bewaard moeten blijven.
-4. **Opslaan**. De regel werkt door op alle nieuwe en bestaande zaken die deze trigger nog niet hebben gepasseerd.
+## 3. Bezwaar/beroep → legal hold
 
-### Validaties
+Zolang een Awb-procedure loopt mag een zaak niet worden overgebracht of
+vernietigd. Procest regelt dit via `BezwaarLegalHoldListener`:
 
-- `bewaartermijnJaren` ≥ 1 of `permanent`.
-- `zaaktypeKey` moet bestaan en gepubliceerd zijn.
-- Een (`zaaktypeKey`, `trigger`)-combinatie is uniek; je kunt geen tweede regel voor hetzelfde paar opslaan.
+- **Bezwaar geregistreerd** (`objection` aangemaakt) → procest plaatst een
+  OpenRegister *legal hold* op de zaak. OR's retention-evaluator en
+  vernietigingsjobs slaan de zaak over zolang de hold staat.
+- **Eindbeslissing** (`bezwaarDecision` of `appealDecision` aangemaakt) →
+  procest heft de hold op; de zaak komt weer in OR's archief-evaluatie zonder
+  handmatige her-nominatie.
 
-### Regel verwijderen
+Holds zijn zichtbaar en beheerbaar in OpenRegister
+(**`/api/archival/legal-holds`**, archivist-view).
 
-Een regel verwijderen verandert **niets** aan reeds aangemaakte triggers of overgedragen zaken. Het stopt alleen nieuwe triggers voor zaken die nog binnen de scope vallen.
+## 4. e-Depot-connectie configureren (OpenRegister)
 
-## 2. Dashboard en monitoring
+De e-Depot-verbinding (endpoint, transport, credentials, bestemming) staat sinds
+de migratie in **OpenRegister's e-Depot-instellingen**:
 
-Het dashboard **Procest → Archief → Overzicht** toont:
+1. Open **Beheer → OpenRegister → Instellingen → e-Depot**
+   (`/api/settings/edepot`).
+2. Kies het transport (`Sftp`, `RestApi` of `OpenConnector`) en vul endpoint +
+   credentials in. In dev/test staat standaard een log/mock-transport.
+3. Test de verbinding met **Verbinding testen** (`/api/settings/edepot/test`).
+4. Overbrengingen en hun status/audittrail bekijk je via **`/api/transfers`**.
 
-- **Statkaarten**:
-    - `Ready` — triggers waarvan de overdrachtsdatum gepasseerd is en die nog niet zijn opgepakt.
-    - `In Progress` — actieve `OverdrachtTransactie`-records.
-    - `Failed` — transacties met fout-status, wachtend op retry of correctie.
-    - `Completed` — succesvol bevestigd door het e-Depot.
-    - `Total Transferred` — cumulatief totaal sinds livegang.
-- **Triggers-tabel** — alle openstaande triggers met zaaknummer, regel, geplande overdrachtsdatum.
-- **Batch-jobs tabel** — laatste 50 batchruns met start, doorlooptijd, aantal SIP-bundels, en eindstatus.
-- **Snelle acties**:
-    - **Batch starten** — start een ad-hoc batchrun voor alle Ready-triggers.
-    - **Mislukte opnieuw proberen** — herstart alle Failed-transacties met de oorspronkelijke SIP-bundel.
-    - **Bewijs bekijken** — opent de `ArchiefBewijs`-detailweergave voor een geselecteerde zaak.
+> Het koppelen van een *echt* e-Depot-testendpoint valt buiten deze migratie en
+> hoort bij `external-integrations-test-environments`. De transport-seam blijft
+> pluggable bij OpenRegister.
 
-## 3. Batchverwerking
+## 5. Vernietiging (destruction)
 
-De daemon draait dagelijks (cron via `BackgroundJob`) en pakt alle Ready-triggers op. Voor handmatige verwerking is er **Batch starten**.
+Vernietiging/overbrenging draait volledig in OpenRegister: `DestructionCheckJob`
+stelt vernietigingslijsten (V-lijsten) samen voor archivist-review,
+`DestructionExecutionJob` voert goedgekeurde vernietiging uit. Procest heeft geen
+eigen vernietigings-UI meer; gebruik OpenRegister's archivist-surface.
 
-### Een handmatige batch
+## 6. Migratie-repair (eenmalig)
 
-1. Klik op **Batch starten**.
-2. Filter optioneel op zaaktype of overdrachtsdatum-bereik.
-3. Bevestig het aantal triggers (max 200 per batch).
-4. Volg de voortgang in real-time via de WebSocket-update op het dashboard.
-5. Na afronding verschijnt een rapport: succesvol / mislukt / wachtend op e-Depot bevestiging.
+Bij de upgrade draait `MigrateArchivalToOpenRegister` (post-migration,
+idempotent, fail-closed):
 
-### Concurrency
+1. Zet `tmloEnabled` op de procest-register.
+2. Plaatst een legal hold op elke zaak waarvan de `OverdrachtTrigger` op
+   `opgeschort-juridische-procedure` stond.
+3. Exporteert elk afgerond `ArchiefBewijs` als onveranderlijk zaakdossier-
+   document, zodat geen bewijs van overbrenging verloren gaat.
 
-Procest verwerkt maximaal **5 SIP-bundels gelijktijdig** (geconfigureerd in `lib/Settings/ArchiefAdmin.php` → `archief_max_concurrent`). Dit beschermt de e-Depot-API tegen overbelasting.
-
-## 4. Bewijs van overdracht (Proof of Transfer)
-
-Voor elke succesvol overgedragen zaak slaat Procest een `ArchiefBewijs` op met:
-
-- `eDepotReceiptId` — de ontvangstbevestiging van het e-Depot.
-- `checksumSha256` — checksum van de SIP-bundel, voor latere verificatie.
-- `acceptanceTimestamp` — wanneer het e-Depot accepteerde.
-- `mdtoBundleReference` — pad naar de gearchiveerde MDTO-bundle.
-
-Het bewijs is **immutabel**. Verwijdering vereist een formeel vernietigingsbesluit en wordt afzonderlijk geregistreerd in `OverdrachtAuditLog`.
-
-### Verifiëren
-
-1. Open de zaak → tab **Archief**.
-2. Klik op **Bewijs valideren**. Procest:
-    - Haalt de SIP-bundel uit het archief.
-    - Berekent de checksum opnieuw.
-    - Vergelijkt met `ArchiefBewijs.checksumSha256`.
-3. Bij mismatch: melding in audit log, en het bewijs wordt gemarkeerd als `verificatieFailed` voor handmatig onderzoek.
-
-## 5. Rollback (corrigerende overdracht)
-
-In zeldzame gevallen moet een overdracht worden teruggetrokken (bv. ontdekt dat verkeerde documenten zijn meegebundeld).
-
-1. Open de transactie via **Archief → Transacties** en kies **Rollback aanvragen**.
-2. Voer motivatie en autoriserende rol in.
-3. Procest stuurt het rollback-verzoek naar het e-Depot via openconnector.
-4. Na bevestiging worden:
-    - `OverdrachtTransactie.status` op `rolledBack` gezet.
-    - Het bijbehorende `ArchiefBewijs` op `ingetrokken` gezet (niet verwijderd, voor audit).
-    - Een nieuwe trigger aangemaakt zodra de fout is gecorrigeerd.
-
-Niet alle e-Depots ondersteunen rollback. Bij ontbreken stuurt Procest een **correctie-bundle** in plaats van een rollback; gedrag is per e-Depot-adapter configureerbaar.
-
-## 6. Audit en BIO-conformiteit
-
-Elke gebeurtenis (rule wijziging, trigger aanmaak, SIP-creatie, submission, accept, reject, retry, rollback, proof validatie) wordt vastgelegd in `OverdrachtAuditLog` met `actor`, `timestamp`, `payloadHash`. De log is append-only.
-
-- **BIO 8.3.1 (Logging)** — actor, tijd, gebeurtenistype, identificatie van de zaak. Geen inhoud van documenten.
-- **MDTO** — XML wordt gegenereerd uit `case`-metadata en gevalideerd tegen de actuele XSD vóór bundeling.
-- **GiHandover BagIt** — `bagit.txt`, `bag-info.txt`, `manifest-sha256.txt`, `tagmanifest-sha256.txt` worden meegeleverd in elke bundle.
+De stap draait maar één keer (markering in app-config
+`procest/archival_migration_completed`) en doet niets wanneer OpenRegister's
+archief-abstracties ontbreken.
 
 ## 7. Troubleshooting
 
 | Symptoom | Oorzaak | Oplossing |
 |----------|---------|-----------|
-| Triggers blijven op `Ready` staan | Daemon-cron staat uit | Controleer `occ background-job:list` op `lib/Cron/ArchiefDaemon.php`. |
-| SIP-creatie faalt met "MDTO validation failed" | Zaak mist verplichte metadata | Vul ontbrekende velden aan en klik **SIP opnieuw genereren**; audit log toont de specifieke XSD-fout. |
-| Transactie hangt op `submitting` | e-Depot endpoint timeout of 5xx | Check **Beheer → openconnector** voor de gebruikte connection; verhoog timeout of wacht op de retry-job (max 5 attempts). |
-| Bewijs validatie geeft mismatch | SIP-bundle in archief was aangepast (bv. anti-malware) | Stop sanitisatie op het archiefpad; herstel via rollback + opnieuw aanmaken. |
-| Dashboard toont 0 in alle stat-kaarten | DIV-rol mist `procest_archief_view` permission | Voeg de rol toe in **Beheer → Procest → Rollen**. |
-| Rollback wordt afgewezen | Doel-e-Depot ondersteunt geen rollback API | Bouw de correctie als nieuwe SIP en stuur die in als `correctieVan` → oorspronkelijke transactie. |
+| Zaak wordt niet genomineerd na afsluiten | Geen retention-regel voor het `caseType` | Voeg een rule toe onder `x-openregister-archival`; ongeconfigureerde types staan in OR's archivist-view. |
+| Zaak met bezwaar wordt tóch genomineerd | Legal hold niet geplaatst | Controleer dat de `objection` een geldige `case`-verwijzing heeft; zie OR `/api/archival/legal-holds`. |
+| Overbrenging blijft hangen | e-Depot-transport/endpoint | Check **OpenRegister → e-Depot** + `/api/transfers`; OR's durable retry pakt tijdelijke fouten op. |
+| TMLO-metadata leeg | `tmloEnabled` staat uit | Herstart de repair-stap of zet `Register.configuration.tmloEnabled = true`. |
 
-## 8. Veelgestelde vragen
+## Zie ook
 
-**Wat gebeurt er met een zaak die nooit een eindstatus bereikt?**
-Geen trigger; geen overdracht. De zaak blijft in Procest tot DIV besluit hem alsnog (mogelijk vervroegd) over te dragen.
-
-**Kan ik een handmatige overdracht starten voor één specifieke zaak?**
-Ja, via **Zaak → Acties → Overdracht initiëren**. Een ad-hoc `OverdrachtTrigger` wordt aangemaakt met datum = vandaag.
-
-**Hoe wijzig ik de bestemming (welke e-Depot)?**
-Configureer in `openconnector`: een nieuwe connection met de juiste endpoint en credentials, en koppel die als default in **Beheer → Procest → Archief → e-Depot-connectie**.
-
-**Mag een Procest-gebruiker een `ArchiefBewijs` verwijderen?**
-Nee. Verwijdering is alleen mogelijk met een formeel vernietigingsbesluit; de UI biedt deze knop niet. Voor het correct verwijderen van data uit het e-Depot zelf: contacteer DIV.
-
-## Specs
-
-- `openspec/changes/archief-edepot-handover-01-schema-config/specs/archief-edepot-handover/spec.md`
-- `openspec/changes/archief-edepot-handover-08-admin-ui-docs/proposal.md`
-- `openspec/architecture/adr-000-data-model.md` — entries `BewaarTermijnRegel`, `OverdrachtTrigger`, `SipBundel`, `OverdrachtTransactie`, `ArchiefBewijs`, `OverdrachtAuditLog` (worden geseed door member-01).
+- `openspec/changes/migrate-archival-to-or/` — proposal, design, spec.
+- OpenRegister archief-stack: `RetentionService`, `Archival/*`, `Edepot/*`,
+  `TmloService`, `Controller/{Archival,Retention,Tmlo,Transfer}Controller`.

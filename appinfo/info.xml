@@ -111,7 +111,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Procest\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Procest\Repair\VthSeedDataRepairStep</step>
             <step>OCA\Procest\Repair\SeedTermijnbewakingData</step>
-            <step>OCA\Procest\Repair\SeedArchiefEdepotData</step>
+            <step>OCA\Procest\Repair\MigrateArchivalToOpenRegister</step>
             <step>OCA\Procest\Repair\SeedKccWerkplekData</step>
             <step>OCA\Procest\Repair\BackfillInformatieobjectMetadata</step>
             <step>OCA\Procest\Repair\LinkInFlightContractDecisionsRepair</step>
