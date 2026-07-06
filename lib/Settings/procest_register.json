@@ -675,6 +675,13 @@
             "maps",
             "shares"
           ],
+          "x-openregister-processing": {
+            "logReads": true,
+            "attribution": {
+              "default": "zaakafhandeling"
+            },
+            "subjectIdFields": {}
+          },
           "x-openregister-references": {
             "caseType": {
               "schema": "caseType",
@@ -1183,12 +1190,23 @@
       "role": {
         "slug": "role",
         "icon": "AccountHardHat",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Role",
         "x-zgw-equivalent": "Rol",
         "title": "Role",
         "description": "A role assignment on a case",
         "type": "object",
+        "configuration": {
+          "x-openregister-processing": {
+            "logReads": true,
+            "attribution": {
+              "default": "zaakafhandeling"
+            },
+            "subjectIdFields": {
+              "contact": "participant"
+            }
+          }
+        },
         "required": [
           "name",
           "roleType",
@@ -1970,11 +1988,22 @@
       "customerContact": {
         "slug": "customerContact",
         "icon": "AccountVoice",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-zgw-equivalent": "KlantContact",
         "title": "Customer Contact",
         "description": "A customer contact moment for a case",
         "type": "object",
+        "configuration": {
+          "x-openregister-processing": {
+            "logReads": true,
+            "attribution": {
+              "default": "klantcontact-registratie"
+            },
+            "subjectIdFields": {
+              "contact": "customerRef"
+            }
+          }
+        },
         "required": [
           "case"
         ],

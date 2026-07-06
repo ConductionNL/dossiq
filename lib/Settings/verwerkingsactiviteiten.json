@@ -1,0 +1,82 @@
+{
+  "$comment": "Procest verwerkingsactiviteiten catalogue (AVG art. 30) — the zaakgericht-werken processing activities procest performs on behalf of a municipality. Seeded into OpenRegister's verwerkingsregister as drafts (status 'concept') by OCA\\Procest\\Repair\\SeedVerwerkingsactiviteiten, upsert-by-code; the FG reviews and publishes them in OpenRegister. Schema attribution references these codes via the x-openregister-processing annotation in procest_register.json. Field names follow OR's Verwerkingsactiviteit entity; rechtsgrond uses OR's AVG art. 6 vocabulary (toestemming, overeenkomst, wettelijke_verplichting, vitaal_belang, publieke_taak, gerechtvaardigd_belang).",
+  "activities": [
+    {
+      "code": "zaakafhandeling",
+      "naam": "Behandelen van zaken (zaakgericht werken)",
+      "beschrijving": "Umbrella activity for handling municipal cases in procest: intake, status lifecycle, task assignment, participant roles, decisions and closure. Default attribution for reads of case and role objects; specific case types refine this once per-case-type attribution is available.",
+      "doelbinding": "Uitvoering van gemeentelijke taken door het gestructureerd behandelen van zaken van inwoners en bedrijven (aanvraag tot en met besluit).",
+      "rechtsgrond": "publieke_taak",
+      "bewaartermijn": "Conform de gemeentelijke selectielijst (VNG); per zaaktype bepaald bij archivering.",
+      "categorieenBetrokkenen": ["inwoners", "ondernemers", "zaakbehandelaars"],
+      "categorieenPersoonsgegevens": ["NAW-gegevens", "contactgegevens", "zaakinhoudelijke gegevens"],
+      "ontvangers": ["behandelende afdeling", "ketenpartners (indien van toepassing)"]
+    },
+    {
+      "code": "behandelen-omgevingsvergunning",
+      "naam": "Behandelen omgevingsvergunning",
+      "beschrijving": "Processing permit applications received through the DSO/Omgevingsloket intake (vergunningaanvraag), including deadline monitoring and formal decisions.",
+      "doelbinding": "Beoordelen en besluiten op aanvragen omgevingsvergunning zoals bedoeld in de Omgevingswet.",
+      "rechtsgrond": "publieke_taak",
+      "bewaartermijn": "Conform de gemeentelijke selectielijst; vergunningdossiers doorgaans blijvend te bewaren.",
+      "categorieenBetrokkenen": ["aanvragers", "belanghebbenden"],
+      "categorieenPersoonsgegevens": ["NAW-gegevens", "contactgegevens", "locatiegegevens", "aanvraaggegevens"],
+      "ontvangers": ["vergunningverleners", "adviseurs (o.a. veiligheidsregio, omgevingsdienst)"]
+    },
+    {
+      "code": "behandelen-bezwaarschrift",
+      "naam": "Behandelen bezwaarschrift",
+      "beschrijving": "Processing objections (bezwaar) against municipal decisions, including hearings and the advisory committee workflow.",
+      "doelbinding": "Behandelen van bezwaarschriften tegen besluiten van het college of de raad (Awb hoofdstuk 7).",
+      "rechtsgrond": "wettelijke_verplichting",
+      "bewaartermijn": "Conform de gemeentelijke selectielijst; bezwaardossiers doorgaans 5 jaar na afhandeling.",
+      "categorieenBetrokkenen": ["bezwaarmakers", "derde-belanghebbenden"],
+      "categorieenPersoonsgegevens": ["NAW-gegevens", "contactgegevens", "dossiergegevens van het bestreden besluit"],
+      "ontvangers": ["bezwaarschriftencommissie", "behandelende afdeling"]
+    },
+    {
+      "code": "behandelen-woo-verzoek",
+      "naam": "Behandelen Woo-verzoek",
+      "beschrijving": "Processing requests for public disclosure of government information under the Woo, including deadline monitoring.",
+      "doelbinding": "Behandelen van verzoeken om publieke informatie op grond van de Wet open overheid.",
+      "rechtsgrond": "wettelijke_verplichting",
+      "bewaartermijn": "Conform de gemeentelijke selectielijst.",
+      "categorieenBetrokkenen": ["verzoekers", "personen genoemd in de opgevraagde documenten"],
+      "categorieenPersoonsgegevens": ["NAW-gegevens", "contactgegevens"],
+      "ontvangers": ["behandelende afdeling", "verzoeker (geanonimiseerde documenten)"]
+    },
+    {
+      "code": "behandelen-klacht",
+      "naam": "Behandelen klacht",
+      "beschrijving": "Processing complaints about municipal conduct (Awb hoofdstuk 9) received through the complaints intake.",
+      "doelbinding": "Behoorlijke behandeling van klachten over gedragingen van het bestuursorgaan.",
+      "rechtsgrond": "wettelijke_verplichting",
+      "bewaartermijn": "Conform de gemeentelijke selectielijst; klachtdossiers doorgaans 5 jaar.",
+      "categorieenBetrokkenen": ["klagers", "medewerkers waarover geklaagd wordt"],
+      "categorieenPersoonsgegevens": ["NAW-gegevens", "contactgegevens", "klachtinhoud"],
+      "ontvangers": ["klachtencoordinator", "behandelende afdeling"]
+    },
+    {
+      "code": "klantcontact-registratie",
+      "naam": "Registreren klantcontact (KCC)",
+      "beschrijving": "Logging inbound and outbound customer contacts in the KCC-werkplek (contactmomenten, customer contacts), including caller identification and case linkage. Default attribution for reads of contactmoment and customerContact objects.",
+      "doelbinding": "Registreren en afhandelen van klantcontacten om inwoners en ondernemers goed te woord te staan en zaken correct te koppelen.",
+      "rechtsgrond": "publieke_taak",
+      "bewaartermijn": "Contactmomenten 2 jaar na registratie, tenzij gekoppeld aan een lopende zaak.",
+      "categorieenBetrokkenen": ["bellers", "inwoners", "ondernemers"],
+      "categorieenPersoonsgegevens": ["contactgegevens", "identificatiegegevens", "gespreksinhoud"],
+      "ontvangers": ["KCC-medewerkers", "zaakbehandelaars (bij doorzetting)"]
+    },
+    {
+      "code": "zaak-archivering",
+      "naam": "Archiveren en overbrengen van zaken",
+      "beschrijving": "Retention, disposal and transfer of closed case files (including e-Depot handover with MDTO metadata).",
+      "doelbinding": "Voldoen aan de archiefwettelijke bewaar-, vernietigings- en overbrengingsplicht voor afgesloten zaakdossiers.",
+      "rechtsgrond": "wettelijke_verplichting",
+      "bewaartermijn": "Conform de gemeentelijke selectielijst (Archiefwet).",
+      "categorieenBetrokkenen": ["inwoners", "ondernemers", "zaakbehandelaars"],
+      "categorieenPersoonsgegevens": ["NAW-gegevens", "zaakinhoudelijke gegevens"],
+      "ontvangers": ["gemeentearchief", "e-Depot"]
+    }
+  ]
+}

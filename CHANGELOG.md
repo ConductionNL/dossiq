@@ -2,6 +2,16 @@
 
 All notable changes to Procest are documented in this file.
 
+## [0.2.36] - 2026-07-06
+
+### Added
+
+- `avg-verwerkingenlogging` (thin consumer of OpenRegister's verwerkingenlogging, VNG Logging Verwerkingen / AVG art. 30): procest contributes domain content and a scoped FG window — no log engine of its own.
+  - Processing-activity catalogue `lib/Settings/verwerkingsactiviteiten.json` (zaakafhandeling, omgevingsvergunning, bezwaarschrift, Woo-verzoek, klacht, klantcontact-registratie, zaak-archivering) seeded into OR's verwerkingsregister as drafts by the `SeedVerwerkingsactiviteiten` repair step (upsert-by-code; FG-published status survives upgrades).
+  - `x-openregister-processing` read-logging opt-in (`logReads: true` + activity attribution + subjectIdFields) on the person-bearing schemas `case`, `role`, `customerContact` and `contactmoment`.
+  - FG/admin view **Processing activities (AVG)** (`/verwerkingen`, settings section): catalogue review status, unclassified-processing counter (OR's flagged fallback), and the per-betrokkene inzageverzoek export entry point (`InzageExportModal`) delegating to OR's `/api/avg/verwerkingen/betrokkene`. English + Dutch i18n.
+  - Docs `docs/admin/verwerkingenlogging.md`: VNG API consumption for external audit tooling (OR endpoints, procest register scope) + known limitations (per-case-type attribution, ZGW client identity — OR-side gaps).
+
 ## [0.2.35] - 2026-07-06
 
 ### Added

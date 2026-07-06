@@ -32,6 +32,7 @@ import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import AdminRootView from './views/settings/AdminRoot.vue'
 import SubstitutionSettingsView from './views/settings/SubstitutionSettings.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
+import VerwerkingenOverviewView from './views/admin/VerwerkingenOverview.vue'
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import AgendaCompilerView from './views/besluitvorming/AgendaCompilerView.vue'
 import VergaderingDetailView from './views/besluitvorming/VergaderingDetailView.vue'
@@ -217,6 +218,14 @@ const registry = {
 		kind: 'page',
 		component: SubstitutionAdminView,
 		_note: 'Coordinator substitution admin + bulk reassignment + capacity action list. Coordinator-gated server-side.',
+	},
+
+	// --- AVG verwerkingenlogging (thin consumer, OR owns the engine). ---
+	// @spec openspec/specs/avg-verwerkingenlogging/spec.md
+	VerwerkingenOverviewView: {
+		kind: 'page',
+		component: VerwerkingenOverviewView,
+		_note: 'FG/admin window on OR\'s processing-activity register: catalogue review status, unclassified counter (OR-PA-4), inzageverzoek export entry (OR-PA-7). OR enforces FG access fail-closed.',
 	},
 
 	// --- Migration cost: deferred to a follow-up. ---
