@@ -221,16 +221,14 @@ test.describe('docs: user track', () => {
 	})
 
 	test('U7 handle-objection', async ({ page }) => {
-		// docs/tutorials/user/07-handle-objection.md — bezwaar / BAC /
-		// beslissing op bezwaar are all separate nav entries.
+		// docs/tutorials/user/07-handle-objection.md — the standalone BAC
+		// (/bezwaar-advice-requests) and beslissing-op-bezwaar
+		// (/bezwaar-decisions) index pages were retired by
+		// case-type-navigation; objection handling now lives on the bezwaar
+		// index and the case's own tabs, so all captures target /bezwaren.
 		await go(page, '/bezwaren')
 		await shoot(page, 'user', '07-handle-objection-01.png')
 		await shoot(page, 'user', '07-handle-objection-02.png')
-		await go(page, '/bezwaar-advice-requests')
-		await shoot(page, 'user', '07-handle-objection-03.png')
-		await shoot(page, 'user', '07-handle-objection-04.png')
-		await go(page, '/bezwaar-decisions')
-		await shoot(page, 'user', '07-handle-objection-05.png')
 	})
 
 	test('U8 inspection-checklist', async ({ page }) => {
