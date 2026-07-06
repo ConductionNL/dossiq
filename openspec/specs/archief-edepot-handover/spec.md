@@ -5,7 +5,9 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 # archief-edepot-handover Specification
 
 ## Purpose
-Automates the lawful transfer of closed cases to an e-Depot, from retention-rule detection through MDTO/TMLO metadata bundling, PDF/A document export, BagIt packaging, submission, and proof-of-transfer capture. Runs a nightly job that assigns each closed case its statutory retention period, blocks or suspends transfer when rules are missing or a legal procedure is active, and lets DIV staff manage retention rules, run concurrent batch transfers, monitor a dashboard, and retry failed handovers. Records every archival milestone to an append-only audit log and produces audit-grade annual inspection exports.
+Procest's archival/e-Depot handover is executed by OpenRegister's retention, destruction, and e-Depot transfer abstractions (ADR-022). Procest contributes zaakgericht domain knowledge declaratively (retention terms per zaaktype via `x-openregister-archival`, selectielijst mapping, TMLO/MDTO field mapping via `tmloDefaults`) and translates Awb lifecycle events into OpenRegister legal holds. Procest runs no archival pipeline of its own.
+
+@e2e exclude Retention, destruction, SIP building, e-Depot transfer, durable retry and proof-of-transfer are executed by OpenRegister (ADR-022) and covered by OR's own e2e/Newman/unit suites; the procest-side surface is declarative schema config plus a backend legal-hold listener and a fail-closed migration repair step (guarded, unit-covered). There is no procest-only browser flow that drives these scenarios without OpenRegister's archival stack installed — mirrors the sla-charts-via-analytics-leaf / stuf-zkn-outbound precedent.
 ## Requirements
 ### Requirement: Retention rules MUST be declared, not executed, by procest
 

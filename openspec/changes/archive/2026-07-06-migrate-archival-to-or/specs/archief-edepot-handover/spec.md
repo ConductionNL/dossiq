@@ -16,6 +16,8 @@ e-Depot transfer abstractions. Procest contributes zaakgericht domain knowledge 
 (retention terms per zaaktype, selectielijst mapping, TMLO/MDTO field mapping) and translates Awb
 lifecycle events into OR legal holds. Procest runs no archival pipeline of its own.
 
+@e2e exclude Retention, destruction, SIP building, e-Depot transfer, durable retry and proof-of-transfer are executed by OpenRegister (ADR-022) and covered by OR's own e2e/Newman/unit suites; the procest-side surface is declarative schema config plus a backend legal-hold listener and a fail-closed migration repair step (guarded, unit-covered). There is no procest-only browser flow that drives these scenarios without OpenRegister's archival stack installed — mirrors the sla-charts-via-analytics-leaf / stuf-zkn-outbound precedent.
+
 ## ADDED Requirements
 
 ### Requirement: Retention rules MUST be declared, not executed, by procest
