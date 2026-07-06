@@ -6,7 +6,7 @@ status: proposed
 
 **Status:** proposed
 **Scope:** procest (thin consumer)
-**Depends on:** `openregister/processing-activity-register` (OR-PA-1..9) — BLOCKED_EXTERNAL; case-management; zgw-autorisaties-api (client identity adjacency)
+**Depends on:** `openregister/processing-activity-register` (OR-PA-1..9) — SHIPPED on OR origin/development (verwerkingen + verwerkingsactiviteiten routes verified 2026-07-05); case-management; zgw-autorisaties-api (client identity adjacency)
 **Standard:** VNG Logging Verwerkingen; AVG art. 5 lid 2, art. 6, art. 15, art. 30
 
 ## Purpose
