@@ -30,6 +30,14 @@ test.describe('Procest — visual baselines', () => {
 	test('cases list', async ({ page }) => {
 		await shootByNav(page, `${APP}#/`, 'Cases', 'cases.png')
 	})
+
+	// VerwerkingenOverview (src/views/admin/VerwerkingenOverview.vue) — the FG
+	// window on OR's processing-activity register (avg-verwerkingenlogging).
+	// The surface is data-light (catalogue table or seed empty-state), so the
+	// shot is deterministic once the repair step has seeded the drafts.
+	test('verwerkingen overview (AVG)', async ({ page }) => {
+		await shootSurface(page, `${APP}#/verwerkingen`, 'verwerkingen-overview.png')
+	})
 })
 
 /*
