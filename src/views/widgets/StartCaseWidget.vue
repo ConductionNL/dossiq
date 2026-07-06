@@ -22,6 +22,14 @@
 				<NcLoadingIcon v-if="creatingId === caseType.id" :size="20" />
 			</button>
 		</div>
+
+		<!-- Optional initiator selection (brp-kvk-register-sets): picking a
+		     case type first asks who submitted it; Skip creates the case
+		     without an initiator (existing flow unchanged). -->
+		<InitiatorPickerModal v-if="pendingCaseType"
+			@confirm="onInitiatorConfirmed"
+			@skip="onInitiatorSkipped"
+			@close="pendingCaseType = null" />
 	</div>
 </template>
 
@@ -30,6 +38,8 @@ import { NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import { generateUrl } from '@nextcloud/router'
 import { useObjectStore } from '../../store/modules/object.js'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
+import InitiatorPickerModal from '../../modals/InitiatorPickerModal.vue'
+import { initiatorProjection } from '../../services/initiatorSearch.js'
 
 export default {
 	name: 'StartCaseWidget',
@@ -37,6 +47,7 @@ export default {
 		NcEmptyContent,
 		NcLoadingIcon,
 		BriefcaseVariantOutline,
+		InitiatorPickerModal,
 	},
 	props: {
 		title: {
@@ -50,6 +61,7 @@ export default {
 			creating: false,
 			creatingId: null,
 			caseTypes: [],
+			pendingCaseType: null,
 		}
 	},
 	computed: {
@@ -84,17 +96,52 @@ export default {
 			}
 		},
 		/**
+		 * Open the optional initiator step for the chosen case type.
+		 * The case is created by onInitiatorConfirmed / onInitiatorSkipped.
+		 *
+		 * @param {object} caseType The case type to start
+		 * @return {void}
+		 * @spec openspec/specs/initiator-selection/spec.md
+		 */
+		startCase(caseType) {
+			if (this.creating) {
+				return
+			}
+			this.pendingCaseType = caseType
+		},
+		/**
+		 * Create the case carrying the picked initiator projection.
+		 *
+		 * @param {object} initiator The unified initiator result
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/initiator-selection/spec.md
+		 */
+		async onInitiatorConfirmed(initiator) {
+			const caseType = this.pendingCaseType
+			this.pendingCaseType = null
+			await this.createCase(caseType, initiatorProjection(initiator))
+		},
+		/**
+		 * Create the case without an initiator (existing flow unchanged).
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/initiator-selection/spec.md
+		 */
+		async onInitiatorSkipped() {
+			const caseType = this.pendingCaseType
+			this.pendingCaseType = null
+			await this.createCase(caseType, {})
+		},
+		/**
 		 * Create a new case of the given type and navigate to it.
 		 *
 		 * @param {object} caseType The case type to start
+		 * @param {object} extraFields Additional case fields (initiator projection)
 		 * @return {Promise<void>}
-		 */
-		/**
-		 * @param caseType
 		 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
 		 */
-		async startCase(caseType) {
-			if (this.creating) {
+		async createCase(caseType, extraFields = {}) {
+			if (!caseType || this.creating) {
 				return
 			}
 			this.creating = true
@@ -105,6 +152,7 @@ export default {
 					title: caseType.title,
 					caseType: caseType.id,
 					startDate: today,
+					...extraFields,
 				})
 				if (newCase?.id) {
 					window.location.href = generateUrl(`/apps/procest/cases/${newCase.id}`)

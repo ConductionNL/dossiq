@@ -637,7 +637,7 @@
           }
         },
         "icon": "BriefcaseOutline",
-        "version": "1.3.0",
+        "version": "1.4.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "x-openregister-quality": {
@@ -1113,6 +1113,22 @@
             "description": "Status label materialised by OpenRegister from qualityScore (good/fair/poor).",
             "enum": ["good", "fair", "poor"],
             "facetable": true
+          },
+          "initiatorType": {
+            "type": "string",
+            "enum": ["person", "company", "contact"],
+            "title": "Initiator type",
+            "description": "Type of the case initiator (indiener): person (BRP natuurlijk persoon), company (KvK niet-natuurlijk persoon), or contact (Nextcloud contact). Display projection of the canonical ADR-048 requester semantic reference (semantic-case-intake) — optional, additive."
+          },
+          "initiatorSourceId": {
+            "type": "string",
+            "title": "Initiator source id",
+            "description": "Identifying number/reference of the initiator in its source: BSN (person), KvK-nummer (company), or contact URI (contact). Display projection — the canonical requester reference is owned by semantic-case-intake."
+          },
+          "initiatorDisplayName": {
+            "type": "string",
+            "title": "Initiator display name",
+            "description": "Human-readable name of the case initiator, denormalised at selection time for list and detail rendering."
           }
         }
       },

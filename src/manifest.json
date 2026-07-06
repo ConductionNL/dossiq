@@ -792,16 +792,26 @@
 							],
 							"rowRoute": "LocationDetail"
 						}
+					},
+					{
+						"id": "initiator",
+						"type": "custom",
+						"title": "Initiator",
+						"_note": "Initiator (indiener) display — brp-kvk-register-sets. Resolved via page slots (widget-initiator -> InitiatorSection registry key); the component self-fetches the case from the route id and renders nothing when no initiator is set."
 					}
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "case-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "case-locaties", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 6 }
+					{ "id": "3", "widgetId": "initiator", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 2, "showTitle": true },
+					{ "id": "2", "widgetId": "case-locaties", "gridX": 0, "gridY": 6, "gridWidth": 12, "gridHeight": 6 }
 				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
 				}
+			},
+			"slots": {
+				"widget-initiator": "InitiatorSection"
 			}
 		},
 		{

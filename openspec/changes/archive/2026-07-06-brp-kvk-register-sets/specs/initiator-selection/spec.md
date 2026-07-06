@@ -72,6 +72,8 @@ never a second requester field.
 
 #### Scenario: Schema extension is additive
 
+@e2e exclude Schema-level additive guarantee (no browser surface): PHPUnit (BrpKvkRegisterSetsTest::testCaseSchemaInitiatorFieldsAreAdditive) proves the three fields are optional and absent from case.required, so pre-existing cases validate unchanged.
+
 - **GIVEN** cases created before this change
 - **WHEN** the extended `case` schema is imported
 - **THEN** existing cases MUST remain valid with the initiator fields absent

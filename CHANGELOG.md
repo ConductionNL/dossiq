@@ -2,6 +2,15 @@
 
 All notable changes to Procest are documented in this file.
 
+## [0.2.37] - 2026-07-06
+
+### Added
+
+- `brp-kvk-register-sets`: BRP/KvK register sets + initiator (indiener) selection and display.
+  - ADR-037 fragment `lib/Settings/register.d/25-brp-kvk.json`: `brpPerson` (Haal Centraal naming, `format: bsn` via OpenRegister's validator) and `kvkCompany` (KvK Zoeken naming) schemas, seeded with the OFFICIAL fictitious fixtures — 10 personen-mock personas (all 11-proef valid) and 10 KvK test companies incl. the pinned 69599084/68750110/69599068/55344526 (fetched from api.kvk.nl/test) — every row marked as fictitious test data. Seeds double as the contract fixtures for `external-integrations-test-environments`.
+  - `case` schema: additive optional `initiatorType` (person|company|contact) / `initiatorSourceId` / `initiatorDisplayName` projection fields (canonical requester semantic reference is `semantic-case-intake`'s; one write path via `initiatorProjection()`).
+  - Initiator UI: `InitiatorPicker` (Person/Company/Contact tabs, register-tier search via the object store, contacts via core contactsmenu with graceful empty state) in the StartCaseWidget create flow (optional, skippable via `InitiatorPickerModal`); `InitiatorSection` on the CaseDetail overview (name + type + source id deep-linking to the seeded register object; renders nothing when unset). English + Dutch i18n.
+
 ## [0.2.36] - 2026-07-06
 
 ### Added
