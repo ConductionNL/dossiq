@@ -1,33 +1,31 @@
 <template>
-	<NcDashboardWidget :items="items"
+	<CnDataTable :rows="items"
+		:columns="columns"
 		:loading="loading"
-		:item-menu="itemMenu"
-		@show="onShow"
-		@click.native.capture="onRowNav">
-		<template #empty-content>
-			<NcEmptyContent :title="t('procest', 'All cases active')">
-				<template #icon>
-					<CheckCircle />
-				</template>
-			</NcEmptyContent>
+		hide-header
+		borderless
+		:empty-text="t('procest', 'All cases active')"
+		@row-click="onRowClick">
+		<template #footer>
+			<a class="cn-data-table__view-all" @click.prevent="onViewAll">
+				{{ t('procest', 'View all') }} →
+			</a>
 		</template>
-	</NcDashboardWidget>
+	</CnDataTable>
 </template>
 
 <script>
-import { NcDashboardWidget, NcEmptyContent } from '@nextcloud/vue'
-import { generateUrl, imagePath } from '@nextcloud/router'
+import { CnDataTable } from '@conduction/nextcloud-vue'
+import { generateUrl } from '@nextcloud/router'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { getStalledCases } from '../../utils/dashboardHelpers.js'
-import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
+import { SIGNAL_COLUMNS, navigateTo } from './signalTable.js'
 
 export default {
 	name: 'StalledCasesWidget',
 	components: {
-		NcDashboardWidget,
-		NcEmptyContent,
-		CheckCircle,
+		CnDataTable,
 	},
 	props: {
 		title: {
@@ -39,12 +37,7 @@ export default {
 		return {
 			loading: false,
 			stalledCases: [],
-			itemMenu: {
-				show: {
-					text: t('procest', 'View case'),
-					icon: 'icon-confirm',
-				},
-			},
+			columns: SIGNAL_COLUMNS,
 		}
 	},
 	computed: {
@@ -58,7 +51,6 @@ export default {
 				id: item.id,
 				mainText: item.title,
 				subText: t('procest', '{days} days inactive', { days: item.daysSinceActivity }),
-				avatarUrl: imagePath('procest', 'app-dark.svg'),
 				targetUrl: generateUrl(`/apps/procest/cases/${item.id}`),
 			}))
 		},
@@ -73,35 +65,21 @@ export default {
 	},
 	methods: {
 		/**
-		 * Handle showing a case.
+		 * Navigate to a clicked case in the same tab.
 		 *
-		 * @param {object} item The case item to show
+		 * @param {object} row The clicked row (a shaped case item).
 		 * @return {void}
 		 */
-		/**
-		 * @param item
-		 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
-		 */
-		onShow(item) {
-			window.location.href = generateUrl(`/apps/procest/cases/${item.id}`)
+		onRowClick(row) {
+			navigateTo(row.targetUrl)
 		},
 		/**
-		 * Intercept a plain row click so it navigates in the SAME tab.
-		 * NcDashboardWidget renders item.targetUrl as a target="_blank" link
-		 * (kept for accessibility / ctrl-click); this capture handler rewrites
-		 * a plain left-click into a same-tab navigation to the history-mode
-		 * case route so the in-app router resolves the detail page.
+		 * Navigate to the full cases list.
 		 *
-		 * @param {MouseEvent} e The captured click event.
 		 * @return {void}
 		 */
-		onRowNav(e) {
-			const a = e.target.closest('a[href]')
-			const href = a && a.getAttribute('href')
-			if (href && href.includes('/apps/procest/')) {
-				e.preventDefault()
-				window.location.href = href
-			}
+		onViewAll() {
+			navigateTo(generateUrl('/apps/procest/cases'))
 		},
 		/**
 		 * Fetch case data and compute stalled cases.

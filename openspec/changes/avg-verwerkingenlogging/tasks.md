@@ -1,6 +1,11 @@
 # Tasks: avg-verwerkingenlogging (thin consumer)
 
-> BLOCKED_EXTERNAL: implementation tasks T01–T05 require `openregister/processing-activity-register` (OR-PA-1..9) to land first. DC tasks can run now.
+> UNBLOCKED 2026-07-05: the OR side is shipped on OR `origin/development` — verwerkingenlogging
+> routes (`/api/avg/verwerkingen`, `/api/avg/verwerkingen/betrokkene`, routes.php:261-262),
+> verwerkingsactiviteiten CRUD + verantwoording (routes.php:224-229), and the
+> `x-openregister-processing` (`logReads`) / `x-openregister-processing-activity` dialects
+> (lib/Db/ProcessingLogEntry.php, lib/Db/Schema.php:1935). All tasks can run; DC01 still pins the
+> minimum deployed OR version first.
 
 ## Deduplication / Dependency Check
 

@@ -2,6 +2,30 @@
 
 All notable changes to Procest are documented in this file.
 
+## [0.2.35] - 2026-07-06
+
+### Added
+
+- `consume-or-mdm` (ADR-045 / ADR-022): procest now declares master-data-management rules for OpenRegister's MDM engine — no app-local MDM code or UI.
+  - `x-openregister-quality` + `x-openregister-dedup` annotations on the `case` (identifier / vergunningaanvraagRef exact match — DSO double-intake guard; title normalized+levenshtein; blocking per caseType), `supplier` (kvkNumber/iban exact, legalName fuzzy, kvkNumber `^[0-9]{8}$` format rule) and `partnerOrganization` (oin exact, name fuzzy, contactEmail format rule) schemas in `lib/Settings/procest_register.json` (in-place, not register.d, to avoid the union-merge pitfall).
+  - OR-materialised `qualityScore`/`qualityStatus` declared as facetable properties on all three schemas. Schema versions bumped.
+  - Explicit non-adoption of `x-openregister-survivorship` (no trust-tiered source records in procest); steward workflow documented in `docs/admin/master-data-stewardship.md`.
+  - Requires OpenRegister >= 0.2.16 (recorded in `appinfo/info.xml` dependencies comment).
+
+### Fixed
+
+- Removed a duplicate `x-schema-org` JSON key on the `supplier` schema (pre-existing).
+
+## [0.2.34] - 2026-07-06
+
+### Changed
+
+- `align-claims-and-licence`: app metadata now tells the truth about the code as shipped.
+  - `appinfo/info.xml` licence flipped `agpl` → `EUPL-1.2` (matches `LICENSE`; the SPDX token is accepted by Nextcloud's app-info.xsd enum since nextcloud/server PR #60212). EN/NL description licence sentences updated; version bumped to 0.2.34.
+  - `appinfo/info.xml` element order fixed to pass app-info.xsd validation (php before nextcloud in `<dependencies>`; repair-steps/commands/settings/navigations reordered) — pre-existing schema violations.
+  - README: licence badge → EUPL-1.2; Unified Search attributed to OpenRegister (provided centrally — procest ships no own search provider); Pipelinq Bridge marked roadmap (see `openspec/changes/semantic-case-intake/`); DMN removed from shipped process-standards claims (roadmap); three dead docs links fixed; platform matrix corrected to Nextcloud 28–34 / PHP 8.3+.
+  - `openspec/features.overlay.json`: `archief-edepot-handover` and `multi-tenancy` downgraded `stable` → `beta` with reasons (mock/log e-Depot adapter; tenant stack not yet on the OpenRegister boundary).
+
 ## [Unreleased]
 
 ### Changed

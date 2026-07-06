@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/ConductionNL/procest/releases"><img src="https://img.shields.io/github/v/release/ConductionNL/procest" alt="Latest release"></a>
-  <a href="https://github.com/ConductionNL/procest/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License"></a>
+  <a href="https://github.com/ConductionNL/procest/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-EUPL--1.2-blue" alt="License"></a>
   <a href="https://github.com/ConductionNL/procest/actions"><img src="https://img.shields.io/github/actions/workflow/status/ConductionNL/procest/code-quality.yml?label=quality" alt="Code quality"></a>
   <a href="https://procest.app"><img src="https://img.shields.io/badge/docs-procest.app-green" alt="Documentation"></a>
 </p>
@@ -64,8 +64,8 @@ It pairs with [Pipelinq](https://github.com/ConductionNL/pipelinq) to form a com
 - **Activity Timeline** — Complete history of every change made to a case, with timestamps and responsible party
 
 ### Integrations
-- **Unified Search** — Deep links for cases and tasks in Nextcloud's global search
-- **Pipelinq Bridge** — Receive requests handed off from Pipelinq CRM as new cases
+- **Unified Search** — Cases and tasks appear in Nextcloud's global search, provided centrally via OpenRegister (procest ships no own search provider)
+- **Pipelinq Bridge** *(roadmap — see [`openspec/changes/semantic-case-intake/`](openspec/changes/semantic-case-intake/))* — Receive requests handed off from Pipelinq CRM as new cases
 - **Sub-cases** — Break complex cases into parent-child hierarchies for structured processing
 
 ## Architecture
@@ -104,9 +104,8 @@ procest/
 │   ├── store/         # Pinia stores per entity (cases, caseTypes, tasks…)
 │   └── views/         # Route-level views
 ├── docs/
-│   ├── FEATURES.md    # Full feature specification
-│   ├── ARCHITECTURE.md
-│   └── features/      # Per-feature documentation
+│   ├── Features/      # Per-feature documentation
+│   └── Technical/     # Architecture and development guides
 ├── img/               # App icons and screenshots
 ├── l10n/              # Translations (en, nl)
 └── docusaurus/        # Product documentation site (procest.app)
@@ -159,8 +158,8 @@ silent specialist.
 
 | Dependency | Version |
 |-----------|---------|
-| Nextcloud | 28 – 33 |
-| PHP | 8.1+ |
+| Nextcloud | 28 – 34 |
+| PHP | 8.3+ |
 | [OpenRegister](https://github.com/ConductionNL/openregister) | latest |
 
 ## Installation
@@ -233,7 +232,7 @@ legacy-debt cluster has been cleared.
 |-------|-----------|
 | Frontend | Vue 2.7, Pinia, @nextcloud/vue |
 | Build | Webpack 5, @nextcloud/webpack-vue-config |
-| Backend | PHP 8.1+, Nextcloud App Framework |
+| Backend | PHP 8.3+, Nextcloud App Framework |
 | Data | OpenRegister (PostgreSQL JSON objects) |
 | UX | @conduction/nextcloud-vue |
 | Quality | PHPCS, PHPMD, phpmetrics, ESLint, Stylelint |
@@ -244,14 +243,14 @@ Full documentation is available at **[procest.app](https://procest.app)**
 
 | Page | Description |
 |------|-------------|
-| [Features](docs/FEATURES.md) | Complete feature specification |
-| [Architecture](docs/ARCHITECTURE.md) | Technical architecture and design decisions |
-| [Development](docs/development.md) | Developer setup and contribution guide |
+| [Features](docs/Features/README.md) | Complete feature specification |
+| [Architecture](docs/Technical/architecture.md) | Technical architecture and design decisions |
+| [Development](docs/Technical/development-guide.md) | Developer setup and contribution guide |
 
 ## Standards & Compliance
 
 - **Data standard:** CMMN 1.1 (OMG Case Management specification)
-- **Process standards:** BPMN 2.0, DMN for task and decision logic
+- **Process standards:** BPMN 2.0 for task lifecycles (DMN: roadmap — no DMN engine ships today)
 - **Dutch interoperability:** ZGW APIs (Zaken, Besluiten, Catalogi), RGBZ information model
 - **Accessibility:** WCAG AA (Dutch government requirement)
 - **Authorization:** RBAC via OpenRegister

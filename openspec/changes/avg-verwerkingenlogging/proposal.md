@@ -2,7 +2,17 @@
 
 > **Reworked 2026-06-11 (abstraction decision):** AVG verwerkingenlogging surfaced near-identically in procest, docudesk, and scholiq on the same day — proof the requirement is abstract. The storage, append-only log, retention, attribution-fallback machinery, Art. 30/inzageverzoek export, and the VNG Logging Verwerkingen API are now owned by OpenRegister (`openregister/openspec/changes/processing-activity-register`, requirements OR-PA-1..9). This change is procest's THIN CONSUMER: it contributes the zaakgericht-werken activity catalogue, read-logging opt-ins, attribution mappings, and FG UI surfacing — nothing more.
 >
-> **Depends on:** `openregister/processing-activity-register` — BLOCKED_EXTERNAL until that change lands.
+> **Depends on:** `openregister/processing-activity-register` — **UNBLOCKED 2026-07-05**: the OR
+> side is SHIPPED on OR `origin/development` (verified via `git -C ../openregister show
+> origin/development:appinfo/routes.php`): processing-log endpoints `GET /api/avg/verwerkingen`
+> (`processingLog#index`) + `GET /api/avg/verwerkingen/betrokkene` (routes.php:261-262, served by
+> `lib/Controller/ProcessingLogController.php`), verwerkingsactiviteiten CRUD
+> `/api/avg/verwerkingsactiviteiten` + `GET /api/avg/verantwoording` (routes.php:224-229,
+> `lib/Controller/VerwerkingsactiviteitenController.php`), DSAR endpoints `/api/avg/inzage` etc.
+> (routes.php:231-235), plus the `x-openregister-processing` dialect with `logReads`
+> (`lib/Db/ProcessingLogEntry.php`) and `x-openregister-processing-activity` attribution
+> (`lib/Db/Schema.php:1935`, `lib/Db/AuditTrailMapper.php`). Implementation can start once the
+> deployed OR release carries this (DC01 pins the version).
 
 ## Why
 
