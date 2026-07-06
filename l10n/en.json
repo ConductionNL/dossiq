@@ -2666,7 +2666,11 @@
         "Skip": "Skip",
         "Trade name or KvK number": "Trade name or KvK number",
         "Use as initiator": "Use as initiator",
-        "Who is the initiator?": "Who is the initiator?"
+        "Who is the initiator?": "Who is the initiator?",
+        "Handoff": "Handoff",
+        "Open source object": "Open source object",
+        "Received via handoff": "Received via handoff",
+        "Received via handoff from another application": "Received via handoff from another application"
     },
     "plurals": ""
 }

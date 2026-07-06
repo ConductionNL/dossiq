@@ -65,7 +65,7 @@ It pairs with [Pipelinq](https://github.com/ConductionNL/pipelinq) to form a com
 
 ### Integrations
 - **Unified Search** — Cases and tasks appear in Nextcloud's global search, provided centrally via OpenRegister (procest ships no own search provider)
-- **Pipelinq Bridge** *(roadmap — see [`openspec/changes/semantic-case-intake/`](openspec/changes/semantic-case-intake/))* — Receive requests handed off from Pipelinq CRM as new cases
+- **Pipelinq Bridge** — Receive requests handed off from Pipelinq CRM as new cases, via OpenRegister's semantic object handoff (procest implements the `ns#Case` kind; requests map onto cases with navigable provenance)
 - **Sub-cases** — Break complex cases into parent-child hierarchies for structured processing
 
 ## Architecture

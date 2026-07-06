@@ -2,6 +2,17 @@
 
 All notable changes to Procest are documented in this file.
 
+## [0.2.39] - 2026-07-06
+
+### Added
+
+- `semantic-case-intake`: procest is now a provider of OpenRegister's `ns#Case` semantic handoff kind — this BACKS the README "Pipelinq Bridge" claim (graduated from roadmap to shipped).
+  - `case` schema declares `implements: ["https://openregister.app/ns#Case"]` + a COMPLETE `handoffContract` binding validated against the REAL OpenRegister `HandoffKindContracts` (mandatory title→title, summary→description, channel→intakeChannel, source→handoffSource; optional requester→requester, priority→priority).
+  - New ADR-048 semantic-reference properties `requester` (canonical requester — the initiator display fields are its projection, one write path) and `handoffSource` (provenance back-link to the originating request).
+  - Declarative `caseHandoffIntake` notification (`x-openregister-notifications`, created + notIn filter on handoffSource) — no imperative dispatch.
+  - Handoff provenance surfaced in the Werkvoorraad intake (origin badge) and on the CaseDetail overview (origin, received-at, source-object link via OR's URN resolver). English + Dutch i18n.
+  - No app-local creation endpoint — handoff creation flows through OpenRegister (ADR-022). Requires OpenRegister with the merged semantic-object-handoff engine.
+
 ## [0.2.38] - 2026-07-06
 
 ### Added

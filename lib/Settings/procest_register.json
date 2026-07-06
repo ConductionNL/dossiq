@@ -634,10 +634,34 @@
               "nl": "Zaak \"{{title}}\" aan je toegewezen",
               "en": "Case \"{{title}}\" assigned to you"
             }
+          },
+          "caseHandoffIntake": {
+            "trigger": {
+              "type": "created",
+              "filter": {
+                "field": "handoffSource",
+                "operator": "notIn",
+                "values": [""]
+              }
+            },
+            "enabled": true,
+            "channels": [
+              "nc-notification"
+            ],
+            "recipients": [
+              {
+                "kind": "field",
+                "field": "assignee"
+              }
+            ],
+            "subject": {
+              "nl": "Nieuwe zaak \"{{title}}\" ontvangen via overdracht",
+              "en": "New case \"{{title}}\" received via handoff"
+            }
           }
         },
         "icon": "BriefcaseOutline",
-        "version": "1.4.0",
+        "version": "1.5.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "x-openregister-quality": {
@@ -667,6 +691,19 @@
         "configuration": {
           "objectNameField": "title",
           "objectDescriptionField": "description",
+          "implements": [
+            "https://openregister.app/ns#Case"
+          ],
+          "handoffContract": {
+            "https://openregister.app/ns#Case": {
+              "title": "title",
+              "summary": "description",
+              "channel": "intakeChannel",
+              "source": "handoffSource",
+              "requester": "requester",
+              "priority": "priority"
+            }
+          },
           "linkedTypes": [
             "mail",
             "calendar",
@@ -1129,6 +1166,19 @@
             "type": "string",
             "title": "Initiator display name",
             "description": "Human-readable name of the case initiator, denormalised at selection time for list and detail rendering."
+          },
+          "requester": {
+            "type": "string",
+            "format": "uuid",
+            "referenceSemanticType": "https://openregister.app/ns#Requester",
+            "title": "Requester",
+            "description": "Canonical ADR-048 semantic reference (UUID) to the party who requested this case, set when the case arrives via the ns#Case semantic handoff. The initiatorType/initiatorSourceId/initiatorDisplayName fields are the display projection of this reference — one write path."
+          },
+          "handoffSource": {
+            "type": "string",
+            "referenceSemanticType": "https://openregister.app/ns#Case",
+            "title": "Handoff source",
+            "description": "Provenance back-link (ADR-048/ADR-051) to the originating object that was handed off into this case (e.g. a Pipelinq request), carrying the contract `source` field. Empty for manually-created cases; the chain source→case is also navigable via OpenRegister's handoff provenance relations."
           }
         }
       },
