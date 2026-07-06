@@ -172,11 +172,11 @@ class ManifestControllerTest extends TestCase
     }//end testManifestReturnsChildPerCaseType()
 
     /**
-     * manifest: anonymous user gets a no-op delta, never an error.
+     * manifest: an unauthenticated caller is refused (401), never leaking data.
      *
      * @return void
      */
-    public function testManifestAnonymousReturnsEmptyDelta(): void
+    public function testManifestAnonymousReturnsUnauthorized(): void
     {
         $userSession = $this->createMock(IUserSession::class);
         $userSession->method('getUser')->willReturn(null);
@@ -189,8 +189,8 @@ class ManifestControllerTest extends TestCase
         );
 
         $response = $controller->manifest();
-        $this->assertSame(Http::STATUS_OK, $response->getStatus());
-        $this->assertSame(['menu' => []], $response->getData());
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+        $this->assertSame([], $response->getData());
     }//end testManifestAnonymousReturnsEmptyDelta()
 
     /**

@@ -31,6 +31,7 @@ namespace OCA\Procest\Controller;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -68,10 +69,10 @@ class ManifestController extends Controller
      *
      * Resolves the live `caseType` objects visible to the current user (RBAC is
      * enforced by OpenRegister's ObjectService under the user session) and maps
-     * each to a menu child under the existing `CasesGroup`. The response is a
-     * no-op delta (`['menu' => []]`) whenever OpenRegister is unavailable, the
-     * register/schema is unconfigured, the user is anonymous, or no case types
-     * exist — it must never break the app shell.
+     * each to a menu child under the existing `CasesGroup`. An unauthenticated
+     * caller is refused with 401. Otherwise the response is a no-op delta
+     * (`['menu' => []]`) whenever OpenRegister is unavailable, the register/schema
+     * is unconfigured, or no case types exist — it must never break the app shell.
      *
      * @return JSONResponse A `mergeStrategy: 'delta'` menu payload.
      *
@@ -80,8 +81,13 @@ class ManifestController extends Controller
     #[NoAdminRequired]
     public function manifest(): JSONResponse
     {
+        // Authorization guard: the endpoint is authenticated-user scoped (it
+        // never takes an object id — it returns only the case types the CURRENT
+        // user may see, RBAC-filtered by OpenRegister's ObjectService). An
+        // unauthenticated caller (NC middleware normally rejects these first) is
+        // refused explicitly; the frontend treats the non-200 as "no override".
         if ($this->userSession->getUser() === null) {
-            return new JSONResponse(['menu' => []]);
+            return new JSONResponse([], Http::STATUS_UNAUTHORIZED);
         }
 
         $objectService = $this->settingsService->getObjectService();
