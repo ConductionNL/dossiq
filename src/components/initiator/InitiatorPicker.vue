@@ -130,6 +130,7 @@ export default {
 		},
 	},
 	watch: {
+		/** @spec openspec/specs/initiator-selection/spec.md */
 		activeTab() {
 			this.results = []
 			if (this.query.trim() !== '') {
