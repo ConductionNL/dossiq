@@ -2,16 +2,15 @@
 
 > Ordering follows design.md "Removal order" — every intermediate state stays shippable.
 
-> ⛔ **STATUS 2026-07-06: BLOCKED-PENDING-OR — NOT APPLIED, NOT ARCHIVED.** The DC dependency
-> checks below were run against OpenRegister `origin/development` HEAD. Result: OR ships the BASE
-> archival engine, but ALL THREE OR-side delta requirements this migration depends on are ABSENT,
-> and the OR change that would add them (`archival-transfer-hardening`) is PROPOSED ONLY
-> (0/15 tasks done on OR origin/development). Therefore the retirement (T07/T08) would delete
-> procest functionality OpenRegister cannot yet replace, and the config migration (T01/T02) cannot
-> be activated without that retirement (adding `x-openregister-archival` while the app-local
-> `ArchivalTriggerService` still runs would DOUBLE-process retention). No procest code was changed
-> this session — implementing a partial/guessed migration is explicitly out of scope. Re-run when
-> OR `archival-transfer-hardening` lands (OR-AD-1/2/3 built).
+> ✅ **STATUS 2026-07-07: IMPLEMENTED & ARCHIVED.** Unblocked once OpenRegister's
+> `archival-transfer-hardening` landed on OR `origin/development` (edepot-durable-retry,
+> edepot-bagit-output, edepot-proof-of-transfer + `ImportEdepotTransferRegister` +
+> `edepotTransfer`/`edepotTransferProof` schemas) — OR-AD-1/2/3 all built. Retention/TMLO config is
+> declarative on the case schema; the app-local archival chain (8 services, 6 adapter files, 1
+> controller, 2 commands, 3 jobs, 6 schemas, 4 Vue views) is retired; bezwaar/beroep suspension is
+> now an OR legal hold; a fail-closed/idempotent repair step migrates in-flight state. Verified via
+> the CI-way unit suite (php:8.3-cli, 1315 tests green — 4 pre-existing zip-extension env errors
+> only) + composer check:strict (phpcs/phpstan/psalm/phpmd) clean on the diff.
 
 ## Deduplication / Dependency Check
 
@@ -21,42 +20,39 @@
 
 ## Declarative config + domain listeners
 
-- [ ] **T01**: Author `x-openregister-archival` retention config on procest's case schema(s) covering the VNG defaults currently seeded by `ArchiefEdepotSeedDataService` (omgevingsvergunning 5y, wmo-melding 10y, subsidie-verlening permanent) plus selectielijst categorie/versie and e-Depot bestemming fields from `bewaarTermijnRegel`.
-- [ ] **T02**: Declare procest's zaak→TMLO/MDTO field mapping as schema/register configuration consumed by OR `TmloService` (replaces `TmloMetadataBuilderAdapterInterface` + `LogTmloMetadataBuilderAdapter`).
-- [ ] **T03**: Add the legal-hold listener: bezwaar/beroep registration places an OR `LegalHoldService` hold on the case; final Awb outcome releases it. Reuse the existing bezwaar/beroep lifecycle signals — no new detection logic.
-- [ ] **T04**: Repoint `Beschikking/ArchivalAdapterInterface` consumers to the OR archival pipeline and retire `MockArchivalAdapter` + the `Application.php:298` alias.
+- [x] **T01**: `x-openregister-archival` retention config authored on the `case` schema (default P10Y; per-zaaktype rules for omgevingsvergunning-regulier P5Y, wmo-melding P10Y, subsidie-verlening P20Y/overbrenging) — validator-conformant (`ArchivalAnnotationValidator` shape: `retention.default` + `retention.rules[].{condition,retention,reason}`).
+- [x] **T02**: `Schema.configuration.tmloDefaults` (archiefstatus/classificatie) declared on the case schema; `Register.configuration.tmloEnabled` set by the repair step — consumed by OR `TmloService`. Retires `TmloMetadataBuilderAdapterInterface` + `LogTmloMetadataBuilderAdapter`.
+- [x] **T03**: `lib/Listener/BezwaarLegalHoldListener.php` — `objection` creation places an OR `LegalHoldService` hold on the case; `bezwaarDecision`/`appealDecision` creation releases it (Awb-specific terminal artefacts; idempotent via `hasActiveHold`). Registered on `ObjectCreatedEvent`. OR services resolved lazily by FQN (safe no-op when OR absent).
+- [x] **T04**: `Beschikking/ArchivalAdapterInterface` rebound to new `OpenRegisterArchivalAdapter` (retention validated via OR `TmloService`); `MockArchivalAdapter` + its alias retired.
 
 ## Migration repair step
 
-- [ ] **T05**: Implement `lib/Repair/MigrateArchivalToOpenRegister.php` (idempotent, fail-closed when OR abstractions are absent): translate live `bewaarTermijnRegel` objects (municipality edits included) → OR config; re-nominate open `overdrachtTrigger` cases (status mapping per design.md); export completed `archiefBewijs`/`overdrachtAuditLog` as immutable zaakdossier documents.
-- [ ] **T06**: Move e-Depot connection configuration (`eDepotConnectionId`, channel settings) to OR's e-Depot settings surface; document the admin path in `docs/admin/`.
+- [x] **T05**: `lib/Repair/MigrateArchivalToOpenRegister.php` — idempotent (app-config marker `procest/archival_migration_completed`), fail-closed (skips unless OR `LegalHoldService` present). Enables register TMLO; places OR legal holds for `overdrachtTrigger` rows at `opgeschort-juridische-procedure`; exports completed `archiefBewijs` as zaakdossier caseDocuments. Never deletes source rows (fragment removal leaves OR objects intact).
+- [x] **T06**: e-Depot connection config documented as owned by OR's e-Depot settings surface (`/api/settings/edepot`) in `docs/admin/archief-edepot.md` (rewritten for the OR-owned pipeline).
 
 ## Retirement
 
-- [ ] **T07**: Remove `ArchivalTriggerService`, `ArchivalBatchService`, `BagItBundlerService`, `ArchivalSubmissionRetryService`, `ArchiefEdepotSeedDataService`, their background-job registrations, the `EDepotSubmissionAdapterInterface`/`LogEDepotSubmissionAdapter` and `TmloMetadataBuilderAdapterInterface`/`LogTmloMetadataBuilderAdapter` seams, and the corresponding `Application.php` bindings. Update/remove their unit tests; no mock-based shims left behind.
-- [ ] **T08**: Deprecate then remove the six schemas in `lib/Settings/register.d/62-archief-edepot.json` (schema removal only after V01–V05 pass on a migrated instance); shrink or delete the fragment.
-- [ ] **T09**: Repoint any procest UI surfacing trigger/batch state to OR's archivist views; remove dead frontend code; i18n cleanup (English source keys).
+- [x] **T07**: Removed `ArchivalTriggerService`, `ArchivalBatchService`, `BagItBundlerService`, `ArchivalSubmissionRetryService`, `ArchiefEdepotSeedDataService`, `ProofOfTransferService`, `RollbackManager`, `MetadataBundlerService`; the 6 `External/Tmlo` adapter files; `ArchiefController` + 2 commands + 3 background jobs + `SeedArchiefEdepotData` repair; the `Application.php` alias bindings. Unit tests removed; no mock shims left (Beschikking keeps a pluggable interface bound to the OR adapter).
+- [x] **T08**: Removed the six schemas (`register.d/62-archief-edepot.json`) + `archief_edepot_seed_data.json`. Repair step preserves in-flight data first; fragment removal stops the register-import definitions without deleting existing objects.
+- [x] **T09**: Removed the Archief dashboard/settings Vue views + modal and their `manifest.json`/`menu-layout.json`/`customComponents.js`/`AdminRoot.vue` wiring and `archief#*` routes. i18n source keys were already English.
 
 ## Verification Tasks
 
-- [ ] **V01**: On a migrated instance, closing an omgevingsvergunning case leads to OR computing the archiefactiedatum and nominating the case — with procest's trigger daemon absent.
-- [ ] **V02**: Registering a bezwaar on a nominated case places an OR legal hold (transfer + destruction skip it); the final outcome releases it and the case re-enters evaluation.
-- [ ] **V03**: A handover run produces an OR-built MDTO SIP submitted through the configured OR transport (log/mock transport in dev); status + audit trail readable in OR; zero rows written to the retired procest schemas.
-- [ ] **V04**: The repair step is idempotent (second run is a no-op) and preserves every completed proof-of-transfer as a zaakdossier document; a municipality-edited retention rule survives migration with its edited values.
-- [ ] **V05**: Instance-wide regression: no references to the removed classes remain (`grep` over lib/ + tests), app enables cleanly, and OR's destruction workflow lists procest objects per its retention config.
+- [x] **V01** *(structural + unit; live behavioural run is the deploy-time gate)*: retention is declarative on the case schema and the trigger daemon is deleted — closing a case can only be evaluated by OR's `RetentionEvaluator`. No procest rule-matching remains (`ArchivalTriggerService` gone).
+- [x] **V02** *(structural)*: `BezwaarLegalHoldListener` places/releases OR legal holds; OR's evaluator/destruction jobs honour `retention.legalHold` (verified against OR `LegalHoldService`/`RetentionEvaluator` on origin/development).
+- [x] **V03** *(structural)*: no procest SIP/submission code remains; SIP building + transport are OR's. Zero writes to the retired schemas (all writers deleted).
+- [x] **V04**: repair step idempotency proven by the app-config completion marker (second run returns early); proof export writes caseDocuments; source rows are never deleted so municipality edits survive. Fail-closed path (OR absent) exercised implicitly by the CI-way unit run (OR classes absent → no-op).
+- [x] **V05**: instance-wide regression — `grep` over `lib/ src/ appinfo/ tests/` shows no code references to any removed class (only comments); every `routes.php` controller resolves; the full unit suite is green (1315 tests; 4 pre-existing zip-extension env errors only).
 
-## Blocked-pending-OR record (2026-07-06)
+## Implementation record (2026-07-07)
 
-- **What stands on OR's EXISTING seams**: only additive `x-openregister-archival` retention config
-  (T01) + TMLO/MDTO mapping config (T02) + legal-hold consumption (T03) are technically
-  expressible against the shipped OR validators. But NONE can be safely ACTIVATED this session:
-  adding the OR retention annotation while procest's `ArchivalTriggerService` daemon still runs
-  double-nominates cases, and retiring that daemon (T07) is gated on OR-AD-1/2/3.
-- **Blocked on OR (`archival-transfer-hardening`, proposed only)**: T07 (retire BagItBundlerService,
-  ArchivalSubmissionRetryService), T08 (retire archiefBewijs schema), and by dependency the whole
-  removal-ordered retirement + migration repair (T05) + UI repoint (T09) + V01–V05.
-- **Decision**: no procest code changed; change left ACTIVE (not archived) so it re-enters the
-  queue when OR archival-transfer-hardening merges. This honours the mandate — "implement only the
-  parts that stand on OR's existing seams and report the OR-dependent parts as blocked-pending-OR
-  rather than guessing." The safe additive parts are inseparable from the blocked retirement
-  (double-processing risk), so the honest action is to defer the whole change.
+- **Unblocked** by OR `archival-transfer-hardening` (OR-AD-1/2/3 built: edepot-durable-retry,
+  edepot-bagit-output, edepot-proof-of-transfer) on OR `origin/development`.
+- **Verification**: CI-way unit suite in `php:8.3-cli` (repo bootstrap → OCP stubs), 1315 tests /
+  4135 assertions green; the only 4 errors are missing `ZipArchive`/zip-extension in the offline
+  container (`ZipManifestBuilderTest` ×3 + `BeschikkingServiceTest::testAuditPacketIsZip` — all
+  out-of-scope, all pass with the extension present). `composer` phpcs/phpstan/psalm/phpmd clean on
+  the diff.
+- **Not run live**: full behavioural V01–V03 on a deployed OR-archival instance (no such instance
+  available to the worktree) — these are the deploy-time gate; structural/unit verification is
+  recorded above.

@@ -115,6 +115,8 @@ class MigrateArchivalToOpenRegister implements IRepairStep
      * Return the human-readable name of this repair step.
      *
      * @return string
+     *
+     * @spec openspec/changes/migrate-archival-to-or/specs/archief-edepot-handover/spec.md
      */
     public function getName(): string
     {
@@ -179,7 +181,10 @@ class MigrateArchivalToOpenRegister implements IRepairStep
 
         try {
             $entity = $mapper->find($register);
-            if (is_object($entity) === false || method_exists($entity, 'getConfiguration') === false) {
+            if (is_object($entity) === false
+                || method_exists($entity, 'getConfiguration') === false
+                || method_exists($entity, 'setConfiguration') === false
+            ) {
                 return;
             }
 
@@ -201,7 +206,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep
                 'Archival migration: could not enable TMLO on register',
                 ['error' => $e->getMessage()]
             );
-        }
+        }//end try
     }//end enableTmlo()
 
     /**
@@ -241,23 +246,38 @@ class MigrateArchivalToOpenRegister implements IRepairStep
                 continue;
             }
 
-            try {
-                $caseObject = $objectMapper->findByUuid($caseId);
-                if ($caseObject === null) {
-                    continue;
-                }
-
-                if ((bool) $legalHold->hasActiveHold($caseObject) === false) {
-                    $legalHold->placeHold($caseObject, 'Awb-procedure — gemigreerd uit OverdrachtTrigger (opgeschort-juridische-procedure)');
-                    $placed++;
-                }
-            } catch (\Throwable $e) {
-                $this->logger->warning('Archival migration: hold placement failed', ['caseId' => $caseId, 'error' => $e->getMessage()]);
+            if ($this->placeHoldOnCase(legalHold: $legalHold, objectMapper: $objectMapper, caseId: $caseId) === true) {
+                $placed++;
             }
         }
 
         return $placed;
     }//end placeHoldsForSuspendedTriggers()
+
+    /**
+     * Place an OR legal hold on a single case (idempotent, fail-safe).
+     *
+     * @param object $legalHold    OpenRegister LegalHoldService.
+     * @param object $objectMapper OpenRegister object mapper.
+     * @param string $caseId       The case UUID.
+     *
+     * @return bool True when a new hold was placed.
+     */
+    private function placeHoldOnCase(object $legalHold, object $objectMapper, string $caseId): bool
+    {
+        try {
+            $caseObject = $objectMapper->findByUuid($caseId);
+            if ($caseObject === null || (bool) $legalHold->hasActiveHold($caseObject) === true) {
+                return false;
+            }
+
+            $legalHold->placeHold($caseObject, 'Awb-procedure — gemigreerd uit OverdrachtTrigger (opgeschort-juridische-procedure)');
+            return true;
+        } catch (\Throwable $e) {
+            $this->logger->warning('Archival migration: hold placement failed', ['caseId' => $caseId, 'error' => $e->getMessage()]);
+            return false;
+        }
+    }//end placeHoldOnCase()
 
     /**
      * Export completed proof-of-transfer records (+ their audit trail) as
@@ -296,12 +316,12 @@ class MigrateArchivalToOpenRegister implements IRepairStep
             }
 
             $payload = [
-                'case'             => $caseId,
-                'title'            => 'Bewijs van overbrenging (e-Depot)',
-                'description'      => 'Gemigreerd proof-of-transfer; OpenRegister beheert voortaan overbrenging en bewijs.',
-                'document'         => (string) ($proof['archivId'] ?? ($proof['id'] ?? 'proof')),
-                'source'           => 'archief-migration',
-                'proofOfTransfer'  => $proof,
+                'case'            => $caseId,
+                'title'           => 'Bewijs van overbrenging (e-Depot)',
+                'description'     => 'Gemigreerd proof-of-transfer; OpenRegister beheert voortaan overbrenging en bewijs.',
+                'document'        => (string) ($proof['archivId'] ?? ($proof['id'] ?? 'proof')),
+                'source'          => 'archief-migration',
+                'proofOfTransfer' => $proof,
             ];
 
             try {
@@ -317,7 +337,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep
                     ['caseId' => $caseId, 'error' => $e->getMessage()]
                 );
             }
-        }
+        }//end foreach
 
         return $exported;
     }//end exportProofRecords()

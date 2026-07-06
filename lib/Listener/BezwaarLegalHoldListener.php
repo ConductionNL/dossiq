@@ -37,7 +37,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Procest\AppInfo\Application;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -108,9 +107,7 @@ class BezwaarLegalHoldListener implements IEventListener
      */
     public function handle(Event $event): void
     {
-        if (($event instanceof ObjectCreatedEvent) === false
-            && ($event instanceof ObjectUpdatedEvent) === false
-        ) {
+        if (($event instanceof ObjectCreatedEvent) === false) {
             return;
         }
 
@@ -120,37 +117,31 @@ class BezwaarLegalHoldListener implements IEventListener
         }
 
         $schemaSlug = $this->resolveSchemaSlug(payload: $payload);
-        if ($schemaSlug === '') {
+        $opens      = in_array($schemaSlug, self::PROCEEDING_OPENED_SCHEMAS, true);
+        $closes     = in_array($schemaSlug, self::PROCEEDING_CLOSED_SCHEMAS, true);
+        if ($opens === false && $closes === false) {
             return;
         }
 
-        if (in_array($schemaSlug, self::PROCEEDING_OPENED_SCHEMAS, true) === true
-            && $event instanceof ObjectCreatedEvent
-        ) {
-            $caseId = $this->resolveCaseId(schemaSlug: $schemaSlug, payload: $payload);
-            if ($caseId !== '') {
-                $this->applyHold(
-                    caseId: $caseId,
-                    place: true,
-                    reason: 'Awb-procedure ('.$schemaSlug.') geregistreerd — archivering opgeschort'
-                );
-            }
-
+        $caseId = $this->resolveCaseId(schemaSlug: $schemaSlug, payload: $payload);
+        if ($caseId === '') {
             return;
         }
 
-        if (in_array($schemaSlug, self::PROCEEDING_CLOSED_SCHEMAS, true) === true
-            && $event instanceof ObjectCreatedEvent
-        ) {
-            $caseId = $this->resolveCaseId(schemaSlug: $schemaSlug, payload: $payload);
-            if ($caseId !== '') {
-                $this->applyHold(
-                    caseId: $caseId,
-                    place: false,
-                    reason: 'Awb-procedure ('.$schemaSlug.') afgehandeld — archivering hervat'
-                );
-            }
+        if ($opens === true) {
+            $this->applyHold(
+                caseId: $caseId,
+                place: true,
+                reason: 'Awb-procedure ('.$schemaSlug.') geregistreerd — archivering opgeschort'
+            );
+            return;
         }
+
+        $this->applyHold(
+            caseId: $caseId,
+            place: false,
+            reason: 'Awb-procedure ('.$schemaSlug.') afgehandeld — archivering hervat'
+        );
     }//end handle()
 
     /**
@@ -169,17 +160,12 @@ class BezwaarLegalHoldListener implements IEventListener
     private function applyHold(string $caseId, bool $place, string $reason): void
     {
         $legalHoldService = $this->resolveOr(fqn: self::LEGAL_HOLD_SERVICE);
-        $objectMapper     = $this->resolveOr(fqn: self::OBJECT_MAPPER);
-        if ($legalHoldService === null || $objectMapper === null) {
+        $caseObject       = $this->resolveCaseObject(caseId: $caseId);
+        if ($legalHoldService === null || $caseObject === null) {
             return;
         }
 
         try {
-            $caseObject = $objectMapper->findByUuid($caseId);
-            if ($caseObject === null) {
-                return;
-            }
-
             $hasHold = (bool) $legalHoldService->hasActiveHold($caseObject);
             if ($place === true && $hasHold === false) {
                 $legalHoldService->placeHold($caseObject, $reason);
@@ -188,15 +174,42 @@ class BezwaarLegalHoldListener implements IEventListener
             }
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'Procest legal-hold: '.($place === true ? 'place' : 'release').' failed',
+                'Procest legal-hold: could not apply hold',
                 [
                     'app'    => Application::APP_ID,
                     'caseId' => $caseId,
+                    'place'  => $place,
                     'error'  => $e->getMessage(),
                 ]
             );
-        }
+        }//end try
     }//end applyHold()
+
+    /**
+     * Resolve the case ObjectEntity for a UUID via the OR object mapper.
+     *
+     * @param string $caseId The case UUID.
+     *
+     * @return object|null The ObjectEntity, or null when unavailable.
+     */
+    private function resolveCaseObject(string $caseId): ?object
+    {
+        $objectMapper = $this->resolveOr(fqn: self::OBJECT_MAPPER);
+        if ($objectMapper === null) {
+            return null;
+        }
+
+        try {
+            $caseObject = $objectMapper->findByUuid($caseId);
+            if (is_object($caseObject) === true) {
+                return $caseObject;
+            }
+
+            return null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }//end resolveCaseObject()
 
     /**
      * Resolve an OpenRegister collaborator by FQN, or null when unavailable.
