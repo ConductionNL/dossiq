@@ -9,6 +9,8 @@ status: proposed
 
 ## Purpose
 
+@e2e exclude Metadata-only change (info.xml, README, features overlay) — no UI surface; verified via xsd validation, README link checker, and JSON validation.
+
 Procest's licence metadata, README feature claims, documentation links, platform matrix, and
 feature-maturity statuses tell the truth about the code as shipped.
 

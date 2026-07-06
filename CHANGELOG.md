@@ -2,6 +2,16 @@
 
 All notable changes to Procest are documented in this file.
 
+## [0.2.34] - 2026-07-06
+
+### Changed
+
+- `align-claims-and-licence`: app metadata now tells the truth about the code as shipped.
+  - `appinfo/info.xml` licence flipped `agpl` → `EUPL-1.2` (matches `LICENSE`; the SPDX token is accepted by Nextcloud's app-info.xsd enum since nextcloud/server PR #60212). EN/NL description licence sentences updated; version bumped to 0.2.34.
+  - `appinfo/info.xml` element order fixed to pass app-info.xsd validation (php before nextcloud in `<dependencies>`; repair-steps/commands/settings/navigations reordered) — pre-existing schema violations.
+  - README: licence badge → EUPL-1.2; Unified Search attributed to OpenRegister (provided centrally — procest ships no own search provider); Pipelinq Bridge marked roadmap (see `openspec/changes/semantic-case-intake/`); DMN removed from shipped process-standards claims (roadmap); three dead docs links fixed; platform matrix corrected to Nextcloud 28–34 / PHP 8.3+.
+  - `openspec/features.overlay.json`: `archief-edepot-handover` and `multi-tenancy` downgraded `stable` → `beta` with reasons (mock/log e-Depot adapter; tenant stack not yet on the OpenRegister boundary).
+
 ## [Unreleased]
 
 ### Changed

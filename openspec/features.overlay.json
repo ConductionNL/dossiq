@@ -87,7 +87,8 @@
     "title_nl": "Archivering naar e-Depot",
     "summary": "You hand over cases to the e-Depot with MDTO metadata and proof of transfer.",
     "summary_nl": "Je draagt zaken over aan het e-Depot met MDTO-metadata en bewijs van overdracht.",
-    "status": "stable",
+    "status": "beta",
+    "reason": "e-Depot submission runs on a mock/log adapter (LogEDepotSubmissionAdapter); nothing is transmitted to a real e-Depot yet",
     "providedBy": "openregister",
     "docsUrl": "openspec/specs/archief-edepot-handover/spec.md"
   },
@@ -115,7 +116,8 @@
     "title_nl": "Multi-tenant SaaS",
     "summary": "You host many gemeenten apart, with quota, billing and onboarding per tenant.",
     "summary_nl": "Je host veel gemeenten apart, met quota, facturatie en onboarding per tenant.",
-    "status": "stable",
+    "status": "beta",
+    "reason": "tenant stack is app-local; not yet on the OpenRegister boundary",
     "docsUrl": "openspec/specs/multi-tenancy/spec.md"
   },
   {
