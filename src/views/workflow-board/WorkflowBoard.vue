@@ -89,6 +89,7 @@ export default {
 			return useObjectStore()
 		},
 	},
+	// @spec exclude Boot-order guard (register OR object types before fetch); no spec scenario.
 	async mounted() {
 		// Register the OR object types before fetching — this page may mount
 		// (via direct navigation) before the app-boot initializeStores() has

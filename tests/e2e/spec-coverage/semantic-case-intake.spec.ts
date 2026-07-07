@@ -46,14 +46,9 @@ test.describe('Semantic case intake — handoff provenance UI', () => {
 		await api?.dispose()
 	})
 
-	// @e2e openspec/specs/semantic-case-intake/spec.md#behandelaar-sees-the-handoff-case-with-origin
-	test('handoff case shows a provenance badge in the Werkvoorraad intake', async ({ page }) => {
-		await page.goto(`${APP}#/werkvoorraad`)
-		const row = page.locator('.werkvoorraad__row', { hasText: 'HANDOFF Intake demo case' })
-		await expect(row).toBeVisible({ timeout: 15000 })
-		await expect(row.locator('.werkvoorraad__handoff-badge')).toBeVisible()
-	})
-
+	// The Werkvoorraad ("All cases in progress") list was retired (work-queue
+	// streamlining); the handoff-provenance scenario is covered by the case-detail
+	// test below.
 	// @e2e openspec/specs/semantic-case-intake/spec.md#behandelaar-sees-the-handoff-case-with-origin
 	test('case detail shows the handoff provenance with a source link', async ({ page }) => {
 		await page.goto(`${APP}#/cases/${caseId}`)

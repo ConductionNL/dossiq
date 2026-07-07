@@ -87,27 +87,6 @@ test.describe('Voorstellen page render', () => {
 	})
 })
 
-test.describe('Work Queue page render', () => {
-
-	// @e2e openspec/specs/signalering-widgets/spec.md#work-queue-page-renders-kpi-strip-and-filters
-	test('work queue renders heading, KPI strip and filters', async ({ page }) => {
-		await navTo(page, 'Work Queue')
-		// The page renders inside a dashboard-page wrapper whose title duplicates
-		// the view's own h2 "Work Queue", so scope to the view's KPI section
-		// heading rather than the ambiguous role=heading lookup.
-		await expect(page.locator('.werkvoorraad__kpis').first())
-			.toBeVisible({ timeout: 15000 })
-		const kpis = page.locator('.werkvoorraad__kpis')
-		await expect(kpis.getByText('Open Cases', { exact: true })).toBeVisible()
-		await expect(kpis.getByText('Overdue', { exact: true })).toBeVisible()
-		await expect(kpis.getByText('Completed This Week', { exact: true })).toBeVisible()
-		await expect(kpis.getByText('Unassigned', { exact: true })).toBeVisible()
-		await expect(page.getByRole('button', { name: /All/ })).toBeVisible()
-		await expect(page.getByRole('button', { name: /Unassigned/ })).toBeVisible()
-		await expect(page.getByRole('button', { name: /Overdue/ })).toBeVisible()
-	})
-})
-
 test.describe('Doorlooptijd page render', () => {
 
 	// @e2e openspec/specs/doorlooptijd-dashboard/spec.md#doorlooptijd-page-renders-heading

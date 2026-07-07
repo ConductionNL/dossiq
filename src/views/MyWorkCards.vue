@@ -34,7 +34,11 @@ export default {
 	components: { CnIndexPage },
 
 	computed: {
-		/** Base filter scoping the case list to the current user's assignments. */
+		/**
+		 * Base filter scoping the case list to the current user's assignments.
+		 *
+		 * @spec openspec/specs/my-work/spec.md
+		 */
 		filter() {
 			const uid = (getCurrentUser() && getCurrentUser().uid)
 				|| (typeof OC !== 'undefined' && OC.currentUser)
@@ -42,7 +46,11 @@ export default {
 			return { assignee: uid }
 		},
 
-		/** Curated card/table columns, mirroring the Cases index. */
+		/**
+		 * Curated card/table columns, mirroring the Cases index.
+		 *
+		 * @spec openspec/specs/my-work/spec.md
+		 */
 		columns() {
 			return [
 				'identifier',
@@ -59,6 +67,8 @@ export default {
 		 * Open a case detail page from a clicked row/card.
 		 *
 		 * @param {object} row The case object emitted by CnIndexPage.
+		 *
+		 * @spec openspec/specs/my-work/spec.md
 		 */
 		openCase(row) {
 			const id = (row && (row.id || row.uuid))

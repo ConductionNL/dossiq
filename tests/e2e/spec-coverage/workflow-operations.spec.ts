@@ -72,19 +72,9 @@ test.describe('Case Map page', () => {
 	})
 })
 
-test.describe('Transfers index page', () => {
-	// @e2e openspec/specs/case-transfer/spec.md#transfers-index-renders-list-shell
-	test('transfers index renders the list shell with a create control', async ({ page }) => {
-		const errors = trackProcestErrors(page)
-		await navTo(page, 'Transfers')
-		await expect(page.getByRole('radio', { name: 'Cards' })).toBeVisible({ timeout: 15000 })
-		await expect(page.getByRole('radio', { name: 'Table' })).toBeVisible()
-		await expect(page.getByRole('button', { name: /^Add / })).toBeVisible()
-		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
-		await expect(page.locator('body')).not.toContainText('Internal Server Error')
-		expect(errors, errors.join('\n')).toEqual([])
-	})
-})
+// Transfers list page removed — cases are transferred from their detail page
+// (the TransferDetail route is kept for deep links). See
+// feat(nav): streamline work queue.
 
 test.describe('Subsidies intake page', () => {
 	// @e2e openspec/specs/subsidy-intake/spec.md#subsidies-index-renders-list-shell
