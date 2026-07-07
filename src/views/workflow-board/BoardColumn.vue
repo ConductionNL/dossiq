@@ -4,9 +4,11 @@
 	Workflow-board column — one Kanban column per non-final status type. Renders
 	a header (status name + case count), a scrollable list of CaseCard children,
 	and accepts drag-and-drop of cards. On drop it emits `drop(caseId, statusId)`
-	to the parent board, which performs the actual status transition.
+	to the parent board, which performs the actual status transition. Also
+	re-emits `move(caseId, newStatusId)` from each CaseCard's keyboard-operable
+	"Move to…" menu — the same status-transition path as drag-and-drop.
 
-	Spec: openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-006
+	Spec: openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 -->
 <template>
 	<div
@@ -35,8 +37,10 @@
 					:key="c.id"
 					:case-item="c"
 					:case-type-name="caseTypeName(c.caseType)"
+					:columns="allColumns"
 					@click="$emit('click-case', $event)"
-					@dragstart="$emit('dragstart', $event)" />
+					@dragstart="$emit('dragstart', $event)"
+					@move="(caseId, newStatusId) => $emit('move', caseId, newStatusId)" />
 			</template>
 		</div>
 	</div>
@@ -61,8 +65,15 @@ export default {
 		loading: { type: Boolean, default: false },
 		/** Map of caseType id → display name, supplied by the parent board. */
 		caseTypeMap: { type: Object, default: () => ({}) },
+		/**
+		 * Every board column (status type), forwarded to each CaseCard so its
+		 * keyboard "Move to…" menu can list every status other than its own.
+		 *
+		 * @type {Array<{id: string, name: string}>}
+		 */
+		allColumns: { type: Array, default: () => [] },
 	},
-	emits: ['drop', 'click-case', 'dragstart'],
+	emits: ['drop', 'click-case', 'dragstart', 'move'],
 	data() {
 		return {
 			dragOver: false,

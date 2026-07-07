@@ -2,11 +2,13 @@
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <!--
 	Workflow Board — a Kanban board with one column per non-final status type,
-	open cases grouped into their current status, and drag-to-advance status
-	transitions. Dropping a card calls saveObject('case', …) which is RBAC-
-	enforced server-side; on failure the card reverts and an error toast shows.
+	open cases grouped into their current status, and status transitions
+	operable by both drag-and-drop AND keyboard alone (each CaseCard's "Move
+	to…" menu). Both paths call the same onDrop() -> saveObject('case', …),
+	which is RBAC-enforced server-side; on failure the card reverts and an
+	error toast shows.
 
-	Spec: openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-006
+	Spec: openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 -->
 <template>
 	<div class="workflow-board">
@@ -14,7 +16,7 @@
 			<div>
 				<h2>{{ t('procest', 'Workflow Board') }}</h2>
 				<p class="workflow-board__subtitle">
-					{{ t('procest', 'Drag cases between statuses to advance their workflow') }}
+					{{ t('procest', 'Drag cases between statuses, or use a case card\'s "Move to…" menu, to advance their workflow') }}
 				</p>
 			</div>
 			<NcButton type="tertiary" @click="$router.push({ name: 'Dashboard' })">
@@ -47,8 +49,10 @@
 				:status-type="col"
 				:cases="casesByStatus[col.id] || []"
 				:case-type-map="caseTypeMap"
+				:all-columns="columns"
 				:loading="false"
 				@drop="onDrop"
+				@move="onDrop"
 				@click-case="goToCase"
 				@dragstart="onDragStart" />
 		</div>
