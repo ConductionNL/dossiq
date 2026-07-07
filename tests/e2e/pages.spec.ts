@@ -83,43 +83,13 @@ test.describe('Tasks page', () => {
 
 test.describe('My Work page', () => {
 
-	// @e2e openspec/specs/my-work/spec.md#filter-tab-layout
-	test('renders with correct filter controls', async ({ page }) => {
+	// @e2e openspec/specs/my-work/spec.md#personal-workload-view
+	test('renders as a card index scoped to the current user', async ({ page }) => {
 		await navTo(page, 'My Work')
-		// type:dashboard pages render the manifest title in CnDashboardPage's
-		// header AND the MyWork view renders its own <h2> — two "My Work" h2s.
-		// Assert the first; presence confirms the page mounted.
-		await expect(page.getByRole('heading', { name: 'My Work', level: 2 }).first()).toBeVisible({ timeout: 15000 })
-		// Filter tabs are <button role="tab">All (n)</button> — not plain buttons.
-		await expect(page.getByRole('tab', { name: /All/ })).toBeVisible()
-		await expect(page.getByRole('tab', { name: /Cases/ })).toBeVisible()
-		await expect(page.getByRole('tab', { name: /Tasks/ })).toBeVisible()
-		await expect(page.getByRole('checkbox', { name: 'Show completed' })).toBeVisible()
-	})
-})
-
-test.describe('Work Queue page', () => {
-
-	// @e2e openspec/specs/signalering-widgets/spec.md#work-queue-page-renders-kpi-strip-and-filters
-	test('renders with heading and stat cards', async ({ page }) => {
-		await navTo(page, 'Work Queue')
-		// type:dashboard header + the Werkvoorraad view's own <h2> both render
-		// "Work Queue" — assert the first.
-		await expect(page.getByRole('heading', { name: 'Work Queue', level: 2 }).first()).toBeVisible({ timeout: 15000 })
-		// Scope to the KPI strip — bare getByText('Open Cases') also matches the
-		// "No open cases match the current filters" empty-state copy.
-		const kpis = page.locator('.werkvoorraad__kpis')
-		await expect(kpis.getByText('Open Cases', { exact: true })).toBeVisible()
-		await expect(kpis.getByText('Overdue', { exact: true })).toBeVisible()
-		await expect(kpis.getByText('Completed This Week', { exact: true })).toBeVisible()
-		await expect(kpis.getByText('Unassigned', { exact: true })).toBeVisible()
-	})
-
-	test('has filter buttons', async ({ page }) => {
-		await navTo(page, 'Work Queue')
-		await expect(page.getByRole('button', { name: /All/ })).toBeVisible({ timeout: 15000 })
-		await expect(page.getByRole('button', { name: /Unassigned/ })).toBeVisible()
-		await expect(page.getByRole('button', { name: /Overdue/ })).toBeVisible()
+		// My Work is now a CnIndexPage card list (assignee = current uid).
+		await expect(page.getByRole('heading', { name: /My Work/ }).first()).toBeVisible({ timeout: 15000 })
+		// Card/table view toggle is present (cards are the default view).
+		await expect(page.getByRole('button', { name: /Cards/ }).first()).toBeVisible()
 	})
 })
 

@@ -61,6 +61,7 @@ import { showError } from '@nextcloud/dialogs'
 import Vue from 'vue'
 import BoardColumn from './BoardColumn.vue'
 import { useObjectStore } from '../../store/modules/object.js'
+import { initializeStores } from '../../store/store.js'
 
 export default {
 	name: 'WorkflowBoard',
@@ -88,7 +89,12 @@ export default {
 			return useObjectStore()
 		},
 	},
+	// @spec exclude Boot-order guard (register OR object types before fetch); no spec scenario.
 	async mounted() {
+		// Register the OR object types before fetching — this page may mount
+		// (via direct navigation) before the app-boot initializeStores() has
+		// resolved, otherwise fetchCollection() throws "type not registered".
+		await initializeStores()
 		await this.fetchData()
 	},
 	methods: {
