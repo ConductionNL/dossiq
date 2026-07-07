@@ -36,15 +36,12 @@ import AdminRootView from './views/settings/AdminRoot.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
 
-// --- Leverancier-zaakportaal (operator-side) — chain members 06/08/10/11/14/15. ---
-import LeverancierDashboard from './views/leverancier/LeverancierDashboard.vue'
-import TenderList from './views/leverancier/TenderList.vue'
-import TenderDetail from './views/leverancier/TenderDetail.vue'
-import InvoiceList from './views/leverancier/InvoiceList.vue'
-import ContractList from './views/leverancier/ContractList.vue'
-import KpiView from './views/leverancier/KpiView.vue'
-import ProfileForm from './views/leverancier/ProfileForm.vue'
-import MessageThread from './views/leverancier/MessageThread.vue'
+// --- Leverancier-zaakportaal (external supplier portal) MOVED to Portaliq
+//     (ADR-046, procest#162): the /leverancier Vue surface is retired here and
+//     re-expressed as the `supplier` audience in
+//     lib/Portal/PortalContributionProvider.php. The backend supplier services
+//     + /api/leverancier-portaal/* endpoints stay; only the in-app portal views
+//     and their nav/routes are removed. ---
 
 // --- Detail-tab custom components (one per cross-schema relation). ---
 // Stubs for v1 — full implementations follow in `procest-case-relation-tabs`.
@@ -147,15 +144,8 @@ export default {
 	PublicAppointmentPage,
 	PublicStatusPage,
 
-	// --- Leverancier-zaakportaal (operator-side) — chain members 06/08/10/11/14/15. ---
-	LeverancierDashboard,
-	TenderList,
-	TenderDetail,
-	InvoiceList,
-	ContractList,
-	KpiView,
-	ProfileForm,
-	MessageThread,
+	// --- Leverancier-zaakportaal external supplier portal MOVED to Portaliq
+	//     (ADR-046, procest#162) — see import-section comment. ---
 
 	// --- Detail-tab components (one per case-detail cross-schema relation). ---
 	CaseTasksTab, // tasks where task.case === parent.id

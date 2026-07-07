@@ -86,10 +86,6 @@ import InspectionPanel from './views/cases/components/InspectionPanel.vue'
 import LegesBerekeningPanel from './views/cases/components/LegesBerekeningPanel.vue'
 import LegesVerordeningenAdmin from './views/settings/LegesVerordeningenAdmin.vue'
 
-// Zaakportaal "Mijn gemeente" citizen-portal pages (zaakportaal-mijngemeente).
-import MijnZakenView from './views/portaal/MijnZaken.vue'
-import MijnNotificatiesView from './views/portaal/MijnNotificaties.vue'
-
 // ADR-049 dissolution: the manifest Dashboard page's signal widgets (open /
 // overdue / stalled cases, my tasks, task reminders, deadline alerts) and the
 // two charts (cases-by-status, cases-by-type) no longer resolve through this
@@ -102,15 +98,13 @@ import MijnNotificatiesView from './views/portaal/MijnNotificaties.vue'
 // components and their `src/*Widget.js` native-dashboard entry points survive
 // UNCHANGED for the native Nextcloud Dashboard (which has no manifest).
 
-// Leverancier-zaakportaal — operator-side Vue surface for supplier dashboards.
-import LeverancierDashboard from './views/leverancier/LeverancierDashboard.vue'
-import TenderList from './views/leverancier/TenderList.vue'
-import TenderDetail from './views/leverancier/TenderDetail.vue'
-import InvoiceList from './views/leverancier/InvoiceList.vue'
-import ContractList from './views/leverancier/ContractList.vue'
-import KpiView from './views/leverancier/KpiView.vue'
-import ProfileForm from './views/leverancier/ProfileForm.vue'
-import MessageThread from './views/leverancier/MessageThread.vue'
+// Leverancier-zaakportaal external supplier portal MOVED to Portaliq (ADR-046,
+// procest#162): the /leverancier Vue surface + the citizen "Mijn gemeente"
+// pages (MijnZakenView / MijnNotificatiesView) are retired and re-expressed as
+// the `supplier` and `citizen` audiences in
+// lib/Portal/PortalContributionProvider.php. The backend supplier + zaakportaal
+// services and their /api/* endpoints stay; only the in-app portal views and
+// their nav/routes are removed.
 
 // ADR-049 dissolution: the `audit-trail` registry adapter (AuditTrailWidget.vue)
 // was a thin reimplementation of the library's built-in CnAuditTrailWidget.
@@ -390,18 +384,9 @@ const registry = {
 		_note: 'OR maps integration leaf (CnMapsTab) — renders the case location marker on the case detail; replaces the bespoke per-case LocationTab/CaseMap (ADR-022).',
 	},
 
-	// --- Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente). ---
-	// @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-17
-	MijnZakenView: {
-		kind: 'page',
-		component: MijnZakenView,
-		_note: 'Citizen-facing case overview + detail with accessible status timeline; reads IDOR-safe /api/portaal/cases. No declarative analogue (citizen surface, subject-scoped).',
-	},
-	MijnNotificatiesView: {
-		kind: 'page',
-		component: MijnNotificatiesView,
-		_note: 'Citizen notification-preference manager with statutory Berichtenbox-always-on control.',
-	},
+	// --- Zaakportaal "Mijn gemeente" citizen portal MOVED to Portaliq
+	//     (ADR-046, procest#162): re-expressed as the `citizen` audience in
+	//     lib/Portal/PortalContributionProvider.php. See import-section comment. ---
 
 	// --- Leges-heffingen: case detail tab + admin page. ---
 	// @spec openspec/changes/leges-heffingen/specs.md#req-leges-002
@@ -426,48 +411,8 @@ const registry = {
 	// `src/views/widgets/*.vue` components stay for the native NC Dashboard
 	// (registered via the `src/*Widget.js` OCA.Dashboard entry points).
 
-	// --- Leverancier-zaakportaal (operator-side) — chain members 06/08/10/11/14/15. ---
-	// @spec openspec/changes/leverancier-zaakportaal-15-dashboard-shell/tasks.md
-	LeverancierDashboard: {
-		kind: 'page',
-		component: LeverancierDashboard,
-		_note: 'Supplier portal 4-card dashboard shell — tenders/invoices/contracts/KPI',
-	},
-	TenderList: {
-		kind: 'page',
-		component: TenderList,
-		_note: 'Supplier tender list — sortable/filterable, status badge from TenderViewModelService',
-	},
-	TenderDetail: {
-		kind: 'page',
-		component: TenderDetail,
-		_note: 'Supplier tender detail — conditional award/rejection/withdrawal sections from visibilityFlags()',
-	},
-	InvoiceList: {
-		kind: 'page',
-		component: InvoiceList,
-		_note: 'Supplier invoice list — overdue90Plus flag + status badge from LeverancierViewModelService',
-	},
-	ContractList: {
-		kind: 'page',
-		component: ContractList,
-		_note: 'Supplier contract list — expiring-soon highlighting from ContractRenewalService',
-	},
-	KpiView: {
-		kind: 'page',
-		component: KpiView,
-		_note: 'Supplier KPI summary — payment days, on-time pct, dispute rate, compliance score',
-	},
-	ProfileForm: {
-		kind: 'page',
-		component: ProfileForm,
-		_note: 'Supplier profile form — address + contact (immediate) + IBAN-change (4-eyes via Procest case)',
-	},
-	MessageThread: {
-		kind: 'page',
-		component: MessageThread,
-		_note: 'Per-case supplier message thread with composer — chain member 11 messaging',
-	},
+	// --- Leverancier-zaakportaal external supplier portal MOVED to Portaliq
+	//     (ADR-046, procest#162) — see import-section comment. ---
 }
 
 export default registry
