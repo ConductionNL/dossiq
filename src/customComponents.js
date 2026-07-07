@@ -18,8 +18,7 @@
 //   - @conduction/nextcloud-vue → docs/migrating-to-manifest.md
 
 // --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
-import MyWorkView from './views/MyWork.vue'
-import WerkvoorraadView from './views/Werkvoorraad.vue'
+import MyWorkView from './views/MyWorkCards.vue'
 // CaseMapView removed — superseded by manifest `type: 'map'` CnMapPage
 // (see openspec/changes/case-map-overview/design.md).
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
@@ -34,16 +33,6 @@ import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import AdminRootView from './views/settings/AdminRoot.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
-
-// --- Leverancier-zaakportaal (operator-side) — chain members 06/08/10/11/14/15. ---
-import LeverancierDashboard from './views/leverancier/LeverancierDashboard.vue'
-import TenderList from './views/leverancier/TenderList.vue'
-import TenderDetail from './views/leverancier/TenderDetail.vue'
-import InvoiceList from './views/leverancier/InvoiceList.vue'
-import ContractList from './views/leverancier/ContractList.vue'
-import KpiView from './views/leverancier/KpiView.vue'
-import ProfileForm from './views/leverancier/ProfileForm.vue'
-import MessageThread from './views/leverancier/MessageThread.vue'
 
 // --- Detail-tab custom components (one per cross-schema relation). ---
 // Stubs for v1 — full implementations follow in `procest-case-relation-tabs`.
@@ -126,8 +115,7 @@ async function voorstelReminder({ actionId, item }) {
 
 export default {
 	// --- Genuine exceptions: no abstract analogue. ---
-	MyWorkView, // bespoke 4-tab filter UI mixing case + task entities
-	WerkvoorraadView, // KPI-strip-driven work queue
+	MyWorkView, // current-user case index (assignee=uid) in card view — CnIndexPage wrapper
 	// CaseMapView removed — see import comment above.
 
 	// --- Lib gaps: would migrate once lib gains the missing primitive. ---
@@ -146,16 +134,6 @@ export default {
 	// --- Anonymous-public routes (no auth, no main menu). ---
 	PublicAppointmentPage,
 	PublicStatusPage,
-
-	// --- Leverancier-zaakportaal (operator-side) — chain members 06/08/10/11/14/15. ---
-	LeverancierDashboard,
-	TenderList,
-	TenderDetail,
-	InvoiceList,
-	ContractList,
-	KpiView,
-	ProfileForm,
-	MessageThread,
 
 	// --- Detail-tab components (one per case-detail cross-schema relation). ---
 	CaseTasksTab, // tasks where task.case === parent.id

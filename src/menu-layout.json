@@ -6,9 +6,7 @@
 	},
 	"relocations": {
 		"MyWork": "WorkGroup",
-		"Werkvoorraad": "WorkGroup",
 		"WorkflowBoard": "WorkGroup",
-		"Transfers": "WorkGroup",
 		"Cases": "CasesGroup",
 		"Analytics": "AnalyticsGroup",
 		"TermijnDashboardMenu": "AnalyticsGroup",

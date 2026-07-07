@@ -25,8 +25,7 @@
 
 import { leafTab } from './integrations/leafTabs.js'
 import BezwaarBeroepOverview from './components/bezwaar/BezwaarBeroepOverview.vue'
-import MyWorkView from './views/MyWork.vue'
-import WerkvoorraadView from './views/Werkvoorraad.vue'
+import MyWorkView from './views/MyWorkCards.vue'
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import AdminRootView from './views/settings/AdminRoot.vue'
@@ -81,10 +80,6 @@ import InspectionPanel from './views/cases/components/InspectionPanel.vue'
 import LegesBerekeningPanel from './views/cases/components/LegesBerekeningPanel.vue'
 import LegesVerordeningenAdmin from './views/settings/LegesVerordeningenAdmin.vue'
 
-// Zaakportaal "Mijn gemeente" citizen-portal pages (zaakportaal-mijngemeente).
-import MijnZakenView from './views/portaal/MijnZaken.vue'
-import MijnNotificatiesView from './views/portaal/MijnNotificaties.vue'
-
 // Self-fetching dashboard widgets (also shipped as NC Dashboard-app
 // widgets). Registered with kind "widget" so the manifest Dashboard
 // page's CnWidgetGrid can resolve them by widgetKey (ADR-036 registry).
@@ -102,16 +97,6 @@ import StalledCasesWidget from './views/widgets/StalledCasesWidget.vue'
 import StatusChartWidget from './views/widgets/StatusChartWidget.vue'
 import CasesByTypeWidget from './views/widgets/CasesByTypeWidget.vue'
 import DashboardHeaderActions from './views/dashboard/DashboardHeaderActions.vue'
-
-// Leverancier-zaakportaal — operator-side Vue surface for supplier dashboards.
-import LeverancierDashboard from './views/leverancier/LeverancierDashboard.vue'
-import TenderList from './views/leverancier/TenderList.vue'
-import TenderDetail from './views/leverancier/TenderDetail.vue'
-import InvoiceList from './views/leverancier/InvoiceList.vue'
-import ContractList from './views/leverancier/ContractList.vue'
-import KpiView from './views/leverancier/KpiView.vue'
-import ProfileForm from './views/leverancier/ProfileForm.vue'
-import MessageThread from './views/leverancier/MessageThread.vue'
 
 // Shared detail-page widgets registered under the manifest widget keys so
 // CnWidgetGrid / CnDetailPage resolve them (ADR-036 registry). `audit-trail`
@@ -170,12 +155,7 @@ const registry = {
 	MyWorkView: {
 		kind: 'page',
 		component: MyWorkView,
-		_note: 'Bespoke 4-tab filter UI mixing case + task entities; no index-page analogue.',
-	},
-	WerkvoorraadView: {
-		kind: 'page',
-		component: WerkvoorraadView,
-		_note: 'KPI-strip-driven work queue.',
+		_note: 'Current-user case index (assignee = current uid) in card view; a thin CnIndexPage wrapper injecting the resolved uid because the stock index base-filter does not resolve the @me token.',
 	},
 
 	// --- Cases-on-map overview (case-map-overview). ---
@@ -395,19 +375,6 @@ const registry = {
 		_note: 'OR maps integration leaf (CnMapsTab) — renders the case location marker on the case detail; replaces the bespoke per-case LocationTab/CaseMap (ADR-022).',
 	},
 
-	// --- Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente). ---
-	// @spec openspec/changes/zaakportaal-mijngemeente/tasks.md#TASK-ZMP-17
-	MijnZakenView: {
-		kind: 'page',
-		component: MijnZakenView,
-		_note: 'Citizen-facing case overview + detail with accessible status timeline; reads IDOR-safe /api/portaal/cases. No declarative analogue (citizen surface, subject-scoped).',
-	},
-	MijnNotificatiesView: {
-		kind: 'page',
-		component: MijnNotificatiesView,
-		_note: 'Citizen notification-preference manager with statutory Berichtenbox-always-on control.',
-	},
-
 	// --- Leges-heffingen: case detail tab + admin page. ---
 	// @spec openspec/changes/leges-heffingen/specs.md#req-leges-002
 	LegesBerekeningPanel: {
@@ -485,48 +452,6 @@ const registry = {
 		_note: 'Dashboard header buttons (New Case + Refresh) wired as the Dashboard page actionsComponent.',
 	},
 
-	// --- Leverancier-zaakportaal (operator-side) — chain members 06/08/10/11/14/15. ---
-	// @spec openspec/changes/leverancier-zaakportaal-15-dashboard-shell/tasks.md
-	LeverancierDashboard: {
-		kind: 'page',
-		component: LeverancierDashboard,
-		_note: 'Supplier portal 4-card dashboard shell — tenders/invoices/contracts/KPI',
-	},
-	TenderList: {
-		kind: 'page',
-		component: TenderList,
-		_note: 'Supplier tender list — sortable/filterable, status badge from TenderViewModelService',
-	},
-	TenderDetail: {
-		kind: 'page',
-		component: TenderDetail,
-		_note: 'Supplier tender detail — conditional award/rejection/withdrawal sections from visibilityFlags()',
-	},
-	InvoiceList: {
-		kind: 'page',
-		component: InvoiceList,
-		_note: 'Supplier invoice list — overdue90Plus flag + status badge from LeverancierViewModelService',
-	},
-	ContractList: {
-		kind: 'page',
-		component: ContractList,
-		_note: 'Supplier contract list — expiring-soon highlighting from ContractRenewalService',
-	},
-	KpiView: {
-		kind: 'page',
-		component: KpiView,
-		_note: 'Supplier KPI summary — payment days, on-time pct, dispute rate, compliance score',
-	},
-	ProfileForm: {
-		kind: 'page',
-		component: ProfileForm,
-		_note: 'Supplier profile form — address + contact (immediate) + IBAN-change (4-eyes via Procest case)',
-	},
-	MessageThread: {
-		kind: 'page',
-		component: MessageThread,
-		_note: 'Per-case supplier message thread with composer — chain member 11 messaging',
-	},
 }
 
 export default registry
