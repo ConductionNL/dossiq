@@ -18,8 +18,7 @@
 //   - @conduction/nextcloud-vue → docs/migrating-to-manifest.md
 
 // --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
-import MyWorkView from './views/MyWork.vue'
-import WerkvoorraadView from './views/Werkvoorraad.vue'
+import MyWorkView from './views/MyWorkCards.vue'
 // CaseMapView removed — superseded by manifest `type: 'map'` CnMapPage
 // (see openspec/changes/case-map-overview/design.md).
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
@@ -124,8 +123,7 @@ async function voorstelReminder({ actionId, item }) {
 
 export default {
 	// --- Genuine exceptions: no abstract analogue. ---
-	MyWorkView, // bespoke 4-tab filter UI mixing case + task entities
-	WerkvoorraadView, // KPI-strip-driven work queue
+	MyWorkView, // current-user case index (assignee=uid) in card view — CnIndexPage wrapper
 	// CaseMapView removed — see import comment above.
 
 	// --- Lib gaps: would migrate once lib gains the missing primitive. ---

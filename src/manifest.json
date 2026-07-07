@@ -70,25 +70,11 @@
 			"order": 40
 		},
 		{
-			"id": "Werkvoorraad",
-			"label": "All cases in progress",
-			"icon": "icon-group",
-			"route": "Werkvoorraad",
-			"order": 30
-		},
-		{
 			"id": "WorkflowBoard",
 			"label": "Workflow board",
 			"icon": "icon-category-workflow",
 			"route": "WorkflowBoard",
 			"order": 35
-		},
-		{
-			"id": "Transfers",
-			"label": "Transfers",
-			"icon": "icon-shared",
-			"route": "Transfers",
-			"order": 80
 		},
 		{
 			"id": "Bezwaren",
@@ -623,59 +609,12 @@
 		{
 			"id": "MyWork",
 			"route": "/my-work",
-			"type": "dashboard",
+			"type": "custom",
 			"title": "My Work",
+			"component": "MyWorkView",
+			"_note": "Case index scoped to the current user (assignee = current uid) in card view. A thin CnIndexPage wrapper because the stock index base-filter does not resolve the @me current-user token; the wrapper injects the resolved uid.",
 			"config": {
-				"widgets": [
-					{
-						"id": "myWorkBoard",
-						"title": "My Work",
-						"type": "custom"
-					}
-				],
-				"layout": [
-					{
-						"id": 1,
-						"widgetId": "myWorkBoard",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 12
-					}
-				],
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"slots": {
-				"widget-myWorkBoard": "MyWorkView"
-			}
-		},
-		{
-			"id": "Werkvoorraad",
-			"route": "/werkvoorraad",
-			"type": "dashboard",
-			"title": "Work Queue",
-			"config": {
-				"widgets": [
-					{
-						"id": "werkvoorraad",
-						"title": "Work Queue",
-						"type": "custom"
-					}
-				],
-				"layout": [
-					{
-						"id": 1,
-						"widgetId": "werkvoorraad",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 12
-					}
-				],
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"slots": {
-				"widget-werkvoorraad": "WerkvoorraadView"
+				"register": "procest"
 			}
 		},
 		{
@@ -1408,30 +1347,12 @@
 		{
 			"id": "WorkflowBoard",
 			"route": "/workflow-board",
-			"type": "dashboard",
+			"type": "custom",
 			"title": "Workflow Board",
+			"component": "WorkflowBoardView",
+			"_note": "Bespoke Kanban board (one column per non-final status type, drag-to-transition) rendered by a host-app SFC; no standard page type offers the drag-between-status-columns workflow surface. Mounted directly (not wrapped in a dashboard widget) so its own header is the single page title.",
 			"config": {
-				"widgets": [
-					{
-						"id": "workflowBoard",
-						"title": "Workflow Board",
-						"type": "custom"
-					}
-				],
-				"layout": [
-					{
-						"id": 1,
-						"widgetId": "workflowBoard",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 12
-					}
-				],
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"slots": {
-				"widget-workflowBoard": "WorkflowBoardView"
+				"register": "procest"
 			}
 		},
 		{
@@ -2011,39 +1932,6 @@
 					"enabled": true,
 					"showMetadata": true
 				}
-			}
-		},
-		{
-			"id": "Transfers",
-			"route": "/transfers",
-			"type": "index",
-			"title": "Transfers",
-			"config": {
-				"register": "procest",
-				"schema": "casetransfer",
-				"showViewAction": false,
-				"actions": [
-					{
-						"id": "view",
-						"label": "View",
-						"icon": "icon-info",
-						"handler": "navigate",
-						"route": "TransferDetail",
-						"type": "handler"
-					}
-				],
-				"columns": [
-					"case",
-					"fromOrg",
-					"toOrg",
-					"status",
-					"initiatedAt"
-				],
-				"sidebar": {
-					"enabled": true,
-					"showMetadata": true
-				},
-				"documentationUrl": "https://procest.conduction.nl"
 			}
 		},
 		{

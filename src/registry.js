@@ -25,8 +25,7 @@
 
 import { leafTab } from './integrations/leafTabs.js'
 import BezwaarBeroepOverview from './components/bezwaar/BezwaarBeroepOverview.vue'
-import MyWorkView from './views/MyWork.vue'
-import WerkvoorraadView from './views/Werkvoorraad.vue'
+import MyWorkView from './views/MyWorkCards.vue'
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import AdminRootView from './views/settings/AdminRoot.vue'
@@ -137,12 +136,7 @@ const registry = {
 	MyWorkView: {
 		kind: 'page',
 		component: MyWorkView,
-		_note: 'Bespoke 4-tab filter UI mixing case + task entities; no index-page analogue.',
-	},
-	WerkvoorraadView: {
-		kind: 'page',
-		component: WerkvoorraadView,
-		_note: 'KPI-strip-driven work queue.',
+		_note: 'Current-user case index (assignee = current uid) in card view; a thin CnIndexPage wrapper injecting the resolved uid because the stock index base-filter does not resolve the @me token.',
 	},
 
 	// --- Cases-on-map overview (case-map-overview). ---
