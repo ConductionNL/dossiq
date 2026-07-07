@@ -1193,6 +1193,11 @@
             "referenceSemanticType": "https://openregister.app/ns#Case",
             "title": "Handoff source",
             "description": "Provenance back-link (ADR-048/ADR-051) to the originating object that was handed off into this case (e.g. a Pipelinq request), carrying the contract `source` field. Empty for manually-created cases; the chain source→case is also navigable via OpenRegister's handoff provenance relations."
+          },
+          "portaalSubject": {
+            "type": "string",
+            "title": "Portal subject reference",
+            "description": "Pseudonymous, one-way subject reference (never a raw BSN/KvK) of the citizen this case belongs to in the external Portaliq portal (ADR-046 citizen audience). Server-stamped from the authenticated portal identity; the sole IDOR-safe scope key for a citizen's 'Mijn gemeente' cases. Empty for cases with no external citizen owner."
           }
         }
       },
@@ -5805,6 +5810,11 @@
             "description": "User UID of the inspector",
             "title": "Inspector"
           },
+          "assignedInspectorRef": {
+            "type": "string",
+            "description": "Pseudonymous portal reference of the EXTERNAL field inspector this report is assigned to (ADR-046 inspector audience). Distinct from `inspector` (internal NC user UID): external inspectors have no Nextcloud account, so Portaliq scopes their reports by this server-stamped subject reference. Empty for internally-handled inspections.",
+            "title": "Assigned inspector reference"
+          },
           "inspectionDate": {
             "type": "string",
             "format": "date-time",
@@ -6158,6 +6168,11 @@
             "type": "string",
             "description": "NC user UID — server-derived from IUserSession, never accepted from body",
             "title": "Inspector"
+          },
+          "assignedInspectorRef": {
+            "type": "string",
+            "description": "Pseudonymous portal reference of the EXTERNAL field inspector this checklist run is assigned to (ADR-046 inspector audience). Distinct from `inspector` (internal NC user UID): external inspectors have no Nextcloud account, so Portaliq scopes their runs by this server-stamped subject reference. Empty for internally-handled runs.",
+            "title": "Assigned inspector reference"
           },
           "startedAt": {
             "type": "string",
