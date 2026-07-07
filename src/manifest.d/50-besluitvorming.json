@@ -5,14 +5,16 @@
 			"route": "/besluitvorming/agenda",
 			"type": "custom",
 			"title": "Agenda",
-			"component": "AgendaCompilerView"
+			"component": "AgendaCompilerView",
+			"_note": "Bespoke agenda-compiler host-app SFC (drag-order meeting agenda assembly across decision items); no standard page type expresses it."
 		},
 		{
 			"id": "VergaderingDetail",
 			"route": "/besluitvorming/vergaderingen/:id",
 			"type": "custom",
 			"title": "Vergadering",
-			"component": "VergaderingDetailView"
+			"component": "VergaderingDetailView",
+			"_note": "Bespoke meeting-detail host-app SFC (agenda + attendance + per-item voting/decisions); not expressible as the generic detail type."
 		}
 	],
 	"menu": [

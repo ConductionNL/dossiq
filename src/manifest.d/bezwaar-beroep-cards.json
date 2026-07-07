@@ -15,9 +15,8 @@
 			"route": "/bezwaar-beroep",
 			"type": "custom",
 			"title": "Bezwaar & Beroep",
-			"icon": "GavelOutline",
 			"component": "BezwaarBeroepOverview",
-			"group": "BezwaarBeroepGroup",
+			"_note": "ADR-044 cards-collapse landing: a bespoke card-grid host-app SFC linking the four former Bezwaar/Beroep leaves as navigable cards; no standard page type renders this card-collapse layout.",
 			"config": {
 				"register": "procest"
 			}

@@ -5,56 +5,64 @@
 			"route": "/leverancier",
 			"type": "custom",
 			"title": "Leveranciersportaal",
-			"component": "LeverancierDashboard"
+			"component": "LeverancierDashboard",
+			"_note": "Bespoke external supplier-portal shell (multi-panel landing scoped to the authenticated supplier); no standard index/detail/dashboard type expresses this host-app SFC."
 		},
 		{
 			"id": "LeverancierTenders",
 			"route": "/leverancier/tenders",
 			"type": "custom",
 			"title": "Aanbestedingen",
-			"component": "TenderList"
+			"component": "TenderList",
+			"_note": "Supplier-scoped tender list rendered by a bespoke host-app SFC (portal RBAC + supplier-filtered fetch); not the generic index type."
 		},
 		{
 			"id": "LeverancierTenderDetail",
 			"route": "/leverancier/tenders/:id",
 			"type": "custom",
 			"title": "Aanbesteding",
-			"component": "TenderDetail"
+			"component": "TenderDetail",
+			"_note": "Supplier-scoped tender detail with bespoke bid/response actions in a host-app SFC; not expressible as the generic detail type."
 		},
 		{
 			"id": "LeverancierFacturen",
 			"route": "/leverancier/facturen",
 			"type": "custom",
 			"title": "Facturen",
-			"component": "InvoiceList"
+			"component": "InvoiceList",
+			"_note": "Supplier-scoped invoice list rendered by a bespoke host-app SFC (portal RBAC + supplier-filtered fetch); not the generic index type."
 		},
 		{
 			"id": "LeverancierContracten",
 			"route": "/leverancier/contracten",
 			"type": "custom",
 			"title": "Contracten",
-			"component": "ContractList"
+			"component": "ContractList",
+			"_note": "Supplier-scoped contract list rendered by a bespoke host-app SFC (portal RBAC + supplier-filtered fetch); not the generic index type."
 		},
 		{
 			"id": "LeverancierKpi",
 			"route": "/leverancier/kpi",
 			"type": "custom",
 			"title": "KPI",
-			"component": "KpiView"
+			"component": "KpiView",
+			"_note": "Supplier-scoped KPI view with bespoke aggregations in a host-app SFC; not expressible as the generic dashboard type."
 		},
 		{
 			"id": "LeverancierProfile",
 			"route": "/leverancier/profiel",
 			"type": "custom",
 			"title": "Mijn gegevens",
-			"component": "ProfileForm"
+			"component": "ProfileForm",
+			"_note": "Supplier self-service profile form with bespoke persistence in a host-app SFC; not expressible as the generic form type."
 		},
 		{
 			"id": "LeverancierBerichten",
 			"route": "/leverancier/berichten",
 			"type": "custom",
 			"title": "Berichten",
-			"component": "MessageThread"
+			"component": "MessageThread",
+			"_note": "Supplier↔municipality message thread rendered by a bespoke host-app SFC (threaded conversation UI); no standard page type covers it."
 		}
 	],
 	"menu": [

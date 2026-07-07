@@ -5,14 +5,16 @@
 			"route": "/portaal/mijn-zaken",
 			"type": "custom",
 			"title": "Mijn gemeente",
-			"component": "MijnZakenView"
+			"component": "MijnZakenView",
+			"_note": "Citizen-facing 'my cases at this municipality' portal rendered by a bespoke host-app SFC (self-scoped case overview); no standard page type covers it."
 		},
 		{
 			"id": "MijnNotificaties",
 			"route": "/portaal/notificaties",
 			"type": "custom",
 			"title": "Notificatievoorkeuren",
-			"component": "MijnNotificatiesView"
+			"component": "MijnNotificatiesView",
+			"_note": "Citizen notification-preferences form with bespoke per-channel persistence in a host-app SFC; not expressible as the generic form type."
 		}
 	],
 	"menu": [
