@@ -53,19 +53,20 @@ Vrij en open source onder de EUPL-1.2-licentie.
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Procest</namespace>
     <documentation>
-        <user>https://github.com/ConductionNL/procest</user>
-        <admin>https://github.com/ConductionNL/procest</admin>
-        <developer>https://github.com/ConductionNL/procest</developer>
+        <user>https://codeberg.org/Conduction/procest</user>
+        <admin>https://codeberg.org/Conduction/procest</admin>
+        <developer>https://codeberg.org/Conduction/procest</developer>
     </documentation>
     <category>organization</category>
     <category>tools</category>
     <category>workflow</category>
-    <website>https://github.com/ConductionNL/procest</website>
-    <discussion>https://github.com/ConductionNL/procest/discussions</discussion>
-    <bugs>https://github.com/ConductionNL/procest/issues</bugs>
-    <repository>https://github.com/ConductionNL/procest</repository>
+    <website>https://codeberg.org/Conduction/procest</website>
+    <bugs>https://codeberg.org/Conduction/procest/issues</bugs>
+    <repository>https://codeberg.org/Conduction/procest</repository>
 
-    <screenshot>https://raw.githubusercontent.com/ConductionNL/procest/main/img/app-store.svg</screenshot>
+    <screenshot>https://codeberg.org/Conduction/procest/raw/branch/main/img/screenshot-dashboard.png</screenshot>
+    <screenshot>https://codeberg.org/Conduction/procest/raw/branch/main/img/screenshot-cases.png</screenshot>
+    <screenshot>https://codeberg.org/Conduction/procest/raw/branch/main/img/screenshot-admin.png</screenshot>
 
     <dependencies>
         <php min-version="8.3"/>
