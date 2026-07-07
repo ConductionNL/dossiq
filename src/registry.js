@@ -90,23 +90,17 @@ import LegesVerordeningenAdmin from './views/settings/LegesVerordeningenAdmin.vu
 import MijnZakenView from './views/portaal/MijnZaken.vue'
 import MijnNotificatiesView from './views/portaal/MijnNotificaties.vue'
 
-// Self-fetching dashboard widgets (also shipped as NC Dashboard-app
-// widgets). Registered with kind "widget" so the manifest Dashboard
-// page's CnWidgetGrid can resolve them by widgetKey (ADR-036 registry).
-import CasesOverviewWidget from './views/widgets/CasesOverviewWidget.vue'
-import OverdueCasesWidget from './views/widgets/OverdueCasesWidget.vue'
-import MyTasksWidget from './views/widgets/MyTasksWidget.vue'
-import DeadlineAlertsWidget from './views/widgets/DeadlineAlertsWidget.vue'
-import TaskRemindersWidget from './views/widgets/TaskRemindersWidget.vue'
-import StalledCasesWidget from './views/widgets/StalledCasesWidget.vue'
-
-// Dashboard KPI cards (CnStatsBlock-based) + chart wrappers + header
-// actions — pipelinq-style dashboard top row. All share cached fetchers
-// in services/dashboardData.js so the page loads with one fetch per
-// dataset instead of one per widget.
-import StatusChartWidget from './views/widgets/StatusChartWidget.vue'
-import CasesByTypeWidget from './views/widgets/CasesByTypeWidget.vue'
-import DashboardHeaderActions from './views/dashboard/DashboardHeaderActions.vue'
+// ADR-049 dissolution: the manifest Dashboard page's signal widgets (open /
+// overdue / stalled cases, my tasks, task reminders, deadline alerts) and the
+// two charts (cases-by-status, cases-by-type) no longer resolve through this
+// registry. They are declared inline on the Dashboard page as built-in
+// `object-table` (with `source.extend:["calculations"]` for the OpenRegister
+// virtual calc columns daysOverdue / daysSinceActivity / daysUntilDue /
+// daysUntilDeadline) and `chart` (aggregate + drilldown) widgets — CnDashboardPage
+// resolves those from the shared dashboard-widget catalog, so no app-registry
+// entry or `slots` mapping is needed. The self-fetching `src/views/widgets/*.vue`
+// components and their `src/*Widget.js` native-dashboard entry points survive
+// UNCHANGED for the native Nextcloud Dashboard (which has no manifest).
 
 // Leverancier-zaakportaal — operator-side Vue surface for supplier dashboards.
 import LeverancierDashboard from './views/leverancier/LeverancierDashboard.vue'
@@ -118,31 +112,13 @@ import KpiView from './views/leverancier/KpiView.vue'
 import ProfileForm from './views/leverancier/ProfileForm.vue'
 import MessageThread from './views/leverancier/MessageThread.vue'
 
-// Shared detail-page widgets registered under the manifest widget keys so
-// CnWidgetGrid / CnDetailPage resolve them (ADR-036 registry). `audit-trail`
-// is a thin adapter over the library's CnAuditTrailCard that reads the current
-// object from whichever render path is active (see AuditTrailWidget.vue).
-import AuditTrailWidget from './components/widgets/AuditTrailWidget.vue'
-
-/*
- * Grid metadata required for every kind:"widget" entry by the ADR-036
- * registry validator in CnAppRoot. Sizes mirror the manifest layout.
- * `allowedSlots` uses the v2 slot literals.
- */
-const PANEL_WIDGET_META = {
-	defaultSize: { w: 6, h: 4 },
-	minSize: { w: 3, h: 2 },
-	maxSize: { w: 12, h: 6 },
-	allowedSlots: ['body'],
-	propsSchema: null,
-}
-const HEADER_ACTIONS_META = {
-	defaultSize: { w: 12, h: 1 },
-	minSize: { w: 1, h: 1 },
-	maxSize: { w: 12, h: 1 },
-	allowedSlots: ['header-actions'],
-	propsSchema: null,
-}
+// ADR-049 dissolution: the `audit-trail` registry adapter (AuditTrailWidget.vue)
+// was a thin reimplementation of the library's built-in CnAuditTrailWidget.
+// It has been removed — the manifest `audit-trail` widget key now resolves to
+// the library built-in (BUILT_IN_WIDGETS for the slot CnWidgetGrid path, and the
+// shared dashboard-widget catalog for CnDetailPage's config-grid body). The
+// built-in resolves register/schema/objectId from the same detail object-context
+// injects/props, so detail-page audit trails are unchanged.
 
 /**
  * V2 component registry.
@@ -155,14 +131,6 @@ const HEADER_ACTIONS_META = {
  * @type {Record<string, { kind: string, component: object }>}
  */
 const registry = {
-	// --- Shared library widgets registered under manifest widget keys (ADR-036). ---
-	'audit-trail': {
-		kind: 'widget',
-		component: AuditTrailWidget,
-		...PANEL_WIDGET_META,
-		allowedSlots: ['body', 'sidebar'],
-		_note: 'Object change-log card — self-fetches from the detail object context (register/schema/objectId).',
-	},
 	// --- Bezwaar & Beroep cards-collapse landing page (bezwaar-beroep-cards-collapse). ---
 	// @spec openspec/changes/bezwaar-beroep-cards-collapse/specs/navigation/spec.md
 	BezwaarBeroepOverview: {
@@ -448,69 +416,15 @@ const registry = {
 		_note: 'Admin page listing leges tariff tables with import + approve workflow',
 	},
 
-	// --- Dashboard widgets — resolved by the Dashboard page's
-	// `slots` map (widget-{id} → registry name) on CnDashboardPage. ---
-	// Self-fetching via the shared cached fetchers in
-	// services/dashboardData.js. The same list components back the NC
-	// Dashboard-app widgets. The grid metadata is required for every
-	// kind:"widget" entry by the ADR-036 registry validator in
-	// CnAppRoot; the dashboard positions widgets via the manifest
-	// `config.layout` (GridStack), so these sizes are not consumed at
-	// runtime — they mirror the manifest layout for coherence.
-	casesOverview: {
-		kind: 'widget',
-		component: CasesOverviewWidget,
-		...PANEL_WIDGET_META,
-		_note: 'Open cases list — self-fetching via objectStore.',
-	},
-	overdueCases: {
-		kind: 'widget',
-		component: OverdueCasesWidget,
-		...PANEL_WIDGET_META,
-		_note: 'Cases past their deadline.',
-	},
-	myTasks: {
-		kind: 'widget',
-		component: MyTasksWidget,
-		...PANEL_WIDGET_META,
-		_note: 'Tasks assigned to the current user.',
-	},
-	deadlineAlerts: {
-		kind: 'widget',
-		component: DeadlineAlertsWidget,
-		...PANEL_WIDGET_META,
-		_note: 'Overdue + at-risk case deadlines.',
-	},
-	taskReminders: {
-		kind: 'widget',
-		component: TaskRemindersWidget,
-		...PANEL_WIDGET_META,
-		_note: 'Tasks overdue or due soon.',
-	},
-	stalledCases: {
-		kind: 'widget',
-		component: StalledCasesWidget,
-		...PANEL_WIDGET_META,
-		_note: 'Cases without recent activity.',
-	},
-	statusChart: {
-		kind: 'widget',
-		component: StatusChartWidget,
-		...PANEL_WIDGET_META,
-		_note: 'Open cases by status — self-fetching wrapper around StatusChart.',
-	},
-	casesByType: {
-		kind: 'widget',
-		component: CasesByTypeWidget,
-		...PANEL_WIDGET_META,
-		_note: 'Open cases by case type — self-fetching wrapper around CasesByType.',
-	},
-	DashboardHeaderActions: {
-		kind: 'widget',
-		component: DashboardHeaderActions,
-		...HEADER_ACTIONS_META,
-		_note: 'Dashboard header buttons (New Case + Refresh) wired as the Dashboard page actionsComponent.',
-	},
+	// --- Dashboard signal widgets + charts + header actions DISSOLVED (ADR-049). ---
+	// casesOverview / overdueCases / stalledCases / myTasks / taskReminders /
+	// deadlineAlerts are now built-in `object-table` widgets, statusChart /
+	// casesByType are built-in `chart` widgets, and DashboardHeaderActions is
+	// now a declarative `config.headerActions[]` array — all declared inline on
+	// the manifest Dashboard page (src/manifest.json) and resolved by the
+	// library, so they no longer need an app-registry entry. The self-fetching
+	// `src/views/widgets/*.vue` components stay for the native NC Dashboard
+	// (registered via the `src/*Widget.js` OCA.Dashboard entry points).
 
 	// --- Leverancier-zaakportaal (operator-side) — chain members 06/08/10/11/14/15. ---
 	// @spec openspec/changes/leverancier-zaakportaal-15-dashboard-shell/tasks.md
