@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
-import Vue from 'vue'
+import Vue, { markRaw } from 'vue'
 import VueRouter from 'vue-router'
 import { PiniaVuePlugin } from 'pinia'
 import { translate as t, translatePlural as n, loadTranslations } from '@nextcloud/l10n'
@@ -108,7 +108,12 @@ registerIntegration({
 // Apply ADR-037 manifest fragments before routes/app consume the manifest.
 const fragmentCtx = require.context('./manifest.d/', false, /\.json$/)
 const fragments = fragmentCtx.keys().sort().map((key) => fragmentCtx(key))
-const builtManifest = buildManifest(bundledManifest, fragments, menuLayout)
+// markRaw: the manifest's ~130KB pages/menu/widget tree never needs
+// per-property reactivity — only the top-level ref reassignment (below)
+// needs to be tracked to re-render the nav after the backend delta lands.
+// Without this, Vue 2 walks the entire nested structure with
+// Object.defineProperty getters/setters on every app boot.
+const builtManifest = markRaw(buildManifest(bundledManifest, fragments, menuLayout))
 
 // Adopt the backend `/api/manifest` delta (case-type-navigation): the
 // ManifestController resolves the live `caseType` objects and returns a keyed
@@ -195,7 +200,14 @@ new Vue({
 	render(h) {
 		return h(App, {
 			props: {
-				manifest: this.resolvedManifest,
+				// markRaw defensively: the initial value is already raw (see
+				// builtManifest above); if a future backend `/api/manifest`
+				// delta ever reassigns `resolvedManifest.value` to a fresh
+				// (non-raw) merged object, this keeps the render tree from
+				// paying the deep-reactivity walk on the merged result too.
+				// The ref reassignment itself (not deep property tracking)
+				// is what drives the case-type-nav re-render.
+				manifest: markRaw(this.resolvedManifest),
 				customComponents: customComponentsProp,
 				registry: registryProp,
 				pageTypes: pageTypesProp,
