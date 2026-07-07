@@ -63,7 +63,7 @@
 					:aria-label-combobox="t('procest', 'Prioriteit')"
 					label="label"
 					:reduce="opt => opt.value"
-					:placeholder="t('procest', 'Selecteer prioriteit')" />
+					:placeholder="t('procest', 'Select priority')" />
 			</div>
 
 			<NcNoteCard v-if="validationError" type="error">

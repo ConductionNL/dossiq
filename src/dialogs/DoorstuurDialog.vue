@@ -18,7 +18,7 @@
 					:placeholder="t('procest', 'e.g. Gemeente Utrecht')" />
 
 				<NcTextArea v-model="reden"
-					:label="t('procest', 'Reden voor doorsturen')"
+					:label="t('procest', 'Reason for forwarding')"
 					:placeholder="t('procest', 'Explain why the verzoek is being forwarded...')"
 					rows="4" />
 

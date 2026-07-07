@@ -25,7 +25,7 @@
 					</NcButton>
 					<NcButton type="secondary"
 						@click="showDoorstuurDialog = true">
-						{{ t('procest', 'Doorsturen') }}
+						{{ t('procest', 'Forward') }}
 					</NcButton>
 				</div>
 

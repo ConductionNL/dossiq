@@ -17,7 +17,7 @@
 			<thead>
 				<tr>
 					<th>{{ t('procest', 'Name') }}</th>
-					<th>{{ t('procest', 'Gemeente code') }}</th>
+					<th>{{ t('procest', 'Municipality code') }}</th>
 					<th>{{ t('procest', 'Application') }}</th>
 					<th>{{ t('procest', 'SOAP version') }}</th>
 					<th>{{ t('procest', 'Strategy') }}</th>

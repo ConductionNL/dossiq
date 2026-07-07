@@ -10,7 +10,7 @@
 
 		<!-- Error state -->
 		<div v-else-if="loadError" class="external-consultation-response__error">
-			<h2>{{ t('procest', 'Niet gevonden') }}</h2>
+			<h2>{{ t('procest', 'Not found') }}</h2>
 			<p>{{ loadError }}</p>
 		</div>
 
@@ -28,7 +28,7 @@
 			<header class="external-consultation-response__header">
 				<h1>{{ t('procest', 'Adviesverzoek') }}</h1>
 				<p class="external-consultation-response__organization">
-					{{ t('procest', 'Van:') }} {{ consultationData.aanvragendeOrganisatie || t('procest', 'Gemeente') }}
+					{{ t('procest', 'From:') }} {{ consultationData.aanvragendeOrganisatie || t('procest', 'Gemeente') }}
 				</p>
 			</header>
 
@@ -190,7 +190,7 @@ export default {
 				{ label: this.t('procest', 'Positief'), value: 'positief' },
 				{ label: this.t('procest', 'Positief met voorwaarden'), value: 'positief_met_voorwaarden' },
 				{ label: this.t('procest', 'Negatief'), value: 'negatief' },
-				{ label: this.t('procest', 'Niet van toepassing'), value: 'niet_van_toepassing' },
+				{ label: this.t('procest', 'Not applicable'), value: 'niet_van_toepassing' },
 			],
 			priorityOptions: [
 				{ label: this.t('procest', 'Hoog'), value: 'hoog' },
@@ -264,7 +264,7 @@ export default {
 				)
 				this.submitted = true
 			} catch (err) {
-				this.submitError = this.t('procest', 'Indienen mislukt. Probeer het opnieuw.')
+				this.submitError = this.t('procest', 'Submission failed. Please try again.')
 			} finally {
 				this.submitting = false
 			}
