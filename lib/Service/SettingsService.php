@@ -53,6 +53,8 @@ class SettingsService
         'appointment_backend_api_key',
         // AI model URL reveals internal infrastructure topology; redact for non-admins.
         'ai_model_url',
+        // Dwangsom callback HMAC secret — never expose to non-admin callers.
+        'dwangsom_callback_secret',
     ];
 
     private const CONFIG_KEYS = [
@@ -226,6 +228,11 @@ class SettingsService
         'ingebrekestelling_schema',
         'dwangsom_berekening_schema',
         'dwangsom_uitbetaling_schema',
+        // Shared secret validating the X-Procest-Signature HMAC-SHA256 header
+        // on the public dwangsom payment-confirmation callback (ADR-005;
+        // enforce-dwangsom-callback-signature spec). Empty = callback fails
+        // closed (401) rather than treated as an implicit pass.
+        'dwangsom_callback_secret',
         // Mandaat-matrix authorization engine.
         'mandaterings_besluit_schema',
         'mandaat_schema',
