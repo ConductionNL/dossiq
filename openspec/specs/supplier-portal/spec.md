@@ -1,6 +1,6 @@
 ---
 status: done
-status-note: Reverse-synced 2026-06-13 from archived implemented changes. Member 09 (contract backend) completed 2026-06-13 — the previously-deferred ContractController (GET /contracts/list, GET /contracts/{id}, POST /contracts/{id}/request-renewal; supplier-scoped, 403 on cross-supplier) and the nightly ScanExpiringContractsJob (TimedJob wrapping ContractRenewalService::scanAndFlagExpiring) are now genuinely built, routed, and unit-tested.
+status-note: Reverse-synced 2026-06-13 from archived implemented changes. Member 09 (contract backend) completed 2026-06-13 — the previously-deferred ContractController (GET /contracts/list, GET /contracts/{id}, POST /contracts/{id}/request-renewal; supplier-scoped, 403 on cross-supplier) and the nightly ScanExpiringContractsJob (TimedJob wrapping ContractRenewalService::scanAndFlagExpiring) are now genuinely built, routed, and unit-tested. 2026-07-07 (move-portals-to-portaliq, ADR-046, procest#162): the in-app supplier portal VIEWS (src/views/leverancier/*) + nav/routes/manifest fragment are RETIRED — the supplier surface is rendered by the shared Portaliq portal as the `supplier` audience of PortalContributionProvider. The backend supplier services + /api/leverancier-portaal/* endpoints and the OpenRegister schemas remain unchanged.
 ---
 # supplier-portal Specification
 

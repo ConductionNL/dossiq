@@ -1,5 +1,14 @@
 ---
 status: done
+status-note: >-
+  2026-07-07 (move-portals-to-portaliq, ADR-046, procest#162): the standalone
+  in-app field-inspection nav page (/inspecties, manifest fragment
+  70-mobiel-inspectie.json) is RETIRED — external field inspectors now use the
+  shared Portaliq portal as the `inspector` audience of
+  PortalContributionProvider (inspectieRapport / inspectionChecklistRun scoped
+  by the additive assignedInspectorRef). The offline `field-inspection` OR
+  integration leaf registration, the inspection schemas and the employee-side
+  case-detail inspection panels remain.
 ---
 
 # mobiel-inspectie-offline Specification
