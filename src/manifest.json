@@ -145,12 +145,6 @@
 			"order": 75
 		},
 		{
-			"id": "PortaalGroup",
-			"label": "Portal",
-			"icon": "icon-user",
-			"order": 87
-		},
-		{
 			"id": "SettingsGroup",
 			"label": "Settings",
 			"icon": "icon-settings",

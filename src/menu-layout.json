@@ -12,10 +12,7 @@
 		"Cases": "CasesGroup",
 		"Analytics": "AnalyticsGroup",
 		"TermijnDashboardMenu": "AnalyticsGroup",
-		"ArchiefDashboardMenu": "CasesGroup",
-		"LeverancierDashboard": "PortaalGroup",
-		"MijnZaken": "PortaalGroup",
-		"MijnNotificaties": "PortaalGroup"
+		"ArchiefDashboardMenu": "CasesGroup"
 	},
 	"removals": [
 		"SubstitutionMenu",
