@@ -11,10 +11,7 @@
 		"Transfers": "WorkGroup",
 		"Cases": "CasesGroup",
 		"Analytics": "AnalyticsGroup",
-		"TermijnDashboardMenu": "AnalyticsGroup",
-		"LeverancierDashboard": "PortaalGroup",
-		"MijnZaken": "PortaalGroup",
-		"MijnNotificaties": "PortaalGroup"
+		"TermijnDashboardMenu": "AnalyticsGroup"
 	},
 	"removals": [
 		"SubstitutionMenu",
@@ -29,7 +26,11 @@
 		"BesluitvormingGroup",
 		"Voorstellen",
 		"Advice",
-		"BesluitvormingAgenda"
+		"BesluitvormingAgenda",
+		"LeverancierDashboard",
+		"MijnZaken",
+		"MijnNotificaties",
+		"Inspecties"
 	],
 	"settingsSection": [
 		"CaseTypesMenu",

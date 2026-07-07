@@ -10,6 +10,14 @@ note: >-
   not rebuilt. Live-instance items (DigiD/eHerkenning edge session, IP binding,
   full E2E/axe/pentest, n8n fan-out, subsidie via opencatalogi) remain DEFERRED
   with reasons recorded in the archived change tasks.md.
+status-note: >-
+  2026-07-07 (move-portals-to-portaliq, ADR-046, procest#162): the in-app
+  citizen portal VIEWS (MijnZaken/MijnNotificaties + the four forms) and their
+  nav/routes/manifest fragment are RETIRED — the citizen surface moved to the
+  shared Portaliq portal as the `citizen` audience of
+  PortalContributionProvider (case→portaalSubject, portaalBericht inbox,
+  portaalVerzoek + createKlacht). Backend services, /api/portaal/* endpoints and
+  the schemas remain (Portaliq reads OpenRegister directly).
 ---
 # zaakportaal-mijngemeente Specification
 
