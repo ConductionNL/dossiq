@@ -68,75 +68,35 @@
 			"config": {
 				"register": "procest",
 				"schema": "subsidieAanvraag",
-				"_note": "CASE-linked detail archetype (subsidy application). Per ADR-044 the subsidy WORKFLOW lives on a unified `case` (caseType=subsidie) shown by CaseDetail; subsidieAanvraag is the SUPPORTING schema (subsidieAanvraag.case) holding subsidy-specific data reached by deep link. It declares NO comms linkedTypes. Overview data+metadata carries the application (aanvraagnummer, subsidieregeling, aangevraagdBedrag, status, behandelaar, the linked case). A Begroting tab groups the budget (begroting, cofinancieringList, projectStartdatum/Einddatum); a Aanvrager tab isolates the applicant references (aanvragerKvkRef, aanvragerBsnRef). Audit-trail closes it. The previous CaseDecisionsTab/CaseDocumentsTab were replaced because they filter decision.case/caseDocument.case by the route id — which here is a subsidieAanvraag id, not a case id, so they never matched; the beschikking + bewijsstukken belong to the parent case dossier (CaseDetail).",
-				"documentationUrl": "https://procest.conduction.nl"
-			},
-			"widgets": [
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 0,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "metadata",
-					"slot": "sidebar",
-					"tabGroup": "overview",
-					"gridX": 0,
-					"gridY": 1,
-					"gridWidth": 1,
-					"gridHeight": 1
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "begroting",
-					"gridX": 0,
-					"gridY": 2,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"fields": [
-								"aangevraagdBedrag",
-								"begroting",
-								"cofinancieringList",
-								"projectStartdatum",
-								"projectEinddatum"
-							]
-						}
-					}
-				},
-				{
-					"widgetKey": "data",
-					"slot": "sidebar",
-					"tabGroup": "aanvrager",
-					"gridX": 0,
-					"gridY": 3,
-					"gridWidth": 1,
-					"gridHeight": 1,
-					"props": {
-						"config": {
-							"fields": [
-								"aanvragerKvkRef",
-								"aanvragerBsnRef"
-							]
-						}
-					}
-				},
-				{
-					"widgetKey": "audit-trail",
-					"slot": "sidebar",
-					"tabGroup": "audit",
-					"gridX": 0,
-					"gridY": 4,
-					"gridWidth": 1,
-					"gridHeight": 1
+				"_note": "SUBSIDY-APPLICATION archetype (subsidieAanvraag). Per ADR-044 the common workflow/status lives on a unified `case` (caseType=subsidie) shown by CaseDetail; subsidieAanvraag is the linked schema holding subsidy-specific data reached by deep link. It declares NO comms linkedTypes, so no files/notes/contacts/calendar leaves — those live on the parent case. The Data widget carries the application and its budget/applicant fields (aanvraagnummer, subsidieregeling, aangevraagdBedrag, begroting, cofinancieringList, projectStartdatum/Einddatum, aanvragerKvkRef, aanvragerBsnRef, behandelaar) and a Related panel links the parent case, the scheme and the handler. Its genuine children — assessments (subsidieBeoordeling), decisions (subsidieBeschikking) and executions (subsidieUitvoering), all keyed subsidieaanvraag=@objectId — are FK-scoped object-lists (these were previously mis-modelled as case-scoped tabs that never matched a subsidieAanvraag id). summaryAggregates chip decision/execution counts and lifecycleActions drive the status (ontvangen → … → verleend/afgewezen). Audit history is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{ "id": "subsidie-data", "type": "data", "title": "Subsidieaanvraag", "content": { "columns": 2 } },
+					{ "id": "subsidie-related", "type": "related", "title": "Case, scheme & handler" },
+					{ "id": "subsidie-beoordelingen", "type": "object-list", "title": "Assessments", "content": { "register": "procest", "schema": "subsidieBeoordeling", "filter": { "subsidieaanvraag": "@objectId" }, "sort": { "field": "beoordelingsdatum", "dir": "desc" }, "limit": 25, "columns": [ { "key": "beoordelaar", "label": "Assessor" }, { "key": "inhoudelijkeToetsOordeel", "label": "Content check" }, { "key": "financieleToetsOordeel", "label": "Financial check" }, { "key": "advies", "label": "Advice" }, { "key": "beoordelingsdatum", "label": "Assessed" } ] } },
+					{ "id": "subsidie-beschikkingen", "type": "object-list", "title": "Decisions", "content": { "register": "procest", "schema": "subsidieBeschikking", "filter": { "subsidieaanvraag": "@objectId" }, "sort": { "field": "beschikkingsdatum", "dir": "desc" }, "limit": 25, "columns": [ { "key": "beschikkingnummer", "label": "Number" }, { "key": "beschikkingtype", "label": "Type" }, { "key": "verleendBedrag", "label": "Granted" }, { "key": "status", "label": "Status" }, { "key": "beschikkingsdatum", "label": "Date" } ] } },
+					{ "id": "subsidie-uitvoeringen", "type": "object-list", "title": "Executions", "content": { "register": "procest", "schema": "subsidieUitvoering", "filter": { "subsidieaanvraag": "@objectId" }, "sort": { "field": "order", "dir": "asc" }, "limit": 25, "columns": [ { "key": "status", "label": "Status" }, { "key": "betaaldeVoorschotten", "label": "Paid advances" }, { "key": "openstaandeVoorschotten", "label": "Open advances" } ] } }
+				],
+				"layout": [
+					{ "id": "1", "widgetId": "subsidie-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
+					{ "id": "2", "widgetId": "subsidie-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 },
+					{ "id": "3", "widgetId": "subsidie-beoordelingen", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 5 },
+					{ "id": "4", "widgetId": "subsidie-beschikkingen", "gridX": 0, "gridY": 9, "gridWidth": 6, "gridHeight": 5 },
+					{ "id": "5", "widgetId": "subsidie-uitvoeringen", "gridX": 6, "gridY": 9, "gridWidth": 6, "gridHeight": 5 }
+				],
+				"summaryAggregates": [
+					{ "label": "Decisions", "register": "procest", "schema": "subsidieBeschikking", "metric": "count", "filter": { "subsidieaanvraag": "@objectId" } },
+					{ "label": "Executions", "register": "procest", "schema": "subsidieUitvoering", "metric": "count", "filter": { "subsidieaanvraag": "@objectId" } }
+				],
+				"lifecycleActions": { "field": "status" },
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+					]
 				}
-			]
+			}
 		},
 		{
 			"id": "Subsidieregelingen",

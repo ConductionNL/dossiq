@@ -1028,8 +1028,8 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "statusType",
-                        "readOnly": true,
-                        "description": "Reference to the current status type. Set declaratively to the case type's initial status by OpenRegister (x-openregister-lifecycle).",
+                        "x-relation-filter": { "caseType": "@object.caseType" },
+                        "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by OpenRegister (x-openregister-lifecycle.initial); user-editable thereafter because OR's transition engine only supports STATIC from/to state values and cannot express procest's per-caseType statusType graph yet — revert to readOnly + lifecycle transitions once OR supports FK-based status graphs. x-relation-filter scopes the picker to the case's own type's statuses.",
                         "title": "Status",
                         "facetable": true
                     },
