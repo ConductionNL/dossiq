@@ -28,6 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Listener;
 
+use OCA\OpenRegister\Db\ApprovalChain;
+use OCA\OpenRegister\Db\ApprovalStep;
+use OCA\OpenRegister\Event\ApprovalStepApprovedEvent;
+use OCA\OpenRegister\Event\ApprovalStepRejectedEvent;
 use OCA\Procest\Listener\ApprovalStepNotificationListener;
 use OCA\Procest\Service\ParaferingNotificationService;
 use OCA\Procest\Service\SettingsService;
@@ -186,20 +190,19 @@ class ApprovalStepNotificationListenerTest extends TestCase
             ->method('notifyStepActivated')
             ->with('hoofd1', 'Omgevingsvergunning', 'voorstel-abc', 'afdelingshoofd');
 
-        $nextStep = new class {
-            /**
-             * @return string Next step role.
-             */
-            public function getRole(): string
-            {
-                return 'afdelingshoofd';
-            }
-        };
+        $step = new ApprovalStep();
+        $step->setObjectUuid('voorstel-abc');
 
-        $fqn   = 'OCA\OpenRegister\Event\ApprovalStepApprovedEvent';
-        $event = new $fqn();
-        $event->setObjectUuid('voorstel-abc');
-        $event->setNext($nextStep);
+        $nextStep = new ApprovalStep();
+        $nextStep->setRole('afdelingshoofd');
+
+        $event = new ApprovalStepApprovedEvent(
+            chain: new ApprovalChain(),
+            step: $step,
+            userId: 'beoordelaar',
+            statusOnApprove: 'approved',
+            nextStep: $nextStep
+        );
 
         $listener = new ApprovalStepNotificationListener(
             $this->notifications,
@@ -252,23 +255,18 @@ class ApprovalStepNotificationListenerTest extends TestCase
                 'Financiele paragraaf ontbreekt'
             );
 
-        $step = new class {
-            /**
-             * @return string JSON metadata-in-comment payload.
-             */
-            public function getComment(): string
-            {
-                return json_encode(
-                    ['text' => 'Financiele paragraaf ontbreekt', '_meta' => ['action' => 'returned']]
-                );
-            }
-        };
+        $step = new ApprovalStep();
+        $step->setObjectUuid('voorstel-xyz');
+        $step->setComment(
+            json_encode(['text' => 'Financiele paragraaf ontbreekt', '_meta' => ['action' => 'returned']])
+        );
 
-        $fqn   = 'OCA\OpenRegister\Event\ApprovalStepRejectedEvent';
-        $event = new $fqn();
-        $event->setObjectUuid('voorstel-xyz');
-        $event->setUserId('beoordelaar');
-        $event->setStep($step);
+        $event = new ApprovalStepRejectedEvent(
+            chain: new ApprovalChain(),
+            step: $step,
+            userId: 'beoordelaar',
+            statusOnReject: 'rejected'
+        );
 
         $listener = new ApprovalStepNotificationListener(
             $this->notifications,
