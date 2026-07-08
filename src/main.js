@@ -110,15 +110,14 @@ const fragmentCtx = require.context('./manifest.d/', false, /\.json$/)
 const fragments = fragmentCtx.keys().sort().map((key) => fragmentCtx(key))
 const builtManifest = buildManifest(bundledManifest, fragments, menuLayout)
 
-// Adopt the backend `/api/manifest` delta (case-type-navigation): the
-// ManifestController resolves the live `caseType` objects and returns a keyed
-// menu delta that ADDS one child per case type under `CasesGroup` (ADR-036
-// keyed `children[]` merge). `useAppManifest` returns a REACTIVE ref — the
-// render function below reads `resolvedManifest.value`, so the navigation
-// updates in place once the backend delta lands, without a page reload.
-// The built manifest is the synchronous fallback: apps work fully before (and
-// without) the backend endpoint responding.
-const { manifest: resolvedManifest } = useAppManifest('procest', builtManifest, { mergeStrategy: 'delta' })
+// Case-type navigation now lives on the Cases index page itself: a folder
+// sidebar (config.folderSidebar) lists the live `caseType` objects and filters
+// cases by `caseType` on select — replacing the former per-case-type menu
+// children injected by the backend ManifestController (`/api/manifest` delta,
+// now removed). `useAppManifest` still returns a REACTIVE ref (the render
+// function reads `resolvedManifest.value`); with no backend delta it resolves
+// to the built manifest.
+const { manifest: resolvedManifest } = useAppManifest('procest', builtManifest)
 
 // Shallow-clone CnPageRenderer because the lib's barrel exports are
 // non-extensible (webpack ESM module records). Vue 2's `Vue.extend()`
