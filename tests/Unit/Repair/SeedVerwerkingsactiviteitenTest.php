@@ -22,7 +22,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Repair;
 
 use OCA\OpenRegister\Db\Verwerkingsactiviteit;
-use OCA\OpenRegister\Db\VerwerkingsactiviteitMapper;
 use OCA\Procest\Repair\SeedVerwerkingsactiviteiten;
 use OCA\Procest\Service\SettingsService;
 use OCP\Migration\IOutput;
@@ -52,11 +51,11 @@ class SeedVerwerkingsactiviteitenTest extends TestCase
     private ContainerInterface $container;
 
     /**
-     * The in-memory OR mapper stub.
+     * The in-memory OR mapper double.
      *
-     * @var VerwerkingsactiviteitMapper
+     * @var InMemoryVerwerkingsactiviteitMapperDouble
      */
-    private VerwerkingsactiviteitMapper $mapper;
+    private InMemoryVerwerkingsactiviteitMapperDouble $mapper;
 
     /**
      * The repair step under test.
@@ -75,7 +74,7 @@ class SeedVerwerkingsactiviteitenTest extends TestCase
         parent::setUp();
         $this->settingsService = $this->createMock(SettingsService::class);
         $this->container       = $this->createMock(ContainerInterface::class);
-        $this->mapper          = new VerwerkingsactiviteitMapper();
+        $this->mapper          = new InMemoryVerwerkingsactiviteitMapperDouble();
 
         $this->step = new SeedVerwerkingsactiviteiten(
             settingsService: $this->settingsService,
@@ -274,4 +273,95 @@ class SeedVerwerkingsactiviteitenTest extends TestCase
         }
 
     }//end testPersonBearingSchemasOptIntoReadLogging()
+}//end class
+
+
+/**
+ * In-memory double for OpenRegister's VerwerkingsactiviteitMapper.
+ *
+ * The real mapper is a QBMapper that requires an IDBConnection and hits the
+ * database. This double is intentionally NOT a subclass of the OR mapper: when
+ * the real OpenRegister app is on the test classpath (the CI unit job checks it
+ * out, and so does the dev container) it shadows the `tests/Stubs/` mapper, so
+ * a `new VerwerkingsactiviteitMapper()` would hit the real DB-bound
+ * constructor. Depending only on the stable `Verwerkingsactiviteit` entity, it
+ * records inserts/updates and stores entities by code so the seed logic can be
+ * asserted without a database — and mirrors the real mapper's "blank status
+ * defaults to `concept` on insert" behaviour.
+ */
+final class InMemoryVerwerkingsactiviteitMapperDouble
+{
+
+    /**
+     * Number of insert() calls.
+     *
+     * @var integer
+     */
+    public int $inserts = 0;
+
+    /**
+     * Number of update() calls.
+     *
+     * @var integer
+     */
+    public int $updates = 0;
+
+    /**
+     * Stored entities keyed by their catalogue code.
+     *
+     * @var array<string, Verwerkingsactiviteit>
+     */
+    private array $byCode = [];
+
+
+    /**
+     * Find a stored activity by its unique code.
+     *
+     * @param string $code The catalogue code.
+     *
+     * @return Verwerkingsactiviteit|null The stored entity, or null.
+     */
+    public function findByCode(string $code): ?Verwerkingsactiviteit
+    {
+        return ($this->byCode[$code] ?? null);
+
+    }//end findByCode()
+
+
+    /**
+     * Record an insert, defaulting a blank status to `concept` like OR does.
+     *
+     * @param Verwerkingsactiviteit $entity The entity to insert.
+     *
+     * @return Verwerkingsactiviteit The stored entity.
+     */
+    public function insert(Verwerkingsactiviteit $entity): Verwerkingsactiviteit
+    {
+        if ($entity->getStatus() === null || $entity->getStatus() === '') {
+            $entity->setStatus('concept');
+        }
+
+        $this->inserts++;
+        $this->byCode[$entity->getCode()] = $entity;
+        return $entity;
+
+    }//end insert()
+
+
+    /**
+     * Record an update.
+     *
+     * @param Verwerkingsactiviteit $entity The entity to update.
+     *
+     * @return Verwerkingsactiviteit The stored entity.
+     */
+    public function update(Verwerkingsactiviteit $entity): Verwerkingsactiviteit
+    {
+        $this->updates++;
+        $this->byCode[$entity->getCode()] = $entity;
+        return $entity;
+
+    }//end update()
+
+
 }//end class

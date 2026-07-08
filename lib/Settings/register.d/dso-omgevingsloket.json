@@ -120,6 +120,7 @@
             "type": "string",
             "title": "Case ID",
             "format": "uuid",
+            "$ref": "case",
             "description": "UUID of the linked Procest zaak"
           }
         }

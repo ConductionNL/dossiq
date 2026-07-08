@@ -48,6 +48,7 @@
                     "catalogus": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "catalogus",
                         "description": "Reference to the parent catalogus",
                         "title": "Catalogus"
                     },
@@ -206,6 +207,8 @@
                     "workflowDefinition": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "workflowTemplate",
+                        "x-relation-filter": {"caseType": "@objectId"},
                         "description": "UUID reference to the pinned active workflowTemplate for this case type. When unset, new cases fall through to the latest published workflowTemplate for this caseType. New cases are bound to the version that is published+isActive at the moment of case creation (see case.workflowTemplate + case.workflowVersion).",
                         "title": "Workflow Definition"
                     },
@@ -471,6 +474,7 @@
                     "catalogus": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "catalogus",
                         "description": "Reference to the parent catalogus",
                         "title": "Catalogus"
                     },
@@ -561,6 +565,7 @@
                     "catalogus": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "catalogus",
                         "description": "Reference to the parent catalogus",
                         "title": "Catalogus"
                     },
@@ -1023,8 +1028,8 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "statusType",
-                        "readOnly": true,
-                        "description": "Reference to the current status type. Set declaratively to the case type's initial status by OpenRegister (x-openregister-lifecycle).",
+                        "x-relation-filter": { "caseType": "@object.caseType" },
+                        "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by OpenRegister (x-openregister-lifecycle.initial); user-editable thereafter because OR's transition engine only supports STATIC from/to state values and cannot express procest's per-caseType statusType graph yet — revert to readOnly + lifecycle transitions once OR supports FK-based status graphs. x-relation-filter scopes the picker to the case's own type's statuses.",
                         "title": "Status",
                         "facetable": true
                     },
@@ -1040,6 +1045,8 @@
                     "result": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "result",
+                        "x-relation-filter": {"case": "@objectId"},
                         "description": "Reference to the result record (set on completion)",
                         "visible": false,
                         "title": "Result"
@@ -1229,6 +1236,8 @@
                     "workflowTemplate": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "workflowTemplate",
+                        "x-relation-filter": {"caseType": "@object.caseType"},
                         "description": "Reference to the bound workflow template",
                         "visible": false,
                         "title": "Workflow Template"
@@ -1653,6 +1662,7 @@
                     "roleType": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "roleType",
                         "description": "Reference to the role type",
                         "title": "Role Type"
                     },
@@ -1724,6 +1734,7 @@
                     "resultType": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "resultType",
                         "description": "Reference to the result type",
                         "title": "Result Type"
                     },
@@ -1759,6 +1770,7 @@
                     "statusType": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "statusType",
                         "description": "Reference to the target status type (toStatus)",
                         "title": "Status Type"
                     },
@@ -1775,6 +1787,7 @@
                     "fromStatus": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "statusType",
                         "description": "Reference to the prior status type (absent on first set)",
                         "title": "From Status"
                     },
@@ -1869,6 +1882,7 @@
                     "decisionType": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "decisionType",
                         "description": "Reference to the decision type",
                         "title": "Decision Type"
                     },
@@ -2025,6 +2039,7 @@
                     "documentType": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "documentType",
                         "description": "Reference to the document type",
                         "title": "Document Type"
                     },
@@ -2259,12 +2274,14 @@
                     "zaaktype": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "caseType",
                         "description": "Reference to the case type",
                         "title": "Case Type Reference"
                     },
                     "informatieobjecttype": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "informatieobjecttype",
                         "description": "Reference to the document type",
                         "title": "Document Type Reference"
                     },
@@ -2286,6 +2303,8 @@
                     "statustype": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "statusType",
+                        "x-relation-filter": {"caseType": "@object.zaaktype"},
                         "description": "Reference to a status type",
                         "title": "Status Type Reference"
                     }
@@ -2316,6 +2335,7 @@
                     "propertyDefinition": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "propertyDefinition",
                         "description": "Reference to the property definition (eigenschap)",
                         "title": "Property Definition"
                     },
@@ -2673,6 +2693,8 @@
                     "parafeerroute": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "parafeerroute",
+                        "x-relation-filter": {"voorstelType": "@object.type"},
                         "description": "Reference to the parafeerroute being used",
                         "title": "Parafeerroute"
                     },
@@ -2719,6 +2741,8 @@
                     "decision": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "decision",
+                        "x-relation-filter": {"case": "@object.case"},
                         "description": "Reference to the linked decision (set when besluit is registered)",
                         "visible": false,
                         "title": "Decision"
@@ -3058,6 +3082,7 @@
                     "parentWorkflow": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "workflowTemplate",
                         "description": "Reference to parent workflow template for inheritance (Enterprise tier)",
                         "title": "Parent Workflow"
                     }
@@ -3645,6 +3670,7 @@
                     "minutesDocument": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "document",
                         "description": "Reference to full hearing minutes document",
                         "title": "Minutes Document"
                     },
@@ -3847,6 +3873,7 @@
                     "reportDocument": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "document",
                         "description": "Reference to full advisory report document",
                         "title": "Report Document"
                     }
@@ -3959,6 +3986,7 @@
                     "decisionDocument": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "decisionDocument",
                         "description": "Reference to the formal decision letter document",
                         "title": "Decision Document"
                     }
@@ -4658,6 +4686,7 @@
                     "parentZaak": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "case",
                         "description": "Reference to the parent case UUID",
                         "title": "Parent Case"
                     },
@@ -4669,6 +4698,7 @@
                     "advisoryBodyId": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "advisoryBody",
                         "description": "Reference to advisoryBody object if using the registry",
                         "title": "Advisory Body ID"
                     },
@@ -4858,6 +4888,7 @@
                     "consultation": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "consultation",
                         "description": "Reference to the parent consultation UUID",
                         "title": "Consultation"
                     },
@@ -5006,6 +5037,7 @@
                     "case": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "case",
                         "description": "Reference to the case this advice is requested for",
                         "title": "Case"
                     },
@@ -5188,6 +5220,7 @@
                     "verordening": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "legesverordening",
                         "description": "Reference to the parent legesverordening",
                         "facetable": true,
                         "title": "Regulation"
@@ -5314,6 +5347,7 @@
                     "case": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "case",
                         "description": "Reference to the case this calculation belongs to",
                         "facetable": true,
                         "title": "Case"
@@ -5326,6 +5360,7 @@
                     "verordeningId": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "legesverordening",
                         "description": "Reference to the legesverordening object",
                         "facetable": true,
                         "title": "Regulation ID"
@@ -5456,6 +5491,7 @@
                     "case": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "case",
                         "description": "Reference to the handhavingszaak",
                         "title": "Case"
                     },
@@ -5740,12 +5776,14 @@
                     "case": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "case",
                         "description": "Reference to the parent case",
                         "title": "Case"
                     },
                     "inspection": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "inspectieRapport",
                         "description": "Optional reference to the originating inspection rapport",
                         "title": "Inspection"
                     },
@@ -5991,12 +6029,14 @@
                     "case": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "case",
                         "description": "Reference to the case (toezichtzaak) this report belongs to",
                         "title": "Case"
                     },
                     "checklist": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "inspectieChecklist",
                         "description": "Reference to the inspectieChecklist used",
                         "title": "Checklist"
                     },
@@ -7793,6 +7833,7 @@
                     "tenantRef": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "tenant",
                         "description": "Reference to the parent Tenant",
                         "title": "Tenant Reference"
                     },
@@ -7882,6 +7923,7 @@
                     "tenantRef": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "tenant",
                         "description": "Reference to the parent Tenant",
                         "title": "Tenant Reference"
                     },
@@ -7947,6 +7989,7 @@
                     "tenantRef": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "tenant",
                         "description": "Reference to the parent Tenant",
                         "title": "Tenant Reference"
                     },
@@ -8004,6 +8047,7 @@
                     "tenantRef": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "tenant",
                         "description": "Reference to the parent Tenant",
                         "title": "Tenant Reference"
                     },
@@ -8053,6 +8097,7 @@
                     "tenantRef": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "tenant",
                         "description": "Reference to the parent Tenant",
                         "title": "Tenant Reference"
                     },
@@ -8354,6 +8399,7 @@
                     "caseRef": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "case",
                         "title": "Case Reference",
                         "description": "Reference to the procurement case this tender relates to"
                     },
@@ -8431,6 +8477,7 @@
                     "caseRef": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "case",
                         "title": "Case Reference",
                         "description": "Reference to the procurement case this contract belongs to"
                     },
@@ -8505,6 +8552,7 @@
                     "caseRef": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "case",
                         "title": "Case Reference",
                         "description": "Reference to the case or contract this invoice relates to"
                     },
@@ -8591,6 +8639,7 @@
                     "caseRef": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "case",
                         "title": "Case Reference",
                         "description": "Reference to the case or contract this message relates to"
                     },
@@ -8706,6 +8755,7 @@
                     "tenantRef": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "tenant",
                         "description": "Reference to the parent Tenant",
                         "title": "Tenant Reference"
                     },
@@ -8805,6 +8855,7 @@
                     "previousVersion": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "emailTemplate",
                         "description": "Reference to the prior version object (audit chain)",
                         "title": "Previous Version"
                     }
