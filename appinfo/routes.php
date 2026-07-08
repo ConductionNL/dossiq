@@ -86,45 +86,6 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'subsidie#transition', 'url' => '/api/subsidies/{id}/transition', 'verb' => 'POST'],
         ['name' => 'subsidie#createBeschikking', 'url' => '/api/subsidies/{id}/beschikking', 'verb' => 'POST'],
 
-        // Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente).
-        // Static/verb routes precede the {id} wildcard routes.
-        ['name' => 'zaakportaal#cases',                     'url' => '/api/portaal/cases', 'verb' => 'GET'],
-        ['name' => 'zaakportaal#messages',                  'url' => '/api/portaal/messages', 'verb' => 'GET'],
-        ['name' => 'zaakportaal#sendMessage',               'url' => '/api/portaal/messages', 'verb' => 'POST'],
-        ['name' => 'zaakportaal#objectionDeadline',         'url' => '/api/portaal/objections/validate-deadline', 'verb' => 'POST'],
-        ['name' => 'zaakportaal#submitObjection',           'url' => '/api/portaal/objections', 'verb' => 'POST'],
-        ['name' => 'zaakportaal#submitComplaint',           'url' => '/api/portaal/complaints', 'verb' => 'POST'],
-        ['name' => 'zaakportaal#requests',                  'url' => '/api/portaal/requests', 'verb' => 'GET'],
-        ['name' => 'zaakportaal#getPreferences',            'url' => '/api/portaal/notification-preferences', 'verb' => 'GET'],
-        ['name' => 'zaakportaal#updatePreferences',         'url' => '/api/portaal/notification-preferences', 'verb' => 'PATCH'],
-        ['name' => 'zaakportaal#caseDetail',                'url' => '/api/portaal/cases/{id}', 'verb' => 'GET'],
-
-        // Leverancier-zaakportaal — operator-side read endpoints for the
-        // Vue surface shipped in chain members 06/08/10/11/14/15.
-        // Supplier-facing eHerkenning + JWT flow is exposed by a separate
-        // edge entry-point (chain member 02 — deferred).
-        ['name' => 'supplierPortal#dashboard',     'url' => '/api/leverancier-portaal/dashboard',         'verb' => 'GET'],
-        ['name' => 'supplierPortal#tenders',       'url' => '/api/leverancier-portaal/tenders',           'verb' => 'GET'],
-        ['name' => 'supplierPortal#tenderDetail',  'url' => '/api/leverancier-portaal/tenders/{id}',      'verb' => 'GET'],
-        ['name' => 'supplierPortal#invoices',      'url' => '/api/leverancier-portaal/invoices',          'verb' => 'GET'],
-        ['name' => 'supplierPortal#contracts',     'url' => '/api/leverancier-portaal/contracts',         'verb' => 'GET'],
-        ['name' => 'supplierPortal#kpi',           'url' => '/api/leverancier-portaal/kpi',               'verb' => 'GET'],
-        ['name' => 'supplierPortal#messages',      'url' => '/api/leverancier-portaal/messages',          'verb' => 'GET'],
-        ['name' => 'supplierPortal#sendMessage',   'url' => '/api/leverancier-portaal/messages',          'verb' => 'POST'],
-
-        // Leverancier-zaakportaal — contract list/detail + renewal request (chain member 09).
-        ['name' => 'contract#index',          'url' => '/api/leverancier-portaal/contracts/list',                'verb' => 'GET'],
-        ['name' => 'contract#requestRenewal', 'url' => '/api/leverancier-portaal/contracts/{id}/request-renewal', 'verb' => 'POST'],
-        ['name' => 'contract#show',           'url' => '/api/leverancier-portaal/contracts/{id}',                'verb' => 'GET'],
-
-        // Leverancier-zaakportaal — operator-side write endpoints (master-data
-        // mutations, chain member 12). Address + contactPerson apply
-        // immediately; IBAN + accreditation are 4-eyes via Procest cases.
-        ['name' => 'supplierProfile#updateAddress',      'url' => '/api/leverancier-portaal/profile/address',        'verb' => 'POST'],
-        ['name' => 'supplierProfile#updateContact',      'url' => '/api/leverancier-portaal/profile/contact',        'verb' => 'POST'],
-        ['name' => 'supplierProfile#requestIbanChange',  'url' => '/api/leverancier-portaal/profile/iban',           'verb' => 'POST'],
-        ['name' => 'supplierProfile#submitAccreditation','url' => '/api/leverancier-portaal/profile/accreditations', 'verb' => 'POST'],
-
         // ZGW Mapping Management.
         ['name' => 'zgwMapping#index', 'url' => '/api/zgw-mappings', 'verb' => 'GET'],
         ['name' => 'zgwMapping#show', 'url' => '/api/zgw-mappings/{resourceKey}', 'verb' => 'GET'],
@@ -286,19 +247,6 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         // Dashboard KPI aggregation endpoint.
         ['name' => 'kpi#index', 'url' => '/api/dashboard/kpis', 'verb' => 'GET'],
 
-        // ── Mobile Inspection (PWA) ─────────────────────────────────────
-        ['name' => 'inspection#index',                'url' => '/api/inspections',                                   'verb' => 'GET'],
-        ['name' => 'inspection#captureLocation',      'url' => '/api/inspections/{id}/location',                     'verb' => 'POST'],
-        ['name' => 'inspection#completeChecklistItem','url' => '/api/inspections/{id}/checklist/{itemId}',           'verb' => 'POST'],
-        ['name' => 'inspection#addPhoto',             'url' => '/api/inspections/{id}/photos',                       'verb' => 'POST'],
-        ['name' => 'inspection#complete',             'url' => '/api/inspections/{id}/complete',                     'verb' => 'POST'],
-
-        // ── Mobiel Inspectie Offline (sync queue + conflict resolution) ─
-        // Static/verb routes precede the {id} wildcards.
-        ['name' => 'sync#daily',         'url' => '/api/sync/daily',                       'verb' => 'GET'],
-        ['name' => 'sync#queue',         'url' => '/api/sync/queue',                       'verb' => 'GET'],
-        ['name' => 'sync#recordOutcome', 'url' => '/api/sync/queue/{id}/outcome',          'verb' => 'POST'],
-        ['name' => 'sync#resolveConflict', 'url' => '/api/sync/conflicts/{id}/resolve',    'verb' => 'POST'],
         // PWA assets (must precede the catch-all /{path} shell route below).
         ['name' => 'dashboard#serviceWorker', 'url' => '/service-worker.js',           'verb' => 'GET'],
         ['name' => 'dashboard#webManifest',   'url' => '/manifest.webmanifest',        'verb' => 'GET'],
