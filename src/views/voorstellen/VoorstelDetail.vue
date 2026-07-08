@@ -169,6 +169,7 @@ import BesluitRegistration from './components/BesluitRegistration.vue'
 import SkipStepDialog from '../../dialogs/SkipStepDialog.vue'
 import AddStepDialog from '../../dialogs/AddStepDialog.vue'
 import { useObjectStore } from '../../store/modules/object.js'
+import { initializeStores } from '../../store/store.js'
 
 const STATUS_LABELS = {
 	concept: 'Concept',
@@ -280,6 +281,10 @@ export default {
 	},
 	/** @spec openspec/specs/parafering-actions/spec.md */
 	async created() {
+		// Widgets can mount before App.vue's initializeStores() resolves the
+		// app-config — await it (idempotent) so 'voorstel'/'parafeeractie'
+		// are registered before the first fetch.
+		await initializeStores()
 		await Promise.all([
 			this.loadVoorstel(),
 			this.loadActies(),
