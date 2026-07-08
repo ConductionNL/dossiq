@@ -60,6 +60,7 @@ import Domain from 'vue-material-design-icons/Domain.vue'
 import CardAccountMailOutline from 'vue-material-design-icons/CardAccountMailOutline.vue'
 import TransitConnectionVariant from 'vue-material-design-icons/TransitConnectionVariant.vue'
 import { useObjectStore } from '../../store/modules/object.js'
+import { initializeStores } from '../../store/store.js'
 
 export default {
 	name: 'InitiatorSection',
@@ -158,6 +159,11 @@ export default {
 		},
 	},
 	async mounted() {
+		// CnAppRoot mounts manifest slot widgets before App.vue's
+		// initializeStores() has resolved the app-config, so the 'case'
+		// object type may not be registered yet — await it here
+		// (idempotent), same pattern as OverdueCasesWidget.
+		await initializeStores()
 		await this.load()
 	},
 	methods: {
