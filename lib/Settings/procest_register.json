@@ -4247,7 +4247,7 @@
                     "contestedDecision": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "appealDecision",
+                        "$ref": "bezwaarDecision",
                         "description": "The beslissing op bezwaar being contested — immutable after appellantFilingDate is set",
                         "title": "Contested Decision"
                     },
@@ -7033,6 +7033,8 @@
                 "properties": {
                     "caseId": {
                         "type": "string",
+                        "format": "uuid",
+                        "$ref": "case",
                         "description": "UUID of the case being transferred",
                         "title": "Case ID"
                     },
