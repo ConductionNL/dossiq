@@ -146,17 +146,6 @@ class SettingsService
         'subsidie_vaststelling_schema',
         'terugvordering_schema',
         'bewijsstuk_schema',
-        // Leges-heffingen (leges-heffingen spec) — Gemeentewet art. 229.
-        'leges_tarief_tabel_schema',
-        'leges_tarief_schema',
-        'leges_variant_schema',
-        'leges_korting_schema',
-        'leges_berekening_schema',
-        'leges_restitutie_schema',
-        // Shillinq accounts-receivable integration toggles.
-        'leges_shillinq_enabled',
-        'leges_shillinq_source',
-        'leges_betalingstermijn_dagen',
         'lhsMatrix',
         'lhs_matrix_schema',
         'lhs_recommendation_schema',
@@ -393,13 +382,6 @@ class SettingsService
         'portaalBericht'               => 'portaal_bericht_schema',
         'portaalVerzoek'               => 'portaal_verzoek_schema',
         'portaalNotificatieVoorkeur'   => 'portaal_notificatie_voorkeur_schema',
-        // Leges (municipal fees) — leges-heffingen spec.
-        'legesTariefTabel'             => 'leges_tarief_tabel_schema',
-        'legesTarief'                  => 'leges_tarief_schema',
-        'legesVariant'                 => 'leges_variant_schema',
-        'legesKorting'                 => 'leges_korting_schema',
-        'legesBerekening'              => 'leges_berekening_schema',
-        'legesRestitutie'              => 'leges_restitutie_schema',
         // Termijnbewaking + dwangsom (AWB 4:13/4:14/4:17).
         'termijnDefinitie'             => 'termijn_definitie_schema',
         'termijnInstance'              => 'termijn_instance_schema',
