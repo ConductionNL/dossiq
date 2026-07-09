@@ -74,12 +74,20 @@ export default {
 		return {
 			loading: true,
 			error: null,
-			/** Non-final status types, sorted by order — one column each. */
+			/**
+			 * Merged columns, sorted by order — one per distinct non-final
+			 * status NAME. Each column's `id` is the status name (status types
+			 * are per-case-type, so names recur across workflows and are merged).
+			 */
 			columns: [],
-			/** Map of statusId → array of open cases in that status. */
+			/** Map of column name → array of open cases whose status has that name. */
 			casesByStatus: {},
 			/** Map of caseType id → display name. */
 			caseTypeMap: {},
+			/** Map of statusType id → the statusType object. */
+			statusById: {},
+			/** Map of `${caseType}::${statusName}` → statusType id (drop resolution). */
+			statusIdByTypeAndName: {},
 			/** Id of the case currently being dragged. */
 			draggedCaseId: null,
 		}
@@ -120,25 +128,51 @@ export default {
 				}
 				this.caseTypeMap = typeMap
 
-				// Non-final columns, ordered.
-				const finalIds = new Set(
-					(statusTypes || [])
-						.filter(st => st.isFinal === true || st.isFinal === 'true')
-						.map(st => st.id),
-				)
-				this.columns = (statusTypes || [])
-					.filter(st => !finalIds.has(st.id))
-					.sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+				// Index every status type by id, and build a (caseType, name) →
+				// id lookup so a drop can resolve the status id belonging to the
+				// dropped case's own workflow.
+				const byId = {}
+				const byTypeAndName = {}
+				for (const st of (statusTypes || [])) {
+					byId[st.id] = st
+					byTypeAndName[`${st.caseType}::${st.name || ''}`] = st.id
+				}
+				this.statusById = byId
+				this.statusIdByTypeAndName = byTypeAndName
 
-				// Group only open (non-final-status) cases into their column.
+				const isFinal = st => st.isFinal === true || st.isFinal === 'true'
+
+				// Merge all non-final status types that share a name into one
+				// column. Status types are defined per case type, so the same
+				// name (e.g. "Ontvangen") recurs across every workflow; without
+				// this merge the board renders one near-empty column per type.
+				const colByName = new Map()
+				for (const st of (statusTypes || [])) {
+					if (isFinal(st)) continue
+					const name = st.name || ''
+					const order = st.order ?? 999
+					const existing = colByName.get(name)
+					if (existing) {
+						existing.order = Math.min(existing.order, order)
+					} else {
+						colByName.set(name, { id: name, name, order })
+					}
+				}
+				this.columns = [...colByName.values()]
+					.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
+
+				// Group open cases into their merged column by resolving each
+				// case's status id to its status-type name. Cases in a final
+				// status (or with an unknown/foreign status id) are omitted.
 				const grouped = {}
 				for (const col of this.columns) {
 					grouped[col.id] = []
 				}
 				for (const c of (cases || [])) {
-					if (finalIds.has(c.status)) continue
-					if (grouped[c.status]) {
-						grouped[c.status].push(c)
+					const st = byId[c.status]
+					if (!st || isFinal(st)) continue
+					if (grouped[st.name]) {
+						grouped[st.name].push(c)
 					}
 				}
 				this.casesByStatus = grouped
@@ -164,32 +198,42 @@ export default {
 		 * and reverts + toasts on failure.
 		 *
 		 * @param {string} caseId The dropped case id
-		 * @param {string} newStatusId The target column's status id
+		 * @param {string} newColumn The target column's name (merged status name)
 		 * @return {Promise<void>}
 		 */
-		async onDrop(caseId, newStatusId) {
+		async onDrop(caseId, newColumn) {
 			this.draggedCaseId = null
 
 			// Locate the card and its current column.
-			let fromStatusId = null
+			let fromColumn = null
 			let caseObj = null
-			for (const [statusId, list] of Object.entries(this.casesByStatus)) {
+			for (const [colName, list] of Object.entries(this.casesByStatus)) {
 				const found = list.find(c => String(c.id) === String(caseId))
 				if (found) {
-					fromStatusId = statusId
+					fromColumn = colName
 					caseObj = found
 					break
 				}
 			}
 
-			if (!caseObj || fromStatusId === null) return
-			if (String(fromStatusId) === String(newStatusId)) return
+			if (!caseObj || fromColumn === null) return
+			if (String(fromColumn) === String(newColumn)) return
+
+			// Columns are merged by status name, but the case's status must be a
+			// concrete status-type id from its OWN workflow. Resolve the id that
+			// carries this column's name within the case's case type; refuse the
+			// move when that workflow has no status by that name.
+			const targetStatusId = this.statusIdByTypeAndName[`${caseObj.caseType}::${newColumn}`]
+			if (!targetStatusId) {
+				showError(this.t('procest', 'That status is not part of this case\'s workflow.'))
+				return
+			}
 
 			// Optimistic move.
-			const fromList = this.casesByStatus[fromStatusId].filter(c => String(c.id) !== String(caseId))
-			Vue.set(this.casesByStatus, fromStatusId, fromList)
-			const movedCase = { ...caseObj, status: newStatusId }
-			Vue.set(this.casesByStatus, newStatusId, [...(this.casesByStatus[newStatusId] || []), movedCase])
+			const fromList = this.casesByStatus[fromColumn].filter(c => String(c.id) !== String(caseId))
+			Vue.set(this.casesByStatus, fromColumn, fromList)
+			const movedCase = { ...caseObj, status: targetStatusId }
+			Vue.set(this.casesByStatus, newColumn, [...(this.casesByStatus[newColumn] || []), movedCase])
 
 			try {
 				const result = await this.objectStore.saveObject('case', movedCase)
@@ -199,10 +243,10 @@ export default {
 			} catch (err) {
 				console.error('[procest] failed to advance case status', err)
 				// Revert: pull from the new column, restore in the old one.
-				const revertedNew = (this.casesByStatus[newStatusId] || [])
+				const revertedNew = (this.casesByStatus[newColumn] || [])
 					.filter(c => String(c.id) !== String(caseId))
-				Vue.set(this.casesByStatus, newStatusId, revertedNew)
-				Vue.set(this.casesByStatus, fromStatusId, [...this.casesByStatus[fromStatusId], caseObj])
+				Vue.set(this.casesByStatus, newColumn, revertedNew)
+				Vue.set(this.casesByStatus, fromColumn, [...this.casesByStatus[fromColumn], caseObj])
 				showError(this.t('procest', 'Could not move the case. You may not have permission, or the change failed.'))
 			}
 		},

@@ -1,5 +1,6 @@
 {
-  "caseTypes": [
+  "_note": "Dutch demo case types (Bezwaar/Beroep/Subsidie) DISABLED for the German-federal English demo — the curated English demo is seeded from lib/Settings/register.d/46-demo-cases-english.json instead. SeedDataService reads `caseTypes`, so this data is parked under `_caseTypes_disabled`. Rename that key back to `caseTypes` to re-enable Dutch seeding (SeedBezwaarBeroepData repair step).",
+  "_caseTypes_disabled": [
     {
       "id": "b3c1a000-0000-4000-a000-00000000be2a",
       "uuid": "b3c1a000-0000-4000-a000-00000000be2a",

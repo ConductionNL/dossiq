@@ -11,6 +11,7 @@
 		view-mode="cards"
 		:view-modes="['cards', 'table']"
 		:columns="columns"
+		:sidebar="sidebar"
 		:show-view-action="false"
 		@view="openCase"
 		@row-click="openCase">
@@ -82,6 +83,16 @@ export default {
 				{ key: 'status', label: this.t('procest', 'Status'), formatter: 'statusTypeName' },
 				'deadline',
 			]
+		},
+
+		/**
+		 * Enable the embedded filter/search sidebar (search box + per-field facet
+		 * filters derived from the case schema), mirroring the Cases index so
+		 * users can narrow their assigned cases by status, case type, priority,
+		 * etc. Metadata column group is hidden to keep it focused.
+		 */
+		sidebar() {
+			return { enabled: true, showMetadata: false }
 		},
 	},
 

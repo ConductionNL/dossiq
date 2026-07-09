@@ -7,7 +7,6 @@
 	"relocations": {
 		"MyWork": "WorkGroup",
 		"WorkflowBoard": "WorkGroup",
-		"Cases": "CasesGroup",
 		"Analytics": "AnalyticsGroup",
 		"TermijnDashboardMenu": "AnalyticsGroup"
 	},

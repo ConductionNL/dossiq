@@ -1,6 +1,7 @@
 {
+    "_note": "Dutch hoofdzaak/deelzaak demo (Omgevingsvergunning/Bouwtoezicht/Milieuadvies) DISABLED for the German-federal English demo — see lib/Settings/register.d/46-demo-cases-english.json. The importer reads `components.objects`, so this data is parked under `components._objects_disabled`. Rename it back to `objects` to re-enable the deelzaak-hierarchy demo.",
     "components": {
-        "objects": [
+        "_objects_disabled": [
             {
                 "@self": {
                     "register": "procest",
